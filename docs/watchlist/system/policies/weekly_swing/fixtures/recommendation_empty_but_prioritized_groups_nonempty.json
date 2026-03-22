@@ -1,0 +1,22 @@
+{
+  "trade_date": "2026-03-16",
+  "policy_code": "WS",
+  "param_set_id": 101,
+  "policy_version": "WS_EOD_RUNTIME_V1",
+  "schema_version": "PARAMSET_JSON",
+  "plan_items": [
+    {
+      "ticker": "DDD",
+      "group": "TOP_PICKS"
+    },
+    {
+      "ticker": "EEE",
+      "group": "SECONDARY"
+    }
+  ],
+  "recommendation_summary": {
+    "recommended_count": 0,
+    "empty_recommendation_flag": true
+  },
+  "reason": "all prioritized items fail final recommendation feasibility"
+}

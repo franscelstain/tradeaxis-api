@@ -1,0 +1,37 @@
+{
+  "fixture_id": "WS_PLAN_UNIVERSE_SNAPSHOT_SAMPLE_V1",
+  "items": [
+    {
+      "asof_eod_date": "2026-02-13",
+      "ticker_code": "AAA",
+      "policy_code": "WS",
+      "policy_version": "WS_EOD_RUNTIME_V1",
+      "eligible_plan": true,
+      "dv20_idr": 3000000000,
+      "atr14_pct": 0.03,
+      "vol_ratio": 1.2,
+      "generated_at": "2026-02-13 16:10:00",
+      "plan_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "canonical_fail_reason_code": null,
+      "missing_fields": []
+    },
+    {
+      "asof_eod_date": "2026-02-13",
+      "ticker_code": "ILLQ",
+      "policy_code": "WS",
+      "policy_version": "WS_EOD_RUNTIME_V1",
+      "eligible_plan": false,
+      "dv20_idr": 100000000,
+      "atr14_pct": 0.03,
+      "vol_ratio": 1.2,
+      "generated_at": "2026-02-13 16:10:00",
+      "plan_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "canonical_fail_reason_code": "WS_LIQ_FAIL",
+      "missing_fields": []
+    }
+  ],
+  "_fixture_expected": {
+    "should_pass": true,
+    "notes": "Conforms to required proof fields for the PLAN universe snapshot contract."
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "policy": "WEEKLY_SWING",
+    "checked_at": "2026-02-14T02:30:00Z",
+    "snapshot_ts": "2026-02-14T02:28:30Z",
+    "snapshot_age_sec": 90,
+    "source": {
+      "vendor": "EXAMPLE_VENDOR",
+      "snapshot_id": "SNAP_20260214_022830Z"
+    }
+  },
+  "items": [
+    {
+      "ticker": "AAA",
+      "label": "CONFIRMED",
+      "reasons": [
+        {
+          "code": "WS_CONFIRM_OK",
+          "severity": "INFO",
+          "message": "Snapshot valid dan sehat; tidak ada sinyal negatif.",
+          "payload": {}
+        }
+      ]
+    },
+    {
+      "ticker": "BBB",
+      "label": "CAUTION",
+      "reasons": [
+        {
+          "code": "WS_CONFIRM_VOL_WEAK",
+          "severity": "WARN",
+          "message": "Volume intraday di bawah ekspektasi; jangan kejar harga.",
+          "payload": {
+            "vol_ratio_live": 0.72
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "CCC",
+      "label": "NEUTRAL",
+      "reasons": [
+        {
+          "code": "WS_CONFIRM_NEUTRAL",
+          "severity": "INFO",
+          "message": "Snapshot valid tetapi tidak memberi sinyal tambahan kuat.",
+          "payload": {}
+        }
+      ]
+    },
+    {
+      "ticker": "DDD",
+      "label": "DELAY",
+      "reasons": [
+        {
+          "code": "WS_NO_PRICE",
+          "severity": "BLOCK",
+          "message": "Harga runtime tidak tersedia; jangan eksekusi.",
+          "payload": {}
+        }
+      ]
+    },
+    {
+      "ticker": "EEE",
+      "label": "DELAY",
+      "reasons": [
+        {
+          "code": "WS_INPUT_INCOMPLETE",
+          "severity": "BLOCK",
+          "message": "Field intraday aggregate wajib belum lengkap; jangan eksekusi.",
+          "payload": {
+            "missing_fields": [
+              "turnover_idr"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "confirmed_count": 1,
+    "neutral_count": 1,
+    "caution_count": 1,
+    "delay_count": 2
+  }
+}

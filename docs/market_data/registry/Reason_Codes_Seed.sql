@@ -1,0 +1,43 @@
+-- Seed canonical reason codes into eod_reason_codes.
+-- Safe to rerun: uses ON DUPLICATE KEY UPDATE for description/severity/category/is_active.
+
+INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is_active`) VALUES
+('RUN_COVERAGE_LOW', 'RUN', 'Coverage ratio for the requested date is below the locked minimum threshold.', 'HARD', 1),
+('RUN_INDICATORS_MISSING', 'RUN', 'Required indicator artifact or required indicator row set for the requested date is not available.', 'HARD', 1),
+('RUN_ELIGIBILITY_MISSING', 'RUN', 'Eligibility snapshot for the requested date is not available.', 'HARD', 1),
+('RUN_HASH_MISSING', 'RUN', 'One or more mandatory content hashes are missing at finalization time.', 'HARD', 1),
+('RUN_HASH_FAILED', 'RUN', 'Hash computation failed or produced unusable output.', 'HARD', 1),
+('RUN_SEAL_PRECONDITION_FAILED', 'RUN', 'Seal execution was attempted before all locked preconditions were satisfied.', 'HARD', 1),
+('RUN_SEAL_WRITE_FAILED', 'RUN', 'Seal metadata could not be written successfully.', 'HARD', 1),
+('RUN_FINALIZE_BEFORE_CUTOFF', 'RUN', 'Final success was attempted before the cutoff policy allowed it.', 'HARD', 1),
+('RUN_LOCK_CONFLICT', 'RUN', 'Run-ownership conflict or duplicate writer activity occurred during hash, seal, or finalize stages.', 'HARD', 1),
+('RUN_SOURCE_TIMEOUT', 'RUN', 'The source timed out and retry policy was already applied or exhausted.', 'WARN', 1),
+('RUN_SOURCE_RATE_LIMIT', 'RUN', 'The source hit rate limiting and affected data acquisition.', 'WARN', 1),
+('RUN_SOURCE_AUTH_ERROR', 'RUN', 'Source authentication failure or credential/config error blocked data acquisition.', 'HARD', 1),
+('RUN_SOURCE_RESPONSE_CHANGED', 'RUN', 'A source schema or response-contract change was detected.', 'HARD', 1),
+('RUN_SOURCE_PARTIAL_COVERAGE', 'RUN', 'The source returned incomplete symbol coverage for the requested date.', 'WARN', 1),
+('RUN_SOURCE_MALFORMED_PAYLOAD', 'RUN', 'The source payload could not be normalized safely.', 'HARD', 1),
+('BAR_DUPLICATE_SOURCE_ROW', 'BAR', 'More than one source row mapped to the same (trade_date, ticker_id), requiring deterministic winner selection.', 'WARN', 1),
+('BAR_INVALID_OHLC_ORDER', 'BAR', 'Received OHLC values violated canonical ordering rules.', 'HARD', 1),
+('BAR_NON_POSITIVE_PRICE', 'BAR', 'Received price value was zero or negative in a field that must be positive.', 'HARD', 1),
+('BAR_NEGATIVE_VOLUME', 'BAR', 'Received volume value was negative.', 'HARD', 1),
+('BAR_MISSING_REQUIRED_FIELD', 'BAR', 'One or more mandatory source fields were missing.', 'HARD', 1),
+('IND_INSUFFICIENT_HISTORY', 'INDICATOR', 'Required trading-day history is not yet sufficient for deterministic indicator computation.', 'WARN', 1),
+('IND_MISSING_DEPENDENCY_BAR', 'INDICATOR', 'A required canonical bar in the trading-day dependency chain is missing.', 'HARD', 1),
+('IND_INVALID_BAR_INPUT', 'INDICATOR', 'A canonical bar input required for indicator computation is invalid.', 'HARD', 1),
+('IND_COMPUTE_ERROR', 'INDICATOR', 'Indicator computation failed because of logic or runtime error.', 'HARD', 1),
+('ELIG_MISSING_BAR', 'ELIGIBILITY', 'A ticker in the coverage universe does not have a canonical valid bar for the requested date.', 'WARN', 1),
+('ELIG_MISSING_INDICATORS', 'ELIGIBILITY', 'Eligibility cannot be determined because required indicators are unavailable.', 'HARD', 1),
+('ELIG_INVALID_INDICATORS', 'ELIGIBILITY', 'An indicator row exists but required indicators are marked invalid.', 'WARN', 1),
+('ELIG_INSUFFICIENT_HISTORY', 'ELIGIBILITY', 'Eligibility is blocked because required indicator history is still insufficient.', 'WARN', 1),
+('ELIG_UNIVERSE_DEPENDENCY_MISSING', 'ELIGIBILITY', 'An upstream dependency required to determine universe membership is unavailable.', 'HARD', 1),
+('ELIG_FETCH_FAILURE', 'ELIGIBILITY', 'Eligibility is blocked because ticker-level source acquisition failed and required upstream artifacts could not be formed safely.', 'WARN', 1),
+('SNAP_SOURCE_TIMEOUT', 'INTRADAY', 'The session-snapshot source timed out.', 'WARN', 1),
+('SNAP_SOURCE_RATE_LIMIT', 'INTRADAY', 'The session-snapshot source hit rate limiting.', 'WARN', 1),
+('SNAP_PARTIAL_SCOPE', 'INTRADAY', 'The session snapshot captured only part of the planned scope.', 'WARN', 1),
+('SNAP_SOURCE_ERROR', 'INTRADAY', 'The session-snapshot source failed for an operational reason that does not block EOD.', 'WARN', 1)
+ON DUPLICATE KEY UPDATE
+  `category` = VALUES(`category`),
+  `description` = VALUES(`description`),
+  `severity` = VALUES(`severity`),
+  `is_active` = VALUES(`is_active`);
