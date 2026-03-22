@@ -1,0 +1,82 @@
+<?php
+
+return [
+    'platform' => [
+        'timezone' => env('MARKET_DATA_PLATFORM_TIMEZONE', 'Asia/Jakarta'),
+        'seal_required_for_consumers' => (bool) env('MARKET_DATA_SEAL_REQUIRED_FOR_CONSUMERS', true),
+        'cutoff_time' => env('MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME', '17:15:00'),
+        'cutoff_grace_minutes' => (int) env('MARKET_DATA_CUT_OFF_GRACE_MINUTES', 15),
+        'coverage_min' => (float) env('MARKET_DATA_COVERAGE_MIN', 0.98),
+        'price_basis_default' => env('MARKET_DATA_PRICE_BASIS_DEFAULT', 'close'),
+        'lot_size' => (int) env('MARKET_DATA_LOT_SIZE', 100),
+    ],
+    'pipeline' => [
+        'daily_enabled' => (bool) env('MARKET_DATA_DAILY_ENABLED', false),
+        'default_source_mode' => env('MARKET_DATA_DEFAULT_SOURCE_MODE', 'manual_file'),
+    ],
+    'indicators' => [
+        'set_version' => env('MARKET_DATA_INDICATOR_SET_VERSION', 'v1'),
+        'dv_window_days' => (int) env('MARKET_DATA_DV_WINDOW_DAYS', 20),
+        'atr_window_days' => (int) env('MARKET_DATA_ATR_WINDOW_DAYS', 14),
+        'vol_ratio_lookback_days' => (int) env('MARKET_DATA_VOL_RATIO_LOOKBACK_DAYS', 20),
+        'roc_lookback_days' => (int) env('MARKET_DATA_ROC_LOOKBACK_DAYS', 20),
+        'hh_window_days' => (int) env('MARKET_DATA_HH_WINDOW_DAYS', 20),
+    ],
+    'hash' => [
+        'algorithm' => env('MARKET_DATA_HASH_ALGORITHM', 'SHA-256'),
+        'delimiter' => env('MARKET_DATA_HASH_DELIMITER', '|'),
+        'line_separator' => env('MARKET_DATA_HASH_LINE_SEPARATOR', "\n"),
+        'null_token' => env('MARKET_DATA_HASH_NULL_TOKEN', ''),
+    ],
+    'source' => [
+        'local_directory' => env('MARKET_DATA_SOURCE_LOCAL_DIRECTORY', 'storage/app/market_data/eod_bars'),
+        'file_template_json' => env('MARKET_DATA_SOURCE_FILE_TEMPLATE_JSON', '{date}.json'),
+        'file_template_csv' => env('MARKET_DATA_SOURCE_FILE_TEMPLATE_CSV', '{date}.csv'),
+        'default_source_name' => env('MARKET_DATA_SOURCE_DEFAULT_NAME', 'LOCAL_FILE'),
+        'api' => [
+            'endpoint_template' => env('MARKET_DATA_SOURCE_API_ENDPOINT_TEMPLATE', ''),
+            'response_format' => env('MARKET_DATA_SOURCE_API_RESPONSE_FORMAT', 'json'),
+            'response_rows_path' => env('MARKET_DATA_SOURCE_API_ROWS_PATH', ''),
+            'timeout_seconds' => (int) env('MARKET_DATA_SOURCE_API_TIMEOUT_SECONDS', 15),
+            'auth_header_name' => env('MARKET_DATA_SOURCE_API_AUTH_HEADER_NAME', ''),
+            'auth_token' => env('MARKET_DATA_SOURCE_API_AUTH_TOKEN', ''),
+            'source_name' => env('MARKET_DATA_SOURCE_API_NAME', 'API_FREE'),
+            'field_map' => [
+                'ticker_code' => env('MARKET_DATA_SOURCE_API_FIELD_TICKER_CODE', 'ticker_code'),
+                'trade_date' => env('MARKET_DATA_SOURCE_API_FIELD_TRADE_DATE', 'trade_date'),
+                'open' => env('MARKET_DATA_SOURCE_API_FIELD_OPEN', 'open'),
+                'high' => env('MARKET_DATA_SOURCE_API_FIELD_HIGH', 'high'),
+                'low' => env('MARKET_DATA_SOURCE_API_FIELD_LOW', 'low'),
+                'close' => env('MARKET_DATA_SOURCE_API_FIELD_CLOSE', 'close'),
+                'volume' => env('MARKET_DATA_SOURCE_API_FIELD_VOLUME', 'volume'),
+                'adj_close' => env('MARKET_DATA_SOURCE_API_FIELD_ADJ_CLOSE', 'adj_close'),
+                'source_row_ref' => env('MARKET_DATA_SOURCE_API_FIELD_SOURCE_ROW_REF', 'source_row_ref'),
+                'captured_at' => env('MARKET_DATA_SOURCE_API_FIELD_CAPTURED_AT', 'captured_at'),
+            ],
+        ],
+    ],
+    'tickers' => [
+        'table' => env('MARKET_DATA_TICKERS_TABLE', 'tickers'),
+        'id_column' => env('MARKET_DATA_TICKERS_ID_COLUMN', 'ticker_id'),
+        'code_column' => env('MARKET_DATA_TICKERS_CODE_COLUMN', 'ticker_code'),
+        'active_column' => env('MARKET_DATA_TICKERS_ACTIVE_COLUMN', 'is_active'),
+        'active_yes_value' => env('MARKET_DATA_TICKERS_ACTIVE_YES_VALUE', 'Yes'),
+        'listed_date_column' => env('MARKET_DATA_TICKERS_LISTED_DATE_COLUMN', 'listed_date'),
+        'delisted_date_column' => env('MARKET_DATA_TICKERS_DELISTED_DATE_COLUMN', 'delisted_date'),
+    ],
+    'evidence' => [
+        'output_directory' => env('MARKET_DATA_EVIDENCE_OUTPUT_DIRECTORY', 'storage/app/market_data/evidence'),
+        'invalid_bars_export_sample_limit' => (int) env('MARKET_DATA_INVALID_BARS_EXPORT_SAMPLE_LIMIT', 1000),
+    ],
+    'provider' => [
+        'api_retry_max' => (int) env('MARKET_DATA_API_RETRY_MAX', 3),
+        'api_backoff_ms' => (int) env('MARKET_DATA_API_BACKOFF_MS', 500),
+        'api_throttle_qps' => (int) env('MARKET_DATA_API_THROTTLE_QPS', 5),
+        'circuit_breaker_error_rate' => (float) env('MARKET_DATA_CIRCUIT_BREAKER_ERROR_RATE', 0.5),
+    ],
+    'session_snapshot' => [
+        'retention_days' => (int) env('MARKET_DATA_INTRADAY_RETENTION_DAYS', 7),
+        'scope_default' => env('MARKET_DATA_INTRADAY_SCOPE_DEFAULT', 'universe_only'),
+        'slot_tolerance_minutes' => (int) env('MARKET_DATA_SNAPSHOT_SLOT_TOLERANCE_MINUTES', 5),
+    ],
+];

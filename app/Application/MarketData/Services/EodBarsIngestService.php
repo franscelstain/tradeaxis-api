@@ -1,0 +1,212 @@
+<?php
+
+namespace App\Application\MarketData\Services;
+
+use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
+use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
+use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
+use Carbon\Carbon;
+
+class EodBarsIngestService
+{
+    private $localSourceAdapter;
+    private $apiSourceAdapter;
+    private $tickers;
+    private $artifacts;
+    private $publications;
+
+    public function __construct(
+        LocalFileEodBarsAdapter $localSourceAdapter,
+        PublicApiEodBarsAdapter $apiSourceAdapter,
+        TickerMasterRepository $tickers,
+        EodArtifactRepository $artifacts,
+        EodPublicationRepository $publications
+    ) {
+        $this->localSourceAdapter = $localSourceAdapter;
+        $this->apiSourceAdapter = $apiSourceAdapter;
+        $this->tickers = $tickers;
+        $this->artifacts = $artifacts;
+        $this->publications = $publications;
+    }
+
+    public function ingest($run, $requestedDate, $sourceMode, $priorCurrentPublication = null)
+    {
+        if ($priorCurrentPublication && (int) $priorCurrentPublication->publication_id === (int) ($run->publication_id ?? 0)) {
+            throw new \RuntimeException('Correction candidate publication cannot equal prior current publication.');
+        }
+
+        if (! $priorCurrentPublication && $this->publications->findCurrentPublicationForTradeDate($requestedDate)) {
+            throw new \RuntimeException('Trade date '.$requestedDate.' sudah punya current publication. Correction/reseal wajib dipakai.');
+        }
+
+        $sourceRows = $this->fetchSourceRows($requestedDate, $sourceMode);
+        $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
+
+        $unknownCodes = collect($sourceRows)
+            ->pluck('ticker_code')
+            ->filter()
+            ->unique()
+            ->reject(function ($code) use ($tickerMap) {
+                return isset($tickerMap[$code]);
+            })
+            ->values()
+            ->all();
+
+        if (! empty($unknownCodes)) {
+            throw new \RuntimeException('Ticker code tidak ditemukan di ticker master: '.implode(', ', $unknownCodes));
+        }
+
+        $candidatePublication = $this->publications->getOrCreateCandidatePublication(
+            $run,
+            $priorCurrentPublication ? $priorCurrentPublication->publication_id : null
+        );
+
+        $deduped = [];
+        $duplicateLosers = [];
+        foreach ($sourceRows as $row) {
+            $tickerId = isset($tickerMap[$row['ticker_code']]) ? $tickerMap[$row['ticker_code']] : null;
+            $row['ticker_id'] = $tickerId;
+            $key = $row['trade_date'].'|'.$tickerId;
+
+            if (! isset($deduped[$key])) {
+                $deduped[$key] = $row;
+                continue;
+            }
+
+            $winner = $this->choosePreferredRow($deduped[$key], $row);
+            $loser = $winner === $row ? $deduped[$key] : $row;
+            $deduped[$key] = $winner;
+            $duplicateLosers[] = $loser + [
+                'invalid_reason_code' => 'BAR_DUPLICATE_SOURCE_ROW',
+                'invalid_note' => 'Deterministic duplicate loser during ingest.',
+                'loser_of_trade_date' => $row['trade_date'],
+                'loser_of_ticker_id' => $tickerId,
+            ];
+        }
+
+        $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
+        $validRows = [];
+        $invalidRows = [];
+        $useHistory = $priorCurrentPublication !== null;
+
+        foreach (array_values($deduped) as $row) {
+            $validation = $this->validateCanonicalRow($row, $requestedDate);
+
+            if ($validation['valid']) {
+                $validRows[] = [
+                    'trade_date' => $requestedDate,
+                    'ticker_id' => $row['ticker_id'],
+                    'open' => $row['open'],
+                    'high' => $row['high'],
+                    'low' => $row['low'],
+                    'close' => $row['close'],
+                    'volume' => $row['volume'],
+                    'adj_close' => $row['adj_close'],
+                    'source' => strtoupper($row['source_name']),
+                    'run_id' => $run->run_id,
+                    'publication_id' => $candidatePublication->publication_id,
+                    'created_at' => $now,
+                ];
+                continue;
+            }
+
+            $invalidRows[] = $this->makeInvalidRow($run->run_id, $row, $validation['reason_code'], $validation['note'], $now);
+        }
+
+        foreach ($duplicateLosers as $loser) {
+            $invalidRows[] = $this->makeInvalidRow(
+                $run->run_id,
+                $loser,
+                $loser['invalid_reason_code'],
+                $loser['invalid_note'],
+                $now,
+                $loser['loser_of_trade_date'],
+                $loser['loser_of_ticker_id']
+            );
+        }
+
+        $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
+
+        return [
+            'publication_id' => (int) $candidatePublication->publication_id,
+            'publication_version' => (int) $candidatePublication->publication_version,
+            'bars_rows_written' => count($validRows),
+            'invalid_bar_count' => count($invalidRows),
+            'source_name' => strtoupper((string) ($sourceRows[0]['source_name'] ?? config('market_data.source.default_source_name'))),
+            'storage_target' => $useHistory ? 'eod_bars_history' : 'eod_bars',
+        ];
+    }
+
+
+    private function fetchSourceRows($requestedDate, $sourceMode)
+    {
+        if ($sourceMode === 'api') {
+            return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode);
+        }
+
+        return $this->localSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode);
+    }
+
+    private function choosePreferredRow(array $left, array $right)
+    {
+        $leftCaptured = Carbon::parse($left['captured_at'])->timestamp;
+        $rightCaptured = Carbon::parse($right['captured_at'])->timestamp;
+
+        if ($leftCaptured !== $rightCaptured) {
+            return $leftCaptured > $rightCaptured ? $left : $right;
+        }
+
+        $leftRef = (string) ($left['source_row_ref'] ?? '');
+        $rightRef = (string) ($right['source_row_ref'] ?? '');
+
+        return strcmp($leftRef, $rightRef) >= 0 ? $left : $right;
+    }
+
+    private function validateCanonicalRow(array $row, $requestedDate)
+    {
+        foreach (['ticker_code', 'trade_date', 'open', 'high', 'low', 'close', 'volume'] as $field) {
+            if (! isset($row[$field]) || $row[$field] === '' || $row[$field] === null) {
+                return ['valid' => false, 'reason_code' => 'BAR_MISSING_REQUIRED_FIELD', 'note' => 'Missing required field: '.$field];
+            }
+        }
+
+        if ($row['trade_date'] !== $requestedDate) {
+            return ['valid' => false, 'reason_code' => 'BAR_MISSING_REQUIRED_FIELD', 'note' => 'trade_date mismatch against requested_date'];
+        }
+
+        foreach (['open', 'high', 'low', 'close'] as $field) {
+            if ((float) $row[$field] <= 0) {
+                return ['valid' => false, 'reason_code' => 'BAR_NON_POSITIVE_PRICE', 'note' => 'Non-positive price at '.$field];
+            }
+        }
+
+        if ((int) $row['volume'] < 0) {
+            return ['valid' => false, 'reason_code' => 'BAR_NEGATIVE_VOLUME', 'note' => 'Negative volume'];
+        }
+
+        if ((float) $row['high'] < (float) $row['low']
+            || (float) $row['high'] < (float) $row['open']
+            || (float) $row['high'] < (float) $row['close']
+            || (float) $row['low'] > (float) $row['open']
+            || (float) $row['low'] > (float) $row['close']) {
+            return ['valid' => false, 'reason_code' => 'BAR_INVALID_OHLC_ORDER', 'note' => 'OHLC ordering invalid'];
+        }
+
+        return ['valid' => true, 'reason_code' => null, 'note' => null];
+    }
+
+    private function makeInvalidRow($runId, array $row, $reasonCode, $note, $now, $winnerTradeDate = null, $winnerTickerId = null)
+    {
+        return [
+            'trade_date' => $row['trade_date'] ?? null,
+            'ticker_id' => $row['ticker_id'] ?? null,
+            'source_row_ref' => (string) ($row['source_row_ref'] ?? ''),
+            'invalid_reason_code' => $reasonCode,
+            'invalid_note' => $note,
+            'run_id' => $runId,
+            'created_at' => $now,
+        ];
+    }
+}

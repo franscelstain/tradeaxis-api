@@ -2,17 +2,13 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\MarketData\MarketDataReasonCodesSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
-        // $this->call('UsersTableSeeder');
+        $this->call(MarketDataReasonCodesSeeder::class);
     }
 }
