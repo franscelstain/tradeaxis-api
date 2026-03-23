@@ -255,3 +255,8 @@
 - Timestamp: SESSION_10_BATCH_10
 - Action: public/free API source adapter diterapkan
 - Notes: mode `api` kini tersedia melalui adapter khusus dengan retry/backoff/throttle+jitter dasar, configurable field mapping, dan klasifikasi error akuisisi yang tetap reason-coded
+
+
+## Session 15 Update
+- Runtime bugfix: correction baseline publication resolver now resolves from `eod_current_publication_pointer` + `eod_publications.is_current=1` + `seal_state=SEALED` without requiring `eod_runs` summary state.
+- This closes the false precondition failure where correction run reported that no current sealed publication existed even though current publication + pointer were already present in DB.

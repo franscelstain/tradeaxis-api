@@ -59,9 +59,9 @@ class MarketDataPipelineService
 
         if ($input->correctionId) {
             $correction = $this->corrections->requireApprovedForTradeDate($input->correctionId, $input->requestedDate);
-            $priorCurrent = $this->publications->findCurrentPublicationForTradeDate($input->requestedDate);
+            $priorCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
             if (! $priorCurrent) {
-                throw new \RuntimeException('Correction requires an existing current sealed publication for target trade date.');
+                throw new \RuntimeException('Correction requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.');
             }
             $supersedesRunId = $priorCurrent->run_id;
         }
