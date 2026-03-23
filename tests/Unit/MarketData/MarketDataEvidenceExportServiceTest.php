@@ -20,7 +20,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'run_id' => 8124,
             'trade_date_requested' => '2026-04-21',
             'trade_date_effective' => '2026-04-21',
-            'lifecycle_state' => 'FINALIZED',
+            'lifecycle_state' => 'COMPLETED',
             'terminal_status' => 'SUCCESS',
             'quality_gate_state' => 'PASS',
             'publishability_state' => 'READABLE',

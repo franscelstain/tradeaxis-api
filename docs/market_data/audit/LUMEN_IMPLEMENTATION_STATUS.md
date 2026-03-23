@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_11_RUNTIME_BUGFIX_PUBLICATION_AND_EVENT_LOGGING
+- Phase: SESSION_12_RUNTIME_BUGFIX_RUN_STATE_MACHINE
 
 ## Current Batch
-- Batch: BATCH_11_RUNTIME_BUGFIX_PUBLICATION_AND_EVENT_LOGGING
+- Batch: BATCH_12_RUNTIME_BUGFIX_RUN_STATE_MACHINE
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -92,9 +92,13 @@
 - `DOC SYNC ISSUE`: checkpoint dinaikkan agar state repo sesi 7 sinkron dengan replay evidence export runtime yang kini sudah nyata di code.
 - `DOC SYNC ISSUE`: checkpoint dinaikkan agar state repo sesi 9 sinkron dengan proof orchestrated finalize/current-pointer outcome dan correction publish-path outcome yang kini sudah nyata di code.
 - `DOC SYNC ISSUE`: checkpoint dinaikkan agar state repo sesi 10 sinkron dengan source mode `api` yang kini sudah nyata di code.
+- `DOC SYNC ISSUE`: runtime lokal membuktikan code masih menulis `lifecycle_state = FINALIZED` padahal schema owner `eod_runs` hanya mengizinkan `PENDING/RUNNING/FINALIZING/COMPLETED/FAILED/CANCELLED`; checkpoint dinaikkan agar status sesi 12 sinkron dengan bugfix state-machine yang sah.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
+- `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
 - `app/Application/MarketData/Services/MarketDataPipelineService.php`
 - `app/Application/MarketData/Services/EodBarsIngestService.php`
 - `app/Application/MarketData/Services/EodIndicatorsComputeService.php`
@@ -137,6 +141,7 @@
 
 ## Keputusan Desain Penting
 - Candidate publication `UNSEALED` kini sah memiliki `sealed_at = NULL`; `sealed_at` baru diisi saat stage seal berhasil.
+- Lifecycle state `eod_runs` kini diselaraskan dengan schema owner: `FINALIZING` dipakai saat stage finalize dimulai, dan state akhir run memakai `COMPLETED`/`FAILED`/`CANCELLED` alih-alih nilai liar `FINALIZED`.
 - Failure event logging kini memotong `message` ke ringkasan aman dan mendorong detail exception ke `event_payload_json` agar observability tidak pecah karena truncation kolom.
 - Jika stage gagal keras setelah owning run terbentuk, run kini ditutup ke `FAILED/NOT_READABLE` alih-alih dibiarkan menggantung di `RUNNING`.
 - Current publication sekarang dipromosikan melalui `eod_current_publication_pointer` sebagai owner utama; `eod_publications.is_current` dan `eod_runs.is_current_publication` hanya diperlakukan sebagai mirror state.

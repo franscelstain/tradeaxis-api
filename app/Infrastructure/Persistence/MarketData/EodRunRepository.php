@@ -72,7 +72,9 @@ class EodRunRepository
     {
         $run->stage = $stage;
 
-        if ($run->lifecycle_state === 'PENDING') {
+        if ($stage === 'FINALIZE') {
+            $run->lifecycle_state = 'FINALIZING';
+        } elseif ($run->lifecycle_state === 'PENDING') {
             $run->lifecycle_state = 'RUNNING';
         }
 

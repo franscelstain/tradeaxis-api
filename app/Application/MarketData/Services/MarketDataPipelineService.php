@@ -307,7 +307,7 @@ class MarketDataPipelineService
                 'quality_gate_state' => $outcome['quality_gate_state'],
                 'publishability_state' => $outcome['publishability_state'],
                 'terminal_status' => $outcome['terminal_status'],
-                'lifecycle_state' => 'FINALIZED',
+                'lifecycle_state' => 'COMPLETED',
             ];
 
             $run = $this->runs->finalize($run, $finalState);
