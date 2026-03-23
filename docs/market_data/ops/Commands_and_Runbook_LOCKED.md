@@ -111,6 +111,20 @@ Capture optional non-streaming session snapshot aligned to readable effective tr
 #### Purpose
 Purge session snapshot rows according to retention policy.
 
+### 11. `market-data:replay:verify`
+#### Purpose
+Verify one executed market-data run against a replay fixture package and persist replay proof rows to `md_replay_*`.
+
+#### Minimum input
+- `run_id`
+- `fixture_path` pointing to a valid fixture package with `manifest.json` and expected replay outputs
+- optional explicit `replay_id` when operator needs deterministic replay identity
+
+#### Minimum output
+- one row in `md_replay_daily_metrics` for the verified requested date
+- synchronized `md_replay_reason_code_counts` rows
+- replay evidence exportable through `market-data:evidence:export --replay_id=...`
+
 ---
 
 ## Operator checkpoints per command
@@ -221,6 +235,23 @@ Purge session snapshot rows according to retention policy.
 - success would be unsealed
 - effective-date resolution is ambiguous
 - current publication state would become ambiguous
+
+---
+### `market-data:replay:verify`
+#### Verify before continuing
+- `run_id` resolves to one completed execution context
+- fixture package contains `manifest.json` and required expected files
+- replay intent is proof/verification, not production publication switch
+
+#### Expected outputs
+- persisted replay metric row for requested trade date
+- persisted replay reason-code counts
+- replay classification explains match/degrade/mismatch outcome
+
+#### Stop publish if
+- fixture package is incomplete or malformed
+- run context cannot be resolved coherently
+- replay proof would be written without clear expected outcome
 
 ---
 

@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_14_CORRECTION_RESEAL_REPLACEMENT_SYNC
+- Phase: SESSION_17_REPLAY_VERIFICATION_MINIMUM
 
 ## Current Batch
-- Batch: BATCH_14_CORRECTION_RESEAL_REPLACEMENT_SYNC
+- Batch: BATCH_17_REPLAY_VERIFICATION_MINIMUM
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- None
+- Replay verification minimum sudah selesai diimplementasikan; menunggu batch berikutnya.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -77,12 +77,13 @@
 - Contract-test matrix expanded for indicator vectors, eligibility decision rules, finalize gating, and publication diff comparison
 - Correction unchanged-rerun outcome support now has direct diff-test proof
 - Orchestrated finalize/current-pointer outcome and correction publish-path outcome now have dedicated service-level proof
+- Replay verification minimum now has fixture-aware runner/verifier proof path
 
 ## Kontrak MISSING
 
 
 ## Kontrak CONFLICT
-- None ditemukan pada sesi ini.
+- Replay verification minimum sudah selesai diimplementasikan; menunggu batch berikutnya. ditemukan pada sesi ini.
 
 ## DOC GAP / DOC CONFLICT / DOC SYNC ISSUE
 - `DOC SYNC ISSUE`: runtime lokal membuktikan mismatch schema/runtime pada `eod_publications.sealed_at` dan truncation pada `eod_run_events.message`; checkpoint dinaikkan agar status sesi 11 sinkron dengan bugfix nyata.
@@ -96,6 +97,7 @@
 - `DOC SYNC ISSUE`: runtime lokal membuktikan finalize verification memakai resolver current publication yang terlalu ketat karena mensyaratkan `eod_runs` sudah `SUCCESS/READABLE` sebelum verifikasi final selesai; checkpoint dinaikkan agar status sesi 13 sinkron dengan bugfix pointer-resolution yang memakai current pointer + sealed publication sebagai sumber kebenaran saat post-promote verification.
 
 - `DOC SYNC ISSUE`: correction/reseal replacement path kini memiliki command eksekusi eksplisit dan event outcome correction publish/cancel agar pembuktian runtime dapat dilakukan tanpa memakai rerun normal yang memang harus tertahan.
+- `DOC SYNC ISSUE`: repo kini punya replay verifier minimum yang membaca fixture package dan menulis `md_replay_*`, sehingga checkpoint harus dinaikkan agar status replay tidak lagi tertulis sebagai export-only.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
@@ -147,6 +149,10 @@
 - `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
 - `app/Console/Commands/MarketData/RunCorrectionCommand.php`
 - `app/Console/Kernel.php`
+- `app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php`
+- `app/Application/MarketData/Services/ReplayVerificationService.php`
+- `app/Console/Commands/MarketData/VerifyReplayCommand.php`
+- `tests/Unit/MarketData/ReplayVerificationServiceTest.php`
 ## Keputusan Desain Penting
 - Finalize post-promote verification kini tidak lagi membaca current publication melalui resolver yang mensyaratkan `eod_runs` sudah `SUCCESS/READABLE`; verification sekarang memakai pointer current + publication current + seal state yang nyata agar outcome `eod_runs` tidak deadlock menahan dirinya sendiri.
 - Candidate publication `UNSEALED` kini sah memiliki `sealed_at = NULL`; `sealed_at` baru diisi saat stage seal berhasil.
@@ -266,3 +272,12 @@
 
 - Correction publish path now updates `eod_dataset_corrections.status`, `prior_run_id`, `new_run_id`, and `published_at` when a correction is published.
 - Correction unchanged path now updates `eod_dataset_corrections.status`, `prior_run_id`, and `new_run_id` when a correction is cancelled due to unchanged artifacts.
+
+
+## Session 17 replay verification minimum
+
+- Repo terbaru divalidasi ulang terhadap checkpoint sesi 16; correction tracking sync tetap sah dan tidak regress.
+- Gap prioritas berikutnya yang benar-benar masih terbuka adalah replay verification minimum: repo sudah bisa export replay evidence dari tabel replay, tetapi belum bisa membentuk proof replay dari run aktual vs fixture package.
+- Batch sesi 17 menutup gap ini dengan command `market-data:replay:verify`, service pembanding fixture-aware, dan repository persistence replay result.
+- Evidence strength naik dari export-only replay support menjadi replay verification minimum yang dapat menulis `md_replay_daily_metrics` dan `md_replay_reason_code_counts` secara eksplisit.
+- Belum ada klaim palsu untuk full historical replay orchestration lintas date-range; yang ditutup pada sesi ini hanya minimum verifier/proof writer yang sah terhadap kontrak replay.

@@ -10,6 +10,7 @@ use App\Console\Commands\MarketData\FinalizeRunCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
 use App\Console\Commands\MarketData\SealDatasetCommand;
+use App\Console\Commands\MarketData\VerifyReplayCommand;
 use App\Console\Commands\MarketData\RequestCorrectionCommand;
 use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
@@ -24,6 +25,7 @@ class Kernel extends ConsoleKernel
         BuildEligibilityCommand::class,
         AuditHashCommand::class,
         SealDatasetCommand::class,
+        VerifyReplayCommand::class,
         FinalizeRunCommand::class,
         ExportEvidenceCommand::class,
         DailyPipelineCommand::class,
