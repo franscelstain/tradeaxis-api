@@ -270,7 +270,7 @@ class MarketDataPipelineService
                     if ($correction && $this->publicationDiffs->isUnchanged($priorCurrent, $candidatePublication)) {
                         $unchangedCorrection = true;
                         $this->publications->discardCandidatePublication($candidatePublication->publication_id);
-                        $this->corrections->markCancelled($correction->correction_id, $run->run_id);
+                        $this->corrections->markCancelled($correction->correction_id, $run->run_id, $priorCurrent ? $priorCurrent->run_id : null);
                         $candidateCurrent = $priorCurrent;
                         $this->runs->appendEvent($run, $input->stage, 'CORRECTION_CANCELLED', 'INFO', 'Correction content unchanged; current publication preserved.', null, [
                             'correction_id' => (int) $correction->correction_id,
@@ -285,7 +285,7 @@ class MarketDataPipelineService
                         $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id);
                         $candidateCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
                         if ($correction && $candidateCurrent && (int) $candidateCurrent->publication_id === (int) $candidatePublication->publication_id) {
-                            $this->corrections->markPublished($correction->correction_id, $run->run_id);
+                            $this->corrections->markPublished($correction->correction_id, $run->run_id, $priorCurrent ? $priorCurrent->run_id : null);
                             $this->runs->appendEvent($run, $input->stage, 'CORRECTION_PUBLISHED', 'INFO', 'Historical correction replaced current publication safely.', null, [
                                 'correction_id' => (int) $correction->correction_id,
                                 'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,

@@ -100,18 +100,24 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
-    public function markPublished($correctionId, $newRunId)
+    public function markPublished($correctionId, $newRunId, $priorRunId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
+        $payload = [
+            'status' => 'PUBLISHED',
+            'new_run_id' => $newRunId,
+            'published_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        if ($priorRunId !== null) {
+            $payload['prior_run_id'] = $priorRunId;
+        }
+
         EodDatasetCorrection::query()
             ->where('correction_id', $correctionId)
-            ->update([
-                'status' => 'PUBLISHED',
-                'new_run_id' => $newRunId,
-                'published_at' => $now,
-                'updated_at' => $now,
-            ]);
+            ->update($payload);
 
         return $this->findById($correctionId);
     }
@@ -130,17 +136,23 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
-    public function markCancelled($correctionId, $newRunId = null)
+    public function markCancelled($correctionId, $newRunId = null, $priorRunId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
+        $payload = [
+            'status' => 'CANCELLED',
+            'new_run_id' => $newRunId,
+            'updated_at' => $now,
+        ];
+
+        if ($priorRunId !== null) {
+            $payload['prior_run_id'] = $priorRunId;
+        }
+
         EodDatasetCorrection::query()
             ->where('correction_id', $correctionId)
-            ->update([
-                'status' => 'CANCELLED',
-                'new_run_id' => $newRunId,
-                'updated_at' => $now,
-            ]);
+            ->update($payload);
 
         return $this->findById($correctionId);
     }

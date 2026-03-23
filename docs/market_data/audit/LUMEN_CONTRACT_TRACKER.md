@@ -37,3 +37,9 @@
 ## Session 15 Update
 - Runtime bugfix: correction baseline publication resolver now resolves from `eod_current_publication_pointer` + `eod_publications.is_current=1` + `seal_state=SEALED` without requiring `eod_runs` summary state.
 - This closes the false precondition failure where correction run reported that no current sealed publication existed even though current publication + pointer were already present in DB.
+
+
+## Session 16 correction tracking sync
+
+- Correction publish path now updates `eod_dataset_corrections.status`, `prior_run_id`, `new_run_id`, and `published_at` when a correction is published.
+- Correction unchanged path now updates `eod_dataset_corrections.status`, `prior_run_id`, and `new_run_id` when a correction is cancelled due to unchanged artifacts.
