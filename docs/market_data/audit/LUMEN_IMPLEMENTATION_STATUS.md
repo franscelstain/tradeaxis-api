@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_13_RUNTIME_BUGFIX_FINALIZE_POINTER_RESOLUTION
+- Phase: SESSION_14_CORRECTION_RESEAL_REPLACEMENT_SYNC
 
 ## Current Batch
-- Batch: BATCH_13_RUNTIME_BUGFIX_FINALIZE_POINTER_RESOLUTION
+- Batch: BATCH_14_CORRECTION_RESEAL_REPLACEMENT_SYNC
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -95,6 +95,8 @@
 - `DOC SYNC ISSUE`: runtime lokal membuktikan code masih menulis `lifecycle_state = FINALIZED` padahal schema owner `eod_runs` hanya mengizinkan `PENDING/RUNNING/FINALIZING/COMPLETED/FAILED/CANCELLED`; checkpoint dinaikkan agar status sesi 12 sinkron dengan bugfix state-machine yang sah.
 - `DOC SYNC ISSUE`: runtime lokal membuktikan finalize verification memakai resolver current publication yang terlalu ketat karena mensyaratkan `eod_runs` sudah `SUCCESS/READABLE` sebelum verifikasi final selesai; checkpoint dinaikkan agar status sesi 13 sinkron dengan bugfix pointer-resolution yang memakai current pointer + sealed publication sebagai sumber kebenaran saat post-promote verification.
 
+- `DOC SYNC ISSUE`: correction/reseal replacement path kini memiliki command eksekusi eksplisit dan event outcome correction publish/cancel agar pembuktian runtime dapat dilakukan tanpa memakai rerun normal yang memang harus tertahan.
+
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
 - `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`
@@ -142,6 +144,9 @@
 
 - `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
 - `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
+- `app/Console/Commands/MarketData/RunCorrectionCommand.php`
+- `app/Console/Kernel.php`
 ## Keputusan Desain Penting
 - Finalize post-promote verification kini tidak lagi membaca current publication melalui resolver yang mensyaratkan `eod_runs` sudah `SUCCESS/READABLE`; verification sekarang memakai pointer current + publication current + seal state yang nyata agar outcome `eod_runs` tidak deadlock menahan dirinya sendiri.
 - Candidate publication `UNSEALED` kini sah memiliki `sealed_at = NULL`; `sealed_at` baru diisi saat stage seal berhasil.

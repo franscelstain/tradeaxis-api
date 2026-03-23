@@ -272,6 +272,11 @@ class MarketDataPipelineService
                         $this->publications->discardCandidatePublication($candidatePublication->publication_id);
                         $this->corrections->markCancelled($correction->correction_id, $run->run_id);
                         $candidateCurrent = $priorCurrent;
+                        $this->runs->appendEvent($run, $input->stage, 'CORRECTION_CANCELLED', 'INFO', 'Correction content unchanged; current publication preserved.', null, [
+                            'correction_id' => (int) $correction->correction_id,
+                            'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                            'candidate_publication_id' => (int) $candidatePublication->publication_id,
+                        ]);
                     } else {
                         if ($correction) {
                             $this->artifacts->promotePublicationHistoryToCurrent($input->requestedDate, $candidatePublication->publication_id, $run->run_id);
@@ -281,6 +286,12 @@ class MarketDataPipelineService
                         $candidateCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
                         if ($correction && $candidateCurrent && (int) $candidateCurrent->publication_id === (int) $candidatePublication->publication_id) {
                             $this->corrections->markPublished($correction->correction_id, $run->run_id);
+                            $this->runs->appendEvent($run, $input->stage, 'CORRECTION_PUBLISHED', 'INFO', 'Historical correction replaced current publication safely.', null, [
+                                'correction_id' => (int) $correction->correction_id,
+                                'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                                'current_publication_id' => (int) $candidateCurrent->publication_id,
+                                'current_publication_version' => (int) $candidateCurrent->publication_version,
+                            ]);
                         }
                     }
                 } catch (\Throwable $e) {

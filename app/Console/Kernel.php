@@ -11,6 +11,7 @@ use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
 use App\Console\Commands\MarketData\SealDatasetCommand;
 use App\Console\Commands\MarketData\RequestCorrectionCommand;
+use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
@@ -27,6 +28,7 @@ class Kernel extends ConsoleKernel
         ExportEvidenceCommand::class,
         DailyPipelineCommand::class,
         RequestCorrectionCommand::class,
+        RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,
     ];
 

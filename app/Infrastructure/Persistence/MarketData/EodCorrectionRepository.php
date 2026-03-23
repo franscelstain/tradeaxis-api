@@ -116,6 +116,20 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
+    public function markRejected($correctionId)
+    {
+        $now = Carbon::now(config('market_data.platform.timezone'));
+
+        EodDatasetCorrection::query()
+            ->where('correction_id', $correctionId)
+            ->update([
+                'status' => 'REJECTED',
+                'updated_at' => $now,
+            ]);
+
+        return $this->findById($correctionId);
+    }
+
     public function markCancelled($correctionId, $newRunId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
