@@ -278,7 +278,7 @@ class MarketDataPipelineService
                         }
                         $this->publications->promoteCandidateToCurrent($run, $priorCurrent ? $priorCurrent->publication_id : null);
                         $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id);
-                        $candidateCurrent = $this->publications->findCurrentPublicationForTradeDate($input->requestedDate);
+                        $candidateCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
                         if ($correction && $candidateCurrent && (int) $candidateCurrent->publication_id === (int) $candidatePublication->publication_id) {
                             $this->corrections->markPublished($correction->correction_id, $run->run_id);
                         }
