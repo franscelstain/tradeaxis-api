@@ -42,6 +42,12 @@ class ReplayResultRepository
             'expected_status' => $metric['expected_status'] ?? null,
             'expected_trade_date_effective' => $metric['expected_trade_date_effective'] ?? null,
             'expected_seal_state' => $metric['expected_seal_state'] ?? null,
+            'expected_config_identity' => $metric['expected_config_identity'] ?? null,
+            'expected_publication_version' => $metric['expected_publication_version'] ?? null,
+            'expected_bars_batch_hash' => $metric['expected_bars_batch_hash'] ?? null,
+            'expected_indicators_batch_hash' => $metric['expected_indicators_batch_hash'] ?? null,
+            'expected_eligibility_batch_hash' => $metric['expected_eligibility_batch_hash'] ?? null,
+            'expected_reason_code_counts_json' => $metric['expected_reason_code_counts_json'] ?? null,
             'mismatch_summary' => $metric['mismatch_summary'] ?? null,
             'created_at' => $metric['created_at'] ?? $now,
         ];

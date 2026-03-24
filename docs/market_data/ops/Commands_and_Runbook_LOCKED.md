@@ -134,6 +134,7 @@ Expected smoke outcomes:
 - one row in `md_replay_daily_metrics` for the verified requested date
 - synchronized `md_replay_reason_code_counts` rows
 - replay evidence exportable through `market-data:evidence:export --replay_id=...`
+- replay evidence pack now preserves explicit `expected_state` and `actual_state`, not just a flat replay summary
 
 ---
 
@@ -257,6 +258,7 @@ Expected smoke outcomes:
 #### Expected outputs
 - persisted replay metric row for requested trade date
 - persisted replay reason-code counts
+- persisted expected replay context for status/effective-date/seal/config/hash/reason-code expectation so evidence export can preserve both expected and actual state
 - fixture-declared expected reason-code distribution now participates in replay compare, including explicit empty-set expectation
 - replay classification explains match/degrade/mismatch outcome
 

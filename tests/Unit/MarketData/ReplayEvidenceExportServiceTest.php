@@ -44,6 +44,15 @@ class ReplayEvidenceExportServiceTest extends TestCase
             'expected_status' => 'HELD',
             'expected_trade_date_effective' => '2025-12-09',
             'expected_seal_state' => 'UNSEALED',
+            'expected_config_identity' => 'cfg_2025_12_v2',
+            'expected_publication_version' => 7,
+            'expected_bars_batch_hash' => 'A1',
+            'expected_indicators_batch_hash' => 'B1',
+            'expected_eligibility_batch_hash' => 'C1',
+            'expected_reason_code_counts_json' => json_encode([
+                'ELIG_MISSING_BAR' => 120,
+                'IND_INSUFFICIENT_HISTORY' => 80,
+            ]),
             'mismatch_summary' => null,
             'created_at' => '2025-12-10T17:15:00+07:00',
         ];
@@ -64,6 +73,8 @@ class ReplayEvidenceExportServiceTest extends TestCase
 
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/replay_result.json');
+        $this->assertFileExists($dir.'/replay_expected_state.json');
+        $this->assertFileExists($dir.'/replay_actual_state.json');
         $this->assertFileExists($dir.'/replay_reason_code_counts.json');
         $this->assertFileExists($dir.'/replay_evidence_pack.json');
 
@@ -72,8 +83,19 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $this->assertSame('EXPECTED_DEGRADE', $replayResult['comparison_result']);
         $this->assertSame('cfg_2025_12_v2', $replayResult['config_identity']);
 
+        $expectedState = json_decode(file_get_contents($dir.'/replay_expected_state.json'), true);
+        $this->assertSame('HELD', $expectedState['status']);
+        $this->assertSame('A1', $expectedState['bars_batch_hash']);
+        $this->assertCount(2, $expectedState['reason_code_counts']);
+
+        $actualState = json_decode(file_get_contents($dir.'/replay_actual_state.json'), true);
+        $this->assertSame('HELD', $actualState['status']);
+        $this->assertSame('B1', $actualState['indicators_batch_hash']);
+        $this->assertCount(2, $actualState['reason_code_counts']);
+
         $payload = json_decode(file_get_contents($dir.'/replay_evidence_pack.json'), true);
         $this->assertSame('HELD', $payload['replay_result']['status']);
+        $this->assertSame('cfg_2025_12_v2', $payload['expected_state']['config_identity']);
         $this->assertCount(2, $payload['reason_code_counts']);
     }
 }

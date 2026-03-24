@@ -137,7 +137,10 @@ class MarketDataEvidenceExportService
         }
 
         $reasonCodes = $this->evidence->replayReasonCodeCounts($metric->replay_id, $metric->trade_date);
+        $expectedReasonCodeCounts = $this->decodeExpectedReasonCodeCounts($metric->expected_reason_code_counts_json ?? null);
         $replayResult = $this->buildReplayResult($metric);
+        $expectedState = $this->buildReplayExpectedState($metric, $expectedReasonCodeCounts);
+        $actualState = $this->buildReplayActualState($metric, $reasonCodes);
         $summary = [
             'replay_id' => (int) $metric->replay_id,
             'trade_date' => $metric->trade_date,
@@ -148,6 +151,8 @@ class MarketDataEvidenceExportService
         ];
         $payload = [
             'replay_result' => $replayResult,
+            'expected_state' => $expectedState,
+            'actual_state' => $actualState,
             'reason_code_counts' => $reasonCodes,
             'summary' => $summary,
         ];
@@ -155,6 +160,8 @@ class MarketDataEvidenceExportService
         $dir = $outputDir ?: $this->defaultReplayOutputDir($metric->replay_id, $metric->trade_date);
         $this->ensureDirectory($dir);
         $this->writeJson($dir.'/replay_result.json', $replayResult);
+        $this->writeJson($dir.'/replay_expected_state.json', $expectedState);
+        $this->writeJson($dir.'/replay_actual_state.json', $actualState);
         $this->writeJson($dir.'/replay_reason_code_counts.json', $reasonCodes);
         $this->writeJson($dir.'/replay_evidence_pack.json', $payload);
 
@@ -162,6 +169,8 @@ class MarketDataEvidenceExportService
             'output_dir' => $dir,
             'files' => [
                 'replay_result.json',
+                'replay_expected_state.json',
+                'replay_actual_state.json',
                 'replay_reason_code_counts.json',
                 'replay_evidence_pack.json',
             ],
@@ -252,9 +261,54 @@ class MarketDataEvidenceExportService
             'expected_status' => $metric->expected_status,
             'expected_trade_date_effective' => $metric->expected_trade_date_effective,
             'expected_seal_state' => $metric->expected_seal_state,
+            'expected_config_identity' => $metric->expected_config_identity ?? null,
+            'expected_publication_version' => $metric->expected_publication_version !== null ? (int) $metric->expected_publication_version : null,
+            'expected_bars_batch_hash' => $metric->expected_bars_batch_hash ?? null,
+            'expected_indicators_batch_hash' => $metric->expected_indicators_batch_hash ?? null,
+            'expected_eligibility_batch_hash' => $metric->expected_eligibility_batch_hash ?? null,
             'mismatch_summary' => $metric->mismatch_summary,
             'created_at' => $metric->created_at,
         ];
+    }
+
+    private function buildReplayExpectedState($metric, array $expectedReasonCodeCounts)
+    {
+        return [
+            'status' => $metric->expected_status,
+            'trade_date_effective' => $metric->expected_trade_date_effective,
+            'seal_state' => $metric->expected_seal_state,
+            'config_identity' => $metric->expected_config_identity ?? null,
+            'publication_version' => $metric->expected_publication_version !== null ? (int) $metric->expected_publication_version : null,
+            'bars_batch_hash' => $metric->expected_bars_batch_hash ?? null,
+            'indicators_batch_hash' => $metric->expected_indicators_batch_hash ?? null,
+            'eligibility_batch_hash' => $metric->expected_eligibility_batch_hash ?? null,
+            'reason_code_counts' => $expectedReasonCodeCounts,
+        ];
+    }
+
+    private function buildReplayActualState($metric, array $reasonCodes)
+    {
+        return [
+            'status' => $metric->status,
+            'trade_date_effective' => $metric->trade_date_effective,
+            'seal_state' => $metric->seal_state,
+            'config_identity' => $metric->config_identity,
+            'publication_version' => $metric->publication_version !== null ? (int) $metric->publication_version : null,
+            'bars_batch_hash' => $metric->bars_batch_hash,
+            'indicators_batch_hash' => $metric->indicators_batch_hash,
+            'eligibility_batch_hash' => $metric->eligibility_batch_hash,
+            'reason_code_counts' => $reasonCodes,
+        ];
+    }
+
+    private function decodeExpectedReasonCodeCounts($json)
+    {
+        if ($json === null || $json === '') {
+            return [];
+        }
+
+        $decoded = json_decode($json, true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     private function buildAnomalyReport(array $runSummary, array $dominantReasonCodes, $manifest = null)

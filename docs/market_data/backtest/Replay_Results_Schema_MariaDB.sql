@@ -26,6 +26,12 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   expected_status ENUM('SUCCESS','HELD','FAILED') NULL,
   expected_trade_date_effective DATE NULL,
   expected_seal_state ENUM('SEALED','UNSEALED') NULL,
+  expected_config_identity VARCHAR(128) NULL,
+  expected_publication_version INT UNSIGNED NULL,
+  expected_bars_batch_hash VARCHAR(64) NULL,
+  expected_indicators_batch_hash VARCHAR(64) NULL,
+  expected_eligibility_batch_hash VARCHAR(64) NULL,
+  expected_reason_code_counts_json JSON NULL,
   mismatch_summary VARCHAR(255) NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (replay_id, trade_date),
@@ -61,7 +67,9 @@ CREATE TABLE IF NOT EXISTS md_replay_reason_code_counts (
 --    - none
 -- 5. config_identity stores the effective config snapshot identity used by the replayed logic.
 -- 6. publication_version is optional but recommended when replay validates correction-aware publication behavior.
--- 7. mismatch_summary is a concise operator-facing explanation of the mismatch and must not replace detailed evidence elsewhere.
+-- 7. expected_* columns preserve the replay fixture expectation needed by exported evidence packs.
+-- 8. expected_reason_code_counts_json stores the normalized expected reason-code distribution when the fixture declares one.
+-- 9. mismatch_summary is a concise operator-facing explanation of the mismatch and must not replace detailed evidence elsewhere.
 
 -- RECOMMENDED USAGE NOTES
 -- 1. Replay verification should compare actual vs expected:

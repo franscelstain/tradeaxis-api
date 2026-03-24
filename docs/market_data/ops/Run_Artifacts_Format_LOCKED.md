@@ -26,6 +26,8 @@ At minimum, the following artifact shapes must be reconstructable:
 Where applicable, the following should also be available:
 7. `correction_evidence.json`
 8. `replay_result.json`
+9. `replay_expected_state.json`
+10. `replay_actual_state.json`
 
 ## 1. `run_summary.json`
 ### Purpose
@@ -238,6 +240,8 @@ Fields such as `prior_publication_is_current` and `new_publication_is_current` s
 - evidence must not imply silent overwrite of prior publication
 
 ## 8. `replay_result.json`
+9. `replay_expected_state.json`
+10. `replay_actual_state.json`
 ### Purpose
 Provide a machine-readable summary when replay comparison does not fully match expectation.
 
@@ -266,6 +270,40 @@ Provide a machine-readable summary when replay comparison does not fully match e
 - replay-result fields that mirror `md_replay_daily_metrics` must use the persisted replay names from replay proof storage
 - expected comparison context must remain explicit through replay-expected fields such as `expected_status`, `expected_trade_date_effective`, and `expected_seal_state`
 - mismatch summary must not replace detailed evidence, only summarize it
+
+## 9. `replay_expected_state.json`
+### Purpose
+Preserve the replay fixture expectation as exported evidence, including expected hashes and expected reason-code distribution when declared.
+
+### Minimum fields
+    {
+      "status": "SUCCESS",
+      "trade_date_effective": "2025-12-10",
+      "seal_state": "SEALED",
+      "config_identity": "cfg_2025_12_v2",
+      "publication_version": 1,
+      "bars_batch_hash": "A1",
+      "indicators_batch_hash": "B1",
+      "eligibility_batch_hash": "C1",
+      "reason_code_counts": []
+    }
+
+## 10. `replay_actual_state.json`
+### Purpose
+Preserve the actual replay proof state exported from `md_replay_daily_metrics` and `md_replay_reason_code_counts`.
+
+### Minimum fields
+    {
+      "status": "SUCCESS",
+      "trade_date_effective": "2025-12-10",
+      "seal_state": "SEALED",
+      "config_identity": "cfg_2025_12_v2",
+      "publication_version": 1,
+      "bars_batch_hash": "A1",
+      "indicators_batch_hash": "B1",
+      "eligibility_batch_hash": "C1",
+      "reason_code_counts": []
+    }
 
 ## Artifact timestamp rule
 All operator-facing artifact timestamps must be represented consistently in platform timezone or in an explicitly stated alternative representation.

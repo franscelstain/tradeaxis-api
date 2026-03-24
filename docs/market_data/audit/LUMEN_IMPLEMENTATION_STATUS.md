@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_18_REPLAY_REASON_CODE_ALIGNMENT
+- Phase: SESSION_19_REPLAY_EVIDENCE_EXPECTED_ACTUAL_SYNC
 
 ## Current Batch
-- Batch: BATCH_18_REPLAY_REASON_CODE_ALIGNMENT
+- Batch: BATCH_19_REPLAY_EVIDENCE_EXPECTED_ACTUAL_SYNC
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- Replay reason-code expectation alignment sedang ditutup di batch ini.
+- Replay evidence expected-vs-actual state preservation sedang ditutup di batch ini.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -79,6 +79,7 @@
 - Orchestrated finalize/current-pointer outcome and correction publish-path outcome now have dedicated service-level proof
 - Replay verification minimum now has fixture-aware runner/verifier proof path
 - Replay reason-code counts now participate in fixture-vs-actual comparison when fixtures declare an expected distribution
+- Replay evidence export now preserves explicit expected-vs-actual state, including expected config/hash/reason-code context persisted from fixture verification
 
 ## Kontrak MISSING
 
@@ -100,6 +101,7 @@
 - `DOC SYNC ISSUE`: correction/reseal replacement path kini memiliki command eksekusi eksplisit dan event outcome correction publish/cancel agar pembuktian runtime dapat dilakukan tanpa memakai rerun normal yang memang harus tertahan.
 - `DOC SYNC ISSUE`: repo kini punya replay verifier minimum yang membaca fixture package dan menulis `md_replay_*`, sehingga checkpoint harus dinaikkan agar status replay tidak lagi tertulis sebagai export-only.
 - `DOC SYNC ISSUE`: replay smoke fixtures sekarang dikomit di `storage/app/market_data/replay-fixtures/**` agar proof runtime tidak bergantung pada fixture buatan manual yang rawan salah. `missing_file_case` wajib gagal dengan `Replay fixture file missing: expected/missing.json`; bila tidak, sesi replay belum boleh dianggap rapat.
+- `DOC SYNC ISSUE`: evidence pack replay sebelumnya hanya mengekspor ringkasan flat + actual reason-code counts, padahal kontrak audit mewajibkan preservation of both expected and actual state. Sesi 19 menutup gap ini dengan expected-context persistence + explicit replay_expected_state/replay_actual_state export.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
@@ -290,3 +292,8 @@
 - Replay verifier kini membandingkan `md_replay_reason_code_counts` aktual terhadap fixture-declared expected distribution bila fixture menyediakan `expected/expected_reason_code_counts.json`.
 - Empty expected reason-code set kini menjadi kontrak eksplisit, bukan asumsi implisit; `valid_case` smoke fixture dikomit ulang untuk membuktikan jalur kosong yang sah.
 - Unit-test replay kini mencakup mismatch khusus reason-code counts agar replay proof tidak hanya berhenti di status/date/seal/hash/row-count saja.
+
+
+## Session 19 Update
+- Replay verifier kini mempersist expected config/hash/reason-code context ke `md_replay_daily_metrics` agar evidence export tidak kehilangan fixture expectation setelah verify selesai.
+- Replay evidence export kini menghasilkan `replay_expected_state.json` dan `replay_actual_state.json` selain `replay_result.json`, sehingga kontrak evidence pack replay preserving both expected and actual state tertutup lebih rapat.
