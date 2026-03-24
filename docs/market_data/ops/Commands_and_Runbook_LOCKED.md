@@ -200,6 +200,30 @@ Execute the built-in replay smoke suite against one completed run and write a su
 - non-zero exit when any smoke case deviates from its expected outcome
 
 ---
+### 13. `market-data:replay:backfill`
+#### Purpose
+Execute fixture-aware historical replay verification across a trading-date range without requiring one-by-one manual replay commands.
+
+#### Minimum input
+- `start_date`
+- `end_date`
+- optional `fixture_case` (default `valid_case`)
+- optional `fixture_root` when operator wants to override built-in fixture directory root
+- optional deterministic `output_dir`
+- optional `continue_on_error` when operator wants resumable range execution
+
+#### Minimum behavior
+- resolve trading dates from `market_calendar`, not weekday guessing
+- for each trading date resolve the current readable publication pointer/run context
+- execute replay verification against the selected fixture case
+- export replay evidence for successful per-date cases
+- stop non-zero when a date fails unless operator explicitly opts into continue-on-error behavior
+
+#### Minimum output
+- one summary artifact `market_data_replay_backfill_summary.json`
+- per-date observed outcome, `run_id`, and `replay_id` in the summary artifact
+
+---
 
 ## Operator checkpoints per command
 
@@ -329,6 +353,24 @@ Execute the built-in replay smoke suite against one completed run and write a su
 - fixture package is incomplete or malformed
 - run context cannot be resolved coherently
 - replay proof would be written without clear expected outcome
+
+---
+### `market-data:replay:backfill`
+#### Verify before continuing
+- requested replay range resolves to at least one trading date in `market_calendar`
+- every trading date can resolve a current readable publication/run context
+- selected fixture case is present under the fixture root
+- operator intent is replay proof batching, not publication mutation
+
+#### Expected outputs
+- one replay verification outcome per resolved trading date
+- replay evidence exported for successful per-date cases
+- one deterministic summary artifact `market_data_replay_backfill_summary.json`
+
+#### Stop publish if
+- a trading date cannot resolve a readable current publication and operator did not opt into continue-on-error
+- fixture case is missing or malformed
+- replay range summary cannot distinguish expected vs observed outcome per date
 
 ---
 

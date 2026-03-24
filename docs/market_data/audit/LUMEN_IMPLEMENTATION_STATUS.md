@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_24_SESSION_SNAPSHOT_DEFAULTS_SYNC
+- Phase: SESSION_25_REPLAY_BACKFILL_MINIMUM
 
 ## Current Batch
-- Batch: BATCH_24_SESSION_SNAPSHOT_DEFAULTS_SYNC
+- Batch: BATCH_25_REPLAY_BACKFILL_MINIMUM
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- Session snapshot defaults sync sedang ditutup di batch ini agar default retention, scope label, slot tolerance, dan purge summary tidak lagi melenceng dari kontrak LOCKED.
+- Replay backfill minimum sedang ditutup di batch ini agar replay historical range execution tidak lagi bergantung pada per-date manual verification command satu-per-satu.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -81,6 +81,7 @@
 - Replay reason-code counts now participate in fixture-vs-actual comparison when fixtures declare an expected distribution
 - Replay evidence export now preserves explicit expected-vs-actual state, including expected config/hash/reason-code context persisted from fixture verification
 - Replay smoke suite minimum now exists to execute built-in replay fixtures as one deterministic operator proof batch
+- Replay backfill minimum now exists to execute replay verification across a trading-date range rooted in `market_calendar` and current readable publication pointers, writing a deterministic summary artifact
 - Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
 - Session snapshot minimum runtime now exists to capture optional supplemental session snapshot rows aligned to readable effective trade date and to purge them according to retention policy
 
@@ -109,63 +110,18 @@
 - `DOC SYNC ISSUE`: docs mengunci `market-data:backfill` sebagai minimum command, tetapi source repo sesi 21 belum memiliki command/runtime minimumnya. Sesi 22 menutup mismatch ini dengan backfill range runner minimum berbasis `market_calendar` + summary artifact.
 - `DOC SYNC ISSUE`: docs mengunci `market-data:session-snapshot` dan `market-data:session-snapshot:purge`, tetapi source repo sesi 22 belum memiliki command/runtime minimumnya. Sesi 23 menutup mismatch ini dengan session snapshot capture minimum berbasis readable current publication + eligibility scope + retention purge summary.
 - `DOC SYNC ISSUE`: runtime/source sesi 23 masih memakai default session-snapshot yang melenceng dari kontrak LOCKED (retention 7 hari, scope label `universe_only`, tolerance 5 menit). Sesi 24 menutup mismatch ini dengan default resmi 30 hari, `eligibility_set`, tolerance 3 menit, dan purge summary yang menuliskan apakah cutoff berasal dari `before_date` eksplisit atau retention default.
+- `DOC SYNC ISSUE`: kontrak backtest/replay masih menuntut historical replay lintas trading-date yang resumable, tetapi source repo sesi 24 belum punya runtime minimumnya. Sesi 25 menutup mismatch ini dengan `market-data:replay:backfill` berbasis `market_calendar` + current readable publication + summary artifact.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
-- `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
-- `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`
-- `app/Application/MarketData/Services/MarketDataPipelineService.php`
-- `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
-- `app/Application/MarketData/Services/MarketDataPipelineService.php`
-- `app/Application/MarketData/Services/EodBarsIngestService.php`
-- `app/Application/MarketData/Services/EodIndicatorsComputeService.php`
-- `app/Application/MarketData/Services/EodEligibilityBuildService.php`
-- `app/Infrastructure/Persistence/MarketData/TickerMasterRepository.php`
-- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
-- `app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php`
-- `app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php`
-- `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`
-- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
-- `app/Models/EodDatasetCorrection.php`
-- `app/Console/Commands/MarketData/RequestCorrectionCommand.php`
-- `app/Console/Commands/MarketData/ApproveCorrectionCommand.php`
+- `app/Application/MarketData/Services/ReplayBackfillService.php`
+- `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
 - `app/Console/Kernel.php`
-- `app/Application/MarketData/Services/DeterministicHashService.php`
-- `app/Application/MarketData/Services/IndicatorVectorService.php`
-- `app/Application/MarketData/Services/EligibilityDecisionService.php`
-- `app/Application/MarketData/Services/FinalizeDecisionService.php`
-- `app/Application/MarketData/Services/PublicationDiffService.php`
-- `app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php`
-- `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
-- `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`
-- `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
-- `config/market_data.php`
-- `.env.example`
-- `storage/app/market_data/evidence/.gitkeep`
-- `storage/app/market_data/evidence/runs/.gitkeep`
-- `storage/app/market_data/evidence/corrections/.gitkeep`
-- `tests/Unit/MarketData/DeterministicHashServiceTest.php`
-- `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
-- `tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php`
-- `tests/Unit/MarketData/IndicatorVectorServiceTest.php`
-- `tests/Unit/MarketData/EligibilityDecisionServiceTest.php`
-- `tests/Unit/MarketData/FinalizeDecisionServiceTest.php`
-- `tests/Unit/MarketData/PublicationDiffServiceTest.php`
-- `tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`
-- `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`
-- `app/Infrastructure/MarketData/Source/SourceAcquisitionException.php`
-- `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+- `tests/Unit/MarketData/ReplayBackfillServiceTest.php`
+- `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+- `docs/market_data/ops/Bootstrap_and_Backfill_Runbook_LOCKED.md`
+- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
 
-- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
-- `app/Application/MarketData/Services/MarketDataPipelineService.php`
-- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
-- `app/Console/Commands/MarketData/RunCorrectionCommand.php`
-- `app/Console/Kernel.php`
-- `app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php`
-- `app/Application/MarketData/Services/ReplayVerificationService.php`
-- `app/Console/Commands/MarketData/VerifyReplayCommand.php`
-- `tests/Unit/MarketData/ReplayVerificationServiceTest.php`
-- `storage/app/market_data/replay-fixtures/valid_case/manifest.json`
-- `storage/app/market_data/replay-fixtures/valid_case/expected/expected_reason_code_counts.json`
 ## Keputusan Desain Penting
 - Finalize post-promote verification kini tidak lagi membaca current publication melalui resolver yang mensyaratkan `eod_runs` sudah `SUCCESS/READABLE`; verification sekarang memakai pointer current + publication current + seal state yang nyata agar outcome `eod_runs` tidak deadlock menahan dirinya sendiri.
 - Candidate publication `UNSEALED` kini sah memiliki `sealed_at = NULL`; `sealed_at` baru diisi saat stage seal berhasil.
@@ -331,3 +287,8 @@
 ## Session 24 Update
 - Session snapshot defaults kini sinkron dengan kontrak LOCKED: retention default 30 hari, scope label default `eligibility_set`, dan slot tolerance default 3 menit.
 - Purge summary kini menuliskan `before_date` eksplisit vs `retention_days` default agar operator proof tidak ambigu ketika purge dijalankan tanpa cutoff manual.
+
+
+## Session 25 Update
+- Added `market-data:replay:backfill` as the minimum historical replay range runner rooted in `market_calendar` and current readable publication pointers.
+- Replay backfill minimum runs fixture-aware replay verification per trading date, exports replay evidence for successful cases, writes `market_data_replay_backfill_summary.json`, and exits non-zero when the range does not pass.

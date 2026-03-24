@@ -15,6 +15,7 @@ use App\Console\Commands\MarketData\IngestEodBarsCommand;
 use App\Console\Commands\MarketData\SealDatasetCommand;
 use App\Console\Commands\MarketData\VerifyReplayCommand;
 use App\Console\Commands\MarketData\ReplaySmokeSuiteCommand;
+use App\Console\Commands\MarketData\ReplayBackfillCommand;
 use App\Console\Commands\MarketData\RequestCorrectionCommand;
 use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
@@ -31,6 +32,7 @@ class Kernel extends ConsoleKernel
         SealDatasetCommand::class,
         VerifyReplayCommand::class,
         ReplaySmokeSuiteCommand::class,
+        ReplayBackfillCommand::class,
         FinalizeRunCommand::class,
         ExportEvidenceCommand::class,
         DailyPipelineCommand::class,

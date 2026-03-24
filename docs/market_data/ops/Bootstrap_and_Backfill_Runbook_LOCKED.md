@@ -32,6 +32,7 @@ Recommended for production stability and replay confidence:
 - verify effective-date and seal behavior on degraded scenarios
 - minimum proof writer may be executed through `market-data:replay:verify` against a completed run plus fixture package
 - built-in replay smoke coverage may be executed through `market-data:replay:smoke` before broader replay/backfill work is resumed
+- minimum historical replay range execution may be driven through `market-data:replay:backfill {start_date} {end_date}` when operator needs resumable date-range replay proof rooted in `market_calendar` and current readable publication pointers
 
 ## Resume requirement (LOCKED)
 - backfill is resumable by date range
