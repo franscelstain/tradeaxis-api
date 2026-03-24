@@ -69,4 +69,30 @@ class SessionSnapshotServiceTest extends TestCase
         $this->assertSame(12, $summary['deleted_rows']);
         $this->assertFileExists($outputDir.'/market_data_session_snapshot_purge_summary.json');
     }
+
+
+    public function test_purge_uses_default_retention_policy_window()
+    {
+        \Carbon\Carbon::setTestNow('2026-03-24 12:00:00');
+
+        $publications = m::mock(EodPublicationRepository::class);
+        $runs = m::mock(EodRunRepository::class);
+        $scope = m::mock(EligibilitySnapshotScopeRepository::class);
+        $snapshots = m::mock(SessionSnapshotRepository::class);
+        $adapter = m::mock(LocalFileSessionSnapshotAdapter::class);
+
+        config(['market_data.session_snapshot.retention_days' => 30]);
+        $snapshots->shouldReceive('purgeBefore')->once()->with('2026-02-22 12:00:00')->andReturn(3);
+        $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
+        $outputDir = sys_get_temp_dir().'/session_snapshot_purge_default_'.uniqid();
+        $summary = $service->purge(null, $outputDir);
+
+        $this->assertSame(3, $summary['deleted_rows']);
+        $this->assertSame(30, $summary['retention_days']);
+        $this->assertNull($summary['before_date']);
+        $this->assertFileExists($outputDir.'/market_data_session_snapshot_purge_summary.json');
+
+        \Carbon\Carbon::setTestNow();
+    }
+
 }

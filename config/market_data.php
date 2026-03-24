@@ -75,8 +75,8 @@ return [
         'circuit_breaker_error_rate' => (float) env('MARKET_DATA_CIRCUIT_BREAKER_ERROR_RATE', 0.5),
     ],
     'session_snapshot' => [
-        'retention_days' => (int) env('MARKET_DATA_INTRADAY_RETENTION_DAYS', 7),
-        'scope_default' => env('MARKET_DATA_INTRADAY_SCOPE_DEFAULT', 'universe_only'),
-        'slot_tolerance_minutes' => (int) env('MARKET_DATA_SNAPSHOT_SLOT_TOLERANCE_MINUTES', 5),
+        'retention_days' => (int) env('MARKET_DATA_SESSION_SNAPSHOT_RETENTION_DAYS', 30),
+        'scope_default' => env('MARKET_DATA_SESSION_SNAPSHOT_SCOPE_DEFAULT', 'eligibility_set'),
+        'slot_tolerance_minutes' => (int) env('MARKET_DATA_SESSION_SNAPSHOT_SLOT_TOLERANCE_MINUTES', 3),
     ],
 ];

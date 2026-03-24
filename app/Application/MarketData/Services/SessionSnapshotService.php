@@ -137,14 +137,17 @@ class SessionSnapshotService
     public function purge($beforeDate = null, $outputDir = null)
     {
         $timezone = config('market_data.platform.timezone');
+        $retentionDays = (int) config('market_data.session_snapshot.retention_days', 30);
         $cutoff = $beforeDate
             ? Carbon::parse($beforeDate, $timezone)->endOfDay()
-            : Carbon::now($timezone)->subDays((int) config('market_data.session_snapshot.retention_days', 7));
+            : Carbon::now($timezone)->subDays($retentionDays);
 
         $deleted = $this->snapshots->purgeBefore($cutoff->toDateTimeString());
         $summary = [
             'cutoff_timestamp' => $cutoff->toDateTimeString(),
             'deleted_rows' => (int) $deleted,
+            'retention_days' => $beforeDate ? null : $retentionDays,
+            'before_date' => $beforeDate,
         ];
         $dir = $outputDir ?: rtrim(config('market_data.evidence.output_directory'), '/').'/session_snapshots/purge_'.Carbon::now($timezone)->format('Ymd_His');
         if (! is_dir($dir)) {

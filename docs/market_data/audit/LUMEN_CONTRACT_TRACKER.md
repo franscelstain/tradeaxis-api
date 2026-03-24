@@ -90,3 +90,8 @@
 ## Session 23 Update
 - Added `market-data:session-snapshot` and `market-data:session-snapshot:purge` as the minimum supplemental snapshot commands required by the locked ops/session-snapshot contracts.
 - Session snapshot capture now aligns to a readable current publication for trade date D, resolves scope from `eod_eligibility`, writes rows to `md_session_snapshots`, appends owning-run evidence, and emits deterministic summary artifacts.
+
+
+## Session 24 Update
+- Synced session snapshot config/env defaults to the locked contract: 30-day retention, `eligibility_set` default scope label, and 3-minute slot tolerance.
+- Purge summary now distinguishes explicit `before_date` runs from retention-driven purge runs so runtime evidence matches the locked retention contract.

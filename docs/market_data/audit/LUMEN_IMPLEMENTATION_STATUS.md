@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_23_SESSION_SNAPSHOT_MINIMUM_RUNTIME
+- Phase: SESSION_24_SESSION_SNAPSHOT_DEFAULTS_SYNC
 
 ## Current Batch
-- Batch: BATCH_23_SESSION_SNAPSHOT_MINIMUM_RUNTIME
+- Batch: BATCH_24_SESSION_SNAPSHOT_DEFAULTS_SYNC
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- Session snapshot minimum runtime sedang ditutup di batch ini agar kontrak `market-data:session-snapshot` dan `market-data:session-snapshot:purge` tidak lagi hanya tertulis di docs, tetapi benar-benar ada sebagai command supplemental snapshot yang selaras dengan readable effective trade date dan retention policy.
+- Session snapshot defaults sync sedang ditutup di batch ini agar default retention, scope label, slot tolerance, dan purge summary tidak lagi melenceng dari kontrak LOCKED.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -108,6 +108,7 @@
 - `DOC SYNC ISSUE`: ZIP source-of-truth sesi 19 masih kehilangan wiring runtime dari `ReplayVerificationService` ke `ReplayResultRepository` untuk expected replay context, sehingga `expected_reason_code_counts_json` tetap `NULL` walau checkpoint sesi 19 sudah dinaikkan. Sesi 20 menutup mismatch ini dan menambahkan guard test agar regress tidak lolos diam-diam.
 - `DOC SYNC ISSUE`: docs mengunci `market-data:backfill` sebagai minimum command, tetapi source repo sesi 21 belum memiliki command/runtime minimumnya. Sesi 22 menutup mismatch ini dengan backfill range runner minimum berbasis `market_calendar` + summary artifact.
 - `DOC SYNC ISSUE`: docs mengunci `market-data:session-snapshot` dan `market-data:session-snapshot:purge`, tetapi source repo sesi 22 belum memiliki command/runtime minimumnya. Sesi 23 menutup mismatch ini dengan session snapshot capture minimum berbasis readable current publication + eligibility scope + retention purge summary.
+- `DOC SYNC ISSUE`: runtime/source sesi 23 masih memakai default session-snapshot yang melenceng dari kontrak LOCKED (retention 7 hari, scope label `universe_only`, tolerance 5 menit). Sesi 24 menutup mismatch ini dengan default resmi 30 hari, `eligibility_set`, tolerance 3 menit, dan purge summary yang menuliskan apakah cutoff berasal dari `before_date` eksplisit atau retention default.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
@@ -325,3 +326,8 @@
 ## Session 23 Update
 - Added `market-data:session-snapshot` as the minimum optional supplemental snapshot command aligned to readable effective trade date, scoped from `eod_eligibility`, and persisted into `md_session_snapshots` with deterministic summary evidence.
 - Added `market-data:session-snapshot:purge` as the minimum retention purge command for supplemental snapshot storage, with summary artifact output.
+
+
+## Session 24 Update
+- Session snapshot defaults kini sinkron dengan kontrak LOCKED: retention default 30 hari, scope label default `eligibility_set`, dan slot tolerance default 3 menit.
+- Purge summary kini menuliskan `before_date` eksplisit vs `retention_days` default agar operator proof tidak ambigu ketika purge dijalankan tanpa cutoff manual.
