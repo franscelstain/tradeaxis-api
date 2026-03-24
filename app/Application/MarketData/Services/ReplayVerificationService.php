@@ -260,21 +260,15 @@ class ReplayVerificationService
             return;
         }
 
-        $normalize = function (array $items) {
-            $normalized = [];
-            foreach ($items as $item) {
-                if (! is_array($item) || ! array_key_exists('reason_code', $item)) {
-                    continue;
-                }
-                $normalized[(string) $item['reason_code']] = (int) ($item['reason_count'] ?? 0);
-            }
-            ksort($normalized);
+        $expectedNormalized = [];
+        foreach ($this->normalizeReasonCodeCounts($expectedCounts) as $item) {
+            $expectedNormalized[$item['reason_code']] = $item['reason_count'];
+        }
 
-            return $normalized;
-        };
-
-        $expectedNormalized = $normalize($expectedCounts);
-        $actualNormalized = $normalize($actualCounts);
+        $actualNormalized = [];
+        foreach ($this->normalizeReasonCodeCounts($actualCounts) as $item) {
+            $actualNormalized[$item['reason_code']] = $item['reason_count'];
+        }
 
         if ($expectedNormalized !== $actualNormalized) {
             $mismatches[] = [
@@ -283,6 +277,28 @@ class ReplayVerificationService
                 'actual' => $actualNormalized,
             ];
         }
+    }
+
+    private function normalizeReasonCodeCounts(array $items)
+    {
+        $normalized = [];
+
+        foreach ($items as $item) {
+            if (! is_array($item) || ! array_key_exists('reason_code', $item)) {
+                continue;
+            }
+
+            $normalized[] = [
+                'reason_code' => (string) $item['reason_code'],
+                'reason_count' => (int) ($item['reason_count'] ?? $item['count'] ?? 0),
+            ];
+        }
+
+        usort($normalized, function ($left, $right) {
+            return strcmp($left['reason_code'], $right['reason_code']);
+        });
+
+        return $normalized;
     }
 
     private function resolvePublicationForRun($run)
