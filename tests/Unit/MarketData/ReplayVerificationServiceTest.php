@@ -111,7 +111,14 @@ class ReplayVerificationServiceTest extends TestCase
             return $metric['replay_id'] === 3002
                 && $metric['comparison_result'] === 'MATCH'
                 && $metric['artifact_changed_scope'] === 'none'
-                && $metric['expected_status'] === 'SUCCESS';
+                && $metric['expected_status'] === 'SUCCESS'
+                && $metric['expected_config_identity'] === 'v1'
+                && $metric['expected_bars_batch_hash'] === 'A1'
+                && $metric['expected_indicators_batch_hash'] === 'B1'
+                && $metric['expected_eligibility_batch_hash'] === 'C1'
+                && $metric['expected_reason_code_counts_json'] === json_encode([
+                    ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
+                ], JSON_UNESCAPED_SLASHES);
         }));
         $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3002, '2026-03-20', [
             ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
@@ -224,7 +231,7 @@ class ReplayVerificationServiceTest extends TestCase
                 'expected_seal_state' => 'SEALED',
             ],
             'expected/expected_reason_code_counts.json' => [
-                ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 2],
+                ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 2],
             ],
         ]);
 
@@ -271,6 +278,9 @@ class ReplayVerificationServiceTest extends TestCase
         $replays->shouldReceive('nextReplayId')->once()->andReturn(3004);
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
             return $metric['comparison_result'] === 'MISMATCH'
+                && $metric['expected_reason_code_counts_json'] === json_encode([
+                    ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 2],
+                ], JSON_UNESCAPED_SLASHES)
                 && strpos((string) $metric['mismatch_summary'], 'reason_code_counts') !== false;
         }));
         $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3004, '2026-03-20', [

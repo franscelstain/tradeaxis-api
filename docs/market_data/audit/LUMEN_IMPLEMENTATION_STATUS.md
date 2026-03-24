@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_19_REPLAY_EVIDENCE_EXPECTED_ACTUAL_SYNC
+- Phase: SESSION_20_REPLAY_EXPECTED_CONTEXT_RUNTIME_SYNC
 
 ## Current Batch
-- Batch: BATCH_19_REPLAY_EVIDENCE_EXPECTED_ACTUAL_SYNC
+- Batch: BATCH_20_REPLAY_EXPECTED_CONTEXT_RUNTIME_SYNC
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- Replay evidence expected-vs-actual state preservation sedang ditutup di batch ini.
+- Replay expected-context runtime sync sedang ditutup di batch ini agar checkpoint sesi 19 benar-benar sah di source repo terbaru.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -102,6 +102,7 @@
 - `DOC SYNC ISSUE`: repo kini punya replay verifier minimum yang membaca fixture package dan menulis `md_replay_*`, sehingga checkpoint harus dinaikkan agar status replay tidak lagi tertulis sebagai export-only.
 - `DOC SYNC ISSUE`: replay smoke fixtures sekarang dikomit di `storage/app/market_data/replay-fixtures/**` agar proof runtime tidak bergantung pada fixture buatan manual yang rawan salah. `missing_file_case` wajib gagal dengan `Replay fixture file missing: expected/missing.json`; bila tidak, sesi replay belum boleh dianggap rapat.
 - `DOC SYNC ISSUE`: evidence pack replay sebelumnya hanya mengekspor ringkasan flat + actual reason-code counts, padahal kontrak audit mewajibkan preservation of both expected and actual state. Sesi 19 menutup gap ini dengan expected-context persistence + explicit replay_expected_state/replay_actual_state export.
+- `DOC SYNC ISSUE`: ZIP source-of-truth sesi 19 masih kehilangan wiring runtime dari `ReplayVerificationService` ke `ReplayResultRepository` untuk expected replay context, sehingga `expected_reason_code_counts_json` tetap `NULL` walau checkpoint sesi 19 sudah dinaikkan. Sesi 20 menutup mismatch ini dan menambahkan guard test agar regress tidak lolos diam-diam.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
@@ -201,8 +202,8 @@
 - Validasi eksekusi command di container ini tetap terbatas karena `vendor/` tidak disertakan pada ZIP terbaru.
 
 ## Artifact History
-- ZIP latest: `tradeaxis-api_session10_batch10_public-api-source-adapter.zip`
-- ZIP status: dibuat pada akhir sesi 10
+- ZIP latest: `tradeaxis-api_session19_batch19_replay-evidence-expected-actual-sync.zip`
+- ZIP status: checkpoint source-of-truth terbaru sebelum sesi 20
 
 ## Update Log
 ### Entry 0
@@ -297,3 +298,9 @@
 ## Session 19 Update
 - Replay verifier kini mempersist expected config/hash/reason-code context ke `md_replay_daily_metrics` agar evidence export tidak kehilangan fixture expectation setelah verify selesai.
 - Replay evidence export kini menghasilkan `replay_expected_state.json` dan `replay_actual_state.json` selain `replay_result.json`, sehingga kontrak evidence pack replay preserving both expected and actual state tertutup lebih rapat.
+
+
+## Session 20 Update
+- Source-of-truth ZIP sesi 19 divalidasi ulang terhadap runtime manual dan terbukti masih kehilangan wiring payload expected replay context dari `ReplayVerificationService` ke `ReplayResultRepository`.
+- Sesi 20 menutup bug itu dengan mengirim expected config/hash/reason-code payload penuh ke proof storage, menormalkan reason-code fixture `count`/`reason_count` secara konsisten, dan memperketat unit-test replay agar expected context persistence benar-benar terjaga.
+- Batch ini sengaja tidak membuka replay range runner baru karena dependency sesi 19 belum rapat pada source repo terbaru.
