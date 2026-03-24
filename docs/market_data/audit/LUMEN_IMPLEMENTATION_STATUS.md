@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_20_REPLAY_EXPECTED_CONTEXT_RUNTIME_SYNC
+- Phase: SESSION_21_REPLAY_SMOKE_SUITE_MINIMUM
 
 ## Current Batch
-- Batch: BATCH_20_REPLAY_EXPECTED_CONTEXT_RUNTIME_SYNC
+- Batch: BATCH_21_REPLAY_SMOKE_SUITE_MINIMUM
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- Replay expected-context runtime sync sedang ditutup di batch ini agar checkpoint sesi 19 benar-benar sah di source repo terbaru.
+- Replay smoke suite minimum sedang ditutup di batch ini agar built-in replay fixtures dapat dieksekusi sebagai satu paket proof, bukan hanya satu-per-satu secara manual.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -80,6 +80,7 @@
 - Replay verification minimum now has fixture-aware runner/verifier proof path
 - Replay reason-code counts now participate in fixture-vs-actual comparison when fixtures declare an expected distribution
 - Replay evidence export now preserves explicit expected-vs-actual state, including expected config/hash/reason-code context persisted from fixture verification
+- Replay smoke suite minimum now exists to execute built-in replay fixtures as one deterministic operator proof batch
 
 ## Kontrak MISSING
 
@@ -304,3 +305,9 @@
 - Source-of-truth ZIP sesi 19 divalidasi ulang terhadap runtime manual dan terbukti masih kehilangan wiring payload expected replay context dari `ReplayVerificationService` ke `ReplayResultRepository`.
 - Sesi 20 menutup bug itu dengan mengirim expected config/hash/reason-code payload penuh ke proof storage, menormalkan reason-code fixture `count`/`reason_count` secara konsisten, dan memperketat unit-test replay agar expected context persistence benar-benar terjaga.
 - Batch ini sengaja tidak membuka replay range runner baru karena dependency sesi 19 belum rapat pada source repo terbaru.
+
+
+## Session 21 Update
+- Added `market-data:replay:smoke` as the minimum built-in replay suite runner for the committed smoke fixtures under `storage/app/market_data/replay-fixtures/**`.
+- The smoke suite records per-case expected vs observed outcomes and writes `replay_smoke_suite_summary.json`, while exporting replay evidence for successful positive cases.
+- This closes the operational gap where replay fixture proof depended on manual one-by-one command execution even though the fixture family set was already committed in-repo.

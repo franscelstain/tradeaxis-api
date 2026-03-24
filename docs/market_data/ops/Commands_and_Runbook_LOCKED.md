@@ -124,9 +124,11 @@ Verify one executed market-data run against a replay fixture package and persist
 - `storage/app/market_data/replay-fixtures/valid_case`
 - `storage/app/market_data/replay-fixtures/broken_manifest_case`
 - `storage/app/market_data/replay-fixtures/missing_file_case`
+- `storage/app/market_data/replay-fixtures/reason_code_mismatch_case`
 
 Expected smoke outcomes:
-- `valid_case` must pass for a compatible completed run
+- `valid_case` must pass for a compatible completed run with `MATCH`
+- `reason_code_mismatch_case` must complete with `MISMATCH`
 - `broken_manifest_case` must fail because required manifest fields are missing
 - `missing_file_case` must fail because `manifest.files` declares `expected/missing.json` but that file is intentionally absent
 
@@ -135,6 +137,26 @@ Expected smoke outcomes:
 - synchronized `md_replay_reason_code_counts` rows
 - replay evidence exportable through `market-data:evidence:export --replay_id=...`
 - replay evidence pack now preserves explicit `expected_state` and `actual_state`, not just a flat replay summary
+
+### 12. `market-data:replay:smoke`
+#### Purpose
+Execute the built-in replay smoke suite against one completed run and write a suite summary artifact.
+
+#### Minimum input
+- `run_id`
+- optional `fixture_root` when operator wants to override the built-in fixture directory root
+- optional `output_dir` when operator wants deterministic suite artifact placement
+
+#### Built-in fixture cases
+- `valid_case` must observe `MATCH`
+- `reason_code_mismatch_case` must observe `MISMATCH`
+- `broken_manifest_case` must fail with `ERROR`
+- `missing_file_case` must fail with `ERROR`
+
+#### Minimum output
+- one suite summary JSON artifact describing all built-in cases and whether each case passed
+- replay evidence bundles for successful positive cases (`MATCH` / `MISMATCH`)
+- non-zero exit when any smoke case deviates from its expected outcome
 
 ---
 

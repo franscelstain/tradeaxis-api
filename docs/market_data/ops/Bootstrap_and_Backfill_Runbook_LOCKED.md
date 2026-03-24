@@ -30,6 +30,7 @@ Recommended for production stability and replay confidence:
 - verify deterministic hashes on stable inputs
 - verify effective-date and seal behavior on degraded scenarios
 - minimum proof writer may be executed through `market-data:replay:verify` against a completed run plus fixture package
+- built-in replay smoke coverage may be executed through `market-data:replay:smoke` before broader replay/backfill work is resumed
 
 ## Resume requirement (LOCKED)
 - backfill is resumable by date range
