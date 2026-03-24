@@ -1,0 +1,135 @@
+<?php
+
+use App\Application\MarketData\Services\EodBarsIngestService;
+use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
+use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
+use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
+use App\Models\EodRun;
+use PHPUnit\Framework\TestCase;
+
+class EodBarsIngestServiceTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (! function_exists('config')) {
+            function config($key = null, $default = null) {
+                global $marketDataTestConfig;
+                $value = $marketDataTestConfig;
+                foreach (explode('.', $key) as $segment) {
+                    if (! is_array($value) || ! array_key_exists($segment, $value)) {
+                        return $default;
+                    }
+                    $value = $value[$segment];
+                }
+                return $value;
+            }
+        }
+    }
+
+    public function test_unknown_ticker_code_is_written_as_invalid_row_instead_of_failing_whole_ingest()
+    {
+        global $marketDataTestConfig;
+        $marketDataTestConfig = [
+            'market_data' => [
+                'platform' => ['timezone' => 'Asia/Jakarta'],
+                'source' => ['default_source_name' => 'LOCAL_FILE'],
+            ],
+        ];
+
+        $localSource = $this->createMock(LocalFileEodBarsAdapter::class);
+        $apiSource = $this->createMock(PublicApiEodBarsAdapter::class);
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+        $publications = $this->createMock(EodPublicationRepository::class);
+
+        $run = new EodRun([
+            'run_id' => 55,
+            'trade_date_requested' => '2026-03-24',
+        ]);
+
+        $sourceRows = [
+            [
+                'ticker_code' => 'BBCA',
+                'trade_date' => '2026-03-24',
+                'open' => 100,
+                'high' => 110,
+                'low' => 99,
+                'close' => 108,
+                'volume' => 1000,
+                'adj_close' => 108,
+                'source_name' => 'manual_file',
+                'source_row_ref' => 'row-1',
+                'captured_at' => '2026-03-24T17:00:00+07:00',
+            ],
+            [
+                'ticker_code' => 'XXXX',
+                'trade_date' => '2026-03-24',
+                'open' => 50,
+                'high' => 55,
+                'low' => 49,
+                'close' => 54,
+                'volume' => 200,
+                'adj_close' => 54,
+                'source_name' => 'manual_file',
+                'source_row_ref' => 'row-2',
+                'captured_at' => '2026-03-24T17:00:00+07:00',
+            ],
+        ];
+
+        $localSource->expects($this->once())
+            ->method('fetchOrLoadEodBars')
+            ->with('2026-03-24', 'manual_file')
+            ->willReturn($sourceRows);
+
+        $tickers->expects($this->once())
+            ->method('resolveTickerIdsByCodes')
+            ->with(['BBCA', 'XXXX'])
+            ->willReturn(['BBCA' => 1]);
+
+        $publications->expects($this->once())
+            ->method('findCurrentPublicationForTradeDate')
+            ->with('2026-03-24')
+            ->willReturn(null);
+
+        $publications->expects($this->once())
+            ->method('getOrCreateCandidatePublication')
+            ->willReturn((object) [
+                'publication_id' => 700,
+                'publication_version' => 3,
+            ]);
+
+        $artifacts->expects($this->once())
+            ->method('replaceBars')
+            ->with(
+                '2026-03-24',
+                700,
+                55,
+                $this->callback(function (array $validRows) {
+                    return count($validRows) === 1
+                        && $validRows[0]['ticker_id'] === 1
+                        && $validRows[0]['source'] === 'MANUAL_FILE';
+                }),
+                $this->callback(function (array $invalidRows) {
+                    return count($invalidRows) === 1
+                        && $invalidRows[0]['ticker_id'] === null
+                        && $invalidRows[0]['source'] === 'MANUAL_FILE'
+                        && $invalidRows[0]['invalid_reason_code'] === 'BAR_TICKER_MAPPING_MISSING'
+                        && $invalidRows[0]['invalid_note'] === 'ticker_code not found in ticker master: XXXX';
+                }),
+                false
+            );
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+
+        $result = $service->ingest($run, '2026-03-24', 'manual_file');
+
+        $this->assertSame(1, $result['bars_rows_written']);
+        $this->assertSame(1, $result['invalid_bar_count']);
+        $this->assertSame('MANUAL_FILE', $result['source_name']);
+        $this->assertSame('eod_bars', $result['storage_target']);
+    }
+}

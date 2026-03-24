@@ -44,30 +44,31 @@ class EodBarsIngestService
         $sourceRows = $this->fetchSourceRows($requestedDate, $sourceMode);
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
 
-        $unknownCodes = collect($sourceRows)
-            ->pluck('ticker_code')
-            ->filter()
-            ->unique()
-            ->reject(function ($code) use ($tickerMap) {
-                return isset($tickerMap[$code]);
-            })
-            ->values()
-            ->all();
-
-        if (! empty($unknownCodes)) {
-            throw new \RuntimeException('Ticker code tidak ditemukan di ticker master: '.implode(', ', $unknownCodes));
-        }
-
         $candidatePublication = $this->publications->getOrCreateCandidatePublication(
             $run,
             $priorCurrentPublication ? $priorCurrentPublication->publication_id : null
         );
 
+        $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
         $duplicateLosers = [];
+        $invalidRows = [];
         foreach ($sourceRows as $row) {
-            $tickerId = isset($tickerMap[$row['ticker_code']]) ? $tickerMap[$row['ticker_code']] : null;
+            $tickerCode = (string) ($row['ticker_code'] ?? '');
+            $tickerId = isset($tickerMap[$tickerCode]) ? $tickerMap[$tickerCode] : null;
             $row['ticker_id'] = $tickerId;
+
+            if ($tickerId === null) {
+                $invalidRows[] = $this->makeInvalidRow(
+                    $run->run_id,
+                    $row,
+                    'BAR_TICKER_MAPPING_MISSING',
+                    'ticker_code not found in ticker master: '.$tickerCode,
+                    $now
+                );
+                continue;
+            }
+
             $key = $row['trade_date'].'|'.$tickerId;
 
             if (! isset($deduped[$key])) {
@@ -86,9 +87,7 @@ class EodBarsIngestService
             ];
         }
 
-        $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $validRows = [];
-        $invalidRows = [];
         $useHistory = $priorCurrentPublication !== null;
 
         foreach (array_values($deduped) as $row) {
@@ -202,10 +201,19 @@ class EodBarsIngestService
         return [
             'trade_date' => $row['trade_date'] ?? null,
             'ticker_id' => $row['ticker_id'] ?? null,
+            'run_id' => $runId,
+            'source' => strtoupper((string) ($row['source_name'] ?? config('market_data.source.default_source_name'))),
             'source_row_ref' => (string) ($row['source_row_ref'] ?? ''),
+            'open' => isset($row['open']) ? (float) $row['open'] : null,
+            'high' => isset($row['high']) ? (float) $row['high'] : null,
+            'low' => isset($row['low']) ? (float) $row['low'] : null,
+            'close' => isset($row['close']) ? (float) $row['close'] : null,
+            'volume' => isset($row['volume']) ? (int) $row['volume'] : null,
+            'adj_close' => isset($row['adj_close']) && $row['adj_close'] !== '' ? (float) $row['adj_close'] : null,
             'invalid_reason_code' => $reasonCode,
             'invalid_note' => $note,
-            'run_id' => $runId,
+            'loser_of_trade_date' => $winnerTradeDate,
+            'loser_of_ticker_id' => $winnerTickerId,
             'created_at' => $now,
         ];
     }

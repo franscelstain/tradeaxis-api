@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_25_REPLAY_BACKFILL_MINIMUM
+- Phase: SESSION_26_TICKER_MAPPING_REASON_CODE_SYNC
 
 ## Current Batch
-- Batch: BATCH_25_REPLAY_BACKFILL_MINIMUM
+- Batch: BATCH_26_TICKER_MAPPING_REASON_CODE_SYNC
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -50,9 +50,10 @@
 - Batch 3 artifact runtime foundation
 - Batch 4 publication current switch / pointer sync / finalize guard
 - Batch 5 correction request / approval / reseal / publish runtime
+- Batch 26 ticker mapping reason-code sync
 
 ## Area yang Sedang Dikerjakan
-- Replay backfill minimum sedang ditutup di batch ini agar replay historical range execution tidak lagi bergantung pada per-date manual verification command satu-per-satu.
+- Batch ini menutup gap lama registry/ingest bars agar source row dengan `ticker_code` unmapped tidak lagi mematikan seluruh ingest dan tetap tercatat sebagai invalid evidence yang sah.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -71,7 +72,6 @@
 ## Kontrak PARTIAL
 - Publication contract mapped and current-switch runtime installed
 - Current publication pointer contract mapped and pointer-sync runtime installed
-- Registry and reason-code seed linkage installed
 - Architecture compliance enforced
 - Evidence/output shape support mapped
 - Contract-test matrix expanded for indicator vectors, eligibility decision rules, finalize gating, and publication diff comparison
@@ -83,17 +83,17 @@
 - Replay smoke suite minimum now exists to execute built-in replay fixtures as one deterministic operator proof batch
 - Replay backfill minimum now exists to execute replay verification across a trading-date range rooted in `market_calendar` and current readable publication pointers, writing a deterministic summary artifact
 - Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
+- Ticker mapping miss at ingest is now reason-coded deterministically as invalid-bar evidence instead of fail-fast runtime abort
 - Session snapshot minimum runtime now exists to capture optional supplemental session snapshot rows aligned to readable effective trade date and to purge them according to retention policy
 
 ## Kontrak MISSING
 
 
 ## Kontrak CONFLICT
-- Replay verification minimum sudah selesai diimplementasikan; menunggu batch berikutnya. ditemukan pada sesi ini.
+- Tidak ada conflict baru yang dibuka pada sesi 26.
 
 ## DOC GAP / DOC CONFLICT / DOC SYNC ISSUE
 - `DOC SYNC ISSUE`: runtime lokal membuktikan mismatch schema/runtime pada `eod_publications.sealed_at` dan truncation pada `eod_run_events.message`; checkpoint dinaikkan agar status sesi 11 sinkron dengan bugfix nyata.
-- `DOC GAP`: registry reason code belum menyediakan code spesifik untuk source row dengan `ticker_code` yang gagal dipetakan ke ticker master. Batch ini memilih fail-fast dibanding memutihkan ke code yang salah.
 - `DOC GAP`: contract correction minimum metadata meminta final correction outcome note, tetapi schema owner `eod_dataset_corrections` belum menyediakan kolom outcome note terpisah. Runtime sesi 5 masih menyimpan outcome melalui status + run events, bukan kolom final note khusus.
 - `DOC SYNC ISSUE`: checkpoint dinaikkan agar state repo sesi 6 sinkron dengan contract-test minimum dan evidence-export runtime yang kini sudah nyata di code.
 - `DOC SYNC ISSUE`: checkpoint dinaikkan agar state repo sesi 7 sinkron dengan replay evidence export runtime yang kini sudah nyata di code.
@@ -113,12 +113,12 @@
 - `DOC SYNC ISSUE`: kontrak backtest/replay masih menuntut historical replay lintas trading-date yang resumable, tetapi source repo sesi 24 belum punya runtime minimumnya. Sesi 25 menutup mismatch ini dengan `market-data:replay:backfill` berbasis `market_calendar` + current readable publication + summary artifact.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
-- `app/Application/MarketData/Services/ReplayBackfillService.php`
-- `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
-- `app/Console/Kernel.php`
-- `tests/Unit/MarketData/ReplayBackfillServiceTest.php`
-- `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-- `docs/market_data/ops/Bootstrap_and_Backfill_Runbook_LOCKED.md`
+- `app/Application/MarketData/Services/EodBarsIngestService.php`
+- `tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+- `docs/market_data/registry/Reason_Codes_Registry.md`
+- `docs/market_data/registry/Reason_Codes_Seed.sql`
+- `docs/market_data/ops/Error_Taxonomy_and_Run_Status_Decision_Table_LOCKED.md`
+- `docs/market_data/book/Source_Mapping_Contract_LOCKED.md`
 - `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
 - `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
 
@@ -147,25 +147,24 @@
 - Cross-folder sync check: PARTIAL
 - Findings classification:
   - defect:
-    - replay runner/verifier nyata belum ada
-    - full DB-backed integration matrix masih belum penuh
+        - full DB-backed integration matrix masih belum penuh
   - editorial:
-    - checkpoint sesi 5 dinaikkan agar repo state baru tercermin akurat
+    - checkpoint sesi 26 dinaikkan agar repo state terbaru untuk registry/ingest bars tercermin akurat
   - claim-boundary yang sah:
-    - correction replacement kini sudah punya flow request/approval/reseal/publish yang aman terhadap current-state, sesi 6 menambah run/correction evidence export serta test minimum, sesi 7 menambah replay evidence export runtime, sesi 8 menambah direct proof logic inti, dan sesi 9 menambah proof orchestrated finalize/current-pointer outcome serta correction publish-path outcome, dan sesi 10 menambah source mode `api` berbasis adapter public/free API pull. Namun replay runner/verifier nyata, full DB-backed integration matrix, dan final outcome note column khusus masih belum boleh di-claim selesai
+    - correction replacement kini sudah punya flow request/approval/reseal/publish yang aman terhadap current-state, sesi 6 menambah run/correction evidence export serta test minimum, sesi 7 menambah replay evidence export runtime, sesi 8 menambah direct proof logic inti, dan sesi 9 menambah proof orchestrated finalize/current-pointer outcome serta correction publish-path outcome, dan sesi 10 menambah source mode `api` berbasis adapter public/free API pull. Namun full DB-backed integration matrix dan final outcome note column khusus masih belum boleh di-claim selesai
 
 ## Next Recommended Batch
-- Lengkapi sisa full orchestrated integration matrix dan replay/fixture runner
-- Lengkapi replay runner/verifier nyata sesuai owner contract tanpa mengubah boundary yang sudah terkunci
 - Lengkapi full DB-backed integration matrix untuk current-pointer/finalize/correction publish path
+- Tutup gap correction final outcome note bila memang tetap diwajibkan oleh owner contract atau tandai `DOC GAP` permanen bila schema owner sengaja tidak menyediakannya
+- Audit ulang sinkronisasi docs/code setelah partial contracts yang tersisa dikerjakan
 
 ## Blocker Nyata
-- Tidak ada blocker desain untuk melanjutkan sesi 10.
+- Tidak ada blocker desain untuk melanjutkan sesi 27.
 - Validasi eksekusi command di container ini tetap terbatas karena `vendor/` tidak disertakan pada ZIP terbaru.
 
 ## Artifact History
-- ZIP latest: `tradeaxis-api_session19_batch19_replay-evidence-expected-actual-sync.zip`
-- ZIP status: checkpoint source-of-truth terbaru sebelum sesi 20
+- ZIP latest: `tradeaxis-api_session25_batch25_replay-backfill-minimum.zip`
+- ZIP status: checkpoint source-of-truth terbaru sebelum sesi 26
 
 ## Update Log
 ### Entry 0
@@ -292,3 +291,10 @@
 ## Session 25 Update
 - Added `market-data:replay:backfill` as the minimum historical replay range runner rooted in `market_calendar` and current readable publication pointers.
 - Replay backfill minimum runs fixture-aware replay verification per trading date, exports replay evidence for successful cases, writes `market_data_replay_backfill_summary.json`, and exits non-zero when the range does not pass.
+
+
+## Session 26 Update
+- Source-of-truth ZIP sesi 25 dibaca ulang dan divalidasi terhadap checkpoint; replay backfill minimum tetap sah dan tidak regress.
+- Batch prioritas berikutnya yang benar-benar belum rapat adalah gap registry/ingest bars lama untuk `ticker_code` yang gagal dipetakan ke ticker master.
+- Sesi 26 menutup gap ini dengan reason code resmi `BAR_TICKER_MAPPING_MISSING`, sinkronisasi registry/seed/error taxonomy/source mapping contract, serta perubahan ingest agar source row unmapped dicatat ke `eod_invalid_bars` tanpa mematikan seluruh ingest.
+- Added unit-test minimum untuk membuktikan satu row valid tetap dipersist sementara row unmapped menjadi invalid evidence deterministik.

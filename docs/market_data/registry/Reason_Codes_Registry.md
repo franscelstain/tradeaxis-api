@@ -39,6 +39,7 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `BAR_NON_POSITIVE_PRICE` | BAR | HARD | Received price value was zero or negative in a field that must be positive. |
 | `BAR_NEGATIVE_VOLUME` | BAR | HARD | Received volume value was negative. |
 | `BAR_MISSING_REQUIRED_FIELD` | BAR | HARD | One or more mandatory source fields were missing. |
+| `BAR_TICKER_MAPPING_MISSING` | BAR | WARN | Source row `ticker_code` could not be resolved deterministically to `ticker_id` via the ticker master. |
 | `IND_INSUFFICIENT_HISTORY` | INDICATOR | WARN | Required trading-day history is not yet sufficient for deterministic indicator computation. |
 | `IND_MISSING_DEPENDENCY_BAR` | INDICATOR | HARD | A required canonical bar in the trading-day dependency chain is missing. |
 | `IND_INVALID_BAR_INPUT` | INDICATOR | HARD | A canonical bar input required for indicator computation is invalid. |

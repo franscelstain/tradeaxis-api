@@ -33,6 +33,7 @@ Target: `eod_bars(trade_date, ticker_id, open, high, low, close, volume, adj_clo
 - missing `volume` => invalid => canonical bar rejected
 
 ## Edge cases (LOCKED)
+- unmapped `ticker_code` against ticker master => reject source row into `eod_invalid_bars` with reason `BAR_TICKER_MAPPING_MISSING`; do not silently fabricate `ticker_id` and do not fail the whole run solely because one row is unmapped
 - suspended/no-trade day => missing bar => eligibility reason `ELIG_MISSING_BAR`
 - corporate-action day => do not fabricate adjusted series
 - manual override/correction must leave audit trail through `run_id`, source name, and correction logs

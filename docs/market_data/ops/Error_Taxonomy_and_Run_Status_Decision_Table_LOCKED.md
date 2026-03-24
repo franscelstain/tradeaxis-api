@@ -85,6 +85,7 @@ This table exists so implementations do not guess when a requested date T may be
 - `BAR_NON_POSITIVE_PRICE`
 - `BAR_NEGATIVE_VOLUME`
 - `BAR_MISSING_REQUIRED_FIELD`
+- `BAR_TICKER_MAPPING_MISSING`
 
 ### Indicators
 - `IND_INSUFFICIENT_HISTORY`

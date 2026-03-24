@@ -22,6 +22,7 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('BAR_NON_POSITIVE_PRICE', 'BAR', 'Received price value was zero or negative in a field that must be positive.', 'HARD', 1),
 ('BAR_NEGATIVE_VOLUME', 'BAR', 'Received volume value was negative.', 'HARD', 1),
 ('BAR_MISSING_REQUIRED_FIELD', 'BAR', 'One or more mandatory source fields were missing.', 'HARD', 1),
+('BAR_TICKER_MAPPING_MISSING', 'BAR', 'Source row ticker_code could not be resolved deterministically to ticker_id via the ticker master.', 'WARN', 1),
 ('IND_INSUFFICIENT_HISTORY', 'INDICATOR', 'Required trading-day history is not yet sufficient for deterministic indicator computation.', 'WARN', 1),
 ('IND_MISSING_DEPENDENCY_BAR', 'INDICATOR', 'A required canonical bar in the trading-day dependency chain is missing.', 'HARD', 1),
 ('IND_INVALID_BAR_INPUT', 'INDICATOR', 'A canonical bar input required for indicator computation is invalid.', 'HARD', 1),
