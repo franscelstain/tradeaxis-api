@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_17_REPLAY_VERIFICATION_MINIMUM
+- Phase: SESSION_18_REPLAY_REASON_CODE_ALIGNMENT
 
 ## Current Batch
-- Batch: BATCH_17_REPLAY_VERIFICATION_MINIMUM
+- Batch: BATCH_18_REPLAY_REASON_CODE_ALIGNMENT
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- Replay verification minimum sudah selesai diimplementasikan; menunggu batch berikutnya.
+- Replay reason-code expectation alignment sedang ditutup di batch ini.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -78,6 +78,7 @@
 - Correction unchanged-rerun outcome support now has direct diff-test proof
 - Orchestrated finalize/current-pointer outcome and correction publish-path outcome now have dedicated service-level proof
 - Replay verification minimum now has fixture-aware runner/verifier proof path
+- Replay reason-code counts now participate in fixture-vs-actual comparison when fixtures declare an expected distribution
 
 ## Kontrak MISSING
 
@@ -98,6 +99,7 @@
 
 - `DOC SYNC ISSUE`: correction/reseal replacement path kini memiliki command eksekusi eksplisit dan event outcome correction publish/cancel agar pembuktian runtime dapat dilakukan tanpa memakai rerun normal yang memang harus tertahan.
 - `DOC SYNC ISSUE`: repo kini punya replay verifier minimum yang membaca fixture package dan menulis `md_replay_*`, sehingga checkpoint harus dinaikkan agar status replay tidak lagi tertulis sebagai export-only.
+- `DOC SYNC ISSUE`: replay smoke fixtures sekarang dikomit di `storage/app/market_data/replay-fixtures/**` agar proof runtime tidak bergantung pada fixture buatan manual yang rawan salah. `missing_file_case` wajib gagal dengan `Replay fixture file missing: expected/missing.json`; bila tidak, sesi replay belum boleh dianggap rapat.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
@@ -153,6 +155,8 @@
 - `app/Application/MarketData/Services/ReplayVerificationService.php`
 - `app/Console/Commands/MarketData/VerifyReplayCommand.php`
 - `tests/Unit/MarketData/ReplayVerificationServiceTest.php`
+- `storage/app/market_data/replay-fixtures/valid_case/manifest.json`
+- `storage/app/market_data/replay-fixtures/valid_case/expected/expected_reason_code_counts.json`
 ## Keputusan Desain Penting
 - Finalize post-promote verification kini tidak lagi membaca current publication melalui resolver yang mensyaratkan `eod_runs` sudah `SUCCESS/READABLE`; verification sekarang memakai pointer current + publication current + seal state yang nyata agar outcome `eod_runs` tidak deadlock menahan dirinya sendiri.
 - Candidate publication `UNSEALED` kini sah memiliki `sealed_at = NULL`; `sealed_at` baru diisi saat stage seal berhasil.
@@ -281,3 +285,8 @@
 - Batch sesi 17 menutup gap ini dengan command `market-data:replay:verify`, service pembanding fixture-aware, dan repository persistence replay result.
 - Evidence strength naik dari export-only replay support menjadi replay verification minimum yang dapat menulis `md_replay_daily_metrics` dan `md_replay_reason_code_counts` secara eksplisit.
 - Belum ada klaim palsu untuk full historical replay orchestration lintas date-range; yang ditutup pada sesi ini hanya minimum verifier/proof writer yang sah terhadap kontrak replay.
+
+## Session 18 Update
+- Replay verifier kini membandingkan `md_replay_reason_code_counts` aktual terhadap fixture-declared expected distribution bila fixture menyediakan `expected/expected_reason_code_counts.json`.
+- Empty expected reason-code set kini menjadi kontrak eksplisit, bukan asumsi implisit; `valid_case` smoke fixture dikomit ulang untuk membuktikan jalur kosong yang sah.
+- Unit-test replay kini mencakup mismatch khusus reason-code counts agar replay proof tidak hanya berhenti di status/date/seal/hash/row-count saja.

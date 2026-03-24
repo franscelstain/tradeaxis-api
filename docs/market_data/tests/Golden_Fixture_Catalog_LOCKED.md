@@ -561,6 +561,7 @@ Minimum file set:
 - `calendar_snapshot_ref.json`
 - `expected_run_summary.json`
 - `expected_hashes.json`
+- `expected_reason_code_counts.json`
 - `expected_replay_result.json`
 
 Minimum expected outputs:
@@ -591,6 +592,7 @@ Minimum file set:
 - `source_snapshot_ref.json`
 - `degradation_note.json`
 - `expected_run_summary.json`
+- `expected_reason_code_counts.json`
 - `expected_replay_result.json`
 
 Minimum expected outputs:

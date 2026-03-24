@@ -25,6 +25,7 @@ class ReplayVerificationServiceTest extends TestCase
                     'expected/expected_replay_result.json',
                     'expected/expected_run_summary.json',
                     'expected/expected_hashes.json',
+                    'expected/expected_reason_code_counts.json',
                 ],
                 'assertion_layers' => ['run', 'hash', 'replay'],
             ],
@@ -50,6 +51,9 @@ class ReplayVerificationServiceTest extends TestCase
                 'bars_batch_hash' => 'A1',
                 'indicators_batch_hash' => 'B1',
                 'eligibility_batch_hash' => 'C1',
+            ],
+            'expected/expected_reason_code_counts.json' => [
+                ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
             ],
         ]);
 
@@ -132,6 +136,7 @@ class ReplayVerificationServiceTest extends TestCase
                 'files' => [
                     'expected/expected_replay_result.json',
                     'expected/expected_run_summary.json',
+                    'expected/expected_reason_code_counts.json',
                 ],
                 'assertion_layers' => ['run', 'replay'],
             ],
@@ -147,6 +152,7 @@ class ReplayVerificationServiceTest extends TestCase
                 'hard_reject_count' => 2,
                 'eligible_count' => 0,
             ],
+            'expected/expected_reason_code_counts.json' => [],
         ]);
 
         $run = (object) [
@@ -196,6 +202,86 @@ class ReplayVerificationServiceTest extends TestCase
 
         $this->assertSame('EXPECTED_DEGRADE', $result['comparison_result']);
         $this->assertSame('none', $result['artifact_changed_scope']);
+    }
+
+    public function test_verify_replay_marks_mismatch_when_reason_code_counts_diverge()
+    {
+        $fixtureDir = $this->makeFixture([
+            'manifest' => [
+                'fixture_family' => 'fixture_replay_reason_code_mismatch',
+                'version' => 'v1',
+                'contract_areas' => ['replay'],
+                'files' => [
+                    'expected/expected_replay_result.json',
+                    'expected/expected_reason_code_counts.json',
+                ],
+                'assertion_layers' => ['replay'],
+            ],
+            'expected/expected_replay_result.json' => [
+                'comparison_result' => 'MATCH',
+                'expected_status' => 'SUCCESS',
+                'expected_trade_date_effective' => '2026-03-20',
+                'expected_seal_state' => 'SEALED',
+            ],
+            'expected/expected_reason_code_counts.json' => [
+                ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 2],
+            ],
+        ]);
+
+        $run = (object) [
+            'run_id' => 93,
+            'trade_date_requested' => '2026-03-20',
+            'trade_date_effective' => '2026-03-20',
+            'source' => 'manual_file',
+            'terminal_status' => 'SUCCESS',
+            'config_version' => 'v1',
+            'publication_version' => 4,
+            'coverage_ratio' => '1.0000',
+            'bars_rows_written' => 10,
+            'indicators_rows_written' => 10,
+            'eligibility_rows_written' => 10,
+            'invalid_bar_count' => 0,
+            'invalid_indicator_count' => 0,
+            'warning_count' => 0,
+            'hard_reject_count' => 0,
+            'bars_batch_hash' => 'A1',
+            'indicators_batch_hash' => 'B1',
+            'eligibility_batch_hash' => 'C1',
+            'sealed_at' => '2026-03-20 17:30:00',
+        ];
+        $publication = (object) [
+            'publication_id' => 45,
+            'publication_version' => 4,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-03-20 17:30:00',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(93)->andReturn($run);
+        $evidence->shouldReceive('findPublicationForRun')->once()->with(93)->andReturn($publication);
+        $evidence->shouldReceive('dominantReasonCodes')->once()->with(93, '2026-03-20', 45)->andReturn([
+            ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
+        ]);
+        $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-20', 45)->andReturn([
+            ['eligible' => 1],
+        ]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3004);
+        $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
+            return $metric['comparison_result'] === 'MISMATCH'
+                && strpos((string) $metric['mismatch_summary'], 'reason_code_counts') !== false;
+        }));
+        $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3004, '2026-03-20', [
+            ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
+        ]);
+
+        $service = new ReplayVerificationService($evidence, $publications, $replays);
+        $result = $service->verifyRunAgainstFixture(93, $fixtureDir);
+
+        $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertStringContainsString('reason_code_counts', (string) $result['mismatch_summary']);
     }
 
     public function test_verify_replay_throws_when_manifest_declares_missing_file()

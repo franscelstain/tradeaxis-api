@@ -120,6 +120,16 @@ Verify one executed market-data run against a replay fixture package and persist
 - `fixture_path` pointing to a valid fixture package with `manifest.json` and expected replay outputs
 - optional explicit `replay_id` when operator needs deterministic replay identity
 
+#### Built-in smoke fixtures
+- `storage/app/market_data/replay-fixtures/valid_case`
+- `storage/app/market_data/replay-fixtures/broken_manifest_case`
+- `storage/app/market_data/replay-fixtures/missing_file_case`
+
+Expected smoke outcomes:
+- `valid_case` must pass for a compatible completed run
+- `broken_manifest_case` must fail because required manifest fields are missing
+- `missing_file_case` must fail because `manifest.files` declares `expected/missing.json` but that file is intentionally absent
+
 #### Minimum output
 - one row in `md_replay_daily_metrics` for the verified requested date
 - synchronized `md_replay_reason_code_counts` rows
@@ -241,11 +251,13 @@ Verify one executed market-data run against a replay fixture package and persist
 #### Verify before continuing
 - `run_id` resolves to one completed execution context
 - fixture package contains `manifest.json` and required expected files
+- every entry listed under `manifest.files` resolves to an actual file in the package
 - replay intent is proof/verification, not production publication switch
 
 #### Expected outputs
 - persisted replay metric row for requested trade date
 - persisted replay reason-code counts
+- fixture-declared expected reason-code distribution now participates in replay compare, including explicit empty-set expectation
 - replay classification explains match/degrade/mismatch outcome
 
 #### Stop publish if

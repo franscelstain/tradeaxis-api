@@ -107,6 +107,7 @@ class ReplayVerificationService
             'expected_replay_result' => $this->readJsonFile(rtrim($fixturePath, '/').'/expected/expected_replay_result.json'),
             'expected_run_summary' => $this->optionalJsonFile(rtrim($fixturePath, '/').'/expected/expected_run_summary.json'),
             'expected_hashes' => $this->optionalJsonFile(rtrim($fixturePath, '/').'/expected/expected_hashes.json'),
+            'expected_reason_code_counts' => $this->optionalJsonFile(rtrim($fixturePath, '/').'/expected/expected_reason_code_counts.json'),
         ];
     }
 
@@ -158,6 +159,7 @@ class ReplayVerificationService
         $expectedReplay = $fixture['expected_replay_result'];
         $expectedRun = $fixture['expected_run_summary'] ?: [];
         $expectedHashes = $fixture['expected_hashes'] ?: [];
+        $expectedReasonCodeCounts = $fixture['expected_reason_code_counts'] ?: [];
         $expectedClass = $expectedReplay['comparison_result'] ?? 'MATCH';
 
         $mismatches = [];
@@ -176,6 +178,8 @@ class ReplayVerificationService
             $expectedValue = array_key_exists($field, $expectedHashes) ? $expectedHashes[$field] : (array_key_exists($field, $expectedReplay) ? $expectedReplay[$field] : null);
             $this->compareField($mismatches, $field, $expectedValue, $actual[$field]);
         }
+
+        $this->compareReasonCodeCounts($mismatches, $expectedReasonCodeCounts, $actual['reason_code_counts']);
 
         $artifactChangedScope = $this->resolveArtifactChangedScope($expectedHashes, $actual);
         $mismatchSummary = empty($mismatches) ? null : implode('; ', array_map(function ($item) {
@@ -241,6 +245,38 @@ class ReplayVerificationService
         }
 
         return 'multi_artifact';
+    }
+
+
+    private function compareReasonCodeCounts(array &$mismatches, array $expectedCounts, array $actualCounts)
+    {
+        if ($expectedCounts === [] || $expectedCounts === null) {
+            return;
+        }
+
+        $normalize = function (array $items) {
+            $normalized = [];
+            foreach ($items as $item) {
+                if (! is_array($item) || ! array_key_exists('reason_code', $item)) {
+                    continue;
+                }
+                $normalized[(string) $item['reason_code']] = (int) ($item['reason_count'] ?? 0);
+            }
+            ksort($normalized);
+
+            return $normalized;
+        };
+
+        $expectedNormalized = $normalize($expectedCounts);
+        $actualNormalized = $normalize($actualCounts);
+
+        if ($expectedNormalized !== $actualNormalized) {
+            $mismatches[] = [
+                'field' => 'reason_code_counts',
+                'expected' => $expectedNormalized,
+                'actual' => $actualNormalized,
+            ];
+        }
     }
 
     private function resolvePublicationForRun($run)

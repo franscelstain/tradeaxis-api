@@ -35,7 +35,7 @@ For each replayed date, record at minimum:
 - effective trade date
 - terminal status
 - row counts
-- reason-code counts
+- reason-code counts compared against expected fixture distribution
 - bars/indicators/eligibility hashes
 - seal state
 - comparison result vs expected output
