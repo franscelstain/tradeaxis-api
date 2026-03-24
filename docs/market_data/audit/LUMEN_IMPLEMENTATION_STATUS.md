@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_29_CORRECTION_FINALIZE_ORDER_SYNC
+- Phase: SESSION_30_CORRECTION_COMMAND_SURFACE_PROOF
 
 ## Current Batch
-- Batch: BATCH_29_CORRECTION_FINALIZE_ORDER_SYNC
+- Batch: BATCH_30_CORRECTION_COMMAND_SURFACE_PROOF
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -54,9 +54,10 @@
 - Batch 27 market-data unit-test config harness sync
 - Batch 28 correction outcome note sync
 - Batch 29 correction finalize-order sync
+- Batch 30 correction command-surface proof
 
 ## Area yang Sedang Dikerjakan
-- Batch ini menutup `DOC SYNC ISSUE` pada correction finalize path: status correction final dan `final_outcome_note` sebelumnya dipersist terlalu dini sebelum outcome finalize benar-benar di-resolve, sehingga runtime nyata bisa menunjukkan publication sudah current tetapi correction masih `RESEALED` dan note final `NULL`.
+- Batch ini menutup partial proof pada ops/correction command surface: request, approve, dan run correction sekarang punya proof test langsung pada command layer sehingga guard status dan summary output operator tidak hanya dibuktikan lewat runtime manual atau service layer.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -314,3 +315,8 @@
 ## Session 29 Update
 - Runtime lokal correction nyata membuktikan publication baru sudah `is_current=1` dan current pointer sudah pindah, tetapi correction masih `RESEALED` dengan `final_outcome_note = NULL`; akar masalahnya adalah `MarketDataPipelineService::completeFinalize()` mempersist `markPublished/markCancelled` sebelum outcome finalize selesai di-resolve.
 - Sesi 29 memindahkan persist correction final state ke setelah `PublicationFinalizeOutcomeService::resolve()` dan menambahkan orchestrated finalize tests untuk jalur `PUBLISHED`, `CANCELLED`, dan conflict/hold agar mismatch ordering ini tidak diam-diam kembali lagi.
+
+
+## Session 30 Update
+- Added direct command-surface proof for `market-data:correction:request`, `market-data:correction:approve`, and `market-data:correction:run`.
+- The new tests verify request/approval summaries, approved-only execution guard, and final correction status rendering so operator-facing correction flow is now proven beyond manual runtime logs.

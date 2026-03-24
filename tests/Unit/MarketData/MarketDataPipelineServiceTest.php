@@ -70,7 +70,11 @@ class MarketDataPipelineServiceTest extends TestCase
 
     public function test_complete_finalize_marks_correction_published_with_final_outcome_note_after_outcome_resolution(): void
     {
+        [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs] = $this->makeService();
+
         $run = $this->makeRun(55);
+        $run->notes = null;
+        $run->supersedes_run_id = null;
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
 
@@ -84,6 +88,7 @@ class MarketDataPipelineServiceTest extends TestCase
             'publication_id' => 32,
             'run_id' => 55,
             'publication_version' => 4,
+            'seal_state' => 'SEALED',
         ];
 
         $correction = (object) [
@@ -91,65 +96,93 @@ class MarketDataPipelineServiceTest extends TestCase
             'status' => 'RESEALED',
         ];
 
-        $this->runs->shouldReceive('findByRunId')
+        $runs->shouldReceive('findByRunId')
             ->once()
             ->with(55)
             ->andReturn($run);
 
-        $this->runs->shouldReceive('appendEvent')
-            ->zeroOrMoreTimes();
+        $corrections->shouldReceive('requireApprovedForTradeDate')
+            ->once()
+            ->with(4, '2026-03-17')
+            ->andReturn($correction);
 
-        $this->runs->shouldReceive('failStage')
-            ->never();
-
-        $this->publications->shouldReceive('findCurrentPublicationForTradeDate')
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
             ->once()
             ->with('2026-03-17')
             ->andReturn($priorCurrent);
 
-        $this->publications->shouldReceive('findCandidatePublicationByRunId')
+        $runs->shouldReceive('touchStage')
             ->once()
-            ->with(55)
-            ->andReturn($candidatePublication);
+            ->with($run, 'FINALIZE', m::type('array'))
+            ->andReturn($run);
 
-        $this->corrections->shouldReceive('findByRunId')
-            ->once()
-            ->with(55)
-            ->andReturn($correction);
+        $runs->shouldReceive('appendEvent')
+            ->zeroOrMoreTimes();
 
-        $this->publicationDiffs->shouldReceive('isUnchanged')
-            ->once()
-            ->with($priorCurrent, $candidatePublication)
-            ->andReturn(false);
+        $runs->shouldReceive('failStage')
+            ->never();
 
-        $this->artifacts->shouldReceive('promotePublicationHistoryToCurrent')
-            ->once()
-            ->with('2026-03-17', 32, 55);
-
-        $this->publications->shouldReceive('promoteCandidateToCurrent')
-            ->once()
-            ->with($run, 31);
-
-        $this->runs->shouldReceive('syncCurrentPublicationMirror')
-            ->once()
-            ->with('2026-03-17', 55);
-
-        $this->publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
+        $publications->shouldReceive('findLatestReadablePublicationBefore')
             ->once()
             ->with('2026-03-17')
+            ->andReturn(null);
+
+        $publications->shouldReceive('getOrCreateCandidatePublication')
+            ->once()
+            ->with($run, 31)
             ->andReturn($candidatePublication);
 
-        $this->finalizeDecisions->shouldReceive('decide')
+        $finalizeDecisions->shouldReceive('evaluate')
             ->once()
             ->andReturn([
                 'promotion_allowed' => true,
                 'terminal_status' => 'SUCCESS',
                 'publishability_state' => 'READABLE',
+                'trade_date_effective' => null,
+                'quality_gate_state' => 'PASS',
                 'reason_code' => null,
                 'message' => 'Finalize succeeded.',
             ]);
 
-        $this->corrections->shouldReceive('markPublished')
+        $publicationDiffs->shouldReceive('isUnchanged')
+            ->once()
+            ->with($priorCurrent, $candidatePublication)
+            ->andReturn(false);
+
+        $artifacts->shouldReceive('promotePublicationHistoryToCurrent')
+            ->once()
+            ->with('2026-03-17', 32, 55);
+
+        $publications->shouldReceive('promoteCandidateToCurrent')
+            ->once()
+            ->with($run, 31);
+
+        $runs->shouldReceive('syncCurrentPublicationMirror')
+            ->once()
+            ->with('2026-03-17', 55);
+
+        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn($candidatePublication);
+
+        $runs->shouldReceive('finalize')
+            ->once()
+            ->with($run, [
+                'trade_date_effective' => '2026-03-17',
+                'quality_gate_state' => 'PASS',
+                'publishability_state' => 'READABLE',
+                'terminal_status' => 'SUCCESS',
+                'lifecycle_state' => 'COMPLETED',
+            ])
+            ->andReturn($run);
+
+        $publications->shouldReceive('buildManifestByPublicationId')
+            ->once()
+            ->with(32)
+            ->andReturn((object) ['publication_id' => 32]);
+
+        $corrections->shouldReceive('markPublished')
             ->once()
             ->with(
                 4,
@@ -158,24 +191,20 @@ class MarketDataPipelineServiceTest extends TestCase
                 'Historical correction published safely via new sealed current publication.'
             );
 
-        $this->corrections->shouldReceive('markCancelled')->never();
-
-        $service = $this->makeService();
+        $corrections->shouldReceive('markCancelled')->never();
 
         $result = $service->completeFinalize($input);
 
-        $this->assertSame('SUCCESS', $result['terminal_status']);
-        $this->assertSame('READABLE', $result['publishability_state']);
-        $this->assertSame('PUBLISHED', $result['correction_outcome']);
-        $this->assertSame(
-            'Historical correction published safely via new sealed current publication.',
-            $result['correction_outcome_note']
-        );
+        $this->assertSame($run, $result);
     }
 
     public function test_complete_finalize_marks_correction_cancelled_with_final_outcome_note_when_content_is_unchanged(): void
     {
+        [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs] = $this->makeService();
+
         $run = $this->makeRun(55);
+        $run->notes = null;
+        $run->supersedes_run_id = null;
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
 
@@ -189,6 +218,7 @@ class MarketDataPipelineServiceTest extends TestCase
             'publication_id' => 32,
             'run_id' => 55,
             'publication_version' => 4,
+            'seal_state' => 'SEALED',
         ];
 
         $correction = (object) [
@@ -196,52 +226,80 @@ class MarketDataPipelineServiceTest extends TestCase
             'status' => 'RESEALED',
         ];
 
-        $this->runs->shouldReceive('findByRunId')
+        $runs->shouldReceive('findByRunId')
             ->once()
             ->with(55)
             ->andReturn($run);
 
-        $this->runs->shouldReceive('appendEvent')
-            ->zeroOrMoreTimes();
+        $corrections->shouldReceive('requireApprovedForTradeDate')
+            ->once()
+            ->with(4, '2026-03-17')
+            ->andReturn($correction);
 
-        $this->runs->shouldReceive('failStage')
-            ->never();
-
-        $this->publications->shouldReceive('findCurrentPublicationForTradeDate')
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
             ->once()
             ->with('2026-03-17')
             ->andReturn($priorCurrent);
 
-        $this->publications->shouldReceive('findCandidatePublicationByRunId')
+        $runs->shouldReceive('touchStage')
             ->once()
-            ->with(55)
+            ->with($run, 'FINALIZE', m::type('array'))
+            ->andReturn($run);
+
+        $runs->shouldReceive('appendEvent')
+            ->zeroOrMoreTimes();
+
+        $runs->shouldReceive('failStage')
+            ->never();
+
+        $publications->shouldReceive('findLatestReadablePublicationBefore')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn(null);
+
+        $publications->shouldReceive('getOrCreateCandidatePublication')
+            ->once()
+            ->with($run, 31)
             ->andReturn($candidatePublication);
 
-        $this->corrections->shouldReceive('findByRunId')
-            ->once()
-            ->with(55)
-            ->andReturn($correction);
-
-        $this->publicationDiffs->shouldReceive('isUnchanged')
-            ->once()
-            ->with($priorCurrent, $candidatePublication)
-            ->andReturn(true);
-
-        $this->publications->shouldReceive('discardCandidatePublication')
-            ->once()
-            ->with(32);
-
-        $this->finalizeDecisions->shouldReceive('decide')
+        $finalizeDecisions->shouldReceive('evaluate')
             ->once()
             ->andReturn([
                 'promotion_allowed' => true,
                 'terminal_status' => 'SUCCESS',
                 'publishability_state' => 'READABLE',
+                'trade_date_effective' => null,
+                'quality_gate_state' => 'PASS',
                 'reason_code' => null,
                 'message' => 'Finalize succeeded.',
             ]);
 
-        $this->corrections->shouldReceive('markCancelled')
+        $publicationDiffs->shouldReceive('isUnchanged')
+            ->once()
+            ->with($priorCurrent, $candidatePublication)
+            ->andReturn(true);
+
+        $publications->shouldReceive('discardCandidatePublication')
+            ->once()
+            ->with(32);
+
+        $runs->shouldReceive('finalize')
+            ->once()
+            ->with($run, [
+                'trade_date_effective' => '2026-03-17',
+                'quality_gate_state' => 'PASS',
+                'publishability_state' => 'READABLE',
+                'terminal_status' => 'SUCCESS',
+                'lifecycle_state' => 'COMPLETED',
+            ])
+            ->andReturn($run);
+
+        $publications->shouldReceive('buildManifestByPublicationId')
+            ->once()
+            ->with(31)
+            ->andReturn((object) ['publication_id' => 31]);
+
+        $corrections->shouldReceive('markCancelled')
             ->once()
             ->with(
                 4,
@@ -250,24 +308,20 @@ class MarketDataPipelineServiceTest extends TestCase
                 'Correction rerun produced unchanged content; current publication preserved without version switch.'
             );
 
-        $this->corrections->shouldReceive('markPublished')->never();
-
-        $service = $this->makeService();
+        $corrections->shouldReceive('markPublished')->never();
 
         $result = $service->completeFinalize($input);
 
-        $this->assertSame('SUCCESS', $result['terminal_status']);
-        $this->assertSame('READABLE', $result['publishability_state']);
-        $this->assertSame('CANCELLED', $result['correction_outcome']);
-        $this->assertSame(
-            'Correction rerun produced unchanged content; current publication preserved without version switch.',
-            $result['correction_outcome_note']
-        );
+        $this->assertSame($run, $result);
     }
 
     public function test_complete_finalize_keeps_resealed_when_finalize_outcome_is_conflict(): void
     {
+        [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs] = $this->makeService();
+
         $run = $this->makeRun(55);
+        $run->notes = null;
+        $run->supersedes_run_id = null;
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
 
@@ -281,11 +335,11 @@ class MarketDataPipelineServiceTest extends TestCase
             'publication_id' => 32,
             'run_id' => 55,
             'publication_version' => 4,
+            'seal_state' => 'SEALED',
         ];
 
         $conflictingCurrent = (object) [
             'publication_id' => 99,
-            'run_id' => 99,
             'publication_version' => 9,
         ];
 
@@ -294,76 +348,96 @@ class MarketDataPipelineServiceTest extends TestCase
             'status' => 'RESEALED',
         ];
 
-        $this->runs->shouldReceive('findByRunId')
+        $runs->shouldReceive('findByRunId')
             ->once()
             ->with(55)
             ->andReturn($run);
 
-        $this->runs->shouldReceive('appendEvent')
-            ->zeroOrMoreTimes();
+        $corrections->shouldReceive('requireApprovedForTradeDate')
+            ->once()
+            ->with(4, '2026-03-17')
+            ->andReturn($correction);
 
-        $this->runs->shouldReceive('failStage')
-            ->never();
-
-        $this->publications->shouldReceive('findCurrentPublicationForTradeDate')
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
             ->once()
             ->with('2026-03-17')
             ->andReturn($priorCurrent);
 
-        $this->publications->shouldReceive('findCandidatePublicationByRunId')
+        $runs->shouldReceive('touchStage')
             ->once()
-            ->with(55)
+            ->with($run, 'FINALIZE', m::type('array'))
+            ->andReturn($run);
+
+        $runs->shouldReceive('appendEvent')
+            ->zeroOrMoreTimes();
+
+        $runs->shouldReceive('failStage')
+            ->never();
+
+        $publications->shouldReceive('findLatestReadablePublicationBefore')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn(null);
+
+        $publications->shouldReceive('getOrCreateCandidatePublication')
+            ->once()
+            ->with($run, 31)
             ->andReturn($candidatePublication);
 
-        $this->corrections->shouldReceive('findByRunId')
+        $finalizeDecisions->shouldReceive('evaluate')
             ->once()
-            ->with(55)
-            ->andReturn($correction);
+            ->andReturn([
+                'promotion_allowed' => true,
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'trade_date_effective' => null,
+                'quality_gate_state' => 'PASS',
+                'reason_code' => null,
+                'message' => 'Finalize succeeded.',
+            ]);
 
-        $this->publicationDiffs->shouldReceive('isUnchanged')
+        $publicationDiffs->shouldReceive('isUnchanged')
             ->once()
             ->with($priorCurrent, $candidatePublication)
             ->andReturn(false);
 
-        $this->artifacts->shouldReceive('promotePublicationHistoryToCurrent')
+        $artifacts->shouldReceive('promotePublicationHistoryToCurrent')
             ->once()
             ->with('2026-03-17', 32, 55);
 
-        $this->publications->shouldReceive('promoteCandidateToCurrent')
+        $publications->shouldReceive('promoteCandidateToCurrent')
             ->once()
             ->with($run, 31);
 
-        $this->runs->shouldReceive('syncCurrentPublicationMirror')
+        $runs->shouldReceive('syncCurrentPublicationMirror')
             ->once()
             ->with('2026-03-17', 55);
 
-        $this->publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
+        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
             ->once()
             ->with('2026-03-17')
             ->andReturn($conflictingCurrent);
 
-        $this->finalizeDecisions->shouldReceive('decide')
+        $runs->shouldReceive('finalize')
             ->once()
-            ->andReturn([
-                'promotion_allowed' => true,
-                'terminal_status' => 'HELD',
+            ->with($run, [
+                'trade_date_effective' => null,
+                'quality_gate_state' => 'PASS',
                 'publishability_state' => 'NOT_READABLE',
-                'reason_code' => 'RUN_LOCK_CONFLICT',
-                'message' => 'Finalize held due to conflicting current publication state.',
-            ]);
+                'terminal_status' => 'HELD',
+                'lifecycle_state' => 'COMPLETED',
+            ])
+            ->andReturn($run);
 
-        $this->corrections->shouldReceive('markPublished')->never();
-        $this->corrections->shouldReceive('markCancelled')->never();
+        $publications->shouldReceive('buildManifestByPublicationId')
+            ->never();
 
-        $service = $this->makeService();
+        $corrections->shouldReceive('markPublished')->never();
+        $corrections->shouldReceive('markCancelled')->never();
 
         $result = $service->completeFinalize($input);
 
-        $this->assertSame('HELD', $result['terminal_status']);
-        $this->assertSame('NOT_READABLE', $result['publishability_state']);
-        $this->assertSame('RUN_LOCK_CONFLICT', $result['reason_code']);
-        $this->assertNull($result['correction_outcome']);
-        $this->assertNull($result['correction_outcome_note']);
+        $this->assertSame($run, $result);
     }
 
     private function makeService(): array
