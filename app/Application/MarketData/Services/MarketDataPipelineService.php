@@ -270,7 +270,6 @@ class MarketDataPipelineService
                     if ($correction && $this->publicationDiffs->isUnchanged($priorCurrent, $candidatePublication)) {
                         $unchangedCorrection = true;
                         $this->publications->discardCandidatePublication($candidatePublication->publication_id);
-                        $this->corrections->markCancelled($correction->correction_id, $run->run_id, $priorCurrent ? $priorCurrent->run_id : null, $outcome['correction_outcome_note']);
                         $candidateCurrent = $priorCurrent;
                         $this->runs->appendEvent($run, $input->stage, 'CORRECTION_CANCELLED', 'INFO', 'Correction content unchanged; current publication preserved.', null, [
                             'correction_id' => (int) $correction->correction_id,
@@ -284,15 +283,6 @@ class MarketDataPipelineService
                         $this->publications->promoteCandidateToCurrent($run, $priorCurrent ? $priorCurrent->publication_id : null);
                         $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id);
                         $candidateCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
-                        if ($correction && $candidateCurrent && (int) $candidateCurrent->publication_id === (int) $candidatePublication->publication_id) {
-                            $this->corrections->markPublished($correction->correction_id, $run->run_id, $priorCurrent ? $priorCurrent->run_id : null, $outcome['correction_outcome_note']);
-                            $this->runs->appendEvent($run, $input->stage, 'CORRECTION_PUBLISHED', 'INFO', 'Historical correction replaced current publication safely.', null, [
-                                'correction_id' => (int) $correction->correction_id,
-                                'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
-                                'current_publication_id' => (int) $candidateCurrent->publication_id,
-                                'current_publication_version' => (int) $candidateCurrent->publication_version,
-                            ]);
-                        }
                     }
                 } catch (\Throwable $e) {
                     $promotionError = $e->getMessage();
@@ -329,6 +319,30 @@ class MarketDataPipelineService
                     'publication_id' => $resolvedPublicationId,
                     'publication_version' => $resolvedPublicationVersion,
                 ];
+            }
+
+            if ($correction) {
+                if ($outcome['correction_outcome'] === 'CANCELLED') {
+                    $this->corrections->markCancelled(
+                        $correction->correction_id,
+                        $run->run_id,
+                        $priorCurrent ? $priorCurrent->run_id : null,
+                        $outcome['correction_outcome_note']
+                    );
+                } elseif ($outcome['correction_outcome'] === 'PUBLISHED') {
+                    $this->corrections->markPublished(
+                        $correction->correction_id,
+                        $run->run_id,
+                        $priorCurrent ? $priorCurrent->run_id : null,
+                        $outcome['correction_outcome_note']
+                    );
+                    $this->runs->appendEvent($run, $input->stage, 'CORRECTION_PUBLISHED', 'INFO', 'Historical correction replaced current publication safely.', null, [
+                        'correction_id' => (int) $correction->correction_id,
+                        'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                        'current_publication_id' => $resolvedPublicationId ? (int) $resolvedPublicationId : null,
+                        'current_publication_version' => $resolvedPublicationVersion ? (int) $resolvedPublicationVersion : null,
+                    ]);
+                }
             }
 
             $manifest = $resolvedPublicationId ? $this->publications->buildManifestByPublicationId($resolvedPublicationId) : null;

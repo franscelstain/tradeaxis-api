@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_28_CORRECTION_OUTCOME_NOTE_SYNC
+- Phase: SESSION_29_CORRECTION_FINALIZE_ORDER_SYNC
 
 ## Current Batch
-- Batch: BATCH_28_CORRECTION_OUTCOME_NOTE_SYNC
+- Batch: BATCH_29_CORRECTION_FINALIZE_ORDER_SYNC
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -53,9 +53,10 @@
 - Batch 26 ticker mapping reason-code sync
 - Batch 27 market-data unit-test config harness sync
 - Batch 28 correction outcome note sync
+- Batch 29 correction finalize-order sync
 
 ## Area yang Sedang Dikerjakan
-- Batch ini menutup `DOC GAP` lama pada correction metadata agar `eod_dataset_corrections` menyimpan `final_outcome_note` terpisah, sinkron dengan contract owner dan correction evidence export.
+- Batch ini menutup `DOC SYNC ISSUE` pada correction finalize path: status correction final dan `final_outcome_note` sebelumnya dipersist terlalu dini sebelum outcome finalize benar-benar di-resolve, sehingga runtime nyata bisa menunjukkan publication sudah current tetapi correction masih `RESEALED` dan note final `NULL`.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -92,7 +93,7 @@
 
 
 ## Kontrak CONFLICT
-- Tidak ada conflict baru yang dibuka pada sesi 28.
+- Tidak ada conflict baru yang dibuka pada sesi 29.
 
 ## DOC GAP / DOC CONFLICT / DOC SYNC ISSUE
 - `DOC SYNC ISSUE`: runtime lokal membuktikan mismatch schema/runtime pada `eod_publications.sealed_at` dan truncation pada `eod_run_events.message`; checkpoint dinaikkan agar status sesi 11 sinkron dengan bugfix nyata.
@@ -112,18 +113,11 @@
 - `DOC SYNC ISSUE`: docs mengunci `market-data:session-snapshot` dan `market-data:session-snapshot:purge`, tetapi source repo sesi 22 belum memiliki command/runtime minimumnya. Sesi 23 menutup mismatch ini dengan session snapshot capture minimum berbasis readable current publication + eligibility scope + retention purge summary.
 - `DOC SYNC ISSUE`: runtime/source sesi 23 masih memakai default session-snapshot yang melenceng dari kontrak LOCKED (retention 7 hari, scope label `universe_only`, tolerance 5 menit). Sesi 24 menutup mismatch ini dengan default resmi 30 hari, `eligibility_set`, tolerance 3 menit, dan purge summary yang menuliskan apakah cutoff berasal dari `before_date` eksplisit atau retention default.
 - `DOC SYNC ISSUE`: kontrak backtest/replay masih menuntut historical replay lintas trading-date yang resumable, tetapi source repo sesi 24 belum punya runtime minimumnya. Sesi 25 menutup mismatch ini dengan `market-data:replay:backfill` berbasis `market_calendar` + current readable publication + summary artifact.
+- `DOC SYNC ISSUE`: runtime lokal pada correction nyata membuktikan publication baru sudah `is_current=1` dan current pointer sudah pindah, tetapi `eod_dataset_corrections` masih `RESEALED` dengan `final_outcome_note = NULL` karena `MarketDataPipelineService::completeFinalize()` mempersist status correction final sebelum outcome finalize di-resolve. Sesi 29 menutup mismatch ini dengan memindahkan `markPublished/markCancelled` ke setelah resolver outcome final dan menambah proof test orkestrasi finalize.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
-- `app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php`
 - `app/Application/MarketData/Services/MarketDataPipelineService.php`
-- `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
-- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
-- `database/migrations/2026_03_24_000003_add_final_outcome_note_to_eod_dataset_corrections.php`
-- `tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`
-- `tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php`
-- `docs/market_data/book/Historical_Correction_and_Reseal_Contract_LOCKED.md`
-- `docs/market_data/db/Database_Schema_MariaDB.sql`
-- `docs/market_data/ops/Audit_Query_Cookbook_LOCKED.md`
+- `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
 - `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
 - `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
 
@@ -139,6 +133,7 @@
 - Correction/reseal kini dibuka hanya lewat flow terkontrol: request -> approval -> executing -> resealed -> published/cancelled, dengan baseline current publication disnapshot dulu ke immutable history sebelum publish replacement diizinkan.
 - Untuk correction, artifact candidate requested-date tidak lagi menimpa current-state table selama eksekusi; candidate ditulis ke `*_history` publication-bound snapshot lalu baru dipromosikan ke current-state saat publish aman.
 - Unchanged-content correction rerun tidak melakukan publication switch; current publication lama dipertahankan dan correction ditutup sebagai non-published audit rerun.
+- Correction final state (`PUBLISHED` / `CANCELLED`) dan `final_outcome_note` kini hanya boleh dipersist setelah `PublicationFinalizeOutcomeService::resolve()` menentukan outcome final; stage seal tetap boleh menandai `RESEALED` sebagai state sementara, tetapi finalize wajib overwrite ke state akhir yang sinkron dengan publication/pointer result nyata.
 - Evidence export runtime sekarang tersedia untuk run evidence pack dan correction evidence pack minimum melalui command khusus, tanpa mengubah owner contract atau memutihkan state yang belum readable.
 - Penambahan adapter `api` untuk public/free API pull dengan retry/backoff/throttle+jitter dasar, configurable field mapping, dan klasifikasi error akuisisi yang tetap reason-coded di event trail.
 - Hash determinism kini dipusatkan pada service khusus agar serialization proof bisa diuji langsung tanpa bergantung pada query builder atau event trail.
@@ -156,20 +151,20 @@
   - editorial:
     - checkpoint sesi 26 dinaikkan agar repo state terbaru untuk registry/ingest bars tercermin akurat
   - claim-boundary yang sah:
-    - correction replacement kini sudah punya flow request/approval/reseal/publish yang aman terhadap current-state, sesi 6 menambah run/correction evidence export serta test minimum, sesi 7 menambah replay evidence export runtime, sesi 8 menambah direct proof logic inti, dan sesi 9 menambah proof orchestrated finalize/current-pointer outcome serta correction publish-path outcome, dan sesi 10 menambah source mode `api` berbasis adapter public/free API pull. Namun full DB-backed integration matrix dan final outcome note column khusus masih belum boleh di-claim selesai
+    - correction replacement kini sudah punya flow request/approval/reseal/publish yang aman terhadap current-state, sesi 6 menambah run/correction evidence export serta test minimum, sesi 7 menambah replay evidence export runtime, sesi 8 menambah direct proof logic inti, dan sesi 9 menambah proof orchestrated finalize/current-pointer outcome serta correction publish-path outcome, dan sesi 10 menambah source mode `api` berbasis adapter public/free API pull. Namun full DB-backed integration matrix dan broader full DB-backed integration matrix masih belum boleh di-claim selesai
 
 ## Next Recommended Batch
+- Verifikasi runtime lokal correction publish/cancel setelah patch sesi 29 agar status correction final + `final_outcome_note` terbukti sinkron dengan publication/current pointer nyata
 - Lengkapi full DB-backed integration matrix untuk current-pointer/finalize/correction publish path
-- Tutup gap correction final outcome note bila memang tetap diwajibkan oleh owner contract atau tandai `DOC GAP` permanen bila schema owner sengaja tidak menyediakannya
 - Audit ulang sinkronisasi docs/code setelah partial contracts yang tersisa dikerjakan
 
 ## Blocker Nyata
-- Tidak ada blocker desain untuk melanjutkan sesi 27.
-- Validasi eksekusi command di container ini tetap terbatas karena `vendor/` tidak disertakan pada ZIP terbaru.
+- Tidak ada blocker desain untuk melanjutkan sesi 30.
+- Validasi phpunit/runtime di container ini tetap terbatas karena `vendor/` tidak disertakan pada ZIP terbaru.
 
 ## Artifact History
-- ZIP latest: `tradeaxis-api_session25_batch25_replay-backfill-minimum.zip`
-- ZIP status: checkpoint source-of-truth terbaru sebelum sesi 26
+- ZIP latest: `tradeaxis-api_session29_batch29_correction-finalize-order-sync.zip`
+- ZIP status: checkpoint source-of-truth terbaru setelah sesi 29
 
 ## Update Log
 ### Entry 0
@@ -314,3 +309,8 @@
 ## Session 28 Update
 - Menutup `DOC GAP` lama pada correction minimum metadata dengan menambahkan kolom schema owner `eod_dataset_corrections.final_outcome_note` beserta migration incremental untuk repo existing.
 - Correction publish/cancel runtime kini menulis operator-readable outcome note terpisah dari status, evidence export correction kini mengekspor note itu, dan direct proof layer diperketat agar note tidak hilang diam-diam.
+
+
+## Session 29 Update
+- Runtime lokal correction nyata membuktikan publication baru sudah `is_current=1` dan current pointer sudah pindah, tetapi correction masih `RESEALED` dengan `final_outcome_note = NULL`; akar masalahnya adalah `MarketDataPipelineService::completeFinalize()` mempersist `markPublished/markCancelled` sebelum outcome finalize selesai di-resolve.
+- Sesi 29 memindahkan persist correction final state ke setelah `PublicationFinalizeOutcomeService::resolve()` dan menambahkan orchestrated finalize tests untuk jalur `PUBLISHED`, `CANCELLED`, dan conflict/hold agar mismatch ordering ini tidak diam-diam kembali lagi.
