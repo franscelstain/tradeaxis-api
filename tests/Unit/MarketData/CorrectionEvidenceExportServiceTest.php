@@ -24,6 +24,7 @@ class CorrectionEvidenceExportServiceTest extends TestCase
             'prior_publication_id' => 1188,
             'new_publication_id' => 1201,
             'status' => 'PUBLISHED',
+            'final_outcome_note' => 'Historical correction published safely via new sealed current publication.',
         ];
         $priorPublication = (object) [
             'publication_id' => 1188,
@@ -64,5 +65,6 @@ class CorrectionEvidenceExportServiceTest extends TestCase
         $this->assertSame('H1B', $payload['old_hashes']['bars_batch_hash']);
         $this->assertSame('H2B', $payload['new_hashes']['bars_batch_hash']);
         $this->assertTrue($payload['publication_switch']);
+        $this->assertStringContainsString('Historical correction published safely', $payload['final_outcome_note']);
     }
 }

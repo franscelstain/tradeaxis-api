@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_26_TICKER_MAPPING_REASON_CODE_SYNC
+- Phase: SESSION_28_CORRECTION_OUTCOME_NOTE_SYNC
 
 ## Current Batch
-- Batch: BATCH_26_TICKER_MAPPING_REASON_CODE_SYNC
+- Batch: BATCH_28_CORRECTION_OUTCOME_NOTE_SYNC
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -51,9 +51,11 @@
 - Batch 4 publication current switch / pointer sync / finalize guard
 - Batch 5 correction request / approval / reseal / publish runtime
 - Batch 26 ticker mapping reason-code sync
+- Batch 27 market-data unit-test config harness sync
+- Batch 28 correction outcome note sync
 
 ## Area yang Sedang Dikerjakan
-- Batch ini menutup gap lama registry/ingest bars agar source row dengan `ticker_code` unmapped tidak lagi mematikan seluruh ingest dan tetap tercatat sebagai invalid evidence yang sah.
+- Batch ini menutup `DOC GAP` lama pada correction metadata agar `eod_dataset_corrections` menyimpan `final_outcome_note` terpisah, sinkron dengan contract owner dan correction evidence export.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -90,11 +92,10 @@
 
 
 ## Kontrak CONFLICT
-- Tidak ada conflict baru yang dibuka pada sesi 26.
+- Tidak ada conflict baru yang dibuka pada sesi 28.
 
 ## DOC GAP / DOC CONFLICT / DOC SYNC ISSUE
 - `DOC SYNC ISSUE`: runtime lokal membuktikan mismatch schema/runtime pada `eod_publications.sealed_at` dan truncation pada `eod_run_events.message`; checkpoint dinaikkan agar status sesi 11 sinkron dengan bugfix nyata.
-- `DOC GAP`: contract correction minimum metadata meminta final correction outcome note, tetapi schema owner `eod_dataset_corrections` belum menyediakan kolom outcome note terpisah. Runtime sesi 5 masih menyimpan outcome melalui status + run events, bukan kolom final note khusus.
 - `DOC SYNC ISSUE`: checkpoint dinaikkan agar state repo sesi 6 sinkron dengan contract-test minimum dan evidence-export runtime yang kini sudah nyata di code.
 - `DOC SYNC ISSUE`: checkpoint dinaikkan agar state repo sesi 7 sinkron dengan replay evidence export runtime yang kini sudah nyata di code.
 - `DOC SYNC ISSUE`: checkpoint dinaikkan agar state repo sesi 9 sinkron dengan proof orchestrated finalize/current-pointer outcome dan correction publish-path outcome yang kini sudah nyata di code.
@@ -113,12 +114,16 @@
 - `DOC SYNC ISSUE`: kontrak backtest/replay masih menuntut historical replay lintas trading-date yang resumable, tetapi source repo sesi 24 belum punya runtime minimumnya. Sesi 25 menutup mismatch ini dengan `market-data:replay:backfill` berbasis `market_calendar` + current readable publication + summary artifact.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
-- `app/Application/MarketData/Services/EodBarsIngestService.php`
-- `tests/Unit/MarketData/EodBarsIngestServiceTest.php`
-- `docs/market_data/registry/Reason_Codes_Registry.md`
-- `docs/market_data/registry/Reason_Codes_Seed.sql`
-- `docs/market_data/ops/Error_Taxonomy_and_Run_Status_Decision_Table_LOCKED.md`
-- `docs/market_data/book/Source_Mapping_Contract_LOCKED.md`
+- `app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php`
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
+- `database/migrations/2026_03_24_000003_add_final_outcome_note_to_eod_dataset_corrections.php`
+- `tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`
+- `tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php`
+- `docs/market_data/book/Historical_Correction_and_Reseal_Contract_LOCKED.md`
+- `docs/market_data/db/Database_Schema_MariaDB.sql`
+- `docs/market_data/ops/Audit_Query_Cookbook_LOCKED.md`
 - `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
 - `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
 
@@ -304,3 +309,8 @@
 - Manual local proof from the user showed the new session-26 unit test passed only after binding Lumen `config` into pure PHPUnit test container, while adjacent market-data unit tests with the same runtime dependency still failed before reaching business assertions.
 - Sesi 27 menutup gap bootstrap test itu dengan helper bersama `tests/Support/InteractsWithMarketDataConfig.php` dan menyinkronkan market-data unit tests yang memanggil service/adapter berbasis `config()` agar tidak lagi pecah pada `Target class [config] does not exist`.
 - Scope tetap sempit: ini bukan fitur market-data baru, melainkan hardening proof layer supaya unit-test minimum untuk backfill/replay/session-snapshot/source adapter bisa benar-benar mengeksekusi logika yang diklaim.
+
+
+## Session 28 Update
+- Menutup `DOC GAP` lama pada correction minimum metadata dengan menambahkan kolom schema owner `eod_dataset_corrections.final_outcome_note` beserta migration incremental untuk repo existing.
+- Correction publish/cancel runtime kini menulis operator-readable outcome note terpisah dari status, evidence export correction kini mengekspor note itu, dan direct proof layer diperketat agar note tidak hilang diam-diam.

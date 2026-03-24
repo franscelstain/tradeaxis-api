@@ -24,6 +24,7 @@ class EodCorrectionRepository
             'approved_by' => null,
             'approved_at' => null,
             'published_at' => null,
+            'final_outcome_note' => null,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -100,7 +101,7 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
-    public function markPublished($correctionId, $newRunId, $priorRunId = null)
+    public function markPublished($correctionId, $newRunId, $priorRunId = null, $finalOutcomeNote = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -108,6 +109,7 @@ class EodCorrectionRepository
             'status' => 'PUBLISHED',
             'new_run_id' => $newRunId,
             'published_at' => $now,
+            'final_outcome_note' => $finalOutcomeNote,
             'updated_at' => $now,
         ];
 
@@ -122,7 +124,7 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
-    public function markRejected($correctionId)
+    public function markRejected($correctionId, $finalOutcomeNote = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -130,19 +132,21 @@ class EodCorrectionRepository
             ->where('correction_id', $correctionId)
             ->update([
                 'status' => 'REJECTED',
+                'final_outcome_note' => $finalOutcomeNote,
                 'updated_at' => $now,
             ]);
 
         return $this->findById($correctionId);
     }
 
-    public function markCancelled($correctionId, $newRunId = null, $priorRunId = null)
+    public function markCancelled($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         $payload = [
             'status' => 'CANCELLED',
             'new_run_id' => $newRunId,
+            'final_outcome_note' => $finalOutcomeNote,
             'updated_at' => $now,
         ];
 

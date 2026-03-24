@@ -93,6 +93,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         $this->assertSame(55, $state['current_publication_id']);
         $this->assertSame('CANCELLED', $state['correction_outcome']);
         $this->assertStringContainsString('unchanged content', $state['message']);
+        $this->assertStringContainsString('unchanged content', $state['correction_outcome_note']);
     }
 
     public function test_correction_changed_marks_published_after_current_pointer_matches_candidate()
@@ -125,5 +126,6 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         $this->assertSame(99, $state['current_publication_id']);
         $this->assertSame('PUBLISHED', $state['correction_outcome']);
         $this->assertStringContainsString('Historical correction published safely', $state['message']);
+        $this->assertStringContainsString('Historical correction published safely', $state['correction_outcome_note']);
     }
 }

@@ -298,6 +298,7 @@ CREATE TABLE IF NOT EXISTS eod_dataset_corrections (
   approved_by VARCHAR(64) NULL,
   approved_at DATETIME NULL,
   published_at DATETIME NULL,
+  final_outcome_note TEXT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (correction_id),

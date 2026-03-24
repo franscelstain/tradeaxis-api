@@ -108,6 +108,7 @@ Explain one correction event.
 - new run/publication
 - approval metadata
 - publication switch result
+- final correction outcome note
 
 ## Query 8 — Old/new hash comparison for corrected date D
 ### Goal

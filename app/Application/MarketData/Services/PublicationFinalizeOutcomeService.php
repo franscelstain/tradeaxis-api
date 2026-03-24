@@ -28,6 +28,7 @@ class PublicationFinalizeOutcomeService
             'current_publication_id' => null,
             'current_publication_version' => null,
             'correction_outcome' => null,
+            'correction_outcome_note' => null,
         ];
 
         if (! ($preDecision['promotion_allowed'] ?? false)) {
@@ -53,6 +54,7 @@ class PublicationFinalizeOutcomeService
             $state['current_publication_id'] = $resolvedCurrentPublicationId ?: $priorPublicationId;
             $state['current_publication_version'] = $resolvedCurrentPublicationVersion ?: $priorPublicationVersion;
             $state['correction_outcome'] = 'CANCELLED';
+            $state['correction_outcome_note'] = 'Correction rerun produced unchanged content; current publication preserved without version switch.';
             return $state;
         }
 
@@ -67,6 +69,7 @@ class PublicationFinalizeOutcomeService
             $state['current_publication_id'] = $resolvedCurrentPublicationId;
             $state['current_publication_version'] = $resolvedCurrentPublicationVersion ?: $candidatePublicationVersion;
             $state['correction_outcome'] = $correctionId ? 'PUBLISHED' : null;
+            $state['correction_outcome_note'] = $correctionId ? 'Historical correction published safely via new sealed current publication.' : null;
             return $state;
         }
 

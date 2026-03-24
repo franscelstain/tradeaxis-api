@@ -62,7 +62,7 @@ A correction request must record at minimum:
 - approval metadata
 - target prior current publication reference
 - target execution run reference once created
-- final correction outcome note
+- final correction outcome note (persisted separately from status as operator-readable outcome text)
 
 ## Publication resolution rule after correction (LOCKED)
 For one trade date D:

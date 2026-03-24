@@ -116,6 +116,7 @@ class MarketDataEvidenceExportService
             ] : null,
             'publication_switch' => $newPublication ? (bool) $newPublication->is_current : false,
             'status' => $correction->status,
+            'final_outcome_note' => $correction->final_outcome_note ?? null,
             'comparison_summary' => $this->buildCorrectionComparisonSummary($priorPublication, $newPublication),
         ];
 
