@@ -63,6 +63,12 @@ class ReplayVerificationService
             'expected_status' => $comparison['expected_status'],
             'expected_trade_date_effective' => $comparison['expected_trade_date_effective'],
             'expected_seal_state' => $comparison['expected_seal_state'],
+            'expected_config_identity' => $comparison['expected_config_identity'],
+            'expected_publication_version' => $comparison['expected_publication_version'],
+            'expected_bars_batch_hash' => $comparison['expected_bars_batch_hash'],
+            'expected_indicators_batch_hash' => $comparison['expected_indicators_batch_hash'],
+            'expected_eligibility_batch_hash' => $comparison['expected_eligibility_batch_hash'],
+            'expected_reason_code_counts_json' => $comparison['expected_reason_code_counts_json'],
             'mismatch_summary' => $comparison['mismatch_summary'],
         ];
 
