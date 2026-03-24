@@ -103,6 +103,21 @@ Execute the daily sequence:
 #### Purpose
 Historical backfill/recompute per trading-date range.
 
+#### Minimum input
+- `start_date`
+- `end_date`
+- optional `source_mode`
+- optional deterministic `output_dir`
+
+#### Minimum behavior
+- resolve trading dates from `market_calendar`, not weekday guessing
+- execute the locked daily pipeline semantics once per resolved trading date
+- stop non-zero when a date fails unless operator explicitly opts into continue-on-error behavior
+
+#### Minimum output
+- one summary artifact `market_data_backfill_summary.json`
+- per-date observed status/run_id in the summary artifact
+
 ### 9. `market-data:session-snapshot`
 #### Purpose
 Capture optional non-streaming session snapshot aligned to readable effective trade date.

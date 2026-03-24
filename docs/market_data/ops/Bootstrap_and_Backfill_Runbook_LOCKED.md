@@ -17,6 +17,7 @@ Recommended for production stability and replay confidence:
 ### Step 1 — bars backfill
 - ingest canonical bars by date range
 - validate coverage and invalid-bar patterns
+- minimum range execution may be driven through `market-data:backfill {start_date} {end_date}` when operator needs resumable trading-day iteration rooted in `market_calendar`
 
 ### Step 2 — indicators backfill
 - compute indicators with explicit `indicator_set_version`

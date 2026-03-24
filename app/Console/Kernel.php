@@ -6,6 +6,7 @@ use App\Console\Commands\MarketData\AuditHashCommand;
 use App\Console\Commands\MarketData\BuildEligibilityCommand;
 use App\Console\Commands\MarketData\ComputeIndicatorsCommand;
 use App\Console\Commands\MarketData\DailyPipelineCommand;
+use App\Console\Commands\MarketData\BackfillMarketDataCommand;
 use App\Console\Commands\MarketData\FinalizeRunCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
@@ -31,6 +32,7 @@ class Kernel extends ConsoleKernel
         FinalizeRunCommand::class,
         ExportEvidenceCommand::class,
         DailyPipelineCommand::class,
+        BackfillMarketDataCommand::class,
         RequestCorrectionCommand::class,
         RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,

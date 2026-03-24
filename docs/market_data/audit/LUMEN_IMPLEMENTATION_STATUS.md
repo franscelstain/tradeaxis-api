@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_21_REPLAY_SMOKE_SUITE_MINIMUM
+- Phase: SESSION_22_BACKFILL_MINIMUM_RUNTIME
 
 ## Current Batch
-- Batch: BATCH_21_REPLAY_SMOKE_SUITE_MINIMUM
+- Batch: BATCH_22_BACKFILL_MINIMUM_RUNTIME
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- Replay smoke suite minimum sedang ditutup di batch ini agar built-in replay fixtures dapat dieksekusi sebagai satu paket proof, bukan hanya satu-per-satu secara manual.
+- Backfill minimum runtime sedang ditutup di batch ini agar kontrak `market-data:backfill` tidak lagi hanya tertulis di docs, tetapi benar-benar ada sebagai command range trading-day yang menghasilkan summary artifact deterministik.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -81,6 +81,7 @@
 - Replay reason-code counts now participate in fixture-vs-actual comparison when fixtures declare an expected distribution
 - Replay evidence export now preserves explicit expected-vs-actual state, including expected config/hash/reason-code context persisted from fixture verification
 - Replay smoke suite minimum now exists to execute built-in replay fixtures as one deterministic operator proof batch
+- Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
 
 ## Kontrak MISSING
 
@@ -104,6 +105,7 @@
 - `DOC SYNC ISSUE`: replay smoke fixtures sekarang dikomit di `storage/app/market_data/replay-fixtures/**` agar proof runtime tidak bergantung pada fixture buatan manual yang rawan salah. `missing_file_case` wajib gagal dengan `Replay fixture file missing: expected/missing.json`; bila tidak, sesi replay belum boleh dianggap rapat.
 - `DOC SYNC ISSUE`: evidence pack replay sebelumnya hanya mengekspor ringkasan flat + actual reason-code counts, padahal kontrak audit mewajibkan preservation of both expected and actual state. Sesi 19 menutup gap ini dengan expected-context persistence + explicit replay_expected_state/replay_actual_state export.
 - `DOC SYNC ISSUE`: ZIP source-of-truth sesi 19 masih kehilangan wiring runtime dari `ReplayVerificationService` ke `ReplayResultRepository` untuk expected replay context, sehingga `expected_reason_code_counts_json` tetap `NULL` walau checkpoint sesi 19 sudah dinaikkan. Sesi 20 menutup mismatch ini dan menambahkan guard test agar regress tidak lolos diam-diam.
+- `DOC SYNC ISSUE`: docs mengunci `market-data:backfill` sebagai minimum command, tetapi source repo sesi 21 belum memiliki command/runtime minimumnya. Sesi 22 menutup mismatch ini dengan backfill range runner minimum berbasis `market_calendar` + summary artifact.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
@@ -311,3 +313,8 @@
 - Added `market-data:replay:smoke` as the minimum built-in replay suite runner for the committed smoke fixtures under `storage/app/market_data/replay-fixtures/**`.
 - The smoke suite records per-case expected vs observed outcomes and writes `replay_smoke_suite_summary.json`, while exporting replay evidence for successful positive cases.
 - This closes the operational gap where replay fixture proof depended on manual one-by-one command execution even though the fixture family set was already committed in-repo.
+
+
+## Session 22 Update
+- Added `market-data:backfill {start_date} {end_date}` so the locked minimum command surface is no longer missing from runtime.
+- Backfill minimum resolves trading dates from `market_calendar`, runs `market-data:daily` semantics per trading day, writes `market_data_backfill_summary.json`, and returns non-zero when the range does not pass.
