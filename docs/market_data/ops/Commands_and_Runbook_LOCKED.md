@@ -122,9 +122,35 @@ Historical backfill/recompute per trading-date range.
 #### Purpose
 Capture optional non-streaming session snapshot aligned to readable effective trade date.
 
+#### Minimum input
+- `trade_date` aligned to a readable current publication
+- `snapshot_slot`
+- `source_mode=manual_file` for minimum runtime
+- `input_file` containing upstream-safe session snapshot rows keyed by `ticker_code`
+- optional deterministic `output_dir`
+
+#### Minimum behavior
+- resolve scope from `eod_eligibility` for effective trade date D, not downstream picks or watchlists
+- require a readable current publication for D before capture is allowed
+- write snapshot rows to `md_session_snapshots`
+- write structured session-snapshot evidence to `eod_run_events` using the owning readable run context
+- failure or partial scope must never mutate EOD publication readiness
+
+#### Minimum output
+- session snapshot rows in `md_session_snapshots`
+- one summary artifact `market_data_session_snapshot_summary.json`
+
 ### 10. `market-data:session-snapshot:purge`
 #### Purpose
 Purge session snapshot rows according to retention policy.
+
+#### Minimum input
+- optional explicit `before_date`
+- optional deterministic `output_dir`
+
+#### Minimum output
+- deleted row count
+- one summary artifact `market_data_session_snapshot_purge_summary.json`
 
 ### 11. `market-data:replay:verify`
 #### Purpose

@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_22_BACKFILL_MINIMUM_RUNTIME
+- Phase: SESSION_23_SESSION_SNAPSHOT_MINIMUM_RUNTIME
 
 ## Current Batch
-- Batch: BATCH_22_BACKFILL_MINIMUM_RUNTIME
+- Batch: BATCH_23_SESSION_SNAPSHOT_MINIMUM_RUNTIME
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -52,7 +52,7 @@
 - Batch 5 correction request / approval / reseal / publish runtime
 
 ## Area yang Sedang Dikerjakan
-- Backfill minimum runtime sedang ditutup di batch ini agar kontrak `market-data:backfill` tidak lagi hanya tertulis di docs, tetapi benar-benar ada sebagai command range trading-day yang menghasilkan summary artifact deterministik.
+- Session snapshot minimum runtime sedang ditutup di batch ini agar kontrak `market-data:session-snapshot` dan `market-data:session-snapshot:purge` tidak lagi hanya tertulis di docs, tetapi benar-benar ada sebagai command supplemental snapshot yang selaras dengan readable effective trade date dan retention policy.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -82,6 +82,7 @@
 - Replay evidence export now preserves explicit expected-vs-actual state, including expected config/hash/reason-code context persisted from fixture verification
 - Replay smoke suite minimum now exists to execute built-in replay fixtures as one deterministic operator proof batch
 - Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
+- Session snapshot minimum runtime now exists to capture optional supplemental session snapshot rows aligned to readable effective trade date and to purge them according to retention policy
 
 ## Kontrak MISSING
 
@@ -106,6 +107,7 @@
 - `DOC SYNC ISSUE`: evidence pack replay sebelumnya hanya mengekspor ringkasan flat + actual reason-code counts, padahal kontrak audit mewajibkan preservation of both expected and actual state. Sesi 19 menutup gap ini dengan expected-context persistence + explicit replay_expected_state/replay_actual_state export.
 - `DOC SYNC ISSUE`: ZIP source-of-truth sesi 19 masih kehilangan wiring runtime dari `ReplayVerificationService` ke `ReplayResultRepository` untuk expected replay context, sehingga `expected_reason_code_counts_json` tetap `NULL` walau checkpoint sesi 19 sudah dinaikkan. Sesi 20 menutup mismatch ini dan menambahkan guard test agar regress tidak lolos diam-diam.
 - `DOC SYNC ISSUE`: docs mengunci `market-data:backfill` sebagai minimum command, tetapi source repo sesi 21 belum memiliki command/runtime minimumnya. Sesi 22 menutup mismatch ini dengan backfill range runner minimum berbasis `market_calendar` + summary artifact.
+- `DOC SYNC ISSUE`: docs mengunci `market-data:session-snapshot` dan `market-data:session-snapshot:purge`, tetapi source repo sesi 22 belum memiliki command/runtime minimumnya. Sesi 23 menutup mismatch ini dengan session snapshot capture minimum berbasis readable current publication + eligibility scope + retention purge summary.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
 - `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`
@@ -318,3 +320,8 @@
 ## Session 22 Update
 - Added `market-data:backfill {start_date} {end_date}` so the locked minimum command surface is no longer missing from runtime.
 - Backfill minimum resolves trading dates from `market_calendar`, runs `market-data:daily` semantics per trading day, writes `market_data_backfill_summary.json`, and returns non-zero when the range does not pass.
+
+
+## Session 23 Update
+- Added `market-data:session-snapshot` as the minimum optional supplemental snapshot command aligned to readable effective trade date, scoped from `eod_eligibility`, and persisted into `md_session_snapshots` with deterministic summary evidence.
+- Added `market-data:session-snapshot:purge` as the minimum retention purge command for supplemental snapshot storage, with summary artifact output.
