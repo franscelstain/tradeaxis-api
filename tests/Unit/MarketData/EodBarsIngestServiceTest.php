@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
+
 use App\Application\MarketData\Services\EodBarsIngestService;
 use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
 use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
@@ -11,34 +13,23 @@ use PHPUnit\Framework\TestCase;
 
 class EodBarsIngestServiceTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
+    use InteractsWithMarketDataConfig;
 
-        if (! function_exists('config')) {
-            function config($key = null, $default = null) {
-                global $marketDataTestConfig;
-                $value = $marketDataTestConfig;
-                foreach (explode('.', $key) as $segment) {
-                    if (! is_array($value) || ! array_key_exists($segment, $value)) {
-                        return $default;
-                    }
-                    $value = $value[$segment];
-                }
-                return $value;
-            }
-        }
+    protected function tearDown(): void
+    {
+        $this->clearMarketDataConfig();
+
+        parent::tearDown();
     }
 
     public function test_unknown_ticker_code_is_written_as_invalid_row_instead_of_failing_whole_ingest()
     {
-        global $marketDataTestConfig;
-        $marketDataTestConfig = [
+        $this->bindMarketDataConfig([
             'market_data' => [
                 'platform' => ['timezone' => 'Asia/Jakarta'],
                 'source' => ['default_source_name' => 'LOCAL_FILE'],
             ],
-        ];
+        ]);
 
         $localSource = $this->createMock(LocalFileEodBarsAdapter::class);
         $apiSource = $this->createMock(PublicApiEodBarsAdapter::class);

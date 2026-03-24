@@ -1,34 +1,25 @@
 <?php
 
+require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
+
 use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use PHPUnit\Framework\TestCase;
 
 class PublicApiEodBarsAdapterTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
+    use InteractsWithMarketDataConfig;
 
-        if (! function_exists('config')) {
-            function config($key = null, $default = null) {
-                global $marketDataTestConfig;
-                $value = $marketDataTestConfig;
-                foreach (explode('.', $key) as $segment) {
-                    if (! is_array($value) || ! array_key_exists($segment, $value)) {
-                        return $default;
-                    }
-                    $value = $value[$segment];
-                }
-                return $value;
-            }
-        }
+    protected function tearDown(): void
+    {
+        $this->clearMarketDataConfig();
+
+        parent::tearDown();
     }
 
     public function test_api_adapter_normalizes_json_rows_using_configured_field_map()
     {
-        global $marketDataTestConfig;
-        $marketDataTestConfig = $this->config([
+        $this->bindMarketDataConfig($this->config([
             'endpoint_template' => 'https://example.test/eod/{date}',
             'response_rows_path' => 'data.items',
             'source_name' => 'API_FREE',
@@ -44,7 +35,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
                 'source_row_ref' => 'rowRef',
                 'captured_at' => 'capturedAt',
             ],
-        ]);
+        ]));
 
         $adapter = new PublicApiEodBarsAdapter(function () {
             return [
@@ -78,8 +69,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
     public function test_api_adapter_retries_rate_limit_then_succeeds()
     {
-        global $marketDataTestConfig;
-        $marketDataTestConfig = $this->config([
+        $this->bindMarketDataConfig($this->config([
             'endpoint_template' => 'https://example.test/eod/{date}',
             'response_rows_path' => 'rows',
             'field_map' => [
@@ -94,7 +84,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
                 'source_row_ref' => 'source_row_ref',
                 'captured_at' => 'captured_at',
             ],
-        ], 1, 0);
+        ], 1, 0));
 
         $calls = 0;
         $adapter = new PublicApiEodBarsAdapter(function () use (&$calls) {
@@ -124,8 +114,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
     public function test_api_adapter_raises_auth_error_without_retry()
     {
-        global $marketDataTestConfig;
-        $marketDataTestConfig = $this->config(['endpoint_template' => 'https://example.test/eod/{date}'], 3, 0);
+        $this->bindMarketDataConfig($this->config(['endpoint_template' => 'https://example.test/eod/{date}'], 3, 0));
 
         $calls = 0;
         $adapter = new PublicApiEodBarsAdapter(function () use (&$calls) {

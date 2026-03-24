@@ -107,3 +107,9 @@
 - Repo source-of-truth sesi 25 divalidasi ulang terhadap checkpoint dan area prioritas berikutnya yang benar-benar masih terbuka ternyata bukan area baru, melainkan gap lama pada registry/ingest bars untuk `ticker_code` yang gagal dipetakan ke ticker master.
 - Sesi 26 menutup gap itu dengan menambahkan reason code resmi `BAR_TICKER_MAPPING_MISSING`, menyinkronkan owner docs/seed registry/error taxonomy, dan mengubah ingest agar source row unmapped masuk ke `eod_invalid_bars` alih-alih fail-fast mematikan seluruh ingest.
 - Unit-test minimum ditambahkan untuk membuktikan satu row valid tetap lolos publish path sementara row unmapped tercatat sebagai invalid evidence yang deterministik.
+
+
+## Session 27 Update
+- Manual local proof from the user showed the new session-26 unit test passed only after binding Lumen `config` into pure PHPUnit test container, while adjacent market-data unit tests with the same runtime dependency still failed before reaching business assertions.
+- Sesi 27 menutup gap bootstrap test itu dengan helper bersama `tests/Support/InteractsWithMarketDataConfig.php` dan menyinkronkan market-data unit tests yang memanggil service/adapter berbasis `config()` agar tidak lagi pecah pada `Target class [config] does not exist`.
+- Scope tetap sempit: ini bukan fitur market-data baru, melainkan hardening proof layer supaya unit-test minimum untuk backfill/replay/session-snapshot/source adapter bisa benar-benar mengeksekusi logika yang diklaim.

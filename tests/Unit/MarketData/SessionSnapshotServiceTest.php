@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
+
 use App\Application\MarketData\Services\SessionSnapshotService;
 use App\Infrastructure\MarketData\Source\LocalFileSessionSnapshotAdapter;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
@@ -11,9 +13,22 @@ use PHPUnit\Framework\TestCase;
 
 class SessionSnapshotServiceTest extends TestCase
 {
+    use InteractsWithMarketDataConfig;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->bindMarketDataConfig();
+    }
+
     protected function tearDown(): void
     {
+        $this->clearMarketDataConfig();
         m::close();
+        \Carbon\Carbon::setTestNow();
+
+        parent::tearDown();
     }
 
     public function test_capture_writes_summary_for_partial_scope()

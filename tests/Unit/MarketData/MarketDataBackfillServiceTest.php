@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
+
 use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
@@ -8,9 +10,21 @@ use PHPUnit\Framework\TestCase;
 
 class MarketDataBackfillServiceTest extends TestCase
 {
+    use InteractsWithMarketDataConfig;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->bindMarketDataConfig();
+    }
+
     protected function tearDown(): void
     {
+        $this->clearMarketDataConfig();
         m::close();
+
+        parent::tearDown();
     }
 
     public function test_execute_runs_daily_pipeline_for_each_trading_date_and_writes_summary()

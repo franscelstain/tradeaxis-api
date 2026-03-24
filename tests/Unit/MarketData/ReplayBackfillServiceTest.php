@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
+
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\ReplayBackfillService;
 use App\Application\MarketData\Services\ReplayVerificationService;
@@ -10,9 +12,21 @@ use PHPUnit\Framework\TestCase;
 
 class ReplayBackfillServiceTest extends TestCase
 {
+    use InteractsWithMarketDataConfig;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->bindMarketDataConfig();
+    }
+
     protected function tearDown(): void
     {
+        $this->clearMarketDataConfig();
         m::close();
+
+        parent::tearDown();
     }
 
     public function test_execute_runs_verification_for_each_trading_date_and_writes_summary()

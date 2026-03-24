@@ -298,3 +298,9 @@
 - Batch prioritas berikutnya yang benar-benar belum rapat adalah gap registry/ingest bars lama untuk `ticker_code` yang gagal dipetakan ke ticker master.
 - Sesi 26 menutup gap ini dengan reason code resmi `BAR_TICKER_MAPPING_MISSING`, sinkronisasi registry/seed/error taxonomy/source mapping contract, serta perubahan ingest agar source row unmapped dicatat ke `eod_invalid_bars` tanpa mematikan seluruh ingest.
 - Added unit-test minimum untuk membuktikan satu row valid tetap dipersist sementara row unmapped menjadi invalid evidence deterministik.
+
+
+## Session 27 Update
+- Manual local proof from the user showed the new session-26 unit test passed only after binding Lumen `config` into pure PHPUnit test container, while adjacent market-data unit tests with the same runtime dependency still failed before reaching business assertions.
+- Sesi 27 menutup gap bootstrap test itu dengan helper bersama `tests/Support/InteractsWithMarketDataConfig.php` dan menyinkronkan market-data unit tests yang memanggil service/adapter berbasis `config()` agar tidak lagi pecah pada `Target class [config] does not exist`.
+- Scope tetap sempit: ini bukan fitur market-data baru, melainkan hardening proof layer supaya unit-test minimum untuk backfill/replay/session-snapshot/source adapter bisa benar-benar mengeksekusi logika yang diklaim.
