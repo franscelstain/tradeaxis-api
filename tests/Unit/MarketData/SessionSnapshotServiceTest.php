@@ -8,6 +8,7 @@ use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\EligibilitySnapshotScopeRepository;
 use App\Infrastructure\Persistence\MarketData\SessionSnapshotRepository;
+use App\Models\EodRun;
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
 
@@ -46,7 +47,10 @@ class SessionSnapshotServiceTest extends TestCase
         $adapter = new LocalFileSessionSnapshotAdapter();
 
         $publication = (object) ['publication_id' => 77, 'trade_date' => '2026-03-20', 'run_id' => 28];
-        $run = (object) ['run_id' => 28, 'trade_date_requested' => '2026-03-20'];
+        $run = new EodRun([
+            'run_id' => 28,
+            'trade_date_requested' => '2026-03-20',
+        ]);
 
         $publications->shouldReceive('findCurrentPublicationForTradeDate')->once()->with('2026-03-20')->andReturn($publication);
         $runs->shouldReceive('findByRunId')->once()->with(28)->andReturn($run);
