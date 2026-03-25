@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_30_CORRECTION_COMMAND_SURFACE_PROOF
+- Phase: SESSION_31_OPS_COMMAND_SURFACE_PROOF
 
 ## Current Batch
-- Batch: BATCH_30_CORRECTION_COMMAND_SURFACE_PROOF
+- Batch: BATCH_31_OPS_COMMAND_SURFACE_PROOF
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -55,9 +55,10 @@
 - Batch 28 correction outcome note sync
 - Batch 29 correction finalize-order sync
 - Batch 30 correction command-surface proof
+- Batch 31 ops command-surface proof
 
 ## Area yang Sedang Dikerjakan
-- Batch ini menutup partial proof pada ops/correction command surface: request, approve, dan run correction sekarang punya proof test langsung pada command layer sehingga guard status dan summary output operator tidak hanya dibuktikan lewat runtime manual atau service layer.
+- Batch ini menutup partial proof berikutnya pada ops command surface yang masih belum punya test langsung: `market-data:backfill`, `market-data:session-snapshot`, `market-data:session-snapshot:purge`, `market-data:replay:smoke`, dan `market-data:replay:backfill` kini memiliki proof command-layer untuk summary output operator dan exit-code minimum.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -320,3 +321,8 @@
 ## Session 30 Update
 - Added direct command-surface proof for `market-data:correction:request`, `market-data:correction:approve`, and `market-data:correction:run`.
 - The new tests verify request/approval summaries, approved-only execution guard, and final correction status rendering so operator-facing correction flow is now proven beyond manual runtime logs.
+
+
+## Session 31 Update
+- Added direct command-surface proof for non-correction ops commands that were already present in runtime but still lacked dedicated command-layer tests: `market-data:backfill`, `market-data:session-snapshot`, `market-data:session-snapshot:purge`, `market-data:replay:smoke`, and `market-data:replay:backfill`.
+- This closes the next narrow ops proof gap without opening a new domain area; the focus remains on operator-visible summary lines and success/failure exit codes for commands that were previously proven only via service tests or manual execution.
