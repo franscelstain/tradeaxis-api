@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_31_OPS_COMMAND_SURFACE_PROOF
+- Phase: SESSION_33_DB_BACKED_PIPELINE_INTEGRATION_MINIMUM
 
 ## Current Batch
-- Batch: BATCH_31_OPS_COMMAND_SURFACE_PROOF
+- Batch: BATCH_33_DB_BACKED_PIPELINE_INTEGRATION_MINIMUM
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -56,9 +56,11 @@
 - Batch 29 correction finalize-order sync
 - Batch 30 correction command-surface proof
 - Batch 31 ops command-surface proof
+- Batch 32 DB-backed repository proof minimum
+- Batch 33 DB-backed pipeline integration minimum
 
 ## Area yang Sedang Dikerjakan
-- Batch ini menutup partial proof berikutnya pada ops command surface yang masih belum punya test langsung: `market-data:backfill`, `market-data:session-snapshot`, `market-data:session-snapshot:purge`, `market-data:replay:smoke`, dan `market-data:replay:backfill` kini memiliki proof command-layer untuk summary output operator dan exit-code minimum.
+- Batch ini menutup gap prioritas berikutnya yang masih tersisa setelah DB-backed repository proof minimum: end-to-end DB-backed pipeline integration minimum untuk jalur daily publish dan correction publish pada schema nyata berbasis sqlite testing harness. Batch ini tidak membuka fitur baru; fokusnya hanya memperkeras proof integrasi lintas service+repository terhadap kontrak inti market-data.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -88,6 +90,8 @@
 - Replay smoke suite minimum now exists to execute built-in replay fixtures as one deterministic operator proof batch
 - Replay backfill minimum now exists to execute replay verification across a trading-date range rooted in `market_calendar` and current readable publication pointers, writing a deterministic summary artifact
 - Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
+- DB-backed repository integration minimum now proves persistence for correction lifecycle, publication current pointer switch, and replay expected/actual persistence on real tables (sqlite testing schema)
+- End-to-end DB-backed pipeline integration minimum for daily publish and correction publish now exists as committed sqlite integration tests (`MarketDataPipelineIntegrationTest`) plus expanded sqlite schema harness, but execution proof in this container remains environment-blocked because PHP CLI here lacks required extensions (`dom`/`mbstring`/`xml`/`xmlwriter`) and sqlite driver support.
 - Ticker mapping miss at ingest is now reason-coded deterministically as invalid-bar evidence instead of fail-fast runtime abort
 - Session snapshot minimum runtime now exists to capture optional supplemental session snapshot rows aligned to readable effective trade date and to purge them according to retention policy
 
@@ -95,7 +99,7 @@
 
 
 ## Kontrak CONFLICT
-- Tidak ada conflict baru yang dibuka pada sesi 29.
+- Tidak ada conflict baru yang dibuka pada sesi 32.
 
 ## DOC GAP / DOC CONFLICT / DOC SYNC ISSUE
 - `DOC SYNC ISSUE`: runtime lokal membuktikan mismatch schema/runtime pada `eod_publications.sealed_at` dan truncation pada `eod_run_events.message`; checkpoint dinaikkan agar status sesi 11 sinkron dengan bugfix nyata.
@@ -114,12 +118,15 @@
 - `DOC SYNC ISSUE`: docs mengunci `market-data:backfill` sebagai minimum command, tetapi source repo sesi 21 belum memiliki command/runtime minimumnya. Sesi 22 menutup mismatch ini dengan backfill range runner minimum berbasis `market_calendar` + summary artifact.
 - `DOC SYNC ISSUE`: docs mengunci `market-data:session-snapshot` dan `market-data:session-snapshot:purge`, tetapi source repo sesi 22 belum memiliki command/runtime minimumnya. Sesi 23 menutup mismatch ini dengan session snapshot capture minimum berbasis readable current publication + eligibility scope + retention purge summary.
 - `DOC SYNC ISSUE`: runtime/source sesi 23 masih memakai default session-snapshot yang melenceng dari kontrak LOCKED (retention 7 hari, scope label `universe_only`, tolerance 5 menit). Sesi 24 menutup mismatch ini dengan default resmi 30 hari, `eligibility_set`, tolerance 3 menit, dan purge summary yang menuliskan apakah cutoff berasal dari `before_date` eksplisit atau retention default.
+- `DOC SYNC ISSUE`: batch sesi 33 menambahkan proof integrasi DB-backed harian/correction minimum pada source repo (`tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`) dan memperluas sqlite testing schema. Namun container kerja sesi ini tidak bisa mengeksekusi proof itu karena PHP CLI lokal tidak memiliki ekstensi `dom`/`mbstring`/`xml`/`xmlwriter` untuk PHPUnit dan tidak memiliki sqlite driver (`could not find driver`). Checkpoint dinaikkan agar source-of-truth sinkron: test sudah dikomit, tetapi status global belum boleh dianggap final-done hanya dari container ini.
 - `DOC SYNC ISSUE`: kontrak backtest/replay masih menuntut historical replay lintas trading-date yang resumable, tetapi source repo sesi 24 belum punya runtime minimumnya. Sesi 25 menutup mismatch ini dengan `market-data:replay:backfill` berbasis `market_calendar` + current readable publication + summary artifact.
 - `DOC SYNC ISSUE`: runtime lokal pada correction nyata membuktikan publication baru sudah `is_current=1` dan current pointer sudah pindah, tetapi `eod_dataset_corrections` masih `RESEALED` dengan `final_outcome_note = NULL` karena `MarketDataPipelineService::completeFinalize()` mempersist status correction final sebelum outcome finalize di-resolve. Sesi 29 menutup mismatch ini dengan memindahkan `markPublished/markCancelled` ke setelah resolver outcome final dan menambah proof test orkestrasi finalize.
 
 ## File Code yang Dibuat/Diubah pada Batch Terakhir
-- `app/Application/MarketData/Services/MarketDataPipelineService.php`
-- `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
+- `tests/Support/UsesMarketDataSqlite.php`
+- `tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php`
+- `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+- `tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php`
 - `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
 - `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
 
@@ -326,3 +333,10 @@
 ## Session 31 Update
 - Added direct command-surface proof for non-correction ops commands that were already present in runtime but still lacked dedicated command-layer tests: `market-data:backfill`, `market-data:session-snapshot`, `market-data:session-snapshot:purge`, `market-data:replay:smoke`, and `market-data:replay:backfill`.
 - This closes the next narrow ops proof gap without opening a new domain area; the focus remains on operator-visible summary lines and success/failure exit codes for commands that were previously proven only via service tests or manual execution.
+
+
+## Session 33 Update
+- Checkpoint sesi 32 divalidasi ulang terhadap repo terbaru: proof command/service/repository minimum sudah ada, tetapi tracker masih jujur menandai belum adanya end-to-end DB-backed execution proof yang lebih utuh untuk jalur harian dan correction publish.
+- Sesi 33 menutup batch prioritas berikutnya dengan memperluas `tests/Support/UsesMarketDataSqlite.php` agar cukup untuk menjalankan pipeline market-data lintas run/event/artifact/publication/current-pointer/ticker master/history tables, bukan hanya repository subset.
+- Ditambahkan `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` untuk membuktikan dua jalur minimum: daily publish sukses ke current publication dan correction publish yang benar-benar mengganti current publication serta mengubah status correction menjadi `PUBLISHED`.
+- Scope tetap market-data only dan tidak membuka domain/fitur baru; batch ini hanya memperkeras proof layer integrasi. Eksekusi otomatis penuh belum bisa dibuktikan di container kerja sesi ini karena keterbatasan ekstensi PHP CLI + sqlite driver, sehingga final done gate tetap belum tertutup.
