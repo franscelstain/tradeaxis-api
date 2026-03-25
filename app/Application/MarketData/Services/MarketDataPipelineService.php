@@ -179,8 +179,8 @@ class MarketDataPipelineService
             throw $e;
         }
     }
-
-    public function completeHash(MarketDataStageInput $input)
+    
+    protected function completeHash(MarketDataStageInput $input)
     {
         [$run] = $this->startStage($input);
 
@@ -189,14 +189,67 @@ class MarketDataPipelineService
             $correctionMode = $input->correctionId !== null;
 
             $hashes = [
-                'bars_batch_hash' => $this->hashForTable($correctionMode ? 'eod_bars_history' : 'eod_bars', 'trade_date', $input->requestedDate, ['trade_date', 'ticker_id', 'open', 'high', 'low', 'close', 'volume', 'adj_close', 'source', 'publication_id'], $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []),
-                'indicators_batch_hash' => $this->hashForTable($correctionMode ? 'eod_indicators_history' : 'eod_indicators', 'trade_date', $input->requestedDate, ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc20', 'hh20', 'publication_id'], $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []),
-                'eligibility_batch_hash' => $this->hashForTable($correctionMode ? 'eod_eligibility_history' : 'eod_eligibility', 'trade_date', $input->requestedDate, ['trade_date', 'ticker_id', 'eligible', 'reason_code', 'publication_id'], $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []),
+                'bars_batch_hash' => $this->hashForTable(
+                    $correctionMode ? 'eod_bars_history' : 'eod_bars',
+                    'trade_date',
+                    $input->requestedDate,
+                    [
+                        'trade_date',
+                        'ticker_id',
+                        'open',
+                        'high',
+                        'low',
+                        'close',
+                        'volume',
+                        'adj_close',
+                        'source',
+                    ],
+                    $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []
+                ),
+                'indicators_batch_hash' => $this->hashForTable(
+                    $correctionMode ? 'eod_indicators_history' : 'eod_indicators',
+                    'trade_date',
+                    $input->requestedDate,
+                    [
+                        'trade_date',
+                        'ticker_id',
+                        'is_valid',
+                        'invalid_reason_code',
+                        'indicator_set_version',
+                        'dv20_idr',
+                        'atr14_pct',
+                        'vol_ratio',
+                        'roc20',
+                        'hh20',
+                    ],
+                    $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []
+                ),
+                'eligibility_batch_hash' => $this->hashForTable(
+                    $correctionMode ? 'eod_eligibility_history' : 'eod_eligibility',
+                    'trade_date',
+                    $input->requestedDate,
+                    [
+                        'trade_date',
+                        'ticker_id',
+                        'eligible',
+                        'reason_code',
+                    ],
+                    $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []
+                ),
             ];
 
             $run = $this->runs->storeHashes($run, $hashes);
             $this->publications->updateCandidateHashes($candidatePublication->publication_id, $hashes);
-            $this->runs->appendEvent($run, $input->stage, 'STAGE_COMPLETED', 'INFO', 'Audit hash stage completed for current artifact set.', null, $hashes + ['publication_id' => (int) $candidatePublication->publication_id]);
+
+            $this->runs->appendEvent(
+                $run,
+                $input->stage,
+                'STAGE_COMPLETED',
+                'INFO',
+                'Audit hash stage completed for current artifact set.',
+                null,
+                $hashes + ['publication_id' => (int) $candidatePublication->publication_id]
+            );
 
             return $run;
         } catch (\Throwable $e) {

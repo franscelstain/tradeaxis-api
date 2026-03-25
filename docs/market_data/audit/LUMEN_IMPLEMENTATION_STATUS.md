@@ -60,7 +60,7 @@
 - Batch 33 DB-backed pipeline integration minimum
 
 ## Area yang Sedang Dikerjakan
-- Batch ini menutup partial prioritas berikutnya yang masih sah setelah proof publish-path minimum rapat: correction unchanged/cancel matrix masih kurang bukti langsung di layer DB-backed integration dan operator command summary. Scope tetap sempit: mempertebal proof untuk jalur `CANCELLED` saat correction rerun menghasilkan artifact yang tidak berubah, tanpa membuka fitur/domain baru.
+- Batch ini mengambil partial prioritas berikutnya yang masih sah setelah proof publish-path minimum rapat: correction unchanged/cancel matrix masih kurang bukti langsung di layer DB-backed integration dan operator command summary. Scope tetap sempit: mempertebal proof untuk jalur `CANCELLED` saat correction rerun menghasilkan artifact yang tidak berubah, tanpa membuka fitur/domain baru. Namun source-of-truth sesi koreksi ini kini jujur mencatat bahwa operator cancelled-summary proof sudah ada, sedangkan DB-backed unchanged rerun masih gagal karena `bars_batch_hash` drift pada rerun dengan fixture yang sama.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -82,7 +82,7 @@
 - Architecture compliance enforced
 - Evidence/output shape support mapped
 - Contract-test matrix expanded for indicator vectors, eligibility decision rules, finalize gating, and publication diff comparison
-- Correction unchanged-rerun outcome support now has direct diff-test proof
+- Correction unchanged-rerun outcome support now has direct diff-test proof, but DB-backed unchanged rerun remains partial because bars hash stability is not yet closed
 - Orchestrated finalize/current-pointer outcome and correction publish-path outcome now have dedicated service-level proof
 - Replay verification minimum now has fixture-aware runner/verifier proof path
 - Replay reason-code counts now participate in fixture-vs-actual comparison when fixtures declare an expected distribution
@@ -92,7 +92,7 @@
 - Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
 - DB-backed repository integration minimum now proves persistence for correction lifecycle, publication current pointer switch, and replay expected/actual persistence on real tables (sqlite testing schema)
 - End-to-end DB-backed pipeline integration minimum for daily publish and correction publish kini tidak lagi hanya committed; proof lokal repo terbaru sudah dieksekusi penuh dan lulus `58 tests / 275 assertions`, termasuk `MarketDataPipelineIntegrationTest`, `PublicationRepositoryIntegrationTest`, `CorrectionRepositoryIntegrationTest`, dan `ReplayResultRepositoryIntegrationTest`
-- Correction unchanged/cancel path now has additional committed proof at DB-backed pipeline integration layer and operator command summary layer, reducing the remaining correction matrix gap to broader error/conflict coverage.
+- Correction unchanged/cancel path now has operator command-summary proof, tetapi DB-backed pipeline integration untuk unchanged rerun belum rapat karena rerun identik masih menghasilkan `bars_batch_hash` drift dan tetap berakhir `PUBLISHED`. Remaining correction matrix gap kini eksplisit mencakup eliminasi drift bars hash sebelum jalur cancel DB-backed bisa diklaim tertutup.
 - Ticker mapping miss at ingest is now reason-coded deterministically as invalid-bar evidence instead of fail-fast runtime abort
 - Session snapshot minimum runtime now exists to capture optional supplemental session snapshot rows aligned to readable effective trade date and to purge them according to retention policy
 
@@ -351,6 +351,6 @@
 
 
 ## Session 35 Update
-- Added committed proof for the correction unchanged/cancel path in `MarketDataPipelineIntegrationTest`, asserting that an unchanged rerun preserves the current publication, records `CANCELLED` on `eod_dataset_corrections`, and writes `CORRECTION_CANCELLED` event evidence.
+- Attempted DB-backed proof for the correction unchanged/cancel path was added in `MarketDataPipelineIntegrationTest`, tetapi local execution shows reused-fixture correction rerun still changes `bars_batch_hash` and ends `PUBLISHED`; therefore cancel-path DB-backed proof remains open and has been downgraded to an explicit diagnostic gap.
 - Added `CorrectionCommandsTest` coverage for operator summary when a correction rerun resolves to `CANCELLED`, so command-surface proof no longer only covers the publish happy path and approval guard.
-- Scope tetap market-data only. Batch ini belum menutup broader correction error/conflict matrix; yang ditutup hanya minimum cancel-path proof yang sebelumnya masih kosong di tracker.
+- Scope tetap market-data only. Batch ini belum menutup broader correction error/conflict matrix; yang benar-benar tertutup hanya operator cancelled-summary proof, sedangkan DB-backed unchanged cancel proof tetap terbuka sebagai diagnostic gap sampai `bars_batch_hash` drift dibereskan.

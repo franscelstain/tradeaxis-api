@@ -204,8 +204,6 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
-
-
     public function test_run_daily_correction_with_unchanged_artifacts_cancels_request_and_preserves_current_publication(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -233,6 +231,13 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $this->assertNotNull($baselinePublication);
         $this->assertSame(1, (int) $baselinePublication->is_current);
+        $this->assertNotNull($baselinePublication->bars_batch_hash);
+        $this->assertNotNull($baselinePublication->indicators_batch_hash);
+        $this->assertNotNull($baselinePublication->eligibility_batch_hash);
+
+        $baselineBarsHash = (string) $baselinePublication->bars_batch_hash;
+        $baselineIndicatorsHash = (string) $baselinePublication->indicators_batch_hash;
+        $baselineEligibilityHash = (string) $baselinePublication->eligibility_batch_hash;
 
         $corrections = new EodCorrectionRepository();
         $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-same-content', 'system');
@@ -243,6 +248,34 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $this->assertSame('SUCCESS', $run->terminal_status);
         $this->assertSame('READABLE', $run->publishability_state);
+
+        $currentPublication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('is_current', 1)
+            ->first();
+
+        $this->assertNotNull($currentPublication);
+        $this->assertNotNull($currentPublication->bars_batch_hash);
+        $this->assertNotNull($currentPublication->indicators_batch_hash);
+        $this->assertNotNull($currentPublication->eligibility_batch_hash);
+
+        $this->assertSame(
+            $baselineBarsHash,
+            (string) $currentPublication->bars_batch_hash,
+            'bars_batch_hash must remain identical for unchanged correction rerun'
+        );
+
+        $this->assertSame(
+            $baselineIndicatorsHash,
+            (string) $currentPublication->indicators_batch_hash,
+            'indicators_batch_hash must remain identical for unchanged correction rerun'
+        );
+
+        $this->assertSame(
+            $baselineEligibilityHash,
+            (string) $currentPublication->eligibility_batch_hash,
+            'eligibility_batch_hash must remain identical for unchanged correction rerun'
+        );
 
         $persistedCorrection = DB::table('eod_dataset_corrections')
             ->where('correction_id', $approved->correction_id)
@@ -258,12 +291,6 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame((int) $run->run_id, (int) $persistedCorrection->new_run_id);
         $this->assertNull($persistedCorrection->published_at);
 
-        $currentPublication = DB::table('eod_publications')
-            ->where('trade_date', '2026-03-20')
-            ->where('is_current', 1)
-            ->first();
-
-        $this->assertNotNull($currentPublication);
         $this->assertSame((int) $baselinePublication->publication_id, (int) $currentPublication->publication_id);
         $this->assertSame((int) $baselinePublication->publication_version, (int) $currentPublication->publication_version);
 

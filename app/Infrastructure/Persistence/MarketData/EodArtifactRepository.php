@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Persistence\MarketData;
 
 use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class EodArtifactRepository
@@ -39,10 +40,10 @@ class EodArtifactRepository
     public function loadBarsWindow($tradeDate, $lookbackDays, $requestedPublicationId = null)
     {
         $startDate = Carbon::parse($tradeDate)->subDays($lookbackDays + 10)->toDateString();
-        $rows = DB::table('eod_bars')
-            ->whereBetween('trade_date', [$startDate, $tradeDate])
-            ->orderBy('ticker_id')
-            ->orderBy('trade_date')
+
+        $rows = $this->applyStableArtifactOrder(
+            DB::table('eod_bars')->whereBetween('trade_date', [$startDate, $tradeDate])
+        )
             ->get()
             ->map(function ($row) {
                 return (array) $row;
@@ -54,10 +55,11 @@ class EodArtifactRepository
                 return (string) $row['trade_date'] !== (string) $tradeDate;
             }));
 
-            $historyRows = DB::table('eod_bars_history')
-                ->where('trade_date', $tradeDate)
-                ->where('publication_id', $requestedPublicationId)
-                ->orderBy('ticker_id')
+            $historyRows = $this->applyStableArtifactOrder(
+                DB::table('eod_bars_history')
+                    ->where('trade_date', $tradeDate)
+                    ->where('publication_id', $requestedPublicationId)
+            )
                 ->get()
                 ->map(function ($row) {
                     return (array) $row;
@@ -71,7 +73,9 @@ class EodArtifactRepository
             ->groupBy('ticker_id')
             ->map(function ($group) {
                 return collect($group)
-                    ->sortBy('trade_date')
+                    ->sortBy(function ($row) {
+                        return sprintf('%s|%010d', (string) $row['trade_date'], (int) $row['ticker_id']);
+                    })
                     ->values()
                     ->all();
             })
@@ -83,9 +87,11 @@ class EodArtifactRepository
         return DB::transaction(function () use ($tradeDate, $rows, $publicationId, $useHistory) {
             $table = $useHistory ? 'eod_indicators_history' : 'eod_indicators';
             $query = DB::table($table)->where('trade_date', $tradeDate);
+
             if ($useHistory) {
                 $query->where('publication_id', $publicationId);
             }
+
             $query->delete();
 
             if (! empty($rows)) {
@@ -98,11 +104,13 @@ class EodArtifactRepository
     {
         $table = $requestedPublicationId ? 'eod_indicators_history' : 'eod_indicators';
         $query = DB::table($table)->where('trade_date', $tradeDate);
+
         if ($requestedPublicationId) {
             $query->where('publication_id', $requestedPublicationId);
         }
 
-        return $query->get()
+        return $this->applyStableArtifactOrder($query)
+            ->get()
             ->keyBy('ticker_id')
             ->map(function ($row) {
                 return (array) $row;
@@ -114,11 +122,13 @@ class EodArtifactRepository
     {
         $table = $requestedPublicationId ? 'eod_bars_history' : 'eod_bars';
         $query = DB::table($table)->where('trade_date', $tradeDate);
+
         if ($requestedPublicationId) {
             $query->where('publication_id', $requestedPublicationId);
         }
 
-        return $query->get()
+        return $this->applyStableArtifactOrder($query)
+            ->get()
             ->keyBy('ticker_id')
             ->map(function ($row) {
                 return (array) $row;
@@ -131,9 +141,11 @@ class EodArtifactRepository
         return DB::transaction(function () use ($tradeDate, $rows, $publicationId, $useHistory) {
             $table = $useHistory ? 'eod_eligibility_history' : 'eod_eligibility';
             $query = DB::table($table)->where('trade_date', $tradeDate);
+
             if ($useHistory) {
                 $query->where('publication_id', $publicationId);
             }
+
             $query->delete();
 
             if (! empty($rows)) {
@@ -154,7 +166,12 @@ class EodArtifactRepository
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
         if (! DB::table('eod_bars_history')->where('publication_id', $publicationId)->exists()) {
-            $bars = DB::table('eod_bars')->where('trade_date', $tradeDate)->where('publication_id', $publicationId)->get();
+            $bars = $this->applyStableArtifactOrder(
+                DB::table('eod_bars')
+                    ->where('trade_date', $tradeDate)
+                    ->where('publication_id', $publicationId)
+            )->get();
+
             $insert = [];
             foreach ($bars as $row) {
                 $insert[] = [
@@ -172,13 +189,19 @@ class EodArtifactRepository
                     'created_at' => $now,
                 ];
             }
+
             if (! empty($insert)) {
                 DB::table('eod_bars_history')->insert($insert);
             }
         }
 
         if (! DB::table('eod_indicators_history')->where('publication_id', $publicationId)->exists()) {
-            $indicators = DB::table('eod_indicators')->where('trade_date', $tradeDate)->where('publication_id', $publicationId)->get();
+            $indicators = $this->applyStableArtifactOrder(
+                DB::table('eod_indicators')
+                    ->where('trade_date', $tradeDate)
+                    ->where('publication_id', $publicationId)
+            )->get();
+
             $insert = [];
             foreach ($indicators as $row) {
                 $insert[] = [
@@ -197,13 +220,19 @@ class EodArtifactRepository
                     'created_at' => $now,
                 ];
             }
+
             if (! empty($insert)) {
                 DB::table('eod_indicators_history')->insert($insert);
             }
         }
 
         if (! DB::table('eod_eligibility_history')->where('publication_id', $publicationId)->exists()) {
-            $eligibility = DB::table('eod_eligibility')->where('trade_date', $tradeDate)->where('publication_id', $publicationId)->get();
+            $eligibility = $this->applyStableArtifactOrder(
+                DB::table('eod_eligibility')
+                    ->where('trade_date', $tradeDate)
+                    ->where('publication_id', $publicationId)
+            )->get();
+
             $insert = [];
             foreach ($eligibility as $row) {
                 $insert[] = [
@@ -216,6 +245,7 @@ class EodArtifactRepository
                     'created_at' => $now,
                 ];
             }
+
             if (! empty($insert)) {
                 DB::table('eod_eligibility_history')->insert($insert);
             }
@@ -227,7 +257,13 @@ class EodArtifactRepository
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
         DB::table('eod_bars')->where('trade_date', $tradeDate)->delete();
-        $bars = DB::table('eod_bars_history')->where('trade_date', $tradeDate)->where('publication_id', $publicationId)->get();
+
+        $bars = $this->applyStableArtifactOrder(
+            DB::table('eod_bars_history')
+                ->where('trade_date', $tradeDate)
+                ->where('publication_id', $publicationId)
+        )->get();
+
         $insert = [];
         foreach ($bars as $row) {
             $insert[] = [
@@ -245,12 +281,19 @@ class EodArtifactRepository
                 'created_at' => $now,
             ];
         }
+
         if (! empty($insert)) {
             DB::table('eod_bars')->insert($insert);
         }
 
         DB::table('eod_indicators')->where('trade_date', $tradeDate)->delete();
-        $indicators = DB::table('eod_indicators_history')->where('trade_date', $tradeDate)->where('publication_id', $publicationId)->get();
+
+        $indicators = $this->applyStableArtifactOrder(
+            DB::table('eod_indicators_history')
+                ->where('trade_date', $tradeDate)
+                ->where('publication_id', $publicationId)
+        )->get();
+
         $insert = [];
         foreach ($indicators as $row) {
             $insert[] = [
@@ -269,12 +312,19 @@ class EodArtifactRepository
                 'created_at' => $now,
             ];
         }
+
         if (! empty($insert)) {
             DB::table('eod_indicators')->insert($insert);
         }
 
         DB::table('eod_eligibility')->where('trade_date', $tradeDate)->delete();
-        $elig = DB::table('eod_eligibility_history')->where('trade_date', $tradeDate)->where('publication_id', $publicationId)->get();
+
+        $elig = $this->applyStableArtifactOrder(
+            DB::table('eod_eligibility_history')
+                ->where('trade_date', $tradeDate)
+                ->where('publication_id', $publicationId)
+        )->get();
+
         $insert = [];
         foreach ($elig as $row) {
             $insert[] = [
@@ -287,8 +337,16 @@ class EodArtifactRepository
                 'created_at' => $now,
             ];
         }
+
         if (! empty($insert)) {
             DB::table('eod_eligibility')->insert($insert);
         }
+    }
+
+    protected function applyStableArtifactOrder(Builder $query): Builder
+    {
+        return $query
+            ->orderBy('trade_date')
+            ->orderBy('ticker_id');
     }
 }
