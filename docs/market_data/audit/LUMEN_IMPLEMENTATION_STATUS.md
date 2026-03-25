@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_35_CORRECTION_CANCEL_MATRIX_PROOF_MINIMUM
+- Phase: SESSION_36_CORRECTION_CONFLICT_HELD_OPERATOR_PROOF_MINIMUM
 
 ## Current Batch
-- Batch: BATCH_35_CORRECTION_CANCEL_MATRIX_PROOF_MINIMUM
+- Batch: BATCH_36_CORRECTION_CONFLICT_HELD_OPERATOR_PROOF_MINIMUM
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -60,7 +60,7 @@
 - Batch 33 DB-backed pipeline integration minimum
 
 ## Area yang Sedang Dikerjakan
-- Batch ini mengambil partial prioritas berikutnya yang masih sah setelah proof publish-path minimum rapat: correction unchanged/cancel matrix masih kurang bukti langsung di layer DB-backed integration dan operator command summary. Scope tetap sempit: mempertebal proof untuk jalur `CANCELLED` saat correction rerun menghasilkan artifact yang tidak berubah, tanpa membuka fitur/domain baru. Namun source-of-truth sesi koreksi ini kini jujur mencatat bahwa operator cancelled-summary proof sudah ada, sedangkan DB-backed unchanged rerun masih gagal karena `bars_batch_hash` drift pada rerun dengan fixture yang sama.
+- Batch sesi 36 sedang menutup proof minimum berikutnya yang masih sah di parent correction/ops matrix: operator-visible correction conflict/HELD path. Scope tetap market-data only; tidak membuka scheduler matrix atau domain baru.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -82,7 +82,7 @@
 - Architecture compliance enforced
 - Evidence/output shape support mapped
 - Contract-test matrix expanded for indicator vectors, eligibility decision rules, finalize gating, and publication diff comparison
-- Correction unchanged-rerun outcome support now has direct diff-test proof, but DB-backed unchanged rerun remains partial because bars hash stability is not yet closed
+- Correction unchanged-rerun outcome support now has direct diff-test proof
 - Orchestrated finalize/current-pointer outcome and correction publish-path outcome now have dedicated service-level proof
 - Replay verification minimum now has fixture-aware runner/verifier proof path
 - Replay reason-code counts now participate in fixture-vs-actual comparison when fixtures declare an expected distribution
@@ -92,7 +92,8 @@
 - Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
 - DB-backed repository integration minimum now proves persistence for correction lifecycle, publication current pointer switch, and replay expected/actual persistence on real tables (sqlite testing schema)
 - End-to-end DB-backed pipeline integration minimum for daily publish and correction publish kini tidak lagi hanya committed; proof lokal repo terbaru sudah dieksekusi penuh dan lulus `58 tests / 275 assertions`, termasuk `MarketDataPipelineIntegrationTest`, `PublicationRepositoryIntegrationTest`, `CorrectionRepositoryIntegrationTest`, dan `ReplayResultRepositoryIntegrationTest`
-- Correction unchanged/cancel path now has operator command-summary proof, tetapi DB-backed pipeline integration untuk unchanged rerun belum rapat karena rerun identik masih menghasilkan `bars_batch_hash` drift dan tetap berakhir `PUBLISHED`. Remaining correction matrix gap kini eksplisit mencakup eliminasi drift bars hash sebelum jalur cancel DB-backed bisa diklaim tertutup.
+- Correction unchanged/cancel path now has executed DB-backed pipeline integration proof and operator command summary proof; identical correction rerun keeps artifact hashes stable, preserves current publication, and finalizes `CANCELLED`.
+- Correction conflict/HELD path now has direct operator command summary proof: when finalize remains `HELD/NOT_READABLE`, `market-data:correction:run` renders `correction_status=RESEALED` instead of implying publish/cancel completion.
 - Ticker mapping miss at ingest is now reason-coded deterministically as invalid-bar evidence instead of fail-fast runtime abort
 - Session snapshot minimum runtime now exists to capture optional supplemental session snapshot rows aligned to readable effective trade date and to purge them according to retention policy
 
@@ -120,7 +121,7 @@
 - `DOC SYNC ISSUE`: docs mengunci `market-data:backfill` sebagai minimum command, tetapi source repo sesi 21 belum memiliki command/runtime minimumnya. Sesi 22 menutup mismatch ini dengan backfill range runner minimum berbasis `market_calendar` + summary artifact.
 - `DOC SYNC ISSUE`: docs mengunci `market-data:session-snapshot` dan `market-data:session-snapshot:purge`, tetapi source repo sesi 22 belum memiliki command/runtime minimumnya. Sesi 23 menutup mismatch ini dengan session snapshot capture minimum berbasis readable current publication + eligibility scope + retention purge summary.
 - `DOC SYNC ISSUE`: runtime/source sesi 23 masih memakai default session-snapshot yang melenceng dari kontrak LOCKED (retention 7 hari, scope label `universe_only`, tolerance 5 menit). Sesi 24 menutup mismatch ini dengan default resmi 30 hari, `eligibility_set`, tolerance 3 menit, dan purge summary yang menuliskan apakah cutoff berasal dari `before_date` eksplisit atau retention default.
-- `DOC SYNC ISSUE`: batch sesi 33 menambahkan proof integrasi DB-backed harian/correction minimum pada source repo (`tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`) dan memperluas sqlite testing schema. Namun container kerja sesi ini tidak bisa mengeksekusi proof itu karena PHP CLI lokal tidak memiliki ekstensi `dom`/`mbstring`/`xml`/`xmlwriter` untuk PHPUnit dan tidak memiliki sqlite driver (`could not find driver`). Checkpoint dinaikkan agar source-of-truth sinkron: test sudah dikomit, tetapi status global belum boleh dianggap final-done hanya dari container ini.
+- `DOC SYNC ISSUE`: batch sesi 33 menambahkan proof integrasi DB-backed harian/correction minimum pada source repo (`tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`). Sesi 34 sudah menyinkronkan checkpoint terhadap proof lokal yang lulus, dan sesi 35 kini menutup jalur unchanged/cancel dengan full local proof `60 tests / 306 assertions`; status global tetap belum final-done karena broader matrix dan readiness closure masih tersisa.
 - `DOC SYNC ISSUE`: kontrak backtest/replay masih menuntut historical replay lintas trading-date yang resumable, tetapi source repo sesi 24 belum punya runtime minimumnya. Sesi 25 menutup mismatch ini dengan `market-data:replay:backfill` berbasis `market_calendar` + current readable publication + summary artifact.
 - `DOC SYNC ISSUE`: runtime lokal pada correction nyata membuktikan publication baru sudah `is_current=1` dan current pointer sudah pindah, tetapi `eod_dataset_corrections` masih `RESEALED` dengan `final_outcome_note = NULL` karena `MarketDataPipelineService::completeFinalize()` mempersist status correction final sebelum outcome finalize di-resolve. Sesi 29 menutup mismatch ini dengan memindahkan `markPublished/markCancelled` ke setelah resolver outcome final dan menambah proof test orkestrasi finalize.
 
@@ -165,17 +166,17 @@
     - correction replacement kini sudah punya flow request/approval/reseal/publish yang aman terhadap current-state, sesi 6 menambah run/correction evidence export serta test minimum, sesi 7 menambah replay evidence export runtime, sesi 8 menambah direct proof logic inti, dan sesi 9 menambah proof orchestrated finalize/current-pointer outcome serta correction publish-path outcome, dan sesi 10 menambah source mode `api` berbasis adapter public/free API pull. Namun full DB-backed integration matrix dan broader full DB-backed integration matrix masih belum boleh di-claim selesai
 
 ## Next Recommended Batch
-- Verifikasi runtime lokal correction publish/cancel setelah patch sesi 29 agar status correction final + `final_outcome_note` terbukti sinkron dengan publication/current pointer nyata
-- Lengkapi full DB-backed integration matrix untuk current-pointer/finalize/correction publish path
-- Audit ulang sinkronisasi docs/code setelah partial contracts yang tersisa dikerjakan
+- Lanjut ke batch berikutnya: broader correction error/conflict matrix di luar unchanged/cancel minimum
+- Perluas scheduler/ops failure matrix dan readiness closure
+- Audit ulang sinkronisasi docs/code setelah partial contracts berikutnya dikerjakan
 
 ## Blocker Nyata
 - Tidak ada blocker desain untuk melanjutkan sesi 30.
-- Validasi phpunit/runtime di container ini tetap terbatas karena `vendor/` tidak disertakan pada ZIP terbaru.
+- Tidak ada blocker nyata untuk menutup sesi 35; proof lokal terbaru lulus `60 tests / 306 assertions`.
 
 ## Artifact History
-- ZIP latest: `tradeaxis-api_session29_batch29_correction-finalize-order-sync.zip`
-- ZIP status: checkpoint source-of-truth terbaru setelah sesi 29
+- ZIP latest: `tradeaxis-api_session35_batch35_done_sync.zip`
+- ZIP status: checkpoint source-of-truth terbaru setelah sesi 35 dinyatakan DONE
 
 ## Update Log
 ### Entry 0
@@ -351,6 +352,13 @@
 
 
 ## Session 35 Update
-- Attempted DB-backed proof for the correction unchanged/cancel path was added in `MarketDataPipelineIntegrationTest`, tetapi local execution shows reused-fixture correction rerun still changes `bars_batch_hash` and ends `PUBLISHED`; therefore cancel-path DB-backed proof remains open and has been downgraded to an explicit diagnostic gap.
-- Added `CorrectionCommandsTest` coverage for operator summary when a correction rerun resolves to `CANCELLED`, so command-surface proof no longer only covers the publish happy path and approval guard.
-- Scope tetap market-data only. Batch ini belum menutup broader correction error/conflict matrix; yang benar-benar tertutup hanya operator cancelled-summary proof, sedangkan DB-backed unchanged cancel proof tetap terbuka sebagai diagnostic gap sampai `bars_batch_hash` drift dibereskan.
+- Root cause drift pada correction unchanged path ditemukan di `MarketDataPipelineService::completeHash()`: payload hash masih memasukkan `publication_id`, sehingga correction rerun identik tetap menghasilkan hash baru dan berakhir `PUBLISHED`.
+- Sesi 35 menutup gap itu dengan menghapus `publication_id` dari payload hash bars/indicators/eligibility, menjaga hash tetap merepresentasikan content artifact alih-alih identity publication.
+- `MarketDataPipelineIntegrationTest` kini kembali membuktikan target final unchanged path: correction rerun identik menjaga hash tetap sama, mempertahankan current publication, menulis `CANCELLED` ke `eod_dataset_corrections`, dan menambah event `CORRECTION_CANCELLED`.
+- `CorrectionCommandsTest` tetap membuktikan operator summary untuk jalur cancelled, dan full local PHPUnit kini lulus `60 tests / 306 assertions`.
+- Dengan proof ini, minimum correction cancel/unchanged matrix untuk sesi 35 dinyatakan DONE. Broader correction error/conflict matrix tetap berada di batch berikutnya.
+
+
+## Session 36 Update
+- Added operator command-surface proof for correction conflict/HELD outcome via `CorrectionCommandsTest::test_run_correction_command_renders_resealed_status_when_finalize_result_is_held_conflict`.
+- The run-correction command proof matrix now covers publish, cancel/unchanged, and held-conflict summaries without opening broader scheduler/error integration scope.
