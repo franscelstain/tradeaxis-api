@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_34_CHECKPOINT_SYNC_AFTER_EXECUTED_LOCAL_PROOF
+- Phase: SESSION_35_CORRECTION_CANCEL_MATRIX_PROOF_MINIMUM
 
 ## Current Batch
-- Batch: BATCH_34_CHECKPOINT_SYNC_AFTER_EXECUTED_LOCAL_PROOF
+- Batch: BATCH_35_CORRECTION_CANCEL_MATRIX_PROOF_MINIMUM
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -60,7 +60,7 @@
 - Batch 33 DB-backed pipeline integration minimum
 
 ## Area yang Sedang Dikerjakan
-- Batch ini menutup `DOC SYNC ISSUE` prioritas berikutnya setelah sesi 33: checkpoint dan tracker masih menyatakan proof integrasi DB-backed terblokir di environment, padahal bukti lokal repo terbaru sudah menunjukkan seluruh suite lulus `58 tests / 275 assertions`. Scope tetap sempit: sinkronisasi checkpoint terhadap source-of-truth terbaru dan proof nyata yang sudah dieksekusi, tanpa membuka area fitur baru.
+- Batch ini menutup partial prioritas berikutnya yang masih sah setelah proof publish-path minimum rapat: correction unchanged/cancel matrix masih kurang bukti langsung di layer DB-backed integration dan operator command summary. Scope tetap sempit: mempertebal proof untuk jalur `CANCELLED` saat correction rerun menghasilkan artifact yang tidak berubah, tanpa membuka fitur/domain baru.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -91,7 +91,8 @@
 - Replay backfill minimum now exists to execute replay verification across a trading-date range rooted in `market_calendar` and current readable publication pointers, writing a deterministic summary artifact
 - Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
 - DB-backed repository integration minimum now proves persistence for correction lifecycle, publication current pointer switch, and replay expected/actual persistence on real tables (sqlite testing schema)
-- End-to-end DB-backed pipeline integration minimum for daily publish and correction publish kini tidak lagi hanya committed; proof lokal repo terbaru sudah dieksekusi penuh dan lulus `58 tests / 275 assertions`, termasuk `MarketDataPipelineIntegrationTest`, `PublicationRepositoryIntegrationTest`, `CorrectionRepositoryIntegrationTest`, dan `ReplayResultRepositoryIntegrationTest`.
+- End-to-end DB-backed pipeline integration minimum for daily publish and correction publish kini tidak lagi hanya committed; proof lokal repo terbaru sudah dieksekusi penuh dan lulus `58 tests / 275 assertions`, termasuk `MarketDataPipelineIntegrationTest`, `PublicationRepositoryIntegrationTest`, `CorrectionRepositoryIntegrationTest`, dan `ReplayResultRepositoryIntegrationTest`
+- Correction unchanged/cancel path now has additional committed proof at DB-backed pipeline integration layer and operator command summary layer, reducing the remaining correction matrix gap to broader error/conflict coverage.
 - Ticker mapping miss at ingest is now reason-coded deterministically as invalid-bar evidence instead of fail-fast runtime abort
 - Session snapshot minimum runtime now exists to capture optional supplemental session snapshot rows aligned to readable effective trade date and to purge them according to retention policy
 
@@ -347,3 +348,9 @@
 - ZIP source-of-truth sesi 34 divalidasi ulang terhadap checkpoint dan proof lokal terbaru. Ditemukan `DOC SYNC ISSUE`: checkpoint sesi 33 masih menyebut proof integrasi DB-backed terblokir di container, padahal repo kerja terbaru sudah lulus penuh `58 tests / 275 assertions`.
 - Sesi 34 tidak membuka fitur baru. Batch ini hanya menyinkronkan checkpoint/tracker terhadap proof nyata yang sudah lewat, sehingga sesi berikutnya tidak lagi mengulang area repository/pipeline integration yang sebenarnya sudah rapat.
 - Bukti yang sekarang dianggap canonical untuk area ini: `CorrectionRepositoryIntegrationTest`, `PublicationRepositoryIntegrationTest`, `ReplayResultRepositoryIntegrationTest`, `MarketDataPipelineIntegrationTest`, dan full `phpunit` pass `58/275`.
+
+
+## Session 35 Update
+- Added committed proof for the correction unchanged/cancel path in `MarketDataPipelineIntegrationTest`, asserting that an unchanged rerun preserves the current publication, records `CANCELLED` on `eod_dataset_corrections`, and writes `CORRECTION_CANCELLED` event evidence.
+- Added `CorrectionCommandsTest` coverage for operator summary when a correction rerun resolves to `CANCELLED`, so command-surface proof no longer only covers the publish happy path and approval guard.
+- Scope tetap market-data only. Batch ini belum menutup broader correction error/conflict matrix; yang ditutup hanya minimum cancel-path proof yang sebelumnya masih kosong di tracker.

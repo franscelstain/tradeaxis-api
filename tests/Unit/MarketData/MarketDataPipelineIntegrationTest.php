@@ -204,6 +204,84 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
+
+
+    public function test_run_daily_correction_with_unchanged_artifacts_cancels_request_and_preserves_current_publication(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+
+        $baselineRows = [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]];
+
+        $this->writeBarsFixture('2026-03-20', $baselineRows);
+        $baselineRun = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
+
+        $baselinePublication = DB::table('eod_publications')
+            ->where('run_id', $baselineRun->run_id)
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($baselinePublication);
+        $this->assertSame(1, (int) $baselinePublication->is_current);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-same-content', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        $this->writeBarsFixture('2026-03-20', $baselineRows);
+        $run = $this->makePipeline()->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
+
+        $this->assertSame('SUCCESS', $run->terminal_status);
+        $this->assertSame('READABLE', $run->publishability_state);
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('CANCELLED', $persistedCorrection->status);
+        $this->assertSame(
+            'Correction rerun produced unchanged content; current publication preserved without version switch.',
+            $persistedCorrection->final_outcome_note
+        );
+        $this->assertSame((int) $baselineRun->run_id, (int) $persistedCorrection->prior_run_id);
+        $this->assertSame((int) $run->run_id, (int) $persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+
+        $currentPublication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('is_current', 1)
+            ->first();
+
+        $this->assertNotNull($currentPublication);
+        $this->assertSame((int) $baselinePublication->publication_id, (int) $currentPublication->publication_id);
+        $this->assertSame((int) $baselinePublication->publication_version, (int) $currentPublication->publication_version);
+
+        $this->assertSame(
+            1,
+            DB::table('eod_publications')
+                ->where('trade_date', '2026-03-20')
+                ->count()
+        );
+
+        $this->assertTrue(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'CORRECTION_CANCELLED')
+                ->exists()
+        );
+    }
+
     private function makePipeline(): MarketDataPipelineService
     {
         $runs = new EodRunRepository();

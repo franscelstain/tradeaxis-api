@@ -143,6 +143,71 @@ class CorrectionCommandsTest extends TestCase
         $this->assertStringContainsString('correction_status=PUBLISHED', $display);
     }
 
+
+
+    public function test_run_correction_command_renders_cancelled_status_when_rerun_is_unchanged(): void
+    {
+        $repo = m::mock(EodCorrectionRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+
+        $approved = (object) [
+            'correction_id' => 7,
+            'trade_date' => '2026-03-17',
+            'status' => 'APPROVED',
+        ];
+
+        $cancelled = (object) [
+            'correction_id' => 7,
+            'trade_date' => '2026-03-17',
+            'status' => 'CANCELLED',
+        ];
+
+        $repo->shouldReceive('findById')
+            ->once()
+            ->with(7)
+            ->andReturn($approved);
+
+        $pipeline->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-17', 'manual_file', 7)
+            ->andReturn((object) [
+                'run_id' => 44,
+                'trade_date_requested' => '2026-03-17',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+            ]);
+
+        $repo->shouldReceive('findById')
+            ->once()
+            ->with(7)
+            ->andReturn($cancelled);
+
+        $this->app->instance(EodCorrectionRepository::class, $repo);
+        $this->app->instance(MarketDataPipelineService::class, $pipeline);
+
+        $command = new RunCorrectionCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'correction_id' => 7,
+            '--requested_date' => '2026-03-17',
+            '--source_mode' => 'manual_file',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('run_id=44', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17', $display);
+        $this->assertStringContainsString('terminal_status=SUCCESS', $display);
+        $this->assertStringContainsString('publishability_state=READABLE', $display);
+        $this->assertStringContainsString('correction_id=7', $display);
+        $this->assertStringContainsString('correction_status=CANCELLED', $display);
+    }
+
     public function test_run_correction_command_rejects_non_approved_status_before_pipeline_execution(): void
     {
         $repo = m::mock(EodCorrectionRepository::class);
