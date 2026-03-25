@@ -18,6 +18,7 @@ use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Models\EodRun;
 use Illuminate\Config\Repository;
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Config\Repository as ConfigRepositoryContract;
 use Illuminate\Support\Facades\Facade;
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
@@ -29,9 +30,26 @@ class MarketDataPipelineServiceTest extends TestCase
         parent::setUp();
 
         $container = new Container();
-        $container->instance('config', new Repository([
+
+        Container::setInstance($container);
+        Facade::clearResolvedInstances();
+        Facade::setFacadeApplication($container);
+
+        $container->instance('app', $container);
+
+        $config = new Repository([
+            'app.env' => 'testing',
+            'database.default' => 'sqlite',
+            'database.connections.sqlite' => [
+                'driver' => 'sqlite',
+                'database' => ':memory:',
+                'prefix' => '',
+            ],
             'market_data' => require dirname(__DIR__, 3).'/config/market_data.php',
-        ]));
+        ]);
+
+        $container->instance('config', $config);
+        $container->instance(ConfigRepositoryContract::class, $config);
 
         $db = new class {
             public function transaction(callable $callback)
@@ -41,8 +59,6 @@ class MarketDataPipelineServiceTest extends TestCase
         };
 
         $container->instance('db', $db);
-        Container::setInstance($container);
-        Facade::setFacadeApplication($container);
     }
 
     protected function tearDown(): void

@@ -18,10 +18,10 @@
   - portfolio / investor / position management
 
 ## Current Phase
-- Phase: SESSION_33_DB_BACKED_PIPELINE_INTEGRATION_MINIMUM
+- Phase: SESSION_34_CHECKPOINT_SYNC_AFTER_EXECUTED_LOCAL_PROOF
 
 ## Current Batch
-- Batch: BATCH_33_DB_BACKED_PIPELINE_INTEGRATION_MINIMUM
+- Batch: BATCH_34_CHECKPOINT_SYNC_AFTER_EXECUTED_LOCAL_PROOF
 
 ## Global Status
 - Status: BELUM SELESAI
@@ -60,7 +60,7 @@
 - Batch 33 DB-backed pipeline integration minimum
 
 ## Area yang Sedang Dikerjakan
-- Batch ini menutup gap prioritas berikutnya yang masih tersisa setelah DB-backed repository proof minimum: end-to-end DB-backed pipeline integration minimum untuk jalur daily publish dan correction publish pada schema nyata berbasis sqlite testing harness. Batch ini tidak membuka fitur baru; fokusnya hanya memperkeras proof integrasi lintas service+repository terhadap kontrak inti market-data.
+- Batch ini menutup `DOC SYNC ISSUE` prioritas berikutnya setelah sesi 33: checkpoint dan tracker masih menyatakan proof integrasi DB-backed terblokir di environment, padahal bukti lokal repo terbaru sudah menunjukkan seluruh suite lulus `58 tests / 275 assertions`. Scope tetap sempit: sinkronisasi checkpoint terhadap source-of-truth terbaru dan proof nyata yang sudah dieksekusi, tanpa membuka area fitur baru.
 
 ## Kontrak DONE
 - Root ownership rules extracted
@@ -91,7 +91,7 @@
 - Replay backfill minimum now exists to execute replay verification across a trading-date range rooted in `market_calendar` and current readable publication pointers, writing a deterministic summary artifact
 - Backfill minimum runtime now exists to execute `market-data:daily` across a trading-date range resolved from `market_calendar` and write a deterministic summary artifact
 - DB-backed repository integration minimum now proves persistence for correction lifecycle, publication current pointer switch, and replay expected/actual persistence on real tables (sqlite testing schema)
-- End-to-end DB-backed pipeline integration minimum for daily publish and correction publish now exists as committed sqlite integration tests (`MarketDataPipelineIntegrationTest`) plus expanded sqlite schema harness, but execution proof in this container remains environment-blocked because PHP CLI here lacks required extensions (`dom`/`mbstring`/`xml`/`xmlwriter`) and sqlite driver support.
+- End-to-end DB-backed pipeline integration minimum for daily publish and correction publish kini tidak lagi hanya committed; proof lokal repo terbaru sudah dieksekusi penuh dan lulus `58 tests / 275 assertions`, termasuk `MarketDataPipelineIntegrationTest`, `PublicationRepositoryIntegrationTest`, `CorrectionRepositoryIntegrationTest`, dan `ReplayResultRepositoryIntegrationTest`.
 - Ticker mapping miss at ingest is now reason-coded deterministically as invalid-bar evidence instead of fail-fast runtime abort
 - Session snapshot minimum runtime now exists to capture optional supplemental session snapshot rows aligned to readable effective trade date and to purge them according to retention policy
 
@@ -112,6 +112,7 @@
 
 - `DOC SYNC ISSUE`: correction/reseal replacement path kini memiliki command eksekusi eksplisit dan event outcome correction publish/cancel agar pembuktian runtime dapat dilakukan tanpa memakai rerun normal yang memang harus tertahan.
 - `DOC SYNC ISSUE`: repo kini punya replay verifier minimum yang membaca fixture package dan menulis `md_replay_*`, sehingga checkpoint harus dinaikkan agar status replay tidak lagi tertulis sebagai export-only.
+- `DOC SYNC ISSUE`: checkpoint sesi 33 masih menyatakan DB-backed pipeline integration proof environment-blocked, tetapi proof lokal repo terbaru sudah lulus penuh (`58 tests / 275 assertions`). Sesi 34 menutup mismatch itu dan menyinkronkan tracker/status agar tidak lagi menyesatkan.
 - `DOC SYNC ISSUE`: replay smoke fixtures sekarang dikomit di `storage/app/market_data/replay-fixtures/**` agar proof runtime tidak bergantung pada fixture buatan manual yang rawan salah. `missing_file_case` wajib gagal dengan `Replay fixture file missing: expected/missing.json`; bila tidak, sesi replay belum boleh dianggap rapat.
 - `DOC SYNC ISSUE`: evidence pack replay sebelumnya hanya mengekspor ringkasan flat + actual reason-code counts, padahal kontrak audit mewajibkan preservation of both expected and actual state. Sesi 19 menutup gap ini dengan expected-context persistence + explicit replay_expected_state/replay_actual_state export.
 - `DOC SYNC ISSUE`: ZIP source-of-truth sesi 19 masih kehilangan wiring runtime dari `ReplayVerificationService` ke `ReplayResultRepository` untuk expected replay context, sehingga `expected_reason_code_counts_json` tetap `NULL` walau checkpoint sesi 19 sudah dinaikkan. Sesi 20 menutup mismatch ini dan menambahkan guard test agar regress tidak lolos diam-diam.
@@ -340,3 +341,9 @@
 - Sesi 33 menutup batch prioritas berikutnya dengan memperluas `tests/Support/UsesMarketDataSqlite.php` agar cukup untuk menjalankan pipeline market-data lintas run/event/artifact/publication/current-pointer/ticker master/history tables, bukan hanya repository subset.
 - Ditambahkan `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` untuk membuktikan dua jalur minimum: daily publish sukses ke current publication dan correction publish yang benar-benar mengganti current publication serta mengubah status correction menjadi `PUBLISHED`.
 - Scope tetap market-data only dan tidak membuka domain/fitur baru; batch ini hanya memperkeras proof layer integrasi. Eksekusi otomatis penuh belum bisa dibuktikan di container kerja sesi ini karena keterbatasan ekstensi PHP CLI + sqlite driver, sehingga final done gate tetap belum tertutup.
+
+
+## Session 34 Update
+- ZIP source-of-truth sesi 34 divalidasi ulang terhadap checkpoint dan proof lokal terbaru. Ditemukan `DOC SYNC ISSUE`: checkpoint sesi 33 masih menyebut proof integrasi DB-backed terblokir di container, padahal repo kerja terbaru sudah lulus penuh `58 tests / 275 assertions`.
+- Sesi 34 tidak membuka fitur baru. Batch ini hanya menyinkronkan checkpoint/tracker terhadap proof nyata yang sudah lewat, sehingga sesi berikutnya tidak lagi mengulang area repository/pipeline integration yang sebenarnya sudah rapat.
+- Bukti yang sekarang dianggap canonical untuk area ini: `CorrectionRepositoryIntegrationTest`, `PublicationRepositoryIntegrationTest`, `ReplayResultRepositoryIntegrationTest`, `MarketDataPipelineIntegrationTest`, dan full `phpunit` pass `58/275`.

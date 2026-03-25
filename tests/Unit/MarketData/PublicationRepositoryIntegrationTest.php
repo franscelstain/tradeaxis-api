@@ -86,12 +86,17 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->assertSame(1, (int) $promoted->is_current);
         $this->assertSame(10, (int) $promoted->supersedes_publication_id);
 
-        $current = $repo->findCurrentPublicationForTradeDate('2026-03-20');
+        // Pakai method yang memang select alias run_terminal_status.
+        $current = $repo->findPointerResolvedPublicationForTradeDate('2026-03-20');
+
+        $this->assertNotNull($current);
         $this->assertSame((int) $candidate->publication_id, (int) $current->publication_id);
         $this->assertSame(27, (int) $current->pointer_run_id);
         $this->assertSame('SUCCESS', $current->run_terminal_status);
+        $this->assertSame('READABLE', $current->run_publishability_state);
 
         $old = DB::table('eod_publications')->where('publication_id', 10)->first();
+        $this->assertNotNull($old);
         $this->assertSame(0, (int) $old->is_current);
     }
 }

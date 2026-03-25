@@ -39,17 +39,27 @@ class MarketDataPipelineIntegrationTest extends TestCase
             mkdir($this->fixtureDir, 0777, true);
         }
 
-        config()->set('market_data.source.local_directory', str_replace(base_path().'/', '', $this->fixtureDir.'/'));
+        // Penting:
+        // LocalFileEodBarsAdapter memakai base_path(config('market_data.source.local_directory')).
+        // Jadi nilai config harus RELATIVE terhadap base_path(), bukan absolute path hasil storage_path().
+        config()->set('market_data.source.local_directory', 'storage/framework/testing/market_data_pipeline');
         config()->set('market_data.source.file_template_json', '{date}.json');
         config()->set('market_data.source.file_template_csv', '{date}.csv');
+        config()->set('market_data.source.default_source_name', 'LOCAL_FILE');
     }
 
     protected function tearDown(): void
     {
         Carbon::setTestNow();
+
         foreach (glob($this->fixtureDir.'/*.json') ?: [] as $file) {
             @unlink($file);
         }
+
+        foreach (glob($this->fixtureDir.'/*.csv') ?: [] as $file) {
+            @unlink($file);
+        }
+
         @rmdir($this->fixtureDir);
 
         parent::tearDown();
@@ -59,6 +69,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
     {
         $this->seedTicker(1, 'BBCA');
         $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA',
             'trade_date' => '2026-03-20',
@@ -71,31 +82,42 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'captured_at' => '2026-03-20T17:20:00+07:00',
         ]]);
 
+        $this->assertFileExists($this->fixtureDir.'/2026-03-20.json');
+
         $run = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
 
         $this->assertSame('SUCCESS', $run->terminal_status);
         $this->assertSame('READABLE', $run->publishability_state);
         $this->assertSame('COMPLETED', $run->lifecycle_state);
         $this->assertSame('2026-03-20', $run->trade_date_effective);
-        $this->assertEquals('1.0000', (string) $run->coverage_ratio);
+        $this->assertEquals(1.0, (float) $run->coverage_ratio);
         $this->assertNotNull($run->bars_batch_hash);
         $this->assertNotNull($run->indicators_batch_hash);
         $this->assertNotNull($run->eligibility_batch_hash);
 
         $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $this->assertNotNull($publication);
         $this->assertSame(1, (int) $publication->is_current);
         $this->assertSame('SEALED', $publication->seal_state);
 
         $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $this->assertNotNull($pointer);
         $this->assertSame((int) $publication->publication_id, (int) $pointer->publication_id);
 
         $this->assertSame(1, DB::table('eod_bars')->where('trade_date', '2026-03-20')->count());
         $this->assertSame(1, DB::table('eod_indicators')->where('trade_date', '2026-03-20')->count());
         $this->assertSame(1, DB::table('eod_eligibility')->where('trade_date', '2026-03-20')->where('eligible', 1)->count());
+
         $this->assertSame(1, DB::table('eod_bars_history')->where('publication_id', $publication->publication_id)->count());
         $this->assertSame(1, DB::table('eod_indicators_history')->where('publication_id', $publication->publication_id)->count());
         $this->assertSame(1, DB::table('eod_eligibility_history')->where('publication_id', $publication->publication_id)->count());
-        $this->assertTrue(DB::table('eod_run_events')->where('run_id', $run->run_id)->where('event_type', 'RUN_FINALIZED')->exists());
+
+        $this->assertTrue(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'RUN_FINALIZED')
+                ->exists()
+        );
     }
 
     public function test_run_daily_correction_replaces_current_publication_and_marks_correction_published(): void
@@ -103,6 +125,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->seedTicker(1, 'BBCA');
         $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA',
             'trade_date' => '2026-03-20',
@@ -115,6 +138,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'captured_at' => '2026-03-20T17:25:00+07:00',
         ]]);
 
+        $this->assertFileExists($this->fixtureDir.'/2026-03-20.json');
+
         $corrections = new EodCorrectionRepository();
         $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute', 'system');
         $approved = $corrections->approve($request->correction_id, 'reviewer');
@@ -123,25 +148,60 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $this->assertSame('SUCCESS', $run->terminal_status);
         $this->assertSame('READABLE', $run->publishability_state);
-        $this->assertSame(1, DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->count());
 
-        $currentPublication = DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->first();
+        $this->assertSame(
+            1,
+            DB::table('eod_publications')
+                ->where('trade_date', '2026-03-20')
+                ->where('is_current', 1)
+                ->count()
+        );
+
+        $currentPublication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('is_current', 1)
+            ->first();
+
+        $this->assertNotNull($currentPublication);
         $this->assertGreaterThan(1, (int) $currentPublication->publication_version);
         $this->assertSame(1, (int) $currentPublication->supersedes_publication_id);
 
-        $currentBar = DB::table('eod_bars')->where('trade_date', '2026-03-20')->where('ticker_id', 1)->first();
+        $currentBar = DB::table('eod_bars')
+            ->where('trade_date', '2026-03-20')
+            ->where('ticker_id', 1)
+            ->first();
+
+        $this->assertNotNull($currentBar);
         $this->assertEquals('134', (string) $currentBar->close);
 
-        $persistedCorrection = DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->first();
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
         $this->assertSame('PUBLISHED', $persistedCorrection->status);
-        $this->assertSame('Historical correction published safely via new sealed current publication.', $persistedCorrection->final_outcome_note);
+        $this->assertSame(
+            'Historical correction published safely via new sealed current publication.',
+            $persistedCorrection->final_outcome_note
+        );
         $this->assertSame(90, (int) $persistedCorrection->prior_run_id);
         $this->assertSame((int) $run->run_id, (int) $persistedCorrection->new_run_id);
         $this->assertNotNull($persistedCorrection->published_at);
 
         $this->assertSame(1, DB::table('eod_bars_history')->where('publication_id', 1)->count());
-        $this->assertSame(1, DB::table('eod_bars_history')->where('publication_id', $currentPublication->publication_id)->count());
-        $this->assertTrue(DB::table('eod_run_events')->where('run_id', $run->run_id)->where('event_type', 'CORRECTION_PUBLISHED')->exists());
+        $this->assertSame(
+            1,
+            DB::table('eod_bars_history')
+                ->where('publication_id', $currentPublication->publication_id)
+                ->count()
+        );
+
+        $this->assertTrue(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'CORRECTION_PUBLISHED')
+                ->exists()
+        );
     }
 
     private function makePipeline(): MarketDataPipelineService
@@ -150,6 +210,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $publications = new EodPublicationRepository();
         $artifacts = new EodArtifactRepository();
         $tickers = new TickerMasterRepository();
+
         $bars = new EodBarsIngestService(
             new LocalFileEodBarsAdapter(),
             new PublicApiEodBarsAdapter(function () {
@@ -159,8 +220,19 @@ class MarketDataPipelineIntegrationTest extends TestCase
             $artifacts,
             $publications
         );
-        $indicators = new EodIndicatorsComputeService($artifacts, $publications, new IndicatorVectorService());
-        $eligibility = new EodEligibilityBuildService($tickers, $artifacts, $publications, new EligibilityDecisionService());
+
+        $indicators = new EodIndicatorsComputeService(
+            $artifacts,
+            $publications,
+            new IndicatorVectorService()
+        );
+
+        $eligibility = new EodEligibilityBuildService(
+            $tickers,
+            $artifacts,
+            $publications,
+            new EligibilityDecisionService()
+        );
 
         return new MarketDataPipelineService(
             $runs,
@@ -322,6 +394,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
     private function writeBarsFixture(string $tradeDate, array $rows): void
     {
-        file_put_contents($this->fixtureDir.'/'.$tradeDate.'.json', json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        file_put_contents(
+            $this->fixtureDir.DIRECTORY_SEPARATOR.$tradeDate.'.json',
+            json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        );
     }
 }

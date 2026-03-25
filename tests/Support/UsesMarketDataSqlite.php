@@ -8,26 +8,51 @@ use Illuminate\Support\Facades\Schema;
 
 trait UsesMarketDataSqlite
 {
+    protected string $marketDataSqliteConnection = 'sqlite';
+
     protected function bootMarketDataSqlite(): void
     {
-        config()->set('database.default', 'sqlite');
-        config()->set('database.connections.sqlite', [
+        config()->set('database.default', $this->marketDataSqliteConnection);
+        config()->set("database.connections.{$this->marketDataSqliteConnection}", [
             'driver' => 'sqlite',
             'database' => ':memory:',
             'prefix' => '',
             'foreign_key_constraints' => false,
         ]);
 
-        DB::purge('sqlite');
-        DB::reconnect('sqlite');
-        Schema::setConnectionResolver(app('db'));
-        Schema::connection('sqlite')->dropAllTables();
+        DB::purge($this->marketDataSqliteConnection);
+        DB::reconnect($this->marketDataSqliteConnection);
+
+        $schema = $this->schema();
+
+        // Untuk test bootstrap, cukup clear schema tanpa setConnectionResolver().
+        if (method_exists($schema, 'dropAllTables')) {
+            $schema->dropAllTables();
+        }
+
         $this->createMarketDataSqliteSchema();
+    }
+
+    protected function tearDownMarketDataSqlite(): void
+    {
+        DB::disconnect($this->marketDataSqliteConnection);
+    }
+
+    protected function schema()
+    {
+        return Schema::connection($this->marketDataSqliteConnection);
+    }
+
+    protected function db()
+    {
+        return DB::connection($this->marketDataSqliteConnection);
     }
 
     protected function createMarketDataSqliteSchema(): void
     {
-        Schema::connection('sqlite')->create('tickers', function (Blueprint $table) {
+        $schema = $this->schema();
+
+        $schema->create('tickers', function (Blueprint $table) {
             $table->integer('ticker_id')->primary();
             $table->string('ticker_code');
             $table->string('is_active')->nullable();
@@ -35,7 +60,7 @@ trait UsesMarketDataSqlite
             $table->date('delisted_date')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_runs', function (Blueprint $table) {
+        $schema->create('eod_runs', function (Blueprint $table) {
             $table->increments('run_id');
             $table->date('trade_date_requested');
             $table->date('trade_date_effective')->nullable();
@@ -72,7 +97,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('updated_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_run_events', function (Blueprint $table) {
+        $schema->create('eod_run_events', function (Blueprint $table) {
             $table->increments('event_id');
             $table->integer('run_id');
             $table->date('trade_date_requested');
@@ -86,7 +111,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('created_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_dataset_corrections', function (Blueprint $table) {
+        $schema->create('eod_dataset_corrections', function (Blueprint $table) {
             $table->increments('correction_id');
             $table->date('trade_date');
             $table->integer('prior_run_id')->nullable();
@@ -104,7 +129,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('updated_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_publications', function (Blueprint $table) {
+        $schema->create('eod_publications', function (Blueprint $table) {
             $table->increments('publication_id');
             $table->date('trade_date');
             $table->integer('run_id');
@@ -120,7 +145,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('updated_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_current_publication_pointer', function (Blueprint $table) {
+        $schema->create('eod_current_publication_pointer', function (Blueprint $table) {
             $table->date('trade_date')->primary();
             $table->integer('publication_id');
             $table->integer('run_id');
@@ -129,7 +154,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('updated_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_bars', function (Blueprint $table) {
+        $schema->create('eod_bars', function (Blueprint $table) {
             $table->increments('bar_id');
             $table->date('trade_date');
             $table->integer('ticker_id');
@@ -145,7 +170,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('created_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_invalid_bars', function (Blueprint $table) {
+        $schema->create('eod_invalid_bars', function (Blueprint $table) {
             $table->increments('invalid_bar_id');
             $table->date('trade_date')->nullable();
             $table->integer('ticker_id')->nullable();
@@ -165,7 +190,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('created_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_indicators', function (Blueprint $table) {
+        $schema->create('eod_indicators', function (Blueprint $table) {
             $table->increments('indicator_id');
             $table->date('trade_date');
             $table->integer('ticker_id');
@@ -182,7 +207,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('created_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_eligibility', function (Blueprint $table) {
+        $schema->create('eod_eligibility', function (Blueprint $table) {
             $table->increments('eligibility_id');
             $table->date('trade_date');
             $table->integer('ticker_id');
@@ -193,7 +218,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('created_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('md_replay_daily_metrics', function (Blueprint $table) {
+        $schema->create('md_replay_daily_metrics', function (Blueprint $table) {
             $table->integer('replay_id');
             $table->date('trade_date');
             $table->date('trade_date_effective')->nullable();
@@ -229,17 +254,18 @@ trait UsesMarketDataSqlite
             $table->text('expected_reason_code_counts_json')->nullable();
             $table->text('mismatch_summary')->nullable();
             $table->dateTime('created_at')->nullable();
+
             $table->primary(['replay_id', 'trade_date']);
         });
 
-        Schema::connection('sqlite')->create('md_replay_reason_code_counts', function (Blueprint $table) {
+        $schema->create('md_replay_reason_code_counts', function (Blueprint $table) {
             $table->integer('replay_id');
             $table->date('trade_date');
             $table->string('reason_code');
             $table->integer('reason_count');
         });
 
-        Schema::connection('sqlite')->create('eod_bars_history', function (Blueprint $table) {
+        $schema->create('eod_bars_history', function (Blueprint $table) {
             $table->increments('history_id');
             $table->integer('publication_id');
             $table->date('trade_date')->nullable();
@@ -255,7 +281,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('created_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_indicators_history', function (Blueprint $table) {
+        $schema->create('eod_indicators_history', function (Blueprint $table) {
             $table->increments('history_id');
             $table->integer('publication_id');
             $table->date('trade_date')->nullable();
@@ -272,7 +298,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('created_at')->nullable();
         });
 
-        Schema::connection('sqlite')->create('eod_eligibility_history', function (Blueprint $table) {
+        $schema->create('eod_eligibility_history', function (Blueprint $table) {
             $table->increments('history_id');
             $table->integer('publication_id');
             $table->date('trade_date')->nullable();
