@@ -1,163 +1,169 @@
 # LUMEN_CONTRACT_TRACKER
 
-| Contract Item | Owner Doc | Architecture Guide | Kewajiban Utama | File Code Pemenuh | Test Pemenuh | Evidence/Output Support | Status | Catatan |
-|---|---|---|---|---|---|---|---|---|
-| Root ownership rules extracted | `docs/README.md` | `docs/api_architecture/**` | Root source-of-truth, ownership, dan build order dipahami dan diterapkan | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | checkpoint update | DONE | Authority order sudah dibaca dan dicatat |
-| System assembly baseline extracted | `docs/system_audit/SYSTEM_ASSEMBLY_BASELINE.md` | `docs/api_architecture/**` | Urutan assembly lintas area dipahami dan dipatuhi | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | checkpoint update | DONE | Build order diikuti sebelum ubah code |
-| System readiness baseline extracted | `docs/system_audit/SYSTEM_READINESS_AUDIT_BASELINE.md` | `docs/api_architecture/**` | Readiness/build-start baseline dipahami dan diterapkan | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | checkpoint update | DONE | Readiness dipakai sebagai anti-shortcut baseline |
-| System readiness tracker respected | `docs/system_audit/SYSTEM_READINESS_CONTRACT_TRACKER.md` | `docs/api_architecture/**` | Tracker readiness dipakai untuk memastikan tidak ada shortcut implementasi | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | checkpoint update | DONE | Tidak mulai dari api_architecture |
-| Cross-domain input baseline respected | `docs/system_audit/SYSTEM_CROSS_DOMAIN_INPUT_BASELINE.md` | `docs/api_architecture/**` | Tidak ada shortcut liar terhadap upstream producer meaning | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | checkpoint update | DONE | Session 3 tetap market-data only |
-| Translation baseline extracted | `docs/system_audit/SYSTEM_TRANSLATION_BASELINE.md` | `docs/api_architecture/**` | Mapping siapa baca apa, siapa orkestrasi, siapa compute, siapa persistence, siapa transport jelas | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | checkpoint update | DONE | Dibaca sebagai guardrail, belum seluruhnya diterapkan |
-| Market-data domain boundary extracted | `docs/market_data/book/Domain_Boundary_Invariants_LOCKED.md` | `docs/api_architecture/**` | Boundary domain market-data diekstrak dan dijaga | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | checkpoint update | DONE | Tidak ada drift ke watchlist/execution |
-| EOD bars contract mapped | `docs/market_data/book/EOD_Bars_Contract.md`, `docs/market_data/book/Canonicalization_Contract_EOD_Bars.md`, `docs/market_data/db/**` | `docs/api_architecture/lumen-config-env-baseline.md` | Entitas, storage, dan flow EOD bars dipetakan ke code | `app/Application/MarketData/Services/EodBarsIngestService.php`, `app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php`, `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`, `app/Infrastructure/MarketData/Source/SourceAcquisitionException.php`, `app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php`, `database/migrations/2026_03_22_000001_create_market_data_core_schema.php`, `config/market_data.php` | `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`, `tests/Unit/MarketData/EodBarsIngestServiceTest.php` | structured run events + invalid bar rows + invalid-bars export + API acquisition retry/throttle proof | DONE | Canonical ingest nyata kini ada untuk `manual_file/manual_entry/api`; unmapped ticker source rows no longer fail-fast silently and are stored as reason-coded invalid bars |
-| EOD indicators contract mapped | `docs/market_data/book/EOD_Indicators_Contract.md`, `docs/market_data/indicators/**` | `docs/api_architecture/lumen-config-env-baseline.md` | Formula/baseline/flow indicators dipetakan ke code | `app/Application/MarketData/Services/EodIndicatorsComputeService.php`, `app/Application/MarketData/Services/IndicatorVectorService.php`, `app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php`, `config/market_data.php` | `tests/Unit/MarketData/IndicatorVectorServiceTest.php` | indicator rows + structured run events + direct vector proof | PARTIAL | Baseline compute nyata dan direct vector tests sudah ada; orchestrated runtime tests dan replay/fixture runner belum ada |
-| Eligibility/session snapshot contract mapped | `docs/market_data/session_snapshot/**`, `docs/market_data/book/EOD_Eligibility_Snapshot_Contract_LOCKED.md`, `docs/market_data/book/Eligibility_Partial_Data_Behavior_LOCKED.md` | `docs/api_architecture/lumen-config-env-baseline.md` | Snapshot scope dan boundary dipetakan ke code | `app/Application/MarketData/Services/EodEligibilityBuildService.php`, `app/Application/MarketData/Services/EligibilityDecisionService.php`, `app/Infrastructure/Persistence/MarketData/TickerMasterRepository.php`, `app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php`, `config/market_data.php` | `tests/Unit/MarketData/EligibilityDecisionServiceTest.php` | eligibility rows + structured run events + direct decision proof | PARTIAL | One-row-per-universe-ticker dan direct decision tests sudah ada; session snapshot minimum runtime kini ada, walau integration matrix lebih luas masih belum ada |
-| Publication contract mapped | `docs/market_data/book/**`, `docs/market_data/db/**`, `docs/market_data/ops/**` | `docs/api_architecture/lumen-config-env-baseline.md` | Publication flow dipetakan ke code | `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`, `config/market_data.php`, `database/migrations/2026_03_22_000001_create_market_data_core_schema.php` | - | candidate publication row + seal + current switch + pointer sync | DONE | Candidate publication, current-switch, pointer sync, dan correction replacement flow kini sudah ada di runtime |
-| Current publication pointer contract mapped | `docs/market_data/book/**`, `docs/market_data/db/**` | `docs/api_architecture/lumen-config-env-baseline.md` | Pointer/current publication dipetakan ke code | `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`, `database/migrations/2026_03_22_000001_create_market_data_core_schema.php` | - | current pointer resolution + fallback lookup + mirror sync | DONE | Pointer owner kini dipakai saat resolve/promote current publication termasuk correction publish path |
-| Correction/reseal contract mapped | `docs/market_data/book/**`, `docs/market_data/ops/**`, `docs/market_data/db/**` | `docs/api_architecture/**` | Correction dan reseal flow dipetakan ke code | `app/Application/MarketData/Services/MarketDataPipelineService.php`, `app/Application/MarketData/Services/PublicationDiffService.php`, `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`, `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php`, `app/Models/EodDatasetCorrection.php`, `database/migrations/2026_03_22_000001_create_market_data_core_schema.php`, `database/migrations/2026_03_24_000003_add_final_outcome_note_to_eod_dataset_corrections.php` | `tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php`, `tests/Unit/MarketData/PublicationDiffServiceTest.php`, `tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`, `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`, `tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php`, `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`, `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`, `tests/Unit/MarketData/CorrectionCommandsTest.php` | correction request/approval status + immutable history staging + reseal/publish trail + correction evidence export + unchanged-vs-changed diff proof + persisted final outcome note + orchestrated finalize correction outcome proof + DB-backed repository persistence proof + executed local correction publish integration proof + executed local correction cancel/unchanged integration proof + operator cancelled-summary proof | PARTIAL | Correction runtime, evidence export minimum, direct diff proof, final outcome note column khusus, orchestrated finalize tests, DB-backed repository proof minimum, executed local correction publish integration proof, executed local cancel/unchanged proof, dan operator command proof untuk held-conflict summary kini sudah ada (`60 tests / 306 assertions` sebelum batch sesi 36); broader error/conflict matrix lintas skenario masih belum lengkap |
-| Registry and reason codes mapped | `docs/market_data/registry/**` | `docs/api_architecture/lumen-config-env-baseline.md` | Registry, reason codes, normalization dipetakan ke code | `config/market_data.php`, `database/migrations/2026_03_22_000001_create_market_data_core_schema.php`, `database/seeders/MarketData/MarketDataReasonCodesSeeder.php`, `app/Application/MarketData/Services/EodBarsIngestService.php`, `app/Application/MarketData/Services/EodEligibilityBuildService.php` | `tests/Unit/MarketData/EodBarsIngestServiceTest.php` | reason-coded invalid rows / eligibility rows / run events | DONE | Registry kini mencakup `BAR_TICKER_MAPPING_MISSING` sehingga source row unmapped terhadap ticker master tetap terlacak sebagai invalid bar yang sah |
-| Ops flow mapped | `docs/market_data/ops/**` | `docs/api_architecture/**` | Command/job/scheduler/failure handling dipetakan ke code | `app/Console/Kernel.php`, `app/Console/Commands/MarketData/**`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `app/Infrastructure/Persistence/MarketData/EodRunRepository.php` | `tests/Unit/MarketData/CorrectionCommandsTest.php`, `tests/Unit/MarketData/OpsCommandSurfaceTest.php`, `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`, `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` | run/event telemetry + current-switch/fallback finalize trace + direct correction command-surface proof + direct backfill/session-snapshot/replay command-surface proof + DB-backed pointer/current persistence proof + executed local DB-backed daily/correction pipeline integration proof | PARTIAL | Artifact runtime inti, correction request/approve/run, minimum ops command surface untuk backfill/session-snapshot/replay, DB-backed pointer/current persistence minimum, executed local DB-backed daily/correction pipeline integration proof, dan correction held-conflict command summary proof kini ada; jalur correction cancelled juga sudah terbukti di command summary dan pipeline integration (`60 tests / 306 assertions` sebelum batch sesi 36), tetapi broader scheduler matrix masih belum ada |
-| Tests requirements mapped | `docs/market_data/tests/**` | `docs/api_architecture/**` | Test matrix, fixtures, acceptance criteria dipetakan ke code/tests | `app/Application/MarketData/Services/DeterministicHashService.php`, `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`, `app/Application/MarketData/Services/ReplayVerificationService.php`, `app/Application/MarketData/Services/IndicatorVectorService.php`, `app/Application/MarketData/Services/EligibilityDecisionService.php`, `app/Application/MarketData/Services/FinalizeDecisionService.php`, `app/Application/MarketData/Services/PublicationDiffService.php`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php`, `app/Console/Commands/MarketData/RequestCorrectionCommand.php`, `app/Console/Commands/MarketData/ApproveCorrectionCommand.php`, `app/Console/Commands/MarketData/RunCorrectionCommand.php` | `tests/Unit/MarketData/DeterministicHashServiceTest.php`, `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`, `tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php`, `tests/Unit/MarketData/ReplayEvidenceExportServiceTest.php`, `tests/Unit/MarketData/ReplayVerificationServiceTest.php`, `tests/Unit/MarketData/IndicatorVectorServiceTest.php`, `tests/Unit/MarketData/EligibilityDecisionServiceTest.php`, `tests/Unit/MarketData/FinalizeDecisionServiceTest.php`, `tests/Unit/MarketData/PublicationDiffServiceTest.php`, `tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`, `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`, `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`, `tests/Unit/MarketData/CorrectionCommandsTest.php`, `tests/Unit/MarketData/OpsCommandSurfaceTest.php`, `tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php`, `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`, `tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php` | unit-test proof for hash determinism, evidence export minimum, fixture-aware replay verification minimum, indicator vectors, eligibility decisions, finalize gating, publication diff, orchestrated finalize/correction outcomes, direct correction/backfill/session-snapshot/replay command surface, DB-backed repository persistence, and executed local DB-backed daily/correction pipeline integration proof | PARTIAL | Test matrix kini tidak lagi bertumpu pada mock/service proof karena repository persistence minimum, executed local end-to-end pipeline integration proof, dan operator held-conflict correction summary proof sudah ada (`60 tests / 306 assertions` sebelum batch sesi 36), termasuk unchanged correction cancel path; broader error/conflict coverage tetap belum lengkap |
-| Replay/backtest verification mapped | `docs/market_data/backtest/**` | `docs/api_architecture/**` | Replay/data-quality verification dipetakan ke code | `database/migrations/2026_03_22_000003_create_market_data_core_schema.php`, `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`, `app/Application/MarketData/Services/ReplayVerificationService.php`, `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`, `app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php`, `app/Console/Commands/MarketData/ExportEvidenceCommand.php`, `app/Console/Commands/MarketData/VerifyReplayCommand.php` | `tests/Unit/MarketData/ReplayEvidenceExportServiceTest.php`, `tests/Unit/MarketData/ReplayVerificationServiceTest.php`, `tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php` | replay_result export + replay reason-code evidence export + fixture-aware replay verification writer + committed smoke fixtures for happy/fail path proof + fixture-declared reason-code expectation compare + expected-vs-actual replay evidence preservation + built-in smoke suite runner + DB-backed replay persistence proof | PARTIAL | Replay verifier minimum kini ada dan dapat menulis proof ke `md_replay_*`; fixture-declared expected reason-code counts kini ikut dibandingkan; replay evidence export kini preserve expected and actual state explicitly; sesi 20 menutup wiring persistence expected replay context agar source repo terbaru sinkron dengan proof runtime; sesi 21 menambahkan `market-data:replay:smoke`, sesi 25 menutup range runner minimum, dan sesi 32 menambah DB-backed replay persistence proof; full end-to-end historical replay matrix tetap belum lengkap |
-| Replay backfill minimum command/runtime installed | `docs/market_data/backtest/**`, `docs/market_data/ops/**`, `docs/db/01_MARKET_CALENDAR.md` | `docs/api_architecture/**` | Minimum historical replay range runner exists, resolves trading dates from market calendar, selects current readable publications, runs fixture-aware replay verification per date, and writes deterministic replay-backfill summary evidence | `app/Application/MarketData/Services/ReplayBackfillService.php`, `app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php`, `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `app/Console/Commands/MarketData/ReplayBackfillCommand.php`, `app/Console/Kernel.php` | `tests/Unit/MarketData/ReplayBackfillServiceTest.php` | replay backfill summary artifact + per-date observed replay outcome/run_id/replay_id + replay evidence export for successful cases | DONE | Minimum replay historical range execution no longer depends on one-by-one manual verification and stays upstream-only without opening full scenario matrix expansion |
-| Evidence/output shape support mapped | `docs/market_data/evidence/**`, `docs/market_data/ops/**`, `docs/market_data/tests/**` | `docs/api_architecture/**` | Output/evidence shape yang diwajibkan didukung implementasi | `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`, `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`, `app/Console/Commands/MarketData/ExportEvidenceCommand.php`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`, `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php` | `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`, `tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php`, `tests/Unit/MarketData/ReplayEvidenceExportServiceTest.php` | run_summary/publication_manifest/run_event_summary/eligibility_export/invalid_bars_export/anomaly_report/correction_evidence/replay_result export runtime | DONE | Run evidence pack, correction evidence pack, dan replay evidence pack minimum kini bisa diekspor dari persistence nyata |
-| Domain drift guard enforced | `docs/market_data/book/**`, `docs/market_data/audit/**` | `docs/README.md`, `docs/system_audit/**`, `docs/api_architecture/**` | Implementasi tetap market-data only dan tidak drift | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | checkpoint update | DONE | Session 3 tidak masuk watchlist/execution/portfolio |
-| Architecture compliance enforced | `docs/api_architecture/**` | `docs/api_architecture/**` | Struktur code dan layering patuh pedoman arsitektur | `app/Application/MarketData/**`, `app/Infrastructure/Persistence/MarketData/**`, `app/Infrastructure/MarketData/Source/**`, `app/Console/Commands/MarketData/**`, `app/Models/**` | `tests/Unit/MarketData/*.php` | - | PARTIAL | Layering makin rapat; sesi 33 menambah proof integrasi DB-backed lintas service/repository tanpa merusak boundary, tetapi full executed matrix dan final readiness closure masih belum ada |
-| Backfill minimum command/runtime installed | `docs/market_data/ops/**`, `docs/market_data/backtest/**`, `docs/db/01_MARKET_CALENDAR.md` | `docs/api_architecture/**` | Locked `market-data:backfill` command exists, resolves trading dates from calendar, runs deterministic daily pipeline per trading date, and writes resumable summary evidence | `app/Application/MarketData/Services/MarketDataBackfillService.php`, `app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php`, `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`, `app/Console/Kernel.php` | `tests/Unit/MarketData/MarketDataBackfillServiceTest.php` | trading-date range backfill summary artifact + non-zero exit on failure | DONE | Minimum backfill/runtime gap is closed without opening full range orchestration or broad integration matrix |
-| Session snapshot minimum command/runtime installed | `docs/market_data/session_snapshot/**`, `docs/market_data/ops/**` | `docs/api_architecture/**` | Locked `market-data:session-snapshot` and `market-data:session-snapshot:purge` commands exist, align capture to readable effective trade date, scope by eligibility, persist supplemental rows, and emit deterministic summary artifacts | `app/Application/MarketData/Services/SessionSnapshotService.php`, `app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php`, `app/Infrastructure/Persistence/MarketData/SessionSnapshotRepository.php`, `app/Infrastructure/MarketData/Source/LocalFileSessionSnapshotAdapter.php`, `app/Console/Commands/MarketData/CaptureSessionSnapshotCommand.php`, `app/Console/Commands/MarketData/PurgeSessionSnapshotCommand.php`, `app/Console/Kernel.php`, `database/migrations/2026_03_24_000002_create_md_session_snapshots_table.php` | `tests/Unit/MarketData/SessionSnapshotServiceTest.php` | session snapshot summary artifact + purge summary artifact + run-event trace on owning readable run | DONE | Minimum session snapshot/runtime gap is closed without leaking downstream watchlist or ranking scope into market-data |
-| Final done gate passed | All relevant owner docs | `docs/api_architecture/**` | Semua kontrak relevan tertutup, readiness/build-order dipatuhi, tidak ada conflict penting terbuka | - | - | - | MISSING | Banyak partial lama sudah makin rapat berkat executed local DB-backed pipeline integration dan sesi 35 yang kini menutup unchanged cancel-path proof (`60 tests / 306 assertions`), tetapi broader executed matrix dan final readiness closure tetap belum tertutup |
+## File Role
+- Fungsi file ini: contract matrix market-data yang menentukan apa yang sudah rapat dan apa yang belum.
+- Fokus file ini:
+  - contract item utama;
+  - status item (`DONE`, `PARTIAL`, `MISSING`, `BLOCKED`, `CONFLICT`);
+  - bukti implementasi/proof;
+  - session terakhir yang mengubah status item;
+  - next required action.
+- File ini bukan timeline naratif utama. Timeline utama berada di `LUMEN_IMPLEMENTATION_STATUS.md`.
 
+## Writing Rules
+- Gunakan `CONTRACT ITEM` sebagai unit utama.
+- Gunakan `SESSION` hanya sebagai referensi singkat:
+  - `LAST UPDATED SESSION`
+  - `CLOSED BY SESSION`
+  - `EVIDENCE SESSION`
+- Jangan menulis ulang cerita sesi panjang di file ini.
+- Setiap contract item minimal harus punya:
+  - `STATUS`
+  - `OWNER AREA`
+  - `LAST UPDATED SESSION`
+  - `EVIDENCE`
+  - `OPEN GAP`
+  - `NEXT REQUIRED ACTION`
+- Status yang boleh dipakai:
+  - `DONE`
+  - `PARTIAL`
+  - `MISSING`
+  - `BLOCKED`
+  - `CONFLICT`
+- `DONE` di level session tidak otomatis berarti parent contract `DONE`.
 
-| Runtime bugfix for publication candidate and event logging | runtime findings from local execution + `docs/market_data/book/**` + `docs/market_data/db/**` | `docs/api_architecture/**` | proven runtime mismatch fixed without opening new domain area | `database/migrations/2026_03_22_000004_fix_publication_candidate_and_event_logging.php`, `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `app/Application/MarketData/Services/EodBarsIngestService.php`, `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`, `docs/market_data/db/Database_Schema_MariaDB.sql`, `docs/market_data/db/EOD_Publications_Table.sql` | - | candidate publication can be UNSEALED with null sealed_at; failure events no longer overflow message; failed stage no longer leaves run hanging | DONE | fixed from real local execution evidence before opening new feature area |
+## Resume Rule For New Chat
+- Gunakan ZIP terbaru sebagai source of truth.
+- Baca file ini dan `LUMEN_IMPLEMENTATION_STATUS.md` terlebih dahulu.
+- Validasi status tracker terhadap source code/test terbaru.
+- Ambil batch prioritas dari item `PARTIAL`, `MISSING`, atau `BLOCKED` yang dependency-nya sudah rapat.
+- Jangan membuka area baru bila parent contract yang menaungi area itu masih bolong.
 
-| Runtime bugfix for eod_runs lifecycle state machine | runtime findings from local execution + `docs/market_data/book/Run_Status_and_Quality_Gates_LOCKED.md` + `docs/market_data/db/Database_Schema_MariaDB.sql` | `docs/api_architecture/**` | proven runtime mismatch fixed without opening new domain area | `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`, `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | finalize path now uses `FINALIZING -> COMPLETED/FAILED`; code no longer writes illegal `FINALIZED` lifecycle state | DONE | fixed from real local execution evidence before opening new feature area |
+## Contract Selection Rule
+- Prioritaskan contract `MISSING` yang menjadi dependency langsung batch berikutnya.
+- Bila tidak ada `MISSING` yang sah dibuka, ambil `PARTIAL` dengan gap paling sempit namun paling load-bearing terhadap final readiness.
+- Jangan memilih batch baru hanya karena menarik; pilih yang paling dekat menutup parent contract matrix.
 
-| Runtime bugfix for finalize pointer resolution / outcome sync | runtime findings from local execution + `docs/market_data/book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md` + `docs/market_data/book/Run_Status_and_Quality_Gates_LOCKED.md` | `docs/api_architecture/**` | proven runtime mismatch fixed without opening new domain area | `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | - | post-promote verification now resolves current publication from pointer/current/sealed state without requiring the same run summary to already be SUCCESS/READABLE | DONE | fixed from real local execution evidence where publication current + pointer existed but `eod_runs` remained HELD because verifier used an over-strict resolver |
+## Reference Note
+- Canonical session batch IDs dikelola di `LUMEN_IMPLEMENTATION_STATUS.md`.
+- Gunakan label session/batch di sana sebagai referensi resmi saat mengisi `LAST UPDATED SESSION` atau `EVIDENCE SESSION`.
 
-| Correction/reseal execution path proofability | runtime findings from local execution + `docs/market_data/book/Historical_Correction_and_Reseal_Contract_LOCKED.md` + `docs/market_data/ops/Historical_Correction_Runbook_LOCKED.md` | `docs/api_architecture/**` | correction replacement path can be executed and observed explicitly without abusing normal rerun | `app/Console/Commands/MarketData/RunCorrectionCommand.php`, `app/Application/MarketData/Services/MarketDataPipelineService.php`, `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`, `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `app/Console/Kernel.php` | - | explicit correction run command + correction published/cancelled events + synced current replacement flow | DONE | correction/reseal path is now easier to prove in runtime and no longer depends on repurposing guarded normal reruns |
+## CONTRACT ITEM 1 — Foundation / bootstrap / ownership
+- STATUS: DONE
+- OWNER AREA: foundation / bootstrap / root ownership
+- LAST UPDATED SESSION: `session1_batch1_market-data-foundation`
+- EVIDENCE:
+  - root ownership extracted from `docs/README.md`;
+  - market-data scope locked;
+  - baseline Lumen config/env wiring enabled.
+- OPEN GAP: none
+- NEXT REQUIRED ACTION: none
 
+## CONTRACT ITEM 2 — Core runtime artifact lifecycle
+- STATUS: PARTIAL
+- OWNER AREA: bars / indicators / eligibility / publication
+- LAST UPDATED SESSION: `session35_batch35_correction_cancel_matrix_proof_minimum`
+- EVIDENCE:
+  - canonical bars/indicators/eligibility runtime installed;
+  - publication current-switch and pointer-sync runtime installed;
+  - unchanged correction path now proven locally after removing `publication_id` from content-hash payload;
+  - local full PHPUnit proof after session 35: `60 tests / 306 assertions`.
+- OPEN GAP:
+  - broader conflict/error matrix at artifact/runtime level is still not fully closed.
+- NEXT REQUIRED ACTION:
+  - continue strengthening broader correction conflict/error matrix without opening unrelated area.
 
-## Session 15 Update
-- Runtime bugfix: correction baseline publication resolver now resolves from `eod_current_publication_pointer` + `eod_publications.is_current=1` + `seal_state=SEALED` without requiring `eod_runs` summary state.
-- This closes the false precondition failure where correction run reported that no current sealed publication existed even though current publication + pointer were already present in DB.
+## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
+- STATUS: PARTIAL
+- OWNER AREA: correction runtime and finalize outcomes
+- LAST UPDATED SESSION: `session36_batch36_correction_conflict_held_operator_proof_minimum`
+- EVIDENCE:
+  - correction request / approval / reseal / publish runtime installed;
+  - correction final outcome note installed;
+  - correction finalize ordering fixed;
+  - unchanged correction rerun now proven locally to end as `CANCELLED`;
+  - held/conflict operator proof now proven locally;
+  - full local PHPUnit after session 36: `61 tests / 313 assertions`.
+- OPEN GAP:
+  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set.
+- NEXT REQUIRED ACTION:
+  - expand matrix for additional conflict/error scenarios that still remain uncovered.
 
+## CONTRACT ITEM 4 — Replay verification / evidence / smoke / backfill
+- STATUS: PARTIAL
+- OWNER AREA: replay verification and evidence
+- LAST UPDATED SESSION: `session25_batch25_replay-backfill-minimum`
+- EVIDENCE:
+  - replay verifier minimum exists;
+  - reason-code alignment exists;
+  - expected/actual evidence export exists;
+  - replay smoke suite exists;
+  - replay backfill minimum exists.
+- OPEN GAP:
+  - replay area still belongs to the broader parent test/evidence matrix that is not fully closed at project level.
+- NEXT REQUIRED ACTION:
+  - revisit only if replay becomes the next highest-priority remaining partial after correction/tests/ops matrix narrows further.
 
-## Session 16 correction tracking sync
+## CONTRACT ITEM 5 — Session snapshot runtime
+- STATUS: PARTIAL
+- OWNER AREA: session snapshot ops/runtime
+- LAST UPDATED SESSION: `session24_batch24_session-snapshot-defaults-sync`
+- EVIDENCE:
+  - session snapshot minimum runtime exists;
+  - purge runtime exists;
+  - defaults synced to locked contract.
+- OPEN GAP:
+  - still part of the broader ops matrix; not yet final-ready as a fully closed parent area.
+- NEXT REQUIRED ACTION:
+  - revisit only if ops matrix becomes the next highest-priority remaining partial.
 
-- Correction publish path now updates `eod_dataset_corrections.status`, `prior_run_id`, `new_run_id`, and `published_at` when a correction is published.
-- Correction unchanged path now updates `eod_dataset_corrections.status`, `prior_run_id`, and `new_run_id` when a correction is cancelled due to unchanged artifacts.
+## CONTRACT ITEM 6 — Operator command surface / ops proof
+- STATUS: PARTIAL
+- OWNER AREA: command surface / operator summaries
+- LAST UPDATED SESSION: `session36_batch36_correction_conflict_held_operator_proof_minimum`
+- EVIDENCE:
+  - correction command proof added in session 30;
+  - ops command proof added in session 31;
+  - correction cancelled summary proof added in session 35;
+  - correction held/resealed summary proof executed locally in session 36;
+  - `CorrectionCommandsTest.php` local proof: `6 tests / 31 assertions`.
+- OPEN GAP:
+  - broader ops failure/retry/scheduler matrix is still not fully proven.
+- NEXT REQUIRED ACTION:
+  - continue into broader scheduler/retry/failure operator proof only when selected as the next highest-priority batch.
 
+## CONTRACT ITEM 7 — DB-backed integration proof
+- STATUS: PARTIAL
+- OWNER AREA: repository + pipeline integration
+- LAST UPDATED SESSION: `session35_batch35_correction_cancel_matrix_proof_minimum`
+- EVIDENCE:
+  - repository integration proof added in session 32;
+  - DB-backed pipeline integration minimum added in session 33;
+  - executed local proof synced in session 34;
+  - unchanged correction DB-backed path closed in session 35.
+- OPEN GAP:
+  - broader DB-backed conflict/error integration matrix is still not fully covered.
+- NEXT REQUIRED ACTION:
+  - extend only into remaining load-bearing DB-backed matrix gaps.
 
-## Session 17 Update
-- Replay verification minimum ditambahkan melalui `ReplayVerificationService`, `ReplayResultRepository`, dan command `market-data:replay:verify`.
-- Replay proof kini tidak berhenti di export evidence; repo dapat membaca fixture package, memvalidasi manifest/file set, membandingkan run aktual terhadap expected replay outcome, lalu menulis hasil ke `md_replay_daily_metrics` dan `md_replay_reason_code_counts`.
-- Scope tetap market-data only dan tidak membuka range backfill/replay orchestration baru; batch ini hanya menutup minimum verifier/proof-writer yang memang sebelumnya kosong.
+## CONTRACT ITEM 8 — Final readiness gate
+- STATUS: MISSING
+- OWNER AREA: project-level readiness
+- LAST UPDATED SESSION: `session36_batch36_correction_conflict_held_operator_proof_minimum`
+- EVIDENCE:
+  - none yet for full project closure.
+- OPEN GAP:
+  - parent contracts still have `PARTIAL` status;
+  - final done gate is not yet satisfied.
+- NEXT REQUIRED ACTION:
+  - keep selecting the highest-priority remaining `PARTIAL` contract until parent matrix is sufficiently closed.
 
+## Reconstruction Note
+- Sessions 1–14 are reconstructed minimum from canonical ZIP batch names and later checkpoint sync.
+- Sessions 15–36 are reconstructed from canonical ZIP batch names plus checkpoint evidence.
+- If older ZIP/source details become available later, enrich evidence without changing canonical session labels.
 
-## Session 17A replay smoke fixture sync
-- `storage/app/market_data/replay-fixtures/valid_case/**` committed as the canonical happy-path minimum for `market-data:replay:verify`.
-- `storage/app/market_data/replay-fixtures/broken_manifest_case/**` committed as the canonical malformed-manifest fail path.
-- `storage/app/market_data/replay-fixtures/missing_file_case/**` committed as the canonical missing-file fail path where `manifest.files` declares `expected/missing.json` but that file is intentionally absent.
-- Replay verification minimum must not be marked complete if `missing_file_case` passes unexpectedly.
-
-
-## Session 18 Update
-- Replay verifier kini membaca `expected/expected_reason_code_counts.json` secara opsional dan membandingkan distribusi reason-code aktual terhadap fixture expectation.
-- `valid_case` smoke fixture sekarang mendeklarasikan empty expected reason-code counts agar jalur replay match minimum membuktikan bahwa distribusi kosong yang sah tetap terjaga.
-- Added replay unit-test proof khusus mismatch reason-code counts.
-
-
-## Session 19 Update
-- Replay proof storage now persists expected fixture context needed by replay evidence export: expected config identity, expected publication version, expected hash trio, and normalized expected reason-code counts.
-- Replay evidence export now emits explicit `replay_expected_state.json` and `replay_actual_state.json`, closing the audit-evidence completeness gap for replay cases.
-
-
-## Session 20 Update
-- Replay verifier source repo terbaru kini benar-benar mengirim expected replay context penuh (`expected_config_identity`, expected hash trio, dan `expected_reason_code_counts_json`) ke `ReplayResultRepository`, bukan hanya menghitungnya di compare layer.
-- Normalisasi reason-code expectation kini menerima fixture shape `count` maupun `reason_count`, sehingga smoke mismatch fixture yang sudah dipakai runtime tidak diam-diam rusak pada source ZIP.
-- Replay unit-test diperketat untuk memverifikasi persistence payload expected context dan mencegah regresi wiring sesi 19 terulang.
-
-
-## Session 21 Update
-- Added `market-data:replay:smoke` so the committed built-in replay fixtures can be executed as one operator proof batch instead of requiring ad hoc one-by-one manual command invocation.
-- The smoke suite writes `replay_smoke_suite_summary.json` and fails the command when any built-in replay case deviates from its expected outcome.
-
-
-## Session 22 Update
-- Added `market-data:backfill` as the minimum trading-date range runner required by the locked command/runbook contract.
-- Backfill minimum resolves dates from `market_calendar`, runs daily pipeline semantics per trading date, writes `market_data_backfill_summary.json`, and exits non-zero when any case fails.
-
-
-## Session 23 Update
-- Added `market-data:session-snapshot` and `market-data:session-snapshot:purge` as the minimum supplemental snapshot commands required by the locked ops/session-snapshot contracts.
-- Session snapshot capture now aligns to a readable current publication for trade date D, resolves scope from `eod_eligibility`, writes rows to `md_session_snapshots`, appends owning-run evidence, and emits deterministic summary artifacts.
-
-
-## Session 24 Update
-- Synced session snapshot config/env defaults to the locked contract: 30-day retention, `eligibility_set` default scope label, and 3-minute slot tolerance.
-- Purge summary now distinguishes explicit `before_date` runs from retention-driven purge runs so runtime evidence matches the locked retention contract.
-
-
-## Session 25 Update
-- Added `market-data:replay:backfill` so fixture-aware replay verification can run across a trading-date range rooted in `market_calendar` and current readable publication pointers.
-- Replay backfill minimum writes `market_data_replay_backfill_summary.json`, exports replay evidence for successful per-date cases, and stops non-zero when the range deviates unless operator opts into continue-on-error.
-
-
-## Session 26 Update
-- Repo source-of-truth sesi 25 divalidasi ulang terhadap checkpoint dan area prioritas berikutnya yang benar-benar masih terbuka ternyata bukan area baru, melainkan gap lama pada registry/ingest bars untuk `ticker_code` yang gagal dipetakan ke ticker master.
-- Sesi 26 menutup gap itu dengan menambahkan reason code resmi `BAR_TICKER_MAPPING_MISSING`, menyinkronkan owner docs/seed registry/error taxonomy, dan mengubah ingest agar source row unmapped masuk ke `eod_invalid_bars` alih-alih fail-fast mematikan seluruh ingest.
-- Unit-test minimum ditambahkan untuk membuktikan satu row valid tetap lolos publish path sementara row unmapped tercatat sebagai invalid evidence yang deterministik.
-
-
-## Session 27 Update
-- Manual local proof from the user showed the new session-26 unit test passed only after binding Lumen `config` into pure PHPUnit test container, while adjacent market-data unit tests with the same runtime dependency still failed before reaching business assertions.
-- Sesi 27 menutup gap bootstrap test itu dengan helper bersama `tests/Support/InteractsWithMarketDataConfig.php` dan menyinkronkan market-data unit tests yang memanggil service/adapter berbasis `config()` agar tidak lagi pecah pada `Target class [config] does not exist`.
-- Scope tetap sempit: ini bukan fitur market-data baru, melainkan hardening proof layer supaya unit-test minimum untuk backfill/replay/session-snapshot/source adapter bisa benar-benar mengeksekusi logika yang diklaim.
-
-
-## Session 28 Update
-- Menutup gap correction metadata minimum dengan menambahkan `eod_dataset_corrections.final_outcome_note` di schema owner + migration incremental repo existing.
-- `PublicationFinalizeOutcomeService`, `MarketDataPipelineService`, `EodCorrectionRepository`, dan correction evidence export kini menyimpan/mengekspor outcome note final yang terpisah dari status sehingga trail correction lebih sesuai kontrak LOCKED.
-
-
-## Session 29 Update
-- Runtime lokal correction nyata membuktikan false mismatch: publication baru sudah `is_current=1` dan current pointer sudah pindah, tetapi correction tetap `RESEALED` dengan `final_outcome_note = NULL`.
-- Akar masalahnya adalah `MarketDataPipelineService::completeFinalize()` mempersist `markPublished/markCancelled` terlalu dini sebelum `PublicationFinalizeOutcomeService::resolve()` menentukan outcome final.
-- Sesi 29 menutup gap itu dengan memindahkan persist correction final state ke setelah outcome final di-resolve dan menambahkan `MarketDataPipelineServiceTest` untuk jalur `PUBLISHED`, `CANCELLED`, dan conflict/hold.
-
-
-## Session 30 Update
-- Added `CorrectionCommandsTest` to prove operator command surface for correction request, approval, successful run summary, and approved-only execution guard.
-- This keeps scope market-data only and closes the missing direct proof at the correction command layer without opening broader DB-backed integration work yet.
-
-
-## Session 31 Update
-- Added `OpsCommandSurfaceTest.php` to prove operator-facing command summaries and exit-code minima for `market-data:backfill`, `market-data:session-snapshot`, `market-data:session-snapshot:purge`, `market-data:replay:smoke`, and `market-data:replay:backfill`.
-
-## Session 32 Update
-- Checkpoint sesi 31 divalidasi ulang terhadap repo terbaru: proof command-layer untuk backfill/session-snapshot/replay memang ada, tetapi persistence nyata pada repository inti masih belum dibuktikan langsung.
-- Sesi 32 menutup batch prioritas berikutnya dengan menambahkan helper sqlite testing schema `tests/Support/UsesMarketDataSqlite.php`.
-- Ditambahkan `CorrectionRepositoryIntegrationTest`, `PublicationRepositoryIntegrationTest`, dan `ReplayResultRepositoryIntegrationTest` untuk membuktikan persistence minimum pada tabel nyata untuk correction lifecycle, publication current pointer switch, dan replay metric/reason-code counts.
-- Scope tetap market-data only dan tidak membuka domain/fitur baru; ini hanya memperkeras proof layer pada repository yang sebelumnya masih bertumpu pada mock/service proof.
-
-
-## Session 33 Update
-- Added committed DB-backed pipeline integration minimum via `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` and expanded sqlite harness `tests/Support/UsesMarketDataSqlite.php`.
-- The new integration proof targets daily publish success and correction publish current-switch persistence on real tables, but local execution in this working container remains blocked by missing PHP CLI extensions / sqlite driver.
-
-
-## Session 34 Update
-- Checkpoint sesi 33 divalidasi ulang terhadap source repo terbaru dan proof lokal yang sudah dieksekusi. Mismatch utamanya ada di narasi tracker yang masih menyebut DB-backed proof terblokir environment.
-- Tracker kini disinkronkan: repository proof minimum dan DB-backed daily/correction pipeline integration proof sudah dianggap executed local proof, karena full suite telah lulus `58 tests / 275 assertions`.
-- Status item terkait belum dinaikkan ke `DONE` secara gegabah bila owner contract masih menuntut matrix yang lebih luas (mis. broader cancel/error/scheduler coverage); yang ditutup pada sesi 34 adalah gap sinkronisasi checkpoint, bukan membuka klaim baru yang berlebihan.
-
-
-## Session 35 Done Sync
-- Root cause drift pada unchanged correction path ditutup di `MarketDataPipelineService::completeHash()` dengan menghapus `publication_id` dari payload hash artifact.
-- `MarketDataPipelineIntegrationTest` kembali membuktikan target final unchanged rerun: hash tetap identik, current publication preserved, correction berakhir `CANCELLED`, dan event `CORRECTION_CANCELLED` tercatat.
-- Full local PHPUnit kini lulus `60 tests / 306 assertions`, sehingga batch sesi 35 dinyatakan DONE walau kontrak parent correction/tests/ops masih tetap PARTIAL karena broader matrix di luar sesi 35 belum lengkap.
-
-
-## Session 36 Update
-- Added correction command proof for held-conflict finalize outcome so operator output now has direct coverage for `PUBLISHED`, `CANCELLED`, and `RESEALED` summaries.
-- Scope remains narrow: this batch does not claim broader scheduler/error integration closure, only the missing operator-visible conflict/HELD path.
+## Tracker Summary
+- Session 35 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
+- Session 36 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
+- Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item.
