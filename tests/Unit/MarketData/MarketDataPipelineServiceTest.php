@@ -331,6 +331,136 @@ class MarketDataPipelineServiceTest extends TestCase
         $this->assertSame($run, $result);
     }
 
+    public function test_complete_finalize_keeps_resealed_when_publication_promotion_throws_lock_conflict(): void
+    {
+        [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs] = $this->makeService();
+
+        $run = $this->makeRun(57);
+        $run->notes = null;
+        $run->supersedes_run_id = null;
+
+        $input = new MarketDataStageInput('2026-03-17', 'manual_file', 57, 'FINALIZE', 6);
+
+        $priorCurrent = (object) [
+            'publication_id' => 31,
+            'run_id' => 31,
+            'publication_version' => 3,
+        ];
+
+        $candidatePublication = (object) [
+            'publication_id' => 34,
+            'run_id' => 57,
+            'publication_version' => 4,
+            'seal_state' => 'SEALED',
+        ];
+
+        $correction = (object) [
+            'correction_id' => 6,
+            'status' => 'RESEALED',
+        ];
+
+        $runs->shouldReceive('findByRunId')
+            ->once()
+            ->with(57)
+            ->andReturn($run);
+
+        $corrections->shouldReceive('requireApprovedForTradeDate')
+            ->once()
+            ->with(6, '2026-03-17')
+            ->andReturn($correction);
+
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn($priorCurrent);
+
+        $runs->shouldReceive('touchStage')
+            ->once()
+            ->with($run, 'FINALIZE', m::type('array'))
+            ->andReturn($run);
+
+        $runs->shouldReceive('appendEvent')
+            ->once()
+            ->with(
+                $run,
+                'FINALIZE',
+                'RUN_FINALIZED',
+                'WARN',
+                'Promotion lost run ownership while switching current publication.',
+                'RUN_LOCK_CONFLICT',
+                m::on(function ($payload) {
+                    return $payload['correction_id'] === 6
+                        && $payload['prior_publication_id'] === 31
+                        && $payload['current_publication_id'] === null
+                        && $payload['correction_outcome'] === null;
+                })
+            );
+
+        $runs->shouldReceive('failStage')->never();
+
+        $publications->shouldReceive('findLatestReadablePublicationBefore')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn((object) [
+                'publication_id' => 30,
+                'readable_trade_date' => '2026-03-16',
+            ]);
+
+        $publications->shouldReceive('getOrCreateCandidatePublication')
+            ->once()
+            ->with($run, 31)
+            ->andReturn($candidatePublication);
+
+        $finalizeDecisions->shouldReceive('evaluate')
+            ->once()
+            ->andReturn([
+                'promotion_allowed' => true,
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'trade_date_effective' => null,
+                'quality_gate_state' => 'PASS',
+                'reason_code' => null,
+                'message' => 'Finalize succeeded.',
+            ]);
+
+        $publicationDiffs->shouldReceive('isUnchanged')
+            ->once()
+            ->with($priorCurrent, $candidatePublication)
+            ->andReturn(false);
+
+        $artifacts->shouldReceive('promotePublicationHistoryToCurrent')
+            ->once()
+            ->with('2026-03-17', 34, 57);
+
+        $publications->shouldReceive('promoteCandidateToCurrent')
+            ->once()
+            ->with($run, 31)
+            ->andThrow(new RuntimeException('Promotion lost run ownership while switching current publication.'));
+
+        $runs->shouldReceive('syncCurrentPublicationMirror')->never();
+        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')->never();
+
+        $runs->shouldReceive('finalize')
+            ->once()
+            ->with($run, [
+                'trade_date_effective' => '2026-03-16',
+                'quality_gate_state' => 'PASS',
+                'publishability_state' => 'NOT_READABLE',
+                'terminal_status' => 'HELD',
+                'lifecycle_state' => 'COMPLETED',
+            ])
+            ->andReturn($run);
+
+        $corrections->shouldReceive('markCancelled')->never();
+        $corrections->shouldReceive('markPublished')->never();
+        $publications->shouldReceive('buildManifestByPublicationId')->never();
+
+        $result = $service->completeFinalize($input);
+
+        $this->assertSame($run, $result);
+    }
+
+
     public function test_complete_finalize_keeps_resealed_when_finalize_outcome_is_conflict(): void
     {
         [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs] = $this->makeService();

@@ -62,6 +62,38 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         $this->assertSame('RUN_LOCK_CONFLICT', $state['reason_code']);
     }
 
+
+    public function test_finalize_held_when_promotion_errors_after_candidate_seal()
+    {
+        $service = new PublicationFinalizeOutcomeService();
+        $preDecision = [
+            'quality_gate_state' => 'PASS',
+            'terminal_status' => 'HELD',
+            'publishability_state' => 'NOT_READABLE',
+            'trade_date_effective' => '2026-04-20',
+            'reason_code' => null,
+            'message' => 'promotion pending',
+            'promotion_allowed' => true,
+        ];
+
+        $state = $service->resolve($preDecision, [
+            'requested_date' => '2026-04-21',
+            'fallback_trade_date' => '2026-04-20',
+            'candidate_publication_id' => 77,
+            'candidate_publication_version' => 3,
+            'resolved_current_publication_id' => null,
+            'resolved_current_publication_version' => null,
+            'promotion_error' => 'Promotion lost run ownership while switching current publication.',
+        ]);
+
+        $this->assertSame('HELD', $state['terminal_status']);
+        $this->assertSame('NOT_READABLE', $state['publishability_state']);
+        $this->assertSame('2026-04-20', $state['trade_date_effective']);
+        $this->assertSame('RUN_LOCK_CONFLICT', $state['reason_code']);
+        $this->assertSame('Promotion lost run ownership while switching current publication.', $state['message']);
+        $this->assertNull($state['correction_outcome']);
+    }
+
     public function test_correction_unchanged_keeps_prior_current_publication_and_marks_cancelled()
     {
         $service = new PublicationFinalizeOutcomeService();

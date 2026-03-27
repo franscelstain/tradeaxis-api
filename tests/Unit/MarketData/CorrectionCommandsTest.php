@@ -272,6 +272,72 @@ class CorrectionCommandsTest extends TestCase
         $this->assertStringContainsString('correction_status=RESEALED', $display);
     }
 
+    public function test_run_correction_command_renders_resealed_status_when_finalize_result_is_held_due_to_lock_conflict(): void
+    {
+        $repo = m::mock(EodCorrectionRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+
+        $approved = (object) [
+            'correction_id' => 9,
+            'trade_date' => '2026-03-17',
+            'status' => 'APPROVED',
+        ];
+
+        $resealed = (object) [
+            'correction_id' => 9,
+            'trade_date' => '2026-03-17',
+            'status' => 'RESEALED',
+        ];
+
+        $repo->shouldReceive('findById')
+            ->once()
+            ->with(9)
+            ->andReturn($approved);
+
+        $pipeline->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-17', 'manual_file', 9)
+            ->andReturn((object) [
+                'run_id' => 46,
+                'trade_date_requested' => '2026-03-17',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'HELD',
+                'publishability_state' => 'NOT_READABLE',
+                'reason_code' => 'RUN_LOCK_CONFLICT',
+                'notes' => 'Promotion lost run ownership while switching current publication.',
+            ]);
+
+        $repo->shouldReceive('findById')
+            ->once()
+            ->with(9)
+            ->andReturn($resealed);
+
+        $this->app->instance(EodCorrectionRepository::class, $repo);
+        $this->app->instance(MarketDataPipelineService::class, $pipeline);
+
+        $command = new RunCorrectionCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'correction_id' => 9,
+            '--requested_date' => '2026-03-17',
+            '--source_mode' => 'manual_file',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('run_id=46', $display);
+        $this->assertStringContainsString('terminal_status=HELD', $display);
+        $this->assertStringContainsString('publishability_state=NOT_READABLE', $display);
+        $this->assertStringContainsString('reason_code=RUN_LOCK_CONFLICT', $display);
+        $this->assertStringContainsString('notes=Promotion lost run ownership while switching current publication.', $display);
+        $this->assertStringContainsString('correction_status=RESEALED', $display);
+    }
+
+
     public function test_run_correction_command_rejects_non_approved_status_before_pipeline_execution(): void
     {
         $repo = m::mock(EodCorrectionRepository::class);

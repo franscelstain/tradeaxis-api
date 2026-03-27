@@ -62,7 +62,7 @@
 ## CONTRACT ITEM 2 — Core runtime artifact lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: bars / indicators / eligibility / publication
-- LAST UPDATED SESSION: `session35_batch35_correction_cancel_matrix_proof_minimum`
+- LAST UPDATED SESSION: `session37_batch37_correction_lock_conflict_negative_proof_minimum`
 - EVIDENCE:
   - canonical bars/indicators/eligibility runtime installed;
   - publication current-switch and pointer-sync runtime installed;
@@ -71,21 +71,23 @@
 - OPEN GAP:
   - broader conflict/error matrix at artifact/runtime level is still not fully closed.
 - NEXT REQUIRED ACTION:
-  - continue strengthening broader correction conflict/error matrix without opening unrelated area.
+  - continue strengthening broader correction conflict/error matrix without opening unrelated area, with priority on DB-backed/integration negative paths.
 
 ## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: correction runtime and finalize outcomes
-- LAST UPDATED SESSION: `session36_batch36_correction_conflict_held_operator_proof_minimum`
+- LAST UPDATED SESSION: `session37_batch37_correction_lock_conflict_negative_proof_minimum`
 - EVIDENCE:
   - correction request / approval / reseal / publish runtime installed;
   - correction final outcome note installed;
   - correction finalize ordering fixed;
   - unchanged correction rerun now proven locally to end as `CANCELLED`;
   - held/conflict operator proof now proven locally;
-  - full local PHPUnit after session 36: `61 tests / 313 assertions`.
+  - explicit lock-conflict/promotion-error negative proof now added across outcome service, pipeline finalize, and correction command surface;
+  - full local PHPUnit after session 36: `61 tests / 313 assertions`;
+  - session 37 repo ZIP did not include `vendor/`, so only PHP syntax lint could be executed for changed files in this session.
 - OPEN GAP:
-  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set.
+  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially DB-backed/integration variants.
 - NEXT REQUIRED ACTION:
   - expand matrix for additional conflict/error scenarios that still remain uncovered.
 
@@ -120,13 +122,14 @@
 ## CONTRACT ITEM 6 — Operator command surface / ops proof
 - STATUS: PARTIAL
 - OWNER AREA: command surface / operator summaries
-- LAST UPDATED SESSION: `session36_batch36_correction_conflict_held_operator_proof_minimum`
+- LAST UPDATED SESSION: `session37_batch37_correction_lock_conflict_negative_proof_minimum`
 - EVIDENCE:
   - correction command proof added in session 30;
   - ops command proof added in session 31;
   - correction cancelled summary proof added in session 35;
   - correction held/resealed summary proof executed locally in session 36;
-  - `CorrectionCommandsTest.php` local proof: `6 tests / 31 assertions`.
+  - explicit correction lock-conflict operator summary proof added in session 37;
+  - last fully executed local proof remains session 36: `CorrectionCommandsTest.php` `6 tests / 31 assertions`; session 37 adds syntax-linted test coverage in repo.
 - OPEN GAP:
   - broader ops failure/retry/scheduler matrix is still not fully proven.
 - NEXT REQUIRED ACTION:
@@ -166,4 +169,5 @@
 ## Tracker Summary
 - Session 35 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 36 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
+- Session 37 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item.
