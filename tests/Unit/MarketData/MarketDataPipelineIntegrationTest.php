@@ -309,10 +309,104 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
+
+    public function test_run_daily_correction_with_changed_artifacts_and_promotion_failure_holds_and_preserves_prior_current_publication(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+        $this->seedReadableFallbackPublication('2026-03-19', 80, 11);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 131,
+            'high' => 136,
+            'low' => 130,
+            'close' => 135,
+            'volume' => 2600,
+            'adj_close' => 135,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-with-promote-conflict', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        $run = $this->makePipelineWithPublications(
+            new ThrowingPromotionPublicationRepository('Promotion lost run ownership while switching current publication.')
+        )->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
+
+        $this->assertSame('HELD', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame('COMPLETED', $run->lifecycle_state);
+        $this->assertSame('2026-03-19', $run->trade_date_effective);
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('RESEALED', $persistedCorrection->status);
+        $this->assertSame(90, (int) $persistedCorrection->prior_run_id);
+        $this->assertSame((int) $run->run_id, (int) $persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+        $this->assertNull($persistedCorrection->final_outcome_note);
+
+        $currentPublication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('is_current', 1)
+            ->first();
+
+        $this->assertNotNull($currentPublication);
+        $this->assertSame(1, (int) $currentPublication->publication_id);
+        $this->assertSame(1, (int) $currentPublication->publication_version);
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
+        $this->assertSame(90, (int) $pointer->run_id);
+
+        $candidatePublication = DB::table('eod_publications')
+            ->where('run_id', $run->run_id)
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($candidatePublication);
+        $this->assertSame('SEALED', $candidatePublication->seal_state);
+        $this->assertSame(0, (int) $candidatePublication->is_current);
+        $this->assertSame(1, (int) $candidatePublication->supersedes_publication_id);
+
+        $finalizedEvent = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->orderByDesc('event_id')
+            ->first();
+
+        $this->assertNotNull($finalizedEvent);
+        $this->assertSame('WARN', $finalizedEvent->severity);
+        $this->assertSame('RUN_LOCK_CONFLICT', $finalizedEvent->reason_code);
+        $this->assertStringContainsString('Promotion lost run ownership while switching current publication.', (string) $finalizedEvent->message);
+
+        $this->assertFalse(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'CORRECTION_PUBLISHED')
+                ->exists()
+        );
+    }
+
     private function makePipeline(): MarketDataPipelineService
     {
+        return $this->makePipelineWithPublications(new EodPublicationRepository());
+    }
+
+    private function makePipelineWithPublications(EodPublicationRepository $publications): MarketDataPipelineService
+    {
         $runs = new EodRunRepository();
-        $publications = new EodPublicationRepository();
         $artifacts = new EodArtifactRepository();
         $tickers = new TickerMasterRepository();
 
@@ -497,11 +591,89 @@ class MarketDataPipelineIntegrationTest extends TestCase
         ]);
     }
 
+
+    private function seedReadableFallbackPublication(string $tradeDate, int $runId, int $publicationId): void
+    {
+        DB::table('eod_runs')->insert([
+            'run_id' => $runId,
+            'trade_date_requested' => $tradeDate,
+            'trade_date_effective' => $tradeDate,
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS',
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'coverage_ratio' => '1.0000',
+            'bars_rows_written' => 1,
+            'indicators_rows_written' => 1,
+            'eligibility_rows_written' => 1,
+            'invalid_bar_count' => 0,
+            'invalid_indicator_count' => 0,
+            'hard_reject_count' => 0,
+            'warning_count' => 0,
+            'notes' => 'fallback',
+            'bars_batch_hash' => 'bars-fallback',
+            'indicators_batch_hash' => 'ind-fallback',
+            'eligibility_batch_hash' => 'elig-fallback',
+            'config_version' => 'v1',
+            'publication_version' => 1,
+            'is_current_publication' => 1,
+            'sealed_at' => $tradeDate.' 17:20:00',
+            'sealed_by' => 'system',
+            'seal_note' => 'fallback',
+            'started_at' => $tradeDate.' 17:00:00',
+            'finished_at' => $tradeDate.' 17:20:00',
+            'created_at' => $tradeDate.' 17:00:00',
+            'updated_at' => $tradeDate.' 17:20:00',
+        ]);
+
+        DB::table('eod_publications')->insert([
+            'publication_id' => $publicationId,
+            'trade_date' => $tradeDate,
+            'run_id' => $runId,
+            'publication_version' => 1,
+            'is_current' => 1,
+            'supersedes_publication_id' => null,
+            'seal_state' => 'SEALED',
+            'bars_batch_hash' => 'bars-fallback',
+            'indicators_batch_hash' => 'ind-fallback',
+            'eligibility_batch_hash' => 'elig-fallback',
+            'sealed_at' => $tradeDate.' 17:20:00',
+            'created_at' => $tradeDate.' 17:00:00',
+            'updated_at' => $tradeDate.' 17:20:00',
+        ]);
+
+        DB::table('eod_current_publication_pointer')->insert([
+            'trade_date' => $tradeDate,
+            'publication_id' => $publicationId,
+            'run_id' => $runId,
+            'publication_version' => 1,
+            'sealed_at' => $tradeDate.' 17:20:00',
+            'updated_at' => $tradeDate.' 17:20:00',
+        ]);
+    }
+
     private function writeBarsFixture(string $tradeDate, array $rows): void
     {
         file_put_contents(
             $this->fixtureDir.DIRECTORY_SEPARATOR.$tradeDate.'.json',
             json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
+    }
+}
+
+class ThrowingPromotionPublicationRepository extends EodPublicationRepository
+{
+    private string $message;
+
+    public function __construct(string $message)
+    {
+        $this->message = $message;
+    }
+
+    public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null)
+    {
+        throw new RuntimeException($this->message);
     }
 }

@@ -62,21 +62,22 @@
 ## CONTRACT ITEM 2 — Core runtime artifact lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: bars / indicators / eligibility / publication
-- LAST UPDATED SESSION: `session37_batch37_correction_lock_conflict_negative_proof_minimum`
+- LAST UPDATED SESSION: `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum`
 - EVIDENCE:
   - canonical bars/indicators/eligibility runtime installed;
   - publication current-switch and pointer-sync runtime installed;
   - unchanged correction path now proven locally after removing `publication_id` from content-hash payload;
+  - DB-backed/integration proof now covers changed-content correction that reaches finalize and then fails during promote/current-switch, producing `HELD/NOT_READABLE` while preserving prior current publication and fallback effective date;
   - local full PHPUnit proof after session 35: `60 tests / 306 assertions`.
 - OPEN GAP:
-  - broader conflict/error matrix at artifact/runtime level is still not fully closed.
+  - broader conflict/error matrix at artifact/runtime level is still not fully closed beyond the current minimum changed-content promotion-failure proof.
 - NEXT REQUIRED ACTION:
-  - continue strengthening broader correction conflict/error matrix without opening unrelated area, with priority on DB-backed/integration negative paths.
+  - continue strengthening broader correction conflict/error matrix without opening unrelated area, with priority on remaining DB-backed/integration negative paths outside the covered minimum.
 
 ## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: correction runtime and finalize outcomes
-- LAST UPDATED SESSION: `session37_batch37_correction_lock_conflict_negative_proof_minimum`
+- LAST UPDATED SESSION: `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum`
 - EVIDENCE:
   - correction request / approval / reseal / publish runtime installed;
   - correction final outcome note installed;
@@ -84,10 +85,11 @@
   - unchanged correction rerun now proven locally to end as `CANCELLED`;
   - held/conflict operator proof now proven locally;
   - explicit lock-conflict/promotion-error negative proof now added across outcome service, pipeline finalize, and correction command surface;
+  - DB-backed/integration proof now covers changed-content correction that reaches publish path preconditions and then fails at promote/current-switch, preserving prior current publication and leaving correction in `RESEALED`;
   - full local PHPUnit after session 36: `61 tests / 313 assertions`;
-  - session 37 repo ZIP did not include `vendor/`, so only PHP syntax lint could be executed for changed files in this session.
+  - session 37-38 repo ZIPs did not include `vendor/`, so only PHP syntax lint could be executed for changed files in these sessions.
 - OPEN GAP:
-  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially DB-backed/integration variants.
+  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants and non-promotion failure modes.
 - NEXT REQUIRED ACTION:
   - expand matrix for additional conflict/error scenarios that still remain uncovered.
 
@@ -138,14 +140,15 @@
 ## CONTRACT ITEM 7 — DB-backed integration proof
 - STATUS: PARTIAL
 - OWNER AREA: repository + pipeline integration
-- LAST UPDATED SESSION: `session35_batch35_correction_cancel_matrix_proof_minimum`
+- LAST UPDATED SESSION: `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum`
 - EVIDENCE:
   - repository integration proof added in session 32;
   - DB-backed pipeline integration minimum added in session 33;
   - executed local proof synced in session 34;
-  - unchanged correction DB-backed path closed in session 35.
+  - unchanged correction DB-backed path closed in session 35;
+  - changed-content correction + promotion-failure DB-backed integration minimum added in session 38.
 - OPEN GAP:
-  - broader DB-backed conflict/error integration matrix is still not fully covered.
+  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum changed-content promotion-failure path.
 - NEXT REQUIRED ACTION:
   - extend only into remaining load-bearing DB-backed matrix gaps.
 
@@ -163,11 +166,12 @@
 
 ## Reconstruction Note
 - Sessions 1–14 are reconstructed minimum from canonical ZIP batch names and later checkpoint sync.
-- Sessions 15–36 are reconstructed from canonical ZIP batch names plus checkpoint evidence.
+- Sessions 15–38 are reconstructed from canonical ZIP batch names plus checkpoint evidence.
 - If older ZIP/source details become available later, enrich evidence without changing canonical session labels.
 
 ## Tracker Summary
 - Session 35 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 36 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 37 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
+- Session 38 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item.
