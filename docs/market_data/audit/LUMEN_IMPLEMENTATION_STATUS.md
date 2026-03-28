@@ -49,11 +49,11 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 38`
-- Last completed batch id: `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum`
+- Last completed session: `SESSION 39`
+- Last completed batch id: `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus paling mungkin ke sisa broader DB-backed correction conflict/error matrix atau lanjut ke broader scheduler/retry/failure matrix bila dependency correction minimum ini sudah cukup rapat.
+- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -69,6 +69,15 @@
 - Sesi 38 DONE pada level batch:
   - DB-backed/integration proof kini ditambahkan untuk correction changed-content + promotion failure, sehingga jalur `HELD/NOT_READABLE` dapat dibuktikan tanpa bergantung pada trial manual lock yang bisa meleset ke unchanged-cancel path;
   - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container tetap sebatas PHP syntax lint untuk file yang diubah.
+- Verifikasi manual setelah sesi 38 kini juga sudah ada:
+- Sesi 39 DONE pada level batch:
+  - DB-backed/integration proof kini ditambahkan untuk correction changed-content + baseline/current-pointer mismatch conflict, sehingga jalur `HELD/NOT_READABLE` juga terbukti untuk varian conflict yang berbeda dari promotion-throw minimum sesi 38;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container tetap sebatas PHP syntax lint untuk file yang diubah.
+- Verifikasi manual setelah sesi 38 kini juga sudah ada:
+  - correction publish path tervalidasi lokal dengan `correction_id=24` -> `run_id=53` -> `PUBLISHED` / `SUCCESS` / `READABLE`;
+  - unchanged-content cancel path tervalidasi lokal dengan `correction_id=25` -> `run_id=54` -> `CANCELLED` / `SUCCESS` / `READABLE`, dan current publication pointer tetap di `run_id=53`;
+  - `market-data:session-snapshot:purge --before_date=2026-03-18 -vvv` tervalidasi lokal dengan `deleted_rows=0` tanpa gejala aneh;
+  - `market-data:replay:backfill 2026-03-17 2026-03-17 --fixture_case=valid_case -vvv` tervalidasi lokal dengan `all_passed=1`, `expected=MATCH`, `observed=MATCH`, `passed=1`.
 - Parent contract correction/tests/ops masih `PARTIAL` karena broader matrix belum lengkap.
 - Final done gate proyek keseluruhan masih belum tertutup.
 
@@ -118,6 +127,7 @@
 - `session36_batch36_correction_conflict_held_operator_proof_minimum`
 - `session37_batch37_correction_lock_conflict_negative_proof_minimum`
 - `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum`
+- `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
 
 ## Session Ledger (Minimum Reconstruction)
 - Sessions 1-14 are reconstructed minimum from canonical ZIP names and later checkpoint sync.
@@ -163,7 +173,7 @@
 | 35 | `session35_batch35_correction_cancel_matrix_proof_minimum` | DONE | correction cancel matrix proof minimum | checkpoint-backed + executed local proof |
 | 36 | `session36_batch36_correction_conflict_held_operator_proof_minimum` | DONE | correction conflict HELD operator proof minimum | checkpoint-backed + executed local proof |
 | 37 | `session37_batch37_correction_lock_conflict_negative_proof_minimum` | DONE | correction lock-conflict negative proof minimum | checkpoint-backed + syntax lint proof |
-| 38 | `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum` | DONE | DB-backed changed-content promotion-failure integration minimum | checkpoint-backed + syntax lint proof |
+| 38 | `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum` | DONE | DB-backed changed-content promotion-failure integration minimum | checkpoint-backed + syntax lint proof + executed manual runtime verification |
 
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
