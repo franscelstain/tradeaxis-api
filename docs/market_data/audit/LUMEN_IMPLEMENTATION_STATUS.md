@@ -49,11 +49,11 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 47`
-- Last completed batch id: `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum`
+- Last completed session: `SESSION 48`
+- Last completed batch id: `session48_batch48_db_backed_run_current_mirror_mismatch_guard_minimum`
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, dan pointer/publication trade-date mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
+- Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, dan run-current-mirror mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -239,38 +239,24 @@
 | 44 | `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum` | DONE | DB-backed correction malformed-baseline-pointer guard integration minimum | checkpoint-backed + syntax lint proof |
 | 45 | `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum` | DONE | DB-backed correction missing-publication-pointer guard integration minimum | checkpoint-backed + local validation after runtime proof |
 
-### SESSION 46
-- STATUS: DONE
-- BATCH ID: `session46_batch46_db_backed_correction_non_readable_baseline_run_guard_integration_minimum`
-- SUMMARY:
-  - menambahkan DB-backed integration proof untuk approved correction dengan baseline publication yang sealed/current tetapi run asalnya `HELD` / `NOT_READABLE` dan `is_current_publication = 0`;
-  - memperketat baseline correction resolver agar memvalidasi `seal/current/readability consistency` melalui run state sebelum correction boleh membuat owning run baru;
-  - checkpoint dan remaining work diperbarui tanpa membuka area baru di luar correction/runtime matrix.
-- PROOF:
-  - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - local validation: completed in user environment with `vendor\bin\phpunit --filter non_readable_run_publication` -> `OK (1 test, 20 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (4 tests, 60 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (12 tests, 250 assertions)`.
+| 46 | `session46_batch46_db_backed_correction_non_readable_baseline_run_guard_integration_minimum` | DONE | DB-backed correction non-readable-baseline-run guard integration minimum | checkpoint-backed + syntax lint proof + executed local proof |
+| 47 | `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum` | DONE | DB-backed pointer/publication trade-date mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after follow-up repairs |
+| 48 | `session48_batch48_db_backed_run_current_mirror_mismatch_guard_minimum` | DONE | DB-backed run-current-mirror mismatch guard minimum | checkpoint-backed + syntax lint proof |
 
-### SESSION 47
-- STATUS: DONE
-- BATCH ID: `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum`
-- SUMMARY:
-  - menambahkan DB-backed integration proof untuk approved correction dengan current pointer row trade date target yang menunjuk publication trade date lain;
-  - memperketat pointer resolution di `EodPublicationRepository` agar semua resolver pointer/current/baseline hanya menerima row ketika `pub.trade_date = ptr.trade_date`;
-  - menambahkan repository integration proof bahwa pointer/publication trade-date mismatch kini fail-safe (`null`) untuk read resolution umum, lalu memperbarui checkpoint tanpa membuka area baru.
-- PROOF:
+- Sesi 48 DONE pada level batch:
+  - repository current/publication resolver kini juga memvalidasi mirror `eod_runs.is_current_publication = 1` untuk current read resolution umum dan fallback readable-date resolution, sehingga pointer + publication yang tampak valid tetapi owning run ditandai non-current kini diperlakukan unsafe;
+  - DB-backed integration proof kini juga mencakup approved correction dengan baseline publication/current pointer yang menunjuk run `SUCCESS` / `READABLE` tetapi `is_current_publication = 0`, sehingga correction tetap ditolak sebelum owning run baru dibuat dan approval state tetap utuh;
+  - repository integration proof kini juga mencakup run-current mirror mismatch untuk `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, dan `findLatestReadablePublicationBefore`, semuanya fail-safe ke `null` saat mirror run tidak sinkron.
+- Proof sesi 48 saat ini:
   - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
   - container proof: `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - local follow-up repair: `AbstractMarketDataCommand::renderRunSummary(...)` kini merender `reason_code` / `notes` saat ada;
-  - local follow-up repair: `MarketDataPipelineServiceTest::test_complete_finalize_keeps_resealed_when_publication_promotion_throws_lock_conflict()` diselaraskan dengan event `STAGE_STARTED` yang nyata di pipeline;
-  - local validation: `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`.
+  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed.
 
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
 - Prioritas paling masuk akal saat ini:
-  - ambil **gap correction/runtime DB-backed lain yang masih `PARTIAL` dan eksplisit load-bearing** setelah minimum non-readable-baseline-run guard dan pointer/publication trade-date mismatch guard tertutup;
-  - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, reseal-failure, history-promotion failure, dan changed-content promote/current-switch paths yang kini sudah tercakup; atau
+  - ambil **gap correction/runtime DB-backed lain yang masih `PARTIAL` dan eksplisit load-bearing** setelah minimum non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, dan run-current-mirror mismatch guard tertutup;
+  - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, reseal-failure, history-promotion failure, changed-content promote/current-switch paths, serta mismatch mirror-state lain yang masih mungkin memengaruhi readability/fallback; atau
   - broader scheduler/retry/failure matrix hanya bila parent correction/runtime sudah cukup rapat.
 - Jangan buka area baru di luar market-data sampai parent correction/tests/ops lebih rapat.
 

@@ -23,6 +23,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'bars_rows_written' => 2,
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
+            'is_current_publication' => 1,
         ]);
 
         DB::table('eod_runs')->insert([
@@ -35,6 +36,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'bars_rows_written' => 2,
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
+            'is_current_publication' => 1,
         ]);
 
         DB::table('eod_publications')->insert([
@@ -64,6 +66,24 @@ class PublicationRepositoryIntegrationTest extends TestCase
     }
 
 
+
+
+    public function test_pointer_resolution_returns_null_when_run_current_mirror_disagrees_with_pointer_and_publication(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'is_current_publication' => 0,
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+
+        $this->assertNull($repo->findPointerResolvedPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
+    }
 
     public function test_pointer_resolution_returns_null_when_publication_trade_date_mismatches_pointer_trade_date(): void
     {
