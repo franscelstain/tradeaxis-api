@@ -384,14 +384,34 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with(
                 $run,
                 'FINALIZE',
+                'STAGE_STARTED',
+                'INFO',
+                'Stage started in owning run context.',
+                null,
+                m::on(function ($payload) {
+                    return is_array($payload)
+                        && ($payload['requested_date'] ?? null) === '2026-03-17'
+                        && ($payload['source_mode'] ?? null) === 'manual_file'
+                        && ($payload['stage'] ?? null) === 'FINALIZE'
+                        && (string) ($payload['correction_id'] ?? null) === '6';
+                })
+            );
+
+        $runs->shouldReceive('appendEvent')
+            ->once()
+            ->with(
+                $run,
+                'FINALIZE',
                 'RUN_FINALIZED',
                 'WARN',
                 'Promotion lost run ownership while switching current publication.',
                 'RUN_LOCK_CONFLICT',
                 m::on(function ($payload) {
-                    return $payload['correction_id'] === 6
-                        && $payload['prior_publication_id'] === 31
-                        && $payload['current_publication_id'] === null
+                    return is_array($payload)
+                        && (string) ($payload['correction_id'] ?? null) === '6'
+                        && ($payload['prior_publication_id'] ?? null) === 31
+                        && ($payload['current_publication_id'] ?? null) === null
+                        && array_key_exists('correction_outcome', $payload)
                         && $payload['correction_outcome'] === null;
                 })
             );

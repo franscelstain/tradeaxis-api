@@ -45,11 +45,19 @@ abstract class AbstractMarketDataCommand extends Command
 
     protected function renderRunSummary($run)
     {
-        $this->info('run_id='.$run->run_id);
-        $this->line('requested_date='.$run->trade_date_requested);
-        $this->line('stage='.$run->stage);
-        $this->line('lifecycle_state='.$run->lifecycle_state);
+        $this->info('run_id='.(string) $run->run_id);
+        $this->line('requested_date='.(string) $run->trade_date_requested);
+        $this->line('stage='.(string) $run->stage);
+        $this->line('lifecycle_state='.(string) $run->lifecycle_state);
         $this->line('terminal_status='.(string) $run->terminal_status);
-        $this->line('publishability_state='.$run->publishability_state);
+        $this->line('publishability_state='.(string) $run->publishability_state);
+
+        if (isset($run->reason_code) && $run->reason_code !== null && $run->reason_code !== '') {
+            $this->line('reason_code='.(string) $run->reason_code);
+        }
+
+        if (isset($run->notes) && $run->notes !== null && $run->notes !== '') {
+            $this->line('notes='.(string) $run->notes);
+        }
     }
 }

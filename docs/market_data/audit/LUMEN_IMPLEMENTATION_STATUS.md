@@ -124,7 +124,8 @@
   - sesi ini menutup gap `pointer row points to a publication with a mismatched trade date` yang sudah eksplisit `LOCKED` di `Publication_Current_Pointer_Integrity_Contract_LOCKED.md` dengan memperketat `EodPublicationRepository` agar pointer resolution fail-safe hanya bila `pub.trade_date = ptr.trade_date`;
   - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id` dan `new_run_id` tetap `null`, pointer/publication mismatch tetap bertahan sebagai state insiden, dan tidak ada run/event side effect untuk correction tersebut;
   - repository integration proof juga ditambah agar current publication resolution umum (`findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`) kini mengembalikan `null` pada trade-date mismatch, bukan lagi menerima state pointer korup sebagai readable;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal PHPUnit penuh tetap perlu dijalankan di environment pengguna.
+  - follow-up repair setelah proof awal juga sudah tervalidasi lokal: `AbstractMarketDataCommand::renderRunSummary(...)` kini merender `reason_code` / `notes` saat ada, dan test `test_complete_finalize_keeps_resealed_when_publication_promotion_throws_lock_conflict()` sudah diselaraskan dengan event `STAGE_STARTED` yang nyata di pipeline;
+  - validasi lokal final sesi 47 lulus penuh dengan `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`.
 - Catatan fokus untuk sesi berikutnya:
   - fokus setelah sesi 47 adalah tetap memilih gap DB-backed correction conflict/error matrix lain yang masih `PARTIAL` tetapi berdasar perilaku runtime yang memang sudah jelas dan bisa dibuktikan;
   - varian `pointer/publication trade-date mismatch` kini sudah menjadi checkpoint sah karena owner-doc `LOCKED` memang eksplisit mewajibkan fail-safe dan repository sudah disinkronkan ke contract tersebut.
@@ -136,7 +137,7 @@
 - Tidak ada `DOC GAP` aktif saat ini.
 - Tidak ada `DOC CONFLICT` aktif saat ini.
 - Tidak ada `DOC SYNC ISSUE` aktif saat ini.
-- Catatan resume: source of truth valid kini mencakup sesi 47 dengan guard pointer/publication trade-date mismatch; mismatch trade-date pada pointer resolution kini merupakan checkpoint sah karena sudah dipaku oleh owner-doc `LOCKED` dan disinkronkan di repository + test integration.
+- Catatan resume: source of truth valid kini mencakup sesi 47 dengan guard pointer/publication trade-date mismatch; mismatch trade-date pada pointer resolution kini merupakan checkpoint sah karena sudah dipaku oleh owner-doc `LOCKED`, disinkronkan di repository + test integration, dan sudah lolos validasi lokal penuh.
 
 ## Canonical Session Batch IDs
 - `session1_batch1_market-data-foundation`
@@ -238,6 +239,33 @@
 | 44 | `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum` | DONE | DB-backed correction malformed-baseline-pointer guard integration minimum | checkpoint-backed + syntax lint proof |
 | 45 | `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum` | DONE | DB-backed correction missing-publication-pointer guard integration minimum | checkpoint-backed + local validation after runtime proof |
 
+### SESSION 46
+- STATUS: DONE
+- BATCH ID: `session46_batch46_db_backed_correction_non_readable_baseline_run_guard_integration_minimum`
+- SUMMARY:
+  - menambahkan DB-backed integration proof untuk approved correction dengan baseline publication yang sealed/current tetapi run asalnya `HELD` / `NOT_READABLE` dan `is_current_publication = 0`;
+  - memperketat baseline correction resolver agar memvalidasi `seal/current/readability consistency` melalui run state sebelum correction boleh membuat owning run baru;
+  - checkpoint dan remaining work diperbarui tanpa membuka area baru di luar correction/runtime matrix.
+- PROOF:
+  - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
+  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
+  - local validation: completed in user environment with `vendor\bin\phpunit --filter non_readable_run_publication` -> `OK (1 test, 20 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (4 tests, 60 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (12 tests, 250 assertions)`.
+
+### SESSION 47
+- STATUS: DONE
+- BATCH ID: `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum`
+- SUMMARY:
+  - menambahkan DB-backed integration proof untuk approved correction dengan current pointer row trade date target yang menunjuk publication trade date lain;
+  - memperketat pointer resolution di `EodPublicationRepository` agar semua resolver pointer/current/baseline hanya menerima row ketika `pub.trade_date = ptr.trade_date`;
+  - menambahkan repository integration proof bahwa pointer/publication trade-date mismatch kini fail-safe (`null`) untuk read resolution umum, lalu memperbarui checkpoint tanpa membuka area baru.
+- PROOF:
+  - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
+  - container proof: `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed;
+  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
+  - local follow-up repair: `AbstractMarketDataCommand::renderRunSummary(...)` kini merender `reason_code` / `notes` saat ada;
+  - local follow-up repair: `MarketDataPipelineServiceTest::test_complete_finalize_keeps_resealed_when_publication_promotion_throws_lock_conflict()` diselaraskan dengan event `STAGE_STARTED` yang nyata di pipeline;
+  - local validation: `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`.
+
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
 - Prioritas paling masuk akal saat ini:
@@ -251,28 +279,3 @@
 - Reason:
   - Parent contract correction/tests/ops masih `PARTIAL` pada broader matrix.
   - Final readiness gate proyek keseluruhan belum tertutup.
-
-### SESSION 46
-- STATUS: DONE
-- BATCH ID: `session46_batch46_db_backed_correction_non_readable_baseline_run_guard_integration_minimum`
-- SUMMARY:
-  - menambahkan DB-backed integration proof untuk approved correction dengan baseline publication yang sealed/current tetapi run asalnya `HELD` / `NOT_READABLE` dan `is_current_publication = 0`;
-  - memperketat baseline correction resolver agar memvalidasi `seal/current/readability consistency` melalui run state sebelum correction boleh membuat owning run baru;
-  - checkpoint dan remaining work diperbarui tanpa membuka area baru di luar correction/runtime matrix.
-- PROOF:
-  - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - local validation: pending di environment pengguna.
-
-### SESSION 47
-- STATUS: DONE
-- BATCH ID: `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum`
-- SUMMARY:
-  - menambahkan DB-backed integration proof untuk approved correction dengan current pointer row trade date target yang menunjuk publication trade date lain;
-  - memperketat pointer resolution di `EodPublicationRepository` agar semua resolver pointer/current/baseline hanya menerima row ketika `pub.trade_date = ptr.trade_date`;
-  - menambahkan repository integration proof bahwa pointer/publication trade-date mismatch kini fail-safe (`null`) untuk read resolution umum, lalu memperbarui checkpoint tanpa membuka area baru.
-- PROOF:
-  - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - local validation: pending di environment pengguna.

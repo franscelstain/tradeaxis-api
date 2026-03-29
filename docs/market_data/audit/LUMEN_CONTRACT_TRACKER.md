@@ -83,15 +83,8 @@
   - DB-backed/integration proof now also covers approved correction with a baseline publication that is `SEALED` and `is_current = 1` but whose originating run is `HELD` / `NOT_READABLE` and `is_current_publication = 0`, proving correction baseline resolution now rejects non-readable baseline runs before owning run creation and preserves correction approval state plus the incident baseline pointer/publication rows untouched;
   - DB-backed/integration proof now also covers approved correction with a current pointer row whose pointed publication belongs to a different trade date, proving correction baseline resolution now rejects pointer/publication trade-date mismatch before owning run creation and preserves correction approval state plus the incident pointer/publication rows untouched;
   - repository integration proof now also covers pointer/publication trade-date mismatch for general current/publication resolution, proving `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, and `findCorrectionBaselinePublicationForTradeDate` all fail safe to `null` when `pub.trade_date != ptr.trade_date`;
-  - DB-backed/integration proof now also covers approved correction with a malformed baseline pointer that references an `UNSEALED`, non-current publication, proving baseline resolution still rejects before owning run creation while preserving correction approval state and the pre-existing malformed pointer/publication rows;
-  - session 44 malformed-baseline-pointer proof was initially blocked by a helper-seed schema mismatch because `seedMalformedBaselinePointerForTradeDate(...)` attempted to insert `created_at` / `updated_at` into `eod_current_publication_pointer`; the helper was then patched to remove timestamp columns from the pointer insert payload;
-  - final local validation for the malformed-baseline-pointer guard path passes with `vendor\bin\phpunit --filter unsealed_non_current_publication` -> `OK (1 test, 16 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (2 tests, 27 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (10 tests, 217 assertions)`;
-  - final local validation for the missing-baseline guard path passes with `vendor\bin\phpunit --filter without_current_baseline` -> `OK (1 test, 11 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (1 test, 11 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (9 tests, 201 assertions)`;
-  - DB-backed/integration proof now also covers approved correction with a malformed baseline pointer/current-publication state, proving the pipeline still rejects before owning run creation when a pointer row exists but resolves to an `UNSEALED` and non-current publication for the target trade date;
-  - DB-backed/integration proof now also covers approved correction with a malformed baseline pointer/current-publication state, proving the pipeline still rejects before owning run creation when a pointer row exists but resolves to an `UNSEALED` and non-current publication for the target trade date;
-  - DB-backed/integration proof now also covers approved correction with a malformed baseline pointer/current-publication state, proving the pipeline still rejects before owning run creation when a pointer row exists but resolves to an `UNSEALED` and non-current publication for the target trade date;
-  - manual runtime verification after session 38 confirms changed-content correction publish path with `correction_id=24` -> `run_id=53` -> `PUBLISHED` / `SUCCESS` / `READABLE`;
-  - local full PHPUnit proof after session 35: `60 tests / 306 assertions`.
+  - final local validation for session 47 required two follow-up repairs after the initial repo patch: `AbstractMarketDataCommand::renderRunSummary(...)` now renders `reason_code` / `notes` when present, and `MarketDataPipelineServiceTest::test_complete_finalize_keeps_resealed_when_publication_promotion_throws_lock_conflict()` now matches the `STAGE_STARTED` event payload safely;
+  - final local full validation after those repairs passes with `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`.
 - OPEN GAP:
   - broader conflict/error matrix at artifact/runtime level is still not fully closed beyond the current minimum changed-content promotion/conflict proof set plus reseal-failure minimum.
 - NEXT REQUIRED ACTION:
@@ -117,9 +110,9 @@
   - DB-backed/integration proof now also covers correction reseal failure, proving seal-write failure aborts correction before safe publication, leaves the correction in `EXECUTING`, and preserves prior current publication/pointer while partial candidate state remains `UNSEALED` and non-current;
   - DB-backed/integration proof now also covers correction history-promotion failure during finalize, proving correction remains `RESEALED`, preserves prior current publication/pointer, leaves the candidate publication `SEALED` but non-current, and resolves through held finalize rather than silent publish;
   - DB-backed/integration proof now also covers approved correction without a current sealed publication baseline, proving the pipeline rejects before owning run creation and preserves the correction in `APPROVED` state without creating candidate publication, pointer state, or run/event side effects;
-  - manual runtime verification after session 38 confirms changed-content publish path with `correction_id=24` and unchanged-content cancel path with `correction_id=25` -> `run_id=54` -> `CANCELLED` / `SUCCESS` / `READABLE`, while current publication pointer remains on `run_id=53`;
-  - full local PHPUnit after session 36: `61 tests / 313 assertions`;
-  - session 37-39 repo ZIPs did not include `vendor/`, so container-side proof for changed files stayed at PHP syntax lint, while final source of truth for session 39 is the locally validated post-patch repo state.
+  - DB-backed/integration proof now also covers approved correction with a current pointer row whose pointed publication belongs to a different trade date, proving correction baseline resolution rejects the trade-date mismatch before owning run creation and leaves correction state plus incident rows untouched;
+  - final local full validation after session 47 follow-up repairs passes with `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`;
+  - manual runtime verification after session 38 confirms changed-content publish path with `correction_id=24` and unchanged-content cancel path with `correction_id=25` -> `run_id=54` -> `CANCELLED` / `SUCCESS` / `READABLE`, while current publication pointer remains on `run_id=53`.
 - OPEN GAP:
   - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants outside the currently covered approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, missing-publication-pointer guard minimum, reseal-failure minimum, history-promotion failure minimum, the two promote/current-switch conflict modes, and any remaining broader non-promotion failure modes.
 - NEXT REQUIRED ACTION:
@@ -159,15 +152,16 @@
 ## CONTRACT ITEM 6 — Operator command surface / ops proof
 - STATUS: PARTIAL
 - OWNER AREA: command surface / operator summaries
-- LAST UPDATED SESSION: `session37_batch37_correction_lock_conflict_negative_proof_minimum`
+- LAST UPDATED SESSION: `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum`
 - EVIDENCE:
   - correction command proof added in session 30;
   - ops command proof added in session 31;
   - correction cancelled summary proof added in session 35;
   - correction held/resealed summary proof executed locally in session 36;
   - explicit correction lock-conflict operator summary proof added in session 37;
-  - manual runtime verification after session 38 confirms command surface remains healthy for `PUBLISHED` and `CANCELLED` finalize outcomes;
-  - last fully executed local proof remains session 36: `CorrectionCommandsTest.php` `6 tests / 31 assertions`; session 37 adds syntax-linted test coverage in repo.
+  - session 47 follow-up repair now makes `AbstractMarketDataCommand::renderRunSummary(...)` surface `reason_code` and `notes` when present, so held/resealed correction command output stays aligned with lock-conflict proof expectations;
+  - final local full validation after the follow-up repair passes with `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`;
+  - manual runtime verification after session 38 confirms command surface remains healthy for `PUBLISHED` and `CANCELLED` finalize outcomes.
 - OPEN GAP:
   - broader ops failure/retry/scheduler matrix is still not fully proven.
 - NEXT REQUIRED ACTION:
@@ -198,6 +192,7 @@
   - DB-backed/integration proof now also covers approved correction with a baseline publication that is `SEALED` and `is_current = 1` but whose originating run is `HELD` / `NOT_READABLE` and `is_current_publication = 0`, proving correction baseline resolution now rejects non-readable baseline runs before owning run creation and preserves correction approval state plus the incident baseline pointer/publication rows untouched;
   - DB-backed/integration proof now also covers approved correction with a current pointer row whose pointed publication belongs to a different trade date, proving correction baseline resolution now rejects pointer/publication trade-date mismatch before owning run creation and preserves correction approval state plus the incident pointer/publication rows untouched;
   - repository integration proof now also covers pointer/publication trade-date mismatch for general current/publication resolution, proving `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, and `findCorrectionBaselinePublicationForTradeDate` all fail safe to `null` when `pub.trade_date != ptr.trade_date`;
+  - final local validation after session 47 follow-up repairs passes with `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`;
   - final local validation for the missing-baseline guard path passes with `vendor\bin\phpunit --filter without_current_baseline` -> `OK (1 test, 11 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (1 test, 11 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (9 tests, 201 assertions)`;
   - final local validation for the missing-publication-pointer guard path passes with `vendor\bin\phpunit --filter missing_publication` -> `OK (1 test, 13 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (3 tests, 40 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (11 tests, 230 assertions)`;
   - `vendor\bin\phpunit --filter requires_approval` returns `No tests executed!` because the filter string does not match the test method name, not because of a runtime failure;
@@ -237,5 +232,5 @@
 - Session 44 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 45 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 46 is DONE at session level for the grounded non-readable-baseline-run guard batch.
-- Session 47 is DONE at session level for the grounded pointer/publication trade-date mismatch guard batch; owner-doc `LOCKED` wording was explicit, repository pointer resolution is now synchronized to it, and the batch is now checkpoint material.
+- Session 47 is DONE at session level for the grounded pointer/publication trade-date mismatch guard batch; owner-doc `LOCKED` wording was explicit, repository pointer resolution is now synchronized to it, final local follow-up repairs are reflected, and the batch is now checkpoint material.
 - Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item.
