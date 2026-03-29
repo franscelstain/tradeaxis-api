@@ -15,14 +15,13 @@ class EodPublicationRepository
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
             ->whereColumn('pub.trade_date', 'ptr.trade_date')
+            ->whereColumn('ptr.run_id', 'pub.run_id')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where(function ($query) {
                 $query->whereNull('run.run_id')
                     ->orWhere(function ($sub) {
-                        $sub->where('run.terminal_status', 'SUCCESS')
-                            ->where('run.publishability_state', 'READABLE')
-                            ->where('run.is_current_publication', 1);
+                        $sub->where('run.is_current_publication', 1);
                     });
             })
             ->select('pub.*', 'ptr.trade_date as pointer_trade_date', 'ptr.run_id as pointer_run_id', 'ptr.publication_version as pointer_publication_version', 'ptr.sealed_at as pointer_sealed_at')
@@ -36,14 +35,13 @@ class EodPublicationRepository
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
             ->whereColumn('pub.trade_date', 'ptr.trade_date')
+            ->whereColumn('ptr.run_id', 'pub.run_id')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where(function ($query) {
                 $query->whereNull('run.run_id')
                     ->orWhere(function ($sub) {
-                        $sub->where('run.terminal_status', 'SUCCESS')
-                            ->where('run.publishability_state', 'READABLE')
-                            ->where('run.is_current_publication', 1);
+                        $sub->where('run.is_current_publication', 1);
                     });
             })
             ->select(
@@ -66,6 +64,7 @@ class EodPublicationRepository
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
             ->whereColumn('pub.trade_date', 'ptr.trade_date')
+            ->whereColumn('ptr.run_id', 'pub.run_id')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where(function ($query) {
@@ -249,12 +248,20 @@ class EodPublicationRepository
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', '<', $tradeDate)
+            ->whereColumn('pub.trade_date', 'ptr.trade_date')
+            ->whereColumn('ptr.run_id', 'pub.run_id')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
+            ->where('run.is_current_publication', 1)
             ->orderByDesc('ptr.trade_date')
-            ->select('ptr.trade_date as readable_trade_date', 'pub.publication_id', 'pub.publication_version', 'run.run_id')
+            ->select(
+                'ptr.trade_date as readable_trade_date',
+                'pub.publication_id',
+                'pub.publication_version',
+                'run.run_id'
+            )
             ->first();
     }
 

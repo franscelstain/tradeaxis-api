@@ -101,6 +101,24 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
     }
 
+
+    public function test_pointer_resolution_returns_null_when_pointer_run_id_mismatches_pointed_publication_run(): void
+    {
+        DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->update([
+                'run_id' => 27,
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+
+        $this->assertNull($repo->findPointerResolvedPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
+    }
+
     public function test_candidate_seal_and_promote_updates_current_pointer_and_prior_publication(): void
     {
         $repo = new EodPublicationRepository();
