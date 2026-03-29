@@ -666,15 +666,132 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
+    public function test_run_daily_correction_with_history_promotion_failure_keeps_prior_current_and_candidate_sealed_non_current(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 134,
+            'high' => 139,
+            'low' => 133,
+            'close' => 138,
+            'volume' => 2900,
+            'adj_close' => 138,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-with-history-promotion-failure', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        try {
+            $this->makePipelineWithArtifacts(
+                new ThrowingHistoryPromotionArtifactRepository('History promotion to current tables failed during correction finalize.')
+            )->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
+            $this->fail('Expected history promotion failure to abort correction finalize.');
+        } catch (RuntimeException $e) {
+            $this->assertSame('History promotion to current tables failed during correction finalize.', $e->getMessage());
+        }
+
+        $run = DB::table('eod_runs')
+            ->where('trade_date_requested', '2026-03-20')
+            ->orderByDesc('run_id')
+            ->first();
+
+        $this->assertNotNull($run);
+        $this->assertSame('FAILED', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame('FAILED', $run->lifecycle_state);
+        $this->assertNotNull($run->sealed_at);
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('EXECUTING', $persistedCorrection->status);
+        $this->assertSame(90, (int) $persistedCorrection->prior_run_id);
+        $this->assertSame((int) $run->run_id, (int) $persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+        $this->assertNull($persistedCorrection->final_outcome_note);
+
+        $currentPublication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('is_current', 1)
+            ->first();
+
+        $this->assertNotNull($currentPublication);
+        $this->assertSame(1, (int) $currentPublication->publication_id);
+        $this->assertSame(1, (int) $currentPublication->publication_version);
+        $this->assertSame('SEALED', $currentPublication->seal_state);
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
+        $this->assertSame(90, (int) $pointer->run_id);
+
+        $candidatePublication = DB::table('eod_publications')
+            ->where('run_id', $run->run_id)
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($candidatePublication);
+        $this->assertSame('SEALED', $candidatePublication->seal_state);
+        $this->assertSame(0, (int) $candidatePublication->is_current);
+        $this->assertSame(1, (int) $candidatePublication->supersedes_publication_id);
+        $this->assertNotNull($candidatePublication->sealed_at);
+
+        $stageFailedEvent = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'STAGE_FAILED')
+            ->orderByDesc('event_id')
+            ->first();
+
+        $this->assertNotNull($stageFailedEvent);
+        $this->assertSame('ERROR', $stageFailedEvent->severity);
+        $this->assertSame('RUN_FINALIZE_FAILED', $stageFailedEvent->reason_code);
+        $this->assertStringContainsString('History promotion to current tables failed during correction finalize.', (string) $stageFailedEvent->message);
+
+        $this->assertFalse(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'RUN_FINALIZED')
+                ->exists()
+        );
+
+        $this->assertFalse(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'CORRECTION_PUBLISHED')
+                ->exists()
+        );
+    }
+
     private function makePipeline(): MarketDataPipelineService
     {
-        return $this->makePipelineWithPublications(new EodPublicationRepository());
+        return $this->makePipelineWithOverrides(new EodPublicationRepository(), new EodArtifactRepository());
     }
 
     private function makePipelineWithPublications(EodPublicationRepository $publications): MarketDataPipelineService
     {
+        return $this->makePipelineWithOverrides($publications, new EodArtifactRepository());
+    }
+
+    private function makePipelineWithArtifacts(EodArtifactRepository $artifacts): MarketDataPipelineService
+    {
+        return $this->makePipelineWithOverrides(new EodPublicationRepository(), $artifacts);
+    }
+
+    private function makePipelineWithOverrides(EodPublicationRepository $publications, EodArtifactRepository $artifacts): MarketDataPipelineService
+    {
         $runs = new EodRunRepository();
-        $artifacts = new EodArtifactRepository();
         $tickers = new TickerMasterRepository();
 
         $bars = new EodBarsIngestService(
@@ -984,6 +1101,20 @@ class ThrowingPromotionPublicationRepository extends EodPublicationRepository
     }
 
     public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null)
+    {
+        throw new RuntimeException($this->message);
+    }
+}
+class ThrowingHistoryPromotionArtifactRepository extends EodArtifactRepository
+{
+    private string $message;
+
+    public function __construct(string $message)
+    {
+        $this->message = $message;
+    }
+
+    public function promotePublicationHistoryToCurrent($tradeDate, $publicationId, $runId)
     {
         throw new RuntimeException($this->message);
     }

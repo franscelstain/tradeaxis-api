@@ -49,11 +49,11 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 41`
-- Last completed batch id: `session41_batch41_db_backed_correction_reseal_failure_integration_minimum`
+- Last completed session: `SESSION 42`
+- Last completed batch id: `session42_batch42_db_backed_correction_history_promotion_failure_integration_minimum`
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum, reseal-failure minimum, dan promote/current-switch minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
+- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum, reseal-failure minimum, history-promotion failure minimum, dan promote/current-switch minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -89,7 +89,12 @@
 - Sesi 41 DONE pada level batch:
   - DB-backed/integration proof kini juga mencakup correction reseal failure, sehingga jalur `correction_failed_reseal_no_switch` tidak hanya tersirat di service/unit layer tetapi terbukti pada pipeline DB-backed saat seal candidate publication gagal ditulis;
   - proof minimum sesi ini menegaskan correction tetap berada di status `EXECUTING`, run correction gagal dengan `FAILED` / `NOT_READABLE`, candidate publication tetap `UNSEALED` dan non-current, prior current publication/pointer tetap aman, serta tidak ada `RUN_FINALIZED` atau `CORRECTION_PUBLISHED`;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh memang perlu dijalankan di environment pengguna;
+  - validasi lokal final sesi 41 lulus dengan `vendor\bin\phpunit --filter reseal_failure` -> `OK (1 test, 30 assertions)`, `vendor\bin\phpunit --filter leaves_candidate_non_current` -> `OK (1 test, 30 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (7 tests, 161 assertions)`.
+- Sesi 42 DONE pada level batch:
+  - DB-backed/integration proof kini juga mencakup correction history-promotion failure pada finalize path, yaitu saat candidate publication sudah `SEALED` tetapi promosi artifact history ke current table gagal sebelum publish/current-switch aman;
+  - proof minimum sesi ini menegaskan correction tetap berada di status `EXECUTING`, run correction gagal dengan `FAILED` / `NOT_READABLE`, candidate publication tetap `SEALED` namun non-current, prior current publication/pointer tetap aman, serta tidak ada `RUN_FINALIZED` atau `CORRECTION_PUBLISHED`;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh masih perlu dijalankan di environment pengguna.
 - Parent contract correction/tests/ops masih `PARTIAL` karena broader matrix belum lengkap.
 - Final done gate proyek keseluruhan masih belum tertutup.
 
@@ -142,6 +147,7 @@
 - `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
 - `session40_batch40_db_backed_correction_requires_approval_integration_minimum`
 - `session41_batch41_db_backed_correction_reseal_failure_integration_minimum`
+- `session42_batch42_db_backed_correction_history_promotion_failure_integration_minimum`
 
 ## Session Ledger (Minimum Reconstruction)
 - Sessions 1-14 are reconstructed minimum from canonical ZIP names and later checkpoint sync.
@@ -188,11 +194,15 @@
 | 36 | `session36_batch36_correction_conflict_held_operator_proof_minimum` | DONE | correction conflict HELD operator proof minimum | checkpoint-backed + executed local proof |
 | 37 | `session37_batch37_correction_lock_conflict_negative_proof_minimum` | DONE | correction lock-conflict negative proof minimum | checkpoint-backed + syntax lint proof |
 | 38 | `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum` | DONE | DB-backed changed-content promotion-failure integration minimum | checkpoint-backed + syntax lint proof + executed manual runtime verification |
+| 39 | `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum` | DONE | DB-backed correction baseline/current-pointer mismatch integration minimum | checkpoint-backed + executed local proof after helper patch |
+| 40 | `session40_batch40_db_backed_correction_requires_approval_integration_minimum` | DONE | DB-backed correction requires-approval integration minimum | checkpoint-backed + executed local proof |
+| 41 | `session41_batch41_db_backed_correction_reseal_failure_integration_minimum` | DONE | DB-backed correction reseal-failure integration minimum | checkpoint-backed + executed local proof |
+| 42 | `session42_batch42_db_backed_correction_history_promotion_failure_integration_minimum` | DONE | DB-backed correction history-promotion-failure integration minimum | checkpoint-backed + syntax lint proof |
 
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
 - Prioritas paling masuk akal saat ini:
-  - sisa broader correction conflict/error matrix di luar minimum changed-content promotion-failure path yang kini sudah tercakup; atau
+  - sisa broader correction conflict/error matrix di luar minimum approval-gate, reseal-failure, history-promotion failure, dan changed-content promote/current-switch paths yang kini sudah tercakup; atau
   - broader scheduler/retry/failure matrix.
 - Jangan buka area baru di luar market-data sampai parent correction/tests/ops lebih rapat.
 
