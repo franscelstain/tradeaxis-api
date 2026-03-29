@@ -49,11 +49,11 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 43`
-- Last completed batch id: `session43_batch43_db_backed_correction_missing_baseline_guard_integration_minimum`
+- Last completed session: `SESSION 44`
+- Last completed batch id: `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum`
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum, missing-baseline guard minimum, reseal-failure minimum, history-promotion failure minimum, dan promote/current-switch minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
+- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, reseal-failure minimum, history-promotion failure minimum, dan promote/current-switch minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -100,6 +100,11 @@
 - Sesi 43 DONE pada level batch:
   - DB-backed/integration proof kini juga mencakup approved correction tanpa current sealed publication baseline, sehingga guard baseline correction tidak hanya tersirat di pipeline start-stage tetapi terbukti menolak eksekusi sebelum owning run dibuat;
   - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id`/`new_run_id` tetap `null`, tidak ada candidate publication, tidak ada current publication pointer untuk trade date target, dan tidak ada event/run baru yang tercipta untuk correction tersebut;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 43 kini sudah mencakup validasi lokal setelah batch dijalankan di environment pengguna;
+  - validasi lokal final sesi 43 lulus dengan `vendor\bin\phpunit --filter without_current_baseline` -> `OK (1 test, 11 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (1 test, 11 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (9 tests, 201 assertions)`.
+- Sesi 44 DONE pada level batch:
+  - DB-backed/integration proof kini juga mencakup approved correction dengan baseline pointer row yang ada tetapi menunjuk publication yang `UNSEALED` dan non-current, sehingga guard baseline correction terbukti menolak eksekusi meskipun ada pointer/publication row palsu untuk trade date target;
+  - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id`/`new_run_id` tetap `null`, tidak ada owning run baru, malformed baseline publication/pointer tetap tidak termutasi, dan tidak ada event/run baru yang tercipta untuk correction tersebut;
   - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
 - Parent contract correction/tests/ops masih `PARTIAL` karena broader matrix belum lengkap.
 - Final done gate proyek keseluruhan masih belum tertutup.
@@ -155,6 +160,7 @@
 - `session41_batch41_db_backed_correction_reseal_failure_integration_minimum`
 - `session42_batch42_db_backed_correction_history_promotion_failure_integration_minimum`
 - `session43_batch43_db_backed_correction_missing_baseline_guard_integration_minimum`
+- `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum`
 
 ## Session Ledger (Minimum Reconstruction)
 - Sessions 1-14 are reconstructed minimum from canonical ZIP names and later checkpoint sync.
@@ -205,12 +211,13 @@
 | 40 | `session40_batch40_db_backed_correction_requires_approval_integration_minimum` | DONE | DB-backed correction requires-approval integration minimum | checkpoint-backed + executed local proof |
 | 41 | `session41_batch41_db_backed_correction_reseal_failure_integration_minimum` | DONE | DB-backed correction reseal-failure integration minimum | checkpoint-backed + executed local proof |
 | 42 | `session42_batch42_db_backed_correction_history_promotion_failure_integration_minimum` | DONE | DB-backed correction history-promotion-failure integration minimum | checkpoint-backed + executed local proof after assertion patch |
-| 43 | `session43_batch43_db_backed_correction_missing_baseline_guard_integration_minimum` | DONE | DB-backed correction missing-baseline guard integration minimum | checkpoint-backed + syntax lint proof; local validation still required |
+| 43 | `session43_batch43_db_backed_correction_missing_baseline_guard_integration_minimum` | DONE | DB-backed correction missing-baseline guard integration minimum | checkpoint-backed + executed local proof |
+| 44 | `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum` | DONE | DB-backed correction malformed-baseline-pointer guard integration minimum | checkpoint-backed + syntax lint proof |
 
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
 - Prioritas paling masuk akal saat ini:
-  - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, reseal-failure, history-promotion failure, dan changed-content promote/current-switch paths yang kini sudah tercakup; atau
+  - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, reseal-failure, history-promotion failure, dan changed-content promote/current-switch paths yang kini sudah tercakup; atau
   - broader scheduler/retry/failure matrix.
 - Jangan buka area baru di luar market-data sampai parent correction/tests/ops lebih rapat.
 
