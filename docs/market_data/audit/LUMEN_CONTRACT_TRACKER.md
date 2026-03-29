@@ -62,7 +62,7 @@
 ## CONTRACT ITEM 2 — Core runtime artifact lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: bars / indicators / eligibility / publication
-- LAST UPDATED SESSION: `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum`
+- LAST UPDATED SESSION: `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum`
 - EVIDENCE:
   - canonical bars/indicators/eligibility runtime installed;
   - publication current-switch and pointer-sync runtime installed;
@@ -78,6 +78,11 @@
   - final local validation for the reseal-failure path passes with `vendor\bin\phpunit --filter reseal_failure` -> `OK (1 test, 30 assertions)`, `vendor\bin\phpunit --filter leaves_candidate_non_current` -> `OK (1 test, 30 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (7 tests, 161 assertions)`;
   - final local validation for the history-promotion failure path passes with `vendor\bin\phpunit --filter history_promotion_failure` -> `OK (1 test, 29 assertions)`, `vendor\bin\phpunit --filter candidate_sealed_non_current` -> `OK (1 test, 29 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (8 tests, 190 assertions)`;
   - DB-backed/integration proof now also covers approved correction without a current sealed publication baseline, proving the pipeline rejects before owning run creation and preserves correction state plus the absence of publication/pointer side effects for the target trade date;
+  - DB-backed/integration proof now also covers approved correction with a malformed pointer that references an `UNSEALED` non-current publication, proving the pipeline rejects before owning run creation and preserves correction approval state while leaving the malformed pointer/publication rows untouched;
+  - DB-backed/integration proof now also covers approved correction with a current pointer row that references a missing publication row, proving the pipeline rejects before owning run creation and preserves correction approval state plus the corrupted pointer state without creating a new publication or run/event side effects;
+  - DB-backed/integration proof now also covers approved correction with a malformed baseline pointer that references an `UNSEALED`, non-current publication, proving baseline resolution still rejects before owning run creation while preserving correction approval state and the pre-existing malformed pointer/publication rows;
+  - session 44 malformed-baseline-pointer proof was initially blocked by a helper-seed schema mismatch because `seedMalformedBaselinePointerForTradeDate(...)` attempted to insert `created_at` / `updated_at` into `eod_current_publication_pointer`; the helper was then patched to remove timestamp columns from the pointer insert payload;
+  - final local validation for the malformed-baseline-pointer guard path passes with `vendor\bin\phpunit --filter unsealed_non_current_publication` -> `OK (1 test, 16 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (2 tests, 27 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (10 tests, 217 assertions)`;
   - final local validation for the missing-baseline guard path passes with `vendor\bin\phpunit --filter without_current_baseline` -> `OK (1 test, 11 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (1 test, 11 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (9 tests, 201 assertions)`;
   - DB-backed/integration proof now also covers approved correction with a malformed baseline pointer/current-publication state, proving the pipeline still rejects before owning run creation when a pointer row exists but resolves to an `UNSEALED` and non-current publication for the target trade date;
   - DB-backed/integration proof now also covers approved correction with a malformed baseline pointer/current-publication state, proving the pipeline still rejects before owning run creation when a pointer row exists but resolves to an `UNSEALED` and non-current publication for the target trade date;
@@ -92,7 +97,7 @@
 ## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: correction runtime and finalize outcomes
-- LAST UPDATED SESSION: `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum`
+- LAST UPDATED SESSION: `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum`
 - EVIDENCE:
   - correction request / approval / reseal / publish runtime installed;
   - correction final outcome note installed;
@@ -112,7 +117,7 @@
   - full local PHPUnit after session 36: `61 tests / 313 assertions`;
   - session 37-39 repo ZIPs did not include `vendor/`, so container-side proof for changed files stayed at PHP syntax lint, while final source of truth for session 39 is the locally validated post-patch repo state.
 - OPEN GAP:
-  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants outside the currently covered approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, reseal-failure minimum, history-promotion failure minimum, the two promote/current-switch conflict modes, and any remaining broader non-promotion failure modes.
+  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants outside the currently covered approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, missing-publication-pointer guard minimum, reseal-failure minimum, history-promotion failure minimum, the two promote/current-switch conflict modes, and any remaining broader non-promotion failure modes.
 - NEXT REQUIRED ACTION:
   - expand matrix for additional conflict/error scenarios that still remain uncovered.
 
@@ -166,7 +171,7 @@
 ## CONTRACT ITEM 7 — DB-backed integration proof
 - STATUS: PARTIAL
 - OWNER AREA: repository + pipeline integration
-- LAST UPDATED SESSION: `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum`
+- LAST UPDATED SESSION: `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum`
 - EVIDENCE:
   - repository integration proof added in session 32;
   - DB-backed pipeline integration minimum added in session 33;
@@ -183,11 +188,14 @@
   - session 42 history-promotion proof was initially invalidated by stale assertion expectations, then repaired by patching `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` to assert the actual held finalize outcome instead of an exception/failure path;
   - final local validation for the history-promotion failure path passes with `vendor\bin\phpunit --filter history_promotion_failure` -> `OK (1 test, 29 assertions)`, `vendor\bin\phpunit --filter candidate_sealed_non_current` -> `OK (1 test, 29 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (8 tests, 190 assertions)`;
   - DB-backed/integration proof now also covers approved correction without a current sealed publication baseline, proving the pipeline rejects before owning run creation and preserves correction state plus the absence of publication/pointer side effects for the target trade date;
+  - DB-backed/integration proof now also covers approved correction with a malformed pointer that references an `UNSEALED` non-current publication, proving the pipeline rejects before owning run creation and preserves correction approval state while leaving the malformed pointer/publication rows untouched;
+  - DB-backed/integration proof now also covers approved correction with a current pointer row that references a missing publication row, proving the pipeline rejects before owning run creation and preserves correction approval state plus the corrupted pointer state without creating a new publication or run/event side effects;
   - final local validation for the missing-baseline guard path passes with `vendor\bin\phpunit --filter without_current_baseline` -> `OK (1 test, 11 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (1 test, 11 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (9 tests, 201 assertions)`;
+  - final local validation for the missing-publication-pointer guard path passes with `vendor\bin\phpunit --filter missing_publication` -> `OK (1 test, 13 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (3 tests, 40 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (11 tests, 230 assertions)`;
   - `vendor\bin\phpunit --filter requires_approval` returns `No tests executed!` because the filter string does not match the test method name, not because of a runtime failure;
   - manual runtime verification after session 38 confirms local DB behavior still aligns for publish path, unchanged cancel path, purge, and replay-backfill minimum.
 - OPEN GAP:
-  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path, missing-baseline guard path, malformed-baseline-pointer guard path, reseal-failure path, history-promotion failure path, and changed-content promote/current-switch conflict paths.
+  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path, missing-baseline guard path, malformed-baseline-pointer guard path, missing-publication-pointer guard path, reseal-failure path, history-promotion failure path, and changed-content promote/current-switch conflict paths.
 - NEXT REQUIRED ACTION:
   - extend only into remaining load-bearing DB-backed matrix gaps.
 
@@ -219,4 +227,5 @@
 - Session 42 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 43 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 44 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
+- Session 45 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item.

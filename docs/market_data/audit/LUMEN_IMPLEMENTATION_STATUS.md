@@ -49,11 +49,11 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 44`
-- Last completed batch id: `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum`
+- Last completed session: `SESSION 45`
+- Last completed batch id: `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum`
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, reseal-failure minimum, history-promotion failure minimum, dan promote/current-switch minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
+- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, missing-publication-pointer guard minimum, reseal-failure minimum, history-promotion failure minimum, dan promote/current-switch minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -105,7 +105,14 @@
 - Sesi 44 DONE pada level batch:
   - DB-backed/integration proof kini juga mencakup approved correction dengan baseline pointer row yang ada tetapi menunjuk publication yang `UNSEALED` dan non-current, sehingga guard baseline correction terbukti menolak eksekusi meskipun ada pointer/publication row palsu untuk trade date target;
   - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id`/`new_run_id` tetap `null`, tidak ada owning run baru, malformed baseline publication/pointer tetap tidak termutasi, dan tidak ada event/run baru yang tercipta untuk correction tersebut;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
+  - validasi lokal awal sesi 44 sempat error karena helper seed `seedMalformedBaselinePointerForTradeDate(...)` mencoba menulis kolom `created_at` / `updated_at` ke tabel `eod_current_publication_pointer` padahal schema pointer tidak memiliki kolom tersebut; helper lalu dipatch dengan menghapus kolom timestamp dari insert payload;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 44 kini sudah mencakup validasi lokal setelah helper seed dipatch;
+  - validasi lokal final sesi 44 lulus dengan `vendor\bin\phpunit --filter unsealed_non_current_publication` -> `OK (1 test, 16 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (2 tests, 27 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (10 tests, 217 assertions)`.
+- Sesi 45 DONE pada level batch:
+  - DB-backed/integration proof kini juga mencakup approved correction dengan current pointer row yang ada tetapi publication row yang dirujuk pointer hilang, sehingga baseline resolver tetap menolak correction sebelum owning run dibuat;
+  - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id` dan `new_run_id` tetap `null`, pointer korup tetap ada, tidak ada publication untuk trade date target, dan tidak ada run/event side effect untuk correction tersebut;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 45 kini sudah mencakup validasi lokal setelah batch dijalankan di environment pengguna;
+  - validasi lokal final sesi 45 lulus dengan `vendor\bin\phpunit --filter missing_publication` -> `OK (1 test, 13 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (3 tests, 40 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (11 tests, 230 assertions)`.
 - Parent contract correction/tests/ops masih `PARTIAL` karena broader matrix belum lengkap.
 - Final done gate proyek keseluruhan masih belum tertutup.
 
@@ -213,11 +220,12 @@
 | 42 | `session42_batch42_db_backed_correction_history_promotion_failure_integration_minimum` | DONE | DB-backed correction history-promotion-failure integration minimum | checkpoint-backed + executed local proof after assertion patch |
 | 43 | `session43_batch43_db_backed_correction_missing_baseline_guard_integration_minimum` | DONE | DB-backed correction missing-baseline guard integration minimum | checkpoint-backed + executed local proof |
 | 44 | `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum` | DONE | DB-backed correction malformed-baseline-pointer guard integration minimum | checkpoint-backed + syntax lint proof |
+| 45 | `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum` | DONE | DB-backed correction missing-publication-pointer guard integration minimum | checkpoint-backed + local validation after runtime proof |
 
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
 - Prioritas paling masuk akal saat ini:
-  - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, reseal-failure, history-promotion failure, dan changed-content promote/current-switch paths yang kini sudah tercakup; atau
+  - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, reseal-failure, history-promotion failure, dan changed-content promote/current-switch paths yang kini sudah tercakup; atau
   - broader scheduler/retry/failure matrix.
 - Jangan buka area baru di luar market-data sampai parent correction/tests/ops lebih rapat.
 
