@@ -688,14 +688,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-with-history-promotion-failure', 'system');
         $approved = $corrections->approve($request->correction_id, 'reviewer');
 
-        try {
-            $this->makePipelineWithArtifacts(
-                new ThrowingHistoryPromotionArtifactRepository('History promotion to current tables failed during correction finalize.')
-            )->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
-            $this->fail('Expected history promotion failure to abort correction finalize.');
-        } catch (RuntimeException $e) {
-            $this->assertSame('History promotion to current tables failed during correction finalize.', $e->getMessage());
-        }
+        $this->makePipelineWithArtifacts(
+            new ThrowingHistoryPromotionArtifactRepository('History promotion to current tables failed during correction finalize.')
+        )->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
 
         $run = DB::table('eod_runs')
             ->where('trade_date_requested', '2026-03-20')
@@ -703,9 +698,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
             ->first();
 
         $this->assertNotNull($run);
-        $this->assertSame('FAILED', $run->terminal_status);
+        $this->assertSame('HELD', $run->terminal_status);
         $this->assertSame('NOT_READABLE', $run->publishability_state);
-        $this->assertSame('FAILED', $run->lifecycle_state);
+        $this->assertSame('COMPLETED', $run->lifecycle_state);
         $this->assertNotNull($run->sealed_at);
 
         $persistedCorrection = DB::table('eod_dataset_corrections')
@@ -713,7 +708,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             ->first();
 
         $this->assertNotNull($persistedCorrection);
-        $this->assertSame('EXECUTING', $persistedCorrection->status);
+        $this->assertSame('RESEALED', $persistedCorrection->status);
         $this->assertSame(90, (int) $persistedCorrection->prior_run_id);
         $this->assertSame((int) $run->run_id, (int) $persistedCorrection->new_run_id);
         $this->assertNull($persistedCorrection->published_at);
@@ -748,21 +743,24 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame(1, (int) $candidatePublication->supersedes_publication_id);
         $this->assertNotNull($candidatePublication->sealed_at);
 
-        $stageFailedEvent = DB::table('eod_run_events')
+        $finalizedEvent = DB::table('eod_run_events')
             ->where('run_id', $run->run_id)
-            ->where('event_type', 'STAGE_FAILED')
+            ->where('event_type', 'RUN_FINALIZED')
             ->orderByDesc('event_id')
             ->first();
 
-        $this->assertNotNull($stageFailedEvent);
-        $this->assertSame('ERROR', $stageFailedEvent->severity);
-        $this->assertSame('RUN_FINALIZE_FAILED', $stageFailedEvent->reason_code);
-        $this->assertStringContainsString('History promotion to current tables failed during correction finalize.', (string) $stageFailedEvent->message);
+        $this->assertNotNull($finalizedEvent);
+        $this->assertSame('WARN', $finalizedEvent->severity);
+        $this->assertSame('RUN_LOCK_CONFLICT', $finalizedEvent->reason_code);
+        $this->assertStringContainsString(
+            'History promotion to current tables failed during correction finalize.',
+            (string) $finalizedEvent->message
+        );
 
         $this->assertFalse(
             DB::table('eod_run_events')
                 ->where('run_id', $run->run_id)
-                ->where('event_type', 'RUN_FINALIZED')
+                ->where('event_type', 'CORRECTION_PUBLISHED')
                 ->exists()
         );
 
@@ -773,6 +771,77 @@ class MarketDataPipelineIntegrationTest extends TestCase
                 ->exists()
         );
     }
+
+    public function test_run_daily_approved_correction_without_current_baseline_rejects_before_run_creation_and_preserves_approval_state(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 134,
+            'high' => 139,
+            'low' => 133,
+            'close' => 138,
+            'volume' => 2900,
+            'adj_close' => 138,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-without-current-baseline', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        try {
+            $this->makePipeline()->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
+            $this->fail('Expected missing current baseline to reject approved correction before run creation.');
+        } catch (RuntimeException $e) {
+            $this->assertSame(
+                'Correction requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.',
+                $e->getMessage()
+            );
+        }
+
+        $run = DB::table('eod_runs')
+            ->where('trade_date_requested', '2026-03-20')
+            ->orderByDesc('run_id')
+            ->first();
+
+        $this->assertNull($run);
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('APPROVED', $persistedCorrection->status);
+        $this->assertNull($persistedCorrection->prior_run_id);
+        $this->assertNull($persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+        $this->assertNull($persistedCorrection->final_outcome_note);
+
+        $this->assertSame(
+            0,
+            DB::table('eod_publications')
+                ->where('trade_date', '2026-03-20')
+                ->count()
+        );
+
+        $this->assertNull(
+            DB::table('eod_current_publication_pointer')
+                ->where('trade_date', '2026-03-20')
+                ->first()
+        );
+
+        $this->assertSame(
+            0,
+            DB::table('eod_run_events')
+                ->where('payload_json', 'like', '%"correction_id":'.$approved->correction_id.'%')
+                ->count()
+        );
+    }
+
 
     private function makePipeline(): MarketDataPipelineService
     {
