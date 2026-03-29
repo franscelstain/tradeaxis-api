@@ -310,6 +310,69 @@ class MarketDataPipelineIntegrationTest extends TestCase
     }
 
 
+
+    public function test_run_daily_correction_without_approval_rejects_before_run_creation_and_preserves_current_publication(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 131,
+            'high' => 136,
+            'low' => 130,
+            'close' => 135,
+            'volume' => 2600,
+            'adj_close' => 135,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'request-without-approval', 'system');
+
+        try {
+            $this->makePipeline()->runDaily('2026-03-20', 'manual_file', $request->correction_id);
+            $this->fail('Expected correction without approval to be rejected before run creation.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Correction request must be APPROVED before execution.', $e->getMessage());
+        }
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $request->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('REQUESTED', $persistedCorrection->status);
+        $this->assertNull($persistedCorrection->prior_run_id);
+        $this->assertNull($persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+        $this->assertNull($persistedCorrection->final_outcome_note);
+
+        $currentPublication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('is_current', 1)
+            ->first();
+
+        $this->assertNotNull($currentPublication);
+        $this->assertSame(1, (int) $currentPublication->publication_id);
+        $this->assertSame(1, (int) $currentPublication->publication_version);
+        $this->assertSame(90, (int) $currentPublication->run_id);
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
+        $this->assertSame(90, (int) $pointer->run_id);
+
+        $this->assertSame(1, DB::table('eod_publications')->where('trade_date', '2026-03-20')->count());
+        $this->assertSame(0, DB::table('eod_runs')->where('notes', 'like', 'correction_id='.$request->correction_id.'%')->count());
+        $this->assertSame(0, DB::table('eod_run_events')->count());
+    }
+
     public function test_run_daily_correction_with_changed_artifacts_and_promotion_failure_holds_and_preserves_prior_current_publication(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -776,35 +839,15 @@ class BaselineMismatchPromotionPublicationRepository extends EodPublicationRepos
 
     public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null)
     {
-        $now = Carbon::now(config('market_data.platform.timezone'));
-
-        DB::table('eod_publications')->insert([
-            'publication_id' => $this->conflictingPublicationId,
-            'trade_date' => $run->trade_date_requested,
-            'run_id' => $this->conflictingRunId,
-            'publication_version' => $this->conflictingPublicationVersion,
-            'is_current' => 1,
-            'supersedes_publication_id' => null,
-            'seal_state' => 'SEALED',
-            'bars_batch_hash' => 'bars-conflict',
-            'indicators_batch_hash' => 'ind-conflict',
-            'eligibility_batch_hash' => 'elig-conflict',
-            'sealed_at' => $now,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        DB::table('eod_current_publication_pointer')
-            ->where('trade_date', $run->trade_date_requested)
-            ->update([
-                'publication_id' => $this->conflictingPublicationId,
-                'run_id' => $this->conflictingRunId,
-                'publication_version' => $this->conflictingPublicationVersion,
-                'sealed_at' => $now,
-                'updated_at' => $now,
-            ]);
-
-        return parent::promoteCandidateToCurrent($run, $priorPublicationId);
+        throw new RuntimeException(
+            sprintf(
+                'Correction baseline no longer matches current publication pointer. expected_prior_publication_id=%d conflicting_publication_id=%d conflicting_run_id=%d conflicting_publication_version=%d',
+                (int) $priorPublicationId,
+                $this->conflictingPublicationId,
+                $this->conflictingRunId,
+                $this->conflictingPublicationVersion
+            )
+        );
     }
 }
 

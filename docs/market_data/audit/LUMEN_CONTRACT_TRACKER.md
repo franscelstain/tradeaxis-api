@@ -62,13 +62,16 @@
 ## CONTRACT ITEM 2 — Core runtime artifact lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: bars / indicators / eligibility / publication
-- LAST UPDATED SESSION: `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
+- LAST UPDATED SESSION: `session40_batch40_db_backed_correction_requires_approval_integration_minimum`
 - EVIDENCE:
   - canonical bars/indicators/eligibility runtime installed;
   - publication current-switch and pointer-sync runtime installed;
   - unchanged correction path now proven locally after removing `publication_id` from content-hash payload;
   - DB-backed/integration proof now covers changed-content correction that reaches finalize and then fails during promote/current-switch, producing `HELD/NOT_READABLE` while preserving prior current publication and fallback effective date;
   - DB-backed/integration proof now also covers changed-content correction where baseline/current-pointer mismatch emerges during promote/current-switch, preserving prior current publication and fallback effective date without silently switching readability;
+  - baseline/current-pointer mismatch proof was initially invalidated by helper side effects, then repaired by patching `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` so the mismatch is raised without mutating pointer/current publication state before the exception path;
+  - final local validation after the patch passes with `vendor\bin\phpunit --filter baseline_pointer_mismatch` -> `OK (1 test, 26 assertions)` and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 114 assertions)`;
+  - DB-backed/integration proof now also covers correction request without approval, proving the pipeline rejects before owning run creation and preserves correction state plus current publication/pointer without creating a candidate publication;
   - manual runtime verification after session 38 confirms changed-content correction publish path with `correction_id=24` -> `run_id=53` -> `PUBLISHED` / `SUCCESS` / `READABLE`;
   - local full PHPUnit proof after session 35: `60 tests / 306 assertions`.
 - OPEN GAP:
@@ -79,7 +82,7 @@
 ## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: correction runtime and finalize outcomes
-- LAST UPDATED SESSION: `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
+- LAST UPDATED SESSION: `session40_batch40_db_backed_correction_requires_approval_integration_minimum`
 - EVIDENCE:
   - correction request / approval / reseal / publish runtime installed;
   - correction final outcome note installed;
@@ -89,18 +92,21 @@
   - explicit lock-conflict/promotion-error negative proof now added across outcome service, pipeline finalize, and correction command surface;
   - DB-backed/integration proof now covers changed-content correction that reaches publish path preconditions and then fails at promote/current-switch, preserving prior current publication and leaving correction in `RESEALED`;
   - DB-backed/integration proof now also covers correction baseline/current-pointer mismatch during promote/current-switch, preserving prior current publication and leaving correction in `RESEALED`;
+  - baseline/current-pointer mismatch proof was initially invalidated by helper side effects, then repaired by patching `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` so the mismatch is raised without mutating pointer/current publication state before the exception path;
+  - final local validation after the patch passes with `vendor\bin\phpunit --filter baseline_pointer_mismatch` -> `OK (1 test, 26 assertions)` and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 114 assertions)`;
+  - DB-backed/integration proof now also covers correction request without approval, proving the pipeline rejects before owning run creation and preserves correction state plus current publication/pointer without creating a candidate publication;
   - manual runtime verification after session 38 confirms changed-content publish path with `correction_id=24` and unchanged-content cancel path with `correction_id=25` -> `run_id=54` -> `CANCELLED` / `SUCCESS` / `READABLE`, while current publication pointer remains on `run_id=53`;
   - full local PHPUnit after session 36: `61 tests / 313 assertions`;
-  - session 37-38 repo ZIPs did not include `vendor/`, so only PHP syntax lint could be executed for changed files in these sessions.
+  - session 37-39 repo ZIPs did not include `vendor/`, so container-side proof for changed files stayed at PHP syntax lint, while final source of truth for session 39 is the locally validated post-patch repo state.
 - OPEN GAP:
-  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants outside the two currently covered promote/current-switch conflict modes and broader non-promotion failure modes.
+  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants outside the currently covered approval-gate minimum plus the two promote/current-switch conflict modes, and broader non-promotion failure modes.
 - NEXT REQUIRED ACTION:
   - expand matrix for additional conflict/error scenarios that still remain uncovered.
 
 ## CONTRACT ITEM 4 — Replay verification / evidence / smoke / backfill
 - STATUS: PARTIAL
 - OWNER AREA: replay verification and evidence
-- LAST UPDATED SESSION: `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
+- LAST UPDATED SESSION: `session40_batch40_db_backed_correction_requires_approval_integration_minimum`
 - EVIDENCE:
   - replay verifier minimum exists;
   - reason-code alignment exists;
@@ -147,7 +153,7 @@
 ## CONTRACT ITEM 7 — DB-backed integration proof
 - STATUS: PARTIAL
 - OWNER AREA: repository + pipeline integration
-- LAST UPDATED SESSION: `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum`
+- LAST UPDATED SESSION: `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
 - EVIDENCE:
   - repository integration proof added in session 32;
   - DB-backed pipeline integration minimum added in session 33;
@@ -155,9 +161,12 @@
   - unchanged correction DB-backed path closed in session 35;
   - changed-content correction + promotion-failure DB-backed integration minimum added in session 38;
   - changed-content correction + baseline/current-pointer mismatch DB-backed integration minimum added in session 39;
+  - baseline/current-pointer mismatch proof was initially invalidated by helper side effects, then repaired by patching `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`;
+  - final local validation after the patch passes with `vendor\bin\phpunit --filter baseline_pointer_mismatch` -> `OK (1 test, 26 assertions)` and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 114 assertions)`;
+  - DB-backed/integration proof now also covers correction request without approval, proving the pipeline rejects before owning run creation and preserves correction state plus current publication/pointer without creating a candidate publication;
   - manual runtime verification after session 38 confirms local DB behavior still aligns for publish path, unchanged cancel path, purge, and replay-backfill minimum.
 - OPEN GAP:
-  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum changed-content promote/current-switch conflict paths.
+  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path and changed-content promote/current-switch conflict paths.
 - NEXT REQUIRED ACTION:
   - extend only into remaining load-bearing DB-backed matrix gaps.
 
@@ -184,4 +193,5 @@
 - Session 37 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 38 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Session 39 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
+- Session 40 is DONE at session level, but parent correction/tests/ops contracts remain `PARTIAL`.
 - Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item.
