@@ -14,6 +14,7 @@ class EodPublicationRepository
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
+            ->whereColumn('pub.trade_date', 'ptr.trade_date')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where(function ($query) {
@@ -33,6 +34,7 @@ class EodPublicationRepository
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
+            ->whereColumn('pub.trade_date', 'ptr.trade_date')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->select(
@@ -54,6 +56,7 @@ class EodPublicationRepository
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
+            ->whereColumn('pub.trade_date', 'ptr.trade_date')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where(function ($query) {
