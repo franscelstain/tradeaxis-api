@@ -49,11 +49,11 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 45`
-- Last completed batch id: `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum`
+- Last completed session: `SESSION 46`
+- Last completed batch id: `session46_batch46_db_backed_correction_non_readable_baseline_run_guard_integration_minimum`
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, missing-publication-pointer guard minimum, reseal-failure minimum, history-promotion failure minimum, dan promote/current-switch minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
+- Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, dan non-readable-baseline-run guard minimum tertutup, tanpa membuka area baru di luar market-data.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -113,6 +113,14 @@
   - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id` dan `new_run_id` tetap `null`, pointer korup tetap ada, tidak ada publication untuk trade date target, dan tidak ada run/event side effect untuk correction tersebut;
   - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 45 kini sudah mencakup validasi lokal setelah batch dijalankan di environment pengguna;
   - validasi lokal final sesi 45 lulus dengan `vendor\bin\phpunit --filter missing_publication` -> `OK (1 test, 13 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (3 tests, 40 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (11 tests, 230 assertions)`.
+- Sesi 46 DONE pada level batch:
+  - DB-backed/integration proof kini juga mencakup approved correction dengan pointer ke publication baseline yang `SEALED` dan `is_current = 1`, tetapi run asal publication tersebut berstatus `HELD` / `NOT_READABLE` dan `is_current_publication = 0`, sehingga baseline resolver wajib menolak correction sebelum owning run dibuat;
+  - sesi ini menutup gap validasi `seal/current/readability consistency` pada correction baseline resolution dengan memperketat `EodPublicationRepository::findCorrectionBaselinePublicationForTradeDate(...)` agar baseline correction hanya lolos bila publication menunjuk run yang `SUCCESS` / `READABLE` dan `is_current_publication = 1` (atau run row tidak ada);
+  - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id` dan `new_run_id` tetap `null`, baseline publication/pointer yang non-readable tetap ada sebagai state insiden, dan tidak ada run/event side effect untuk correction tersebut;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
+- Catatan fokus untuk sesi berikutnya:
+  - fokus setelah sesi 46 adalah tetap memilih gap DB-backed correction conflict/error matrix lain yang masih `PARTIAL` tetapi berdasar perilaku runtime yang memang sudah jelas dan bisa dibuktikan;
+  - varian `pointer/publication trade-date mismatch` tetap tidak diperlakukan sebagai guard batch mandiri sampai ada dasar owner-doc/runtime enforcement yang tegas.
 - Parent contract correction/tests/ops masih `PARTIAL` karena broader matrix belum lengkap.
 - Final done gate proyek keseluruhan masih belum tertutup.
 
@@ -121,6 +129,7 @@
 - Tidak ada `DOC GAP` aktif saat ini.
 - Tidak ada `DOC CONFLICT` aktif saat ini.
 - Tidak ada `DOC SYNC ISSUE` aktif saat ini.
+- Catatan resume: source of truth valid kini mencakup sesi 46 dengan guard non-readable baseline run; percobaan `pointer/publication trade-date mismatch` sebelumnya tetap bukan checkpoint sah dan tidak boleh dipromosikan tanpa dasar contract/runtime yang jelas.
 
 ## Canonical Session Batch IDs
 - `session1_batch1_market-data-foundation`
@@ -225,8 +234,9 @@
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
 - Prioritas paling masuk akal saat ini:
+  - ambil **gap correction/runtime DB-backed lain yang masih `PARTIAL` dan eksplisit load-bearing** setelah minimum non-readable-baseline-run guard tertutup, sambil **tetap mengecualikan** varian `pointer/publication trade-date mismatch` sampai ada dasar contract/runtime yang tegas;
   - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, reseal-failure, history-promotion failure, dan changed-content promote/current-switch paths yang kini sudah tercakup; atau
-  - broader scheduler/retry/failure matrix.
+  - broader scheduler/retry/failure matrix hanya bila parent correction/runtime sudah cukup rapat.
 - Jangan buka area baru di luar market-data sampai parent correction/tests/ops lebih rapat.
 
 ## Final Done Gate
@@ -234,3 +244,15 @@
 - Reason:
   - Parent contract correction/tests/ops masih `PARTIAL` pada broader matrix.
   - Final readiness gate proyek keseluruhan belum tertutup.
+
+### SESSION 46
+- STATUS: DONE
+- BATCH ID: `session46_batch46_db_backed_correction_non_readable_baseline_run_guard_integration_minimum`
+- SUMMARY:
+  - menambahkan DB-backed integration proof untuk approved correction dengan baseline publication yang sealed/current tetapi run asalnya `HELD` / `NOT_READABLE` dan `is_current_publication = 0`;
+  - memperketat baseline correction resolver agar memvalidasi `seal/current/readability consistency` melalui run state sebelum correction boleh membuat owning run baru;
+  - checkpoint dan remaining work diperbarui tanpa membuka area baru di luar correction/runtime matrix.
+- PROOF:
+  - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
+  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
+  - local validation: pending di environment pengguna.
