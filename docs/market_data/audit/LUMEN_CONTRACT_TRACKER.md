@@ -153,7 +153,7 @@
 ## CONTRACT ITEM 7 — DB-backed integration proof
 - STATUS: PARTIAL
 - OWNER AREA: repository + pipeline integration
-- LAST UPDATED SESSION: `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
+- LAST UPDATED SESSION: `session40_batch40_db_backed_correction_requires_approval_integration_minimum`
 - EVIDENCE:
   - repository integration proof added in session 32;
   - DB-backed pipeline integration minimum added in session 33;
@@ -164,6 +164,8 @@
   - baseline/current-pointer mismatch proof was initially invalidated by helper side effects, then repaired by patching `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`;
   - final local validation after the patch passes with `vendor\bin\phpunit --filter baseline_pointer_mismatch` -> `OK (1 test, 26 assertions)` and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 114 assertions)`;
   - DB-backed/integration proof now also covers correction request without approval, proving the pipeline rejects before owning run creation and preserves correction state plus current publication/pointer without creating a candidate publication;
+  - final local validation for the approval-gate path passes with `vendor\bin\phpunit --filter without_approval` -> `OK (1 test, 17 assertions)`, `vendor\bin\phpunit --filter rejects_before_run_creation` -> `OK (1 test, 17 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (6 tests, 131 assertions)`;
+  - `vendor\bin\phpunit --filter requires_approval` returns `No tests executed!` because the filter string does not match the test method name, not because of a runtime failure;
   - manual runtime verification after session 38 confirms local DB behavior still aligns for publish path, unchanged cancel path, purge, and replay-backfill minimum.
 - OPEN GAP:
   - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path and changed-content promote/current-switch conflict paths.

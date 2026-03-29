@@ -70,21 +70,22 @@
   - DB-backed/integration proof kini ditambahkan untuk correction changed-content + promotion failure, sehingga jalur `HELD/NOT_READABLE` dapat dibuktikan tanpa bergantung pada trial manual lock yang bisa meleset ke unchanged-cancel path;
   - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container tetap sebatas PHP syntax lint untuk file yang diubah.
 - Verifikasi manual setelah sesi 38 kini juga sudah ada:
+  - correction publish path tervalidasi lokal dengan `correction_id=24` -> `run_id=53` -> `PUBLISHED` / `SUCCESS` / `READABLE`;
+  - unchanged-content cancel path tervalidasi lokal dengan `correction_id=25` -> `run_id=54` -> `CANCELLED` / `SUCCESS` / `READABLE`, dan current publication pointer tetap di `run_id=53`;
+  - `market-data:session-snapshot:purge --before_date=2026-03-18 -vvv` tervalidasi lokal dengan `deleted_rows=0` tanpa gejala aneh;
+  - `market-data:replay:backfill 2026-03-17 2026-03-17 --fixture_case=valid_case -vvv` tervalidasi lokal dengan `all_passed=1`, `expected=MATCH`, `observed=MATCH`, `passed=1`.
 - Sesi 39 DONE pada level batch:
-- Sesi 40 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup correction request tanpa approval, sehingga guard `correction_requires_approval` tidak hanya terbukti di command surface tetapi juga langsung pada pipeline/service path;
-  - proof minimum sesi ini menegaskan rejection terjadi sebelum owning run baru dibuat, tanpa memutasi correction state, tanpa membuat candidate publication, dan tanpa mengubah current publication/pointer yang sudah readable;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
   - DB-backed/integration proof kini ditambahkan untuk correction changed-content + baseline/current-pointer mismatch conflict, sehingga jalur `HELD/NOT_READABLE` juga terbukti untuk varian conflict yang berbeda dari promotion-throw minimum sesi 38;
   - validasi lokal awal sempat gagal karena helper test baseline/current-pointer mismatch menimbulkan side effect pointer/publication state sebelum exception dilempar;
   - helper test kemudian dipatch pada `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` agar mismatch dipicu tanpa memutasi pointer/current publication state secara persisten;
   - setelah patch, validasi lokal lulus dengan `vendor\bin\phpunit --filter baseline_pointer_mismatch` -> `OK (1 test, 26 assertions)` dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 114 assertions)`;
   - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint, tetapi source of truth final sesi 39 kini sudah mencakup validasi lokal setelah patch.
-- Verifikasi manual setelah sesi 38 kini juga sudah ada:
-  - correction publish path tervalidasi lokal dengan `correction_id=24` -> `run_id=53` -> `PUBLISHED` / `SUCCESS` / `READABLE`;
-  - unchanged-content cancel path tervalidasi lokal dengan `correction_id=25` -> `run_id=54` -> `CANCELLED` / `SUCCESS` / `READABLE`, dan current publication pointer tetap di `run_id=53`;
-  - `market-data:session-snapshot:purge --before_date=2026-03-18 -vvv` tervalidasi lokal dengan `deleted_rows=0` tanpa gejala aneh;
-  - `market-data:replay:backfill 2026-03-17 2026-03-17 --fixture_case=valid_case -vvv` tervalidasi lokal dengan `all_passed=1`, `expected=MATCH`, `observed=MATCH`, `passed=1`.
+- Sesi 40 DONE pada level batch:
+  - DB-backed/integration proof kini juga mencakup correction request tanpa approval, sehingga guard `correction_requires_approval` tidak hanya terbukti di command surface tetapi juga langsung pada pipeline/service path;
+  - proof minimum sesi ini menegaskan rejection terjadi sebelum owning run baru dibuat, tanpa memutasi correction state, tanpa membuat candidate publication, dan tanpa mengubah current publication/pointer yang sudah readable;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna;
+  - validasi lokal final sesi 40 lulus dengan `vendor\bin\phpunit --filter without_approval` -> `OK (1 test, 17 assertions)`, `vendor\bin\phpunit --filter rejects_before_run_creation` -> `OK (1 test, 17 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (6 tests, 131 assertions)`;
+  - `vendor\bin\phpunit --filter requires_approval` menghasilkan `No tests executed!` karena string filter tidak match nama test, bukan karena failure runtime.
 - Parent contract correction/tests/ops masih `PARTIAL` karena broader matrix belum lengkap.
 - Final done gate proyek keseluruhan masih belum tertutup.
 
