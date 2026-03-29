@@ -49,11 +49,11 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 40`
-- Last completed batch id: `session40_batch40_db_backed_correction_requires_approval_integration_minimum`
+- Last completed session: `SESSION 41`
+- Last completed batch id: `session41_batch41_db_backed_correction_reseal_failure_integration_minimum`
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
+- Next session target: ambil batch prioritas tertinggi berikutnya dari parent contract yang masih `PARTIAL`, dengan fokus tetap pada sisa broader DB-backed correction conflict/error matrix yang belum terbukti secara integration setelah approval-gate minimum, reseal-failure minimum, dan promote/current-switch minimum tertutup, sebelum membuka scheduler/retry/failure matrix yang lebih lebar.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -86,6 +86,10 @@
   - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna;
   - validasi lokal final sesi 40 lulus dengan `vendor\bin\phpunit --filter without_approval` -> `OK (1 test, 17 assertions)`, `vendor\bin\phpunit --filter rejects_before_run_creation` -> `OK (1 test, 17 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (6 tests, 131 assertions)`;
   - `vendor\bin\phpunit --filter requires_approval` menghasilkan `No tests executed!` karena string filter tidak match nama test, bukan karena failure runtime.
+- Sesi 41 DONE pada level batch:
+  - DB-backed/integration proof kini juga mencakup correction reseal failure, sehingga jalur `correction_failed_reseal_no_switch` tidak hanya tersirat di service/unit layer tetapi terbukti pada pipeline DB-backed saat seal candidate publication gagal ditulis;
+  - proof minimum sesi ini menegaskan correction tetap berada di status `EXECUTING`, run correction gagal dengan `FAILED` / `NOT_READABLE`, candidate publication tetap `UNSEALED` dan non-current, prior current publication/pointer tetap aman, serta tidak ada `RUN_FINALIZED` atau `CORRECTION_PUBLISHED`;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
 - Parent contract correction/tests/ops masih `PARTIAL` karena broader matrix belum lengkap.
 - Final done gate proyek keseluruhan masih belum tertutup.
 
@@ -137,6 +141,7 @@
 - `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum`
 - `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
 - `session40_batch40_db_backed_correction_requires_approval_integration_minimum`
+- `session41_batch41_db_backed_correction_reseal_failure_integration_minimum`
 
 ## Session Ledger (Minimum Reconstruction)
 - Sessions 1-14 are reconstructed minimum from canonical ZIP names and later checkpoint sync.
