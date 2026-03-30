@@ -104,7 +104,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
 
     public function test_pointer_resolution_returns_null_when_pointer_publication_version_mismatches_pointed_publication(): void
     {
-        $this->seedPointerPublicationVersionMismatchScenario();
+        $this->seedPointerToPublicationWithDifferentVersion();
 
         $repository = new EodPublicationRepository();
 
@@ -112,6 +112,25 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->assertNull($repository->findCurrentPublicationForTradeDate('2026-03-20'));
         $this->assertNull($repository->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
         $this->assertNull($repository->findLatestReadablePublicationBefore('2026-03-21'));
+    }
+
+
+
+    public function test_pointer_resolution_returns_null_when_publication_current_mirror_disagrees_with_pointer(): void
+    {
+        DB::table('eod_publications')
+            ->where('publication_id', 10)
+            ->update([
+                'is_current' => 0,
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+
+        $this->assertNull($repo->findPointerResolvedPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
     }
 
 
@@ -184,5 +203,64 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $old = DB::table('eod_publications')->where('publication_id', 10)->first();
         $this->assertNotNull($old);
         $this->assertSame(0, (int) $old->is_current);
+    }
+
+    protected function seedPointerToPublicationWithDifferentVersion()
+    {
+        DB::table('eod_runs')->insert([
+            'run_id' => 125,
+            'trade_date_requested' => '2026-03-20',
+            'trade_date_effective' => '2026-03-20',
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS',
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'coverage_ratio' => 1,
+            'bars_rows_written' => 1,
+            'indicators_rows_written' => 1,
+            'eligibility_rows_written' => 1,
+            'invalid_bar_count' => 0,
+            'invalid_indicator_count' => 0,
+            'hard_reject_count' => 0,
+            'warning_count' => 0,
+            'notes' => 'pointer-publication-version-mismatch-incident',
+            'bars_batch_hash' => 'bars-version-mismatch',
+            'indicators_batch_hash' => 'ind-version-mismatch',
+            'eligibility_batch_hash' => 'elig-version-mismatch',
+            'config_version' => 'v1',
+            'publication_version' => 1,
+            'is_current_publication' => 1,
+            'sealed_at' => '2026-03-20 17:21:00',
+            'sealed_by' => 'system',
+            'seal_note' => 'pointer-publication-version-mismatch-incident',
+            'started_at' => '2026-03-20 17:00:00',
+            'finished_at' => '2026-03-20 17:21:00',
+            'created_at' => '2026-03-20 17:00:00',
+            'updated_at' => '2026-03-20 17:21:00',
+        ]);
+
+        DB::table('eod_publications')->insert([
+            'publication_id' => 110,
+            'trade_date' => '2026-03-20',
+            'publication_version' => 1,
+            'run_id' => 125,
+            'seal_state' => 'SEALED',
+            'is_current' => 1,
+            'sealed_at' => '2026-03-20 17:21:00',
+            'created_at' => '2026-03-20 17:21:00',
+            'updated_at' => '2026-03-20 17:21:00',
+        ]);
+
+        DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->update([
+                'publication_id' => 110,
+                'publication_version' => 999,
+                'run_id' => 125,
+                'sealed_at' => '2026-03-20 17:21:00',
+                'updated_at' => '2026-03-20 17:21:00',
+            ]);
     }
 }

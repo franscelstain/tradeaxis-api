@@ -168,7 +168,7 @@
 ## CONTRACT ITEM 6 — Operator command surface / ops proof
 - STATUS: PARTIAL
 - OWNER AREA: command surface / operator summaries
-- LAST UPDATED SESSION: `session48_batch48_db_backed_run_current_mirror_mismatch_guard_minimum`
+- LAST UPDATED SESSION: `session50_batch50_db_backed_pointer_publication_version_mismatch_guard_minimum`
 - EVIDENCE:
   - correction command proof added in session 30;
   - ops command proof added in session 31;
@@ -186,7 +186,7 @@
 ## CONTRACT ITEM 7 — DB-backed integration proof
 - STATUS: PARTIAL
 - OWNER AREA: repository + pipeline integration
-- LAST UPDATED SESSION: `session48_batch48_db_backed_run_current_mirror_mismatch_guard_minimum`
+- LAST UPDATED SESSION: `session51_batch51_db_backed_publication_current_mirror_mismatch_guard_minimum`
 - EVIDENCE:
   - repository integration proof added in session 32;
   - DB-backed pipeline integration minimum added in session 33;
@@ -220,10 +220,19 @@
   - final local validation for the missing-publication-pointer guard path passes with `vendor\bin\phpunit --filter missing_publication` -> `OK (1 test, 13 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (3 tests, 40 assertions)`, and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (11 tests, 230 assertions)`;
   - `vendor\bin\phpunit --filter requires_approval` returns `No tests executed!` because the filter string does not match the test method name, not because of a runtime failure;
   - manual runtime verification after session 38 confirms local DB behavior still aligns for publish path, unchanged cancel path, purge, and replay-backfill minimum.
+- EVIDENCE:
+  - final local validation after session 49 passes with `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (4 tests, 24 assertions)`, `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (15 tests, 312 assertions)`, and `vendor\bin\phpunit` -> `OK (79 tests, 587 assertions)`;
+  - DB-backed/integration proof now also covers approved correction with a current pointer row whose `publication_version` disagrees materially with the pointed publication row, proving correction baseline resolution now rejects pointer/publication publication-version mismatch before owning run creation and preserves correction approval state plus the incident pointer/publication rows untouched;
+  - repository integration proof now also covers pointer/publication publication-version mismatch for `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, and `findLatestReadablePublicationBefore`, all failing safe to `null` when `eod_current_publication_pointer.publication_version` disagrees materially with the pointed publication row;
+  - session 50 follow-up repair was required after the initial repo patch because the new repository integration helper was missing and the test fixture initially violated local sqlite uniqueness constraints (`eod_runs.run_id` and `eod_current_publication_pointer.trade_date`); the helper was then repaired to mutate the existing pointer row safely and the older run-id mismatch test assertion was tightened so seeded incident run `91` is not mistaken as a newly created correction owning run;
+  - final local full validation after session 50 passes with `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (6 tests, 32 assertions)`, `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (16 tests, 334 assertions)`, and `vendor\bin\phpunit` -> `OK (82 tests, 617 assertions)`.
+  - DB-backed/integration proof now also covers approved correction with a current pointer row that still resolves to a `SEALED` publication whose mirror state is `is_current = 0`, proving correction baseline resolution now rejects publication-current-mirror mismatch before owning run creation and preserves correction approval state plus the incident pointer/publication rows untouched;
+  - repository integration proof now also covers publication-current-mirror mismatch for `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, and `findLatestReadablePublicationBefore`, all failing safe to `null` when the pointed publication is no longer marked current;
+  - session 51 container proof passes with `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` and `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`; full PHPUnit remains pending locally because the ZIP still omits `vendor/`.
 - OPEN GAP:
-  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path, missing-baseline guard path, malformed-baseline-pointer guard path, missing-publication-pointer guard path, non-readable-baseline-run guard path, pointer/publication trade-date mismatch guard path, run-current-mirror mismatch guard path, reseal-failure path, history-promotion failure path, and changed-content promote/current-switch conflict paths.
+  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path, missing-baseline guard path, malformed-baseline-pointer guard path, missing-publication-pointer guard path, non-readable-baseline-run guard path, pointer/publication trade-date mismatch guard path, run-current-mirror mismatch guard path, publication-current-mirror mismatch guard path, pointer/publication run-id mismatch guard path, pointer/publication publication-version mismatch guard path, reseal-failure path, history-promotion failure path, and changed-content promote/current-switch conflict paths.
 - NEXT REQUIRED ACTION:
-  - extend only into remaining load-bearing DB-backed matrix gaps after the now-closed pointer/publication trade-date mismatch and run-current-mirror mismatch guard minimums.
+  - extend only into remaining load-bearing DB-backed matrix gaps after the now-closed pointer/publication trade-date mismatch, run-current-mirror mismatch, publication-current-mirror mismatch, pointer/publication run-id mismatch, and pointer/publication publication-version mismatch guard minimums.
 
 ## CONTRACT ITEM 8 — Final readiness gate
 - STATUS: MISSING
@@ -258,5 +267,6 @@
 - Session 47 is DONE at session level for the grounded pointer/publication trade-date mismatch guard batch; owner-doc `LOCKED` wording was explicit, repository pointer resolution is now synchronized to it, final local follow-up repairs are reflected, and the batch is now checkpoint material.
 - Session 48 is DONE at session level for the grounded run-current-mirror mismatch guard batch; after follow-up repair, current/publication in-flight resolution and readable-baseline/fallback resolution are split correctly, `eod_runs.is_current_publication` disagreement is still treated as unsafe where it matters, and final local validation now passes fully with `77 tests / 557 assertions`.
 - Session 49 is DONE at session level for the grounded pointer/publication run-id mismatch guard batch; current/baseline/fallback resolver paths now fail safe when `eod_current_publication_pointer.run_id` disagrees materially with the pointed publication row, and final local validation now passes fully with `79 tests / 587 assertions`.
-- Session 50 is DONE at session level for the grounded pointer/publication publication-version mismatch guard batch; current/baseline/fallback resolver paths now fail safe when `eod_current_publication_pointer.publication_version` disagrees materially with the pointed publication row, and local full validation is still pending because the ZIP does not include `vendor/`.
+- Session 50 is DONE at session level for the grounded pointer/publication publication-version mismatch guard batch; current/baseline/fallback resolver paths now fail safe when `eod_current_publication_pointer.publication_version` disagrees materially with the pointed publication row, the helper/fixture follow-up repairs are complete, and final local validation now passes fully with `82 tests / 617 assertions`.
+- Session 51 is DONE at session level for the grounded publication-current-mirror mismatch guard batch; current/baseline/fallback resolver paths now fail safe when the pointed publication remains `SEALED` but is no longer marked current, and DB-backed correction baseline resolution now rejects that incident state before owning run creation while keeping approval state intact.
 - Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item.

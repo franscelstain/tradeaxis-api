@@ -49,12 +49,12 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 50`
-- Last completed batch id: `session50_batch50_db_backed_pointer_publication_version_mismatch_guard_minimum`
-- Last completed proof: pending local validation (container lint only)
+- Last completed session: `SESSION 51`
+- Last completed batch id: `session51_batch51_db_backed_publication_current_mirror_mismatch_guard_minimum`
+- Last completed proof: `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> `No syntax errors detected`; `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected` (repo ZIP sesi 51 tetap tidak menyertakan `vendor/`, jadi full PHPUnit lokal masih wajib dijalankan di environment pengguna).
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, pointer/publication run-id mismatch guard, dan pointer/publication publication-version mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
+- Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, publication-current-mirror mismatch guard, pointer/publication run-id mismatch guard, dan pointer/publication publication-version mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -138,7 +138,7 @@
 - Tidak ada `DOC GAP` aktif saat ini.
 - Tidak ada `DOC CONFLICT` aktif saat ini.
 - Tidak ada `DOC SYNC ISSUE` aktif saat ini.
-- Catatan resume: source of truth valid kini mencakup sesi 48 dengan guard run-current-mirror mismatch yang sudah melewati follow-up repair dan validasi lokal penuh; mismatch mirror state pada pointer/publication resolution kini merupakan checkpoint sah selama pemisahan guard in-flight vs finalized-readable path tetap dipertahankan.
+- Catatan resume: source of truth valid kini mencakup sesi 50 dengan guard pointer/publication publication-version mismatch yang sudah melewati follow-up repair dan validasi lokal penuh; mismatch mirror state dan identity mismatch pada pointer/publication resolution kini merupakan checkpoint sah selama pemisahan guard in-flight vs finalized-readable path tetap dipertahankan.
 
 ## Canonical Session Batch IDs
 - `session1_batch1_market-data-foundation`
@@ -244,7 +244,8 @@
 | 47 | `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum` | DONE | DB-backed pointer/publication trade-date mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after follow-up repairs |
 | 48 | `session48_batch48_db_backed_run_current_mirror_mismatch_guard_minimum` | DONE | DB-backed run-current-mirror mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after follow-up repair |
 | 49 | `session49_batch49_db_backed_pointer_run_id_mismatch_guard_minimum` | DONE | DB-backed pointer/publication run-id mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation |
-| 50 | `session50_batch50_db_backed_pointer_publication_version_mismatch_guard_minimum` | DONE | DB-backed pointer/publication publication-version mismatch guard minimum | checkpoint-backed + syntax lint proof |
+| 50 | `session50_batch50_db_backed_pointer_publication_version_mismatch_guard_minimum` | DONE | DB-backed pointer/publication publication-version mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after helper/fixture follow-up repairs |
+| 51 | `session51_batch51_db_backed_publication_current_mirror_mismatch_guard_minimum` | DONE | DB-backed publication-current-mirror mismatch guard minimum | checkpoint-backed + syntax lint proof |
 
 - Sesi 48 DONE pada level batch:
   - repository current/publication resolver kini juga memvalidasi mirror `eod_runs.is_current_publication = 1`, tetapi follow-up repair setelah proof awal memisahkan guard dengan benar: `findPointerResolvedPublicationForTradeDate` dan `findCurrentPublicationForTradeDate` tetap mendukung current resolution saat finalize masih in-flight, sedangkan `findCorrectionBaselinePublicationForTradeDate` dan `findLatestReadablePublicationBefore` tetap strict untuk baseline/fallback yang memang harus sudah `SUCCESS` / `READABLE`;
@@ -275,10 +276,24 @@
 - Sesi 50 DONE pada level batch:
   - DB-backed/integration proof kini juga mencakup approved correction dengan pointer row yang `publication_version`-nya tidak sama dengan publication current yang ditunjuk, sehingga correction baseline resolution fail-safe sebelum owning run baru dibuat;
   - repository resolution kini juga memandang mismatch `eod_current_publication_pointer.publication_version != eod_publications.publication_version` sebagai incident material pada current/publication/baseline/fallback resolver path;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof di container tetap sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
+  - validasi lokal awal sesi 50 sempat gagal karena helper repository integration untuk mismatch `publication_version` belum ada, helper seed awal memakai identity yang bentrok dengan fixture sqlite (`eod_runs.run_id` dan `eod_current_publication_pointer.trade_date`), dan test run-id mismatch sesi 49 yang ikut berjalan masih membaca seeded incident run `91` sebagai seolah-olah owning run baru correction;
+  - helper test kemudian dipatch di file test yang sama agar memakai fixture identity yang aman, memutasi pointer existing untuk trade date target alih-alih menambah row pointer duplikat, dan assertion run-id mismatch diperketat agar seeded incident run tidak dihitung sebagai run correction baru;
+  - proof sesi 50 final:
+    - local proof: `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (6 tests, 32 assertions)`;
+    - local proof: `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (16 tests, 334 assertions)`;
+    - local proof: `vendor\bin\phpunit` -> `OK (82 tests, 617 assertions)`.
+
+- Sesi 51 DONE pada level batch:
+  - DB-backed/integration proof kini juga mencakup approved correction dengan pointer yang tetap menunjuk publication `SEALED`, tetapi publication tersebut `is_current = 0`, sehingga correction baseline resolution fail-safe sebelum owning run baru dibuat;
+  - repository resolution kini juga memandang mismatch `eod_current_publication_pointer` versus mirror `eod_publications.is_current` sebagai incident material pada current/publication/baseline/fallback resolver path;
+  - batch ini sengaja tetap berada di area market-data dan mengikuti owner-doc `Publication_Current_Pointer_Integrity_Contract_LOCKED.md`, khususnya rule bahwa mismatch `pointer row and eod_publications.is_current disagree materially` harus diperlakukan unsafe dan fail-safe;
+  - proof sesi 51 yang bisa dijalankan di container:
+    - `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> `No syntax errors detected`;
+    - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
+  - repo ZIP sesi 51 tetap tidak menyertakan `vendor/`, sehingga full PHPUnit lokal untuk batch ini masih wajib dijalankan di environment pengguna.
 
 ## Remaining Work
-- Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
+- Pilih batch berikutnya dari parent contract yang masih `PARTIAL`, khususnya varian correction/runtime DB-backed lain yang masih grounded di owner-doc tetapi belum diberi proof minimum sesudah guard publication-current-mirror mismatch ini ditutup.
 - Prioritas paling masuk akal saat ini:
   - ambil **gap correction/runtime DB-backed lain yang masih `PARTIAL` dan eksplisit load-bearing** setelah minimum non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, dan pointer/publication run-id mismatch guard dan pointer/publication publication-version mismatch guard tertutup;
   - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, reseal-failure, history-promotion failure, changed-content promote/current-switch paths, serta mismatch mirror-state lain yang masih mungkin memengaruhi readability/fallback; atau
