@@ -49,12 +49,12 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 49`
-- Last completed batch id: `session49_batch49_db_backed_pointer_run_id_mismatch_guard_minimum`
-- Last completed proof: `vendor\bin\phpunit` -> `OK (79 tests, 587 assertions)`
+- Last completed session: `SESSION 50`
+- Last completed batch id: `session50_batch50_db_backed_pointer_publication_version_mismatch_guard_minimum`
+- Last completed proof: pending local validation (container lint only)
 - Active session: none
 - Active batch: none
-- Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, dan pointer/publication run-id mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
+- Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, pointer/publication run-id mismatch guard, dan pointer/publication publication-version mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -138,7 +138,7 @@
 - Tidak ada `DOC GAP` aktif saat ini.
 - Tidak ada `DOC CONFLICT` aktif saat ini.
 - Tidak ada `DOC SYNC ISSUE` aktif saat ini.
-- Catatan resume: source of truth valid kini mencakup sesi 49 dengan guard pointer/publication run-id mismatch yang sudah melewati validasi lokal penuh; mismatch trade-date, run-current-mirror, dan pointer/publication run-id pada pointer/publication resolution kini merupakan checkpoint sah selama pemisahan guard in-flight vs finalized-readable path tetap dipertahankan.
+- Catatan resume: source of truth valid kini mencakup sesi 48 dengan guard run-current-mirror mismatch yang sudah melewati follow-up repair dan validasi lokal penuh; mismatch mirror state pada pointer/publication resolution kini merupakan checkpoint sah selama pemisahan guard in-flight vs finalized-readable path tetap dipertahankan.
 
 ## Canonical Session Batch IDs
 - `session1_batch1_market-data-foundation`
@@ -244,6 +244,7 @@
 | 47 | `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum` | DONE | DB-backed pointer/publication trade-date mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after follow-up repairs |
 | 48 | `session48_batch48_db_backed_run_current_mirror_mismatch_guard_minimum` | DONE | DB-backed run-current-mirror mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after follow-up repair |
 | 49 | `session49_batch49_db_backed_pointer_run_id_mismatch_guard_minimum` | DONE | DB-backed pointer/publication run-id mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation |
+| 50 | `session50_batch50_db_backed_pointer_publication_version_mismatch_guard_minimum` | DONE | DB-backed pointer/publication publication-version mismatch guard minimum | checkpoint-backed + syntax lint proof |
 
 - Sesi 48 DONE pada level batch:
   - repository current/publication resolver kini juga memvalidasi mirror `eod_runs.is_current_publication = 1`, tetapi follow-up repair setelah proof awal memisahkan guard dengan benar: `findPointerResolvedPublicationForTradeDate` dan `findCurrentPublicationForTradeDate` tetap mendukung current resolution saat finalize masih in-flight, sedangkan `findCorrectionBaselinePublicationForTradeDate` dan `findLatestReadablePublicationBefore` tetap strict untuk baseline/fallback yang memang harus sudah `SUCCESS` / `READABLE`;
@@ -271,10 +272,15 @@
   - local proof: `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (15 tests, 312 assertions)`;
   - local proof: `vendor\bin\phpunit` -> `OK (79 tests, 587 assertions)`.
 
+- Sesi 50 DONE pada level batch:
+  - DB-backed/integration proof kini juga mencakup approved correction dengan pointer row yang `publication_version`-nya tidak sama dengan publication current yang ditunjuk, sehingga correction baseline resolution fail-safe sebelum owning run baru dibuat;
+  - repository resolution kini juga memandang mismatch `eod_current_publication_pointer.publication_version != eod_publications.publication_version` sebagai incident material pada current/publication/baseline/fallback resolver path;
+  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof di container tetap sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
+
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
 - Prioritas paling masuk akal saat ini:
-  - ambil **gap correction/runtime DB-backed lain yang masih `PARTIAL` dan eksplisit load-bearing** setelah minimum non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, dan pointer/publication run-id mismatch guard tertutup;
+  - ambil **gap correction/runtime DB-backed lain yang masih `PARTIAL` dan eksplisit load-bearing** setelah minimum non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, dan pointer/publication run-id mismatch guard dan pointer/publication publication-version mismatch guard tertutup;
   - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, reseal-failure, history-promotion failure, changed-content promote/current-switch paths, serta mismatch mirror-state lain yang masih mungkin memengaruhi readability/fallback; atau
   - broader scheduler/retry/failure matrix hanya bila parent correction/runtime sudah cukup rapat.
 - Jangan buka area baru di luar market-data sampai parent correction/tests/ops lebih rapat.

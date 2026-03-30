@@ -16,6 +16,7 @@ class EodPublicationRepository
             ->where('ptr.trade_date', $tradeDate)
             ->whereColumn('pub.trade_date', 'ptr.trade_date')
             ->whereColumn('ptr.run_id', 'pub.run_id')
+            ->whereColumn('ptr.publication_version', 'pub.publication_version')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where(function ($query) {
@@ -36,6 +37,7 @@ class EodPublicationRepository
             ->where('ptr.trade_date', $tradeDate)
             ->whereColumn('pub.trade_date', 'ptr.trade_date')
             ->whereColumn('ptr.run_id', 'pub.run_id')
+            ->whereColumn('ptr.publication_version', 'pub.publication_version')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where(function ($query) {
@@ -65,6 +67,7 @@ class EodPublicationRepository
             ->where('ptr.trade_date', $tradeDate)
             ->whereColumn('pub.trade_date', 'ptr.trade_date')
             ->whereColumn('ptr.run_id', 'pub.run_id')
+            ->whereColumn('ptr.publication_version', 'pub.publication_version')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where(function ($query) {
@@ -250,6 +253,7 @@ class EodPublicationRepository
             ->where('ptr.trade_date', '<', $tradeDate)
             ->whereColumn('pub.trade_date', 'ptr.trade_date')
             ->whereColumn('ptr.run_id', 'pub.run_id')
+            ->whereColumn('ptr.publication_version', 'pub.publication_version')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
             ->where('run.terminal_status', 'SUCCESS')
