@@ -1134,13 +1134,27 @@ class MarketDataPipelineIntegrationTest extends TestCase
             );
         }
 
-        $run = DB::table('eod_runs')
+        $unexpectedRun = DB::table('eod_runs')
             ->where('trade_date_requested', '2026-03-20')
-            ->where('run_id', '!=', 90)
+            ->whereNotIn('run_id', [90, 91])
             ->orderByDesc('run_id')
             ->first();
 
-        $this->assertNull($run);
+        $this->assertNull($unexpectedRun);
+
+        $this->assertSame(
+            2,
+            (int) DB::table('eod_runs')
+                ->where('trade_date_requested', '2026-03-20')
+                ->count()
+        );
+
+        $incidentRun = DB::table('eod_runs')->where('run_id', 91)->first();
+
+        $this->assertNotNull($incidentRun);
+        $this->assertSame('SUCCESS', $incidentRun->terminal_status);
+        $this->assertSame('READABLE', $incidentRun->publishability_state);
+        $this->assertSame(1, (int) $incidentRun->is_current_publication);
 
         $persistedCorrection = DB::table('eod_dataset_corrections')
             ->where('correction_id', $approved->correction_id)

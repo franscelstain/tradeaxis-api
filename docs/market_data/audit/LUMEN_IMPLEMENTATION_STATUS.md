@@ -51,7 +51,7 @@
 - Project status: BELUM SELESAI
 - Last completed session: `SESSION 49`
 - Last completed batch id: `session49_batch49_db_backed_pointer_run_id_mismatch_guard_minimum`
-- Last completed proof: `vendor\bin\phpunit` -> `OK (79 tests, 586 assertions)`
+- Last completed proof: `vendor\bin\phpunit` -> `OK (79 tests, 587 assertions)`
 - Active session: none
 - Active batch: none
 - Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, dan pointer/publication run-id mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
@@ -138,7 +138,7 @@
 - Tidak ada `DOC GAP` aktif saat ini.
 - Tidak ada `DOC CONFLICT` aktif saat ini.
 - Tidak ada `DOC SYNC ISSUE` aktif saat ini.
-- Catatan resume: source of truth valid kini mencakup sesi 48 dengan guard run-current-mirror mismatch yang sudah melewati follow-up repair dan validasi lokal penuh; mismatch mirror state pada pointer/publication resolution kini merupakan checkpoint sah selama pemisahan guard in-flight vs finalized-readable path tetap dipertahankan.
+- Catatan resume: source of truth valid kini mencakup sesi 49 dengan guard pointer/publication run-id mismatch yang sudah melewati validasi lokal penuh; mismatch trade-date, run-current-mirror, dan pointer/publication run-id pada pointer/publication resolution kini merupakan checkpoint sah selama pemisahan guard in-flight vs finalized-readable path tetap dipertahankan.
 
 ## Canonical Session Batch IDs
 - `session1_batch1_market-data-foundation`
@@ -268,8 +268,8 @@
   - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed.
 - Proof sesi 49 final:
   - local proof: `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (4 tests, 24 assertions)`;
-  - local proof: `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (15 tests, 311 assertions)`;
-  - local proof: `vendor\bin\phpunit` -> `OK (79 tests, 586 assertions)`.
+  - local proof: `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (15 tests, 312 assertions)`;
+  - local proof: `vendor\bin\phpunit` -> `OK (79 tests, 587 assertions)`.
 
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`.
