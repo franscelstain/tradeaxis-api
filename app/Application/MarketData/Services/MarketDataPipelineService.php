@@ -336,8 +336,21 @@ class MarketDataPipelineService
                         $this->publications->promoteCandidateToCurrent($run, $priorCurrent ? $priorCurrent->publication_id : null);
                         $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id);
                         $candidateCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
+
+                        if ((int) ($candidateCurrent->publication_id ?? 0) !== (int) $candidatePublication->publication_id) {
+                            throw new \RuntimeException('Current publication pointer resolution mismatch after finalize.');
+                        }
                     }
                 } catch (\Throwable $e) {
+                    if ($correction && $priorCurrent) {
+                        $this->publications->restorePriorCurrentPublication(
+                            $input->requestedDate,
+                            (int) $priorCurrent->publication_id,
+                            (int) $priorCurrent->run_id
+                        );
+                        $this->runs->syncCurrentPublicationMirror($input->requestedDate, (int) $priorCurrent->run_id);
+                    }
+
                     $promotionError = $e->getMessage();
                 }
             }

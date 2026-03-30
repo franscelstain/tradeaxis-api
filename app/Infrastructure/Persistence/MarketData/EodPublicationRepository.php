@@ -223,6 +223,54 @@ class EodPublicationRepository
     }
 
 
+    public function restorePriorCurrentPublication($tradeDate, $priorPublicationId, $priorRunId = null)
+    {
+        return DB::transaction(function () use ($tradeDate, $priorPublicationId, $priorRunId) {
+            if (! $priorPublicationId) {
+                return null;
+            }
+
+            $priorPublication = DB::table('eod_publications')
+                ->where('publication_id', $priorPublicationId)
+                ->where('trade_date', $tradeDate)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $priorPublication) {
+                return null;
+            }
+
+            $now = Carbon::now(config('market_data.platform.timezone'));
+
+            DB::table('eod_publications')
+                ->where('trade_date', $tradeDate)
+                ->update([
+                    'is_current' => 0,
+                    'updated_at' => $now,
+                ]);
+
+            DB::table('eod_publications')
+                ->where('publication_id', $priorPublicationId)
+                ->update([
+                    'is_current' => 1,
+                    'updated_at' => $now,
+                ]);
+
+            DB::table('eod_current_publication_pointer')->updateOrInsert(
+                ['trade_date' => $tradeDate],
+                [
+                    'publication_id' => $priorPublicationId,
+                    'run_id' => $priorRunId ?: $priorPublication->run_id,
+                    'publication_version' => $priorPublication->publication_version,
+                    'sealed_at' => $priorPublication->sealed_at,
+                    'updated_at' => $now,
+                ]
+            );
+
+            return DB::table('eod_publications')->where('publication_id', $priorPublicationId)->first();
+        });
+    }
+
     public function discardCandidatePublication($publicationId)
     {
         DB::transaction(function () use ($publicationId) {
