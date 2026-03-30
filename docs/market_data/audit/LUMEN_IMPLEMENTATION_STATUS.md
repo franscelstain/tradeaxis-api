@@ -51,7 +51,7 @@
 - Project status: BELUM SELESAI
 - Last completed session: `SESSION 51`
 - Last completed batch id: `session51_batch51_db_backed_publication_current_mirror_mismatch_guard_minimum`
-- Last completed proof: `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> `No syntax errors detected`; `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected` (repo ZIP sesi 51 tetap tidak menyertakan `vendor/`, jadi full PHPUnit lokal masih wajib dijalankan di environment pengguna).
+- Last completed proof: `vendor\bin\phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> `OK (7 tests, 36 assertions)`; `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (17 tests, 354 assertions)`; `vendor\bin\phpunit tests/Unit/MarketData` -> `OK (83 tests, 640 assertions)`; `vendor\bin\phpunit` -> `OK (84 tests, 641 assertions)`.
 - Active session: none
 - Active batch: none
 - Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, publication-current-mirror mismatch guard, pointer/publication run-id mismatch guard, dan pointer/publication publication-version mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
@@ -138,7 +138,7 @@
 - Tidak ada `DOC GAP` aktif saat ini.
 - Tidak ada `DOC CONFLICT` aktif saat ini.
 - Tidak ada `DOC SYNC ISSUE` aktif saat ini.
-- Catatan resume: source of truth valid kini mencakup sesi 50 dengan guard pointer/publication publication-version mismatch yang sudah melewati follow-up repair dan validasi lokal penuh; mismatch mirror state dan identity mismatch pada pointer/publication resolution kini merupakan checkpoint sah selama pemisahan guard in-flight vs finalized-readable path tetap dipertahankan.
+- Catatan resume: source of truth valid kini mencakup sesi 51 dengan guard publication-current-mirror mismatch yang sudah melewati validasi lokal penuh; mismatch mirror state dan identity mismatch pada pointer/publication resolution kini merupakan checkpoint sah selama pemisahan guard in-flight vs finalized-readable path tetap dipertahankan.
 
 ## Canonical Session Batch IDs
 - `session1_batch1_market-data-foundation`
@@ -287,10 +287,13 @@
   - DB-backed/integration proof kini juga mencakup approved correction dengan pointer yang tetap menunjuk publication `SEALED`, tetapi publication tersebut `is_current = 0`, sehingga correction baseline resolution fail-safe sebelum owning run baru dibuat;
   - repository resolution kini juga memandang mismatch `eod_current_publication_pointer` versus mirror `eod_publications.is_current` sebagai incident material pada current/publication/baseline/fallback resolver path;
   - batch ini sengaja tetap berada di area market-data dan mengikuti owner-doc `Publication_Current_Pointer_Integrity_Contract_LOCKED.md`, khususnya rule bahwa mismatch `pointer row and eod_publications.is_current disagree materially` harus diperlakukan unsafe dan fail-safe;
-  - proof sesi 51 yang bisa dijalankan di container:
-    - `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> `No syntax errors detected`;
-    - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
-  - repo ZIP sesi 51 tetap tidak menyertakan `vendor/`, sehingga full PHPUnit lokal untuk batch ini masih wajib dijalankan di environment pengguna.
+  - syntax lint container untuk file yang diubah tetap lulus;
+  - validasi lokal final sesi 51 kini sudah lengkap dan lulus dengan:
+    - `vendor\bin\phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> `OK (7 tests, 36 assertions)`;
+    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (17 tests, 354 assertions)`;
+    - `vendor\bin\phpunit tests/Unit/MarketData` -> `OK (83 tests, 640 assertions)`;
+    - `vendor\bin\phpunit` -> `OK (84 tests, 641 assertions)`;
+  - `vendor\bin\phpunit --filter publication_current_mirror_mismatch` dan `vendor\bin\phpunit --filter correction_baseline_publication_current_mirror_mismatch` menghasilkan `No tests executed!` karena filter string tidak match nama method test, bukan karena failure runtime.
 
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`, khususnya varian correction/runtime DB-backed lain yang masih grounded di owner-doc tetapi belum diberi proof minimum sesudah guard publication-current-mirror mismatch ini ditutup.
