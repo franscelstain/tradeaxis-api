@@ -457,7 +457,14 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with($run, 31)
             ->andThrow(new RuntimeException('Promotion lost run ownership while switching current publication.'));
 
-        $runs->shouldReceive('syncCurrentPublicationMirror')->never();
+        $publications->shouldReceive('restorePriorCurrentPublication')
+            ->once()
+            ->with('2026-03-17', 31, 31);
+
+        $runs->shouldReceive('syncCurrentPublicationMirror')
+            ->once()
+            ->with('2026-03-17', 31);
+
         $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')->never();
 
         $runs->shouldReceive('finalize')
@@ -583,6 +590,14 @@ class MarketDataPipelineServiceTest extends TestCase
             ->once()
             ->with('2026-03-17')
             ->andReturn($conflictingCurrent);
+
+        $publications->shouldReceive('restorePriorCurrentPublication')
+            ->once()
+            ->with('2026-03-17', 31, 31);
+
+        $runs->shouldReceive('syncCurrentPublicationMirror')
+            ->once()
+            ->with('2026-03-17', 31);
 
         $runs->shouldReceive('finalize')
             ->once()

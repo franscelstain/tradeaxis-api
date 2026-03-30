@@ -51,10 +51,10 @@
 - Project status: BELUM SELESAI
 - Last completed session: `SESSION 59`
 - Last completed batch id: `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum`
-- Last completed proof: container syntax lint passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_missing_run_row_does_not_invent_effective_trade_date()`. Repo ZIP sesi ini tetap tidak menyertakan `vendor/`, jadi proof lokal final untuk test baru masih harus dijalankan di environment user; belum ada `DOC SYNC ISSUE` aktif selama checkpoint tetap menandai proof lokal itu sebagai pending.
-- Active session: `SESSION 59`
-- Active batch: `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum`
-- Next session target: lanjutkan ke varian DB-backed correction/runtime berikutnya yang masih `PARTIAL`, khususnya remaining changed-content promote/current-switch conflict atau fallback-integrity guards lain yang belum punya proof minimum setelah fallback missing-run-row guard sesi 59 ditambahkan.
+- Last completed proof: final local validation sesi 59 kini sudah tertutup penuh. Proof yang tervalidasi di environment user mencakup `vendor\bin\phpunit --filter missing_run_row_does_not_invent_effective_trade_date` -> `OK (1 test, 35 assertions)`, `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (5 tests, 156 assertions)`, `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (24 tests, 557 assertions)`, `vendor\bin\phpunit --filter correction` -> `OK (37 tests, 613 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (10 tests, 182 assertions)`, `vendor\bin\phpunit --filter non_readable_run_publication` -> `OK (1 test, 20 assertions)`, `vendor\bin\phpunit --filter SessionSnapshotServiceTest` -> `OK (3 tests, 10 assertions)`, dan `vendor\bin\phpunit` -> `OK (92 tests, 848 assertions)`. Follow-up repair test juga sudah selesai di `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` dan `tests/Unit/MarketData/SessionSnapshotServiceTest.php`, sehingga tidak ada proof lokal sesi 59 yang masih pending.
+- Active session: none
+- Active batch: none
+- Next session target: `SESSION 60` harus mengambil varian DB-backed correction/runtime berikutnya yang masih `PARTIAL`, khususnya remaining changed-content promote/current-switch conflict atau fallback-integrity guards lain yang belum punya proof minimum setelah fallback missing-run-row guard sesi 59 dan follow-up full-suite repair benar-benar tertutup.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -258,7 +258,7 @@
 | 56 | `session56_batch56_db_backed_post_switch_malformed_fallback_guard_minimum` | DONE | DB-backed post-switch mismatch + malformed fallback effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
 | 57 | `session57_batch57_db_backed_post_switch_fallback_publication_version_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback publication-version mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
 | 58 | `session58_batch58_db_backed_post_switch_fallback_trade_date_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback trade-date mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
-| 59 | `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback missing-run-row effective-date guard minimum | checkpoint-backed + syntax lint proof |
+| 59 | `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback missing-run-row effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof + full-suite repair |
 
 - Sesi 48 DONE pada level batch:
   - repository current/publication resolver kini juga memvalidasi mirror `eod_runs.is_current_publication = 1`, tetapi follow-up repair setelah proof awal memisahkan guard dengan benar: `findPointerResolvedPublicationForTradeDate` dan `findCurrentPublicationForTradeDate` tetap mendukung current resolution saat finalize masih in-flight, sedangkan `findCorrectionBaselinePublicationForTradeDate` dan `findLatestReadablePublicationBefore` tetap strict untuk baseline/fallback yang memang harus sudah `SUCCESS` / `READABLE`;
@@ -268,7 +268,16 @@
 - Sesi 59 DONE pada level batch:
   - DB-backed integration proof kini juga mencakup changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang run row-nya sudah hilang, sehingga `trade_date_effective` tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
   - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_missing_run_row_does_not_invent_effective_trade_date()`;
-  - container proof yang bisa dijalankan di repo ZIP saat ini: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed; local PHPUnit proof masih perlu dijalankan di environment user karena `vendor/` tidak ikut terpaket.
+  - follow-up repair sesudah proof minimum juga sudah selesai di `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` dan `tests/Unit/MarketData/SessionSnapshotServiceTest.php`, sehingga rollback path finalize dan retention-window test kembali sinkron dengan runtime terbaru;
+  - proof final sesi 59 kini sudah lengkap di environment user dengan:
+    - `vendor\bin\phpunit --filter missing_run_row_does_not_invent_effective_trade_date` -> `OK (1 test, 35 assertions)`;
+    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (5 tests, 156 assertions)`;
+    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (24 tests, 557 assertions)`;
+    - `vendor\bin\phpunit --filter correction` -> `OK (37 tests, 613 assertions)`;
+    - `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (10 tests, 182 assertions)`;
+    - `vendor\bin\phpunit --filter non_readable_run_publication` -> `OK (1 test, 20 assertions)`;
+    - `vendor\bin\phpunit --filter SessionSnapshotServiceTest` -> `OK (3 tests, 10 assertions)`;
+    - `vendor\bin\phpunit` -> `OK (92 tests, 848 assertions)`.
 
 - Proof sesi 48 final:
   - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;

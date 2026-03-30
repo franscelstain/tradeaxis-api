@@ -92,6 +92,11 @@ class SessionSnapshotServiceTest extends TestCase
 
     public function test_purge_uses_default_retention_policy_window()
     {
+        config([
+            'market_data.platform.timezone' => 'Asia/Jakarta',
+            'market_data.session_snapshot.retention_days' => 30,
+        ]);
+
         \Carbon\Carbon::setTestNow('2026-03-24 12:00:00');
 
         $publications = m::mock(EodPublicationRepository::class);
@@ -100,8 +105,15 @@ class SessionSnapshotServiceTest extends TestCase
         $snapshots = m::mock(SessionSnapshotRepository::class);
         $adapter = m::mock(LocalFileSessionSnapshotAdapter::class);
 
-        config(['market_data.session_snapshot.retention_days' => 30]);
-        $snapshots->shouldReceive('purgeBefore')->once()->with('2026-02-22 12:00:00')->andReturn(3);
+        $expectedCutoff = \Carbon\Carbon::now('Asia/Jakarta')
+            ->subDays(30)
+            ->toDateTimeString();
+
+        $snapshots->shouldReceive('purgeBefore')
+            ->once()
+            ->with($expectedCutoff)
+            ->andReturn(3);
+
         $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
         $outputDir = sys_get_temp_dir().'/session_snapshot_purge_default_'.uniqid();
         $summary = $service->purge(null, $outputDir);
