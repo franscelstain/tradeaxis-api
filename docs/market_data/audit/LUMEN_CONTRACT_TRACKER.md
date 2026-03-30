@@ -62,7 +62,7 @@
 ## CONTRACT ITEM 2 — Core runtime artifact lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: bars / indicators / eligibility / publication
-- LAST UPDATED SESSION: `session52_batch52_db_backed_missing_run_row_guard_minimum`
+- LAST UPDATED SESSION: `session53_batch53_db_backed_malformed_fallback_guard_minimum`
 - EVIDENCE:
   - canonical bars/indicators/eligibility runtime installed;
   - publication current-switch and pointer-sync runtime installed;
@@ -99,15 +99,16 @@
   - repository integration proof now also covers pointer/publication `run_id` mismatch for `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, and `findLatestReadablePublicationBefore`, all failing safe to `null` when pointer run identity disagrees materially with the pointed publication row;
   - final local full validation after session 49 passes with `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (4 tests, 24 assertions)`, `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (15 tests, 312 assertions)`, and `vendor\bin\phpunit` -> `OK (79 tests, 587 assertions)`.
 - OPEN GAP:
-  - broader conflict/error matrix at artifact/runtime level is still not fully closed beyond the current minimum changed-content promotion/conflict proof set, reseal-failure minimum, and the now-closed pointer/publication integrity guard minimums (trade-date mismatch, run-current-mirror mismatch, run-id mismatch, and publication-version mismatch).
+  - broader conflict/error matrix at artifact/runtime level is still not fully closed beyond the current minimum changed-content promotion/conflict proof set, reseal-failure minimum, the now-closed pointer/publication integrity guard minimums (trade-date mismatch, run-current-mirror mismatch, run-id mismatch, publication-version mismatch, missing-run-row), and the new malformed-fallback effective-date guard minimum;
+  - `DOC SYNC ISSUE`: local PHPUnit proof for the session 53 malformed-fallback batch is not yet synced from the user environment.
 - NEXT REQUIRED ACTION:
-  - continue strengthening broader correction conflict/error matrix without opening unrelated area, with priority on remaining DB-backed/integration negative paths outside the covered minimum;
-  - for `SESI 51`, continue with the next load-bearing DB-backed correction/runtime gap now that `pointer/publication trade-date mismatch`, `run-current-mirror mismatch`, `pointer/publication run-id mismatch`, and `pointer/publication publication-version mismatch` are already closed and checkpointed.
+  - sync local PHPUnit proof for session 53 first;
+  - for `SESI 54`, continue with the next load-bearing DB-backed correction/runtime gap only after the malformed-fallback batch is checkpointed as fully proven.
 
 ## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: correction runtime and finalize outcomes
-- LAST UPDATED SESSION: `session52_batch52_db_backed_missing_run_row_guard_minimum`
+- LAST UPDATED SESSION: `session53_batch53_db_backed_malformed_fallback_guard_minimum`
 - EVIDENCE:
   - correction request / approval / reseal / publish runtime installed;
   - correction final outcome note installed;
@@ -122,6 +123,7 @@
   - DB-backed/integration proof now also covers correction request without approval, proving the pipeline rejects before owning run creation and preserves correction state plus current publication/pointer without creating a candidate publication;
   - DB-backed/integration proof now also covers correction reseal failure, proving seal-write failure aborts correction before safe publication, leaves the correction in `EXECUTING`, and preserves prior current publication/pointer while partial candidate state remains `UNSEALED` and non-current;
   - DB-backed/integration proof now also covers correction history-promotion failure during finalize, proving correction remains `RESEALED`, preserves prior current publication/pointer, leaves the candidate publication `SEALED` but non-current, and resolves through held finalize rather than silent publish;
+  - DB-backed/integration proof now also covers changed-content correction with promotion failure while fallback prior-readable pointer integrity is broken, proving correction lifecycle still ends in held finalize without inventing a fallback `trade_date_effective` from corrupted state;
   - DB-backed/integration proof now also covers approved correction without a current sealed publication baseline, proving the pipeline rejects before owning run creation and preserves the correction in `APPROVED` state without creating candidate publication, pointer state, or run/event side effects;
   - DB-backed/integration proof now also covers approved correction with a current pointer row whose pointed publication belongs to a different trade date, proving correction baseline resolution rejects the trade-date mismatch before owning run creation and leaves correction state plus incident rows untouched;
   - final local full validation after session 47 follow-up repairs passes with `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`;
@@ -135,11 +137,14 @@
   - session 52 container proof passes with `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`, and `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`;
   - final local validation after session 52 passes with `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (8 tests, 40 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (10 tests, 182 assertions)`, and `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (18 tests, 372 assertions)`;
   - manual runtime verification after session 38 confirms changed-content publish path with `correction_id=24` and unchanged-content cancel path with `correction_id=25` -> `run_id=54` -> `CANCELLED` / `SUCCESS` / `READABLE`, while current publication pointer remains on `run_id=53`.
+  - DB-backed/integration proof now also covers changed-content correction with promotion failure while the latest prior-readable fallback pointer is materially malformed (`eod_current_publication_pointer.run_id` disagrees with the pointed publication row), proving finalize remains `HELD` / `NOT_READABLE` and does not invent `trade_date_effective` from unsafe fallback state;
+  - session 53 container proof passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding `test_run_daily_correction_with_changed_artifacts_and_malformed_fallback_pointer_does_not_invent_effective_trade_date()`.
 - OPEN GAP:
-  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants outside the currently covered approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, missing-publication-pointer guard minimum, non-readable-baseline-run minimum, missing-run-row-behind-publication minimum, pointer/publication trade-date mismatch minimum, run-current-mirror mismatch minimum, pointer/publication run-id mismatch minimum, pointer/publication publication-version mismatch minimum, reseal-failure minimum, history-promotion failure minimum, the two promote/current-switch conflict modes, and any remaining broader non-promotion failure modes.
+  - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants outside the currently covered approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, missing-publication-pointer guard minimum, non-readable-baseline-run minimum, missing-run-row-behind-publication minimum, pointer/publication trade-date mismatch minimum, run-current-mirror mismatch minimum, pointer/publication run-id mismatch minimum, pointer/publication publication-version mismatch minimum, malformed-fallback effective-date guard minimum, reseal-failure minimum, history-promotion failure minimum, the two promote/current-switch conflict modes, and any remaining broader non-promotion failure modes;
+  - `DOC SYNC ISSUE`: local PHPUnit proof for the new malformed-fallback guard batch is not yet synced from the user environment.
 - NEXT REQUIRED ACTION:
-  - expand matrix for additional conflict/error scenarios that still remain uncovered;
-  - for `SESI 53`, prefer the next remaining correction/runtime DB-backed scenario whose reject/hold behavior is already explicit in owner-doc/runtime evidence, without reopening the now-closed missing-run-row-behind-publication guard, trade-date mismatch guard, run-current-mirror guard, publication-current-mirror guard, pointer/publication run-id mismatch guard, or pointer/publication publication-version mismatch guard.
+  - sync local PHPUnit proof for the malformed-fallback guard batch first;
+  - for `SESI 54`, prefer the next remaining correction/runtime DB-backed scenario whose reject/hold behavior is already explicit in owner-doc/runtime evidence, without reopening the now-closed missing-run-row-behind-publication guard, trade-date mismatch guard, run-current-mirror guard, publication-current-mirror guard, pointer/publication run-id mismatch guard, or pointer/publication publication-version mismatch guard.
 
 ## CONTRACT ITEM 4 — Replay verification / evidence / smoke / backfill
 - STATUS: PARTIAL
@@ -239,10 +244,13 @@
   - repository integration proof now also covers missing-run-row incidents for `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, and `findLatestReadablePublicationBefore`, all failing safe to `null` when the pointed publication has no surviving `eod_runs` row;
   - session 52 container proof passes with `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`, and `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`;
   - final local validation after session 52 passes with `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (8 tests, 40 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (10 tests, 182 assertions)`, and `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (18 tests, 372 assertions)`.
+  - DB-backed/integration proof now also covers changed-content correction with promotion failure plus malformed fallback pointer state, proving `trade_date_effective` remains `null` when fallback integrity is unsafe instead of silently falling back to a corrupted prior-readable date;
+  - session 53 container proof passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding the malformed-fallback effective-date guard test.
 - OPEN GAP:
-  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path, missing-baseline guard path, malformed-baseline-pointer guard path, missing-publication-pointer guard path, non-readable-baseline-run guard path, missing-run-row-behind-publication guard path, pointer/publication trade-date mismatch guard path, run-current-mirror mismatch guard path, publication-current-mirror mismatch guard path, pointer/publication run-id mismatch guard path, pointer/publication publication-version mismatch guard path, reseal-failure path, history-promotion failure path, and changed-content promote/current-switch conflict paths.
+  - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path, missing-baseline guard path, malformed-baseline-pointer guard path, missing-publication-pointer guard path, non-readable-baseline-run guard path, missing-run-row-behind-publication guard path, pointer/publication trade-date mismatch guard path, run-current-mirror mismatch guard path, publication-current-mirror mismatch guard path, pointer/publication run-id mismatch guard path, pointer/publication publication-version mismatch guard path, malformed-fallback effective-date guard path, reseal-failure path, history-promotion failure path, and changed-content promote/current-switch conflict paths;
+  - `DOC SYNC ISSUE`: local PHPUnit proof for the new malformed-fallback guard batch is not yet synced from the user environment.
 - NEXT REQUIRED ACTION:
-  - extend only into remaining load-bearing DB-backed matrix gaps after the now-closed missing-run-row-behind-publication, pointer/publication trade-date mismatch, run-current-mirror mismatch, publication-current-mirror mismatch, pointer/publication run-id mismatch, and pointer/publication publication-version mismatch guard minimums.
+  - sync local PHPUnit proof for the malformed-fallback guard batch first, then continue into the next highest-priority remaining DB-backed gap.
 
 ## CONTRACT ITEM 8 — Final readiness gate
 - STATUS: MISSING
@@ -280,4 +288,5 @@
 - Session 52 is DONE at session level for the grounded missing-run-row-behind-publication guard batch; current/baseline/fallback resolver paths now fail safe when the pointed publication no longer has a surviving `eod_runs` row, and final local PHPUnit validation now also passes with `PublicationRepositoryIntegrationTest`, `preserves_approval_state`, and `MarketDataPipelineIntegrationTest`.
 - Session 50 is DONE at session level for the grounded pointer/publication publication-version mismatch guard batch; current/baseline/fallback resolver paths now fail safe when `eod_current_publication_pointer.publication_version` disagrees materially with the pointed publication row, the helper/fixture follow-up repairs are complete, and final local validation now passes fully with `82 tests / 617 assertions`.
 - Session 51 is DONE at session level for the grounded publication-current-mirror mismatch guard batch; current/baseline/fallback resolver paths now fail safe when the pointed publication remains `SEALED` but is no longer marked current, and DB-backed correction baseline resolution now rejects that incident state before owning run creation while keeping approval state intact.
-- Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item.
+- Session 53 is PARTIAL at session level for the grounded malformed-fallback effective-date guard batch; DB-backed correction finalize proof now asserts malformed prior-readable fallback state must not invent `trade_date_effective`, but local PHPUnit sync is still pending.
+- Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item after dependency proof for session 53 is synchronized.
