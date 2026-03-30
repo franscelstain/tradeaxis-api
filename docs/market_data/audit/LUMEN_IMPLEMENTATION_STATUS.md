@@ -51,7 +51,7 @@
 - Project status: BELUM SELESAI
 - Last completed session: `SESSION 52`
 - Last completed batch id: `session52_batch52_db_backed_missing_run_row_guard_minimum`
-- Last completed proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed; `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed; `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed. Local PHPUnit proof remains pending in user environment because the source-of-truth ZIP still does not ship `vendor/`.
+- Last completed proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed; `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed; `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed; `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (8 tests, 40 assertions)`; `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (10 tests, 182 assertions)`; `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (18 tests, 372 assertions)`.
 - Active session: none
 - Active batch: none
 - Next session target: ambil batch correction/runtime DB-backed berikutnya yang masih `PARTIAL` setelah approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, missing-run-row-behind-publication guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, publication-current-mirror mismatch guard, pointer/publication run-id mismatch guard, dan pointer/publication publication-version mismatch guard minimum tertutup, tanpa membuka area baru di luar market-data.
