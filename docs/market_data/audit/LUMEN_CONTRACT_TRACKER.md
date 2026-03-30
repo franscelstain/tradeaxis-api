@@ -62,7 +62,7 @@
 ## CONTRACT ITEM 2 — Core runtime artifact lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: bars / indicators / eligibility / publication
-- LAST UPDATED SESSION: `session54_batch54_db_backed_post_switch_resolution_mismatch_guard_minimum`
+- LAST UPDATED SESSION: `session56_batch56_db_backed_post_switch_malformed_fallback_guard_minimum`
 - EVIDENCE:
   - canonical bars/indicators/eligibility runtime installed;
   - publication current-switch and pointer-sync runtime installed;
@@ -100,10 +100,10 @@
   - final local full validation after session 49 passes with `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (4 tests, 24 assertions)`, `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (15 tests, 312 assertions)`, and `vendor\bin\phpunit` -> `OK (79 tests, 587 assertions)`.
 - OPEN GAP:
   - broader conflict/error matrix at artifact/runtime level is still not fully closed beyond the current minimum changed-content promotion/conflict proof set, reseal-failure minimum, the now-closed pointer/publication integrity guard minimums (trade-date mismatch, run-current-mirror mismatch, run-id mismatch, publication-version mismatch, missing-run-row), and the new malformed-fallback effective-date guard minimum;
-  - none for session 53 malformed-fallback proof sync; local PHPUnit proof is now synced.
+  - local PHPUnit validation for the session 54 post-switch resolution mismatch rollback path is still pending in user environment because the ZIP source-of-truth still omits `vendor/`; broader artifact/runtime conflict matrix also remains open.
 - NEXT REQUIRED ACTION:
-  - sync local PHPUnit proof for session 53 first;
-  - for `SESI 54`, continue with the next load-bearing DB-backed correction/runtime gap only after the malformed-fallback batch is checkpointed as fully proven.
+  - helper unblock sesi 55 sudah tersedia; gunakan helper itu untuk menyinkronkan proof lokal PHPUnit sesi 54 terlebih dahulu;
+  - setelah proof sesi 54 masuk ke source-of-truth, lanjutkan ke next load-bearing DB-backed correction/runtime gap.
 
 ## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
 - STATUS: PARTIAL
@@ -145,10 +145,11 @@
   - local PHPUnit validation for the new post-switch resolution mismatch rollback path is still pending in user environment because the ZIP source-of-truth still omits `vendor/`.
 - OPEN GAP:
   - broader correction conflict/error matrix still not fully closed beyond the current minimum proof set, especially additional DB-backed/integration variants outside the currently covered approval-gate minimum, missing-baseline guard minimum, malformed-baseline-pointer guard minimum, missing-publication-pointer guard minimum, non-readable-baseline-run minimum, missing-run-row-behind-publication minimum, pointer/publication trade-date mismatch minimum, run-current-mirror mismatch minimum, pointer/publication run-id mismatch minimum, pointer/publication publication-version mismatch minimum, malformed-fallback effective-date guard minimum, reseal-failure minimum, history-promotion failure minimum, the two promote/current-switch conflict modes, and any remaining broader non-promotion failure modes;
-  - none for the malformed-fallback guard batch; local PHPUnit proof is now synced.
+  - local PHPUnit validation for the session 54 post-switch resolution mismatch rollback path is still pending in user environment because the ZIP source-of-truth still omits `vendor/`;
+  - session 55 adds `tools/market_data/session54_local_phpunit_proof.ps1` so the missing local proof can be executed and captured into traceable evidence files under `storage/app/market_data/evidence/local_phpunit/...` without inventing pseudo-proof.
 - NEXT REQUIRED ACTION:
-  - sync local PHPUnit proof for the malformed-fallback guard batch first;
-  - for `SESI 54`, prefer the next remaining correction/runtime DB-backed scenario whose reject/hold behavior is already explicit in owner-doc/runtime evidence, without reopening the now-closed missing-run-row-behind-publication guard, trade-date mismatch guard, run-current-mirror guard, publication-current-mirror guard, pointer/publication run-id mismatch guard, or pointer/publication publication-version mismatch guard.
+  - jalankan `tools/market_data/session54_local_phpunit_proof.ps1` di environment user yang memiliki `vendor/bin/phpunit`, lalu masukkan artefak outputnya ke ZIP source-of-truth berikutnya;
+  - setelah proof sesi 54 tersinkron, pilih varian correction/runtime DB-backed berikutnya yang reject/hold behavior-nya sudah eksplisit di owner-doc/runtime evidence, tanpa membuka ulang guard yang sudah ditutup pada sesi 47-54.
 
 ## CONTRACT ITEM 4 — Replay verification / evidence / smoke / backfill
 - STATUS: PARTIAL
@@ -257,9 +258,11 @@
   - final local validation after session 53 passes with `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (19 tests, 401 assertions)`, `vendor\bin\phpunit --filter malformed_fallback_pointer` -> `OK (1 test, 29 assertions)`, and `vendor\bin\phpunit --filter does_not_invent_effective_trade_date` -> `OK (1 test)`;
 - OPEN GAP:
   - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path, missing-baseline guard path, malformed-baseline-pointer guard path, missing-publication-pointer guard path, non-readable-baseline-run guard path, missing-run-row-behind-publication guard path, pointer/publication trade-date mismatch guard path, run-current-mirror mismatch guard path, publication-current-mirror mismatch guard path, pointer/publication run-id mismatch guard path, pointer/publication publication-version mismatch guard path, malformed-fallback effective-date guard path, reseal-failure path, history-promotion failure path, and remaining changed-content promote/current-switch conflict variants;
-  - local PHPUnit proof for the post-switch resolution mismatch rollback batch is not yet synced in this ZIP because `vendor/` is absent.
+  - user-run local PHPUnit proof for the session 54 post-switch resolution mismatch rollback batch has been observed in conversation via the helper output, but the uploaded ZIP still omits the expected `storage/app/market_data/evidence/local_phpunit/...` files, so artifact packaging still has a `DOC SYNC ISSUE`;
+  - DB-backed/integration proof now also covers changed-content correction with post-switch current-pointer resolution mismatch plus malformed fallback pointer state, proving `trade_date_effective` remains `null` when both the current switch and the fallback chain are unsafe instead of silently falling back to a corrupted prior-readable date;
+  - session 56 container proof passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding `test_run_daily_correction_with_post_switch_resolution_mismatch_and_malformed_fallback_pointer_does_not_invent_effective_trade_date()`.
 - NEXT REQUIRED ACTION:
-  - sync local PHPUnit proof for the session 54 post-switch resolution mismatch rollback batch first, then continue into the next highest-priority remaining DB-backed gap.
+  - continue into the next highest-priority remaining DB-backed gap, and make sure the next source-of-truth ZIP also carries the generated `storage/app/market_data/evidence/local_phpunit/...` files so the session-55 proof packaging `DOC SYNC ISSUE` is closed.
 
 ## CONTRACT ITEM 8 — Final readiness gate
 - STATUS: MISSING
@@ -299,4 +302,6 @@
 - Session 51 is DONE at session level for the grounded publication-current-mirror mismatch guard batch; current/baseline/fallback resolver paths now fail safe when the pointed publication remains `SEALED` but is no longer marked current, and DB-backed correction baseline resolution now rejects that incident state before owning run creation while keeping approval state intact.
 - Session 53 is DONE at session level for the grounded malformed-fallback effective-date guard batch; DB-backed correction finalize proof now asserts malformed prior-readable fallback state must not invent `trade_date_effective`, and final local PHPUnit validation is now synced.
 - Session 54 is DONE at session level for the grounded post-switch resolution mismatch rollback batch; finalize now fails safe on post-switch pointer-resolution mismatch by restoring the prior current publication/pointer/run-current mirror, and local PHPUnit follow-up still needs to be synced outside this ZIP.
-- Next batch must be selected from the highest-priority remaining `PARTIAL` or `MISSING` contract item after dependency proof for session 53 is synchronized.
+- Session 55 is DONE at session level for the grounded local-proof unblock helper batch; the helper was executed successfully by the user and local PHPUnit proof for session 54 is now observed in conversation, although the uploaded ZIP still leaves a `DOC SYNC ISSUE` because the generated evidence folder was not packaged.
+- Session 56 is DONE at session level for the grounded post-switch mismatch + malformed fallback guard batch; finalize now also fails safe to `trade_date_effective = null` when a post-switch conflict coincides with an unsafe prior-readable fallback chain.
+- Next batch should come from the highest-priority remaining `PARTIAL` or `MISSING` contract item while carrying the missing local-proof evidence files into the next ZIP.

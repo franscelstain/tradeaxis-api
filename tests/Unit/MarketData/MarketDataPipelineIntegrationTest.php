@@ -878,6 +878,110 @@ class MarketDataPipelineIntegrationTest extends TestCase
     }
 
 
+    public function test_run_daily_correction_with_post_switch_resolution_mismatch_and_malformed_fallback_pointer_does_not_invent_effective_trade_date(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+        $this->seedReadableFallbackPublication('2026-03-19', 80, 11);
+        DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-19')
+            ->update([
+                'run_id' => 999,
+                'updated_at' => '2026-03-19 17:21:00',
+            ]);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 131,
+            'high' => 136,
+            'low' => 130,
+            'close' => 135,
+            'volume' => 2600,
+            'adj_close' => 135,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-with-post-switch-resolution-mismatch-and-malformed-fallback', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        $run = $this->makePipelineWithPublications(
+            new PostSwitchResolutionMismatchPublicationRepository()
+        )->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
+
+        $this->assertSame('HELD', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame('COMPLETED', $run->lifecycle_state);
+        $this->assertNull($run->trade_date_effective);
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('RESEALED', $persistedCorrection->status);
+        $this->assertSame(90, (int) $persistedCorrection->prior_run_id);
+        $this->assertSame((int) $run->run_id, (int) $persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+        $this->assertNull($persistedCorrection->final_outcome_note);
+
+        $currentPublication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('is_current', 1)
+            ->first();
+
+        $this->assertNotNull($currentPublication);
+        $this->assertSame(1, (int) $currentPublication->publication_id);
+        $this->assertSame(1, (int) $currentPublication->publication_version);
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
+        $this->assertSame(90, (int) $pointer->run_id);
+        $this->assertSame(1, (int) $pointer->publication_version);
+
+        $candidatePublication = DB::table('eod_publications')
+            ->where('run_id', $run->run_id)
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($candidatePublication);
+        $this->assertSame('SEALED', $candidatePublication->seal_state);
+        $this->assertSame(0, (int) $candidatePublication->is_current);
+        $this->assertSame(1, (int) $candidatePublication->supersedes_publication_id);
+
+        $malformedFallbackPointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-19')
+            ->first();
+
+        $this->assertNotNull($malformedFallbackPointer);
+        $this->assertSame(999, (int) $malformedFallbackPointer->run_id);
+
+        $finalizedEvent = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->orderByDesc('event_id')
+            ->first();
+
+        $this->assertNotNull($finalizedEvent);
+        $this->assertSame('WARN', $finalizedEvent->severity);
+        $this->assertSame('RUN_LOCK_CONFLICT', $finalizedEvent->reason_code);
+        $this->assertSame('Current publication pointer resolution mismatch after finalize.', (string) $finalizedEvent->message);
+
+        $this->assertFalse(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'CORRECTION_PUBLISHED')
+                ->exists()
+        );
+    }
+
+
     public function test_run_daily_correction_with_history_promotion_failure_keeps_prior_current_and_candidate_sealed_non_current(): void
     {
         $this->seedTicker(1, 'BBCA');
