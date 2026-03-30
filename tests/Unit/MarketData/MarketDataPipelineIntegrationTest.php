@@ -922,6 +922,92 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
+    public function test_run_daily_approved_correction_with_pointer_to_publication_whose_run_row_is_missing_rejects_before_run_creation_and_preserves_approval_state(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+        $this->seedBaselinePointerToPublicationWithMissingRunForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 134,
+            'high' => 139,
+            'low' => 133,
+            'close' => 138,
+            'volume' => 2900,
+            'adj_close' => 138,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-with-pointer-to-publication-whose-run-row-is-missing', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        try {
+            $this->makePipeline()->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
+            $this->fail('Expected missing run row behind current pointer publication to reject approved correction before run creation.');
+        } catch (RuntimeException $e) {
+            $this->assertSame(
+                'Correction requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.',
+                $e->getMessage()
+            );
+        }
+
+        $run = DB::table('eod_runs')
+            ->where('trade_date_requested', '2026-03-20')
+            ->orderBy('run_id')
+            ->get();
+
+        $this->assertCount(0, $run);
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('APPROVED', $persistedCorrection->status);
+        $this->assertNull($persistedCorrection->prior_run_id);
+        $this->assertNull($persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+        $this->assertNull($persistedCorrection->final_outcome_note);
+
+        $publication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('publication_id', 1)
+            ->first();
+
+        $this->assertNotNull($publication);
+        $this->assertSame('SEALED', $publication->seal_state);
+        $this->assertSame(1, (int) $publication->is_current);
+        $this->assertSame(90, (int) $publication->run_id);
+
+        $this->assertNull(DB::table('eod_runs')->where('run_id', 90)->first());
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
+        $this->assertSame(90, (int) $pointer->run_id);
+
+        $this->assertSame(
+            1,
+            (int) DB::table('eod_publications')
+                ->where('trade_date', '2026-03-20')
+                ->count()
+        );
+
+        $this->assertSame(
+            0,
+            DB::table('eod_run_events')
+                ->where('payload_json', 'like', '%"correction_id":'.$approved->correction_id.'%')
+                ->count()
+        );
+    }
+
+
     public function test_run_daily_approved_correction_with_pointer_to_non_readable_run_publication_rejects_before_run_creation_and_preserves_approval_state(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -1739,6 +1825,75 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         DB::table('eod_eligibility')->insert([
             'trade_date' => $publicationTradeDate,
+            'ticker_id' => $tickerId,
+            'eligible' => 1,
+            'reason_code' => null,
+            'run_id' => 90,
+            'publication_id' => 1,
+            'created_at' => Carbon::now()->toDateTimeString(),
+        ]);
+    }
+
+
+    private function seedBaselinePointerToPublicationWithMissingRunForTradeDate(string $tradeDate, int $tickerId, float $close): void
+    {
+        DB::table('eod_publications')->insert([
+            'publication_id' => 1,
+            'trade_date' => $tradeDate,
+            'run_id' => 90,
+            'publication_version' => 1,
+            'is_current' => 1,
+            'supersedes_publication_id' => null,
+            'seal_state' => 'SEALED',
+            'bars_batch_hash' => 'bars-old',
+            'indicators_batch_hash' => 'ind-old',
+            'eligibility_batch_hash' => 'elig-old',
+            'sealed_at' => '2026-03-20 17:20:00',
+            'created_at' => '2026-03-20 17:00:00',
+            'updated_at' => '2026-03-20 17:20:00',
+        ]);
+
+        DB::table('eod_current_publication_pointer')->insert([
+            'trade_date' => $tradeDate,
+            'publication_id' => 1,
+            'run_id' => 90,
+            'publication_version' => 1,
+            'sealed_at' => '2026-03-20 17:20:00',
+        ]);
+
+        DB::table('eod_bars')->insert([
+            'trade_date' => $tradeDate,
+            'ticker_id' => $tickerId,
+            'open' => $close,
+            'high' => $close,
+            'low' => $close,
+            'close' => $close,
+            'volume' => 1000,
+            'adj_close' => $close,
+            'source' => 'MANUAL_FILE',
+            'run_id' => 90,
+            'publication_id' => 1,
+            'created_at' => Carbon::now()->toDateTimeString(),
+        ]);
+
+        DB::table('eod_indicators')->insert([
+            'trade_date' => $tradeDate,
+            'ticker_id' => $tickerId,
+            'is_valid' => 1,
+            'invalid_reason_code' => null,
+            'indicator_set_version' => config('market_data.indicators.set_version'),
+            'dv20_idr' => 100000000,
+            'atr14_pct' => 0.02,
+            'vol_ratio' => 1.1,
+            'roc20' => 0.03,
+            'hh20' => $close,
+            'run_id' => 90,
+            'publication_id' => 1,
+            'created_at' => Carbon::now()->toDateTimeString(),
+        ]);
+
+        DB::table('eod_eligibility')->insert([
+            'trade_date' => $tradeDate,
             'ticker_id' => $tickerId,
             'eligible' => 1,
             'reason_code' => null,

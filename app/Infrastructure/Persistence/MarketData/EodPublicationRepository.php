@@ -19,12 +19,8 @@ class EodPublicationRepository
             ->whereColumn('ptr.publication_version', 'pub.publication_version')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
-            ->where(function ($query) {
-                $query->whereNull('run.run_id')
-                    ->orWhere(function ($sub) {
-                        $sub->where('run.is_current_publication', 1);
-                    });
-            })
+            ->whereNotNull('run.run_id')
+            ->where('run.is_current_publication', 1)
             ->select('pub.*', 'ptr.trade_date as pointer_trade_date', 'ptr.run_id as pointer_run_id', 'ptr.publication_version as pointer_publication_version', 'ptr.sealed_at as pointer_sealed_at')
             ->first();
     }
@@ -40,12 +36,8 @@ class EodPublicationRepository
             ->whereColumn('ptr.publication_version', 'pub.publication_version')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
-            ->where(function ($query) {
-                $query->whereNull('run.run_id')
-                    ->orWhere(function ($sub) {
-                        $sub->where('run.is_current_publication', 1);
-                    });
-            })
+            ->whereNotNull('run.run_id')
+            ->where('run.is_current_publication', 1)
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
@@ -70,14 +62,10 @@ class EodPublicationRepository
             ->whereColumn('ptr.publication_version', 'pub.publication_version')
             ->where('pub.is_current', 1)
             ->where('pub.seal_state', 'SEALED')
-            ->where(function ($query) {
-                $query->whereNull('run.run_id')
-                    ->orWhere(function ($sub) {
-                        $sub->where('run.terminal_status', 'SUCCESS')
-                            ->where('run.publishability_state', 'READABLE')
-                            ->where('run.is_current_publication', 1);
-                    });
-            })
+            ->whereNotNull('run.run_id')
+            ->where('run.terminal_status', 'SUCCESS')
+            ->where('run.publishability_state', 'READABLE')
+            ->where('run.is_current_publication', 1)
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',

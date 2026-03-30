@@ -68,6 +68,18 @@ class PublicationRepositoryIntegrationTest extends TestCase
 
 
 
+    public function test_pointer_resolution_returns_null_when_pointed_publication_run_row_is_missing(): void
+    {
+        DB::table('eod_runs')->where('run_id', 25)->delete();
+
+        $repo = new EodPublicationRepository();
+
+        $this->assertNull($repo->findPointerResolvedPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
+    }
+
     public function test_pointer_resolution_returns_null_when_run_current_mirror_disagrees_with_pointer_and_publication(): void
     {
         DB::table('eod_runs')
