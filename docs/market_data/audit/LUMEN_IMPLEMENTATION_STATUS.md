@@ -49,12 +49,12 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 62`
-- Last completed batch id: `session62_batch62_db_backed_post_switch_fallback_unsealed_publication_guard_minimum`
-- Last completed proof: syntax lint container sesi 62 lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`; proof lokal user sesi 62 kini juga lulus dengan `vendor\bin\phpunit --filter fallback_unsealed_publication` -> `OK (1 test, 39 assertions)`, `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (8 tests, 271 assertions)`, dan `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (27 tests, 672 assertions)`.
+- Last completed session: `SESSION 63`
+- Last completed batch id: `session63_batch63_db_backed_post_switch_fallback_missing_publication_row_guard_minimum`
+- Last completed proof: syntax lint container sesi 63 lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`; proof lokal user tetap perlu dijalankan di environment pengguna karena ZIP source-of-truth tidak menyertakan `vendor/`. Target proof lokal minimum sesi 63: `vendor\bin\phpunit --filter fallback_missing_publication_row`, `vendor\bin\phpunit --filter post_switch_resolution_mismatch`, dan `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php`.
 - Active session: none
 - Active batch: none
-- Next session target: `SESSION 63` mengambil varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity setelah fallback unsealed-publication variant kini tertutup di sesi 62. Jangan buka area baru sebelum parent contract item 7 makin rapat.
+- Next session target: `SESSION 64` mengambil varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity setelah fallback missing-publication-row variant kini tertutup di sesi 63. Jangan buka area baru sebelum parent contract item 7 makin rapat.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
