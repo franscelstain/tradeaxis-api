@@ -49,12 +49,12 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 61`
-- Last completed batch id: `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum`
-- Last completed proof: syntax lint container sesi 61 lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`; validasi lokal user juga sudah lulus dengan `vendor\bin\phpunit --filter post_switch_resolution_mismatch_and_fallback_publication_current_mirror_mismatch` -> `OK (1 test, 38 assertions)` dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (26 tests, 633 assertions)`.
+- Last completed session: `SESSION 62`
+- Last completed batch id: `session62_batch62_db_backed_post_switch_fallback_unsealed_publication_guard_minimum`
+- Last completed proof: syntax lint container sesi 62 lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`; proof lokal user untuk batch baru masih `PENDING` karena repo ZIP tetap tidak menyertakan `vendor/`.
 - Active session: `SESSION 62`
-- Active batch: `session62_batch62_db_backed_next_fallback_integrity_gap_minimum`
-- Next session target: `SESSION 62` mengambil varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity setelah publication-current-mirror fallback variant kini tertutup di sesi 61. Jangan buka area baru sebelum parent contract item 7 makin rapat.
+- Active batch: `session62_batch62_db_backed_post_switch_fallback_unsealed_publication_guard_minimum`
+- Next session target: `SESSION 63` mengambil varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity setelah fallback unsealed-publication variant kini tertutup di sesi 62. Jangan buka area baru sebelum parent contract item 7 makin rapat.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -261,12 +261,20 @@
 | 59 | `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback missing-run-row effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof + full-suite repair |
 | 60 | `session60_batch60_db_backed_post_switch_fallback_run_current_mirror_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback run-current-mirror effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof + full-suite validation |
 | 61 | `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback publication-current-mirror effective-date guard minimum | checkpoint-backed + syntax lint proof |
+| 62 | `session62_batch62_db_backed_post_switch_fallback_unsealed_publication_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback unsealed-publication effective-date guard minimum | checkpoint-backed + syntax lint proof |
 
 - Sesi 48 DONE pada level batch:
   - repository current/publication resolver kini juga memvalidasi mirror `eod_runs.is_current_publication = 1`, tetapi follow-up repair setelah proof awal memisahkan guard dengan benar: `findPointerResolvedPublicationForTradeDate` dan `findCurrentPublicationForTradeDate` tetap mendukung current resolution saat finalize masih in-flight, sedangkan `findCorrectionBaselinePublicationForTradeDate` dan `findLatestReadablePublicationBefore` tetap strict untuk baseline/fallback yang memang harus sudah `SUCCESS` / `READABLE`;
   - DB-backed integration proof kini juga mencakup approved correction dengan baseline publication/current pointer yang menunjuk run `SUCCESS` / `READABLE` tetapi `is_current_publication = 0`, sehingga correction tetap ditolak sebelum owning run baru dibuat dan approval state tetap utuh;
   - repository integration proof kini juga mencakup run-current mirror mismatch untuk `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, dan `findLatestReadablePublicationBefore`, semuanya fail-safe ke `null` saat mirror run tidak sinkron;
   - validasi lokal awal sesi 48 sempat gagal karena guard repo terlalu keras dan ikut menahan happy-path finalize/current-resolution normal, sehingga DB-backed daily/correction pipeline test jatuh ke `HELD`; repository guard lalu dipisahkan sesuai jalur in-flight vs finalized-readable path.
+
+
+- Sesi 62 DONE pada level batch:
+  - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang pointer-nya masih menunjuk publication yang sama, run fallback masih `SUCCESS` / `READABLE` + `is_current_publication = 1`, tetapi publication fallback sendiri berubah menjadi `UNSEALED`, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
+  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_unsealed_publication_does_not_invent_effective_trade_date()`;
+  - syntax lint container lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
+  - proof lokal user untuk sesi 62 masih `PENDING` karena repo ZIP source-of-truth tidak menyertakan `vendor/`, sehingga validasi PHPUnit penuh tetap harus dijalankan di environment user.
 
 - Sesi 61 DONE pada level batch:
   - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang pointer-nya masih menunjuk publication `SEALED`, run fallback masih `SUCCESS` / `READABLE` + `is_current_publication = 1`, tetapi publication fallback sendiri sudah `is_current = 0`, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
