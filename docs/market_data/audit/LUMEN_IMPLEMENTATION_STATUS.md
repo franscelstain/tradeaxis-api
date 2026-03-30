@@ -51,7 +51,7 @@
 - Project status: BELUM SELESAI
 - Last completed session: `SESSION 63`
 - Last completed batch id: `session63_batch63_db_backed_post_switch_fallback_missing_publication_row_guard_minimum`
-- Last completed proof: syntax lint container sesi 63 lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`; proof lokal user tetap perlu dijalankan di environment pengguna karena ZIP source-of-truth tidak menyertakan `vendor/`. Target proof lokal minimum sesi 63: `vendor\bin\phpunit --filter fallback_missing_publication_row`, `vendor\bin\phpunit --filter post_switch_resolution_mismatch`, dan `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php`.
+- Last completed proof: syntax lint container sesi 63 lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`; proof lokal user sesi 63 juga sudah lulus dengan `vendor\bin\phpunit --filter fallback_missing_publication_row` -> `OK (1 test, 35 assertions)`, `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (9 tests, 306 assertions)`, `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (28 tests, 707 assertions)`, dan `vendor\bin\phpunit --filter "test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_missing_publication_row_does_not_invent_effective_trade_date"` -> `OK (1 test, 35 assertions)`.
 - Active session: none
 - Active batch: none
 - Next session target: `SESSION 64` mengambil varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity setelah fallback missing-publication-row variant kini tertutup di sesi 63. Jangan buka area baru sebelum parent contract item 7 makin rapat.
@@ -254,7 +254,7 @@
 | 52 | `session52_batch52_db_backed_missing_run_row_guard_minimum` | DONE | DB-backed missing-run-row-behind-publication guard minimum | checkpoint-backed + syntax lint proof |
 | 53 | `session53_batch53_db_backed_malformed_fallback_guard_minimum` | DONE | DB-backed malformed-fallback effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
 | 54 | `session54_batch54_db_backed_post_switch_resolution_mismatch_guard_minimum` | DONE | DB-backed post-switch resolution mismatch rollback guard minimum | checkpoint-backed + syntax lint proof |
-| 55 | `session55_batch55_local_phpunit_proof_capture_helper_for_session54` | DONE | helper capture proof lokal PHPUnit sesi 54 sudah dijalankan user; artifact ZIP masih menyisakan `DOC SYNC ISSUE` | checkpoint-backed + helper script + observed local proof |
+| 55 | `session55_batch55_local_phpunit_proof_capture_helper_for_session54` | DONE | helper capture proof lokal PHPUnit sesi 54 sudah dijalankan user; `DOC SYNC ISSUE` packaging artifact kini sudah tertutup | checkpoint-backed + helper script + observed local proof |
 | 56 | `session56_batch56_db_backed_post_switch_malformed_fallback_guard_minimum` | DONE | DB-backed post-switch mismatch + malformed fallback effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
 | 57 | `session57_batch57_db_backed_post_switch_fallback_publication_version_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback publication-version mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
 | 58 | `session58_batch58_db_backed_post_switch_fallback_trade_date_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback trade-date mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
@@ -279,6 +279,17 @@
     - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (8 tests, 271 assertions)`;
     - `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (27 tests, 672 assertions)`;
   - tidak ada proof lokal sesi 62 yang masih pending.
+
+- Sesi 63 DONE pada level batch:
+  - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback pointer yang masih ada tetapi publication row yang dirujuk sudah hilang, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
+  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_missing_publication_row_does_not_invent_effective_trade_date()`;
+  - syntax lint container lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
+  - proof lokal user sesi 63 kini juga sudah lulus dengan:
+    - `vendor\bin\phpunit --filter fallback_missing_publication_row` -> `OK (1 test, 35 assertions)`;
+    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (9 tests, 306 assertions)`;
+    - `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (28 tests, 707 assertions)`;
+    - `vendor\bin\phpunit --filter "test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_missing_publication_row_does_not_invent_effective_trade_date"` -> `OK (1 test, 35 assertions)`;
+  - tidak ada proof lokal sesi 63 yang masih pending.
 
 - Sesi 61 DONE pada level batch:
   - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang pointer-nya masih menunjuk publication `SEALED`, run fallback masih `SUCCESS` / `READABLE` + `is_current_publication = 1`, tetapi publication fallback sendiri sudah `is_current = 0`, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
@@ -424,7 +435,7 @@
 
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`, khususnya varian correction/runtime DB-backed lain yang masih grounded di owner-doc tetapi belum diberi proof minimum.
-- Prioritas paling masuk akal setelah sesi 62:
+- Prioritas paling masuk akal setelah sesi 63:
   - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, missing-run-row-behind-publication guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, publication-current-mirror mismatch guard, pointer/publication run-id mismatch guard, pointer/publication publication-version mismatch guard, malformed-fallback effective-date guard, history-promotion failure, post-switch resolution mismatch guard, dan varian changed-content promote/current-switch conflict lain yang masih belum diberi proof minimum;
   - pertahankan pola packaging `storage/app/market_data/evidence/local_phpunit/...` di ZIP berikutnya agar checkpoint proof tetap traceable tanpa membuka ulang `DOC SYNC ISSUE` yang sudah tertutup.
 
