@@ -49,12 +49,12 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 57`
-- Last completed batch id: `session57_batch57_db_backed_post_switch_fallback_publication_version_mismatch_guard_minimum`
-- Last completed proof: container syntax lint passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_version_mismatch_does_not_invent_effective_trade_date()`. Latest observed local proof remains session 56: `vendor\bin\phpunit --filter malformed_fallback_pointer tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (2 tests, 57 assertions)`; `vendor\bin\phpunit --filter post_switch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (2 tests, 58 assertions)`; `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (21 tests, 459 assertions)`. User also executed `powershell -ExecutionPolicy Bypass -File tools/market_data/session54_local_phpunit_proof.ps1` successfully in local environment, but the uploaded ZIP still does not contain the expected `storage/app/market_data/evidence/local_phpunit/...` folder, so a `DOC SYNC ISSUE` remains on artifact packaging, not on runtime proof execution.
-- Active session: `SESSION 58`
-- Active batch: `TBD from highest-priority remaining PARTIAL contract after session 57 checkpoint sync`
-- Next session target: lanjutkan ke varian DB-backed correction/runtime berikutnya yang masih `PARTIAL`, khususnya remaining changed-content promote/current-switch conflict or fallback-integrity guards yang belum punya proof minimum, sambil tetap membawa artefak `storage/app/market_data/evidence/local_phpunit/...` ke ZIP source-of-truth berikutnya agar `DOC SYNC ISSUE` sesi 55 benar-benar tertutup.
+- Last completed session: `SESSION 59`
+- Last completed batch id: `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum`
+- Last completed proof: container syntax lint passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_missing_run_row_does_not_invent_effective_trade_date()`. Repo ZIP sesi ini tetap tidak menyertakan `vendor/`, jadi proof lokal final untuk test baru masih harus dijalankan di environment user; belum ada `DOC SYNC ISSUE` aktif selama checkpoint tetap menandai proof lokal itu sebagai pending.
+- Active session: `SESSION 59`
+- Active batch: `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum`
+- Next session target: lanjutkan ke varian DB-backed correction/runtime berikutnya yang masih `PARTIAL`, khususnya remaining changed-content promote/current-switch conflict atau fallback-integrity guards lain yang belum punya proof minimum setelah fallback missing-run-row guard sesi 59 ditambahkan.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -137,8 +137,8 @@
 - Tidak ada `CONFLICT` aktif saat ini.
 - Tidak ada `DOC GAP` aktif saat ini.
 - Tidak ada `DOC CONFLICT` aktif saat ini.
-- `DOC SYNC ISSUE` aktif: user-run local PHPUnit proof sesi 54 sudah observed di percakapan, tetapi ZIP source-of-truth terbaru belum membawa folder `storage/app/market_data/evidence/local_phpunit/...` yang dilaporkan helper.
-- Catatan resume: source of truth valid kini mencakup sesi 55 DONE pada level unblock karena proof helper lokal sudah observed dari output user, walaupun ZIP masih menyisakan `DOC SYNC ISSUE` karena folder evidence tidak ikut terpaketkan; sesi 56 DONE menambah guard post-switch mismatch + malformed fallback agar `trade_date_effective` tetap `null` saat fallback prior-readable tidak aman. Guard pointer/publication/run integrity sesi 47-52, malformed-fallback guard sesi 53, dan post-switch rollback guard sesi 54 tetap sah sebagai baseline pemilihan batch berikutnya.
+- `DOC SYNC ISSUE` packaging artifact sesi 55 tetap tertutup; source-of-truth valid kini sudah membawa folder `storage/app/market_data/evidence/local_phpunit/...` untuk proof helper sesi 54, proof lokal sesi 57, dan checkpoint berikutnya tinggal menjaga pola ini saat sesi lanjut.
+- Catatan resume: source of truth valid kini mencakup sesi 55 DONE pada level unblock plus artifact sync closure, sesi 56 DONE untuk guard post-switch mismatch + malformed fallback, sesi 57 DONE untuk guard post-switch mismatch + fallback publication-version mismatch, sesi 58 DONE untuk guard post-switch mismatch + fallback trade-date mismatch dengan final local proof sudah observed di percakapan, dan sesi 59 DONE untuk guard post-switch mismatch + fallback missing-run-row minimum dengan syntax-lint proof sudah tertutup. Guard pointer/publication/run integrity sesi 47-52, malformed-fallback guard sesi 53, dan post-switch rollback guard sesi 54 tetap sah sebagai baseline pemilihan batch berikutnya.
 
 ## Canonical Session Batch IDs
 - `session1_batch1_market-data-foundation`
@@ -256,12 +256,20 @@
 | 54 | `session54_batch54_db_backed_post_switch_resolution_mismatch_guard_minimum` | DONE | DB-backed post-switch resolution mismatch rollback guard minimum | checkpoint-backed + syntax lint proof |
 | 55 | `session55_batch55_local_phpunit_proof_capture_helper_for_session54` | DONE | helper capture proof lokal PHPUnit sesi 54 sudah dijalankan user; artifact ZIP masih menyisakan `DOC SYNC ISSUE` | checkpoint-backed + helper script + observed local proof |
 | 56 | `session56_batch56_db_backed_post_switch_malformed_fallback_guard_minimum` | DONE | DB-backed post-switch mismatch + malformed fallback effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
+| 57 | `session57_batch57_db_backed_post_switch_fallback_publication_version_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback publication-version mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
+| 58 | `session58_batch58_db_backed_post_switch_fallback_trade_date_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback trade-date mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
+| 59 | `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback missing-run-row effective-date guard minimum | checkpoint-backed + syntax lint proof |
 
 - Sesi 48 DONE pada level batch:
   - repository current/publication resolver kini juga memvalidasi mirror `eod_runs.is_current_publication = 1`, tetapi follow-up repair setelah proof awal memisahkan guard dengan benar: `findPointerResolvedPublicationForTradeDate` dan `findCurrentPublicationForTradeDate` tetap mendukung current resolution saat finalize masih in-flight, sedangkan `findCorrectionBaselinePublicationForTradeDate` dan `findLatestReadablePublicationBefore` tetap strict untuk baseline/fallback yang memang harus sudah `SUCCESS` / `READABLE`;
   - DB-backed integration proof kini juga mencakup approved correction dengan baseline publication/current pointer yang menunjuk run `SUCCESS` / `READABLE` tetapi `is_current_publication = 0`, sehingga correction tetap ditolak sebelum owning run baru dibuat dan approval state tetap utuh;
   - repository integration proof kini juga mencakup run-current mirror mismatch untuk `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, dan `findLatestReadablePublicationBefore`, semuanya fail-safe ke `null` saat mirror run tidak sinkron;
   - validasi lokal awal sesi 48 sempat gagal karena guard repo terlalu keras dan ikut menahan happy-path finalize/current-resolution normal, sehingga DB-backed daily/correction pipeline test jatuh ke `HELD`; repository guard lalu dipisahkan sesuai jalur in-flight vs finalized-readable path.
+- Sesi 59 DONE pada level batch:
+  - DB-backed integration proof kini juga mencakup changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang run row-nya sudah hilang, sehingga `trade_date_effective` tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
+  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_missing_run_row_does_not_invent_effective_trade_date()`;
+  - container proof yang bisa dijalankan di repo ZIP saat ini: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed; local PHPUnit proof masih perlu dijalankan di environment user karena `vendor/` tidak ikut terpaket.
+
 - Proof sesi 48 final:
   - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
   - container proof: `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed;
@@ -356,10 +364,30 @@
     - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (21 tests, 459 assertions)`.
 
 
+- Sesi 57 DONE pada level batch:
+  - DB-backed integration proof kini juga mencakup changed-content correction dengan **post-switch current-pointer resolution mismatch** saat fallback prior-readable sendiri mengalami `publication_version` mismatch terhadap publication row yang ditunjuk, sehingga finalize tetap `HELD` / `NOT_READABLE` dan `trade_date_effective` tetap `null`;
+  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_version_mismatch_does_not_invent_effective_trade_date()`;
+  - validasi lokal final sesi 57 kini tersinkron di source-of-truth dengan evidence folder `storage/app/market_data/evidence/local_phpunit/session57_phpunit_proof/` berisi:
+    - `vendor\bin\phpunit --filter publication_version_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (2 tests, 52 assertions)`;
+    - `vendor\bin\phpunit --filter post_switch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (3 tests, 88 assertions)`;
+    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (22 tests, 489 assertions)`.
+
+- Sesi 58 DONE pada level batch:
+  - DB-backed integration proof kini juga mencakup changed-content correction dengan **post-switch current-pointer resolution mismatch** saat fallback prior-readable sendiri mengalami `trade_date` mismatch antara pointer trade date dan publication row yang ditunjuk, sehingga finalize tetap `HELD` / `NOT_READABLE` dan `trade_date_effective` tetap `null`;
+  - batch ini tetap grounded pada owner-doc effective-date/read-model/fallback contracts: fallback hanya boleh dipakai bila pointer/publication/run chain prior-readable masih valid secara material, termasuk kecocokan `trade_date`;
+  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_trade_date_mismatch_does_not_invent_effective_trade_date()`;
+  - proof minimum yang bisa dijalankan di container pada repo ZIP ini tetap syntax lint:
+    - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
+  - validasi lokal final sesi 58 kini juga sudah observed di environment user dengan:
+    - `vendor\bin\phpunit --filter trade_date_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (1 test, 33 assertions)`;
+    - `vendor\bin\phpunit --filter post_switch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (4 tests, 121 assertions)`;
+    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (23 tests, 522 assertions)`;
+  - evidence lokal sesi 58 juga sudah dibuat di `storage/app/market_data/evidence/local_phpunit/session58_phpunit_proof/`.
+
 ## Remaining Work
 - Pilih batch berikutnya dari parent contract yang masih `PARTIAL`, khususnya varian correction/runtime DB-backed lain yang masih grounded di owner-doc tetapi belum diberi proof minimum.
-- Prioritas paling masuk akal setelah sesi 56:
+- Prioritas paling masuk akal setelah sesi 58:
   - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, missing-run-row-behind-publication guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, publication-current-mirror mismatch guard, pointer/publication run-id mismatch guard, pointer/publication publication-version mismatch guard, malformed-fallback effective-date guard, history-promotion failure, post-switch resolution mismatch guard, dan varian changed-content promote/current-switch conflict lain yang masih belum diberi proof minimum;
-  - sinkronkan juga evidence folder hasil helper sesi 55 ke ZIP berikutnya agar `DOC SYNC ISSUE` artifact packaging tertutup.
+  - pertahankan pola packaging `storage/app/market_data/evidence/local_phpunit/...` di ZIP berikutnya agar checkpoint proof tetap traceable tanpa membuka ulang `DOC SYNC ISSUE` yang sudah tertutup.
 
 
