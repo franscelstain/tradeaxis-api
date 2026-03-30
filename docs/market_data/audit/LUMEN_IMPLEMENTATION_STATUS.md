@@ -49,12 +49,12 @@
 
 ## Current Project Status
 - Project status: BELUM SELESAI
-- Last completed session: `SESSION 60`
-- Last completed batch id: `session60_batch60_db_backed_post_switch_fallback_run_current_mirror_guard_minimum`
-- Last completed proof: final local validation sesi 60 kini sudah tertutup penuh. Proof yang tervalidasi di environment user mencakup `vendor\bin\phpunit --filter fallback_run_current_mirror_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (1 test, 38 assertions)`, `vendor\bin\phpunit --filter post_switch_resolution_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (6 tests, 194 assertions)`, `vendor\bin\phpunit --filter run_daily_correction_with_post_switch_resolution_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 164 assertions)`, `vendor\bin\phpunit` -> `OK (93 tests, 886 assertions)`, dan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`. Batch 60 kini punya proof minimum lokal dan full-suite proof yang cukup untuk dinaikkan menjadi `DONE`.
-- Active session: `SESSION 61`
-- Active batch: `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum`
-- Next session target: `SESSION 61` mengambil varian DB-backed correction/runtime untuk post-switch mismatch + fallback publication-current-mirror mismatch, karena sesi 60 sudah tertutup dengan proof lokal PHPUnit dan full-suite hijau. Fokus berikutnya tetap di fallback-integrity sempit berikutnya; jangan buka area baru sebelum batch ini rapat.
+- Last completed session: `SESSION 61`
+- Last completed batch id: `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum`
+- Last completed proof: syntax lint container sesi 61 lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`; validasi lokal user juga sudah lulus dengan `vendor\bin\phpunit --filter post_switch_resolution_mismatch_and_fallback_publication_current_mirror_mismatch` -> `OK (1 test, 38 assertions)` dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (26 tests, 633 assertions)`.
+- Active session: `SESSION 62`
+- Active batch: `session62_batch62_db_backed_next_fallback_integrity_gap_minimum`
+- Next session target: `SESSION 62` mengambil varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity setelah publication-current-mirror fallback variant kini tertutup di sesi 61. Jangan buka area baru sebelum parent contract item 7 makin rapat.
 
 ## Current Truth Summary
 - Sesi 35 DONE pada level batch:
@@ -260,12 +260,21 @@
 | 58 | `session58_batch58_db_backed_post_switch_fallback_trade_date_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback trade-date mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
 | 59 | `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback missing-run-row effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof + full-suite repair |
 | 60 | `session60_batch60_db_backed_post_switch_fallback_run_current_mirror_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback run-current-mirror effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof + full-suite validation |
+| 61 | `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback publication-current-mirror effective-date guard minimum | checkpoint-backed + syntax lint proof |
 
 - Sesi 48 DONE pada level batch:
   - repository current/publication resolver kini juga memvalidasi mirror `eod_runs.is_current_publication = 1`, tetapi follow-up repair setelah proof awal memisahkan guard dengan benar: `findPointerResolvedPublicationForTradeDate` dan `findCurrentPublicationForTradeDate` tetap mendukung current resolution saat finalize masih in-flight, sedangkan `findCorrectionBaselinePublicationForTradeDate` dan `findLatestReadablePublicationBefore` tetap strict untuk baseline/fallback yang memang harus sudah `SUCCESS` / `READABLE`;
   - DB-backed integration proof kini juga mencakup approved correction dengan baseline publication/current pointer yang menunjuk run `SUCCESS` / `READABLE` tetapi `is_current_publication = 0`, sehingga correction tetap ditolak sebelum owning run baru dibuat dan approval state tetap utuh;
   - repository integration proof kini juga mencakup run-current mirror mismatch untuk `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, dan `findLatestReadablePublicationBefore`, semuanya fail-safe ke `null` saat mirror run tidak sinkron;
   - validasi lokal awal sesi 48 sempat gagal karena guard repo terlalu keras dan ikut menahan happy-path finalize/current-resolution normal, sehingga DB-backed daily/correction pipeline test jatuh ke `HELD`; repository guard lalu dipisahkan sesuai jalur in-flight vs finalized-readable path.
+
+- Sesi 61 DONE pada level batch:
+  - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang pointer-nya masih menunjuk publication `SEALED`, run fallback masih `SUCCESS` / `READABLE` + `is_current_publication = 1`, tetapi publication fallback sendiri sudah `is_current = 0`, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
+  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_current_mirror_mismatch_does_not_invent_effective_trade_date()`;
+  - syntax lint container lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
+  - proof lokal user sesi 61 kini juga sudah lulus dengan `vendor\bin\phpunit --filter post_switch_resolution_mismatch_and_fallback_publication_current_mirror_mismatch` -> `OK (1 test, 38 assertions)` dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (26 tests, 633 assertions)`;
+  - tidak ada proof lokal sesi 61 yang masih pending.
+
 - Sesi 60 DONE pada level batch:
   - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback run yang masih `SUCCESS` / `READABLE` tetapi mirror `is_current_publication = 0`, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
   - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_run_current_mirror_mismatch_does_not_invent_effective_trade_date()`;

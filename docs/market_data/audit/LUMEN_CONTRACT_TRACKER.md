@@ -62,7 +62,7 @@
 ## CONTRACT ITEM 2 — Core runtime artifact lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: bars / indicators / eligibility / publication
-- LAST UPDATED SESSION: `session60_batch60_db_backed_post_switch_fallback_run_current_mirror_guard_minimum`
+- LAST UPDATED SESSION: `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum`
 - EVIDENCE:
   - canonical bars/indicators/eligibility runtime installed;
   - publication current-switch and pointer-sync runtime installed;
@@ -108,7 +108,7 @@
 ## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
 - STATUS: PARTIAL
 - OWNER AREA: correction runtime and finalize outcomes
-- LAST UPDATED SESSION: `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum`
+- LAST UPDATED SESSION: `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum`
 - EVIDENCE:
   - correction request / approval / reseal / publish runtime installed;
   - correction final outcome note installed;
@@ -210,7 +210,7 @@
 ## CONTRACT ITEM 7 — DB-backed integration proof
 - STATUS: PARTIAL
 - OWNER AREA: repository + pipeline integration
-- LAST UPDATED SESSION: `session60_batch60_db_backed_post_switch_fallback_run_current_mirror_guard_minimum`
+- LAST UPDATED SESSION: `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum`
 - EVIDENCE:
   - repository integration proof added in session 32;
   - DB-backed pipeline integration minimum added in session 33;
@@ -273,12 +273,14 @@
   - session 53 container proof passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding the malformed-fallback effective-date guard test.
   - session 60 container proof passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_run_current_mirror_mismatch_does_not_invent_effective_trade_date()`.
   - final local validation after session 60 passes with `vendor\bin\phpunit --filter fallback_run_current_mirror_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (1 test, 38 assertions)`, `vendor\bin\phpunit --filter post_switch_resolution_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (6 tests, 194 assertions)`, `vendor\bin\phpunit --filter run_daily_correction_with_post_switch_resolution_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 164 assertions)`, `vendor\bin\phpunit` -> `OK (93 tests, 886 assertions)`, and `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`.
+  - DB-backed/integration proof now also covers changed-content correction with post-switch current-pointer resolution mismatch plus a prior-readable fallback publication whose owning run still looks current/readable but the fallback publication mirror itself is no longer current (`eod_publications.is_current = 0`), proving `trade_date_effective` stays `null` when fallback integrity is unsafe because the pointed fallback publication is no longer the authoritative current publication for that trade date;
+  - session 61 container proof passes with `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` after adding `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_current_mirror_mismatch_does_not_invent_effective_trade_date()`.
   - final local validation after session 53 passes with `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (19 tests, 401 assertions)`, `vendor\bin\phpunit --filter malformed_fallback_pointer` -> `OK (1 test, 29 assertions)`, and `vendor\bin\phpunit --filter does_not_invent_effective_trade_date` -> `OK (1 test)`;
 - OPEN GAP:
   - broader DB-backed conflict/error integration matrix is still not fully covered outside the current minimum approval-gate path, missing-baseline guard path, malformed-baseline-pointer guard path, missing-publication-pointer guard path, non-readable-baseline-run guard path, missing-run-row-behind-publication guard path, pointer/publication trade-date mismatch guard path, run-current-mirror mismatch guard path, publication-current-mirror mismatch guard path, pointer/publication run-id mismatch guard path, pointer/publication publication-version mismatch guard path, malformed-fallback effective-date guard path, fallback missing-run-row effective-date guard path, fallback run-current-mirror effective-date guard path, reseal-failure path, history-promotion failure path, and remaining changed-content promote/current-switch conflict variants plus other malformed prior-readable fallback shapes outside the currently covered run-id/publication-version/trade-date/missing-run/run-current minimums;
-  - publication-current-mirror fallback variant and other narrow malformed prior-readable fallback shapes are still unproven at DB-backed correction/runtime level.
+  - other narrow malformed prior-readable fallback shapes are still unproven at DB-backed correction/runtime level outside the now-closed run-id/publication-version/trade-date/missing-run/run-current/publication-current minimum fallback set.
 - NEXT REQUIRED ACTION:
-  - continue into the next highest-priority remaining DB-backed fallback-integrity gap: the publication-current-mirror variant for the prior-readable fallback chain, while keeping the same fail-safe rule that `trade_date_effective` must remain `null` whenever fallback current-state integrity is not trustworthy.
+  - continue into the next highest-priority remaining DB-backed fallback-integrity or correction/runtime gap that is still grounded in owner-docs, without reopening the now-closed publication-current-mirror fallback variant.
 
 ## CONTRACT ITEM 8 — Final readiness gate
 - STATUS: MISSING
@@ -318,10 +320,12 @@
 - Session 51 is DONE at session level for the grounded publication-current-mirror mismatch guard batch; current/baseline/fallback resolver paths now fail safe when the pointed publication remains `SEALED` but is no longer marked current, and DB-backed correction baseline resolution now rejects that incident state before owning run creation while keeping approval state intact.
 - Session 53 is DONE at session level for the grounded malformed-fallback effective-date guard batch; DB-backed correction finalize proof now asserts malformed prior-readable fallback state must not invent `trade_date_effective`, and final local PHPUnit validation is now synced.
 - Session 54 is DONE at session level for the grounded post-switch resolution mismatch rollback batch; finalize now fails safe on post-switch pointer-resolution mismatch by restoring the prior current publication/pointer/run-current mirror, and local PHPUnit follow-up is now observed in conversation via the session 55 helper output.
+- Session 61 is DONE at session level for the grounded fallback publication-current-mirror effective-date guard batch; DB-backed correction/runtime proof now also asserts post-switch mismatch must not invent `trade_date_effective` when the prior-readable fallback publication is no longer marked current even though its pointer row and owning run still look superficially readable.
+- Final local validation for session 61 now also passes with `vendor\bin\phpunit --filter post_switch_resolution_mismatch_and_fallback_publication_current_mirror_mismatch` -> `OK (1 test, 38 assertions)` and `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (26 tests, 633 assertions)`.
 - Session 55 is DONE at session level for the grounded local-proof unblock helper batch; the helper was executed successfully by the user and the previously missing local proof is now fully backed by packaged evidence under `storage/app/market_data/evidence/local_phpunit/...`.
 - Session 56 is DONE at session level for the grounded post-switch mismatch + malformed fallback guard batch; finalize now also fails safe to `trade_date_effective = null` when a post-switch conflict coincides with an unsafe prior-readable fallback chain, and final local PHPUnit validation is now observed in conversation with `2/57`, `2/58`, and `21/459` passing outputs.
 - Session 57 is DONE at session level for the grounded post-switch mismatch + fallback publication-version mismatch guard batch; final local PHPUnit validation is now packaged and checkpoint-backed with `2/52`, `3/88`, and `22/489` passing outputs.
 - Session 58 is DONE at session level for the grounded post-switch mismatch + fallback trade-date mismatch guard batch; final local PHPUnit validation is now observed with `1/33`, `4/121`, and `23/522` passing outputs, and evidence files have been written under `storage/app/market_data/evidence/local_phpunit/session58_phpunit_proof/`.
 - Session 59 is DONE at session level for the grounded post-switch mismatch + fallback missing-run-row guard batch; final local PHPUnit validation is now fully observed in the user environment, including the new DB-backed integration test, follow-up unit-test repairs, and a full green suite with `vendor\bin\phpunit` -> `OK (92 tests, 848 assertions)`.
 - Session 60 is DONE at session level for the grounded post-switch mismatch + fallback run-current-mirror guard batch; repo proof, local focused PHPUnit proof, and full-suite validation are now aligned, so the batch is closed.
-- Next batch should come from the highest-priority remaining `PARTIAL` or `MISSING` contract item, which is now the narrow publication-current-mirror fallback-integrity variant, while preserving the packaged local-proof evidence pattern in future ZIPs.
+- Next batch should come from the highest-priority remaining `PARTIAL` or `MISSING` contract item that is still grounded in owner-doc fallback-integrity/correction-runtime rules, while preserving the packaged local-proof evidence pattern in future ZIPs.
