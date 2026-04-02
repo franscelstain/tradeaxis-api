@@ -75,7 +75,7 @@ class MarketDataPipelineServiceTest extends TestCase
     private function makeRun(
         int $runId = 55,
         string $coverageRatio = '1.0000',
-        string $sealedAt = '2026-03-24 23:06:08'
+        ?string $sealedAt = '2026-03-24 23:06:08'
     ): EodRun {
         $run = new EodRun();
         $run->run_id = $runId;

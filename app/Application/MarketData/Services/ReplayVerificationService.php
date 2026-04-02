@@ -203,15 +203,19 @@ class ReplayVerificationService
         $this->compareField($mismatches, 'config_identity', $expectedReplay['config_identity'] ?? null, $actual['config_identity']);
         $this->compareField($mismatches, 'publication_version', $expectedReplay['publication_version'] ?? null, $actual['publication_version']);
 
-        foreach (['coverage_universe_count', 'coverage_available_count', 'coverage_missing_count', 'coverage_ratio', 'coverage_min_threshold', 'coverage_gate_state', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
+        foreach (['coverage_universe_count', 'coverage_available_count', 'coverage_missing_count', 'coverage_gate_state', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
             $this->compareField($mismatches, $field, $expectedReplay[$field] ?? null, $actual[$field]);
+        }
+
+        foreach (['coverage_ratio', 'coverage_min_threshold'] as $field) {
+            $this->compareNumericField($mismatches, $field, $expectedReplay[$field] ?? null, $actual[$field]);
         }
         $this->compareListField($mismatches, 'coverage_missing_sample', $expectedReplay['coverage_missing_sample'] ?? null, $actual['coverage_missing_sample']);
 
         foreach (['bars_rows_written', 'indicators_rows_written', 'eligibility_rows_written', 'invalid_bar_count', 'invalid_indicator_count', 'warning_count', 'hard_reject_count', 'eligible_count'] as $field) {
             $expectedValue = array_key_exists($field, $expectedRun) ? $expectedRun[$field] : (array_key_exists($field, $expectedReplay) ? $expectedReplay[$field] : null);
             $this->compareField($mismatches, $field, $expectedValue, $actual[$field]);
-        }
+        }       
 
         foreach (['bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash'] as $field) {
             $expectedValue = array_key_exists($field, $expectedHashes) ? $expectedHashes[$field] : (array_key_exists($field, $expectedReplay) ? $expectedReplay[$field] : null);
@@ -268,6 +272,30 @@ class ReplayVerificationService
         }
 
         if ((string) $expected !== (string) $actual) {
+            $mismatches[] = [
+                'field' => $field,
+                'expected' => $expected,
+                'actual' => $actual,
+            ];
+        }
+    }
+
+    private function compareNumericField(array &$mismatches, $field, $expected, $actual)
+    {
+        if ($expected === null) {
+            return;
+        }
+
+        if ($actual === null) {
+            $mismatches[] = [
+                'field' => $field,
+                'expected' => $expected,
+                'actual' => $actual,
+            ];
+            return;
+        }
+
+        if ((float) $expected !== (float) $actual) {
             $mismatches[] = [
                 'field' => $field,
                 'expected' => $expected,
