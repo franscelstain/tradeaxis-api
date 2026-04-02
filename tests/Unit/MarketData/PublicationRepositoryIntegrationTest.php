@@ -68,6 +68,41 @@ class PublicationRepositoryIntegrationTest extends TestCase
 
 
 
+
+    public function test_pointer_resolution_returns_null_when_pointed_publication_run_terminal_status_is_not_success(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'terminal_status' => 'HELD',
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+
+        $this->assertNull($repo->findPointerResolvedPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
+    }
+
+    public function test_pointer_resolution_returns_null_when_pointed_publication_run_publishability_is_not_readable(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'publishability_state' => 'NOT_READABLE',
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+
+        $this->assertNull($repo->findPointerResolvedPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
+    }
+
     public function test_pointer_resolution_returns_null_when_pointed_publication_run_row_is_missing(): void
     {
         DB::table('eod_runs')->where('run_id', 25)->delete();
@@ -79,6 +114,25 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
         $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
     }
+
+
+    public function test_pointer_resolution_returns_null_when_pointed_publication_run_requested_trade_date_mismatches_pointer_trade_date(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'trade_date_requested' => '2026-03-19',
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+
+        $this->assertNull($repo->findPointerResolvedPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
+    }
+
 
     public function test_pointer_resolution_returns_null_when_run_current_mirror_disagrees_with_pointer_and_publication(): void
     {

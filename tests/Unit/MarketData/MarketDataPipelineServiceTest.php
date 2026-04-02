@@ -91,6 +91,9 @@ class MarketDataPipelineServiceTest extends TestCase
         $run = $this->makeRun(55);
         $run->notes = null;
         $run->supersedes_run_id = null;
+        $run->terminal_status = 'SUCCESS';
+        $run->quality_gate_state = 'PASS';
+        $run->trade_date_effective = '2026-03-17';
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
 
@@ -105,6 +108,14 @@ class MarketDataPipelineServiceTest extends TestCase
             'run_id' => 55,
             'publication_version' => 4,
             'seal_state' => 'SEALED',
+            'trade_date' => '2026-03-17',
+        ];
+
+        $resolvedCurrent = (object) [
+            'publication_id' => 32,
+            'run_id' => 55,
+            'publication_version' => 4,
+            'trade_date' => '2026-03-17',
         ];
 
         $correction = (object) [
@@ -171,16 +182,12 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('promoteCandidateToCurrent')
             ->once()
-            ->with($run, 31);
+            ->with($run, 31)
+            ->andReturn($candidatePublication);
 
         $runs->shouldReceive('syncCurrentPublicationMirror')
             ->once()
             ->with('2026-03-17', 55);
-
-        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
-            ->once()
-            ->with('2026-03-17')
-            ->andReturn($candidatePublication);
 
         $runs->shouldReceive('finalize')
             ->once()
@@ -192,6 +199,14 @@ class MarketDataPipelineServiceTest extends TestCase
                 'lifecycle_state' => 'COMPLETED',
             ])
             ->andReturn($run);
+
+        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn($resolvedCurrent);
+
+        $publications->shouldReceive('restorePriorCurrentPublication')
+            ->never();
 
         $publications->shouldReceive('buildManifestByPublicationId')
             ->once()
@@ -221,6 +236,9 @@ class MarketDataPipelineServiceTest extends TestCase
         $run = $this->makeRun(55);
         $run->notes = null;
         $run->supersedes_run_id = null;
+        $run->terminal_status = 'SUCCESS';
+        $run->quality_gate_state = 'PASS';
+        $run->trade_date_effective = '2026-03-17';
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
 
@@ -299,6 +317,15 @@ class MarketDataPipelineServiceTest extends TestCase
             ->once()
             ->with(32);
 
+        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
+            ->never();
+
+        $publications->shouldReceive('restorePriorCurrentPublication')
+            ->never();
+
+        $runs->shouldReceive('syncCurrentPublicationMirror')
+            ->never();
+
         $runs->shouldReceive('finalize')
             ->once()
             ->with($run, [
@@ -338,6 +365,9 @@ class MarketDataPipelineServiceTest extends TestCase
         $run = $this->makeRun(57);
         $run->notes = null;
         $run->supersedes_run_id = null;
+        $run->terminal_status = 'HELD';
+        $run->quality_gate_state = 'PASS';
+        $run->trade_date_effective = '2026-03-16';
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 57, 'FINALIZE', 6);
 
@@ -465,7 +495,8 @@ class MarketDataPipelineServiceTest extends TestCase
             ->once()
             ->with('2026-03-17', 31);
 
-        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')->never();
+        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
+            ->never();
 
         $runs->shouldReceive('finalize')
             ->once()
@@ -487,7 +518,6 @@ class MarketDataPipelineServiceTest extends TestCase
         $this->assertSame($run, $result);
     }
 
-
     public function test_complete_finalize_keeps_resealed_when_finalize_outcome_is_conflict(): void
     {
         [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs] = $this->makeService();
@@ -495,6 +525,9 @@ class MarketDataPipelineServiceTest extends TestCase
         $run = $this->makeRun(55);
         $run->notes = null;
         $run->supersedes_run_id = null;
+        $run->terminal_status = 'HELD';
+        $run->quality_gate_state = 'PASS';
+        $run->trade_date_effective = null;
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
 
@@ -509,6 +542,14 @@ class MarketDataPipelineServiceTest extends TestCase
             'run_id' => 55,
             'publication_version' => 4,
             'seal_state' => 'SEALED',
+            'trade_date' => '2026-03-17',
+        ];
+
+        $publishedCandidate = (object) [
+            'publication_id' => 32,
+            'run_id' => 55,
+            'publication_version' => 4,
+            'trade_date' => '2026-03-17',
         ];
 
         $conflictingCurrent = (object) [
@@ -580,11 +621,23 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('promoteCandidateToCurrent')
             ->once()
-            ->with($run, 31);
+            ->with($run, 31)
+            ->andReturn($publishedCandidate);
 
         $runs->shouldReceive('syncCurrentPublicationMirror')
             ->once()
             ->with('2026-03-17', 55);
+
+        $runs->shouldReceive('finalize')
+            ->once()
+            ->with($run, [
+                'trade_date_effective' => '2026-03-17',
+                'quality_gate_state' => 'PASS',
+                'publishability_state' => 'READABLE',
+                'terminal_status' => 'SUCCESS',
+                'lifecycle_state' => 'COMPLETED',
+            ])
+            ->andReturn($run);
 
         $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')
             ->once()
@@ -611,7 +664,9 @@ class MarketDataPipelineServiceTest extends TestCase
             ->andReturn($run);
 
         $publications->shouldReceive('buildManifestByPublicationId')
-            ->never();
+            ->once()
+            ->with(32)
+            ->andReturn((object) ['publication_id' => 32]);
 
         $corrections->shouldReceive('markPublished')->never();
         $corrections->shouldReceive('markCancelled')->never();

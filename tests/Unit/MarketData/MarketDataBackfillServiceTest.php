@@ -57,6 +57,38 @@ class MarketDataBackfillServiceTest extends TestCase
         $this->assertFileExists($outputDir.'/market_data_backfill_summary.json');
     }
 
+
+
+    public function test_execute_marks_fail_when_pipeline_returns_non_readable_terminal_state()
+    {
+        $calendar = m::mock(MarketCalendarRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+        $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
+
+        $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-20', '2026-03-21')->andReturn([
+            '2026-03-20',
+            '2026-03-21',
+        ]);
+
+        $pipeline->shouldReceive('runDaily')->once()->with('2026-03-20', 'manual_file', null)->andReturn((object) [
+            'run_id' => 1001,
+            'terminal_status' => 'HELD',
+            'publishability_state' => 'NOT_READABLE',
+            'trade_date_effective' => '2026-03-19',
+        ]);
+        $pipeline->shouldNotReceive('runDaily')->with('2026-03-21', 'manual_file', null);
+
+        $service = new MarketDataBackfillService($calendar, $pipeline);
+        $summary = $service->execute('2026-03-20', '2026-03-21', 'manual_file', $outputDir, false);
+
+        $this->assertFalse($summary['all_passed']);
+        $this->assertCount(1, $summary['cases']);
+        $this->assertSame('FAIL', $summary['cases'][0]['status']);
+        $this->assertSame('HELD', $summary['cases'][0]['terminal_status']);
+        $this->assertSame('NOT_READABLE', $summary['cases'][0]['publishability_state']);
+        $this->assertFileExists($outputDir.'/market_data_backfill_summary.json');
+    }
+
     public function test_execute_marks_failure_and_stops_when_continue_on_error_is_false()
     {
         $calendar = m::mock(MarketCalendarRepository::class);

@@ -37,14 +37,23 @@ class MarketDataBackfillService
         foreach ($dates as $requestedDate) {
             try {
                 $run = $this->pipeline->runDaily($requestedDate, $sourceMode, null);
+                $passed = $this->runCountsAsPass($run);
+                if (! $passed) {
+                    $allPassed = false;
+                }
+
                 $cases[] = [
                     'requested_date' => $requestedDate,
-                    'status' => 'SUCCESS',
+                    'status' => $passed ? 'PASS' : 'FAIL',
                     'run_id' => (int) $run->run_id,
                     'terminal_status' => (string) $run->terminal_status,
                     'publishability_state' => (string) $run->publishability_state,
-                    'trade_date_effective' => (string) $run->trade_date_effective,
+                    'trade_date_effective' => $run->trade_date_effective !== null ? (string) $run->trade_date_effective : null,
                 ];
+
+                if (! $passed && ! $continueOnError) {
+                    break;
+                }
             } catch (\Throwable $e) {
                 $allPassed = false;
                 $cases[] = [
@@ -79,6 +88,13 @@ class MarketDataBackfillService
         );
 
         return $summary;
+    }
+
+
+    private function runCountsAsPass($run)
+    {
+        return (string) $run->terminal_status === 'SUCCESS'
+            && (string) $run->publishability_state === 'READABLE';
     }
 
     private function guardDateRange($startDate, $endDate)

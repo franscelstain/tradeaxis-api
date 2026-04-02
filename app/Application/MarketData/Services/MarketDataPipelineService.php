@@ -296,139 +296,310 @@ class MarketDataPipelineService
             throw $e;
         }
     }
-
+    
     public function completeFinalize(MarketDataStageInput $input)
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
 
         try {
             return DB::transaction(function () use ($run, $input, $correction, $priorCurrent) {
-            $fallback = $this->publications->findLatestReadablePublicationBefore($input->requestedDate);
-            $cutoffSatisfied = $this->isFinalizeCutoffSatisfied($input->requestedDate);
-            $candidatePublication = $this->publications->getOrCreateCandidatePublication($run, $priorCurrent ? $priorCurrent->publication_id : null);
-            $candidateCurrent = null;
-            $preDecision = $this->finalizeDecisions->evaluate(
-                $cutoffSatisfied,
-                (bool) $run->sealed_at,
-                $candidatePublication->seal_state,
-                $run->coverage_ratio,
-                (float) config('market_data.platform.coverage_min'),
-                $fallback ? $fallback->readable_trade_date : null
-            );
-            $unchangedCorrection = false;
-            $promotionError = null;
+                $fallback = $this->publications->findLatestReadablePublicationBefore($input->requestedDate);
+                $cutoffSatisfied = $this->isFinalizeCutoffSatisfied($input->requestedDate);
 
-            if ($preDecision['promotion_allowed']) {
-                try {
-                    if ($correction && $this->publicationDiffs->isUnchanged($priorCurrent, $candidatePublication)) {
-                        $unchangedCorrection = true;
-                        $this->publications->discardCandidatePublication($candidatePublication->publication_id);
-                        $candidateCurrent = $priorCurrent;
-                        $this->runs->appendEvent($run, $input->stage, 'CORRECTION_CANCELLED', 'INFO', 'Correction content unchanged; current publication preserved.', null, [
-                            'correction_id' => (int) $correction->correction_id,
-                            'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
-                            'candidate_publication_id' => (int) $candidatePublication->publication_id,
-                        ]);
-                    } else {
-                        if ($correction) {
-                            $this->artifacts->promotePublicationHistoryToCurrent($input->requestedDate, $candidatePublication->publication_id, $run->run_id);
+                $candidatePublication = $this->publications->getOrCreateCandidatePublication(
+                    $run,
+                    $priorCurrent ? $priorCurrent->publication_id : null
+                );
+
+                $candidateCurrent = null;
+
+                $preDecision = $this->finalizeDecisions->evaluate(
+                    $cutoffSatisfied,
+                    (bool) $run->sealed_at,
+                    $candidatePublication->seal_state,
+                    $run->coverage_ratio,
+                    (float) config('market_data.platform.coverage_min'),
+                    $fallback ? $fallback->readable_trade_date : null
+                );
+
+                $unchangedCorrection = false;
+                $promotionError = null;
+                $postFinalizeMismatchNote = null;
+
+                if ($preDecision['promotion_allowed']) {
+                    try {
+                        if ($correction && $this->publicationDiffs->isUnchanged($priorCurrent, $candidatePublication)) {
+                            $unchangedCorrection = true;
+
+                            $this->publications->discardCandidatePublication(
+                                $candidatePublication->publication_id
+                            );
+
+                            $candidateCurrent = $priorCurrent;
+
+                            $this->runs->appendEvent(
+                                $run,
+                                $input->stage,
+                                'CORRECTION_CANCELLED',
+                                'INFO',
+                                'Correction content unchanged; current publication preserved.',
+                                null,
+                                [
+                                    'correction_id' => (int) $correction->correction_id,
+                                    'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                                    'candidate_publication_id' => (int) $candidatePublication->publication_id,
+                                ]
+                            );
+                        } else {
+                            if ($correction) {
+                                $this->artifacts->promotePublicationHistoryToCurrent(
+                                    $input->requestedDate,
+                                    $candidatePublication->publication_id,
+                                    $run->run_id
+                                );
+                            }
+
+                            $promotedCurrent = $this->publications->promoteCandidateToCurrent(
+                                $run,
+                                $priorCurrent ? $priorCurrent->publication_id : null
+                            );
+
+                            $this->runs->syncCurrentPublicationMirror(
+                                $input->requestedDate,
+                                $run->run_id
+                            );
+
+                            /*
+                            * Provisional only.
+                            * Jangan pakai strict readable pointer resolver di titik ini.
+                            */
+                            $candidateCurrent = $promotedCurrent;
+
+                            if (! $candidateCurrent) {
+                                throw new \RuntimeException(
+                                    'Current publication promotion returned no publication.'
+                                );
+                            }
+
+                            if ((int) $candidateCurrent->publication_id !== (int) $candidatePublication->publication_id) {
+                                throw new \RuntimeException(
+                                    'Current publication pointer resolution mismatch after finalize.'
+                                );
+                            }
+
+                            if (
+                                isset($candidateCurrent->publication_version) &&
+                                (int) $candidateCurrent->publication_version !== (int) $candidatePublication->publication_version
+                            ) {
+                                throw new \RuntimeException(
+                                    'Current publication version mismatch after finalize.'
+                                );
+                            }
+
+                            if (
+                                isset($candidateCurrent->run_id) &&
+                                (int) $candidateCurrent->run_id !== (int) $run->run_id
+                            ) {
+                                throw new \RuntimeException(
+                                    'Current publication run mismatch after finalize.'
+                                );
+                            }
+
+                            if (
+                                isset($candidateCurrent->trade_date) &&
+                                (string) $candidateCurrent->trade_date !== (string) $input->requestedDate
+                            ) {
+                                throw new \RuntimeException(
+                                    'Current publication trade date mismatch after finalize.'
+                                );
+                            }
                         }
-                        $this->publications->promoteCandidateToCurrent($run, $priorCurrent ? $priorCurrent->publication_id : null);
-                        $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id);
-                        $candidateCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
+                    } catch (\Throwable $e) {
+                        if ($correction && $priorCurrent) {
+                            $this->publications->restorePriorCurrentPublication(
+                                $input->requestedDate,
+                                (int) $priorCurrent->publication_id,
+                                (int) $priorCurrent->run_id
+                            );
 
-                        if ((int) ($candidateCurrent->publication_id ?? 0) !== (int) $candidatePublication->publication_id) {
-                            throw new \RuntimeException('Current publication pointer resolution mismatch after finalize.');
+                            $this->runs->syncCurrentPublicationMirror(
+                                $input->requestedDate,
+                                (int) $priorCurrent->run_id
+                            );
                         }
-                    }
-                } catch (\Throwable $e) {
-                    if ($correction && $priorCurrent) {
-                        $this->publications->restorePriorCurrentPublication(
-                            $input->requestedDate,
-                            (int) $priorCurrent->publication_id,
-                            (int) $priorCurrent->run_id
-                        );
-                        $this->runs->syncCurrentPublicationMirror($input->requestedDate, (int) $priorCurrent->run_id);
-                    }
 
-                    $promotionError = $e->getMessage();
+                        $promotionError = $e->getMessage();
+                        $candidateCurrent = $priorCurrent ?: null;
+                    }
                 }
-            }
 
-            $outcome = $this->publicationFinalizeOutcomes->resolve($preDecision, [
-                'requested_date' => $input->requestedDate,
-                'fallback_trade_date' => $fallback ? $fallback->readable_trade_date : null,
-                'candidate_publication_id' => (int) $candidatePublication->publication_id,
-                'candidate_publication_version' => (int) $candidatePublication->publication_version,
-                'resolved_current_publication_id' => $candidateCurrent ? (int) $candidateCurrent->publication_id : null,
-                'resolved_current_publication_version' => $candidateCurrent ? (int) $candidateCurrent->publication_version : null,
-                'correction_id' => $correction ? (int) $correction->correction_id : null,
-                'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
-                'prior_publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : null,
-                'unchanged_correction' => $unchangedCorrection,
-                'promotion_error' => $promotionError,
-            ]);
+                $outcome = $this->publicationFinalizeOutcomes->resolve($preDecision, [
+                    'requested_date' => $input->requestedDate,
+                    'fallback_trade_date' => $fallback ? $fallback->readable_trade_date : null,
+                    'candidate_publication_id' => (int) $candidatePublication->publication_id,
+                    'candidate_publication_version' => (int) $candidatePublication->publication_version,
+                    'resolved_current_publication_id' => $candidateCurrent ? (int) $candidateCurrent->publication_id : null,
+                    'resolved_current_publication_version' => $candidateCurrent ? (int) $candidateCurrent->publication_version : null,
+                    'correction_id' => $correction ? (int) $correction->correction_id : null,
+                    'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                    'prior_publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : null,
+                    'unchanged_correction' => $unchangedCorrection,
+                    'promotion_error' => $promotionError,
+                ]);
 
-            $finalState = [
-                'trade_date_effective' => $outcome['trade_date_effective'],
-                'quality_gate_state' => $outcome['quality_gate_state'],
-                'publishability_state' => $outcome['publishability_state'],
-                'terminal_status' => $outcome['terminal_status'],
-                'lifecycle_state' => 'COMPLETED',
-            ];
-
-            $run = $this->runs->finalize($run, $finalState);
-            $resolvedPublicationId = $outcome['current_publication_id'];
-            $resolvedPublicationVersion = $outcome['current_publication_version'];
-            if ($resolvedPublicationId && (! $candidateCurrent || (int) $candidateCurrent->publication_id !== (int) $resolvedPublicationId)) {
-                $candidateCurrent = (object) [
-                    'publication_id' => $resolvedPublicationId,
-                    'publication_version' => $resolvedPublicationVersion,
+                $finalState = [
+                    'trade_date_effective' => $outcome['trade_date_effective'],
+                    'quality_gate_state' => $outcome['quality_gate_state'],
+                    'publishability_state' => $outcome['publishability_state'],
+                    'terminal_status' => $outcome['terminal_status'],
+                    'lifecycle_state' => 'COMPLETED',
                 ];
-            }
 
-            if ($correction) {
-                if ($outcome['correction_outcome'] === 'CANCELLED') {
-                    $this->corrections->markCancelled(
-                        $correction->correction_id,
-                        $run->run_id,
-                        $priorCurrent ? $priorCurrent->run_id : null,
-                        $outcome['correction_outcome_note']
+                $run = $this->runs->finalize($run, $finalState);
+
+                /*
+                * Strict post-finalize validation hanya setelah run benar-benar finalized.
+                * Ini yang menutup family post_switch_resolution_mismatch tanpa membunuh
+                * correction publish normal.
+                */
+                if (
+                    $correction
+                    && ! $unchangedCorrection
+                    && $outcome['terminal_status'] === 'SUCCESS'
+                    && $outcome['correction_outcome'] === 'PUBLISHED'
+                ) {
+                    $resolved = $this->publications->findPointerResolvedPublicationForTradeDate(
+                        $input->requestedDate
                     );
-                } elseif ($outcome['correction_outcome'] === 'PUBLISHED') {
-                    $this->corrections->markPublished(
-                        $correction->correction_id,
-                        $run->run_id,
-                        $priorCurrent ? $priorCurrent->run_id : null,
-                        $outcome['correction_outcome_note']
-                    );
-                    $this->runs->appendEvent($run, $input->stage, 'CORRECTION_PUBLISHED', 'INFO', 'Historical correction replaced current publication safely.', null, [
-                        'correction_id' => (int) $correction->correction_id,
-                        'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
-                        'current_publication_id' => $resolvedPublicationId ? (int) $resolvedPublicationId : null,
-                        'current_publication_version' => $resolvedPublicationVersion ? (int) $resolvedPublicationVersion : null,
-                    ]);
+
+                    $strictMismatch = false;
+
+                    if (! $resolved) {
+                        $strictMismatch = true;
+                    } elseif ((int) $resolved->publication_id !== (int) $candidatePublication->publication_id) {
+                        $strictMismatch = true;
+                    } elseif (
+                        isset($resolved->publication_version) &&
+                        (int) $resolved->publication_version !== (int) $candidatePublication->publication_version
+                    ) {
+                        $strictMismatch = true;
+                    }
+
+                    if ($strictMismatch) {
+                        $postFinalizeMismatchNote = 'Current publication pointer resolution mismatch after finalize.';
+
+                        if ($priorCurrent) {
+                            $this->publications->restorePriorCurrentPublication(
+                                $input->requestedDate,
+                                (int) $priorCurrent->publication_id,
+                                (int) $priorCurrent->run_id
+                            );
+
+                            $this->runs->syncCurrentPublicationMirror(
+                                $input->requestedDate,
+                                (int) $priorCurrent->run_id
+                            );
+                        }
+
+                        $run = $this->runs->finalize($run, [
+                            'trade_date_effective' => $fallback ? $fallback->readable_trade_date : null,
+                            'quality_gate_state' => $outcome['quality_gate_state'],
+                            'publishability_state' => 'NOT_READABLE',
+                            'terminal_status' => 'HELD',
+                            'lifecycle_state' => 'COMPLETED',
+                        ]);
+
+                        $candidateCurrent = $priorCurrent ?: null;
+                        $resolvedPublicationId = $priorCurrent ? (int) $priorCurrent->publication_id : null;
+                        $resolvedPublicationVersion = $priorCurrent ? (int) $priorCurrent->publication_version : null;
+                    }
+
+                    $candidateCurrent = $resolved;
                 }
-            }
 
-            $manifest = $resolvedPublicationId ? $this->publications->buildManifestByPublicationId($resolvedPublicationId) : null;
-            $this->runs->appendEvent($run, $input->stage, 'RUN_FINALIZED', $outcome['terminal_status'] === 'SUCCESS' ? 'INFO' : 'WARN', $outcome['message'], $outcome['reason_code'], [
-                'cutoff_satisfied' => $cutoffSatisfied,
-                'coverage_ratio' => $run->coverage_ratio,
-                'coverage_min' => (float) config('market_data.platform.coverage_min'),
-                'quality_gate_state' => $outcome['quality_gate_state'],
-                'requested_date' => $input->requestedDate,
-                'trade_date_effective' => $outcome['trade_date_effective'],
-                'current_publication_id' => $resolvedPublicationId,
-                'current_publication_version' => $resolvedPublicationVersion,
-                'fallback_publication_id' => $fallback ? (int) $fallback->publication_id : null,
-                'fallback_trade_date' => $fallback ? $fallback->readable_trade_date : null,
-                'correction_id' => $correction ? (int) $correction->correction_id : null,
-                'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
-                'manifest' => $manifest ? (array) $manifest : null,
-                'correction_outcome' => $outcome['correction_outcome'],
-                'correction_outcome_note' => $outcome['correction_outcome_note'],
-            ]);
+                $resolvedPublicationId = $outcome['current_publication_id'];
+                $resolvedPublicationVersion = $outcome['current_publication_version'];
+
+                if (
+                    $resolvedPublicationId &&
+                    (! $candidateCurrent || (int) $candidateCurrent->publication_id !== (int) $resolvedPublicationId)
+                ) {
+                    $candidateCurrent = (object) [
+                        'publication_id' => $resolvedPublicationId,
+                        'publication_version' => $resolvedPublicationVersion,
+                    ];
+                }
+
+                if ($correction) {
+                    if ($outcome['correction_outcome'] === 'CANCELLED') {
+                        $this->corrections->markCancelled(
+                            $correction->correction_id,
+                            $run->run_id,
+                            $priorCurrent ? $priorCurrent->run_id : null,
+                            $outcome['correction_outcome_note']
+                        );
+                    } elseif ($outcome['correction_outcome'] === 'PUBLISHED' && $run->terminal_status === 'SUCCESS') {
+                        $this->corrections->markPublished(
+                            $correction->correction_id,
+                            $run->run_id,
+                            $priorCurrent ? $priorCurrent->run_id : null,
+                            $outcome['correction_outcome_note']
+                        );
+
+                        $this->runs->appendEvent(
+                            $run,
+                            $input->stage,
+                            'CORRECTION_PUBLISHED',
+                            'INFO',
+                            'Historical correction replaced current publication safely.',
+                            null,
+                            [
+                                'correction_id' => (int) $correction->correction_id,
+                                'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                                'current_publication_id' => $resolvedPublicationId ? (int) $resolvedPublicationId : null,
+                                'current_publication_version' => $resolvedPublicationVersion ? (int) $resolvedPublicationVersion : null,
+                            ]
+                        );
+                    }
+                }
+
+                $manifest = $resolvedPublicationId
+                    ? $this->publications->buildManifestByPublicationId($resolvedPublicationId)
+                    : null;
+
+                $finalRunMessage = $outcome['message'];
+
+                if ($postFinalizeMismatchNote !== null) {
+                    $finalRunMessage = $postFinalizeMismatchNote;
+                } elseif ($promotionError) {
+                    $finalRunMessage = $promotionError;
+                }
+
+                $this->runs->appendEvent(
+                    $run,
+                    $input->stage,
+                    'RUN_FINALIZED',
+                    $run->terminal_status === 'SUCCESS' ? 'INFO' : 'WARN',
+                    $finalRunMessage,
+                    $run->terminal_status === 'SUCCESS' ? $outcome['reason_code'] : 'RUN_LOCK_CONFLICT',
+                    [
+                        'cutoff_satisfied' => $cutoffSatisfied,
+                        'coverage_ratio' => $run->coverage_ratio,
+                        'coverage_min' => (float) config('market_data.platform.coverage_min'),
+                        'quality_gate_state' => $run->quality_gate_state,
+                        'requested_date' => $input->requestedDate,
+                        'trade_date_effective' => $run->trade_date_effective,
+                        'current_publication_id' => $resolvedPublicationId,
+                        'current_publication_version' => $resolvedPublicationVersion,
+                        'fallback_publication_id' => $fallback ? (int) $fallback->publication_id : null,
+                        'fallback_trade_date' => $fallback ? $fallback->readable_trade_date : null,
+                        'correction_id' => $correction ? (int) $correction->correction_id : null,
+                        'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                        'manifest' => $manifest ? (array) $manifest : null,
+                        'correction_outcome' => $outcome['correction_outcome'],
+                        'correction_outcome_note' => $outcome['correction_outcome_note'],
+                    ]
+                );
 
                 return $run;
             });

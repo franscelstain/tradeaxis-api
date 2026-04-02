@@ -8,13 +8,17 @@ class PublicationFinalizeOutcomeService
     {
         $fallbackTradeDate = $context['fallback_trade_date'] ?? $preDecision['trade_date_effective'] ?? null;
         $requestedDate = $context['requested_date'] ?? null;
+
         $candidatePublicationId = $context['candidate_publication_id'] ?? null;
         $candidatePublicationVersion = $context['candidate_publication_version'] ?? null;
+
         $resolvedCurrentPublicationId = $context['resolved_current_publication_id'] ?? null;
         $resolvedCurrentPublicationVersion = $context['resolved_current_publication_version'] ?? null;
+
         $correctionId = $context['correction_id'] ?? null;
         $priorPublicationId = $context['prior_publication_id'] ?? null;
         $priorPublicationVersion = $context['prior_publication_version'] ?? null;
+
         $unchangedCorrection = (bool) ($context['unchanged_correction'] ?? false);
         $promotionError = $context['promotion_error'] ?? null;
 
@@ -58,7 +62,11 @@ class PublicationFinalizeOutcomeService
             return $state;
         }
 
-        if ((string) $resolvedCurrentPublicationId === (string) $candidatePublicationId) {
+        $resolvedMatchesCandidate =
+            (string) $resolvedCurrentPublicationId === (string) $candidatePublicationId
+            && (string) $resolvedCurrentPublicationVersion === (string) $candidatePublicationVersion;
+
+        if ($resolvedMatchesCandidate) {
             $state['terminal_status'] = 'SUCCESS';
             $state['publishability_state'] = 'READABLE';
             $state['trade_date_effective'] = $requestedDate;
@@ -67,9 +75,11 @@ class PublicationFinalizeOutcomeService
                 ? 'Historical correction published safely via new sealed current publication.'
                 : 'Run finalized with sealed current publication for requested date.';
             $state['current_publication_id'] = $resolvedCurrentPublicationId;
-            $state['current_publication_version'] = $resolvedCurrentPublicationVersion ?: $candidatePublicationVersion;
+            $state['current_publication_version'] = $resolvedCurrentPublicationVersion;
             $state['correction_outcome'] = $correctionId ? 'PUBLISHED' : null;
-            $state['correction_outcome_note'] = $correctionId ? 'Historical correction published safely via new sealed current publication.' : null;
+            $state['correction_outcome_note'] = $correctionId
+                ? 'Historical correction published safely via new sealed current publication.'
+                : null;
             return $state;
         }
 

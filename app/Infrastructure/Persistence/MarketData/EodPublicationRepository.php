@@ -21,6 +21,8 @@ class EodPublicationRepository
             ->where('pub.seal_state', 'SEALED')
             ->whereNotNull('run.run_id')
             ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
+            ->where('run.terminal_status', 'SUCCESS')
+            ->where('run.publishability_state', 'READABLE')
             ->where('run.is_current_publication', 1)
             ->select('pub.*', 'ptr.trade_date as pointer_trade_date', 'ptr.run_id as pointer_run_id', 'ptr.publication_version as pointer_publication_version', 'ptr.sealed_at as pointer_sealed_at')
             ->first();
@@ -39,6 +41,8 @@ class EodPublicationRepository
             ->where('pub.seal_state', 'SEALED')
             ->whereNotNull('run.run_id')
             ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
+            ->where('run.terminal_status', 'SUCCESS')
+            ->where('run.publishability_state', 'READABLE')
             ->where('run.is_current_publication', 1)
             ->select(
                 'pub.*',
