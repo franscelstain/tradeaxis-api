@@ -100,25 +100,20 @@
   - mismatch `run.trade_date_requested` guard patch sudah masuk untuk resolver current/baseline/fallback, dengan test minimum yang menutup:
     - baseline correction pre-run rejection saat pointer/publication tampak benar tetapi run requested date mismatch;
     - post-switch fallback fail-safe saat prior-readable fallback run requested date mismatch.
-  - proof yang baru tersedia di checkpoint ini masih level syntax lint:
+  - executed local proof final untuk workstream aktif sudah tersinkron:
     - `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> `No syntax errors detected`
     - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`
-  - executed local proof final untuk sub-family readability mismatch sebelumnya tetap tersinkron:
-    - `vendor\bin\phpunit --filter fallback_run_terminal_status_mismatch` -> `OK (1 test, 38 assertions)`
-    - `vendor\bin\phpunit --filter fallback_run_publishability_mismatch` -> `OK (1 test, 38 assertions)`
-    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (13 tests, 455 assertions)`
-    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (32 tests, 856 assertions)`
+    - `vendor\bin\phpunit --filter requested_trade_date_mismatch` -> `OK (2 tests, 53 assertions)`
+    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (14 tests, 490 assertions)`
+    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (34 tests, 909 assertions)`
 - OPEN GAP:
-  - workstream aktif `db_backed_run_requested_trade_date_mismatch_guard_minimum` belum punya executed local proof PHPUnit karena ZIP source-of-truth tidak membawa `vendor/`;
   - broader correction conflict/error matrix masih belum fully closed di luar minimum proof family yang sudah ada.
 - WHAT IS STILL MISSING:
-  - executed local proof untuk workstream aktif mismatch `run.trade_date_requested`;
   - varian correction/runtime lain yang masih load-bearing tetapi belum punya proof minimum;
   - sub-family conflict/error integration di luar fallback-integrity minimum yang sudah tertutup.
 - NEXT REQUIRED ACTION:
-  - jalankan executed local proof untuk workstream aktif mismatch `run.trade_date_requested` dan sinkronkan checkpoint;
-  - setelah itu pilih varian correction/runtime berikutnya yang masih load-bearing dan benar-benar belum terbukti;
-  - jangan buka area baru sebelum family ini makin rapat.
+  - pilih varian correction/runtime berikutnya yang masih satu family, paling load-bearing, dan benar-benar belum terbukti;
+  - jangan buka area baru sebelum family correction/runtime ini makin rapat.
 
 ## CONTRACT ITEM 4 — Replay verification / evidence / smoke / backfill
 - STATUS: `PARTIAL`
@@ -187,7 +182,8 @@
     - pointer/publication run-id mismatch;
     - pointer/publication publication-version mismatch;
     - publication-current-mirror mismatch;
-    - missing-run-row-behind-publication.
+    - missing-run-row-behind-publication;
+    - run requested-trade-date mismatch.
   - post-switch rollback + fallback-integrity minimum family sudah tertutup minimum untuk:
     - malformed fallback pointer;
     - fallback publication-version mismatch;
@@ -198,39 +194,30 @@
     - fallback unsealed-publication;
     - fallback missing-publication-row;
     - fallback missing-pointer-row;
-    - fallback run-id mismatch.
-  - fallback run readability mismatch minimum family sudah tertutup minimum untuk:
+    - fallback run-id mismatch;
     - fallback run terminal-status mismatch;
-    - fallback run publishability mismatch.
-  - current synced proof sebelum sesi 3 ini tetap:
-    - `vendor\bin\phpunit --filter fallback_run_id_mismatch` -> `OK (1 test, 39 assertions)`
-    - `vendor\bin\phpunit --filter fallback_run_terminal_status_mismatch` -> `OK (1 test, 38 assertions)`
-    - `vendor\bin\phpunit --filter fallback_run_publishability_mismatch` -> `OK (1 test, 38 assertions)`
-    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (13 tests, 455 assertions)`
-    - `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (32 tests, 856 assertions)`
-  - patch sesi 3 yang belum tersinkron ke executed local proof:
-    - repository guard `run.trade_date_requested = ptr.trade_date` pada resolver current/baseline/fallback;
-    - test minimum baseline mismatch dan fallback mismatch untuk requested-trade-date run.
-  - proof yang tersedia untuk patch sesi 3 saat ini baru syntax lint:
+    - fallback run publishability mismatch;
+    - fallback run requested-trade-date mismatch.
+  - executed local proof terkini sudah tersinkron:
     - `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> `No syntax errors detected`
     - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`
+    - `vendor\bin\phpunit --filter requested_trade_date_mismatch` -> `OK (2 tests, 53 assertions)`
+    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (14 tests, 490 assertions)`
+    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (34 tests, 909 assertions)`
   - manual runtime verification tambahan menegaskan normal correction path tetap sehat dan bukan conflict dengan special-case proof workstream ini.
 - OPEN GAP:
-  - workstream aktif `db_backed_run_requested_trade_date_mismatch_guard_minimum` belum punya executed local proof PHPUnit;
   - broader DB-backed conflict/error integration matrix masih belum fully covered di luar guard minimum yang sudah tertutup;
   - masih mungkin ada varian sempit lain pada correction/runtime atau fallback-integrity yang belum diberi proof minimum.
 - WHAT IS STILL MISSING:
-  - executed local proof untuk workstream aktif mismatch `run.trade_date_requested`;
   - remaining sub-family DB-backed correction/runtime atau fallback-integrity yang masih grounded di owner-docs tetapi belum diberi proof minimum;
   - closure yang cukup untuk menyatakan matrix integration parent item ini benar-benar rapat.
 - NEXT REQUIRED ACTION:
-  - jalankan executed local proof untuk workstream aktif mismatch `run.trade_date_requested`;
-  - setelah sinkron, lanjut ke varian DB-backed correction/runtime berikutnya yang masih grounded di owner-docs;
+  - lanjut ke varian DB-backed correction/runtime berikutnya yang masih grounded di owner-docs dan paling load-bearing;
   - jangan buka ulang varian yang sudah tertutup minimum.
 - IN-PROGRESS NOTE:
   - workstream `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum` sudah tertutup minimum melalui executed local proof dan checkpoint telah disinkronkan;
   - workstream `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum` sudah tertutup minimum melalui executed local proof final dan tidak lagi menjadi blocker aktif;
-  - workstream baru `db_backed_run_requested_trade_date_mismatch_guard_minimum` sedang berjalan tetapi belum bisa dinaikkan ke `DONE` karena proof PHPUnit belum dieksekusi ulang pada ZIP source-of-truth ini.
+  - workstream `db_backed_run_requested_trade_date_mismatch_guard_minimum` sudah tertutup minimum melalui executed local proof final dan checkpoint ini menjadi resume point sah untuk memilih batch berikutnya.
 
 ## CONTRACT ITEM 8 — Final readiness gate
 - STATUS: `MISSING`
