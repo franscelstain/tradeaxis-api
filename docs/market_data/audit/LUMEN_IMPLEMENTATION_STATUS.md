@@ -1,32 +1,31 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
-## SESSION 8 FINAL STATE
+## SESSION 9 FINAL STATE
 
-- Batch scope: market-data ops evidence export command surface hardening
+- Batch scope: market-data ops replay-verify command surface proof hardening
 - Parent contract family: `market-data:ops` evidence export / replay-backfill / resumable operator proof surface
 - Patch implemented:
-  - `market-data:evidence:export` now rejects ambiguous selector input instead of silently prioritizing `--run_id` over `--correction_id` / `--replay_id`
-  - ops command surface coverage now includes run / correction / replay evidence export paths plus the exact-one-selector guardrail
+  - ops command surface coverage now includes `market-data:replay:verify` success path with deterministic replay id, fixture path propagation, and optional replay evidence export branch
+  - ops command surface coverage now includes `market-data:replay:verify` mismatch exit semantics so replay proof drift returns non-zero without implicitly forcing evidence export
 - Proof status:
-  - session 8 patch is now proof-synced from local user environment
-  - targeted command-surface proof passed
-  - full PHPUnit suite passed
-- Proof executed and passed:
-  - `php -l app/Console/Commands/MarketData/ExportEvidenceCommand.php` -> passed
+  - patch implemented against source-of-truth repo
+  - syntax proof for changed test file executed in-session
+  - runtime PHPUnit proof not executed here because uploaded ZIP intentionally omits `vendor/`
+- Proof executed in this environment:
   - `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> passed
-  - `vendor\\bin\\phpunit tests\\Unit\\MarketData\\OpsCommandSurfaceTest.php` -> passed (`OK (10 tests, 39 assertions)`)
-  - `vendor\\bin\\phpunit` -> passed (`OK (111 tests, 1231 assertions)`)
+- Proof still required in local user environment:
+  - targeted PHPUnit for `OpsCommandSurfaceTest`
+  - full PHPUnit suite or at minimum the relevant market-data command-surface regression pass
 
 ### Impact
-- CONTRACT ITEM 8 core: tighter and safer at operator boundary, with session-8 batch now backed by runtime proof
+- CONTRACT ITEM 8 core: replay verification command surface is now covered at the operator boundary instead of leaving `market-data:replay:verify` unproved inside the broader ops family
 - Closed in this batch:
-  - ambiguous evidence export selector input no longer falls through to implicit run export
-  - ops command surface now has explicit test coverage for `market-data:evidence:export` run / correction / replay branches
-  - ops command surface now has explicit guard coverage for missing selector and multi-selector ambiguity
-  - session 8 evidence-export command surface hardening is now proof-synced and can be treated as closed at batch level
+  - replay verify success path now has explicit command-surface proof for argument propagation and optional evidence export invocation
+  - replay verify mismatch path now has explicit command-surface proof for non-zero exit semantics
+  - replay verify command no longer sits outside the ops command-surface regression harness
 - Still open:
-  - broader ops matrix (`replay`, `evidence export`, `range command surfaces`, and wider runbook parity) is still not fully closed at project level
-  - parent contract family remains partial even though the session-8 sub-gap is now closed
+  - broader ops matrix remains partial beyond the now-covered replay verify / replay smoke / replay backfill / evidence export command surface slices
+  - wider runbook parity and additional ops-family runtime proof can still be tightened later
 
 ### Next Step
-- Lanjut ke SESSION 9 and continue with the next narrow ops/replay/evidence gap without reopening already closed finalize/correction batches
+- Lanjut ke SESSION 10 and continue with the next narrow ops-family gap without reopening already proof-synced evidence-export or replay-verify command-surface batches

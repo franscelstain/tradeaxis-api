@@ -4,6 +4,7 @@ use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\ReplayBackfillService;
 use App\Application\MarketData\Services\ReplaySmokeSuiteService;
+use App\Application\MarketData\Services\ReplayVerificationService;
 use App\Application\MarketData\Services\SessionSnapshotService;
 use App\Console\Commands\MarketData\BackfillMarketDataCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
@@ -11,6 +12,7 @@ use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
 use App\Console\Commands\MarketData\ReplayBackfillCommand;
 use App\Console\Commands\MarketData\ReplaySmokeSuiteCommand;
+use App\Console\Commands\MarketData\VerifyReplayCommand;
 use Mockery as m;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -304,6 +306,95 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('output_dir=/tmp/replay-evidence', $tester->getDisplay());
         $this->assertStringContainsString('files=replay_result.json,replay_evidence_pack.json', $tester->getDisplay());
+    }
+
+
+    public function test_replay_verify_command_renders_result_and_exports_evidence_when_output_dir_requested(): void
+    {
+        $verification = m::mock(ReplayVerificationService::class);
+        $verification->shouldReceive('verifyRunAgainstFixture')
+            ->once()
+            ->with(41, 'storage/app/market_data/replay-fixtures/valid_case', 3001)
+            ->andReturn([
+                'replay_id' => 3001,
+                'trade_date' => '2026-03-17',
+                'comparison_result' => 'MATCH',
+                'comparison_note' => 'Replay verification matched fixture expectation.',
+                'artifact_changed_scope' => 'none',
+                'fixture_family' => 'market_data_replay_minimum',
+            ]);
+
+        $evidence = m::mock(MarketDataEvidenceExportService::class);
+        $evidence->shouldReceive('exportReplayEvidence')
+            ->once()
+            ->with(3001, '2026-03-17', '/tmp/replay-verify')
+            ->andReturn([
+                'output_dir' => '/tmp/replay-verify',
+                'files' => ['replay_result.json', 'replay_evidence_pack.json'],
+            ]);
+
+        $this->app->instance(ReplayVerificationService::class, $verification);
+        $this->app->instance(MarketDataEvidenceExportService::class, $evidence);
+
+        $command = new VerifyReplayCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'run_id' => 41,
+            'fixture_path' => 'storage/app/market_data/replay-fixtures/valid_case',
+            '--replay_id' => 3001,
+            '--output_dir' => '/tmp/replay-verify',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('replay_id=3001', $display);
+        $this->assertStringContainsString('trade_date=2026-03-17', $display);
+        $this->assertStringContainsString('comparison_result=MATCH', $display);
+        $this->assertStringContainsString('artifact_changed_scope=none', $display);
+        $this->assertStringContainsString('fixture_family=market_data_replay_minimum', $display);
+        $this->assertStringContainsString('evidence_output_dir=/tmp/replay-verify', $display);
+    }
+
+    public function test_replay_verify_command_returns_failure_on_mismatch_without_forcing_evidence_export(): void
+    {
+        $verification = m::mock(ReplayVerificationService::class);
+        $verification->shouldReceive('verifyRunAgainstFixture')
+            ->once()
+            ->with(41, 'storage/app/market_data/replay-fixtures/reason_code_mismatch_case', null)
+            ->andReturn([
+                'replay_id' => 3002,
+                'trade_date' => '2026-03-17',
+                'comparison_result' => 'MISMATCH',
+                'comparison_note' => 'Replay verification diverged from fixture expectation.',
+                'artifact_changed_scope' => 'bars_only',
+                'fixture_family' => 'market_data_replay_minimum',
+            ]);
+
+        $evidence = m::mock(MarketDataEvidenceExportService::class);
+        $evidence->shouldNotReceive('exportReplayEvidence');
+
+        $this->app->instance(ReplayVerificationService::class, $verification);
+        $this->app->instance(MarketDataEvidenceExportService::class, $evidence);
+
+        $command = new VerifyReplayCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'run_id' => 41,
+            'fixture_path' => 'storage/app/market_data/replay-fixtures/reason_code_mismatch_case',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('replay_id=3002', $display);
+        $this->assertStringContainsString('comparison_result=MISMATCH', $display);
+        $this->assertStringContainsString('comparison_note=Replay verification diverged from fixture expectation.', $display);
+        $this->assertStringContainsString('artifact_changed_scope=bars_only', $display);
     }
 
     public function test_replay_backfill_command_returns_failure_and_renders_case_lines_when_any_case_fails(): void
