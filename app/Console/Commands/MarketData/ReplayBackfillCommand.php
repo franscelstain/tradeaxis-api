@@ -29,12 +29,27 @@ class ReplayBackfillCommand extends AbstractMarketDataCommand
         $this->line('output_dir='.$summary['output_dir']);
 
         foreach ($summary['cases'] as $case) {
-            $this->line(implode(' | ', [
+            $parts = [
                 'trade_date='.$case['trade_date'],
+                'status='.($case['status'] ?? (empty($case['passed']) ? 'ERROR' : 'SUCCESS')),
                 'expected='.($case['expected_outcome'] ?? 'n/a'),
-                'observed='.$case['observed_outcome'],
+                'observed='.($case['observed_outcome'] ?? 'n/a'),
                 'passed='.(empty($case['passed']) ? '0' : '1'),
-            ]));
+            ];
+
+            if (isset($case['run_id'])) {
+                $parts[] = 'run_id='.$case['run_id'];
+            }
+
+            if (isset($case['replay_id'])) {
+                $parts[] = 'replay_id='.$case['replay_id'];
+            }
+
+            if (isset($case['error_message'])) {
+                $parts[] = 'error='.$case['error_message'];
+            }
+
+            $this->line(implode(' | ', $parts));
         }
 
         return empty($summary['all_passed']) ? 1 : 0;

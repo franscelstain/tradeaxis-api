@@ -397,6 +397,58 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('artifact_changed_scope=bars_only', $display);
     }
 
+    public function test_replay_backfill_command_propagates_operator_options_and_renders_run_and_replay_ids(): void
+    {
+        $service = m::mock(ReplayBackfillService::class);
+        $service->shouldReceive('execute')
+            ->once()
+            ->with('2026-03-17', '2026-03-18', 'valid_case', '/tmp/fixtures', '/tmp/replay-backfill', true)
+            ->andReturn([
+                'suite' => 'market_data_replay_backfill_minimum',
+                'range' => [
+                    'start_date' => '2026-03-17',
+                    'end_date' => '2026-03-18',
+                ],
+                'fixture_case' => 'valid_case',
+                'all_passed' => true,
+                'output_dir' => '/tmp/replay-backfill',
+                'cases' => [
+                    [
+                        'trade_date' => '2026-03-17',
+                        'status' => 'SUCCESS',
+                        'expected_outcome' => 'MATCH',
+                        'observed_outcome' => 'MATCH',
+                        'passed' => true,
+                        'run_id' => 41,
+                        'replay_id' => 3001,
+                    ],
+                ],
+            ]);
+
+        $this->app->instance(ReplayBackfillService::class, $service);
+
+        $command = new ReplayBackfillCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'start_date' => '2026-03-17',
+            'end_date' => '2026-03-18',
+            '--fixture_case' => 'valid_case',
+            '--fixture_root' => '/tmp/fixtures',
+            '--output_dir' => '/tmp/replay-backfill',
+            '--continue_on_error' => true,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('suite=market_data_replay_backfill_minimum', $display);
+        $this->assertStringContainsString('fixture_case=valid_case', $display);
+        $this->assertStringContainsString('all_passed=1', $display);
+        $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001', $display);
+    }
+
     public function test_replay_backfill_command_returns_failure_and_renders_case_lines_when_any_case_fails(): void
     {
         $service = m::mock(ReplayBackfillService::class);
@@ -415,15 +467,20 @@ class OpsCommandSurfaceTest extends TestCase
                 'cases' => [
                     [
                         'trade_date' => '2026-03-17',
+                        'status' => 'SUCCESS',
                         'expected_outcome' => 'MATCH',
                         'observed_outcome' => 'MATCH',
                         'passed' => true,
+                        'run_id' => 41,
+                        'replay_id' => 3001,
                     ],
                     [
                         'trade_date' => '2026-03-18',
+                        'status' => 'ERROR',
                         'expected_outcome' => 'MATCH',
-                        'observed_outcome' => 'MISMATCH',
+                        'observed_outcome' => 'ERROR',
                         'passed' => false,
+                        'error_message' => 'Readable current publication not found for replay backfill trade date 2026-03-18.',
                     ],
                 ],
             ]);
@@ -446,6 +503,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('suite=market_data_replay_backfill_minimum', $display);
         $this->assertStringContainsString('fixture_case=valid_case', $display);
         $this->assertStringContainsString('all_passed=0', $display);
-        $this->assertStringContainsString('trade_date=2026-03-18 | expected=MATCH | observed=MISMATCH | passed=0', $display);
+        $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001', $display);
+        $this->assertStringContainsString('trade_date=2026-03-18 | status=ERROR | expected=MATCH | observed=ERROR | passed=0 | error=Readable current publication not found for replay backfill trade date 2026-03-18.', $display);
     }
 }

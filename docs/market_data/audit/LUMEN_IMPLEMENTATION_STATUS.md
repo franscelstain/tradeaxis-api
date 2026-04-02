@@ -1,33 +1,31 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
-## SESSION 9 FINAL STATE
+## SESSION 10 FINAL STATE
 
-- Batch scope: market-data ops replay-verify command surface proof hardening
-- Parent contract family: `market-data:ops` evidence export / replay-backfill / resumable operator proof surface
+- Batch scope: market-data ops replay-backfill command surface parity hardening
+- Parent contract family: `market-data:ops` replay backfill operator summary / option propagation proof surface
 - Patch implemented:
-  - ops command surface coverage now includes `market-data:replay:verify` success path with deterministic replay id, fixture path propagation, and optional replay evidence export branch
-  - ops command surface coverage now includes `market-data:replay:verify` mismatch exit semantics so replay proof drift returns non-zero without implicitly forcing evidence export
-  - `VerifyReplayCommand` was hotfixed so replay evidence export runs only when `--output_dir` is explicitly provided and non-empty
+  - `ReplayBackfillCommand` now renders richer per-date case lines so operator-visible output includes `status`, `run_id`, and `replay_id` when present, plus explicit `error` text on failed dates
+  - replay-backfill command surface coverage now verifies option propagation for `--fixture_root`, `--output_dir`, and `--continue_on_error`
+  - replay-backfill command surface coverage now proves the command emits the per-date identifiers required to keep the summary output distinguishable at operator level
 - Proof status:
   - patch implemented against source-of-truth repo
   - syntax proof completed
-  - targeted PHPUnit proof completed
-  - full PHPUnit suite confirmation completed
+  - targeted PHPUnit proof not executed in this environment because uploaded ZIP intentionally omits `vendor/`
+  - full PHPUnit suite confirmation not executed in this environment because uploaded ZIP intentionally omits `vendor/`
 - Proof executed:
+  - `php -l app/Console/Commands/MarketData/ReplayBackfillCommand.php` -> passed
   - `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> passed
-  - `vendor\bin\phpunit tests\Unit\MarketData\OpsCommandSurfaceTest.php` -> passed (`OK (12 tests, 51 assertions)`)
-  - `vendor\bin\phpunit` -> passed (`OK (113 tests, 1243 assertions)`)
 
 ### Impact
-- CONTRACT ITEM 8 core: replay verification command surface is now covered at the operator boundary instead of leaving `market-data:replay:verify` unproved inside the broader ops family
+- CONTRACT ITEM 8 ops replay-backfill sub-gap is tighter: operator-facing replay range output no longer hides the per-date `run_id` / `replay_id` context that the runbook expects to stay distinguishable
 - Closed in this batch:
-  - replay verify success path now has explicit command-surface proof for argument propagation and optional evidence export invocation
-  - replay verify mismatch path now has explicit command-surface proof for non-zero exit semantics
-  - replay verify command no longer sits outside the ops command-surface regression harness
-  - runtime bug on omitted `--output_dir` is fixed and proof-synced against local execution
+  - replay-backfill command now surfaces `status`, `run_id`, and `replay_id` on success cases when present
+  - replay-backfill command now surfaces explicit per-date error text for failing cases
+  - replay-backfill command surface proof now covers operator option propagation for fixture root, deterministic output placement, and continue-on-error mode
 - Still open:
-  - broader ops matrix remains partial beyond the now-covered replay verify / replay smoke / replay backfill / evidence export command surface slices
-  - wider runbook parity and additional ops-family runtime proof can still be tightened later
+  - broader ops family remains partial beyond the replay/backfill/evidence command-surface slices already tightened
+  - local runtime PHPUnit proof still needs to be executed in the user environment before this sub-gap can be treated as fully proof-synced
 
 ### Next Step
-- Lanjut ke SESSION 10 and continue with the next narrow ops-family gap without reopening already proof-synced evidence-export or replay-verify command-surface batches
+- Lanjut ke SESSION 11 and continue with the next narrow ops-family gap without reopening already proof-tightened replay/evidence/backfill command-surface batches
