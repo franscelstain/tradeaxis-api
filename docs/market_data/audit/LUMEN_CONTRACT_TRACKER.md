@@ -108,26 +108,34 @@
   - otherwise reassess whether only the final readiness gate remains
 
 ## CONTRACT ITEM 9 — Final readiness gate
-- STATUS: DONE (SESSION 17 CHECKPOINT REASSESSMENT CLOSED)
+- STATUS: DONE (SESSION 19 FINAL AUDIT CLOSURE CLOSED)
 - OWNER AREA: project-level readiness
-- LAST UPDATED SESSION: session17_final_readiness_closed
+- LAST UPDATED SESSION: session19_final_audit_closure
 
 - EVIDENCE:
   - session 15 closed session snapshot runtime proof
   - session 16 closed the still-unfinished DB-backed integration family batch for readable seal-timestamp integrity
   - session 17 reassessment against the live repo and active tracker found no remaining higher-priority market-data parent contract family still open in current scope
+  - session 18 revalidated the uploaded source-of-truth ZIP and confirmed the same closure state still holds in the current artifact
+  - session 19 repeated that closure check against the newest source-of-truth ZIP, re-read the relevant readiness/build-order anchors, confirmed packaged proof artifacts are still present, and added current-scope PHP syntax validation for the provider-default path
   - active tracker state after reassessment is now:
     - contract item 5 = `DONE`
     - contract item 7 = `DONE`
     - contract item 8 = `DONE`
     - contract item 9 = readiness closure item itself
   - the previous `PARTIAL` state on contract item 9 had become a stale planning placeholder rather than evidence of an unresolved implementation family
-  - session 17 therefore closes the final readiness gate as a checkpoint-state action without inventing new runtime-proof claims beyond the already recorded proof-backed sessions
+  - session 17 therefore closed the final readiness gate as a checkpoint-state action without inventing new runtime-proof claims beyond the already recorded proof-backed sessions
+  - session 18 keeps that closure intact and only hardens the checkpoint so the current artifact is the explicit final-audit source of truth
+  - session 19 advances that checkpoint one step further so the final-audit handoff ZIP, not the prior session ZIP, is the explicit source of truth for closure
   - after that closure, the active codebase received one sanctioned config/provider-default update: EOD acquisition default now uses `source_mode=api` with provider `yahoo_finance`, and owner docs were synchronized immediately after proof passed
 
 - PROOF:
   - checkpoint-vs-repo reassessment -> PASS
   - active tracker closure consistency -> PASS
+  - source-of-truth ZIP revalidation in current environment -> PASS
+  - readiness/build-order anchor re-read in current environment -> PASS
+  - Yahoo default-provider code/doc sync spot-check -> PASS
+  - targeted PHP syntax checks in current scope -> PASS
   - new runtime execution in this container -> NOT RUN (`vendor/` intentionally absent from uploaded ZIP)
   - last full runtime proof already recorded in active checkpoint before this closure step -> PASS (`123 tests, 1391 assertions` from session 16)
   - post-closure provider-default proof -> PASS (`PublicApiEodBarsAdapterTest` 4/4, `EodBarsIngestServiceTest` 2/2, full suite `125 tests, 1405 assertions`)
