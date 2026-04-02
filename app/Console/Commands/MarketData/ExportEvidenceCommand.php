@@ -16,8 +16,21 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
         $correctionId = $this->option('correction_id');
         $replayId = $this->option('replay_id');
 
-        if (! $runId && ! $correctionId && ! $replayId) {
-            $this->error('One of --run_id, --correction_id, or --replay_id must be provided.');
+        $selected = array_filter([
+            'run_id' => $runId,
+            'correction_id' => $correctionId,
+            'replay_id' => $replayId,
+        ], function ($value) {
+            return $value !== null && $value !== '';
+        });
+
+        if (count($selected) === 0) {
+            $this->error('Exactly one of --run_id, --correction_id, or --replay_id must be provided.');
+            return 1;
+        }
+
+        if (count($selected) > 1) {
+            $this->error('Evidence export selector is ambiguous. Provide exactly one of --run_id, --correction_id, or --replay_id.');
             return 1;
         }
 

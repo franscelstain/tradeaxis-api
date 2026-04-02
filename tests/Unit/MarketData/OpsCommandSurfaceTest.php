@@ -1,10 +1,12 @@
 <?php
 
 use App\Application\MarketData\Services\MarketDataBackfillService;
+use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\ReplayBackfillService;
 use App\Application\MarketData\Services\ReplaySmokeSuiteService;
 use App\Application\MarketData\Services\SessionSnapshotService;
 use App\Console\Commands\MarketData\BackfillMarketDataCommand;
+use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
 use App\Console\Commands\MarketData\ReplayBackfillCommand;
@@ -185,6 +187,123 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('run_id=41', $display);
         $this->assertStringContainsString('all_passed=1', $display);
         $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1', $display);
+    }
+
+
+    public function test_evidence_export_command_requires_exactly_one_selector(): void
+    {
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('Exactly one of --run_id, --correction_id, or --replay_id must be provided.', $tester->getDisplay());
+    }
+
+    public function test_evidence_export_command_rejects_ambiguous_selector_input(): void
+    {
+        $service = m::mock(MarketDataEvidenceExportService::class);
+        $service->shouldNotReceive('exportRunEvidence');
+        $service->shouldNotReceive('exportCorrectionEvidence');
+        $service->shouldNotReceive('exportReplayEvidence');
+
+        $this->app->instance(MarketDataEvidenceExportService::class, $service);
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--run_id' => 41,
+            '--replay_id' => 3001,
+        ]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('Evidence export selector is ambiguous. Provide exactly one of --run_id, --correction_id, or --replay_id.', $tester->getDisplay());
+    }
+
+    public function test_evidence_export_command_exports_run_evidence(): void
+    {
+        $service = m::mock(MarketDataEvidenceExportService::class);
+        $service->shouldReceive('exportRunEvidence')
+            ->once()
+            ->with(41, '/tmp/run-evidence')
+            ->andReturn([
+                'output_dir' => '/tmp/run-evidence',
+                'files' => ['run_summary.json', 'evidence_pack.json'],
+            ]);
+
+        $this->app->instance(MarketDataEvidenceExportService::class, $service);
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--run_id' => 41,
+            '--output_dir' => '/tmp/run-evidence',
+        ]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('output_dir=/tmp/run-evidence', $tester->getDisplay());
+        $this->assertStringContainsString('files=run_summary.json,evidence_pack.json', $tester->getDisplay());
+    }
+
+    public function test_evidence_export_command_exports_correction_evidence(): void
+    {
+        $service = m::mock(MarketDataEvidenceExportService::class);
+        $service->shouldReceive('exportCorrectionEvidence')
+            ->once()
+            ->with(25, '/tmp/correction-evidence')
+            ->andReturn([
+                'output_dir' => '/tmp/correction-evidence',
+                'files' => ['correction_evidence.json'],
+            ]);
+
+        $this->app->instance(MarketDataEvidenceExportService::class, $service);
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--correction_id' => 25,
+            '--output_dir' => '/tmp/correction-evidence',
+        ]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('output_dir=/tmp/correction-evidence', $tester->getDisplay());
+        $this->assertStringContainsString('files=correction_evidence.json', $tester->getDisplay());
+    }
+
+    public function test_evidence_export_command_exports_replay_evidence(): void
+    {
+        $service = m::mock(MarketDataEvidenceExportService::class);
+        $service->shouldReceive('exportReplayEvidence')
+            ->once()
+            ->with(3001, '2026-03-17', '/tmp/replay-evidence')
+            ->andReturn([
+                'output_dir' => '/tmp/replay-evidence',
+                'files' => ['replay_result.json', 'replay_evidence_pack.json'],
+            ]);
+
+        $this->app->instance(MarketDataEvidenceExportService::class, $service);
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--replay_id' => 3001,
+            '--trade_date' => '2026-03-17',
+            '--output_dir' => '/tmp/replay-evidence',
+        ]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('output_dir=/tmp/replay-evidence', $tester->getDisplay());
+        $this->assertStringContainsString('files=replay_result.json,replay_evidence_pack.json', $tester->getDisplay());
     }
 
     public function test_replay_backfill_command_returns_failure_and_renders_case_lines_when_any_case_fails(): void
