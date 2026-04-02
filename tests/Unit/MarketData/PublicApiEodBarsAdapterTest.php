@@ -67,6 +67,61 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame('api-1', $rows[0]['source_row_ref']);
     }
 
+
+    public function test_api_adapter_normalizes_yahoo_finance_chart_payload_using_ticker_universe()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ]));
+
+        $requestedUrls = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+            $requestedUrls[] = $url;
+
+            return [
+                'status' => 200,
+                'body' => json_encode([
+                    'chart' => [
+                        'result' => [[
+                            'meta' => [
+                                'exchangeTimezoneName' => 'Asia/Jakarta',
+                            ],
+                            'timestamp' => [1773939600],
+                            'indicators' => [
+                                'quote' => [[
+                                    'open' => [100],
+                                    'high' => [110],
+                                    'low' => [99],
+                                    'close' => [108],
+                                    'volume' => [100000],
+                                ]],
+                                'adjclose' => [[
+                                    'adjclose' => [108],
+                                ]],
+                            ],
+                        ]],
+                    ],
+                ]),
+            ];
+        });
+
+        $rows = $adapter->fetchOrLoadEodBars('2026-03-18', 'api', ['bbca']);
+
+        $this->assertCount(1, $rows);
+        $this->assertSame('BBCA', $rows[0]['ticker_code']);
+        $this->assertSame('2026-03-18', $rows[0]['trade_date']);
+        $this->assertSame('YAHOO_FINANCE', $rows[0]['source_name']);
+        $this->assertSame('yahoo:BBCA:2026-03-18', $rows[0]['source_row_ref']);
+        $this->assertSame('https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d', $requestedUrls[0]);
+    }
+
     public function test_api_adapter_retries_rate_limit_then_succeeds()
     {
         $this->bindMarketDataConfig($this->config([
@@ -146,6 +201,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
                 ],
                 'source' => [
                     'api' => array_replace([
+                        'provider' => 'generic',
                         'endpoint_template' => '',
                         'response_format' => 'json',
                         'response_rows_path' => '',
@@ -153,6 +209,11 @@ class PublicApiEodBarsAdapterTest extends TestCase
                         'auth_header_name' => '',
                         'auth_token' => '',
                         'source_name' => 'API_FREE',
+                        'yahoo' => [
+                            'symbol_suffix' => '.JK',
+                            'range' => '10d',
+                            'interval' => '1d',
+                        ],
                         'field_map' => [
                             'ticker_code' => 'ticker_code',
                             'trade_date' => 'trade_date',

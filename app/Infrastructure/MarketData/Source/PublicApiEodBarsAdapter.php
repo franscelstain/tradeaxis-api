@@ -26,6 +26,10 @@ class PublicApiEodBarsAdapter
             throw new SourceAcquisitionException('Source API endpoint template belum dikonfigurasi.', 'RUN_SOURCE_AUTH_ERROR');
         }
 
+        if ($this->providerName($apiConfig) === 'yahoo_finance') {
+            return $this->fetchYahooFinanceBars($tradeDate, $tickerCodes, $apiConfig);
+        }
+
         $url = str_replace(
             ['{date}', '{symbols}'],
             [$tradeDate, implode(',', $tickerCodes)],
@@ -38,6 +42,108 @@ class PublicApiEodBarsAdapter
         return array_map(function ($row, $index) use ($tradeDate, $response, $apiConfig) {
             return $this->normalizeRow($row, $tradeDate, $index + 1, $response['captured_at'], $apiConfig);
         }, $rows, array_keys($rows));
+    }
+
+
+    private function fetchYahooFinanceBars($tradeDate, array $tickerCodes, array $apiConfig)
+    {
+        if (empty($tickerCodes)) {
+            throw new SourceAcquisitionException('Yahoo Finance source membutuhkan ticker universe yang tidak kosong.', 'RUN_SOURCE_RESPONSE_CHANGED');
+        }
+
+        $rows = [];
+        $index = 0;
+
+        foreach ($tickerCodes as $tickerCode) {
+            $tickerCode = $this->normalizeTickerCode($tickerCode);
+            if ($tickerCode === null || $tickerCode === '') {
+                continue;
+            }
+
+            $url = $this->buildYahooFinanceUrl($tradeDate, $tickerCode, $apiConfig);
+            $response = $this->requestWithRetry($url);
+            $row = $this->parseYahooFinancePayload($response['body'], $tradeDate, $tickerCode, $response['captured_at'], $apiConfig);
+            if ($row === null) {
+                continue;
+            }
+
+            $index++;
+            $rows[] = $this->normalizeRow($row, $tradeDate, $index, $response['captured_at'], $apiConfig);
+        }
+
+        return $rows;
+    }
+
+    private function buildYahooFinanceUrl($tradeDate, $tickerCode, array $apiConfig)
+    {
+        $urlTemplate = isset($apiConfig['endpoint_template']) ? trim((string) $apiConfig['endpoint_template']) : '';
+        $symbolSuffix = (string) data_get($apiConfig, 'yahoo.symbol_suffix', '');
+        $range = (string) data_get($apiConfig, 'yahoo.range', '10d');
+        $interval = (string) data_get($apiConfig, 'yahoo.interval', '1d');
+
+        return str_replace(
+            ['{date}', '{symbol}', '{symbols}', '{symbol_suffix}', '{range}', '{interval}'],
+            [$tradeDate, $tickerCode, $tickerCode, $symbolSuffix, $range, $interval],
+            $urlTemplate
+        );
+    }
+
+    private function parseYahooFinancePayload($body, $tradeDate, $tickerCode, $capturedAt, array $apiConfig)
+    {
+        $decoded = json_decode($body, true);
+        if (! is_array($decoded)) {
+            throw new SourceAcquisitionException('Yahoo Finance payload is not valid JSON.', 'RUN_SOURCE_MALFORMED_PAYLOAD');
+        }
+
+        $result = data_get($decoded, 'chart.result.0');
+        if (! is_array($result)) {
+            throw new SourceAcquisitionException('Yahoo Finance chart payload is missing result[0].', 'RUN_SOURCE_RESPONSE_CHANGED');
+        }
+
+        $timestamps = data_get($result, 'timestamp');
+        $quote = data_get($result, 'indicators.quote.0');
+        if (! is_array($timestamps) || ! is_array($quote)) {
+            throw new SourceAcquisitionException('Yahoo Finance chart payload is missing timestamp/quote data.', 'RUN_SOURCE_RESPONSE_CHANGED');
+        }
+
+        $adjclose = data_get($result, 'indicators.adjclose.0.adjclose', []);
+        $meta = is_array(data_get($result, 'meta')) ? data_get($result, 'meta') : [];
+        $exchangeTimezone = isset($meta['exchangeTimezoneName']) ? (string) $meta['exchangeTimezoneName'] : config('market_data.platform.timezone');
+
+        foreach (array_values($timestamps) as $position => $timestamp) {
+            if (! is_numeric($timestamp)) {
+                continue;
+            }
+
+            $rowTradeDate = Carbon::createFromTimestampUTC((int) $timestamp)
+                ->setTimezone($exchangeTimezone)
+                ->toDateString();
+
+            if ($rowTradeDate !== $tradeDate) {
+                continue;
+            }
+
+            return [
+                'ticker_code' => $tickerCode,
+                'trade_date' => $tradeDate,
+                'open' => $quote['open'][$position] ?? null,
+                'high' => $quote['high'][$position] ?? null,
+                'low' => $quote['low'][$position] ?? null,
+                'close' => $quote['close'][$position] ?? null,
+                'volume' => $quote['volume'][$position] ?? null,
+                'adj_close' => $adjclose[$position] ?? ($quote['close'][$position] ?? null),
+                'source_name' => isset($apiConfig['source_name']) ? $apiConfig['source_name'] : 'YAHOO_FINANCE',
+                'source_row_ref' => 'yahoo:'.$tickerCode.':'.$tradeDate,
+                'captured_at' => $capturedAt,
+            ];
+        }
+
+        return null;
+    }
+
+    private function providerName(array $apiConfig)
+    {
+        return Str::lower(trim((string) ($apiConfig['provider'] ?? 'generic')));
     }
 
     private function requestWithRetry($url)

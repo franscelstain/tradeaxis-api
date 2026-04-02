@@ -12,7 +12,7 @@ return [
     ],
     'pipeline' => [
         'daily_enabled' => (bool) env('MARKET_DATA_DAILY_ENABLED', false),
-        'default_source_mode' => env('MARKET_DATA_DEFAULT_SOURCE_MODE', 'manual_file'),
+        'default_source_mode' => env('MARKET_DATA_DEFAULT_SOURCE_MODE', 'api'),
     ],
     'indicators' => [
         'set_version' => env('MARKET_DATA_INDICATOR_SET_VERSION', 'v1'),
@@ -32,15 +32,21 @@ return [
         'local_directory' => env('MARKET_DATA_SOURCE_LOCAL_DIRECTORY', 'storage/app/market_data/eod_bars'),
         'file_template_json' => env('MARKET_DATA_SOURCE_FILE_TEMPLATE_JSON', '{date}.json'),
         'file_template_csv' => env('MARKET_DATA_SOURCE_FILE_TEMPLATE_CSV', '{date}.csv'),
-        'default_source_name' => env('MARKET_DATA_SOURCE_DEFAULT_NAME', 'LOCAL_FILE'),
+        'default_source_name' => env('MARKET_DATA_SOURCE_DEFAULT_NAME', 'YAHOO_FINANCE'),
         'api' => [
-            'endpoint_template' => env('MARKET_DATA_SOURCE_API_ENDPOINT_TEMPLATE', ''),
+            'provider' => env('MARKET_DATA_SOURCE_API_PROVIDER', 'yahoo_finance'),
+            'endpoint_template' => env('MARKET_DATA_SOURCE_API_ENDPOINT_TEMPLATE', 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com'),
             'response_format' => env('MARKET_DATA_SOURCE_API_RESPONSE_FORMAT', 'json'),
             'response_rows_path' => env('MARKET_DATA_SOURCE_API_ROWS_PATH', ''),
             'timeout_seconds' => (int) env('MARKET_DATA_SOURCE_API_TIMEOUT_SECONDS', 15),
             'auth_header_name' => env('MARKET_DATA_SOURCE_API_AUTH_HEADER_NAME', ''),
             'auth_token' => env('MARKET_DATA_SOURCE_API_AUTH_TOKEN', ''),
-            'source_name' => env('MARKET_DATA_SOURCE_API_NAME', 'API_FREE'),
+            'source_name' => env('MARKET_DATA_SOURCE_API_NAME', 'YAHOO_FINANCE'),
+            'yahoo' => [
+                'symbol_suffix' => env('MARKET_DATA_SOURCE_YAHOO_SYMBOL_SUFFIX', '.JK'),
+                'range' => env('MARKET_DATA_SOURCE_YAHOO_RANGE', '10d'),
+                'interval' => env('MARKET_DATA_SOURCE_YAHOO_INTERVAL', '1d'),
+            ],
             'field_map' => [
                 'ticker_code' => env('MARKET_DATA_SOURCE_API_FIELD_TICKER_CODE', 'ticker_code'),
                 'trade_date' => env('MARKET_DATA_SOURCE_API_FIELD_TRADE_DATE', 'trade_date'),

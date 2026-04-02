@@ -142,7 +142,12 @@ class EodBarsIngestService
     private function fetchSourceRows($requestedDate, $sourceMode)
     {
         if ($sourceMode === 'api') {
-            return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode);
+            $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
+            $tickerCodes = array_values(array_filter(array_map(function ($row) {
+                return isset($row['ticker_code']) ? $row['ticker_code'] : null;
+            }, $universe)));
+
+            return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes);
         }
 
         return $this->localSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode);
