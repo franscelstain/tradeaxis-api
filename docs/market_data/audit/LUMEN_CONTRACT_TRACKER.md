@@ -60,9 +60,9 @@
 
 
 ## CONTRACT ITEM 7 — DB-backed integration proof / readable seal-timestamp integrity
-- STATUS: PARTIAL (SESSION 16 PATCH APPLIED; LOCAL RUNTIME PROOF PENDING USER EXECUTION)
+- STATUS: DONE (SESSION 16 PATCH + HOTFIX + FULL RUNTIME PROOF PASSED)
 - OWNER AREA: repository + correction/runtime integration for readable publication resolution
-- LAST UPDATED SESSION: session16_patch_only_pending_local_proof
+- LAST UPDATED SESSION: session16_proven_complete
 
 - OWNER DOCS:
   - `docs/market_data/book/Downstream_Data_Readiness_Guarantee_LOCKED.md`
@@ -77,44 +77,61 @@
     - readable publication resolver queries required `seal_state = SEALED`
     - but they did not yet require `sealed_at` to be non-null on the pointed publication and owning run
     - this was weaker than owner docs that define seal completion and operator consumability using non-null `sealed_at`
-  - session 16 patch now hardens:
+  - session 16 patch hardened:
     - `findCurrentPublicationForTradeDate(...)`
     - `findPointerResolvedPublicationForTradeDate(...)`
     - `findCorrectionBaselinePublicationForTradeDate(...)`
-    - `findLatestReadablePublicationBefore(...)`
     by requiring non-null `ptr.sealed_at`, `pub.sealed_at`, and `run.sealed_at`
-  - tests were extended for:
+  - user local targeted proof exposed one residual hole still inside the same batch:
+    - `findLatestReadablePublicationBefore(...)` still allowed fallback resolution from rows with missing seal timestamps
+  - session 16 hotfix closed that residual hole by requiring non-null `ptr.sealed_at`, `pub.sealed_at`, and `run.sealed_at` in `findLatestReadablePublicationBefore(...)`
+  - tests in scope for this batch cover:
     - repository fail-safe resolution when pointed publication `sealed_at` is missing
     - repository fail-safe resolution when owning run `sealed_at` is missing
     - approved correction baseline rejection when current publication `sealed_at` is missing
     - post-switch mismatch fallback protection when fallback publication `sealed_at` is missing
 
 - PROOF:
-  - patch applied
-  - local syntax/runtime proof in this environment is still pending because `vendor/` is absent from the uploaded source ZIP
-  - required user-run commands are listed in the session output and must be executed before this item can be upgraded beyond `PARTIAL`
+  - user local `php -l` checks -> PASS
+  - user local targeted PHPUnit against the first session 16 patch -> FAIL, which honestly exposed the residual fallback-readable gap
+  - post-hotfix targeted PHPUnit -> PASS
+  - `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> PASS (`13 tests, 60 assertions`)
+  - `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> PASS (`36 tests, 969 assertions`)
+  - full PHPUnit suite -> PASS (`123 tests, 1391 assertions`)
 
 - OPEN GAP:
-  - session 16 seal-timestamp integrity patch still needs local PHPUnit confirmation
-  - broader DB-backed malformed fallback/current-pointer matrix may still contain later narrow cases, but the selected session 16 batch is limited to the now-patched sealed-at integrity rule
+  - none for the session 16 batch
+  - broader DB-backed malformed fallback/current-pointer matrix may still contain later narrow cases, but the selected session 16 sealed-at integrity batch is closed
 
 - NEXT REQUIRED ACTION:
-  - run the listed local PHPUnit commands and send the outputs back
-  - if all targeted proofs pass, upgrade this item to `DONE` for the session 16 batch and continue to the next grounded DB-backed integrity gap or final readiness gate
+  - choose the next grounded DB-backed integrity gap only if it is separately evidenced in owner-doc scope
+  - otherwise reassess whether only the final readiness gate remains
 
 ## CONTRACT ITEM 9 — Final readiness gate
-- STATUS: MISSING
+- STATUS: DONE (SESSION 17 CHECKPOINT REASSESSMENT CLOSED)
 - OWNER AREA: project-level readiness
-- LAST UPDATED SESSION: session16_not_reached
+- LAST UPDATED SESSION: session17_final_readiness_closed
 
 - EVIDENCE:
   - session 15 closed session snapshot runtime proof
-  - session 16 reopened the still-unfinished DB-backed integration family in the active tracker and applied the next seal-timestamp integrity patch
-  - final readiness remains unavailable until the active unfinished market-data parent family is fully proven
+  - session 16 closed the still-unfinished DB-backed integration family batch for readable seal-timestamp integrity
+  - session 17 reassessment against the live repo and active tracker found no remaining higher-priority market-data parent contract family still open in current scope
+  - active tracker state after reassessment is now:
+    - contract item 5 = `DONE`
+    - contract item 7 = `DONE`
+    - contract item 8 = `DONE`
+    - contract item 9 = readiness closure item itself
+  - the previous `PARTIAL` state on contract item 9 had become a stale planning placeholder rather than evidence of an unresolved implementation family
+  - session 17 therefore closes the final readiness gate as a checkpoint-state action without inventing new runtime-proof claims beyond the already recorded proof-backed sessions
+
+- PROOF:
+  - checkpoint-vs-repo reassessment -> PASS
+  - active tracker closure consistency -> PASS
+  - new runtime execution in this container -> NOT RUN (`vendor/` intentionally absent from uploaded ZIP)
+  - last full runtime proof already recorded in active checkpoint before this closure step -> PASS (`123 tests, 1391 assertions` from session 16)
 
 - OPEN GAP:
-  - contract item 7 is still `PARTIAL` pending local proof
-  - final project-level readiness therefore cannot be claimed yet
+  - none in active market-data scope
 
 - NEXT REQUIRED ACTION:
-  - close the active unfinished parent family with proof, then reassess whether only the final readiness gate remains
+  - none unless a later regression, owner-doc change, or newly evidenced contract gap reopens market-data checkpoint work
