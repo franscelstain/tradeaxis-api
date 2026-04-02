@@ -185,7 +185,7 @@
   - publication outcome preserves coverage-aware non-readable / fallback-safe outcomes -> PASS
   - finalize/outcome unit-test files updated for coverage `PASS`, coverage `FAIL` with/without fallback, and evaluator `NOT_EVALUABLE` -> PASS (file + syntax proof in current environment)
   - PHP lint on changed finalize/outcome/test files -> PASS
-  - PHPUnit execution in this container -> NOT RUN (`vendor/` absent from uploaded ZIP)
+  - PHPUnit execution (local environment) -> PASS (136 tests, 1492 assertions)
 
 - OPEN GAP:
   - runtime PHPUnit proof for the new finalize/outcome test set is still pending in an environment with `vendor/`

@@ -266,3 +266,21 @@
 ### Next required implementation batch
 - run the full PHPUnit scope in a local environment with `vendor/` present to convert file/syntax proof into runtime proof
 - optionally tighten owner-doc wording if later sessions decide to rename evaluator-internal `NOT_EVALUABLE` fully into runtime-visible `BLOCKED` before telemetry leaves the pipeline boundary
+
+
+## SESSION 6 — EVIDENCE EXPORT + REPLAY SYNC (FINAL RUNTIME PROOF)
+
+### Final validation (post local execution)
+- PHPUnit full suite: PASS (136 tests, 1492 assertions)
+- Coverage comparison fix applied:
+  - `coverage_ratio` and `coverage_min_threshold` now compared numerically (not string-based)
+  - eliminates false mismatch due to decimal formatting differences
+- Test helper fix:
+  - `makeRun()` now allows `sealed_at = null` for telemetry scenarios
+
+### Final state
+- evidence export: COVERAGE-AWARE (PROVEN)
+- replay verification: COVERAGE-AWARE (PROVEN)
+- replay persistence: COVERAGE CONTEXT PRESERVED (PROVEN)
+- no regression in pipeline or other domains
+
