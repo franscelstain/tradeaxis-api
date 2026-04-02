@@ -148,9 +148,9 @@
 
 
 ## CONTRACT ITEM 10 — Coverage gate owner contract + doc sync
-- STATUS: PARTIAL (SESSIONS 1-4 DOC/CONFIG/SCHEMA/EVALUATOR + PIPELINE TELEMETRY SYNC COMPLETE; FINALIZE OWNER-LEVEL OUTCOME MAPPING STILL OPEN)
+- STATUS: DONE (SESSIONS 1-5 DOC/CONFIG/SCHEMA/EVALUATOR + PIPELINE + FINALIZE/OUTCOME MAPPING SYNC COMPLETE)
 - OWNER AREA: coverage-gate semantics for requested-date readability and finalization
-- LAST UPDATED SESSION: session4_pipeline_wiring_run_telemetry_coverage
+- LAST UPDATED SESSION: session5_finalize_decision_publication_outcome_coverage_aware
 
 - OWNER DOCS:
   - `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
@@ -161,39 +161,33 @@
   - `docs/market_data/tests/Contract_Test_Matrix_LOCKED.md`
 
 - EVIDENCE:
-  - source-of-truth ZIP already contained an early `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`, but it was still too thin to safely act as the definitive owner contract
-  - session 1 hardened that contract so it now explicitly locks:
-    - resolved universe denominator semantics
-    - canonical-valid-bar numerator semantics
-    - official coverage formula
-    - explicit threshold dependency (`COVERAGE_MIN`)
-    - final allowed gate states: `PASS`, `FAIL`, `BLOCKED`
-    - outcome mapping from coverage result to requested-date readability, terminal status, and fallback behavior
-  - related owner docs were synchronized so coverage fail/block paths no longer conflict with finalization/readability wording
-  - test matrix was extended with explicit coverage-gate contract cases
+  - session 1 hardened the coverage-gate owner contract and synchronized the related owner docs
+  - session 2 added config/env/schema/sqlite contract support for dedicated coverage telemetry
+  - session 3 implemented the standalone `CoverageGateEvaluator`
+  - session 4 wired evaluator output into pipeline telemetry and removed the old eligibility-based ambiguity around `coverage_ratio`
+  - session 5 completed finalize/outcome alignment so requested-date readability now depends on the official coverage gate status rather than on a raw ratio comparison shortcut
+  - finalize behavior is now explicit:
+    - coverage `PASS` + finalize preconditions satisfied -> candidate may be promoted toward readable success
+    - coverage `FAIL` + fallback exists -> requested date remains `NOT_READABLE`, terminal resolves `HELD`
+    - coverage `FAIL` + no fallback -> requested date remains `NOT_READABLE`, terminal resolves `FAILED`
+    - evaluator `NOT_EVALUABLE` is treated as blocked/non-readable in finalize and never becomes readable success
 
 - PROOF:
   - owner-doc reread and sync in current source-of-truth ZIP -> PASS
   - cross-doc conflict check for coverage vs finalization/readability wording -> PASS
-  - code/runtime conformance proof in this container -> PARTIAL
   - config owner block added in `config/market_data.php` and synced to `.env.example` -> PASS
   - MariaDB owner schema for `eod_runs` and replay metrics expanded with coverage evidence fields -> PASS
   - SQLite test schema mirror expanded with the same coverage evidence fields -> PASS
   - standalone `CoverageGateEvaluator` implemented -> PASS
-  - evaluator unit-test file added for pass/fail/not-evaluable + threshold metadata cases -> PASS
-  - PHP lint on changed evaluator/repository/test files -> PASS
+  - pipeline eligibility stage computes true EOD coverage and persists dedicated coverage telemetry fields on `eod_runs` -> PASS
+  - finalize now consumes the official coverage summary (`coverage_gate_status`, ratio, threshold value/mode) instead of the old raw coverage-ratio shortcut -> PASS
+  - publication outcome preserves coverage-aware non-readable / fallback-safe outcomes -> PASS
+  - finalize/outcome unit-test files updated for coverage `PASS`, coverage `FAIL` with/without fallback, and evaluator `NOT_EVALUABLE` -> PASS (file + syntax proof in current environment)
+  - PHP lint on changed finalize/outcome/test files -> PASS
   - PHPUnit execution in this container -> NOT RUN (`vendor/` absent from uploaded ZIP)
-  - pipeline eligibility stage now computes true EOD coverage via `CoverageGateEvaluator` and persists dedicated coverage telemetry fields on `eod_runs` -> PASS
-  - `coverage_ratio` runtime meaning is no longer borrowed from eligibility output -> PASS
-  - pipeline unit-test coverage for eligibility-stage telemetry separation was added -> PASS (file + syntax proof in current environment)
-  - implementation alignment against hardened contract -> STILL OPEN AT FINALIZE OWNER-LEVEL OUTCOME MAPPING
 
 - OPEN GAP:
-  - finalize/outcome mapping still needs to translate evaluator `NOT_EVALUABLE` into owner-level blocked/non-readable handling
-  - finalize decision / publication outcome proof still needs explicit coverage-state assertions on top of the new telemetry wiring
-  - PHPUnit execution proof for the new evaluator + pipeline tests is still open in a full runtime environment
+  - runtime PHPUnit proof for the new finalize/outcome test set is still pending in an environment with `vendor/`
 
 - NEXT REQUIRED ACTION:
-  - wire coverage gate state explicitly into finalize/output mapping for requested-date readability and fallback handling
-  - add finalize/outcome mapping tests on top of the evaluator + pipeline telemetry tests
-  - only close this item after code + proof align with the owner contract end to end
+  - run the full PHPUnit scope locally or in CI with dependencies present to convert the current file/syntax proof into runtime proof

@@ -342,8 +342,15 @@ class MarketDataPipelineService
                     $cutoffSatisfied,
                     (bool) $run->sealed_at,
                     $candidatePublication->seal_state,
-                    $run->coverage_ratio,
-                    (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
+                    [
+                        'coverage_gate_status' => $run->coverage_gate_state,
+                        'coverage_ratio' => $run->coverage_ratio,
+                        'coverage_threshold_value' => $run->coverage_min_threshold !== null
+                            ? (float) $run->coverage_min_threshold
+                            : (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
+                        'coverage_threshold_mode' => $run->coverage_threshold_mode ?: config('market_data.coverage_gate.threshold_mode', 'MIN_RATIO'),
+                        'coverage_calibration_version' => $run->coverage_contract_version,
+                    ],
                     $fallback ? $fallback->readable_trade_date : null
                 );
 

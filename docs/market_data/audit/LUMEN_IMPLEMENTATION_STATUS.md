@@ -203,3 +203,32 @@
 - wire coverage gate state explicitly into finalize outcome mapping for requested-date readability / held-vs-failed resolution
 - add finalize-level proof for fallback/readability behavior when coverage is `FAIL` or evaluator result is non-evaluable
 - only close the coverage-gate contract family after finalize/output mapping is fully aligned end to end
+
+
+## SESSION 5 — FINALIZE DECISION + PUBLICATION OUTCOME COVERAGE-AWARE
+
+### Scope completed in this session
+- re-audited the finalize/readability path so requested-date publishability no longer depends on the old ambiguous `coverage_ratio >= coverageMin` shortcut
+- changed finalize pre-decision handling so runtime now consumes the official coverage summary (`coverage_gate_status`, ratio, threshold value/mode) written by the coverage evaluator / telemetry path
+- aligned publication outcome behavior so coverage `PASS`, `FAIL`, and evaluator `NOT_EVALUABLE` now drive requested-date readability and fallback behavior explicitly
+- added finalize/outcome unit-test coverage for coverage-aware readable/held/failed outcomes
+
+### What changed
+- `FinalizeDecisionService` no longer decides from raw ratio + threshold inputs; it now accepts the official coverage summary and maps it to finalize-safe state
+- finalize behavior is now:
+  - coverage `PASS` + other finalize preconditions satisfied -> promotion allowed toward `READABLE`
+  - coverage `FAIL` + fallback exists -> requested date stays `NOT_READABLE`, terminal resolves `HELD`
+  - coverage `FAIL` + no fallback -> requested date stays `NOT_READABLE`, terminal resolves `FAILED`
+  - coverage `NOT_EVALUABLE` -> requested date never becomes `READABLE`; finalize treats this as blocked/non-readable and only allows `HELD` when fallback continuity exists
+- `MarketDataPipelineService::completeFinalize(...)` now passes the official coverage summary from run telemetry instead of the old ambiguous raw coverage ratio path
+- `PublicationFinalizeOutcomeService` preserves coverage-aware non-promotion outcomes without collapsing them into readable success
+
+### Current checkpoint result
+- finalize decision now uses official coverage gate status instead of raw ratio comparison: `DONE`
+- publication outcome behavior for coverage-aware readable / held / non-readable resolution: `DONE`
+- evaluator `NOT_EVALUABLE` no longer has a path to readable success: `DONE`
+- full PHPUnit runtime proof in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- run the full PHPUnit scope in a local environment with `vendor/` present to convert file/syntax proof into runtime proof
+- optionally tighten owner-doc wording if later sessions decide to rename evaluator-internal `NOT_EVALUABLE` fully into runtime-visible `BLOCKED` before telemetry leaves the pipeline boundary

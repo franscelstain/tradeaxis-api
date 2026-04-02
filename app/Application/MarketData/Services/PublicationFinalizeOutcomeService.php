@@ -23,6 +23,7 @@ class PublicationFinalizeOutcomeService
         $promotionError = $context['promotion_error'] ?? null;
 
         $state = [
+            'coverage_gate_status' => $preDecision['coverage_gate_status'] ?? null,
             'quality_gate_state' => $preDecision['quality_gate_state'],
             'terminal_status' => $preDecision['terminal_status'],
             'publishability_state' => $preDecision['publishability_state'],
