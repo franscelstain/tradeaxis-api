@@ -74,6 +74,21 @@ Must support, at minimum:
 - config identity
 - correction/publication linkage
 
+#### Coverage-gate evidence required on runs
+For the locked coverage-gate contract, `eod_runs` must also support coverage evidence fields equivalent to:
+- `coverage_universe_count`
+- `coverage_available_count`
+- `coverage_missing_count`
+- `coverage_ratio`
+- `coverage_min_threshold`
+- `coverage_gate_state`
+- `coverage_threshold_mode`
+- `coverage_universe_basis`
+- `coverage_contract_version`
+- optional `coverage_missing_sample_json`
+
+These fields exist so finalization does not have to infer denominator, numerator, or threshold after the fact.
+
 ### 6. Run events
 Must support:
 - append-only event trail

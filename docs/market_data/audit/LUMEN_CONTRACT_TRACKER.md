@@ -148,9 +148,9 @@
 
 
 ## CONTRACT ITEM 10 — Coverage gate owner contract + doc sync
-- STATUS: PARTIAL (SESSION 1 DOC OWNER SYNC COMPLETE; CODE/TEST ALIGNMENT OPEN)
+- STATUS: PARTIAL (SESSIONS 1-2 DOC/CONFIG/SCHEMA SYNC COMPLETE; RUNTIME IMPLEMENTATION STILL OPEN)
 - OWNER AREA: coverage-gate semantics for requested-date readability and finalization
-- LAST UPDATED SESSION: session1_coverage_gate_doc_sync
+- LAST UPDATED SESSION: session2_coverage_gate_config_env_db_schema
 
 - OWNER DOCS:
   - `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
@@ -176,10 +176,14 @@
   - owner-doc reread and sync in current source-of-truth ZIP -> PASS
   - cross-doc conflict check for coverage vs finalization/readability wording -> PASS
   - code/runtime conformance proof in this container -> NOT RUN (`vendor/` absent from uploaded ZIP)
+  - config owner block added in `config/market_data.php` and synced to `.env.example` -> PASS
+  - MariaDB owner schema for `eod_runs` and replay metrics expanded with coverage evidence fields -> PASS
+  - SQLite test schema mirror expanded with the same coverage evidence fields -> PASS
   - implementation alignment against hardened contract -> OPEN
 
 - OPEN GAP:
   - code/service/finalize path may still not fully enforce the hardened denominator/numerator/state rules
+  - runtime write-path still needs to populate the new coverage config/schema fields consistently
   - explicit DB/runtime evidence fields for coverage denominator/numerator/threshold may still need implementation or strengthening
   - PHPUnit/integration proof for the new coverage-gate cases is still open
 

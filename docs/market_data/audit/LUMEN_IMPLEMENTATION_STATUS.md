@@ -1,3 +1,40 @@
+## SESSION 2 — CONFIG + ENV + DB SCHEMA CONTRACT FOR COVERAGE GATE
+
+### Scope completed in this session
+- added the official runtime config block for coverage gate in `config/market_data.php`
+- synchronized `.env.example` with explicit coverage-gate keys required by the owner contract
+- expanded MariaDB owner schema docs so `eod_runs` carries explicit denominator/numerator/threshold/state metadata for coverage evaluation
+- expanded SQLite test schema mirror so test bootstrap no longer lags behind the owner DB contract
+- synchronized DB metadata docs so coverage evidence requirements are no longer informal
+
+### What changed
+- coverage gate now has an official config surface under `market_data.coverage_gate`
+- existing `market_data.platform.coverage_min` remains as a backward-compatibility alias during transition, but the owner config block is now the coverage-gate block
+- `eod_runs` schema contract now includes:
+  - `coverage_universe_count`
+  - `coverage_available_count`
+  - `coverage_missing_count`
+  - `coverage_min_threshold`
+  - `coverage_gate_state`
+  - `coverage_threshold_mode`
+  - `coverage_universe_basis`
+  - `coverage_contract_version`
+  - `coverage_missing_sample_json`
+- replay/test schema mirror was aligned to the same evidence model
+
+### Current checkpoint result
+- owner docs for coverage formula/outcome: `DONE`
+- config + env contract for coverage gate: `DONE`
+- DB schema contract + sqlite mirror for coverage evidence: `DONE`
+- runtime service/finalize population of the new config/schema fields: `PARTIAL`
+- PHPUnit/runtime proof in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- change runtime services/finalize flow to read the official `coverage_gate` config block
+- populate the new `eod_runs` coverage fields during evaluation/finalization
+- add/update PHPUnit coverage-gate tests to assert field population and outcome mapping
+
+
 # LUMEN_IMPLEMENTATION_STATUS
 
 ## SESSION 19 FINAL AUDIT CLOSURE

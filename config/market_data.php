@@ -6,13 +6,23 @@ return [
         'seal_required_for_consumers' => (bool) env('MARKET_DATA_SEAL_REQUIRED_FOR_CONSUMERS', true),
         'cutoff_time' => env('MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME', '17:15:00'),
         'cutoff_grace_minutes' => (int) env('MARKET_DATA_CUT_OFF_GRACE_MINUTES', 15),
-        'coverage_min' => (float) env('MARKET_DATA_COVERAGE_MIN', 0.98),
+        'coverage_min' => (float) env('MARKET_DATA_COVERAGE_MIN', 0.98), // legacy alias; owner block lives under coverage_gate.min_ratio
         'price_basis_default' => env('MARKET_DATA_PRICE_BASIS_DEFAULT', 'close'),
         'lot_size' => (int) env('MARKET_DATA_LOT_SIZE', 100),
     ],
     'pipeline' => [
         'daily_enabled' => (bool) env('MARKET_DATA_DAILY_ENABLED', false),
         'default_source_mode' => env('MARKET_DATA_DEFAULT_SOURCE_MODE', 'api'),
+    ],
+    'coverage_gate' => [
+        'enabled' => (bool) env('MARKET_DATA_COVERAGE_GATE_ENABLED', true),
+        'min_ratio' => (float) env('MARKET_DATA_COVERAGE_MIN', 0.98),
+        'threshold_mode' => env('MARKET_DATA_COVERAGE_THRESHOLD_MODE', 'MIN_RATIO'),
+        'blocked_on_zero_universe' => (bool) env('MARKET_DATA_COVERAGE_BLOCK_ZERO_UNIVERSE', true),
+        'require_canonical_bar_evidence' => (bool) env('MARKET_DATA_COVERAGE_REQUIRE_CANONICAL_BAR_EVIDENCE', true),
+        'universe_basis' => env('MARKET_DATA_COVERAGE_UNIVERSE_BASIS', 'ACTIVE_LISTED_EQUITY_AS_OF_DATE'),
+        'contract_version' => env('MARKET_DATA_COVERAGE_CONTRACT_VERSION', 'coverage_gate_v1'),
+        'missing_sample_limit' => (int) env('MARKET_DATA_COVERAGE_MISSING_SAMPLE_LIMIT', 25),
     ],
     'indicators' => [
         'set_version' => env('MARKET_DATA_INDICATOR_SET_VERSION', 'v1'),
