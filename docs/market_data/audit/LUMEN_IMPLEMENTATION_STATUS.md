@@ -37,3 +37,13 @@
 ### Next Step
 - market-data checkpoint work in the active scope is closed unless a later regression, new owner-doc change, or newly evidenced contract gap reopens it
 - if you want an additional runtime-tight confirmation after receiving this artifact, run the local proof commands listed in the session output and send back the exact pass/fail results
+
+### Post-closure provider default sync
+- after session 17 closure, the active codebase was intentionally updated so default EOD acquisition now uses `source_mode=api` with default provider `yahoo_finance`
+- `.env.example` and `config/market_data.php` now select Yahoo Finance as the default provider path, with IDX symbol suffix `.JK` handled inside the source adapter
+- targeted proof for the provider-default patch passed locally after hotfix:
+  - `PublicApiEodBarsAdapterTest` -> PASS (`4 tests, 15 assertions`)
+  - `EodBarsIngestServiceTest` -> PASS (`2 tests, 16 assertions`)
+  - full PHPUnit suite -> PASS (`125 tests, 1405 assertions`)
+- docs were then synchronized in owner market-data areas so the default-provider change is explicit and does not remain as code-only behavior
+- classification: sanctioned doc-sync update, not drift

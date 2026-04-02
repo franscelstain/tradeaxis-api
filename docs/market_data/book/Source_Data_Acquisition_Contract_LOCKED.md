@@ -12,6 +12,15 @@ Allowed source modes:
 - local CSV/JSON import
 - manual entry/import prepared in a controlled format
 
+## Current selected default operating mode (LOCKED FOR ACTIVE CODEBASE)
+For the active market-data codebase, the selected default acquisition mode is:
+- `source_mode=api`
+- default provider = `yahoo_finance`
+- IDX ticker requests append suffix `.JK` before provider fetch
+- `manual_file` remains a valid controlled fallback mode for local recovery, deterministic replay support, and operator-led ingestion when API mode is unavailable
+
+This is a sanctioned operating-model choice for the active codebase, not an implementation drift. The downstream canonicalization contract remains source-mode agnostic after normalization.
+
 The downstream canonicalization contract must not care which source mode produced the row once it has been normalized.
 
 ## Minimum normalized source fields (LOCKED)
@@ -34,6 +43,8 @@ Every normalized source row must provide:
 - retry with backoff on transient API errors when API mode is used
 - manual-file mode must validate schema before rows are accepted
 - every acquisition stage must record source mode and source name in run telemetry
+- for the active default `yahoo_finance` provider path, ingestion resolves the active ticker universe first, then fetches provider payloads per ticker symbol before normalization into canonical source rows
+- for the active default `yahoo_finance` provider path, EOD requests use daily interval semantics and provider-specific symbol mapping must stay inside the source adapter, not leak into downstream canonicalization
 
 ## Failure classification (LOCKED)
 - transient API error: retry, then `HELD` if unresolved

@@ -22,6 +22,12 @@ Acquire and canonicalize EOD bars for requested date T.
 - `requested_date=T`
 - source mode (`api|manual_file|manual_entry`)
 
+#### Active default operating notes
+- current default source mode for the active codebase is `api`
+- current default API provider for the active codebase is `yahoo_finance`
+- Yahoo requests for IDX symbols append `.JK` inside the provider adapter
+- `manual_file` remains a valid fallback/operator mode and is still required by some controlled runbook paths such as minimum session-snapshot runtime
+
 #### Minimum output
 - valid bars -> `eod_bars`
 - invalid bars -> `eod_invalid_bars`
@@ -125,7 +131,7 @@ Capture optional non-streaming session snapshot aligned to readable effective tr
 #### Minimum input
 - `trade_date` aligned to a readable current publication
 - `snapshot_slot`
-- `source_mode=manual_file` for minimum runtime
+- `source_mode=manual_file` for minimum runtime on this command even though the platform-wide EOD ingestion default is now `api`
 - `input_file` containing upstream-safe session snapshot rows keyed by `ticker_code`
 - optional deterministic `output_dir`
 

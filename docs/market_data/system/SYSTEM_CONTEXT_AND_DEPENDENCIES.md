@@ -29,6 +29,13 @@ Platform behavior juga bergantung pada area berikut:
 ## Operating model note
 Paket ini harus jujur terhadap operating model. Bila sumber data masih gratis/public atau ada langkah operator/manual injection tertentu, hal itu adalah bagian dari operating model dan harus dibaca melalui contract/runbook terkait, bukan disembunyikan.
 
+Untuk active codebase saat ini, operating-model choice yang disahkan adalah:
+- default EOD acquisition berjalan lewat public API provider `yahoo_finance`
+- symbol IDX dimap ke format provider dengan suffix `.JK` di source adapter
+- `manual_file` tidak dihapus; mode itu tetap resmi untuk fallback, replay-oriented workflows, dan operator-controlled ingestion tertentu
+
+Pilihan ini adalah perubahan yang sah karena sudah disinkronkan ke config/env, adapter implementation, proof tests, dan owner docs market-data. Ini bukan drift implementasi.
+
 ## Dependency reading pointers
 - acquisition and source behavior → `book/Source_Data_Acquisition_Contract_LOCKED.md`
 - publication pointer integrity → `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`, `db/EOD_Current_Publication_Pointer_Table.sql`, `db/Publication_Current_Pointer_Switch_Procedure_LOCKED.sql`

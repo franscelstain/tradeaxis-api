@@ -123,12 +123,14 @@
     - contract item 9 = readiness closure item itself
   - the previous `PARTIAL` state on contract item 9 had become a stale planning placeholder rather than evidence of an unresolved implementation family
   - session 17 therefore closes the final readiness gate as a checkpoint-state action without inventing new runtime-proof claims beyond the already recorded proof-backed sessions
+  - after that closure, the active codebase received one sanctioned config/provider-default update: EOD acquisition default now uses `source_mode=api` with provider `yahoo_finance`, and owner docs were synchronized immediately after proof passed
 
 - PROOF:
   - checkpoint-vs-repo reassessment -> PASS
   - active tracker closure consistency -> PASS
   - new runtime execution in this container -> NOT RUN (`vendor/` intentionally absent from uploaded ZIP)
   - last full runtime proof already recorded in active checkpoint before this closure step -> PASS (`123 tests, 1391 assertions` from session 16)
+  - post-closure provider-default proof -> PASS (`PublicApiEodBarsAdapterTest` 4/4, `EodBarsIngestServiceTest` 2/2, full suite `125 tests, 1405 assertions`)
 
 - OPEN GAP:
   - none in active market-data scope
