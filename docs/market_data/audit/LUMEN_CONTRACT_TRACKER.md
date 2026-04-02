@@ -3,7 +3,7 @@
 ## CONTRACT ITEM 8 — Ops backfill / replay / evidence export command semantics
 - STATUS: PARTIAL
 - OWNER AREA: ops backfill, replay, and evidence export command/service semantics
-- LAST UPDATED SESSION: session9a_replay_verify_output_dir_hotfix
+- LAST UPDATED SESSION: session9_final_proof_synced
 - EVIDENCE:
   - owner-doc target remains `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`, `docs/market_data/ops/Bootstrap_and_Backfill_Runbook_LOCKED.md`, and related replay/evidence contracts under `docs/market_data/ops/`
   - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` now covers `market-data:replay:verify` for:
@@ -18,11 +18,10 @@
     - `market-data:replay:backfill` failure summary behavior
     - `market-data:backfill` summary behavior
     - session snapshot capture / purge summary behavior
-  - proof executed in-session:
+  - proof executed and confirmed:
     - `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> passed
-  - proof pending in local user environment because `vendor/` is absent from uploaded ZIP:
-    - `vendor\\bin\\phpunit tests\\Unit\\MarketData\\OpsCommandSurfaceTest.php`
-    - broader suite confirmation after integrating the session-9 patch
+    - `vendor\\bin\\phpunit tests\\Unit\\MarketData\\OpsCommandSurfaceTest.php` -> passed (`OK (12 tests, 51 assertions)`)
+    - `vendor\\bin\\phpunit` -> passed (`OK (113 tests, 1243 assertions)`)
 - OPEN GAP:
   - wider ops family remains partial beyond the command-surface slices already covered
   - broader parity across replay/backfill/evidence operational matrix can still be tightened later
@@ -31,8 +30,8 @@
   - continue tightening the next narrow ops/runbook parity gap under CONTRACT ITEM 8 without reopening already-covered command surfaces
 
 
-### SESSION 9A PROOF-SYNC NOTE
+### SESSION 9 FINAL PROOF-SYNC NOTE
 - Contract family: ops / replay / evidence command semantics.
-- Hotfix: `VerifyReplayCommand` no longer calls `exportReplayEvidence()` when `--output_dir` is omitted.
-- Reason: local user proof showed mismatch-path command test failing due to unintended export side effect.
-- Status impact: keeps ITEM 8 in `PARTIAL`, but SESSION 9 sub-gap is now aligned with expected command semantics pending local green proof.
+- Hotfix confirmed: `VerifyReplayCommand` no longer calls `exportReplayEvidence()` when `--output_dir` is omitted.
+- Reason: local user proof exposed unintended export side effect on mismatch path; the hotfix aligned runtime behavior with the command-surface contract.
+- Status impact: ITEM 8 remains `PARTIAL` overall, but the SESSION 9 replay-verify sub-gap is now closed with local targeted proof and full-suite confirmation.
