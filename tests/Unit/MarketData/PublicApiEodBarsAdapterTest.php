@@ -93,7 +93,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
                             'meta' => [
                                 'exchangeTimezoneName' => 'Asia/Jakarta',
                             ],
-                            'timestamp' => [1773939600],
+                            'timestamp' => [1773828000],
                             'indicators' => [
                                 'quote' => [[
                                     'open' => [100],
