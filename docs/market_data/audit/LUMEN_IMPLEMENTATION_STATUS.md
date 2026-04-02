@@ -1,44 +1,43 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
-## SESSION 15 FINAL STATE
+## SESSION 16 FINAL STATE
 
-- Batch scope: session snapshot capture slot-tolerance enforcement and operator evidence surfacing
-- Parent contract family: `market-data:session-snapshot`
+- Batch scope: readable seal-timestamp integrity for current/baseline/fallback publication resolution
+- Parent contract family: `db-backed integration proof / readable publication integrity`
 
 - Checkpoint validation against repo:
-  - session 14 purge cutoff-source patch is present in repo and still aligned with the current codebase
-  - session-snapshot family remained the highest-priority unfinished parent contract family in tracker
-  - repo validation exposed a still-open runtime gap inside the same family: locked slot-tolerance rules existed in docs/config, but capture runtime still accepted out-of-window rows silently and command/operator surfaces did not expose slot-tolerance evidence
+  - session 15 patch is present in repo and still aligned with the current codebase
+  - current checkpoint docs were no longer sufficient as active planning state because the tracker only exposed already-closed families and hid the still-open DB-backed integration family
+  - repo validation against owner docs found the next grounded load-bearing gap inside that unfinished family:
+    - readable resolution already required `seal_state = SEALED`
+    - but it still accepted publication/run states with missing `sealed_at`
+    - this was weaker than owner docs that require seal completion and operator consumability to include non-null `sealed_at`
 
 - Patch implemented:
-  - `SessionSnapshotService::capture(...)` now enforces locked default slot anchors for:
-    - `OPEN_CHECK=09:10:00`
-    - `MIDDAY_CHECK=13:30:00`
-    - `PRE_CLOSE_CHECK=14:45:00`
-  - capture now uses configured `market_data.session_snapshot.slot_tolerance_minutes` to treat out-of-window rows as skipped partial-state rows instead of silently accepting them
-  - session snapshot event payload and summary artifact now expose:
-    - `slot_tolerance_minutes`
-    - `slot_anchor_time` when the slot is one of the locked default slots
-    - `slot_miss_count`
-  - `market-data:session-snapshot` command now renders effective publication context and slot-tolerance evidence:
-    - `trade_date_effective`
-    - `publication_id`
-    - `slot_anchor_time`
-    - `slot_tolerance_minutes`
-    - `slot_miss_count`
-  - tests expanded for both the in-tolerance capture path and out-of-window partial-slot-miss path
-  - locked docs updated so slot-miss behavior and minimum summary fields are explicit instead of implicit
+  - hardened publication resolver queries in `EodPublicationRepository` so current, pointer-resolved, correction-baseline, and fallback-readable resolution now all require:
+    - non-null pointer `sealed_at`
+    - non-null publication `sealed_at`
+    - non-null owning run `sealed_at`
+  - expanded repository integration tests for:
+    - missing publication `sealed_at`
+    - missing run `sealed_at`
+  - expanded DB-backed pipeline integration proof for:
+    - approved correction baseline rejection when current publication `sealed_at` is missing
+    - post-switch mismatch fallback protection when fallback publication `sealed_at` is missing
+  - updated the active contract tracker so the still-open DB-backed integration family is visible again and the session 16 batch is recorded there
 
 - Proof status:
-  - syntax check -> PASS
-  - targeted PHPUnit -> NOT RUN in this environment (`vendor/` not included in source ZIP)
-  - full PHPUnit -> NOT RUN in this environment (`vendor/` not included in source ZIP)
+  - syntax check in this environment -> pending
+  - targeted PHPUnit in this environment -> pending
+  - full PHPUnit in this environment -> pending
+  - reason: uploaded ZIP intentionally omits `vendor/`, so runtime proof must be executed in the user's local environment after this patch is returned
 
 ### Impact
-- session-snapshot capture now follows the locked slot-tolerance contract instead of silently storing rows that miss the allowed slot window
-- operator evidence is stronger because capture output now makes effective-date/publication alignment and slot-miss counts visible without opening JSON artifacts manually
-- session-snapshot parent family is narrower and more audit-ready, but still cannot be declared fully closed until local runtime proof is executed against the updated patch set
+- readable publication resolution is now stricter and no longer treats `seal_state = SEALED` with missing `sealed_at` as consumer-safe
+- correction baseline resolution now rejects a malformed current publication that claims to be sealed but has no seal timestamp
+- fallback effective-date resolution now refuses to invent `trade_date_effective` from a prior readable chain whose publication lost its seal timestamp
+- checkpoint state is usable again for next-session planning because the unfinished DB-backed integration family is now back in the active tracker
 
 ### Next Step
-- run the listed local proof commands against the updated artifact
-- if proof passes, reassess whether any grounded session-snapshot runtime gap still remains; otherwise repair from failing output first
+- run the local proof commands listed in the session output
+- if targeted/runtime proof passes, upgrade the session 16 batch from patch-complete to proof-complete and continue to the next grounded DB-backed integration gap or the final readiness gate

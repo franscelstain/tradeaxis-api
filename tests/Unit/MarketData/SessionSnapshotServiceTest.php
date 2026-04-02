@@ -36,7 +36,7 @@ class SessionSnapshotServiceTest extends TestCase
     {
         $inputFile = sys_get_temp_dir().'/session_snapshot_'.uniqid().'.json';
         file_put_contents($inputFile, json_encode([
-            ['ticker_code' => 'BBCA', 'captured_at' => '2026-03-24 09:10:00', 'last_price' => 9100, 'prev_close' => 9000, 'chg_pct' => 1.1111, 'volume' => 100000, 'day_high' => 9150, 'day_low' => 9050],
+            ['ticker_code' => 'BBCA', 'captured_at' => '2026-03-24T09:10:00+07:00', 'last_price' => 9100, 'prev_close' => 9000, 'chg_pct' => 1.1111, 'volume' => 100000, 'day_high' => 9150, 'day_low' => 9050],
         ]));
         $outputDir = sys_get_temp_dir().'/session_snapshot_output_'.uniqid();
 
@@ -79,7 +79,7 @@ class SessionSnapshotServiceTest extends TestCase
     {
         $inputFile = sys_get_temp_dir().'/session_snapshot_slot_miss_'.uniqid().'.json';
         file_put_contents($inputFile, json_encode([
-            ['ticker_code' => 'BBCA', 'captured_at' => '2026-03-24 09:20:30', 'last_price' => 9100, 'prev_close' => 9000, 'chg_pct' => 1.1111, 'volume' => 100000, 'day_high' => 9150, 'day_low' => 9050],
+            ['ticker_code' => 'BBCA', 'captured_at' => '2026-03-24T09:20:30+07:00', 'last_price' => 9100, 'prev_close' => 9000, 'chg_pct' => 1.1111, 'volume' => 100000, 'day_high' => 9150, 'day_low' => 9050],
         ]));
         $outputDir = sys_get_temp_dir().'/session_snapshot_slot_miss_output_'.uniqid();
 
