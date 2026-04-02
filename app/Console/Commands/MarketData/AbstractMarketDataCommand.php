@@ -45,19 +45,165 @@ abstract class AbstractMarketDataCommand extends Command
 
     protected function renderRunSummary($run)
     {
-        $this->info('run_id='.(string) $run->run_id);
-        $this->line('requested_date='.(string) $run->trade_date_requested);
-        $this->line('stage='.(string) $run->stage);
-        $this->line('lifecycle_state='.(string) $run->lifecycle_state);
-        $this->line('terminal_status='.(string) $run->terminal_status);
-        $this->line('publishability_state='.(string) $run->publishability_state);
+        $this->info('run_id='.(string) $this->runField($run, 'run_id', ''));
+        $this->line('requested_date='.(string) $this->runField($run, 'trade_date_requested', ''));
+        $this->line('stage='.(string) $this->runField($run, 'stage', ''));
+        $this->line('lifecycle_state='.(string) $this->runField($run, 'lifecycle_state', ''));
+        $this->line('terminal_status='.(string) $this->runField($run, 'terminal_status', ''));
+        $this->line('publishability_state='.(string) $this->runField($run, 'publishability_state', ''));
 
-        if (isset($run->reason_code) && $run->reason_code !== null && $run->reason_code !== '') {
-            $this->line('reason_code='.(string) $run->reason_code);
+        $this->renderCoverageSummary($run);
+
+        $reasonCode = $this->runField($run, 'reason_code');
+        if ($reasonCode !== null && $reasonCode !== '') {
+            $this->line('reason_code='.(string) $reasonCode);
         }
 
-        if (isset($run->notes) && $run->notes !== null && $run->notes !== '') {
-            $this->line('notes='.(string) $run->notes);
+        $notes = $this->runField($run, 'notes');
+        if ($notes !== null && $notes !== '') {
+            $this->line('notes='.(string) $notes);
         }
+    }
+
+    protected function renderCoverageSummary($run)
+    {
+        $state = $this->runField($run, 'coverage_gate_state');
+        $ratio = $this->runField($run, 'coverage_ratio');
+        $available = $this->runField($run, 'coverage_available_count');
+        $universe = $this->runField($run, 'coverage_universe_count');
+        $missing = $this->runField($run, 'coverage_missing_count');
+        $threshold = $this->runField($run, 'coverage_min_threshold');
+        $basis = $this->runField($run, 'coverage_universe_basis');
+        $contract = $this->runField($run, 'coverage_contract_version');
+
+        $coverageReasonCode = $this->runField($run, 'coverage_reason_code');
+        if ($coverageReasonCode === null || $coverageReasonCode === '') {
+            $coverageReasonCode = $this->resolveCoverageReasonCode($run, $state);
+        }
+
+        if ($state === null && $ratio === null && $available === null && $universe === null && $missing === null && $threshold === null && $coverageReasonCode === null) {
+            return;
+        }
+
+        if ($state !== null && $state !== '') {
+            $this->line('coverage_gate_state='.(string) $state);
+        }
+
+        if ($coverageReasonCode !== null && $coverageReasonCode !== '') {
+            $this->line('coverage_reason_code='.(string) $coverageReasonCode);
+        }
+
+        $summaryParts = [];
+
+        if ($available !== null || $universe !== null) {
+            $summaryParts[] = 'available='.(string) ($available ?? 'null').'/'.(string) ($universe ?? 'null');
+        }
+
+        if ($missing !== null) {
+            $summaryParts[] = 'missing='.(string) $missing;
+        }
+
+        if ($ratio !== null) {
+            $summaryParts[] = 'ratio='.$this->formatCoverageDecimal($ratio);
+        }
+
+        if ($threshold !== null) {
+            $summaryParts[] = 'threshold='.$this->formatCoverageDecimal($threshold);
+        }
+
+        if ($basis !== null && $basis !== '') {
+            $summaryParts[] = 'basis='.(string) $basis;
+        }
+
+        if ($contract !== null && $contract !== '') {
+            $summaryParts[] = 'contract='.(string) $contract;
+        }
+
+        if ($summaryParts !== []) {
+            $this->line('coverage_summary='.implode(' | ', $summaryParts));
+        }
+
+        $missingSample = $this->decodeMissingSample($this->runField($run, 'coverage_missing_sample_json'));
+        if ($missingSample !== []) {
+            $this->line('coverage_missing_sample='.implode(',', $missingSample));
+        }
+    }
+
+    protected function resolveCoverageReasonCode($run, $coverageState)
+    {
+        $reasonCode = $this->runField($run, 'reason_code');
+
+        $knownCoverageReasonCodes = [
+            'COVERAGE_THRESHOLD_MET',
+            'COVERAGE_BELOW_THRESHOLD',
+            'RUN_COVERAGE_NOT_EVALUABLE',
+            'COVERAGE_UNIVERSE_EMPTY',
+        ];
+
+        if (in_array($reasonCode, $knownCoverageReasonCodes, true)) {
+            return $reasonCode;
+        }
+
+        if ($coverageState === 'PASS') {
+            return 'COVERAGE_THRESHOLD_MET';
+        }
+
+        if ($coverageState === 'FAIL') {
+            return 'COVERAGE_BELOW_THRESHOLD';
+        }
+
+        if ($coverageState === 'NOT_EVALUABLE') {
+            return 'RUN_COVERAGE_NOT_EVALUABLE';
+        }
+
+        return null;
+    }
+
+    protected function decodeMissingSample($value)
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return array_values(array_filter(array_map('strval', $value), static function ($item) {
+                return $item !== '';
+            }));
+        }
+
+        $decoded = json_decode((string) $value, true);
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('strval', $decoded), static function ($item) {
+            return $item !== '';
+        }));
+    }
+
+    protected function formatCoverageDecimal($value)
+    {
+        if ($value === null || $value === '') {
+            return 'null';
+        }
+
+        return number_format((float) $value, 4, '.', '');
+    }
+
+    protected function runField($run, $field, $default = null)
+    {
+        if (is_array($run) && array_key_exists($field, $run)) {
+            return $run[$field];
+        }
+
+        if (is_object($run) && isset($run->{$field})) {
+            return $run->{$field};
+        }
+
+        if (is_object($run) && property_exists($run, $field)) {
+            return $run->{$field};
+        }
+
+        return $default;
     }
 }

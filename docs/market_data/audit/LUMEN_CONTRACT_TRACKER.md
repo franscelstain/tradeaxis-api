@@ -148,9 +148,9 @@
 
 
 ## CONTRACT ITEM 10 — Coverage gate owner contract + doc sync
-- STATUS: DONE (SESSIONS 1-6 DOC/CONFIG/SCHEMA/EVALUATOR + PIPELINE + FINALIZE/OUTCOME + EVIDENCE/REPLAY SYNC COMPLETE)
-- OWNER AREA: coverage-gate semantics for requested-date readability and finalization
-- LAST UPDATED SESSION: session6_evidence_export_replay_sync_coverage_aware
+- STATUS: PARTIAL (SESSIONS 1-7 COMPLETE IN CODE/TESTS; LIVE INTEGRATION PARITY STILL OPEN)
+- OWNER AREA: coverage-gate semantics for requested-date readability, finalization, operator surface, and existing-db schema parity
+- LAST UPDATED SESSION: session7_runtime_proof_and_schema_sync_recorded
 
 - OWNER DOCS:
   - `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
@@ -167,7 +167,25 @@
   - session 4 wired evaluator output into pipeline telemetry and removed the old eligibility-based ambiguity around `coverage_ratio`
   - session 5 completed finalize/outcome alignment so requested-date readability now depends on the official coverage gate status rather than on a raw ratio comparison shortcut
   - session 6 completed evidence/export/replay alignment so the same coverage contract is now visible in exported evidence packs, persisted replay metrics, and replay actual-vs-expected comparison
-  - finalize behavior is now explicit:
+  - session 7 synchronized coverage reason-code literals into registry/seed, expanded operator command surface expectations, and added ops-surface tests for coverage-aware command output
+  - session 7 patch closed the live existing-db schema drift by adding an `eod_runs` migration for the runtime coverage telemetry columns:
+    - `coverage_universe_count`
+    - `coverage_available_count`
+    - `coverage_missing_count`
+    - `coverage_ratio`
+    - `coverage_min_threshold`
+    - `coverage_gate_state`
+    - `coverage_threshold_mode`
+    - `coverage_universe_basis`
+    - `coverage_contract_version`
+    - `coverage_missing_sample_json`
+  - local runtime/manual proof after the migration now shows:
+    - `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` -> PASS
+    - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> PASS (`19 tests, 116 assertions`)
+    - full PHPUnit suite -> PASS (`138 tests, 1504 assertions`)
+    - `market-data:daily --requested_date=2026-03-24 --source_mode=manual_file -vvv` no longer fails on missing coverage columns; it now reaches source loading and fails only because the configured local JSON/CSV bars file for that requested date is absent
+    - live `market-data:run:finalize --run_id=55/54/53/52 -vvv` shows `coverage_summary`, but the observed runtime output still does not surface `coverage_gate_state` / `coverage_reason_code` on those real runs even though the unit-test fixture path now does
+  - coverage finalize semantics currently evidenced in code/tests remain:
     - coverage `PASS` + finalize preconditions satisfied -> candidate may be promoted toward readable success
     - coverage `FAIL` + fallback exists -> requested date remains `NOT_READABLE`, terminal resolves `HELD`
     - coverage `FAIL` + no fallback -> requested date remains `NOT_READABLE`, terminal resolves `FAILED`
@@ -181,14 +199,20 @@
   - SQLite test schema mirror expanded with the same coverage evidence fields -> PASS
   - standalone `CoverageGateEvaluator` implemented -> PASS
   - pipeline eligibility stage computes true EOD coverage and persists dedicated coverage telemetry fields on `eod_runs` -> PASS
-  - finalize now consumes the official coverage summary (`coverage_gate_status`, ratio, threshold value/mode) instead of the old raw coverage-ratio shortcut -> PASS
+  - finalize now consumes the official coverage summary instead of the old raw coverage-ratio shortcut -> PASS
   - publication outcome preserves coverage-aware non-readable / fallback-safe outcomes -> PASS
-  - finalize/outcome unit-test files updated for coverage `PASS`, coverage `FAIL` with/without fallback, and evaluator `NOT_EVALUABLE` -> PASS (file + syntax proof in current environment)
-  - PHP lint on changed finalize/outcome/test files -> PASS
-  - PHPUnit execution (local environment) -> PASS (136 tests, 1492 assertions)
+  - evidence export / replay comparison / replay persistence are coverage-aware -> PASS
+  - reason-code registry + seed now include coverage pass/fail/not-evaluable literals used by runtime -> PASS
+  - existing-db backfill migration for `eod_runs` coverage telemetry columns added -> PASS
+  - PHP lint local check on changed runtime/tests files -> PASS
+  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` local runtime proof -> PASS (`19 tests, 116 assertions`)
+  - full PHPUnit local runtime proof -> PASS (`138 tests, 1504 assertions`)
 
 - OPEN GAP:
-  - runtime PHPUnit proof for the new finalize/outcome test set is still pending in an environment with `vendor/`
+  - live integration parity is still open for command output on real finalized runs: fixture/test output now renders `coverage_gate_state` and `coverage_reason_code`, but the observed runtime live path still only shows `coverage_summary` for the tested historical runs
+  - end-to-end proof for the daily manual-file path is still gated by availability of a configured local bars file for the requested date; current failure is source-input absence, not coverage schema drift
+  - final closure still needs the next batch to prove pipeline -> finalize -> publication fallback behavior end to end on integration data, not only on unit fixtures
 
 - NEXT REQUIRED ACTION:
-  - run the full PHPUnit scope locally or in CI with dependencies present to convert the current file/syntax proof into runtime proof
+  - run the session 8 integration batch to close live coverage-gate parity across pipeline/finalize/publication fallback behavior
+  - determine whether the remaining runtime gap is in live run persistence, finalize/repository projection, or command input shape, and only mark this contract family `DONE` once that integration path is proven end to end

@@ -1,3 +1,75 @@
+## SESSION 7 PATCH — EOD_RUNS COVERAGE SCHEMA SYNC
+
+### Scope completed in this patch
+- validated the real runtime daily command against the session 7 source-of-truth ZIP and confirmed the new coverage telemetry write-path now touches existing-install `eod_runs` schema, not only fresh schema docs
+- closed the missing migration gap for coverage telemetry columns already written by runtime when an owning run is created for daily/finalize flow
+- checkpointed the drift explicitly so schema sync is no longer implied by docs alone
+
+### What changed
+- added migration `database/migrations/2026_04_03_000002_add_coverage_gate_fields_to_eod_runs.php`
+- migration backfills existing databases with the runtime coverage columns already expected by `EodRunRepository` and `MarketDataPipelineService`:
+  - `coverage_universe_count`
+  - `coverage_available_count`
+  - `coverage_missing_count`
+  - `coverage_ratio`
+  - `coverage_min_threshold`
+  - `coverage_gate_state`
+  - `coverage_threshold_mode`
+  - `coverage_universe_basis`
+  - `coverage_contract_version`
+  - `coverage_missing_sample_json`
+- migration uses `Schema::hasColumn(...)` guards so fresh installs that already got the columns from the owner schema SQL do not fail during patch rollout
+
+### Current checkpoint result
+- existing-db `eod_runs` schema sync for coverage telemetry: `DONE`
+- fresh-schema owner docs already carrying the same coverage fields: `DONE`
+- local runtime rerun after applying the new migration: `PENDING LOCAL RUN`
+- operator-surface proof for `coverage_gate_state` / `coverage_reason_code` on real finalized runs: `PENDING LOCAL RUN`
+
+### Next required implementation batch
+- run the new migration locally
+- rerun `php artisan market-data:daily --requested_date=... --source_mode=manual_file -vvv`
+- rerun `php artisan market-data:run:finalize --run_id=... -vvv` on valid runs to confirm the schema drift is gone and the operator surface now shows the expected coverage fields
+
+
+## SESSION 7 — REASON CODE REGISTRY + OPS SURFACE UNTUK COVERAGE GATE
+
+### Scope completed in this session
+- re-read reason-code registry and ops command docs relevant to coverage-gate operator visibility
+- audited runtime coverage reason codes already emitted by evaluator/finalize versus registry/seed coverage of those codes
+- synchronized coverage-gate reason codes into registry docs and seed SQL
+- expanded command surface summary so operator can see coverage status, coverage reason, coverage counts, ratio, threshold, and missing-sample shortcut directly from relevant run commands
+- updated ops command docs so the documented surface now matches the command output contract
+- added ops-surface tests for daily/finalize coverage rendering
+
+### What changed
+- `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` now register:
+  - `RUN_COVERAGE_NOT_EVALUABLE`
+  - `COVERAGE_THRESHOLD_MET`
+  - `COVERAGE_BELOW_THRESHOLD`
+  - `COVERAGE_UNIVERSE_EMPTY`
+- `AbstractMarketDataCommand` now renders coverage-aware operator lines when coverage telemetry is present on the run:
+  - `coverage_gate_state`
+  - `coverage_reason_code`
+  - `coverage_summary`
+  - `coverage_missing_sample` when available
+- `DailyPipelineCommand` and `FinalizeRunCommand` inherit the richer summary surface without adding duplicate command-specific formatting
+- `OpsCommandSurfaceTest` now covers readable pass output and held/not-readable coverage-fail output for the command surface
+- ops docs for daily pipeline and finalize/publish now document the concrete coverage lines operators should expect
+
+### Current checkpoint result
+- coverage reason-code registry sync with runtime literals: `DONE`
+- seed SQL sync with registry docs: `DONE`
+- operator-visible coverage summary on relevant command surface: `DONE`
+- ops command docs synced to command output: `DONE`
+- PHPUnit execution in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+- PHP lint for changed runtime/tests files in this container: `PENDING LOCAL RUN`
+
+### Next required implementation batch
+- run local `php -l` and PHPUnit for the changed ops-surface scope in an environment with dependencies present
+- continue only after the command-surface proof is recorded into the next checkpoint if runtime output matches the new contract
+
+
 ## SESSION 6 — EVIDENCE EXPORT + REPLAY SYNC FOR COVERAGE GATE
 
 ### Scope completed in this session
@@ -111,6 +183,80 @@
 
 
 # LUMEN_IMPLEMENTATION_STATUS
+
+## SESSION 7 PATCH — COVERAGE SCHEMA SYNC + LOCAL RUNTIME PROOF
+
+- Batch scope: close existing-db coverage schema drift, rerun local checks, and record what is now actually proven versus still open for live runtime parity
+- Parent contract family: `coverage gate owner contract + doc sync`
+- Final session status: `DONE FOR PATCH SCOPE / PARTIAL FOR FULL CONTRACT CLOSURE`
+
+- Checkpoint validation against repo/runtime:
+  - local migration patch added for existing-install `eod_runs` coverage columns already written by runtime
+  - after applying the migration, `market-data:daily --requested_date=2026-03-24 --source_mode=manual_file -vvv` no longer fails on unknown coverage columns; the command now reaches source loading and stops because the configured local JSON/CSV source for that date is missing
+  - local `market-data:run:finalize --run_id=55`, `54`, `53`, and `52` all execute and still render `coverage_summary`, but they do not yet render `coverage_gate_state` / `coverage_reason_code` on those real historical runs
+  - operator-surface unit proof was advanced from pending to real local runtime proof:
+    - `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` -> PASS
+    - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> PASS (`19 tests, 116 assertions`)
+    - full PHPUnit suite -> PASS (`138 tests, 1504 assertions`)
+  - the failing ops-surface assertion around legacy `RUN_COVERAGE_LOW` was corrected to the new coverage registry literal `COVERAGE_BELOW_THRESHOLD`; after that adjustment the focused test scope and the full suite both passed
+
+- Patch implemented:
+  - added migration `database/migrations/2026_04_03_000002_add_coverage_gate_fields_to_eod_runs.php`
+  - kept migration idempotent with `Schema::hasColumn(...)` guards so fresh installs that already receive the coverage columns from owner schema SQL do not fail on rollout
+  - updated `AbstractMarketDataCommand` coverage rendering logic and aligned the ops-surface PHPUnit expectation to the new coverage reason-code registry semantics
+  - updated checkpoint docs to record both the schema-drift closure and the remaining live integration parity gap honestly
+
+- Proof progression:
+  - PHP lint on changed command file -> PASS
+  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> PASS (`19 tests, 116 assertions`)
+  - full PHPUnit -> PASS (`138 tests, 1504 assertions`)
+  - local daily manual-file runtime proof -> BLOCKED BY MISSING SOURCE FILE, not by coverage schema/runtime write-path
+  - live command-surface parity on historical runs -> PARTIAL (coverage summary visible; coverage state/reason not yet observed on the tested real runs)
+
+### Impact
+- existing-db installations are no longer blocked by missing `eod_runs` coverage columns when runtime tries to create/update coverage telemetry
+- command-surface registry/test semantics are now aligned to the sanctioned coverage reason codes
+- the checkpoint is no longer overstated: code/tests are green, but live end-to-end parity is still an open follow-up and must be closed in the next integration-focused batch
+
+### Next Step
+- continue with the integration-focused coverage-gate closure batch to prove the live pipeline -> finalize -> publication fallback wiring end to end
+- do not mark the overall coverage-gate contract family `DONE` until the remaining live parity gap is closed or honestly classified as non-load-bearing by grounded integration proof
+
+## SESSION 7 — REASON CODE REGISTRY + OPS SURFACE FOR COVERAGE GATE
+
+- Batch scope: synchronize coverage reason-code registry/seed with runtime literals and make operator command surface coverage-aware
+- Parent contract family: `coverage gate owner contract + doc sync`
+- Final session status: `DONE FOR SELECTED BATCH`
+
+- Checkpoint validation against repo:
+  - registry/seed/docs for coverage reason codes were re-read and synchronized with runtime literals
+  - `AbstractMarketDataCommand` surface was updated so coverage-aware lines can render directly from run telemetry when those fields are present
+  - ops command docs and tests were aligned to the new surface contract
+
+- Patch implemented:
+  - synchronized registry + seed literals:
+    - `RUN_COVERAGE_NOT_EVALUABLE`
+    - `COVERAGE_THRESHOLD_MET`
+    - `COVERAGE_BELOW_THRESHOLD`
+    - `COVERAGE_UNIVERSE_EMPTY`
+  - expanded command output contract to include, when present on the run:
+    - `coverage_gate_state`
+    - `coverage_reason_code`
+    - `coverage_summary`
+    - `coverage_missing_sample`
+  - updated `tests/Unit/MarketData/OpsCommandSurfaceTest.php` and related ops docs
+
+- Proof progression:
+  - local `tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> PASS (`19 tests, 116 assertions`)
+  - local full PHPUnit -> PASS (`138 tests, 1504 assertions`)
+  - live runtime proof on real historical runs was later found to be only partial and is therefore tracked explicitly in the session 7 patch entry above rather than overstated here
+
+### Impact
+- selected session 7 batch is closed and test-backed
+- later runtime findings refine, but do not invalidate, the completed registry/seed/test sync from this batch
+
+### Next Step
+- preserve this batch as complete, then close the remaining integration/runtime parity gap in the next coverage-gate batch
 
 ## SESSION 19 FINAL AUDIT CLOSURE
 

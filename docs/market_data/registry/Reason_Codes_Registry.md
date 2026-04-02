@@ -20,6 +20,10 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | code | category | severity | description |
 |---|---|---:|---|
 | `RUN_COVERAGE_LOW` | RUN | HARD | Coverage ratio for the requested date is below the locked minimum threshold. |
+| `RUN_COVERAGE_NOT_EVALUABLE` | RUN | HARD | Coverage could not be evaluated meaningfully for the requested date, so requested-date publication must remain not readable. |
+| `COVERAGE_THRESHOLD_MET` | COVERAGE | INFO | Coverage evaluation passed because available canonical EOD bars met or exceeded the locked minimum threshold. |
+| `COVERAGE_BELOW_THRESHOLD` | COVERAGE | HARD | Coverage evaluation failed because available canonical EOD bars stayed below the locked minimum threshold. |
+| `COVERAGE_UNIVERSE_EMPTY` | COVERAGE | HARD | Coverage could not be evaluated because the resolved coverage universe for the requested date was empty. |
 | `RUN_INDICATORS_MISSING` | RUN | HARD | Required indicator artifact or required indicator row set for the requested date is not available. |
 | `RUN_ELIGIBILITY_MISSING` | RUN | HARD | Eligibility snapshot for the requested date is not available. |
 | `RUN_HASH_MISSING` | RUN | HARD | One or more mandatory content hashes are missing at finalization time. |
@@ -59,4 +63,6 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 - `ELIG_MISSING_BAR` and `ELIG_INSUFFICIENT_HISTORY` may coexist as different row outcomes on different dates/tickers, but one row stores only the single most specific blocking reason.
 - `RUN_SOURCE_TIMEOUT` and `RUN_SOURCE_RATE_LIMIT` do not automatically force `FAILED`; terminal status still follows the decision table and gate results.
 - `RUN_HASH_MISSING`, `RUN_HASH_FAILED`, `RUN_SEAL_PRECONDITION_FAILED`, and `RUN_SEAL_WRITE_FAILED` are always incompatible with final `SUCCESS`.
+- `COVERAGE_THRESHOLD_MET`, `COVERAGE_BELOW_THRESHOLD`, and `COVERAGE_UNIVERSE_EMPTY` are coverage-evaluation outcomes and may appear in coverage telemetry or coverage-oriented operator surfaces even when the dominant run reason code is different.
+- `RUN_COVERAGE_NOT_EVALUABLE` is the run-level blocked/not-readable reason used when finalize consumes a non-meaningful coverage evaluation outcome.
 - Session snapshot reason codes must never be used to justify fallback of sealed EOD datasets.

@@ -3,6 +3,10 @@
 
 INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is_active`) VALUES
 ('RUN_COVERAGE_LOW', 'RUN', 'Coverage ratio for the requested date is below the locked minimum threshold.', 'HARD', 1),
+('RUN_COVERAGE_NOT_EVALUABLE', 'RUN', 'Coverage could not be evaluated meaningfully for the requested date, so requested-date publication must remain not readable.', 'HARD', 1),
+('COVERAGE_THRESHOLD_MET', 'COVERAGE', 'Coverage evaluation passed because available canonical EOD bars met or exceeded the locked minimum threshold.', 'INFO', 1),
+('COVERAGE_BELOW_THRESHOLD', 'COVERAGE', 'Coverage evaluation failed because available canonical EOD bars stayed below the locked minimum threshold.', 'HARD', 1),
+('COVERAGE_UNIVERSE_EMPTY', 'COVERAGE', 'Coverage could not be evaluated because the resolved coverage universe for the requested date was empty.', 'HARD', 1),
 ('RUN_INDICATORS_MISSING', 'RUN', 'Required indicator artifact or required indicator row set for the requested date is not available.', 'HARD', 1),
 ('RUN_ELIGIBILITY_MISSING', 'RUN', 'Eligibility snapshot for the requested date is not available.', 'HARD', 1),
 ('RUN_HASH_MISSING', 'RUN', 'One or more mandatory content hashes are missing at finalization time.', 'HARD', 1),

@@ -1,7 +1,9 @@
 <?php
 
+use App\Application\MarketData\DTOs\MarketDataStageInput;
 use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
+use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Application\MarketData\Services\ReplayBackfillService;
 use App\Application\MarketData\Services\ReplaySmokeSuiteService;
 use App\Application\MarketData\Services\ReplayVerificationService;
@@ -735,4 +737,105 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001', $display);
         $this->assertStringContainsString('trade_date=2026-03-18 | status=ERROR | expected=MATCH | observed=ERROR | passed=0 | error=Readable current publication not found for replay backfill trade date 2026-03-18.', $display);
     }
+
+
+    public function test_daily_pipeline_command_renders_coverage_summary_for_pass_outcome(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'manual_file', null)
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'coverage_gate_state' => 'PASS',
+                'coverage_available_count' => 900,
+                'coverage_universe_count' => 900,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => '1.0000',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'reason_code' => null,
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'manual_file',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('coverage_gate_state=PASS', $display);
+        $this->assertStringContainsString('coverage_reason_code=COVERAGE_THRESHOLD_MET', $display);
+        $this->assertStringContainsString('coverage_summary=available=900/900 | missing=0 | ratio=1.0000 | threshold=0.9800 | basis=ticker_master_active_on_trade_date | contract=coverage_gate_v1', $display);
+    }
+
+    public function test_finalize_command_renders_coverage_hold_context_for_not_readable_run(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('completeFinalize')
+            ->once()
+            ->with(m::on(function ($input) {
+                return $input instanceof MarketDataStageInput
+                    && $input->requestedDate === '2026-03-24'
+                    && $input->sourceMode === 'manual_file'
+                    && $input->runId === 55
+                    && $input->stage === 'FINALIZE'
+                    && $input->correctionId === null;
+            }))
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'HELD',
+                'publishability_state' => 'NOT_READABLE',
+                'coverage_gate_state' => 'FAIL',
+                'coverage_available_count' => 854,
+                'coverage_universe_count' => 900,
+                'coverage_missing_count' => 46,
+                'coverage_ratio' => '0.9489',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'reason_code' => 'RUN_COVERAGE_LOW',
+                'coverage_missing_sample_json' => json_encode(['AALI', 'ACES', 'ADRO']),
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $command = new \App\Console\Commands\MarketData\FinalizeRunCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'manual_file',
+            '--run_id' => 55,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('terminal_status=HELD', $display);
+        $this->assertStringContainsString('publishability_state=NOT_READABLE', $display);
+        $this->assertStringContainsString('coverage_gate_state=FAIL', $display);
+        $this->assertStringContainsString('coverage_reason_code=COVERAGE_BELOW_THRESHOLD', $display);
+        $this->assertStringContainsString('coverage_summary=available=854/900 | missing=46 | ratio=0.9489 | threshold=0.9800 | basis=ticker_master_active_on_trade_date | contract=coverage_gate_v1', $display);
+        $this->assertStringContainsString('coverage_missing_sample=AALI,ACES,ADRO', $display);
+        $this->assertStringContainsString('reason_code=RUN_COVERAGE_LOW', $display);
+    }
+
 }
