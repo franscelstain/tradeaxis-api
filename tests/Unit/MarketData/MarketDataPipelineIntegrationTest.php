@@ -3643,6 +3643,246 @@ class MarketDataPipelineIntegrationTest extends TestCase
     }
 
 
+    public function test_run_daily_full_coverage_persists_finalize_coverage_payload_and_readable_publication(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedTicker(2, 'BBRI');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 2, 80.0, 900);
+
+        $this->writeBarsFixture('2026-03-20', [
+            [
+                'ticker_code' => 'BBCA',
+                'trade_date' => '2026-03-20',
+                'open' => 121,
+                'high' => 125,
+                'low' => 120,
+                'close' => 124,
+                'volume' => 2000,
+                'adj_close' => 124,
+                'captured_at' => '2026-03-20T17:20:00+07:00',
+            ],
+            [
+                'ticker_code' => 'BBRI',
+                'trade_date' => '2026-03-20',
+                'open' => 91,
+                'high' => 94,
+                'low' => 90,
+                'close' => 93,
+                'volume' => 1800,
+                'adj_close' => 93,
+                'captured_at' => '2026-03-20T17:21:00+07:00',
+            ],
+        ]);
+
+        $run = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
+        $event = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->first();
+        $payload = json_decode((string) $event->event_payload_json, true);
+
+        $this->assertSame('SUCCESS', $run->terminal_status);
+        $this->assertSame('READABLE', $run->publishability_state);
+        $this->assertSame('PASS', $run->coverage_gate_state);
+        $this->assertSame(2, (int) $run->coverage_available_count);
+        $this->assertSame(2, (int) $run->coverage_universe_count);
+        $this->assertSame(0, (int) $run->coverage_missing_count);
+        $this->assertSame('coverage_gate_v1', (string) $run->coverage_contract_version);
+        $this->assertNotNull($event);
+        $this->assertNull($event->reason_code);
+        $this->assertSame('PASS', $payload['coverage_gate_state']);
+        $this->assertSame('COVERAGE_THRESHOLD_MET', $payload['coverage_reason_code']);
+        $this->assertSame(2, $payload['coverage_available_count']);
+        $this->assertSame(2, $payload['coverage_universe_count']);
+        $this->assertSame(0, $payload['coverage_missing_count']);
+        $this->assertSame('coverage_gate_v1', $payload['coverage_contract_version']);
+        $this->assertSame('2026-03-20', $payload['trade_date_effective']);
+    }
+
+    public function test_run_daily_low_coverage_with_fallback_holds_requested_date_and_preserves_old_readable_publication(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedTicker(2, 'BBRI');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-18', 1, 100.0, 1000);
+        $this->seedHistoricalBars('2026-02-27', '2026-03-18', 2, 80.0, 900);
+        $this->seedReadableFallbackPublication('2026-03-19', 80, 11);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $run = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
+        $event = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->first();
+        $payload = json_decode((string) $event->event_payload_json, true);
+
+        $this->assertSame('HELD', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame('FAIL', $run->quality_gate_state);
+        $this->assertSame('FAIL', $run->coverage_gate_state);
+        $this->assertSame('2026-03-19', $run->trade_date_effective);
+        $this->assertSame('RUN_COVERAGE_LOW', $event->reason_code);
+        $this->assertSame('RUN_COVERAGE_LOW', $payload['coverage_reason_code']);
+        $this->assertSame(1, $payload['coverage_available_count']);
+        $this->assertSame(2, $payload['coverage_universe_count']);
+        $this->assertSame(1, $payload['coverage_missing_count']);
+        $this->assertSame(11, (int) $payload['fallback_publication_id']);
+        $this->assertSame('2026-03-19', $payload['fallback_trade_date']);
+        $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+
+        $fallbackPointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-19')->first();
+        $fallbackPublication = DB::table('eod_publications')->where('publication_id', 11)->first();
+        $fallbackRun = DB::table('eod_runs')->where('run_id', 80)->first();
+
+        $this->assertNotNull($fallbackPointer);
+        $this->assertSame(11, (int) $fallbackPointer->publication_id);
+        $this->assertNotNull($fallbackPublication);
+        $this->assertSame(1, (int) $fallbackPublication->is_current);
+        $this->assertNotNull($fallbackRun);
+        $this->assertSame('SUCCESS', $fallbackRun->terminal_status);
+        $this->assertSame('READABLE', $fallbackRun->publishability_state);
+        $this->assertSame(1, (int) $fallbackRun->is_current_publication);
+    }
+
+    public function test_run_daily_low_coverage_without_fallback_finishes_not_readable_and_emits_coverage_reason_code(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedTicker(2, 'BBRI');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 2, 80.0, 900);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $run = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
+        $event = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->first();
+        $payload = json_decode((string) $event->event_payload_json, true);
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+
+        $this->assertSame('FAILED', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame('FAIL', $run->quality_gate_state);
+        $this->assertSame('FAIL', $run->coverage_gate_state);
+        $this->assertNull($run->trade_date_effective);
+        $this->assertSame('RUN_COVERAGE_LOW', $event->reason_code);
+        $this->assertSame('RUN_COVERAGE_LOW', $payload['coverage_reason_code']);
+        $this->assertSame(1, $payload['coverage_available_count']);
+        $this->assertSame(2, $payload['coverage_universe_count']);
+        $this->assertSame(1, $payload['coverage_missing_count']);
+        $this->assertNotNull($publication);
+        $this->assertSame(0, (int) $publication->is_current);
+        $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+    }
+
+    public function test_finalize_not_evaluable_without_universe_stays_not_readable_and_emits_blocked_coverage_reason_code(): void
+    {
+        DB::table('eod_runs')->insert([
+            'run_id' => 55,
+            'trade_date_requested' => '2026-03-20',
+            'trade_date_effective' => null,
+            'lifecycle_state' => 'RUNNING',
+            'terminal_status' => null,
+            'quality_gate_state' => 'PENDING',
+            'publishability_state' => 'NOT_READABLE',
+            'stage' => 'SEAL',
+            'source' => 'manual_file',
+            'coverage_universe_count' => 0,
+            'coverage_available_count' => 0,
+            'coverage_missing_count' => 0,
+            'coverage_ratio' => null,
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'NOT_EVALUABLE',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'bars_rows_written' => 1,
+            'indicators_rows_written' => 1,
+            'eligibility_rows_written' => 1,
+            'invalid_bar_count' => 0,
+            'invalid_indicator_count' => 0,
+            'hard_reject_count' => 0,
+            'warning_count' => 0,
+            'notes' => 'not-evaluable-finalize',
+            'bars_batch_hash' => 'bars-ne',
+            'indicators_batch_hash' => 'ind-ne',
+            'eligibility_batch_hash' => 'elig-ne',
+            'config_version' => 'v1',
+            'publication_version' => 1,
+            'is_current_publication' => 0,
+            'sealed_at' => '2026-03-24 23:06:08',
+            'sealed_by' => 'system',
+            'seal_note' => 'not-evaluable-finalize',
+            'started_at' => '2026-03-24 23:00:00',
+            'finished_at' => null,
+            'created_at' => '2026-03-24 23:00:00',
+            'updated_at' => '2026-03-24 23:06:08',
+        ]);
+
+        DB::table('eod_publications')->insert([
+            'publication_id' => 21,
+            'trade_date' => '2026-03-20',
+            'run_id' => 55,
+            'publication_version' => 1,
+            'is_current' => 0,
+            'supersedes_publication_id' => null,
+            'seal_state' => 'SEALED',
+            'bars_batch_hash' => 'bars-ne',
+            'indicators_batch_hash' => 'ind-ne',
+            'eligibility_batch_hash' => 'elig-ne',
+            'sealed_at' => '2026-03-24 23:06:08',
+            'created_at' => '2026-03-24 23:06:08',
+            'updated_at' => '2026-03-24 23:06:08',
+        ]);
+
+        $finalizedRun = $this->makePipeline()->completeFinalize(
+            new App\Application\MarketData\DTOs\MarketDataStageInput('2026-03-20', 'manual_file', 55, 'FINALIZE', null)
+        );
+
+        $event = DB::table('eod_run_events')
+            ->where('run_id', $finalizedRun->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->first();
+        $payload = json_decode((string) $event->event_payload_json, true);
+        $publication = DB::table('eod_publications')->where('publication_id', 21)->first();
+
+        $this->assertSame('FAILED', $finalizedRun->terminal_status);
+        $this->assertSame('NOT_READABLE', $finalizedRun->publishability_state);
+        $this->assertSame('BLOCKED', $finalizedRun->quality_gate_state);
+        $this->assertSame('NOT_EVALUABLE', $finalizedRun->coverage_gate_state);
+        $this->assertNull($finalizedRun->trade_date_effective);
+        $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $event->reason_code);
+        $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $payload['coverage_reason_code']);
+        $this->assertSame(0, $payload['coverage_universe_count']);
+        $this->assertSame(0, $payload['coverage_available_count']);
+        $this->assertSame(0, $payload['coverage_missing_count']);
+        $this->assertSame('coverage_gate_v1', $payload['coverage_contract_version']);
+        $this->assertSame(0, (int) $publication->is_current);
+        $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+    }
+
     private function makePipeline(): MarketDataPipelineService
     {
         return $this->makePipelineWithOverrides(new EodPublicationRepository(), new EodArtifactRepository());

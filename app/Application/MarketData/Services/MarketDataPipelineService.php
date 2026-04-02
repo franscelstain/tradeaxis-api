@@ -607,17 +607,33 @@ class MarketDataPipelineService
                     $finalRunMessage = $promotionError;
                 }
 
+                $finalizeReasonCode = $this->resolveFinalizeReasonCode(
+                    $run,
+                    $outcome,
+                    $promotionError,
+                    $postFinalizeMismatchNote
+                );
+
                 $this->runs->appendEvent(
                     $run,
                     $input->stage,
                     'RUN_FINALIZED',
                     $run->terminal_status === 'SUCCESS' ? 'INFO' : 'WARN',
                     $finalRunMessage,
-                    $run->terminal_status === 'SUCCESS' ? $outcome['reason_code'] : 'RUN_LOCK_CONFLICT',
+                    $finalizeReasonCode,
                     [
                         'cutoff_satisfied' => $cutoffSatisfied,
+                        'coverage_gate_state' => $run->coverage_gate_state,
+                        'coverage_reason_code' => $this->resolveCoverageReasonCode($run, $outcome),
+                        'coverage_available_count' => $run->coverage_available_count,
+                        'coverage_universe_count' => $run->coverage_universe_count,
+                        'coverage_missing_count' => $run->coverage_missing_count,
                         'coverage_ratio' => $run->coverage_ratio,
+                        'coverage_min_threshold' => $run->coverage_min_threshold !== null
+                            ? (float) $run->coverage_min_threshold
+                            : (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                         'coverage_min' => (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
+                        'coverage_contract_version' => $run->coverage_contract_version,
                         'quality_gate_state' => $run->quality_gate_state,
                         'requested_date' => $input->requestedDate,
                         'trade_date_effective' => $run->trade_date_effective,
@@ -660,6 +676,44 @@ class MarketDataPipelineService
         }
 
         return $run;
+    }
+
+
+    private function resolveFinalizeReasonCode($run, array $outcome, $promotionError, $postFinalizeMismatchNote)
+    {
+        if ($promotionError !== null || $postFinalizeMismatchNote !== null) {
+            return 'RUN_LOCK_CONFLICT';
+        }
+
+        if (($outcome['reason_code'] ?? null) !== null) {
+            return $outcome['reason_code'];
+        }
+
+        return $this->resolveCoverageReasonCode($run, $outcome);
+    }
+
+    private function resolveCoverageReasonCode($run, array $outcome)
+    {
+        $coverageState = strtoupper((string) ($run->coverage_gate_state ?? ''));
+        $outcomeReasonCode = $outcome['reason_code'] ?? null;
+
+        if ($outcomeReasonCode === 'RUN_COVERAGE_LOW' || $outcomeReasonCode === 'RUN_COVERAGE_NOT_EVALUABLE') {
+            return $outcomeReasonCode;
+        }
+
+        if ($coverageState === 'PASS') {
+            return 'COVERAGE_THRESHOLD_MET';
+        }
+
+        if ($coverageState === 'FAIL') {
+            return 'COVERAGE_BELOW_THRESHOLD';
+        }
+
+        if ($coverageState === 'NOT_EVALUABLE') {
+            return 'RUN_COVERAGE_NOT_EVALUABLE';
+        }
+
+        return null;
     }
 
 

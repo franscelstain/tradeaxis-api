@@ -148,9 +148,9 @@
 
 
 ## CONTRACT ITEM 10 — Coverage gate owner contract + doc sync
-- STATUS: PARTIAL (SESSIONS 1-7 COMPLETE IN CODE/TESTS; LIVE INTEGRATION PARITY STILL OPEN)
+- STATUS: PARTIAL (SESSION 8 CODE PATCH APPLIED; LOCAL EXECUTION PROOF STILL PENDING)
 - OWNER AREA: coverage-gate semantics for requested-date readability, finalization, operator surface, and existing-db schema parity
-- LAST UPDATED SESSION: session7_runtime_proof_and_schema_sync_recorded
+- LAST UPDATED SESSION: session8_integration_patch_applied_pending_local_proof
 
 - OWNER DOCS:
   - `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
@@ -190,6 +190,23 @@
     - coverage `FAIL` + fallback exists -> requested date remains `NOT_READABLE`, terminal resolves `HELD`
     - coverage `FAIL` + no fallback -> requested date remains `NOT_READABLE`, terminal resolves `FAILED`
     - evaluator `NOT_EVALUABLE` is treated as blocked/non-readable in finalize and never becomes readable success
+  - session 8 extends the proof from unit/fixture scope into DB-backed integration coverage tests:
+    - full daily pipeline with full coverage -> `SUCCESS + READABLE`
+    - low coverage with fallback -> `HELD + NOT_READABLE` while prior readable publication remains untouched
+    - low coverage without fallback -> `FAILED + NOT_READABLE`
+    - not evaluable finalize path -> `FAILED + NOT_READABLE + BLOCKED`
+  - session 8 also closes an integration-path reason-code bug in `RUN_FINALIZED` events:
+    - non-success finalize events are no longer blindly tagged `RUN_LOCK_CONFLICT`
+    - real coverage failures now emit `RUN_COVERAGE_LOW`
+    - real not-evaluable finalize outcomes now emit `RUN_COVERAGE_NOT_EVALUABLE`
+  - session 8 expands `RUN_FINALIZED` event payload parity so downstream operator/evidence layers receive:
+    - `coverage_gate_state`
+    - `coverage_reason_code`
+    - `coverage_available_count`
+    - `coverage_universe_count`
+    - `coverage_missing_count`
+    - `coverage_min_threshold`
+    - `coverage_contract_version`
 
 - PROOF:
   - owner-doc reread and sync in current source-of-truth ZIP -> PASS
@@ -207,12 +224,14 @@
   - PHP lint local check on changed runtime/tests files -> PASS
   - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` local runtime proof -> PASS (`19 tests, 116 assertions`)
   - full PHPUnit local runtime proof -> PASS (`138 tests, 1504 assertions`)
+  - session 8 changed files pass `php -l` in this container -> PASS
+  - session 8 targeted / full PHPUnit execution in this container -> BLOCKED (`vendor/` absent from uploaded ZIP)
 
 - OPEN GAP:
-  - live integration parity is still open for command output on real finalized runs: fixture/test output now renders `coverage_gate_state` and `coverage_reason_code`, but the observed runtime live path still only shows `coverage_summary` for the tested historical runs
-  - end-to-end proof for the daily manual-file path is still gated by availability of a configured local bars file for the requested date; current failure is source-input absence, not coverage schema drift
-  - final closure still needs the next batch to prove pipeline -> finalize -> publication fallback behavior end to end on integration data, not only on unit fixtures
+  - local execution proof is still missing for the new session 8 integration cases because the uploaded ZIP does not include `vendor/` and this container cannot run PHPUnit for the patched scope
+  - live runtime command proof on real historical runs is still not re-recorded in this session; integration tests are now the primary proof path, but user-environment execution is still needed to declare final closure honestly
 
 - NEXT REQUIRED ACTION:
-  - run the session 8 integration batch to close live coverage-gate parity across pipeline/finalize/publication fallback behavior
-  - determine whether the remaining runtime gap is in live run persistence, finalize/repository projection, or command input shape, and only mark this contract family `DONE` once that integration path is proven end to end
+  - run local PHPUnit for `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` and the full suite
+  - rerun the relevant finalize command locally only if you still want command-surface evidence on historical runs; this is now secondary to the integration tests, not the main proof source
+  - mark this contract item `DONE` only after those local proofs are recorded green against this session 8 ZIP

@@ -832,7 +832,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('terminal_status=HELD', $display);
         $this->assertStringContainsString('publishability_state=NOT_READABLE', $display);
         $this->assertStringContainsString('coverage_gate_state=FAIL', $display);
-        $this->assertStringContainsString('coverage_reason_code=COVERAGE_BELOW_THRESHOLD', $display);
+        $this->assertStringContainsString('coverage_reason_code=RUN_COVERAGE_LOW', $display);
         $this->assertStringContainsString('coverage_summary=available=854/900 | missing=46 | ratio=0.9489 | threshold=0.9800 | basis=ticker_master_active_on_trade_date | contract=coverage_gate_v1', $display);
         $this->assertStringContainsString('coverage_missing_sample=AALI,ACES,ADRO', $display);
         $this->assertStringContainsString('reason_code=RUN_COVERAGE_LOW', $display);

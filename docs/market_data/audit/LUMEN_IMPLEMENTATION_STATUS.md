@@ -1,3 +1,46 @@
+## SESSION 8 PATCH — COVERAGE GATE INTEGRATION PATH + FINALIZE PAYLOAD PARITY
+
+### Scope completed in this patch
+- re-audited the end-to-end coverage-gate path from pipeline telemetry to finalize outcome to publication pointer behavior
+- added DB-backed integration coverage tests for the load-bearing finalize outcomes instead of relying on manual-file runtime alone
+- closed the integration payload gap where `RUN_FINALIZED` events could fall back to `RUN_LOCK_CONFLICT` even for genuine coverage failures
+- expanded finalize event payload so the same run given to operator/evidence layers now carries the full coverage telemetry contract
+
+### What changed
+- `MarketDataPipelineService` finalize path now writes coverage-aware `RUN_FINALIZED` event metadata with:
+  - `coverage_gate_state`
+  - `coverage_reason_code`
+  - `coverage_available_count`
+  - `coverage_universe_count`
+  - `coverage_missing_count`
+  - `coverage_min_threshold`
+  - `coverage_contract_version`
+- finalize event reason-code resolution is now honest on integration path:
+  - low coverage -> `RUN_COVERAGE_LOW`
+  - not evaluable -> `RUN_COVERAGE_NOT_EVALUABLE`
+  - lock/pointer mismatch -> `RUN_LOCK_CONFLICT`
+- `MarketDataPipelineIntegrationTest` now covers:
+  - full coverage -> `SUCCESS + READABLE`
+  - low coverage + fallback -> `HELD + NOT_READABLE` while old readable publication stays safe
+  - low coverage + no fallback -> `FAILED + NOT_READABLE`
+  - not evaluable -> `FAILED + NOT_READABLE + BLOCKED`
+  - finalize payload parity for coverage fields on integration path
+- `PHPUNIT_TEST_MATRIX.md` now documents the integration proof cases explicitly
+
+### Current checkpoint result
+- coverage finalize payload parity on integration path: `DONE IN CODE`
+- coverage reason-code sync on integration path: `DONE IN CODE`
+- fallback readable publication preservation proof: `DONE IN TEST DESIGN`
+- local PHPUnit execution for new session 8 scope in this container: `BLOCKED` (`vendor/` not present in uploaded ZIP)
+- live runtime proof on user environment: `PENDING LOCAL RUN`
+
+### Next required implementation batch
+- run local PHPUnit for:
+  - `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - full suite
+- if green locally, this ZIP becomes the correct source of truth for the session 8 coverage-gate integration patch; if not, keep the failure output as the next checkpoint input
+
+
 ## SESSION 7 PATCH — EOD_RUNS COVERAGE SCHEMA SYNC
 
 ### Scope completed in this patch

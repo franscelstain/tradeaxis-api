@@ -75,11 +75,7 @@ abstract class AbstractMarketDataCommand extends Command
         $threshold = $this->runField($run, 'coverage_min_threshold');
         $basis = $this->runField($run, 'coverage_universe_basis');
         $contract = $this->runField($run, 'coverage_contract_version');
-
-        $coverageReasonCode = $this->runField($run, 'coverage_reason_code');
-        if ($coverageReasonCode === null || $coverageReasonCode === '') {
-            $coverageReasonCode = $this->resolveCoverageReasonCode($run, $state);
-        }
+        $coverageReasonCode = $this->resolveCoverageReasonCode($run, $state);
 
         if ($state === null && $ratio === null && $available === null && $universe === null && $missing === null && $threshold === null && $coverageReasonCode === null) {
             return;
@@ -133,14 +129,7 @@ abstract class AbstractMarketDataCommand extends Command
     {
         $reasonCode = $this->runField($run, 'reason_code');
 
-        $knownCoverageReasonCodes = [
-            'COVERAGE_THRESHOLD_MET',
-            'COVERAGE_BELOW_THRESHOLD',
-            'RUN_COVERAGE_NOT_EVALUABLE',
-            'COVERAGE_UNIVERSE_EMPTY',
-        ];
-
-        if (in_array($reasonCode, $knownCoverageReasonCodes, true)) {
+        if ($reasonCode === 'RUN_COVERAGE_LOW' || $reasonCode === 'RUN_COVERAGE_NOT_EVALUABLE') {
             return $reasonCode;
         }
 
