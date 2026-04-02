@@ -240,6 +240,7 @@ class MarketDataEvidenceExportService
             'publishability_state' => $run->publishability_state,
             'stage' => $run->stage,
             'source' => $run->source,
+            'coverage' => $this->buildCoverageState($run),
             'coverage_ratio' => $run->coverage_ratio !== null ? (float) $run->coverage_ratio : null,
             'bars_rows_written' => $run->bars_rows_written !== null ? (int) $run->bars_rows_written : null,
             'indicators_rows_written' => $run->indicators_rows_written !== null ? (int) $run->indicators_rows_written : null,
@@ -276,6 +277,8 @@ class MarketDataEvidenceExportService
             'artifact_changed_scope' => $metric->artifact_changed_scope,
             'config_identity' => $metric->config_identity,
             'publication_version' => $metric->publication_version !== null ? (int) $metric->publication_version : null,
+            'coverage' => $this->buildCoverageState($metric),
+            'expected_coverage' => $this->buildExpectedCoverageState($metric),
             'coverage_ratio' => $metric->coverage_ratio !== null ? (float) $metric->coverage_ratio : null,
             'bars_rows_written' => $metric->bars_rows_written !== null ? (int) $metric->bars_rows_written : null,
             'indicators_rows_written' => $metric->indicators_rows_written !== null ? (int) $metric->indicators_rows_written : null,
@@ -311,6 +314,7 @@ class MarketDataEvidenceExportService
             'seal_state' => $metric->expected_seal_state,
             'config_identity' => $metric->expected_config_identity ?? null,
             'publication_version' => $metric->expected_publication_version !== null ? (int) $metric->expected_publication_version : null,
+            'coverage' => $this->buildExpectedCoverageState($metric),
             'bars_batch_hash' => $metric->expected_bars_batch_hash ?? null,
             'indicators_batch_hash' => $metric->expected_indicators_batch_hash ?? null,
             'eligibility_batch_hash' => $metric->expected_eligibility_batch_hash ?? null,
@@ -326,11 +330,60 @@ class MarketDataEvidenceExportService
             'seal_state' => $metric->seal_state,
             'config_identity' => $metric->config_identity,
             'publication_version' => $metric->publication_version !== null ? (int) $metric->publication_version : null,
+            'coverage' => $this->buildCoverageState($metric),
             'bars_batch_hash' => $metric->bars_batch_hash,
             'indicators_batch_hash' => $metric->indicators_batch_hash,
             'eligibility_batch_hash' => $metric->eligibility_batch_hash,
             'reason_code_counts' => $reasonCodes,
         ];
+    }
+
+
+    private function buildCoverageState($record)
+    {
+        return [
+            'coverage_universe_count' => isset($record->coverage_universe_count) && $record->coverage_universe_count !== null ? (int) $record->coverage_universe_count : null,
+            'coverage_available_count' => isset($record->coverage_available_count) && $record->coverage_available_count !== null ? (int) $record->coverage_available_count : null,
+            'coverage_missing_count' => isset($record->coverage_missing_count) && $record->coverage_missing_count !== null ? (int) $record->coverage_missing_count : null,
+            'coverage_ratio' => isset($record->coverage_ratio) && $record->coverage_ratio !== null ? (float) $record->coverage_ratio : null,
+            'coverage_min_threshold' => isset($record->coverage_min_threshold) && $record->coverage_min_threshold !== null ? (float) $record->coverage_min_threshold : null,
+            'coverage_gate_state' => $record->coverage_gate_state ?? null,
+            'coverage_threshold_mode' => $record->coverage_threshold_mode ?? null,
+            'coverage_universe_basis' => $record->coverage_universe_basis ?? null,
+            'coverage_contract_version' => $record->coverage_contract_version ?? null,
+            'coverage_missing_sample' => $this->decodeJsonArray($record->coverage_missing_sample_json ?? null),
+        ];
+    }
+
+    private function buildExpectedCoverageState($record)
+    {
+        return [
+            'coverage_universe_count' => isset($record->expected_coverage_universe_count) && $record->expected_coverage_universe_count !== null ? (int) $record->expected_coverage_universe_count : null,
+            'coverage_available_count' => isset($record->expected_coverage_available_count) && $record->expected_coverage_available_count !== null ? (int) $record->expected_coverage_available_count : null,
+            'coverage_missing_count' => isset($record->expected_coverage_missing_count) && $record->expected_coverage_missing_count !== null ? (int) $record->expected_coverage_missing_count : null,
+            'coverage_ratio' => isset($record->expected_coverage_ratio) && $record->expected_coverage_ratio !== null ? (float) $record->expected_coverage_ratio : null,
+            'coverage_min_threshold' => isset($record->expected_coverage_min_threshold) && $record->expected_coverage_min_threshold !== null ? (float) $record->expected_coverage_min_threshold : null,
+            'coverage_gate_state' => $record->expected_coverage_gate_state ?? null,
+            'coverage_threshold_mode' => $record->expected_coverage_threshold_mode ?? null,
+            'coverage_universe_basis' => $record->expected_coverage_universe_basis ?? null,
+            'coverage_contract_version' => $record->expected_coverage_contract_version ?? null,
+            'coverage_missing_sample' => $this->decodeJsonArray($record->expected_coverage_missing_sample_json ?? null),
+        ];
+    }
+
+    private function decodeJsonArray($value)
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return array_values($value);
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? array_values($decoded) : [];
     }
 
     private function decodeExpectedReasonCodeCounts($json)

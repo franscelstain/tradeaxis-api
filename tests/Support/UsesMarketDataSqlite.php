@@ -266,6 +266,16 @@ trait UsesMarketDataSqlite
             $table->string('expected_seal_state')->nullable();
             $table->string('expected_config_identity')->nullable();
             $table->integer('expected_publication_version')->nullable();
+            $table->integer('expected_coverage_universe_count')->nullable();
+            $table->integer('expected_coverage_available_count')->nullable();
+            $table->integer('expected_coverage_missing_count')->nullable();
+            $table->decimal('expected_coverage_ratio', 12, 6)->nullable();
+            $table->decimal('expected_coverage_min_threshold', 12, 6)->nullable();
+            $table->string('expected_coverage_gate_state')->nullable();
+            $table->string('expected_coverage_threshold_mode')->nullable();
+            $table->string('expected_coverage_universe_basis')->nullable();
+            $table->string('expected_coverage_contract_version')->nullable();
+            $table->text('expected_coverage_missing_sample_json')->nullable();
             $table->string('expected_bars_batch_hash')->nullable();
             $table->string('expected_indicators_batch_hash')->nullable();
             $table->string('expected_eligibility_batch_hash')->nullable();

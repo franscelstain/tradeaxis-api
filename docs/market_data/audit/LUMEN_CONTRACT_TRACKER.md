@@ -148,9 +148,9 @@
 
 
 ## CONTRACT ITEM 10 — Coverage gate owner contract + doc sync
-- STATUS: DONE (SESSIONS 1-5 DOC/CONFIG/SCHEMA/EVALUATOR + PIPELINE + FINALIZE/OUTCOME MAPPING SYNC COMPLETE)
+- STATUS: DONE (SESSIONS 1-6 DOC/CONFIG/SCHEMA/EVALUATOR + PIPELINE + FINALIZE/OUTCOME + EVIDENCE/REPLAY SYNC COMPLETE)
 - OWNER AREA: coverage-gate semantics for requested-date readability and finalization
-- LAST UPDATED SESSION: session5_finalize_decision_publication_outcome_coverage_aware
+- LAST UPDATED SESSION: session6_evidence_export_replay_sync_coverage_aware
 
 - OWNER DOCS:
   - `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
@@ -166,6 +166,7 @@
   - session 3 implemented the standalone `CoverageGateEvaluator`
   - session 4 wired evaluator output into pipeline telemetry and removed the old eligibility-based ambiguity around `coverage_ratio`
   - session 5 completed finalize/outcome alignment so requested-date readability now depends on the official coverage gate status rather than on a raw ratio comparison shortcut
+  - session 6 completed evidence/export/replay alignment so the same coverage contract is now visible in exported evidence packs, persisted replay metrics, and replay actual-vs-expected comparison
   - finalize behavior is now explicit:
     - coverage `PASS` + finalize preconditions satisfied -> candidate may be promoted toward readable success
     - coverage `FAIL` + fallback exists -> requested date remains `NOT_READABLE`, terminal resolves `HELD`

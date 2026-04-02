@@ -35,6 +35,17 @@ class ReplayVerificationServiceTest extends TestCase
                 'expected_trade_date_effective' => '2026-03-20',
                 'expected_seal_state' => 'SEALED',
                 'config_identity' => 'v1',
+                'publication_version' => 4,
+                'coverage_universe_count' => 10,
+                'coverage_available_count' => 10,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => '1.0000',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_gate_state' => 'PASS',
+                'coverage_threshold_mode' => 'MIN_RATIO',
+                'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'coverage_missing_sample' => [],
                 'comparison_note' => 'all artifact hashes matched expected fixture outcome',
             ],
             'expected/expected_run_summary.json' => [
@@ -65,7 +76,16 @@ class ReplayVerificationServiceTest extends TestCase
             'terminal_status' => 'SUCCESS',
             'config_version' => 'v1',
             'publication_version' => 4,
+            'coverage_universe_count' => 10,
+            'coverage_available_count' => 10,
+            'coverage_missing_count' => 0,
             'coverage_ratio' => '1.0000',
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'PASS',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
             'bars_rows_written' => 10,
             'indicators_rows_written' => 10,
             'eligibility_rows_written' => 10,
@@ -113,6 +133,9 @@ class ReplayVerificationServiceTest extends TestCase
                 && $metric['artifact_changed_scope'] === 'none'
                 && $metric['expected_status'] === 'SUCCESS'
                 && $metric['expected_config_identity'] === 'v1'
+                && $metric['expected_publication_version'] === 4
+                && $metric['expected_coverage_gate_state'] === 'PASS'
+                && $metric['expected_coverage_universe_count'] === 10
                 && $metric['expected_bars_batch_hash'] === 'A1'
                 && $metric['expected_indicators_batch_hash'] === 'B1'
                 && $metric['expected_eligibility_batch_hash'] === 'C1'
@@ -129,6 +152,8 @@ class ReplayVerificationServiceTest extends TestCase
 
         $this->assertSame(3002, $result['replay_id']);
         $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame('PASS', $result['coverage_gate_state']);
+        $this->assertSame(10, $result['coverage_universe_count']);
         $this->assertNull($result['mismatch_summary']);
         $this->assertSame('fixture_replay_unchanged_input', $result['fixture_family']);
     }
@@ -153,6 +178,16 @@ class ReplayVerificationServiceTest extends TestCase
                 'expected_trade_date_effective' => '2026-03-19',
                 'expected_seal_state' => 'UNSEALED',
                 'comparison_note' => 'coverage intentionally degraded',
+                'coverage_universe_count' => 10,
+                'coverage_available_count' => 7,
+                'coverage_missing_count' => 3,
+                'coverage_ratio' => '0.7200',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_gate_state' => 'FAIL',
+                'coverage_threshold_mode' => 'MIN_RATIO',
+                'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'coverage_missing_sample' => ['BBCA', 'BMRI', 'TLKM'],
             ],
             'expected/expected_run_summary.json' => [
                 'warning_count' => 5,
@@ -170,7 +205,16 @@ class ReplayVerificationServiceTest extends TestCase
             'terminal_status' => 'HELD',
             'config_version' => 'v1',
             'publication_version' => null,
+            'coverage_universe_count' => 10,
+            'coverage_available_count' => 7,
+            'coverage_missing_count' => 3,
             'coverage_ratio' => '0.7200',
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'FAIL',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode(['BBCA', 'BMRI', 'TLKM']),
             'bars_rows_written' => 7,
             'indicators_rows_written' => 5,
             'eligibility_rows_written' => 10,
@@ -200,7 +244,9 @@ class ReplayVerificationServiceTest extends TestCase
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
             return $metric['comparison_result'] === 'EXPECTED_DEGRADE'
                 && $metric['status'] === 'HELD'
-                && $metric['expected_seal_state'] === 'UNSEALED';
+                && $metric['expected_seal_state'] === 'UNSEALED'
+                && $metric['expected_coverage_gate_state'] === 'FAIL'
+                && $metric['coverage_missing_sample_json'] === json_encode(['BBCA', 'BMRI', 'TLKM'], JSON_UNESCAPED_SLASHES);
         }));
         $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3003, '2026-03-20', []);
 
@@ -229,6 +275,16 @@ class ReplayVerificationServiceTest extends TestCase
                 'expected_status' => 'SUCCESS',
                 'expected_trade_date_effective' => '2026-03-20',
                 'expected_seal_state' => 'SEALED',
+                'coverage_universe_count' => 10,
+                'coverage_available_count' => 10,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => '1.0000',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_gate_state' => 'PASS',
+                'coverage_threshold_mode' => 'MIN_RATIO',
+                'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'coverage_missing_sample' => [],
             ],
             'expected/expected_reason_code_counts.json' => [
                 ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 2],
@@ -243,7 +299,16 @@ class ReplayVerificationServiceTest extends TestCase
             'terminal_status' => 'SUCCESS',
             'config_version' => 'v1',
             'publication_version' => 4,
+            'coverage_universe_count' => 10,
+            'coverage_available_count' => 10,
+            'coverage_missing_count' => 0,
             'coverage_ratio' => '1.0000',
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'PASS',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
             'bars_rows_written' => 10,
             'indicators_rows_written' => 10,
             'eligibility_rows_written' => 10,
@@ -292,6 +357,101 @@ class ReplayVerificationServiceTest extends TestCase
 
         $this->assertSame('MISMATCH', $result['comparison_result']);
         $this->assertStringContainsString('reason_code_counts', (string) $result['mismatch_summary']);
+    }
+
+
+    public function test_verify_replay_marks_mismatch_when_coverage_contract_fields_diverge()
+    {
+        $fixtureDir = $this->makeFixture([
+            'manifest' => [
+                'fixture_family' => 'fixture_replay_coverage_mismatch',
+                'version' => 'v1',
+                'contract_areas' => ['replay', 'coverage_gate'],
+                'files' => [
+                    'expected/expected_replay_result.json',
+                ],
+                'assertion_layers' => ['replay'],
+            ],
+            'expected/expected_replay_result.json' => [
+                'comparison_result' => 'MATCH',
+                'expected_status' => 'SUCCESS',
+                'expected_trade_date_effective' => '2026-03-20',
+                'expected_seal_state' => 'SEALED',
+                'coverage_universe_count' => 10,
+                'coverage_available_count' => 10,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => '1.0000',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_gate_state' => 'PASS',
+                'coverage_threshold_mode' => 'MIN_RATIO',
+                'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'coverage_missing_sample' => [],
+            ],
+        ]);
+
+        $run = (object) [
+            'run_id' => 94,
+            'trade_date_requested' => '2026-03-20',
+            'trade_date_effective' => '2026-03-20',
+            'source' => 'manual_file',
+            'terminal_status' => 'SUCCESS',
+            'config_version' => 'v1',
+            'publication_version' => 4,
+            'coverage_universe_count' => 10,
+            'coverage_available_count' => 8,
+            'coverage_missing_count' => 2,
+            'coverage_ratio' => '0.8000',
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'FAIL',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode(['BBCA', 'BMRI']),
+            'bars_rows_written' => 8,
+            'indicators_rows_written' => 8,
+            'eligibility_rows_written' => 8,
+            'invalid_bar_count' => 0,
+            'invalid_indicator_count' => 0,
+            'warning_count' => 0,
+            'hard_reject_count' => 0,
+            'bars_batch_hash' => 'A1',
+            'indicators_batch_hash' => 'B1',
+            'eligibility_batch_hash' => 'C1',
+            'sealed_at' => '2026-03-20 17:30:00',
+        ];
+        $publication = (object) [
+            'publication_id' => 46,
+            'publication_version' => 4,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-03-20 17:30:00',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(94)->andReturn($run);
+        $evidence->shouldReceive('findPublicationForRun')->once()->with(94)->andReturn($publication);
+        $evidence->shouldReceive('dominantReasonCodes')->once()->with(94, '2026-03-20', 46)->andReturn([]);
+        $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-20', 46)->andReturn([
+            ['eligible' => 1],
+        ]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3005);
+        $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
+            return $metric['comparison_result'] === 'MISMATCH'
+                && $metric['expected_coverage_gate_state'] === 'PASS'
+                && (string) $metric['expected_coverage_ratio'] === '1.0000'
+                && strpos((string) $metric['mismatch_summary'], 'coverage_gate_state') !== false;
+        }));
+        $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3005, '2026-03-20', []);
+
+        $service = new ReplayVerificationService($evidence, $publications, $replays);
+        $result = $service->verifyRunAgainstFixture(94, $fixtureDir);
+
+        $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertSame('FAIL', $result['coverage_gate_state']);
+        $this->assertStringContainsString('coverage_gate_state', (string) $result['mismatch_summary']);
     }
 
     public function test_verify_replay_throws_when_manifest_declares_missing_file()

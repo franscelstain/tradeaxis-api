@@ -27,7 +27,16 @@ class ReplayEvidenceExportServiceTest extends TestCase
             'artifact_changed_scope' => 'bars_indicators_eligibility',
             'config_identity' => 'cfg_2025_12_v2',
             'publication_version' => null,
+            'coverage_universe_count' => 1000,
+            'coverage_available_count' => 842,
+            'coverage_missing_count' => 158,
             'coverage_ratio' => '0.8420',
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'FAIL',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode(['BBCA', 'TLKM']),
             'bars_rows_written' => 842,
             'indicators_rows_written' => 830,
             'eligibility_rows_written' => 1000,
@@ -46,6 +55,16 @@ class ReplayEvidenceExportServiceTest extends TestCase
             'expected_seal_state' => 'UNSEALED',
             'expected_config_identity' => 'cfg_2025_12_v2',
             'expected_publication_version' => 7,
+            'expected_coverage_universe_count' => 1000,
+            'expected_coverage_available_count' => 842,
+            'expected_coverage_missing_count' => 158,
+            'expected_coverage_ratio' => '0.8420',
+            'expected_coverage_min_threshold' => '0.9800',
+            'expected_coverage_gate_state' => 'FAIL',
+            'expected_coverage_threshold_mode' => 'MIN_RATIO',
+            'expected_coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'expected_coverage_contract_version' => 'coverage_gate_v1',
+            'expected_coverage_missing_sample_json' => json_encode(['BBCA', 'TLKM']),
             'expected_bars_batch_hash' => 'A1',
             'expected_indicators_batch_hash' => 'B1',
             'expected_eligibility_batch_hash' => 'C1',
@@ -87,16 +106,21 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $this->assertSame(3001, $replayResult['replay_id']);
         $this->assertSame('EXPECTED_DEGRADE', $replayResult['comparison_result']);
         $this->assertSame('cfg_2025_12_v2', $replayResult['config_identity']);
+        $this->assertSame('FAIL', $replayResult['coverage']['coverage_gate_state']);
+        $this->assertSame('FAIL', $replayResult['expected_coverage']['coverage_gate_state']);
+        $this->assertSame(['BBCA', 'TLKM'], $replayResult['coverage']['coverage_missing_sample']);
 
         $expectedState = json_decode(file_get_contents($dir.'/replay_expected_state.json'), true);
         $this->assertSame('HELD', $expectedState['status']);
         $this->assertSame('A1', $expectedState['bars_batch_hash']);
         $this->assertCount(2, $expectedState['reason_code_counts']);
+        $this->assertSame(1000, $expectedState['coverage']['coverage_universe_count']);
 
         $actualState = json_decode(file_get_contents($dir.'/replay_actual_state.json'), true);
         $this->assertSame('HELD', $actualState['status']);
         $this->assertSame('B1', $actualState['indicators_batch_hash']);
         $this->assertCount(2, $actualState['reason_code_counts']);
+        $this->assertSame(['BBCA', 'TLKM'], $actualState['coverage']['coverage_missing_sample']);
 
         $payload = json_decode(file_get_contents($dir.'/replay_evidence_pack.json'), true);
         $this->assertSame('HELD', $payload['replay_result']['status']);

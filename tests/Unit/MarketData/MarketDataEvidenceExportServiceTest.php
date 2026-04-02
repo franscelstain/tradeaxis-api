@@ -26,7 +26,16 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'publishability_state' => 'READABLE',
             'stage' => 'FINALIZE',
             'source' => 'manual_file',
+            'coverage_universe_count' => 2,
+            'coverage_available_count' => 2,
+            'coverage_missing_count' => 0,
             'coverage_ratio' => 1.0,
+            'coverage_min_threshold' => 0.98,
+            'coverage_gate_state' => 'PASS',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
             'bars_rows_written' => 2,
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
@@ -115,5 +124,13 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(8124, $summary['run_id']);
         $this->assertSame('SUCCESS', $summary['terminal_status']);
         $this->assertTrue($summary['is_current_publication']);
+        $this->assertSame('PASS', $summary['coverage']['coverage_gate_state']);
+        $this->assertSame(2, $summary['coverage']['coverage_universe_count']);
+        $this->assertSame(0.98, $summary['coverage']['coverage_min_threshold']);
+        $this->assertSame([], $summary['coverage']['coverage_missing_sample']);
+
+        $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
+        $this->assertSame('coverage_gate_v1', $payload['run_summary']['coverage']['coverage_contract_version']);
+        $this->assertSame('active_equity_universe_asof_trade_date', $payload['run_summary']['coverage']['coverage_universe_basis']);
     }
 }

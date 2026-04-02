@@ -46,7 +46,16 @@ class ReplayVerificationService
             'artifact_changed_scope' => $comparison['artifact_changed_scope'],
             'config_identity' => $actual['config_identity'],
             'publication_version' => $actual['publication_version'],
+            'coverage_universe_count' => $actual['coverage_universe_count'],
+            'coverage_available_count' => $actual['coverage_available_count'],
+            'coverage_missing_count' => $actual['coverage_missing_count'],
             'coverage_ratio' => $actual['coverage_ratio'],
+            'coverage_min_threshold' => $actual['coverage_min_threshold'],
+            'coverage_gate_state' => $actual['coverage_gate_state'],
+            'coverage_threshold_mode' => $actual['coverage_threshold_mode'],
+            'coverage_universe_basis' => $actual['coverage_universe_basis'],
+            'coverage_contract_version' => $actual['coverage_contract_version'],
+            'coverage_missing_sample_json' => json_encode($actual['coverage_missing_sample'], JSON_UNESCAPED_SLASHES),
             'bars_rows_written' => $actual['bars_rows_written'],
             'indicators_rows_written' => $actual['indicators_rows_written'],
             'eligibility_rows_written' => $actual['eligibility_rows_written'],
@@ -65,6 +74,16 @@ class ReplayVerificationService
             'expected_seal_state' => $comparison['expected_seal_state'],
             'expected_config_identity' => $comparison['expected_config_identity'],
             'expected_publication_version' => $comparison['expected_publication_version'],
+            'expected_coverage_universe_count' => $comparison['expected_coverage_universe_count'],
+            'expected_coverage_available_count' => $comparison['expected_coverage_available_count'],
+            'expected_coverage_missing_count' => $comparison['expected_coverage_missing_count'],
+            'expected_coverage_ratio' => $comparison['expected_coverage_ratio'],
+            'expected_coverage_min_threshold' => $comparison['expected_coverage_min_threshold'],
+            'expected_coverage_gate_state' => $comparison['expected_coverage_gate_state'],
+            'expected_coverage_threshold_mode' => $comparison['expected_coverage_threshold_mode'],
+            'expected_coverage_universe_basis' => $comparison['expected_coverage_universe_basis'],
+            'expected_coverage_contract_version' => $comparison['expected_coverage_contract_version'],
+            'expected_coverage_missing_sample_json' => $comparison['expected_coverage_missing_sample_json'],
             'expected_bars_batch_hash' => $comparison['expected_bars_batch_hash'],
             'expected_indicators_batch_hash' => $comparison['expected_indicators_batch_hash'],
             'expected_eligibility_batch_hash' => $comparison['expected_eligibility_batch_hash'],
@@ -142,7 +161,16 @@ class ReplayVerificationService
             'status' => $run->terminal_status,
             'config_identity' => $run->config_version,
             'publication_version' => $publication && $publication->publication_version !== null ? (int) $publication->publication_version : ($run->publication_version !== null ? (int) $run->publication_version : null),
+            'coverage_universe_count' => isset($run->coverage_universe_count) && $run->coverage_universe_count !== null ? (int) $run->coverage_universe_count : null,
+            'coverage_available_count' => isset($run->coverage_available_count) && $run->coverage_available_count !== null ? (int) $run->coverage_available_count : null,
+            'coverage_missing_count' => isset($run->coverage_missing_count) && $run->coverage_missing_count !== null ? (int) $run->coverage_missing_count : null,
             'coverage_ratio' => $run->coverage_ratio !== null ? (float) $run->coverage_ratio : null,
+            'coverage_min_threshold' => isset($run->coverage_min_threshold) && $run->coverage_min_threshold !== null ? (float) $run->coverage_min_threshold : null,
+            'coverage_gate_state' => $run->coverage_gate_state ?? null,
+            'coverage_threshold_mode' => $run->coverage_threshold_mode ?? null,
+            'coverage_universe_basis' => $run->coverage_universe_basis ?? null,
+            'coverage_contract_version' => $run->coverage_contract_version ?? null,
+            'coverage_missing_sample' => $this->decodeJsonArray($run->coverage_missing_sample_json ?? null),
             'bars_rows_written' => $run->bars_rows_written !== null ? (int) $run->bars_rows_written : null,
             'indicators_rows_written' => $run->indicators_rows_written !== null ? (int) $run->indicators_rows_written : null,
             'eligibility_rows_written' => $run->eligibility_rows_written !== null ? (int) $run->eligibility_rows_written : null,
@@ -175,6 +203,11 @@ class ReplayVerificationService
         $this->compareField($mismatches, 'config_identity', $expectedReplay['config_identity'] ?? null, $actual['config_identity']);
         $this->compareField($mismatches, 'publication_version', $expectedReplay['publication_version'] ?? null, $actual['publication_version']);
 
+        foreach (['coverage_universe_count', 'coverage_available_count', 'coverage_missing_count', 'coverage_ratio', 'coverage_min_threshold', 'coverage_gate_state', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
+            $this->compareField($mismatches, $field, $expectedReplay[$field] ?? null, $actual[$field]);
+        }
+        $this->compareListField($mismatches, 'coverage_missing_sample', $expectedReplay['coverage_missing_sample'] ?? null, $actual['coverage_missing_sample']);
+
         foreach (['bars_rows_written', 'indicators_rows_written', 'eligibility_rows_written', 'invalid_bar_count', 'invalid_indicator_count', 'warning_count', 'hard_reject_count', 'eligible_count'] as $field) {
             $expectedValue = array_key_exists($field, $expectedRun) ? $expectedRun[$field] : (array_key_exists($field, $expectedReplay) ? $expectedReplay[$field] : null);
             $this->compareField($mismatches, $field, $expectedValue, $actual[$field]);
@@ -206,6 +239,16 @@ class ReplayVerificationService
             'expected_seal_state' => $expectedReplay['expected_seal_state'] ?? $expectedReplay['seal_state'] ?? null,
             'expected_config_identity' => $expectedReplay['config_identity'] ?? null,
             'expected_publication_version' => $expectedReplay['publication_version'] ?? null,
+            'expected_coverage_universe_count' => $expectedReplay['coverage_universe_count'] ?? null,
+            'expected_coverage_available_count' => $expectedReplay['coverage_available_count'] ?? null,
+            'expected_coverage_missing_count' => $expectedReplay['coverage_missing_count'] ?? null,
+            'expected_coverage_ratio' => $expectedReplay['coverage_ratio'] ?? null,
+            'expected_coverage_min_threshold' => $expectedReplay['coverage_min_threshold'] ?? null,
+            'expected_coverage_gate_state' => $expectedReplay['coverage_gate_state'] ?? null,
+            'expected_coverage_threshold_mode' => $expectedReplay['coverage_threshold_mode'] ?? null,
+            'expected_coverage_universe_basis' => $expectedReplay['coverage_universe_basis'] ?? null,
+            'expected_coverage_contract_version' => $expectedReplay['coverage_contract_version'] ?? null,
+            'expected_coverage_missing_sample_json' => json_encode($this->normalizeList($expectedReplay['coverage_missing_sample'] ?? []), JSON_UNESCAPED_SLASHES),
             'expected_bars_batch_hash' => $expectedHashes['bars_batch_hash'] ?? ($expectedReplay['bars_batch_hash'] ?? null),
             'expected_indicators_batch_hash' => $expectedHashes['indicators_batch_hash'] ?? ($expectedReplay['indicators_batch_hash'] ?? null),
             'expected_eligibility_batch_hash' => $expectedHashes['eligibility_batch_hash'] ?? ($expectedReplay['eligibility_batch_hash'] ?? null),
@@ -259,6 +302,63 @@ class ReplayVerificationService
         return 'multi_artifact';
     }
 
+
+
+    private function compareListField(array &$mismatches, $field, $expected, $actual)
+    {
+        if ($expected === null) {
+            return;
+        }
+
+        $expectedNormalized = $this->normalizeList($expected);
+        $actualNormalized = $this->normalizeList($actual);
+
+        if ($expectedNormalized !== $actualNormalized) {
+            $mismatches[] = [
+                'field' => $field,
+                'expected' => $expectedNormalized,
+                'actual' => $actualNormalized,
+            ];
+        }
+    }
+
+    private function normalizeList($items)
+    {
+        if ($items === null || $items === '') {
+            return [];
+        }
+
+        if (is_string($items)) {
+            $decoded = json_decode($items, true);
+            $items = is_array($decoded) ? $decoded : [$items];
+        }
+
+        if (! is_array($items)) {
+            return [(string) $items];
+        }
+
+        $normalized = array_map(function ($item) {
+            return (string) $item;
+        }, array_values($items));
+        sort($normalized);
+
+        return $normalized;
+    }
+
+    private function decodeJsonArray($value)
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return array_values($value);
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? array_values($decoded) : [];
+    }
 
     private function compareReasonCodeCounts(array &$mismatches, array $expectedCounts, array $actualCounts)
     {

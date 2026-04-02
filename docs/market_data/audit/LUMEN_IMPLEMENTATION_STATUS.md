@@ -1,3 +1,37 @@
+## SESSION 6 — EVIDENCE EXPORT + REPLAY SYNC FOR COVERAGE GATE
+
+### Scope completed in this session
+- re-read evidence/export and replay contracts relevant to coverage-aware audit artifacts
+- audited `MarketDataEvidenceExportService`, `ReplayVerificationService`, and `ReplayResultRepository` against the locked coverage-gate evidence requirements
+- expanded replay persistence so actual and expected coverage telemetry can survive beyond runtime verification and be re-exported later as evidence
+- made replay comparison coverage-aware, including mismatch detection for coverage counts, ratio, threshold, gate state, basis, contract version, and missing-sample list
+- made evidence export coverage-aware for run summary, replay result, replay expected state, and replay actual state
+- aligned replay fixtures / sqlite schema / migration surface with the persisted expected-coverage context
+
+### What changed
+- `MarketDataEvidenceExportService` now exports structured `coverage` payloads instead of relying on `coverage_ratio` alone
+- `ReplayVerificationService` now compares expected vs actual coverage contract fields and stores both actual + expected coverage state in replay metrics
+- `ReplayResultRepository` now persists the full actual coverage block and the expected coverage block
+- replay expected-context schema was expanded with explicit expected-coverage columns via migration + sqlite mirror
+- replay fixtures now declare coverage expectations where replay proof is supposed to be coverage-aware
+- tests now cover:
+  - evidence export contains structured coverage fields
+  - replay match when coverage fields match
+  - replay mismatch when coverage fields diverge
+
+### Current checkpoint result
+- evidence export coverage-aware: `DONE`
+- replay verification coverage-aware: `DONE`
+- replay persistence of expected/actual coverage context: `DONE`
+- replay fixture sync for coverage proof: `DONE`
+- PHP lint for changed code/tests/migration in this container: `PASS`
+- PHPUnit execution in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- convert the current file/syntax proof into runtime proof by running the updated replay/evidence PHPUnit scope in an environment with dependencies present
+- continue to the next grounded market-data batch only after this coverage-aware evidence/replay sync is checkpointed
+
+
 ## SESSION 3 — COVERAGE GATE EVALUATOR + UNIT TEST
 
 ### Scope completed in this session
