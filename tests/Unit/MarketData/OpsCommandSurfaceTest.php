@@ -24,7 +24,60 @@ class OpsCommandSurfaceTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_backfill_command_renders_summary_and_returns_success_when_all_cases_pass(): void
+    public function test_backfill_command_propagates_operator_options_and_renders_publishability_context(): void
+    {
+        $service = m::mock(MarketDataBackfillService::class);
+        $service->shouldReceive('execute')
+            ->once()
+            ->with('2026-03-17', '2026-03-18', 'manual_file', '/tmp/backfill', true)
+            ->andReturn([
+                'suite' => 'market_data_backfill_minimum',
+                'range' => [
+                    'start_date' => '2026-03-17',
+                    'end_date' => '2026-03-18',
+                ],
+                'source_mode' => 'manual_file',
+                'all_passed' => true,
+                'output_dir' => '/tmp/backfill',
+                'cases' => [
+                    [
+                        'requested_date' => '2026-03-17',
+                        'status' => 'PASS',
+                        'run_id' => 41,
+                        'terminal_status' => 'SUCCESS',
+                        'publishability_state' => 'READABLE',
+                        'trade_date_effective' => '2026-03-17',
+                    ],
+                ],
+            ]);
+
+        $this->app->instance(MarketDataBackfillService::class, $service);
+
+        $command = new BackfillMarketDataCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'start_date' => '2026-03-17',
+            'end_date' => '2026-03-18',
+            '--source_mode' => 'manual_file',
+            '--output_dir' => '/tmp/backfill',
+            '--continue_on_error' => true,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('suite=market_data_backfill_minimum', $display);
+        $this->assertStringContainsString('start_date=2026-03-17', $display);
+        $this->assertStringContainsString('end_date=2026-03-18', $display);
+        $this->assertStringContainsString('source_mode=manual_file', $display);
+        $this->assertStringContainsString('all_passed=1', $display);
+        $this->assertStringContainsString('output_dir=/tmp/backfill', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17', $display);
+    }
+
+    public function test_backfill_command_returns_failure_and_renders_error_case_lines(): void
     {
         $service = m::mock(MarketDataBackfillService::class);
         $service->shouldReceive('execute')
@@ -36,20 +89,23 @@ class OpsCommandSurfaceTest extends TestCase
                     'start_date' => '2026-03-17',
                     'end_date' => '2026-03-18',
                 ],
-                'all_passed' => true,
+                'source_mode' => 'manual_file',
+                'all_passed' => false,
                 'output_dir' => '/tmp/backfill',
                 'cases' => [
                     [
                         'requested_date' => '2026-03-17',
-                        'status' => 'PASS',
+                        'status' => 'FAIL',
                         'run_id' => 41,
-                        'terminal_status' => 'SUCCESS',
+                        'terminal_status' => 'HELD',
+                        'publishability_state' => 'NOT_READABLE',
+                        'trade_date_effective' => '2026-03-16',
                     ],
                     [
                         'requested_date' => '2026-03-18',
-                        'status' => 'PASS',
-                        'run_id' => 42,
-                        'terminal_status' => 'SUCCESS',
+                        'status' => 'ERROR',
+                        'error_class' => 'RuntimeException',
+                        'error_message' => 'Backfill requires at least one trading date in market_calendar for the requested range.',
                     ],
                 ],
             ]);
@@ -68,12 +124,11 @@ class OpsCommandSurfaceTest extends TestCase
 
         $display = $tester->getDisplay();
 
-        $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('suite=market_data_backfill_minimum', $display);
-        $this->assertStringContainsString('start_date=2026-03-17', $display);
-        $this->assertStringContainsString('end_date=2026-03-18', $display);
-        $this->assertStringContainsString('all_passed=1', $display);
-        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS', $display);
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('source_mode=manual_file', $display);
+        $this->assertStringContainsString('all_passed=0', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=FAIL | run_id=41 | terminal_status=HELD | publishability_state=NOT_READABLE | trade_date_effective=2026-03-16', $display);
+        $this->assertStringContainsString('requested_date=2026-03-18 | status=ERROR | error=Backfill requires at least one trading date in market_calendar for the requested range.', $display);
     }
 
     public function test_session_snapshot_capture_command_renders_summary(): void

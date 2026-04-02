@@ -23,6 +23,7 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
         $this->info('suite='.$summary['suite']);
         $this->line('start_date='.$summary['range']['start_date']);
         $this->line('end_date='.$summary['range']['end_date']);
+        $this->line('source_mode='.(string) $summary['source_mode']);
         $this->line('all_passed='.(int) $summary['all_passed']);
         $this->line('output_dir='.$summary['output_dir']);
 
@@ -32,6 +33,8 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
                 .' | status='.$case['status']
                 .(isset($case['run_id']) ? ' | run_id='.$case['run_id'] : '')
                 .(isset($case['terminal_status']) ? ' | terminal_status='.$case['terminal_status'] : '')
+                .(isset($case['publishability_state']) ? ' | publishability_state='.$case['publishability_state'] : '')
+                .(isset($case['trade_date_effective']) && $case['trade_date_effective'] !== null ? ' | trade_date_effective='.$case['trade_date_effective'] : '')
                 .(isset($case['error_message']) ? ' | error='.$case['error_message'] : '')
             );
         }
