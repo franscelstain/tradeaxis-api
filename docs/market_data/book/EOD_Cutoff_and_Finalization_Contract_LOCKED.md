@@ -30,3 +30,12 @@ A run may evaluate gates before seal, but it must not be recorded as finalized `
 ## Anti-ambiguity rule (LOCKED)
 Implementations must not expose a transient state where `terminal_status='SUCCESS'` but hashes or seal are still missing.
 If hash/seal is pending or failed, the run must remain non-consumable (`HELD`, `FAILED`, or equivalent pre-final status outside the downstream contract).
+
+## Coverage gate alignment (LOCKED)
+A run is not success-eligible unless the coverage gate for the requested/effective date resolves to `PASS` under `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`.
+
+Implications:
+- `coverage_ratio >= COVERAGE_MIN` is required for requested-date readability
+- coverage `FAIL` keeps the requested date `NOT_READABLE` even if bars/indicators/eligibility/hashes already exist
+- coverage `BLOCKED` also keeps the requested date `NOT_READABLE`; finalization must treat this as blocked integrity/prerequisite state, not as silent pass
+- readable fallback resolution may keep consumers operational, but it does not convert the requested date into `SUCCESS`

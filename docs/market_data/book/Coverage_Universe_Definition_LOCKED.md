@@ -14,3 +14,7 @@ Optional refinement is allowed only if driven by stable upstream master-data att
 - coverage numerator must count tickers with a canonical valid bar in `eod_bars` for D
 - downstream consumer preferences must never alter coverage metrics
 - if the application lacks temporal ticker membership data, it must explicitly document that coverage is current-state only; it must not silently claim historical as-of correctness
+
+## Ownership boundary
+This document owns universe-membership semantics.
+Coverage formula, threshold, gate state, and finalization outcome mapping are owned by `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`.

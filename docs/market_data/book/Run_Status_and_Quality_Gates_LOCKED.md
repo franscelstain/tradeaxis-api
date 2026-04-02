@@ -91,7 +91,7 @@ At minimum, gates must cover:
 1. canonical bar artifact exists
 2. indicator artifact exists
 3. eligibility artifact exists
-4. coverage threshold passes
+4. coverage gate passes according to `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
 5. required hashes exist before readable success
 6. seal exists before readable success
 7. publication resolution is unambiguous
@@ -135,9 +135,9 @@ A run should resolve to terminal `HELD` when:
 - publishability state remains `NOT_READABLE`
 
 Typical causes:
-- coverage below threshold
-- source degradation
-- candidate not safely publishable
+- coverage gate evaluated to `FAIL` and prior readable fallback still exists
+- requested date degraded below threshold but prior sealed readable publication still serves consumers
+- candidate not safely publishable even though fallback continuity remains
 
 ### FAILED
 A run should resolve to terminal `FAILED` when:
@@ -149,6 +149,7 @@ A run should resolve to terminal `FAILED` when:
 Typical causes:
 - compute failure
 - source schema drift
+- coverage gate is `BLOCKED` because prerequisite universe or canonical-bar evidence is unusable
 - hash failure with no safe continuation
 - seal failure with no safe publish path
 
@@ -215,3 +216,12 @@ This contract must remain aligned with:
 
 ## Anti-ambiguity rule (LOCKED)
 If execution progress, gate evaluation, and consumer readability cannot be distinguished cleanly, then the run-state model is too compressed and must not be treated as sufficient.
+
+## Coverage gate alignment (LOCKED)
+Coverage gate semantics are owned by `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`.
+This run-status contract must not redefine the denominator, numerator, or pass/fail rule for coverage.
+
+Mandatory alignment:
+- coverage `PASS` is necessary but not sufficient for `SUCCESS`
+- coverage `FAIL` keeps the requested date non-readable and normally maps to `HELD` only when a prior readable fallback exists
+- coverage `BLOCKED` keeps the requested date non-readable and must never be collapsed into readable success

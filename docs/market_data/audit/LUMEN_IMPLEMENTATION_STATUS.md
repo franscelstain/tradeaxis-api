@@ -59,3 +59,29 @@
 ### Next Step
 - this market-data scope is closed as `SELESAI` unless a later regression, owner-doc change, or newly evidenced contract gap reopens it
 - the newest ZIP produced from this session becomes the canonical artifact for final audit because it carries the latest checkpoint state
+
+
+## SESSION 1 — OWNER CONTRACT + DOC SYNC FOR COVERAGE GATE
+
+### Scope completed in this session
+- re-read owner docs relevant to coverage, finalization, readability, runbook, and contract-test matrix
+- hardened `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` into the official owner contract for coverage universe usage, numerator/denominator semantics, formula, gate states, and final outcome mapping
+- synchronized related docs so coverage semantics no longer conflict with finalization/readability wording
+- updated checkpoint tracker to reflect that doc-owner alignment is done while implementation proof still remains open
+
+### What changed
+- coverage gate now uses a locked denominator based on resolved universe membership as-of requested date
+- coverage gate now uses a locked numerator based on canonical valid bars only
+- `NOT_EVALUABLE` was removed as a final coverage-gate state and replaced by locked `BLOCKED` semantics
+- coverage `FAIL` and coverage `BLOCKED` now explicitly keep the requested date non-readable
+- fallback readability may still keep consumers operational, but it does not turn the requested date into readable success
+
+### Current checkpoint result
+- owner-doc sync for coverage gate: `DONE`
+- codebase sync to the hardened owner contract: `PARTIAL`
+- PHPUnit/runtime proof for the new coverage-gate contract family in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- map the locked coverage contract into code/service/finalize paths
+- add DB/audit-visible fields if current schema/runtime output is still too weak for denominator/numerator/threshold evidence
+- add/adjust PHPUnit coverage-gate tests according to `Contract_Test_Matrix_LOCKED.md`

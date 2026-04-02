@@ -145,3 +145,45 @@
 
 - NEXT REQUIRED ACTION:
   - none unless a later regression, owner-doc change, or newly evidenced contract gap reopens market-data checkpoint work
+
+
+## CONTRACT ITEM 10 — Coverage gate owner contract + doc sync
+- STATUS: PARTIAL (SESSION 1 DOC OWNER SYNC COMPLETE; CODE/TEST ALIGNMENT OPEN)
+- OWNER AREA: coverage-gate semantics for requested-date readability and finalization
+- LAST UPDATED SESSION: session1_coverage_gate_doc_sync
+
+- OWNER DOCS:
+  - `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
+  - `docs/market_data/book/Coverage_Universe_Definition_LOCKED.md`
+  - `docs/market_data/book/Run_Status_and_Quality_Gates_LOCKED.md`
+  - `docs/market_data/book/EOD_Cutoff_and_Finalization_Contract_LOCKED.md`
+  - `docs/market_data/ops/Daily_Pipeline_Execution_and_Sealing_Runbook_LOCKED.md`
+  - `docs/market_data/tests/Contract_Test_Matrix_LOCKED.md`
+
+- EVIDENCE:
+  - source-of-truth ZIP already contained an early `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`, but it was still too thin to safely act as the definitive owner contract
+  - session 1 hardened that contract so it now explicitly locks:
+    - resolved universe denominator semantics
+    - canonical-valid-bar numerator semantics
+    - official coverage formula
+    - explicit threshold dependency (`COVERAGE_MIN`)
+    - final allowed gate states: `PASS`, `FAIL`, `BLOCKED`
+    - outcome mapping from coverage result to requested-date readability, terminal status, and fallback behavior
+  - related owner docs were synchronized so coverage fail/block paths no longer conflict with finalization/readability wording
+  - test matrix was extended with explicit coverage-gate contract cases
+
+- PROOF:
+  - owner-doc reread and sync in current source-of-truth ZIP -> PASS
+  - cross-doc conflict check for coverage vs finalization/readability wording -> PASS
+  - code/runtime conformance proof in this container -> NOT RUN (`vendor/` absent from uploaded ZIP)
+  - implementation alignment against hardened contract -> OPEN
+
+- OPEN GAP:
+  - code/service/finalize path may still not fully enforce the hardened denominator/numerator/state rules
+  - explicit DB/runtime evidence fields for coverage denominator/numerator/threshold may still need implementation or strengthening
+  - PHPUnit/integration proof for the new coverage-gate cases is still open
+
+- NEXT REQUIRED ACTION:
+  - implement coverage-gate contract in code paths that compute/finalize publishability
+  - add or harden tests for the new coverage-gate matrix
+  - only close this item after code + proof align with the owner contract
