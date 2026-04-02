@@ -200,15 +200,16 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('deleted_rows=250', $display);
     }
 
-    public function test_replay_smoke_command_renders_suite_summary_and_returns_success_when_all_cases_pass(): void
+    public function test_replay_smoke_command_propagates_operator_options_and_renders_case_identifiers(): void
     {
         $service = m::mock(ReplaySmokeSuiteService::class);
         $service->shouldReceive('execute')
             ->once()
-            ->with(41, null, null)
+            ->with(41, '/tmp/fixtures', '/tmp/replay-smoke')
             ->andReturn([
                 'suite' => 'replay_smoke_minimum',
                 'run_id' => 41,
+                'fixture_root' => '/tmp/fixtures',
                 'all_passed' => true,
                 'output_dir' => '/tmp/replay-smoke',
                 'cases' => [
@@ -217,12 +218,63 @@ class OpsCommandSurfaceTest extends TestCase
                         'expected_outcome' => 'MATCH',
                         'observed_outcome' => 'MATCH',
                         'passed' => true,
+                        'trade_date' => '2026-03-17',
+                        'replay_id' => 3001,
+                        'evidence_output_dir' => '/tmp/replay-smoke/valid_case',
                     ],
                     [
                         'fixture_case' => 'missing_file_case',
                         'expected_outcome' => 'ERROR',
                         'observed_outcome' => 'ERROR',
                         'passed' => true,
+                        'error' => 'Fixture file declared in manifest is missing.',
+                    ],
+                ],
+            ]);
+
+        $this->app->instance(ReplaySmokeSuiteService::class, $service);
+
+        $command = new ReplaySmokeSuiteCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'run_id' => 41,
+            '--fixture_root' => '/tmp/fixtures',
+            '--output_dir' => '/tmp/replay-smoke',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('suite=replay_smoke_minimum', $display);
+        $this->assertStringContainsString('run_id=41', $display);
+        $this->assertStringContainsString('fixture_root=/tmp/fixtures', $display);
+        $this->assertStringContainsString('all_passed=1', $display);
+        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1 | trade_date=2026-03-17 | replay_id=3001 | evidence_output_dir=/tmp/replay-smoke/valid_case', $display);
+        $this->assertStringContainsString('fixture_case=missing_file_case | expected=ERROR | observed=ERROR | passed=1 | error=Fixture file declared in manifest is missing.', $display);
+    }
+
+    public function test_replay_smoke_command_returns_failure_when_any_case_deviates_from_expected_outcome(): void
+    {
+        $service = m::mock(ReplaySmokeSuiteService::class);
+        $service->shouldReceive('execute')
+            ->once()
+            ->with(41, null, null)
+            ->andReturn([
+                'suite' => 'replay_smoke_minimum',
+                'run_id' => 41,
+                'fixture_root' => '/tmp/default-fixtures',
+                'all_passed' => false,
+                'output_dir' => '/tmp/replay-smoke',
+                'cases' => [
+                    [
+                        'fixture_case' => 'valid_case',
+                        'expected_outcome' => 'MATCH',
+                        'observed_outcome' => 'MISMATCH',
+                        'passed' => false,
+                        'trade_date' => '2026-03-17',
+                        'replay_id' => 3001,
                     ],
                 ],
             ]);
@@ -239,11 +291,10 @@ class OpsCommandSurfaceTest extends TestCase
 
         $display = $tester->getDisplay();
 
-        $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('suite=replay_smoke_minimum', $display);
-        $this->assertStringContainsString('run_id=41', $display);
-        $this->assertStringContainsString('all_passed=1', $display);
-        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1', $display);
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('fixture_root=/tmp/default-fixtures', $display);
+        $this->assertStringContainsString('all_passed=0', $display);
+        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MISMATCH | passed=0 | trade_date=2026-03-17 | replay_id=3001', $display);
     }
 
 
