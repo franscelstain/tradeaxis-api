@@ -75,7 +75,7 @@
 ## CONTRACT ITEM 3 — Correction / reseal / publish / cancel lifecycle
 - STATUS: `PARTIAL`
 - OWNER AREA: correction runtime and finalize outcomes
-- LAST UPDATED WORKSTREAM: `db_backed_post_switch_fallback_missing_pointer_row_guard_minimum`
+- LAST UPDATED WORKSTREAM: `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum`
 - EVIDENCE:
   - correction request / approval / reseal / publish / cancel runtime installed;
   - unchanged correction rerun proven berakhir `CANCELLED`;
@@ -181,11 +181,12 @@
     - fallback publication-current-mirror mismatch;
     - fallback unsealed-publication;
     - fallback missing-publication-row;
-    - fallback missing-pointer-row.
+    - fallback missing-pointer-row;
+    - fallback run-id mismatch.
   - current synced proof:
-    - `vendor\bin\phpunit --filter fallback_missing_pointer_row` -> `OK (1 test, 34 assertions)`
-    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (10 tests, 340 assertions)`
-    - `vendor\bin\phpunit --filter fallback_missing_publication_row` -> `OK (1 test, 35 assertions)`
+    - `vendor\bin\phpunit --filter fallback_run_id_mismatch` -> `OK (1 test, 39 assertions)`
+    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (11 tests, 379 assertions)`
+    - `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (30 tests, 780 assertions)`
   - manual runtime verification tambahan menegaskan normal correction path tetap sehat dan bukan conflict dengan special-case proof workstream ini.
 - OPEN GAP:
   - broader DB-backed conflict/error integration matrix masih belum fully covered di luar guard minimum yang sudah tertutup;
@@ -197,6 +198,8 @@
   - lanjut ke varian DB-backed correction/runtime berikutnya yang masih grounded di owner-docs;
   - boleh ambil beberapa subtask sekaligus bila masih satu family dan proof-nya tetap rapat;
   - jangan buka ulang varian yang sudah tertutup minimum.
+- IN-PROGRESS NOTE:
+  - workstream `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum` sudah tertutup minimum melalui executed local proof dan checkpoint telah disinkronkan.
 
 ## CONTRACT ITEM 8 — Final readiness gate
 - STATUS: `MISSING`
@@ -214,8 +217,7 @@
 
 ## Next Workstream Candidates
 - Prioritas tertinggi saat ini tetap:
-  - `CONTRACT ITEM 7`
-  - atau `CONTRACT ITEM 3`
+  - lanjutkan `CONTRACT ITEM 7` atau `CONTRACT ITEM 3` pada varian correction/runtime berikutnya yang masih satu family.
 - Kandidat workstream berikutnya harus:
   - masih grounded di owner-docs;
   - tidak membuka area baru;

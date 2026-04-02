@@ -66,8 +66,8 @@
 
 ## Current Project Status
 - Project status: `BELUM SELESAI`
-- Current active workstream: none
-- Last completed workstream id: `db_backed_post_switch_fallback_missing_pointer_row_guard_minimum`
+- Current active workstream: `none`
+- Last completed workstream id: `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum`
 - Next recommended workstream: lanjut ke varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity atau correction/runtime matrix. Jangan buka area baru sebelum parent contract item `3` dan `7` makin rapat.
 
 ## Validated Completed Work
@@ -98,29 +98,28 @@
   - session-snapshot purge minimum tetap sehat;
   - correction normal `REQUESTED -> APPROVED -> PUBLISHED` tetap sehat dan bukan conflict dengan special-case fallback proof karena precondition insiden khusus tidak dibentuk.
 
+## Current Active Work Record
+- Tidak ada workstream aktif yang sedang dibuka pada checkpoint ini.
+- Batch pertama sesi ini sudah selesai diproof dan dipindahkan menjadi completed work.
+
 ## Last Completed Work Record
-- WORKSTREAM ID: `db_backed_post_switch_fallback_missing_pointer_row_guard_minimum`
+- WORKSTREAM ID: `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum`
 - STATUS: `DONE`
 - SCOPE:
-  - menutup varian DB-backed correction/runtime minimum untuk post-switch current-pointer resolution mismatch + prior-readable fallback missing-pointer-row;
-  - sinkronisasi checkpoint kecil agar tracker kembali menunjuk workstream terakhir yang benar.
+  - menutup varian DB-backed correction/runtime minimum untuk post-switch current-pointer resolution mismatch + prior-readable fallback pointer/run_id mismatch;
+  - menjaga family fallback-integrity tetap sempit dan satu contract family.
 - IMPLEMENTATION:
   - proof minimum ditambahkan di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test:
-    - `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_missing_pointer_row_does_not_invent_effective_trade_date()`
+    - `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_run_id_mismatch_does_not_invent_effective_trade_date()`
 - PROOF:
   - syntax lint: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`
   - focused local proof:
-    - `vendor\bin\phpunit --filter fallback_missing_pointer_row` -> `OK (1 test, 34 assertions)`
-    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (10 tests, 340 assertions)`
-    - `vendor\bin\phpunit --filter fallback_missing_publication_row` -> `OK (1 test, 35 assertions)`
-  - manual runtime verification:
-    - `market-data:correction:request --trade_date=2026-03-20 --reason_code=READABILITY_FIX --reason_note="session64 manual test"` -> `REQUESTED`
-    - `market-data:correction:approve 26` -> `APPROVED`
-    - `market-data:correction:run 26 --source_mode=manual_file -vvv` -> `COMPLETED / SUCCESS / READABLE / PUBLISHED`
-    - hasil manual ini normal dan bukan conflict dengan proof workstream ini karena precondition khusus insiden tidak dibentuk.
+    - `vendor\bin\phpunit --filter fallback_run_id_mismatch` -> `OK (1 test, 39 assertions)`
+    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (11 tests, 379 assertions)`
+    - `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (30 tests, 780 assertions)`
 - RESULT:
   - workstream ini tertutup;
-  - checkpoint kembali sinkron;
+  - checkpoint tersinkron ke executed local proof nyata;
   - parent contract belum selesai.
 
 ## Remaining Work
@@ -134,7 +133,7 @@
   - `CONTRACT ITEM 6 — Operator command surface / ops proof`
 - Parent contract `8` tetap `MISSING` karena done gate proyek belum sah ditutup.
 - Remaining gap yang masih sah dibuka sekarang:
-  - varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-docs;
+  - lanjut ke varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-docs;
   - varian fallback-integrity atau conflict/error integration yang belum punya proof minimum;
   - jangan buka ulang varian yang sudah tertutup minimum.
 
@@ -153,6 +152,7 @@
 - Tidak ada `DOC SYNC ISSUE` aktif saat ini.
 - Catatan operasional:
   - ZIP source-of-truth berikutnya sebaiknya tetap membawa pola evidence `storage/app/market_data/evidence/local_phpunit/...` agar proof tetap traceable.
+  - Untuk audit eksekusi di container ini, dependency test runtime (`vendor/bin/phpunit`) tidak tersedia dari ZIP yang diupload, jadi proof baru belum bisa diobservasi langsung di environment kerja saat ini.
 
 ## Historical References
 - Jangan gunakan daftar ini sebagai struktur utama checkpoint aktif.
