@@ -1572,6 +1572,80 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
+    public function test_run_daily_approved_correction_with_pointer_to_publication_whose_run_requested_trade_date_mismatches_rejects_before_run_creation_and_preserves_approval_state(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+        $this->seedBaselinePointerToPublicationWithRunRequestedTradeDateMismatch('2026-03-20', '2026-03-19', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 134,
+            'high' => 139,
+            'low' => 133,
+            'close' => 138,
+            'volume' => 2900,
+            'adj_close' => 138,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-with-baseline-run-requested-trade-date-mismatch', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        try {
+            $this->makePipeline()->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
+            $this->fail('Expected baseline run requested-trade-date mismatch to reject approved correction before run creation.');
+        } catch (RuntimeException $e) {
+            $this->assertSame(
+                'Correction requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.',
+                $e->getMessage()
+            );
+        }
+
+        $run = DB::table('eod_runs')
+            ->where('trade_date_requested', '2026-03-20')
+            ->where('run_id', '!=', 90)
+            ->orderByDesc('run_id')
+            ->first();
+
+        $this->assertNull($run);
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('APPROVED', $persistedCorrection->status);
+        $this->assertNull($persistedCorrection->prior_run_id);
+        $this->assertNull($persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+        $this->assertNull($persistedCorrection->final_outcome_note);
+
+        $baselineRun = DB::table('eod_runs')->where('run_id', 90)->first();
+        $this->assertNotNull($baselineRun);
+        $this->assertSame('2026-03-19', (string) $baselineRun->trade_date_requested);
+        $this->assertSame('SUCCESS', $baselineRun->terminal_status);
+        $this->assertSame('READABLE', $baselineRun->publishability_state);
+        $this->assertSame(1, (int) $baselineRun->is_current_publication);
+
+        $baselinePointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($baselinePointer);
+        $this->assertSame(1, (int) $baselinePointer->publication_id);
+        $this->assertSame(90, (int) $baselinePointer->run_id);
+        $this->assertSame(1, (int) $baselinePointer->publication_version);
+
+        $this->assertSame(
+            0,
+            DB::table('eod_run_events')
+                ->where('payload_json', 'like', '%"correction_id":'.$approved->correction_id.'%')
+                ->count()
+        );
+    }
     public function test_run_daily_approved_correction_with_pointer_to_publication_whose_run_row_is_missing_rejects_before_run_creation_and_preserves_approval_state(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -2646,6 +2720,117 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
 
 
+    public function test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_run_requested_trade_date_mismatch_does_not_invent_effective_trade_date(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+        $this->seedReadableFallbackPublication('2026-03-19', 80, 11);
+        DB::table('eod_runs')
+            ->where('run_id', 80)
+            ->update([
+                'trade_date_requested' => '2026-03-18',
+                'updated_at' => '2026-03-19 17:22:30',
+            ]);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 131,
+            'high' => 136,
+            'low' => 130,
+            'close' => 135,
+            'volume' => 2600,
+            'adj_close' => 135,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'recompute-with-post-switch-resolution-mismatch-and-fallback-run-requested-trade-date-mismatch', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        $run = $this->makePipelineWithPublications(
+            new PostSwitchResolutionMismatchPublicationRepository()
+        )->runDaily('2026-03-20', 'manual_file', $approved->correction_id);
+
+        $this->assertSame('HELD', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame('COMPLETED', $run->lifecycle_state);
+        $this->assertNull($run->trade_date_effective);
+
+        $persistedCorrection = DB::table('eod_dataset_corrections')
+            ->where('correction_id', $approved->correction_id)
+            ->first();
+
+        $this->assertNotNull($persistedCorrection);
+        $this->assertSame('RESEALED', $persistedCorrection->status);
+        $this->assertSame(90, (int) $persistedCorrection->prior_run_id);
+        $this->assertSame((int) $run->run_id, (int) $persistedCorrection->new_run_id);
+        $this->assertNull($persistedCorrection->published_at);
+        $this->assertNull($persistedCorrection->final_outcome_note);
+
+        $currentPublication = DB::table('eod_publications')
+            ->where('trade_date', '2026-03-20')
+            ->where('is_current', 1)
+            ->first();
+
+        $this->assertNotNull($currentPublication);
+        $this->assertSame(1, (int) $currentPublication->publication_id);
+        $this->assertSame(1, (int) $currentPublication->publication_version);
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
+        $this->assertSame(90, (int) $pointer->run_id);
+        $this->assertSame(1, (int) $pointer->publication_version);
+
+        $candidatePublication = DB::table('eod_publications')
+            ->where('run_id', $run->run_id)
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($candidatePublication);
+        $this->assertSame('SEALED', $candidatePublication->seal_state);
+        $this->assertSame(0, (int) $candidatePublication->is_current);
+        $this->assertSame(1, (int) $candidatePublication->supersedes_publication_id);
+
+        $fallbackPointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-19')
+            ->first();
+
+        $this->assertNotNull($fallbackPointer);
+        $this->assertSame(11, (int) $fallbackPointer->publication_id);
+        $this->assertSame(80, (int) $fallbackPointer->run_id);
+        $this->assertSame(1, (int) $fallbackPointer->publication_version);
+
+        $fallbackRun = DB::table('eod_runs')->where('run_id', 80)->first();
+        $this->assertNotNull($fallbackRun);
+        $this->assertSame('2026-03-18', (string) $fallbackRun->trade_date_requested);
+        $this->assertSame('SUCCESS', $fallbackRun->terminal_status);
+        $this->assertSame('READABLE', $fallbackRun->publishability_state);
+        $this->assertSame(1, (int) $fallbackRun->is_current_publication);
+
+        $finalizedEvent = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->orderByDesc('event_id')
+            ->first();
+
+        $this->assertNotNull($finalizedEvent);
+        $this->assertSame('WARN', $finalizedEvent->severity);
+        $this->assertSame('RUN_LOCK_CONFLICT', $finalizedEvent->reason_code);
+        $this->assertSame('Current publication pointer resolution mismatch after finalize.', (string) $finalizedEvent->message);
+
+        $this->assertFalse(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'CORRECTION_PUBLISHED')
+                ->exists()
+        );
+    }
     public function test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_unsealed_publication_does_not_invent_effective_trade_date(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -3447,6 +3632,107 @@ class MarketDataPipelineIntegrationTest extends TestCase
     }
 
 
+    private function seedBaselinePointerToPublicationWithRunRequestedTradeDateMismatch(string $tradeDate, string $runTradeDateRequested, int $tickerId, float $close): void
+    {
+        DB::table('eod_runs')->insert([
+            'run_id' => 90,
+            'trade_date_requested' => $runTradeDateRequested,
+            'trade_date_effective' => $tradeDate,
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS',
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'coverage_ratio' => '1.0000',
+            'bars_rows_written' => 1,
+            'indicators_rows_written' => 1,
+            'eligibility_rows_written' => 1,
+            'invalid_bar_count' => 0,
+            'invalid_indicator_count' => 0,
+            'hard_reject_count' => 0,
+            'warning_count' => 0,
+            'notes' => 'run-requested-trade-date-mismatch-baseline',
+            'bars_batch_hash' => 'bars-old',
+            'indicators_batch_hash' => 'ind-old',
+            'eligibility_batch_hash' => 'elig-old',
+            'config_version' => 'v1',
+            'publication_version' => 1,
+            'is_current_publication' => 1,
+            'sealed_at' => '2026-03-20 17:20:00',
+            'sealed_by' => 'system',
+            'seal_note' => 'run-requested-trade-date-mismatch-baseline',
+            'started_at' => '2026-03-20 17:00:00',
+            'finished_at' => '2026-03-20 17:20:00',
+            'created_at' => '2026-03-20 17:00:00',
+            'updated_at' => '2026-03-20 17:20:00',
+        ]);
+
+        DB::table('eod_publications')->insert([
+            'publication_id' => 1,
+            'trade_date' => $tradeDate,
+            'run_id' => 90,
+            'publication_version' => 1,
+            'is_current' => 1,
+            'supersedes_publication_id' => null,
+            'seal_state' => 'SEALED',
+            'bars_batch_hash' => 'bars-old',
+            'indicators_batch_hash' => 'ind-old',
+            'eligibility_batch_hash' => 'elig-old',
+            'sealed_at' => '2026-03-20 17:20:00',
+            'created_at' => '2026-03-20 17:00:00',
+            'updated_at' => '2026-03-20 17:20:00',
+        ]);
+
+        DB::table('eod_current_publication_pointer')->insert([
+            'trade_date' => $tradeDate,
+            'publication_id' => 1,
+            'run_id' => 90,
+            'publication_version' => 1,
+            'sealed_at' => '2026-03-20 17:20:00',
+        ]);
+
+        DB::table('eod_bars')->insert([
+            'trade_date' => $tradeDate,
+            'ticker_id' => $tickerId,
+            'open' => $close,
+            'high' => $close,
+            'low' => $close,
+            'close' => $close,
+            'volume' => 1000,
+            'adj_close' => $close,
+            'source' => 'MANUAL_FILE',
+            'run_id' => 90,
+            'publication_id' => 1,
+            'created_at' => Carbon::now()->toDateTimeString(),
+        ]);
+
+        DB::table('eod_indicators')->insert([
+            'trade_date' => $tradeDate,
+            'ticker_id' => $tickerId,
+            'is_valid' => 1,
+            'invalid_reason_code' => null,
+            'indicator_set_version' => config('market_data.indicators.set_version'),
+            'dv20_idr' => 100000000,
+            'atr14_pct' => 0.02,
+            'vol_ratio' => 1.1,
+            'roc20' => 0.03,
+            'hh20' => $close,
+            'run_id' => 90,
+            'publication_id' => 1,
+            'created_at' => Carbon::now()->toDateTimeString(),
+        ]);
+
+        DB::table('eod_eligibility')->insert([
+            'trade_date' => $tradeDate,
+            'ticker_id' => $tickerId,
+            'eligible' => 1,
+            'reason_code' => null,
+            'run_id' => 90,
+            'publication_id' => 1,
+            'created_at' => Carbon::now()->toDateTimeString(),
+        ]);
+    }
     private function seedBaselinePointerToPublicationWithMissingRunForTradeDate(string $tradeDate, int $tickerId, float $close): void
     {
         DB::table('eod_publications')->insert([
