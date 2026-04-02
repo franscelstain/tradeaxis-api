@@ -66,9 +66,9 @@
 
 ## Current Project Status
 - Project status: `BELUM SELESAI`
-- Current active workstream: `none`
+- Current active workstream: `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum`
 - Last completed workstream id: `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum`
-- Next recommended workstream: lanjut ke varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity atau correction/runtime matrix. Jangan buka area baru sebelum parent contract item `3` dan `7` makin rapat.
+- Next recommended workstream: selesaikan proof eksekusi untuk `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum` pada environment yang memiliki `vendor/bin/phpunit`; setelah itu lanjut ke varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity atau correction/runtime matrix. Jangan buka area baru sebelum parent contract item `3` dan `7` makin rapat.
 
 ## Validated Completed Work
 - Foundation, orchestration, artifact runtime, publication current-switch, correction reseal runtime, replay/evidence runtime, session snapshot runtime, dan command surface minimum sudah terpasang pada level dasar dan tidak lagi menjadi fokus awal.
@@ -99,8 +99,25 @@
   - correction normal `REQUESTED -> APPROVED -> PUBLISHED` tetap sehat dan bukan conflict dengan special-case fallback proof karena precondition insiden khusus tidak dibentuk.
 
 ## Current Active Work Record
-- Tidak ada workstream aktif yang sedang dibuka pada checkpoint ini.
-- Batch pertama sesi ini sudah selesai diproof dan dipindahkan menjadi completed work.
+- WORKSTREAM ID: `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum`
+- STATUS: `PARTIAL`
+- SCOPE:
+  - menambah dua varian DB-backed correction/runtime minimum untuk post-switch current-pointer resolution mismatch + prior-readable fallback run readability mismatch;
+  - varian yang ditambah tetap satu family fallback-integrity, yaitu:
+    - fallback run `terminal_status` mismatch;
+    - fallback run `publishability_state` mismatch.
+- IMPLEMENTATION:
+  - proof minimum draft ditambahkan di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test:
+    - `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_run_terminal_status_mismatch_does_not_invent_effective_trade_date()`
+    - `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_run_publishability_mismatch_does_not_invent_effective_trade_date()`
+- PROOF SAAT INI:
+  - syntax lint: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`
+  - executed local PHPUnit proof: `BELUM TEROBSERVASI` pada environment kerja saat ini karena ZIP source of truth tidak menyertakan dependency test runtime (`vendor/bin/phpunit`).
+- BLOCKER:
+  - evidence eksekusi minimum belum bisa di-claim selesai sampai focused PHPUnit benar-benar dijalankan pada environment yang punya dependency test runtime.
+- RESULT SEMENTARA:
+  - batch sudah dikerjakan secara konkret pada level code/test draft;
+  - checkpoint belum boleh menganggap workstream ini `DONE`.
 
 ## Last Completed Work Record
 - WORKSTREAM ID: `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum`
@@ -138,11 +155,12 @@
   - jangan buka ulang varian yang sudah tertutup minimum.
 
 ## Next Recommended Work
-- Ambil workstream berikutnya dari parent contract `3` atau `7`.
-- Workstream berikut boleh berisi beberapa subtask sekaligus selama:
-  - masih satu contract family;
-  - jalur implementasi dan proof berdekatan;
-  - hasilnya tetap bisa diproof dengan family `phpunit` yang jelas.
+- Prioritas berikutnya bukan membuka family baru, tetapi menutup proof execution untuk `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum`.
+- Jalankan focused PHPUnit pada environment yang punya `vendor/bin/phpunit`, minimal untuk:
+  - filter `fallback_run_(terminal_status|publishability)_mismatch`;
+  - filter `post_switch_resolution_mismatch`;
+  - file `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`.
+- Setelah proof itu sah, baru ambil varian correction/runtime lain dari parent contract `3` atau `7`.
 - Hindari membuka replay, ops, atau area readiness final sebelum correction/runtime DB-backed family cukup rapat.
 
 ## Active Issues
@@ -152,7 +170,8 @@
 - Tidak ada `DOC SYNC ISSUE` aktif saat ini.
 - Catatan operasional:
   - ZIP source-of-truth berikutnya sebaiknya tetap membawa pola evidence `storage/app/market_data/evidence/local_phpunit/...` agar proof tetap traceable.
-  - Untuk audit eksekusi di container ini, dependency test runtime (`vendor/bin/phpunit`) tidak tersedia dari ZIP yang diupload, jadi proof baru belum bisa diobservasi langsung di environment kerja saat ini.
+  - Untuk audit eksekusi di container ini, dependency test runtime (`vendor/bin/phpunit`) tidak tersedia dari ZIP yang diupload, jadi workstream aktif baru belum bisa diobservasi langsung sebagai executed local proof.
+  - Ini adalah blocker environment, bukan `DOC GAP` dan bukan `CONFLICT` kontrak.
 
 ## Historical References
 - Jangan gunakan daftar ini sebagai struktur utama checkpoint aktif.

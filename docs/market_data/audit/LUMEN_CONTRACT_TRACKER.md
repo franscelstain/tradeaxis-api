@@ -76,6 +76,7 @@
 - STATUS: `PARTIAL`
 - OWNER AREA: correction runtime and finalize outcomes
 - LAST UPDATED WORKSTREAM: `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum`
+- IN-PROGRESS WORKSTREAM: `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum`
 - EVIDENCE:
   - correction request / approval / reseal / publish / cancel runtime installed;
   - unchanged correction rerun proven berakhir `CANCELLED`;
@@ -93,14 +94,17 @@
     - fallback unsealed-publication;
     - fallback missing-publication-row;
     - fallback missing-pointer-row.
-  - manual runtime verification menegaskan jalur correction normal tetap sehat dan tidak regress.
+  - manual runtime verification menegaskan jalur correction normal tetap sehat dan tidak regress;
+  - draft proof tambahan untuk fallback run readability mismatch (terminal-status mismatch + publishability mismatch) sudah ditulis di repo tetapi belum sah dihitung sebagai executed proof karena environment kerja saat ini tidak membawa `vendor/bin/phpunit`.
 - OPEN GAP:
   - broader correction conflict/error matrix masih belum fully closed di luar minimum proof family yang sudah ada.
 - WHAT IS STILL MISSING:
+  - eksekusi proof minimum untuk draft fallback run readability mismatch agar bisa dihitung menutup dua varian tambahan pada sub-family fallback-integrity;
   - varian correction/runtime lain yang masih load-bearing tetapi belum punya proof minimum;
   - sub-family conflict/error integration di luar fallback-integrity minimum yang sudah tertutup.
 - NEXT REQUIRED ACTION:
-  - pilih varian correction/runtime berikutnya yang masih load-bearing dan benar-benar belum terbukti;
+  - validasikan dulu `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum` pada environment yang punya `vendor/bin/phpunit`;
+  - setelah itu pilih varian correction/runtime berikutnya yang masih load-bearing dan benar-benar belum terbukti;
   - utamakan sub-family correction/runtime atau fallback-integrity yang paling dekat menutup parent contract ini;
   - jangan buka area baru sebelum family ini makin rapat.
 
@@ -160,6 +164,7 @@
 - STATUS: `PARTIAL`
 - OWNER AREA: repository + pipeline integration
 - LAST UPDATED WORKSTREAM: `db_backed_post_switch_fallback_missing_pointer_row_guard_minimum`
+- IN-PROGRESS WORKSTREAM: `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum`
 - EVIDENCE:
   - repository integration proof added in historical workstream `db_backed_repository_proof`;
   - DB-backed pipeline integration minimum added in historical workstream `db_backed_pipeline_integration_minimum`;
@@ -183,6 +188,10 @@
     - fallback missing-publication-row;
     - fallback missing-pointer-row;
     - fallback run-id mismatch.
+  - draft proof tambahan untuk:
+    - fallback run terminal-status mismatch;
+    - fallback run publishability mismatch;
+    sudah ditulis di repo tetapi belum bisa dihitung sebagai executed proof karena environment kerja saat ini tidak membawa `vendor/bin/phpunit`.
   - current synced proof:
     - `vendor\bin\phpunit --filter fallback_run_id_mismatch` -> `OK (1 test, 39 assertions)`
     - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (11 tests, 379 assertions)`
@@ -192,14 +201,17 @@
   - broader DB-backed conflict/error integration matrix masih belum fully covered di luar guard minimum yang sudah tertutup;
   - masih mungkin ada varian sempit lain pada correction/runtime atau fallback-integrity yang belum diberi proof minimum.
 - WHAT IS STILL MISSING:
+  - eksekusi proof minimum untuk draft fallback run readability mismatch agar dua varian tambahan itu bisa dihitung tertutup;
   - remaining sub-family DB-backed correction/runtime atau fallback-integrity yang masih grounded di owner-docs tetapi belum diberi proof minimum;
   - closure yang cukup untuk menyatakan matrix integration parent item ini benar-benar rapat.
 - NEXT REQUIRED ACTION:
-  - lanjut ke varian DB-backed correction/runtime berikutnya yang masih grounded di owner-docs;
+  - validasikan dulu `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum` pada environment yang punya `vendor/bin/phpunit`;
+  - setelah itu lanjut ke varian DB-backed correction/runtime berikutnya yang masih grounded di owner-docs;
   - boleh ambil beberapa subtask sekaligus bila masih satu family dan proof-nya tetap rapat;
   - jangan buka ulang varian yang sudah tertutup minimum.
 - IN-PROGRESS NOTE:
-  - workstream `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum` sudah tertutup minimum melalui executed local proof dan checkpoint telah disinkronkan.
+  - workstream `db_backed_post_switch_fallback_run_id_mismatch_guard_minimum` sudah tertutup minimum melalui executed local proof dan checkpoint telah disinkronkan;
+  - workstream `db_backed_post_switch_fallback_run_readability_mismatch_guard_minimum` baru sampai tahap code/test draft + syntax lint, belum sampai executed proof karena dependency test runtime tidak tersedia pada ZIP ini.
 
 ## CONTRACT ITEM 8 — Final readiness gate
 - STATUS: `MISSING`
