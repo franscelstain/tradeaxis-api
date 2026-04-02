@@ -29,3 +29,10 @@
 
 ### Next Step
 - Lanjut ke SESSION 10 and continue with the next narrow ops-family gap without reopening already proof-synced evidence-export or replay-verify command-surface batches
+
+
+## SESSION 9A PROOF SYNC HOTFIX
+- Local proof from user exposed a real command bug in `market-data:replay:verify`: `--output_dir` absence still triggered replay evidence export because the command checked `!== ''` and treated `null` as export-enabled.
+- Hotfix applied in `app/Console/Commands/MarketData/VerifyReplayCommand.php` so evidence export now runs only when `--output_dir` is explicitly provided and non-empty.
+- Scope is still the same contract family (ops command surface). This is a proof-sync correction to make SESSION 9 command semantics match the test contract.
+- Required local proof after hotfix: rerun `vendor\bin\phpunit tests\Unit\MarketData\OpsCommandSurfaceTest.php`.

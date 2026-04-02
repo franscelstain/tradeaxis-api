@@ -27,13 +27,13 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
         $this->line('fixture_family='.(string) $result['fixture_family']);
 
         $outputDir = $this->option('output_dir');
-        if ($outputDir !== '') {
+        if ($outputDir !== null && $outputDir !== '') {
             app(MarketDataEvidenceExportService::class)->exportReplayEvidence(
                 $result['replay_id'],
                 $result['trade_date'],
-                $outputDir ?: null
+                $outputDir
             );
-            $this->line('evidence_output_dir='.(string) ($outputDir ?: 'default'));
+            $this->line('evidence_output_dir='.(string) $outputDir);
         }
 
         return $result['comparison_result'] === 'UNEXPECTED' || $result['comparison_result'] === 'MISMATCH' ? 1 : 0;
