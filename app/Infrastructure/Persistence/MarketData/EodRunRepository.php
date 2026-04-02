@@ -34,7 +34,16 @@ class EodRunRepository
                 'publishability_state' => 'NOT_READABLE',
                 'stage' => $stage,
                 'source' => $sourceMode,
+                'coverage_universe_count' => null,
+                'coverage_available_count' => null,
+                'coverage_missing_count' => null,
                 'coverage_ratio' => null,
+                'coverage_min_threshold' => null,
+                'coverage_gate_state' => null,
+                'coverage_threshold_mode' => null,
+                'coverage_universe_basis' => null,
+                'coverage_contract_version' => null,
+                'coverage_missing_sample_json' => null,
                 'bars_rows_written' => null,
                 'indicators_rows_written' => null,
                 'eligibility_rows_written' => null,
@@ -140,6 +149,8 @@ class EodRunRepository
 
     public function updateTelemetry(EodRun $run, array $telemetry)
     {
+        $telemetry = $this->normalizeTelemetry($telemetry);
+
         foreach ($telemetry as $key => $value) {
             $run->{$key} = $value;
         }
@@ -192,6 +203,43 @@ class EodRunRepository
             ]);
     }
 
+
+    private function normalizeTelemetry(array $telemetry)
+    {
+        if (array_key_exists('expected_universe_count', $telemetry) && ! array_key_exists('coverage_universe_count', $telemetry)) {
+            $telemetry['coverage_universe_count'] = $telemetry['expected_universe_count'];
+        }
+
+        if (array_key_exists('available_eod_count', $telemetry) && ! array_key_exists('coverage_available_count', $telemetry)) {
+            $telemetry['coverage_available_count'] = $telemetry['available_eod_count'];
+        }
+
+        if (array_key_exists('missing_eod_count', $telemetry) && ! array_key_exists('coverage_missing_count', $telemetry)) {
+            $telemetry['coverage_missing_count'] = $telemetry['missing_eod_count'];
+        }
+
+        if (array_key_exists('coverage_gate_status', $telemetry) && ! array_key_exists('coverage_gate_state', $telemetry)) {
+            $telemetry['coverage_gate_state'] = $telemetry['coverage_gate_status'];
+        }
+
+        if (array_key_exists('coverage_threshold_value', $telemetry) && ! array_key_exists('coverage_min_threshold', $telemetry)) {
+            $telemetry['coverage_min_threshold'] = $telemetry['coverage_threshold_value'];
+        }
+
+        if (array_key_exists('coverage_calibration_version', $telemetry) && ! array_key_exists('coverage_contract_version', $telemetry)) {
+            $telemetry['coverage_contract_version'] = $telemetry['coverage_calibration_version'];
+        }
+
+        if (array_key_exists('missing_ticker_codes', $telemetry) && ! array_key_exists('coverage_missing_sample_json', $telemetry)) {
+            $telemetry['coverage_missing_sample_json'] = $telemetry['missing_ticker_codes'];
+        }
+
+        if (array_key_exists('coverage_missing_sample_json', $telemetry) && is_array($telemetry['coverage_missing_sample_json'])) {
+            $telemetry['coverage_missing_sample_json'] = json_encode(array_values($telemetry['coverage_missing_sample_json']));
+        }
+
+        return $telemetry;
+    }
 
     private function normalizeSeverity($severity)
     {

@@ -148,9 +148,9 @@
 
 
 ## CONTRACT ITEM 10 — Coverage gate owner contract + doc sync
-- STATUS: PARTIAL (SESSIONS 1-2 DOC/CONFIG/SCHEMA SYNC COMPLETE; RUNTIME IMPLEMENTATION STILL OPEN)
+- STATUS: PARTIAL (SESSIONS 1-4 DOC/CONFIG/SCHEMA/EVALUATOR + PIPELINE TELEMETRY SYNC COMPLETE; FINALIZE OWNER-LEVEL OUTCOME MAPPING STILL OPEN)
 - OWNER AREA: coverage-gate semantics for requested-date readability and finalization
-- LAST UPDATED SESSION: session2_coverage_gate_config_env_db_schema
+- LAST UPDATED SESSION: session4_pipeline_wiring_run_telemetry_coverage
 
 - OWNER DOCS:
   - `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
@@ -175,19 +175,25 @@
 - PROOF:
   - owner-doc reread and sync in current source-of-truth ZIP -> PASS
   - cross-doc conflict check for coverage vs finalization/readability wording -> PASS
-  - code/runtime conformance proof in this container -> NOT RUN (`vendor/` absent from uploaded ZIP)
+  - code/runtime conformance proof in this container -> PARTIAL
   - config owner block added in `config/market_data.php` and synced to `.env.example` -> PASS
   - MariaDB owner schema for `eod_runs` and replay metrics expanded with coverage evidence fields -> PASS
   - SQLite test schema mirror expanded with the same coverage evidence fields -> PASS
-  - implementation alignment against hardened contract -> OPEN
+  - standalone `CoverageGateEvaluator` implemented -> PASS
+  - evaluator unit-test file added for pass/fail/not-evaluable + threshold metadata cases -> PASS
+  - PHP lint on changed evaluator/repository/test files -> PASS
+  - PHPUnit execution in this container -> NOT RUN (`vendor/` absent from uploaded ZIP)
+  - pipeline eligibility stage now computes true EOD coverage via `CoverageGateEvaluator` and persists dedicated coverage telemetry fields on `eod_runs` -> PASS
+  - `coverage_ratio` runtime meaning is no longer borrowed from eligibility output -> PASS
+  - pipeline unit-test coverage for eligibility-stage telemetry separation was added -> PASS (file + syntax proof in current environment)
+  - implementation alignment against hardened contract -> STILL OPEN AT FINALIZE OWNER-LEVEL OUTCOME MAPPING
 
 - OPEN GAP:
-  - code/service/finalize path may still not fully enforce the hardened denominator/numerator/state rules
-  - runtime write-path still needs to populate the new coverage config/schema fields consistently
-  - explicit DB/runtime evidence fields for coverage denominator/numerator/threshold may still need implementation or strengthening
-  - PHPUnit/integration proof for the new coverage-gate cases is still open
+  - finalize/outcome mapping still needs to translate evaluator `NOT_EVALUABLE` into owner-level blocked/non-readable handling
+  - finalize decision / publication outcome proof still needs explicit coverage-state assertions on top of the new telemetry wiring
+  - PHPUnit execution proof for the new evaluator + pipeline tests is still open in a full runtime environment
 
 - NEXT REQUIRED ACTION:
-  - implement coverage-gate contract in code paths that compute/finalize publishability
-  - add or harden tests for the new coverage-gate matrix
-  - only close this item after code + proof align with the owner contract
+  - wire coverage gate state explicitly into finalize/output mapping for requested-date readability and fallback handling
+  - add finalize/outcome mapping tests on top of the evaluator + pipeline telemetry tests
+  - only close this item after code + proof align with the owner contract end to end

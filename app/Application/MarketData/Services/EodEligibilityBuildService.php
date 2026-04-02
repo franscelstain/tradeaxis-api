@@ -61,12 +61,16 @@ class EodEligibilityBuildService
 
         $this->artifacts->replaceEligibility($requestedDate, $run->run_id, $rows, $candidatePublication->publication_id, $correctionMode);
 
+        $eligibilityRowsWritten = count($rows);
+        $eligibleRows = $eligibilityRowsWritten - $blockedCount;
+
         return [
             'publication_id' => (int) $candidatePublication->publication_id,
             'publication_version' => (int) $candidatePublication->publication_version,
-            'eligibility_rows_written' => count($rows),
+            'eligibility_rows_written' => $eligibilityRowsWritten,
             'blocked_rows' => $blockedCount,
-            'coverage_ratio' => count($rows) > 0 ? round((count($rows) - $blockedCount) / count($rows), 4) : null,
+            'eligible_rows' => $eligibleRows,
+            'eligibility_pass_ratio' => $eligibilityRowsWritten > 0 ? round($eligibleRows / $eligibilityRowsWritten, 4) : null,
             'storage_target' => $correctionMode ? 'eod_eligibility_history' : 'eod_eligibility',
         ];
     }

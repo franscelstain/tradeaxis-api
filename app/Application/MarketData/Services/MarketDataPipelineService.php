@@ -24,6 +24,7 @@ class MarketDataPipelineService
     private $finalizeDecisions;
     private $publicationDiffs;
     private $publicationFinalizeOutcomes;
+    private $coverageGateEvaluator;
 
     public function __construct(
         EodRunRepository $runs,
@@ -36,7 +37,8 @@ class MarketDataPipelineService
         DeterministicHashService $hashes,
         FinalizeDecisionService $finalizeDecisions,
         PublicationDiffService $publicationDiffs,
-        PublicationFinalizeOutcomeService $publicationFinalizeOutcomes
+        PublicationFinalizeOutcomeService $publicationFinalizeOutcomes,
+        CoverageGateEvaluator $coverageGateEvaluator
     ) {
         $this->runs = $runs;
         $this->barsIngest = $barsIngest;
@@ -49,6 +51,7 @@ class MarketDataPipelineService
         $this->finalizeDecisions = $finalizeDecisions;
         $this->publicationDiffs = $publicationDiffs;
         $this->publicationFinalizeOutcomes = $publicationFinalizeOutcomes;
+        $this->coverageGateEvaluator = $coverageGateEvaluator;
     }
 
     public function startStage(MarketDataStageInput $input)
@@ -164,13 +167,35 @@ class MarketDataPipelineService
         try {
             return DB::transaction(function () use ($run, $input) {
                 $result = $this->eligibility->build($run, $input->requestedDate, $input->correctionId !== null);
+                $coverage = $this->coverageGateEvaluator->evaluate(
+                    $input->requestedDate,
+                    $input->correctionId !== null ? $result['publication_id'] : null
+                );
+
                 $run = $this->runs->updateTelemetry($run, [
                     'eligibility_rows_written' => $result['eligibility_rows_written'],
                     'hard_reject_count' => $result['blocked_rows'],
-                    'coverage_ratio' => $result['coverage_ratio'],
+                    'coverage_universe_count' => $coverage['expected_universe_count'],
+                    'coverage_available_count' => $coverage['available_eod_count'],
+                    'coverage_missing_count' => $coverage['missing_eod_count'],
+                    'coverage_ratio' => $coverage['coverage_ratio'],
+                    'coverage_min_threshold' => $coverage['coverage_threshold_value'],
+                    'coverage_gate_state' => $coverage['coverage_gate_status'],
+                    'coverage_threshold_mode' => $coverage['coverage_threshold_mode'],
+                    'coverage_universe_basis' => (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
+                    'coverage_contract_version' => $coverage['coverage_calibration_version'],
+                    'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
                 ]);
 
-                $this->runs->appendEvent($run, $input->stage, 'STAGE_COMPLETED', 'INFO', 'Eligibility build stage completed with one row per universe ticker.', null, $result);
+                $this->runs->appendEvent(
+                    $run,
+                    $input->stage,
+                    'STAGE_COMPLETED',
+                    'INFO',
+                    'Eligibility build stage completed with one row per universe ticker and coverage telemetry stored separately.',
+                    null,
+                    $result + ['coverage' => $coverage]
+                );
 
                 return $run;
             });
@@ -318,7 +343,7 @@ class MarketDataPipelineService
                     (bool) $run->sealed_at,
                     $candidatePublication->seal_state,
                     $run->coverage_ratio,
-                    (float) config('market_data.platform.coverage_min'),
+                    (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                     $fallback ? $fallback->readable_trade_date : null
                 );
 
@@ -585,7 +610,7 @@ class MarketDataPipelineService
                     [
                         'cutoff_satisfied' => $cutoffSatisfied,
                         'coverage_ratio' => $run->coverage_ratio,
-                        'coverage_min' => (float) config('market_data.platform.coverage_min'),
+                        'coverage_min' => (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                         'quality_gate_state' => $run->quality_gate_state,
                         'requested_date' => $input->requestedDate,
                         'trade_date_effective' => $run->trade_date_effective,

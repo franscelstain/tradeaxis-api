@@ -136,6 +136,12 @@ class EodArtifactRepository
             ->all();
     }
 
+
+    public function loadCanonicalBarTickerIdsForTradeDate($tradeDate, $requestedPublicationId = null)
+    {
+        return array_map('intval', array_keys($this->loadBarsForTradeDate($tradeDate, $requestedPublicationId)));
+    }
+
     public function replaceEligibility($tradeDate, $runId, array $rows, $publicationId = null, $useHistory = false)
     {
         return DB::transaction(function () use ($tradeDate, $rows, $publicationId, $useHistory) {

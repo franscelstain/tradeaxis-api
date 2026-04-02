@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\MarketData\Services\CoverageGateEvaluator;
 use App\Application\MarketData\Services\DeterministicHashService;
 use App\Application\MarketData\Services\EligibilityDecisionService;
 use App\Application\MarketData\Services\EodBarsIngestService;
@@ -3696,7 +3697,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
             new DeterministicHashService(),
             new FinalizeDecisionService(),
             new PublicationDiffService(),
-            new PublicationFinalizeOutcomeService()
+            new PublicationFinalizeOutcomeService(),
+            new CoverageGateEvaluator(new TickerMasterRepository(), $artifacts)
         );
     }
 

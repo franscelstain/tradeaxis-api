@@ -1,3 +1,44 @@
+## SESSION 3 — COVERAGE GATE EVALUATOR + UNIT TEST
+
+### Scope completed in this session
+- added standalone `CoverageGateEvaluator` so coverage computation is no longer forced to live inside finalize/publishability flow
+- kept evaluator scope limited to expected-universe resolution, canonical-bar availability counting, coverage ratio calculation, threshold evaluation, and coverage-specific reason codes
+- added repository helper on `EodArtifactRepository` so evaluator can ask for canonical available ticker IDs without mixing publishability logic into the service
+- added dedicated unit-test file for evaluator pass/fail/not-evaluable behavior and threshold metadata output
+
+### What changed
+- new service: `app/Application/MarketData/Services/CoverageGateEvaluator.php`
+- `TickerMasterRepository` remained sufficient as-is via existing `getUniverseForTradeDate()` owner-aligned universe helper
+- `EodArtifactRepository` now exposes `loadCanonicalBarTickerIdsForTradeDate()` for evaluator-only bar availability resolution
+- evaluator returns:
+  - `expected_universe_count`
+  - `available_eod_count`
+  - `missing_eod_count`
+  - `coverage_ratio`
+  - `coverage_gate_status`
+  - `coverage_threshold_value`
+  - `coverage_threshold_mode`
+  - `coverage_calibration_version`
+  - coverage reason code(s)
+- evaluator deliberately does **not** return finalization fields such as `terminal_status` or `publishability_state`
+
+### Current checkpoint result
+- standalone coverage evaluator service: `DONE`
+- evaluator unit-test file added: `DONE`
+- evaluator/finalize separation preserved: `DONE`
+- runtime pipeline integration of evaluator output into finalization write-path: `PARTIAL`
+- PHPUnit execution in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP); PHP lint for changed files: `PASS`
+
+### Contract note
+- owner contract still uses final non-readable blocked semantics at requested-date outcome level
+- this session keeps evaluator output at pre-finalization computation level, where zero-universe resolves to `NOT_EVALUABLE` and must be mapped explicitly by later finalize/outcome code instead of being treated as readable success
+
+### Next required implementation batch
+- wire evaluator into pipeline/finalize orchestration
+- persist evaluator outputs into `eod_runs` coverage evidence fields
+- add finalize/outcome mapping from evaluator `NOT_EVALUABLE` to owner-level non-readable blocked/failure handling
+
+
 ## SESSION 2 — CONFIG + ENV + DB SCHEMA CONTRACT FOR COVERAGE GATE
 
 ### Scope completed in this session
@@ -122,3 +163,43 @@
 - map the locked coverage contract into code/service/finalize paths
 - add DB/audit-visible fields if current schema/runtime output is still too weak for denominator/numerator/threshold evidence
 - add/adjust PHPUnit coverage-gate tests according to `Contract_Test_Matrix_LOCKED.md`
+
+
+## SESSION 4 — PIPELINE WIRING + RUN TELEMETRY COVERAGE
+
+### Scope completed in this session
+- re-audited the live runtime path around `EodEligibilityBuildService`, `MarketDataPipelineService`, and `EodRunRepository` to close the ambiguity where `coverage_ratio` had still been sourced from eligibility output rather than true EOD coverage
+- wired `CoverageGateEvaluator` into the pipeline eligibility stage so requested-date coverage is now computed from expected universe vs canonical bar availability and then persisted into run telemetry
+- normalized `eod_runs` runtime telemetry handling so the new coverage evidence fields can be written without overloading the old ambiguous meaning
+- added pipeline unit-test coverage for eligibility-stage wiring and telemetry separation
+
+### What changed
+- `EodEligibilityBuildService` no longer returns misleading `coverage_ratio`; it now returns eligibility-only metrics (`eligible_rows`, `eligibility_pass_ratio`) so eligibility and coverage are separate concerns
+- `MarketDataPipelineService::completeEligibility(...)` now:
+  - builds eligibility rows
+  - evaluates true EOD coverage via `CoverageGateEvaluator`
+  - stores coverage evidence fields on the run:
+    - `coverage_universe_count`
+    - `coverage_available_count`
+    - `coverage_missing_count`
+    - `coverage_ratio`
+    - `coverage_min_threshold`
+    - `coverage_gate_state`
+    - `coverage_threshold_mode`
+    - `coverage_universe_basis`
+    - `coverage_contract_version`
+    - `coverage_missing_sample_json`
+- stage event payload now keeps eligibility metrics at the top level and nests true coverage output under `coverage`, which closes the previous payload ambiguity
+- `EodRunRepository` now initializes and normalizes the dedicated coverage telemetry fields for `eod_runs`
+- `EodRun` now casts the coverage telemetry fields for stable runtime/test behavior
+
+### Current checkpoint result
+- evaluator-to-pipeline wiring for coverage telemetry: `DONE`
+- ambiguity where run `coverage_ratio` still represented eligibility semantics: `DONE`
+- finalize/outcome owner mapping for evaluator `NOT_EVALUABLE` to owner-level blocked/non-readable behavior: `PARTIAL`
+- full PHPUnit runtime proof in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- wire coverage gate state explicitly into finalize outcome mapping for requested-date readability / held-vs-failed resolution
+- add finalize-level proof for fallback/readability behavior when coverage is `FAIL` or evaluator result is non-evaluable
+- only close the coverage-gate contract family after finalize/output mapping is fully aligned end to end

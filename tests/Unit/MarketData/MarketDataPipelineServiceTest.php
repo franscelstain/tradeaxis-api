@@ -3,6 +3,7 @@
 require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
 
 use App\Application\MarketData\DTOs\MarketDataStageInput;
+use App\Application\MarketData\Services\CoverageGateEvaluator;
 use App\Application\MarketData\Services\DeterministicHashService;
 use App\Application\MarketData\Services\EodBarsIngestService;
 use App\Application\MarketData\Services\EodEligibilityBuildService;
@@ -82,6 +83,83 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->sealed_at = $sealedAt;
 
         return $run;
+    }
+
+    public function test_complete_eligibility_stores_coverage_telemetry_separately_from_eligibility_metrics(): void
+    {
+        [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility] = $this->makeService();
+
+        $run = $this->makeRun(77, '0.0000', null);
+
+        $input = new MarketDataStageInput('2026-04-03', 'manual_file', 77, 'BUILD_ELIGIBILITY', null);
+
+        $service->shouldReceive('startStage')
+            ->once()
+            ->with($input)
+            ->andReturn([$run]);
+
+        $eligibility->shouldReceive('build')
+            ->once()
+            ->with($run, '2026-04-03', false)
+            ->andReturn([
+                'publication_id' => 15,
+                'publication_version' => 2,
+                'eligibility_rows_written' => 900,
+                'blocked_rows' => 40,
+                'eligible_rows' => 860,
+                'eligibility_pass_ratio' => 0.9556,
+                'storage_target' => 'eod_eligibility',
+            ]);
+
+        $coverageGateEvaluator->shouldReceive('evaluate')
+            ->once()
+            ->with('2026-04-03', null)
+            ->andReturn([
+                'expected_universe_count' => 900,
+                'available_eod_count' => 870,
+                'missing_eod_count' => 30,
+                'coverage_ratio' => 0.9666667,
+                'coverage_gate_status' => 'PASS',
+                'coverage_threshold_value' => 0.95,
+                'coverage_threshold_mode' => 'MIN_RATIO',
+                'coverage_calibration_version' => 'coverage_gate_v1',
+                'reason_code' => 'COVERAGE_THRESHOLD_MET',
+                'reason_codes' => ['COVERAGE_THRESHOLD_MET'],
+                'missing_ticker_ids' => [101, 102],
+                'missing_ticker_codes' => ['AAA', 'BBB'],
+            ]);
+
+        $runs->shouldReceive('updateTelemetry')
+            ->once()
+            ->with($run, m::on(function ($telemetry) {
+                return $telemetry['eligibility_rows_written'] === 900
+                    && $telemetry['hard_reject_count'] === 40
+                    && $telemetry['coverage_universe_count'] === 900
+                    && $telemetry['coverage_available_count'] === 870
+                    && $telemetry['coverage_missing_count'] === 30
+                    && abs($telemetry['coverage_ratio'] - 0.9666667) < 0.000001
+                    && $telemetry['coverage_gate_state'] === 'PASS'
+                    && abs($telemetry['coverage_min_threshold'] - 0.95) < 0.000001
+                    && $telemetry['coverage_threshold_mode'] === 'MIN_RATIO'
+                    && $telemetry['coverage_contract_version'] === 'coverage_gate_v1'
+                    && $telemetry['coverage_missing_sample_json'] === ['AAA', 'BBB'];
+            }))
+            ->andReturn($run);
+
+        $runs->shouldReceive('appendEvent')
+            ->once()
+            ->with($run, 'BUILD_ELIGIBILITY', 'STAGE_COMPLETED', 'INFO', m::type('string'), null, m::on(function ($payload) {
+                return isset($payload['eligibility_pass_ratio'])
+                    && ! isset($payload['coverage_ratio'])
+                    && isset($payload['coverage']['coverage_ratio'])
+                    && $payload['coverage']['coverage_gate_status'] === 'PASS';
+            }));
+
+        $runs->shouldReceive('failStage')->never();
+
+        $result = $service->completeEligibility($input);
+
+        $this->assertSame($run, $result);
     }
 
     public function test_complete_finalize_marks_correction_published_with_final_outcome_note_after_outcome_resolution(): void
@@ -689,6 +767,7 @@ class MarketDataPipelineServiceTest extends TestCase
         $finalizeDecisions = m::mock(FinalizeDecisionService::class);
         $publicationDiffs = m::mock(PublicationDiffService::class);
         $publicationFinalizeOutcomes = new PublicationFinalizeOutcomeService();
+        $coverageGateEvaluator = m::mock(CoverageGateEvaluator::class);
 
         $service = m::mock(MarketDataPipelineService::class, [
             $runs,
@@ -702,8 +781,9 @@ class MarketDataPipelineServiceTest extends TestCase
             $finalizeDecisions,
             $publicationDiffs,
             $publicationFinalizeOutcomes,
+            $coverageGateEvaluator,
         ])->makePartial()->shouldAllowMockingProtectedMethods();
 
-        return [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs];
+        return [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility];
     }
 }
