@@ -71,6 +71,11 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $dir = sys_get_temp_dir().'/market_data_evidence_replay_'.uniqid();
         $result = $service->exportReplayEvidence(3001, '2025-12-10', $dir);
 
+        $this->assertSame('replay', $result['selector']['type']);
+        $this->assertSame(3001, $result['selector']['id']);
+        $this->assertSame('EXPECTED_DEGRADE', $result['summary']['comparison_result']);
+        $this->assertSame('HELD', $result['summary']['status']);
+        $this->assertSame(5, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/replay_result.json');
         $this->assertFileExists($dir.'/replay_expected_state.json');

@@ -145,6 +145,7 @@ class SessionSnapshotService
         $deleted = $this->snapshots->purgeBefore($cutoff->toDateTimeString());
         $summary = [
             'cutoff_timestamp' => $cutoff->toDateTimeString(),
+            'cutoff_source' => $beforeDate ? 'explicit_before_date' : 'default_retention_days',
             'deleted_rows' => (int) $deleted,
             'retention_days' => $beforeDate ? null : $retentionDays,
             'before_date' => $beforeDate,

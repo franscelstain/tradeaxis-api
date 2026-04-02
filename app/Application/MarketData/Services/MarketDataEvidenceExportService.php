@@ -62,17 +62,28 @@ class MarketDataEvidenceExportService
         file_put_contents($dir.'/anomaly_report.md', $anomalyReport);
         $this->writeJson($dir.'/evidence_pack.json', $payload);
 
+        $files = array_values(array_filter([
+            'run_summary.json',
+            $manifest ? 'publication_manifest.json' : null,
+            'run_event_summary.json',
+            'eligibility_export.csv',
+            'invalid_bars_export.csv',
+            'anomaly_report.md',
+            'evidence_pack.json',
+        ]));
+
         return [
+            'selector' => ['type' => 'run', 'id' => (int) $run->run_id],
+            'summary' => [
+                'run_id' => (int) $run->run_id,
+                'trade_date_requested' => $runSummary['trade_date_requested'],
+                'trade_date_effective' => $runSummary['trade_date_effective'],
+                'terminal_status' => $runSummary['terminal_status'],
+                'publishability_state' => $runSummary['publishability_state'],
+            ],
             'output_dir' => $dir,
-            'files' => array_values(array_filter([
-                'run_summary.json',
-                $manifest ? 'publication_manifest.json' : null,
-                'run_event_summary.json',
-                'eligibility_export.csv',
-                'invalid_bars_export.csv',
-                'anomaly_report.md',
-                'evidence_pack.json',
-            ])),
+            'file_count' => count($files),
+            'files' => $files,
         ];
     }
 
@@ -124,9 +135,19 @@ class MarketDataEvidenceExportService
         $this->ensureDirectory($dir);
         $this->writeJson($dir.'/correction_evidence.json', $payload);
 
+        $files = ['correction_evidence.json'];
+
         return [
+            'selector' => ['type' => 'correction', 'id' => (int) $correction->correction_id],
+            'summary' => [
+                'correction_id' => (int) $correction->correction_id,
+                'trade_date' => $correction->trade_date,
+                'status' => $correction->status,
+                'publication_switch' => $payload['publication_switch'],
+            ],
             'output_dir' => $dir,
-            'files' => ['correction_evidence.json'],
+            'file_count' => count($files),
+            'files' => $files,
         ];
     }
 
@@ -166,15 +187,25 @@ class MarketDataEvidenceExportService
         $this->writeJson($dir.'/replay_reason_code_counts.json', $reasonCodes);
         $this->writeJson($dir.'/replay_evidence_pack.json', $payload);
 
+        $files = [
+            'replay_result.json',
+            'replay_expected_state.json',
+            'replay_actual_state.json',
+            'replay_reason_code_counts.json',
+            'replay_evidence_pack.json',
+        ];
+
         return [
-            'output_dir' => $dir,
-            'files' => [
-                'replay_result.json',
-                'replay_expected_state.json',
-                'replay_actual_state.json',
-                'replay_reason_code_counts.json',
-                'replay_evidence_pack.json',
+            'selector' => ['type' => 'replay', 'id' => (int) $metric->replay_id],
+            'summary' => [
+                'replay_id' => (int) $metric->replay_id,
+                'trade_date' => $metric->trade_date,
+                'comparison_result' => $metric->comparison_result,
+                'status' => $metric->status,
             ],
+            'output_dir' => $dir,
+            'file_count' => count($files),
+            'files' => $files,
         ];
     }
 

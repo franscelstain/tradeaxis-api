@@ -1,36 +1,56 @@
 # LUMEN_CONTRACT_TRACKER
 
-## CONTRACT ITEM 8 — Ops backfill / replay / evidence export command semantics
-- STATUS: PARTIAL
-- OWNER AREA: ops backfill, replay, and evidence export command/service semantics
-- LAST UPDATED SESSION: session12_patch_pending_local_proof
+## CONTRACT ITEM 5 — Session snapshot runtime / retention / purge semantics
+- STATUS: PARTIAL (SESSION 14 PATCH IMPLEMENTED, LOCAL RUNTIME PROOF PENDING)
+- OWNER AREA: session snapshot runtime and retention evidence semantics
+- LAST UPDATED SESSION: session14_patch_cutoff_source_contract
+
+- OWNER DOCS:
+  - `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  - `docs/market_data/session_snapshot/Session_Snapshot_Contract_LOCKED.md`
+  - `docs/market_data/session_snapshot/Session_Snapshot_Retention_Defaults_LOCKED.md`
+
 - EVIDENCE:
-  - owner-doc target remains `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`, `docs/market_data/ops/Bootstrap_and_Backfill_Runbook_LOCKED.md`
-  - Backfill & replay command surface now expose required operator-level fields:
-    - summary-level `source_mode`
-    - per-date `publishability_state`
-    - per-date `trade_date_effective`
-    - explicit `error` text
-    - replay identifiers (`run_id`, `replay_id`)
-  - Replay smoke command surface now also exposes operator-visible replay proof context per case:
-    - `fixture_root`
-    - `trade_date`
-    - `replay_id`
-    - `evidence_output_dir`
-    - explicit per-case `error`
-  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` now covers:
-    - option propagation (`--fixture_root`, `--output_dir`, `--continue_on_error`)
-    - success / held / error rendering
-    - operator-visible identifiers
-    - replay smoke failure exit discipline when any case deviates from expected outcome
+  - capture path remains in place for readable-publication-gated manual-file snapshot runtime
+  - purge path already wrote summary artifacts with cutoff timestamp and deleted rows
+  - session 14 hardens the remaining retention-summary ambiguity by making cutoff provenance explicit in both artifact and operator surface:
+    - `cutoff_source=explicit_before_date` when `--before_date` is supplied
+    - `cutoff_source=default_retention_days` when purge uses retention defaults
+    - `before_date` is present only for explicit cutoff mode
+    - `retention_days` is present only for default-retention mode
+  - tests updated for service-level artifact semantics and command-surface rendering in both purge modes
+
 - PROOF:
-  - php -l checks -> PASS
-  - targeted PHPUnit -> NOT RUN IN THIS ENVIRONMENT (`vendor/` missing from uploaded ZIP)
-  - full PHPUnit suite -> NOT RUN IN THIS ENVIRONMENT (`vendor/` missing from uploaded ZIP)
+  - php -l checks -> pending session 14 local syntax validation
+  - targeted PHPUnit -> pending local execution
+  - full PHPUnit suite -> pending local execution
 
 - OPEN GAP:
-  - broader ops family beyond command-surface parity still PARTIAL until local PHPUnit reconfirms the new smoke-surface patch and the next ops/runbook gap is closed.
+  - full local/runtime proof for the session 14 patch is still missing because the source ZIP does not ship `vendor/`
+  - broader session-snapshot parent area is not yet closed at final-readiness level beyond this narrowed purge cutoff-source batch
 
 - NEXT REQUIRED ACTION:
-  - run local targeted/full PHPUnit for the updated ops command surface
-  - if green, continue next narrow ops/runbook parity gap in SESSION 13
+  - execute the session 14 local proof commands and return the outputs
+  - if proof passes, keep session snapshot family open only for any remaining grounded runtime/ops gaps; otherwise repair from failing output first
+
+## CONTRACT ITEM 8 — Ops backfill / replay / evidence export command semantics
+- STATUS: DONE (SESSION 13 PATCH + FULL RUNTIME PROOF PASSED)
+- OWNER AREA: ops backfill, replay, and evidence export command/service semantics
+- LAST UPDATED SESSION: session13_proven_complete
+
+- EVIDENCE:
+  - owner-doc target remains `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`, `docs/market_data/ops/Bootstrap_and_Backfill_Runbook_LOCKED.md`, and `docs/market_data/ops/Audit_Evidence_Pack_Contract_LOCKED.md`
+  - backfill and replay command surface exposes required operator-level fields for range and replay minimums
+  - evidence export command surface exposes normalized selector metadata and deterministic file summary fields for run / correction / replay exports
+  - session 13 proof already passed locally, including full PHPUnit
+
+- PROOF:
+  - php -l checks -> PASS
+  - targeted PHPUnit -> PASS
+  - full PHPUnit suite -> PASS
+
+- OPEN GAP:
+  - none for this contract family in current scope
+
+- NEXT REQUIRED ACTION:
+  - none unless a later regression is observed

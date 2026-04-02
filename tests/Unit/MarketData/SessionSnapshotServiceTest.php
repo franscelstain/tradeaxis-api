@@ -85,6 +85,9 @@ class SessionSnapshotServiceTest extends TestCase
         $outputDir = sys_get_temp_dir().'/session_snapshot_purge_'.uniqid();
         $summary = $service->purge('2026-03-01', $outputDir);
 
+        $this->assertSame('explicit_before_date', $summary['cutoff_source']);
+        $this->assertSame('2026-03-01', $summary['before_date']);
+        $this->assertNull($summary['retention_days']);
         $this->assertSame(12, $summary['deleted_rows']);
         $this->assertFileExists($outputDir.'/market_data_session_snapshot_purge_summary.json');
     }
@@ -118,6 +121,7 @@ class SessionSnapshotServiceTest extends TestCase
         $outputDir = sys_get_temp_dir().'/session_snapshot_purge_default_'.uniqid();
         $summary = $service->purge(null, $outputDir);
 
+        $this->assertSame('default_retention_days', $summary['cutoff_source']);
         $this->assertSame(3, $summary['deleted_rows']);
         $this->assertSame(30, $summary['retention_days']);
         $this->assertNull($summary['before_date']);

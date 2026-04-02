@@ -34,18 +34,53 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
             return 1;
         }
 
-        $service = app(MarketDataEvidenceExportService::class);
-        if ($runId) {
-            $result = $service->exportRunEvidence($runId, $this->option('output_dir') ?: null);
-        } elseif ($correctionId) {
-            $result = $service->exportCorrectionEvidence($correctionId, $this->option('output_dir') ?: null);
-        } else {
-            $result = $service->exportReplayEvidence($replayId, $this->option('trade_date') ?: null, $this->option('output_dir') ?: null);
+        try {
+            $service = app(MarketDataEvidenceExportService::class);
+            if ($runId) {
+                $result = $service->exportRunEvidence($runId, $this->option('output_dir') ?: null);
+            } elseif ($correctionId) {
+                $result = $service->exportCorrectionEvidence($correctionId, $this->option('output_dir') ?: null);
+            } else {
+                $result = $service->exportReplayEvidence($replayId, $this->option('trade_date') ?: null, $this->option('output_dir') ?: null);
+            }
+        } catch (\Throwable $e) {
+            $this->error('error='.$e->getMessage());
+
+            return 1;
         }
 
-        $this->info('output_dir='.$result['output_dir']);
+        $selector = isset($result['selector']) && is_array($result['selector']) ? $result['selector'] : [];
+        $summary = isset($result['summary']) && is_array($result['summary']) ? $result['summary'] : [];
+
+        if (isset($selector['type'])) {
+            $this->info('selector='.(string) $selector['type']);
+        }
+
+        if (isset($selector['id'])) {
+            $this->line('selector_id='.(string) $selector['id']);
+        }
+
+        foreach ($summary as $key => $value) {
+            $this->line($key.'='.$this->stringifyValue($value));
+        }
+
+        $this->line('output_dir='.$result['output_dir']);
+        $this->line('file_count='.(string) ($result['file_count'] ?? count($result['files'] ?? [])));
         $this->line('files='.implode(',', $result['files']));
 
         return 0;
+    }
+
+    private function stringifyValue($value)
+    {
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if ($value === null) {
+            return '';
+        }
+
+        return (string) $value;
     }
 }

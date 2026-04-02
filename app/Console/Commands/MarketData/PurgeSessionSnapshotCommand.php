@@ -18,6 +18,13 @@ class PurgeSessionSnapshotCommand extends Command
         );
 
         $this->line('cutoff_timestamp='.$summary['cutoff_timestamp']);
+        $this->line('cutoff_source='.$summary['cutoff_source']);
+        if (isset($summary['before_date']) && $summary['before_date'] !== null) {
+            $this->line('before_date='.$summary['before_date']);
+        }
+        if (isset($summary['retention_days']) && $summary['retention_days'] !== null) {
+            $this->line('retention_days='.$summary['retention_days']);
+        }
         $this->line('deleted_rows='.$summary['deleted_rows']);
         $this->line('output_dir='.$summary['output_dir']);
 

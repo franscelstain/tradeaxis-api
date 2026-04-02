@@ -178,7 +178,10 @@ class OpsCommandSurfaceTest extends TestCase
             ->once()
             ->with('2026-03-01', null)
             ->andReturn([
-                'cutoff_timestamp' => '2026-03-01 00:00:00',
+                'cutoff_timestamp' => '2026-03-01 23:59:59',
+                'cutoff_source' => 'explicit_before_date',
+                'before_date' => '2026-03-01',
+                'retention_days' => null,
                 'deleted_rows' => 250,
                 'output_dir' => '/tmp/session-purge',
             ]);
@@ -196,8 +199,46 @@ class OpsCommandSurfaceTest extends TestCase
         $display = $tester->getDisplay();
 
         $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('cutoff_timestamp=2026-03-01 00:00:00', $display);
+        $this->assertStringContainsString('cutoff_timestamp=2026-03-01 23:59:59', $display);
+        $this->assertStringContainsString('cutoff_source=explicit_before_date', $display);
+        $this->assertStringContainsString('before_date=2026-03-01', $display);
         $this->assertStringContainsString('deleted_rows=250', $display);
+    }
+
+    public function test_session_snapshot_purge_command_renders_default_retention_context(): void
+    {
+        $service = m::mock(SessionSnapshotService::class);
+        $service->shouldReceive('purge')
+            ->once()
+            ->with(null, '/tmp/session-purge-default')
+            ->andReturn([
+                'cutoff_timestamp' => '2026-03-24 12:00:00',
+                'cutoff_source' => 'default_retention_days',
+                'before_date' => null,
+                'retention_days' => 30,
+                'deleted_rows' => 25,
+                'output_dir' => '/tmp/session-purge-default',
+            ]);
+
+        $this->app->instance(SessionSnapshotService::class, $service);
+
+        $command = new PurgeSessionSnapshotCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--output_dir' => '/tmp/session-purge-default',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('cutoff_timestamp=2026-03-24 12:00:00', $display);
+        $this->assertStringContainsString('cutoff_source=default_retention_days', $display);
+        $this->assertStringContainsString('retention_days=30', $display);
+        $this->assertStringNotContainsString('before_date=', $display);
+        $this->assertStringContainsString('deleted_rows=25', $display);
+        $this->assertStringContainsString('output_dir=/tmp/session-purge-default', $display);
     }
 
     public function test_replay_smoke_command_propagates_operator_options_and_renders_case_identifiers(): void
@@ -339,7 +380,16 @@ class OpsCommandSurfaceTest extends TestCase
             ->once()
             ->with(41, '/tmp/run-evidence')
             ->andReturn([
+                'selector' => ['type' => 'run', 'id' => 41],
+                'summary' => [
+                    'run_id' => 41,
+                    'trade_date_requested' => '2026-03-17',
+                    'trade_date_effective' => '2026-03-17',
+                    'terminal_status' => 'SUCCESS',
+                    'publishability_state' => 'READABLE',
+                ],
                 'output_dir' => '/tmp/run-evidence',
+                'file_count' => 2,
                 'files' => ['run_summary.json', 'evidence_pack.json'],
             ]);
 
@@ -354,9 +404,17 @@ class OpsCommandSurfaceTest extends TestCase
             '--output_dir' => '/tmp/run-evidence',
         ]);
 
+        $display = $tester->getDisplay();
+
         $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('output_dir=/tmp/run-evidence', $tester->getDisplay());
-        $this->assertStringContainsString('files=run_summary.json,evidence_pack.json', $tester->getDisplay());
+        $this->assertStringContainsString('selector=run', $display);
+        $this->assertStringContainsString('selector_id=41', $display);
+        $this->assertStringContainsString('trade_date_requested=2026-03-17', $display);
+        $this->assertStringContainsString('terminal_status=SUCCESS', $display);
+        $this->assertStringContainsString('publishability_state=READABLE', $display);
+        $this->assertStringContainsString('output_dir=/tmp/run-evidence', $display);
+        $this->assertStringContainsString('file_count=2', $display);
+        $this->assertStringContainsString('files=run_summary.json,evidence_pack.json', $display);
     }
 
     public function test_evidence_export_command_exports_correction_evidence(): void
@@ -366,7 +424,15 @@ class OpsCommandSurfaceTest extends TestCase
             ->once()
             ->with(25, '/tmp/correction-evidence')
             ->andReturn([
+                'selector' => ['type' => 'correction', 'id' => 25],
+                'summary' => [
+                    'correction_id' => 25,
+                    'trade_date' => '2026-03-17',
+                    'status' => 'PUBLISHED',
+                    'publication_switch' => true,
+                ],
                 'output_dir' => '/tmp/correction-evidence',
+                'file_count' => 1,
                 'files' => ['correction_evidence.json'],
             ]);
 
@@ -381,9 +447,17 @@ class OpsCommandSurfaceTest extends TestCase
             '--output_dir' => '/tmp/correction-evidence',
         ]);
 
+        $display = $tester->getDisplay();
+
         $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('output_dir=/tmp/correction-evidence', $tester->getDisplay());
-        $this->assertStringContainsString('files=correction_evidence.json', $tester->getDisplay());
+        $this->assertStringContainsString('selector=correction', $display);
+        $this->assertStringContainsString('selector_id=25', $display);
+        $this->assertStringContainsString('trade_date=2026-03-17', $display);
+        $this->assertStringContainsString('status=PUBLISHED', $display);
+        $this->assertStringContainsString('publication_switch=1', $display);
+        $this->assertStringContainsString('output_dir=/tmp/correction-evidence', $display);
+        $this->assertStringContainsString('file_count=1', $display);
+        $this->assertStringContainsString('files=correction_evidence.json', $display);
     }
 
     public function test_evidence_export_command_exports_replay_evidence(): void
@@ -393,7 +467,15 @@ class OpsCommandSurfaceTest extends TestCase
             ->once()
             ->with(3001, '2026-03-17', '/tmp/replay-evidence')
             ->andReturn([
+                'selector' => ['type' => 'replay', 'id' => 3001],
+                'summary' => [
+                    'replay_id' => 3001,
+                    'trade_date' => '2026-03-17',
+                    'comparison_result' => 'MATCH',
+                    'status' => 'SUCCESS',
+                ],
                 'output_dir' => '/tmp/replay-evidence',
+                'file_count' => 2,
                 'files' => ['replay_result.json', 'replay_evidence_pack.json'],
             ]);
 
@@ -409,9 +491,40 @@ class OpsCommandSurfaceTest extends TestCase
             '--output_dir' => '/tmp/replay-evidence',
         ]);
 
+        $display = $tester->getDisplay();
+
         $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('output_dir=/tmp/replay-evidence', $tester->getDisplay());
-        $this->assertStringContainsString('files=replay_result.json,replay_evidence_pack.json', $tester->getDisplay());
+        $this->assertStringContainsString('selector=replay', $display);
+        $this->assertStringContainsString('selector_id=3001', $display);
+        $this->assertStringContainsString('trade_date=2026-03-17', $display);
+        $this->assertStringContainsString('comparison_result=MATCH', $display);
+        $this->assertStringContainsString('status=SUCCESS', $display);
+        $this->assertStringContainsString('output_dir=/tmp/replay-evidence', $display);
+        $this->assertStringContainsString('file_count=2', $display);
+        $this->assertStringContainsString('files=replay_result.json,replay_evidence_pack.json', $display);
+    }
+
+    public function test_evidence_export_command_returns_failure_and_renders_error_when_service_throws(): void
+    {
+        $service = m::mock(MarketDataEvidenceExportService::class);
+        $service->shouldReceive('exportRunEvidence')
+            ->once()
+            ->with(41, '/tmp/run-evidence')
+            ->andThrow(new \RuntimeException('Run not found for evidence export.'));
+
+        $this->app->instance(MarketDataEvidenceExportService::class, $service);
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--run_id' => 41,
+            '--output_dir' => '/tmp/run-evidence',
+        ]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('error=Run not found for evidence export.', $tester->getDisplay());
     }
 
 

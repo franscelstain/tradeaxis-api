@@ -57,6 +57,11 @@ class CorrectionEvidenceExportServiceTest extends TestCase
         $dir = sys_get_temp_dir().'/market_data_evidence_correction_'.uniqid();
         $result = $service->exportCorrectionEvidence(9001, $dir);
 
+        $this->assertSame('correction', $result['selector']['type']);
+        $this->assertSame(9001, $result['selector']['id']);
+        $this->assertSame('PUBLISHED', $result['summary']['status']);
+        $this->assertTrue($result['summary']['publication_switch']);
+        $this->assertSame(1, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/correction_evidence.json');
 

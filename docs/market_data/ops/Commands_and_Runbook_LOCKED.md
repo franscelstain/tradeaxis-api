@@ -150,7 +150,7 @@ Purge session snapshot rows according to retention policy.
 
 #### Minimum output
 - deleted row count
-- one summary artifact `market_data_session_snapshot_purge_summary.json` containing `cutoff_timestamp`, `deleted_rows`, and whether cutoff came from explicit `before_date` or default retention days
+- one summary artifact `market_data_session_snapshot_purge_summary.json` containing `cutoff_timestamp`, explicit `cutoff_source` (`explicit_before_date` or `default_retention_days`), `deleted_rows`, and the supporting cutoff field (`before_date` or `retention_days`)
 
 ### 11. `market-data:replay:verify`
 #### Purpose

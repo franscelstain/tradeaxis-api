@@ -97,6 +97,11 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
         $result = $service->exportRunEvidence(8124, $dir);
 
+        $this->assertSame('run', $result['selector']['type']);
+        $this->assertSame(8124, $result['selector']['id']);
+        $this->assertSame('SUCCESS', $result['summary']['terminal_status']);
+        $this->assertSame('READABLE', $result['summary']['publishability_state']);
+        $this->assertSame(7, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/run_summary.json');
         $this->assertFileExists($dir.'/publication_manifest.json');
