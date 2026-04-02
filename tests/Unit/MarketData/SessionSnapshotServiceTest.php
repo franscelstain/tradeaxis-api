@@ -69,6 +69,55 @@ class SessionSnapshotServiceTest extends TestCase
         $this->assertSame(2, $summary['scope_count']);
         $this->assertSame(1, $summary['captured_count']);
         $this->assertSame(1, $summary['skipped_count']);
+        $this->assertSame(0, $summary['slot_miss_count']);
+        $this->assertSame(3, $summary['slot_tolerance_minutes']);
+        $this->assertSame('09:10:00', $summary['slot_anchor_time']);
+        $this->assertFileExists($outputDir.'/market_data_session_snapshot_summary.json');
+    }
+
+    public function test_capture_records_slot_miss_rows_as_skipped_partial_state()
+    {
+        $inputFile = sys_get_temp_dir().'/session_snapshot_slot_miss_'.uniqid().'.json';
+        file_put_contents($inputFile, json_encode([
+            ['ticker_code' => 'BBCA', 'captured_at' => '2026-03-24 09:20:30', 'last_price' => 9100, 'prev_close' => 9000, 'chg_pct' => 1.1111, 'volume' => 100000, 'day_high' => 9150, 'day_low' => 9050],
+        ]));
+        $outputDir = sys_get_temp_dir().'/session_snapshot_slot_miss_output_'.uniqid();
+
+        $publications = m::mock(EodPublicationRepository::class);
+        $runs = m::mock(EodRunRepository::class);
+        $scope = m::mock(EligibilitySnapshotScopeRepository::class);
+        $snapshots = m::mock(SessionSnapshotRepository::class);
+        $adapter = new LocalFileSessionSnapshotAdapter();
+
+        $publication = (object) ['publication_id' => 77, 'trade_date' => '2026-03-20', 'run_id' => 28];
+        $run = new EodRun([
+            'run_id' => 28,
+            'trade_date_requested' => '2026-03-20',
+        ]);
+
+        $publications->shouldReceive('findCurrentPublicationForTradeDate')->once()->with('2026-03-20')->andReturn($publication);
+        $runs->shouldReceive('findByRunId')->once()->with(28)->andReturn($run);
+        $scope->shouldReceive('getScopeForTradeDate')->once()->with('2026-03-20')->andReturn([
+            ['ticker_id' => 1, 'ticker_code' => 'BBCA', 'eligible' => 1],
+        ]);
+        $snapshots->shouldReceive('replaceSlotRows')->once()->with('2026-03-20', 'OPEN_CHECK', []);
+        $runs->shouldReceive('appendEvent')->once()->withArgs(function ($runArg, $family, $event, $severity, $message, $reasonCode, $payload) {
+            return $family === 'SESSION_SNAPSHOT'
+                && $event === 'SNAPSHOT_CAPTURED'
+                && $severity === 'WARN'
+                && $reasonCode === 'SNAP_PARTIAL_SCOPE'
+                && $payload['slot_miss_count'] === 1
+                && $payload['captured_count'] === 0
+                && $payload['skipped_count'] === 1;
+        });
+
+        $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
+        $summary = $service->capture('2026-03-20', 'OPEN_CHECK', 'manual_file', $inputFile, $outputDir);
+
+        $this->assertSame(0, $summary['captured_count']);
+        $this->assertSame(1, $summary['skipped_count']);
+        $this->assertSame(1, $summary['slot_miss_count']);
+        $this->assertSame('09:10:00', $summary['slot_anchor_time']);
         $this->assertFileExists($outputDir.'/market_data_session_snapshot_summary.json');
     }
 

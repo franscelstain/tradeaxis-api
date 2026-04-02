@@ -134,11 +134,12 @@ Capture optional non-streaming session snapshot aligned to readable effective tr
 - require a readable current publication for D before capture is allowed
 - write snapshot rows to `md_session_snapshots`
 - write structured session-snapshot evidence to `eod_run_events` using the owning readable run context
+- for default locked slots, rows outside the configured slot-tolerance window must be recorded as skipped partial-state rows, not treated as EOD failure
 - failure or partial scope must never mutate EOD publication readiness
 
 #### Minimum output
 - session snapshot rows in `md_session_snapshots`
-- one summary artifact `market_data_session_snapshot_summary.json`
+- one summary artifact `market_data_session_snapshot_summary.json` carrying at minimum: `trade_date`, `trade_date_effective`, `publication_id`, `run_id`, `scope_count`, `captured_count`, `skipped_count`, `slot_tolerance_minutes`, `slot_anchor_time` when applicable, and `slot_miss_count`
 
 ### 10. `market-data:session-snapshot:purge`
 #### Purpose

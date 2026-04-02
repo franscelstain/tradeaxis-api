@@ -35,6 +35,7 @@ Default behavior must never assume picks, rankings, or portfolio subsets.
 ## Locked rules
 - `trade_date` must equal resolved `trade_date_effective` D
 - `captured_at` must store the actual wall-clock timestamp of capture
+- when capture uses a locked default slot, rows outside the configured slot-tolerance window must be recorded as skipped/partial, not silently accepted as in-slot rows
 - failure or absence of a session snapshot must never block EOD finalization or sealing
 - retention and slot tolerance are governed by locked session snapshot defaults
 - session snapshot rows are not inputs to EOD bar canonicalization or EOD indicator recomputation for the same date

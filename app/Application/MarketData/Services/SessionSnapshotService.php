@@ -58,10 +58,15 @@ class SessionSnapshotService
             $rowsByCode[$row['ticker_code']] = $row;
         }
 
-        $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
+        $timezone = config('market_data.platform.timezone');
+        $slotToleranceMinutes = (int) config('market_data.session_snapshot.slot_tolerance_minutes', 3);
+        $slotAnchor = $this->resolveSlotAnchor($snapshotSlot);
+
+        $now = Carbon::now($timezone)->toDateTimeString();
         $insert = [];
         $captured = 0;
         $skipped = 0;
+        $slotMissCount = 0;
         foreach ($scope as $item) {
             if (! isset($rowsByCode[$item['ticker_code']])) {
                 $skipped++;
@@ -69,6 +74,12 @@ class SessionSnapshotService
             }
 
             $sourceRow = $rowsByCode[$item['ticker_code']];
+            if ($slotAnchor !== null && ! $this->isWithinSlotTolerance($sourceRow['captured_at'], $slotAnchor, $slotToleranceMinutes, $timezone)) {
+                $skipped++;
+                $slotMissCount++;
+                continue;
+            }
+
             $insert[] = [
                 'trade_date' => $tradeDate,
                 'snapshot_slot' => $snapshotSlot,
@@ -102,6 +113,8 @@ class SessionSnapshotService
             'skipped_count' => $skipped,
             'source_mode' => $sourceMode,
             'input_file' => $inputFile,
+            'slot_tolerance_minutes' => $slotToleranceMinutes,
+            'slot_miss_count' => $slotMissCount,
         ];
 
         if ($skipped > 0) {
@@ -122,6 +135,9 @@ class SessionSnapshotService
             'skipped_count' => $skipped,
             'all_captured' => $skipped === 0,
             'input_file' => $inputFile,
+            'slot_tolerance_minutes' => $slotToleranceMinutes,
+            'slot_anchor_time' => $slotAnchor,
+            'slot_miss_count' => $slotMissCount,
         ];
 
         $dir = $outputDir ?: rtrim(config('market_data.evidence.output_directory'), '/').'/session_snapshots/'.$tradeDate.'_'.$snapshotSlot;
@@ -132,6 +148,25 @@ class SessionSnapshotService
 
         $summary['output_dir'] = $dir;
         return $summary;
+    }
+
+    private function resolveSlotAnchor($snapshotSlot)
+    {
+        $anchors = [
+            'OPEN_CHECK' => '09:10:00',
+            'MIDDAY_CHECK' => '13:30:00',
+            'PRE_CLOSE_CHECK' => '14:45:00',
+        ];
+
+        return $anchors[$snapshotSlot] ?? null;
+    }
+
+    private function isWithinSlotTolerance($capturedAt, $slotAnchor, $slotToleranceMinutes, $timezone)
+    {
+        $captured = Carbon::parse($capturedAt, $timezone);
+        $anchor = Carbon::parse($captured->toDateString().' '.$slotAnchor, $timezone);
+
+        return abs($captured->diffInSeconds($anchor, false)) <= ($slotToleranceMinutes * 60);
     }
 
     public function purge($beforeDate = null, $outputDir = null)

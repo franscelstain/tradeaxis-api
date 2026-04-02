@@ -139,11 +139,16 @@ class OpsCommandSurfaceTest extends TestCase
             ->with('2026-03-17', 'PREOPEN', 'manual_file', 'storage/app/manual.csv', null)
             ->andReturn([
                 'trade_date' => '2026-03-17',
+                'trade_date_effective' => '2026-03-17',
                 'snapshot_slot' => 'PREOPEN',
+                'publication_id' => 55,
                 'run_id' => 41,
                 'scope_count' => 901,
                 'captured_count' => 901,
                 'skipped_count' => 0,
+                'slot_anchor_time' => '09:10:00',
+                'slot_tolerance_minutes' => 3,
+                'slot_miss_count' => 0,
                 'output_dir' => '/tmp/session-snapshot',
             ]);
 
@@ -165,10 +170,15 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('trade_date=2026-03-17', $display);
         $this->assertStringContainsString('snapshot_slot=PREOPEN', $display);
+        $this->assertStringContainsString('trade_date_effective=2026-03-17', $display);
+        $this->assertStringContainsString('publication_id=55', $display);
         $this->assertStringContainsString('run_id=41', $display);
         $this->assertStringContainsString('scope_count=901', $display);
         $this->assertStringContainsString('captured_count=901', $display);
         $this->assertStringContainsString('skipped_count=0', $display);
+        $this->assertStringContainsString('slot_anchor_time=09:10:00', $display);
+        $this->assertStringContainsString('slot_tolerance_minutes=3', $display);
+        $this->assertStringContainsString('slot_miss_count=0', $display);
     }
 
     public function test_session_snapshot_purge_command_renders_summary(): void
