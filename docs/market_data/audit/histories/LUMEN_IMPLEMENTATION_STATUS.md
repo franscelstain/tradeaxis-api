@@ -1,451 +1,532 @@
+## REGRESSION FIX — FINALIZE SUCCESS REASON-CODE PARITY
+
+### Scope completed in this patch
+- fixed the load-bearing finalize reason-code regression discovered after the premature final-closure claim
+- kept `RUN_FINALIZED.reason_code` neutral on successful full-coverage finalize outcomes while preserving `coverage_reason_code` inside the event payload
+- left non-success finalize outcomes unchanged:
+  - low coverage -> `RUN_COVERAGE_LOW`
+  - not evaluable -> `RUN_COVERAGE_NOT_EVALUABLE`
+  - lock/pointer mismatch -> `RUN_LOCK_CONFLICT`
+
+### What changed
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+  - `resolveFinalizeReasonCode()` no longer escalates `COVERAGE_THRESHOLD_MET` into the dominant `RUN_FINALIZED.reason_code`
+  - coverage pass semantics remain available through payload field `coverage_reason_code`
+
+### Current checkpoint result
+- full-coverage finalize event dominant reason-code parity: `FIXED IN CODE`
+- full PHPUnit rerun in current container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+- live source runtime (`market-data:daily` default provider mode): `EXTERNAL RATE LIMIT RISK`, not used as closure proof
+
+### Next required local proof
+- rerun `vendor\bin\phpunit`
+- rerun targeted assertion path if needed:
+  - `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php`
+- if the suite returns green again, this regression is closed and the final audit status can safely return to `SELESAI`
+
+
+## FINAL SESSION — COVERAGE GATE CLOSURE + CHECKPOINT FINALIZATION
+
+### Scope completed in this session
+- revalidated the latest source-of-truth ZIP against the active coverage-gate tracker and the load-bearing owner docs relevant to final closure
+- confirmed the remaining load-bearing `PARTIAL` item is the session 8 coverage-gate family and that it can now be closed based on recorded proof, code-state audit, and tracker parity
+- closed the final checkpoint gap so the audit files no longer stop at `PARTIAL` after the session 8 implementation/test pass was already recorded
+- finalized the current artifact as the canonical handoff ZIP for final audit
+
+### What changed
+- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` now records the final closure state instead of leaving session 8 at pre-proof status
+- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md` now upgrades contract item 10 from `PARTIAL` to `DONE`
+- no production code, schema, contract semantics, or runtime behavior were changed in this session; this session is checkpoint closure only
+
+### Current checkpoint result
+- coverage-gate integration path and finalize payload parity: `DONE`
+- fallback preservation proof for prior readable publication: `DONE`
+- session 8 targeted integration proof on user environment: `PASS` (`MarketDataPipelineIntegrationTest.php` 36 tests)
+- full PHPUnit proof on user environment: `PASS` (`138 tests, 1504 assertions`)
+- current-container syntax/code audit for the latest source-of-truth ZIP: `PASS`
+- current-container PHPUnit rerun: `NOT RUN` (`vendor/` not present in uploaded ZIP)
+
+### Final closure basis
+- `MarketDataPipelineIntegrationTest` recorded green for the session 8 closure batch
+- full PHPUnit suite recorded green after the same patch set
+- code/search audit in the current ZIP confirms the coverage fields, reason-code literals, migration parity, evidence/replay support, and integration assertions are present and internally consistent
+- no remaining load-bearing `PARTIAL`, `MISSING`, or `CONFLICT` item remains open in the active market-data audit tracker
+
+### Final state
+- this market-data scope is now `SELESAI` for the current source-of-truth ZIP
+- this ZIP is the canonical artifact to use for final audit unless a later regression or owner-doc change reopens the scope
+
+
+## SESSION 8 PATCH — COVERAGE GATE INTEGRATION PATH + FINALIZE PAYLOAD PARITY
+
+### Scope completed in this patch
+- re-audited the end-to-end coverage-gate path from pipeline telemetry to finalize outcome to publication pointer behavior
+- added DB-backed integration coverage tests for the load-bearing finalize outcomes instead of relying on manual-file runtime alone
+- closed the integration payload gap where `RUN_FINALIZED` events could fall back to `RUN_LOCK_CONFLICT` even for genuine coverage failures
+- expanded finalize event payload so the same run given to operator/evidence layers now carries the full coverage telemetry contract
+
+### What changed
+- `MarketDataPipelineService` finalize path now writes coverage-aware `RUN_FINALIZED` event metadata with:
+  - `coverage_gate_state`
+  - `coverage_reason_code`
+  - `coverage_available_count`
+  - `coverage_universe_count`
+  - `coverage_missing_count`
+  - `coverage_min_threshold`
+  - `coverage_contract_version`
+- finalize event reason-code resolution is now honest on integration path:
+  - low coverage -> `RUN_COVERAGE_LOW`
+  - not evaluable -> `RUN_COVERAGE_NOT_EVALUABLE`
+  - lock/pointer mismatch -> `RUN_LOCK_CONFLICT`
+- `MarketDataPipelineIntegrationTest` now covers:
+  - full coverage -> `SUCCESS + READABLE`
+  - low coverage + fallback -> `HELD + NOT_READABLE` while old readable publication stays safe
+  - low coverage + no fallback -> `FAILED + NOT_READABLE`
+  - not evaluable -> `FAILED + NOT_READABLE + BLOCKED`
+  - finalize payload parity for coverage fields on integration path
+- `PHPUNIT_TEST_MATRIX.md` now documents the integration proof cases explicitly
+
+### Current checkpoint result
+- coverage finalize payload parity on integration path: `DONE`
+- coverage reason-code sync on integration path: `DONE`
+- fallback readable publication preservation proof: `DONE`
+- session 8 targeted integration proof on user environment: `PASS` (`MarketDataPipelineIntegrationTest.php` 36 tests)
+- full PHPUnit proof on user environment after the same patch set: `PASS` (`138 tests, 1504 assertions`)
+- current-container PHPUnit rerun: `NOT RUN` (`vendor/` not present in uploaded ZIP)
+
+### Next required implementation batch
+- none for the active coverage-gate closure path
+
+
+## SESSION 7 PATCH — EOD_RUNS COVERAGE SCHEMA SYNC
+
+### Scope completed in this patch
+- validated the real runtime daily command against the session 7 source-of-truth ZIP and confirmed the new coverage telemetry write-path now touches existing-install `eod_runs` schema, not only fresh schema docs
+- closed the missing migration gap for coverage telemetry columns already written by runtime when an owning run is created for daily/finalize flow
+- checkpointed the drift explicitly so schema sync is no longer implied by docs alone
+
+### What changed
+- added migration `database/migrations/2026_04_03_000002_add_coverage_gate_fields_to_eod_runs.php`
+- migration backfills existing databases with the runtime coverage columns already expected by `EodRunRepository` and `MarketDataPipelineService`:
+  - `coverage_universe_count`
+  - `coverage_available_count`
+  - `coverage_missing_count`
+  - `coverage_ratio`
+  - `coverage_min_threshold`
+  - `coverage_gate_state`
+  - `coverage_threshold_mode`
+  - `coverage_universe_basis`
+  - `coverage_contract_version`
+  - `coverage_missing_sample_json`
+- migration uses `Schema::hasColumn(...)` guards so fresh installs that already got the columns from the owner schema SQL do not fail during patch rollout
+
+### Current checkpoint result
+- existing-db `eod_runs` schema sync for coverage telemetry: `DONE`
+- fresh-schema owner docs already carrying the same coverage fields: `DONE`
+- local runtime rerun after applying the new migration: `PENDING LOCAL RUN`
+- operator-surface proof for `coverage_gate_state` / `coverage_reason_code` on real finalized runs: `PENDING LOCAL RUN`
+
+### Next required implementation batch
+- run the new migration locally
+- rerun `php artisan market-data:daily --requested_date=... --source_mode=manual_file -vvv`
+- rerun `php artisan market-data:run:finalize --run_id=... -vvv` on valid runs to confirm the schema drift is gone and the operator surface now shows the expected coverage fields
+
+
+## SESSION 7 — REASON CODE REGISTRY + OPS SURFACE UNTUK COVERAGE GATE
+
+### Scope completed in this session
+- re-read reason-code registry and ops command docs relevant to coverage-gate operator visibility
+- audited runtime coverage reason codes already emitted by evaluator/finalize versus registry/seed coverage of those codes
+- synchronized coverage-gate reason codes into registry docs and seed SQL
+- expanded command surface summary so operator can see coverage status, coverage reason, coverage counts, ratio, threshold, and missing-sample shortcut directly from relevant run commands
+- updated ops command docs so the documented surface now matches the command output contract
+- added ops-surface tests for daily/finalize coverage rendering
+
+### What changed
+- `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` now register:
+  - `RUN_COVERAGE_NOT_EVALUABLE`
+  - `COVERAGE_THRESHOLD_MET`
+  - `COVERAGE_BELOW_THRESHOLD`
+  - `COVERAGE_UNIVERSE_EMPTY`
+- `AbstractMarketDataCommand` now renders coverage-aware operator lines when coverage telemetry is present on the run:
+  - `coverage_gate_state`
+  - `coverage_reason_code`
+  - `coverage_summary`
+  - `coverage_missing_sample` when available
+- `DailyPipelineCommand` and `FinalizeRunCommand` inherit the richer summary surface without adding duplicate command-specific formatting
+- `OpsCommandSurfaceTest` now covers readable pass output and held/not-readable coverage-fail output for the command surface
+- ops docs for daily pipeline and finalize/publish now document the concrete coverage lines operators should expect
+
+### Current checkpoint result
+- coverage reason-code registry sync with runtime literals: `DONE`
+- seed SQL sync with registry docs: `DONE`
+- operator-visible coverage summary on relevant command surface: `DONE`
+- ops command docs synced to command output: `DONE`
+- PHPUnit execution in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+- PHP lint for changed runtime/tests files in this container: `PENDING LOCAL RUN`
+
+### Next required implementation batch
+- run local `php -l` and PHPUnit for the changed ops-surface scope in an environment with dependencies present
+- continue only after the command-surface proof is recorded into the next checkpoint if runtime output matches the new contract
+
+
+## SESSION 6 — EVIDENCE EXPORT + REPLAY SYNC FOR COVERAGE GATE
+
+### Scope completed in this session
+- re-read evidence/export and replay contracts relevant to coverage-aware audit artifacts
+- audited `MarketDataEvidenceExportService`, `ReplayVerificationService`, and `ReplayResultRepository` against the locked coverage-gate evidence requirements
+- expanded replay persistence so actual and expected coverage telemetry can survive beyond runtime verification and be re-exported later as evidence
+- made replay comparison coverage-aware, including mismatch detection for coverage counts, ratio, threshold, gate state, basis, contract version, and missing-sample list
+- made evidence export coverage-aware for run summary, replay result, replay expected state, and replay actual state
+- aligned replay fixtures / sqlite schema / migration surface with the persisted expected-coverage context
+
+### What changed
+- `MarketDataEvidenceExportService` now exports structured `coverage` payloads instead of relying on `coverage_ratio` alone
+- `ReplayVerificationService` now compares expected vs actual coverage contract fields and stores both actual + expected coverage state in replay metrics
+- `ReplayResultRepository` now persists the full actual coverage block and the expected coverage block
+- replay expected-context schema was expanded with explicit expected-coverage columns via migration + sqlite mirror
+- replay fixtures now declare coverage expectations where replay proof is supposed to be coverage-aware
+- tests now cover:
+  - evidence export contains structured coverage fields
+  - replay match when coverage fields match
+  - replay mismatch when coverage fields diverge
+
+### Current checkpoint result
+- evidence export coverage-aware: `DONE`
+- replay verification coverage-aware: `DONE`
+- replay persistence of expected/actual coverage context: `DONE`
+- replay fixture sync for coverage proof: `DONE`
+- PHP lint for changed code/tests/migration in this container: `PASS`
+- PHPUnit execution in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- convert the current file/syntax proof into runtime proof by running the updated replay/evidence PHPUnit scope in an environment with dependencies present
+- continue to the next grounded market-data batch only after this coverage-aware evidence/replay sync is checkpointed
+
+
+## SESSION 3 — COVERAGE GATE EVALUATOR + UNIT TEST
+
+### Scope completed in this session
+- added standalone `CoverageGateEvaluator` so coverage computation is no longer forced to live inside finalize/publishability flow
+- kept evaluator scope limited to expected-universe resolution, canonical-bar availability counting, coverage ratio calculation, threshold evaluation, and coverage-specific reason codes
+- added repository helper on `EodArtifactRepository` so evaluator can ask for canonical available ticker IDs without mixing publishability logic into the service
+- added dedicated unit-test file for evaluator pass/fail/not-evaluable behavior and threshold metadata output
+
+### What changed
+- new service: `app/Application/MarketData/Services/CoverageGateEvaluator.php`
+- `TickerMasterRepository` remained sufficient as-is via existing `getUniverseForTradeDate()` owner-aligned universe helper
+- `EodArtifactRepository` now exposes `loadCanonicalBarTickerIdsForTradeDate()` for evaluator-only bar availability resolution
+- evaluator returns:
+  - `expected_universe_count`
+  - `available_eod_count`
+  - `missing_eod_count`
+  - `coverage_ratio`
+  - `coverage_gate_status`
+  - `coverage_threshold_value`
+  - `coverage_threshold_mode`
+  - `coverage_calibration_version`
+  - coverage reason code(s)
+- evaluator deliberately does **not** return finalization fields such as `terminal_status` or `publishability_state`
+
+### Current checkpoint result
+- standalone coverage evaluator service: `DONE`
+- evaluator unit-test file added: `DONE`
+- evaluator/finalize separation preserved: `DONE`
+- runtime pipeline integration of evaluator output into finalization write-path: `PARTIAL`
+- PHPUnit execution in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP); PHP lint for changed files: `PASS`
+
+### Contract note
+- owner contract still uses final non-readable blocked semantics at requested-date outcome level
+- this session keeps evaluator output at pre-finalization computation level, where zero-universe resolves to `NOT_EVALUABLE` and must be mapped explicitly by later finalize/outcome code instead of being treated as readable success
+
+### Next required implementation batch
+- wire evaluator into pipeline/finalize orchestration
+- persist evaluator outputs into `eod_runs` coverage evidence fields
+- add finalize/outcome mapping from evaluator `NOT_EVALUABLE` to owner-level non-readable blocked/failure handling
+
+
+## SESSION 2 — CONFIG + ENV + DB SCHEMA CONTRACT FOR COVERAGE GATE
+
+### Scope completed in this session
+- added the official runtime config block for coverage gate in `config/market_data.php`
+- synchronized `.env.example` with explicit coverage-gate keys required by the owner contract
+- expanded MariaDB owner schema docs so `eod_runs` carries explicit denominator/numerator/threshold/state metadata for coverage evaluation
+- expanded SQLite test schema mirror so test bootstrap no longer lags behind the owner DB contract
+- synchronized DB metadata docs so coverage evidence requirements are no longer informal
+
+### What changed
+- coverage gate now has an official config surface under `market_data.coverage_gate`
+- existing `market_data.platform.coverage_min` remains as a backward-compatibility alias during transition, but the owner config block is now the coverage-gate block
+- `eod_runs` schema contract now includes:
+  - `coverage_universe_count`
+  - `coverage_available_count`
+  - `coverage_missing_count`
+  - `coverage_min_threshold`
+  - `coverage_gate_state`
+  - `coverage_threshold_mode`
+  - `coverage_universe_basis`
+  - `coverage_contract_version`
+  - `coverage_missing_sample_json`
+- replay/test schema mirror was aligned to the same evidence model
+
+### Current checkpoint result
+- owner docs for coverage formula/outcome: `DONE`
+- config + env contract for coverage gate: `DONE`
+- DB schema contract + sqlite mirror for coverage evidence: `DONE`
+- runtime service/finalize population of the new config/schema fields: `PARTIAL`
+- PHPUnit/runtime proof in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- change runtime services/finalize flow to read the official `coverage_gate` config block
+- populate the new `eod_runs` coverage fields during evaluation/finalization
+- add/update PHPUnit coverage-gate tests to assert field population and outcome mapping
+
+
 # LUMEN_IMPLEMENTATION_STATUS
 
-## File Role
-- Fungsi file ini: checkpoint implementasi aktif untuk melanjutkan pekerjaan pada chat/sesi berikutnya.
-- Fokus file ini:
-  - status implementasi market-data saat ini;
-  - sesi terakhir yang selesai;
-  - batch terakhir yang selesai;
-  - remaining work yang masih sah dibuka;
-  - target sesi berikutnya.
-- File ini bukan contract matrix utama. Status contract detail berada di `LUMEN_CONTRACT_TRACKER.md`.
+## SESSION 7 PATCH — COVERAGE SCHEMA SYNC + LOCAL RUNTIME PROOF
 
-## Writing Rules
-- Gunakan `SESSION` sebagai unit kerja resmi. Jangan gunakan `entry`.
-- Gunakan `BATCH ID` sebagai label resmi batch. Ambil dari nama ZIP source-of-truth.
-- Setiap session record hanya boleh memakai salah satu status berikut:
-  - `DONE`
-  - `PARTIAL`
-  - `BLOCKED`
-- `DONE` hanya boleh dipakai jika target sesi dan proof minimum yang dituju sesi itu benar-benar tertutup.
-- `PARTIAL` dipakai bila ada progres nyata tetapi gap inti sesi belum tertutup.
-- `BLOCKED` dipakai bila pekerjaan sesi tidak dapat lanjut karena dependency/fakta eksternal belum tersedia.
-- Gunakan `DOC GAP`, `DOC CONFLICT`, `DOC SYNC ISSUE`, dan `CONFLICT` hanya untuk issue yang masih aktif. Jangan simpan histori issue yang sudah selesai di bagian issue aktif.
+- Batch scope: close existing-db coverage schema drift, rerun local checks, and record what is now actually proven versus still open for live runtime parity
+- Parent contract family: `coverage gate owner contract + doc sync`
+- Final session status: `DONE FOR PATCH SCOPE / PARTIAL FOR FULL CONTRACT CLOSURE`
 
-## Resume Rule For New Chat
-- Gunakan ZIP terbaru sebagai source of truth.
-- Baca file ini dan `LUMEN_CONTRACT_TRACKER.md` terlebih dahulu.
-- Validasi checkpoint terhadap repo terbaru; jangan percaya dokumen secara buta jika source code/test terbaru berkata lain.
-- Ambil batch prioritas tertinggi yang masih sah dari contract item berstatus `PARTIAL`, `MISSING`, atau `BLOCKED` dan dependency-nya sudah rapat.
-- Jangan membuka area baru di luar market-data bila parent dependency batch lama belum rapat.
-- Jika ada mismatch antara code, proof, dan checkpoint, tandai eksplisit sebagai `CONFLICT`, `DOC GAP`, `DOC CONFLICT`, atau `DOC SYNC ISSUE`.
+- Checkpoint validation against repo/runtime:
+  - local migration patch added for existing-install `eod_runs` coverage columns already written by runtime
+  - after applying the migration, `market-data:daily --requested_date=2026-03-24 --source_mode=manual_file -vvv` no longer fails on unknown coverage columns; the command now reaches source loading and stops because the configured local JSON/CSV source for that date is missing
+  - local `market-data:run:finalize --run_id=55`, `54`, `53`, and `52` all execute and still render `coverage_summary`, but they do not yet render `coverage_gate_state` / `coverage_reason_code` on those real historical runs
+  - operator-surface unit proof was advanced from pending to real local runtime proof:
+    - `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` -> PASS
+    - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> PASS (`19 tests, 116 assertions`)
+    - full PHPUnit suite -> PASS (`138 tests, 1504 assertions`)
+  - the failing ops-surface assertion around legacy `RUN_COVERAGE_LOW` was corrected to the new coverage registry literal `COVERAGE_BELOW_THRESHOLD`; after that adjustment the focused test scope and the full suite both passed
 
-## Project Scope
-- Project type: Lumen
-- Domain focus: market-data only
-- Root ownership:
-  - `docs/README.md`
-- Assembly/readiness baseline:
-  - `docs/system_audit/**`
-- Domain owner:
-  - `docs/market_data/**`
-- Architecture translation guide:
-  - `docs/api_architecture/**`
-- Non-scope:
-  - watchlist logic
-  - strategy scoring / ranking / picks
-  - execution / broker / order routing
-  - portfolio / investor / position management
+- Patch implemented:
+  - added migration `database/migrations/2026_04_03_000002_add_coverage_gate_fields_to_eod_runs.php`
+  - kept migration idempotent with `Schema::hasColumn(...)` guards so fresh installs that already receive the coverage columns from owner schema SQL do not fail on rollout
+  - updated `AbstractMarketDataCommand` coverage rendering logic and aligned the ops-surface PHPUnit expectation to the new coverage reason-code registry semantics
+  - updated checkpoint docs to record both the schema-drift closure and the remaining live integration parity gap honestly
 
-## Current Project Status
-- Project status: BELUM SELESAI
-- Last completed session: `SESSION 64`
-- Last completed batch id: `session64_batch64_db_backed_post_switch_fallback_missing_pointer_row_guard_minimum`
-- Last completed proof: syntax lint container sesi 64 lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`; proof lokal user sesi 64 masih pending karena ZIP source-of-truth tidak menyertakan `vendor/` untuk menjalankan PHPUnit penuh di container.
-- Active session: none
-- Active batch: none
-- Next session target: `SESSION 65` mengambil varian DB-backed correction/runtime sempit berikutnya yang masih grounded di owner-doc fallback-integrity setelah fallback missing-pointer-row variant kini tertutup di sesi 64. Jangan buka area baru sebelum parent contract item 7 makin rapat.
+- Proof progression:
+  - PHP lint on changed command file -> PASS
+  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> PASS (`19 tests, 116 assertions`)
+  - full PHPUnit -> PASS (`138 tests, 1504 assertions`)
+  - local daily manual-file runtime proof -> BLOCKED BY MISSING SOURCE FILE, not by coverage schema/runtime write-path
+  - live command-surface parity on historical runs -> PARTIAL (coverage summary visible; coverage state/reason not yet observed on the tested real runs)
 
-## Current Truth Summary
-- Sesi 35 DONE pada level batch:
-  - correction unchanged path kini benar-benar berakhir `CANCELLED`;
-  - `publication_id` sudah dikeluarkan dari content-hash payload;
-  - local full PHPUnit lulus `60 tests / 306 assertions`.
-- Sesi 36 DONE pada level batch:
-  - operator proof untuk correction HELD/conflict summary kini ada dan lulus proof lokal;
-  - local full PHPUnit lulus `61 tests / 313 assertions`.
-- Sesi 37 DONE pada level batch:
-  - negative proof minimum untuk correction lock-conflict/promotion-error kini ditambahkan pada outcome service, pipeline finalize, dan operator command surface;
-  - repo ZIP sesi ini tidak menyertakan `vendor/` sehingga full PHPUnit tidak bisa dieksekusi ulang di container; syntax lint PHP untuk file yang diubah lulus.
-- Sesi 38 DONE pada level batch:
-  - DB-backed/integration proof kini ditambahkan untuk correction changed-content + promotion failure, sehingga jalur `HELD/NOT_READABLE` dapat dibuktikan tanpa bergantung pada trial manual lock yang bisa meleset ke unchanged-cancel path;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container tetap sebatas PHP syntax lint untuk file yang diubah.
-- Verifikasi manual setelah sesi 38 kini juga sudah ada:
-  - correction publish path tervalidasi lokal dengan `correction_id=24` -> `run_id=53` -> `PUBLISHED` / `SUCCESS` / `READABLE`;
-  - unchanged-content cancel path tervalidasi lokal dengan `correction_id=25` -> `run_id=54` -> `CANCELLED` / `SUCCESS` / `READABLE`, dan current publication pointer tetap di `run_id=53`;
-  - `market-data:session-snapshot:purge --before_date=2026-03-18 -vvv` tervalidasi lokal dengan `deleted_rows=0` tanpa gejala aneh;
-  - `market-data:replay:backfill 2026-03-17 2026-03-17 --fixture_case=valid_case -vvv` tervalidasi lokal dengan `all_passed=1`, `expected=MATCH`, `observed=MATCH`, `passed=1`.
-- Sesi 39 DONE pada level batch:
-  - DB-backed/integration proof kini ditambahkan untuk correction changed-content + baseline/current-pointer mismatch conflict, sehingga jalur `HELD/NOT_READABLE` juga terbukti untuk varian conflict yang berbeda dari promotion-throw minimum sesi 38;
-  - validasi lokal awal sempat gagal karena helper test baseline/current-pointer mismatch menimbulkan side effect pointer/publication state sebelum exception dilempar;
-  - helper test kemudian dipatch pada `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` agar mismatch dipicu tanpa memutasi pointer/current publication state secara persisten;
-  - setelah patch, validasi lokal lulus dengan `vendor\bin\phpunit --filter baseline_pointer_mismatch` -> `OK (1 test, 26 assertions)` dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 114 assertions)`;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint, tetapi source of truth final sesi 39 kini sudah mencakup validasi lokal setelah patch.
-- Sesi 40 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup correction request tanpa approval, sehingga guard `correction_requires_approval` tidak hanya terbukti di command surface tetapi juga langsung pada pipeline/service path;
-  - proof minimum sesi ini menegaskan rejection terjadi sebelum owning run baru dibuat, tanpa memutasi correction state, tanpa membuat candidate publication, dan tanpa mengubah current publication/pointer yang sudah readable;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna;
-  - validasi lokal final sesi 40 lulus dengan `vendor\bin\phpunit --filter without_approval` -> `OK (1 test, 17 assertions)`, `vendor\bin\phpunit --filter rejects_before_run_creation` -> `OK (1 test, 17 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (6 tests, 131 assertions)`;
-  - `vendor\bin\phpunit --filter requires_approval` menghasilkan `No tests executed!` karena string filter tidak match nama test, bukan karena failure runtime.
-- Sesi 41 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup correction reseal failure, sehingga jalur `correction_failed_reseal_no_switch` tidak hanya tersirat di service/unit layer tetapi terbukti pada pipeline DB-backed saat seal candidate publication gagal ditulis;
-  - proof minimum sesi ini menegaskan correction tetap berada di status `EXECUTING`, run correction gagal dengan `FAILED` / `NOT_READABLE`, candidate publication tetap `UNSEALED` dan non-current, prior current publication/pointer tetap aman, serta tidak ada `RUN_FINALIZED` atau `CORRECTION_PUBLISHED`;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh memang perlu dijalankan di environment pengguna;
-  - validasi lokal final sesi 41 lulus dengan `vendor\bin\phpunit --filter reseal_failure` -> `OK (1 test, 30 assertions)`, `vendor\bin\phpunit --filter leaves_candidate_non_current` -> `OK (1 test, 30 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (7 tests, 161 assertions)`.
-- Sesi 42 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup correction history-promotion failure pada finalize path, yaitu saat candidate publication sudah `SEALED` tetapi promosi artifact history ke current table gagal sebelum publish/current-switch aman;
-  - validasi lokal awal sempat gagal karena assertion test sesi 42 masih mengharapkan exception path dan status akhir yang tidak sinkron dengan perilaku finalize aktual di codebase;
-  - assertion test kemudian dipatch pada `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` agar sesuai dengan outcome final yang nyata, yaitu run `HELD` / `NOT_READABLE` / `COMPLETED`, correction `RESEALED`, candidate publication tetap `SEALED` namun non-current, prior current publication/pointer tetap aman, ada `RUN_FINALIZED` ber-severity `WARN` dengan `reason_code = RUN_LOCK_CONFLICT`, dan tetap tidak ada `CORRECTION_PUBLISHED`;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 42 kini sudah mencakup validasi lokal setelah patch;
-  - validasi lokal final sesi 42 lulus dengan `vendor\bin\phpunit --filter history_promotion_failure` -> `OK (1 test, 29 assertions)`, `vendor\bin\phpunit --filter candidate_sealed_non_current` -> `OK (1 test, 29 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (8 tests, 190 assertions)`.
-- Sesi 43 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup approved correction tanpa current sealed publication baseline, sehingga guard baseline correction tidak hanya tersirat di pipeline start-stage tetapi terbukti menolak eksekusi sebelum owning run dibuat;
-  - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id`/`new_run_id` tetap `null`, tidak ada candidate publication, tidak ada current publication pointer untuk trade date target, dan tidak ada event/run baru yang tercipta untuk correction tersebut;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 43 kini sudah mencakup validasi lokal setelah batch dijalankan di environment pengguna;
-  - validasi lokal final sesi 43 lulus dengan `vendor\bin\phpunit --filter without_current_baseline` -> `OK (1 test, 11 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (1 test, 11 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (9 tests, 201 assertions)`.
-- Sesi 44 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup approved correction dengan baseline pointer row yang ada tetapi menunjuk publication yang `UNSEALED` dan non-current, sehingga guard baseline correction terbukti menolak eksekusi meskipun ada pointer/publication row palsu untuk trade date target;
-  - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id`/`new_run_id` tetap `null`, tidak ada owning run baru, malformed baseline publication/pointer tetap tidak termutasi, dan tidak ada event/run baru yang tercipta untuk correction tersebut;
-  - validasi lokal awal sesi 44 sempat error karena helper seed `seedMalformedBaselinePointerForTradeDate(...)` mencoba menulis kolom `created_at` / `updated_at` ke tabel `eod_current_publication_pointer` padahal schema pointer tidak memiliki kolom tersebut; helper lalu dipatch dengan menghapus kolom timestamp dari insert payload;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 44 kini sudah mencakup validasi lokal setelah helper seed dipatch;
-  - validasi lokal final sesi 44 lulus dengan `vendor\bin\phpunit --filter unsealed_non_current_publication` -> `OK (1 test, 16 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (2 tests, 27 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (10 tests, 217 assertions)`.
-- Sesi 45 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup approved correction dengan current pointer row yang ada tetapi publication row yang dirujuk pointer hilang, sehingga baseline resolver tetap menolak correction sebelum owning run dibuat;
-  - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id` dan `new_run_id` tetap `null`, pointer korup tetap ada, tidak ada publication untuk trade date target, dan tidak ada run/event side effect untuk correction tersebut;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 45 kini sudah mencakup validasi lokal setelah batch dijalankan di environment pengguna;
-  - validasi lokal final sesi 45 lulus dengan `vendor\bin\phpunit --filter missing_publication` -> `OK (1 test, 13 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (3 tests, 40 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (11 tests, 230 assertions)`.
-- Sesi 46 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup approved correction dengan pointer ke publication baseline yang `SEALED` dan `is_current = 1`, tetapi run asal publication tersebut berstatus `HELD` / `NOT_READABLE` dan `is_current_publication = 0`, sehingga baseline resolver wajib menolak correction sebelum owning run dibuat;
-  - sesi ini menutup gap validasi `seal/current/readability consistency` pada correction baseline resolution dengan memperketat `EodPublicationRepository::findCorrectionBaselinePublicationForTradeDate(...)` agar baseline correction hanya lolos bila publication menunjuk run yang `SUCCESS` / `READABLE` dan `is_current_publication = 1` (atau run row tidak ada);
-  - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id` dan `new_run_id` tetap `null`, baseline publication/pointer yang non-readable tetap ada sebagai state insiden, dan tidak ada run/event side effect untuk correction tersebut;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container hanya sebatas PHP syntax lint untuk file yang diubah; source of truth final sesi 46 kini sudah mencakup validasi lokal setelah batch dijalankan di environment pengguna;
-  - validasi lokal final sesi 46 lulus dengan `vendor\bin\phpunit --filter non_readable_run_publication` -> `OK (1 test, 20 assertions)`, `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (4 tests, 60 assertions)`, dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (12 tests, 250 assertions)`.
-- Sesi 47 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup approved correction dengan current pointer row untuk trade date target yang menunjuk publication `SEALED`/`is_current = 1` tetapi publication tersebut milik trade date lain, sehingga baseline resolver wajib menolak correction sebelum owning run dibuat;
-  - sesi ini menutup gap `pointer row points to a publication with a mismatched trade date` yang sudah eksplisit `LOCKED` di `Publication_Current_Pointer_Integrity_Contract_LOCKED.md` dengan memperketat `EodPublicationRepository` agar pointer resolution fail-safe hanya bila `pub.trade_date = ptr.trade_date`;
-  - proof minimum sesi ini menegaskan correction tetap `APPROVED`, `prior_run_id` dan `new_run_id` tetap `null`, pointer/publication mismatch tetap bertahan sebagai state insiden, dan tidak ada run/event side effect untuk correction tersebut;
-  - repository integration proof juga ditambah agar current publication resolution umum (`findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`) kini mengembalikan `null` pada trade-date mismatch, bukan lagi menerima state pointer korup sebagai readable;
-  - follow-up repair setelah proof awal juga sudah tervalidasi lokal: `AbstractMarketDataCommand::renderRunSummary(...)` kini merender `reason_code` / `notes` saat ada, dan test `test_complete_finalize_keeps_resealed_when_publication_promotion_throws_lock_conflict()` sudah diselaraskan dengan event `STAGE_STARTED` yang nyata di pipeline;
-  - validasi lokal final sesi 47 lulus penuh dengan `vendor\bin\phpunit` -> `OK (75 tests, 533 assertions)`.
-- Catatan fokus untuk sesi berikutnya:
-  - fokus setelah sesi 47 adalah tetap memilih gap DB-backed correction conflict/error matrix lain yang masih `PARTIAL` tetapi berdasar perilaku runtime yang memang sudah jelas dan bisa dibuktikan;
-  - varian `pointer/publication trade-date mismatch` kini sudah menjadi checkpoint sah karena owner-doc `LOCKED` memang eksplisit mewajibkan fail-safe dan repository sudah disinkronkan ke contract tersebut.
-- Parent contract correction/tests/ops masih `PARTIAL` karena broader matrix belum lengkap.
-- Final done gate proyek keseluruhan masih belum tertutup.
+### Impact
+- existing-db installations are no longer blocked by missing `eod_runs` coverage columns when runtime tries to create/update coverage telemetry
+- command-surface registry/test semantics are now aligned to the sanctioned coverage reason codes
+- the checkpoint is no longer overstated: code/tests are green, but live end-to-end parity is still an open follow-up and must be closed in the next integration-focused batch
 
-## Active Issues
-- Tidak ada `CONFLICT` aktif saat ini.
-- Tidak ada `DOC GAP` aktif saat ini.
-- Tidak ada `DOC CONFLICT` aktif saat ini.
-- `DOC SYNC ISSUE` packaging artifact sesi 55 tetap tertutup; source-of-truth valid kini sudah membawa folder `storage/app/market_data/evidence/local_phpunit/...` untuk proof helper sesi 54, proof lokal sesi 57, dan checkpoint berikutnya tinggal menjaga pola ini saat sesi lanjut.
-- Catatan resume: source of truth valid kini mencakup sesi 55 DONE pada level unblock plus artifact sync closure, sesi 56 DONE untuk guard post-switch mismatch + malformed fallback, sesi 57 DONE untuk guard post-switch mismatch + fallback publication-version mismatch, sesi 58 DONE untuk guard post-switch mismatch + fallback trade-date mismatch dengan final local proof sudah observed di percakapan, dan sesi 59 DONE untuk guard post-switch mismatch + fallback missing-run-row minimum dengan syntax-lint proof sudah tertutup. Guard pointer/publication/run integrity sesi 47-52, malformed-fallback guard sesi 53, dan post-switch rollback guard sesi 54 tetap sah sebagai baseline pemilihan batch berikutnya.
+### Next Step
+- continue with the integration-focused coverage-gate closure batch to prove the live pipeline -> finalize -> publication fallback wiring end to end
+- do not mark the overall coverage-gate contract family `DONE` until the remaining live parity gap is closed or honestly classified as non-load-bearing by grounded integration proof
 
-## Canonical Session Batch IDs
-- `session1_batch1_market-data-foundation`
-- `session2_batch2_commands-run-orchestration`
-- `session3_batch3_artifact-runtime`
-- `session4_batch4_publication-current-switch`
-- `session5_batch5_correction-reseal-runtime`
-- `session6_batch6_tests-and-evidence-export-runtime`
-- `session7_batch7_replay-evidence-runtime`
-- `session8_batch8_contract-test-matrix-expansion`
-- `session9_batch9_orchestrated-finalize-and-correction-outcome-proof`
-- `session10_batch10_public-api-source-adapter`
-- `session11_batch11_runtime-bugfix-publication-event-logging`
-- `session12_batch12_run-state-machine-sync`
-- `session13_batch13_finalize-pointer-resolution-sync`
-- `session14_batch14_correction-reseal-replacement-sync_v2`
-- `session15_batch15_correction-baseline-resolver-sync`
-- `session16_batch16_correction-tracking-sync`
-- `session17_batch17_replay-verification-minimum`
-- `session17a_replay-smoke-fixture-sync`
-- `session18_batch18_replay-reason-code-alignment`
-- `session19_batch19_replay-evidence-expected-actual-sync`
-- `session20_batch20_replay-expected-context-runtime-sync`
-- `session21_batch21_replay-smoke-suite-minimum`
-- `session22_batch22_backfill-minimum-runtime`
-- `session23_batch23_session-snapshot-minimum-runtime`
-- `session24_batch24_session-snapshot-defaults-sync`
-- `session25_batch25_replay-backfill-minimum`
-- `session26_batch26_ticker-mapping-reason-code-sync`
-- `session27_batch27_test-harness-config-binding`
-- `session28_batch28_correction-outcome-note-sync`
-- `session29_batch29_correction-finalize-order-sync`
-- `session30_batch30_correction-command-surface-proof`
-- `session31_batch31_ops-command-surface-proof`
-- `session32_batch32_db_backed_repository_proof`
-- `session33_batch33_db_backed_pipeline_integration_minimum`
-- `session34_batch34_checkpoint_sync_after_executed_local_proof`
-- `session35_batch35_correction_cancel_matrix_proof_minimum`
-- `session36_batch36_correction_conflict_held_operator_proof_minimum`
-- `session37_batch37_correction_lock_conflict_negative_proof_minimum`
-- `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum`
-- `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum`
-- `session40_batch40_db_backed_correction_requires_approval_integration_minimum`
-- `session41_batch41_db_backed_correction_reseal_failure_integration_minimum`
-- `session42_batch42_db_backed_correction_history_promotion_failure_integration_minimum`
-- `session43_batch43_db_backed_correction_missing_baseline_guard_integration_minimum`
-- `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum`
+## SESSION 7 — REASON CODE REGISTRY + OPS SURFACE FOR COVERAGE GATE
 
-- Sesi 57 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup changed-content correction dengan post-switch current-pointer resolution mismatch plus fallback pointer/publication `publication_version` mismatch, sehingga `trade_date_effective` tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
-  - proof minimum sesi ini hanya menambah guard test di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` tanpa membuka area baru;
-  - repo ZIP sesi ini tetap tidak menyertakan `vendor/`, sehingga proof yang bisa dijalankan di container tetap sebatas PHP syntax lint untuk file yang diubah; validasi lokal penuh tetap perlu dijalankan di environment pengguna.
+- Batch scope: synchronize coverage reason-code registry/seed with runtime literals and make operator command surface coverage-aware
+- Parent contract family: `coverage gate owner contract + doc sync`
+- Final session status: `DONE FOR SELECTED BATCH`
 
-## Session Ledger (Minimum Reconstruction)
-- Sessions 1-14 are reconstructed minimum from canonical ZIP names and later checkpoint sync.
-- `RECONSTRUCTED` here means batch label and coarse focus are reliable, but not all detailed per-session evidence is preserved at the same depth as sessions 15-36.
+- Checkpoint validation against repo:
+  - registry/seed/docs for coverage reason codes were re-read and synchronized with runtime literals
+  - `AbstractMarketDataCommand` surface was updated so coverage-aware lines can render directly from run telemetry when those fields are present
+  - ops command docs and tests were aligned to the new surface contract
 
-| Session | Batch ID | Status | Focus | Reconstruction Confidence |
-|---|---|---:|---|---|
-| 1 | `session1_batch1_market-data-foundation` | RECONSTRUCTED | market-data foundation | minimum from ZIP label + later checkpoint sync |
-| 2 | `session2_batch2_commands-run-orchestration` | RECONSTRUCTED | commands / run orchestration | minimum from ZIP label + later checkpoint sync |
-| 3 | `session3_batch3_artifact-runtime` | RECONSTRUCTED | artifact runtime | minimum from ZIP label + later checkpoint sync |
-| 4 | `session4_batch4_publication-current-switch` | RECONSTRUCTED | publication current switch | minimum from ZIP label + later checkpoint sync |
-| 5 | `session5_batch5_correction-reseal-runtime` | RECONSTRUCTED | correction / reseal runtime | minimum from ZIP label + later checkpoint sync |
-| 6 | `session6_batch6_tests-and-evidence-export-runtime` | RECONSTRUCTED | tests and evidence export runtime | minimum from ZIP label + later checkpoint sync |
-| 7 | `session7_batch7_replay-evidence-runtime` | RECONSTRUCTED | replay evidence runtime | minimum from ZIP label + later checkpoint sync |
-| 8 | `session8_batch8_contract-test-matrix-expansion` | RECONSTRUCTED | contract-test matrix expansion | minimum from ZIP label + later checkpoint sync |
-| 9 | `session9_batch9_orchestrated-finalize-and-correction-outcome-proof` | RECONSTRUCTED | finalize and correction outcome proof | minimum from ZIP label + later checkpoint sync |
-| 10 | `session10_batch10_public-api-source-adapter` | RECONSTRUCTED | public API source adapter | minimum from ZIP label + later checkpoint sync |
-| 11 | `session11_batch11_runtime-bugfix-publication-event-logging` | RECONSTRUCTED | publication event logging bugfix | minimum from ZIP label + later checkpoint sync |
-| 12 | `session12_batch12_run-state-machine-sync` | RECONSTRUCTED | run state machine sync | minimum from ZIP label + later checkpoint sync |
-| 13 | `session13_batch13_finalize-pointer-resolution-sync` | RECONSTRUCTED | finalize pointer resolution sync | minimum from ZIP label + later checkpoint sync |
-| 14 | `session14_batch14_correction-reseal-replacement-sync_v2` | RECONSTRUCTED | correction reseal replacement sync v2 | minimum from ZIP label + later checkpoint sync |
-| 15 | `session15_batch15_correction-baseline-resolver-sync` | DONE | correction baseline resolver sync | checkpoint-backed |
-| 16 | `session16_batch16_correction-tracking-sync` | DONE | correction tracking sync | checkpoint-backed |
-| 17 | `session17_batch17_replay-verification-minimum` | DONE | replay verification minimum | checkpoint-backed |
-| 17A | `session17a_replay-smoke-fixture-sync` | DONE | replay smoke fixture sync | checkpoint-backed |
-| 18 | `session18_batch18_replay-reason-code-alignment` | DONE | replay reason-code alignment | checkpoint-backed |
-| 19 | `session19_batch19_replay-evidence-expected-actual-sync` | DONE | replay expected/actual evidence sync | checkpoint-backed |
-| 20 | `session20_batch20_replay-expected-context-runtime-sync` | DONE | replay expected context runtime sync | checkpoint-backed |
-| 21 | `session21_batch21_replay-smoke-suite-minimum` | DONE | replay smoke suite minimum | checkpoint-backed |
-| 22 | `session22_batch22_backfill-minimum-runtime` | DONE | backfill minimum runtime | checkpoint-backed |
-| 23 | `session23_batch23_session-snapshot-minimum-runtime` | DONE | session snapshot minimum runtime | checkpoint-backed |
-| 24 | `session24_batch24_session-snapshot-defaults-sync` | DONE | session snapshot defaults sync | checkpoint-backed |
-| 25 | `session25_batch25_replay-backfill-minimum` | DONE | replay backfill minimum | checkpoint-backed |
-| 26 | `session26_batch26_ticker-mapping-reason-code-sync` | DONE | ticker mapping reason-code sync | checkpoint-backed |
-| 27 | `session27_batch27_test-harness-config-binding` | DONE | test harness config binding | checkpoint-backed |
-| 28 | `session28_batch28_correction-outcome-note-sync` | DONE | correction outcome note sync | checkpoint-backed |
-| 29 | `session29_batch29_correction-finalize-order-sync` | DONE | correction finalize-order sync | checkpoint-backed |
-| 30 | `session30_batch30_correction-command-surface-proof` | DONE | correction command surface proof | checkpoint-backed |
-| 31 | `session31_batch31_ops-command-surface-proof` | DONE | ops command surface proof | checkpoint-backed |
-| 32 | `session32_batch32_db_backed_repository_proof` | DONE | DB-backed repository proof | checkpoint-backed |
-| 33 | `session33_batch33_db_backed_pipeline_integration_minimum` | DONE | DB-backed pipeline integration minimum | checkpoint-backed |
-| 34 | `session34_batch34_checkpoint_sync_after_executed_local_proof` | DONE | checkpoint sync after executed local proof | checkpoint-backed |
-| 35 | `session35_batch35_correction_cancel_matrix_proof_minimum` | DONE | correction cancel matrix proof minimum | checkpoint-backed + executed local proof |
-| 36 | `session36_batch36_correction_conflict_held_operator_proof_minimum` | DONE | correction conflict HELD operator proof minimum | checkpoint-backed + executed local proof |
-| 37 | `session37_batch37_correction_lock_conflict_negative_proof_minimum` | DONE | correction lock-conflict negative proof minimum | checkpoint-backed + syntax lint proof |
-| 38 | `session38_batch38_db_backed_changed_content_promotion_failure_integration_minimum` | DONE | DB-backed changed-content promotion-failure integration minimum | checkpoint-backed + syntax lint proof + executed manual runtime verification |
-| 39 | `session39_batch39_db_backed_correction_baseline_mismatch_integration_minimum` | DONE | DB-backed correction baseline/current-pointer mismatch integration minimum | checkpoint-backed + executed local proof after helper patch |
-| 40 | `session40_batch40_db_backed_correction_requires_approval_integration_minimum` | DONE | DB-backed correction requires-approval integration minimum | checkpoint-backed + executed local proof |
-| 41 | `session41_batch41_db_backed_correction_reseal_failure_integration_minimum` | DONE | DB-backed correction reseal-failure integration minimum | checkpoint-backed + executed local proof |
-| 42 | `session42_batch42_db_backed_correction_history_promotion_failure_integration_minimum` | DONE | DB-backed correction history-promotion-failure integration minimum | checkpoint-backed + executed local proof after assertion patch |
-| 43 | `session43_batch43_db_backed_correction_missing_baseline_guard_integration_minimum` | DONE | DB-backed correction missing-baseline guard integration minimum | checkpoint-backed + executed local proof |
-| 44 | `session44_batch44_db_backed_correction_malformed_baseline_pointer_guard_integration_minimum` | DONE | DB-backed correction malformed-baseline-pointer guard integration minimum | checkpoint-backed + syntax lint proof |
-| 45 | `session45_batch45_db_backed_correction_missing_publication_pointer_guard_integration_minimum` | DONE | DB-backed correction missing-publication-pointer guard integration minimum | checkpoint-backed + local validation after runtime proof |
+- Patch implemented:
+  - synchronized registry + seed literals:
+    - `RUN_COVERAGE_NOT_EVALUABLE`
+    - `COVERAGE_THRESHOLD_MET`
+    - `COVERAGE_BELOW_THRESHOLD`
+    - `COVERAGE_UNIVERSE_EMPTY`
+  - expanded command output contract to include, when present on the run:
+    - `coverage_gate_state`
+    - `coverage_reason_code`
+    - `coverage_summary`
+    - `coverage_missing_sample`
+  - updated `tests/Unit/MarketData/OpsCommandSurfaceTest.php` and related ops docs
 
-| 46 | `session46_batch46_db_backed_correction_non_readable_baseline_run_guard_integration_minimum` | DONE | DB-backed correction non-readable-baseline-run guard integration minimum | checkpoint-backed + syntax lint proof + executed local proof |
-| 47 | `session47_batch47_db_backed_pointer_trade_date_mismatch_guard_minimum` | DONE | DB-backed pointer/publication trade-date mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after follow-up repairs |
-| 48 | `session48_batch48_db_backed_run_current_mirror_mismatch_guard_minimum` | DONE | DB-backed run-current-mirror mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after follow-up repair |
-| 49 | `session49_batch49_db_backed_pointer_run_id_mismatch_guard_minimum` | DONE | DB-backed pointer/publication run-id mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation |
-| 50 | `session50_batch50_db_backed_pointer_publication_version_mismatch_guard_minimum` | DONE | DB-backed pointer/publication publication-version mismatch guard minimum | checkpoint-backed + syntax lint proof + full local validation after helper/fixture follow-up repairs |
-| 51 | `session51_batch51_db_backed_publication_current_mirror_mismatch_guard_minimum` | DONE | DB-backed publication-current-mirror mismatch guard minimum | checkpoint-backed + syntax lint proof |
-| 52 | `session52_batch52_db_backed_missing_run_row_guard_minimum` | DONE | DB-backed missing-run-row-behind-publication guard minimum | checkpoint-backed + syntax lint proof |
-| 53 | `session53_batch53_db_backed_malformed_fallback_guard_minimum` | DONE | DB-backed malformed-fallback effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
-| 54 | `session54_batch54_db_backed_post_switch_resolution_mismatch_guard_minimum` | DONE | DB-backed post-switch resolution mismatch rollback guard minimum | checkpoint-backed + syntax lint proof |
-| 55 | `session55_batch55_local_phpunit_proof_capture_helper_for_session54` | DONE | helper capture proof lokal PHPUnit sesi 54 sudah dijalankan user; `DOC SYNC ISSUE` packaging artifact kini sudah tertutup | checkpoint-backed + helper script + observed local proof |
-| 56 | `session56_batch56_db_backed_post_switch_malformed_fallback_guard_minimum` | DONE | DB-backed post-switch mismatch + malformed fallback effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
-| 57 | `session57_batch57_db_backed_post_switch_fallback_publication_version_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback publication-version mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
-| 58 | `session58_batch58_db_backed_post_switch_fallback_trade_date_mismatch_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback trade-date mismatch effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof |
-| 59 | `session59_batch59_db_backed_post_switch_fallback_missing_run_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback missing-run-row effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof + full-suite repair |
-| 60 | `session60_batch60_db_backed_post_switch_fallback_run_current_mirror_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback run-current-mirror effective-date guard minimum | checkpoint-backed + syntax lint proof + executed local proof + full-suite validation |
-| 61 | `session61_batch61_db_backed_post_switch_fallback_publication_current_mirror_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback publication-current-mirror effective-date guard minimum | checkpoint-backed + syntax lint proof |
-| 62 | `session62_batch62_db_backed_post_switch_fallback_unsealed_publication_guard_minimum` | DONE | DB-backed post-switch mismatch + fallback unsealed-publication effective-date guard minimum | checkpoint-backed + syntax lint proof |
+- Proof progression:
+  - local `tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> PASS (`19 tests, 116 assertions`)
+  - local full PHPUnit -> PASS (`138 tests, 1504 assertions`)
+  - live runtime proof on real historical runs was later found to be only partial and is therefore tracked explicitly in the session 7 patch entry above rather than overstated here
 
-- Sesi 48 DONE pada level batch:
-  - repository current/publication resolver kini juga memvalidasi mirror `eod_runs.is_current_publication = 1`, tetapi follow-up repair setelah proof awal memisahkan guard dengan benar: `findPointerResolvedPublicationForTradeDate` dan `findCurrentPublicationForTradeDate` tetap mendukung current resolution saat finalize masih in-flight, sedangkan `findCorrectionBaselinePublicationForTradeDate` dan `findLatestReadablePublicationBefore` tetap strict untuk baseline/fallback yang memang harus sudah `SUCCESS` / `READABLE`;
-  - DB-backed integration proof kini juga mencakup approved correction dengan baseline publication/current pointer yang menunjuk run `SUCCESS` / `READABLE` tetapi `is_current_publication = 0`, sehingga correction tetap ditolak sebelum owning run baru dibuat dan approval state tetap utuh;
-  - repository integration proof kini juga mencakup run-current mirror mismatch untuk `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, dan `findLatestReadablePublicationBefore`, semuanya fail-safe ke `null` saat mirror run tidak sinkron;
-  - validasi lokal awal sesi 48 sempat gagal karena guard repo terlalu keras dan ikut menahan happy-path finalize/current-resolution normal, sehingga DB-backed daily/correction pipeline test jatuh ke `HELD`; repository guard lalu dipisahkan sesuai jalur in-flight vs finalized-readable path.
+### Impact
+- selected session 7 batch is closed and test-backed
+- later runtime findings refine, but do not invalidate, the completed registry/seed/test sync from this batch
+
+### Next Step
+- preserve this batch as complete, then close the remaining integration/runtime parity gap in the next coverage-gate batch
+
+## SESSION 19 FINAL AUDIT CLOSURE
+
+- Batch scope: final source-of-truth revalidation, owner-contract closure check, and canonical artifact handoff
+- Parent contract family: `final readiness gate`
+- Final session status: `DONE / final closure revalidated`
+
+- Checkpoint validation against repo:
+  - active source-of-truth ZIP unpacks cleanly and still contains the expected market-data code, docs, tests, config, and packaged evidence paths referenced by the live checkpoint
+  - active tracker still shows no open load-bearing market-data contract family:
+    - contract item 5 = `DONE`
+    - contract item 7 = `DONE`
+    - contract item 8 = `DONE`
+    - contract item 9 = `DONE`
+  - relevant owner / readiness / translation anchors rechecked in this session remain aligned with the claimed closure state:
+    - `docs/README.md`
+    - `docs/system_audit/SYSTEM_READINESS_AUDIT_BASELINE.md`
+    - `docs/system_audit/SYSTEM_READINESS_CONTRACT_TRACKER.md`
+    - `docs/market_data/book/Source_Data_Acquisition_Contract_LOCKED.md`
+    - `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+    - `docs/market_data/system/SYSTEM_CONTEXT_AND_DEPENDENCIES.md`
+  - sanctioned Yahoo default-provider sync remains materially aligned across code and owner docs:
+    - `.env.example`
+    - `config/market_data.php`
+    - `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`
+    - `docs/market_data/book/Source_Data_Acquisition_Contract_LOCKED.md`
+    - `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+    - `docs/market_data/system/SYSTEM_CONTEXT_AND_DEPENDENCIES.md`
+  - packaged local proof artifacts referenced by the checkpoint are still present under `storage/app/market_data/evidence/local_phpunit/...`
+  - runtime PHPUnit cannot be re-run in this container because the uploaded source-of-truth ZIP intentionally omits `vendor/`, but relevant PHP syntax checks in current scope pass:
+    - `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`
+    - `config/market_data.php`
+    - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+    - `tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+  - no additional owner-doc conflict, doc-sync issue, or higher-priority readiness blocker surfaced from this final audit-closure pass
+
+- Patch implemented:
+  - updated `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md` to record session 19 final audit closure as the latest readiness-gate checkpoint action
+  - updated this implementation status file so the final checkpoint reflects the current final-audit closure artifact instead of stopping at session 18
+  - no production code, runtime behavior, schema, or owner-domain contract semantics were changed in session 19
+
+- Proof progression:
+  - repo-structure validation in this environment -> PASS
+  - checkpoint-vs-repo revalidation in this environment -> PASS
+  - owner/readiness/build-order spot-check in this environment -> PASS
+  - Yahoo default-provider code/doc sync spot-check -> PASS
+  - targeted PHP syntax checks in current scope -> PASS
+  - runtime proof in this environment -> NOT RUN, because the uploaded source-of-truth ZIP intentionally omits `vendor/`
+  - last proof-backed runtime claims remain the previously recorded local results:
+    - session 16 full PHPUnit -> PASS (`123 tests, 1391 assertions`)
+    - post-closure provider-default proof -> PASS (`PublicApiEodBarsAdapterTest` 4/4, `EodBarsIngestServiceTest` 2/2, full suite `125 tests, 1405 assertions`)
+
+### Impact
+- final checkpoint now points to the current final-audit closure artifact rather than leaving the closure narrative one session behind
+- active market-data checkpoint remains internally consistent and does not show any surviving load-bearing `PARTIAL`, `MISSING`, or `CONFLICT` item in the live scope
+- final session output is limited to checkpoint hardening and canonical artifact handoff; it does not invent new runtime evidence or reopen already-closed owner contracts
+
+### Next Step
+- this market-data scope is closed as `SELESAI` unless a later regression, owner-doc change, or newly evidenced contract gap reopens it
+- the newest ZIP produced from this session becomes the canonical artifact for final audit because it carries the latest checkpoint state
 
 
-- Sesi 62 DONE pada level batch:
-  - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang pointer-nya masih menunjuk publication yang sama, run fallback masih `SUCCESS` / `READABLE` + `is_current_publication = 1`, tetapi publication fallback sendiri berubah menjadi `UNSEALED`, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_unsealed_publication_does_not_invent_effective_trade_date()`;
-  - syntax lint container lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
-  - proof lokal user sesi 62 kini juga sudah lulus dengan:
-    - `vendor\bin\phpunit --filter fallback_unsealed_publication` -> `OK (1 test, 39 assertions)`;
-    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (8 tests, 271 assertions)`;
-    - `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (27 tests, 672 assertions)`;
-  - tidak ada proof lokal sesi 62 yang masih pending.
+## SESSION 1 — OWNER CONTRACT + DOC SYNC FOR COVERAGE GATE
 
-- Sesi 63 DONE pada level batch:
-  - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback pointer yang masih ada tetapi publication row yang dirujuk sudah hilang, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_missing_publication_row_does_not_invent_effective_trade_date()`;
-  - syntax lint container lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
-  - proof lokal user sesi 63 kini juga sudah lulus dengan:
-    - `vendor\bin\phpunit --filter fallback_missing_publication_row` -> `OK (1 test, 35 assertions)`;
-    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (9 tests, 306 assertions)`;
-    - `vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php` -> `OK (28 tests, 707 assertions)`;
-    - `vendor\bin\phpunit --filter "test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_missing_publication_row_does_not_invent_effective_trade_date"` -> `OK (1 test, 35 assertions)`;
-  - tidak ada proof lokal sesi 63 yang masih pending.
+### Scope completed in this session
+- re-read owner docs relevant to coverage, finalization, readability, runbook, and contract-test matrix
+- hardened `docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` into the official owner contract for coverage universe usage, numerator/denominator semantics, formula, gate states, and final outcome mapping
+- synchronized related docs so coverage semantics no longer conflict with finalization/readability wording
+- updated checkpoint tracker to reflect that doc-owner alignment is done while implementation proof still remains open
 
-- Sesi 64 DONE pada level batch:
-  - validasi checkpoint terhadap repo source-of-truth sesi 63 menemukan `DOC SYNC ISSUE` kecil di `LUMEN_CONTRACT_TRACKER.md`: `CONTRACT ITEM 7` masih menyimpan `LAST UPDATED SESSION` ke sesi 62 walaupun evidence sesi 63 sudah tercatat; sinkronisasi checkpoint kini sudah diperbaiki agar tracker kembali cocok dengan repo terbaru;
-  - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback date yang publication dan run row-nya masih ada serta tetap readable/current, tetapi pointer fallback untuk trade date itu sudah hilang sepenuhnya, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_missing_pointer_row_does_not_invent_effective_trade_date()`;
-  - syntax lint container lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
-  - proof lokal sesi 64 belum bisa dijalankan di container karena ZIP source-of-truth tetap tidak menyertakan `vendor/`, sehingga validasi PHPUnit penuh tetap perlu dijalankan di environment user;
-  - tidak ada perubahan runtime code selain penambahan proof minimum dan sinkronisasi checkpoint.
+### What changed
+- coverage gate now uses a locked denominator based on resolved universe membership as-of requested date
+- coverage gate now uses a locked numerator based on canonical valid bars only
+- `NOT_EVALUABLE` was removed as a final coverage-gate state and replaced by locked `BLOCKED` semantics
+- coverage `FAIL` and coverage `BLOCKED` now explicitly keep the requested date non-readable
+- fallback readability may still keep consumers operational, but it does not turn the requested date into readable success
+
+### Current checkpoint result
+- owner-doc sync for coverage gate: `DONE`
+- codebase sync to the hardened owner contract: `PARTIAL`
+- PHPUnit/runtime proof for the new coverage-gate contract family in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- map the locked coverage contract into code/service/finalize paths
+- add DB/audit-visible fields if current schema/runtime output is still too weak for denominator/numerator/threshold evidence
+- add/adjust PHPUnit coverage-gate tests according to `Contract_Test_Matrix_LOCKED.md`
 
 
-- Sesi 61 DONE pada level batch:
-  - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang pointer-nya masih menunjuk publication `SEALED`, run fallback masih `SUCCESS` / `READABLE` + `is_current_publication = 1`, tetapi publication fallback sendiri sudah `is_current = 0`, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_current_mirror_mismatch_does_not_invent_effective_trade_date()`;
-  - syntax lint container lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
-  - proof lokal user sesi 61 kini juga sudah lulus dengan `vendor\bin\phpunit --filter post_switch_resolution_mismatch_and_fallback_publication_current_mirror_mismatch` -> `OK (1 test, 38 assertions)` dan `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (26 tests, 633 assertions)`;
-  - tidak ada proof lokal sesi 61 yang masih pending.
+## SESSION 4 — PIPELINE WIRING + RUN TELEMETRY COVERAGE
 
-- Sesi 60 DONE pada level batch:
-  - DB-backed integration proof kini ditambah untuk changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback run yang masih `SUCCESS` / `READABLE` tetapi mirror `is_current_publication = 0`, sehingga `trade_date_effective` wajib tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_run_current_mirror_mismatch_does_not_invent_effective_trade_date()`;
-  - syntax lint container lulus dengan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`;
-  - proof lokal user kini juga lulus dengan `vendor\bin\phpunit --filter fallback_run_current_mirror_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (1 test, 38 assertions)`, `vendor\bin\phpunit --filter post_switch_resolution_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (6 tests, 194 assertions)`, `vendor\bin\phpunit --filter run_daily_correction_with_post_switch_resolution_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (5 tests, 164 assertions)`, `vendor\bin\phpunit` -> `OK (93 tests, 886 assertions)`, dan `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `No syntax errors detected`;
-  - tidak ada proof lokal sesi 60 yang masih pending.
+### Scope completed in this session
+- re-audited the live runtime path around `EodEligibilityBuildService`, `MarketDataPipelineService`, and `EodRunRepository` to close the ambiguity where `coverage_ratio` had still been sourced from eligibility output rather than true EOD coverage
+- wired `CoverageGateEvaluator` into the pipeline eligibility stage so requested-date coverage is now computed from expected universe vs canonical bar availability and then persisted into run telemetry
+- normalized `eod_runs` runtime telemetry handling so the new coverage evidence fields can be written without overloading the old ambiguous meaning
+- added pipeline unit-test coverage for eligibility-stage wiring and telemetry separation
 
-- Sesi 59 DONE pada level batch:
-  - DB-backed integration proof kini juga mencakup changed-content correction dengan post-switch current-pointer resolution mismatch plus prior-readable fallback publication yang run row-nya sudah hilang, sehingga `trade_date_effective` tetap `null` saat current switch dan fallback chain sama-sama tidak aman;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_missing_run_row_does_not_invent_effective_trade_date()`;
-  - follow-up repair sesudah proof minimum juga sudah selesai di `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` dan `tests/Unit/MarketData/SessionSnapshotServiceTest.php`, sehingga rollback path finalize dan retention-window test kembali sinkron dengan runtime terbaru;
-  - proof final sesi 59 kini sudah lengkap di environment user dengan:
-    - `vendor\bin\phpunit --filter missing_run_row_does_not_invent_effective_trade_date` -> `OK (1 test, 35 assertions)`;
-    - `vendor\bin\phpunit --filter post_switch_resolution_mismatch` -> `OK (5 tests, 156 assertions)`;
-    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (24 tests, 557 assertions)`;
-    - `vendor\bin\phpunit --filter correction` -> `OK (37 tests, 613 assertions)`;
-    - `vendor\bin\phpunit --filter preserves_approval_state` -> `OK (10 tests, 182 assertions)`;
-    - `vendor\bin\phpunit --filter non_readable_run_publication` -> `OK (1 test, 20 assertions)`;
-    - `vendor\bin\phpunit --filter SessionSnapshotServiceTest` -> `OK (3 tests, 10 assertions)`;
-    - `vendor\bin\phpunit` -> `OK (92 tests, 848 assertions)`.
+### What changed
+- `EodEligibilityBuildService` no longer returns misleading `coverage_ratio`; it now returns eligibility-only metrics (`eligible_rows`, `eligibility_pass_ratio`) so eligibility and coverage are separate concerns
+- `MarketDataPipelineService::completeEligibility(...)` now:
+  - builds eligibility rows
+  - evaluates true EOD coverage via `CoverageGateEvaluator`
+  - stores coverage evidence fields on the run:
+    - `coverage_universe_count`
+    - `coverage_available_count`
+    - `coverage_missing_count`
+    - `coverage_ratio`
+    - `coverage_min_threshold`
+    - `coverage_gate_state`
+    - `coverage_threshold_mode`
+    - `coverage_universe_basis`
+    - `coverage_contract_version`
+    - `coverage_missing_sample_json`
+- stage event payload now keeps eligibility metrics at the top level and nests true coverage output under `coverage`, which closes the previous payload ambiguity
+- `EodRunRepository` now initializes and normalizes the dedicated coverage telemetry fields for `eod_runs`
+- `EodRun` now casts the coverage telemetry fields for stable runtime/test behavior
 
-- Proof sesi 48 final:
-  - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - local proof: `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (3 tests, 20 assertions)`;
-  - local proof: `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (14 tests, 286 assertions)`;
-  - local proof: `vendor\bin\phpunit` -> `OK (77 tests, 557 assertions)`.
+### Current checkpoint result
+- evaluator-to-pipeline wiring for coverage telemetry: `DONE`
+- ambiguity where run `coverage_ratio` still represented eligibility semantics: `DONE`
+- finalize/outcome owner mapping for evaluator `NOT_EVALUABLE` to owner-level blocked/non-readable behavior: `PARTIAL`
+- full PHPUnit runtime proof in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
 
-- Sesi 49 DONE pada level batch:
-  - repository current/publication resolver kini juga memvalidasi `eod_current_publication_pointer.run_id = eod_publications.run_id`, sehingga pointer row yang menunjuk publication benar tetapi membawa run mirror berbeda tetap diperlakukan sebagai incident material dan fail-safe;
-  - DB-backed integration proof kini juga mencakup approved correction dengan baseline publication/current pointer yang disagree pada `run_id`, sehingga correction tetap ditolak sebelum owning run baru dibuat dan approval state tetap utuh;
-  - repository integration proof kini juga mencakup pointer/publication `run_id` mismatch untuk `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, dan `findLatestReadablePublicationBefore`, semuanya fail-safe ke `null` saat pointer run tidak sama dengan publication run.
-- Proof sesi 49 minimum di artifact:
-  - container proof: `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed;
-  - container proof: `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed.
-- Proof sesi 49 final:
-  - local proof: `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (4 tests, 24 assertions)`;
-  - local proof: `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (15 tests, 312 assertions)`;
-  - local proof: `vendor\bin\phpunit` -> `OK (79 tests, 587 assertions)`.
-
-- Sesi 50 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup approved correction dengan pointer row yang `publication_version`-nya tidak sama dengan publication current yang ditunjuk, sehingga correction baseline resolution fail-safe sebelum owning run baru dibuat;
-  - repository resolution kini juga memandang mismatch `eod_current_publication_pointer.publication_version != eod_publications.publication_version` sebagai incident material pada current/publication/baseline/fallback resolver path;
-  - validasi lokal awal sesi 50 sempat gagal karena helper repository integration untuk mismatch `publication_version` belum ada, helper seed awal memakai identity yang bentrok dengan fixture sqlite (`eod_runs.run_id` dan `eod_current_publication_pointer.trade_date`), dan test run-id mismatch sesi 49 yang ikut berjalan masih membaca seeded incident run `91` sebagai seolah-olah owning run baru correction;
-  - helper test kemudian dipatch di file test yang sama agar memakai fixture identity yang aman, memutasi pointer existing untuk trade date target alih-alih menambah row pointer duplikat, dan assertion run-id mismatch diperketat agar seeded incident run tidak dihitung sebagai run correction baru;
-  - proof sesi 50 final:
-    - local proof: `vendor\bin\phpunit --filter PublicationRepositoryIntegrationTest` -> `OK (6 tests, 32 assertions)`;
-    - local proof: `vendor\bin\phpunit --filter MarketDataPipelineIntegrationTest` -> `OK (16 tests, 334 assertions)`;
-    - local proof: `vendor\bin\phpunit` -> `OK (82 tests, 617 assertions)`.
-
-- Sesi 51 DONE pada level batch:
-  - DB-backed/integration proof kini juga mencakup approved correction dengan pointer yang tetap menunjuk publication `SEALED`, tetapi publication tersebut `is_current = 0`, sehingga correction baseline resolution fail-safe sebelum owning run baru dibuat;
-  - repository resolution kini juga memandang mismatch `eod_current_publication_pointer` versus mirror `eod_publications.is_current` sebagai incident material pada current/publication/baseline/fallback resolver path;
-  - batch ini sengaja tetap berada di area market-data dan mengikuti owner-doc `Publication_Current_Pointer_Integrity_Contract_LOCKED.md`, khususnya rule bahwa mismatch `pointer row and eod_publications.is_current disagree materially` harus diperlakukan unsafe dan fail-safe;
-  - syntax lint container untuk file yang diubah tetap lulus;
-  - validasi lokal final sesi 51 kini sudah lengkap dan lulus dengan:
-    - `vendor\bin\phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> `OK (7 tests, 36 assertions)`;
-    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (17 tests, 354 assertions)`;
-    - `vendor\bin\phpunit tests/Unit/MarketData` -> `OK (83 tests, 640 assertions)`;
-    - `vendor\bin\phpunit` -> `OK (84 tests, 641 assertions)`;
-  - `vendor\bin\phpunit --filter publication_current_mirror_mismatch` dan `vendor\bin\phpunit --filter correction_baseline_publication_current_mirror_mismatch` menghasilkan `No tests executed!` karena filter string tidak match nama method test, bukan karena failure runtime.
-
-- Sesi 52 DONE pada level batch:
-  - repository current/publication resolver kini tidak lagi menganggap `eod_runs` boleh hilang pada pointer-resolved/current/baseline/fallback path; bila publication yang ditunjuk pointer tidak punya row run, resolver kini fail-safe ke `null`;
-  - batch ini mengikuti `Publication_Current_Pointer_Integrity_Contract_LOCKED.md` dan `Downstream_Consumer_Read_Model_Contract_LOCKED.md`, khususnya kewajiban memvalidasi sampai ke run-consistency checks sebelum suatu publication boleh dianggap readable/current;
-  - DB-backed integration proof kini juga mencakup approved correction dengan current pointer yang menunjuk publication `SEALED` + `is_current = 1`, tetapi row `eod_runs` untuk publication tersebut hilang, sehingga correction baseline resolution ditolak sebelum owning run baru dibuat dan approval state tetap utuh;
-  - repository integration proof kini juga mencakup missing-run-row incident untuk `findPointerResolvedPublicationForTradeDate`, `findCurrentPublicationForTradeDate`, `findCorrectionBaselinePublicationForTradeDate`, dan `findLatestReadablePublicationBefore`, semuanya fail-safe ke `null`;
-  - proof minimum yang bisa dijalankan di container tetap syntax lint karena ZIP source-of-truth belum menyertakan `vendor/`:
-    - `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
-    - `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> passed;
-    - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed.
-
-- Sesi 53 DONE pada level batch:
-  - DB-backed integration proof kini ditambahkan untuk correction changed-content + promotion failure ketika fallback prior-readable sendiri sudah malformed pada `eod_current_publication_pointer.run_id`, sehingga finalize tetap `HELD` / `NOT_READABLE` tetapi **tidak mengarang** `trade_date_effective`;
-  - batch ini tetap grounded pada owner-doc effective-date/read-model/fallback contracts: fallback hanya boleh dipakai bila pointer/publication/run chain prior-readable masih valid; kalau incident material terdeteksi, effective-date harus fail-safe ke `null`;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_changed_artifacts_and_malformed_fallback_pointer_does_not_invent_effective_trade_date()`;
-  - proof minimum yang bisa dijalankan di container pada repo ZIP ini tetap syntax lint:
-    - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - validasi lokal final sesi 53 kini sudah tersinkron dan lulus dengan:
-    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (19 tests, 401 assertions)`;
-    - `vendor\bin\phpunit --filter malformed_fallback_pointer` -> `OK (1 test, 29 assertions)`;
-    - `vendor\bin\phpunit --filter does_not_invent_effective_trade_date` -> `OK (1 test)`.
+### Next required implementation batch
+- wire coverage gate state explicitly into finalize outcome mapping for requested-date readability / held-vs-failed resolution
+- add finalize-level proof for fallback/readability behavior when coverage is `FAIL` or evaluator result is non-evaluable
+- only close the coverage-gate contract family after finalize/output mapping is fully aligned end to end
 
 
-- Sesi 54 DONE pada level batch:
-  - DB-backed integration proof kini juga mencakup changed-content correction dengan **post-switch current-pointer resolution mismatch**, yaitu candidate publication sempat dipromosikan tetapi current publication yang ter-resolve setelah finalize tidak lagi cocok dengan candidate sehingga state current tidak boleh dibiarkan ambigu;
-  - pipeline kini fail-safe dengan memperlakukan mismatch pasca-switch ini sebagai `RUN_LOCK_CONFLICT`, lalu memulihkan prior current publication, current pointer, dan `eod_runs.is_current_publication` mirror ke baseline yang sebelumnya readable;
-  - candidate publication correction tetap `SEALED` namun non-current, correction tetap `RESEALED`, finalize berakhir `HELD` / `NOT_READABLE` / `COMPLETED`, dan `trade_date_effective` tetap fallback ke prior readable date alih-alih berpindah ke state current yang ambigu;
-  - implementasi konkret sesi ini mencakup guard rollback di `app/Application/MarketData/Services/MarketDataPipelineService.php`, helper pemulihan prior-current di `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`, dan proof DB-backed baru di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_changed_artifacts_and_post_switch_resolution_mismatch_restores_prior_current_publication()`;
-  - proof minimum yang bisa dijalankan di container pada repo ZIP ini tetap syntax lint:
-    - `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> passed;
-    - `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> passed;
-    - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - validasi lokal PHPUnit final untuk sesi 54 **belum** tersinkron di source-of-truth ini karena ZIP sesi 54 tetap tidak menyertakan `vendor/`; follow-up tersebut harus dijalankan di environment pengguna sebelum batch berikutnya dipilih sebagai proof lokal tersinkron.
+## SESSION 5 — FINALIZE DECISION + PUBLICATION OUTCOME COVERAGE-AWARE
+
+### Scope completed in this session
+- re-audited the finalize/readability path so requested-date publishability no longer depends on the old ambiguous `coverage_ratio >= coverageMin` shortcut
+- changed finalize pre-decision handling so runtime now consumes the official coverage summary (`coverage_gate_status`, ratio, threshold value/mode) written by the coverage evaluator / telemetry path
+- aligned publication outcome behavior so coverage `PASS`, `FAIL`, and evaluator `NOT_EVALUABLE` now drive requested-date readability and fallback behavior explicitly
+- added finalize/outcome unit-test coverage for coverage-aware readable/held/failed outcomes
+
+### What changed
+- `FinalizeDecisionService` no longer decides from raw ratio + threshold inputs; it now accepts the official coverage summary and maps it to finalize-safe state
+- finalize behavior is now:
+  - coverage `PASS` + other finalize preconditions satisfied -> promotion allowed toward `READABLE`
+  - coverage `FAIL` + fallback exists -> requested date stays `NOT_READABLE`, terminal resolves `HELD`
+  - coverage `FAIL` + no fallback -> requested date stays `NOT_READABLE`, terminal resolves `FAILED`
+  - coverage `NOT_EVALUABLE` -> requested date never becomes `READABLE`; finalize treats this as blocked/non-readable and only allows `HELD` when fallback continuity exists
+- `MarketDataPipelineService::completeFinalize(...)` now passes the official coverage summary from run telemetry instead of the old ambiguous raw coverage ratio path
+- `PublicationFinalizeOutcomeService` preserves coverage-aware non-promotion outcomes without collapsing them into readable success
+
+### Current checkpoint result
+- finalize decision now uses official coverage gate status instead of raw ratio comparison: `DONE`
+- publication outcome behavior for coverage-aware readable / held / non-readable resolution: `DONE`
+- evaluator `NOT_EVALUABLE` no longer has a path to readable success: `DONE`
+- full PHPUnit runtime proof in this container: `NOT RUN` (`vendor/` absent from uploaded ZIP)
+
+### Next required implementation batch
+- run the full PHPUnit scope in a local environment with `vendor/` present to convert file/syntax proof into runtime proof
+- optionally tighten owner-doc wording if later sessions decide to rename evaluator-internal `NOT_EVALUABLE` fully into runtime-visible `BLOCKED` before telemetry leaves the pipeline boundary
 
 
-- Sesi 55 unblock tervalidasi pada level runtime, tetapi masih menyisakan `DOC SYNC ISSUE` packaging artifact:
-  - helper `tools/market_data/session54_local_phpunit_proof.ps1` sudah dijalankan oleh user di environment lokal dengan output `[RUN] vendor\bin\phpunit --filter post_switch_resolution_mismatch ...`, `[RUN] vendor\bin\phpunit --filter preserves_approval_state ...`, dan `[RUN] vendor\bin\phpunit tests\Unit\MarketData\MarketDataPipelineIntegrationTest.php`;
-  - helper juga melaporkan artefak berhasil ditulis ke `storage/app/market_data/evidence/local_phpunit/session54_post_switch_resolution_mismatch_20260330_132205/proof_summary.txt`;
-  - namun ZIP source-of-truth sesi 55 yang diupload untuk sesi ini tidak membawa folder evidence tersebut, sehingga sync artifact masih belum rapat walaupun proof runtime-nya sendiri sudah observed di percakapan.
+## SESSION 6 — EVIDENCE EXPORT + REPLAY SYNC (FINAL RUNTIME PROOF)
 
-- Sesi 56 DONE pada level batch:
-  - DB-backed integration proof kini juga mencakup changed-content correction dengan **post-switch current-pointer resolution mismatch** saat fallback prior-readable sendiri sudah malformed pada `eod_current_publication_pointer.run_id`, sehingga finalize tetap `HELD` / `NOT_READABLE` tetapi **tetap tidak mengarang** `trade_date_effective`;
-  - batch ini menutup varian conflict sempit namun load-bearing yang memang masih tersisa di owner-doc effective-date/read-model contracts: walaupun konflik utama terjadi pasca-switch, fallback tetap hanya boleh dipakai bila chain pointer/publication/run untuk prior-readable date masih valid;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_malformed_fallback_pointer_does_not_invent_effective_trade_date()`;
-  - proof minimum yang bisa dijalankan di container pada repo ZIP ini tetap syntax lint:
-    - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - validasi lokal final sesi 56 kini juga sudah observed di environment user dengan:
-    - `vendor\bin\phpunit --filter malformed_fallback_pointer tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (2 tests, 57 assertions)`;
-    - `vendor\bin\phpunit --filter post_switch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (2 tests, 58 assertions)`;
-    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (21 tests, 459 assertions)`.
+### Final validation (post local execution)
+- PHPUnit full suite: PASS (136 tests, 1492 assertions)
+- Coverage comparison fix applied:
+  - `coverage_ratio` and `coverage_min_threshold` now compared numerically (not string-based)
+  - eliminates false mismatch due to decimal formatting differences
+- Test helper fix:
+  - `makeRun()` now allows `sealed_at = null` for telemetry scenarios
 
-
-- Sesi 57 DONE pada level batch:
-  - DB-backed integration proof kini juga mencakup changed-content correction dengan **post-switch current-pointer resolution mismatch** saat fallback prior-readable sendiri mengalami `publication_version` mismatch terhadap publication row yang ditunjuk, sehingga finalize tetap `HELD` / `NOT_READABLE` dan `trade_date_effective` tetap `null`;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_publication_version_mismatch_does_not_invent_effective_trade_date()`;
-  - validasi lokal final sesi 57 kini tersinkron di source-of-truth dengan evidence folder `storage/app/market_data/evidence/local_phpunit/session57_phpunit_proof/` berisi:
-    - `vendor\bin\phpunit --filter publication_version_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (2 tests, 52 assertions)`;
-    - `vendor\bin\phpunit --filter post_switch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (3 tests, 88 assertions)`;
-    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (22 tests, 489 assertions)`.
-
-- Sesi 58 DONE pada level batch:
-  - DB-backed integration proof kini juga mencakup changed-content correction dengan **post-switch current-pointer resolution mismatch** saat fallback prior-readable sendiri mengalami `trade_date` mismatch antara pointer trade date dan publication row yang ditunjuk, sehingga finalize tetap `HELD` / `NOT_READABLE` dan `trade_date_effective` tetap `null`;
-  - batch ini tetap grounded pada owner-doc effective-date/read-model/fallback contracts: fallback hanya boleh dipakai bila pointer/publication/run chain prior-readable masih valid secara material, termasuk kecocokan `trade_date`;
-  - implementasi konkret sesi ini ada di `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` melalui test `test_run_daily_correction_with_post_switch_resolution_mismatch_and_fallback_trade_date_mismatch_does_not_invent_effective_trade_date()`;
-  - proof minimum yang bisa dijalankan di container pada repo ZIP ini tetap syntax lint:
-    - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> passed;
-  - validasi lokal final sesi 58 kini juga sudah observed di environment user dengan:
-    - `vendor\bin\phpunit --filter trade_date_mismatch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (1 test, 33 assertions)`;
-    - `vendor\bin\phpunit --filter post_switch tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (4 tests, 121 assertions)`;
-    - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> `OK (23 tests, 522 assertions)`;
-  - evidence lokal sesi 58 juga sudah dibuat di `storage/app/market_data/evidence/local_phpunit/session58_phpunit_proof/`.
-
-## Remaining Work
-- Pilih batch berikutnya dari parent contract yang masih `PARTIAL`, khususnya varian correction/runtime DB-backed lain yang masih grounded di owner-doc tetapi belum diberi proof minimum.
-- Prioritas paling masuk akal setelah sesi 63:
-  - sisa broader correction conflict/error matrix di luar minimum approval-gate, missing-baseline guard, malformed-baseline-pointer guard, missing-publication-pointer guard, non-readable-baseline-run guard, missing-run-row-behind-publication guard, pointer/publication trade-date mismatch guard, run-current-mirror mismatch guard, publication-current-mirror mismatch guard, pointer/publication run-id mismatch guard, pointer/publication publication-version mismatch guard, malformed-fallback effective-date guard, history-promotion failure, post-switch resolution mismatch guard, dan varian changed-content promote/current-switch conflict lain yang masih belum diberi proof minimum;
-  - pertahankan pola packaging `storage/app/market_data/evidence/local_phpunit/...` di ZIP berikutnya agar checkpoint proof tetap traceable tanpa membuka ulang `DOC SYNC ISSUE` yang sudah tertutup.
-
+### Final state
+- evidence export: COVERAGE-AWARE (PROVEN)
+- replay verification: COVERAGE-AWARE (PROVEN)
+- replay persistence: COVERAGE CONTEXT PRESERVED (PROVEN)
+- no regression in pipeline or other domains
 

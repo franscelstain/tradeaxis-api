@@ -689,7 +689,13 @@ class MarketDataPipelineService
             return $outcome['reason_code'];
         }
 
-        return $this->resolveCoverageReasonCode($run, $outcome);
+        $coverageReasonCode = $this->resolveCoverageReasonCode($run, $outcome);
+
+        if ($coverageReasonCode === 'COVERAGE_THRESHOLD_MET') {
+            return null;
+        }
+
+        return $coverageReasonCode;
     }
 
     private function resolveCoverageReasonCode($run, array $outcome)
