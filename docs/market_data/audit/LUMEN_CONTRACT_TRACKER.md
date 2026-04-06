@@ -3,7 +3,7 @@
 ## Summary
 Semua contract core coverage/finalize/evidence/publication readability sudah DONE.
 
-Masih ada family operasional external source yang belum full DONE. Pada sesi ini diambil batch homogen untuk menutup gap rerun strategy minimum pada backfill operator agar source path per tanggal tidak berhenti di raw run notes.
+Masih ada family operasional external source yang belum full DONE. Pada sesi ini diambil batch homogen untuk menutup gap proof berbasis run nyata pada jalur `market-data:backfill` agar source context summary tidak berhenti di unit/stub path saja.
 
 ---
 
@@ -33,7 +33,7 @@ Status: PARTIAL
 | Error classification | PARTIAL | reason classification minimum sudah ada pada acquisition failure path; coverage operasional belum penuh |
 | Partial failure handling | PARTIAL | ingest failure persistence sudah benar; scope family belum full selesai |
 | Fallback | PARTIAL | manual-file fallback operator path pada `market-data:daily` sudah ada dengan explicit `input_file`; fallback multi-path/operator proof yang lebih luas belum ada |
-| Rerun strategy | PARTIAL | rerun date-range via `market-data:backfill` sekarang punya source-context summary minimum; fallback multi-path/live proof masih belum lengkap |
+| Rerun strategy | PARTIAL | rerun date-range via `market-data:backfill` sekarang punya source-context summary minimum; blocker harness SQLite `market_calendar` sudah ditutup, tetapi fallback multi-path/live proof masih belum lengkap |
 | Logging ops | PARTIAL | source-context logging minimum + success-after-retry telemetry minimum sekarang muncul di command summary, run evidence export, dan punya integration proof berbasis run nyata; dashboard/export menyeluruh belum lengkap |
 
 #### Batch In Scope in This Session
@@ -180,3 +180,41 @@ Honest validation state for this scoped batch:
 - syntax validation tersedia
 - integration proof di repo sudah ada
 - targeted/full PHPUnit batch ini belum boleh diklaim sampai user menjalankan lokal
+
+#### Batch In Scope in This Session
+Status: PARTIAL (implemented, pending local PHPUnit proof)
+
+Scope yang dikerjakan pada sesi ini:
+- integration proof berbasis run nyata untuk source context minimum pada summary artifact `market-data:backfill`
+- path rerun `source_mode=api` dengan success-after-retry ke `market_data_backfill_summary.json`
+- path rerun `source_mode=manual_file` ke `market_data_backfill_summary.json`
+
+Proof implementasi di code:
+- `MarketDataPipelineIntegrationTest` sekarang menjalankan `MarketDataBackfillService` DB-backed pada trading dates nyata dari `market_calendar`
+- proof API rerun memverifikasi `source_name` dan `source_summary` muncul per requested date di summary artifact backfill
+- proof manual-file rerun memverifikasi `source_name=LOCAL_FILE` muncul di summary artifact backfill hasil run nyata
+
+Validation evidence currently available:
+- repo surface sinkron untuk code/doc/test batch ini
+- `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` in container → OK
+- local PHPUnit for new batch → MENUNGGU environment lokal user karena `vendor/` tidak ada di ZIP
+
+Tests added/updated for this batch:
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `test_backfill_api_success_after_retry_writes_source_context_per_date_in_summary_artifact()`
+  - `test_backfill_manual_file_writes_real_run_source_name_in_summary_artifact()`
+
+Honest validation state for this scoped batch:
+- batch code + docs sinkron
+- syntax validation tersedia
+- integration proof di repo sudah ada
+- targeted/full PHPUnit batch ini belum boleh diklaim sampai user menjalankan lokal
+
+
+- hasil verifikasi user membuktikan blocker harness pada proof backfill: SQLite schema belum punya `market_calendar`, sehingga 2 integration test baru gagal sebelum mencapai assertion bisnis
+- `Tests\Support\UsesMarketDataSqlite` sekarang membangun tabel `market_calendar` agar proof backfill memakai dependency calendar yang konsisten dengan repository DB-backed
+- setelah fix harness ini, batch proof backfill kembali ke status PARTIAL dan menunggu rerun PHPUnit lokal user
+- hasil rerun user setelah fix harness menunjukkan blocker schema sudah tertutup: tinggal 1 failure assertion pada proof retry API backfill
+- akar masalah assertion bukan di business logic pipeline/backfill, tetapi di test callback yang salah mengekstrak requested date dari query, padahal endpoint template memakai path `/eod/{date}`
+- `MarketDataPipelineIntegrationTest` sekarang membaca date dari URL path terlebih dahulu dan fallback ke query hanya bila diperlukan, sehingga retry telemetry benar-benar dihitung per requested trade date
+- status batch ini kembali PARTIAL dan menunggu rerun PHPUnit lokal user untuk pembuktian final

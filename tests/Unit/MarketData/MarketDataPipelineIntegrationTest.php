@@ -9,6 +9,7 @@ use App\Application\MarketData\Services\EodIndicatorsComputeService;
 use App\Application\MarketData\Services\FinalizeDecisionService;
 use App\Application\MarketData\Services\IndicatorVectorService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
+use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\PublicationDiffService;
 use App\Application\MarketData\Services\PublicationFinalizeOutcomeService;
@@ -263,6 +264,98 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertStringContainsString('source_attempt_count=2', (string) $runRow->notes);
         $this->assertStringContainsString('source_success_after_retry=yes', (string) $runRow->notes);
         $this->assertStringContainsString('source_final_http_status=200', (string) $runRow->notes);
+    }
+
+
+    public function test_backfill_api_success_after_retry_writes_source_context_per_date_in_summary_artifact(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedMarketCalendarRange('2026-03-20', '2026-03-23');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+
+        config()->set('market_data.source.api.endpoint_template', 'https://example.test/eod/{date}?symbols={symbols}');
+        config()->set('market_data.source.api.response_rows_path', 'rows');
+        config()->set('market_data.source.api.provider', 'generic');
+        config()->set('market_data.source.api.source_name', 'API_FREE');
+        config()->set('market_data.provider.api_retry_max', 2);
+        config()->set('market_data.provider.api_backoff_ms', 5);
+        config()->set('market_data.provider.api_throttle_qps', 1000);
+
+        $attemptsByDate = [];
+        $service = $this->makeBackfillServiceWithApiFetcher(function (string $url) use (&$attemptsByDate) {
+            $path = (string) parse_url($url, PHP_URL_PATH);
+            $date = trim((string) basename($path));
+
+            if ($date === '') {
+                parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+                $date = (string) ($query['date'] ?? '');
+            }
+
+            $attemptsByDate[$date] = ($attemptsByDate[$date] ?? 0) + 1;
+
+            if ($attemptsByDate[$date] === 1) {
+                return [
+                    'status' => 429,
+                    'body' => '{"error":"rate limit"}',
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => json_encode(['rows' => [[
+                    'ticker_code' => 'BBCA',
+                    'trade_date' => $date,
+                    'open' => 121,
+                    'high' => 125,
+                    'low' => 120,
+                    'close' => 124,
+                    'volume' => 2000,
+                    'adj_close' => 124,
+                    'captured_at' => $date.'T17:20:00+07:00',
+                ]]]),
+            ];
+        });
+
+        $outputDir = storage_path('framework/testing/market_data_pipeline/backfill-api-retry');
+        $summary = $service->execute('2026-03-20', '2026-03-23', 'api', $outputDir, false);
+        $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
+
+        $this->assertTrue($summary['all_passed']);
+        $this->assertCount(2, $summary['cases']);
+        $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
+        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $summary['cases'][0]['source_summary']);
+        $this->assertSame('API_FREE', $summaryFile['cases'][1]['source_name']);
+        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $summaryFile['cases'][1]['source_summary']);
+        $this->assertSame(['2026-03-20' => 2, '2026-03-23' => 2], $attemptsByDate);
+    }
+
+    public function test_backfill_manual_file_writes_real_run_source_name_in_summary_artifact(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedMarketCalendarRange('2026-03-20', '2026-03-20');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $outputDir = storage_path('framework/testing/market_data_pipeline/backfill-manual-file');
+        $summary = $this->makeBackfillService()->execute('2026-03-20', '2026-03-20', 'manual_file', $outputDir, false);
+        $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
+
+        $this->assertTrue($summary['all_passed']);
+        $this->assertSame('LOCAL_FILE', $summary['cases'][0]['source_name']);
+        $this->assertArrayNotHasKey('source_summary', $summary['cases'][0]);
+        $this->assertSame('LOCAL_FILE', $summaryFile['cases'][0]['source_name']);
+        $this->assertArrayNotHasKey('source_input_file', $summaryFile['cases'][0]);
     }
 
 
@@ -4056,6 +4149,16 @@ class MarketDataPipelineIntegrationTest extends TestCase
         @rmdir($path);
     }
 
+    private function makeBackfillService(): MarketDataBackfillService
+    {
+        return new MarketDataBackfillService(new App\Infrastructure\Persistence\MarketData\MarketCalendarRepository(), $this->makePipeline());
+    }
+
+    private function makeBackfillServiceWithApiFetcher(callable $fetcher): MarketDataBackfillService
+    {
+        return new MarketDataBackfillService(new App\Infrastructure\Persistence\MarketData\MarketCalendarRepository(), $this->makePipelineWithApiFetcher($fetcher));
+    }
+
     private function makePipeline(): MarketDataPipelineService
     {
         return $this->makePipelineWithOverrides(new EodPublicationRepository(), new EodArtifactRepository());
@@ -4138,6 +4241,23 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'listed_date' => '2020-01-01',
             'delisted_date' => null,
         ]);
+    }
+
+    private function seedMarketCalendarRange(string $startDate, string $endDate): void
+    {
+        $date = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+
+        while ($date->lessThanOrEqualTo($end)) {
+            DB::table('market_calendar')->insert([
+                'cal_date' => $date->toDateString(),
+                'is_trading_day' => in_array($date->dayOfWeekIso, [6, 7], true) ? 0 : 1,
+                'market_code' => 'IDX',
+                'created_at' => Carbon::now()->toDateTimeString(),
+                'updated_at' => Carbon::now()->toDateTimeString(),
+            ]);
+            $date->addDay();
+        }
     }
 
     private function seedHistoricalBars(string $startDate, string $endDate, int $tickerId, float $startClose, int $startVolume): void

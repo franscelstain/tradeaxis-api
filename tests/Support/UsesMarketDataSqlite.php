@@ -60,6 +60,14 @@ trait UsesMarketDataSqlite
             $table->date('delisted_date')->nullable();
         });
 
+        $schema->create('market_calendar', function (Blueprint $table) {
+            $table->date('cal_date')->primary();
+            $table->boolean('is_trading_day')->default(true);
+            $table->string('market_code', 16)->default('IDX');
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
+        });
+
         $schema->create('eod_runs', function (Blueprint $table) {
             $table->increments('run_id');
             $table->date('trade_date_requested');

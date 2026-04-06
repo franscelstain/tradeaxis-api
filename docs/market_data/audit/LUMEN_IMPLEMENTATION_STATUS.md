@@ -4,7 +4,7 @@
 - Domain: market_data
 - Current State: SELESAI (contract scope inti)
 - Operational State: PARTIAL
-- Last Session: BACKFILL RERUN SOURCE CONTEXT
+- Last Session: BACKFILL RUN-BACKED SOURCE PROOF
 
 ---
 
@@ -45,6 +45,8 @@
   - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
   - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
 - current session PHPUnit/artisan execution di container → BELUM DIJALANKAN di container karena ZIP tidak menyertakan `vendor/`
+- current session syntax validation from uploaded ZIP (backfill run-backed source proof batch) → OK
+  - `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
 - current session syntax validation from uploaded ZIP (source-evidence batch) → OK
   - `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
   - `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
@@ -331,3 +333,104 @@ PARTIAL (OPERATIONAL DOMAIN ONLY; CURRENT BATCH VERIFIED, WIDER OPERATIONAL FAMI
 ### Honest Status
 - Batch sesi ini: PARTIAL sampai user menjalankan integration PHPUnit lokal
 - Domain market-data keseluruhan: contract core tetap SELESAI, operational family tetap PARTIAL
+
+## Session Update — Backfill Run-Backed Source Proof
+
+### Scope
+- mengambil batch homogen dari family `External Source Operational Resilience`
+- fokus pada gap proof berbasis run nyata untuk rerun strategy minimum di jalur `market-data:backfill`
+- memastikan source context minimum pada summary artifact backfill benar-benar berasal dari run DB-backed, bukan hanya stub/unit path
+
+### What Was Implemented
+- menambahkan integration proof untuk `market-data:backfill` dengan `source_mode=api` yang sukses setelah retry sehingga `source_name` dan `source_summary` benar-benar turun ke `market_data_backfill_summary.json` per trading date
+- menambahkan integration proof untuk `market-data:backfill` dengan `source_mode=manual_file` sehingga `source_name=LOCAL_FILE` benar-benar muncul di summary artifact hasil rerun nyata
+- menambahkan helper integration-level backfill service dan seed `market_calendar` agar proof memakai repository DB-backed yang sama dengan pipeline/backfill production path
+
+### Code Changed
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+
+### Test Coverage Added/Updated
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `test_backfill_api_success_after_retry_writes_source_context_per_date_in_summary_artifact()`
+  - `test_backfill_manual_file_writes_real_run_source_name_in_summary_artifact()`
+
+### Verification Evidence Available Now
+- syntax check file yang diubah di container → OK
+  - `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- PHPUnit lokal untuk batch ini → MENUNGGU user run karena `vendor/` tidak ada di ZIP
+
+### Contract Result
+- proof run-backed untuk source context minimum pada summary artifact `market-data:backfill` sekarang tersedia di repo surface
+- family operational resilience tetap PARTIAL karena fallback external source multi-path/live runtime proof masih belum ada
+
+### Honest Status
+- Batch sesi ini: PARTIAL sampai user menjalankan integration PHPUnit lokal
+- Domain market-data keseluruhan: contract core tetap SELESAI, operational family tetap PARTIAL
+
+
+
+#### Batch In Scope in This Session
+Status: PARTIAL (harness fixed, rerun local PHPUnit proof required)
+
+Scope yang dikerjakan pada sesi ini:
+- menutup blocker load-bearing yang ditemukan saat user menjalankan integration test batch backfill source-context
+- fokus sempit pada SQLite harness agar dependency `market_calendar` tersedia secara deterministik untuk proof backfill DB-backed
+
+Root cause yang tervalidasi dari hasil user:
+- targeted/full PHPUnit gagal pada 2 test baru karena SQLite test schema belum memiliki tabel `market_calendar`
+- error yang muncul: `SQLSTATE[HY000]: General error: 1 no such table: market_calendar`
+- akar masalah ada di test harness, bukan pada business logic `MarketDataBackfillService`
+
+Proof implementasi di code:
+- `Tests\Support\UsesMarketDataSqlite` sekarang membuat tabel `market_calendar`
+- schema minimal yang ditambahkan: `cal_date`, `is_trading_day`, `market_code`, `created_at`, `updated_at`
+- batch proof backfill tidak lagi bergantung pada asumsi migration global untuk dependency calendar
+
+Code/doc changed for this fix:
+- `tests/Support/UsesMarketDataSqlite.php`
+- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+
+Validation evidence currently available:
+- hasil user menunjukkan failure konsisten karena missing table `market_calendar`
+- patch harness sudah diterapkan di repo
+- rerun targeted/full PHPUnit masih menunggu user karena `vendor/` tidak ada di ZIP
+
+Honest validation state for this scoped batch:
+- blocker harness untuk dependency `market_calendar` sudah ditutup di code
+- integration proof backfill kembali ke status PARTIAL sampai user rerun PHPUnit lokal
+
+#### Batch In Scope in This Session
+Status: PARTIAL (assertion fix applied, rerun local PHPUnit proof required)
+
+Scope yang dikerjakan pada sesi ini:
+- menutup failure assertion yang tersisa setelah harness `market_calendar` diperbaiki
+- fokus sempit pada deterministic retry proof untuk backfill API agar penghitungan `attempt_count` benar-benar berbasis requested trade date
+
+Root cause yang tervalidasi dari hasil user:
+- targeted/full PHPUnit sudah melewati blocker schema, tetapi masih gagal pada 1 assertion `source_summary`
+- expected: `attempt_count=2 | success_after_retry=yes | final_http_status=200`
+- actual: `attempt_count=1 | final_http_status=200`
+- akar masalah ada di callback test: date diekstrak dari query param `date`, padahal endpoint template menaruh `{date}` di URL path (`/eod/{date}`)
+- akibatnya dua requested date berbagi key attempt yang sama, sehingga date kedua tampak sebagai success-first-attempt
+
+Proof implementasi di code:
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` sekarang mengekstrak requested date dari `PHP_URL_PATH` / `basename($path)` lebih dulu
+- fallback ke query `date` tetap dipertahankan bila endpoint template lain memakai query param
+- assertion per-date retry proof sekarang selaras dengan contract endpoint template yang dipakai test
+
+Code/doc changed for this fix:
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+
+Validation evidence currently available:
+- hasil user menunjukkan schema blocker sudah tertutup dan tinggal 1 failure assertion pada proof API backfill
+- `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` in container → OK
+- rerun targeted/full PHPUnit masih menunggu environment lokal user karena `vendor/` tidak ada di ZIP
+
+Honest validation state for this scoped batch:
+- bug assertion test sudah ditutup di code
+- integration proof batch ini tetap PARTIAL sampai user rerun PHPUnit lokal
