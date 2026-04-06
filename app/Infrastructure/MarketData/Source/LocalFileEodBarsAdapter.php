@@ -13,6 +13,11 @@ class LocalFileEodBarsAdapter
             throw new \RuntimeException('Source mode '.$sourceMode.' belum diimplementasikan. Gunakan manual_file atau manual_entry.');
         }
 
+        $explicitInputFile = $this->resolveExplicitInputFilePath();
+        if ($explicitInputFile !== null) {
+            return $this->loadExplicitInputFile($explicitInputFile, $tradeDate);
+        }
+
         $basePath = base_path(config('market_data.source.local_directory'));
         $jsonPath = $basePath.'/'.str_replace('{date}', $tradeDate, config('market_data.source.file_template_json'));
         $csvPath = $basePath.'/'.str_replace('{date}', $tradeDate, config('market_data.source.file_template_csv'));
@@ -26,6 +31,43 @@ class LocalFileEodBarsAdapter
         }
 
         throw new \RuntimeException('Sumber bars lokal untuk '.$tradeDate.' tidak ditemukan pada path JSON/CSV yang dikonfigurasi.');
+    }
+
+    private function resolveExplicitInputFilePath()
+    {
+        $configured = trim((string) config('market_data.source.local_input_file', ''));
+        if ($configured == '') {
+            return null;
+        }
+
+        $candidate = $this->isAbsolutePath($configured) ? $configured : base_path($configured);
+
+        if (! file_exists($candidate)) {
+            throw new \RuntimeException('Explicit local input file not found: '.$configured);
+        }
+
+        return $candidate;
+    }
+
+    private function loadExplicitInputFile($path, $tradeDate)
+    {
+        $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+        if ($extension === 'json') {
+            return $this->loadJson($path, $tradeDate);
+        }
+
+        if ($extension === 'csv') {
+            return $this->loadCsv($path, $tradeDate);
+        }
+
+        throw new \RuntimeException('Explicit local input file must use .json or .csv extension.');
+    }
+
+    private function isAbsolutePath($path)
+    {
+        return Str::startsWith($path, ['/','\\'])
+            || preg_match('/^[A-Za-z]:[\\\/]/', $path) === 1;
     }
 
     private function loadJson($path, $tradeDate)

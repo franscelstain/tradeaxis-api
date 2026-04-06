@@ -149,6 +149,66 @@ class MarketDataPipelineServiceTest extends TestCase
         $this->assertNull($result[2]);
     }
 
+    public function test_complete_ingest_persists_manual_input_file_in_notes_and_event_payload(): void
+    {
+        config()->set('market_data.source.local_input_file', 'storage/app/market_data/operator/manual-2026-03-24.csv');
+
+        $runs = m::mock(EodRunRepository::class);
+        $bars = m::mock(EodBarsIngestService::class);
+        $indicators = m::mock(EodIndicatorsComputeService::class);
+        $eligibility = m::mock(EodEligibilityBuildService::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+        $artifacts = m::mock(EodArtifactRepository::class);
+        $hashes = m::mock(DeterministicHashService::class);
+        $finalize = m::mock(FinalizeDecisionService::class);
+        $diffs = m::mock(PublicationDiffService::class);
+        $outcomes = m::mock(PublicationFinalizeOutcomeService::class);
+        $coverageGate = m::mock(CoverageGateEvaluator::class);
+
+        $run = (object) [
+            'run_id' => 88,
+            'trade_date_requested' => '2026-03-24',
+            'stage' => 'INGEST_BARS',
+            'source' => 'manual_file',
+            'notes' => null,
+            'supersedes_run_id' => null,
+        ];
+
+        $runs->shouldReceive('getOrCreateOwningRun')->once()->andReturn($run);
+        $runs->shouldReceive('touchStage')->once()->andReturn($run);
+        $runs->shouldReceive('appendEvent')->twice()->withArgs(function ($runArg, $stage, $eventType, $severity, $message, $reasonCode, $payload) {
+            if ($eventType === 'STAGE_STARTED') {
+                return ($payload['source_mode'] ?? null) === 'manual_file'
+                    && ($payload['input_file'] ?? null) === 'storage/app/market_data/operator/manual-2026-03-24.csv';
+            }
+
+            return ($payload['source_mode'] ?? null) === 'manual_file'
+                && ($payload['input_file'] ?? null) === 'storage/app/market_data/operator/manual-2026-03-24.csv';
+        });
+        $runs->shouldReceive('updateTelemetry')->once()->with($run, m::on(function ($telemetry) {
+            return ($telemetry['notes'] ?? null) === 'candidate_publication_id=44; source_name=LOCAL_FILE; source_input_file=manual-2026-03-24.csv';
+        }))->andReturn($run);
+
+        $bars->shouldReceive('ingest')->once()->andReturn([
+            'publication_id' => 44,
+            'publication_version' => 1,
+            'bars_rows_written' => 10,
+            'invalid_bar_count' => 0,
+            'source_name' => 'LOCAL_FILE',
+            'storage_target' => 'eod_bars',
+            'source_acquisition' => [],
+        ]);
+
+        $service = new MarketDataPipelineService($runs, $bars, $indicators, $eligibility, $publications, $corrections, $artifacts, $hashes, $finalize, $diffs, $outcomes, $coverageGate);
+
+        $input = new MarketDataStageInput('2026-03-24', 'manual_file', null, 'INGEST_BARS', null);
+        $result = $service->completeIngest($input);
+
+        $this->assertSame(88, $result->run_id);
+        config()->set('market_data.source.local_input_file', null);
+    }
+
     public function test_complete_ingest_persists_source_name_in_notes_and_event_payload(): void
     {
         [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility, $barsIngest] = $this->makeService();

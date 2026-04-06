@@ -105,6 +105,16 @@ Execute the daily sequence:
 - seal
 - finalize
 
+#### Minimum input
+- optional `requested_date`
+- optional `source_mode`
+- optional `input_file` when operator explicitly runs `source_mode=manual_file` on a one-off fallback/recovery path
+
+#### Minimum behavior
+- `input_file` is only a manual-file override and must not silently alter API mode behavior
+- explicit `input_file` accepts `.json` or `.csv` only
+- explicit `input_file` must be reflected in operator-visible command output and minimum ingest telemetry when used
+
 ### 8. `market-data:backfill`
 #### Purpose
 Historical backfill/recompute per trading-date range.

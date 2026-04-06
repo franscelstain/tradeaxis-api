@@ -58,6 +58,12 @@ Sudah diimplementasikan minimal pada success path ingest API.
 - `MarketDataPipelineService` menulis ringkasan tersebut ke payload `STAGE_COMPLETED` dan ke `eod_runs.notes` minimum (`source_attempt_count`, `source_success_after_retry`, `source_final_http_status`)
 - tujuan batch ini tetap audit trail minimum, bukan operator dashboard/export khusus
 
+### Manual fallback operator path
+Sudah diimplementasikan minimum pada command harian utama.
+- operator dapat menjalankan `market-data:daily --source_mode=manual_file --input_file=...` saat API mode tidak aman dipakai
+- explicit input file `.json` / `.csv` mengoverride lookup direktori default hanya untuk eksekusi command tersebut
+- payload event stage ingest dan `eod_runs.notes` sekarang dapat membawa jejak minimum `input_file` / `source_input_file` untuk fallback manual yang dipicu operator
+
 ### Manual rerun path
 Sudah tersedia melalui command pipeline yang sudah ada.
 - operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu

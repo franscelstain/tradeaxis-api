@@ -42,6 +42,7 @@ Every normalized source row must provide:
 - throttle + jitter between requests when API mode is used
 - retry with backoff on transient API errors when API mode is used
 - manual-file mode must validate schema before rows are accepted
+- for operator fallback on the primary daily command, `source_mode=manual_file` may use an explicit `input_file` (`.json` / `.csv`) instead of directory-template lookup
 - every acquisition stage must record source mode and source name in run telemetry
 - for the active default `yahoo_finance` provider path, ingestion resolves the active ticker universe first, then fetches provider payloads per ticker symbol before normalization into canonical source rows
 - for the active default `yahoo_finance` provider path, EOD requests use daily interval semantics and provider-specific symbol mapping must stay inside the source adapter, not leak into downstream canonicalization

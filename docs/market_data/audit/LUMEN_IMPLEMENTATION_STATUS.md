@@ -4,7 +4,7 @@
 - Domain: market_data
 - Current State: SELESAI (contract scope inti)
 - Operational State: PARTIAL
-- Last Session: SUCCESS-AFTER-RETRY TELEMETRY MINIMUM
+- Last Session: MANUAL-FILE FALLBACK OPERATOR PATH
 
 ---
 
@@ -18,7 +18,8 @@
 - Attempt context persistence ke run failure event sudah diimplementasikan
 - Ingest failure persistence setelah rollback sudah diimplementasikan
 - Source context logging minimum sekarang diperluas pada ingest stage event dan run notes
-- Historical local evidence dari sesi sebelumnya menunjukkan full PHPUnit suite PASS (`146 tests, 1602 assertions`) sebelum batch sesi ini
+- Manual-file fallback operator path pada `market-data:daily` sekarang mendukung explicit `input_file` override yang tertelusur di telemetry minimum
+- Historical local evidence dari sesi sebelumnya menunjukkan full PHPUnit suite PASS (`148 tests, 1608 assertions`) sebelum batch sesi ini
 
 ---
 
@@ -34,73 +35,69 @@
   - filter `test_start_stage_logs_api_source_context_in_stage_started_event` → `OK (1 test, 3 assertions)`
   - filter `test_complete_ingest_persists_source_name_in_notes_and_event_payload` → `OK (1 test, 1 assertion)`
 - full PHPUnit suite after previous validated batch → PASS (`148 tests, 1608 assertions`)
-- current session syntax validation from uploaded ZIP → OK for changed code/test files
+- current session syntax validation from uploaded ZIP → OK
+  - `app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php`
+  - `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  - `app/Application/MarketData/Services/MarketDataPipelineService.php`
+  - `tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php`
+  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
 - current session PHPUnit/artisan execution → BELUM DIJALANKAN di container karena ZIP tidak menyertakan `vendor/`
 
 ---
 
-## Session Update — Success-After-Retry Telemetry Minimum
+## Session Update — Manual-File Fallback Operator Path
 
 ### Scope
 - mengambil batch homogen dari family `External Source Operational Resilience`
-- fokus pada gap owner doc: success-after-retry telemetry minimum
-- memastikan audit trail source acquisition tidak berhenti di failure path saja
+- fokus pada gap owner doc: manual-file fallback operator path pada command harian utama
+- memastikan fallback operator tidak berhenti di contract text saja dan punya jejak runtime minimum yang eksplisit
 
 ### What Was Implemented
-- `PublicApiEodBarsAdapter` sekarang menyimpan ringkasan acquisition terakhir dan membuka method `consumeLastAcquisitionTelemetry()`
-- ringkasan success path minimum sekarang mencakup:
-  - `provider`
-  - `source_name`
-  - `timeout_seconds`
-  - `retry_max`
-  - `attempt_count`
-  - `attempts`
-  - `success_after_retry`
-  - `final_http_status`
-  - `final_reason_code`
-  - `captured_at`
-- failure context juga diselaraskan agar menyimpan `success_after_retry=false` pada telemetry terakhir
-- `EodBarsIngestService` sekarang meneruskan telemetry acquisition API ke hasil ingest lewat key `source_acquisition`
-- `MarketDataPipelineService::completeIngest()` sekarang:
-  - menulis `source_acquisition` ke payload `STAGE_COMPLETED`
-  - menambahkan ringkasan minimum ke `eod_runs.notes`:
-    - `source_attempt_count=...`
-    - `source_success_after_retry=yes`
-    - `source_final_http_status=...`
+- `DailyPipelineCommand` sekarang mendukung `--input_file=` untuk fallback operator satu kali pada `source_mode=manual_file`
+- override file eksplisit hanya aktif selama eksekusi command lalu dipulihkan agar tidak bocor ke run berikutnya
+- `LocalFileEodBarsAdapter` sekarang dapat membaca explicit input file `.json` / `.csv` dari `market_data.source.local_input_file` sebelum fallback ke directory-template default
+- `MarketDataPipelineService::completeIngest()` sekarang menulis jejak minimum fallback manual ke:
+  - payload `STAGE_STARTED` / `STAGE_COMPLETED` melalui field `input_file`
+  - `eod_runs.notes` melalui segment `source_input_file=...`
+- jejak minimum ini membuat operator bisa membedakan fallback manual eksplisit vs lookup direktori default tanpa menambah contract baru di luar owner docs
 
 ### Code Changed
-- `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`
-- `app/Application/MarketData/Services/EodBarsIngestService.php`
+- `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+- `app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php`
 - `app/Application/MarketData/Services/MarketDataPipelineService.php`
-- `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
-- `tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+- `tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php`
 - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
 - `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+- `docs/market_data/book/Source_Data_Acquisition_Contract_LOCKED.md`
+- `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
 
 ### Test Coverage Added/Updated
-- `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
-  - `test_api_adapter_exposes_success_after_retry_telemetry()`
-- `tests/Unit/MarketData/EodBarsIngestServiceTest.php`
-  - `test_api_ingest_returns_source_acquisition_summary_from_adapter()`
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  - `test_daily_pipeline_command_propagates_manual_input_file_override_without_leaking_config()`
+- `tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php`
+  - `test_fetch_or_load_eod_bars_prefers_explicit_manual_input_file_override()`
+  - `test_fetch_or_load_eod_bars_rejects_explicit_input_file_with_unsupported_extension()`
 - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
-  - `test_complete_ingest_persists_source_name_in_notes_and_event_payload()` diperluas untuk assert `source_acquisition` + ringkasan retry di notes
+  - `test_complete_ingest_persists_manual_input_file_in_notes_and_event_payload()`
 
 ### Verification Evidence Available Now
-- syntax check file yang diubah → OK
-  - `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`
-  - `app/Application/MarketData/Services/EodBarsIngestService.php`
+- syntax check file yang diubah di container → OK
+  - `app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php`
+  - `app/Console/Commands/MarketData/DailyPipelineCommand.php`
   - `app/Application/MarketData/Services/MarketDataPipelineService.php`
-  - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
-  - `tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+  - `tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php`
+  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
   - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
 - PHPUnit lokal untuk batch ini → MENUNGGU user run karena `vendor/` tidak ada di ZIP
 
 ### Contract Result
-- success-after-retry telemetry minimum: IMPLEMENTED
-- logging ops family: tetap PARTIAL karena dashboard/export khusus, fallback nyata, dan rerun strategy operasional belum ada
+- manual-file fallback operator path pada command harian utama: IMPLEMENTED
+- logging ops family: tetap PARTIAL karena dashboard/export khusus dan rerun strategy operasional yang lebih luas belum ada
 
 ### Honest Status
-- Batch sesi ini: PARTIAL sampai user menjalankan PHPUnit lokal untuk proof runtime batch
+- Batch sesi ini: PARTIAL sampai user menjalankan syntax/PHPUnit lokal untuk proof runtime batch
 - Domain market-data keseluruhan: contract core tetap SELESAI, operational family tetap PARTIAL
 
 ---

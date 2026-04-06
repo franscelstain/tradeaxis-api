@@ -127,7 +127,7 @@ class MarketDataPipelineService
                     'notes' => $this->appendRunNotes($run->notes, array_merge([
                         'candidate_publication_id='.$result['publication_id'],
                         'source_name='.(string) $result['source_name'],
-                    ], $this->sourceAcquisitionNoteSegments($sourceAcquisition))),
+                    ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisition))),
                 ]);
 
                 $this->runs->appendEvent(
@@ -790,7 +790,29 @@ class MarketDataPipelineService
             $payload['throttle_qps'] = max(1, (int) config('market_data.provider.api_throttle_qps', 1));
         }
 
+        if (in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
+            $configuredInputFile = trim((string) config('market_data.source.local_input_file', ''));
+            if ($configuredInputFile !== '') {
+                $payload['input_file'] = $configuredInputFile;
+            }
+        }
+
         return $payload;
+    }
+
+
+    private function manualSourceInputNoteSegments($sourceMode)
+    {
+        if (! in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
+            return [];
+        }
+
+        $configuredInputFile = trim((string) config('market_data.source.local_input_file', ''));
+        if ($configuredInputFile === '') {
+            return [];
+        }
+
+        return ['source_input_file='.(string) basename($configuredInputFile)];
     }
 
     private function sourceAcquisitionNoteSegments(array $sourceAcquisition)
