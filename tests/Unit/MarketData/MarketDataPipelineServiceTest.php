@@ -180,6 +180,13 @@ class MarketDataPipelineServiceTest extends TestCase
                 'invalid_bar_count' => 3,
                 'source_name' => 'API_FREE',
                 'storage_target' => 'eod_bars',
+                'source_acquisition' => [
+                    'provider' => 'generic',
+                    'source_name' => 'API_FREE',
+                    'attempt_count' => 2,
+                    'success_after_retry' => true,
+                    'final_http_status' => 200,
+                ],
             ]);
 
         $runs->shouldReceive('updateTelemetry')
@@ -189,7 +196,7 @@ class MarketDataPipelineServiceTest extends TestCase
                     && ($telemetry['bars_rows_written'] ?? null) === 900
                     && ($telemetry['invalid_bar_count'] ?? null) === 3
                     && ($telemetry['publication_version'] ?? null) === 6
-                    && ($telemetry['notes'] ?? null) === 'correction_id=7; candidate_publication_id=44; source_name=API_FREE';
+                    && ($telemetry['notes'] ?? null) === 'correction_id=7; candidate_publication_id=44; source_name=API_FREE; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200';
             }))
             ->andReturn($run);
 
@@ -210,7 +217,11 @@ class MarketDataPipelineServiceTest extends TestCase
                         && ($payload['provider'] ?? null) === 'generic'
                         && ($payload['timeout_seconds'] ?? null) === 15
                         && ($payload['retry_max'] ?? null) === 3
-                        && ($payload['throttle_qps'] ?? null) === 5;
+                        && ($payload['throttle_qps'] ?? null) === 5
+                        && is_array($payload['source_acquisition'] ?? null)
+                        && ($payload['source_acquisition']['attempt_count'] ?? null) === 2
+                        && ($payload['source_acquisition']['success_after_retry'] ?? null) === true
+                        && ($payload['source_acquisition']['final_http_status'] ?? null) === 200;
                 })
             );
 

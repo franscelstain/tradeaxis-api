@@ -135,6 +135,7 @@ class EodBarsIngestService
             'invalid_bar_count' => count($invalidRows),
             'source_name' => strtoupper((string) ($sourceRows[0]['source_name'] ?? config('market_data.source.default_source_name'))),
             'storage_target' => $useHistory ? 'eod_bars_history' : 'eod_bars',
+            'source_acquisition' => $sourceMode === 'api' ? $this->apiSourceAdapter->consumeLastAcquisitionTelemetry() : [],
         ];
     }
 

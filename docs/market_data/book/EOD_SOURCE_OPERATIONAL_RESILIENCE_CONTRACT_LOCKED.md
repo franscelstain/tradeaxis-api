@@ -50,6 +50,14 @@ Sudah ditutup oleh finalize + coverage gate path.
 - requested date tidak boleh menjadi `READABLE` bila ingest/source failure membuat coverage gagal atau blocked
 - fallback publication lama boleh tetap menjadi effective readable date bila memang valid menurut finalize decision
 
+### Success-after-retry telemetry
+Sudah diimplementasikan minimal pada success path ingest API.
+- adapter menyimpan ringkasan acquisition terakhir untuk run ingest API
+- ringkasan minimum berisi `provider`, `source_name`, `timeout_seconds`, `retry_max`, `attempt_count`, `attempts`, `success_after_retry`, `final_http_status`, `final_reason_code`, dan `captured_at`
+- `EodBarsIngestService` meneruskan ringkasan ini ke hasil ingest
+- `MarketDataPipelineService` menulis ringkasan tersebut ke payload `STAGE_COMPLETED` dan ke `eod_runs.notes` minimum (`source_attempt_count`, `source_success_after_retry`, `source_final_http_status`)
+- tujuan batch ini tetap audit trail minimum, bukan operator dashboard/export khusus
+
 ### Manual rerun path
 Sudah tersedia melalui command pipeline yang sudah ada.
 - operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu
@@ -60,7 +68,7 @@ Sudah tersedia melalui command pipeline yang sudah ada.
 ## Remaining Operational Gaps
 Bagian berikut belum boleh dianggap selesai hanya karena adapter retry sudah ada:
 - live-source runtime proof di environment nyata
-- logging/audit trail saat ini baru minimum dan fokus pada failure path; belum mencakup success-after-retry telemetry atau operator dashboard/export khusus
+- logging/audit trail saat ini sudah mencakup failure path dan success-after-retry minimum, tetapi belum punya operator dashboard/export khusus
 - failure handling yang lebih granular bila nanti source acquisition dibuat concurrent atau multi-provider
 - fallback exercise proof berbasis run nyata, bukan hanya contract/unit path
 

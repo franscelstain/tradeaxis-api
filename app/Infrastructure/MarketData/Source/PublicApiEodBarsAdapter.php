@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 class PublicApiEodBarsAdapter
 {
     private $fetcher;
+    private $lastAcquisitionTelemetry = [];
 
     public function __construct(callable $fetcher = null)
     {
@@ -16,6 +17,7 @@ class PublicApiEodBarsAdapter
 
     public function fetchOrLoadEodBars($tradeDate, $sourceMode, array $tickerCodes = [])
     {
+        $this->lastAcquisitionTelemetry = [];
         if ($sourceMode !== 'api') {
             throw new \RuntimeException('Source mode '.$sourceMode.' tidak didukung oleh PublicApiEodBarsAdapter.');
         }
@@ -146,6 +148,19 @@ class PublicApiEodBarsAdapter
         return Str::lower(trim((string) ($apiConfig['provider'] ?? 'generic')));
     }
 
+    public function consumeLastAcquisitionTelemetry()
+    {
+        $telemetry = $this->lastAcquisitionTelemetry;
+        $this->lastAcquisitionTelemetry = [];
+
+        return is_array($telemetry) ? $telemetry : [];
+    }
+
+    private function rememberAcquisitionTelemetry(array $telemetry)
+    {
+        $this->lastAcquisitionTelemetry = $telemetry;
+    }
+
     private function requestWithRetry($url)
     {
         $retryMax = max(0, (int) config('market_data.provider.api_retry_max'));
@@ -181,6 +196,30 @@ class PublicApiEodBarsAdapter
                     throw new SourceAcquisitionException('Source API returned unexpected HTTP status '.$status.'.', 'RUN_SOURCE_MALFORMED_PAYLOAD');
                 }
 
+                $attemptCount = count($attemptLog) + 1;
+                $attempts = $attemptLog;
+                $attempts[] = [
+                    'attempt_number' => $attemptNumber,
+                    'reason_code' => null,
+                    'http_status' => $status,
+                    'throttle_delay_ms' => $throttleDelayMs,
+                    'backoff_delay_ms' => 0,
+                    'will_retry' => false,
+                ];
+
+                $this->rememberAcquisitionTelemetry([
+                    'provider' => $provider,
+                    'source_name' => $sourceName,
+                    'timeout_seconds' => $timeoutSeconds,
+                    'retry_max' => $retryMax,
+                    'attempt_count' => $attemptCount,
+                    'attempts' => $attempts,
+                    'success_after_retry' => $attemptCount > 1,
+                    'final_reason_code' => null,
+                    'final_http_status' => $status,
+                    'captured_at' => $capturedAt,
+                ]);
+
                 return [
                     'body' => $response['body'],
                     'captured_at' => $capturedAt,
@@ -198,7 +237,7 @@ class PublicApiEodBarsAdapter
                     'will_retry' => $willRetry,
                 ];
 
-                $lastException = $e->withContext([
+                $failureContext = [
                     'url' => $url,
                     'provider' => $provider,
                     'source_name' => $sourceName,
@@ -206,9 +245,14 @@ class PublicApiEodBarsAdapter
                     'retry_max' => $retryMax,
                     'attempt_count' => count($attemptLog),
                     'attempts' => $attemptLog,
+                    'success_after_retry' => false,
                     'final_reason_code' => $e->reasonCode(),
                     'captured_at' => $capturedAt,
-                ]);
+                ];
+
+                $this->rememberAcquisitionTelemetry($failureContext);
+
+                $lastException = $e->withContext($failureContext);
 
                 if (! $willRetry) {
                     throw $lastException;

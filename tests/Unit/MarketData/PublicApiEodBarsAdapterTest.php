@@ -206,6 +206,57 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame(2, $calls);
     }
 
+    public function test_api_adapter_exposes_success_after_retry_telemetry()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'endpoint_template' => 'https://example.test/eod/{date}',
+            'response_rows_path' => 'rows',
+        ], 1, 0));
+
+        $calls = 0;
+        $adapter = new PublicApiEodBarsAdapter(function () use (&$calls) {
+            $calls++;
+            if ($calls === 1) {
+                return [
+                    'status' => 429,
+                    'body' => '{"error":"rate limit"}',
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => json_encode(['rows' => [[
+                    'ticker_code' => 'BBCA',
+                    'trade_date' => '2026-03-20',
+                    'open' => 1,
+                    'high' => 2,
+                    'low' => 1,
+                    'close' => 2,
+                    'volume' => 10,
+                ]]]),
+            ];
+        });
+
+        $rows = $adapter->fetchOrLoadEodBars('2026-03-20', 'api');
+        $telemetry = $adapter->consumeLastAcquisitionTelemetry();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(2, $calls);
+        $this->assertSame('generic', $telemetry['provider']);
+        $this->assertSame('API_FREE', $telemetry['source_name']);
+        $this->assertSame(2, $telemetry['attempt_count']);
+        $this->assertTrue($telemetry['success_after_retry']);
+        $this->assertNull($telemetry['final_reason_code']);
+        $this->assertSame(200, $telemetry['final_http_status']);
+        $this->assertCount(2, $telemetry['attempts']);
+        $this->assertSame('RUN_SOURCE_RATE_LIMIT', $telemetry['attempts'][0]['reason_code']);
+        $this->assertTrue($telemetry['attempts'][0]['will_retry']);
+        $this->assertNull($telemetry['attempts'][1]['reason_code']);
+        $this->assertSame(200, $telemetry['attempts'][1]['http_status']);
+        $this->assertFalse($telemetry['attempts'][1]['will_retry']);
+        $this->assertSame([], $adapter->consumeLastAcquisitionTelemetry());
+    }
+
 
     public function test_api_adapter_raises_timeout_after_retry_exhaustion_with_attempt_log_context()
     {

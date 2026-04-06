@@ -116,14 +116,18 @@ class MarketDataPipelineService
             return DB::transaction(function () use ($run, $input, $priorCurrent) {
                 $result = $this->barsIngest->ingest($run, $input->requestedDate, $input->sourceMode, $priorCurrent);
 
+                $sourceAcquisition = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
+                    ? $result['source_acquisition']
+                    : [];
+
                 $run = $this->runs->updateTelemetry($run, [
                     'bars_rows_written' => $result['bars_rows_written'],
                     'invalid_bar_count' => $result['invalid_bar_count'],
                     'publication_version' => $result['publication_version'],
-                    'notes' => $this->appendRunNotes($run->notes, [
+                    'notes' => $this->appendRunNotes($run->notes, array_merge([
                         'candidate_publication_id='.$result['publication_id'],
                         'source_name='.(string) $result['source_name'],
-                    ]),
+                    ], $this->sourceAcquisitionNoteSegments($sourceAcquisition))),
                 ]);
 
                 $this->runs->appendEvent(
@@ -133,7 +137,9 @@ class MarketDataPipelineService
                     'INFO',
                     'Bars ingest stage completed with canonical artifact writes.',
                     null,
-                    $result + $this->sourceTelemetryPayload($input->sourceMode, $result['source_name'])
+                    $result + $this->sourceTelemetryPayload($input->sourceMode, $result['source_name']) + [
+                        'source_acquisition' => $sourceAcquisition,
+                    ]
                 );
 
                 return $run;
@@ -785,6 +791,29 @@ class MarketDataPipelineService
         }
 
         return $payload;
+    }
+
+    private function sourceAcquisitionNoteSegments(array $sourceAcquisition)
+    {
+        if (empty($sourceAcquisition)) {
+            return [];
+        }
+
+        $segments = [];
+
+        if (array_key_exists('attempt_count', $sourceAcquisition)) {
+            $segments[] = 'source_attempt_count='.(int) $sourceAcquisition['attempt_count'];
+        }
+
+        if (! empty($sourceAcquisition['success_after_retry'])) {
+            $segments[] = 'source_success_after_retry=yes';
+        }
+
+        if (array_key_exists('final_http_status', $sourceAcquisition) && $sourceAcquisition['final_http_status'] !== null) {
+            $segments[] = 'source_final_http_status='.(int) $sourceAcquisition['final_http_status'];
+        }
+
+        return $segments;
     }
 
     private function appendRunNotes($existingNotes, array $segments)

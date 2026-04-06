@@ -126,6 +126,91 @@ class EodBarsIngestServiceTest extends TestCase
         $this->assertSame('YAHOO_FINANCE', $result['source_name']);
         $this->assertSame('eod_bars', $result['storage_target']);
     }
+    public function test_api_ingest_returns_source_acquisition_summary_from_adapter()
+    {
+        $this->bindMarketDataConfig([
+            'market_data' => [
+                'platform' => ['timezone' => 'Asia/Jakarta'],
+                'source' => ['default_source_name' => 'YAHOO_FINANCE'],
+            ],
+        ]);
+
+        $localSource = $this->createMock(LocalFileEodBarsAdapter::class);
+        $apiSource = $this->createMock(PublicApiEodBarsAdapter::class);
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+        $publications = $this->createMock(EodPublicationRepository::class);
+
+        $run = new EodRun([
+            'run_id' => 57,
+            'trade_date_requested' => '2026-03-24',
+        ]);
+
+        $publications->expects($this->once())
+            ->method('findCurrentPublicationForTradeDate')
+            ->with('2026-03-24')
+            ->willReturn(null);
+
+        $tickers->expects($this->once())
+            ->method('getUniverseForTradeDate')
+            ->with('2026-03-24')
+            ->willReturn([
+                ['ticker_id' => 1, 'ticker_code' => 'BBCA'],
+            ]);
+
+        $apiSource->expects($this->once())
+            ->method('fetchOrLoadEodBars')
+            ->with('2026-03-24', 'api', ['BBCA'])
+            ->willReturn([
+                [
+                    'ticker_code' => 'BBCA',
+                    'trade_date' => '2026-03-24',
+                    'open' => 100,
+                    'high' => 110,
+                    'low' => 99,
+                    'close' => 108,
+                    'volume' => 1000,
+                    'adj_close' => 108,
+                    'source_name' => 'YAHOO_FINANCE',
+                    'source_row_ref' => 'yahoo:BBCA:2026-03-24',
+                    'captured_at' => '2026-03-24T17:00:00+07:00',
+                ],
+            ]);
+
+        $apiSource->expects($this->once())
+            ->method('consumeLastAcquisitionTelemetry')
+            ->willReturn([
+                'provider' => 'yahoo_finance',
+                'source_name' => 'YAHOO_FINANCE',
+                'attempt_count' => 2,
+                'success_after_retry' => true,
+                'final_http_status' => 200,
+            ]);
+
+        $tickers->expects($this->once())
+            ->method('resolveTickerIdsByCodes')
+            ->with(['BBCA'])
+            ->willReturn(['BBCA' => 1]);
+
+        $publications->expects($this->once())
+            ->method('getOrCreateCandidatePublication')
+            ->willReturn((object) [
+                'publication_id' => 702,
+                'publication_version' => 2,
+            ]);
+
+        $artifacts->expects($this->once())
+            ->method('replaceBars');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+
+        $result = $service->ingest($run, '2026-03-24', 'api');
+
+        $this->assertSame(2, $result['source_acquisition']['attempt_count']);
+        $this->assertTrue($result['source_acquisition']['success_after_retry']);
+        $this->assertSame(200, $result['source_acquisition']['final_http_status']);
+    }
+
 
     public function test_unknown_ticker_code_is_written_as_invalid_row_instead_of_failing_whole_ingest()
     {

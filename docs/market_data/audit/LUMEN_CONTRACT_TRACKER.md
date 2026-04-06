@@ -3,7 +3,7 @@
 ## Summary
 Semua contract core coverage/finalize/evidence/publication readability sudah DONE.
 
-Masih ada family operasional external source yang belum full DONE. Pada sesi ini diambil batch homogen untuk memperkeras source-context logging minimum agar source mode/name/provider/timeout tidak lagi hanya implisit di sebagian path saja.
+Masih ada family operasional external source yang belum full DONE. Pada sesi ini diambil batch homogen untuk menutup gap success-after-retry telemetry minimum agar audit trail source acquisition tidak berhenti di failure path saja.
 
 ---
 
@@ -34,51 +34,54 @@ Status: PARTIAL
 | Partial failure handling | PARTIAL | ingest failure persistence sudah benar; scope family belum full selesai |
 | Fallback | MISSING | belum ada |
 | Rerun strategy | MISSING | belum ada |
-| Logging ops | PARTIAL | source-context logging minimum sudah diperkeras di stage start/success/failure + run notes, tetapi logging ops menyeluruh belum lengkap |
+| Logging ops | PARTIAL | source-context logging minimum + success-after-retry telemetry minimum sudah ada, tetapi logging ops menyeluruh belum lengkap |
 
 #### Batch In Scope in This Session
-Status: DONE (for scoped batch)
+Status: PARTIAL (awaiting local PHPUnit proof)
 
 Scope yang dikerjakan pada sesi ini:
-- source-context logging minimum untuk acquisition path
-- source telemetry parity antara stage start, ingest success, dan stage failure
-- timeout policy evidence minimum pada failure context
-- run-note visibility untuk `source_name`
+- success-after-retry telemetry minimum pada acquisition success path
+- propagation telemetry dari adapter → ingest service → pipeline stage completed event
+- ringkasan retry minimum pada `eod_runs.notes` agar operator tidak hanya bergantung pada payload event
 
 Proof implementasi di code:
-- `PublicApiEodBarsAdapter` failure context sekarang memuat:
+- `PublicApiEodBarsAdapter` sekarang menyimpan telemetry acquisition terakhir dan menyediakan `consumeLastAcquisitionTelemetry()`
+- success path telemetry minimum memuat:
   - `provider`
   - `source_name`
   - `timeout_seconds`
   - `retry_max`
   - `attempt_count`
   - `attempts`
+  - `success_after_retry`
+  - `final_http_status`
   - `final_reason_code`
   - `captured_at`
-- `MarketDataPipelineService::startStage()` menulis source telemetry minimum ke `STAGE_STARTED`
-- `completeIngest()` menulis `source_name` ke:
-  - `eod_runs.notes`
-  - payload `STAGE_COMPLETED`
-- `handleStageFailure()` menambahkan source telemetry minimum ke payload `STAGE_FAILED`
+- `EodBarsIngestService` meneruskan telemetry itu sebagai `source_acquisition`
+- `MarketDataPipelineService::completeIngest()` menulis telemetry ke:
+  - payload `STAGE_COMPLETED.source_acquisition`
+  - `eod_runs.notes` minimum: `source_attempt_count`, `source_success_after_retry`, `source_final_http_status`
 
 Validation evidence currently available:
 - `php -l app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php` → OK
+- `php -l app/Application/MarketData/Services/EodBarsIngestService.php` → OK
 - `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` → OK
 - `php -l tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` → OK
+- `php -l tests/Unit/MarketData/EodBarsIngestServiceTest.php` → OK
 - `php -l tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → OK
-- local PHPUnit for new batch → PASS
-  - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` → `OK (7 tests, 34 assertions)`
-  - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → `OK (7 tests, 9 assertions)`
-  - filtered start-stage telemetry test → `OK (1 test, 3 assertions)`
-  - filtered complete-ingest telemetry test → `OK (1 test, 1 assertion)`
-- full PHPUnit suite after batch → PASS (`148 tests, 1608 assertions`)
+- local PHPUnit for new batch → NOT RUN in this container (`vendor/` absent from uploaded ZIP)
 
 Tests added/updated for this batch:
 - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
-  - exhaustion context now asserted for `source_name` and `timeout_seconds`
+  - `test_api_adapter_exposes_success_after_retry_telemetry()`
+- `tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+  - `test_api_ingest_returns_source_acquisition_summary_from_adapter()`
 - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
-  - `test_start_stage_logs_api_source_context_in_stage_started_event()`
-  - `test_complete_ingest_persists_source_name_in_notes_and_event_payload()`
+  - `test_complete_ingest_persists_source_name_in_notes_and_event_payload()` now also asserts `source_acquisition` + retry summary note segments
+
+Honest validation gap for this scoped batch:
+- batch code + docs + syntax sudah sinkron
+- PHPUnit lokal user masih diperlukan sebelum batch ini boleh dianggap fully validated
 
 ---
 
@@ -88,7 +91,8 @@ Tests added/updated for this batch:
 - family external source resilience belum full selesai
 
 ## Honest Remaining Validation Gap
-- tidak ada validation gap tersisa untuk batch scoped session ini; gap yang tersisa ada pada family operasional yang lebih besar
+- scoped batch session ini masih menunggu local PHPUnit proof karena `vendor/` tidak ada di ZIP
+- gap family operasional yang lebih besar tetap tersisa di fallback, rerun strategy, dan logging ops menyeluruh
 
 ---
 
