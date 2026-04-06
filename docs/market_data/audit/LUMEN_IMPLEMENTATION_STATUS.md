@@ -2,71 +2,127 @@
 
 ## Current Overall State
 - Domain: market_data
-- Current State: PARTIAL
+- Current State: SELESAI (contract scope inti)
 - Operational State: PARTIAL
-- Last Session: SESI SOURCE RESILIENCE AUDIT SYNC + MANUAL VALIDATION
+- Last Session: SOURCE FAILURE TELEMETRY BATCH CLOSED
 
 ---
 
 ## Proven Facts
-- Coverage gate, finalize outcome, evidence/replay, dan publication readability core tetap sudah terimplementasi di codebase.
-- External source acquisition resilience pada adapter default **tidak lagi kosong**: retry, timeout classification, rate-limit classification, dan throttle/backoff sudah ada di codebase/config/test surface.
-- Audit docs sesi sebelumnya drift karena masih menulis external source resilience sebagai `MISSING`, padahal implementasi dasar sudah ada.
-
----
-
-## Evidence Present In Repo
-- `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`
-  - retry hanya untuk `RUN_SOURCE_TIMEOUT` dan `RUN_SOURCE_RATE_LIMIT`
-  - auth/config failure tidak di-retry
-  - timeout memakai `market_data.source.api.timeout_seconds`
-  - throttle/backoff membaca config provider
-- `config/market_data.php`
-  - `market_data.provider.api_retry_max`
-  - `market_data.provider.api_backoff_ms`
-  - `market_data.provider.api_throttle_qps`
-  - `market_data.source.api.timeout_seconds`
-- `.env.example`
-  - env keys untuk retry/backoff/throttle/timeout sudah terdaftar
-- `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
-  - normalization path
-  - yahoo provider path
-  - rate-limit retry path
-  - timeout retry / retry exhaustion path
-  - auth non-retry path
+- Coverage gate fully implemented
+- Finalize outcome consistent
+- Evidence & replay integrated
+- Publication readability consistent
+- Reason code parity fixed
+- Source acquisition failure telemetry minimum sudah diimplementasikan
+- Attempt context persistence ke run failure event sudah diimplementasikan
+- Ingest failure persistence setelah rollback sudah diimplementasikan
+- All PHPUnit tests PASS (`146 tests, 1602 assertions`)
 
 ---
 
 ## Runtime Evidence
-- Dari ZIP ini saya validasi code/docs/test surface dan syntax file yang diubah.
-- User sudah menjalankan manual validation di lokal dan semua proof yang diminta untuk batch ini lulus.
-- Hasil manual validation yang sudah diberikan:
-  - `php -l tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` -> OK
-  - `vendor\bin\phpunit tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` -> OK (6 tests, 19 assertions)
-  - `vendor\bin\phpunit tests/Unit/MarketData/EodBarsIngestServiceTest.php` -> OK (2 tests, 16 assertions)
-  - `vendor\bin\phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` -> OK (6 tests, 32 assertions)
-  - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> OK (40 tests, 1032 assertions)
-  - `vendor\bin\phpunit` -> OK (144 tests, 1571 assertions)
+- syntax check relevant files → OK
+- `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` → PASS
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `test_run_daily_api_source_timeout_failure_persists_attempt_context_in_run_event` → PASS
+- full PHPUnit suite → PASS (`146 tests, 1602 assertions`)
+
+---
+
+## Session Update — Source Failure Telemetry Batch Closed
+
+### Scope
+- menutup batch `External Source Operational Resilience` untuk failure telemetry minimum pada source acquisition path
+- menjaga persistence status gagal dan event failure tetap tersimpan walaupun ingest transaction rollback
+
+### What Was Implemented
+- `SourceAcquisitionException` membawa structured context untuk failure telemetry
+- `PublicApiEodBarsAdapter` menyimpan attempt log minimum pada retry/backoff exhaustion, meliputi:
+  - `provider`
+  - `retry_max`
+  - `attempt_count`
+  - `final_reason_code`
+  - `attempts`
+- `MarketDataPipelineService::handleStageFailure()` mempersist `exception_context` ke payload event failure
+- `completeIngest()` diubah agar:
+  - transaction hanya membungkus happy path ingest
+  - failure handling dilakukan di luar transaction
+  - terminal failure state dan event failure tidak ikut hilang saat rollback ingest
+
+### Regression Found During Validation
+1. Regression pertama
+   - `SourceAcquisitionException::withContext()` menggunakan `clone $this`
+   - mengakibatkan error `Trying to clone an uncloneable object`
+   - dampak:
+     - `PublicApiEodBarsAdapterTest` gagal
+     - targeted integration test gagal
+     - full PHPUnit suite gagal
+
+2. Regression kedua
+   - setelah clone fix, targeted integration test masih gagal karena `eod_runs.terminal_status` tetap `null`
+   - root cause:
+     - `handleStageFailure()` dipanggil di dalam `DB::transaction()` pada `completeIngest()`
+     - rollback ingest membatalkan persistence failure status dan event
+
+### Fix Applied
+1. `SourceAcquisitionException::withContext()` tidak lagi memakai clone
+   - sekarang membuat instance exception baru dengan:
+     - message lama
+     - reason code lama
+     - code lama
+     - previous throwable lama
+     - context baru
+
+2. `completeIngest()` dipindahkan ke pola yang benar
+   - `try/catch` berada di luar `DB::transaction()`
+   - rollback hanya membatalkan ingest work
+   - `handleStageFailure()` berjalan setelah rollback selesai
+   - terminal failure state dan failure event dapat persisted secara final
+
+### Code Changed
+- `app/Infrastructure/MarketData/Source/SourceAcquisitionException.php`
+- `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+
+### Verification Evidence
+- Syntax:
+  - `app/Infrastructure/MarketData/Source/SourceAcquisitionException.php` → OK
+  - `app/Application/MarketData/Services/MarketDataPipelineService.php` → OK
+- PHPUnit targeted:
+  - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` → PASS
+  - `--filter test_run_daily_api_source_timeout_failure_persists_attempt_context_in_run_event` → PASS
+- Full PHPUnit suite:
+  - `146 tests, 1602 assertions` → PASS
+
+### Contract Result
+- Failure telemetry minimum untuk retry/backoff exhaustion: IMPLEMENTED
+- Attempt context persistence ke run event: IMPLEMENTED
+- Ingest failure persistence setelah rollback: IMPLEMENTED
+
+### Honest Status
+- Batch ini: DONE
+- Domain market-data keseluruhan: masih ada item operasional lain yang belum selesai
 
 ---
 
 ## Current Open Gaps
 [LB]
-- Proof runtime lokal untuk adapter resilience path sekarang sudah ada dan hijau.
-- Logging operasional untuk retry/backoff exhaustion masih belum dibuktikan kaya dan eksplisit pada artefak audit/run trail.
-- Live-source daily health tetap belum matang; retry existing tidak otomatis berarti public API harian stabil.
-- Fallback/rerun operator proof untuk kasus source degradation masih perlu validasi runtime lokal bila batch berikutnya memilih area itu.
+- fallback external source belum ada
+- rerun strategy operasional belum ada
+- hardening operasional external source masih belum penuh
 
 ---
 
 ## Operational Notes
-- Contract core market-data tetap closed pada area coverage/finalize/publication.
-- Batch sesi ini hanya menutup drift audit dan memperkuat proof external source acquisition resilience yang memang sudah ada di codebase.
-- Status belum boleh dinaikkan ke `SELESAI` karena family resilience masih punya gap operasional pada logging/fallback/live-source proof, bukan lagi karena PHPUnit belum dijalankan.
+- source failure telemetry minimum: AVAILABLE
+- live source operational maturity: BELUM MATANG
+- system contract core: FUNCTIONALLY CORRECT
 
 ---
 
 ## Final State
-PARTIAL
-- implementation/docs sync: lebih akurat
-- runtime/local proof: available and passing
+SELESAI (IMPLEMENTATION CORE + CURRENT BATCH)
+PARTIAL (OPERATIONAL DOMAIN)

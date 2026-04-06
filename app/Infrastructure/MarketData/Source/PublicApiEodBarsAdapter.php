@@ -151,10 +151,13 @@ class PublicApiEodBarsAdapter
         $retryMax = max(0, (int) config('market_data.provider.api_retry_max'));
         $baseBackoffMs = max(0, (int) config('market_data.provider.api_backoff_ms'));
         $capturedAt = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
+        $provider = (string) $this->providerName(config('market_data.source.api'));
         $lastException = null;
+        $attemptLog = [];
 
         for ($attempt = 0; $attempt <= $retryMax; $attempt++) {
-            $this->applyThrottleAndJitter($attempt);
+            $attemptNumber = $attempt + 1;
+            $throttleDelayMs = $this->applyThrottleAndJitter($attempt);
 
             try {
                 $response = $this->performHttpRequest($url);
@@ -181,12 +184,31 @@ class PublicApiEodBarsAdapter
                     'captured_at' => $capturedAt,
                 ];
             } catch (SourceAcquisitionException $e) {
-                $lastException = $e;
-                if (! $this->shouldRetry($e->reasonCode(), $attempt, $retryMax)) {
-                    throw $e;
-                }
+                $willRetry = $this->shouldRetry($e->reasonCode(), $attempt, $retryMax);
+                $backoffDelayMs = $willRetry ? $this->backoff($attempt, $baseBackoffMs) : 0;
 
-                $this->backoff($attempt, $baseBackoffMs);
+                $attemptLog[] = [
+                    'attempt_number' => $attemptNumber,
+                    'reason_code' => $e->reasonCode(),
+                    'http_status' => $this->extractStatusFromExceptionContext($e),
+                    'throttle_delay_ms' => $throttleDelayMs,
+                    'backoff_delay_ms' => $backoffDelayMs,
+                    'will_retry' => $willRetry,
+                ];
+
+                $lastException = $e->withContext([
+                    'url' => $url,
+                    'provider' => $provider,
+                    'retry_max' => $retryMax,
+                    'attempt_count' => count($attemptLog),
+                    'attempts' => $attemptLog,
+                    'final_reason_code' => $e->reasonCode(),
+                    'captured_at' => $capturedAt,
+                ]);
+
+                if (! $willRetry) {
+                    throw $lastException;
+                }
             }
         }
 
@@ -206,7 +228,10 @@ class PublicApiEodBarsAdapter
     {
         $multiplier = (int) pow(2, $attempt);
         $jitterMs = random_int(50, 150);
-        usleep(($baseBackoffMs * $multiplier + $jitterMs) * 1000);
+        $delayMs = $baseBackoffMs * $multiplier + $jitterMs;
+        usleep($delayMs * 1000);
+
+        return $delayMs;
     }
 
     private function applyThrottleAndJitter($attempt)
@@ -214,10 +239,30 @@ class PublicApiEodBarsAdapter
         $qps = max(1, (int) config('market_data.provider.api_throttle_qps'));
         $throttleUs = (int) floor(1000000 / $qps);
         $jitterUs = random_int(25000, 125000);
+        $delayUs = $throttleUs + $jitterUs;
 
         if ($attempt > 0 || $throttleUs > 0) {
-            usleep($throttleUs + $jitterUs);
+            usleep($delayUs);
         }
+
+        return (int) floor($delayUs / 1000);
+    }
+
+    private function extractStatusFromExceptionContext(SourceAcquisitionException $e)
+    {
+        if (preg_match('/HTTP\s+(\d{3})/i', $e->getMessage(), $matches)) {
+            return (int) $matches[1];
+        }
+
+        if ($e->reasonCode() === 'RUN_SOURCE_RATE_LIMIT') {
+            return 429;
+        }
+
+        if ($e->reasonCode() === 'RUN_SOURCE_AUTH_ERROR') {
+            return 401;
+        }
+
+        return null;
     }
 
     private function performHttpRequest($url)

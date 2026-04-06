@@ -38,6 +38,13 @@ Sudah diimplementasikan minimal untuk source adapter default.
 - `RUN_SOURCE_MALFORMED_PAYLOAD` untuk unexpected non-2xx response atau payload yang tidak bisa dipercaya
 - `RUN_SOURCE_RESPONSE_CHANGED` untuk provider payload yang berubah bentuk pada adapter provider-specific path
 
+### Failure event telemetry
+Sudah diimplementasikan minimal pada failure path ingest API.
+- exhaustion / non-retry source failure membawa `exception_context` ke `eod_run_events.event_payload_json`
+- context minimum berisi provider, retry_max, attempt_count, final_reason_code, dan daftar attempt
+- setiap attempt menyimpan minimal: `attempt_number`, `reason_code`, `http_status`, `throttle_delay_ms`, `backoff_delay_ms`, dan `will_retry`
+- enrichment ini adalah audit trail minimum untuk operator; ini tidak mengubah contract retry/fallback yang sudah ada
+
 ### Finalize safety
 Sudah ditutup oleh finalize + coverage gate path.
 - requested date tidak boleh menjadi `READABLE` bila ingest/source failure membuat coverage gagal atau blocked
@@ -53,7 +60,7 @@ Sudah tersedia melalui command pipeline yang sudah ada.
 ## Remaining Operational Gaps
 Bagian berikut belum boleh dianggap selesai hanya karena adapter retry sudah ada:
 - live-source runtime proof di environment nyata
-- operator-visible logging/audit trail untuk attempt/backoff yang lebih kaya
+- logging/audit trail saat ini baru minimum dan fokus pada failure path; belum mencakup success-after-retry telemetry atau operator dashboard/export khusus
 - failure handling yang lebih granular bila nanti source acquisition dibuat concurrent atau multi-provider
 - fallback exercise proof berbasis run nyata, bukan hanya contract/unit path
 

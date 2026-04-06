@@ -109,33 +109,41 @@ class MarketDataPipelineService
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
 
-        return DB::transaction(function () use ($run, $input, $priorCurrent) {
-            try {
+        try {
+            return DB::transaction(function () use ($run, $input, $priorCurrent) {
                 $result = $this->barsIngest->ingest($run, $input->requestedDate, $input->sourceMode, $priorCurrent);
-            } catch (\Throwable $e) {
-                if ($e instanceof SourceAcquisitionException) {
-                    $reasonCode = $e->reasonCode();
-                } else {
-                    $reasonCode = strpos($e->getMessage(), 'current publication') !== false
-                        ? 'RUN_LOCK_CONFLICT'
-                        : 'RUN_SOURCE_MALFORMED_PAYLOAD';
-                }
 
-                $this->handleStageFailure($run, $input->stage, $reasonCode, $e);
-                throw $e;
+                $run = $this->runs->updateTelemetry($run, [
+                    'bars_rows_written' => $result['bars_rows_written'],
+                    'invalid_bar_count' => $result['invalid_bar_count'],
+                    'publication_version' => $result['publication_version'],
+                    'notes' => trim(($run->notes ? $run->notes.'; ' : '').'candidate_publication_id='.$result['publication_id']),
+                ]);
+
+                $this->runs->appendEvent(
+                    $run,
+                    $input->stage,
+                    'STAGE_COMPLETED',
+                    'INFO',
+                    'Bars ingest stage completed with canonical artifact writes.',
+                    null,
+                    $result
+                );
+
+                return $run;
+            });
+        } catch (\Throwable $e) {
+            if ($e instanceof SourceAcquisitionException) {
+                $reasonCode = $e->reasonCode();
+            } else {
+                $reasonCode = strpos($e->getMessage(), 'current publication') !== false
+                    ? 'RUN_LOCK_CONFLICT'
+                    : 'RUN_SOURCE_MALFORMED_PAYLOAD';
             }
 
-            $run = $this->runs->updateTelemetry($run, [
-                'bars_rows_written' => $result['bars_rows_written'],
-                'invalid_bar_count' => $result['invalid_bar_count'],
-                'publication_version' => $result['publication_version'],
-                'notes' => trim(($run->notes ? $run->notes.'; ' : '').'candidate_publication_id='.$result['publication_id']),
-            ]);
-
-            $this->runs->appendEvent($run, $input->stage, 'STAGE_COMPLETED', 'INFO', 'Bars ingest stage completed with canonical artifact writes.', null, $result);
-
-            return $run;
-        });
+            $this->handleStageFailure($run, $input->stage, $reasonCode, $e);
+            throw $e;
+        }
     }
 
     public function completeIndicators(MarketDataStageInput $input)
@@ -729,6 +737,13 @@ class MarketDataPipelineService
             'exception_class' => get_class($e),
             'exception_message' => $e->getMessage(),
         ];
+
+        if (method_exists($e, 'context')) {
+            $context = $e->context();
+            if (is_array($context) && ! empty($context)) {
+                $payload['exception_context'] = $context;
+            }
+        }
 
         if ($e instanceof \PDOException && $e->getCode()) {
             $payload['sqlstate'] = (string) $e->getCode();

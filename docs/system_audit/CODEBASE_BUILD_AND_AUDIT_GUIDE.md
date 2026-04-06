@@ -35,13 +35,14 @@ Jangan campur:
 
 ## Done Gate Result
 Masih PARTIAL karena:
-- external source operational family belum full proof pada logging/fallback/runtime degradation path
+- external source operational family belum full proof pada fallback/rerun/runtime degradation path
+- logging failure-path untuk retry/backoff exhaustion sekarang sudah ada minimum audit trail, tetapi belum membuktikan operasi live harian
 - live-source operational stability masih belum terbukti hanya dari unit + integration test
 
 ---
 
 ## Recommendation
 Next phase boleh lanjut ke salah satu jalur berikut, tapi satu batch saja per sesi:
-- proof runtime lokal untuk source resilience
-- logging/audit enrichment untuk retry/backoff exhaustion
 - degraded-source fallback/rerun operator proof
+- proof runtime lokal untuk source resilience pada jalur operator harian
+- enrichment lanjutan bila nanti dibutuhkan export/dashboard khusus untuk source-attempt telemetry

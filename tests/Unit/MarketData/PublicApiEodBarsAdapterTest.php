@@ -206,6 +206,45 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame(2, $calls);
     }
 
+
+    public function test_api_adapter_raises_timeout_after_retry_exhaustion_with_attempt_log_context()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'endpoint_template' => 'https://example.test/eod/{date}',
+        ], 2, 5));
+
+        $calls = 0;
+        $adapter = new PublicApiEodBarsAdapter(function () use (&$calls) {
+            $calls++;
+
+            return [
+                'status' => 500,
+                'body' => '{"error":"upstream unavailable"}',
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBars('2026-03-20', 'api');
+            $this->fail('Expected timeout classification after retry exhaustion.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+
+            $this->assertSame('RUN_SOURCE_TIMEOUT', $e->reasonCode());
+            $this->assertSame(3, $calls);
+            $this->assertSame('generic', $context['provider']);
+            $this->assertSame(2, $context['retry_max']);
+            $this->assertSame(3, $context['attempt_count']);
+            $this->assertCount(3, $context['attempts']);
+            $this->assertSame(1, $context['attempts'][0]['attempt_number']);
+            $this->assertSame('RUN_SOURCE_TIMEOUT', $context['attempts'][0]['reason_code']);
+            $this->assertTrue($context['attempts'][0]['will_retry']);
+            $this->assertGreaterThan(0, $context['attempts'][0]['backoff_delay_ms']);
+            $this->assertSame(3, $context['attempts'][2]['attempt_number']);
+            $this->assertFalse($context['attempts'][2]['will_retry']);
+            $this->assertSame(0, $context['attempts'][2]['backoff_delay_ms']);
+        }
+    }
+
     public function test_api_adapter_raises_timeout_after_retry_exhaustion()
     {
         $this->bindMarketDataConfig($this->config([

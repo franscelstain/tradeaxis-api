@@ -121,6 +121,65 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
+
+    public function test_run_daily_api_source_timeout_failure_persists_attempt_context_in_run_event(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        config()->set('market_data.source.api.endpoint_template', 'https://example.test/eod/{date}?symbols={symbols}');
+        config()->set('market_data.source.api.response_rows_path', 'rows');
+        config()->set('market_data.source.api.provider', 'generic');
+        config()->set('market_data.provider.api_retry_max', 2);
+        config()->set('market_data.provider.api_backoff_ms', 5);
+        config()->set('market_data.provider.api_throttle_qps', 1000);
+
+        $calls = 0;
+        try {
+            $this->makePipelineWithApiFetcher(function () use (&$calls) {
+                $calls++;
+
+                return [
+                    'status' => 500,
+                    'body' => '{"error":"upstream unavailable"}',
+                ];
+            })->runDaily('2026-03-20', 'api');
+            $this->fail('Expected api source timeout failure.');
+        } catch (\App\Infrastructure\MarketData\Source\SourceAcquisitionException $e) {
+            $this->assertSame('RUN_SOURCE_TIMEOUT', $e->reasonCode());
+        }
+
+        $run = DB::table('eod_runs')
+            ->where('trade_date_requested', '2026-03-20')
+            ->orderByDesc('run_id')
+            ->first();
+
+        $this->assertNotNull($run);
+        $this->assertSame('FAILED', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame(3, $calls);
+
+        $stageFailedEvent = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'STAGE_FAILED')
+            ->orderByDesc('event_id')
+            ->first();
+
+        $this->assertNotNull($stageFailedEvent);
+        $this->assertSame('RUN_SOURCE_TIMEOUT', $stageFailedEvent->reason_code);
+
+        $payload = json_decode($stageFailedEvent->event_payload_json, true);
+        $this->assertIsArray($payload);
+        $this->assertSame('App\Infrastructure\MarketData\Source\SourceAcquisitionException', $payload['exception_class']);
+        $this->assertSame('RUN_SOURCE_TIMEOUT', $payload['exception_context']['final_reason_code']);
+        $this->assertSame('generic', $payload['exception_context']['provider']);
+        $this->assertSame(2, $payload['exception_context']['retry_max']);
+        $this->assertSame(3, $payload['exception_context']['attempt_count']);
+        $this->assertCount(3, $payload['exception_context']['attempts']);
+        $this->assertTrue($payload['exception_context']['attempts'][0]['will_retry']);
+        $this->assertFalse($payload['exception_context']['attempts'][2]['will_retry']);
+        $this->assertGreaterThan(0, $payload['exception_context']['attempts'][0]['backoff_delay_ms']);
+        $this->assertSame(0, $payload['exception_context']['attempts'][2]['backoff_delay_ms']);
+    }
+
     public function test_run_daily_correction_replaces_current_publication_and_marks_correction_published(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -3888,6 +3947,11 @@ class MarketDataPipelineIntegrationTest extends TestCase
         return $this->makePipelineWithOverrides(new EodPublicationRepository(), new EodArtifactRepository());
     }
 
+    private function makePipelineWithApiFetcher(callable $fetcher): MarketDataPipelineService
+    {
+        return $this->makePipelineWithOverrides(new EodPublicationRepository(), new EodArtifactRepository(), $fetcher);
+    }
+
     private function makePipelineWithPublications(EodPublicationRepository $publications): MarketDataPipelineService
     {
         return $this->makePipelineWithOverrides($publications, new EodArtifactRepository());
@@ -3898,14 +3962,14 @@ class MarketDataPipelineIntegrationTest extends TestCase
         return $this->makePipelineWithOverrides(new EodPublicationRepository(), $artifacts);
     }
 
-    private function makePipelineWithOverrides(EodPublicationRepository $publications, EodArtifactRepository $artifacts): MarketDataPipelineService
+    private function makePipelineWithOverrides(EodPublicationRepository $publications, EodArtifactRepository $artifacts, callable $apiFetcher = null): MarketDataPipelineService
     {
         $runs = new EodRunRepository();
         $tickers = new TickerMasterRepository();
 
         $bars = new EodBarsIngestService(
             new LocalFileEodBarsAdapter(),
-            new PublicApiEodBarsAdapter(function () {
+            new PublicApiEodBarsAdapter($apiFetcher ?: function () {
                 throw new RuntimeException('API source not expected in sqlite integration test.');
             }),
             $tickers,
