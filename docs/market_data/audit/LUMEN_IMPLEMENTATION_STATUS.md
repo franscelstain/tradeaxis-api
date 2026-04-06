@@ -4,7 +4,7 @@
 - Domain: market_data
 - Current State: SELESAI (contract scope inti)
 - Operational State: PARTIAL
-- Last Session: SOURCE CONTEXT LOGGING HARDENING BATCH IN PROGRESS
+- Last Session: SOURCE CONTEXT LOGGING HARDENING BATCH VALIDATED
 
 ---
 
@@ -28,7 +28,12 @@
   - `app/Application/MarketData/Services/MarketDataPipelineService.php`
   - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
   - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
-- local PHPUnit/artisan validation untuk batch sesi ini → BELUM DIJALANKAN dari ZIP ini (`vendor/` tidak ada)
+- local PHPUnit validation batch sesi ini → PASS dari environment lokal user
+  - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` → `OK (7 tests, 34 assertions)`
+  - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → `OK (7 tests, 9 assertions)`
+  - filter `test_start_stage_logs_api_source_context_in_stage_started_event` → `OK (1 test, 3 assertions)`
+  - filter `test_complete_ingest_persists_source_name_in_notes_and_event_payload` → `OK (1 test, 1 assertion)`
+- full PHPUnit suite after batch → PASS (`148 tests, 1608 assertions`)
 
 ---
 
@@ -74,7 +79,8 @@
 
 ### Verification Evidence Available Now
 - syntax check file yang diubah → OK
-- proof unit/integration lokal untuk batch baru ini → MENUNGGU user menjalankan PHPUnit di lokal
+- proof unit lokal untuk batch ini → PASS dari hasil local run user
+- full regression suite → PASS (`148 tests, 1608 assertions`)
 
 ### Contract Result
 - Source mode dan source name sekarang terlihat di logs/event payload secara lebih konsisten: IMPLEMENTED
@@ -82,7 +88,7 @@
 - Logging ops family: masih PARTIAL, tetapi gap minimum source-context visibility batch ini sudah ditutup di code
 
 ### Honest Status
-- Batch sesi ini: PARTIAL sampai PHPUnit lokal dijalankan
+- Batch sesi ini: DONE untuk scope yang diambil; proof lokal sudah tersedia
 - Domain market-data keseluruhan: contract core tetap SELESAI, operational family tetap PARTIAL
 
 ---
@@ -93,14 +99,12 @@
 - rerun strategy operasional belum ada
 - hardening operasional external source masih belum penuh
 
-[NON-LB untuk batch aktif]
-- validasi lokal PHPUnit untuk source-context logging batch ini masih menunggu
 
 ---
 
 ## Operational Notes
 - source failure telemetry minimum: AVAILABLE
-- source context logging minimum: AVAILABLE IN CODE, pending local PHPUnit proof
+- source context logging minimum: AVAILABLE dan tervalidasi oleh local PHPUnit
 - live source operational maturity: BELUM MATANG
 - system contract core: FUNCTIONALLY CORRECT
 
@@ -108,4 +112,4 @@
 
 ## Final State
 SELESAI (IMPLEMENTATION CORE)
-PARTIAL (OPERATIONAL DOMAIN + CURRENT BATCH VALIDATION PENDING)
+PARTIAL (OPERATIONAL DOMAIN ONLY; CURRENT BATCH VALIDATED)

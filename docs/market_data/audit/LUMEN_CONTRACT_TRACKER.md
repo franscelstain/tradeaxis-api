@@ -37,7 +37,7 @@ Status: PARTIAL
 | Logging ops | PARTIAL | source-context logging minimum sudah diperkeras di stage start/success/failure + run notes, tetapi logging ops menyeluruh belum lengkap |
 
 #### Batch In Scope in This Session
-Status: PARTIAL (awaiting local PHPUnit)
+Status: DONE (for scoped batch)
 
 Scope yang dikerjakan pada sesi ini:
 - source-context logging minimum untuk acquisition path
@@ -66,7 +66,12 @@ Validation evidence currently available:
 - `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` → OK
 - `php -l tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` → OK
 - `php -l tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → OK
-- local PHPUnit for new batch → PENDING (uploaded ZIP tidak menyertakan `vendor/`)
+- local PHPUnit for new batch → PASS
+  - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` → `OK (7 tests, 34 assertions)`
+  - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → `OK (7 tests, 9 assertions)`
+  - filtered start-stage telemetry test → `OK (1 test, 3 assertions)`
+  - filtered complete-ingest telemetry test → `OK (1 test, 1 assertion)`
+- full PHPUnit suite after batch → PASS (`148 tests, 1608 assertions`)
 
 Tests added/updated for this batch:
 - `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
@@ -83,7 +88,7 @@ Tests added/updated for this batch:
 - family external source resilience belum full selesai
 
 ## Honest Remaining Validation Gap
-- batch source-context logging sesi ini belum boleh dianggap closed penuh sebelum local PHPUnit dijalankan
+- tidak ada validation gap tersisa untuk batch scoped session ini; gap yang tersisa ada pada family operasional yang lebih besar
 
 ---
 
