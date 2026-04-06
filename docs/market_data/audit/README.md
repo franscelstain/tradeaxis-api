@@ -41,9 +41,15 @@ Urutan minimum:
 1. baca `AUDIT_BASELINE.md`
 2. baca `AUDIT_LAYER_CLASSIFICATION_RULES.md`
 3. baca `AUDIT_DOMAIN_BOUNDARY.md`
-4. jalankan checklist yang sesuai
-5. baca `audit/reports/AUDIT_FINAL_STATE.md` untuk state audit aktif saat ini
-6. pakai templates bila perlu membuat findings, remediation, atau verdict baru
+4. baca checkpoint aktif implementasi market-data:
+   - `LUMEN_IMPLEMENTATION_STATUS.md`
+   - `LUMEN_CONTRACT_TRACKER.md`
+5. jika audit menyentuh source live / operational health, baca juga:
+   - `../book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+   - `../../system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+6. jalankan checklist yang sesuai
+7. baca `audit/reports/AUDIT_FINAL_STATE.md` untuk state audit aktif saat ini
+8. pakai templates bila perlu membuat findings, remediation, atau verdict baru
 
 ## Relationship to other folders
 - `system/` = peta besar sistem tingkat atas
@@ -56,3 +62,19 @@ Urutan minimum:
 
 ## Important rule
 Audit ini menilai market-data sebagai **producer/data-platform domain**, bukan watchlist strategy, bukan execution engine, dan bukan portfolio behavior.
+
+
+## Checkpoint rule
+Dua file berikut adalah checkpoint aktif utama untuk build dan closure implementasi market-data:
+- `LUMEN_IMPLEMENTATION_STATUS.md`
+- `LUMEN_CONTRACT_TRACKER.md`
+
+Keduanya wajib sinkron dengan owner docs dan tidak boleh dipakai untuk membuat kontrak paralel.
+
+## Runtime-state separation
+Audit market-data wajib memisahkan:
+- `contract / implementation state`, dan
+- `operational live-source state`.
+
+Test suite hijau tidak otomatis berarti live source sehat harian.
+Sebaliknya, gangguan provider eksternal tidak otomatis membatalkan closure contract internal, selama checkpoint menuliskannya dengan jujur.

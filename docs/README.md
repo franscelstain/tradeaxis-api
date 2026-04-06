@@ -179,6 +179,23 @@ Ikuti dulu jalur assembly berikut:
 
 `docs/api_architecture/` dipakai untuk menerjemahkan kontrak domain yang sudah terkunci ke struktur kode yang benar. Folder ini bukan titik awal memahami sistem dan bukan pengganti owner contract domain.
 
+
+### Jika ingin menilai apakah codebase sudah dibangun dengan baik
+Mulai dari:
+1. `docs/README.md`
+2. domain owner yang relevan (`docs/market_data/README.md` atau domain lain yang sesuai)
+3. baseline lintas-domain di `docs/system_audit/`
+4. `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+5. checkpoint aktif domain terkait, misalnya:
+   - `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+   - `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+
+Jalur ini dipakai untuk memisahkan:
+- owner contract,
+- translation/build-order,
+- checkpoint implementasi,
+- dan audit apakah status `SELESAI` benar-benar sah.
+
 ---
 
 ## 5. Build order that must be followed

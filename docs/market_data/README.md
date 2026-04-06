@@ -61,6 +61,21 @@ Use these as the primary intake anchors for downstream consumption:
 
 This README does not define downstream watchlist behavior. It only fixes the allowed upstream meaning that a downstream consumer may read.
 
+
+## Implementation checkpoint and audit path
+Untuk build, audit, dan penutupan status implementasi market-data, gunakan jalur berikut:
+- `audit/LUMEN_IMPLEMENTATION_STATUS.md`
+- `audit/LUMEN_CONTRACT_TRACKER.md`
+- `../system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+Untuk ketahanan operasional source eksternal, gunakan contract tambahan berikut:
+- `book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+
+Aturan penting:
+- checkpoint audit tidak menggantikan owner contract,
+- contract operasional source eksternal tidak menggantikan contract akuisisi source inti,
+- status `SELESAI` untuk contract/implementation harus dipisahkan dari status kesehatan operasi harian live source.
+
 ## Start here
 This README is the orientation document itself. Before using it as the fourth read anchor referenced by `system/` and `audit/`, first read in this order:
 1. `book/Terminology_and_Scope.md`
