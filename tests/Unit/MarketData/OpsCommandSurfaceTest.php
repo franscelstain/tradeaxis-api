@@ -49,6 +49,8 @@ class OpsCommandSurfaceTest extends TestCase
                         'terminal_status' => 'SUCCESS',
                         'publishability_state' => 'READABLE',
                         'trade_date_effective' => '2026-03-17',
+                        'source_name' => 'API_FREE',
+                        'source_summary' => 'attempt_count=2 | success_after_retry=yes | final_http_status=200',
                     ],
                 ],
             ]);
@@ -76,7 +78,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('source_mode=manual_file', $display);
         $this->assertStringContainsString('all_passed=1', $display);
         $this->assertStringContainsString('output_dir=/tmp/backfill', $display);
-        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17 | source_name=API_FREE | source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200', $display);
     }
 
     public function test_backfill_command_returns_failure_and_renders_error_case_lines(): void
@@ -102,6 +104,8 @@ class OpsCommandSurfaceTest extends TestCase
                         'terminal_status' => 'HELD',
                         'publishability_state' => 'NOT_READABLE',
                         'trade_date_effective' => '2026-03-16',
+                        'source_name' => 'LOCAL_FILE',
+                        'source_input_file' => 'manual-2026-03-17.csv',
                     ],
                     [
                         'requested_date' => '2026-03-18',
@@ -129,7 +133,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('source_mode=manual_file', $display);
         $this->assertStringContainsString('all_passed=0', $display);
-        $this->assertStringContainsString('requested_date=2026-03-17 | status=FAIL | run_id=41 | terminal_status=HELD | publishability_state=NOT_READABLE | trade_date_effective=2026-03-16', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=FAIL | run_id=41 | terminal_status=HELD | publishability_state=NOT_READABLE | trade_date_effective=2026-03-16 | source_name=LOCAL_FILE | source_input_file=manual-2026-03-17.csv', $display);
         $this->assertStringContainsString('requested_date=2026-03-18 | status=ERROR | error=Backfill requires at least one trading date in market_calendar for the requested range.', $display);
     }
 

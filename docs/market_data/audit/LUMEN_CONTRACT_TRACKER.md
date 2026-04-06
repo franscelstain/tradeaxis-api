@@ -3,7 +3,7 @@
 ## Summary
 Semua contract core coverage/finalize/evidence/publication readability sudah DONE.
 
-Masih ada family operasional external source yang belum full DONE. Pada sesi ini diambil batch homogen untuk menutup gap logging ops minimum pada command operator agar telemetry source tidak berhenti sebagai raw notes.
+Masih ada family operasional external source yang belum full DONE. Pada sesi ini diambil batch homogen untuk menutup gap rerun strategy minimum pada backfill operator agar source path per tanggal tidak berhenti di raw run notes.
 
 ---
 
@@ -33,7 +33,7 @@ Status: PARTIAL
 | Error classification | PARTIAL | reason classification minimum sudah ada pada acquisition failure path; coverage operasional belum penuh |
 | Partial failure handling | PARTIAL | ingest failure persistence sudah benar; scope family belum full selesai |
 | Fallback | PARTIAL | manual-file fallback operator path pada `market-data:daily` sudah ada dengan explicit `input_file`; fallback multi-path/operator proof yang lebih luas belum ada |
-| Rerun strategy | MISSING | belum ada |
+| Rerun strategy | PARTIAL | rerun date-range via `market-data:backfill` sekarang punya source-context summary minimum; fallback multi-path/live proof masih belum lengkap |
 | Logging ops | PARTIAL | source-context logging minimum + success-after-retry telemetry minimum sekarang muncul di command summary, run evidence export, dan punya integration proof berbasis run nyata; dashboard/export menyeluruh belum lengkap |
 
 #### Batch In Scope in This Session
@@ -99,14 +99,44 @@ Honest validation state for this scoped batch:
 - targeted/full PHPUnit batch ini belum boleh diklaim sampai user menjalankan lokal
 
 
+#### Batch In Scope in This Session
+Status: PARTIAL (implemented, pending local PHPUnit proof)
+
+Scope yang dikerjakan pada sesi ini:
+- rerun strategy operasional minimum pada jalur `market-data:backfill`
+- source context minimum per tanggal pada summary artifact/operator output backfill
+- parity source context antara daily command, run evidence export, dan rerun date-range backfill
+
+Proof implementasi di code:
+- `MarketDataBackfillService` sekarang mem-parsing `eod_runs.notes` lalu menurunkan `source_name`, `source_input_file`, dan `source_summary` ke setiap case summary backfill
+- `BackfillMarketDataCommand` sekarang merender source context minimum itu di output operator per requested date
+- `market_data_backfill_summary.json` sekarang menyimpan source context minimum per case sehingga rerun range punya audit trail operator minimum
+
+Validation evidence currently available:
+- repo surface sinkron untuk code/doc/test batch ini
+- `php -l` changed files in container → OK
+- local PHPUnit for new batch → MENUNGGU environment lokal user karena `vendor/` tidak ada di ZIP
+
+Tests added/updated for this batch:
+- `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  - summary artifact sekarang memverifikasi `source_name`, `source_summary`, dan `source_input_file` ketika notes run tersedia
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  - backfill command sekarang memverifikasi render `source_name`, `source_input_file`, dan `source_summary` di output operator
+
+Honest validation state for this scoped batch:
+- batch code + docs sinkron
+- syntax validation tersedia
+- targeted/full PHPUnit batch ini belum boleh diklaim sampai user menjalankan lokal
+
+
 ## Load-Bearing Remaining
 - fallback external source belum ada
-- rerun strategy operasional belum ada
+- rerun strategy operasional belum full operator-grade
 - family external source resilience belum full selesai
 
 ## Honest Remaining Validation Gap
 - scoped batch session ini sudah tervalidasi lewat syntax check lokal user, targeted PHPUnit, dan full PHPUnit suite
-- gap family operasional yang lebih besar tetap tersisa di fallback external source, rerun strategy, dan dashboard/export ops yang lebih luas
+- gap family operasional yang lebih besar tetap tersisa di fallback external source, live runtime proof, dan dashboard/export ops yang lebih luas
 
 ---
 

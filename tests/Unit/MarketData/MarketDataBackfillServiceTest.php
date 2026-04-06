@@ -45,6 +45,7 @@ class MarketDataBackfillServiceTest extends TestCase
                 'terminal_status' => 'SUCCESS',
                 'publishability_state' => 'READABLE',
                 'trade_date_effective' => $date,
+                'notes' => 'source_name=API_FREE; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200',
             ];
             $pipeline->shouldReceive('runDaily')->once()->with($date, 'manual_file', null)->andReturn($run);
         }
@@ -54,7 +55,12 @@ class MarketDataBackfillServiceTest extends TestCase
 
         $this->assertTrue($summary['all_passed']);
         $this->assertCount(3, $summary['cases']);
-        $this->assertFileExists($outputDir.'/market_data_backfill_summary.json');
+        $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
+        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $summary['cases'][0]['source_summary']);
+
+        $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
+        $this->assertSame('API_FREE', $summaryFile['cases'][0]['source_name']);
+        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $summaryFile['cases'][0]['source_summary']);
     }
 
 
@@ -75,6 +81,7 @@ class MarketDataBackfillServiceTest extends TestCase
             'terminal_status' => 'HELD',
             'publishability_state' => 'NOT_READABLE',
             'trade_date_effective' => '2026-03-19',
+            'notes' => 'source_name=LOCAL_FILE; source_input_file=manual-2026-03-20.csv',
         ]);
         $pipeline->shouldNotReceive('runDaily')->with('2026-03-21', 'manual_file', null);
 
@@ -86,6 +93,8 @@ class MarketDataBackfillServiceTest extends TestCase
         $this->assertSame('FAIL', $summary['cases'][0]['status']);
         $this->assertSame('HELD', $summary['cases'][0]['terminal_status']);
         $this->assertSame('NOT_READABLE', $summary['cases'][0]['publishability_state']);
+        $this->assertSame('LOCAL_FILE', $summary['cases'][0]['source_name']);
+        $this->assertSame('manual-2026-03-20.csv', $summary['cases'][0]['source_input_file']);
         $this->assertFileExists($outputDir.'/market_data_backfill_summary.json');
     }
 

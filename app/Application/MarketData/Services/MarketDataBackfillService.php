@@ -49,7 +49,7 @@ class MarketDataBackfillService
                     'terminal_status' => (string) $run->terminal_status,
                     'publishability_state' => (string) $run->publishability_state,
                     'trade_date_effective' => $run->trade_date_effective !== null ? (string) $run->trade_date_effective : null,
-                ];
+                ] + $this->buildSourceContextFromRun($run);
 
                 if (! $passed && ! $continueOnError) {
                     break;
@@ -90,6 +90,77 @@ class MarketDataBackfillService
         return $summary;
     }
 
+    private function buildSourceContextFromRun($run)
+    {
+        $notesMap = $this->parseRunNotes((string) ($run->notes ?? ''));
+        $sourceContext = [];
+
+        if (($notesMap['source_name'] ?? '') !== '') {
+            $sourceContext['source_name'] = (string) $notesMap['source_name'];
+        }
+
+        if (($notesMap['source_input_file'] ?? '') !== '') {
+            $sourceContext['source_input_file'] = (string) $notesMap['source_input_file'];
+        }
+
+        $sourceSummary = $this->buildSourceSummaryString($notesMap);
+        if ($sourceSummary !== null) {
+            $sourceContext['source_summary'] = $sourceSummary;
+        }
+
+        return $sourceContext;
+    }
+
+    private function buildSourceSummaryString(array $notesMap)
+    {
+        $summaryParts = [];
+
+        foreach (['source_attempt_count' => 'attempt_count', 'source_success_after_retry' => 'success_after_retry', 'source_final_http_status' => 'final_http_status'] as $key => $label) {
+            if (($notesMap[$key] ?? '') === '') {
+                continue;
+            }
+
+            $summaryParts[] = $label.'='.(string) $notesMap[$key];
+        }
+
+        if ($summaryParts === []) {
+            return null;
+        }
+
+        return implode(' | ', $summaryParts);
+    }
+
+    private function parseRunNotes($notes)
+    {
+        if ($notes === '') {
+            return [];
+        }
+
+        $segments = preg_split('/\s*;\s*/', $notes);
+        if (! is_array($segments)) {
+            return [];
+        }
+
+        $parsed = [];
+        foreach ($segments as $segment) {
+            $segment = trim((string) $segment);
+            if ($segment === '' || strpos($segment, '=') === false) {
+                continue;
+            }
+
+            [$key, $value] = array_pad(explode('=', $segment, 2), 2, null);
+            $key = trim((string) $key);
+            $value = trim((string) $value);
+
+            if ($key === '') {
+                continue;
+            }
+
+            $parsed[$key] = $value;
+        }
+
+        return $parsed;
+    }
 
     private function runCountsAsPass($run)
     {

@@ -4,7 +4,7 @@
 - Domain: market_data
 - Current State: SELESAI (contract scope inti)
 - Operational State: PARTIAL
-- Last Session: SOURCE TELEMETRY COMMAND SURFACE
+- Last Session: BACKFILL RERUN SOURCE CONTEXT
 
 ---
 
@@ -20,6 +20,7 @@
 - Source context logging minimum sekarang diperluas pada ingest stage event dan run notes
 - Manual-file fallback operator path pada `market-data:daily` sekarang mendukung explicit `input_file` override yang tertelusur di telemetry minimum
 - Run evidence export sekarang menurunkan source context minimum ke artifact/operator output
+- Backfill rerun range sekarang menurunkan source context minimum per tanggal ke summary artifact/operator output
 - Historical local evidence dari sesi sebelumnya menunjukkan full PHPUnit suite PASS (`148 tests, 1608 assertions`) sebelum batch sesi ini
 
 ---
@@ -51,6 +52,11 @@
   - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
 - current session syntax validation from uploaded ZIP (new batch) → OK
   - `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+- current session syntax validation from uploaded ZIP (backfill rerun source-context batch) → OK
+  - `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  - `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  - `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
   - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
 - local validation final untuk batch `Source Telemetry Command Surface` → PASS dari environment lokal user
   - `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → `No syntax errors detected`
@@ -163,10 +169,59 @@
 - Domain market-data keseluruhan: contract core tetap SELESAI, operational family tetap PARTIAL
 
 
+## Session Update — Backfill Rerun Source Context
+
+### Scope
+- mengambil batch homogen dari family `External Source Operational Resilience`
+- fokus pada gap rerun strategy operasional minimum di jalur date-range backfill
+- memastikan rerun operator tidak harus membuka `eod_runs.notes` satu per satu hanya untuk melihat source path minimum per tanggal
+
+### What Was Implemented
+- `MarketDataBackfillService` sekarang menurunkan source context minimum dari `eod_runs.notes` ke setiap case summary backfill
+- source context minimum yang ikut dibawa adalah `source_name`, `source_input_file`, dan `source_summary` (`attempt_count`, `success_after_retry`, `final_http_status`) bila tersedia
+- `BackfillMarketDataCommand` sekarang merender source context per tanggal agar operator bisa membaca path rerun range langsung dari output command
+- summary artifact `market_data_backfill_summary.json` sekarang menyimpan source context minimum per tanggal sehingga rerun range punya audit trail operator minimum yang konsisten dengan daily command dan run evidence export
+
+### Code Changed
+- `app/Application/MarketData/Services/MarketDataBackfillService.php`
+- `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+- `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+- `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+- `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+- `docs/market_data/ops/Bootstrap_and_Backfill_Runbook_LOCKED.md`
+- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+
+### Test Coverage Added/Updated
+- `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  - `test_execute_runs_daily_pipeline_for_each_trading_date_and_writes_summary()` diperluas untuk memverifikasi `source_name` dan `source_summary` masuk ke summary artifact
+  - `test_execute_marks_fail_when_pipeline_returns_non_readable_terminal_state()` diperluas untuk memverifikasi `source_input_file` manual fallback ikut dibawa ke case summary
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  - `test_backfill_command_propagates_operator_options_and_renders_publishability_context()` diperluas agar output command menampilkan `source_name` dan `source_summary`
+  - `test_backfill_command_returns_failure_and_renders_error_case_lines()` diperluas agar output command menampilkan `source_input_file` pada fail case
+
+### Verification Evidence Available Now
+- syntax check file yang diubah di container → OK
+  - `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  - `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  - `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+- PHPUnit lokal untuk batch ini → MENUNGGU user run karena `vendor/` tidak ada di ZIP
+
+### Contract Result
+- rerun strategy operasional minimum pada date-range backfill sekarang IMPLEMENTED
+- family operational resilience tetap PARTIAL karena fallback external source multi-path, live runtime proof, dan dashboard/export ops yang lebih luas masih belum ada
+
+### Honest Status
+- Batch sesi ini: PARTIAL sampai user menjalankan syntax/PHPUnit lokal untuk proof runtime batch
+- Domain market-data keseluruhan: contract core tetap SELESAI, operational family tetap PARTIAL
+
+
 ## Current Open Gaps
 [LB]
 - fallback external source belum ada
-- rerun strategy operasional belum ada
+- rerun strategy operasional belum full operator-grade
 - hardening operasional external source masih belum penuh
 
 

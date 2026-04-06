@@ -37,6 +37,7 @@ Recommended for production stability and replay confidence:
 ## Resume requirement (LOCKED)
 - backfill is resumable by date range
 - rerun is idempotent
+- operator-visible backfill summary should preserve enough per-date context to explain source path used during rerun without reopening raw run notes one by one
 
 ## Done criteria
 - recent sample dates meet coverage threshold

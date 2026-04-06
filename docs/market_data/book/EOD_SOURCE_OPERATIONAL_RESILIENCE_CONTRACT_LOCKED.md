@@ -68,8 +68,10 @@ Sudah diimplementasikan minimum pada command harian utama.
 - output command operator sekarang juga menampilkan `source_input_file` bila jejak itu tersedia
 
 ### Manual rerun path
-Sudah tersedia melalui command pipeline yang sudah ada.
+Sudah tersedia minimum melalui command pipeline yang sudah ada.
 - operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu
+- operator dapat menjalankan `market-data:backfill {start_date} {end_date}` untuk rerun date-range yang mengikuti `market_calendar`
+- summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya, sehingga rerun operator tidak berhenti di raw notes atau run-by-run inspection
 - correction / reseal path tetap memakai command correction yang sudah terpisah bila konteksnya historical correction
 
 ---
@@ -77,7 +79,7 @@ Sudah tersedia melalui command pipeline yang sudah ada.
 ## Remaining Operational Gaps
 Bagian berikut belum boleh dianggap selesai hanya karena adapter retry sudah ada:
 - live-source runtime proof di environment nyata
-- logging/audit trail saat ini sudah mencakup failure path dan success-after-retry minimum, tetapi belum punya operator dashboard/export khusus
+- logging/audit trail saat ini sudah mencakup failure path, success-after-retry minimum, dan ringkasan backfill minimum, tetapi belum punya operator dashboard/export khusus
 - failure handling yang lebih granular bila nanti source acquisition dibuat concurrent atau multi-provider
 - fallback exercise proof berbasis run nyata, bukan hanya contract/unit path
 
