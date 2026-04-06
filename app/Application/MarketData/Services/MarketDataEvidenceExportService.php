@@ -32,6 +32,7 @@ class MarketDataEvidenceExportService
         $publication = $this->resolvePublicationForRun($run);
         $manifest = $publication ? (array) $this->publications->buildManifestByPublicationId($publication->publication_id) : null;
         $runSummary = $this->buildRunSummary($run, $manifest);
+        $sourceSummary = $this->buildSourceSummaryString($runSummary['source_context'] ?? []);
         $eventSummary = ['run_id' => (int) $run->run_id, 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
         $dominantReasonCodes = $this->evidence->dominantReasonCodes($run->run_id, $this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
         $eligibilityRows = $this->evidence->exportEligibilityRows($this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
@@ -80,6 +81,9 @@ class MarketDataEvidenceExportService
                 'trade_date_effective' => $runSummary['trade_date_effective'],
                 'terminal_status' => $runSummary['terminal_status'],
                 'publishability_state' => $runSummary['publishability_state'],
+                'source_name' => $runSummary['source_context']['source_name'] ?? null,
+                'source_input_file' => $runSummary['source_context']['source_input_file'] ?? null,
+                'source_summary' => $sourceSummary,
             ],
             'output_dir' => $dir,
             'file_count' => count($files),
@@ -230,6 +234,8 @@ class MarketDataEvidenceExportService
 
     private function buildRunSummary($run, $manifest = null)
     {
+        $sourceContext = $this->buildSourceContext($run);
+
         return [
             'run_id' => (int) $run->run_id,
             'trade_date_requested' => $run->trade_date_requested,
@@ -240,6 +246,7 @@ class MarketDataEvidenceExportService
             'publishability_state' => $run->publishability_state,
             'stage' => $run->stage,
             'source' => $run->source,
+            'source_context' => $sourceContext,
             'coverage' => $this->buildCoverageState($run),
             'coverage_ratio' => $run->coverage_ratio !== null ? (float) $run->coverage_ratio : null,
             'bars_rows_written' => $run->bars_rows_written !== null ? (int) $run->bars_rows_written : null,
@@ -262,6 +269,70 @@ class MarketDataEvidenceExportService
             'started_at' => $run->started_at,
             'finished_at' => $run->finished_at,
         ];
+    }
+
+    private function buildSourceContext($record)
+    {
+        $notesMap = $this->parseRunNotes((string) ($record->notes ?? ''));
+
+        return [
+            'source_name' => $notesMap['source_name'] ?? null,
+            'source_input_file' => $notesMap['source_input_file'] ?? null,
+            'attempt_count' => isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] !== '' ? (int) $notesMap['source_attempt_count'] : null,
+            'success_after_retry' => $notesMap['source_success_after_retry'] ?? null,
+            'final_http_status' => isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? (int) $notesMap['source_final_http_status'] : null,
+        ];
+    }
+
+    private function buildSourceSummaryString(array $sourceContext)
+    {
+        $summaryParts = [];
+
+        if (array_key_exists('attempt_count', $sourceContext) && $sourceContext['attempt_count'] !== null) {
+            $summaryParts[] = 'attempt_count='.(string) $sourceContext['attempt_count'];
+        }
+
+        if (isset($sourceContext['success_after_retry']) && $sourceContext['success_after_retry'] !== '') {
+            $summaryParts[] = 'success_after_retry='.(string) $sourceContext['success_after_retry'];
+        }
+
+        if (array_key_exists('final_http_status', $sourceContext) && $sourceContext['final_http_status'] !== null) {
+            $summaryParts[] = 'final_http_status='.(string) $sourceContext['final_http_status'];
+        }
+
+        return $summaryParts === [] ? null : implode(' | ', $summaryParts);
+    }
+
+    private function parseRunNotes($notes)
+    {
+        if ($notes === '') {
+            return [];
+        }
+
+        $segments = preg_split('/\s*;\s*/', $notes);
+        if (! is_array($segments)) {
+            return [];
+        }
+
+        $parsed = [];
+        foreach ($segments as $segment) {
+            $segment = trim((string) $segment);
+            if ($segment === '' || strpos($segment, '=') === false) {
+                continue;
+            }
+
+            [$key, $value] = array_pad(explode('=', $segment, 2), 2, null);
+            $key = trim((string) $key);
+            $value = trim((string) $value);
+
+            if ($key === '') {
+                continue;
+            }
+
+            $parsed[$key] = $value;
+        }
+
+        return $parsed;
     }
 
     private function buildReplayResult($metric)

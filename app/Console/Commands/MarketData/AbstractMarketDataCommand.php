@@ -54,6 +54,8 @@ abstract class AbstractMarketDataCommand extends Command
 
         $this->renderCoverageSummary($run);
 
+        $this->renderSourceSummary($run);
+
         $reasonCode = $this->runField($run, 'reason_code');
         if ($reasonCode !== null && $reasonCode !== '') {
             $this->line('reason_code='.(string) $reasonCode);
@@ -63,6 +65,75 @@ abstract class AbstractMarketDataCommand extends Command
         if ($notes !== null && $notes !== '') {
             $this->line('notes='.(string) $notes);
         }
+    }
+
+
+    protected function renderSourceSummary($run)
+    {
+        $notesMap = $this->parseRunNotes((string) $this->runField($run, 'notes', ''));
+        $sourceName = $notesMap['source_name'] ?? null;
+        $inputFile = $notesMap['source_input_file'] ?? null;
+        $attemptCount = $notesMap['source_attempt_count'] ?? null;
+        $successAfterRetry = $notesMap['source_success_after_retry'] ?? null;
+        $finalHttpStatus = $notesMap['source_final_http_status'] ?? null;
+
+        if ($sourceName !== null && $sourceName !== '') {
+            $this->line('source_name='.(string) $sourceName);
+        }
+
+        if ($inputFile !== null && $inputFile !== '') {
+            $this->line('source_input_file='.(string) $inputFile);
+        }
+
+        $summaryParts = [];
+
+        if ($attemptCount !== null && $attemptCount !== '') {
+            $summaryParts[] = 'attempt_count='.(string) $attemptCount;
+        }
+
+        if ($successAfterRetry !== null && $successAfterRetry !== '') {
+            $summaryParts[] = 'success_after_retry='.(string) $successAfterRetry;
+        }
+
+        if ($finalHttpStatus !== null && $finalHttpStatus !== '') {
+            $summaryParts[] = 'final_http_status='.(string) $finalHttpStatus;
+        }
+
+        if ($summaryParts !== []) {
+            $this->line('source_summary='.implode(' | ', $summaryParts));
+        }
+    }
+
+    protected function parseRunNotes($notes)
+    {
+        if ($notes === '') {
+            return [];
+        }
+
+        $segments = preg_split('/\s*;\s*/', $notes);
+        if (! is_array($segments)) {
+            return [];
+        }
+
+        $parsed = [];
+        foreach ($segments as $segment) {
+            $segment = trim((string) $segment);
+            if ($segment === '' || strpos($segment, '=') === false) {
+                continue;
+            }
+
+            [$key, $value] = array_pad(explode('=', $segment, 2), 2, null);
+            $key = trim((string) $key);
+            $value = trim((string) $value);
+
+            if ($key === '') {
+                continue;
+            }
+
+            $parsed[$key] = $value;
+        }
+
+        return $parsed;
     }
 
     protected function renderCoverageSummary($run)

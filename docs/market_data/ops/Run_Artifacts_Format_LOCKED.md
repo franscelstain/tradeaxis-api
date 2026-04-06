@@ -46,6 +46,13 @@ A conforming summary should contain at minimum:
       "publishability_state": "NOT_READABLE",
       "stage": "FINALIZE",
       "source": "API_FREE",
+      "source_context": {
+        "source_name": "API_FREE",
+        "source_input_file": null,
+        "attempt_count": 3,
+        "success_after_retry": "yes",
+        "final_http_status": 200
+      },
       "coverage_ratio": 0.8420,
       "bars_rows_written": 842,
       "indicators_rows_written": 830,
@@ -74,6 +81,7 @@ A conforming summary should contain at minimum:
 - if requested date is held or failed, summary must not imply requested date is readable
 - run-summary fields that mirror persisted run state must use the persisted names from `eod_runs`
 - derived publication-facing fields may appear only when clearly marked as derived companion evidence, not as replacement names for persisted columns
+- `source_context` is allowed as derived companion evidence parsed from persisted run telemetry/notes; it must not invent source facts absent from persisted run context
 
 ## 2. `publication_manifest.json`
 ### Purpose

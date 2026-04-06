@@ -55,6 +55,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'supersedes_run_id' => null,
             'started_at' => '2026-04-21T17:00:00+07:00',
             'finished_at' => '2026-04-21T17:21:00+07:00',
+            'notes' => 'candidate_publication_id=1201; source_name=API_FREE; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200',
         ];
         $publication = (object) ['publication_id' => 1201, 'run_id' => 8124, 'publication_version' => 1, 'is_current' => 1, 'seal_state' => 'SEALED'];
         $manifest = (object) [
@@ -128,9 +129,15 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(2, $summary['coverage']['coverage_universe_count']);
         $this->assertSame(0.98, $summary['coverage']['coverage_min_threshold']);
         $this->assertSame([], $summary['coverage']['coverage_missing_sample']);
+        $this->assertSame('API_FREE', $summary['source_context']['source_name']);
+        $this->assertSame(2, $summary['source_context']['attempt_count']);
+        $this->assertSame('yes', $summary['source_context']['success_after_retry']);
+        $this->assertSame(200, $summary['source_context']['final_http_status']);
 
         $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
         $this->assertSame('coverage_gate_v1', $payload['run_summary']['coverage']['coverage_contract_version']);
         $this->assertSame('active_equity_universe_asof_trade_date', $payload['run_summary']['coverage']['coverage_universe_basis']);
+        $this->assertSame('API_FREE', $payload['run_summary']['source_context']['source_name']);
+        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $result['summary']['source_summary']);
     }
 }

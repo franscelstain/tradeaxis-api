@@ -114,6 +114,8 @@ Execute the daily sequence:
 - `input_file` is only a manual-file override and must not silently alter API mode behavior
 - explicit `input_file` accepts `.json` or `.csv` only
 - explicit `input_file` must be reflected in operator-visible command output and minimum ingest telemetry when used
+- when API acquisition telemetry is available in run notes, command summary should surface minimum source context (`source_name`, attempt summary, final HTTP status) without forcing operator to parse raw notes
+- `market-data:evidence:export --run_id=...` should also surface the same minimum source context in exported run evidence summary when that telemetry exists
 
 ### 8. `market-data:backfill`
 #### Purpose

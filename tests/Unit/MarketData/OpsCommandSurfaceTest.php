@@ -429,6 +429,50 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('files=run_summary.json,evidence_pack.json', $display);
     }
 
+    public function test_evidence_export_command_exports_run_evidence_with_source_context_summary(): void
+    {
+        $service = m::mock(MarketDataEvidenceExportService::class);
+        $service->shouldReceive('exportRunEvidence')
+            ->once()
+            ->with(42, '/tmp/run-evidence-source')
+            ->andReturn([
+                'selector' => ['type' => 'run', 'id' => 42],
+                'summary' => [
+                    'run_id' => 42,
+                    'trade_date_requested' => '2026-03-18',
+                    'trade_date_effective' => '2026-03-18',
+                    'terminal_status' => 'SUCCESS',
+                    'publishability_state' => 'READABLE',
+                    'source_name' => 'API_FREE',
+                    'source_input_file' => null,
+                    'source_summary' => 'attempt_count=2 | success_after_retry=yes | final_http_status=200',
+                ],
+                'output_dir' => '/tmp/run-evidence-source',
+                'file_count' => 2,
+                'files' => ['run_summary.json', 'evidence_pack.json'],
+            ]);
+
+        $this->app->instance(MarketDataEvidenceExportService::class, $service);
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--run_id' => 42,
+            '--output_dir' => '/tmp/run-evidence-source',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('selector=run', $display);
+        $this->assertStringContainsString('selector_id=42', $display);
+        $this->assertStringContainsString('source_name=API_FREE', $display);
+        $this->assertStringContainsString('source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200', $display);
+        $this->assertStringNotContainsString('source_input_file=', $display);
+    }
+
     public function test_evidence_export_command_exports_correction_evidence(): void
     {
         $service = m::mock(MarketDataEvidenceExportService::class);
@@ -777,6 +821,75 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(0, $exitCode);
         $this->assertNull(config('market_data.source.local_input_file'));
         $this->assertStringContainsString('input_file=storage/app/market_data/operator/manual-2026-03-24.csv', $display);
+    }
+
+
+    public function test_daily_pipeline_command_renders_source_summary_from_run_notes(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'api', null)
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'notes' => 'candidate_publication_id=44; source_name=API_FREE; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'api',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('source_name=API_FREE', $display);
+        $this->assertStringContainsString('source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200', $display);
+    }
+
+    public function test_daily_pipeline_command_renders_manual_source_input_file_from_run_notes(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'manual_file', null)
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'notes' => 'candidate_publication_id=44; source_name=LOCAL_FILE; source_input_file=manual-2026-03-24.csv',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'manual_file',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('source_name=LOCAL_FILE', $display);
+        $this->assertStringContainsString('source_input_file=manual-2026-03-24.csv', $display);
     }
 
     public function test_daily_pipeline_command_renders_coverage_summary_for_pass_outcome(): void

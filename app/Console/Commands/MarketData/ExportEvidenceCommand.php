@@ -61,6 +61,10 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
         }
 
         foreach ($summary as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
             $this->line($key.'='.$this->stringifyValue($value));
         }
 

@@ -3,7 +3,7 @@
 ## Summary
 Semua contract core coverage/finalize/evidence/publication readability sudah DONE.
 
-Masih ada family operasional external source yang belum full DONE. Pada sesi ini diambil batch homogen untuk menutup gap manual-file fallback operator path pada command harian utama agar fallback operator tidak berhenti di contract text saja.
+Masih ada family operasional external source yang belum full DONE. Pada sesi ini diambil batch homogen untuk menutup gap logging ops minimum pada command operator agar telemetry source tidak berhenti sebagai raw notes.
 
 ---
 
@@ -34,41 +34,70 @@ Status: PARTIAL
 | Partial failure handling | PARTIAL | ingest failure persistence sudah benar; scope family belum full selesai |
 | Fallback | PARTIAL | manual-file fallback operator path pada `market-data:daily` sudah ada dengan explicit `input_file`; fallback multi-path/operator proof yang lebih luas belum ada |
 | Rerun strategy | MISSING | belum ada |
-| Logging ops | PARTIAL | source-context logging minimum + success-after-retry telemetry minimum sudah ada, tetapi logging ops menyeluruh belum lengkap |
+| Logging ops | PARTIAL | source-context logging minimum + success-after-retry telemetry minimum sekarang muncul di command summary dan run evidence export; dashboard/export menyeluruh belum lengkap |
 
 #### Batch In Scope in This Session
-Status: PARTIAL (awaiting local PHPUnit proof)
+Status: DONE (implemented and verified)
 
 Scope yang dikerjakan pada sesi ini:
-- manual-file fallback operator path pada `market-data:daily`
-- explicit `input_file` override untuk fallback satu kali tanpa kebocoran config ke run berikutnya
-- jejak minimum fallback manual ke output command, event payload, dan `eod_runs.notes`
+- command-surface rendering untuk source telemetry minimum yang sudah tersimpan di `eod_runs.notes`
+- output operator minimum untuk API retry path (`source_name`, `attempt_count`, `success_after_retry`, `final_http_status`)
+- output operator minimum untuk manual fallback path (`source_input_file`)
 
 Proof implementasi di code:
-- `DailyPipelineCommand` sekarang menerima `--input_file=` saat `source_mode=manual_file`
-- override file eksplisit dipasang sementara lalu dipulihkan setelah command selesai
-- `LocalFileEodBarsAdapter` sekarang membaca explicit input file `.json` / `.csv` dari `market_data.source.local_input_file` sebelum directory-template default
-- `MarketDataPipelineService::completeIngest()` sekarang menulis `input_file` ke payload event manual-file dan `source_input_file=...` ke `eod_runs.notes`
+- `AbstractMarketDataCommand::renderRunSummary()` sekarang memanggil renderer source summary sebelum `reason_code` / `notes`
+- parser notes minimum mengekstrak `source_name`, `source_attempt_count`, `source_success_after_retry`, `source_final_http_status`, dan `source_input_file`
+- summary tetap memakai source of truth yang sama (`eod_runs.notes`) tanpa field runtime baru
 
 Validation evidence currently available:
 - repo surface sinkron untuk code/doc/test batch ini
 - `php -l` changed files in container → OK
-- local PHPUnit for new batch → NOT RUN in this container (`vendor/` absent from uploaded ZIP)
+- local PHPUnit for new batch → PASS dari environment lokal user (`tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (22 tests, 126 assertions)`)
+- full PHPUnit suite after scoped batch → PASS dari environment lokal user (`156 tests, 1648 assertions`)
 
 Tests added/updated for this batch:
 - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  - `test_daily_pipeline_command_propagates_manual_input_file_override_without_leaking_config()`
-- `tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php`
-  - `test_fetch_or_load_eod_bars_prefers_explicit_manual_input_file_override()`
-  - `test_fetch_or_load_eod_bars_rejects_explicit_input_file_with_unsupported_extension()`
-- `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
-  - `test_complete_ingest_persists_manual_input_file_in_notes_and_event_payload()`
+  - `test_daily_pipeline_command_renders_source_summary_from_run_notes()`
+  - `test_daily_pipeline_command_renders_manual_source_input_file_from_run_notes()`
 
-Honest validation gap for this scoped batch:
-- batch code + docs tampak sinkron dari audit ZIP
-- syntax dan PHPUnit lokal user masih diperlukan sebelum batch ini boleh dianggap fully validated
+Honest validation state for this scoped batch:
+- batch code + docs sinkron
+- syntax lokal user sudah terbukti
+- targeted PHPUnit batch sudah terbukti
+- full PHPUnit suite juga sudah terbukti
+- batch logging ops ini boleh dianggap fully validated
 
 ---
+
+#### Batch In Scope in This Session
+Status: PARTIAL (implemented, pending local PHPUnit proof)
+
+Scope yang dikerjakan pada sesi ini:
+- run evidence export surface untuk source telemetry minimum
+- turunan source context minimum dari `eod_runs.notes` ke `run_summary.json` / `evidence_pack.json`
+- output operator minimum `market-data:evidence:export` untuk `source_name`, `source_input_file`, dan `source_summary`
+
+Proof implementasi di code:
+- `MarketDataEvidenceExportService::buildRunSummary()` sekarang menambahkan `source_context` companion evidence dari run notes
+- `exportRunEvidence()` sekarang mereturn summary operator yang menyertakan `source_name`, `source_input_file`, dan `source_summary` bila tersedia
+- `ExportEvidenceCommand` melewati field summary kosong/null agar output source context tetap bersih
+
+Validation evidence currently available:
+- repo surface sinkron untuk code/doc/test batch ini
+- `php -l` changed files in container → OK
+- local PHPUnit for new batch → MENUNGGU environment lokal user karena `vendor/` tidak ada di ZIP
+
+Tests added/updated for this batch:
+- `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+  - run evidence sekarang memverifikasi `source_context` dan summary retry minimum
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  - `test_evidence_export_command_exports_run_evidence_with_source_context_summary()`
+
+Honest validation state for this scoped batch:
+- batch code + docs sinkron
+- syntax validation tersedia
+- targeted/full PHPUnit batch ini belum boleh diklaim sampai user menjalankan lokal
+
 
 ## Load-Bearing Remaining
 - fallback external source belum ada
@@ -76,8 +105,8 @@ Honest validation gap for this scoped batch:
 - family external source resilience belum full selesai
 
 ## Honest Remaining Validation Gap
-- scoped batch session ini masih menunggu local PHPUnit proof karena `vendor/` tidak ada di ZIP
-- gap family operasional yang lebih besar tetap tersisa di fallback, rerun strategy, dan logging ops menyeluruh
+- scoped batch session ini sudah tervalidasi lewat syntax check lokal user, targeted PHPUnit, dan full PHPUnit suite
+- gap family operasional yang lebih besar tetap tersisa di fallback external source, rerun strategy, dan dashboard/export ops yang lebih luas
 
 ---
 
@@ -88,6 +117,5 @@ PARTIAL
 ## Correction Note After Local User Validation
 - local PHPUnit user membuktikan 2 defect batch ini: regex absolute-path invalid dan test manual-file ingest tidak mengikuti contract `EodRun`.
 - corrective fix sesi ini menutup kedua defect tersebut tanpa mengubah owner contract.
-- status batch tetap PARTIAL sampai user menjalankan ulang PHPUnit lokal.
 - follow-up fix v4: test `test_complete_ingest_persists_manual_input_file_in_notes_and_event_payload` kini memakai `EodRun` nyata, bukan `stdClass`, agar sesuai signature `EodRunRepository::touchStage()`.
-- status batch tetap PARTIAL sampai user menjalankan ulang PHPUnit lokal atas file test target.
+- user sudah menjalankan ulang syntax check, targeted PHPUnit, dan full suite; batch logging ops sekarang verified.
