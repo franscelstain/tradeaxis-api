@@ -167,6 +167,70 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame(2, $calls);
     }
 
+
+
+    public function test_api_adapter_retries_timeout_then_succeeds()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'endpoint_template' => 'https://example.test/eod/{date}',
+            'response_rows_path' => 'rows',
+        ], 1, 0));
+
+        $calls = 0;
+        $adapter = new PublicApiEodBarsAdapter(function () use (&$calls) {
+            $calls++;
+            if ($calls === 1) {
+                return [
+                    'status' => 504,
+                    'body' => '{"error":"gateway timeout"}',
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => json_encode(['rows' => [[
+                    'ticker_code' => 'BBCA',
+                    'trade_date' => '2026-03-20',
+                    'open' => 1,
+                    'high' => 2,
+                    'low' => 1,
+                    'close' => 2,
+                    'volume' => 10,
+                ]]]),
+            ];
+        });
+
+        $rows = $adapter->fetchOrLoadEodBars('2026-03-20', 'api');
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(2, $calls);
+    }
+
+    public function test_api_adapter_raises_timeout_after_retry_exhaustion()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'endpoint_template' => 'https://example.test/eod/{date}',
+        ], 2, 0));
+
+        $calls = 0;
+        $adapter = new PublicApiEodBarsAdapter(function () use (&$calls) {
+            $calls++;
+
+            return [
+                'status' => 500,
+                'body' => '{"error":"upstream unavailable"}',
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBars('2026-03-20', 'api');
+            $this->fail('Expected timeout classification after retry exhaustion.');
+        } catch (SourceAcquisitionException $e) {
+            $this->assertSame('RUN_SOURCE_TIMEOUT', $e->reasonCode());
+            $this->assertSame(3, $calls);
+        }
+    }
+
     public function test_api_adapter_raises_auth_error_without_retry()
     {
         $this->bindMarketDataConfig($this->config(['endpoint_template' => 'https://example.test/eod/{date}'], 3, 0));
