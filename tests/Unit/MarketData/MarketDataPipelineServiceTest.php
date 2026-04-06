@@ -166,14 +166,12 @@ class MarketDataPipelineServiceTest extends TestCase
         $outcomes = m::mock(PublicationFinalizeOutcomeService::class);
         $coverageGate = m::mock(CoverageGateEvaluator::class);
 
-        $run = (object) [
-            'run_id' => 88,
-            'trade_date_requested' => '2026-03-24',
-            'stage' => 'INGEST_BARS',
-            'source' => 'manual_file',
-            'notes' => null,
-            'supersedes_run_id' => null,
-        ];
+        $run = $this->makeRun(88, '1.0000', null);
+        $run->trade_date_requested = '2026-03-24';
+        $run->stage = 'INGEST_BARS';
+        $run->source = 'manual_file';
+        $run->notes = null;
+        $run->supersedes_run_id = null;
 
         $runs->shouldReceive('getOrCreateOwningRun')->once()->andReturn($run);
         $runs->shouldReceive('touchStage')->once()->andReturn($run);

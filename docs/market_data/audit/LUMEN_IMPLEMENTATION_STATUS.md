@@ -123,3 +123,11 @@
 ## Final State
 SELESAI (IMPLEMENTATION CORE)
 PARTIAL (OPERATIONAL DOMAIN ONLY; CURRENT BATCH AWAITS LOCAL TEST PROOF)
+
+
+## Post-Local-Test Correction
+- local PHPUnit user menemukan 2 defect nyata pada batch ini: regex absolute-path adapter invalid dan test manual-file ingest memakai `stdClass` alih-alih `EodRun`.
+- corrective fix sesi ini memperbaiki regex absolute-path di `LocalFileEodBarsAdapter` dan menyelaraskan test ke `EodRun` sesuai contract domain.
+- follow-up fix v4: `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` diperbaiki lagi karena satu test manual-file ingest masih mengembalikan `stdClass`; sekarang seluruh path `touchStage()` pada batch ini kembali memakai `EodRun` sesuai contract repository.
+- status batch tetap PARTIAL sampai user menjalankan ulang PHPUnit lokal untuk membuktikan fix follow-up ini.
+- proof final batch masih menunggu user menjalankan ulang PHPUnit lokal.

@@ -83,3 +83,11 @@ Honest validation gap for this scoped batch:
 
 ## Final Tracker State
 PARTIAL
+
+
+## Correction Note After Local User Validation
+- local PHPUnit user membuktikan 2 defect batch ini: regex absolute-path invalid dan test manual-file ingest tidak mengikuti contract `EodRun`.
+- corrective fix sesi ini menutup kedua defect tersebut tanpa mengubah owner contract.
+- status batch tetap PARTIAL sampai user menjalankan ulang PHPUnit lokal.
+- follow-up fix v4: test `test_complete_ingest_persists_manual_input_file_in_notes_and_event_payload` kini memakai `EodRun` nyata, bukan `stdClass`, agar sesuai signature `EodRunRepository::touchStage()`.
+- status batch tetap PARTIAL sampai user menjalankan ulang PHPUnit lokal atas file test target.

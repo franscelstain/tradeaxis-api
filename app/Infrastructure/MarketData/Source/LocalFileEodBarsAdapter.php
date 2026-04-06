@@ -67,7 +67,7 @@ class LocalFileEodBarsAdapter
     private function isAbsolutePath($path)
     {
         return Str::startsWith($path, ['/','\\'])
-            || preg_match('/^[A-Za-z]:[\\\/]/', $path) === 1;
+            || preg_match('~^[A-Za-z]:[\\/]~', $path) === 1;
     }
 
     private function loadJson($path, $tradeDate)
