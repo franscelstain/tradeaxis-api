@@ -10,7 +10,7 @@ Digunakan aktif untuk project tradeaxis-api (market_data).
 - Architecture correctness: DONE
 - Code quality: STABLE
 - Test proof in repo surface: PRESENT
-- Local execution proof from current ZIP: PENDING MANUAL RUN
+- Local execution proof from current ZIP: AVAILABLE (user manual validation passed)
 - Operational readiness: PARTIAL
 
 ---
@@ -29,13 +29,14 @@ Jangan campur:
 - repo surface proof -> file memang ada dan sinkron
 - local execution proof -> baru sah setelah phpunit/artisan dijalankan di lingkungan lokal
 - live operational stability -> tetap isu terpisah meskipun retry/backoff/timeout sudah ada
+- manual validation evidence -> saat user sudah kirim hasil lokal, audit harus diperbarui dan tidak boleh tetap menulis pending
 
 ---
 
 ## Done Gate Result
 Masih PARTIAL karena:
-- manual/local validation belum dijalankan dari ZIP tanpa `vendor/`
 - external source operational family belum full proof pada logging/fallback/runtime degradation path
+- live-source operational stability masih belum terbukti hanya dari unit + integration test
 
 ---
 

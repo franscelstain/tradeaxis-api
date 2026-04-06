@@ -4,7 +4,7 @@
 - Domain: market_data
 - Current State: PARTIAL
 - Operational State: PARTIAL
-- Last Session: SESI SOURCE RESILIENCE AUDIT SYNC
+- Last Session: SESI SOURCE RESILIENCE AUDIT SYNC + MANUAL VALIDATION
 
 ---
 
@@ -38,15 +38,21 @@
 ---
 
 ## Runtime Evidence
-- Dari ZIP ini saya hanya bisa validasi code/docs/test surface dan syntax file yang diubah.
-- PHPUnit/artisan belum boleh diklaim jalan karena `vendor/` tidak ikut di ZIP.
-- Proof runtime lokal masih menunggu hasil manual test dari user.
+- Dari ZIP ini saya validasi code/docs/test surface dan syntax file yang diubah.
+- User sudah menjalankan manual validation di lokal dan semua proof yang diminta untuk batch ini lulus.
+- Hasil manual validation yang sudah diberikan:
+  - `php -l tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` -> OK
+  - `vendor\bin\phpunit tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` -> OK (6 tests, 19 assertions)
+  - `vendor\bin\phpunit tests/Unit/MarketData/EodBarsIngestServiceTest.php` -> OK (2 tests, 16 assertions)
+  - `vendor\bin\phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` -> OK (6 tests, 32 assertions)
+  - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> OK (40 tests, 1032 assertions)
+  - `vendor\bin\phpunit` -> OK (144 tests, 1571 assertions)
 
 ---
 
 ## Current Open Gaps
 [LB]
-- Belum ada proof runtime lokal bahwa adapter resilience path tetap hijau saat PHPUnit dijalankan pada repo aktual.
+- Proof runtime lokal untuk adapter resilience path sekarang sudah ada dan hijau.
 - Logging operasional untuk retry/backoff exhaustion masih belum dibuktikan kaya dan eksplisit pada artefak audit/run trail.
 - Live-source daily health tetap belum matang; retry existing tidak otomatis berarti public API harian stabil.
 - Fallback/rerun operator proof untuk kasus source degradation masih perlu validasi runtime lokal bila batch berikutnya memilih area itu.
@@ -56,11 +62,11 @@
 ## Operational Notes
 - Contract core market-data tetap closed pada area coverage/finalize/publication.
 - Batch sesi ini hanya menutup drift audit dan memperkuat proof external source acquisition resilience yang memang sudah ada di codebase.
-- Status belum boleh dinaikkan ke `SELESAI` karena proof lokal belum dijalankan dari repo tanpa vendor.
+- Status belum boleh dinaikkan ke `SELESAI` karena family resilience masih punya gap operasional pada logging/fallback/live-source proof, bukan lagi karena PHPUnit belum dijalankan.
 
 ---
 
 ## Final State
 PARTIAL
 - implementation/docs sync: lebih akurat
-- runtime/local proof: menunggu manual validation
+- runtime/local proof: available and passing
