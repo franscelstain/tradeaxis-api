@@ -83,7 +83,10 @@ class MarketDataPipelineService
         }
 
         $run = $this->runs->touchStage($run, $input->stage, [
-            'notes' => $input->correctionId ? 'correction_id='.$input->correctionId : $run->notes,
+            'notes' => $this->appendRunNotes(
+                $run->notes,
+                $input->correctionId ? ['correction_id='.(int) $input->correctionId] : []
+            ),
             'supersedes_run_id' => $supersedesRunId ?: $run->supersedes_run_id,
         ]);
 
@@ -94,7 +97,7 @@ class MarketDataPipelineService
             'INFO',
             'Stage started in owning run context.',
             null,
-            [
+            $this->sourceTelemetryPayload($input->sourceMode) + [
                 'requested_date' => $input->requestedDate,
                 'source_mode' => $input->sourceMode,
                 'stage' => $input->stage,
@@ -117,7 +120,10 @@ class MarketDataPipelineService
                     'bars_rows_written' => $result['bars_rows_written'],
                     'invalid_bar_count' => $result['invalid_bar_count'],
                     'publication_version' => $result['publication_version'],
-                    'notes' => trim(($run->notes ? $run->notes.'; ' : '').'candidate_publication_id='.$result['publication_id']),
+                    'notes' => $this->appendRunNotes($run->notes, [
+                        'candidate_publication_id='.$result['publication_id'],
+                        'source_name='.(string) $result['source_name'],
+                    ]),
                 ]);
 
                 $this->runs->appendEvent(
@@ -127,7 +133,7 @@ class MarketDataPipelineService
                     'INFO',
                     'Bars ingest stage completed with canonical artifact writes.',
                     null,
-                    $result
+                    $result + $this->sourceTelemetryPayload($input->sourceMode, $result['source_name'])
                 );
 
                 return $run;
@@ -733,7 +739,7 @@ class MarketDataPipelineService
 
     private function handleStageFailure($run, $stage, $reasonCode, \Throwable $e)
     {
-        $payload = [
+        $payload = $this->sourceTelemetryPayload($run->source ?? null) + [
             'exception_class' => get_class($e),
             'exception_message' => $e->getMessage(),
         ];
@@ -754,6 +760,52 @@ class MarketDataPipelineService
         }
 
         $this->runs->failStage($run, $stage, $reasonCode, $this->summarizeThrowable($e), $payload);
+    }
+
+
+    private function sourceTelemetryPayload($sourceMode, $resolvedSourceName = null)
+    {
+        $payload = [
+            'source_mode' => $sourceMode,
+        ];
+
+        if ($resolvedSourceName !== null && trim((string) $resolvedSourceName) !== '') {
+            $payload['source_name'] = strtoupper(trim((string) $resolvedSourceName));
+        } elseif ($sourceMode === 'api') {
+            $payload['source_name'] = strtoupper((string) config('market_data.source.api.source_name', config('market_data.source.default_source_name', 'API_FREE')));
+        } elseif (in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
+            $payload['source_name'] = strtoupper((string) config('market_data.source.default_source_name', 'LOCAL_FILE'));
+        }
+
+        if ($sourceMode === 'api') {
+            $payload['provider'] = strtolower((string) config('market_data.source.api.provider', 'generic'));
+            $payload['timeout_seconds'] = max(1, (int) config('market_data.source.api.timeout_seconds', 15));
+            $payload['retry_max'] = max(0, (int) config('market_data.provider.api_retry_max', 0));
+            $payload['throttle_qps'] = max(1, (int) config('market_data.provider.api_throttle_qps', 1));
+        }
+
+        return $payload;
+    }
+
+    private function appendRunNotes($existingNotes, array $segments)
+    {
+        $parts = [];
+
+        foreach (explode(';', (string) $existingNotes) as $part) {
+            $part = trim($part);
+            if ($part !== '') {
+                $parts[] = $part;
+            }
+        }
+
+        foreach ($segments as $segment) {
+            $segment = trim((string) $segment);
+            if ($segment !== '' && ! in_array($segment, $parts, true)) {
+                $parts[] = $segment;
+            }
+        }
+
+        return empty($parts) ? null : implode('; ', $parts);
     }
 
     private function summarizeThrowable(\Throwable $e)

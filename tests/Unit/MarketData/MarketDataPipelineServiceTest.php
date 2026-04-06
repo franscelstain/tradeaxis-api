@@ -85,6 +85,142 @@ class MarketDataPipelineServiceTest extends TestCase
         return $run;
     }
 
+
+    public function test_start_stage_logs_api_source_context_in_stage_started_event(): void
+    {
+        [$service, $runs, $publications, $corrections] = $this->makeService();
+
+        $run = $this->makeRun(91);
+        $run->notes = null;
+        $run->supersedes_run_id = null;
+
+        config()->set('market_data.source.api.provider', 'generic');
+        config()->set('market_data.source.api.source_name', 'API_FREE');
+        config()->set('market_data.source.api.timeout_seconds', 9);
+        config()->set('market_data.provider.api_retry_max', 4);
+        config()->set('market_data.provider.api_throttle_qps', 11);
+
+        $input = new MarketDataStageInput('2026-04-05', 'api', null, 'INGEST_BARS', null);
+
+        $runs->shouldReceive('getOrCreateOwningRun')
+            ->once()
+            ->with('2026-04-05', 'api', 'INGEST_BARS', null)
+            ->andReturn($run);
+
+        $runs->shouldReceive('touchStage')
+            ->once()
+            ->with($run, 'INGEST_BARS', m::on(function ($attributes) {
+                return is_array($attributes)
+                    && array_key_exists('notes', $attributes)
+                    && $attributes['notes'] === null
+                    && array_key_exists('supersedes_run_id', $attributes)
+                    && $attributes['supersedes_run_id'] === null;
+            }))
+            ->andReturn($run);
+
+        $runs->shouldReceive('appendEvent')
+            ->once()
+            ->with(
+                $run,
+                'INGEST_BARS',
+                'STAGE_STARTED',
+                'INFO',
+                'Stage started in owning run context.',
+                null,
+                m::on(function ($payload) {
+                    return is_array($payload)
+                        && ($payload['requested_date'] ?? null) === '2026-04-05'
+                        && ($payload['source_mode'] ?? null) === 'api'
+                        && ($payload['source_name'] ?? null) === 'API_FREE'
+                        && ($payload['provider'] ?? null) === 'generic'
+                        && ($payload['timeout_seconds'] ?? null) === 9
+                        && ($payload['retry_max'] ?? null) === 4
+                        && ($payload['throttle_qps'] ?? null) === 11
+                        && ($payload['stage'] ?? null) === 'INGEST_BARS'
+                        && array_key_exists('correction_id', $payload)
+                        && $payload['correction_id'] === null;
+                })
+            );
+
+        $result = $service->startStage($input);
+
+        $this->assertSame($run, $result[0]);
+        $this->assertNull($result[1]);
+        $this->assertNull($result[2]);
+    }
+
+    public function test_complete_ingest_persists_source_name_in_notes_and_event_payload(): void
+    {
+        [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility, $barsIngest] = $this->makeService();
+
+        $run = $this->makeRun(92);
+        $run->notes = 'correction_id=7';
+        $run->supersedes_run_id = null;
+
+        $input = new MarketDataStageInput('2026-04-05', 'api', 92, 'INGEST_BARS', null);
+
+        config()->set('market_data.source.api.provider', 'generic');
+        config()->set('market_data.source.api.source_name', 'API_FREE');
+        config()->set('market_data.source.api.timeout_seconds', 15);
+        config()->set('market_data.provider.api_retry_max', 3);
+        config()->set('market_data.provider.api_throttle_qps', 5);
+
+        $service->shouldReceive('startStage')
+            ->once()
+            ->with($input)
+            ->andReturn([$run, null, null]);
+
+        $barsIngest->shouldReceive('ingest')
+            ->once()
+            ->with($run, '2026-04-05', 'api', null)
+            ->andReturn([
+                'publication_id' => 44,
+                'publication_version' => 6,
+                'bars_rows_written' => 900,
+                'invalid_bar_count' => 3,
+                'source_name' => 'API_FREE',
+                'storage_target' => 'eod_bars',
+            ]);
+
+        $runs->shouldReceive('updateTelemetry')
+            ->once()
+            ->with($run, m::on(function ($telemetry) {
+                return is_array($telemetry)
+                    && ($telemetry['bars_rows_written'] ?? null) === 900
+                    && ($telemetry['invalid_bar_count'] ?? null) === 3
+                    && ($telemetry['publication_version'] ?? null) === 6
+                    && ($telemetry['notes'] ?? null) === 'correction_id=7; candidate_publication_id=44; source_name=API_FREE';
+            }))
+            ->andReturn($run);
+
+        $runs->shouldReceive('appendEvent')
+            ->once()
+            ->with(
+                $run,
+                'INGEST_BARS',
+                'STAGE_COMPLETED',
+                'INFO',
+                'Bars ingest stage completed with canonical artifact writes.',
+                null,
+                m::on(function ($payload) {
+                    return is_array($payload)
+                        && ($payload['publication_id'] ?? null) === 44
+                        && ($payload['source_mode'] ?? null) === 'api'
+                        && ($payload['source_name'] ?? null) === 'API_FREE'
+                        && ($payload['provider'] ?? null) === 'generic'
+                        && ($payload['timeout_seconds'] ?? null) === 15
+                        && ($payload['retry_max'] ?? null) === 3
+                        && ($payload['throttle_qps'] ?? null) === 5;
+                })
+            );
+
+        $runs->shouldReceive('failStage')->never();
+
+        $result = $service->completeIngest($input);
+
+        $this->assertSame($run, $result);
+    }
+
     public function test_complete_eligibility_stores_coverage_telemetry_separately_from_eligibility_metrics(): void
     {
         [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility] = $this->makeService();
@@ -784,6 +920,6 @@ class MarketDataPipelineServiceTest extends TestCase
             $coverageGateEvaluator,
         ])->makePartial()->shouldAllowMockingProtectedMethods();
 
-        return [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility];
+        return [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility, $barsIngest];
     }
 }

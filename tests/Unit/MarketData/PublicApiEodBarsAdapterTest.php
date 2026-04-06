@@ -232,6 +232,8 @@ class PublicApiEodBarsAdapterTest extends TestCase
             $this->assertSame('RUN_SOURCE_TIMEOUT', $e->reasonCode());
             $this->assertSame(3, $calls);
             $this->assertSame('generic', $context['provider']);
+            $this->assertSame('API_FREE', $context['source_name']);
+            $this->assertSame(3, $context['timeout_seconds']);
             $this->assertSame(2, $context['retry_max']);
             $this->assertSame(3, $context['attempt_count']);
             $this->assertCount(3, $context['attempts']);

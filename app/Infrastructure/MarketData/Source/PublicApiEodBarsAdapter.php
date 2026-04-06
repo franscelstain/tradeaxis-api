@@ -152,6 +152,8 @@ class PublicApiEodBarsAdapter
         $baseBackoffMs = max(0, (int) config('market_data.provider.api_backoff_ms'));
         $capturedAt = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $provider = (string) $this->providerName(config('market_data.source.api'));
+        $sourceName = strtoupper((string) data_get(config('market_data.source.api'), 'source_name', config('market_data.source.default_source_name', 'API_FREE')));
+        $timeoutSeconds = $this->timeoutSeconds();
         $lastException = null;
         $attemptLog = [];
 
@@ -199,6 +201,8 @@ class PublicApiEodBarsAdapter
                 $lastException = $e->withContext([
                     'url' => $url,
                     'provider' => $provider,
+                    'source_name' => $sourceName,
+                    'timeout_seconds' => $timeoutSeconds,
                     'retry_max' => $retryMax,
                     'attempt_count' => count($attemptLog),
                     'attempts' => $attemptLog,
