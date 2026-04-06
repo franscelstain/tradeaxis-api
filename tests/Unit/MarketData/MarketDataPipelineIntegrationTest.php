@@ -9,6 +9,7 @@ use App\Application\MarketData\Services\EodIndicatorsComputeService;
 use App\Application\MarketData\Services\FinalizeDecisionService;
 use App\Application\MarketData\Services\IndicatorVectorService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
+use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\PublicationDiffService;
 use App\Application\MarketData\Services\PublicationFinalizeOutcomeService;
 use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
@@ -53,15 +54,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
     {
         Carbon::setTestNow();
 
-        foreach (glob($this->fixtureDir.'/*.json') ?: [] as $file) {
-            @unlink($file);
-        }
-
-        foreach (glob($this->fixtureDir.'/*.csv') ?: [] as $file) {
-            @unlink($file);
-        }
-
-        @rmdir($this->fixtureDir);
+        $this->deleteDirectory($this->fixtureDir);
 
         parent::tearDown();
     }
@@ -179,6 +172,99 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertGreaterThan(0, $payload['exception_context']['attempts'][0]['backoff_delay_ms']);
         $this->assertSame(0, $payload['exception_context']['attempts'][2]['backoff_delay_ms']);
     }
+    public function test_run_daily_manual_file_with_explicit_input_file_exports_source_context_in_run_evidence(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+
+        $explicitFile = $this->fixtureDir.'/manual-explicit-2026-03-20.csv';
+        file_put_contents($explicitFile, implode("\n", [
+            'ticker_code,trade_date,open,high,low,close,volume,adj_close,captured_at',
+            'BBCA,2026-03-20,121,125,120,124,2000,124,2026-03-20T17:20:00+07:00',
+        ]));
+
+        config()->set('market_data.source.local_input_file', 'storage/framework/testing/market_data_pipeline/manual-explicit-2026-03-20.csv');
+
+        $run = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
+
+        $exportDir = storage_path('framework/testing/market_data_pipeline/evidence-manual-file');
+        $result = $this->makeEvidenceExporter()->exportRunEvidence($run->run_id, $exportDir);
+        $summary = json_decode(file_get_contents($exportDir.'/run_summary.json'), true);
+        $evidencePack = json_decode(file_get_contents($exportDir.'/evidence_pack.json'), true);
+
+        $this->assertSame('LOCAL_FILE', $result['summary']['source_name']);
+        $this->assertSame('manual-explicit-2026-03-20.csv', $result['summary']['source_input_file']);
+        $this->assertNull($result['summary']['source_summary']);
+        $this->assertSame('LOCAL_FILE', $summary['source_context']['source_name']);
+        $this->assertSame('manual-explicit-2026-03-20.csv', $summary['source_context']['source_input_file']);
+        $this->assertSame('manual-explicit-2026-03-20.csv', $evidencePack['run_summary']['source_context']['source_input_file']);
+
+        $runRow = DB::table('eod_runs')->where('run_id', $run->run_id)->first();
+        $this->assertNotNull($runRow);
+        $this->assertStringContainsString('source_input_file=manual-explicit-2026-03-20.csv', (string) $runRow->notes);
+    }
+
+    public function test_run_daily_api_success_after_retry_exports_source_context_in_run_evidence(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        config()->set('market_data.source.api.endpoint_template', 'https://example.test/eod/{date}?symbols={symbols}');
+        config()->set('market_data.source.api.response_rows_path', 'rows');
+        config()->set('market_data.source.api.provider', 'generic');
+        config()->set('market_data.source.api.source_name', 'API_FREE');
+        config()->set('market_data.provider.api_retry_max', 2);
+        config()->set('market_data.provider.api_backoff_ms', 5);
+        config()->set('market_data.provider.api_throttle_qps', 1000);
+
+        $calls = 0;
+        $run = $this->makePipelineWithApiFetcher(function () use (&$calls) {
+            $calls++;
+
+            if ($calls === 1) {
+                return [
+                    'status' => 429,
+                    'body' => '{"error":"rate limit"}',
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => json_encode(['rows' => [[
+                    'ticker_code' => 'BBCA',
+                    'trade_date' => '2026-03-20',
+                    'open' => 121,
+                    'high' => 125,
+                    'low' => 120,
+                    'close' => 124,
+                    'volume' => 2000,
+                    'adj_close' => 124,
+                    'captured_at' => '2026-03-20T17:20:00+07:00',
+                ]]]),
+            ];
+        })->runDaily('2026-03-20', 'api');
+
+        $this->assertSame(2, $calls);
+
+        $exportDir = storage_path('framework/testing/market_data_pipeline/evidence-api-retry');
+        $result = $this->makeEvidenceExporter()->exportRunEvidence($run->run_id, $exportDir);
+        $summary = json_decode(file_get_contents($exportDir.'/run_summary.json'), true);
+        $evidencePack = json_decode(file_get_contents($exportDir.'/evidence_pack.json'), true);
+
+        $this->assertSame('API_FREE', $result['summary']['source_name']);
+        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $result['summary']['source_summary']);
+        $this->assertSame('API_FREE', $summary['source_context']['source_name']);
+        $this->assertSame(2, $summary['source_context']['attempt_count']);
+        $this->assertSame('yes', $summary['source_context']['success_after_retry']);
+        $this->assertSame(200, $summary['source_context']['final_http_status']);
+        $this->assertSame('API_FREE', $evidencePack['run_summary']['source_context']['source_name']);
+        $this->assertSame(2, $evidencePack['run_summary']['source_context']['attempt_count']);
+
+        $runRow = DB::table('eod_runs')->where('run_id', $run->run_id)->first();
+        $this->assertNotNull($runRow);
+        $this->assertStringContainsString('source_attempt_count=2', (string) $runRow->notes);
+        $this->assertStringContainsString('source_success_after_retry=yes', (string) $runRow->notes);
+        $this->assertStringContainsString('source_final_http_status=200', (string) $runRow->notes);
+    }
+
 
     public function test_run_daily_correction_replaces_current_publication_and_marks_correction_published(): void
     {
@@ -3942,6 +4028,34 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
     }
 
+    private function deleteDirectory(string $path): void
+    {
+        if (! is_dir($path)) {
+            return;
+        }
+
+        $items = scandir($path);
+        if (! is_array($items)) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $fullPath = $path.DIRECTORY_SEPARATOR.$item;
+            if (is_dir($fullPath)) {
+                $this->deleteDirectory($fullPath);
+                continue;
+            }
+
+            @unlink($fullPath);
+        }
+
+        @rmdir($path);
+    }
+
     private function makePipeline(): MarketDataPipelineService
     {
         return $this->makePipelineWithOverrides(new EodPublicationRepository(), new EodArtifactRepository());
@@ -4003,6 +4117,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
             new PublicationDiffService(),
             new PublicationFinalizeOutcomeService(),
             new CoverageGateEvaluator(new TickerMasterRepository(), $artifacts)
+        );
+    }
+
+    private function makeEvidenceExporter(): MarketDataEvidenceExportService
+    {
+        return new MarketDataEvidenceExportService(
+            new App\Infrastructure\Persistence\MarketData\EodEvidenceRepository(),
+            new EodPublicationRepository(),
+            new EodCorrectionRepository()
         );
     }
 

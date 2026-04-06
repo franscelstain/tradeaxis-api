@@ -34,7 +34,7 @@ Status: PARTIAL
 | Partial failure handling | PARTIAL | ingest failure persistence sudah benar; scope family belum full selesai |
 | Fallback | PARTIAL | manual-file fallback operator path pada `market-data:daily` sudah ada dengan explicit `input_file`; fallback multi-path/operator proof yang lebih luas belum ada |
 | Rerun strategy | MISSING | belum ada |
-| Logging ops | PARTIAL | source-context logging minimum + success-after-retry telemetry minimum sekarang muncul di command summary dan run evidence export; dashboard/export menyeluruh belum lengkap |
+| Logging ops | PARTIAL | source-context logging minimum + success-after-retry telemetry minimum sekarang muncul di command summary, run evidence export, dan punya integration proof berbasis run nyata; dashboard/export menyeluruh belum lengkap |
 
 #### Batch In Scope in This Session
 Status: DONE (implemented and verified)
@@ -119,3 +119,34 @@ PARTIAL
 - corrective fix sesi ini menutup kedua defect tersebut tanpa mengubah owner contract.
 - follow-up fix v4: test `test_complete_ingest_persists_manual_input_file_in_notes_and_event_payload` kini memakai `EodRun` nyata, bukan `stdClass`, agar sesuai signature `EodRunRepository::touchStage()`.
 - user sudah menjalankan ulang syntax check, targeted PHPUnit, dan full suite; batch logging ops sekarang verified.
+
+---
+
+#### Batch In Scope in This Session
+Status: PARTIAL (implemented, pending local PHPUnit proof)
+
+Scope yang dikerjakan pada sesi ini:
+- integration proof berbasis run nyata untuk source telemetry minimum pada run evidence export
+- path manual fallback `manual_file` + explicit `input_file` dari pipeline ke `run_summary.json` / `evidence_pack.json`
+- path API success-after-retry dari pipeline ke `run_summary.json` / `evidence_pack.json`
+
+Proof implementasi di code:
+- `MarketDataPipelineIntegrationTest` sekarang mengeksekusi pipeline DB-backed lalu memanggil `MarketDataEvidenceExportService` nyata untuk membuktikan source context minimum turun ke artifact evidence
+- proof manual fallback memverifikasi `source_input_file` tersimpan di `eod_runs.notes` dan terbaca kembali di export summary
+- proof API retry memverifikasi `source_attempt_count`, `source_success_after_retry`, dan `source_final_http_status` tersimpan di `eod_runs.notes` lalu terbaca kembali di export summary
+
+Validation evidence currently available:
+- repo surface sinkron untuk code/doc/test batch ini
+- `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` in container → OK
+- local PHPUnit for new batch → MENUNGGU environment lokal user karena `vendor/` tidak ada di ZIP
+
+Tests added/updated for this batch:
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `test_run_daily_manual_file_with_explicit_input_file_exports_source_context_in_run_evidence()`
+  - `test_run_daily_api_success_after_retry_exports_source_context_in_run_evidence()`
+
+Honest validation state for this scoped batch:
+- batch code + docs sinkron
+- syntax validation tersedia
+- integration proof di repo sudah ada
+- targeted/full PHPUnit batch ini belum boleh diklaim sampai user menjalankan lokal

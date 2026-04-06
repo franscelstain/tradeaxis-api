@@ -240,3 +240,39 @@ PARTIAL (OPERATIONAL DOMAIN ONLY; CURRENT BATCH VERIFIED, WIDER OPERATIONAL FAMI
 ### Honest Status
 - Batch sesi ini: DONE untuk scope batch karena syntax check, targeted PHPUnit, dan full suite sudah terbukti di environment lokal user
 - Domain market-data keseluruhan: contract core tetap SELESAI, operational family tetap PARTIAL
+
+
+## Session Update — Source Telemetry Run-Backed Evidence Proof
+
+### Scope
+- mengambil batch homogen dari family `External Source Operational Resilience`
+- fokus pada gap proof berbasis run nyata untuk telemetry source minimum
+- memastikan manual fallback path dan API success-after-retry path benar-benar menurunkan source context ke run evidence, bukan hanya lolos di unit/command surface
+
+### What Was Implemented
+- menambahkan integration proof untuk `runDaily(..., manual_file)` dengan explicit `local_input_file` agar `source_input_file` benar-benar tersimpan di `eod_runs.notes` lalu turun ke `run_summary.json` dan `evidence_pack.json`
+- menambahkan integration proof untuk `runDaily(..., api)` yang sukses setelah retry agar `attempt_count`, `success_after_retry`, dan `final_http_status` benar-benar tersimpan di run nyata lalu turun ke run evidence export
+- menambahkan helper integration-level exporter agar verifikasi memakai repository DB-backed yang sama dengan pipeline, bukan stub/unit-only surface
+
+### Code Changed
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+
+### Test Coverage Added/Updated
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `test_run_daily_manual_file_with_explicit_input_file_exports_source_context_in_run_evidence()`
+  - `test_run_daily_api_success_after_retry_exports_source_context_in_run_evidence()`
+
+### Verification Evidence Available Now
+- syntax check file yang diubah di container → OK
+  - `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- PHPUnit lokal untuk batch ini → MENUNGGU user run karena `vendor/` tidak ada di ZIP
+
+### Contract Result
+- proof run-backed untuk telemetry source minimum pada evidence export sekarang tersedia di repo surface
+- family operational resilience tetap PARTIAL karena fallback external source multi-path dan rerun strategy operasional masih belum ada
+
+### Honest Status
+- Batch sesi ini: PARTIAL sampai user menjalankan integration PHPUnit lokal
+- Domain market-data keseluruhan: contract core tetap SELESAI, operational family tetap PARTIAL
