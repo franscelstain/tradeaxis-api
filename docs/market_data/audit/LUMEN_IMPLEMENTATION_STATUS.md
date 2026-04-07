@@ -3,7 +3,7 @@
 ## SESSION UPDATE
 
 * Batch: Run Evidence Source Attempt Telemetry Export
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -38,11 +38,16 @@
   * `docs/market_data/ops/Run_Artifacts_Format_LOCKED.md`
   * `docs/market_data/ops/Audit_Evidence_Pack_Contract_LOCKED.md`
 
+* targeted local PHPUnit proof supplied after implementation:
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `1 test, 40 assertions`
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `25 tests, 140 assertions`
+  * `vendor\bin\phpunit` → `163 tests, 1730 assertions`
+
 ### What is still pending
 
-* PHPUnit proof for the changed evidence-export test has not been executed from this ZIP because `vendor/` is not included here.
-* Family-level `External Source Operational Resilience` remains partial because live-source runtime proof and broader operator/dashboard hardening are still outside this batch.
+* No batch-level proof is pending for this implementation.
+* Family-level `External Source Operational Resilience` still remains partial because live-source runtime proof and broader operator/dashboard hardening are still outside this batch.
 
 ### Final State
 
-* PARTIAL
+* PARTIAL (batch verified as DONE; family remains PARTIAL)

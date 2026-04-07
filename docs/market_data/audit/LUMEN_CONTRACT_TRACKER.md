@@ -4,7 +4,7 @@
 
 ### Run Evidence Source Attempt Telemetry Export
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -45,11 +45,17 @@
   * changed PHP files pass `php -l`
   * checkpoint-vs-repo parity revalidation completed for this batch
   * changed docs are aligned with the new evidence-export surface
+  * targeted local PHPUnit execution passed:
+
+    * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `1 test, 40 assertions`
+    * `tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `25 tests, 140 assertions`
+  * full PHPUnit regression passed:
+
+    * `163 tests, 1730 assertions`
 
 * Pending proof:
 
-  * targeted PHPUnit execution still required for `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
-  * optional broader regression around command surface can be re-run locally for safety
+  * none for this batch
 
 ### Operator Source Summary Enrichment
 
@@ -225,6 +231,6 @@
 * Exception-path operator recovery batch remains CLOSED and verified.
 * Coverage final-state parity batch is CLOSED and verified.
 * Operator source summary enrichment batch is DONE and verified.
-* Run evidence source attempt telemetry export batch is now PARTIAL pending local PHPUnit proof for the changed evidence-export surface.
+* Run evidence source attempt telemetry export batch is now DONE and verified.
 * External source operational resilience still remains PARTIAL at family/owner-doc level because the locked contract still lists broader remaining operational gaps outside this batch, including live-source runtime proof and future operator/dashboard hardening.
 * System-level daily live runtime validation remains outside this session scope.
