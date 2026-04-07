@@ -4,7 +4,7 @@
 
 ### Operator Source Summary Enrichment
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -47,17 +47,20 @@
 
   * changed PHP files and changed PHPUnit files pass `php -l`
   * checkpoint-vs-repo parity revalidation completed for this batch
+  * targeted local PHPUnit execution passed:
+
+    * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `3 tests, 20 assertions`
+    * `tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `25 tests, 140 assertions`
+    * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `1 test, 30 assertions`
+    * `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → `8 tests, 10 assertions`
+    * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → `45 tests, 1092 assertions`
+  * full PHPUnit regression passed:
+
+    * `163 tests, 1720 assertions`
 
 * Pending proof:
 
-  * targeted local PHPUnit proof is still required because this ZIP has no `vendor/`
-  * recommended local validation:
-
-    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
-    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
-    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  * none for this batch
 
 ### Backfill Run-Backed Source Proof
 
@@ -172,5 +175,6 @@
 
 * Exception-path operator recovery batch remains CLOSED and verified.
 * Coverage final-state parity batch is CLOSED and verified.
-* Source operational resilience remains the active PARTIAL family for operator/runtime proof hardening.
+* Operator source summary enrichment batch is now DONE and verified.
+* External source operational resilience still remains PARTIAL at family/owner-doc level because the locked contract still lists broader remaining operational gaps outside this batch, including live-source runtime proof in real environment and future hardening for more complex source topologies.
 * System-level daily live runtime validation remains outside this session scope.

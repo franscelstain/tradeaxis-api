@@ -3,11 +3,11 @@
 ## SESSION UPDATE
 
 * Batch: Source Telemetry Operator Summary Enrichment
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
-* Re-audited the active checkpoint against the live repo and found the next grounded gap is no longer coverage/finalize parity, but the still-partial source-operational-resilience family already acknowledged by owner docs and system audit guidance.
+* Re-audited the active checkpoint against the live repo and confirmed the next grounded gap after coverage/finalize parity was the still-partial source-operational-resilience family already acknowledged by owner docs and system audit guidance.
 * Enriched persisted source-acquisition notes so API runs now carry the operator-useful context that was already present in event payload telemetry but not yet propagated into run-note recovery paths:
   * `source_provider`
   * `source_timeout_seconds`
@@ -39,16 +39,22 @@
   * `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS
   * `php -l tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → PASS
   * `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS
+* Local PHPUnit proof provided by user:
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `3 tests, 20 assertions`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `25 tests, 140 assertions`
+  * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `1 test, 30 assertions`
+  * `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → `8 tests, 10 assertions`
+  * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → `45 tests, 1092 assertions`
+  * full PHPUnit regression → `163 tests, 1720 assertions`
 * Companion docs synced with the richer note/operator-summary context:
   * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
   * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
 
 ### What is still pending
 
-* No PHPUnit execution was run inside this ZIP because `vendor/` is absent.
-* No new live-runtime proof exists from this session.
-* The parent external-source operational-resilience family remains open until local PHPUnit proof is received and the checkpoint can be upgraded honestly.
+* Nothing remains pending for this batch.
+* Parent family `External Source Operational Resilience` still remains partially implemented at owner-doc level because the remaining gaps are broader than this batch, including live-source runtime proof in real environment and broader operational hardening explicitly listed in the locked source-operational-resilience contract.
 
 ### Final State
 
-* PARTIAL
+* DONE
