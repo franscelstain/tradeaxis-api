@@ -2,43 +2,64 @@
 
 ## SESSION UPDATE
 
-- Batch: Exception-Path Operator Summary Recovery
-- Status: PARTIAL (regression fix applied, waiting local re-run proof)
+* Batch: Exception-Path Operator Summary Recovery
+* Status: SELESAI
 
 ### What was implemented
-- Existing failure-side run-note persistence remains in place, including logical `source_name=API_FREE` for API mode and explicit `source_final_reason_code` propagation.
-- `DailyPipelineCommand` recovery still uses requested-date + source scoped lookup, but command dependency resolution now goes through the command container so test/runtime overrides remain authoritative and deterministic.
-- `MarketDataBackfillService` keeps exception-path recovery support, but the new run repository dependency is now backward-compatible and optional so existing two-argument construction paths do not break integration callers.
-- `EodRunRepository` lookup helper remains narrow: latest run by requested date + source only, used for operator-summary recovery.
-- Tests remain the proof target for exception-path recovery in `market-data:daily` and `market-data:backfill` without changing the existing source-telemetry contract.
 
-### Evidence available from ZIP
-- Syntax check passed:
-  - `php -l app/Infrastructure/Persistence/MarketData/EodRunRepository.php`
-  - `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-  - `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php`
-  - `php -l app/Application/MarketData/Services/MarketDataBackfillService.php`
-  - `php -l app/Application/MarketData/Services/MarketDataPipelineService.php`
-  - `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
-  - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
-  - `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
-  - `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-  - `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+* Failure-side run-note persistence remains authoritative, including:
 
-### Evidence still waiting for local manual run
-- Re-run focused verification after regression fix for:
-  - `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
-  - `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
-  - `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-  - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-- Full PHPUnit regression run.
+  * `source_name`
+  * `source_attempt_count`
+  * `source_final_reason_code`
+* `DailyPipelineCommand` exception-path recovery:
 
-### Remaining gap after this batch
-- Prior local run exposed one constructor regression and one command recovery binding mismatch; code has now been corrected in this ZIP but still needs local proof.
-- This batch tightens operator visibility on exception-path failures, but it still does not prove live runtime behavior.
-- The broader external-source operational resilience family remains open at project-readiness level until local execution proof and real operator/runtime evidence exist.
+  * retrieves scoped run summary deterministically
+  * respects container-based dependency resolution
+* `MarketDataBackfillService`:
+
+  * supports exception-path recovery
+  * constructor made backward-compatible (optional dependency)
+* `EodRunRepository`:
+
+  * provides scoped lookup by `requested_date + source`
+  * used only for operator recovery path
+* Ops command recovery behavior aligned with test contract (no global latest run leakage)
+
+### Regression encountered
+
+* Constructor change caused integration break (ArgumentCountError)
+* Recovery logic selected incorrect run (`latest` instead of scoped run)
+* Ops command binding mismatch caused incorrect repository resolution
+
+### Resolution
+
+* Constructor made optional for new dependency (no breaking change)
+* Recovery logic corrected to deterministic scoped lookup
+* Ops command test binding aligned with concrete repository class
+* Command container resolution fixed
+
+### Evidence (LOCAL PROOF)
+
+* PHPUnit results:
+
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS
+  * Full suite:
+
+    * 163 tests
+    * 1714 assertions
+    * 0 failures
+    * 0 errors 
+
+### Remaining gap
+
+* No load-bearing gap for this batch
+* Live runtime/operator validation not yet proven (outside batch scope)
 
 ### Final State
-- PARTIAL
 
-- Latest batch fixes the discovered regression while keeping operator recovery in place. Validation still depends on local PHPUnit re-run.
+* SELESAI
+
+* Batch closed with full test proof and no remaining regression.

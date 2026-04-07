@@ -8,6 +8,7 @@ use App\Application\MarketData\Services\ReplayBackfillService;
 use App\Application\MarketData\Services\ReplaySmokeSuiteService;
 use App\Application\MarketData\Services\ReplayVerificationService;
 use App\Application\MarketData\Services\SessionSnapshotService;
+use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Console\Commands\MarketData\BackfillMarketDataCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
