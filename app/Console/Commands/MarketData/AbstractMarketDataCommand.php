@@ -136,7 +136,7 @@ abstract class AbstractMarketDataCommand extends Command
         }
 
         if (($sourceContext['source_input_file'] ?? null) !== null && $sourceContext['source_input_file'] !== '') {
-            $payload['source_input_file'] = $sourceContext['source_input_file'];
+            $payload['source_input_file'] = $this->normalizeOptionalPathForDisplay($sourceContext['source_input_file']);
         }
 
         $sourceSummary = $this->buildSourceSummaryString($sourceContext);
@@ -170,6 +170,15 @@ abstract class AbstractMarketDataCommand extends Command
     protected function normalizePathForDisplay($path)
     {
         return str_replace('\\', '/', (string) $path);
+    }
+
+    protected function normalizeOptionalPathForDisplay($path)
+    {
+        if ($path === null || $path === '') {
+            return $path;
+        }
+
+        return $this->normalizePathForDisplay($path);
     }
 
     protected function buildSourceSummaryString(array $sourceContext)
@@ -210,7 +219,7 @@ abstract class AbstractMarketDataCommand extends Command
         }
 
         if ($inputFile !== null && $inputFile !== '') {
-            $this->line('source_input_file='.(string) $inputFile);
+            $this->line('source_input_file='.(string) $this->normalizeOptionalPathForDisplay($inputFile));
         }
 
         $sourceSummary = $this->buildSourceSummaryString($sourceContext);

@@ -2,6 +2,61 @@
 
 ## SESSION UPDATE
 
+* Batch: Manual File Path Display Normalization
+* Status: DONE
+
+### What was implemented
+
+* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap still inside the partial operator-proof/resilience family: operator-facing manual-file path lines were still emitted in platform-native form even after artifact-path display had already been normalized.
+* Normalized operator-facing `input_file` / `source_input_file` rendering to forward-slash display form across the daily/backfill operator surfaces without changing configured runtime input targets or note persistence semantics.
+* Kept the change bounded to operator-proof surfaces only:
+  * `DailyPipelineCommand` now normalizes displayed manual `input_file` and the daily summary artifact payload field written for local proof.
+  * `AbstractMarketDataCommand` now normalizes displayed and artifact-exported `source_input_file` when run summaries are rendered from run notes or recovered run context.
+  * `BackfillMarketDataCommand` now normalizes displayed per-date `source_input_file` values in command output.
+* Added PHPUnit coverage for Windows-style manual-file paths so CLI rendering and the daily summary artifact both prove normalized operator-facing path values while underlying configured input paths remain unchanged during execution.
+* Synced owner/ops docs so manual-file path display normalization is explicit in the operator-proof contract instead of remaining an implicit implementation detail.
+
+### Drift / gap that was found
+
+* The previous batch closed path normalization only for artifact output locations such as `output_dir`, `summary_artifact`, and `evidence_output_dir`.
+* Manual-file proof lines (`input_file` and `source_input_file`) were still printed directly from operator options or persisted notes.
+* That meant the same fallback/manual-file proof could still drift between Windows and non-Windows terminals and inside `market_data_daily_summary.json` even when the real runtime behavior was identical.
+
+### Evidence available from this session
+
+* Code inspection parity shows operator-facing manual-file path output is now normalized through the shared display helper while runtime configuration and persisted note values stay untouched.
+* ZIP-local syntax proof:
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Local PHPUnit/manual validation received after follow-up verification:
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `30 tests, 178 assertions`
+  * `vendor\bin\phpunit` → `170 tests, 1784 assertions`
+* Added repo proof surface:
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+* Companion docs synced with the manual-file display-normalization rule:
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+### What is still pending
+
+* Nothing remains pending inside this batch after local validation was provided.
+* Family-level `External Source Operational Resilience` remains partial beyond this closed batch because broader live-source runtime proof and future operator/dashboard hardening are still outside this session scope.
+
+### Final State
+
+* DONE for this batch
+* Project/repo overall remains PARTIAL
+
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Operator Artifact Path Display Normalization
 * Status: DONE
 

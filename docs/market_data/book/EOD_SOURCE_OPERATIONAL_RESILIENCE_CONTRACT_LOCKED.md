@@ -68,6 +68,7 @@ Sudah diimplementasikan minimum pada command harian utama.
 - explicit input file `.json` / `.csv` mengoverride lookup direktori default hanya untuk eksekusi command tersebut
 - payload event stage ingest dan `eod_runs.notes` sekarang dapat membawa jejak minimum `input_file` / `source_input_file` untuk fallback manual yang dipicu operator
 - output command operator sekarang juga menampilkan `source_input_file` bila jejak itu tersedia
+- bila output operator atau artifact proof lokal menampilkan `input_file` / `source_input_file`, nilai path operator-facing itu harus dirender dalam bentuk normalized forward-slash untuk menjaga determinisme proof lintas Windows dan non-Windows tanpa mengubah target file input aktual
 - bila `market-data:daily` gagal setelah run failure-side notes sempat dipersist, command harus mencoba merender ulang ringkasan run terakhir untuk tanggal+source tersebut sebelum mengembalikan exit non-zero, agar operator tetap melihat `source_name` / `source_summary` minimum tanpa inspeksi manual ke tabel
 - bila operator memberi `--output_dir`, command harian juga harus menulis `market_data_daily_summary.json` berisi ringkasan run/operator minimum yang sama (`run_id`, requested/effective date bila ada, terminal/publishability state, coverage summary, source context minimum, dan `error_message` pada recovered failure path) agar proof runtime lokal tidak bergantung pada copy-paste terminal
 
@@ -76,6 +77,7 @@ Sudah tersedia minimum melalui command pipeline yang sudah ada.
 - operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu
 - operator dapat menjalankan `market-data:backfill {start_date} {end_date}` untuk rerun date-range yang mengikuti `market_calendar`
 - summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya; untuk API path, `source_summary` harus ikut menurunkan `provider`, `timeout_seconds`, dan `retry_max` bila context itu dipersist; bila notes tipis tetapi attempt-level telemetry run masih tersedia, backfill summary boleh memulihkan field minimum yang sama dari telemetry persisted tersebut tanpa mengarang fakta baru
+- path manual-file yang tampil ke operator melalui ringkasan harian/backfill atau artifact proof lokal harus memakai bentuk normalized forward-slash agar proof runtime tidak drift hanya karena separator OS
 - bila `market-data:backfill` menerima exception setelah run gagal sudah tercatat, summary kasus `ERROR` harus mencoba memuat ulang run terakhir untuk tanggal+source tersebut dan tetap menurunkan `run_id`, `terminal_status`, `publishability_state`, serta source context minimum dari notes yang sudah dipersist
 - correction / reseal path tetap memakai command correction yang sudah terpisah bila konteksnya historical correction
 

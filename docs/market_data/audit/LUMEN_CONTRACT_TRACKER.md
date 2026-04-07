@@ -1,4 +1,60 @@
-# LUMEN_CONTRACT_TRACKER.md
+# LUMEN_CONTRACT_TRACKER
+
+### Manual File Path Display Normalization
+
+* Status: DONE
+
+* Scope:
+
+  * normalize operator-facing manual-file path rendering across daily/backfill command surfaces and the daily summary proof artifact
+  * keep normalization display-only so configured runtime input targets and persisted notes are not rewritten
+  * align manual fallback proof on Windows and non-Windows terminals without widening the source-resilience contract
+
+* Owner-doc anchor:
+
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+* Drift found:
+
+  * prior batches already normalized operator-facing artifact output paths
+  * manual-file proof lines (`input_file`, `source_input_file`) still depended on raw operator options or persisted note values
+  * the same manual fallback proof could therefore drift by path separator across operating systems even when the underlying runtime behavior matched
+
+* Resolution applied in this session:
+
+  * daily command now normalizes displayed manual `input_file` and the same field inside `market_data_daily_summary.json`
+  * run-summary rendering now normalizes operator-facing `source_input_file` for console output and the daily summary artifact payload
+  * backfill command now normalizes displayed per-date `source_input_file` values
+  * PHPUnit coverage was expanded for Windows-style manual-file paths on both CLI output and the daily summary artifact
+  * owner/ops docs now state that operator-facing manual-file path values must use normalized forward-slash display form for deterministic local proof
+
+* Available proof:
+
+  * changed PHP files and changed PHPUnit file pass `php -l`
+  * checkpoint-vs-repo drift revalidation completed for this batch
+  * changed docs are aligned with the bounded display-only normalization behavior
+  * local follow-up validation passed:
+
+    * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+    * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
+    * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
+    * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `30 tests, 178 assertions`
+    * `vendor\bin\phpunit` → `170 tests, 1784 assertions`
+
+* Pending proof:
+
+  * none for this batch
+
 
 ## External Source Operational Resilience
 

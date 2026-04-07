@@ -62,13 +62,13 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
                 'command' => 'market-data:daily',
                 'source_mode' => $sourceMode,
                 'status' => 'SUCCESS',
-                'input_file' => $configuredOverride ? (string) $this->option('input_file') : null,
+                'input_file' => $configuredOverride ? $this->normalizeOptionalPathForDisplay((string) $this->option('input_file')) : null,
             ], $sourceContext)
         );
 
         $this->renderRunSummary($run, $sourceContext);
         if ($configuredOverride) {
-            $this->line('input_file='.(string) $this->option('input_file'));
+            $this->line('input_file='.(string) $this->normalizeOptionalPathForDisplay($this->option('input_file')));
         }
         if ($artifactPath !== null) {
             $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));

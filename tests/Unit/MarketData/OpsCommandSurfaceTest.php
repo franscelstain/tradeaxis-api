@@ -108,7 +108,7 @@ class OpsCommandSurfaceTest extends TestCase
                         'publishability_state' => 'NOT_READABLE',
                         'trade_date_effective' => '2026-03-16',
                         'source_name' => 'LOCAL_FILE',
-                        'source_input_file' => 'manual-2026-03-17.csv',
+                        'source_input_file' => 'C:\\ops\\manual-2026-03-17.csv',
                     ],
                     [
                         'requested_date' => '2026-03-18',
@@ -136,7 +136,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('source_mode=manual_file', $display);
         $this->assertStringContainsString('all_passed=0', $display);
-        $this->assertStringContainsString('requested_date=2026-03-17 | status=FAIL | run_id=41 | terminal_status=HELD | publishability_state=NOT_READABLE | trade_date_effective=2026-03-16 | source_name=LOCAL_FILE | source_input_file=manual-2026-03-17.csv', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=FAIL | run_id=41 | terminal_status=HELD | publishability_state=NOT_READABLE | trade_date_effective=2026-03-16 | source_name=LOCAL_FILE | source_input_file=C:/ops/manual-2026-03-17.csv', $display);
         $this->assertStringContainsString('requested_date=2026-03-18 | status=ERROR | error=Backfill requires at least one trading date in market_calendar for the requested range.', $display);
     }
 
@@ -908,6 +908,56 @@ class OpsCommandSurfaceTest extends TestCase
         File::deleteDirectory($outputDir);
     }
 
+    public function test_daily_pipeline_command_normalizes_manual_input_file_paths_in_summary_artifact(): void
+    {
+        config()->set('market_data.source.local_input_file', null);
+
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'manual_file', null)
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'trade_date_effective' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'notes' => 'candidate_publication_id=44; source_name=LOCAL_FILE; source_input_file=C:\\ops\\manual-2026-03-24.csv',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $outputDir = sys_get_temp_dir().'/tradeaxis-daily-manual-success-'.uniqid();
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'manual_file',
+            '--input_file' => 'C:\\ops\\manual-2026-03-24.csv',
+            '--output_dir' => $outputDir,
+        ]);
+
+        $display = $tester->getDisplay();
+        $artifactPath = $outputDir.'/market_data_daily_summary.json';
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('input_file=C:/ops/manual-2026-03-24.csv', $display);
+        $this->assertStringContainsString('source_input_file=C:/ops/manual-2026-03-24.csv', $display);
+        $this->assertFileExists($artifactPath);
+
+        $payload = json_decode((string) file_get_contents($artifactPath), true);
+
+        $this->assertSame('C:/ops/manual-2026-03-24.csv', $payload['input_file']);
+        $this->assertSame('C:/ops/manual-2026-03-24.csv', $payload['source_input_file']);
+
+        File::deleteDirectory($outputDir);
+    }
+
     public function test_daily_pipeline_command_propagates_manual_input_file_override_without_leaking_config(): void
     {
         config()->set('market_data.source.local_input_file', null);
@@ -917,7 +967,7 @@ class OpsCommandSurfaceTest extends TestCase
             ->once()
             ->with('2026-03-24', 'manual_file', null)
             ->andReturnUsing(function () {
-                \PHPUnit\Framework\Assert::assertSame('storage/app/market_data/operator/manual-2026-03-24.csv', config('market_data.source.local_input_file'));
+                \PHPUnit\Framework\Assert::assertSame('storage\\app\\market_data\\operator\\manual-2026-03-24.csv', config('market_data.source.local_input_file'));
 
                 return (object) [
                     'run_id' => 55,
@@ -938,7 +988,7 @@ class OpsCommandSurfaceTest extends TestCase
         $exitCode = $tester->execute([
             '--requested_date' => '2026-03-24',
             '--source_mode' => 'manual_file',
-            '--input_file' => 'storage/app/market_data/operator/manual-2026-03-24.csv',
+            '--input_file' => 'storage\\app\\market_data\\operator\\manual-2026-03-24.csv',
         ]);
 
         $display = $tester->getDisplay();
@@ -1190,7 +1240,7 @@ class OpsCommandSurfaceTest extends TestCase
                 'lifecycle_state' => 'COMPLETED',
                 'terminal_status' => 'SUCCESS',
                 'publishability_state' => 'READABLE',
-                'notes' => 'candidate_publication_id=44; source_name=LOCAL_FILE; source_input_file=manual-2026-03-24.csv',
+                'notes' => 'candidate_publication_id=44; source_name=LOCAL_FILE; source_input_file=C:\\ops\\manual-2026-03-24.csv',
             ]);
 
         $this->app->instance(MarketDataPipelineService::class, $service);
@@ -1208,7 +1258,7 @@ class OpsCommandSurfaceTest extends TestCase
 
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('source_name=LOCAL_FILE', $display);
-        $this->assertStringContainsString('source_input_file=manual-2026-03-24.csv', $display);
+        $this->assertStringContainsString('source_input_file=C:/ops/manual-2026-03-24.csv', $display);
     }
 
     public function test_daily_pipeline_command_renders_coverage_summary_for_pass_outcome(): void

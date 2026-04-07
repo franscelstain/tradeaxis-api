@@ -12,6 +12,7 @@ This document does not define screening, scoring, grouping, ranking, strategy lo
 - no command may commit final `SUCCESS` before seal exists
 - output-affecting parameters must come from the effective registry snapshot, not undocumented runtime overrides
 - operator-facing artifact path lines (`output_dir`, `summary_artifact`, `evidence_output_dir`, and equivalent exported artifact path fields) must be rendered in normalized forward-slash display form for deterministic local proof across Windows and non-Windows environments; this does not change the actual filesystem write target
+- operator-facing manual-file path lines (`input_file`, `source_input_file`, and equivalent command-summary/manual-proof path fields) must also be rendered in normalized forward-slash display form for the same deterministic local-proof reason; this does not change the actual configured or resolved filesystem input target
 
 ## Minimum commands
 
@@ -115,6 +116,7 @@ Execute the daily sequence:
 - `input_file` is only a manual-file override and must not silently alter API mode behavior
 - explicit `input_file` accepts `.json` or `.csv` only
 - explicit `input_file` must be reflected in operator-visible command output and minimum ingest telemetry when used
+- when command output or operator-proof artifacts echo `input_file` or recovered `source_input_file`, those operator-facing path values must use normalized forward-slash display form
 - when API acquisition telemetry is available in run notes, command summary should surface minimum source context (`source_name`, attempt summary, final HTTP status) without forcing operator to parse raw notes; if run notes are thinner than persisted attempt telemetry, the command summary may recover the same minimum operator-facing source fields from that telemetry instead of degrading to a thin source summary
 - when operator passes `--output_dir`, `market-data:daily` should also persist `market_data_daily_summary.json` with the same minimum run/source/coverage context rendered to the CLI, plus `error_message` on the recovered failure path, so local runtime proof can be archived deterministically
 - `market-data:evidence:export --run_id=...` should also surface the same minimum source context in exported run evidence summary when that telemetry exists
@@ -139,6 +141,7 @@ Historical backfill/recompute per trading-date range.
 - one summary artifact `market_data_backfill_summary.json`
 - per-date observed status/run_id in the summary artifact
 - when per-run source telemetry exists in notes, the summary artifact and command output should surface minimum source context (`source_name`, `source_input_file`, `source_summary` including `provider`, `timeout_seconds`, `retry_max`, and failure-side `final_reason_code` when present) for each requested date; if run notes are thinner than persisted attempt telemetry, backfill summary may recover the same minimum operator-facing source fields from that telemetry instead of degrading to a thin source summary
+- any operator-facing `source_input_file` value rendered by daily/backfill command surfaces must use normalized forward-slash display form for deterministic local proof across operating systems
 
 ### 9. `market-data:session-snapshot`
 #### Purpose

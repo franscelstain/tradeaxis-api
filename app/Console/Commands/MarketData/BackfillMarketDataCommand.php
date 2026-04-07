@@ -36,7 +36,7 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
                 .(isset($case['publishability_state']) ? ' | publishability_state='.$case['publishability_state'] : '')
                 .(isset($case['trade_date_effective']) && $case['trade_date_effective'] !== null ? ' | trade_date_effective='.$case['trade_date_effective'] : '')
                 .(isset($case['source_name']) ? ' | source_name='.$case['source_name'] : '')
-                .(isset($case['source_input_file']) ? ' | source_input_file='.$case['source_input_file'] : '')
+                .(isset($case['source_input_file']) ? ' | source_input_file='.$this->normalizeOptionalPathForDisplay($case['source_input_file']) : '')
                 .(isset($case['source_summary']) ? ' | source_summary='.$case['source_summary'] : '')
                 .(isset($case['error_message']) ? ' | error='.$case['error_message'] : '')
             );
