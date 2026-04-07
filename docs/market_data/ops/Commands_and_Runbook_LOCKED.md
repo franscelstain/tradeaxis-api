@@ -116,6 +116,7 @@ Execute the daily sequence:
 - explicit `input_file` must be reflected in operator-visible command output and minimum ingest telemetry when used
 - when API acquisition telemetry is available in run notes, command summary should surface minimum source context (`source_name`, attempt summary, final HTTP status) without forcing operator to parse raw notes
 - `market-data:evidence:export --run_id=...` should also surface the same minimum source context in exported run evidence summary when that telemetry exists
+- when attempt-level source telemetry exists in `eod_run_events`, run evidence export should also materialize a bounded `source_attempt_telemetry.json` companion so retry/backoff diagnosis does not require manual table inspection
 
 ### 8. `market-data:backfill`
 #### Purpose

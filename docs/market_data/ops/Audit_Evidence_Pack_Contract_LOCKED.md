@@ -43,6 +43,7 @@ A conforming run evidence pack must include at minimum:
 - config identity
 - current publication resolution
 - minimum source context when source telemetry exists in persisted run notes (`source_name`, retry summary, failure-side `final_reason_code` when present, explicit manual `source_input_file`)
+- attempt-level source telemetry companion when the append-only event trail already contains retry/backoff attempt details
 - anomaly summary if status is held/failed or materially degraded
 
 ### Minimum questions it must answer

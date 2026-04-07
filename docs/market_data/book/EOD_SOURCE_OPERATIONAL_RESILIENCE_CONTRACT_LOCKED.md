@@ -58,6 +58,7 @@ Sudah diimplementasikan minimal pada success path ingest API.
 - `MarketDataPipelineService` menulis ringkasan tersebut ke payload `STAGE_COMPLETED` dan ke `eod_runs.notes` minimum (`source_provider`, `source_timeout_seconds`, `source_retry_max`, `source_attempt_count`, `source_success_after_retry`, `source_final_http_status`)
 - `AbstractMarketDataCommand` sekarang mengekstrak ringkasan minimum itu ke output operator (`source_name`, `source_summary`) agar operator tidak harus membaca `notes` mentah; bila context tersedia, `source_summary` juga harus membawa `provider`, `timeout_seconds`, dan `retry_max`
 - `MarketDataEvidenceExportService` sekarang juga menurunkan source context minimum itu ke `run_summary.json`, `evidence_pack.json`, dan ringkasan `market-data:evidence:export` agar proof ops minimum tidak berhenti di notes mentah atau command harian saja
+- bila telemetry attempt-level tersedia di `eod_run_events`, `MarketDataEvidenceExportService` juga harus dapat mengekspor `source_attempt_telemetry.json` dan menyertakannya ke `evidence_pack.json` agar proof ops minimum untuk retry/backoff tidak bergantung pada inspeksi tabel mentah
 - bila run gagal pada jalur source-acquisition, minimum failure-side source context (`source_name`, `source_provider`, `source_timeout_seconds`, `source_retry_max`, `source_attempt_count`, `source_final_http_status` bila ada, dan `source_final_reason_code`) juga harus ikut dipersist ke `eod_runs.notes` agar operator summary/backfill/evidence export tetap bisa menjelaskan kegagalan tanpa membaca raw event payload saja
 - tujuan batch ini tetap audit trail minimum, bukan operator dashboard penuh
 
@@ -82,7 +83,7 @@ Sudah tersedia minimum melalui command pipeline yang sudah ada.
 ## Remaining Operational Gaps
 Bagian berikut belum boleh dianggap selesai hanya karena adapter retry sudah ada:
 - live-source runtime proof di environment nyata
-- logging/audit trail saat ini sudah mencakup failure path, success-after-retry minimum, dan ringkasan backfill minimum, tetapi belum punya operator dashboard/export khusus
+- logging/audit trail saat ini sudah mencakup failure path, success-after-retry minimum, ringkasan backfill minimum, dan export attempt-telemetry minimum pada evidence export, tetapi belum punya operator dashboard khusus
 - failure handling yang lebih granular bila nanti source acquisition dibuat concurrent atau multi-provider
 - fallback exercise proof berbasis run nyata, bukan hanya contract/unit path
 

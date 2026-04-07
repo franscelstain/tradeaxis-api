@@ -2,6 +2,55 @@
 
 ## External Source Operational Resilience
 
+### Run Evidence Source Attempt Telemetry Export
+
+* Status: PARTIAL
+
+* Scope:
+
+  * export persisted attempt-level source telemetry from `eod_run_events` into run evidence artifacts
+  * keep success-side and failure-side source-attempt extraction aligned
+  * expose the new evidence artifact without inventing telemetry outside persisted event payloads
+
+* Owner-doc anchor:
+
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/market_data/ops/Run_Artifacts_Format_LOCKED.md`
+  * `docs/market_data/ops/Audit_Evidence_Pack_Contract_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`
+  * `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+  * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+
+* Drift found:
+
+  * attempt-level retry/backoff telemetry already existed in persisted run-event payloads
+  * run evidence export only surfaced note-derived minimum summary fields
+  * operator evidence for retry/backoff diagnosis therefore still depended on manual raw event inspection
+
+* Resolution applied in this session:
+
+  * added repository extraction for the latest persisted source-attempt telemetry payload per run
+  * run evidence export now writes optional `source_attempt_telemetry.json` when attempt telemetry exists
+  * `evidence_pack.json` now embeds the same `source_attempt_telemetry` structure
+  * export summary now exposes `source_attempt_event_type` and `source_attempt_count`
+  * owner/ops docs updated so the artifact is explicit and bounded by persisted run-event data
+
+* Available proof:
+
+  * changed PHP files pass `php -l`
+  * checkpoint-vs-repo parity revalidation completed for this batch
+  * changed docs are aligned with the new evidence-export surface
+
+* Pending proof:
+
+  * targeted PHPUnit execution still required for `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+  * optional broader regression around command surface can be re-run locally for safety
+
 ### Operator Source Summary Enrichment
 
 * Status: DONE
@@ -175,6 +224,7 @@
 
 * Exception-path operator recovery batch remains CLOSED and verified.
 * Coverage final-state parity batch is CLOSED and verified.
-* Operator source summary enrichment batch is now DONE and verified.
-* External source operational resilience still remains PARTIAL at family/owner-doc level because the locked contract still lists broader remaining operational gaps outside this batch, including live-source runtime proof in real environment and future hardening for more complex source topologies.
+* Operator source summary enrichment batch is DONE and verified.
+* Run evidence source attempt telemetry export batch is now PARTIAL pending local PHPUnit proof for the changed evidence-export surface.
+* External source operational resilience still remains PARTIAL at family/owner-doc level because the locked contract still lists broader remaining operational gaps outside this batch, including live-source runtime proof and future operator/dashboard hardening.
 * System-level daily live runtime validation remains outside this session scope.

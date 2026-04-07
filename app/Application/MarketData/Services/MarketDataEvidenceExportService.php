@@ -32,6 +32,7 @@ class MarketDataEvidenceExportService
         $publication = $this->resolvePublicationForRun($run);
         $manifest = $publication ? (array) $this->publications->buildManifestByPublicationId($publication->publication_id) : null;
         $runSummary = $this->buildRunSummary($run, $manifest);
+        $sourceAttemptTelemetry = $this->buildSourceAttemptTelemetry($run, $runSummary['source_context'] ?? []);
         $sourceSummary = $this->buildSourceSummaryString($runSummary['source_context'] ?? []);
         $eventSummary = ['run_id' => (int) $run->run_id, 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
         $dominantReasonCodes = $this->evidence->dominantReasonCodes($run->run_id, $this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
@@ -49,6 +50,7 @@ class MarketDataEvidenceExportService
                 'publication_version' => $manifest ? (int) $manifest['publication_version'] : null,
                 'is_current_publication' => $manifest ? (bool) $manifest['is_current'] : false,
             ],
+            'source_attempt_telemetry' => $sourceAttemptTelemetry,
         ];
 
         $dir = $outputDir ?: $this->defaultRunOutputDir($run->run_id);
@@ -58,6 +60,9 @@ class MarketDataEvidenceExportService
             $this->writeJson($dir.'/publication_manifest.json', $manifest);
         }
         $this->writeJson($dir.'/run_event_summary.json', $eventSummary);
+        if ($sourceAttemptTelemetry !== null) {
+            $this->writeJson($dir.'/source_attempt_telemetry.json', $sourceAttemptTelemetry);
+        }
         $this->writeCsv($dir.'/eligibility_export.csv', ['trade_date', 'ticker_id', 'eligible', 'reason_code'], $eligibilityRows);
         $this->writeCsv($dir.'/invalid_bars_export.csv', ['trade_date', 'ticker_id', 'source', 'source_row_ref', 'invalid_reason_code'], $invalidBarsRows);
         file_put_contents($dir.'/anomaly_report.md', $anomalyReport);
@@ -67,6 +72,7 @@ class MarketDataEvidenceExportService
             'run_summary.json',
             $manifest ? 'publication_manifest.json' : null,
             'run_event_summary.json',
+            $sourceAttemptTelemetry !== null ? 'source_attempt_telemetry.json' : null,
             'eligibility_export.csv',
             'invalid_bars_export.csv',
             'anomaly_report.md',
@@ -84,6 +90,8 @@ class MarketDataEvidenceExportService
                 'source_name' => $runSummary['source_context']['source_name'] ?? null,
                 'source_input_file' => $runSummary['source_context']['source_input_file'] ?? null,
                 'source_summary' => $sourceSummary,
+                'source_attempt_event_type' => $sourceAttemptTelemetry['event_type'] ?? null,
+                'source_attempt_count' => $sourceAttemptTelemetry['attempt_count'] ?? null,
             ],
             'output_dir' => $dir,
             'file_count' => count($files),
@@ -269,6 +277,53 @@ class MarketDataEvidenceExportService
             'started_at' => $run->started_at,
             'finished_at' => $run->finished_at,
         ];
+    }
+
+
+    private function buildSourceAttemptTelemetry($run, array $sourceContext)
+    {
+        $telemetry = $this->evidence->exportRunSourceAttemptTelemetry($run->run_id);
+        if ($telemetry === []) {
+            return null;
+        }
+
+        if (($telemetry['source_name'] ?? null) === null && ($sourceContext['source_name'] ?? null) !== null) {
+            $telemetry['source_name'] = $sourceContext['source_name'];
+        }
+
+        if (($telemetry['source_input_file'] ?? null) === null && ($sourceContext['source_input_file'] ?? null) !== null) {
+            $telemetry['source_input_file'] = $sourceContext['source_input_file'];
+        }
+
+        if (($telemetry['provider'] ?? null) === null && ($sourceContext['provider'] ?? null) !== null) {
+            $telemetry['provider'] = $sourceContext['provider'];
+        }
+
+        if (($telemetry['timeout_seconds'] ?? null) === null && array_key_exists('timeout_seconds', $sourceContext)) {
+            $telemetry['timeout_seconds'] = $sourceContext['timeout_seconds'];
+        }
+
+        if (($telemetry['retry_max'] ?? null) === null && array_key_exists('retry_max', $sourceContext)) {
+            $telemetry['retry_max'] = $sourceContext['retry_max'];
+        }
+
+        if (($telemetry['attempt_count'] ?? null) === null && array_key_exists('attempt_count', $sourceContext)) {
+            $telemetry['attempt_count'] = $sourceContext['attempt_count'];
+        }
+
+        if (($telemetry['success_after_retry'] ?? null) === null && ($sourceContext['success_after_retry'] ?? null) !== null) {
+            $telemetry['success_after_retry'] = $sourceContext['success_after_retry'];
+        }
+
+        if (($telemetry['final_http_status'] ?? null) === null && array_key_exists('final_http_status', $sourceContext)) {
+            $telemetry['final_http_status'] = $sourceContext['final_http_status'];
+        }
+
+        if (($telemetry['final_reason_code'] ?? null) === null && ($sourceContext['final_reason_code'] ?? null) !== null) {
+            $telemetry['final_reason_code'] = $sourceContext['final_reason_code'];
+        }
+
+        return $telemetry;
     }
 
     private function buildSourceContext($record)

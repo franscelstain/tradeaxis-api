@@ -96,6 +96,38 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'reason_code_counts' => [],
         ]);
         $evidence->shouldReceive('dominantReasonCodes')->once()->andReturn([]);
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8124)->andReturn([
+            'event_id' => 991,
+            'event_time' => '2026-04-21T17:04:00+07:00',
+            'event_type' => 'STAGE_COMPLETED',
+            'provider' => 'generic',
+            'source_name' => 'API_FREE',
+            'timeout_seconds' => 15,
+            'retry_max' => 3,
+            'attempt_count' => 2,
+            'success_after_retry' => 'yes',
+            'final_http_status' => 200,
+            'final_reason_code' => 'RUN_SOURCE_TIMEOUT',
+            'captured_at' => '2026-04-21T17:04:00+07:00',
+            'attempts' => [
+                [
+                    'attempt_number' => 1,
+                    'reason_code' => 'RUN_SOURCE_TIMEOUT',
+                    'http_status' => 504,
+                    'throttle_delay_ms' => 1000,
+                    'backoff_delay_ms' => 250,
+                    'will_retry' => true,
+                ],
+                [
+                    'attempt_number' => 2,
+                    'reason_code' => null,
+                    'http_status' => 200,
+                    'throttle_delay_ms' => 1000,
+                    'backoff_delay_ms' => 0,
+                    'will_retry' => false,
+                ],
+            ],
+        ]);
         $evidence->shouldReceive('exportEligibilityRows')->once()->andReturn([
             ['trade_date' => '2026-04-21', 'ticker_id' => 101, 'eligible' => 1, 'reason_code' => null],
         ]);
@@ -111,11 +143,12 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(8124, $result['selector']['id']);
         $this->assertSame('SUCCESS', $result['summary']['terminal_status']);
         $this->assertSame('READABLE', $result['summary']['publishability_state']);
-        $this->assertSame(7, $result['file_count']);
+        $this->assertSame(8, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/run_summary.json');
         $this->assertFileExists($dir.'/publication_manifest.json');
         $this->assertFileExists($dir.'/run_event_summary.json');
+        $this->assertFileExists($dir.'/source_attempt_telemetry.json');
         $this->assertFileExists($dir.'/eligibility_export.csv');
         $this->assertFileExists($dir.'/invalid_bars_export.csv');
         $this->assertFileExists($dir.'/anomaly_report.md');
@@ -135,11 +168,22 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(200, $summary['source_context']['final_http_status']);
         $this->assertSame('RUN_SOURCE_TIMEOUT', $summary['source_context']['final_reason_code']);
 
+        $attemptTelemetry = json_decode(file_get_contents($dir.'/source_attempt_telemetry.json'), true);
+        $this->assertSame('STAGE_COMPLETED', $attemptTelemetry['event_type']);
+        $this->assertSame('API_FREE', $attemptTelemetry['source_name']);
+        $this->assertCount(2, $attemptTelemetry['attempts']);
+        $this->assertTrue($attemptTelemetry['attempts'][0]['will_retry']);
+        $this->assertFalse($attemptTelemetry['attempts'][1]['will_retry']);
+
         $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
         $this->assertSame('coverage_gate_v1', $payload['run_summary']['coverage']['coverage_contract_version']);
         $this->assertSame('active_equity_universe_asof_trade_date', $payload['run_summary']['coverage']['coverage_universe_basis']);
         $this->assertSame('API_FREE', $payload['run_summary']['source_context']['source_name']);
         $this->assertSame('RUN_SOURCE_TIMEOUT', $payload['run_summary']['source_context']['final_reason_code']);
+        $this->assertSame('STAGE_COMPLETED', $payload['source_attempt_telemetry']['event_type']);
+        $this->assertCount(2, $payload['source_attempt_telemetry']['attempts']);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $result['summary']['source_summary']);
+        $this->assertSame('STAGE_COMPLETED', $result['summary']['source_attempt_event_type']);
+        $this->assertSame(2, $result['summary']['source_attempt_count']);
     }
 }

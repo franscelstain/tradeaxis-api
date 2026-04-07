@@ -24,10 +24,11 @@ At minimum, the following artifact shapes must be reconstructable:
 6. `anomaly_report.md` or equivalent machine-readable anomaly summary
 
 Where applicable, the following should also be available:
-7. `correction_evidence.json`
-8. `replay_result.json`
-9. `replay_expected_state.json`
-10. `replay_actual_state.json`
+7. `source_attempt_telemetry.json` when attempt-level source telemetry exists for the run
+8. `correction_evidence.json`
+9. `replay_result.json`
+10. `replay_expected_state.json`
+11. `replay_actual_state.json`
 
 ## 1. `run_summary.json`
 ### Purpose
@@ -212,6 +213,53 @@ Provide a short operator-facing summary of what went wrong or what materially ch
 ### Locked rules
 - anomaly report must be consistent with run summary
 - narrative explanation must not contradict status/seal/publication facts
+
+
+## 7. `source_attempt_telemetry.json`
+### Purpose
+Provide a compact bounded export of attempt-level source acquisition telemetry for one run when the append-only event trail already contains it.
+
+### Minimum fields
+A conforming source-attempt export should contain at minimum:
+
+    {
+      "event_id": 991,
+      "event_time": "2026-04-21T17:04:00+07:00",
+      "event_type": "STAGE_COMPLETED",
+      "source_name": "API_FREE",
+      "provider": "generic",
+      "timeout_seconds": 15,
+      "retry_max": 3,
+      "attempt_count": 2,
+      "success_after_retry": "yes",
+      "final_http_status": 200,
+      "final_reason_code": "RUN_SOURCE_TIMEOUT",
+      "captured_at": "2026-04-21T17:04:00+07:00",
+      "attempts": [
+        {
+          "attempt_number": 1,
+          "reason_code": "RUN_SOURCE_TIMEOUT",
+          "http_status": 504,
+          "throttle_delay_ms": 1000,
+          "backoff_delay_ms": 250,
+          "will_retry": true
+        },
+        {
+          "attempt_number": 2,
+          "reason_code": null,
+          "http_status": 200,
+          "throttle_delay_ms": 1000,
+          "backoff_delay_ms": 0,
+          "will_retry": false
+        }
+      ]
+    }
+
+### Locked rules
+- export must be derived from persisted `eod_run_events.event_payload_json`, not reconstructed from guesswork
+- export is optional and only materialized when attempt-level telemetry actually exists in the event trail
+- export may enrich missing top-level identity fields from persisted run notes, but it must not invent attempt rows that are absent from the event payload
+- this artifact is a bounded operator companion; row-level `eod_run_events` remains authoritative for full forensic inspection
 
 ## 7. `correction_evidence.json`
 ### Purpose

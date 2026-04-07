@@ -131,6 +131,76 @@ class EodEvidenceRepository
             ->all();
     }
 
+
+    public function exportRunSourceAttemptTelemetry($runId)
+    {
+        $events = DB::table('eod_run_events')
+            ->select('event_id', 'event_time', 'event_type', 'event_payload_json')
+            ->where('run_id', $runId)
+            ->whereNotNull('event_payload_json')
+            ->orderBy('event_time')
+            ->orderBy('event_id')
+            ->get();
+
+        $selected = null;
+
+        foreach ($events as $event) {
+            $payload = json_decode((string) $event->event_payload_json, true);
+            if (! is_array($payload)) {
+                continue;
+            }
+
+            $sourceAcquisition = null;
+            if (isset($payload['source_acquisition']) && is_array($payload['source_acquisition'])) {
+                $sourceAcquisition = $payload['source_acquisition'];
+            } elseif (isset($payload['exception_context']) && is_array($payload['exception_context'])) {
+                $sourceAcquisition = $payload['exception_context'];
+            }
+
+            if (! is_array($sourceAcquisition) || empty($sourceAcquisition['attempts']) || ! is_array($sourceAcquisition['attempts'])) {
+                continue;
+            }
+
+            $selected = [
+                'event_id' => (int) $event->event_id,
+                'event_time' => (string) $event->event_time,
+                'event_type' => (string) $event->event_type,
+            ] + $sourceAcquisition;
+        }
+
+        if (! is_array($selected)) {
+            return [];
+        }
+
+        return [
+            'event_id' => $selected['event_id'],
+            'event_time' => $selected['event_time'],
+            'event_type' => $selected['event_type'],
+            'provider' => isset($selected['provider']) && $selected['provider'] !== '' ? (string) $selected['provider'] : null,
+            'source_name' => isset($selected['source_name']) && $selected['source_name'] !== '' ? (string) $selected['source_name'] : null,
+            'source_name_resolved' => isset($selected['source_name_resolved']) && $selected['source_name_resolved'] !== '' ? (string) $selected['source_name_resolved'] : null,
+            'timeout_seconds' => isset($selected['timeout_seconds']) && $selected['timeout_seconds'] !== null ? (int) $selected['timeout_seconds'] : null,
+            'retry_max' => isset($selected['retry_max']) && $selected['retry_max'] !== null ? (int) $selected['retry_max'] : null,
+            'attempt_count' => isset($selected['attempt_count']) && $selected['attempt_count'] !== null ? (int) $selected['attempt_count'] : count($selected['attempts']),
+            'success_after_retry' => ! empty($selected['success_after_retry']) ? 'yes' : null,
+            'final_http_status' => isset($selected['final_http_status']) && $selected['final_http_status'] !== null ? (int) $selected['final_http_status'] : null,
+            'final_reason_code' => isset($selected['final_reason_code']) && $selected['final_reason_code'] !== '' ? (string) $selected['final_reason_code'] : null,
+            'captured_at' => isset($selected['captured_at']) && $selected['captured_at'] !== '' ? (string) $selected['captured_at'] : (string) $selected['event_time'],
+            'attempts' => array_values(array_map(function ($attempt) {
+                $attempt = is_array($attempt) ? $attempt : [];
+
+                return [
+                    'attempt_number' => isset($attempt['attempt_number']) && $attempt['attempt_number'] !== null ? (int) $attempt['attempt_number'] : null,
+                    'reason_code' => isset($attempt['reason_code']) && $attempt['reason_code'] !== '' ? (string) $attempt['reason_code'] : null,
+                    'http_status' => isset($attempt['http_status']) && $attempt['http_status'] !== null ? (int) $attempt['http_status'] : null,
+                    'throttle_delay_ms' => isset($attempt['throttle_delay_ms']) && $attempt['throttle_delay_ms'] !== null ? (int) $attempt['throttle_delay_ms'] : null,
+                    'backoff_delay_ms' => isset($attempt['backoff_delay_ms']) && $attempt['backoff_delay_ms'] !== null ? (int) $attempt['backoff_delay_ms'] : null,
+                    'will_retry' => isset($attempt['will_retry']) ? (bool) $attempt['will_retry'] : null,
+                ];
+            }, $selected['attempts'])),
+        ];
+    }
+
     public function findCorrectionById($correctionId)
     {
         return DB::table('eod_dataset_corrections')->where('correction_id', $correctionId)->first();
