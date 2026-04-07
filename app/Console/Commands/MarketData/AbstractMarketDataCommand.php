@@ -4,6 +4,7 @@ namespace App\Console\Commands\MarketData;
 
 use App\Application\MarketData\DTOs\MarketDataStageInput;
 use App\Application\MarketData\Services\MarketDataPipelineService;
+use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -40,7 +41,34 @@ abstract class AbstractMarketDataCommand extends Command
 
     protected function pipeline()
     {
-        return app(MarketDataPipelineService::class);
+        return $this->container()->make(MarketDataPipelineService::class);
+    }
+
+    protected function runRepository()
+    {
+        return $this->container()->make(EodRunRepository::class);
+    }
+
+    protected function latestRunForRequestedDate($requestedDate = null, $sourceMode = null)
+    {
+        $requestedDate = $requestedDate ?: $this->requestedDate();
+        $sourceMode = $sourceMode ?: $this->sourceMode();
+
+        return $this->runRepository()->findLatestForRequestedDate($requestedDate, $sourceMode);
+    }
+
+    protected function container()
+    {
+        return $this->laravel ?: app();
+    }
+
+    protected function renderRecoveredFailureSummary($run, \Throwable $e)
+    {
+        if ($run) {
+            $this->renderRunSummary($run);
+        }
+
+        $this->error('error='.(string) $e->getMessage());
     }
 
     protected function renderRunSummary($run)

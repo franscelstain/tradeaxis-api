@@ -77,6 +77,20 @@ class EodRunRepository
         return EodRun::query()->where('run_id', $runId)->first();
     }
 
+
+    public function findLatestForRequestedDate($requestedDate, $sourceMode = null)
+    {
+        $query = EodRun::query()
+            ->where('trade_date_requested', $requestedDate)
+            ->orderByDesc('run_id');
+
+        if ($sourceMode !== null && trim((string) $sourceMode) !== '') {
+            $query->where('source', $sourceMode);
+        }
+
+        return $query->first();
+    }
+
     public function touchStage(EodRun $run, $stage, array $attributes = [])
     {
         $run->stage = $stage;

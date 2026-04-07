@@ -67,12 +67,14 @@ Sudah diimplementasikan minimum pada command harian utama.
 - explicit input file `.json` / `.csv` mengoverride lookup direktori default hanya untuk eksekusi command tersebut
 - payload event stage ingest dan `eod_runs.notes` sekarang dapat membawa jejak minimum `input_file` / `source_input_file` untuk fallback manual yang dipicu operator
 - output command operator sekarang juga menampilkan `source_input_file` bila jejak itu tersedia
+- bila `market-data:daily` gagal setelah run failure-side notes sempat dipersist, command harus mencoba merender ulang ringkasan run terakhir untuk tanggal+source tersebut sebelum mengembalikan exit non-zero, agar operator tetap melihat `source_name` / `source_summary` minimum tanpa inspeksi manual ke tabel
 
 ### Manual rerun path
 Sudah tersedia minimum melalui command pipeline yang sudah ada.
 - operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu
 - operator dapat menjalankan `market-data:backfill {start_date} {end_date}` untuk rerun date-range yang mengikuti `market_calendar`
 - summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya, sehingga rerun operator tidak berhenti di raw notes atau run-by-run inspection
+- bila `market-data:backfill` menerima exception setelah run gagal sudah tercatat, summary kasus `ERROR` harus mencoba memuat ulang run terakhir untuk tanggal+source tersebut dan tetap menurunkan `run_id`, `terminal_status`, `publishability_state`, serta source context minimum dari notes yang sudah dipersist
 - correction / reseal path tetap memakai command correction yang sudah terpisah bila konteksnya historical correction
 
 ---

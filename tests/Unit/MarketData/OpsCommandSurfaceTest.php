@@ -896,6 +896,50 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('source_summary=attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 
+
+    public function test_daily_pipeline_command_recovers_failed_run_summary_when_pipeline_throws(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'api', null)
+            ->andThrow(new RuntimeException('boom'));
+
+        $runs = m::mock(EodRunRepository::class);
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-03-24', 'api')
+            ->andReturn((object) [
+                'run_id' => 44,
+                'trade_date_requested' => '2026-03-24',
+                'stage' => 'INGEST_BARS',
+                'lifecycle_state' => 'FAILED',
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'notes' => 'source_name=API_FREE; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodRunRepository::class, $runs);
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'api',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('run_id=44', $display);
+        $this->assertStringContainsString('source_name=API_FREE', $display);
+        $this->assertStringContainsString('source_summary=attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
+        $this->assertStringContainsString('error=boom', $display);
+    }
+
     public function test_daily_pipeline_command_renders_manual_source_input_file_from_run_notes(): void
     {
         $service = m::mock(MarketDataPipelineService::class);

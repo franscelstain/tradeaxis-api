@@ -2,6 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use Carbon\Carbon;
 
@@ -9,11 +10,13 @@ class MarketDataBackfillService
 {
     private $calendar;
     private $pipeline;
+    private $runs;
 
-    public function __construct(MarketCalendarRepository $calendar, MarketDataPipelineService $pipeline)
+    public function __construct(MarketCalendarRepository $calendar, MarketDataPipelineService $pipeline, EodRunRepository $runs = null)
     {
         $this->calendar = $calendar;
         $this->pipeline = $pipeline;
+        $this->runs = $runs;
     }
 
     public function execute($startDate, $endDate, $sourceMode = null, $outputDir = null, $continueOnError = false)
@@ -56,12 +59,24 @@ class MarketDataBackfillService
                 }
             } catch (\Throwable $e) {
                 $allPassed = false;
-                $cases[] = [
+                $failedRun = $this->runs ? $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode) : null;
+                $case = [
                     'requested_date' => $requestedDate,
                     'status' => 'ERROR',
                     'error_class' => get_class($e),
                     'error_message' => $e->getMessage(),
                 ];
+
+                if ($failedRun) {
+                    $case = array_merge($case, [
+                        'run_id' => (int) $failedRun->run_id,
+                        'terminal_status' => (string) $failedRun->terminal_status,
+                        'publishability_state' => (string) $failedRun->publishability_state,
+                        'trade_date_effective' => $failedRun->trade_date_effective !== null ? (string) $failedRun->trade_date_effective : null,
+                    ], $this->buildSourceContextFromRun($failedRun));
+                }
+
+                $cases[] = $case;
 
                 if (! $continueOnError) {
                     break;

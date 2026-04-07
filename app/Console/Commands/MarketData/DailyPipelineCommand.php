@@ -18,8 +18,17 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
             $configuredOverride = true;
         }
 
+        $requestedDate = $this->requestedDate();
+        $sourceMode = $this->sourceMode();
+        $correctionId = $this->option('correction_id') ?: null;
+
         try {
-            $run = $this->pipeline()->runDaily($this->requestedDate(), $this->sourceMode(), $this->option('correction_id') ?: null);
+            $run = $this->pipeline()->runDaily($requestedDate, $sourceMode, $correctionId);
+        } catch (\Throwable $e) {
+            $run = $this->latestRunForRequestedDate($requestedDate, $sourceMode);
+            $this->renderRecoveredFailureSummary($run, $e);
+
+            return 1;
         } finally {
             if ($configuredOverride) {
                 config()->set('market_data.source.local_input_file', $previousInputFile);

@@ -4,6 +4,7 @@ require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
 
 use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
+use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
@@ -31,6 +32,7 @@ class MarketDataBackfillServiceTest extends TestCase
     {
         $calendar = m::mock(MarketCalendarRepository::class);
         $pipeline = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
         $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
 
         $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-20', '2026-03-24')->andReturn([
@@ -50,7 +52,9 @@ class MarketDataBackfillServiceTest extends TestCase
             $pipeline->shouldReceive('runDaily')->once()->with($date, 'manual_file', null)->andReturn($run);
         }
 
-        $service = new MarketDataBackfillService($calendar, $pipeline);
+        $runs->shouldNotReceive('findLatestForRequestedDate');
+
+        $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
         $summary = $service->execute('2026-03-20', '2026-03-24', 'manual_file', $outputDir, false);
 
         $this->assertTrue($summary['all_passed']);
@@ -69,6 +73,7 @@ class MarketDataBackfillServiceTest extends TestCase
     {
         $calendar = m::mock(MarketCalendarRepository::class);
         $pipeline = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
         $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
 
         $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-20', '2026-03-21')->andReturn([
@@ -85,7 +90,9 @@ class MarketDataBackfillServiceTest extends TestCase
         ]);
         $pipeline->shouldNotReceive('runDaily')->with('2026-03-21', 'manual_file', null);
 
-        $service = new MarketDataBackfillService($calendar, $pipeline);
+        $runs->shouldNotReceive('findLatestForRequestedDate');
+
+        $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
         $summary = $service->execute('2026-03-20', '2026-03-21', 'manual_file', $outputDir, false);
 
         $this->assertFalse($summary['all_passed']);
@@ -102,17 +109,28 @@ class MarketDataBackfillServiceTest extends TestCase
     {
         $calendar = m::mock(MarketCalendarRepository::class);
         $pipeline = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
         $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
 
         $calendar->shouldReceive('tradingDatesBetween')->once()->andReturn(['2026-03-20', '2026-03-21']);
         $pipeline->shouldReceive('runDaily')->once()->with('2026-03-20', 'manual_file', null)->andThrow(new RuntimeException('boom'));
         $pipeline->shouldNotReceive('runDaily')->with('2026-03-21', 'manual_file', null);
+        $runs->shouldReceive('findLatestForRequestedDate')->once()->with('2026-03-20', 'manual_file')->andReturn((object) [
+            'run_id' => 1001,
+            'terminal_status' => 'FAILED',
+            'publishability_state' => 'NOT_READABLE',
+            'trade_date_effective' => null,
+            'notes' => 'source_name=API_FREE; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+        ]);
 
-        $service = new MarketDataBackfillService($calendar, $pipeline);
+        $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
         $summary = $service->execute('2026-03-20', '2026-03-21', 'manual_file', $outputDir, false);
 
         $this->assertFalse($summary['all_passed']);
         $this->assertCount(1, $summary['cases']);
         $this->assertSame('ERROR', $summary['cases'][0]['status']);
+        $this->assertSame(1001, $summary['cases'][0]['run_id']);
+        $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
+        $this->assertSame('attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
     }
 }
