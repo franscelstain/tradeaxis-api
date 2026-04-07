@@ -4,7 +4,7 @@
 
 ### Run Evidence Source Context Recovery From Attempt Telemetry
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -51,13 +51,20 @@
   * first local PHPUnit run failed on `MarketDataEvidenceExportServiceTest::test_export_run_evidence_recovers_source_summary_from_attempt_telemetry_when_notes_are_thin` because `findCurrentPublicationForTradeDate('2026-04-21')` was never called
   * root cause was publication resolution being gated too narrowly to requested-date readable runs
 
+* Available proof after fix:
+
+  * changed PHP files pass `php -l`
+  * checkpoint-vs-repo parity revalidation completed for this batch
+  * changed docs are aligned with the recovery behavior
+  * local PHPUnit execution passed after the publication-resolution fix:
+
+    * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `2 tests, 52 assertions`
+    * `tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `25 tests, 140 assertions`
+    * `vendor\bin\phpunit` → `164 tests, 1742 assertions`
+
 * Pending proof:
 
-  * local PHPUnit execution still required for:
-
-    * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
-    * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-    * `vendor\bin\phpunit`
+  * none for this batch
 
 ### Run Evidence Source Attempt Telemetry Export
 

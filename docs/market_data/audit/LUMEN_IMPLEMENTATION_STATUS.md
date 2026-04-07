@@ -3,7 +3,7 @@
 ## SESSION UPDATE
 
 * Batch: Run Evidence Source Context Recovery From Attempt Telemetry
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -20,13 +20,17 @@
 * That meant operator-facing evidence export was still weaker than the already-persisted attempt trail, despite both artifacts belonging to the same bounded run-evidence surface.
 * Local PHPUnit feedback then exposed a narrower code/test drift: failed or held runs with `trade_date_effective = last_good_trade_date` still needed evidence export to resolve the current publication for that fallback effective date, but the implementation only performed current-publication lookup on requested-date readable runs.
 
-### Evidence available from this ZIP
+### Evidence available from this session
 
 * Code inspection parity shows run evidence export now recovers missing minimum source context from persisted attempt telemetry before writing operator-facing summaries.
 * Local syntax proof in container:
   * `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → PASS
   * `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS
 * Code inspection after the failing local PHPUnit run confirms the publication resolver now follows effective-date fallback semantics for evidence export as required by the readability contracts.
+* Local PHPUnit proof received from the user after the fix:
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS (`2 tests, 52 assertions`)
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS (`25 tests, 140 assertions`)
+  * `vendor\bin\phpunit` → PASS (`164 tests, 1742 assertions`)
 * Companion docs synced with the bounded recovery behavior:
   * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
   * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
@@ -35,9 +39,9 @@
 
 ### What is still pending
 
-* Updated local PHPUnit rerun is still pending in the user's local environment because the uploaded ZIP does not include `vendor/` and the first proof run exposed then validated the need for the publication-resolution fix.
-* Family-level `External Source Operational Resilience` remains partial because live-source runtime proof and broader operator/dashboard hardening are still outside this batch.
+* No additional proof is pending for this batch.
+* Family-level `External Source Operational Resilience` remains partial only at the broader owner-doc family level because live-source runtime proof and broader operator/dashboard hardening are still outside this closed batch.
 
 ### Final State
 
-* PARTIAL (batch implemented, awaiting local PHPUnit proof; family still PARTIAL)
+* DONE (batch closed with local PHPUnit proof; broader family still PARTIAL outside this batch)
