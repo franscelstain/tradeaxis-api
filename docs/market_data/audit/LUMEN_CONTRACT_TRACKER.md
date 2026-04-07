@@ -2,6 +2,63 @@
 
 ## External Source Operational Resilience
 
+### Run Evidence Source Context Recovery From Attempt Telemetry
+
+* Status: PARTIAL
+
+* Scope:
+
+  * recover missing minimum operator-facing source context during run evidence export when `eod_runs.notes` are thinner than persisted attempt telemetry
+  * keep recovery bounded to facts already stored in persisted run-event payloads
+  * align `run_summary.json`, `evidence_pack.json`, and CLI export summary with the same recovered minimum source context
+
+* Owner-doc anchor:
+
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/market_data/ops/Run_Artifacts_Format_LOCKED.md`
+  * `docs/market_data/ops/Audit_Evidence_Pack_Contract_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+  * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+
+* Drift found:
+
+  * the prior batch already exported bounded attempt telemetry as its own artifact
+  * operator-facing evidence summary still depended mostly on `eod_runs.notes`
+  * when notes were thin, exported `source_summary` could remain weaker than the persisted attempt telemetry already available in the same run
+  * first local PHPUnit proof also exposed that fallback-effective-date runs still expected current-publication resolution for `trade_date_effective`, but the implementation only looked up current publication for requested-date readable runs
+
+* Resolution applied in this session:
+
+  * run evidence export now merges missing minimum source-context fields from persisted attempt telemetry into exported run summary payloads
+  * recovered fields stay bounded to persisted telemetry and do not invent new source facts
+  * PHPUnit coverage now includes the thin-notes recovery path
+  * owner/ops docs now state that run evidence export may recover minimum source context from persisted attempt telemetry when notes are thin
+  * publication resolution inside run evidence export now falls back to the current publication for `trade_date_effective` whenever that fallback readable date exists, keeping failed/held evidence packs aligned with the locked readability contracts
+
+* Available proof:
+
+  * changed PHP files pass `php -l`
+  * checkpoint-vs-repo parity revalidation completed for this batch
+  * changed docs are aligned with the recovery behavior
+
+* Regression feedback already received:
+
+  * first local PHPUnit run failed on `MarketDataEvidenceExportServiceTest::test_export_run_evidence_recovers_source_summary_from_attempt_telemetry_when_notes_are_thin` because `findCurrentPublicationForTradeDate('2026-04-21')` was never called
+  * root cause was publication resolution being gated too narrowly to requested-date readable runs
+
+* Pending proof:
+
+  * local PHPUnit execution still required for:
+
+    * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+    * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+    * `vendor\bin\phpunit`
+
 ### Run Evidence Source Attempt Telemetry Export
 
 * Status: DONE
@@ -228,9 +285,10 @@
 
 ### Family status note
 
+* Run evidence source context recovery batch is now PARTIAL pending local PHPUnit proof.
+* Run evidence source attempt telemetry export batch remains DONE and verified.
 * Exception-path operator recovery batch remains CLOSED and verified.
 * Coverage final-state parity batch is CLOSED and verified.
 * Operator source summary enrichment batch is DONE and verified.
-* Run evidence source attempt telemetry export batch is now DONE and verified.
-* External source operational resilience still remains PARTIAL at family/owner-doc level because the locked contract still lists broader remaining operational gaps outside this batch, including live-source runtime proof and future operator/dashboard hardening.
+* External source operational resilience still remains PARTIAL at family/owner-doc level because the locked contract still lists broader remaining operational gaps outside the closed batches, including live-source runtime proof and future operator/dashboard hardening.
 * System-level daily live runtime validation remains outside this session scope.

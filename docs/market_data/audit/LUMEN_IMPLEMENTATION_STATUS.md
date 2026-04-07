@@ -2,52 +2,42 @@
 
 ## SESSION UPDATE
 
-* Batch: Run Evidence Source Attempt Telemetry Export
-* Status: DONE
+* Batch: Run Evidence Source Context Recovery From Attempt Telemetry
+* Status: PARTIAL
 
 ### What was implemented
 
-* Re-audited the active checkpoint against the live repo and confirmed the next narrow gap that still fit the owner docs was the missing operator-friendly export of attempt-level source acquisition telemetry from persisted run events.
-* Added attempt-level run-evidence extraction in `EodEvidenceRepository` so evidence export can read the latest persisted source-acquisition attempt trail from `eod_run_events.event_payload_json` for either:
-  * success-side ingest completion payloads (`source_acquisition`)
-  * failure-side ingest exceptions (`exception_context`)
-* Extended `MarketDataEvidenceExportService` so requested-date run evidence now also:
-  * builds `source_attempt_telemetry` from persisted run events
-  * writes `source_attempt_telemetry.json` when attempt telemetry exists
-  * embeds the same structure into `evidence_pack.json`
-  * exposes minimal operator summary fields (`source_attempt_event_type`, `source_attempt_count`) alongside the existing source summary
-* Updated PHPUnit surface for run-evidence export so the new artifact and payload shape are asserted in `MarketDataEvidenceExportServiceTest`.
-* Synced owner/ops docs so attempt-level run-evidence export is now documented as a bounded companion artifact instead of an implicit raw-table-only capability.
+* Re-audited the checkpoint against the uploaded repo and selected one narrow follow-up gap inside the still-partial `External Source Operational Resilience` family: run evidence export still trusted `eod_runs.notes` as the only source for operator-facing `source_summary`, even when richer attempt telemetry was already persisted in `eod_run_events`.
+* Extended `MarketDataEvidenceExportService` so run evidence export now merges missing minimum source-context fields from persisted attempt telemetry back into exported `run_summary.json`, `evidence_pack.json`, and CLI summary output.
+* Recovery is bounded and non-inventive: it only fills missing minimum fields already present in persisted attempt telemetry (`provider`, `timeout_seconds`, `retry_max`, `attempt_count`, `success_after_retry`, `final_http_status`, `final_reason_code`, plus `source_name` / `source_input_file` when present).
+* Added PHPUnit coverage for the thin-notes path so evidence export proves operator-facing source summary still works when `notes` only contain `source_name` but attempt telemetry carries the rest of the minimum resilience context.
+* Synced owner/ops docs so this recovery path is explicit companion behavior rather than an implicit implementation detail.
+* After local PHPUnit feedback exposed a publication-resolution regression on thin-notes fallback runs, corrected `resolvePublicationForRun()` so run evidence export resolves the current publication for `trade_date_effective` whenever fallback readability is in force, instead of limiting current-publication lookup to requested-date readable runs only.
 
 ### Drift / gap that was found
 
-* Owner docs already allowed richer source-resilience telemetry at event level, but run evidence export still stopped at note-derived summary fields only.
-* That meant retry/backoff attempt diagnosis still required manual inspection of raw `eod_run_events` rows even though the evidence-export path already existed.
-* This was a real auditability gap inside the still-partial external-source operational-resilience family.
+* The previous batch exported `source_attempt_telemetry.json`, but `run_summary.json` and the `market-data:evidence:export` summary could still degrade to a thin or blank `source_summary` when persisted notes were sparse.
+* That meant operator-facing evidence export was still weaker than the already-persisted attempt trail, despite both artifacts belonging to the same bounded run-evidence surface.
+* Local PHPUnit feedback then exposed a narrower code/test drift: failed or held runs with `trade_date_effective = last_good_trade_date` still needed evidence export to resolve the current publication for that fallback effective date, but the implementation only performed current-publication lookup on requested-date readable runs.
 
 ### Evidence available from this ZIP
 
-* Code inspection parity shows attempt-level source telemetry is now exported from persisted run events into run evidence artifacts.
+* Code inspection parity shows run evidence export now recovers missing minimum source context from persisted attempt telemetry before writing operator-facing summaries.
 * Local syntax proof in container:
-  * `php -l app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php` → PASS
   * `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → PASS
   * `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS
-* Companion docs synced with the new bounded evidence artifact:
+* Code inspection after the failing local PHPUnit run confirms the publication resolver now follows effective-date fallback semantics for evidence export as required by the readability contracts.
+* Companion docs synced with the bounded recovery behavior:
   * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
   * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
   * `docs/market_data/ops/Run_Artifacts_Format_LOCKED.md`
   * `docs/market_data/ops/Audit_Evidence_Pack_Contract_LOCKED.md`
 
-* targeted local PHPUnit proof supplied after implementation:
-  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `1 test, 40 assertions`
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `25 tests, 140 assertions`
-  * `vendor\bin\phpunit` → `163 tests, 1730 assertions`
-
 ### What is still pending
 
-* No batch-level proof is pending for this implementation.
-* Family-level `External Source Operational Resilience` still remains partial because live-source runtime proof and broader operator/dashboard hardening are still outside this batch.
+* Updated local PHPUnit rerun is still pending in the user's local environment because the uploaded ZIP does not include `vendor/` and the first proof run exposed then validated the need for the publication-resolution fix.
+* Family-level `External Source Operational Resilience` remains partial because live-source runtime proof and broader operator/dashboard hardening are still outside this batch.
 
 ### Final State
 
-* PARTIAL (batch verified as DONE; family remains PARTIAL)
+* PARTIAL (batch implemented, awaiting local PHPUnit proof; family still PARTIAL)

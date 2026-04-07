@@ -83,7 +83,7 @@ A conforming summary should contain at minimum:
 - if requested date is held or failed, summary must not imply requested date is readable
 - run-summary fields that mirror persisted run state must use the persisted names from `eod_runs`
 - derived publication-facing fields may appear only when clearly marked as derived companion evidence, not as replacement names for persisted columns
-- `source_context` is allowed as derived companion evidence parsed from persisted run telemetry/notes; it must not invent source facts absent from persisted run context
+- `source_context` is allowed as derived companion evidence parsed from persisted run telemetry/notes; it may recover missing minimum operator-facing fields from persisted attempt telemetry when run notes are thin, but it must not invent source facts absent from persisted run context
 
 ## 2. `publication_manifest.json`
 ### Purpose

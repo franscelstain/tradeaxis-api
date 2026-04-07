@@ -33,6 +33,10 @@ class MarketDataEvidenceExportService
         $manifest = $publication ? (array) $this->publications->buildManifestByPublicationId($publication->publication_id) : null;
         $runSummary = $this->buildRunSummary($run, $manifest);
         $sourceAttemptTelemetry = $this->buildSourceAttemptTelemetry($run, $runSummary['source_context'] ?? []);
+        $runSummary['source_context'] = $this->mergeSourceContextFromTelemetry(
+            is_array($runSummary['source_context'] ?? null) ? $runSummary['source_context'] : [],
+            $sourceAttemptTelemetry
+        );
         $sourceSummary = $this->buildSourceSummaryString($runSummary['source_context'] ?? []);
         $eventSummary = ['run_id' => (int) $run->run_id, 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
         $dominantReasonCodes = $this->evidence->dominantReasonCodes($run->run_id, $this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
@@ -229,11 +233,12 @@ class MarketDataEvidenceExportService
             if ($current && (int) $current->run_id === (int) $run->run_id) {
                 return $current;
             }
-            if ($run->trade_date_effective && $run->trade_date_effective !== $run->trade_date_requested) {
-                $fallback = $this->publications->findCurrentPublicationForTradeDate($run->trade_date_effective);
-                if ($fallback) {
-                    return $fallback;
-                }
+        }
+
+        if ($run->trade_date_effective) {
+            $fallback = $this->publications->findCurrentPublicationForTradeDate($run->trade_date_effective);
+            if ($fallback) {
+                return $fallback;
             }
         }
 
@@ -341,6 +346,37 @@ class MarketDataEvidenceExportService
             'final_http_status' => isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? (int) $notesMap['source_final_http_status'] : null,
             'final_reason_code' => $notesMap['source_final_reason_code'] ?? null,
         ];
+    }
+
+    private function mergeSourceContextFromTelemetry(array $sourceContext, $sourceAttemptTelemetry)
+    {
+        if (! is_array($sourceAttemptTelemetry)) {
+            return $sourceContext;
+        }
+
+        $merged = $sourceContext;
+        $fieldMap = [
+            'source_name' => 'source_name',
+            'source_input_file' => 'source_input_file',
+            'provider' => 'provider',
+            'timeout_seconds' => 'timeout_seconds',
+            'retry_max' => 'retry_max',
+            'attempt_count' => 'attempt_count',
+            'success_after_retry' => 'success_after_retry',
+            'final_http_status' => 'final_http_status',
+            'final_reason_code' => 'final_reason_code',
+        ];
+
+        foreach ($fieldMap as $contextKey => $telemetryKey) {
+            $contextHasValue = array_key_exists($contextKey, $merged) && $merged[$contextKey] !== null && $merged[$contextKey] !== '';
+            $telemetryHasValue = array_key_exists($telemetryKey, $sourceAttemptTelemetry) && $sourceAttemptTelemetry[$telemetryKey] !== null && $sourceAttemptTelemetry[$telemetryKey] !== '';
+
+            if (! $contextHasValue && $telemetryHasValue) {
+                $merged[$contextKey] = $sourceAttemptTelemetry[$telemetryKey];
+            }
+        }
+
+        return $merged;
     }
 
     private function buildSourceSummaryString(array $sourceContext)
