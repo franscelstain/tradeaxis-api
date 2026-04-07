@@ -281,6 +281,7 @@ class MarketDataEvidenceExportService
             'attempt_count' => isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] !== '' ? (int) $notesMap['source_attempt_count'] : null,
             'success_after_retry' => $notesMap['source_success_after_retry'] ?? null,
             'final_http_status' => isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? (int) $notesMap['source_final_http_status'] : null,
+            'final_reason_code' => $notesMap['source_final_reason_code'] ?? null,
         ];
     }
 
@@ -298,6 +299,10 @@ class MarketDataEvidenceExportService
 
         if (array_key_exists('final_http_status', $sourceContext) && $sourceContext['final_http_status'] !== null) {
             $summaryParts[] = 'final_http_status='.(string) $sourceContext['final_http_status'];
+        }
+
+        if (($sourceContext['final_reason_code'] ?? '') !== '') {
+            $summaryParts[] = 'final_reason_code='.(string) $sourceContext['final_reason_code'];
         }
 
         return $summaryParts === [] ? null : implode(' | ', $summaryParts);

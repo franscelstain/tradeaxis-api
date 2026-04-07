@@ -51,7 +51,8 @@ A conforming summary should contain at minimum:
         "source_input_file": null,
         "attempt_count": 3,
         "success_after_retry": "yes",
-        "final_http_status": 200
+        "final_http_status": 200,
+        "final_reason_code": null
       },
       "coverage_ratio": 0.8420,
       "bars_rows_written": 842,

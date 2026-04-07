@@ -58,6 +58,7 @@ Sudah diimplementasikan minimal pada success path ingest API.
 - `MarketDataPipelineService` menulis ringkasan tersebut ke payload `STAGE_COMPLETED` dan ke `eod_runs.notes` minimum (`source_attempt_count`, `source_success_after_retry`, `source_final_http_status`)
 - `AbstractMarketDataCommand` sekarang mengekstrak ringkasan minimum itu ke output operator (`source_name`, `source_summary`) agar operator tidak harus membaca `notes` mentah
 - `MarketDataEvidenceExportService` sekarang juga menurunkan source context minimum itu ke `run_summary.json`, `evidence_pack.json`, dan ringkasan `market-data:evidence:export` agar proof ops minimum tidak berhenti di notes mentah atau command harian saja
+- bila run gagal pada jalur source-acquisition, minimum failure-side source context (`source_name`, `source_attempt_count`, `source_final_http_status` bila ada, dan `source_final_reason_code`) juga harus ikut dipersist ke `eod_runs.notes` agar operator summary/backfill/evidence export tetap bisa menjelaskan kegagalan tanpa membaca raw event payload saja
 - tujuan batch ini tetap audit trail minimum, bukan operator dashboard penuh
 
 ### Manual fallback operator path

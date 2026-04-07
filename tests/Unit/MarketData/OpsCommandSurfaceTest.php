@@ -50,7 +50,7 @@ class OpsCommandSurfaceTest extends TestCase
                         'publishability_state' => 'READABLE',
                         'trade_date_effective' => '2026-03-17',
                         'source_name' => 'API_FREE',
-                        'source_summary' => 'attempt_count=2 | success_after_retry=yes | final_http_status=200',
+                        'source_summary' => 'attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT',
                     ],
                 ],
             ]);
@@ -78,7 +78,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('source_mode=manual_file', $display);
         $this->assertStringContainsString('all_passed=1', $display);
         $this->assertStringContainsString('output_dir=/tmp/backfill', $display);
-        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17 | source_name=API_FREE | source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17 | source_name=API_FREE | source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 
     public function test_backfill_command_returns_failure_and_renders_error_case_lines(): void
@@ -449,7 +449,7 @@ class OpsCommandSurfaceTest extends TestCase
                     'publishability_state' => 'READABLE',
                     'source_name' => 'API_FREE',
                     'source_input_file' => null,
-                    'source_summary' => 'attempt_count=2 | success_after_retry=yes | final_http_status=200',
+                    'source_summary' => 'attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT',
                 ],
                 'output_dir' => '/tmp/run-evidence-source',
                 'file_count' => 2,
@@ -473,7 +473,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('selector=run', $display);
         $this->assertStringContainsString('selector_id=42', $display);
         $this->assertStringContainsString('source_name=API_FREE', $display);
-        $this->assertStringContainsString('source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200', $display);
+        $this->assertStringContainsString('source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
         $this->assertStringNotContainsString('source_input_file=', $display);
     }
 
@@ -841,7 +841,7 @@ class OpsCommandSurfaceTest extends TestCase
                 'lifecycle_state' => 'COMPLETED',
                 'terminal_status' => 'SUCCESS',
                 'publishability_state' => 'READABLE',
-                'notes' => 'candidate_publication_id=44; source_name=API_FREE; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200',
+                'notes' => 'candidate_publication_id=44; source_name=API_FREE; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
             ]);
 
         $this->app->instance(MarketDataPipelineService::class, $service);
@@ -859,7 +859,30 @@ class OpsCommandSurfaceTest extends TestCase
 
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('source_name=API_FREE', $display);
-        $this->assertStringContainsString('source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200', $display);
+        $this->assertStringContainsString('source_summary=attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
+    }
+
+    public function test_daily_pipeline_command_renders_failed_source_summary_from_run_notes(): void
+    {
+        $this->runRecord = [
+            'run_id' => 44,
+            'trade_date_requested' => '2026-03-24',
+            'stage' => 'INGEST_BARS',
+            'lifecycle_state' => 'FAILED',
+            'terminal_status' => 'FAILED',
+            'publishability_state' => 'NOT_READABLE',
+            'notes' => 'source_name=API_FREE; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+        ];
+
+        $this->artisan('market-data:daily', [
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'api',
+        ]);
+
+        $display = $this->getArtisanDisplay();
+
+        $this->assertStringContainsString('source_name=API_FREE', $display);
+        $this->assertStringContainsString('source_summary=attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 
     public function test_daily_pipeline_command_renders_manual_source_input_file_from_run_notes(): void

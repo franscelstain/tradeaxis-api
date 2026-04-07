@@ -765,6 +765,13 @@ class MarketDataPipelineService
             $payload['trace'] = mb_substr($e->getTraceAsString(), 0, 4000);
         }
 
+        $failureSourceNotes = $this->sourceFailureNoteSegments($run->source ?? null, $reasonCode, $payload);
+        if ($failureSourceNotes !== []) {
+            $run = $this->runs->updateTelemetry($run, [
+                'notes' => $this->appendRunNotes($run->notes, $failureSourceNotes),
+            ]);
+        }
+
         $this->runs->failStage($run, $stage, $reasonCode, $this->summarizeThrowable($e), $payload);
     }
 
@@ -837,6 +844,44 @@ class MarketDataPipelineService
 
         return $segments;
     }
+
+    private function sourceFailureNoteSegments($sourceMode, $reasonCode, array $payload)
+    {
+        $segments = [];
+        $sourceTelemetry = $this->sourceTelemetryPayload($sourceMode, $payload['source_name'] ?? null);
+
+        if (($sourceTelemetry['source_name'] ?? '') !== '') {
+            $segments[] = 'source_name='.(string) $sourceTelemetry['source_name'];
+        }
+
+        if (($sourceTelemetry['input_file'] ?? '') !== '') {
+            $segments[] = 'source_input_file='.(string) basename((string) $sourceTelemetry['input_file']);
+        }
+
+        $exceptionContext = isset($payload['exception_context']) && is_array($payload['exception_context'])
+            ? $payload['exception_context']
+            : [];
+
+        if (array_key_exists('attempt_count', $exceptionContext)) {
+            $segments[] = 'source_attempt_count='.(int) $exceptionContext['attempt_count'];
+        }
+
+        if (! empty($exceptionContext['success_after_retry'])) {
+            $segments[] = 'source_success_after_retry=yes';
+        }
+
+        if (array_key_exists('final_http_status', $exceptionContext) && $exceptionContext['final_http_status'] !== null) {
+            $segments[] = 'source_final_http_status='.(int) $exceptionContext['final_http_status'];
+        }
+
+        $finalReasonCode = $exceptionContext['final_reason_code'] ?? $reasonCode;
+        if ($finalReasonCode !== null && trim((string) $finalReasonCode) !== '') {
+            $segments[] = 'source_final_reason_code='.(string) $finalReasonCode;
+        }
+
+        return $segments;
+    }
+
 
     private function appendRunNotes($existingNotes, array $segments)
     {

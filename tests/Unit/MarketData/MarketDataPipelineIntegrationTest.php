@@ -150,6 +150,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('FAILED', $run->terminal_status);
         $this->assertSame('NOT_READABLE', $run->publishability_state);
         $this->assertSame(3, $calls);
+        $this->assertStringContainsString('source_name=API_FREE', (string) $run->notes);
+        $this->assertStringContainsString('source_attempt_count=3', (string) $run->notes);
+        $this->assertStringContainsString('source_final_reason_code=RUN_SOURCE_TIMEOUT', (string) $run->notes);
 
         $stageFailedEvent = DB::table('eod_run_events')
             ->where('run_id', $run->run_id)

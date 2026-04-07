@@ -76,6 +76,7 @@ abstract class AbstractMarketDataCommand extends Command
         $attemptCount = $notesMap['source_attempt_count'] ?? null;
         $successAfterRetry = $notesMap['source_success_after_retry'] ?? null;
         $finalHttpStatus = $notesMap['source_final_http_status'] ?? null;
+        $finalReasonCode = $notesMap['source_final_reason_code'] ?? null;
 
         if ($sourceName !== null && $sourceName !== '') {
             $this->line('source_name='.(string) $sourceName);
@@ -97,6 +98,10 @@ abstract class AbstractMarketDataCommand extends Command
 
         if ($finalHttpStatus !== null && $finalHttpStatus !== '') {
             $summaryParts[] = 'final_http_status='.(string) $finalHttpStatus;
+        }
+
+        if ($finalReasonCode !== null && $finalReasonCode !== '') {
+            $summaryParts[] = 'final_reason_code='.(string) $finalReasonCode;
         }
 
         if ($summaryParts !== []) {

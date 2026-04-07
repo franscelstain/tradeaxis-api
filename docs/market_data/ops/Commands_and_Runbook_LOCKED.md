@@ -135,7 +135,7 @@ Historical backfill/recompute per trading-date range.
 #### Minimum output
 - one summary artifact `market_data_backfill_summary.json`
 - per-date observed status/run_id in the summary artifact
-- when per-run source telemetry exists in notes, the summary artifact and command output should surface minimum source context (`source_name`, `source_input_file`, `source_summary`) for each requested date
+- when per-run source telemetry exists in notes, the summary artifact and command output should surface minimum source context (`source_name`, `source_input_file`, `source_summary` including failure-side `final_reason_code` when present) for each requested date
 
 ### 9. `market-data:session-snapshot`
 #### Purpose

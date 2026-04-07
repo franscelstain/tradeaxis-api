@@ -115,7 +115,12 @@ class MarketDataBackfillService
     {
         $summaryParts = [];
 
-        foreach (['source_attempt_count' => 'attempt_count', 'source_success_after_retry' => 'success_after_retry', 'source_final_http_status' => 'final_http_status'] as $key => $label) {
+        foreach ([
+            'source_attempt_count' => 'attempt_count',
+            'source_success_after_retry' => 'success_after_retry',
+            'source_final_http_status' => 'final_http_status',
+            'source_final_reason_code' => 'final_reason_code',
+        ] as $key => $label) {
             if (($notesMap[$key] ?? '') === '') {
                 continue;
             }
