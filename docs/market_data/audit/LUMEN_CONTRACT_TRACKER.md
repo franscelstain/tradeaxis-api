@@ -42,7 +42,16 @@
   * checkpoint-vs-repo parity revalidation completed for this batch
   * changed docs are aligned with the bounded recovery behavior
   * changed PHP files pass `php -l`
-  * local PHPUnit proof is still pending because the uploaded ZIP omits `vendor/`
+
+* Regression feedback already received:
+
+  * first local PHPUnit run failed on three `MarketDataBackfillServiceTest` cases plus one backfill integration case with `Undefined index: source_summary`
+  * root cause was backfill source-summary rendering still reading note-style keys after the merged source context had already been normalized to canonical keys
+
+* Repair applied after regression feedback:
+
+  * `MarketDataBackfillService::buildSourceSummaryString()` now reads canonical merged keys (`provider`, `timeout_seconds`, `retry_max`, `attempt_count`, `success_after_retry`, `final_http_status`, `final_reason_code`)
+  * this keeps note-derived and telemetry-recovered paths on the same normalized source-context shape before summary rendering
 
 * Pending proof:
 

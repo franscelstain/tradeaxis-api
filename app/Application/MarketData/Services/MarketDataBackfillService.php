@@ -184,24 +184,24 @@ class MarketDataBackfillService
         return $merged;
     }
 
-    private function buildSourceSummaryString(array $notesMap)
+    private function buildSourceSummaryString(array $sourceContext)
     {
         $summaryParts = [];
 
         foreach ([
-            'source_provider' => 'provider',
-            'source_timeout_seconds' => 'timeout_seconds',
-            'source_retry_max' => 'retry_max',
-            'source_attempt_count' => 'attempt_count',
-            'source_success_after_retry' => 'success_after_retry',
-            'source_final_http_status' => 'final_http_status',
-            'source_final_reason_code' => 'final_reason_code',
+            'provider' => 'provider',
+            'timeout_seconds' => 'timeout_seconds',
+            'retry_max' => 'retry_max',
+            'attempt_count' => 'attempt_count',
+            'success_after_retry' => 'success_after_retry',
+            'final_http_status' => 'final_http_status',
+            'final_reason_code' => 'final_reason_code',
         ] as $key => $label) {
-            if (($notesMap[$key] ?? '') === '') {
+            if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
                 continue;
             }
 
-            $summaryParts[] = $label.'='.(string) $notesMap[$key];
+            $summaryParts[] = $label.'='.(string) $sourceContext[$key];
         }
 
         if ($summaryParts === []) {

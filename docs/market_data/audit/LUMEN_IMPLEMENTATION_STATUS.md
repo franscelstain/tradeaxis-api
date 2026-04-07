@@ -34,10 +34,10 @@
 
 ### What is still pending
 
-* Local syntax proof is now available from container lint checks; PHPUnit proof is still pending because the uploaded ZIP does not include `vendor/`.
-* This batch remains open until local validation confirms the new backfill test and the relevant regression surface pass.
+* Local syntax proof is available; first local PHPUnit feedback from the user exposed a regression where backfill source-summary rendering still read note-style keys (`source_provider`, etc.) after telemetry merge had already normalized the array to canonical keys (`provider`, `timeout_seconds`, etc.).
+* The regression has now been patched by making backfill source-summary rendering read canonical merged keys, so this batch remains open only for rerun validation of the repaired test surface.
 * Family-level `External Source Operational Resilience` still remains partial beyond this batch because live-source runtime proof and broader operator/dashboard hardening are outside this session scope.
 
 ### Final State
 
-* PARTIAL (implementation + checkpoint updated, awaiting local syntax/PHPUnit proof)
+* PARTIAL (implementation repaired after local PHPUnit regression, awaiting rerun proof)
