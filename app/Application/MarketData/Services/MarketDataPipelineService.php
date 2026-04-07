@@ -735,7 +735,7 @@ class MarketDataPipelineService
             return 'COVERAGE_BELOW_THRESHOLD';
         }
 
-        if ($coverageState === 'NOT_EVALUABLE') {
+        if ($coverageState === 'BLOCKED') {
             return 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 

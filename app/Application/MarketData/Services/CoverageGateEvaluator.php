@@ -47,7 +47,7 @@ class CoverageGateEvaluator
                 'available_eod_count' => 0,
                 'missing_eod_count' => 0,
                 'coverage_ratio' => null,
-                'coverage_gate_status' => 'NOT_EVALUABLE',
+                'coverage_gate_status' => 'BLOCKED',
                 'coverage_threshold_value' => $thresholdValue,
                 'coverage_threshold_mode' => $thresholdMode,
                 'coverage_calibration_version' => $calibrationVersion,

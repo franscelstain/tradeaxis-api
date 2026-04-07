@@ -4038,7 +4038,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
     }
 
-    public function test_finalize_not_evaluable_without_universe_stays_not_readable_and_emits_blocked_coverage_reason_code(): void
+    public function test_finalize_blocked_without_universe_stays_not_readable_and_emits_blocked_coverage_reason_code(): void
     {
         DB::table('eod_runs')->insert([
             'run_id' => 55,
@@ -4055,7 +4055,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'coverage_missing_count' => 0,
             'coverage_ratio' => null,
             'coverage_min_threshold' => '0.9800',
-            'coverage_gate_state' => 'NOT_EVALUABLE',
+            'coverage_gate_state' => 'BLOCKED',
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',
@@ -4112,7 +4112,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('FAILED', $finalizedRun->terminal_status);
         $this->assertSame('NOT_READABLE', $finalizedRun->publishability_state);
         $this->assertSame('BLOCKED', $finalizedRun->quality_gate_state);
-        $this->assertSame('NOT_EVALUABLE', $finalizedRun->coverage_gate_state);
+        $this->assertSame('BLOCKED', $finalizedRun->coverage_gate_state);
         $this->assertNull($finalizedRun->trade_date_effective);
         $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $event->reason_code);
         $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $payload['coverage_reason_code']);

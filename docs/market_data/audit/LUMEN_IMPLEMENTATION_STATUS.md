@@ -2,64 +2,63 @@
 
 ## SESSION UPDATE
 
-* Batch: Exception-Path Operator Summary Recovery
-* Status: SELESAI
+* Batch: Coverage BLOCKED Final-State Parity
+* Status: PARTIAL
 
 ### What was implemented
 
-* Failure-side run-note persistence remains authoritative, including:
+* Re-audited active owner docs and live repo state around coverage-gate final-state semantics.
+* Closed a real drift where runtime/test code still emitted `NOT_EVALUABLE` as a final coverage gate state even though the active owner contract only allows `PASS`, `FAIL`, or `BLOCKED`.
+* Updated runtime code so blocked coverage paths now surface `coverage_gate_state=BLOCKED` consistently in evaluator/finalize/operator-reason resolution paths:
+  * `CoverageGateEvaluator`
+  * `FinalizeDecisionService`
+  * `MarketDataPipelineService`
+  * `AbstractMarketDataCommand`
+* Updated PHPUnit expectations that were still pinned to `NOT_EVALUABLE` final-state output:
+  * `CoverageGateEvaluatorTest`
+  * `FinalizeDecisionServiceTest`
+  * `MarketDataPipelineIntegrationTest`
+  * `PublicationFinalizeOutcomeServiceTest`
+* Synced active companion docs that were still describing `NOT_EVALUABLE` as operator/test-visible final output:
+  * `docs/market_data/tests/PHPUNIT_TEST_MATRIX.md`
+  * `docs/market_data/ops/commands/04_FINALIZE_AND_PUBLISH.md`
 
-  * `source_name`
-  * `source_attempt_count`
-  * `source_final_reason_code`
-* `DailyPipelineCommand` exception-path recovery:
+### Drift that was found
 
-  * retrieves scoped run summary deterministically
-  * respects container-based dependency resolution
-* `MarketDataBackfillService`:
+* Active owner contract already says `NOT_EVALUABLE` is **not** an allowed final gate state.
+* Live code/tests still used `NOT_EVALUABLE` as persisted/runtime-visible `coverage_gate_state` on zero-universe / blocked finalize paths.
+* This was a real doc-code-test drift on a load-bearing readiness field.
 
-  * supports exception-path recovery
-  * constructor made backward-compatible (optional dependency)
-* `EodRunRepository`:
+### Evidence available from this ZIP
 
-  * provides scoped lookup by `requested_date + source`
-  * used only for operator recovery path
-* Ops command recovery behavior aligned with test contract (no global latest run leakage)
+* Code inspection parity:
+  * coverage blocked path now resolves to `coverage_gate_state=BLOCKED`
+  * blocked path still preserves the locked run-level reason code `RUN_COVERAGE_NOT_EVALUABLE`
+* Local syntax proof in container:
+  * `php -l app/Application/MarketData/Services/CoverageGateEvaluator.php` → PASS
+  * `php -l app/Application/MarketData/Services/FinalizeDecisionService.php` → PASS
+  * `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` → PASS
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/CoverageGateEvaluatorTest.php` → PASS
+  * `php -l tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS
+  * `php -l tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → PASS
 
-### Regression encountered
+### Evidence still pending manual/local execution
 
-* Constructor change caused integration break (ArgumentCountError)
-* Recovery logic selected incorrect run (`latest` instead of scoped run)
-* Ops command binding mismatch caused incorrect repository resolution
-
-### Resolution
-
-* Constructor made optional for new dependency (no breaking change)
-* Recovery logic corrected to deterministic scoped lookup
-* Ops command test binding aligned with concrete repository class
-* Command container resolution fixed
-
-### Evidence (LOCAL PROOF)
-
-* PHPUnit results:
-
-  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-  * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS
-  * Full suite:
-
-    * 163 tests
-    * 1714 assertions
-    * 0 failures
-    * 0 errors 
+* PHPUnit proof is still pending because uploaded ZIP does not contain `vendor/`.
+* The following runtime proof is required before this batch can be marked `SELESAI`:
+  * `tests/Unit/MarketData/CoverageGateEvaluatorTest.php`
+  * `tests/Unit/MarketData/FinalizeDecisionServiceTest.php`
+  * `tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`
+  * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  * full PHPUnit suite
 
 ### Remaining gap
 
-* No load-bearing gap for this batch
-* Live runtime/operator validation not yet proven (outside batch scope)
+* No new owner-doc conflict remains in the active files touched by this batch.
+* Session status remains `PARTIAL` until local PHPUnit confirms there is no regression on the renamed blocked final-state path.
 
 ### Final State
 
-* SELESAI
-
-* Batch closed with full test proof and no remaining regression.
+* PARTIAL

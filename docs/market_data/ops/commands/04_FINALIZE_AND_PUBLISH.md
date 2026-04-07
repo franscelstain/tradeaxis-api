@@ -35,5 +35,5 @@ reason_code=RUN_COVERAGE_LOW
 ## Interpretasi operator
 - `coverage_gate_state=FAIL` + `terminal_status=HELD` berarti run tidak meloloskan requested date, tetapi sistem masih punya fallback readable yang sah.
 - `coverage_gate_state=FAIL` + `terminal_status=FAILED` berarti requested date gagal dan fallback readable tidak tersedia.
-- `coverage_gate_state=NOT_EVALUABLE` + `coverage_reason_code=RUN_COVERAGE_NOT_EVALUABLE` berarti coverage tidak bermakna untuk dinilai; requested date tetap harus dianggap not readable.
+- `coverage_gate_state=BLOCKED` + `coverage_reason_code=RUN_COVERAGE_NOT_EVALUABLE` berarti coverage tidak bermakna untuk dinilai; requested date tetap harus dianggap not readable.
 - `coverage_missing_sample` hanya sampel cepat untuk operator, bukan daftar lengkap missing universe.

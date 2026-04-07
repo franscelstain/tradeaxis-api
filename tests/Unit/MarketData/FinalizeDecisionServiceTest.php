@@ -91,18 +91,18 @@ class FinalizeDecisionServiceTest extends TestCase
         $this->assertSame('RUN_COVERAGE_LOW', $decision['reason_code']);
     }
 
-    public function test_finalize_uses_not_evaluable_as_blocked_and_never_readable()
+    public function test_finalize_uses_blocked_as_non_readable_and_never_promotes()
     {
         $service = new FinalizeDecisionService();
         $decision = $service->evaluate(true, true, 'SEALED', [
-            'coverage_gate_status' => 'NOT_EVALUABLE',
+            'coverage_gate_status' => 'BLOCKED',
             'coverage_ratio' => null,
             'coverage_threshold_value' => 0.95,
             'coverage_threshold_mode' => 'MIN_RATIO',
         ], '2026-04-20');
 
         $this->assertFalse($decision['promotion_allowed']);
-        $this->assertSame('NOT_EVALUABLE', $decision['coverage_gate_status']);
+        $this->assertSame('BLOCKED', $decision['coverage_gate_status']);
         $this->assertSame('BLOCKED', $decision['quality_gate_state']);
         $this->assertSame('HELD', $decision['terminal_status']);
         $this->assertSame('NOT_READABLE', $decision['publishability_state']);

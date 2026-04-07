@@ -12,14 +12,14 @@
 ### PRIORITY FAIL
 - overall PASS tapi priority FAIL → FAIL
 
-### NOT EVALUABLE
-- expected = 0 → NOT_EVALUABLE
+### BLOCKED
+- expected = 0 → BLOCKED
 
 ## FINALIZE DECISION
 - FAIL + fallback → HELD + NOT_READABLE
 - FAIL tanpa fallback → FAILED + NOT_READABLE
 - PASS → SUCCESS + READABLE
-- NOT_EVALUABLE tanpa fallback → FAILED + NOT_READABLE
+- BLOCKED tanpa fallback → FAILED + NOT_READABLE
 
 ## INTEGRATION / END-TO-END PROOF
 - `MarketDataPipelineIntegrationTest::test_run_daily_full_coverage_persists_finalize_coverage_payload_and_readable_publication`
@@ -47,8 +47,8 @@
   - pointer requested date tidak dibuat
   - finalize event tetap sinkron dengan `RUN_COVERAGE_LOW`
 
-- `MarketDataPipelineIntegrationTest::test_finalize_not_evaluable_without_universe_stays_not_readable_and_emits_blocked_coverage_reason_code`
-  - membuktikan finalize path untuk `NOT_EVALUABLE`
+- `MarketDataPipelineIntegrationTest::test_finalize_blocked_without_universe_stays_not_readable_and_emits_blocked_coverage_reason_code`
+  - membuktikan finalize path untuk `BLOCKED`
   - run final: `FAILED + NOT_READABLE + BLOCKED`
   - pointer/current publication tidak dipromosikan
   - finalize event sinkron dengan `RUN_COVERAGE_NOT_EVALUABLE`

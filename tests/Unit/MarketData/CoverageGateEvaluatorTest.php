@@ -83,7 +83,7 @@ class CoverageGateEvaluatorTest extends TestCase
         $this->assertSame('TKR0855', $result['missing_ticker_codes'][0]);
     }
 
-    public function test_evaluator_returns_not_evaluable_when_expected_universe_is_zero()
+    public function test_evaluator_returns_blocked_when_expected_universe_is_zero()
     {
         $this->bindCoverageGateConfig();
 
@@ -105,7 +105,7 @@ class CoverageGateEvaluatorTest extends TestCase
         $this->assertSame(0, $result['available_eod_count']);
         $this->assertSame(0, $result['missing_eod_count']);
         $this->assertNull($result['coverage_ratio']);
-        $this->assertSame('NOT_EVALUABLE', $result['coverage_gate_status']);
+        $this->assertSame('BLOCKED', $result['coverage_gate_status']);
         $this->assertSame('COVERAGE_UNIVERSE_EMPTY', $result['reason_code']);
     }
 

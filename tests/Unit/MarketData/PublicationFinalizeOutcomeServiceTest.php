@@ -85,11 +85,11 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         $this->assertSame('RUN_COVERAGE_LOW', $state['reason_code']);
     }
 
-    public function test_outcome_keeps_not_evaluable_non_readable_and_never_promotes()
+    public function test_outcome_keeps_blocked_non_readable_and_never_promotes()
     {
         $service = new PublicationFinalizeOutcomeService();
         $preDecision = [
-            'coverage_gate_status' => 'NOT_EVALUABLE',
+            'coverage_gate_status' => 'BLOCKED',
             'quality_gate_state' => 'BLOCKED',
             'terminal_status' => 'HELD',
             'publishability_state' => 'NOT_READABLE',
