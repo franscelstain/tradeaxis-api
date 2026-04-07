@@ -4,6 +4,7 @@ require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
 
 use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
+use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use Mockery as m;
@@ -68,6 +69,59 @@ class MarketDataBackfillServiceTest extends TestCase
     }
 
 
+
+
+    public function test_execute_recovers_source_summary_from_attempt_telemetry_when_notes_are_thin()
+    {
+        $calendar = m::mock(MarketCalendarRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
+
+        $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-20', '2026-03-20')->andReturn([
+            '2026-03-20',
+        ]);
+
+        $run = (object) [
+            'run_id' => 1001,
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'trade_date_effective' => '2026-03-20',
+            'notes' => 'source_name=API_FREE',
+        ];
+
+        $pipeline->shouldReceive('runDaily')->once()->with('2026-03-20', 'manual_file', null)->andReturn($run);
+        $runs->shouldNotReceive('findLatestForRequestedDate');
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(1001)->andReturn([
+            'event_id' => 9001,
+            'event_time' => '2026-03-20 16:00:00',
+            'event_type' => 'STAGE_COMPLETED',
+            'provider' => 'generic',
+            'source_name' => 'API_FREE',
+            'timeout_seconds' => 15,
+            'retry_max' => 3,
+            'attempt_count' => 2,
+            'success_after_retry' => 'yes',
+            'final_http_status' => 200,
+            'final_reason_code' => 'RUN_SOURCE_TIMEOUT',
+            'captured_at' => '2026-03-20T16:00:00+07:00',
+            'attempts' => [
+                ['attempt_number' => 1, 'reason_code' => 'RUN_SOURCE_TIMEOUT', 'http_status' => 504, 'throttle_delay_ms' => 120, 'backoff_delay_ms' => 250, 'will_retry' => true],
+                ['attempt_number' => 2, 'reason_code' => null, 'http_status' => 200, 'throttle_delay_ms' => 120, 'backoff_delay_ms' => 0, 'will_retry' => false],
+            ],
+        ]);
+
+        $service = new MarketDataBackfillService($calendar, $pipeline, $runs, $evidence);
+        $summary = $service->execute('2026-03-20', '2026-03-20', 'manual_file', $outputDir, false);
+
+        $this->assertTrue($summary['all_passed']);
+        $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
+
+        $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summaryFile['cases'][0]['source_summary']);
+    }
 
     public function test_execute_marks_fail_when_pipeline_returns_non_readable_terminal_state()
     {

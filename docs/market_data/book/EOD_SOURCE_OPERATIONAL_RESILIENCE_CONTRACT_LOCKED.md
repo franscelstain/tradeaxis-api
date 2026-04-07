@@ -74,7 +74,7 @@ Sudah diimplementasikan minimum pada command harian utama.
 Sudah tersedia minimum melalui command pipeline yang sudah ada.
 - operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu
 - operator dapat menjalankan `market-data:backfill {start_date} {end_date}` untuk rerun date-range yang mengikuti `market_calendar`
-- summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya; untuk API path, `source_summary` harus ikut menurunkan `provider`, `timeout_seconds`, dan `retry_max` bila context itu dipersist
+- summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya; untuk API path, `source_summary` harus ikut menurunkan `provider`, `timeout_seconds`, dan `retry_max` bila context itu dipersist; bila notes tipis tetapi attempt-level telemetry run masih tersedia, backfill summary boleh memulihkan field minimum yang sama dari telemetry persisted tersebut tanpa mengarang fakta baru
 - bila `market-data:backfill` menerima exception setelah run gagal sudah tercatat, summary kasus `ERROR` harus mencoba memuat ulang run terakhir untuk tanggal+source tersebut dan tetap menurunkan `run_id`, `terminal_status`, `publishability_state`, serta source context minimum dari notes yang sudah dipersist
 - correction / reseal path tetap memakai command correction yang sudah terpisah bila konteksnya historical correction
 

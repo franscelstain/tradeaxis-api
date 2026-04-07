@@ -2,6 +2,54 @@
 
 ## External Source Operational Resilience
 
+### Backfill Source Context Recovery From Attempt Telemetry
+
+* Status: PARTIAL
+
+* Scope:
+
+  * recover missing minimum operator-facing source context during backfill summary generation when `eod_runs.notes` are thinner than persisted attempt telemetry
+  * keep recovery bounded to facts already stored in persisted run-event payloads
+  * align in-memory backfill cases and `market_data_backfill_summary.json` with the same recovered minimum source context
+
+* Owner-doc anchor:
+
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+
+* Drift found:
+
+  * run evidence export was already able to recover thin note context from persisted attempt telemetry
+  * backfill summary still depended only on `eod_runs.notes`
+  * when notes were thin, operator-facing backfill `source_summary` could remain weaker than the persisted attempt telemetry already available for the same run
+
+* Resolution applied in this session:
+
+  * backfill source-context building now optionally reads persisted attempt telemetry per run and merges only missing minimum fields
+  * recovered fields stay bounded to persisted telemetry and do not invent new source facts
+  * constructor compatibility preserved by keeping the new evidence dependency optional
+  * PHPUnit coverage now includes the thin-notes recovery path
+  * owner/ops docs now state that backfill summary may recover minimum source context from persisted attempt telemetry when notes are thin
+
+* Available proof:
+
+  * checkpoint-vs-repo parity revalidation completed for this batch
+  * changed docs are aligned with the bounded recovery behavior
+  * changed PHP files pass `php -l`
+  * local PHPUnit proof is still pending because the uploaded ZIP omits `vendor/`
+
+* Pending proof:
+
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `vendor\bin\phpunit`
+
 ### Run Evidence Source Context Recovery From Attempt Telemetry
 
 * Status: DONE

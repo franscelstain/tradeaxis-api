@@ -2,6 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use Carbon\Carbon;
@@ -11,12 +12,14 @@ class MarketDataBackfillService
     private $calendar;
     private $pipeline;
     private $runs;
+    private $evidence;
 
-    public function __construct(MarketCalendarRepository $calendar, MarketDataPipelineService $pipeline, EodRunRepository $runs = null)
+    public function __construct(MarketCalendarRepository $calendar, MarketDataPipelineService $pipeline, EodRunRepository $runs = null, EodEvidenceRepository $evidence = null)
     {
         $this->calendar = $calendar;
         $this->pipeline = $pipeline;
         $this->runs = $runs;
+        $this->evidence = $evidence;
     }
 
     public function execute($startDate, $endDate, $sourceMode = null, $outputDir = null, $continueOnError = false)
@@ -108,22 +111,77 @@ class MarketDataBackfillService
     private function buildSourceContextFromRun($run)
     {
         $notesMap = $this->parseRunNotes((string) ($run->notes ?? ''));
-        $sourceContext = [];
+        $sourceAttemptTelemetry = $this->buildSourceAttemptTelemetryForRun($run);
+        $sourceContext = $this->mergeSourceContextFromTelemetry([
+            'source_name' => ($notesMap['source_name'] ?? '') !== '' ? (string) $notesMap['source_name'] : null,
+            'source_input_file' => ($notesMap['source_input_file'] ?? '') !== '' ? (string) $notesMap['source_input_file'] : null,
+            'provider' => ($notesMap['source_provider'] ?? '') !== '' ? (string) $notesMap['source_provider'] : null,
+            'timeout_seconds' => isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] != '' ? (int) $notesMap['source_timeout_seconds'] : null,
+            'retry_max' => isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] != '' ? (int) $notesMap['source_retry_max'] : null,
+            'attempt_count' => isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] != '' ? (int) $notesMap['source_attempt_count'] : null,
+            'success_after_retry' => ($notesMap['source_success_after_retry'] ?? '') !== '' ? (string) $notesMap['source_success_after_retry'] : null,
+            'final_http_status' => isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] != '' ? (int) $notesMap['source_final_http_status'] : null,
+            'final_reason_code' => ($notesMap['source_final_reason_code'] ?? '') !== '' ? (string) $notesMap['source_final_reason_code'] : null,
+        ], $sourceAttemptTelemetry);
 
-        if (($notesMap['source_name'] ?? '') !== '') {
-            $sourceContext['source_name'] = (string) $notesMap['source_name'];
+        $result = [];
+
+        if (($sourceContext['source_name'] ?? null) !== null) {
+            $result['source_name'] = $sourceContext['source_name'];
         }
 
-        if (($notesMap['source_input_file'] ?? '') !== '') {
-            $sourceContext['source_input_file'] = (string) $notesMap['source_input_file'];
+        if (($sourceContext['source_input_file'] ?? null) !== null) {
+            $result['source_input_file'] = $sourceContext['source_input_file'];
         }
 
-        $sourceSummary = $this->buildSourceSummaryString($notesMap);
+        $sourceSummary = $this->buildSourceSummaryString($sourceContext);
         if ($sourceSummary !== null) {
-            $sourceContext['source_summary'] = $sourceSummary;
+            $result['source_summary'] = $sourceSummary;
         }
 
-        return $sourceContext;
+        return $result;
+    }
+
+    private function buildSourceAttemptTelemetryForRun($run)
+    {
+        if ($this->evidence === null || ! isset($run->run_id)) {
+            return null;
+        }
+
+        $telemetry = $this->evidence->exportRunSourceAttemptTelemetry((int) $run->run_id);
+
+        return $telemetry === [] ? null : $telemetry;
+    }
+
+    private function mergeSourceContextFromTelemetry(array $sourceContext, $sourceAttemptTelemetry)
+    {
+        if (! is_array($sourceAttemptTelemetry)) {
+            return $sourceContext;
+        }
+
+        $merged = $sourceContext;
+        $fieldMap = [
+            'source_name' => 'source_name',
+            'source_input_file' => 'source_input_file',
+            'provider' => 'provider',
+            'timeout_seconds' => 'timeout_seconds',
+            'retry_max' => 'retry_max',
+            'attempt_count' => 'attempt_count',
+            'success_after_retry' => 'success_after_retry',
+            'final_http_status' => 'final_http_status',
+            'final_reason_code' => 'final_reason_code',
+        ];
+
+        foreach ($fieldMap as $contextKey => $telemetryKey) {
+            $contextHasValue = array_key_exists($contextKey, $merged) && $merged[$contextKey] !== null && $merged[$contextKey] !== '';
+            $telemetryHasValue = array_key_exists($telemetryKey, $sourceAttemptTelemetry) && $sourceAttemptTelemetry[$telemetryKey] !== null && $sourceAttemptTelemetry[$telemetryKey] !== '';
+
+            if (! $contextHasValue && $telemetryHasValue) {
+                $merged[$contextKey] = $sourceAttemptTelemetry[$telemetryKey];
+            }
+        }
+
+        return $merged;
     }
 
     private function buildSourceSummaryString(array $notesMap)
