@@ -114,7 +114,7 @@ Execute the daily sequence:
 - `input_file` is only a manual-file override and must not silently alter API mode behavior
 - explicit `input_file` accepts `.json` or `.csv` only
 - explicit `input_file` must be reflected in operator-visible command output and minimum ingest telemetry when used
-- when API acquisition telemetry is available in run notes, command summary should surface minimum source context (`source_name`, attempt summary, final HTTP status) without forcing operator to parse raw notes
+- when API acquisition telemetry is available in run notes, command summary should surface minimum source context (`source_name`, attempt summary, final HTTP status) without forcing operator to parse raw notes; if run notes are thinner than persisted attempt telemetry, the command summary may recover the same minimum operator-facing source fields from that telemetry instead of degrading to a thin source summary
 - `market-data:evidence:export --run_id=...` should also surface the same minimum source context in exported run evidence summary when that telemetry exists
 - when attempt-level source telemetry exists in `eod_run_events`, run evidence export should also materialize a bounded `source_attempt_telemetry.json` companion so retry/backoff diagnosis does not require manual table inspection; when run notes only retain a thinner source context, exported run summary may recover the same minimum operator-facing source fields from that persisted attempt telemetry
 

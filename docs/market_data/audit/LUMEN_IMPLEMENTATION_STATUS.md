@@ -2,6 +2,49 @@
 
 ## SESSION UPDATE
 
+* Batch: Operator Command Source Context Recovery From Attempt Telemetry
+* Status: PARTIAL
+
+### What was implemented
+
+* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap inside the still-partial `External Source Operational Resilience` family: daily operator command summary still trusted `eod_runs.notes` only, even when richer attempt telemetry was already persisted in `eod_run_events`.
+* Extended `AbstractMarketDataCommand` so operator-visible source context now builds from normalized notes first and only falls back to persisted attempt telemetry when the minimum API source context is still thin.
+* Recovery stays bounded and non-inventive: it only fills missing minimum fields already present in persisted attempt telemetry (`source_name`, `provider`, `timeout_seconds`, `retry_max`, `attempt_count`, `final_reason_code`, plus optional `success_after_retry` / `final_http_status` when available).
+* Kept the scope narrow by reusing the existing `EodEvidenceRepository::exportRunSourceAttemptTelemetry()` path instead of introducing a new telemetry contract or separate operator-only persistence shape.
+* Added Ops command PHPUnit coverage for both the normal daily summary path and the exception-recovery path when notes only contain `source_name` but persisted attempt telemetry carries the rest of the minimum resilience context.
+* Synced owner/ops docs so telemetry-backed recovery is explicit for the daily operator summary surface instead of remaining an implicit implementation detail.
+
+### Drift / gap that was found
+
+* Evidence export and backfill summary were already hardened in prior batches, but the daily operator command still degraded to a thin or blank `source_summary` whenever persisted run notes were sparse.
+* That left the most immediate operator-facing CLI surface weaker than the already-persisted attempt trail for the same run family, even though both surfaces belong to the same bounded resilience contract.
+
+### Evidence available from this session
+
+* Code inspection parity shows operator command source summary now merges missing minimum source context from persisted attempt telemetry before rendering CLI output.
+* Local syntax proof from the ZIP environment:
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Added repo proof surface:
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+* Companion docs synced with the bounded recovery behavior:
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+### What is still pending
+
+* PHPUnit execution is still pending because the uploaded ZIP does not include `vendor/`; manual local validation is required before this batch can be marked DONE.
+* Family-level `External Source Operational Resilience` still remains partial beyond this batch because live-source runtime proof and broader operator/dashboard hardening are outside this session scope.
+
+### Final State
+
+* PARTIAL for this batch pending local PHPUnit validation
+* Project/repo overall remains PARTIAL because additional tracker items outside this batch are still open
+
+
+## SESSION UPDATE
+
 * Batch: Backfill Source Context Recovery From Attempt Telemetry
 * Status: DONE
 

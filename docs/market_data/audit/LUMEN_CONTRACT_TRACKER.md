@@ -2,6 +2,50 @@
 
 ## External Source Operational Resilience
 
+### Operator Command Source Context Recovery From Attempt Telemetry
+
+* Status: PARTIAL
+
+* Scope:
+
+  * recover missing minimum operator-facing source context during daily command summary rendering when `eod_runs.notes` are thinner than persisted attempt telemetry
+  * keep recovery bounded to facts already stored in persisted run-event payloads
+  * align normal daily output and exception-path recovered run summary with the same recovered minimum source context
+
+* Owner-doc anchor:
+
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+* Drift found:
+
+  * prior batches already recovered thin-note source context for backfill summary and run evidence export
+  * daily operator command output still depended only on `eod_runs.notes`
+  * when notes were thin, the first operator-facing CLI summary could remain weaker than the persisted attempt telemetry already available in the same run
+
+* Resolution applied in this session:
+
+  * daily operator source-context building now normalizes note fields first and only reads persisted attempt telemetry when minimum API source fields are still missing
+  * recovered fields stay bounded to persisted telemetry and do not invent new source facts
+  * PHPUnit coverage was added for both the normal daily output path and the exception-path recovered run summary when notes are thin
+  * owner/ops docs now state that daily operator summary may recover minimum source context from persisted attempt telemetry when notes are thin
+
+* Available proof:
+
+  * checkpoint-vs-repo parity revalidation completed for this batch
+  * changed docs are aligned with the bounded recovery behavior
+  * changed PHP files pass `php -l`
+
+* Pending proof:
+
+  * local PHPUnit execution is still required for `tests/Unit/MarketData/OpsCommandSurfaceTest.php` and relevant regression coverage because the uploaded ZIP does not include `vendor/`
+
 ### Backfill Source Context Recovery From Attempt Telemetry
 
 * Status: DONE

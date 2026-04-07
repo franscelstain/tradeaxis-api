@@ -4,6 +4,7 @@ namespace App\Console\Commands\MarketData;
 
 use App\Application\MarketData\DTOs\MarketDataStageInput;
 use App\Application\MarketData\Services\MarketDataPipelineService;
+use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -47,6 +48,11 @@ abstract class AbstractMarketDataCommand extends Command
     protected function runRepository()
     {
         return $this->container()->make(EodRunRepository::class);
+    }
+
+    protected function evidenceRepository()
+    {
+        return $this->container()->make(EodEvidenceRepository::class);
     }
 
     protected function latestRunForRequestedDate($requestedDate = null, $sourceMode = null)
@@ -98,16 +104,9 @@ abstract class AbstractMarketDataCommand extends Command
 
     protected function renderSourceSummary($run)
     {
-        $notesMap = $this->parseRunNotes((string) $this->runField($run, 'notes', ''));
-        $sourceName = $notesMap['source_name'] ?? null;
-        $inputFile = $notesMap['source_input_file'] ?? null;
-        $provider = $notesMap['source_provider'] ?? null;
-        $timeoutSeconds = $notesMap['source_timeout_seconds'] ?? null;
-        $retryMax = $notesMap['source_retry_max'] ?? null;
-        $attemptCount = $notesMap['source_attempt_count'] ?? null;
-        $successAfterRetry = $notesMap['source_success_after_retry'] ?? null;
-        $finalHttpStatus = $notesMap['source_final_http_status'] ?? null;
-        $finalReasonCode = $notesMap['source_final_reason_code'] ?? null;
+        $sourceContext = $this->buildSourceContext($run);
+        $sourceName = $sourceContext['source_name'] ?? null;
+        $inputFile = $sourceContext['source_input_file'] ?? null;
 
         if ($sourceName !== null && $sourceName !== '') {
             $this->line('source_name='.(string) $sourceName);
@@ -119,37 +118,89 @@ abstract class AbstractMarketDataCommand extends Command
 
         $summaryParts = [];
 
-        if ($provider !== null && $provider !== '') {
-            $summaryParts[] = 'provider='.(string) $provider;
-        }
+        foreach ([
+            'provider' => 'provider',
+            'timeout_seconds' => 'timeout_seconds',
+            'retry_max' => 'retry_max',
+            'attempt_count' => 'attempt_count',
+            'success_after_retry' => 'success_after_retry',
+            'final_http_status' => 'final_http_status',
+            'final_reason_code' => 'final_reason_code',
+        ] as $key => $label) {
+            if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
+                continue;
+            }
 
-        if ($timeoutSeconds !== null && $timeoutSeconds !== '') {
-            $summaryParts[] = 'timeout_seconds='.(string) $timeoutSeconds;
-        }
-
-        if ($retryMax !== null && $retryMax !== '') {
-            $summaryParts[] = 'retry_max='.(string) $retryMax;
-        }
-
-        if ($attemptCount !== null && $attemptCount !== '') {
-            $summaryParts[] = 'attempt_count='.(string) $attemptCount;
-        }
-
-        if ($successAfterRetry !== null && $successAfterRetry !== '') {
-            $summaryParts[] = 'success_after_retry='.(string) $successAfterRetry;
-        }
-
-        if ($finalHttpStatus !== null && $finalHttpStatus !== '') {
-            $summaryParts[] = 'final_http_status='.(string) $finalHttpStatus;
-        }
-
-        if ($finalReasonCode !== null && $finalReasonCode !== '') {
-            $summaryParts[] = 'final_reason_code='.(string) $finalReasonCode;
+            $summaryParts[] = $label.'='.(string) $sourceContext[$key];
         }
 
         if ($summaryParts !== []) {
             $this->line('source_summary='.implode(' | ', $summaryParts));
         }
+    }
+
+    protected function buildSourceContext($run)
+    {
+        $notesMap = $this->parseRunNotes((string) $this->runField($run, 'notes', ''));
+        $sourceContext = [
+            'source_name' => $notesMap['source_name'] ?? null,
+            'source_input_file' => $notesMap['source_input_file'] ?? null,
+            'provider' => $notesMap['source_provider'] ?? null,
+            'timeout_seconds' => $notesMap['source_timeout_seconds'] ?? null,
+            'retry_max' => $notesMap['source_retry_max'] ?? null,
+            'attempt_count' => $notesMap['source_attempt_count'] ?? null,
+            'success_after_retry' => $notesMap['source_success_after_retry'] ?? null,
+            'final_http_status' => $notesMap['source_final_http_status'] ?? null,
+            'final_reason_code' => $notesMap['source_final_reason_code'] ?? null,
+        ];
+
+        $runId = $this->runField($run, 'run_id');
+        if ($runId === null || $runId === '' || ! $this->needsSourceTelemetryRecovery($sourceContext)) {
+            return $sourceContext;
+        }
+
+        return $this->mergeSourceContextFromTelemetry($sourceContext, $this->evidenceRepository()->exportRunSourceAttemptTelemetry($runId));
+    }
+
+    protected function needsSourceTelemetryRecovery(array $sourceContext)
+    {
+        foreach (['provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'final_reason_code'] as $key) {
+            if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function mergeSourceContextFromTelemetry(array $sourceContext, $sourceAttemptTelemetry)
+    {
+        if (! is_array($sourceAttemptTelemetry)) {
+            return $sourceContext;
+        }
+
+        $merged = $sourceContext;
+
+        foreach ([
+            'source_name' => 'source_name',
+            'source_input_file' => 'source_input_file',
+            'provider' => 'provider',
+            'timeout_seconds' => 'timeout_seconds',
+            'retry_max' => 'retry_max',
+            'attempt_count' => 'attempt_count',
+            'success_after_retry' => 'success_after_retry',
+            'final_http_status' => 'final_http_status',
+            'final_reason_code' => 'final_reason_code',
+        ] as $contextKey => $telemetryKey) {
+            $contextHasValue = array_key_exists($contextKey, $merged) && $merged[$contextKey] !== null && $merged[$contextKey] !== '';
+            $telemetryHasValue = array_key_exists($telemetryKey, $sourceAttemptTelemetry) && $sourceAttemptTelemetry[$telemetryKey] !== null && $sourceAttemptTelemetry[$telemetryKey] !== '';
+
+            if (! $contextHasValue && $telemetryHasValue) {
+                $merged[$contextKey] = $sourceAttemptTelemetry[$telemetryKey];
+            }
+        }
+
+        return $merged;
     }
 
     protected function parseRunNotes($notes)
