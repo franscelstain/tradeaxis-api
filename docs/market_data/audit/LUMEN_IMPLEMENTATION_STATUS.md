@@ -3,7 +3,7 @@
 ## SESSION UPDATE
 
 * Batch: Operator Command Source Context Recovery From Attempt Telemetry
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -25,6 +25,9 @@
 * Local syntax proof from the ZIP environment:
   * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
   * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Local PHPUnit proof received after manual validation:
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `27 tests, 148 assertions`
+  * `vendor\bin\phpunit` → `167 tests, 1754 assertions`
 * Added repo proof surface:
   * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
   * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
@@ -34,12 +37,12 @@
 
 ### What is still pending
 
-* PHPUnit execution is still pending because the uploaded ZIP does not include `vendor/`; manual local validation is required before this batch can be marked DONE.
+* Nothing remains pending inside this batch.
 * Family-level `External Source Operational Resilience` still remains partial beyond this batch because live-source runtime proof and broader operator/dashboard hardening are outside this session scope.
 
 ### Final State
 
-* PARTIAL for this batch pending local PHPUnit validation
+* DONE for this batch
 * Project/repo overall remains PARTIAL because additional tracker items outside this batch are still open
 
 

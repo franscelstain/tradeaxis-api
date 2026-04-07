@@ -4,7 +4,7 @@
 
 ### Operator Command Source Context Recovery From Attempt Telemetry
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -42,9 +42,16 @@
   * changed docs are aligned with the bounded recovery behavior
   * changed PHP files pass `php -l`
 
+* Available proof after manual validation:
+
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `27 tests, 148 assertions`
+  * `vendor\bin\phpunit` → `167 tests, 1754 assertions`
+
 * Pending proof:
 
-  * local PHPUnit execution is still required for `tests/Unit/MarketData/OpsCommandSurfaceTest.php` and relevant regression coverage because the uploaded ZIP does not include `vendor/`
+  * none for this batch
 
 ### Backfill Source Context Recovery From Attempt Telemetry
 
