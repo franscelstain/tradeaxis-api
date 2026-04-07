@@ -1,10 +1,8 @@
-# LUMEN_CONTRACT_TRACKER.md
-
 ## External Source Operational Resilience
 
 ### Backfill Source Context Recovery From Attempt Telemetry
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -53,11 +51,18 @@
   * `MarketDataBackfillService::buildSourceSummaryString()` now reads canonical merged keys (`provider`, `timeout_seconds`, `retry_max`, `attempt_count`, `success_after_retry`, `final_http_status`, `final_reason_code`)
   * this keeps note-derived and telemetry-recovered paths on the same normalized source-context shape before summary rendering
 
+* Available proof after fix:
+
+  * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `4 tests, 24 assertions`
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `25 tests, 140 assertions`
+  * `vendor\bin\phpunit --filter test_backfill_api_success_after_retry_writes_source_context_per_date_in_summary_artifact tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → `1 test, 7 assertions`
+  * `vendor\bin\phpunit` → `165 tests, 1746 assertions`
+
 * Pending proof:
 
-  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `vendor\bin\phpunit`
+  * none for this batch
 
 ### Run Evidence Source Context Recovery From Attempt Telemetry
 
@@ -349,7 +354,8 @@
 
 ### Family status note
 
-* Run evidence source context recovery batch is now PARTIAL pending local PHPUnit proof.
+* Backfill source context recovery batch is now DONE and verified.
+* Run evidence source context recovery batch remains DONE and verified.
 * Run evidence source attempt telemetry export batch remains DONE and verified.
 * Exception-path operator recovery batch remains CLOSED and verified.
 * Coverage final-state parity batch is CLOSED and verified.
