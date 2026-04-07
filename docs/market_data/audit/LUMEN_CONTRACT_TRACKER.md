@@ -56,7 +56,7 @@
 
 ### Coverage BLOCKED Final-State Parity
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -97,14 +97,22 @@
 
   * changed PHP files and changed PHPUnit files pass `php -l`
   * checkpoint-vs-repo drift revalidation completed for this batch
+  * local targeted PHPUnit execution passed:
+
+    * `tests/Unit/MarketData/CoverageGateEvaluatorTest.php` → `4 tests, 38 assertions`
+    * `tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → `6 tests, 32 assertions`
+    * `tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → `8 tests, 39 assertions`
+    * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → `45 tests, 1086 assertions`
+  * full PHPUnit regression passed:
+
+    * `163 tests, 1714 assertions`
 
 * Pending proof:
 
-  * targeted PHPUnit execution in local environment with `vendor/`
-  * full PHPUnit regression run in local environment with `vendor/`
+  * none for this batch
 
 ### Family status note
 
 * Exception-path operator recovery batch remains CLOSED and verified.
-* Coverage final-state parity batch is still PARTIAL pending local PHPUnit proof.
+* Coverage final-state parity batch is CLOSED and verified.
 * System-level daily live runtime validation remains outside this session scope.

@@ -3,7 +3,7 @@
 ## SESSION UPDATE
 
 * Batch: Coverage BLOCKED Final-State Parity
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -44,21 +44,20 @@
   * `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS
   * `php -l tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → PASS
 
-### Evidence still pending manual/local execution
+### Manual/local verification received
 
-* PHPUnit proof is still pending because uploaded ZIP does not contain `vendor/`.
-* The following runtime proof is required before this batch can be marked `SELESAI`:
-  * `tests/Unit/MarketData/CoverageGateEvaluatorTest.php`
-  * `tests/Unit/MarketData/FinalizeDecisionServiceTest.php`
-  * `tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`
-  * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
-  * full PHPUnit suite
+* Local PHPUnit proof received from user environment:
+  * `vendor\bin\phpunit tests/Unit/MarketData/CoverageGateEvaluatorTest.php` → PASS (`4 tests, 38 assertions`)
+  * `vendor\bin\phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → PASS (`6 tests, 32 assertions`)
+  * `vendor\bin\phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → PASS (`8 tests, 39 assertions`)
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS (`45 tests, 1086 assertions`)
+  * `vendor\bin\phpunit` → PASS (`163 tests, 1714 assertions`)
 
 ### Remaining gap
 
-* No new owner-doc conflict remains in the active files touched by this batch.
-* Session status remains `PARTIAL` until local PHPUnit confirms there is no regression on the renamed blocked final-state path.
+* No load-bearing gap remains for this batch.
+* Owner docs, code, tests, and recorded verification are aligned for the coverage blocked final-state parity scope.
 
 ### Final State
 
-* PARTIAL
+* SELESAI
