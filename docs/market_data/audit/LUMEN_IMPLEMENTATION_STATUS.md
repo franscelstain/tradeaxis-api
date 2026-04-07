@@ -42,8 +42,8 @@
   * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
 * Local PHPUnit/manual validation received after the targeted repair:
   * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 171 assertions`
-  * `vendor\bin\phpunit` → `169 tests, 1777 assertions`
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 172 assertions`
+  * `vendor\bin\phpunit` → `169 tests, 1778 assertions`
 * Added repo proof surface:
   * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
   * `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
