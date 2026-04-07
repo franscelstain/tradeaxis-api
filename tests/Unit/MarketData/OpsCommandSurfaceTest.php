@@ -864,23 +864,34 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_daily_pipeline_command_renders_failed_source_summary_from_run_notes(): void
     {
-        $this->runRecord = [
-            'run_id' => 44,
-            'trade_date_requested' => '2026-03-24',
-            'stage' => 'INGEST_BARS',
-            'lifecycle_state' => 'FAILED',
-            'terminal_status' => 'FAILED',
-            'publishability_state' => 'NOT_READABLE',
-            'notes' => 'source_name=API_FREE; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
-        ];
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'api', null)
+            ->andReturn((object) [
+                'run_id' => 44,
+                'trade_date_requested' => '2026-03-24',
+                'stage' => 'INGEST_BARS',
+                'lifecycle_state' => 'FAILED',
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'notes' => 'source_name=API_FREE; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+            ]);
 
-        $this->artisan('market-data:daily', [
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
             '--requested_date' => '2026-03-24',
             '--source_mode' => 'api',
         ]);
 
-        $display = $this->getArtisanDisplay();
+        $display = $tester->getDisplay();
 
+        $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('source_name=API_FREE', $display);
         $this->assertStringContainsString('source_summary=attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }

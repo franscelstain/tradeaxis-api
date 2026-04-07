@@ -3,13 +3,15 @@
 ## SESSION UPDATE
 
 - Batch: Failure-Side Source Context Propagation
-- Status: PARTIAL
+- Status: PARTIAL (regression fix applied, waiting local proof)
 
 ### What was implemented
-- `MarketDataPipelineService` now persists minimum source-context notes before `failStage()` for source-acquisition failures, so failed runs do not lose operator-facing source telemetry.
-- Failure-side notes now include `source_name`, `source_attempt_count`, optional `source_final_http_status`, explicit `source_final_reason_code`, and manual `source_input_file` when applicable.
-- `AbstractMarketDataCommand`, `MarketDataBackfillService`, and `MarketDataEvidenceExportService` now surface `final_reason_code` inside `source_summary` / `source_context` when the run notes contain it.
-- Tests updated to cover failed-run notes propagation, evidence export summary, backfill summary, and command rendering for failure-side source telemetry.
+- `MarketDataPipelineService` persists minimum source-context notes before `failStage()` for source-acquisition failures, so failed runs do not lose operator-facing source telemetry.
+- Failure-side notes include `source_name`, `source_attempt_count`, optional `source_final_http_status`, explicit `source_final_reason_code`, and manual `source_input_file` when applicable.
+- Regression fix applied: failure-side `source_name` for API mode now stays on the logical contract name (`API_FREE`) instead of drifting to provider/default-source naming.
+- Regression fix applied: failed command rendering test now mocks `MarketDataPipelineService` directly, so command-surface coverage no longer leaks the real source-acquisition exception path.
+- `AbstractMarketDataCommand`, `MarketDataBackfillService`, and `MarketDataEvidenceExportService` surface `final_reason_code` inside `source_summary` / `source_context` when the run notes contain it.
+- Tests cover failed-run notes propagation, evidence export summary, backfill summary, and command rendering for failure-side source telemetry.
 
 ### Evidence available from ZIP
 - Syntax check passed:
@@ -36,3 +38,5 @@
 
 ### Final State
 - PARTIAL
+
+- Latest regression fix tightens pipeline source telemetry so API failure-side notes/events always emit logical `API_FREE`, not provider default labels. Validation still depends on local PHPUnit.

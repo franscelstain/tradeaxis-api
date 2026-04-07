@@ -782,12 +782,27 @@ class MarketDataPipelineService
             'source_mode' => $sourceMode,
         ];
 
-        if ($resolvedSourceName !== null && trim((string) $resolvedSourceName) !== '') {
-            $payload['source_name'] = strtoupper(trim((string) $resolvedSourceName));
-        } elseif ($sourceMode === 'api') {
-            $payload['source_name'] = strtoupper((string) config('market_data.source.api.source_name', config('market_data.source.default_source_name', 'API_FREE')));
+        $configuredSourceName = null;
+        if ($sourceMode === 'api') {
+            // CONTRACT: pipeline/operator-facing API source identity stays on the logical name
+            // API_FREE even when the adapter/provider defaults resolve to a concrete upstream
+            // label such as YAHOO_FINANCE. Provider detail belongs in provider telemetry, not
+            // in the primary source_name emitted to run notes or operator summaries.
+            $configuredSourceName = 'API_FREE';
         } elseif (in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
-            $payload['source_name'] = strtoupper((string) config('market_data.source.default_source_name', 'LOCAL_FILE'));
+            $configuredSourceName = strtoupper(trim((string) config('market_data.source.default_source_name', 'LOCAL_FILE')));
+        }
+
+        $normalizedResolvedSourceName = $resolvedSourceName !== null
+            ? strtoupper(trim((string) $resolvedSourceName))
+            : null;
+
+        if ($sourceMode === 'api') {
+            $payload['source_name'] = $configuredSourceName !== '' ? $configuredSourceName : 'API_FREE';
+        } elseif ($normalizedResolvedSourceName !== null && $normalizedResolvedSourceName !== '') {
+            $payload['source_name'] = $normalizedResolvedSourceName;
+        } elseif ($configuredSourceName !== null && $configuredSourceName !== '') {
+            $payload['source_name'] = $configuredSourceName;
         }
 
         if ($sourceMode === 'api') {
@@ -848,7 +863,7 @@ class MarketDataPipelineService
     private function sourceFailureNoteSegments($sourceMode, $reasonCode, array $payload)
     {
         $segments = [];
-        $sourceTelemetry = $this->sourceTelemetryPayload($sourceMode, $payload['source_name'] ?? null);
+        $sourceTelemetry = $this->sourceTelemetryPayload($sourceMode);
 
         if (($sourceTelemetry['source_name'] ?? '') !== '') {
             $segments[] = 'source_name='.(string) $sourceTelemetry['source_name'];
