@@ -8,6 +8,7 @@ use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 
 abstract class AbstractMarketDataCommand extends Command
 {
@@ -68,16 +69,16 @@ abstract class AbstractMarketDataCommand extends Command
         return $this->laravel ?: app();
     }
 
-    protected function renderRecoveredFailureSummary($run, \Throwable $e)
+    protected function renderRecoveredFailureSummary($run, \Throwable $e, array $sourceContext = null)
     {
         if ($run) {
-            $this->renderRunSummary($run);
+            $this->renderRunSummary($run, $sourceContext);
         }
 
         $this->error('error='.(string) $e->getMessage());
     }
 
-    protected function renderRunSummary($run)
+    protected function renderRunSummary($run, array $sourceContext = null)
     {
         $this->info('run_id='.(string) $this->runField($run, 'run_id', ''));
         $this->line('requested_date='.(string) $this->runField($run, 'trade_date_requested', ''));
@@ -86,9 +87,11 @@ abstract class AbstractMarketDataCommand extends Command
         $this->line('terminal_status='.(string) $this->runField($run, 'terminal_status', ''));
         $this->line('publishability_state='.(string) $this->runField($run, 'publishability_state', ''));
 
+        $sourceContext = $sourceContext ?: $this->buildSourceContext($run);
+
         $this->renderCoverageSummary($run);
 
-        $this->renderSourceSummary($run);
+        $this->renderSourceSummary($run, $sourceContext);
 
         $reasonCode = $this->runField($run, 'reason_code');
         if ($reasonCode !== null && $reasonCode !== '') {
@@ -102,20 +105,75 @@ abstract class AbstractMarketDataCommand extends Command
     }
 
 
-    protected function renderSourceSummary($run)
+
+    protected function buildRunSummaryPayload($run, array $overrides = [], array $sourceContext = null)
     {
-        $sourceContext = $this->buildSourceContext($run);
-        $sourceName = $sourceContext['source_name'] ?? null;
-        $inputFile = $sourceContext['source_input_file'] ?? null;
+        $sourceContext = $sourceContext ?: $this->buildSourceContext($run);
 
-        if ($sourceName !== null && $sourceName !== '') {
-            $this->line('source_name='.(string) $sourceName);
+        $payload = [
+            'run_id' => $this->runField($run, 'run_id'),
+            'requested_date' => $this->runField($run, 'trade_date_requested'),
+            'stage' => $this->runField($run, 'stage'),
+            'lifecycle_state' => $this->runField($run, 'lifecycle_state'),
+            'terminal_status' => $this->runField($run, 'terminal_status'),
+            'publishability_state' => $this->runField($run, 'publishability_state'),
+            'trade_date_effective' => $this->runField($run, 'trade_date_effective'),
+            'reason_code' => $this->runField($run, 'reason_code'),
+            'notes' => $this->runField($run, 'notes'),
+            'coverage_gate_state' => $this->runField($run, 'coverage_gate_state'),
+            'coverage_reason_code' => $this->resolveCoverageReasonCode($run, $this->runField($run, 'coverage_gate_state')),
+            'coverage_available_count' => $this->runField($run, 'coverage_available_count'),
+            'coverage_universe_count' => $this->runField($run, 'coverage_universe_count'),
+            'coverage_missing_count' => $this->runField($run, 'coverage_missing_count'),
+            'coverage_ratio' => $this->runField($run, 'coverage_ratio'),
+            'coverage_min_threshold' => $this->runField($run, 'coverage_min_threshold'),
+            'coverage_universe_basis' => $this->runField($run, 'coverage_universe_basis'),
+            'coverage_contract_version' => $this->runField($run, 'coverage_contract_version'),
+        ];
+
+        if (($sourceContext['source_name'] ?? null) !== null && $sourceContext['source_name'] !== '') {
+            $payload['source_name'] = $sourceContext['source_name'];
         }
 
-        if ($inputFile !== null && $inputFile !== '') {
-            $this->line('source_input_file='.(string) $inputFile);
+        if (($sourceContext['source_input_file'] ?? null) !== null && $sourceContext['source_input_file'] !== '') {
+            $payload['source_input_file'] = $sourceContext['source_input_file'];
         }
 
+        $sourceSummary = $this->buildSourceSummaryString($sourceContext);
+        if ($sourceSummary !== null) {
+            $payload['source_summary'] = $sourceSummary;
+        }
+
+        foreach ($overrides as $key => $value) {
+            $payload[$key] = $value;
+        }
+
+        return array_filter($payload, function ($value) {
+            return $value !== null && $value !== '';
+        });
+    }
+
+    protected function writeRunSummaryArtifact($outputDir, $fileName, array $payload)
+    {
+        if ($outputDir === null || trim((string) $outputDir) === '') {
+            return null;
+        }
+
+        $outputDir = rtrim((string) $outputDir, DIRECTORY_SEPARATOR.'/');
+        File::ensureDirectoryExists($outputDir);
+        $path = $outputDir.DIRECTORY_SEPARATOR.$fileName;
+        File::put($path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
+
+        return $path;
+    }
+
+    protected function normalizePathForDisplay($path)
+    {
+        return str_replace('\\', '/', (string) $path);
+    }
+
+    protected function buildSourceSummaryString(array $sourceContext)
+    {
         $summaryParts = [];
 
         foreach ([
@@ -134,8 +192,30 @@ abstract class AbstractMarketDataCommand extends Command
             $summaryParts[] = $label.'='.(string) $sourceContext[$key];
         }
 
-        if ($summaryParts !== []) {
-            $this->line('source_summary='.implode(' | ', $summaryParts));
+        if ($summaryParts === []) {
+            return null;
+        }
+
+        return implode(' | ', $summaryParts);
+    }
+
+    protected function renderSourceSummary($run, array $sourceContext = null)
+    {
+        $sourceContext = $sourceContext ?: $this->buildSourceContext($run);
+        $sourceName = $sourceContext['source_name'] ?? null;
+        $inputFile = $sourceContext['source_input_file'] ?? null;
+
+        if ($sourceName !== null && $sourceName !== '') {
+            $this->line('source_name='.(string) $sourceName);
+        }
+
+        if ($inputFile !== null && $inputFile !== '') {
+            $this->line('source_input_file='.(string) $inputFile);
+        }
+
+        $sourceSummary = $this->buildSourceSummaryString($sourceContext);
+        if ($sourceSummary !== null) {
+            $this->line('source_summary='.$sourceSummary);
         }
     }
 

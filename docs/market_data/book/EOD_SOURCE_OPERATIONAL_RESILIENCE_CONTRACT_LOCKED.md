@@ -69,6 +69,7 @@ Sudah diimplementasikan minimum pada command harian utama.
 - payload event stage ingest dan `eod_runs.notes` sekarang dapat membawa jejak minimum `input_file` / `source_input_file` untuk fallback manual yang dipicu operator
 - output command operator sekarang juga menampilkan `source_input_file` bila jejak itu tersedia
 - bila `market-data:daily` gagal setelah run failure-side notes sempat dipersist, command harus mencoba merender ulang ringkasan run terakhir untuk tanggal+source tersebut sebelum mengembalikan exit non-zero, agar operator tetap melihat `source_name` / `source_summary` minimum tanpa inspeksi manual ke tabel
+- bila operator memberi `--output_dir`, command harian juga harus menulis `market_data_daily_summary.json` berisi ringkasan run/operator minimum yang sama (`run_id`, requested/effective date bila ada, terminal/publishability state, coverage summary, source context minimum, dan `error_message` pada recovered failure path) agar proof runtime lokal tidak bergantung pada copy-paste terminal
 
 ### Manual rerun path
 Sudah tersedia minimum melalui command pipeline yang sudah ada.

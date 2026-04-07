@@ -2,6 +2,52 @@
 
 ## External Source Operational Resilience
 
+### Daily Operator Summary Artifact Export
+
+* Status: PARTIAL
+
+* Scope:
+
+  * add deterministic operator-proof artifact output for `market-data:daily` without changing the bounded run/source summary contract
+  * keep artifact payload limited to facts already rendered or recoverable by the daily operator surface
+  * cover both success-side and recovered-failure daily command paths
+
+* Owner-doc anchor:
+
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+* Drift found:
+
+  * daily operator CLI already rendered bounded run/source context
+  * local/live proof for that path still depended on terminal copy/paste because no deterministic summary artifact was emitted
+  * this left the most important operator runtime command weaker than backfill/evidence flows for archived proof collection
+
+* Resolution applied in this session:
+
+  * `market-data:daily` now accepts optional `--output_dir` and writes `market_data_daily_summary.json` on success and recovered failure paths
+  * artifact payload reuses the same bounded run/source/coverage summary built by `AbstractMarketDataCommand` and adds only `command`, `source_mode`, `status`, and `error_message` on recovered failure
+  * PHPUnit coverage was added for both artifact-writing paths
+  * owner/ops docs now state that daily operator runs may persist this bounded summary artifact for deterministic local runtime proof
+
+* Available proof:
+
+  * checkpoint-vs-repo parity revalidation completed for this batch
+  * changed docs are aligned with the bounded artifact behavior
+  * changed PHP files pass `php -l`
+
+* Pending proof:
+
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `vendor\bin\phpunit`
+
 ### Operator Command Source Context Recovery From Attempt Telemetry
 
 * Status: DONE
@@ -415,3 +461,41 @@
 * Operator source summary enrichment batch is DONE and verified.
 * External source operational resilience still remains PARTIAL at family/owner-doc level because the locked contract still lists broader remaining operational gaps outside the closed batches, including live-source runtime proof and future operator/dashboard hardening.
 * System-level daily live runtime validation remains outside this session scope.
+
+
+### Daily Operator Summary Artifact Export Regression Repair
+
+* Status: PARTIAL
+
+* Scope:
+
+  * remove duplicate `exportRunSourceAttemptTelemetry()` lookups introduced by the daily summary artifact export path
+  * normalize displayed artifact/output paths so ops-surface output remains deterministic across Windows and non-Windows environments
+  * keep the existing `market_data_daily_summary.json` contract unchanged
+
+* Triggering validation evidence:
+
+  * local `tests/Unit/MarketData/OpsCommandSurfaceTest.php` failed because telemetry export was invoked twice for the same run
+  * local full PHPUnit failed on the same two errors plus two path-separator assertion failures
+  * local artisan runtime still wrote `market_data_daily_summary.json`, but displayed `summary_artifact=` with backslashes on Windows
+
+* Repo repair:
+
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+
+* Resolution applied in this session:
+
+  * daily command now computes source context once and reuses it for both console rendering and artifact payload generation
+  * display output for `output_dir` and `summary_artifact` is normalized to forward-slash form
+
+* Available proof:
+
+  * changed PHP files pass `php -l` in ZIP-only validation
+  * checkpoint updated to reflect the regression and the repair attempt
+
+* Pending proof:
+
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `vendor\bin\phpunit`
+  * optional rerun of `php artisan market-data:daily ... --output_dir=...` to confirm normalized display output on Windows

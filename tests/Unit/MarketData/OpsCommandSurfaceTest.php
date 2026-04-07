@@ -19,6 +19,7 @@ use App\Console\Commands\MarketData\ReplaySmokeSuiteCommand;
 use App\Console\Commands\MarketData\VerifyReplayCommand;
 use Mockery as m;
 use Symfony\Component\Console\Tester\CommandTester;
+use Illuminate\Support\Facades\File;
 
 class OpsCommandSurfaceTest extends TestCase
 {
@@ -788,6 +789,121 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('trade_date=2026-03-18 | status=ERROR | expected=MATCH | observed=ERROR | passed=0 | error=Readable current publication not found for replay backfill trade date 2026-03-18.', $display);
     }
 
+
+
+    public function test_daily_pipeline_command_writes_summary_artifact_for_success_path(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'api', null)
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'trade_date_effective' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'notes' => 'candidate_publication_id=44; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $outputDir = sys_get_temp_dir().'/tradeaxis-daily-success-'.uniqid();
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'api',
+            '--output_dir' => $outputDir,
+        ]);
+
+        $display = $tester->getDisplay();
+        $artifactPath = $outputDir.'/market_data_daily_summary.json';
+        $normalizedOutputDir = str_replace('\\', '/', $outputDir);
+        $normalizedArtifactPath = str_replace('\\', '/', $artifactPath);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('output_dir='.$normalizedOutputDir, $display);
+        $this->assertStringContainsString('summary_artifact='.$normalizedArtifactPath, $display);
+        $this->assertFileExists($artifactPath);
+
+        $payload = json_decode((string) file_get_contents($artifactPath), true);
+
+        $this->assertSame('market-data:daily', $payload['command']);
+        $this->assertSame('SUCCESS', $payload['status']);
+        $this->assertSame('api', $payload['source_mode']);
+        $this->assertSame(55, $payload['run_id']);
+        $this->assertSame('API_FREE', $payload['source_name']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $payload['source_summary']);
+
+        File::deleteDirectory($outputDir);
+    }
+
+    public function test_daily_pipeline_command_writes_summary_artifact_for_recovered_failure_path(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'api', null)
+            ->andThrow(new RuntimeException('boom'));
+
+        $runs = m::mock(EodRunRepository::class);
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-03-24', 'api')
+            ->andReturn((object) [
+                'run_id' => 44,
+                'trade_date_requested' => '2026-03-24',
+                'trade_date_effective' => '2026-03-21',
+                'stage' => 'INGEST_BARS',
+                'lifecycle_state' => 'FAILED',
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'notes' => 'source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodRunRepository::class, $runs);
+
+        $outputDir = sys_get_temp_dir().'/tradeaxis-daily-failure-'.uniqid();
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'api',
+            '--output_dir' => $outputDir,
+        ]);
+
+        $display = $tester->getDisplay();
+        $artifactPath = $outputDir.'/market_data_daily_summary.json';
+        $normalizedOutputDir = str_replace('\\', '/', $outputDir);
+        $normalizedArtifactPath = str_replace('\\', '/', $artifactPath);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('output_dir='.$normalizedOutputDir, $display);
+        $this->assertStringContainsString('summary_artifact='.$normalizedArtifactPath, $display);
+        $this->assertFileExists($artifactPath);
+
+        $payload = json_decode((string) file_get_contents($artifactPath), true);
+
+        $this->assertSame('market-data:daily', $payload['command']);
+        $this->assertSame('ERROR', $payload['status']);
+        $this->assertSame('api', $payload['source_mode']);
+        $this->assertSame(44, $payload['run_id']);
+        $this->assertSame('2026-03-21', $payload['trade_date_effective']);
+        $this->assertSame('boom', $payload['error_message']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $payload['source_summary']);
+
+        File::deleteDirectory($outputDir);
+    }
 
     public function test_daily_pipeline_command_propagates_manual_input_file_override_without_leaking_config(): void
     {

@@ -2,6 +2,51 @@
 
 ## SESSION UPDATE
 
+* Batch: Daily Operator Summary Artifact Export
+* Status: PARTIAL
+
+### What was implemented
+
+* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap still inside the partial `External Source Operational Resilience` family: operator runtime proof for `market-data:daily` still depended on terminal copy/paste even though the command already rendered the minimum run/source context.
+* Extended `DailyPipelineCommand` with optional `--output_dir` support so the daily operator path now writes a deterministic `market_data_daily_summary.json` artifact on both the normal success path and the recovered failure path.
+* Kept the artifact bounded to existing command-visible facts only: run identity, requested/effective date when available, lifecycle/terminal/publishability fields, coverage fields, source context minimum, notes/reason code, and `error_message` on the recovered failure path.
+* Reused the existing operator-summary parsing/recovery flow in `AbstractMarketDataCommand` instead of introducing a parallel persistence shape or new resilience contract outside the current operator surface.
+* Added Ops command PHPUnit coverage for both artifact-writing paths so success-side and recovered-failure daily runs prove the new artifact content and path rendering.
+* Synced owner/ops docs so optional daily artifact export is explicit as a local runtime proof aid, not an implicit implementation detail.
+
+### Drift / gap that was found
+
+* The repo already surfaced minimum source context to the CLI for daily/backfill/evidence flows, but the main `market-data:daily` operator path still had no deterministic summary artifact for runtime validation.
+* That meant live/local source resilience proof still depended on manual terminal capture even when the command already knew the exact bounded summary fields that operators need.
+
+### Evidence available from this session
+
+* Code inspection parity shows `market-data:daily --output_dir=...` now writes `market_data_daily_summary.json` for both success and recovered failure paths using the same bounded run/source summary already rendered to the console.
+* Local syntax proof from the ZIP environment:
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Added repo proof surface:
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+* Companion docs synced with the bounded artifact behavior:
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+### What is still pending
+
+* PHPUnit/local runtime proof is still pending because this ZIP does not include `vendor/`.
+* Family-level `External Source Operational Resilience` remains partial beyond this batch because live-source runtime proof and broader operator/dashboard hardening are still outside this session scope.
+
+### Final State
+
+* PARTIAL for this batch until local PHPUnit/manual validation is run
+* Project/repo overall remains PARTIAL because additional tracker items outside this batch are still open
+
+
+## SESSION UPDATE
+
 * Batch: Operator Command Source Context Recovery From Attempt Telemetry
 * Status: DONE
 
@@ -94,3 +139,42 @@
 
 * DONE for this batch
 * Project/repo overall remains PARTIAL because additional tracker items outside this batch are still open
+
+
+## SESSION UPDATE
+
+* Batch: Daily Operator Summary Artifact Export Regression Repair
+* Status: PARTIAL
+
+### What was implemented
+
+* Repaired the regression surfaced by the latest local validation for the daily operator summary artifact batch.
+* Eliminated duplicate source-attempt telemetry reads in `DailyPipelineCommand` by computing source context once per run and reusing it for both console rendering and JSON artifact payload generation.
+* Normalized displayed `output_dir` and `summary_artifact` paths to forward-slash form so operator output stays stable across Windows and non-Windows environments while the actual file write path remains unchanged.
+* Kept the bounded contract intact: no new config/env, no new artifact name, no change to persisted payload semantics beyond reuse of already-derived source context.
+
+### Drift / gap found from manual validation
+
+* Latest local PHPUnit run showed `exportRunSourceAttemptTelemetry()` was called twice in two ops-surface tests after the artifact export addition.
+* The same validation also showed `summary_artifact=` output used platform-native backslashes on Windows, while the tests and operator surface expect normalized forward-slash output.
+* Manual artisan proof still created the artifact file, so the issue was output consistency and duplicated telemetry lookup, not missing artifact generation.
+
+### Evidence available from this session
+
+* User-supplied local validation captured the exact failing surfaces: duplicate telemetry calls and Windows path separator mismatch in `summary_artifact=` output.
+* Repo repair applied in:
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+* Local syntax proof from ZIP-only validation:
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
+
+### What is still pending
+
+* Local PHPUnit rerun is still required to confirm the repaired batch is green.
+* Full-project PHPUnit rerun is still required before promoting this batch from PARTIAL to DONE.
+
+### Final State
+
+* PARTIAL for this repair batch until the updated local test output is received
+* Project/repo overall remains PARTIAL
