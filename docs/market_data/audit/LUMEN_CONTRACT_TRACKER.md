@@ -4,7 +4,7 @@
 
 ### Daily Operator Summary Artifact Export
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -43,10 +43,15 @@
   * changed docs are aligned with the bounded artifact behavior
   * changed PHP files pass `php -l`
 
+* Available proof after manual validation:
+
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 169 assertions`
+  * `vendor\bin\phpunit` → `169 tests, 1775 assertions`
+
 * Pending proof:
 
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `vendor\bin\phpunit`
+  * none for this batch
 
 ### Operator Command Source Context Recovery From Attempt Telemetry
 
@@ -459,13 +464,15 @@
 * Exception-path operator recovery batch remains CLOSED and verified.
 * Coverage final-state parity batch is CLOSED and verified.
 * Operator source summary enrichment batch is DONE and verified.
+* Daily operator summary artifact export batch is now DONE and verified.
+* Daily operator summary artifact export regression repair batch is now DONE and verified.
 * External source operational resilience still remains PARTIAL at family/owner-doc level because the locked contract still lists broader remaining operational gaps outside the closed batches, including live-source runtime proof and future operator/dashboard hardening.
 * System-level daily live runtime validation remains outside this session scope.
 
 
 ### Daily Operator Summary Artifact Export Regression Repair
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -493,9 +500,12 @@
 
   * changed PHP files pass `php -l` in ZIP-only validation
   * checkpoint updated to reflect the regression and the repair attempt
+  * local follow-up validation passed after the repair:
+
+    * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 169 assertions`
+    * `vendor\bin\phpunit` → `169 tests, 1775 assertions`
 
 * Pending proof:
 
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `vendor\bin\phpunit`
-  * optional rerun of `php artisan market-data:daily ... --output_dir=...` to confirm normalized display output on Windows
+  * none for this batch

@@ -3,7 +3,7 @@
 ## SESSION UPDATE
 
 * Batch: Daily Operator Summary Artifact Export
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -26,6 +26,10 @@
   * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
   * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
   * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Local PHPUnit/manual validation received after follow-up regression repair:
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 169 assertions`
+  * `vendor\bin\phpunit` → `169 tests, 1775 assertions`
 * Added repo proof surface:
   * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
   * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
@@ -36,12 +40,12 @@
 
 ### What is still pending
 
-* PHPUnit/local runtime proof is still pending because this ZIP does not include `vendor/`.
+* PHPUnit/local runtime proof has now been provided from local validation and is recorded below.
 * Family-level `External Source Operational Resilience` remains partial beyond this batch because live-source runtime proof and broader operator/dashboard hardening are still outside this session scope.
 
 ### Final State
 
-* PARTIAL for this batch until local PHPUnit/manual validation is run
+* DONE for this batch
 * Project/repo overall remains PARTIAL because additional tracker items outside this batch are still open
 
 
@@ -144,7 +148,7 @@
 ## SESSION UPDATE
 
 * Batch: Daily Operator Summary Artifact Export Regression Repair
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -165,16 +169,21 @@
 * Repo repair applied in:
   * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
   * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
 * Local syntax proof from ZIP-only validation:
   * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
   * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
+* Local proof received after repair:
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 169 assertions`
+  * `vendor\bin\phpunit` → `169 tests, 1775 assertions`
 
 ### What is still pending
 
-* Local PHPUnit rerun is still required to confirm the repaired batch is green.
-* Full-project PHPUnit rerun is still required before promoting this batch from PARTIAL to DONE.
+* Nothing remains pending inside this repair batch.
+* The repaired batch is now covered by local targeted and full-project PHPUnit proof.
 
 ### Final State
 
-* PARTIAL for this repair batch until the updated local test output is received
+* DONE for this repair batch
 * Project/repo overall remains PARTIAL
