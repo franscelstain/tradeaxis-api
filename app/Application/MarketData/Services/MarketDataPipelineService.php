@@ -845,6 +845,18 @@ class MarketDataPipelineService
 
         $segments = [];
 
+        if (($sourceAcquisition['provider'] ?? '') !== '') {
+            $segments[] = 'source_provider='.(string) $sourceAcquisition['provider'];
+        }
+
+        if (array_key_exists('timeout_seconds', $sourceAcquisition) && $sourceAcquisition['timeout_seconds'] !== null) {
+            $segments[] = 'source_timeout_seconds='.(int) $sourceAcquisition['timeout_seconds'];
+        }
+
+        if (array_key_exists('retry_max', $sourceAcquisition) && $sourceAcquisition['retry_max'] !== null) {
+            $segments[] = 'source_retry_max='.(int) $sourceAcquisition['retry_max'];
+        }
+
         if (array_key_exists('attempt_count', $sourceAcquisition)) {
             $segments[] = 'source_attempt_count='.(int) $sourceAcquisition['attempt_count'];
         }
@@ -876,6 +888,21 @@ class MarketDataPipelineService
         $exceptionContext = isset($payload['exception_context']) && is_array($payload['exception_context'])
             ? $payload['exception_context']
             : [];
+
+        $provider = $exceptionContext['provider'] ?? ($sourceTelemetry['provider'] ?? null);
+        if ($provider !== null && trim((string) $provider) !== '') {
+            $segments[] = 'source_provider='.(string) $provider;
+        }
+
+        $timeoutSeconds = $exceptionContext['timeout_seconds'] ?? ($sourceTelemetry['timeout_seconds'] ?? null);
+        if ($timeoutSeconds !== null && $timeoutSeconds !== '') {
+            $segments[] = 'source_timeout_seconds='.(int) $timeoutSeconds;
+        }
+
+        $retryMax = $exceptionContext['retry_max'] ?? ($sourceTelemetry['retry_max'] ?? null);
+        if ($retryMax !== null && $retryMax !== '') {
+            $segments[] = 'source_retry_max='.(int) $retryMax;
+        }
 
         if (array_key_exists('attempt_count', $exceptionContext)) {
             $segments[] = 'source_attempt_count='.(int) $exceptionContext['attempt_count'];

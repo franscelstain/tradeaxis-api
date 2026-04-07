@@ -278,6 +278,9 @@ class MarketDataEvidenceExportService
         return [
             'source_name' => $notesMap['source_name'] ?? null,
             'source_input_file' => $notesMap['source_input_file'] ?? null,
+            'provider' => $notesMap['source_provider'] ?? null,
+            'timeout_seconds' => isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] !== '' ? (int) $notesMap['source_timeout_seconds'] : null,
+            'retry_max' => isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] !== '' ? (int) $notesMap['source_retry_max'] : null,
             'attempt_count' => isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] !== '' ? (int) $notesMap['source_attempt_count'] : null,
             'success_after_retry' => $notesMap['source_success_after_retry'] ?? null,
             'final_http_status' => isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? (int) $notesMap['source_final_http_status'] : null,
@@ -288,6 +291,18 @@ class MarketDataEvidenceExportService
     private function buildSourceSummaryString(array $sourceContext)
     {
         $summaryParts = [];
+
+        if (($sourceContext['provider'] ?? '') !== '') {
+            $summaryParts[] = 'provider='.(string) $sourceContext['provider'];
+        }
+
+        if (array_key_exists('timeout_seconds', $sourceContext) && $sourceContext['timeout_seconds'] !== null) {
+            $summaryParts[] = 'timeout_seconds='.(string) $sourceContext['timeout_seconds'];
+        }
+
+        if (array_key_exists('retry_max', $sourceContext) && $sourceContext['retry_max'] !== null) {
+            $summaryParts[] = 'retry_max='.(string) $sourceContext['retry_max'];
+        }
 
         if (array_key_exists('attempt_count', $sourceContext) && $sourceContext['attempt_count'] !== null) {
             $summaryParts[] = 'attempt_count='.(string) $sourceContext['attempt_count'];

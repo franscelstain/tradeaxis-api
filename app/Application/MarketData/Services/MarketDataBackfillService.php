@@ -131,6 +131,9 @@ class MarketDataBackfillService
         $summaryParts = [];
 
         foreach ([
+            'source_provider' => 'provider',
+            'source_timeout_seconds' => 'timeout_seconds',
+            'source_retry_max' => 'retry_max',
             'source_attempt_count' => 'attempt_count',
             'source_success_after_retry' => 'success_after_retry',
             'source_final_http_status' => 'final_http_status',

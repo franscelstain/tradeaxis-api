@@ -241,6 +241,8 @@ class MarketDataPipelineServiceTest extends TestCase
                 'source_acquisition' => [
                     'provider' => 'generic',
                     'source_name' => 'API_FREE',
+                    'timeout_seconds' => 15,
+                    'retry_max' => 3,
                     'attempt_count' => 2,
                     'success_after_retry' => true,
                     'final_http_status' => 200,
@@ -254,7 +256,7 @@ class MarketDataPipelineServiceTest extends TestCase
                     && ($telemetry['bars_rows_written'] ?? null) === 900
                     && ($telemetry['invalid_bar_count'] ?? null) === 3
                     && ($telemetry['publication_version'] ?? null) === 6
-                    && ($telemetry['notes'] ?? null) === 'correction_id=7; candidate_publication_id=44; source_name=API_FREE; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200';
+                    && ($telemetry['notes'] ?? null) === 'correction_id=7; candidate_publication_id=44; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200';
             }))
             ->andReturn($run);
 

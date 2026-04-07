@@ -2,62 +2,53 @@
 
 ## SESSION UPDATE
 
-* Batch: Coverage BLOCKED Final-State Parity
-* Status: DONE
+* Batch: Source Telemetry Operator Summary Enrichment
+* Status: PARTIAL
 
 ### What was implemented
 
-* Re-audited active owner docs and live repo state around coverage-gate final-state semantics.
-* Closed a real drift where runtime/test code still emitted `NOT_EVALUABLE` as a final coverage gate state even though the active owner contract only allows `PASS`, `FAIL`, or `BLOCKED`.
-* Updated runtime code so blocked coverage paths now surface `coverage_gate_state=BLOCKED` consistently in evaluator/finalize/operator-reason resolution paths:
-  * `CoverageGateEvaluator`
-  * `FinalizeDecisionService`
-  * `MarketDataPipelineService`
+* Re-audited the active checkpoint against the live repo and found the next grounded gap is no longer coverage/finalize parity, but the still-partial source-operational-resilience family already acknowledged by owner docs and system audit guidance.
+* Enriched persisted source-acquisition notes so API runs now carry the operator-useful context that was already present in event payload telemetry but not yet propagated into run-note recovery paths:
+  * `source_provider`
+  * `source_timeout_seconds`
+  * `source_retry_max`
+  * existing fields kept intact: `source_attempt_count`, `source_success_after_retry`, `source_final_http_status`, `source_final_reason_code`
+* Applied the enrichment consistently across both success and failure note-writing paths in `MarketDataPipelineService`.
+* Synced operator/recovery readers so the richer source summary is surfaced consistently from persisted run notes in:
   * `AbstractMarketDataCommand`
-* Updated PHPUnit expectations that were still pinned to `NOT_EVALUABLE` final-state output:
-  * `CoverageGateEvaluatorTest`
-  * `FinalizeDecisionServiceTest`
-  * `MarketDataPipelineIntegrationTest`
-  * `PublicationFinalizeOutcomeServiceTest`
-* Synced active companion docs that were still describing `NOT_EVALUABLE` as operator/test-visible final output:
-  * `docs/market_data/tests/PHPUNIT_TEST_MATRIX.md`
-  * `docs/market_data/ops/commands/04_FINALIZE_AND_PUBLISH.md`
+  * `MarketDataBackfillService`
+  * `MarketDataEvidenceExportService`
+* Updated PHPUnit expectations covering operator output, backfill summary artifacts, evidence export, pipeline note persistence, and integration note/evidence parity.
 
-### Drift that was found
+### Drift / gap that was found
 
-* Active owner contract already says `NOT_EVALUABLE` is **not** an allowed final gate state.
-* Live code/tests still used `NOT_EVALUABLE` as persisted/runtime-visible `coverage_gate_state` on zero-universe / blocked finalize paths.
-* This was a real doc-code-test drift on a load-bearing readiness field.
+* Active owner/system docs still classify external source operational resilience as only partially implemented.
+* Live code already had richer source telemetry in event payloads, but operator-facing note recovery paths only surfaced a thinner subset.
+* This left degraded-source rerun/backfill/evidence flows weaker than the available telemetry warranted, especially when operators rely on persisted run notes instead of raw event payload inspection.
 
 ### Evidence available from this ZIP
 
-* Code inspection parity:
-  * coverage blocked path now resolves to `coverage_gate_state=BLOCKED`
-  * blocked path still preserves the locked run-level reason code `RUN_COVERAGE_NOT_EVALUABLE`
+* Code inspection parity shows the enrichment is wired in all three note-consumer surfaces and both write paths.
 * Local syntax proof in container:
-  * `php -l app/Application/MarketData/Services/CoverageGateEvaluator.php` → PASS
-  * `php -l app/Application/MarketData/Services/FinalizeDecisionService.php` → PASS
   * `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` → PASS
   * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/CoverageGateEvaluatorTest.php` → PASS
-  * `php -l tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → PASS
+  * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
+  * `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → PASS
   * `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS
-  * `php -l tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → PASS
+* Companion docs synced with the richer note/operator-summary context:
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
 
-### Manual/local verification received
+### What is still pending
 
-* Local PHPUnit proof received from user environment:
-  * `vendor\bin\phpunit tests/Unit/MarketData/CoverageGateEvaluatorTest.php` → PASS (`4 tests, 38 assertions`)
-  * `vendor\bin\phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → PASS (`6 tests, 32 assertions`)
-  * `vendor\bin\phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → PASS (`8 tests, 39 assertions`)
-  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS (`45 tests, 1086 assertions`)
-  * `vendor\bin\phpunit` → PASS (`163 tests, 1714 assertions`)
-
-### Remaining gap
-
-* No load-bearing gap remains for this batch.
-* Owner docs, code, tests, and recorded verification are aligned for the coverage blocked final-state parity scope.
+* No PHPUnit execution was run inside this ZIP because `vendor/` is absent.
+* No new live-runtime proof exists from this session.
+* The parent external-source operational-resilience family remains open until local PHPUnit proof is received and the checkpoint can be upgraded honestly.
 
 ### Final State
 
-* SELESAI
+* PARTIAL

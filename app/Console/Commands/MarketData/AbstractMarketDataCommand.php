@@ -101,6 +101,9 @@ abstract class AbstractMarketDataCommand extends Command
         $notesMap = $this->parseRunNotes((string) $this->runField($run, 'notes', ''));
         $sourceName = $notesMap['source_name'] ?? null;
         $inputFile = $notesMap['source_input_file'] ?? null;
+        $provider = $notesMap['source_provider'] ?? null;
+        $timeoutSeconds = $notesMap['source_timeout_seconds'] ?? null;
+        $retryMax = $notesMap['source_retry_max'] ?? null;
         $attemptCount = $notesMap['source_attempt_count'] ?? null;
         $successAfterRetry = $notesMap['source_success_after_retry'] ?? null;
         $finalHttpStatus = $notesMap['source_final_http_status'] ?? null;
@@ -115,6 +118,18 @@ abstract class AbstractMarketDataCommand extends Command
         }
 
         $summaryParts = [];
+
+        if ($provider !== null && $provider !== '') {
+            $summaryParts[] = 'provider='.(string) $provider;
+        }
+
+        if ($timeoutSeconds !== null && $timeoutSeconds !== '') {
+            $summaryParts[] = 'timeout_seconds='.(string) $timeoutSeconds;
+        }
+
+        if ($retryMax !== null && $retryMax !== '') {
+            $summaryParts[] = 'retry_max='.(string) $retryMax;
+        }
 
         if ($attemptCount !== null && $attemptCount !== '') {
             $summaryParts[] = 'attempt_count='.(string) $attemptCount;

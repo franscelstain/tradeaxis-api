@@ -55,10 +55,10 @@ Sudah diimplementasikan minimal pada success path ingest API.
 - adapter menyimpan ringkasan acquisition terakhir untuk run ingest API
 - ringkasan minimum berisi `provider`, `source_name`, `timeout_seconds`, `retry_max`, `attempt_count`, `attempts`, `success_after_retry`, `final_http_status`, `final_reason_code`, dan `captured_at`
 - `EodBarsIngestService` meneruskan ringkasan ini ke hasil ingest
-- `MarketDataPipelineService` menulis ringkasan tersebut ke payload `STAGE_COMPLETED` dan ke `eod_runs.notes` minimum (`source_attempt_count`, `source_success_after_retry`, `source_final_http_status`)
-- `AbstractMarketDataCommand` sekarang mengekstrak ringkasan minimum itu ke output operator (`source_name`, `source_summary`) agar operator tidak harus membaca `notes` mentah
+- `MarketDataPipelineService` menulis ringkasan tersebut ke payload `STAGE_COMPLETED` dan ke `eod_runs.notes` minimum (`source_provider`, `source_timeout_seconds`, `source_retry_max`, `source_attempt_count`, `source_success_after_retry`, `source_final_http_status`)
+- `AbstractMarketDataCommand` sekarang mengekstrak ringkasan minimum itu ke output operator (`source_name`, `source_summary`) agar operator tidak harus membaca `notes` mentah; bila context tersedia, `source_summary` juga harus membawa `provider`, `timeout_seconds`, dan `retry_max`
 - `MarketDataEvidenceExportService` sekarang juga menurunkan source context minimum itu ke `run_summary.json`, `evidence_pack.json`, dan ringkasan `market-data:evidence:export` agar proof ops minimum tidak berhenti di notes mentah atau command harian saja
-- bila run gagal pada jalur source-acquisition, minimum failure-side source context (`source_name`, `source_attempt_count`, `source_final_http_status` bila ada, dan `source_final_reason_code`) juga harus ikut dipersist ke `eod_runs.notes` agar operator summary/backfill/evidence export tetap bisa menjelaskan kegagalan tanpa membaca raw event payload saja
+- bila run gagal pada jalur source-acquisition, minimum failure-side source context (`source_name`, `source_provider`, `source_timeout_seconds`, `source_retry_max`, `source_attempt_count`, `source_final_http_status` bila ada, dan `source_final_reason_code`) juga harus ikut dipersist ke `eod_runs.notes` agar operator summary/backfill/evidence export tetap bisa menjelaskan kegagalan tanpa membaca raw event payload saja
 - tujuan batch ini tetap audit trail minimum, bukan operator dashboard penuh
 
 ### Manual fallback operator path
@@ -73,7 +73,7 @@ Sudah diimplementasikan minimum pada command harian utama.
 Sudah tersedia minimum melalui command pipeline yang sudah ada.
 - operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu
 - operator dapat menjalankan `market-data:backfill {start_date} {end_date}` untuk rerun date-range yang mengikuti `market_calendar`
-- summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya, sehingga rerun operator tidak berhenti di raw notes atau run-by-run inspection
+- summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya; untuk API path, `source_summary` harus ikut menurunkan `provider`, `timeout_seconds`, dan `retry_max` bila context itu dipersist
 - bila `market-data:backfill` menerima exception setelah run gagal sudah tercatat, summary kasus `ERROR` harus mencoba memuat ulang run terakhir untuk tanggal+source tersebut dan tetap menurunkan `run_id`, `terminal_status`, `publishability_state`, serta source context minimum dari notes yang sudah dipersist
 - correction / reseal path tetap memakai command correction yang sudah terpisah bila konteksnya historical correction
 

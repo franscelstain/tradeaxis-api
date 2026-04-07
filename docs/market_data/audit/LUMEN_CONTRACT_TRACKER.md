@@ -2,6 +2,63 @@
 
 ## External Source Operational Resilience
 
+### Operator Source Summary Enrichment
+
+* Status: PARTIAL
+
+* Scope:
+
+  * propagate provider/timeout/retry context from source-acquisition telemetry into persisted `eod_runs.notes`
+  * keep success-side and failure-side note persistence aligned
+  * surface the enriched source summary consistently in operator command output, backfill summary artifacts, and evidence export summaries
+
+* Owner-doc anchor:
+
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Application/MarketData/Services/MarketDataPipelineService.php`
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  * `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+  * `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
+  * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+
+* Drift found:
+
+  * event payload telemetry already carried provider-level resilience context
+  * persisted note recovery paths still exposed only the thinner attempt/final-status subset
+  * operator/backfill/evidence note-based recovery therefore lagged behind the telemetry already available in the same run family
+
+* Resolution applied in this session:
+
+  * success-side note persistence now appends `source_provider`, `source_timeout_seconds`, and `source_retry_max`
+  * failure-side note persistence now appends the same context alongside existing failure-side source fields
+  * operator command/backfill/evidence readers now render summary strings that include provider/timeout/retry metadata when persisted in notes
+  * companion docs synced so the richer note/operator-summary context is documented explicitly
+
+* Available proof:
+
+  * changed PHP files and changed PHPUnit files pass `php -l`
+  * checkpoint-vs-repo parity revalidation completed for this batch
+
+* Pending proof:
+
+  * targeted local PHPUnit proof is still required because this ZIP has no `vendor/`
+  * recommended local validation:
+
+    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
+    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+
 ### Backfill Run-Backed Source Proof
 
 * Status: CLOSED
@@ -115,4 +172,5 @@
 
 * Exception-path operator recovery batch remains CLOSED and verified.
 * Coverage final-state parity batch is CLOSED and verified.
+* Source operational resilience remains the active PARTIAL family for operator/runtime proof hardening.
 * System-level daily live runtime validation remains outside this session scope.

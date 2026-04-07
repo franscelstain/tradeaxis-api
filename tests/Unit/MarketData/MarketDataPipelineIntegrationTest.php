@@ -151,6 +151,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('NOT_READABLE', $run->publishability_state);
         $this->assertSame(3, $calls);
         $this->assertStringContainsString('source_name=API_FREE', (string) $run->notes);
+        $this->assertStringContainsString('source_provider=generic', (string) $run->notes);
+        $this->assertStringContainsString('source_timeout_seconds=15', (string) $run->notes);
+        $this->assertStringContainsString('source_retry_max=2', (string) $run->notes);
         $this->assertStringContainsString('source_attempt_count=3', (string) $run->notes);
         $this->assertStringContainsString('source_final_reason_code=RUN_SOURCE_TIMEOUT', (string) $run->notes);
 
@@ -254,7 +257,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $evidencePack = json_decode(file_get_contents($exportDir.'/evidence_pack.json'), true);
 
         $this->assertSame('API_FREE', $result['summary']['source_name']);
-        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $result['summary']['source_summary']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200', $result['summary']['source_summary']);
         $this->assertSame('API_FREE', $summary['source_context']['source_name']);
         $this->assertSame(2, $summary['source_context']['attempt_count']);
         $this->assertSame('yes', $summary['source_context']['success_after_retry']);
@@ -264,6 +267,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $runRow = DB::table('eod_runs')->where('run_id', $run->run_id)->first();
         $this->assertNotNull($runRow);
+        $this->assertStringContainsString('source_provider=generic', (string) $runRow->notes);
+        $this->assertStringContainsString('source_timeout_seconds=15', (string) $runRow->notes);
+        $this->assertStringContainsString('source_retry_max=2', (string) $runRow->notes);
         $this->assertStringContainsString('source_attempt_count=2', (string) $runRow->notes);
         $this->assertStringContainsString('source_success_after_retry=yes', (string) $runRow->notes);
         $this->assertStringContainsString('source_final_http_status=200', (string) $runRow->notes);
@@ -326,9 +332,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertTrue($summary['all_passed']);
         $this->assertCount(2, $summary['cases']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
-        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $summary['cases'][0]['source_summary']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200', $summary['cases'][0]['source_summary']);
         $this->assertSame('API_FREE', $summaryFile['cases'][1]['source_name']);
-        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200', $summaryFile['cases'][1]['source_summary']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200', $summaryFile['cases'][1]['source_summary']);
         $this->assertSame(['2026-03-20' => 2, '2026-03-23' => 2], $attemptsByDate);
     }
 

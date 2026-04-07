@@ -47,7 +47,7 @@ class MarketDataBackfillServiceTest extends TestCase
                 'terminal_status' => 'SUCCESS',
                 'publishability_state' => 'READABLE',
                 'trade_date_effective' => $date,
-                'notes' => 'source_name=API_FREE; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+                'notes' => 'source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
             ];
             $pipeline->shouldReceive('runDaily')->once()->with($date, 'manual_file', null)->andReturn($run);
         }
@@ -60,11 +60,11 @@ class MarketDataBackfillServiceTest extends TestCase
         $this->assertTrue($summary['all_passed']);
         $this->assertCount(3, $summary['cases']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
-        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
 
         $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
         $this->assertSame('API_FREE', $summaryFile['cases'][0]['source_name']);
-        $this->assertSame('attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summaryFile['cases'][0]['source_summary']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summaryFile['cases'][0]['source_summary']);
     }
 
 
@@ -120,7 +120,7 @@ class MarketDataBackfillServiceTest extends TestCase
             'terminal_status' => 'FAILED',
             'publishability_state' => 'NOT_READABLE',
             'trade_date_effective' => null,
-            'notes' => 'source_name=API_FREE; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+            'notes' => 'source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
         ]);
 
         $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
@@ -131,6 +131,6 @@ class MarketDataBackfillServiceTest extends TestCase
         $this->assertSame('ERROR', $summary['cases'][0]['status']);
         $this->assertSame(1001, $summary['cases'][0]['run_id']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
-        $this->assertSame('attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
     }
 }
