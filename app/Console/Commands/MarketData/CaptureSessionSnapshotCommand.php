@@ -3,9 +3,7 @@
 namespace App\Console\Commands\MarketData;
 
 use App\Application\MarketData\Services\SessionSnapshotService;
-use Illuminate\Console\Command;
-
-class CaptureSessionSnapshotCommand extends Command
+class CaptureSessionSnapshotCommand extends AbstractMarketDataCommand
 {
     protected $signature = 'market-data:session-snapshot {trade_date} {snapshot_slot} {--source_mode=manual_file} {--input_file=} {--output_dir=}';
     protected $description = 'Capture optional supplemental session snapshot aligned to readable effective trade date.';
@@ -41,7 +39,7 @@ class CaptureSessionSnapshotCommand extends Command
         if (isset($summary['slot_miss_count'])) {
             $this->line('slot_miss_count='.$summary['slot_miss_count']);
         }
-        $this->line('output_dir='.$summary['output_dir']);
+        $this->line('output_dir='.$this->normalizePathForDisplay($summary['output_dir']));
 
         return 0;
     }

@@ -21,8 +21,8 @@ class ReplaySmokeSuiteCommand extends AbstractMarketDataCommand
         $this->info('suite='.($summary['suite'] ?? 'replay_smoke_minimum'));
         $this->line('run_id='.$summary['run_id']);
         $this->line('all_passed='.(empty($summary['all_passed']) ? '0' : '1'));
-        $this->line('fixture_root='.$summary['fixture_root']);
-        $this->line('output_dir='.$summary['output_dir']);
+        $this->line('fixture_root='.$this->normalizePathForDisplay($summary['fixture_root']));
+        $this->line('output_dir='.$this->normalizePathForDisplay($summary['output_dir']));
 
         foreach ($summary['cases'] as $case) {
             $parts = [
@@ -41,7 +41,7 @@ class ReplaySmokeSuiteCommand extends AbstractMarketDataCommand
             }
 
             if (isset($case['evidence_output_dir'])) {
-                $parts[] = 'evidence_output_dir='.$case['evidence_output_dir'];
+                $parts[] = 'evidence_output_dir='.$this->normalizePathForDisplay($case['evidence_output_dir']);
             }
 
             if (isset($case['error'])) {

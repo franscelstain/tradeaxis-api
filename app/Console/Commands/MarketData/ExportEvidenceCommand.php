@@ -68,7 +68,7 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
             $this->line($key.'='.$this->stringifyValue($value));
         }
 
-        $this->line('output_dir='.$result['output_dir']);
+        $this->line('output_dir='.$this->normalizePathForDisplay($result['output_dir']));
         $this->line('file_count='.(string) ($result['file_count'] ?? count($result['files'] ?? [])));
         $this->line('files='.implode(',', $result['files']));
 

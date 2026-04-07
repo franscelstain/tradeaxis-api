@@ -26,7 +26,7 @@ class ReplayBackfillCommand extends AbstractMarketDataCommand
         $this->line('end_date='.$summary['range']['end_date']);
         $this->line('fixture_case='.$summary['fixture_case']);
         $this->line('all_passed='.(empty($summary['all_passed']) ? '0' : '1'));
-        $this->line('output_dir='.$summary['output_dir']);
+        $this->line('output_dir='.$this->normalizePathForDisplay($summary['output_dir']));
 
         foreach ($summary['cases'] as $case) {
             $parts = [

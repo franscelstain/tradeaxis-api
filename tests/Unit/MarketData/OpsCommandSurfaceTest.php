@@ -34,7 +34,7 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(MarketDataBackfillService::class);
         $service->shouldReceive('execute')
             ->once()
-            ->with('2026-03-17', '2026-03-18', 'manual_file', '/tmp/backfill', true)
+            ->with('2026-03-17', '2026-03-18', 'manual_file', 'C:\\tmp\\backfill', true)
             ->andReturn([
                 'suite' => 'market_data_backfill_minimum',
                 'range' => [
@@ -43,7 +43,7 @@ class OpsCommandSurfaceTest extends TestCase
                 ],
                 'source_mode' => 'manual_file',
                 'all_passed' => true,
-                'output_dir' => '/tmp/backfill',
+                'output_dir' => 'C:\\tmp\\backfill',
                 'cases' => [
                     [
                         'requested_date' => '2026-03-17',
@@ -68,7 +68,7 @@ class OpsCommandSurfaceTest extends TestCase
             'start_date' => '2026-03-17',
             'end_date' => '2026-03-18',
             '--source_mode' => 'manual_file',
-            '--output_dir' => '/tmp/backfill',
+            '--output_dir' => 'C:\\tmp\\backfill',
             '--continue_on_error' => true,
         ]);
 
@@ -80,7 +80,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('end_date=2026-03-18', $display);
         $this->assertStringContainsString('source_mode=manual_file', $display);
         $this->assertStringContainsString('all_passed=1', $display);
-        $this->assertStringContainsString('output_dir=/tmp/backfill', $display);
+        $this->assertStringContainsString('output_dir=C:/tmp/backfill', $display);
         $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17 | source_name=API_FREE | source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 
@@ -158,7 +158,7 @@ class OpsCommandSurfaceTest extends TestCase
                 'slot_anchor_time' => '09:10:00',
                 'slot_tolerance_minutes' => 3,
                 'slot_miss_count' => 0,
-                'output_dir' => '/tmp/session-snapshot',
+                'output_dir' => 'C:\\tmp\\session-snapshot',
             ]);
 
         $this->app->instance(SessionSnapshotService::class, $service);
@@ -188,6 +188,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('slot_anchor_time=09:10:00', $display);
         $this->assertStringContainsString('slot_tolerance_minutes=3', $display);
         $this->assertStringContainsString('slot_miss_count=0', $display);
+        $this->assertStringContainsString('output_dir=C:/tmp/session-snapshot', $display);
     }
 
     public function test_session_snapshot_purge_command_renders_summary(): void
@@ -202,7 +203,7 @@ class OpsCommandSurfaceTest extends TestCase
                 'before_date' => '2026-03-01',
                 'retention_days' => null,
                 'deleted_rows' => 250,
-                'output_dir' => '/tmp/session-purge',
+                'output_dir' => 'C:\\tmp\\session-purge',
             ]);
 
         $this->app->instance(SessionSnapshotService::class, $service);
@@ -222,6 +223,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('cutoff_source=explicit_before_date', $display);
         $this->assertStringContainsString('before_date=2026-03-01', $display);
         $this->assertStringContainsString('deleted_rows=250', $display);
+        $this->assertStringContainsString('output_dir=C:/tmp/session-purge', $display);
     }
 
     public function test_session_snapshot_purge_command_renders_default_retention_context(): void
@@ -265,13 +267,13 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(ReplaySmokeSuiteService::class);
         $service->shouldReceive('execute')
             ->once()
-            ->with(41, '/tmp/fixtures', '/tmp/replay-smoke')
+            ->with(41, '/tmp/fixtures', 'C:\\tmp\\replay-smoke')
             ->andReturn([
                 'suite' => 'replay_smoke_minimum',
                 'run_id' => 41,
-                'fixture_root' => '/tmp/fixtures',
+                'fixture_root' => 'C:\\tmp\\fixtures',
                 'all_passed' => true,
-                'output_dir' => '/tmp/replay-smoke',
+                'output_dir' => 'C:\\tmp\\replay-smoke',
                 'cases' => [
                     [
                         'fixture_case' => 'valid_case',
@@ -280,7 +282,7 @@ class OpsCommandSurfaceTest extends TestCase
                         'passed' => true,
                         'trade_date' => '2026-03-17',
                         'replay_id' => 3001,
-                        'evidence_output_dir' => '/tmp/replay-smoke/valid_case',
+                        'evidence_output_dir' => 'C:\\tmp\\replay-smoke\\valid_case',
                     ],
                     [
                         'fixture_case' => 'missing_file_case',
@@ -301,7 +303,7 @@ class OpsCommandSurfaceTest extends TestCase
         $exitCode = $tester->execute([
             'run_id' => 41,
             '--fixture_root' => '/tmp/fixtures',
-            '--output_dir' => '/tmp/replay-smoke',
+            '--output_dir' => 'C:\\tmp\\replay-smoke',
         ]);
 
         $display = $tester->getDisplay();
@@ -309,9 +311,9 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('suite=replay_smoke_minimum', $display);
         $this->assertStringContainsString('run_id=41', $display);
-        $this->assertStringContainsString('fixture_root=/tmp/fixtures', $display);
+        $this->assertStringContainsString('fixture_root=C:/tmp/fixtures', $display);
         $this->assertStringContainsString('all_passed=1', $display);
-        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1 | trade_date=2026-03-17 | replay_id=3001 | evidence_output_dir=/tmp/replay-smoke/valid_case', $display);
+        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1 | trade_date=2026-03-17 | replay_id=3001 | evidence_output_dir=C:/tmp/replay-smoke/valid_case', $display);
         $this->assertStringContainsString('fixture_case=missing_file_case | expected=ERROR | observed=ERROR | passed=1 | error=Fixture file declared in manifest is missing.', $display);
     }
 
@@ -397,7 +399,7 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(MarketDataEvidenceExportService::class);
         $service->shouldReceive('exportRunEvidence')
             ->once()
-            ->with(41, '/tmp/run-evidence')
+            ->with(41, 'C:\\tmp\\run-evidence')
             ->andReturn([
                 'selector' => ['type' => 'run', 'id' => 41],
                 'summary' => [
@@ -407,7 +409,7 @@ class OpsCommandSurfaceTest extends TestCase
                     'terminal_status' => 'SUCCESS',
                     'publishability_state' => 'READABLE',
                 ],
-                'output_dir' => '/tmp/run-evidence',
+                'output_dir' => 'C:\\tmp\\run-evidence',
                 'file_count' => 2,
                 'files' => ['run_summary.json', 'evidence_pack.json'],
             ]);
@@ -420,7 +422,7 @@ class OpsCommandSurfaceTest extends TestCase
 
         $exitCode = $tester->execute([
             '--run_id' => 41,
-            '--output_dir' => '/tmp/run-evidence',
+            '--output_dir' => 'C:\\tmp\\run-evidence',
         ]);
 
         $display = $tester->getDisplay();
@@ -431,7 +433,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('trade_date_requested=2026-03-17', $display);
         $this->assertStringContainsString('terminal_status=SUCCESS', $display);
         $this->assertStringContainsString('publishability_state=READABLE', $display);
-        $this->assertStringContainsString('output_dir=/tmp/run-evidence', $display);
+        $this->assertStringContainsString('output_dir=C:/tmp/run-evidence', $display);
         $this->assertStringContainsString('file_count=2', $display);
         $this->assertStringContainsString('files=run_summary.json,evidence_pack.json', $display);
     }
@@ -609,9 +611,9 @@ class OpsCommandSurfaceTest extends TestCase
         $evidence = m::mock(MarketDataEvidenceExportService::class);
         $evidence->shouldReceive('exportReplayEvidence')
             ->once()
-            ->with(3001, '2026-03-17', '/tmp/replay-verify')
+            ->with(3001, '2026-03-17', 'C:\\tmp\\replay-verify')
             ->andReturn([
-                'output_dir' => '/tmp/replay-verify',
+                'output_dir' => 'C:\\tmp\\replay-verify',
                 'files' => ['replay_result.json', 'replay_evidence_pack.json'],
             ]);
 
@@ -626,7 +628,7 @@ class OpsCommandSurfaceTest extends TestCase
             'run_id' => 41,
             'fixture_path' => 'storage/app/market_data/replay-fixtures/valid_case',
             '--replay_id' => 3001,
-            '--output_dir' => '/tmp/replay-verify',
+            '--output_dir' => 'C:\\tmp\\replay-verify',
         ]);
 
         $display = $tester->getDisplay();
@@ -637,7 +639,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('comparison_result=MATCH', $display);
         $this->assertStringContainsString('artifact_changed_scope=none', $display);
         $this->assertStringContainsString('fixture_family=market_data_replay_minimum', $display);
-        $this->assertStringContainsString('evidence_output_dir=/tmp/replay-verify', $display);
+        $this->assertStringContainsString('evidence_output_dir=C:/tmp/replay-verify', $display);
     }
 
     public function test_replay_verify_command_returns_failure_on_mismatch_without_forcing_evidence_export(): void
@@ -684,7 +686,7 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(ReplayBackfillService::class);
         $service->shouldReceive('execute')
             ->once()
-            ->with('2026-03-17', '2026-03-18', 'valid_case', '/tmp/fixtures', '/tmp/replay-backfill', true)
+            ->with('2026-03-17', '2026-03-18', 'valid_case', '/tmp/fixtures', 'C:\\tmp\\replay-backfill', true)
             ->andReturn([
                 'suite' => 'market_data_replay_backfill_minimum',
                 'range' => [
@@ -693,7 +695,7 @@ class OpsCommandSurfaceTest extends TestCase
                 ],
                 'fixture_case' => 'valid_case',
                 'all_passed' => true,
-                'output_dir' => '/tmp/replay-backfill',
+                'output_dir' => 'C:\\tmp\\replay-backfill',
                 'cases' => [
                     [
                         'trade_date' => '2026-03-17',
@@ -718,7 +720,7 @@ class OpsCommandSurfaceTest extends TestCase
             'end_date' => '2026-03-18',
             '--fixture_case' => 'valid_case',
             '--fixture_root' => '/tmp/fixtures',
-            '--output_dir' => '/tmp/replay-backfill',
+            '--output_dir' => 'C:\\tmp\\replay-backfill',
             '--continue_on_error' => true,
         ]);
 
@@ -728,6 +730,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('suite=market_data_replay_backfill_minimum', $display);
         $this->assertStringContainsString('fixture_case=valid_case', $display);
         $this->assertStringContainsString('all_passed=1', $display);
+        $this->assertStringContainsString('output_dir=C:/tmp/replay-backfill', $display);
         $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001', $display);
     }
 

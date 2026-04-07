@@ -2,6 +2,66 @@
 
 ## External Source Operational Resilience
 
+### Operator Artifact Path Display Normalization
+
+* Status: DONE
+
+* Scope:
+
+  * normalize operator-facing artifact path lines across ops commands so local proof stays deterministic across Windows and non-Windows terminals
+  * keep normalization display-only and bounded to command output (`output_dir`, `summary_artifact`, `evidence_output_dir`, and equivalent artifact-path lines)
+  * avoid changing service inputs, persisted payloads, or real filesystem write targets
+
+* Owner-doc anchor:
+
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
+  * `app/Console/Commands/MarketData/CaptureSessionSnapshotCommand.php`
+  * `app/Console/Commands/MarketData/PurgeSessionSnapshotCommand.php`
+  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `app/Console/Commands/MarketData/VerifyReplayCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+* Drift found:
+
+  * `market-data:daily` had already been repaired to render normalized artifact paths for deterministic runtime proof
+  * several other operator commands still echoed platform-native artifact paths directly from service summaries
+  * this left the ops proof surface inconsistent across commands even though the artifact contracts themselves were already deterministic
+  * local follow-up PHPUnit then exposed one stale backfill assertion that still expected a replay-smoke path on the wrong command surface
+
+* Resolution applied in this session:
+
+  * the affected command surfaces now reuse `AbstractMarketDataCommand::normalizePathForDisplay()` for display-only artifact path rendering
+  * `CaptureSessionSnapshotCommand` and `PurgeSessionSnapshotCommand` were aligned to the same shared command base so they can use the same bounded normalization helper
+  * ops-surface PHPUnit expectations were expanded to cover Windows-style path inputs and normalized forward-slash output for the touched commands
+  * the stale backfill assertion was removed so the test matches the actual bounded command output
+  * the runbook now explicitly states that operator-facing artifact path lines must be rendered in normalized forward-slash display form across environments
+
+* Available proof:
+
+  * changed PHP files pass `php -l`
+  * checkpoint-vs-repo parity revalidation completed for this batch
+  * changed docs are aligned with the display-normalization behavior
+  * local follow-up validation passed:
+
+    * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 171 assertions`
+    * `vendor\bin\phpunit` → `169 tests, 1777 assertions`
+
+* Pending proof:
+
+  * none for this batch
+
+
+
+## External Source Operational Resilience
+
 ### Daily Operator Summary Artifact Export
 
 * Status: DONE

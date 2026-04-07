@@ -33,7 +33,7 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
                 $result['trade_date'],
                 $outputDir
             );
-            $this->line('evidence_output_dir='.(string) $outputDir);
+            $this->line('evidence_output_dir='.$this->normalizePathForDisplay((string) $outputDir));
         }
 
         return $result['comparison_result'] === 'UNEXPECTED' || $result['comparison_result'] === 'MISMATCH' ? 1 : 0;

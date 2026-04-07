@@ -3,9 +3,7 @@
 namespace App\Console\Commands\MarketData;
 
 use App\Application\MarketData\Services\SessionSnapshotService;
-use Illuminate\Console\Command;
-
-class PurgeSessionSnapshotCommand extends Command
+class PurgeSessionSnapshotCommand extends AbstractMarketDataCommand
 {
     protected $signature = 'market-data:session-snapshot:purge {--before_date=} {--output_dir=}';
     protected $description = 'Purge session snapshot rows according to retention policy.';
@@ -26,7 +24,7 @@ class PurgeSessionSnapshotCommand extends Command
             $this->line('retention_days='.$summary['retention_days']);
         }
         $this->line('deleted_rows='.$summary['deleted_rows']);
-        $this->line('output_dir='.$summary['output_dir']);
+        $this->line('output_dir='.$this->normalizePathForDisplay($summary['output_dir']));
 
         return 0;
     }

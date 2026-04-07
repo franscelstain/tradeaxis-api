@@ -25,7 +25,7 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
         $this->line('end_date='.$summary['range']['end_date']);
         $this->line('source_mode='.(string) $summary['source_mode']);
         $this->line('all_passed='.(int) $summary['all_passed']);
-        $this->line('output_dir='.$summary['output_dir']);
+        $this->line('output_dir='.$this->normalizePathForDisplay($summary['output_dir']));
 
         foreach ($summary['cases'] as $case) {
             $this->line(

@@ -11,6 +11,7 @@ This document does not define screening, scoring, grouping, ranking, strategy lo
 - commands must write minimum structured evidence to `eod_run_events`
 - no command may commit final `SUCCESS` before seal exists
 - output-affecting parameters must come from the effective registry snapshot, not undocumented runtime overrides
+- operator-facing artifact path lines (`output_dir`, `summary_artifact`, `evidence_output_dir`, and equivalent exported artifact path fields) must be rendered in normalized forward-slash display form for deterministic local proof across Windows and non-Windows environments; this does not change the actual filesystem write target
 
 ## Minimum commands
 

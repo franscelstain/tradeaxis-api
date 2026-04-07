@@ -2,6 +2,74 @@
 
 ## SESSION UPDATE
 
+* Batch: Operator Artifact Path Display Normalization
+* Status: DONE
+
+### What was implemented
+
+* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap still inside the partially implemented operator-proof/resilience family: several ops commands still printed platform-native artifact paths even after the daily command had already been hardened to forward-slash display form.
+* Normalized operator-facing artifact path output across the remaining command surface without changing real filesystem write targets:
+  * `market-data:backfill`
+  * `market-data:evidence:export`
+  * `market-data:session-snapshot`
+  * `market-data:session-snapshot:purge`
+  * `market-data:replay:smoke`
+  * `market-data:replay:verify`
+  * `market-data:replay:backfill`
+* Reused `AbstractMarketDataCommand::normalizePathForDisplay()` instead of adding a parallel path-normalization utility or changing service-layer return payload semantics.
+* Narrowly aligned `CaptureSessionSnapshotCommand` and `PurgeSessionSnapshotCommand` to the same shared command base so the display-only normalization behavior stays consistent across operator commands.
+* Extended ops-surface PHPUnit coverage to exercise Windows-style artifact paths and verify normalized forward-slash rendering for command output while leaving service call inputs and file-write semantics intact.
+* Repaired the only regression surfaced by local validation: one backfill assertion in `OpsCommandSurfaceTest` still expected a replay-smoke output path even though the command under test correctly renders the normalized backfill path.
+* Synced the runbook so deterministic local proof explicitly requires normalized operator-facing artifact path display across Windows and non-Windows environments.
+
+### Drift / gap that was found
+
+* The recent daily artifact repair fixed Windows-path drift only for `market-data:daily`.
+* Other ops commands still echoed raw platform-native `output_dir` / `evidence_output_dir` values, which means the same local proof workflow could still drift between Windows and non-Windows terminals depending on which command the operator used.
+* Local follow-up PHPUnit then exposed one test-level regression in the new coverage: the backfill test carried a stale `replay-smoke` expectation unrelated to the command output being asserted.
+
+### Evidence available from this session
+
+* Code inspection parity shows the affected commands now normalize operator-facing artifact path lines via the shared display helper, while service inputs and write targets remain unchanged.
+* ZIP-local syntax proof:
+  * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/ExportEvidenceCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/CaptureSessionSnapshotCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/PurgeSessionSnapshotCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/ReplayBackfillCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/VerifyReplayCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Local PHPUnit/manual validation received after the targeted repair:
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 171 assertions`
+  * `vendor\bin\phpunit` → `169 tests, 1777 assertions`
+* Added repo proof surface:
+  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
+  * `app/Console/Commands/MarketData/CaptureSessionSnapshotCommand.php`
+  * `app/Console/Commands/MarketData/PurgeSessionSnapshotCommand.php`
+  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `app/Console/Commands/MarketData/VerifyReplayCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+* Companion docs synced with the display-normalization rule:
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+### What is still pending
+
+* Nothing remains pending inside this batch.
+* Family-level `External Source Operational Resilience` still remains partial beyond this closed batch because broader live-source runtime proof and future operator/dashboard hardening are still outside this session scope.
+
+### Final State
+
+* DONE for this batch
+* Project/repo overall remains PARTIAL
+
+
+
+## SESSION UPDATE
+
 * Batch: Daily Operator Summary Artifact Export
 * Status: DONE
 
