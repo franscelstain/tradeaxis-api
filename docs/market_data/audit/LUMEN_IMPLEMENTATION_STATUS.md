@@ -2,6 +2,82 @@
 
 ## SESSION UPDATE
 
+* Batch: Daily Source Attempt Telemetry Runtime Artifact Follow-up Fix
+* Status: PARTIAL
+
+### What was implemented
+
+* Evaluated the local PHPUnit failure report and kept the batch bounded to the same daily operator runtime-artifact contract.
+* Fixed `AbstractMarketDataCommand::writeSourceAttemptTelemetryArtifact()` so it always exports persisted run source-attempt telemetry for in-memory command rendering/payload recovery, even when `--output_dir` is not provided.
+* Kept artifact materialization unchanged: `source_attempt_telemetry.json` is still only written when `--output_dir` is present and bounded attempt rows exist.
+* This closes the concrete drift exposed by the failing daily ops-surface tests where `source_attempt_event_type` / `source_attempt_count` disappeared from CLI rendering because telemetry export was incorrectly short-circuited behind artifact writing.
+
+### Evidence available from this session
+
+* Local failure evidence provided by the user shows four daily ops-surface failures, all missing `source_attempt_event_type` in daily command output while summary fields were otherwise present.
+* ZIP-level code fix is isolated to:
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+* Local syntax validation passed:
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+
+### What is still pending
+
+* PHPUnit/manual local re-validation is still required after this correction because the uploaded ZIP does not include `vendor/`, so this session cannot honestly claim the suite now passes.
+* Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
+
+### Final State
+
+* PARTIAL for this follow-up fix pending local PHPUnit/manual validation
+* Project/repo overall remains PARTIAL
+
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Daily Source Attempt Telemetry Runtime Artifact
+* Status: PARTIAL
+
+### What was implemented
+
+* Re-audited the uploaded ZIP against the checkpoint pair, owner docs, and the still-open operational-readiness lane in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
+* Selected one bounded batch from that lane: strengthen local runtime proof for the daily operator path by persisting bounded source-attempt telemetry beside the existing daily summary artifact when telemetry already exists for the run.
+* Updated `AbstractMarketDataCommand` with bounded helpers to export persisted run source-attempt telemetry once, normalize any optional operator-facing path fields, and materialize `source_attempt_telemetry.json` only when attempt-level telemetry actually exists.
+* Updated `DailyPipelineCommand` so both success and recovered-failure `--output_dir` paths can write `source_attempt_telemetry.json` and print `source_attempt_telemetry_artifact=...` without changing pipeline, finalize, publication, or fallback semantics.
+* Expanded ops-surface PHPUnit coverage for the bounded behavior:
+  * success-path proof that `market-data:daily` writes `source_attempt_telemetry.json` when attempt telemetry exists
+  * recovered-failure proof that the same artifact is produced on the daily operator path after a thrown pipeline run when the persisted failed run already has attempt telemetry
+* Synced the locked resilience/ops docs so the bounded daily runtime-artifact rule exists in docs, code, and tests together.
+
+### Evidence available from this session
+
+* Repo parity for the bounded batch covers:
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* ZIP-level re-audit confirms the batch stays inside daily operator runtime proof only; no source acquisition, finalize, publication, correction, or backfill semantics were widened.
+* Local syntax validation passed:
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+
+### What is still pending
+
+* PHPUnit/manual local validation is still required because the uploaded ZIP does not include `vendor/`, so this session cannot honestly claim command-surface or full-suite pass.
+* Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
+
+### Final State
+
+* PARTIAL for this batch pending local PHPUnit/manual validation
+* Project/repo overall remains PARTIAL
+
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Daily Source Attempt Telemetry Operator Proof
 * Status: DONE
 

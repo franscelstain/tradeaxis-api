@@ -244,7 +244,7 @@ abstract class AbstractMarketDataCommand extends Command
         }
     }
 
-    protected function buildSourceContext($run)
+    protected function buildSourceContext($run, array $sourceAttemptTelemetry = null)
     {
         $notesMap = $this->parseRunNotes((string) $this->runField($run, 'notes', ''));
         $sourceContext = [
@@ -261,12 +261,50 @@ abstract class AbstractMarketDataCommand extends Command
             'source_attempt_count' => null,
         ];
 
-        $runId = $this->runField($run, 'run_id');
-        if ($runId === null || $runId === '' || ! $this->shouldRecoverSourceTelemetry($sourceContext)) {
+        if (! $this->shouldRecoverSourceTelemetry($sourceContext)) {
             return $sourceContext;
         }
 
-        return $this->mergeSourceContextFromTelemetry($sourceContext, $this->evidenceRepository()->exportRunSourceAttemptTelemetry($runId));
+        return $this->mergeSourceContextFromTelemetry(
+            $sourceContext,
+            $sourceAttemptTelemetry !== null ? $sourceAttemptTelemetry : $this->exportRunSourceAttemptTelemetry($run)
+        );
+    }
+
+    protected function exportRunSourceAttemptTelemetry($run)
+    {
+        $runId = $this->runField($run, 'run_id');
+        if ($runId === null || $runId === '') {
+            return [];
+        }
+
+        $telemetry = $this->evidenceRepository()->exportRunSourceAttemptTelemetry($runId);
+        if (! is_array($telemetry)) {
+            return [];
+        }
+
+        if (array_key_exists('source_input_file', $telemetry) && $telemetry['source_input_file'] !== null && $telemetry['source_input_file'] !== '') {
+            $telemetry['source_input_file'] = $this->normalizeOptionalPathForDisplay($telemetry['source_input_file']);
+        }
+
+        return $telemetry;
+    }
+
+    protected function writeSourceAttemptTelemetryArtifact($outputDir, $run)
+    {
+        $telemetry = $this->exportRunSourceAttemptTelemetry($run);
+
+        if ($outputDir === null || trim((string) $outputDir) === '') {
+            return [null, $telemetry];
+        }
+
+        if (! is_array($telemetry) || $telemetry === [] || ! isset($telemetry['attempts']) || ! is_array($telemetry['attempts']) || $telemetry['attempts'] === []) {
+            return [null, $telemetry];
+        }
+
+        $path = $this->writeRunSummaryArtifact($outputDir, 'source_attempt_telemetry.json', $telemetry);
+
+        return [$path, $telemetry];
     }
 
     protected function shouldRecoverSourceTelemetry(array $sourceContext)

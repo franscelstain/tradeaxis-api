@@ -28,7 +28,8 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
             $run = $this->pipeline()->runDaily($requestedDate, $sourceMode, $correctionId);
         } catch (\Throwable $e) {
             $run = $this->latestRunForRequestedDate($requestedDate, $sourceMode);
-            $sourceContext = $run ? $this->buildSourceContext($run) : null;
+            [$sourceTelemetryArtifactPath, $sourceAttemptTelemetry] = $run ? $this->writeSourceAttemptTelemetryArtifact($outputDir, $run) : [null, []];
+            $sourceContext = $run ? $this->buildSourceContext($run, $sourceAttemptTelemetry) : null;
             $artifactPath = $run ? $this->writeRunSummaryArtifact(
                 $outputDir,
                 'market_data_daily_summary.json',
@@ -45,6 +46,9 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
                 $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));
                 $this->line('summary_artifact='.$this->normalizePathForDisplay($artifactPath));
             }
+            if ($sourceTelemetryArtifactPath !== null) {
+                $this->line('source_attempt_telemetry_artifact='.$this->normalizePathForDisplay($sourceTelemetryArtifactPath));
+            }
 
             return 1;
         } finally {
@@ -53,7 +57,8 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
             }
         }
 
-        $sourceContext = $this->buildSourceContext($run);
+        [$sourceTelemetryArtifactPath, $sourceAttemptTelemetry] = $this->writeSourceAttemptTelemetryArtifact($outputDir, $run);
+        $sourceContext = $this->buildSourceContext($run, $sourceAttemptTelemetry);
 
         $artifactPath = $this->writeRunSummaryArtifact(
             $outputDir,
@@ -73,6 +78,9 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
         if ($artifactPath !== null) {
             $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));
             $this->line('summary_artifact='.$this->normalizePathForDisplay($artifactPath));
+        }
+        if ($sourceTelemetryArtifactPath !== null) {
+            $this->line('source_attempt_telemetry_artifact='.$this->normalizePathForDisplay($sourceTelemetryArtifactPath));
         }
 
         return 0;

@@ -1,5 +1,104 @@
 # LUMEN_CONTRACT_TRACKER
 
+### Daily Source Attempt Telemetry Runtime Artifact Follow-up Fix
+
+* Status: PARTIAL
+
+* Scope:
+
+  * keep the batch inside daily operator runtime proof only
+  * restore thin-note and thick-note CLI retry-proof rendering without changing artifact-write gating
+  * do not widen daily pipeline, finalize, publication, correction, or source acquisition semantics
+
+* Owner-doc anchor:
+
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Repo evidence:
+
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+
+* Drift found:
+
+  * user-provided local PHPUnit output showed four failures on the daily ops surface, all asserting that `source_attempt_event_type` should still be rendered in daily command output when persisted source-attempt telemetry exists
+  * the bounded runtime-artifact change had coupled telemetry export to `--output_dir`, so daily command rendering received empty telemetry whenever no artifact output path was provided
+  * this broke the existing thin-note/thick-note operator-proof contract even though the persisted telemetry repository wiring was present
+
+* Resolution applied in this session:
+
+  * decoupled telemetry export from artifact creation inside `writeSourceAttemptTelemetryArtifact()`
+  * the helper now always returns exported telemetry for command rendering/payload recovery, while only writing `source_attempt_telemetry.json` when `--output_dir` exists and attempt rows are present
+  * no docs contract was widened because the bounded rule remains the same; this is a corrective implementation fix for the already-declared contract
+
+* Available proof:
+
+  * user-provided local failure evidence identifies the exact broken surface and expected fields
+  * local syntax validation passed:
+    * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+
+* Pending proof:
+
+  * rerun local validation after the fix:
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+    * `vendor\bin\phpunit`
+
+
+# LUMEN_CONTRACT_TRACKER
+
+### Daily Source Attempt Telemetry Runtime Artifact
+
+* Status: PARTIAL
+
+* Scope:
+
+  * persist bounded `source_attempt_telemetry.json` on the `market-data:daily` operator path when `--output_dir` is provided and attempt telemetry already exists for the run
+  * keep the change bounded to local runtime proof for the daily operator path
+  * do not change source acquisition, retry policy, finalize, publication, correction, or backfill semantics
+
+* Owner-doc anchor:
+
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Repo evidence:
+
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Drift found:
+
+  * the build guide still leaves local runtime proof for source resilience on the daily operator path as an allowed next batch
+  * daily operator proof already persisted `market_data_daily_summary.json`, but bounded retry/backoff attempt telemetry still required a separate evidence-export step even when the same run already had persisted attempt-level telemetry
+  * this left the daily operator runtime-proof lane thinner than the evidence-export lane for the exact same run context
+
+* Resolution applied in this session:
+
+  * `AbstractMarketDataCommand` now provides bounded helpers to export persisted run source-attempt telemetry once and materialize `source_attempt_telemetry.json` only when attempt-level telemetry actually exists
+  * `market-data:daily` now writes that bounded telemetry artifact on both success and recovered-failure `--output_dir` paths and prints the resulting artifact path for operator use
+  * locked resilience/ops docs now state explicitly that the daily operator path may archive this bounded telemetry companion beside `market_data_daily_summary.json`
+
+* Available proof:
+
+  * checkpoint-vs-repo revalidation completed for the bounded daily runtime-artifact surface
+  * local syntax validation passed:
+    * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+    * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
+    * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * PHPUnit/manual validation is still pending because the uploaded ZIP omits `vendor/`
+
+* Pending proof:
+
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `vendor\bin\phpunit`
+
+# LUMEN_CONTRACT_TRACKER
+
 ### Daily Source Attempt Telemetry Operator Proof
 
 * Status: DONE

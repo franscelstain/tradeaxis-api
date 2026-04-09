@@ -71,6 +71,7 @@ Sudah diimplementasikan minimum pada command harian utama.
 - bila output operator atau artifact proof lokal menampilkan `input_file` / `source_input_file`, nilai path operator-facing itu harus dirender dalam bentuk normalized forward-slash untuk menjaga determinisme proof lintas Windows dan non-Windows tanpa mengubah target file input aktual
 - bila `market-data:daily` gagal setelah run failure-side notes sempat dipersist, command harus mencoba merender ulang ringkasan run terakhir untuk tanggal+source tersebut sebelum mengembalikan exit non-zero, agar operator tetap melihat `source_name` / `source_summary` minimum tanpa inspeksi manual ke tabel
 - bila operator memberi `--output_dir`, command harian juga harus menulis `market_data_daily_summary.json` berisi ringkasan run/operator minimum yang sama (`run_id`, requested/effective date bila ada, terminal/publishability state, coverage summary, source context minimum, dan `error_message` pada recovered failure path) agar proof runtime lokal tidak bergantung pada copy-paste terminal
+- bila operator memberi `--output_dir` dan telemetry attempt-level memang tersedia untuk run tersebut, command harian juga boleh mematerialkan `source_attempt_telemetry.json` bounded companion dengan payload telemetry persisted yang sama agar proof runtime lokal untuk retry/backoff operator harian tidak mengharuskan langkah export evidence terpisah
 
 ### Manual rerun path
 Sudah tersedia minimum melalui command pipeline yang sudah ada.
