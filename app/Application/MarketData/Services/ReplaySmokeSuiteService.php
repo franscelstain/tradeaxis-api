@@ -43,7 +43,7 @@ class ReplaySmokeSuiteService
             $caseOutputDir = rtrim($outputDir, '/').'/'.$caseName;
             $record = [
                 'fixture_case' => $caseName,
-                'fixture_path' => $fixturePath,
+                'fixture_path' => $this->normalizePathForDisplay($fixturePath),
                 'expected_outcome' => $expectedOutcome,
                 'passed' => false,
             ];
@@ -59,7 +59,7 @@ class ReplaySmokeSuiteService
 
                 if ($record['passed']) {
                     $export = $this->evidence->exportReplayEvidence($result['replay_id'], $result['trade_date'], $caseOutputDir);
-                    $record['evidence_output_dir'] = $export['output_dir'];
+                    $record['evidence_output_dir'] = $this->normalizePathForDisplay($export['output_dir']);
                     $record['evidence_files'] = $export['files'];
                 }
             } catch (\Throwable $e) {
@@ -74,7 +74,7 @@ class ReplaySmokeSuiteService
 
         $summary = [
             'run_id' => (int) $runId,
-            'fixture_root' => $fixtureRoot,
+            'fixture_root' => $this->normalizePathForDisplay($fixtureRoot),
             'suite' => 'replay_smoke_minimum',
             'all_passed' => $allPassed,
             'executed_at' => date(DATE_ATOM),
@@ -84,5 +84,10 @@ class ReplaySmokeSuiteService
         file_put_contents(rtrim($outputDir, '/').'/replay_smoke_suite_summary.json', json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         return $summary + ['output_dir' => $outputDir];
+    }
+
+    private function normalizePathForDisplay($path)
+    {
+        return str_replace('\\', '/', (string) $path);
     }
 }

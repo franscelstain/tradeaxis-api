@@ -67,6 +67,9 @@ class ReplayBackfillServiceTest extends TestCase
         $summary = $service->execute('2026-03-18', '2026-03-20', 'valid_case', $fixtureRoot, $outputDir, false);
 
         $this->assertTrue($summary['all_passed']);
+        $this->assertSame(str_replace('\\', '/', $fixtureRoot), $summary['fixture_root']);
+        $this->assertSame(str_replace('\\', '/', $fixtureRoot.'/valid_case'), $summary['fixture_path']);
+        $this->assertSame(str_replace('\\', '/', $outputDir.'/2026-03-18'), $summary['cases'][0]['evidence_output_dir']);
         $this->assertCount(3, $summary['cases']);
         $this->assertFileExists($outputDir.'/market_data_replay_backfill_summary.json');
     }

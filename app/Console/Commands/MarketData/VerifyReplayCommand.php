@@ -25,6 +25,7 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
         $this->line('comparison_note='.(string) $result['comparison_note']);
         $this->line('artifact_changed_scope='.(string) $result['artifact_changed_scope']);
         $this->line('fixture_family='.(string) $result['fixture_family']);
+        $this->line('fixture_path='.$this->normalizePathForDisplay((string) $this->argument('fixture_path')));
 
         $outputDir = $this->option('output_dir');
         if ($outputDir !== null && $outputDir !== '') {

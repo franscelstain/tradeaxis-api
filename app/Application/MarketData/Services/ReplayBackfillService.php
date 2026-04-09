@@ -73,7 +73,7 @@ class ReplayBackfillService
                     'comparison_note' => $result['comparison_note'],
                     'fixture_case' => $fixtureCase,
                     'passed' => $passed,
-                    'evidence_output_dir' => $evidence['output_dir'],
+                    'evidence_output_dir' => $this->normalizePathForDisplay($evidence['output_dir']),
                     'evidence_files' => $evidence['files'],
                 ];
 
@@ -112,8 +112,8 @@ class ReplayBackfillService
                 'end_date' => $endDate,
             ],
             'fixture_case' => $fixtureCase,
-            'fixture_root' => $fixtureRoot,
-            'fixture_path' => $fixturePath,
+            'fixture_root' => $this->normalizePathForDisplay($fixtureRoot),
+            'fixture_path' => $this->normalizePathForDisplay($fixturePath),
             'expected_outcome' => $expectedOutcome,
             'trading_dates' => $dates,
             'all_passed' => $allPassed,
@@ -149,5 +149,10 @@ class ReplayBackfillService
         ];
 
         return $map[$fixtureCase] ?? null;
+    }
+
+    private function normalizePathForDisplay($path)
+    {
+        return str_replace('\\', '/', (string) $path);
     }
 }

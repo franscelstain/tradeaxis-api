@@ -204,6 +204,7 @@ Expected smoke outcomes:
 - synchronized `md_replay_reason_code_counts` rows
 - replay evidence exportable through `market-data:evidence:export --replay_id=...`
 - replay evidence pack now preserves explicit `expected_state` and `actual_state`, not just a flat replay summary
+- any operator-facing `fixture_path` or replay evidence output path rendered by the command surface must use normalized forward-slash display form for deterministic local proof across operating systems
 
 ### 12. `market-data:replay:smoke`
 #### Purpose
@@ -223,6 +224,7 @@ Execute the built-in replay smoke suite against one completed run and write a su
 #### Minimum output
 - one suite summary JSON artifact describing all built-in cases and whether each case passed
 - replay evidence bundles for successful positive cases (`MATCH` / `MISMATCH`)
+- any operator-facing `fixture_root`, per-case `fixture_path`, or `evidence_output_dir` rendered by the command or suite summary artifact must use normalized forward-slash display form for deterministic local proof across operating systems
 - non-zero exit when any smoke case deviates from its expected outcome
 
 ---
@@ -248,6 +250,7 @@ Execute fixture-aware historical replay verification across a trading-date range
 #### Minimum output
 - one summary artifact `market_data_replay_backfill_summary.json`
 - per-date observed outcome, `run_id`, and `replay_id` in the summary artifact
+- any operator-facing `fixture_root`, `fixture_path`, or per-date `evidence_output_dir` rendered by the command or summary artifact must use normalized forward-slash display form for deterministic local proof across operating systems
 
 ---
 

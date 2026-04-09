@@ -244,15 +244,37 @@ abstract class AbstractMarketDataCommand extends Command
         ];
 
         $runId = $this->runField($run, 'run_id');
-        if ($runId === null || $runId === '' || ! $this->needsSourceTelemetryRecovery($sourceContext)) {
+        if ($runId === null || $runId === '' || ! $this->shouldRecoverSourceTelemetry($sourceContext)) {
             return $sourceContext;
         }
 
         return $this->mergeSourceContextFromTelemetry($sourceContext, $this->evidenceRepository()->exportRunSourceAttemptTelemetry($runId));
     }
 
-    protected function needsSourceTelemetryRecovery(array $sourceContext)
+    protected function shouldRecoverSourceTelemetry(array $sourceContext)
     {
+        $sourceName = isset($sourceContext['source_name']) ? strtoupper((string) $sourceContext['source_name']) : '';
+        $hasSourceInputFile = array_key_exists('source_input_file', $sourceContext)
+            && $sourceContext['source_input_file'] !== null
+            && $sourceContext['source_input_file'] !== '';
+
+        $hasTelemetrySeed = $sourceName !== '' || $hasSourceInputFile;
+
+        foreach (['provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'success_after_retry', 'final_http_status', 'final_reason_code'] as $key) {
+            if (array_key_exists($key, $sourceContext) && $sourceContext[$key] !== null && $sourceContext[$key] !== '') {
+                $hasTelemetrySeed = true;
+                break;
+            }
+        }
+
+        if (! $hasTelemetrySeed) {
+            return false;
+        }
+
+        if ($sourceName === 'LOCAL_FILE' || $hasSourceInputFile) {
+            return false;
+        }
+
         foreach (['provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'final_reason_code'] as $key) {
             if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
                 return true;

@@ -2,6 +2,138 @@
 
 ## SESSION UPDATE
 
+* Batch: Replay Smoke Follow-up Checkpoint Closure
+* Status: DONE
+
+### What was implemented
+
+* Re-audited the uploaded ZIP against the active replay follow-up checkpoint and verified the repo already contains the final bounded repair for replay-smoke mismatch rows.
+* Closed the remaining checkpoint drift between audit docs:
+  * `ReplaySmokeSuiteCommand` already limits fallback `fixture_path` derivation to successful rows with the required replay identity context.
+  * `OpsCommandSurfaceTest` already proves mismatch rows render without derived `fixture_path` while successful rows still keep the normalized success-path proof.
+  * `LUMEN_CONTRACT_TRACKER.md` is now synced so this replay follow-up batch is no longer left marked `PARTIAL` after the verified repair landed.
+* No runtime semantics, service contracts, env/config surface, or filesystem behavior were changed in this session. The batch is audit/checkpoint closure only.
+
+### Evidence available from this session
+
+* Repo/code parity revalidation from the uploaded ZIP:
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* Verified repo behavior matches the previously recorded local validation already captured by the checkpoint family:
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+  * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
+* Drift closed in docs only: implementation status and contract tracker now describe the same final state for the replay follow-up repair.
+
+### What is still pending
+
+* Nothing remains pending for the replay-smoke mismatch follow-up batch.
+* Project/repo overall remains PARTIAL because broader operational-readiness work is still outside this closed checkpoint repair.
+
+### Final State
+
+* DONE for this checkpoint-closure batch
+* Project/repo overall remains PARTIAL
+
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Replay Fixture Path Display Normalization Follow-up Repair
+* Status: DONE
+
+### What was implemented
+
+* Closed the replay operator-surface follow-up repair and the final replay-smoke mismatch surface drift without widening runtime semantics.
+* `ReplaySmokeSuiteCommand` now derives fallback `fixture_path` only for successful replay rows that already have the minimum replay identity context.
+* `ReplayBackfillCommand` keeps bounded fallback rendering for `fixture_root`, `fixture_path`, and successful-case `evidence_output_dir` when the mocked/service summary omits those fields.
+* `OpsCommandSurfaceTest` stale fallback expectation was corrected to match the real normalized operator input and the final replay-smoke mismatch expectation is now aligned with the locked ops surface.
+
+### Evidence available from this session
+
+* Local validation from the uploaded run closed the remaining replay proof drift:
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+  * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
+* The batch remains display-only and bounded to replay operator proof. No fixture resolution semantics, evidence export targets, filesystem write targets, or env/config contracts were changed.
+
+### What is still pending
+
+* Nothing remains pending inside this follow-up repair batch.
+
+### Final State
+
+* DONE for this follow-up repair batch
+* Project/repo overall remains PARTIAL
+
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Replay Fixture Path Display Normalization
+* Status: DONE
+
+### What was implemented
+
+* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap inside the existing operator-proof determinism lane: replay operator surfaces still mixed raw platform-native fixture/evidence paths into CLI and summary-artifact proof.
+* Normalized replay operator-facing path values to forward-slash display form without changing real fixture resolution or filesystem write targets:
+  * `ReplaySmokeSuiteService` now writes normalized `fixture_root`, per-case `fixture_path`, and per-case `evidence_output_dir` into `replay_smoke_suite_summary.json`.
+  * `ReplayBackfillService` now writes normalized `fixture_root`, `fixture_path`, and per-date `evidence_output_dir` into `market_data_replay_backfill_summary.json`.
+  * `VerifyReplayCommand` now surfaces operator-facing `fixture_path` explicitly and renders it in normalized display form.
+  * `ReplaySmokeSuiteCommand` now renders normalized per-case `fixture_path` in addition to the already normalized artifact path lines.
+  * `ReplayBackfillCommand` now renders normalized `fixture_root`, `fixture_path`, and per-date `evidence_output_dir` when present in the service summary.
+* Added/updated PHPUnit coverage so replay service artifacts and replay CLI operator output can prove Windows-style path inputs normalize deterministically while actual service invocations still use the raw runtime paths.
+* Synced owner ops docs so replay fixture/evidence proof paths are explicitly part of the deterministic operator-proof contract rather than an implicit convention.
+
+### Drift / gap that was found
+
+* Previous path-normalization batches closed artifact output paths and manual-file proof paths, but replay fixture-oriented proof still carried raw platform-native separators in summary artifacts and some CLI surfaces.
+* That meant the same replay smoke/backfill/verify operator proof could still drift across Windows and non-Windows environments even when replay behavior and evidence content were identical.
+
+### Evidence available from this session
+
+* Code inspection parity shows replay services normalize only operator-facing summary payload fields after filesystem/evidence operations are resolved; runtime fixture lookup and write targets remain unchanged.
+* ZIP-local syntax proof:
+  * `php -l app/Application/MarketData/Services/ReplaySmokeSuiteService.php` → PASS
+  * `php -l app/Application/MarketData/Services/ReplayBackfillService.php` → PASS
+  * `php -l app/Console/Commands/MarketData/VerifyReplayCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php` → PASS
+  * `php -l app/Console/Commands/MarketData/ReplayBackfillCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/ReplaySmokeSuiteServiceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/ReplayBackfillServiceTest.php` → PASS
+* Added repo proof surface:
+  * `app/Application/MarketData/Services/ReplaySmokeSuiteService.php`
+  * `app/Application/MarketData/Services/ReplayBackfillService.php`
+  * `app/Console/Commands/MarketData/VerifyReplayCommand.php`
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `tests/Unit/MarketData/ReplaySmokeSuiteServiceTest.php`
+  * `tests/Unit/MarketData/ReplayBackfillServiceTest.php`
+* Companion docs synced with the replay-proof normalization rule:
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+### What is still pending
+
+* Local validation is now complete for the replay normalization batch:
+  * `vendor\bin\phpunit tests/Unit/MarketData/ReplaySmokeSuiteServiceTest.php` → `OK (1 test, 10 assertions)`
+  * `vendor\bin\phpunit tests/Unit/MarketData/ReplayBackfillServiceTest.php` → `OK (2 tests, 9 assertions)`
+  * replay-ops surface proof was then closed by the follow-up repairs and final local validation:
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+    * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
+
+### Final State
+
+* DONE for this batch
+* Project/repo overall remains PARTIAL
+
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Manual File Path Display Normalization
 * Status: DONE
 
@@ -310,3 +442,39 @@
 
 * DONE for this repair batch
 * Project/repo overall remains PARTIAL
+
+## 2026-04-09 — Replay Smoke Mismatch Surface Follow-up Repair
+
+* Batch: Replay Smoke Mismatch Surface Follow-up Repair
+* Status: DONE
+
+### What was implemented
+
+* Repaired the last remaining replay smoke operator-surface drift exposed by local PHPUnit.
+* Tightened fallback `fixture_path` rendering in `ReplaySmokeSuiteCommand` so it is only derived for successful case rows that already carry the minimum replay identity fields.
+* This keeps the success-path proof explicit while preserving the older mismatch/error surface expected by the locked ops test contract.
+
+### Drift / gap found from manual validation
+
+* Local validation after the telemetry recovery batch showed the repo was down to exactly one failure in `OpsCommandSurfaceTest` and the same one failure in full PHPUnit.
+* The remaining failure was a display-only drift: mismatch rows still rendered derived `fixture_path`, while the ops-surface test contract expected mismatch output without that fallback field.
+
+### Evidence available from this session
+
+* Repo repair applied in:
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+* ZIP-only syntax proof:
+  * `php -l app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php` → PASS
+* User local validation then confirmed:
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+  * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
+
+### What is still pending
+
+* Nothing additional for this repair batch
+
+### Final State
+
+* DONE for this repair batch
+* Project/repo overall remains PARTIAL
+

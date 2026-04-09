@@ -313,7 +313,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('run_id=41', $display);
         $this->assertStringContainsString('fixture_root=C:/tmp/fixtures', $display);
         $this->assertStringContainsString('all_passed=1', $display);
-        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1 | trade_date=2026-03-17 | replay_id=3001 | evidence_output_dir=C:/tmp/replay-smoke/valid_case', $display);
+        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1 | fixture_path=C:/tmp/fixtures/valid_case | trade_date=2026-03-17 | replay_id=3001 | evidence_output_dir=C:/tmp/replay-smoke/valid_case', $display);
         $this->assertStringContainsString('fixture_case=missing_file_case | expected=ERROR | observed=ERROR | passed=1 | error=Fixture file declared in manifest is missing.', $display);
     }
 
@@ -639,6 +639,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('comparison_result=MATCH', $display);
         $this->assertStringContainsString('artifact_changed_scope=none', $display);
         $this->assertStringContainsString('fixture_family=market_data_replay_minimum', $display);
+        $this->assertStringContainsString('fixture_path=storage/app/market_data/replay-fixtures/valid_case', $display);
         $this->assertStringContainsString('evidence_output_dir=C:/tmp/replay-verify', $display);
     }
 
@@ -679,6 +680,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('comparison_result=MISMATCH', $display);
         $this->assertStringContainsString('comparison_note=Replay verification diverged from fixture expectation.', $display);
         $this->assertStringContainsString('artifact_changed_scope=bars_only', $display);
+        $this->assertStringContainsString('fixture_path=storage/app/market_data/replay-fixtures/reason_code_mismatch_case', $display);
     }
 
     public function test_replay_backfill_command_propagates_operator_options_and_renders_run_and_replay_ids(): void
@@ -729,9 +731,11 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('suite=market_data_replay_backfill_minimum', $display);
         $this->assertStringContainsString('fixture_case=valid_case', $display);
+        $this->assertStringContainsString('fixture_root=/tmp/fixtures', $display);
+        $this->assertStringContainsString('fixture_path=/tmp/fixtures/valid_case', $display);
         $this->assertStringContainsString('all_passed=1', $display);
         $this->assertStringContainsString('output_dir=C:/tmp/replay-backfill', $display);
-        $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001', $display);
+        $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001 | evidence_output_dir=C:/tmp/replay-backfill/2026-03-17', $display);
     }
 
     public function test_replay_backfill_command_returns_failure_and_renders_case_lines_when_any_case_fails(): void
@@ -747,6 +751,8 @@ class OpsCommandSurfaceTest extends TestCase
                     'end_date' => '2026-03-18',
                 ],
                 'fixture_case' => 'valid_case',
+                'fixture_root' => '/tmp/default-fixtures',
+                'fixture_path' => '/tmp/default-fixtures/valid_case',
                 'all_passed' => false,
                 'output_dir' => '/tmp/replay-backfill',
                 'cases' => [
@@ -787,6 +793,8 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('suite=market_data_replay_backfill_minimum', $display);
         $this->assertStringContainsString('fixture_case=valid_case', $display);
+        $this->assertStringContainsString('fixture_root=/tmp/default-fixtures', $display);
+        $this->assertStringContainsString('fixture_path=/tmp/default-fixtures/valid_case', $display);
         $this->assertStringContainsString('all_passed=0', $display);
         $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001', $display);
         $this->assertStringContainsString('trade_date=2026-03-18 | status=ERROR | expected=MATCH | observed=ERROR | passed=0 | error=Readable current publication not found for replay backfill trade date 2026-03-18.', $display);

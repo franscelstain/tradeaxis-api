@@ -62,6 +62,9 @@ class ReplaySmokeSuiteServiceTest extends TestCase
 
         $payload = json_decode(file_get_contents($outputDir.'/replay_smoke_suite_summary.json'), true);
         $this->assertTrue($payload['all_passed']);
+        $this->assertSame(str_replace('\\', '/', $fixtureRoot), $payload['fixture_root']);
+        $this->assertSame(str_replace('\\', '/', $fixtureRoot.'/valid_case'), $payload['cases'][0]['fixture_path']);
+        $this->assertSame(str_replace('\\', '/', $outputDir.'/valid_case'), $payload['cases'][0]['evidence_output_dir']);
         $this->assertSame('MATCH', $payload['cases'][0]['observed_outcome']);
         $this->assertSame('ERROR', $payload['cases'][2]['observed_outcome']);
     }

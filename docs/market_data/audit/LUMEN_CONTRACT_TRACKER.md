@@ -1,5 +1,115 @@
 # LUMEN_CONTRACT_TRACKER
 
+### Replay Fixture Path Display Normalization Follow-up Repair
+
+* Status: DONE
+
+* Scope:
+
+  * close the replay operator-proof failures observed during local validation of the replay-path batch
+  * keep the fix bounded to replay CLI fallback rendering and stale PHPUnit surface expectations only
+  * do not change replay verification semantics, fixture resolution, or evidence export targets
+
+* Owner-doc anchor:
+
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+* Drift found:
+
+  * local validation showed replay smoke CLI output still missed fallback `fixture_path` when the mocked summary omitted it
+  * local validation showed replay backfill CLI output still missed fallback `fixture_root`, fallback `fixture_path`, and derived successful-case `evidence_output_dir` when the mocked summary omitted them
+  * a stale PHPUnit expectation string also did not match the actual operator input used by the test
+  * after the first repair, one final replay-smoke mismatch row still rendered derived `fixture_path` when the locked ops surface expected mismatch output without that fallback field
+
+* Resolution applied in this session:
+
+  * replay smoke command now derives fallback `fixture_path` from `fixture_root` plus `fixture_case` only for successful replay rows with minimum replay identity context
+  * replay backfill command now derives fallback `fixture_root` / `fixture_path` / successful-case `evidence_output_dir` from existing summary or operator-option context for operator-proof rendering
+  * stale PHPUnit expectations were corrected to match the real normalized operator input and the final mismatch-row display contract
+
+* Available proof:
+
+  * final local validation confirmed:
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+    * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
+  * repo changes stayed bounded to replay CLI fallback proof and stale surface expectations only
+
+* Pending proof:
+
+  * none for this repair batch
+
+
+# LUMEN_CONTRACT_TRACKER
+
+### Replay Fixture Path Display Normalization
+
+* Status: DONE
+
+* Scope:
+
+  * normalize replay operator-facing fixture/evidence path rendering across replay verify, replay smoke, and replay backfill proof surfaces
+  * keep normalization display-only so fixture resolution, evidence export calls, and real filesystem targets are not rewritten
+  * align replay CLI output and replay summary artifacts across Windows and non-Windows environments without widening replay semantics beyond deterministic operator proof
+
+* Owner-doc anchor:
+
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Application/MarketData/Services/ReplaySmokeSuiteService.php`
+  * `app/Application/MarketData/Services/ReplayBackfillService.php`
+  * `app/Console/Commands/MarketData/VerifyReplayCommand.php`
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `tests/Unit/MarketData/ReplaySmokeSuiteServiceTest.php`
+  * `tests/Unit/MarketData/ReplayBackfillServiceTest.php`
+
+* Drift found:
+
+  * prior operator-proof normalization batches covered artifact output paths and manual-file proof paths
+  * replay fixture-oriented proof still emitted raw platform-native `fixture_root`, `fixture_path`, and replay `evidence_output_dir` values in summary artifacts and some CLI surfaces
+  * this left replay proof nondeterministic across operating systems even though replay behavior and evidence content were otherwise stable
+
+* Resolution applied in this session:
+
+  * replay smoke service now persists normalized `fixture_root`, per-case `fixture_path`, and per-case `evidence_output_dir` in the suite summary artifact
+  * replay backfill service now persists normalized `fixture_root`, `fixture_path`, and per-date `evidence_output_dir` in the summary artifact
+  * replay verify command now surfaces normalized `fixture_path`
+  * replay smoke command now surfaces normalized per-case `fixture_path`
+  * replay backfill command now surfaces normalized `fixture_root`, `fixture_path`, and per-date `evidence_output_dir` when present
+  * PHPUnit coverage was expanded so service artifacts and CLI output assert normalized replay proof paths while mocked service inputs stay unchanged
+  * owner runbook now explicitly requires normalized forward-slash rendering for replay fixture/evidence proof paths
+
+* Available proof:
+
+  * changed PHP files and changed PHPUnit files pass `php -l`
+  * checkpoint-vs-repo drift revalidation completed for this batch
+  * changed docs are aligned with the bounded display-only normalization behavior
+
+* Available proof after final local validation:
+
+  * `vendor\bin\phpunit tests/Unit/MarketData/ReplaySmokeSuiteServiceTest.php` → `OK (1 test, 10 assertions)`
+  * `vendor\bin\phpunit tests/Unit/MarketData/ReplayBackfillServiceTest.php` → `OK (2 tests, 9 assertions)`
+  * replay-ops surface follow-up repairs then closed the remaining operator-proof drift:
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+    * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
+
+* Pending proof:
+
+  * none for this batch
+
+
+
 ### Manual File Path Display Normalization
 
 * Status: DONE
@@ -625,3 +735,42 @@
 * Pending proof:
 
   * none for this batch
+
+### Replay Smoke Mismatch Surface Follow-up Repair
+
+* Status: DONE
+
+* Scope:
+
+  * stop deriving fallback `fixture_path` for mismatch/error replay smoke rows
+  * preserve derived `fixture_path` for successful replay smoke rows that have full replay identity context
+  * keep the change display-only and bounded to the replay smoke operator surface
+
+* Triggering validation evidence:
+
+  * local `tests/Unit/MarketData/OpsCommandSurfaceTest.php` had exactly one remaining failure in the prior session state
+  * local full PHPUnit had the same single remaining failure
+  * the failing assertion expected mismatch rows without derived `fixture_path`
+
+* Repo repair:
+
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+* Resolution applied in this session family:
+
+  * replay smoke fallback `fixture_path` derivation now requires `passed=1` in addition to the existing minimum replay identity fields
+  * ops-surface PHPUnit now proves mismatch rows render without derived `fixture_path` while successful rows still keep the derived normalized path proof
+  * checkpoint drift was closed after revalidating that the uploaded ZIP already contains the final repair
+
+* Available proof:
+
+  * repo/code parity revalidation from the uploaded ZIP shows the bounded repair is present in code and tests
+  * previously recorded local validation remains the governing execution proof for this batch:
+
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+    * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
+
+* Pending proof:
+
+  * none
