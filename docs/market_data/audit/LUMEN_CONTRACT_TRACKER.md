@@ -2,7 +2,7 @@
 
 ### Backfill Source Attempt Telemetry Operator Proof
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -41,14 +41,19 @@
   * checkpoint-vs-repo revalidation completed for the bounded backfill operator-proof surface
   * code/doc/test alignment is present in the uploaded ZIP for the changed backfill service, command, tests, and runbook
   * no config/env expansion was introduced
+  * local syntax validation passed:
+    * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
+    * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
+    * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+    * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * local PHPUnit validation passed:
+    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (5 tests, 35 assertions)`
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (31 tests, 188 assertions)`
+    * `vendor\bin\phpunit` → `OK (172 tests, 1811 assertions)`
 
 * Pending proof:
 
-  * local syntax validation still needs to be run for the changed PHP files
-  * local PHPUnit validation still needs to be run for:
-    * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-    * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-    * optional repo-wide `vendor\bin\phpunit`
+  * none
 
 
 # LUMEN_CONTRACT_TRACKER

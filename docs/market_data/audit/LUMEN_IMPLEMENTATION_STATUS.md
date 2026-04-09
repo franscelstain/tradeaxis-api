@@ -3,7 +3,7 @@
 ## SESSION UPDATE
 
 * Batch: Backfill Source Attempt Telemetry Operator Proof
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -15,6 +15,7 @@
   * service-level proof that backfill summary payloads and persisted `market_data_backfill_summary.json` include `source_attempt_event_type` / `source_attempt_count` when telemetry exists, and stay absent when only run notes are available
   * command-surface proof that `market-data:backfill` prints the same bounded retry-proof fields on success-case operator output
 * Synced the locked ops runbook so backfill operator proof explicitly allows these bounded retry-proof fields from persisted source-attempt telemetry.
+* Closed the batch after local validation confirmed the bounded change and no broader market-data regression.
 
 ### Evidence available from this session
 
@@ -25,17 +26,24 @@
   * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
   * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
 * ZIP-level re-audit confirms the batch stays inside degraded-source/rerun operator proof only; no publishability, finalize, or source acquisition semantics were widened.
-* Local runtime proof is not yet available from this uploaded ZIP because `vendor/` is absent and PHPUnit/artisan were not executed in this environment.
+* Local syntax validation passed:
+  * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
+  * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Local PHPUnit validation passed:
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (5 tests, 35 assertions)`
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (31 tests, 188 assertions)`
+  * `vendor\bin\phpunit` → `OK (172 tests, 1811 assertions)`
 
 ### What is still pending
 
-* Manual local validation is still required for the changed PHPUnit surface and any repo-wide regression signal.
-* Until that validation is provided, this batch remains `PARTIAL` even though code/doc/test alignment has been updated.
+* Nothing remains pending for this bounded batch.
 * Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
 
 ### Final State
 
-* PARTIAL for this batch pending manual local validation
+* DONE for this batch
 * Project/repo overall remains PARTIAL
 
 
