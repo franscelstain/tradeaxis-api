@@ -4,7 +4,7 @@
 ## SESSION UPDATE
 
 * Batch: Backfill Manual Source Input File Artifact Normalization
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -13,26 +13,31 @@
 * Normalized `source_input_file` in `MarketDataBackfillService` before the service writes `market_data_backfill_summary.json`, so manual fallback/rerun proof now stays deterministic in both returned summary payloads and persisted summary artifacts.
 * Added focused PHPUnit coverage for the new bounded behavior, including an explicit Windows-style manual-file path case that proves forward-slash normalization in the backfill summary artifact.
 * Synced the locked ops runbook so the backfill summary artifact is explicitly included in the already-existing forward-slash normalization rule for operator-facing `source_input_file` proof.
+* Closed the batch after local validation confirmed the bounded change and no broader market-data regression.
 
 ### Evidence available from this session
 
-* ZIP-local repo parity for the bounded batch now covers:
+* Repo parity for the bounded batch covers:
   * `app/Application/MarketData/Services/MarketDataBackfillService.php`
   * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
   * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-* ZIP-local syntax validation completed for changed PHP files only:
+* Local syntax validation passed:
   * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
   * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+* Local PHPUnit validation passed:
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (5 tests, 27 assertions)`
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+  * `vendor\bin\phpunit` → `OK (171 tests, 1799 assertions)`
 * Code/doc alignment for this batch is now bounded and explicit: the backfill summary artifact no longer preserves platform-native manual-file separators when it echoes operator-facing `source_input_file` values.
 
 ### What is still pending
 
-* Local PHPUnit validation for the changed batch is still pending because the uploaded ZIP does not include `vendor/`.
-* Repo overall remains `PARTIAL` even if this batch validates locally, because program-level live operational readiness is still not fully proven in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
+* Nothing remains pending for this bounded batch.
+* Project/repo overall still remains `PARTIAL` because program-level live operational readiness is still not fully proven in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
 
 ### Final State
 
-* PARTIAL for this batch pending local PHPUnit validation
+* DONE for this batch
 * Project/repo overall remains PARTIAL
 
 # LUMEN_IMPLEMENTATION_STATUS.md

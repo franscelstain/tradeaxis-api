@@ -1,7 +1,7 @@
 
 ### Backfill Manual Source Input File Artifact Normalization
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -34,15 +34,19 @@
 
 * Available proof:
 
-  * changed PHP files pass `php -l` in ZIP-only validation
+  * local syntax validation passed:
+    * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
+    * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+  * local PHPUnit validation passed:
+    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (5 tests, 27 assertions)`
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
+    * `vendor\bin\phpunit` → `OK (171 tests, 1799 assertions)`
   * checkpoint-vs-repo drift revalidation completed for this batch
   * changed docs are aligned with the bounded backfill-summary normalization behavior
 
 * Pending proof:
 
-  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-  * optional regression confirmation: `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * optional full regression: `vendor\bin\phpunit`
+  * none for this batch
 
 # LUMEN_CONTRACT_TRACKER
 
