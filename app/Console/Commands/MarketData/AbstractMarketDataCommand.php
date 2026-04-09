@@ -139,6 +139,14 @@ abstract class AbstractMarketDataCommand extends Command
             $payload['source_input_file'] = $this->normalizeOptionalPathForDisplay($sourceContext['source_input_file']);
         }
 
+        if (($sourceContext['source_attempt_event_type'] ?? null) !== null && $sourceContext['source_attempt_event_type'] !== '') {
+            $payload['source_attempt_event_type'] = $sourceContext['source_attempt_event_type'];
+        }
+
+        if (($sourceContext['source_attempt_count'] ?? null) !== null && $sourceContext['source_attempt_count'] !== '') {
+            $payload['source_attempt_count'] = $sourceContext['source_attempt_count'];
+        }
+
         $sourceSummary = $this->buildSourceSummaryString($sourceContext);
         if ($sourceSummary !== null) {
             $payload['source_summary'] = $sourceSummary;
@@ -222,6 +230,14 @@ abstract class AbstractMarketDataCommand extends Command
             $this->line('source_input_file='.(string) $this->normalizeOptionalPathForDisplay($inputFile));
         }
 
+        if (($sourceContext['source_attempt_event_type'] ?? null) !== null && $sourceContext['source_attempt_event_type'] !== '') {
+            $this->line('source_attempt_event_type='.(string) $sourceContext['source_attempt_event_type']);
+        }
+
+        if (($sourceContext['source_attempt_count'] ?? null) !== null && $sourceContext['source_attempt_count'] !== '') {
+            $this->line('source_attempt_count='.(string) $sourceContext['source_attempt_count']);
+        }
+
         $sourceSummary = $this->buildSourceSummaryString($sourceContext);
         if ($sourceSummary !== null) {
             $this->line('source_summary='.$sourceSummary);
@@ -241,6 +257,8 @@ abstract class AbstractMarketDataCommand extends Command
             'success_after_retry' => $notesMap['source_success_after_retry'] ?? null,
             'final_http_status' => $notesMap['source_final_http_status'] ?? null,
             'final_reason_code' => $notesMap['source_final_reason_code'] ?? null,
+            'source_attempt_event_type' => null,
+            'source_attempt_count' => null,
         ];
 
         $runId = $this->runField($run, 'run_id');
@@ -275,7 +293,7 @@ abstract class AbstractMarketDataCommand extends Command
             return false;
         }
 
-        foreach (['provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'final_reason_code'] as $key) {
+        foreach (['provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'final_reason_code', 'source_attempt_event_type', 'source_attempt_count'] as $key) {
             if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
                 return true;
             }
@@ -302,6 +320,8 @@ abstract class AbstractMarketDataCommand extends Command
             'success_after_retry' => 'success_after_retry',
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
+            'source_attempt_event_type' => 'event_type',
+            'source_attempt_count' => 'attempt_count',
         ] as $contextKey => $telemetryKey) {
             $contextHasValue = array_key_exists($contextKey, $merged) && $merged[$contextKey] !== null && $merged[$contextKey] !== '';
             $telemetryHasValue = array_key_exists($telemetryKey, $sourceAttemptTelemetry) && $sourceAttemptTelemetry[$telemetryKey] !== null && $sourceAttemptTelemetry[$telemetryKey] !== '';

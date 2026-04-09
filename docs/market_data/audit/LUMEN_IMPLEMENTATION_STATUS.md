@@ -2,6 +2,50 @@
 
 ## SESSION UPDATE
 
+* Batch: Daily Source Attempt Telemetry Operator Proof
+* Status: DONE
+
+### What was implemented
+
+* Re-audited the uploaded ZIP against the checkpoint pair, owner docs, and the still-open degraded-source daily operator-proof lane.
+* Selected one bounded batch from that lane: expose persisted source-attempt telemetry proof on the `market-data:daily` operator surface and daily summary artifact when run notes are too thin.
+* Updated `AbstractMarketDataCommand` so thin-note telemetry recovery now also carries bounded retry-proof fields `source_attempt_event_type` and `source_attempt_count` into daily CLI rendering and `market_data_daily_summary.json`.
+* Expanded PHPUnit coverage for the bounded behavior:
+  * daily CLI success/failure proof that recovered thin-note telemetry renders the bounded retry-proof fields
+  * daily summary artifact proof that the same fields are persisted only when recovered telemetry exists, while existing thick-note cases stay unchanged
+* Synced the locked resilience/ops docs so the bounded daily operator-proof rule exists in docs, code, and tests together.
+* Corrected the two failing ops-surface tests by explicitly binding `EodEvidenceRepository::exportRunSourceAttemptTelemetry()` in the cases that were supposed to exercise thin-note telemetry recovery.
+
+### Evidence available from this session
+
+* Repo parity for the bounded batch covers:
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* ZIP-level re-audit confirms the batch stays inside bounded daily operator proof only; no source acquisition, finalize, publication, or backfill semantics were widened.
+* Local syntax validation passed:
+  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Final local PHPUnit validation passed after the corrective test wiring fix:
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (33 tests, 210 assertions)`
+  * `vendor\bin\phpunit` → `OK (174 tests, 1833 assertions)`
+
+### What is still pending
+
+* Nothing remains pending for this bounded batch.
+* Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
+
+### Final State
+
+* DONE for this batch
+* Project/repo overall remains PARTIAL
+
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Backfill Source Attempt Telemetry Operator Proof
 * Status: DONE
 

@@ -1,5 +1,54 @@
 # LUMEN_CONTRACT_TRACKER
 
+### Daily Source Attempt Telemetry Operator Proof
+
+* Status: DONE
+
+* Scope:
+
+  * expose bounded persisted source-attempt telemetry proof on `market-data:daily` when run notes are too thin
+  * keep the change bounded to daily CLI rendering and `market_data_daily_summary.json` operator-proof payloads
+  * do not change source acquisition semantics, finalize outcomes, publication resolution, or backfill behavior
+
+* Owner-doc anchor:
+
+  * `docs/README.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Repo evidence:
+
+  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Drift found:
+
+  * daily thin-note telemetry recovery already restored the compressed `source_summary` fields from persisted attempt telemetry
+  * the new operator-proof assertions for `source_attempt_event_type` / `source_attempt_count` initially failed in two CLI cases because those tests did not bind `EodEvidenceRepository`, so no persisted telemetry was available inside the command under test
+  * the runtime contract itself was present; the remaining drift was isolated to incomplete test wiring in those two cases
+
+* Resolution applied in this session:
+
+  * kept the bounded operator-proof contract unchanged in code and docs
+  * corrected `OpsCommandSurfaceTest` so both failing daily CLI cases explicitly bind `EodEvidenceRepository::exportRunSourceAttemptTelemetry()` with the persisted payload each assertion expects
+  * reran local validation after the test wiring fix and closed the batch once the daily ops surface and full suite both passed
+
+* Available proof:
+
+  * local syntax validation passed:
+    * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+    * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * local PHPUnit validation passed after the test wiring fix:
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (33 tests, 210 assertions)`
+    * `vendor\bin\phpunit` → `OK (174 tests, 1833 assertions)`
+
+* Pending proof:
+
+  * none
+
 ### Backfill Source Attempt Telemetry Operator Proof
 
 * Status: DONE

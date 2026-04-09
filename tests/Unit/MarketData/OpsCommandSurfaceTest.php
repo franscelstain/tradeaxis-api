@@ -894,6 +894,8 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame('api', $payload['source_mode']);
         $this->assertSame(55, $payload['run_id']);
         $this->assertSame('API_FREE', $payload['source_name']);
+        $this->assertArrayNotHasKey('source_attempt_event_type', $payload);
+        $this->assertArrayNotHasKey('source_attempt_count', $payload);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $payload['source_summary']);
 
         File::deleteDirectory($outputDir);
@@ -955,6 +957,8 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(44, $payload['run_id']);
         $this->assertSame('2026-03-21', $payload['trade_date_effective']);
         $this->assertSame('boom', $payload['error_message']);
+        $this->assertArrayNotHasKey('source_attempt_event_type', $payload);
+        $this->assertArrayNotHasKey('source_attempt_count', $payload);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $payload['source_summary']);
 
         File::deleteDirectory($outputDir);
@@ -1067,7 +1071,24 @@ class OpsCommandSurfaceTest extends TestCase
                 'notes' => 'candidate_publication_id=44; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
             ]);
 
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')
+            ->once()
+            ->with(55)
+            ->andReturn([
+                'source_name' => 'API_FREE',
+                'provider' => 'generic',
+                'timeout_seconds' => 15,
+                'retry_max' => 3,
+                'attempt_count' => 2,
+                'success_after_retry' => true,
+                'final_http_status' => 200,
+                'final_reason_code' => 'RUN_SOURCE_TIMEOUT',
+                'event_type' => 'STAGE_COMPLETED',
+            ]);
+
         $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodEvidenceRepository::class, $evidence);
 
         $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
         $command->setLaravel($this->app);
@@ -1082,6 +1103,8 @@ class OpsCommandSurfaceTest extends TestCase
 
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('source_name=API_FREE', $display);
+        $this->assertStringContainsString('source_attempt_event_type=STAGE_COMPLETED', $display);
+        $this->assertStringContainsString('source_attempt_count=2', $display);
         $this->assertStringContainsString('source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 
@@ -1171,6 +1194,8 @@ class OpsCommandSurfaceTest extends TestCase
 
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('source_name=API_FREE', $display);
+        $this->assertStringContainsString('source_attempt_event_type=STAGE_COMPLETED', $display);
+        $this->assertStringContainsString('source_attempt_count=2', $display);
         $this->assertStringContainsString('source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 
@@ -1231,10 +1256,148 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('run_id=44', $display);
         $this->assertStringContainsString('source_name=API_FREE', $display);
+        $this->assertStringContainsString('source_attempt_event_type=STAGE_FAILED', $display);
+        $this->assertStringContainsString('source_attempt_count=3', $display);
         $this->assertStringContainsString('source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
         $this->assertStringContainsString('error=boom', $display);
     }
 
+
+
+    public function test_daily_pipeline_command_writes_attempt_telemetry_fields_into_summary_artifact_when_notes_are_thin(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'api', null)
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'trade_date_effective' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'notes' => 'candidate_publication_id=44; source_name=API_FREE',
+            ]);
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')
+            ->once()
+            ->with(55)
+            ->andReturn([
+                'event_id' => 401,
+                'event_time' => '2026-03-24 09:15:00',
+                'event_type' => 'STAGE_COMPLETED',
+                'source_name' => 'API_FREE',
+                'provider' => 'generic',
+                'timeout_seconds' => 15,
+                'retry_max' => 3,
+                'attempt_count' => 2,
+                'success_after_retry' => 'yes',
+                'final_http_status' => 200,
+                'final_reason_code' => 'RUN_SOURCE_TIMEOUT',
+                'attempts' => [],
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodEvidenceRepository::class, $evidence);
+
+        $outputDir = sys_get_temp_dir().'/tradeaxis-daily-thin-notes-success-'.uniqid();
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'api',
+            '--output_dir' => $outputDir,
+        ]);
+
+        $this->assertSame(0, $exitCode);
+
+        $artifactPath = $outputDir.'/market_data_daily_summary.json';
+        $this->assertFileExists($artifactPath);
+
+        $payload = json_decode((string) file_get_contents($artifactPath), true);
+
+        $this->assertSame('STAGE_COMPLETED', $payload['source_attempt_event_type']);
+        $this->assertSame(2, $payload['source_attempt_count']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $payload['source_summary']);
+
+        File::deleteDirectory($outputDir);
+    }
+
+    public function test_daily_pipeline_command_writes_recovered_attempt_telemetry_fields_into_summary_artifact_when_pipeline_throws(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('runDaily')
+            ->once()
+            ->with('2026-03-24', 'api', null)
+            ->andThrow(new RuntimeException('boom'));
+
+        $runs = m::mock(EodRunRepository::class);
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-03-24', 'api')
+            ->andReturn((object) [
+                'run_id' => 44,
+                'trade_date_requested' => '2026-03-24',
+                'trade_date_effective' => '2026-03-21',
+                'stage' => 'INGEST_BARS',
+                'lifecycle_state' => 'FAILED',
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'notes' => 'source_name=API_FREE',
+            ]);
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')
+            ->once()
+            ->with(44)
+            ->andReturn([
+                'event_id' => 402,
+                'event_time' => '2026-03-24 09:20:00',
+                'event_type' => 'STAGE_FAILED',
+                'source_name' => 'API_FREE',
+                'provider' => 'generic',
+                'timeout_seconds' => 15,
+                'retry_max' => 3,
+                'attempt_count' => 3,
+                'final_reason_code' => 'RUN_SOURCE_TIMEOUT',
+                'attempts' => [],
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodRunRepository::class, $runs);
+        $this->app->instance(EodEvidenceRepository::class, $evidence);
+
+        $outputDir = sys_get_temp_dir().'/tradeaxis-daily-thin-notes-failure-'.uniqid();
+
+        $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'api',
+            '--output_dir' => $outputDir,
+        ]);
+
+        $this->assertSame(1, $exitCode);
+
+        $artifactPath = $outputDir.'/market_data_daily_summary.json';
+        $this->assertFileExists($artifactPath);
+
+        $payload = json_decode((string) file_get_contents($artifactPath), true);
+
+        $this->assertSame('STAGE_FAILED', $payload['source_attempt_event_type']);
+        $this->assertSame(3, $payload['source_attempt_count']);
+        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $payload['source_summary']);
+
+        File::deleteDirectory($outputDir);
+    }
 
     public function test_daily_pipeline_command_recovers_failed_run_summary_when_pipeline_throws(): void
     {
@@ -1258,8 +1421,23 @@ class OpsCommandSurfaceTest extends TestCase
                 'notes' => 'source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
             ]);
 
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')
+            ->once()
+            ->with(44)
+            ->andReturn([
+                'source_name' => 'API_FREE',
+                'provider' => 'generic',
+                'timeout_seconds' => 15,
+                'retry_max' => 3,
+                'attempt_count' => 3,
+                'final_reason_code' => 'RUN_SOURCE_TIMEOUT',
+                'event_type' => 'STAGE_FAILED',
+            ]);
+
         $this->app->instance(MarketDataPipelineService::class, $service);
         $this->app->instance(EodRunRepository::class, $runs);
+        $this->app->instance(EodEvidenceRepository::class, $evidence);
 
         $command = new \App\Console\Commands\MarketData\DailyPipelineCommand();
         $command->setLaravel($this->app);
@@ -1275,6 +1453,8 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('run_id=44', $display);
         $this->assertStringContainsString('source_name=API_FREE', $display);
+        $this->assertStringContainsString('source_attempt_event_type=STAGE_FAILED', $display);
+        $this->assertStringContainsString('source_attempt_count=3', $display);
         $this->assertStringContainsString('source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
         $this->assertStringContainsString('error=boom', $display);
     }
