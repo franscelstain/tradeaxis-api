@@ -33,10 +33,13 @@ class MarketDataEvidenceExportService
         $manifest = $publication ? (array) $this->publications->buildManifestByPublicationId($publication->publication_id) : null;
         $runSummary = $this->buildRunSummary($run, $manifest);
         $sourceAttemptTelemetry = $this->buildSourceAttemptTelemetry($run, $runSummary['source_context'] ?? []);
-        $runSummary['source_context'] = $this->mergeSourceContextFromTelemetry(
-            is_array($runSummary['source_context'] ?? null) ? $runSummary['source_context'] : [],
-            $sourceAttemptTelemetry
+        $runSummary['source_context'] = $this->normalizeSourceContextPaths(
+            $this->mergeSourceContextFromTelemetry(
+                is_array($runSummary['source_context'] ?? null) ? $runSummary['source_context'] : [],
+                $sourceAttemptTelemetry
+            )
         );
+        $sourceAttemptTelemetry = $this->normalizeSourceAttemptTelemetryPaths($sourceAttemptTelemetry);
         $sourceSummary = $this->buildSourceSummaryString($runSummary['source_context'] ?? []);
         $eventSummary = ['run_id' => (int) $run->run_id, 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
         $dominantReasonCodes = $this->evidence->dominantReasonCodes($run->run_id, $this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
@@ -92,7 +95,9 @@ class MarketDataEvidenceExportService
                 'terminal_status' => $runSummary['terminal_status'],
                 'publishability_state' => $runSummary['publishability_state'],
                 'source_name' => $runSummary['source_context']['source_name'] ?? null,
-                'source_input_file' => $runSummary['source_context']['source_input_file'] ?? null,
+                'source_input_file' => isset($runSummary['source_context']['source_input_file'])
+                    ? $this->normalizeOptionalPathForDisplay($runSummary['source_context']['source_input_file'])
+                    : null,
                 'source_summary' => $sourceSummary,
                 'source_attempt_event_type' => $sourceAttemptTelemetry['event_type'] ?? null,
                 'source_attempt_count' => $sourceAttemptTelemetry['attempt_count'] ?? null,
@@ -249,6 +254,8 @@ class MarketDataEvidenceExportService
     {
         $sourceContext = $this->buildSourceContext($run);
 
+        $sourceContext = $this->normalizeSourceContextPaths($sourceContext);
+
         return [
             'run_id' => (int) $run->run_id,
             'trade_date_requested' => $run->trade_date_requested,
@@ -328,7 +335,7 @@ class MarketDataEvidenceExportService
             $telemetry['final_reason_code'] = $sourceContext['final_reason_code'];
         }
 
-        return $telemetry;
+        return $this->normalizeSourceAttemptTelemetryPaths($telemetry);
     }
 
     private function buildSourceContext($record)
@@ -377,6 +384,38 @@ class MarketDataEvidenceExportService
         }
 
         return $merged;
+    }
+
+
+    private function normalizeSourceContextPaths(array $sourceContext)
+    {
+        if (array_key_exists('source_input_file', $sourceContext) && $sourceContext['source_input_file'] !== null && $sourceContext['source_input_file'] !== '') {
+            $sourceContext['source_input_file'] = $this->normalizeOptionalPathForDisplay($sourceContext['source_input_file']);
+        }
+
+        return $sourceContext;
+    }
+
+    private function normalizeSourceAttemptTelemetryPaths($telemetry)
+    {
+        if (! is_array($telemetry)) {
+            return $telemetry;
+        }
+
+        if (array_key_exists('source_input_file', $telemetry) && $telemetry['source_input_file'] !== null && $telemetry['source_input_file'] !== '') {
+            $telemetry['source_input_file'] = $this->normalizeOptionalPathForDisplay($telemetry['source_input_file']);
+        }
+
+        return $telemetry;
+    }
+
+    private function normalizeOptionalPathForDisplay($path)
+    {
+        if ($path === null || $path === '') {
+            return $path;
+        }
+
+        return str_replace('\\', '/', (string) $path);
     }
 
     private function buildSourceSummaryString(array $sourceContext)

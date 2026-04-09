@@ -1,3 +1,88 @@
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Backfill Source Attempt Telemetry Operator Proof
+* Status: PARTIAL
+
+### What was implemented
+
+* Re-audited the uploaded ZIP against the checkpoint pair, owner docs, and the still-open degraded-source fallback/rerun operator-proof lane in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
+* Selected one bounded batch from that lane: expose bounded source-attempt retry proof on the backfill operator surface without changing backfill execution semantics.
+* Updated `MarketDataBackfillService` so each backfill case now carries `source_attempt_event_type` and `source_attempt_count` when persisted source-attempt telemetry exists for the run.
+* Updated `market-data:backfill` command rendering so those bounded retry-proof fields appear in operator-visible per-date lines before the compressed `source_summary` field.
+* Expanded PHPUnit coverage for the bounded behavior:
+  * service-level proof that backfill summary payloads and persisted `market_data_backfill_summary.json` include `source_attempt_event_type` / `source_attempt_count` when telemetry exists, and stay absent when only run notes are available
+  * command-surface proof that `market-data:backfill` prints the same bounded retry-proof fields on success-case operator output
+* Synced the locked ops runbook so backfill operator proof explicitly allows these bounded retry-proof fields from persisted source-attempt telemetry.
+
+### Evidence available from this session
+
+* Repo parity for the bounded batch covers:
+  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* ZIP-level re-audit confirms the batch stays inside degraded-source/rerun operator proof only; no publishability, finalize, or source acquisition semantics were widened.
+* Local runtime proof is not yet available from this uploaded ZIP because `vendor/` is absent and PHPUnit/artisan were not executed in this environment.
+
+### What is still pending
+
+* Manual local validation is still required for the changed PHPUnit surface and any repo-wide regression signal.
+* Until that validation is provided, this batch remains `PARTIAL` even though code/doc/test alignment has been updated.
+* Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
+
+### Final State
+
+* PARTIAL for this batch pending manual local validation
+* Project/repo overall remains PARTIAL
+
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Run Evidence Manual Source Input File Normalization
+* Status: DONE
+
+### What was implemented
+
+* Re-audited the uploaded ZIP against the checkpoint pair, owner docs, and the remaining operational-readiness lane in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
+* Selected one bounded follow-up batch from the degraded-source/operator-proof lane: normalize manual `source_input_file` inside run-evidence export surfaces so exported proof does not drift by OS path separator.
+* Normalized manual `source_input_file` for run evidence in `MarketDataEvidenceExportService`, covering returned summary payloads plus persisted `run_summary.json`, `evidence_pack.json`, and `source_attempt_telemetry.json` when that field is present.
+* Extended PHPUnit coverage for the bounded behavior:
+  * service-level proof for normalized manual `source_input_file` in exported run-evidence artifacts
+  * command-surface proof for `market-data:evidence:export` summary output showing normalized forward-slash manual paths
+* Synced the locked ops runbook so exported run-evidence source context explicitly inherits the same forward-slash normalization rule for manual `source_input_file` proof.
+* Closed the batch after local validation confirmed the bounded change and no broader market-data regression.
+
+### Evidence available from this session
+
+* Repo parity for the bounded batch covers:
+  * `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+  * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* Local syntax validation passed:
+  * `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+* Local PHPUnit validation passed:
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `OK (2 tests, 52 assertions)`
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (31 tests, 188 assertions)`
+  * `vendor\bin\phpunit` → `OK (172 tests, 1803 assertions)`
+
+### What is still pending
+
+* Nothing remains pending for this bounded batch.
+* Project/repo overall remains `PARTIAL` because program-level operational readiness in the build guide is still not fully proven.
+
+### Final State
+
+* DONE for this batch
+* Project/repo overall remains PARTIAL
+
 
 # LUMEN_IMPLEMENTATION_STATUS.md
 

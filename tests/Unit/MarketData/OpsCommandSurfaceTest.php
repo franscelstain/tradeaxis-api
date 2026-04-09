@@ -53,6 +53,8 @@ class OpsCommandSurfaceTest extends TestCase
                         'publishability_state' => 'READABLE',
                         'trade_date_effective' => '2026-03-17',
                         'source_name' => 'API_FREE',
+                        'source_attempt_event_type' => 'STAGE_COMPLETED',
+                        'source_attempt_count' => 2,
                         'source_summary' => 'provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT',
                     ],
                 ],
@@ -81,7 +83,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('source_mode=manual_file', $display);
         $this->assertStringContainsString('all_passed=1', $display);
         $this->assertStringContainsString('output_dir=C:/tmp/backfill', $display);
-        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17 | source_name=API_FREE | source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17 | source_name=API_FREE | source_attempt_event_type=STAGE_COMPLETED | source_attempt_count=2 | source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 
     public function test_backfill_command_returns_failure_and_renders_error_case_lines(): void
@@ -480,6 +482,48 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('source_name=API_FREE', $display);
         $this->assertStringContainsString('source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
         $this->assertStringNotContainsString('source_input_file=', $display);
+    }
+
+
+    public function test_evidence_export_command_normalizes_manual_source_input_file_in_summary_output(): void
+    {
+        $service = m::mock(MarketDataEvidenceExportService::class);
+        $service->shouldReceive('exportRunEvidence')
+            ->once()
+            ->with(43, 'C:\tmp\run-evidence-manual')
+            ->andReturn([
+                'selector' => ['type' => 'run', 'id' => 43],
+                'summary' => [
+                    'run_id' => 43,
+                    'trade_date_requested' => '2026-03-19',
+                    'trade_date_effective' => '2026-03-18',
+                    'terminal_status' => 'HELD',
+                    'publishability_state' => 'NOT_READABLE',
+                    'source_name' => 'LOCAL_FILE',
+                    'source_input_file' => 'C:/tmp/manual-2026-03-19.csv',
+                ],
+                'output_dir' => 'C:\tmp\run-evidence-manual',
+                'file_count' => 2,
+                'files' => ['run_summary.json', 'evidence_pack.json'],
+            ]);
+
+        $this->app->instance(MarketDataEvidenceExportService::class, $service);
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--run_id' => 43,
+            '--output_dir' => 'C:\tmp\run-evidence-manual',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('source_name=LOCAL_FILE', $display);
+        $this->assertStringContainsString('source_input_file=C:/tmp/manual-2026-03-19.csv', $display);
+        $this->assertStringContainsString('output_dir=C:/tmp/run-evidence-manual', $display);
     }
 
     public function test_evidence_export_command_exports_correction_evidence(): void

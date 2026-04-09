@@ -134,6 +134,16 @@ class MarketDataBackfillService
             $result['source_input_file'] = $this->normalizeOptionalPathForDisplay($sourceContext['source_input_file']);
         }
 
+        if (is_array($sourceAttemptTelemetry)) {
+            if (($sourceAttemptTelemetry['event_type'] ?? null) !== null && $sourceAttemptTelemetry['event_type'] !== '') {
+                $result['source_attempt_event_type'] = (string) $sourceAttemptTelemetry['event_type'];
+            }
+
+            if (array_key_exists('attempt_count', $sourceAttemptTelemetry) && $sourceAttemptTelemetry['attempt_count'] !== null) {
+                $result['source_attempt_count'] = (int) $sourceAttemptTelemetry['attempt_count'];
+            }
+        }
+
         $sourceSummary = $this->buildSourceSummaryString($sourceContext);
         if ($sourceSummary !== null) {
             $result['source_summary'] = $sourceSummary;

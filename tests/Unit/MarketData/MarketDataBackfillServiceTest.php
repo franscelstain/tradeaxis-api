@@ -61,10 +61,14 @@ class MarketDataBackfillServiceTest extends TestCase
         $this->assertTrue($summary['all_passed']);
         $this->assertCount(3, $summary['cases']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
+        $this->assertArrayNotHasKey('source_attempt_event_type', $summary['cases'][0]);
+        $this->assertArrayNotHasKey('source_attempt_count', $summary['cases'][0]);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
 
         $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
         $this->assertSame('API_FREE', $summaryFile['cases'][0]['source_name']);
+        $this->assertArrayNotHasKey('source_attempt_event_type', $summaryFile['cases'][0]);
+        $this->assertArrayNotHasKey('source_attempt_count', $summaryFile['cases'][0]);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summaryFile['cases'][0]['source_summary']);
     }
 
@@ -117,9 +121,13 @@ class MarketDataBackfillServiceTest extends TestCase
 
         $this->assertTrue($summary['all_passed']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
+        $this->assertSame('STAGE_COMPLETED', $summary['cases'][0]['source_attempt_event_type']);
+        $this->assertSame(2, $summary['cases'][0]['source_attempt_count']);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
 
         $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
+        $this->assertSame('STAGE_COMPLETED', $summaryFile['cases'][0]['source_attempt_event_type']);
+        $this->assertSame(2, $summaryFile['cases'][0]['source_attempt_count']);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summaryFile['cases'][0]['source_summary']);
     }
 

@@ -1,3 +1,110 @@
+# LUMEN_CONTRACT_TRACKER
+
+### Backfill Source Attempt Telemetry Operator Proof
+
+* Status: PARTIAL
+
+* Scope:
+
+  * expose bounded source-attempt retry proof on the backfill operator surface
+  * keep the batch limited to backfill summary payload / persisted summary artifact / CLI rendering
+  * do not change backfill execution flow, publishability semantics, or source acquisition behavior
+
+* Owner-doc anchor:
+
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Repo evidence:
+
+  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Drift found:
+
+  * the build guide still leaves degraded-source fallback/rerun operator proof as an allowed next batch
+  * backfill already recovered minimum source context from persisted source-attempt telemetry, but the operator surface compressed that retry proof into `source_summary` and did not expose the bounded telemetry identity fields directly
+  * this made rerun diagnosis more opaque than the existing run-evidence export surface even when persisted attempt telemetry was already available
+
+* Resolution applied in this session:
+
+  * `MarketDataBackfillService` now emits `source_attempt_event_type` and `source_attempt_count` per case when persisted source-attempt telemetry exists
+  * the persisted `market_data_backfill_summary.json` artifact now carries the same bounded retry-proof fields
+  * `market-data:backfill` CLI output now renders those fields on per-date lines before `source_summary`
+  * the locked ops runbook now states explicitly that backfill operator proof may surface these bounded retry-proof fields when persisted source-attempt telemetry exists
+
+* Available proof:
+
+  * checkpoint-vs-repo revalidation completed for the bounded backfill operator-proof surface
+  * code/doc/test alignment is present in the uploaded ZIP for the changed backfill service, command, tests, and runbook
+  * no config/env expansion was introduced
+
+* Pending proof:
+
+  * local syntax validation still needs to be run for the changed PHP files
+  * local PHPUnit validation still needs to be run for:
+    * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+    * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+    * optional repo-wide `vendor\bin\phpunit`
+
+
+# LUMEN_CONTRACT_TRACKER
+
+### Run Evidence Manual Source Input File Normalization
+
+* Status: DONE
+
+* Scope:
+
+  * normalize manual `source_input_file` across run-evidence export proof surfaces
+  * keep the change bounded to exported operator-proof payloads and command-summary output only
+  * do not change actual manual input target resolution, run-note persistence semantics, or replay/backfill behavior
+
+* Owner-doc anchor:
+
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Repo evidence:
+
+  * `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+  * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Drift found:
+
+  * prior manual-file normalization batches already closed daily/backfill command and summary-artifact proof
+  * run-evidence export still allowed manual `source_input_file` to persist/display in platform-native separator form inside exported summary artifacts and evidence-export command output
+  * this left one remaining bounded operator-proof drift in the source-resilience lane even though runtime manual-file behavior itself did not differ
+
+* Resolution applied in this session:
+
+  * run-evidence service now normalizes manual `source_input_file` before returning summary payloads and before writing exported JSON artifacts
+  * run-evidence source-attempt telemetry export also normalizes `source_input_file` if the field is present via merged source context
+  * ops-command coverage now asserts normalized manual `source_input_file` on `market-data:evidence:export` output
+  * locked ops docs now state the same normalization rule explicitly for exported run-evidence source context
+
+* Available proof:
+
+  * local syntax validation passed:
+    * `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → PASS
+    * `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS
+    * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+  * local PHPUnit validation passed:
+    * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `OK (2 tests, 52 assertions)`
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (31 tests, 188 assertions)`
+    * `vendor\bin\phpunit` → `OK (172 tests, 1803 assertions)`
+  * checkpoint-vs-repo drift revalidation completed for this bounded batch
+
+* Pending proof:
+
+  * none
+
 
 ### Backfill Manual Source Input File Artifact Normalization
 

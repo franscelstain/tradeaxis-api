@@ -119,7 +119,7 @@ Execute the daily sequence:
 - when command output or operator-proof artifacts echo `input_file` or recovered `source_input_file`, those operator-facing path values must use normalized forward-slash display form
 - when API acquisition telemetry is available in run notes, command summary should surface minimum source context (`source_name`, attempt summary, final HTTP status) without forcing operator to parse raw notes; if run notes are thinner than persisted attempt telemetry, the command summary may recover the same minimum operator-facing source fields from that telemetry instead of degrading to a thin source summary
 - when operator passes `--output_dir`, `market-data:daily` should also persist `market_data_daily_summary.json` with the same minimum run/source/coverage context rendered to the CLI, plus `error_message` on the recovered failure path, so local runtime proof can be archived deterministically
-- `market-data:evidence:export --run_id=...` should also surface the same minimum source context in exported run evidence summary when that telemetry exists
+- `market-data:evidence:export --run_id=...` should also surface the same minimum source context in exported run evidence summary when that telemetry exists; if that summary or exported run-evidence artifacts echo manual `source_input_file`, the operator-facing path value must use normalized forward-slash display form
 - when attempt-level source telemetry exists in `eod_run_events`, run evidence export should also materialize a bounded `source_attempt_telemetry.json` companion so retry/backoff diagnosis does not require manual table inspection; when run notes only retain a thinner source context, exported run summary may recover the same minimum operator-facing source fields from that persisted attempt telemetry
 
 ### 8. `market-data:backfill`
@@ -141,6 +141,7 @@ Historical backfill/recompute per trading-date range.
 - one summary artifact `market_data_backfill_summary.json`
 - per-date observed status/run_id in the summary artifact
 - when per-run source telemetry exists in notes, the summary artifact and command output should surface minimum source context (`source_name`, `source_input_file`, `source_summary` including `provider`, `timeout_seconds`, `retry_max`, and failure-side `final_reason_code` when present) for each requested date; if run notes are thinner than persisted attempt telemetry, backfill summary may recover the same minimum operator-facing source fields from that telemetry instead of degrading to a thin source summary
+- when persisted source-attempt telemetry exists for a requested date, backfill command output and the persisted backfill summary artifact may also surface bounded retry-proof fields `source_attempt_event_type` and `source_attempt_count` so degraded-source rerun diagnosis does not rely only on the compressed `source_summary` string
 - any operator-facing `source_input_file` value rendered by daily/backfill command surfaces, including the persisted backfill summary artifact payload, must use normalized forward-slash display form for deterministic local proof across operating systems
 
 ### 9. `market-data:session-snapshot`
