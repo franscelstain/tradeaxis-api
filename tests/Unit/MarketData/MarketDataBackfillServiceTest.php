@@ -123,6 +123,37 @@ class MarketDataBackfillServiceTest extends TestCase
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $summaryFile['cases'][0]['source_summary']);
     }
 
+    public function test_execute_normalizes_manual_source_input_file_in_summary_artifact(): void
+    {
+        $calendar = m::mock(MarketCalendarRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+        $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
+
+        $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-24', '2026-03-24')->andReturn([
+            '2026-03-24',
+        ]);
+
+        $pipeline->shouldReceive('runDaily')->once()->with('2026-03-24', 'manual_file', null)->andReturn((object) [
+            'run_id' => 1001,
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'trade_date_effective' => '2026-03-24',
+            'notes' => 'source_name=LOCAL_FILE; source_input_file=C:\\ops\\manual-2026-03-24.csv',
+        ]);
+
+        $runs->shouldNotReceive('findLatestForRequestedDate');
+
+        $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
+        $summary = $service->execute('2026-03-24', '2026-03-24', 'manual_file', $outputDir, false);
+
+        $this->assertSame('C:/ops/manual-2026-03-24.csv', $summary['cases'][0]['source_input_file']);
+
+        $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
+        $this->assertSame('C:/ops/manual-2026-03-24.csv', $summaryFile['cases'][0]['source_input_file']);
+    }
+
+
     public function test_execute_marks_fail_when_pipeline_returns_non_readable_terminal_state()
     {
         $calendar = m::mock(MarketCalendarRepository::class);
@@ -157,6 +188,9 @@ class MarketDataBackfillServiceTest extends TestCase
         $this->assertSame('LOCAL_FILE', $summary['cases'][0]['source_name']);
         $this->assertSame('manual-2026-03-20.csv', $summary['cases'][0]['source_input_file']);
         $this->assertFileExists($outputDir.'/market_data_backfill_summary.json');
+
+        $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
+        $this->assertSame('manual-2026-03-20.csv', $summaryFile['cases'][0]['source_input_file']);
     }
 
     public function test_execute_marks_failure_and_stops_when_continue_on_error_is_false()

@@ -1,3 +1,79 @@
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Backfill Manual Source Input File Artifact Normalization
+* Status: PARTIAL
+
+### What was implemented
+
+* Re-audited the uploaded ZIP against the active checkpoint pair, the owner-doc resilience lane, and the current repo surface after tracker terminal-state alignment.
+* Selected one new bounded batch from the still-open operational-readiness lane in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`: close remaining degraded-source/rerun operator-proof drift on the persisted backfill summary artifact.
+* Normalized `source_input_file` in `MarketDataBackfillService` before the service writes `market_data_backfill_summary.json`, so manual fallback/rerun proof now stays deterministic in both returned summary payloads and persisted summary artifacts.
+* Added focused PHPUnit coverage for the new bounded behavior, including an explicit Windows-style manual-file path case that proves forward-slash normalization in the backfill summary artifact.
+* Synced the locked ops runbook so the backfill summary artifact is explicitly included in the already-existing forward-slash normalization rule for operator-facing `source_input_file` proof.
+
+### Evidence available from this session
+
+* ZIP-local repo parity for the bounded batch now covers:
+  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* ZIP-local syntax validation completed for changed PHP files only:
+  * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+* Code/doc alignment for this batch is now bounded and explicit: the backfill summary artifact no longer preserves platform-native manual-file separators when it echoes operator-facing `source_input_file` values.
+
+### What is still pending
+
+* Local PHPUnit validation for the changed batch is still pending because the uploaded ZIP does not include `vendor/`.
+* Repo overall remains `PARTIAL` even if this batch validates locally, because program-level live operational readiness is still not fully proven in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
+
+### Final State
+
+* PARTIAL for this batch pending local PHPUnit validation
+* Project/repo overall remains PARTIAL
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Tracker Terminal State Alignment Audit
+* Status: DONE
+
+### What was implemented
+
+* Re-audited the uploaded ZIP against the active checkpoint pair and the repo surface referenced by the latest replay/path-normalization batches.
+* Verified the current tracker no longer contains any active `PARTIAL`, `BLOCKED`, or `DOC GAP` batch rows; every recorded market-data implementation batch in the tracker is already closed as `DONE` or `CLOSED`.
+* Closed checkpoint drift at the audit layer by making the checkpoint pair say the same thing explicitly: the tracked implementation batches are closed, while the repo overall still remains `PARTIAL` only because the build guide still classifies live operational readiness as not yet fully proven.
+* No PHP/runtime/config/test surface was changed in this session. This batch is audit/checkpoint alignment only.
+
+### Evidence available from this session
+
+* Repo/checkpoint parity revalidation from the uploaded ZIP covered the currently referenced implementation surface, including:
+  * `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+  * `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+* Tracker scan result from the current ZIP: no remaining batch entry is marked `PARTIAL`, `BLOCKED`, or `DOC GAP`.
+* The build guide still says `Operational readiness: PARTIAL` and `BELUM boleh dianggap fully production-ready untuk daily live run`, so repo overall cannot be promoted to `SELESAI` from checkpoint closure alone.
+
+### What is still pending
+
+* No tracked implementation batch remains open inside `LUMEN_CONTRACT_TRACKER.md` as of this audit pass.
+* Repo overall remains `PARTIAL` because live operational readiness proof is still an open program-level concern in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`, not because of an unclosed tracker batch in the current checkpoint file.
+* The next session should only open a new batch after selecting a concrete owner-doc-backed operational-readiness scope; it should not pretend that an old tracker batch is still open when the tracker already shows closure.
+
+### Final State
+
+* DONE for this checkpoint-alignment batch
+* Project/repo overall remains PARTIAL
+
+
 # LUMEN_IMPLEMENTATION_STATUS.md
 
 ## SESSION UPDATE

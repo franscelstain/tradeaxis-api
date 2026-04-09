@@ -131,7 +131,7 @@ class MarketDataBackfillService
         }
 
         if (($sourceContext['source_input_file'] ?? null) !== null) {
-            $result['source_input_file'] = $sourceContext['source_input_file'];
+            $result['source_input_file'] = $this->normalizeOptionalPathForDisplay($sourceContext['source_input_file']);
         }
 
         $sourceSummary = $this->buildSourceSummaryString($sourceContext);
@@ -182,6 +182,16 @@ class MarketDataBackfillService
         }
 
         return $merged;
+    }
+
+
+    private function normalizeOptionalPathForDisplay($path)
+    {
+        if ($path === null || $path === '') {
+            return $path;
+        }
+
+        return str_replace('\\', '/', (string) $path);
     }
 
     private function buildSourceSummaryString(array $sourceContext)

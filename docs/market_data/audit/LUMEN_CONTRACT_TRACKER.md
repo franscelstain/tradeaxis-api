@@ -1,3 +1,99 @@
+
+### Backfill Manual Source Input File Artifact Normalization
+
+* Status: PARTIAL
+
+* Scope:
+
+  * normalize operator-facing manual `source_input_file` values inside `market_data_backfill_summary.json`
+  * keep the change bounded to persisted backfill summary proof and returned backfill service payloads
+  * avoid changing runtime source lookup, backfill sequencing, or terminal-status semantics
+
+* Owner-doc anchor:
+
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+
+* Repo evidence:
+
+  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Drift found:
+
+  * prior manual path normalization work already covered daily CLI proof, daily summary artifacts, and backfill command display lines
+  * `market_data_backfill_summary.json` still preserved platform-native separators for manual `source_input_file` values because the service wrote raw run-note paths into the persisted summary payload
+  * this left degraded-source/rerun operator proof partially nondeterministic across Windows and non-Windows environments even though the bounded CLI surface was already normalized
+
+* Resolution applied in this session:
+
+  * `MarketDataBackfillService` now normalizes manual `source_input_file` values before they are written into the returned case payload and persisted backfill summary artifact
+  * PHPUnit coverage now proves the persisted backfill summary artifact keeps forward-slash display form for Windows-style manual-file inputs
+  * the locked ops runbook now states explicitly that the persisted backfill summary artifact is included in the existing forward-slash normalization rule for operator-facing `source_input_file` proof
+
+* Available proof:
+
+  * changed PHP files pass `php -l` in ZIP-only validation
+  * checkpoint-vs-repo drift revalidation completed for this batch
+  * changed docs are aligned with the bounded backfill-summary normalization behavior
+
+* Pending proof:
+
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  * optional regression confirmation: `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * optional full regression: `vendor\bin\phpunit`
+
+# LUMEN_CONTRACT_TRACKER
+
+### Tracker Terminal State Alignment Audit
+
+* Status: DONE
+
+* Scope:
+
+  * re-audit the active tracker after the replay follow-up closure
+  * confirm whether any tracked implementation batch still remains `PARTIAL`, `BLOCKED`, or `DOC GAP`
+  * align the tracker wording with the implementation-status checkpoint so the overall repo `PARTIAL` state is not incorrectly attributed to a still-open tracker batch
+
+* Owner-doc anchor:
+
+  * `docs/README.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/README.md`
+
+* Repo evidence:
+
+  * `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+  * `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
+  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+* Drift found:
+
+  * the tracker itself no longer contains any active implementation batch marked `PARTIAL`, `BLOCKED`, or `DOC GAP`
+  * implementation status already said the replay follow-up closure was complete, but the checkpoint family did not yet state explicitly that the remaining repo-level `PARTIAL` verdict comes from the build guide's operational-readiness verdict rather than from an unclosed tracker batch
+
+* Resolution applied in this session:
+
+  * revalidated the latest tracked replay/path-normalization repo surface against the uploaded ZIP
+  * confirmed the tracker is fully closed at the recorded batch level
+  * updated the checkpoint wording so future sessions do not reopen a finished tracker item by mistake
+
+* Available proof:
+
+  * checkpoint-vs-repo parity revalidation completed for the latest tracked replay/path-normalization surface
+  * current tracker scan shows no active batch entry with status `PARTIAL`, `BLOCKED`, or `DOC GAP`
+  * build guide still marks overall operational readiness as `PARTIAL`, so repo overall remains `PARTIAL` for program-level reasons outside the closed tracker batches
+
+* Pending proof:
+
+  * none for this alignment batch
+
+
 # LUMEN_CONTRACT_TRACKER
 
 ### Replay Fixture Path Display Normalization Follow-up Repair
