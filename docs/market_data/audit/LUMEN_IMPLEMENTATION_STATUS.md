@@ -3,7 +3,7 @@
 ## SESSION UPDATE
 
 * Batch: Daily Source Attempt Telemetry Runtime Artifact Follow-up Fix
-* Status: PARTIAL
+* Status: DONE
 
 ### What was implemented
 
@@ -14,20 +14,23 @@
 
 ### Evidence available from this session
 
-* Local failure evidence provided by the user shows four daily ops-surface failures, all missing `source_attempt_event_type` in daily command output while summary fields were otherwise present.
+* Local failure evidence provided by the user showed four daily ops-surface failures, all missing `source_attempt_event_type` in daily command output while summary fields were otherwise present.
 * ZIP-level code fix is isolated to:
   * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
 * Local syntax validation passed:
   * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+* Final local PHPUnit validation passed after the follow-up fix:
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (35 tests, 225 assertions)`
+  * `vendor\bin\phpunit` → `OK (176 tests, 1848 assertions)`
 
 ### What is still pending
 
-* PHPUnit/manual local re-validation is still required after this correction because the uploaded ZIP does not include `vendor/`, so this session cannot honestly claim the suite now passes.
+* Nothing remains pending for this bounded follow-up fix.
 * Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
 
 ### Final State
 
-* PARTIAL for this follow-up fix pending local PHPUnit/manual validation
+* DONE for this follow-up fix
 * Project/repo overall remains PARTIAL
 
 

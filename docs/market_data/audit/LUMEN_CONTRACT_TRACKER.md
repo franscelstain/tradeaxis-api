@@ -2,7 +2,7 @@
 
 ### Daily Source Attempt Telemetry Runtime Artifact Follow-up Fix
 
-* Status: PARTIAL
+* Status: DONE
 
 * Scope:
 
@@ -34,15 +34,16 @@
 
 * Available proof:
 
-  * user-provided local failure evidence identifies the exact broken surface and expected fields
+  * user-provided local failure evidence identified the exact broken surface and expected fields
   * local syntax validation passed:
     * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
+  * local PHPUnit validation passed after the follow-up fix:
+    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (35 tests, 225 assertions)`
+    * `vendor\bin\phpunit` → `OK (176 tests, 1848 assertions)`
 
 * Pending proof:
 
-  * rerun local validation after the fix:
-    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-    * `vendor\bin\phpunit`
+  * none
 
 
 # LUMEN_CONTRACT_TRACKER
