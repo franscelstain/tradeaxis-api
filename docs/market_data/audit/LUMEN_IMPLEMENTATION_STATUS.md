@@ -2,776 +2,115 @@
 
 ## SESSION UPDATE
 
-* Batch: Daily Source Attempt Telemetry Runtime Artifact Follow-up Fix
+* Batch: Backfill Failure Source Attempt Telemetry Artifact Export
 * Status: DONE
 
 ### What was implemented
 
-* Evaluated the local PHPUnit failure report and kept the batch bounded to the same daily operator runtime-artifact contract.
-* Fixed `AbstractMarketDataCommand::writeSourceAttemptTelemetryArtifact()` so it always exports persisted run source-attempt telemetry for in-memory command rendering/payload recovery, even when `--output_dir` is not provided.
-* Kept artifact materialization unchanged: `source_attempt_telemetry.json` is still only written when `--output_dir` is present and bounded attempt rows exist.
-* This closes the concrete drift exposed by the failing daily ops-surface tests where `source_attempt_event_type` / `source_attempt_count` disappeared from CLI rendering because telemetry export was incorrectly short-circuited behind artifact writing.
+* Re-audited the uploaded ZIP against the active checkpoint pair, owner docs, and the fresh runtime/manual evidence for Yahoo rate-limit failure on backfill single-day execution.
+* Confirmed the runtime/manual evidence proves a bounded export gap rather than a persistence gap: source-attempt telemetry for failed Yahoo acquisition already exists in `eod_run_events`, but `market-data:backfill` did not materialize `source_attempt_telemetry.json` on the backfill failure path.
+* Updated `MarketDataBackfillService` so backfill execution now collects persisted source-attempt telemetry per requested date and writes a bounded `source_attempt_telemetry.json` companion when attempt rows exist, including failure-side cases recovered from `eod_run_events`.
+* Updated `BackfillMarketDataCommand` so operator output now prints `source_attempt_telemetry_artifact=...` when the bounded backfill telemetry artifact is materialized.
+* Expanded PHPUnit coverage for the bounded behavior:
+  * service-level proof that failed backfill cases with persisted telemetry now write `source_attempt_telemetry.json`
+  * ops-command proof that the backfill command prints the telemetry artifact path when the bounded artifact exists
+* Synced the locked ops runbook so the backfill contract explicitly states that persisted attempt telemetry must be materialized to `source_attempt_telemetry.json` on deterministic backfill output paths when it exists.
 
 ### Evidence available from this session
 
-* Local failure evidence provided by the user showed four daily ops-surface failures, all missing `source_attempt_event_type` in daily command output while summary fields were otherwise present.
-* ZIP-level code fix is isolated to:
+* Runtime/manual evidence from the prior session established the trigger for this batch:
+  * `php artisan market-data:backfill 2026-03-02 2026-03-02` failed with `RUN_SOURCE_RATE_LIMIT` / HTTP 429
+  * DB exports showed `eod_run_events` for `run_id=64` already contained persisted attempt-level telemetry for the failed Yahoo request
+  * the expected backfill artifact `source_attempt_telemetry.json` was missing even though the telemetry existed in DB
+* Repo parity for the bounded batch now covers:
+  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
+  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* ZIP-level syntax validation passed:
+  * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
+  * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
+  * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
+  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+
+### Regression feedback received after implementation
+
+* Local validation then exposed one bounded implementation regression and one existing-config drift that had to be corrected before this batch can close:
+  * `exportRunSourceAttemptTelemetry(1001)` was called twice in `MarketDataBackfillServiceTest`, proving the service was reading persisted telemetry once for summary recovery and again for artifact materialization instead of reusing one export per run
+  * the new failed-backfill telemetry artifact path was normalized to forward-slash display form, so the service-level PHPUnit expectation using raw Windows separators had to be aligned with the existing operator-facing normalization rule
+  * three existing integration assertions still expected `source_timeout_seconds=15` even though the active runtime baseline for this source path is now `20`, matching the accepted local runtime evidence
+* The current ZIP includes the corrective follow-up for those findings:
+  * `MarketDataBackfillService` now caches persisted telemetry per `run_id` so one run only exports once and the same payload is reused for summary recovery plus artifact writing
+  * service-level path proof is aligned to the normalized display-path contract
+  * affected integration expectations were updated to the active timeout baseline already observed in runtime/manual evidence
+
+### Latest local validation feedback
+
+* Local syntax validation passed for all touched files.
+* Local targeted PHPUnit validation passed:
+  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (6 tests, 44 assertions)`
+  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (35 tests, 226 assertions)`
+* Local full-suite validation passed:
+  * `vendor\bin\phpunit` → `OK (177 tests, 1858 assertions)`
+* Local runtime/manual validation proved the bounded artifact path works on the failure side:
+  * `php artisan market-data:backfill 2026-03-02 2026-03-02 --output_dir=storage/app/market-data-test` prints `source_attempt_telemetry_artifact=storage/app/market-data-test/source_attempt_telemetry.json` on the failed Yahoo rate-limit path.
+
+### What is still pending
+
+* Nothing remains pending for this bounded backfill telemetry artifact batch.
+* The broader Yahoo source/runtime blocker remains open and unchanged: single-day backfill is still rate-limited at source acquisition level, which is outside this bounded export-gap batch.
+* Project/repo overall remains `PARTIAL` because program-level operational readiness and the Yahoo source/runtime blocker are still not fully resolved.
+
+### Final State
+
+* DONE for this bounded backfill telemetry artifact batch
+* Project/repo overall remains PARTIAL
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Active Checkpoint Consolidation for Daily Telemetry Runtime Artifact
+* Status: DONE
+
+### What was implemented
+
+* Re-audited the uploaded ZIP against the active checkpoint pair, owner docs, and the latest bounded daily telemetry runtime-artifact implementation.
+* Verified the repo already contains the corrective follow-up in `AbstractMarketDataCommand::writeSourceAttemptTelemetryArtifact()` that decouples telemetry export from `--output_dir` while keeping artifact writing gated behind `--output_dir`.
+* Closed audit drift in the active checkpoint files:
+  * the stale `PARTIAL` row for `Daily Source Attempt Telemetry Runtime Artifact` is no longer left open in the active checkpoint pair after the follow-up fix and local PHPUnit proof were already recorded as official evidence;
+  * the active checkpoint files are now reduced to the current authoritative state instead of mixing current state with a long stack of older appended session blocks that already belong in `docs/market_data/audit/histories/**`.
+* No PHP runtime behavior, config/env surface, schema, or contract semantics were changed in this session. The batch is checkpoint/audit consolidation only.
+
+### Evidence available from this session
+
+* Checkpoint-vs-repo revalidation covered:
+  * `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+  * `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
   * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-* Local syntax validation passed:
+  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
+  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* Code evidence present in repo:
+  * `writeSourceAttemptTelemetryArtifact()` now always exports persisted telemetry for command rendering/payload recovery and only writes `source_attempt_telemetry.json` when `--output_dir` exists and attempt rows are present.
+  * ops-surface tests cover both CLI proof and `source_attempt_telemetry.json` materialization for the daily command path.
+* Official local validation evidence already provided from the prior session and still valid for the current source of truth:
   * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
-* Final local PHPUnit validation passed after the follow-up fix:
   * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (35 tests, 225 assertions)`
   * `vendor\bin\phpunit` → `OK (176 tests, 1848 assertions)`
+* Build-guide evidence still unchanged:
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md` still classifies `Operational readiness: PARTIAL` and states the repo is not yet fully production-ready for daily live run.
 
 ### What is still pending
 
-* Nothing remains pending for this bounded follow-up fix.
-* Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
+* No bounded implementation gap remains open for the daily telemetry runtime-artifact contract.
+* Project/repo overall remains `PARTIAL` because the remaining open concern is program-level operational readiness proof, not an unclosed code/test/doc drift inside this batch.
+* The next batch should be opened only from a concrete owner-doc-backed operational-readiness gap or fresh runtime/manual evidence.
 
 ### Final State
 
-* DONE for this follow-up fix
+* DONE for this checkpoint-consolidation batch
 * Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Daily Source Attempt Telemetry Runtime Artifact
-* Status: PARTIAL
-
-### What was implemented
-
-* Re-audited the uploaded ZIP against the checkpoint pair, owner docs, and the still-open operational-readiness lane in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
-* Selected one bounded batch from that lane: strengthen local runtime proof for the daily operator path by persisting bounded source-attempt telemetry beside the existing daily summary artifact when telemetry already exists for the run.
-* Updated `AbstractMarketDataCommand` with bounded helpers to export persisted run source-attempt telemetry once, normalize any optional operator-facing path fields, and materialize `source_attempt_telemetry.json` only when attempt-level telemetry actually exists.
-* Updated `DailyPipelineCommand` so both success and recovered-failure `--output_dir` paths can write `source_attempt_telemetry.json` and print `source_attempt_telemetry_artifact=...` without changing pipeline, finalize, publication, or fallback semantics.
-* Expanded ops-surface PHPUnit coverage for the bounded behavior:
-  * success-path proof that `market-data:daily` writes `source_attempt_telemetry.json` when attempt telemetry exists
-  * recovered-failure proof that the same artifact is produced on the daily operator path after a thrown pipeline run when the persisted failed run already has attempt telemetry
-* Synced the locked resilience/ops docs so the bounded daily runtime-artifact rule exists in docs, code, and tests together.
-
-### Evidence available from this session
-
-* Repo parity for the bounded batch covers:
-  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-* ZIP-level re-audit confirms the batch stays inside daily operator runtime proof only; no source acquisition, finalize, publication, correction, or backfill semantics were widened.
-* Local syntax validation passed:
-  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-
-### What is still pending
-
-* PHPUnit/manual local validation is still required because the uploaded ZIP does not include `vendor/`, so this session cannot honestly claim command-surface or full-suite pass.
-* Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
-
-### Final State
-
-* PARTIAL for this batch pending local PHPUnit/manual validation
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Daily Source Attempt Telemetry Operator Proof
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded ZIP against the checkpoint pair, owner docs, and the still-open degraded-source daily operator-proof lane.
-* Selected one bounded batch from that lane: expose persisted source-attempt telemetry proof on the `market-data:daily` operator surface and daily summary artifact when run notes are too thin.
-* Updated `AbstractMarketDataCommand` so thin-note telemetry recovery now also carries bounded retry-proof fields `source_attempt_event_type` and `source_attempt_count` into daily CLI rendering and `market_data_daily_summary.json`.
-* Expanded PHPUnit coverage for the bounded behavior:
-  * daily CLI success/failure proof that recovered thin-note telemetry renders the bounded retry-proof fields
-  * daily summary artifact proof that the same fields are persisted only when recovered telemetry exists, while existing thick-note cases stay unchanged
-* Synced the locked resilience/ops docs so the bounded daily operator-proof rule exists in docs, code, and tests together.
-* Corrected the two failing ops-surface tests by explicitly binding `EodEvidenceRepository::exportRunSourceAttemptTelemetry()` in the cases that were supposed to exercise thin-note telemetry recovery.
-
-### Evidence available from this session
-
-* Repo parity for the bounded batch covers:
-  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-* ZIP-level re-audit confirms the batch stays inside bounded daily operator proof only; no source acquisition, finalize, publication, or backfill semantics were widened.
-* Local syntax validation passed:
-  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-* Final local PHPUnit validation passed after the corrective test wiring fix:
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (33 tests, 210 assertions)`
-  * `vendor\bin\phpunit` → `OK (174 tests, 1833 assertions)`
-
-### What is still pending
-
-* Nothing remains pending for this bounded batch.
-* Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Backfill Source Attempt Telemetry Operator Proof
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded ZIP against the checkpoint pair, owner docs, and the still-open degraded-source fallback/rerun operator-proof lane in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
-* Selected one bounded batch from that lane: expose bounded source-attempt retry proof on the backfill operator surface without changing backfill execution semantics.
-* Updated `MarketDataBackfillService` so each backfill case now carries `source_attempt_event_type` and `source_attempt_count` when persisted source-attempt telemetry exists for the run.
-* Updated `market-data:backfill` command rendering so those bounded retry-proof fields appear in operator-visible per-date lines before the compressed `source_summary` field.
-* Expanded PHPUnit coverage for the bounded behavior:
-  * service-level proof that backfill summary payloads and persisted `market_data_backfill_summary.json` include `source_attempt_event_type` / `source_attempt_count` when telemetry exists, and stay absent when only run notes are available
-  * command-surface proof that `market-data:backfill` prints the same bounded retry-proof fields on success-case operator output
-* Synced the locked ops runbook so backfill operator proof explicitly allows these bounded retry-proof fields from persisted source-attempt telemetry.
-* Closed the batch after local validation confirmed the bounded change and no broader market-data regression.
-
-### Evidence available from this session
-
-* Repo parity for the bounded batch covers:
-  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
-  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
-  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-* ZIP-level re-audit confirms the batch stays inside degraded-source/rerun operator proof only; no publishability, finalize, or source acquisition semantics were widened.
-* Local syntax validation passed:
-  * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
-  * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-* Local PHPUnit validation passed:
-  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (5 tests, 35 assertions)`
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (31 tests, 188 assertions)`
-  * `vendor\bin\phpunit` → `OK (172 tests, 1811 assertions)`
-
-### What is still pending
-
-* Nothing remains pending for this bounded batch.
-* Project/repo overall remains `PARTIAL` because program-level live operational readiness is still not fully proven in the build guide.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Run Evidence Manual Source Input File Normalization
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded ZIP against the checkpoint pair, owner docs, and the remaining operational-readiness lane in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
-* Selected one bounded follow-up batch from the degraded-source/operator-proof lane: normalize manual `source_input_file` inside run-evidence export surfaces so exported proof does not drift by OS path separator.
-* Normalized manual `source_input_file` for run evidence in `MarketDataEvidenceExportService`, covering returned summary payloads plus persisted `run_summary.json`, `evidence_pack.json`, and `source_attempt_telemetry.json` when that field is present.
-* Extended PHPUnit coverage for the bounded behavior:
-  * service-level proof for normalized manual `source_input_file` in exported run-evidence artifacts
-  * command-surface proof for `market-data:evidence:export` summary output showing normalized forward-slash manual paths
-* Synced the locked ops runbook so exported run-evidence source context explicitly inherits the same forward-slash normalization rule for manual `source_input_file` proof.
-* Closed the batch after local validation confirmed the bounded change and no broader market-data regression.
-
-### Evidence available from this session
-
-* Repo parity for the bounded batch covers:
-  * `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
-  * `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-* Local syntax validation passed:
-  * `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → PASS
-  * `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-* Local PHPUnit validation passed:
-  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → `OK (2 tests, 52 assertions)`
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (31 tests, 188 assertions)`
-  * `vendor\bin\phpunit` → `OK (172 tests, 1803 assertions)`
-
-### What is still pending
-
-* Nothing remains pending for this bounded batch.
-* Project/repo overall remains `PARTIAL` because program-level operational readiness in the build guide is still not fully proven.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Backfill Manual Source Input File Artifact Normalization
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded ZIP against the active checkpoint pair, the owner-doc resilience lane, and the current repo surface after tracker terminal-state alignment.
-* Selected one new bounded batch from the still-open operational-readiness lane in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`: close remaining degraded-source/rerun operator-proof drift on the persisted backfill summary artifact.
-* Normalized `source_input_file` in `MarketDataBackfillService` before the service writes `market_data_backfill_summary.json`, so manual fallback/rerun proof now stays deterministic in both returned summary payloads and persisted summary artifacts.
-* Added focused PHPUnit coverage for the new bounded behavior, including an explicit Windows-style manual-file path case that proves forward-slash normalization in the backfill summary artifact.
-* Synced the locked ops runbook so the backfill summary artifact is explicitly included in the already-existing forward-slash normalization rule for operator-facing `source_input_file` proof.
-* Closed the batch after local validation confirmed the bounded change and no broader market-data regression.
-
-### Evidence available from this session
-
-* Repo parity for the bounded batch covers:
-  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
-  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-* Local syntax validation passed:
-  * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
-  * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
-* Local PHPUnit validation passed:
-  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (5 tests, 27 assertions)`
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
-  * `vendor\bin\phpunit` → `OK (171 tests, 1799 assertions)`
-* Code/doc alignment for this batch is now bounded and explicit: the backfill summary artifact no longer preserves platform-native manual-file separators when it echoes operator-facing `source_input_file` values.
-
-### What is still pending
-
-* Nothing remains pending for this bounded batch.
-* Project/repo overall still remains `PARTIAL` because program-level live operational readiness is still not fully proven in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Tracker Terminal State Alignment Audit
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded ZIP against the active checkpoint pair and the repo surface referenced by the latest replay/path-normalization batches.
-* Verified the current tracker no longer contains any active `PARTIAL`, `BLOCKED`, or `DOC GAP` batch rows; every recorded market-data implementation batch in the tracker is already closed as `DONE` or `CLOSED`.
-* Closed checkpoint drift at the audit layer by making the checkpoint pair say the same thing explicitly: the tracked implementation batches are closed, while the repo overall still remains `PARTIAL` only because the build guide still classifies live operational readiness as not yet fully proven.
-* No PHP/runtime/config/test surface was changed in this session. This batch is audit/checkpoint alignment only.
-
-### Evidence available from this session
-
-* Repo/checkpoint parity revalidation from the uploaded ZIP covered the currently referenced implementation surface, including:
-  * `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
-  * `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
-  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
-  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-* Tracker scan result from the current ZIP: no remaining batch entry is marked `PARTIAL`, `BLOCKED`, or `DOC GAP`.
-* The build guide still says `Operational readiness: PARTIAL` and `BELUM boleh dianggap fully production-ready untuk daily live run`, so repo overall cannot be promoted to `SELESAI` from checkpoint closure alone.
-
-### What is still pending
-
-* No tracked implementation batch remains open inside `LUMEN_CONTRACT_TRACKER.md` as of this audit pass.
-* Repo overall remains `PARTIAL` because live operational readiness proof is still an open program-level concern in `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`, not because of an unclosed tracker batch in the current checkpoint file.
-* The next session should only open a new batch after selecting a concrete owner-doc-backed operational-readiness scope; it should not pretend that an old tracker batch is still open when the tracker already shows closure.
-
-### Final State
-
-* DONE for this checkpoint-alignment batch
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Replay Smoke Follow-up Checkpoint Closure
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded ZIP against the active replay follow-up checkpoint and verified the repo already contains the final bounded repair for replay-smoke mismatch rows.
-* Closed the remaining checkpoint drift between audit docs:
-  * `ReplaySmokeSuiteCommand` already limits fallback `fixture_path` derivation to successful rows with the required replay identity context.
-  * `OpsCommandSurfaceTest` already proves mismatch rows render without derived `fixture_path` while successful rows still keep the normalized success-path proof.
-  * `LUMEN_CONTRACT_TRACKER.md` is now synced so this replay follow-up batch is no longer left marked `PARTIAL` after the verified repair landed.
-* No runtime semantics, service contracts, env/config surface, or filesystem behavior were changed in this session. The batch is audit/checkpoint closure only.
-
-### Evidence available from this session
-
-* Repo/code parity revalidation from the uploaded ZIP:
-  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-* Verified repo behavior matches the previously recorded local validation already captured by the checkpoint family:
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
-  * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
-* Drift closed in docs only: implementation status and contract tracker now describe the same final state for the replay follow-up repair.
-
-### What is still pending
-
-* Nothing remains pending for the replay-smoke mismatch follow-up batch.
-* Project/repo overall remains PARTIAL because broader operational-readiness work is still outside this closed checkpoint repair.
-
-### Final State
-
-* DONE for this checkpoint-closure batch
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Replay Fixture Path Display Normalization Follow-up Repair
-* Status: DONE
-
-### What was implemented
-
-* Closed the replay operator-surface follow-up repair and the final replay-smoke mismatch surface drift without widening runtime semantics.
-* `ReplaySmokeSuiteCommand` now derives fallback `fixture_path` only for successful replay rows that already have the minimum replay identity context.
-* `ReplayBackfillCommand` keeps bounded fallback rendering for `fixture_root`, `fixture_path`, and successful-case `evidence_output_dir` when the mocked/service summary omits those fields.
-* `OpsCommandSurfaceTest` stale fallback expectation was corrected to match the real normalized operator input and the final replay-smoke mismatch expectation is now aligned with the locked ops surface.
-
-### Evidence available from this session
-
-* Local validation from the uploaded run closed the remaining replay proof drift:
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
-  * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
-* The batch remains display-only and bounded to replay operator proof. No fixture resolution semantics, evidence export targets, filesystem write targets, or env/config contracts were changed.
-
-### What is still pending
-
-* Nothing remains pending inside this follow-up repair batch.
-
-### Final State
-
-* DONE for this follow-up repair batch
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Replay Fixture Path Display Normalization
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap inside the existing operator-proof determinism lane: replay operator surfaces still mixed raw platform-native fixture/evidence paths into CLI and summary-artifact proof.
-* Normalized replay operator-facing path values to forward-slash display form without changing real fixture resolution or filesystem write targets:
-  * `ReplaySmokeSuiteService` now writes normalized `fixture_root`, per-case `fixture_path`, and per-case `evidence_output_dir` into `replay_smoke_suite_summary.json`.
-  * `ReplayBackfillService` now writes normalized `fixture_root`, `fixture_path`, and per-date `evidence_output_dir` into `market_data_replay_backfill_summary.json`.
-  * `VerifyReplayCommand` now surfaces operator-facing `fixture_path` explicitly and renders it in normalized display form.
-  * `ReplaySmokeSuiteCommand` now renders normalized per-case `fixture_path` in addition to the already normalized artifact path lines.
-  * `ReplayBackfillCommand` now renders normalized `fixture_root`, `fixture_path`, and per-date `evidence_output_dir` when present in the service summary.
-* Added/updated PHPUnit coverage so replay service artifacts and replay CLI operator output can prove Windows-style path inputs normalize deterministically while actual service invocations still use the raw runtime paths.
-* Synced owner ops docs so replay fixture/evidence proof paths are explicitly part of the deterministic operator-proof contract rather than an implicit convention.
-
-### Drift / gap that was found
-
-* Previous path-normalization batches closed artifact output paths and manual-file proof paths, but replay fixture-oriented proof still carried raw platform-native separators in summary artifacts and some CLI surfaces.
-* That meant the same replay smoke/backfill/verify operator proof could still drift across Windows and non-Windows environments even when replay behavior and evidence content were identical.
-
-### Evidence available from this session
-
-* Code inspection parity shows replay services normalize only operator-facing summary payload fields after filesystem/evidence operations are resolved; runtime fixture lookup and write targets remain unchanged.
-* ZIP-local syntax proof:
-  * `php -l app/Application/MarketData/Services/ReplaySmokeSuiteService.php` → PASS
-  * `php -l app/Application/MarketData/Services/ReplayBackfillService.php` → PASS
-  * `php -l app/Console/Commands/MarketData/VerifyReplayCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/ReplayBackfillCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-  * `php -l tests/Unit/MarketData/ReplaySmokeSuiteServiceTest.php` → PASS
-  * `php -l tests/Unit/MarketData/ReplayBackfillServiceTest.php` → PASS
-* Added repo proof surface:
-  * `app/Application/MarketData/Services/ReplaySmokeSuiteService.php`
-  * `app/Application/MarketData/Services/ReplayBackfillService.php`
-  * `app/Console/Commands/MarketData/VerifyReplayCommand.php`
-  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
-  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-  * `tests/Unit/MarketData/ReplaySmokeSuiteServiceTest.php`
-  * `tests/Unit/MarketData/ReplayBackfillServiceTest.php`
-* Companion docs synced with the replay-proof normalization rule:
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-
-### What is still pending
-
-* Local validation is now complete for the replay normalization batch:
-  * `vendor\bin\phpunit tests/Unit/MarketData/ReplaySmokeSuiteServiceTest.php` → `OK (1 test, 10 assertions)`
-  * `vendor\bin\phpunit tests/Unit/MarketData/ReplayBackfillServiceTest.php` → `OK (2 tests, 9 assertions)`
-  * replay-ops surface proof was then closed by the follow-up repairs and final local validation:
-    * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
-    * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Manual File Path Display Normalization
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap still inside the partial operator-proof/resilience family: operator-facing manual-file path lines were still emitted in platform-native form even after artifact-path display had already been normalized.
-* Normalized operator-facing `input_file` / `source_input_file` rendering to forward-slash display form across the daily/backfill operator surfaces without changing configured runtime input targets or note persistence semantics.
-* Kept the change bounded to operator-proof surfaces only:
-  * `DailyPipelineCommand` now normalizes displayed manual `input_file` and the daily summary artifact payload field written for local proof.
-  * `AbstractMarketDataCommand` now normalizes displayed and artifact-exported `source_input_file` when run summaries are rendered from run notes or recovered run context.
-  * `BackfillMarketDataCommand` now normalizes displayed per-date `source_input_file` values in command output.
-* Added PHPUnit coverage for Windows-style manual-file paths so CLI rendering and the daily summary artifact both prove normalized operator-facing path values while underlying configured input paths remain unchanged during execution.
-* Synced owner/ops docs so manual-file path display normalization is explicit in the operator-proof contract instead of remaining an implicit implementation detail.
-
-### Drift / gap that was found
-
-* The previous batch closed path normalization only for artifact output locations such as `output_dir`, `summary_artifact`, and `evidence_output_dir`.
-* Manual-file proof lines (`input_file` and `source_input_file`) were still printed directly from operator options or persisted notes.
-* That meant the same fallback/manual-file proof could still drift between Windows and non-Windows terminals and inside `market_data_daily_summary.json` even when the real runtime behavior was identical.
-
-### Evidence available from this session
-
-* Code inspection parity shows operator-facing manual-file path output is now normalized through the shared display helper while runtime configuration and persisted note values stay untouched.
-* ZIP-local syntax proof:
-  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-* Local PHPUnit/manual validation received after follow-up verification:
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `30 tests, 178 assertions`
-  * `vendor\bin\phpunit` → `170 tests, 1784 assertions`
-* Added repo proof surface:
-  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
-  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-* Companion docs synced with the manual-file display-normalization rule:
-  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-
-### What is still pending
-
-* Nothing remains pending inside this batch after local validation was provided.
-* Family-level `External Source Operational Resilience` remains partial beyond this closed batch because broader live-source runtime proof and future operator/dashboard hardening are still outside this session scope.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL
-
-
-# LUMEN_IMPLEMENTATION_STATUS.md
-
-## SESSION UPDATE
-
-* Batch: Operator Artifact Path Display Normalization
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap still inside the partially implemented operator-proof/resilience family: several ops commands still printed platform-native artifact paths even after the daily command had already been hardened to forward-slash display form.
-* Normalized operator-facing artifact path output across the remaining command surface without changing real filesystem write targets:
-  * `market-data:backfill`
-  * `market-data:evidence:export`
-  * `market-data:session-snapshot`
-  * `market-data:session-snapshot:purge`
-  * `market-data:replay:smoke`
-  * `market-data:replay:verify`
-  * `market-data:replay:backfill`
-* Reused `AbstractMarketDataCommand::normalizePathForDisplay()` instead of adding a parallel path-normalization utility or changing service-layer return payload semantics.
-* Narrowly aligned `CaptureSessionSnapshotCommand` and `PurgeSessionSnapshotCommand` to the same shared command base so the display-only normalization behavior stays consistent across operator commands.
-* Extended ops-surface PHPUnit coverage to exercise Windows-style artifact paths and verify normalized forward-slash rendering for command output while leaving service call inputs and file-write semantics intact.
-* Repaired the only regression surfaced by local validation: one backfill assertion in `OpsCommandSurfaceTest` still expected a replay-smoke output path even though the command under test correctly renders the normalized backfill path.
-* Synced the runbook so deterministic local proof explicitly requires normalized operator-facing artifact path display across Windows and non-Windows environments.
-
-### Drift / gap that was found
-
-* The recent daily artifact repair fixed Windows-path drift only for `market-data:daily`.
-* Other ops commands still echoed raw platform-native `output_dir` / `evidence_output_dir` values, which means the same local proof workflow could still drift between Windows and non-Windows terminals depending on which command the operator used.
-* Local follow-up PHPUnit then exposed one test-level regression in the new coverage: the backfill test carried a stale `replay-smoke` expectation unrelated to the command output being asserted.
-
-### Evidence available from this session
-
-* Code inspection parity shows the affected commands now normalize operator-facing artifact path lines via the shared display helper, while service inputs and write targets remain unchanged.
-* ZIP-local syntax proof:
-  * `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/ExportEvidenceCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/CaptureSessionSnapshotCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/PurgeSessionSnapshotCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/ReplayBackfillCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/VerifyReplayCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-* Local PHPUnit/manual validation received after the targeted repair:
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 172 assertions`
-  * `vendor\bin\phpunit` → `169 tests, 1778 assertions`
-* Added repo proof surface:
-  * `app/Console/Commands/MarketData/BackfillMarketDataCommand.php`
-  * `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
-  * `app/Console/Commands/MarketData/CaptureSessionSnapshotCommand.php`
-  * `app/Console/Commands/MarketData/PurgeSessionSnapshotCommand.php`
-  * `app/Console/Commands/MarketData/ReplayBackfillCommand.php`
-  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
-  * `app/Console/Commands/MarketData/VerifyReplayCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-* Companion docs synced with the display-normalization rule:
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-
-### What is still pending
-
-* Nothing remains pending inside this batch.
-* Family-level `External Source Operational Resilience` still remains partial beyond this closed batch because broader live-source runtime proof and future operator/dashboard hardening are still outside this session scope.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL
-
-
-
-## SESSION UPDATE
-
-* Batch: Daily Operator Summary Artifact Export
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap still inside the partial `External Source Operational Resilience` family: operator runtime proof for `market-data:daily` still depended on terminal copy/paste even though the command already rendered the minimum run/source context.
-* Extended `DailyPipelineCommand` with optional `--output_dir` support so the daily operator path now writes a deterministic `market_data_daily_summary.json` artifact on both the normal success path and the recovered failure path.
-* Kept the artifact bounded to existing command-visible facts only: run identity, requested/effective date when available, lifecycle/terminal/publishability fields, coverage fields, source context minimum, notes/reason code, and `error_message` on the recovered failure path.
-* Reused the existing operator-summary parsing/recovery flow in `AbstractMarketDataCommand` instead of introducing a parallel persistence shape or new resilience contract outside the current operator surface.
-* Added Ops command PHPUnit coverage for both artifact-writing paths so success-side and recovered-failure daily runs prove the new artifact content and path rendering.
-* Synced owner/ops docs so optional daily artifact export is explicit as a local runtime proof aid, not an implicit implementation detail.
-
-### Drift / gap that was found
-
-* The repo already surfaced minimum source context to the CLI for daily/backfill/evidence flows, but the main `market-data:daily` operator path still had no deterministic summary artifact for runtime validation.
-* That meant live/local source resilience proof still depended on manual terminal capture even when the command already knew the exact bounded summary fields that operators need.
-
-### Evidence available from this session
-
-* Code inspection parity shows `market-data:daily --output_dir=...` now writes `market_data_daily_summary.json` for both success and recovered failure paths using the same bounded run/source summary already rendered to the console.
-* Local syntax proof from the ZIP environment:
-  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-* Local PHPUnit/manual validation received after follow-up regression repair:
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 169 assertions`
-  * `vendor\bin\phpunit` → `169 tests, 1775 assertions`
-* Added repo proof surface:
-  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-* Companion docs synced with the bounded artifact behavior:
-  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-
-### What is still pending
-
-* PHPUnit/local runtime proof has now been provided from local validation and is recorded below.
-* Family-level `External Source Operational Resilience` remains partial beyond this batch because live-source runtime proof and broader operator/dashboard hardening are still outside this session scope.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL because additional tracker items outside this batch are still open
-
-
-## SESSION UPDATE
-
-* Batch: Operator Command Source Context Recovery From Attempt Telemetry
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap inside the still-partial `External Source Operational Resilience` family: daily operator command summary still trusted `eod_runs.notes` only, even when richer attempt telemetry was already persisted in `eod_run_events`.
-* Extended `AbstractMarketDataCommand` so operator-visible source context now builds from normalized notes first and only falls back to persisted attempt telemetry when the minimum API source context is still thin.
-* Recovery stays bounded and non-inventive: it only fills missing minimum fields already present in persisted attempt telemetry (`source_name`, `provider`, `timeout_seconds`, `retry_max`, `attempt_count`, `final_reason_code`, plus optional `success_after_retry` / `final_http_status` when available).
-* Kept the scope narrow by reusing the existing `EodEvidenceRepository::exportRunSourceAttemptTelemetry()` path instead of introducing a new telemetry contract or separate operator-only persistence shape.
-* Added Ops command PHPUnit coverage for both the normal daily summary path and the exception-recovery path when notes only contain `source_name` but persisted attempt telemetry carries the rest of the minimum resilience context.
-* Synced owner/ops docs so telemetry-backed recovery is explicit for the daily operator summary surface instead of remaining an implicit implementation detail.
-
-### Drift / gap that was found
-
-* Evidence export and backfill summary were already hardened in prior batches, but the daily operator command still degraded to a thin or blank `source_summary` whenever persisted run notes were sparse.
-* That left the most immediate operator-facing CLI surface weaker than the already-persisted attempt trail for the same run family, even though both surfaces belong to the same bounded resilience contract.
-
-### Evidence available from this session
-
-* Code inspection parity shows operator command source summary now merges missing minimum source context from persisted attempt telemetry before rendering CLI output.
-* Local syntax proof from the ZIP environment:
-  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-* Local PHPUnit proof received after manual validation:
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `27 tests, 148 assertions`
-  * `vendor\bin\phpunit` → `167 tests, 1754 assertions`
-* Added repo proof surface:
-  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-* Companion docs synced with the bounded recovery behavior:
-  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-
-### What is still pending
-
-* Nothing remains pending inside this batch.
-* Family-level `External Source Operational Resilience` still remains partial beyond this batch because live-source runtime proof and broader operator/dashboard hardening are outside this session scope.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL because additional tracker items outside this batch are still open
-
-
-## SESSION UPDATE
-
-* Batch: Backfill Source Context Recovery From Attempt Telemetry
-* Status: DONE
-
-### What was implemented
-
-* Re-audited the uploaded repo against the active checkpoint and selected one narrow follow-up gap inside the still-partial `External Source Operational Resilience` family: backfill summary still trusted `eod_runs.notes` only, even when richer attempt telemetry was already persisted in `eod_run_events`.
-* Extended `MarketDataBackfillService` so backfill summary now merges missing minimum source-context fields from persisted attempt telemetry before writing each case into `market_data_backfill_summary.json`.
-* Recovery stays bounded and non-inventive: it only fills missing minimum fields already present in persisted attempt telemetry (`source_name`, `provider`, `timeout_seconds`, `retry_max`, `attempt_count`, `success_after_retry`, `final_http_status`, and `final_reason_code`).
-* Kept constructor compatibility by adding the evidence dependency as an optional fourth argument, so existing call sites that only pass calendar/pipeline or calendar/pipeline/runs keep working.
-* Added PHPUnit coverage for the thin-notes path so backfill summary proves operator-facing `source_summary` still works when `notes` only contain `source_name` but attempt telemetry carries the rest of the minimum resilience context.
-* Synced owner/ops docs so telemetry-backed recovery is explicit for the backfill summary surface instead of remaining an implicit implementation detail.
-* Repaired the follow-up regression found during the first local PHPUnit run by updating backfill source-summary rendering to read the canonical merged keys after telemetry normalization.
-
-### Drift / gap that was found
-
-* Evidence export was already hardened in the previous batch, but `MarketDataBackfillService` still degraded to a thin or blank `source_summary` whenever persisted run notes were sparse.
-* That left the backfill operator artifact weaker than the already-persisted attempt trail for the same run family, even though both surfaces belong to the same bounded resilience contract.
-* The first local PHPUnit run then exposed one implementation regression: `source_summary` rendering still expected note-style keys after telemetry merge had already normalized the source context.
-
-### Evidence available from this session
-
-* Code inspection parity shows backfill summary now recovers missing minimum source context from persisted attempt telemetry before returning cases and before writing `market_data_backfill_summary.json`.
-* Local syntax proof:
-  * `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` → PASS
-  * `php -l tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → PASS
-* Local PHPUnit proof after the regression repair:
-  * `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `4 tests, 24 assertions`
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `25 tests, 140 assertions`
-  * `vendor\bin\phpunit --filter test_backfill_api_success_after_retry_writes_source_context_per_date_in_summary_artifact tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → `1 test, 7 assertions`
-  * `vendor\bin\phpunit` → `165 tests, 1746 assertions`
-* Added repo proof surface:
-  * `app/Application/MarketData/Services/MarketDataBackfillService.php`
-  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
-* Companion docs synced with the bounded recovery behavior:
-  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
-  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
-
-### What is still pending
-
-* Nothing remains pending inside this batch.
-* Family-level `External Source Operational Resilience` still remains partial beyond this batch because live-source runtime proof and broader operator/dashboard hardening are outside this session scope.
-
-### Final State
-
-* DONE for this batch
-* Project/repo overall remains PARTIAL because additional tracker items outside this batch are still open
-
-
-## SESSION UPDATE
-
-* Batch: Daily Operator Summary Artifact Export Regression Repair
-* Status: DONE
-
-### What was implemented
-
-* Repaired the regression surfaced by the latest local validation for the daily operator summary artifact batch.
-* Eliminated duplicate source-attempt telemetry reads in `DailyPipelineCommand` by computing source context once per run and reusing it for both console rendering and JSON artifact payload generation.
-* Normalized displayed `output_dir` and `summary_artifact` paths to forward-slash form so operator output stays stable across Windows and non-Windows environments while the actual file write path remains unchanged.
-* Kept the bounded contract intact: no new config/env, no new artifact name, no change to persisted payload semantics beyond reuse of already-derived source context.
-
-### Drift / gap found from manual validation
-
-* Latest local PHPUnit run showed `exportRunSourceAttemptTelemetry()` was called twice in two ops-surface tests after the artifact export addition.
-* The same validation also showed `summary_artifact=` output used platform-native backslashes on Windows, while the tests and operator surface expect normalized forward-slash output.
-* Manual artisan proof still created the artifact file, so the issue was output consistency and duplicated telemetry lookup, not missing artifact generation.
-
-### Evidence available from this session
-
-* User-supplied local validation captured the exact failing surfaces: duplicate telemetry calls and Windows path separator mismatch in `summary_artifact=` output.
-* Repo repair applied in:
-  * `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-  * `app/Console/Commands/MarketData/DailyPipelineCommand.php`
-  * `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
-* Local syntax proof from ZIP-only validation:
-  * `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` → PASS
-  * `php -l app/Console/Commands/MarketData/DailyPipelineCommand.php` → PASS
-* Local proof received after repair:
-  * `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `29 tests, 169 assertions`
-  * `vendor\bin\phpunit` → `169 tests, 1775 assertions`
-
-### What is still pending
-
-* Nothing remains pending inside this repair batch.
-* The repaired batch is now covered by local targeted and full-project PHPUnit proof.
-
-### Final State
-
-* DONE for this repair batch
-* Project/repo overall remains PARTIAL
-
-## 2026-04-09 — Replay Smoke Mismatch Surface Follow-up Repair
-
-* Batch: Replay Smoke Mismatch Surface Follow-up Repair
-* Status: DONE
-
-### What was implemented
-
-* Repaired the last remaining replay smoke operator-surface drift exposed by local PHPUnit.
-* Tightened fallback `fixture_path` rendering in `ReplaySmokeSuiteCommand` so it is only derived for successful case rows that already carry the minimum replay identity fields.
-* This keeps the success-path proof explicit while preserving the older mismatch/error surface expected by the locked ops test contract.
-
-### Drift / gap found from manual validation
-
-* Local validation after the telemetry recovery batch showed the repo was down to exactly one failure in `OpsCommandSurfaceTest` and the same one failure in full PHPUnit.
-* The remaining failure was a display-only drift: mismatch rows still rendered derived `fixture_path`, while the ops-surface test contract expected mismatch output without that fallback field.
-
-### Evidence available from this session
-
-* Repo repair applied in:
-  * `app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php`
-* ZIP-only syntax proof:
-  * `php -l app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php` → PASS
-* User local validation then confirmed:
-  * `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → `OK (30 tests, 184 assertions)`
-  * `vendor\bin\phpunit` → `OK (170 tests, 1796 assertions)`
-
-### What is still pending
-
-* Nothing additional for this repair batch
-
-### Final State
-
-* DONE for this repair batch
-* Project/repo overall remains PARTIAL
-

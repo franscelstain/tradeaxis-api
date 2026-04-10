@@ -13,6 +13,7 @@ class MarketDataBackfillService
     private $pipeline;
     private $runs;
     private $evidence;
+    private $sourceAttemptTelemetryCache = [];
 
     public function __construct(MarketCalendarRepository $calendar, MarketDataPipelineService $pipeline, EodRunRepository $runs = null, EodEvidenceRepository $evidence = null)
     {
@@ -38,6 +39,7 @@ class MarketDataBackfillService
         }
 
         $cases = [];
+        $telemetryCases = [];
         $allPassed = true;
 
         foreach ($dates as $requestedDate) {
@@ -56,6 +58,11 @@ class MarketDataBackfillService
                     'publishability_state' => (string) $run->publishability_state,
                     'trade_date_effective' => $run->trade_date_effective !== null ? (string) $run->trade_date_effective : null,
                 ] + $this->buildSourceContextFromRun($run);
+
+                $telemetryCase = $this->buildSourceAttemptTelemetryCase($requestedDate, $run);
+                if ($telemetryCase !== null) {
+                    $telemetryCases[] = $telemetryCase;
+                }
 
                 if (! $passed && ! $continueOnError) {
                     break;
@@ -77,6 +84,11 @@ class MarketDataBackfillService
                         'publishability_state' => (string) $failedRun->publishability_state,
                         'trade_date_effective' => $failedRun->trade_date_effective !== null ? (string) $failedRun->trade_date_effective : null,
                     ], $this->buildSourceContextFromRun($failedRun));
+
+                    $telemetryCase = $this->buildSourceAttemptTelemetryCase($requestedDate, $failedRun);
+                    if ($telemetryCase !== null) {
+                        $telemetryCases[] = $telemetryCase;
+                    }
                 }
 
                 $cases[] = $case;
@@ -86,6 +98,8 @@ class MarketDataBackfillService
                 }
             }
         }
+
+        $telemetryArtifactPath = $this->writeSourceAttemptTelemetryArtifact($outputDir, $startDate, $endDate, $sourceMode, $telemetryCases);
 
         $summary = [
             'suite' => 'market_data_backfill_minimum',
@@ -98,6 +112,7 @@ class MarketDataBackfillService
             'all_passed' => $allPassed,
             'cases' => $cases,
             'output_dir' => $outputDir,
+            'source_attempt_telemetry_artifact' => $telemetryArtifactPath,
         ];
 
         file_put_contents(
@@ -106,6 +121,53 @@ class MarketDataBackfillService
         );
 
         return $summary;
+    }
+
+
+    private function buildSourceAttemptTelemetryCase($requestedDate, $run)
+    {
+        $sourceAttemptTelemetry = $this->buildSourceAttemptTelemetryForRun($run);
+        if (! is_array($sourceAttemptTelemetry) || $sourceAttemptTelemetry === []) {
+            return null;
+        }
+
+        if (! isset($sourceAttemptTelemetry['attempts']) || ! is_array($sourceAttemptTelemetry['attempts']) || $sourceAttemptTelemetry['attempts'] === []) {
+            return null;
+        }
+
+        return [
+            'requested_date' => (string) $requestedDate,
+            'run_id' => isset($run->run_id) ? (int) $run->run_id : null,
+            'terminal_status' => isset($run->terminal_status) ? (string) $run->terminal_status : null,
+            'publishability_state' => isset($run->publishability_state) ? (string) $run->publishability_state : null,
+            'telemetry' => $sourceAttemptTelemetry,
+        ];
+    }
+
+    private function writeSourceAttemptTelemetryArtifact($outputDir, $startDate, $endDate, $sourceMode, array $telemetryCases)
+    {
+        if ($outputDir === null || trim((string) $outputDir) === '' || $telemetryCases === []) {
+            return null;
+        }
+
+        $artifact = [
+            'suite' => 'market_data_backfill_minimum',
+            'range' => [
+                'start_date' => (string) $startDate,
+                'end_date' => (string) $endDate,
+            ],
+            'source_mode' => $sourceMode,
+            'cases' => $telemetryCases,
+        ];
+
+        $path = $outputDir.'/source_attempt_telemetry.json';
+
+        file_put_contents(
+            $path,
+            json_encode($artifact, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+        );
+
+        return $this->normalizeOptionalPathForDisplay($path);
     }
 
     private function buildSourceContextFromRun($run)
@@ -158,9 +220,14 @@ class MarketDataBackfillService
             return null;
         }
 
-        $telemetry = $this->evidence->exportRunSourceAttemptTelemetry((int) $run->run_id);
+        $runId = (int) $run->run_id;
 
-        return $telemetry === [] ? null : $telemetry;
+        if (! array_key_exists($runId, $this->sourceAttemptTelemetryCache)) {
+            $telemetry = $this->evidence->exportRunSourceAttemptTelemetry($runId);
+            $this->sourceAttemptTelemetryCache[$runId] = $telemetry === [] ? null : $telemetry;
+        }
+
+        return $this->sourceAttemptTelemetryCache[$runId];
     }
 
     private function mergeSourceContextFromTelemetry(array $sourceContext, $sourceAttemptTelemetry)

@@ -44,6 +44,7 @@ class OpsCommandSurfaceTest extends TestCase
                 'source_mode' => 'manual_file',
                 'all_passed' => true,
                 'output_dir' => 'C:\\tmp\\backfill',
+                'source_attempt_telemetry_artifact' => 'C:\\tmp\\backfill\\source_attempt_telemetry.json',
                 'cases' => [
                     [
                         'requested_date' => '2026-03-17',
@@ -83,6 +84,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('source_mode=manual_file', $display);
         $this->assertStringContainsString('all_passed=1', $display);
         $this->assertStringContainsString('output_dir=C:/tmp/backfill', $display);
+        $this->assertStringContainsString('source_attempt_telemetry_artifact=C:/tmp/backfill/source_attempt_telemetry.json', $display);
         $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17 | source_name=API_FREE | source_attempt_event_type=STAGE_COMPLETED | source_attempt_count=2 | source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 

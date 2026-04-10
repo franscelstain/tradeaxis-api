@@ -162,6 +162,59 @@ class MarketDataBackfillServiceTest extends TestCase
     }
 
 
+
+    public function test_execute_writes_source_attempt_telemetry_artifact_for_failed_backfill_case_when_persisted_attempts_exist(): void
+    {
+        $calendar = m::mock(MarketCalendarRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
+
+        $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-20', '2026-03-20')->andReturn([
+            '2026-03-20',
+        ]);
+
+        $pipeline->shouldReceive('runDaily')->once()->with('2026-03-20', 'manual_file', null)->andThrow(new RuntimeException('boom'));
+        $runs->shouldReceive('findLatestForRequestedDate')->once()->with('2026-03-20', 'manual_file')->andReturn((object) [
+            'run_id' => 1001,
+            'terminal_status' => 'FAILED',
+            'publishability_state' => 'NOT_READABLE',
+            'trade_date_effective' => null,
+            'notes' => 'source_name=API_FREE',
+        ]);
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(1001)->andReturn([
+            'event_id' => 9001,
+            'event_time' => '2026-03-20 16:00:00',
+            'event_type' => 'STAGE_FAILED',
+            'provider' => 'yahoo_finance',
+            'source_name' => 'API_FREE',
+            'timeout_seconds' => 20,
+            'retry_max' => 5,
+            'attempt_count' => 6,
+            'final_reason_code' => 'RUN_SOURCE_RATE_LIMIT',
+            'attempts' => [
+                ['attempt_number' => 1, 'reason_code' => 'RUN_SOURCE_RATE_LIMIT', 'http_status' => 429, 'backoff_delay_ms' => 250, 'will_retry' => true],
+                ['attempt_number' => 6, 'reason_code' => 'RUN_SOURCE_RATE_LIMIT', 'http_status' => 429, 'backoff_delay_ms' => 0, 'will_retry' => false],
+            ],
+        ]);
+
+        $service = new MarketDataBackfillService($calendar, $pipeline, $runs, $evidence);
+        $summary = $service->execute('2026-03-20', '2026-03-20', 'manual_file', $outputDir, false);
+
+        $this->assertFalse($summary['all_passed']);
+        $this->assertSame(str_replace('\\', '/', $outputDir).'/source_attempt_telemetry.json', str_replace('\\', '/', $summary['source_attempt_telemetry_artifact']));
+        $this->assertFileExists($outputDir.'/source_attempt_telemetry.json');
+
+        $artifact = json_decode(file_get_contents($outputDir.'/source_attempt_telemetry.json'), true);
+        $this->assertSame('2026-03-20', $artifact['range']['start_date']);
+        $this->assertSame('2026-03-20', $artifact['cases'][0]['requested_date']);
+        $this->assertSame(1001, $artifact['cases'][0]['run_id']);
+        $this->assertSame('STAGE_FAILED', $artifact['cases'][0]['telemetry']['event_type']);
+        $this->assertCount(2, $artifact['cases'][0]['telemetry']['attempts']);
+        $this->assertSame(429, $artifact['cases'][0]['telemetry']['attempts'][0]['http_status']);
+    }
+
     public function test_execute_marks_fail_when_pipeline_returns_non_readable_terminal_state()
     {
         $calendar = m::mock(MarketCalendarRepository::class);

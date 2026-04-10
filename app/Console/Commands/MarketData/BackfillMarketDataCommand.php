@@ -27,6 +27,10 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
         $this->line('all_passed='.(int) $summary['all_passed']);
         $this->line('output_dir='.$this->normalizePathForDisplay($summary['output_dir']));
 
+        if (isset($summary['source_attempt_telemetry_artifact']) && $summary['source_attempt_telemetry_artifact'] !== null && $summary['source_attempt_telemetry_artifact'] !== '') {
+            $this->line('source_attempt_telemetry_artifact='.$this->normalizePathForDisplay($summary['source_attempt_telemetry_artifact']));
+        }
+
         foreach ($summary['cases'] as $case) {
             $this->line(
                 'requested_date='.$case['requested_date']
