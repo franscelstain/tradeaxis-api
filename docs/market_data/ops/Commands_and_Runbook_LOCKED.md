@@ -28,6 +28,7 @@ Acquire and canonicalize EOD bars for requested date T.
 - current default source mode for the active codebase is `api`
 - current default API provider for the active codebase is `yahoo_finance`
 - Yahoo requests for IDX symbols append `.JK` inside the provider adapter
+- current Yahoo acquisition path fans out one HTTP chart request per ticker in the resolved universe for that requested date; this is not a batched multi-symbol request path
 - `manual_file` remains a valid fallback/operator mode and is still required by some controlled runbook paths such as minimum session-snapshot runtime
 
 #### Minimum output
@@ -144,6 +145,7 @@ Historical backfill/recompute per trading-date range.
 - when per-run source telemetry exists in notes, the summary artifact and command output should surface minimum source context (`source_name`, `source_input_file`, `source_summary` including `provider`, `timeout_seconds`, `retry_max`, and failure-side `final_reason_code` when present) for each requested date; if run notes are thinner than persisted attempt telemetry, backfill summary may recover the same minimum operator-facing source fields from that telemetry instead of degrading to a thin source summary
 - when persisted source-attempt telemetry exists for a requested date, backfill command output and the persisted backfill summary artifact may also surface bounded retry-proof fields `source_attempt_event_type` and `source_attempt_count` so degraded-source rerun diagnosis does not rely only on the compressed `source_summary` string
 - when operator passes a deterministic `output_dir` and persisted source-attempt telemetry exists for one or more requested dates, `market-data:backfill` should also materialize `source_attempt_telemetry.json` from persisted `eod_run_events` and print its artifact path so failure-side retry/backoff diagnosis does not require manual table inspection
+- for `yahoo_finance`, operator diagnosis of single-day backfill rate-limit must treat request cardinality as `resolved_ticker_count` on the success-first-attempt path and up to `resolved_ticker_count * (1 + retry_max)` on retry-exhausted failure path, because retry is applied per symbol request rather than once for the whole requested date
 - any operator-facing `source_input_file` value rendered by daily/backfill command surfaces, including the persisted backfill summary artifact payload, must use normalized forward-slash display form for deterministic local proof across operating systems
 
 ### 9. `market-data:session-snapshot`

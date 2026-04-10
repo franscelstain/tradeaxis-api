@@ -122,6 +122,129 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame('https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d', $requestedUrls[0]);
     }
 
+
+    public function test_yahoo_finance_adapter_fans_out_one_request_per_ticker_without_duplicate_requests()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 0, 0));
+
+        $requestedUrls = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+            $requestedUrls[] = $url;
+            preg_match('#/chart/([^?]+)#', $url, $matches);
+            $symbol = $matches[1] ?? 'UNKNOWN.JK';
+            $ticker = str_replace('.JK', '', $symbol);
+
+            return [
+                'status' => 200,
+                'body' => json_encode([
+                    'chart' => [
+                        'result' => [[
+                            'meta' => [
+                                'exchangeTimezoneName' => 'Asia/Jakarta',
+                            ],
+                            'timestamp' => [1773828000],
+                            'indicators' => [
+                                'quote' => [[
+                                    'open' => [100],
+                                    'high' => [110],
+                                    'low' => [99],
+                                    'close' => [108],
+                                    'volume' => [100000],
+                                ]],
+                                'adjclose' => [[
+                                    'adjclose' => [108],
+                                ]],
+                            ],
+                        ]],
+                    ],
+                ]),
+            ];
+        });
+
+        $rows = $adapter->fetchOrLoadEodBars('2026-03-18', 'api', ['bbca', 'bbri', 'tlkm']);
+
+        $this->assertCount(3, $rows);
+        $this->assertSame([
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBRI.JK?interval=1d&range=10d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/TLKM.JK?interval=1d&range=10d',
+        ], $requestedUrls);
+        $this->assertSame($requestedUrls, array_values(array_unique($requestedUrls)));
+    }
+
+    public function test_yahoo_finance_adapter_retries_per_ticker_so_request_count_scales_with_universe_size()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 1, 0));
+
+        $callsBySymbol = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$callsBySymbol) {
+            preg_match('#/chart/([^?]+)#', $url, $matches);
+            $symbol = $matches[1] ?? 'UNKNOWN.JK';
+            $callsBySymbol[$symbol] = ($callsBySymbol[$symbol] ?? 0) + 1;
+
+            if ($callsBySymbol[$symbol] === 1) {
+                return [
+                    'status' => 429,
+                    'body' => '{"error":"rate limit"}',
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => json_encode([
+                    'chart' => [
+                        'result' => [[
+                            'meta' => [
+                                'exchangeTimezoneName' => 'Asia/Jakarta',
+                            ],
+                            'timestamp' => [1773828000],
+                            'indicators' => [
+                                'quote' => [[
+                                    'open' => [100],
+                                    'high' => [110],
+                                    'low' => [99],
+                                    'close' => [108],
+                                    'volume' => [100000],
+                                ]],
+                                'adjclose' => [[
+                                    'adjclose' => [108],
+                                ]],
+                            ],
+                        ]],
+                    ],
+                ]),
+            ];
+        });
+
+        $rows = $adapter->fetchOrLoadEodBars('2026-03-18', 'api', ['bbca', 'bbri', 'tlkm']);
+
+        $this->assertCount(3, $rows);
+        $this->assertSame([
+            'BBCA.JK' => 2,
+            'BBRI.JK' => 2,
+            'TLKM.JK' => 2,
+        ], $callsBySymbol);
+        $this->assertSame(6, array_sum($callsBySymbol));
+    }
+
     public function test_api_adapter_retries_rate_limit_then_succeeds()
     {
         $this->bindMarketDataConfig($this->config([

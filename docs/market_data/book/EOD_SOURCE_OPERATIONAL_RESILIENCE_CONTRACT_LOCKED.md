@@ -24,6 +24,7 @@ Sudah diimplementasikan pada `PublicApiEodBarsAdapter`.
 - backoff bersifat exponential berbasis `market_data.provider.api_backoff_ms`
 - throttle + jitter request menggunakan `market_data.provider.api_throttle_qps`
 - detail schedule operasional tetap mengacu ke `ops/Performance_SLO_and_Limits_LOCKED.md` sebagai guidance operator, bukan hardcoded contract sequence
+- untuk provider `yahoo_finance` pada active codebase, satu requested date saat ini difan-out menjadi satu request per ticker di universe tanggal tersebut; sehingga throttle/retry diterapkan per request simbol, bukan sekali per requested date
 
 ### Timeout
 Sudah diimplementasikan.
@@ -77,6 +78,7 @@ Sudah diimplementasikan minimum pada command harian utama.
 Sudah tersedia minimum melalui command pipeline yang sudah ada.
 - operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu
 - operator dapat menjalankan `market-data:backfill {start_date} {end_date}` untuk rerun date-range yang mengikuti `market_calendar`
+- pada provider `yahoo_finance`, satu requested date di jalur backfill/daily saat ini dapat menghasilkan `ticker_universe_count * (1 + retry_max)` request maksimum pada jalur gagal total, karena adapter melakukan request chart per ticker lalu memberi retry per request
 - summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya; untuk API path, `source_summary` harus ikut menurunkan `provider`, `timeout_seconds`, dan `retry_max` bila context itu dipersist; bila notes tipis tetapi attempt-level telemetry run masih tersedia, backfill summary boleh memulihkan field minimum yang sama dari telemetry persisted tersebut tanpa mengarang fakta baru
 - path manual-file yang tampil ke operator melalui ringkasan harian/backfill atau artifact proof lokal harus memakai bentuk normalized forward-slash agar proof runtime tidak drift hanya karena separator OS
 - bila `market-data:backfill` menerima exception setelah run gagal sudah tercatat, summary kasus `ERROR` harus mencoba memuat ulang run terakhir untuk tanggal+source tersebut dan tetap menurunkan `run_id`, `terminal_status`, `publishability_state`, serta source context minimum dari notes yang sudah dipersist

@@ -2,6 +2,66 @@
 
 ## SESSION UPDATE
 
+* Batch: Yahoo Single-Day Rate-Limit Root-Cause Audit on Backfill Path
+* Status: PARTIAL
+
+### What was audited in this session
+
+* Re-audited the uploaded ZIP against the active checkpoint pair, owner docs, and the accepted runtime trigger that `php artisan market-data:backfill 2026-03-02 2026-03-02` failed with `RUN_SOURCE_RATE_LIMIT` / HTTP 429 on the Yahoo path.
+* Traced the active backfill execution path from `market-data:backfill` → `MarketDataBackfillService` → `MarketDataPipelineService::runDaily()` → `EodBarsIngestService::fetchSourceRows()` → `TickerMasterRepository::getUniverseForTradeDate()` → `PublicApiEodBarsAdapter::fetchYahooFinanceBars()`.
+* Verified the active Yahoo adapter is not a single-request-per-date path. It iterates the resolved ticker universe and issues one chart request per ticker symbol, appending `.JK` per symbol.
+* Verified retry/backoff is applied inside `requestWithRetry()` per symbol request, not once per requested date. With `retry_max=3`, one requested date can expand to `resolved_ticker_count * 4` HTTP attempts on full retry exhaustion.
+* Confirmed no evidence in the active adapter of same-symbol duplicate requests before retry: the fan-out is linear per ticker, then layered retry on top of each ticker request.
+* Synced locked docs so the Yahoo path now explicitly states the per-symbol request cardinality and retry scaling semantics.
+* Added unit-proof coverage so repo tests now explicitly lock:
+  * Yahoo request fan-out is one request per ticker without same-symbol duplicate requests in the first-attempt path
+  * Yahoo retry is applied per ticker, so total request count scales with universe size
+
+### Root-cause assessment from repo + runtime evidence
+
+* Strong hypothesis: the single-day Yahoo rate-limit is primarily driven by provider-facing request cardinality, not by a hidden duplicate loop in backfill orchestration.
+* Supporting code facts:
+  * `EodBarsIngestService` resolves the full ticker universe for the requested date before API fetch.
+  * `PublicApiEodBarsAdapter::fetchYahooFinanceBars()` loops that universe and calls `requestWithRetry()` once per ticker.
+  * `requestWithRetry()` retries `RUN_SOURCE_RATE_LIMIT` and `RUN_SOURCE_TIMEOUT` up to `retry_max`, so rate-limited symbols multiply total outbound request volume.
+* Supporting runtime facts already accepted in checkpoint:
+  * the trigger run failed on a single-day backfill with `RUN_SOURCE_RATE_LIMIT`
+  * persisted attempt telemetry already showed repeated HTTP 429 responses from Yahoo for that failed run
+* Evidence that weakens alternative hypotheses:
+  * no repo evidence of an extra outer duplicate loop for the same requested date beyond the intended per-date backfill loop
+  * no repo evidence of same-symbol duplicate first-attempt requests inside the Yahoo adapter
+* Remaining limit:
+  * the uploaded ZIP does not include fresh DB exports with full per-run request counts by symbol for the trigger run, so exact runtime cardinality for that one failing run is still inferred from code shape + accepted 429 telemetry, not recalculated from raw event rows inside this session
+
+### What changed
+
+* No production PHP behavior was changed in this session.
+* Updated docs/contracts:
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+* Added audit-lock tests:
+  * `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+
+### What is still pending
+
+* Exact runtime request-count proof for the trigger run remains open until fresh runtime/manual evidence is exported from local environment, ideally grouped by requested date, symbol, attempt number, HTTP status, and retry outcome.
+* No code-level duplicate-loop bug is proven in the current repo.
+* The broader Yahoo runtime blocker remains open because current code still uses a per-symbol Yahoo acquisition path and current runtime evidence already shows that provider can rate-limit even on a single-day backfill.
+* Project/repo overall remains `PARTIAL`.
+
+### Final State
+
+* PARTIAL for this Yahoo root-cause audit batch
+* Root-cause hypothesis is strong but not fully closed without fresh runtime cardinality export
+* Project/repo overall remains PARTIAL
+
+
+---
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Backfill Failure Source Attempt Telemetry Artifact Export
 * Status: DONE
 
