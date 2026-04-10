@@ -419,8 +419,9 @@ Execute fixture-aware historical replay verification across a trading-date range
 2. inspect final run state
 3. verify hash presence if candidate success path
 4. verify seal exists before treating date as readable
-5. if `HELD` or `FAILED`, confirm fallback safety to prior readable sealed date
+5. if `HELD` or `FAILED`, confirm whether run is using prior readable fallback or is being held without baseline
 6. for `RUN_SOURCE_RATE_LIMIT` / `RUN_SOURCE_TIMEOUT`, treat `HELD + NOT_READABLE + trade_date_effective=<prior readable date>` as the official degraded outcome when prior readable fallback exists; do not misread it as requested-date success
+7. when the same source blocker occurs and no prior readable publication exists, the official runtime outcome is still `HELD + NOT_READABLE + trade_date_effective=NULL`; operator proof must surface `final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE` instead of escalating the case as an unclassified command crash
 7. preserve evidence for anomalies
 
 ## Locking and ownership rule (LOCKED)

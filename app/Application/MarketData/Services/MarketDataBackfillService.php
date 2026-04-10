@@ -188,6 +188,10 @@ class MarketDataBackfillService
 
         $result = [];
 
+        if (($notesMap['final_outcome_note'] ?? null) !== null && $notesMap['final_outcome_note'] !== '') {
+            $result['final_outcome_note'] = (string) $notesMap['final_outcome_note'];
+        }
+
         if (($sourceContext['source_name'] ?? null) !== null) {
             $result['source_name'] = $sourceContext['source_name'];
         }

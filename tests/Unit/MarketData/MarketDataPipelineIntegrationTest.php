@@ -116,7 +116,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
     }
 
 
-    public function test_run_daily_api_source_timeout_failure_persists_attempt_context_in_run_event(): void
+    public function test_run_daily_api_source_timeout_degraded_hold_persists_attempt_context_in_run_event(): void
     {
         $this->seedTicker(1, 'BBCA');
         config()->set('market_data.source.api.endpoint_template', 'https://example.test/eod/{date}?symbols={symbols}');
@@ -127,19 +127,14 @@ class MarketDataPipelineIntegrationTest extends TestCase
         config()->set('market_data.provider.api_throttle_qps', 1000);
 
         $calls = 0;
-        try {
-            $this->makePipelineWithApiFetcher(function () use (&$calls) {
-                $calls++;
+        $this->makePipelineWithApiFetcher(function () use (&$calls) {
+            $calls++;
 
-                return [
-                    'status' => 500,
-                    'body' => '{"error":"upstream unavailable"}',
-                ];
-            })->runDaily('2026-03-20', 'api');
-            $this->fail('Expected api source timeout failure.');
-        } catch (\App\Infrastructure\MarketData\Source\SourceAcquisitionException $e) {
-            $this->assertSame('RUN_SOURCE_TIMEOUT', $e->reasonCode());
-        }
+            return [
+                'status' => 500,
+                'body' => '{"error":"upstream unavailable"}',
+            ];
+        })->runDaily('2026-03-20', 'api');
 
         $run = DB::table('eod_runs')
             ->where('trade_date_requested', '2026-03-20')
@@ -147,7 +142,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             ->first();
 
         $this->assertNotNull($run);
-        $this->assertSame('FAILED', $run->terminal_status);
+        $this->assertSame('HELD', $run->terminal_status);
         $this->assertSame('NOT_READABLE', $run->publishability_state);
         $this->assertSame(3, $calls);
         $this->assertStringContainsString('source_name=API_FREE', (string) $run->notes);
@@ -156,6 +151,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertStringContainsString('source_retry_max=2', (string) $run->notes);
         $this->assertStringContainsString('source_attempt_count=3', (string) $run->notes);
         $this->assertStringContainsString('source_final_reason_code=RUN_SOURCE_TIMEOUT', (string) $run->notes);
+        $this->assertStringContainsString('degraded_mode=NO_BASELINE_HELD', (string) $run->notes);
+        $this->assertStringContainsString('final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE', (string) $run->notes);
 
         $stageFailedEvent = DB::table('eod_run_events')
             ->where('run_id', $run->run_id)

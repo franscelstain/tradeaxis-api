@@ -717,15 +717,16 @@ class MarketDataPipelineService
         }
 
         $fallback = $this->publications->findLatestReadablePublicationBefore($requestedDate);
-        if (! $fallback) {
-            return null;
-        }
+        $fallbackTradeDate = $fallback->readable_trade_date ?? null;
+        $hasFallback = $fallbackTradeDate !== null && $fallbackTradeDate !== '';
 
         $payload = $this->sourceTelemetryPayload($run->source ?? null) + [
             'exception_class' => get_class($e),
             'exception_message' => $e->getMessage(),
             'fallback_publication_id' => $fallback->publication_id ?? null,
-            'fallback_trade_date' => $fallback->readable_trade_date ?? null,
+            'fallback_trade_date' => $fallbackTradeDate,
+            'degraded_mode' => $hasFallback ? 'FALLBACK_HELD' : 'NO_BASELINE_HELD',
+            'final_outcome_note' => $hasFallback ? 'SOURCE_UNAVAILABLE_FALLBACK_HELD' : 'SOURCE_UNAVAILABLE_NO_BASELINE',
         ];
 
         if (method_exists($e, 'context')) {
@@ -744,7 +745,12 @@ class MarketDataPipelineService
         }
 
         $notes = $this->sourceFailureNoteSegments($run->source ?? null, $reasonCode, $payload);
-        $notes[] = 'fallback_trade_date='.(string) $fallback->readable_trade_date;
+        $notes[] = 'degraded_mode='.(string) $payload['degraded_mode'];
+        $notes[] = 'final_outcome_note='.(string) $payload['final_outcome_note'];
+
+        if ($hasFallback) {
+            $notes[] = 'fallback_trade_date='.(string) $fallbackTradeDate;
+        }
 
         $run = $this->runs->updateTelemetry($run, [
             'notes' => $this->appendRunNotes($run->notes, $notes),
@@ -754,8 +760,10 @@ class MarketDataPipelineService
             $run,
             $stage,
             $reasonCode,
-            'Source acquisition failed, but prior readable publication remains available for fallback.',
-            $fallback->readable_trade_date,
+            $hasFallback
+                ? 'Source acquisition failed, but prior readable publication remains available for fallback.'
+                : 'Source acquisition failed and no prior readable publication is available; run is held as non-readable without fallback.',
+            $hasFallback ? $fallbackTradeDate : null,
             $payload
         );
     }

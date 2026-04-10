@@ -51,7 +51,7 @@ Sudah ditutup oleh finalize + coverage gate path.
 - requested date tidak boleh menjadi `READABLE` bila ingest/source failure membuat coverage gagal atau blocked
 - fallback publication lama boleh tetap menjadi effective readable date bila memang valid menurut finalize decision
 - untuk `RUN_SOURCE_RATE_LIMIT` atau `RUN_SOURCE_TIMEOUT`, active codebase sekarang boleh menghentikan pipeline lebih awal dengan `terminal_status=HELD`, `publishability_state=NOT_READABLE`, dan `trade_date_effective` menunjuk ke prior readable publication bila fallback valid memang ada
-- bila tidak ada prior readable publication yang valid, source failure tetap berakhir `FAILED`; tidak ada best-effort publish untuk requested date
+- bila tidak ada prior readable publication yang valid, source failure harus berakhir `HELD + NOT_READABLE + trade_date_effective=NULL`; requested date tetap tidak readable, tetapi pipeline tidak boleh hard-crash atau melaporkan requested date sebagai sukses
 
 ### Success-after-retry telemetry
 Sudah diimplementasikan minimal pada success path ingest API.

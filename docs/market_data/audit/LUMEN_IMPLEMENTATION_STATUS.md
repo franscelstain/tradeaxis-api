@@ -293,3 +293,31 @@
 
 * DONE for this checkpoint-consolidation batch
 * Project/repo overall remains PARTIAL
+
+
+---
+
+# SESSION UPDATE — NO-FALLBACK DEGRADED HOLD
+
+- Status: DONE
+- Scope: backfill command, ingest-stage source failure handling, no-baseline degraded outcome, operator-facing proof fields
+- Decision: `RUN_SOURCE_RATE_LIMIT` / `RUN_SOURCE_TIMEOUT` no longer hard-fail the run when no prior readable publication exists; they now resolve to `HELD + NOT_READABLE + trade_date_effective=NULL`
+- Reason: runtime evidence proved the earlier patch only handled fallback-present cases; no-baseline cases still surfaced as command `ERROR` / run `FAILED`, which kept the pipeline collapsing on external provider blocker
+- Code changes:
+  - `MarketDataPipelineService` now converts recoverable source blocker exhaustion into held no-baseline outcome when fallback lookup returns nothing
+  - `MarketDataBackfillService` now surfaces `final_outcome_note` from run notes into summary artifacts/case output
+  - `BackfillMarketDataCommand` now prints `final_outcome_note` when available so runtime proof is explicit
+  - new PHPUnit coverage added for ingest no-baseline hold and backfill summary no-error held case
+- Docs synced: source resilience contract, commands/runbook, and performance/SLO guidance now all state that no-baseline provider blocker resolves as held/non-readable rather than failed/crashed
+- Capability gained: single-day Yahoo `429` without any readable baseline can now finish gracefully as an operator-visible blocked hold, still without inventing a readable dataset
+- Manual proof required:
+  - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
+  - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  - `vendor\bin\phpunit`
+  - `php artisan market-data:backfill 2026-03-02 2026-03-02 --output_dir=storage/app/market-data-yahoo-rate-limit-audit`
+- Expected runtime proof:
+  - `terminal_status=HELD`
+  - `publishability_state=NOT_READABLE`
+  - no `trade_date_effective` line when no baseline exists
+  - `final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE`
+  - backfill case status should be `FAIL`, not `ERROR`

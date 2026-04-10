@@ -374,6 +374,91 @@ class MarketDataPipelineServiceTest extends TestCase
         $this->assertSame($run, $result);
     }
 
+
+    public function test_complete_ingest_holds_rate_limited_source_without_prior_readable_fallback(): void
+    {
+        [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility, $barsIngest] = $this->makeService();
+
+        $run = $this->makeRun(56);
+        $run->source = 'api';
+        $run->notes = null;
+
+        config()->set('market_data.source.api.provider', 'yahoo_finance');
+        config()->set('market_data.source.api.timeout_seconds', 20);
+        config()->set('market_data.provider.api_retry_max', 3);
+        config()->set('market_data.provider.api_throttle_qps', 5);
+
+        $input = new MarketDataStageInput('2026-03-17', 'api', 56, 'INGEST_BARS', null);
+
+        $service->shouldReceive('startStage')
+            ->once()
+            ->with($input)
+            ->andReturn([$run, null, null]);
+
+        $barsIngest->shouldReceive('ingest')
+            ->once()
+            ->with($run, '2026-03-17', 'api', null)
+            ->andThrow(new \App\Infrastructure\MarketData\Source\SourceAcquisitionException(
+                'Source API rate limited the request.',
+                'RUN_SOURCE_RATE_LIMIT',
+                0,
+                null,
+                [
+                    'provider' => 'yahoo_finance',
+                    'retry_max' => 3,
+                    'attempt_count' => 4,
+                    'final_reason_code' => 'RUN_SOURCE_RATE_LIMIT',
+                ]
+            ));
+
+        $publications->shouldReceive('findLatestReadablePublicationBefore')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn(null);
+
+        $runs->shouldReceive('updateTelemetry')
+            ->once()
+            ->with($run, m::on(function ($telemetry) {
+                return is_array($telemetry)
+                    && isset($telemetry['notes'])
+                    && strpos($telemetry['notes'], 'source_provider=yahoo_finance') !== false
+                    && strpos($telemetry['notes'], 'degraded_mode=NO_BASELINE_HELD') !== false
+                    && strpos($telemetry['notes'], 'final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE') !== false
+                    && strpos($telemetry['notes'], 'fallback_trade_date=') === false;
+            }))
+            ->andReturn($run);
+
+        $runs->shouldReceive('holdStage')
+            ->once()
+            ->with(
+                m::type(\App\Models\EodRun::class),
+                'INGEST_BARS',
+                'RUN_SOURCE_RATE_LIMIT',
+                'Source acquisition failed and no prior readable publication is available; run is held as non-readable without fallback.',
+                null,
+                m::on(function ($payload) {
+                    return is_array($payload)
+                        && ($payload['provider'] ?? null) === 'yahoo_finance'
+                        && ($payload['retry_max'] ?? null) === 3
+                        && array_key_exists('fallback_publication_id', $payload)
+                        && $payload['fallback_publication_id'] === null
+                        && array_key_exists('fallback_trade_date', $payload)
+                        && $payload['fallback_trade_date'] === null
+                        && ($payload['degraded_mode'] ?? null) === 'NO_BASELINE_HELD'
+                        && ($payload['final_outcome_note'] ?? null) === 'SOURCE_UNAVAILABLE_NO_BASELINE'
+                        && is_array($payload['exception_context'] ?? null)
+                        && ($payload['exception_context']['attempt_count'] ?? null) === 4;
+                })
+            )
+            ->andReturn($run);
+
+        $runs->shouldReceive('failStage')->never();
+
+        $result = $service->completeIngest($input);
+
+        $this->assertSame($run, $result);
+    }
+
     public function test_complete_eligibility_stores_coverage_telemetry_separately_from_eligibility_metrics(): void
     {
         [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility] = $this->makeService();

@@ -254,6 +254,44 @@ class MarketDataBackfillServiceTest extends TestCase
         $this->assertSame('manual-2026-03-20.csv', $summaryFile['cases'][0]['source_input_file']);
     }
 
+
+    public function test_execute_records_held_no_baseline_source_failure_as_fail_not_error(): void
+    {
+        $calendar = m::mock(MarketCalendarRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+        $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
+
+        $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-02', '2026-03-02')->andReturn([
+            '2026-03-02',
+        ]);
+
+        $pipeline->shouldReceive('runDaily')->once()->with('2026-03-02', 'api', null)->andReturn((object) [
+            'run_id' => 1070,
+            'terminal_status' => 'HELD',
+            'publishability_state' => 'NOT_READABLE',
+            'trade_date_effective' => null,
+            'notes' => 'source_name=API_FREE; source_provider=yahoo_finance; source_timeout_seconds=20; source_retry_max=3; source_attempt_count=4; source_final_reason_code=RUN_SOURCE_RATE_LIMIT; final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE',
+        ]);
+
+        $runs->shouldNotReceive('findLatestForRequestedDate');
+
+        $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
+        $summary = $service->execute('2026-03-02', '2026-03-02', 'api', $outputDir, false);
+
+        $this->assertFalse($summary['all_passed']);
+        $this->assertSame('FAIL', $summary['cases'][0]['status']);
+        $this->assertSame('HELD', $summary['cases'][0]['terminal_status']);
+        $this->assertSame('SOURCE_UNAVAILABLE_NO_BASELINE', $summary['cases'][0]['final_outcome_note']);
+        $this->assertArrayNotHasKey('error_message', $summary['cases'][0]);
+
+        $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
+        $this->assertSame('FAIL', $summaryFile['cases'][0]['status']);
+        $this->assertSame('HELD', $summaryFile['cases'][0]['terminal_status']);
+        $this->assertSame('SOURCE_UNAVAILABLE_NO_BASELINE', $summaryFile['cases'][0]['final_outcome_note']);
+        $this->assertArrayNotHasKey('error_message', $summaryFile['cases'][0]);
+    }
+
     public function test_execute_marks_failure_and_stops_when_continue_on_error_is_false()
     {
         $calendar = m::mock(MarketCalendarRepository::class);
