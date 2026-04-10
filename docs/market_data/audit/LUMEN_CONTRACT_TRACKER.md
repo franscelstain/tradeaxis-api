@@ -9,6 +9,7 @@
   * finalize the root-cause decision for the accepted Yahoo single-day backfill failure using the already accepted runtime evidence
   * determine whether the repo still contains a bounded code gap that worsens the provider blocker
   * keep any patch minimal and limited to retry-safety / checkpoint truthfulness
+  * use the user's post-patch runtime/manual validation as closing proof
   * do not redesign provider strategy, add new env/config keys, or change unrelated market-data paths
 
 * Owner-doc anchor:
@@ -20,11 +21,18 @@
 
 * Accepted runtime evidence:
 
-  * single-day backfill failed on Yahoo
-  * `attempt_count = 6`
-  * `retry_max = 5`
-  * all captured attempts returned HTTP `429`
-  * failure occurred on the first proven request URL for `ADMR.JK`
+  * pre-patch accepted trigger run proved:
+    * single-day backfill failed on Yahoo
+    * `attempt_count = 6`
+    * `retry_max = 5`
+    * all captured attempts returned HTTP `429`
+    * failure occurred on the first proven request URL for `ADMR.JK`
+  * post-patch accepted validation now proves:
+    * local syntax validation passed for all touched files
+    * targeted PHPUnit suites passed
+    * full PHPUnit suite passed with `OK (180 tests, 1870 assertions)`
+    * rerun of `market-data:backfill 2026-03-02 2026-03-02` produced `run_id = 69`, `terminal_status = FAILED`, `publishability_state = NOT_READABLE`, `source_attempt_count = 4`, `retry_max = 3`, final reason `RUN_SOURCE_RATE_LIMIT`
+    * exported telemetry proves four consecutive attempts with HTTP `429` and capped retry exhaustion on attempt `4`
 
 * Repo evidence reviewed:
 
@@ -34,42 +42,46 @@
   * `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
   * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
   * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+  * `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
 
 * Final root-cause decision:
 
-  * accepted trigger run is sufficiently proven as an **external/provider Yahoo rate-limit blocker**
-  * no duplicate-loop or accidental extra-request code defect is proven as the dominant cause for this run
-  * the first captured Yahoo symbol request was already blocked and all retries on that same request also returned HTTP `429`
+  * accepted trigger lane is conclusively an **external/provider Yahoo rate-limit blocker**
+  * no duplicate-loop or accidental extra-request code defect is proven as the dominant cause for this lane
+  * post-patch runtime still fails with provider `429` after retry is capped to the locked safe maximum, so the blocker classification survives bounded code correction
 
 * Drift/gap found in active code:
 
-  * active code let effective API retry budget follow raw runtime config directly
-  * accepted runtime evidence proves that environment drift reached `retry_max = 5`
-  * this exceeded the locked safer operator maximum of `3` and could worsen a provider-side 429 block even though it did not change the dominant root-cause classification
+  * active code previously let effective API retry budget follow raw runtime config directly
+  * accepted pre-patch runtime evidence proved that environment drift reached `retry_max = 5`
+  * this exceeded the locked safer operator maximum of `3` and could worsen a provider-side `429` block even though it did not change the dominant root-cause classification
 
-* Resolution applied in this session:
+* Resolution applied in this lane:
 
   * capped effective API retry budget at `3` inside `PublicApiEodBarsAdapter`
   * capped operator/event payload `retry_max` at the same effective value inside `MarketDataPipelineService`
   * added PHPUnit proof that a raw runtime config above `3` is reduced to the locked safe maximum and surfaced consistently
   * updated locked docs so operator diagnosis reflects the capped effective retry value
+  * accepted local/runtime validation now proves the bounded correction is active end to end
 
 * Available proof:
 
-  * repo inspection proves Yahoo path is still per-symbol and retry is still per request
-  * repo inspection plus accepted runtime evidence proves the accepted run failed on the first captured symbol request, so external/provider blocker is sufficient as the final root-cause decision
-  * bounded code patch closes the retry-budget drift that could worsen the blocker
+  * repo inspection proves Yahoo path is per-symbol and retry is per request
+  * pre-patch runtime evidence proves the first captured symbol request was already blocked by Yahoo/provider-side `429`
+  * post-patch runtime evidence proves capped retry behavior is active (`retry_max = 3`, `attempt_count = 4`) while the provider block remains
+  * targeted PHPUnit and full-suite validation passed after the bounded patch
 
 * Pending proof:
 
-  * local/runtime validation still required from the user's environment because no PHPUnit/artisan/API execution was performed in this session without `vendor/`
-  * provider strategy readiness is still partial even after the retry cap, because Yahoo can still reject the first symbol request
+  * none for this bounded root-cause decision batch
+  * provider strategy readiness remains partial only at program level, not as unresolved proof for this lane
 
 * Final state:
 
   * DONE for this bounded root-cause decision batch
-  * external/provider blocker classification is now final for the accepted trigger run
-  * bounded retry-safety code gap is closed
+  * external/provider blocker classification is final and locally validated
+  * bounded retry-safety code gap is closed and validated
   * program-level readiness remains PARTIAL
 
 
