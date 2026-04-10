@@ -120,6 +120,12 @@ If actual coverage falls below the locked minimum:
 - requested date must not become readable
 - fallback logic applies
 
+### Source-blocker degraded hold
+If source acquisition ends in `RUN_SOURCE_RATE_LIMIT` or `RUN_SOURCE_TIMEOUT` after bounded retry exhaustion:
+- requested date must not become readable
+- when a prior readable publication exists, operator-facing outcome may stop at `HELD` with fallback effective date
+- when no prior readable publication exists, outcome remains `FAILED`
+
 ## 8. Publication safety alert conditions
 Immediate operator visibility is required if any of the following occurs:
 - hash missing when candidate publication appears success-eligible

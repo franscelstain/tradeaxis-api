@@ -420,7 +420,8 @@ Execute fixture-aware historical replay verification across a trading-date range
 3. verify hash presence if candidate success path
 4. verify seal exists before treating date as readable
 5. if `HELD` or `FAILED`, confirm fallback safety to prior readable sealed date
-6. preserve evidence for anomalies
+6. for `RUN_SOURCE_RATE_LIMIT` / `RUN_SOURCE_TIMEOUT`, treat `HELD + NOT_READABLE + trade_date_effective=<prior readable date>` as the official degraded outcome when prior readable fallback exists; do not misread it as requested-date success
+7. preserve evidence for anomalies
 
 ## Locking and ownership rule (LOCKED)
 - one requested date must have one active writer owner for publish-critical stages

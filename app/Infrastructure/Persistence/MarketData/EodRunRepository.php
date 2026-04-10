@@ -161,6 +161,38 @@ class EodRunRepository
         return $run->fresh();
     }
 
+    public function holdStage(EodRun $run, $stage, $reasonCode, $message, $tradeDateEffective = null, array $payload = [])
+    {
+        $safePayload = array_merge([
+            'run_id' => (int) $run->run_id,
+            'stage' => $stage,
+            'reason_code' => $reasonCode,
+            'trade_date_effective' => $tradeDateEffective,
+        ], $payload);
+
+        $this->appendEvent(
+            $run,
+            $stage,
+            'STAGE_FAILED',
+            'WARN',
+            $message,
+            $reasonCode,
+            $safePayload
+        );
+
+        $now = Carbon::now(config('market_data.platform.timezone'));
+        $run->lifecycle_state = 'COMPLETED';
+        $run->terminal_status = 'HELD';
+        $run->quality_gate_state = 'BLOCKED';
+        $run->publishability_state = 'NOT_READABLE';
+        $run->trade_date_effective = $tradeDateEffective;
+        $run->finished_at = $now;
+        $run->updated_at = $now;
+        $run->save();
+
+        return $run->fresh();
+    }
+
     public function updateTelemetry(EodRun $run, array $telemetry)
     {
         $telemetry = $this->normalizeTelemetry($telemetry);

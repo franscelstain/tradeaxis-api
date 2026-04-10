@@ -153,6 +153,13 @@ class MarketDataPipelineService
                     : 'RUN_SOURCE_MALFORMED_PAYLOAD';
             }
 
+            if ($e instanceof SourceAcquisitionException) {
+                $heldRun = $this->handleRecoverableSourceFailure($run, $input->requestedDate, $input->stage, $reasonCode, $e);
+                if ($heldRun !== null) {
+                    return $heldRun;
+                }
+            }
+
             $this->handleStageFailure($run, $input->stage, $reasonCode, $e);
             throw $e;
         }
@@ -693,11 +700,65 @@ class MarketDataPipelineService
         foreach ($sequence as $stage => $method) {
             $input = new MarketDataStageInput($requestedDate, $sourceMode, $run ? $run->run_id : null, $stage, $correctionId);
             $run = $this->{$method}($input);
+
+            if ($run && in_array((string) $run->terminal_status, ['HELD', 'FAILED'], true)) {
+                return $run;
+            }
         }
 
         return $run;
     }
 
+
+    private function handleRecoverableSourceFailure($run, $requestedDate, $stage, $reasonCode, \Throwable $e)
+    {
+        if (! in_array($reasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT'], true)) {
+            return null;
+        }
+
+        $fallback = $this->publications->findLatestReadablePublicationBefore($requestedDate);
+        if (! $fallback) {
+            return null;
+        }
+
+        $payload = $this->sourceTelemetryPayload($run->source ?? null) + [
+            'exception_class' => get_class($e),
+            'exception_message' => $e->getMessage(),
+            'fallback_publication_id' => $fallback->publication_id ?? null,
+            'fallback_trade_date' => $fallback->readable_trade_date ?? null,
+        ];
+
+        if (method_exists($e, 'context')) {
+            $context = $e->context();
+            if (is_array($context) && ! empty($context)) {
+                $payload['exception_context'] = $context;
+            }
+        }
+
+        if ($e instanceof \PDOException && $e->getCode()) {
+            $payload['sqlstate'] = (string) $e->getCode();
+        }
+
+        if (method_exists($e, 'getTraceAsString')) {
+            $payload['trace'] = mb_substr($e->getTraceAsString(), 0, 4000);
+        }
+
+        $notes = $this->sourceFailureNoteSegments($run->source ?? null, $reasonCode, $payload);
+        $notes[] = 'fallback_trade_date='.(string) $fallback->readable_trade_date;
+
+        $run = $this->runs->updateTelemetry($run, [
+            'notes' => $this->appendRunNotes($run->notes, $notes),
+        ]);
+
+        return $this->runs->holdStage(
+            $run,
+            $stage,
+            $reasonCode,
+            'Source acquisition failed, but prior readable publication remains available for fallback.',
+            $fallback->readable_trade_date,
+            $payload
+        );
+    }
 
     private function resolveFinalizeReasonCode($run, array $outcome, $promotionError, $postFinalizeMismatchNote)
     {

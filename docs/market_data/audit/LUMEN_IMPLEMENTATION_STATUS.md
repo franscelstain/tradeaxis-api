@@ -2,6 +2,54 @@
 
 ## SESSION UPDATE
 
+* Batch: Post Yahoo Rate-Limit Operational Strategy
+* Status: DONE
+
+### Strategy decision
+
+* Official strategy chosen for the active codebase is **B — degraded/partial operation using existing `HELD` semantics**, not a new enum.
+* Reason: the locked DB/runtime contract already supports `SUCCESS`, `HELD`, and `FAILED`; adding `PARTIAL` / `DEGRADED` as new terminal enums in this batch would create wider schema/doc/test drift.
+* Operational meaning: Yahoo/provider blocker no longer has to force an immediate total `FAILED` when a prior readable publication already exists.
+
+### What changed in code
+
+* Added `EodRunRepository::holdStage(...)` so a stage can end with `terminal_status=HELD`, `publishability_state=NOT_READABLE`, and an explicit fallback effective date without pretending requested-date success.
+* Updated `MarketDataPipelineService::completeIngest()` so `RUN_SOURCE_RATE_LIMIT` / `RUN_SOURCE_TIMEOUT` first check for a prior readable publication.
+* When a prior readable publication exists, ingest now records bounded degraded telemetry and stops the daily pipeline early as `HELD` instead of forcing immediate `FAILED`.
+* When no prior readable publication exists, behavior remains strict `FAILED`.
+* Updated `runDaily()` to stop the remaining stage sequence once a run is already finalized into `HELD` / `FAILED`.
+
+### Contract impact
+
+* No new terminal-status enum was introduced.
+* Official degraded outcome for this batch is now: `HELD + NOT_READABLE + trade_date_effective=<prior readable date>`.
+* Requested date still never becomes readable after source blocker exhaustion.
+
+### Capability gained
+
+* Single-day/backfill runs now have a controlled degraded path when Yahoo is blocked but the system still has a valid prior readable publication.
+* The system no longer has to collapse into total run failure for this source-blocker class in every case.
+* Fallback remains explicit and auditable in run state / event telemetry / notes.
+
+### Manual validation still required
+
+* Re-run the same bounded Yahoo single-day backfill against a date that has a prior readable publication available.
+* Confirm expected outcome becomes `terminal_status=HELD`, `publishability_state=NOT_READABLE`, and `trade_date_effective=<prior readable date>` rather than unconditional `FAILED`.
+* Also validate a date with no readable fallback still ends `FAILED`.
+
+### Final state
+
+* DONE for this bounded operational-strategy batch
+* Strategy chosen and implemented without widening schema enums
+* Project/repo overall remains PARTIAL
+
+
+---
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Yahoo Single-Day Rate-Limit Final Root-Cause Decision on Backfill Path
 * Status: DONE
 

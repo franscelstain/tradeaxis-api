@@ -1,5 +1,56 @@
 # LUMEN_CONTRACT_TRACKER
 
+### Post Yahoo Rate-Limit Operational Strategy
+
+* Status: DONE
+
+* Strategy chosen:
+
+  * choose **B — degraded/partial operation**, implemented through existing `HELD` semantics rather than adding new terminal enums
+  * requested date still never becomes readable after source-blocker exhaustion
+  * degraded success is represented by `terminal_status=HELD`, `publishability_state=NOT_READABLE`, and `trade_date_effective` pointing to a prior readable publication when one exists
+
+* Scope:
+
+  * backfill path
+  * ingest pipeline source failure handling
+  * publishability/fallback outcome for provider blocker
+  * checkpoint/doc sync only for this bounded behavior
+
+* Why this strategy was chosen:
+
+  * strict unconditional failure is too brittle once Yahoo is already proven externally blocked
+  * multi-source fallback is not yet implemented infrastructure-wide
+  * existing schema/docs already support `HELD`, so this batch can deliver a real operational improvement without widening enum/database contracts
+
+* Code/docs changes in this batch:
+
+  * added bounded stage-hold path in `EodRunRepository`
+  * ingest now uses prior readable publication as degraded fallback for `RUN_SOURCE_RATE_LIMIT` / `RUN_SOURCE_TIMEOUT`
+  * daily pipeline now stops after early `HELD` outcome
+  * locked source-operational contract + runbook + performance/limits docs updated to describe the official degraded hold outcome
+
+* What remains strict:
+
+  * requested date never becomes `READABLE` after source blocker exhaustion
+  * no prior readable publication => outcome remains `FAILED`
+  * no fake publish, no silent success, no new hidden status enum
+
+* Manual proof still required:
+
+  * prove degraded `HELD` outcome on a date with valid prior readable publication
+  * prove strict `FAILED` outcome on a date with no readable fallback
+
+* Final state:
+
+  * DONE for this bounded contract-strategy batch
+  * repo overall remains PARTIAL
+
+
+---
+
+# LUMEN_CONTRACT_TRACKER
+
 ### Yahoo Single-Day Rate-Limit Final Root-Cause Decision on Backfill Path
 
 * Status: DONE

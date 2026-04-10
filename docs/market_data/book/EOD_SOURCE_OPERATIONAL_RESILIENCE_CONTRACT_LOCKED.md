@@ -50,6 +50,8 @@ Sudah diimplementasikan minimal pada failure path ingest API.
 Sudah ditutup oleh finalize + coverage gate path.
 - requested date tidak boleh menjadi `READABLE` bila ingest/source failure membuat coverage gagal atau blocked
 - fallback publication lama boleh tetap menjadi effective readable date bila memang valid menurut finalize decision
+- untuk `RUN_SOURCE_RATE_LIMIT` atau `RUN_SOURCE_TIMEOUT`, active codebase sekarang boleh menghentikan pipeline lebih awal dengan `terminal_status=HELD`, `publishability_state=NOT_READABLE`, dan `trade_date_effective` menunjuk ke prior readable publication bila fallback valid memang ada
+- bila tidak ada prior readable publication yang valid, source failure tetap berakhir `FAILED`; tidak ada best-effort publish untuk requested date
 
 ### Success-after-retry telemetry
 Sudah diimplementasikan minimal pada success path ingest API.
@@ -65,6 +67,7 @@ Sudah diimplementasikan minimal pada success path ingest API.
 
 ### Manual fallback operator path
 Sudah diimplementasikan minimum pada command harian utama.
+Operator manual fallback tetap valid, tetapi active codebase sekarang juga punya degraded auto-hold minimum untuk source blocker tertentu bila prior readable publication sudah ada.
 - operator dapat menjalankan `market-data:daily --source_mode=manual_file --input_file=...` saat API mode tidak aman dipakai
 - explicit input file `.json` / `.csv` mengoverride lookup direktori default hanya untuk eksekusi command tersebut
 - payload event stage ingest dan `eod_runs.notes` sekarang dapat membawa jejak minimum `input_file` / `source_input_file` untuk fallback manual yang dipicu operator

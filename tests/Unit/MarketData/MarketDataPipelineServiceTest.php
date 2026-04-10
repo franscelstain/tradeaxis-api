@@ -292,6 +292,86 @@ class MarketDataPipelineServiceTest extends TestCase
         $this->assertSame($run, $result);
     }
 
+
+    public function test_complete_ingest_holds_rate_limited_source_when_prior_readable_fallback_exists(): void
+    {
+        [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility, $barsIngest] = $this->makeService();
+
+        $run = $this->makeRun(55);
+        $run->source = 'api';
+        $run->notes = null;
+
+        config()->set('market_data.source.api.provider', 'yahoo_finance');
+        config()->set('market_data.source.api.timeout_seconds', 20);
+        config()->set('market_data.provider.api_retry_max', 3);
+        config()->set('market_data.provider.api_throttle_qps', 5);
+
+        $input = new MarketDataStageInput('2026-03-17', 'api', 55, 'INGEST_BARS', null);
+
+        $service->shouldReceive('startStage')
+            ->once()
+            ->with($input)
+            ->andReturn([$run, null, null]);
+
+        $barsIngest->shouldReceive('ingest')
+            ->once()
+            ->with($run, '2026-03-17', 'api', null)
+            ->andThrow(new \App\Infrastructure\MarketData\Source\SourceAcquisitionException(
+                'Source API rate limited the request.',
+                'RUN_SOURCE_RATE_LIMIT',
+                [
+                    'provider' => 'yahoo_finance',
+                    'retry_max' => 3,
+                    'attempt_count' => 4,
+                    'final_reason_code' => 'RUN_SOURCE_RATE_LIMIT',
+                ]
+            ));
+
+        $publications->shouldReceive('findLatestReadablePublicationBefore')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn((object) [
+                'publication_id' => 41,
+                'readable_trade_date' => '2026-03-16',
+            ]);
+
+        $runs->shouldReceive('updateTelemetry')
+            ->once()
+            ->with($run, m::on(function ($telemetry) {
+                return is_array($telemetry)
+                    && isset($telemetry['notes'])
+                    && strpos($telemetry['notes'], 'source_provider=yahoo_finance') !== false
+                    && strpos($telemetry['notes'], 'fallback_trade_date=2026-03-16') !== false;
+            }))
+            ->andReturn($run);
+
+        $runs->shouldReceive('holdStage')
+            ->once()
+            ->with(
+                $run,
+                'INGEST_BARS',
+                'RUN_SOURCE_RATE_LIMIT',
+                'Source acquisition failed, but prior readable publication remains available for fallback.',
+                '2026-03-16',
+                m::on(function ($payload) {
+                    return is_array($payload)
+                        && ($payload['provider'] ?? null) === 'yahoo_finance'
+                        && ($payload['retry_max'] ?? null) === 3
+                        && ($payload['fallback_publication_id'] ?? null) === 41
+                        && ($payload['fallback_trade_date'] ?? null) === '2026-03-16'
+                        && is_array($payload['exception_context'] ?? null)
+                        && ($payload['exception_context']['attempt_count'] ?? null) === 4;
+                })
+            )
+            ->andReturn($run);
+
+        $runs->shouldReceive('failStage')->never();
+
+        $result = $service->completeIngest($input);
+
+        $this->assertSame($run, $result);
+    }
+
     public function test_complete_eligibility_stores_coverage_telemetry_separately_from_eligibility_metrics(): void
     {
         [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility] = $this->makeService();
