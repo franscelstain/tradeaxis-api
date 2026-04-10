@@ -163,7 +163,7 @@ class PublicApiEodBarsAdapter
 
     private function requestWithRetry($url)
     {
-        $retryMax = max(0, (int) config('market_data.provider.api_retry_max'));
+        $retryMax = min(3, max(0, (int) config('market_data.provider.api_retry_max')));
         $baseBackoffMs = max(0, (int) config('market_data.provider.api_backoff_ms'));
         $capturedAt = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $provider = (string) $this->providerName(config('market_data.source.api'));

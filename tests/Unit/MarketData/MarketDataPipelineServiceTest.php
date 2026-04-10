@@ -134,7 +134,7 @@ class MarketDataPipelineServiceTest extends TestCase
                         && ($payload['source_name'] ?? null) === 'API_FREE'
                         && ($payload['provider'] ?? null) === 'generic'
                         && ($payload['timeout_seconds'] ?? null) === 9
-                        && ($payload['retry_max'] ?? null) === 4
+                        && ($payload['retry_max'] ?? null) === 3
                         && ($payload['throttle_qps'] ?? null) === 11
                         && ($payload['stage'] ?? null) === 'INGEST_BARS'
                         && array_key_exists('correction_id', $payload)

@@ -16,14 +16,14 @@ Fokusnya hanya pada source acquisition upstream, bukan realtime/live trading sys
 ### Retry
 Sudah diimplementasikan pada `PublicApiEodBarsAdapter`.
 - retry hanya untuk `RUN_SOURCE_TIMEOUT` dan `RUN_SOURCE_RATE_LIMIT`
-- jumlah retry dikendalikan oleh `market_data.provider.api_retry_max`
+- jumlah retry dikendalikan oleh `market_data.provider.api_retry_max`, tetapi active codebase sekarang meng-cap effective retry budget ke maksimum `3` agar tidak melewati batas retry aman operator saat runtime config lebih agresif
 - retry tidak dipakai untuk auth/config error
 
 ### Backoff + throttle
 Sudah diimplementasikan pada `PublicApiEodBarsAdapter`.
 - backoff bersifat exponential berbasis `market_data.provider.api_backoff_ms`
 - throttle + jitter request menggunakan `market_data.provider.api_throttle_qps`
-- detail schedule operasional tetap mengacu ke `ops/Performance_SLO_and_Limits_LOCKED.md` sebagai guidance operator, bukan hardcoded contract sequence
+- detail schedule operasional tetap mengacu ke `ops/Performance_SLO_and_Limits_LOCKED.md` sebagai guidance operator, tetapi active codebase tetap memaksa cap retry aman maksimum `3` untuk menghindari drift runtime yang memperburuk provider blocker
 - untuk provider `yahoo_finance` pada active codebase, satu requested date saat ini difan-out menjadi satu request per ticker di universe tanggal tersebut; sehingga throttle/retry diterapkan per request simbol, bukan sekali per requested date
 
 ### Timeout

@@ -808,7 +808,7 @@ class MarketDataPipelineService
         if ($sourceMode === 'api') {
             $payload['provider'] = strtolower((string) config('market_data.source.api.provider', 'generic'));
             $payload['timeout_seconds'] = max(1, (int) config('market_data.source.api.timeout_seconds', 15));
-            $payload['retry_max'] = max(0, (int) config('market_data.provider.api_retry_max', 0));
+            $payload['retry_max'] = min(3, max(0, (int) config('market_data.provider.api_retry_max', 0)));
             $payload['throttle_qps'] = max(1, (int) config('market_data.provider.api_throttle_qps', 1));
         }
 

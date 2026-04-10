@@ -245,6 +245,38 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame(6, array_sum($callsBySymbol));
     }
 
+
+    public function test_api_adapter_caps_rate_limit_retry_budget_to_locked_maximum()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'endpoint_template' => 'https://example.test/eod/{date}',
+        ], 5, 0));
+
+        $calls = 0;
+        $adapter = new PublicApiEodBarsAdapter(function () use (&$calls) {
+            $calls++;
+
+            return [
+                'status' => 429,
+                'body' => '{"error":"rate limit"}',
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBars('2026-03-20', 'api');
+            $this->fail('Expected rate-limit exception after capped retry exhaustion.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $e->reasonCode());
+            $this->assertSame(4, $calls);
+            $this->assertSame(3, $context['retry_max']);
+            $this->assertSame(4, $context['attempt_count']);
+            $this->assertCount(4, $context['attempts']);
+            $this->assertFalse($context['attempts'][3]['will_retry']);
+        }
+    }
+
     public function test_api_adapter_retries_rate_limit_then_succeeds()
     {
         $this->bindMarketDataConfig($this->config([

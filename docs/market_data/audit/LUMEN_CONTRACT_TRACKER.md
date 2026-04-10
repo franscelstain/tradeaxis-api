@@ -1,5 +1,82 @@
 # LUMEN_CONTRACT_TRACKER
 
+### Yahoo Single-Day Rate-Limit Final Root-Cause Decision on Backfill Path
+
+* Status: DONE
+
+* Scope:
+
+  * finalize the root-cause decision for the accepted Yahoo single-day backfill failure using the already accepted runtime evidence
+  * determine whether the repo still contains a bounded code gap that worsens the provider blocker
+  * keep any patch minimal and limited to retry-safety / checkpoint truthfulness
+  * do not redesign provider strategy, add new env/config keys, or change unrelated market-data paths
+
+* Owner-doc anchor:
+
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/market_data/ops/Performance_SLO_and_Limits_LOCKED.md`
+
+* Accepted runtime evidence:
+
+  * single-day backfill failed on Yahoo
+  * `attempt_count = 6`
+  * `retry_max = 5`
+  * all captured attempts returned HTTP `429`
+  * failure occurred on the first proven request URL for `ADMR.JK`
+
+* Repo evidence reviewed:
+
+  * `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php`
+  * `app/Application/MarketData/Services/MarketDataPipelineService.php`
+  * `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+  * `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+
+* Final root-cause decision:
+
+  * accepted trigger run is sufficiently proven as an **external/provider Yahoo rate-limit blocker**
+  * no duplicate-loop or accidental extra-request code defect is proven as the dominant cause for this run
+  * the first captured Yahoo symbol request was already blocked and all retries on that same request also returned HTTP `429`
+
+* Drift/gap found in active code:
+
+  * active code let effective API retry budget follow raw runtime config directly
+  * accepted runtime evidence proves that environment drift reached `retry_max = 5`
+  * this exceeded the locked safer operator maximum of `3` and could worsen a provider-side 429 block even though it did not change the dominant root-cause classification
+
+* Resolution applied in this session:
+
+  * capped effective API retry budget at `3` inside `PublicApiEodBarsAdapter`
+  * capped operator/event payload `retry_max` at the same effective value inside `MarketDataPipelineService`
+  * added PHPUnit proof that a raw runtime config above `3` is reduced to the locked safe maximum and surfaced consistently
+  * updated locked docs so operator diagnosis reflects the capped effective retry value
+
+* Available proof:
+
+  * repo inspection proves Yahoo path is still per-symbol and retry is still per request
+  * repo inspection plus accepted runtime evidence proves the accepted run failed on the first captured symbol request, so external/provider blocker is sufficient as the final root-cause decision
+  * bounded code patch closes the retry-budget drift that could worsen the blocker
+
+* Pending proof:
+
+  * local/runtime validation still required from the user's environment because no PHPUnit/artisan/API execution was performed in this session without `vendor/`
+  * provider strategy readiness is still partial even after the retry cap, because Yahoo can still reject the first symbol request
+
+* Final state:
+
+  * DONE for this bounded root-cause decision batch
+  * external/provider blocker classification is now final for the accepted trigger run
+  * bounded retry-safety code gap is closed
+  * program-level readiness remains PARTIAL
+
+
+---
+
+# LUMEN_CONTRACT_TRACKER
+
 ### Yahoo Single-Day Rate-Limit Root-Cause Audit on Backfill Path
 
 * Status: PARTIAL
@@ -18,57 +95,56 @@
 
 * Runtime/manual evidence in scope:
 
-  * accepted trigger: `php artisan market-data:backfill 2026-03-02 2026-03-02` failed with `RUN_SOURCE_RATE_LIMIT`
-  * accepted DB evidence from prior session: failed Yahoo run already persisted repeated HTTP 429 attempt telemetry in `eod_run_events`
+  * accepted trigger: `php artisan market-data:backfill 2026-03-02 2026-03-02 --output_dir=storage/app/market-data-yahoo-rate-limit-audit`
+  * `market_data_backfill_summary.json` proves for requested date `2026-03-02`: `run_id=68`, `terminal_status=FAILED`, `publishability_state=NOT_READABLE`, `source_attempt_count=6`, `provider=yahoo_finance`, `retry_max=5`, final reason `RUN_SOURCE_RATE_LIMIT`
+  * `source_attempt_telemetry.json` proves six consecutive attempts with HTTP `429`, each tied to the same failed acquisition context
+  * `eod_run_events.csv` proves the captured failing Yahoo URL was `https://query1.finance.yahoo.com/v8/finance/chart/ADMR.JK?...`
 
-* What is proven from active repo audit:
+* What is proven from active repo audit + runtime evidence:
 
   * `EodBarsIngestService` resolves the full ticker universe for the requested date before API fetch
   * `PublicApiEodBarsAdapter::fetchYahooFinanceBars()` performs one Yahoo chart request per ticker symbol in that universe
   * `PublicApiEodBarsAdapter::requestWithRetry()` applies retry/backoff per symbol request for `RUN_SOURCE_RATE_LIMIT` and `RUN_SOURCE_TIMEOUT`
-  * therefore one requested date on Yahoo currently scales as:
-    * first-attempt path: `resolved_ticker_count`
-    * retry-exhausted path upper bound: `resolved_ticker_count * (1 + retry_max)`
-  * no same-symbol duplicate first-attempt loop is proven in the active adapter; the observed amplification comes from intentional per-symbol fan-out plus retry layering
+  * for the accepted failing run `68`, the supplied runtime evidence proves failure on the first captured symbol request (`ADMR.JK`) with six consecutive HTTP `429` responses
+  * therefore the accepted trigger run is **not** currently proven to have failed because of multi-symbol fan-out burst across the whole universe; it is proven to have failed because Yahoo rejected the first captured symbol request and all retries on that same request
 
 * What is not yet proven:
 
-  * exact symbol-by-symbol request counts for the accepted failing runtime run inside this session
-  * whether Yahoo rate-limited because of pure request volume, provider-side burst heuristics, IP reputation, or time-window behavior beyond what the persisted 429 trail already shows
+  * whether other runs under different provider conditions fail only after several ticker requests
+  * whether Yahoo rejected this run because of IP reputation, shared network budget, temporary provider window limits, or another provider-side policy not visible from the repo
+  * whether any code change can fully remove the blocker without changing provider/source strategy
 
 * Repo/test/doc updates made in this batch:
 
-  * added unit proof that Yahoo path fans out one request per ticker without same-symbol duplicate first-attempt requests
-  * added unit proof that retry count scales per ticker for Yahoo path
-  * updated locked contracts/runbook to state Yahoo request cardinality explicitly so future audits do not treat single-day backfill as one outbound request
+  * updated audit checkpoints so the root-cause statement matches the new runtime evidence exactly
+  * no production code changes made in this evidence-review turn
 
 * Root-cause hypothesis:
 
-  * hypothesis: the dominant root cause is Yahoo provider/runtime rate-limit pressure caused by per-symbol request fan-out combined with per-symbol retry, not a hidden duplicate loop in backfill orchestration
+  * hypothesis: for the accepted trigger run, the dominant root cause is an external/provider-side Yahoo runtime rate-limit blocker that rejects the first captured symbol request (`ADMR.JK`) and then defeats all configured retries
   * status: STRONG
   * why strong:
-    * code path directly proves the request cardinality shape
-    * accepted runtime evidence already proves repeated Yahoo 429 responses on the failing run
+    * runtime evidence now identifies the failing symbol URL and shows six straight HTTP `429` results on that same request
+    * there is still no evidence of a duplicate-loop bug in the repo
+  * what weakens the earlier fan-out-centric framing:
+    * the supplied run evidence does not show a second symbol request before failure
   * why not yet final:
-    * this session still lacks fresh raw runtime export that totals attempt rows by symbol/date for the exact trigger run
+    * additional runs/evidence are still needed to distinguish first-request blocking from broader burst-window throttling patterns across time
 
 * Next evidence required to close or strengthen:
 
-  * rerun single-day backfill locally and export/run-save:
+  * rerun single-day backfill later/from a different provider window and compare whether the first symbol still gets immediate `429`
+  * if possible, run the same job with a smaller isolated ticker universe or alternative source path for comparison
+  * continue exporting:
     * CLI output
     * `market_data_backfill_summary.json`
     * `source_attempt_telemetry.json`
     * DB export of `eod_run_events` filtered to the failing `run_id`
-  * compute:
-    * distinct symbol count attempted
-    * total attempt rows
-    * per-symbol attempt count
-    * final 429 exhaustion count
 
 * Final state:
 
   * PARTIAL
-  * root cause is strongly narrowed to provider-facing request cardinality + retry scaling
+  * accepted trigger run root cause is strongly narrowed to external/provider Yahoo blocking on the first captured symbol request plus exhausted retry
   * external/runtime Yahoo blocker remains open
 
 
