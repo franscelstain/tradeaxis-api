@@ -319,6 +319,8 @@ class MarketDataPipelineServiceTest extends TestCase
             ->andThrow(new \App\Infrastructure\MarketData\Source\SourceAcquisitionException(
                 'Source API rate limited the request.',
                 'RUN_SOURCE_RATE_LIMIT',
+                0,
+                null,
                 [
                     'provider' => 'yahoo_finance',
                     'retry_max' => 3,
