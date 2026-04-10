@@ -1,5 +1,73 @@
 # LUMEN_CONTRACT_TRACKER
 
+### Yahoo No-Baseline Degraded Hold Runtime Validation
+
+* Status: DONE
+
+* Scope:
+
+  * close the bounded gap where Yahoo/provider source blocking with no prior readable publication still surfaced as hard failure on the backfill lane
+  * keep the batch limited to backfill command, ingest failure mapping, finalize outcome shaping, and audit/checkpoint alignment
+  * do not widen schema enums or redesign unrelated publication/finalize domains
+
+* Owner-doc anchor:
+
+  * `docs/system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
+  * `docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+  * `docs/market_data/ops/Commands_and_Runbook_LOCKED.md`
+  * `docs/market_data/ops/Performance_SLO_and_Limits_LOCKED.md`
+
+* Accepted final evidence:
+
+  * targeted PHPUnit passed:
+    * `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → `OK (10 tests, 12 assertions)`
+    * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (7 tests, 53 assertions)`
+    * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → `OK (45 tests, 1093 assertions)`
+  * full suite passed:
+    * `vendor\bin\phpunit` → `OK (183 tests, 1882 assertions)`
+  * runtime backfill proof passed for:
+    * `php artisan market-data:backfill 2026-03-02 2026-03-02 --output_dir=storage/app/market-data-yahoo-rate-limit-audit`
+  * accepted runtime outcome:
+    * `status=FAIL`
+    * `terminal_status=HELD`
+    * `publishability_state=NOT_READABLE`
+    * `source_attempt_count=4`
+    * `final_reason_code=RUN_SOURCE_RATE_LIMIT`
+    * `final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE`
+
+* Contract decision now validated:
+
+  * Yahoo/provider source blocker with prior readable fallback:
+    * `HELD + NOT_READABLE + trade_date_effective=<prior readable date>`
+  * Yahoo/provider source blocker with **no** prior readable fallback:
+    * `HELD + NOT_READABLE + trade_date_effective=NULL + final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE`
+  * this lane is intentionally surfaced as bounded operational failure (`status=FAIL`) rather than command/runtime error
+  * this batch does **not** generalize all failure lanes into `HELD`; low-coverage without fallback and correction reseal failure remain `FAILED`
+
+* Repo/doc/test alignment completed in this batch:
+
+  * production/runtime code updated so bounded Yahoo no-baseline source blockers stop at controlled `HELD` rather than terminal `FAILED`
+  * backfill/operator output updated so final outcome note is visible in CLI and exported summary data
+  * unit/integration tests aligned to the final runtime truth instead of earlier intermediate assumptions
+  * audit checkpoints updated to record the final accepted runtime evidence
+
+* What is now proven:
+
+  * the no-baseline Yahoo rate-limit lane no longer collapses into hard failure
+  * bounded retry telemetry remains intact (`attempt_count=4`, `retry_max=3`) while terminal handling is now graceful
+  * the codebase cleanly distinguishes degraded-hold versus true-failed lanes
+
+* Final state:
+
+  * DONE
+  * bounded contract change implemented and runtime-validated
+  * broader provider strategy/program readiness still remains PARTIAL only at portfolio level
+
+
+---
+
+# LUMEN_CONTRACT_TRACKER
+
 ### Post Yahoo Rate-Limit Operational Strategy
 
 * Status: DONE

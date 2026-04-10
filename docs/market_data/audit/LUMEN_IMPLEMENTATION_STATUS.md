@@ -2,6 +2,78 @@
 
 ## SESSION UPDATE
 
+* Batch: Yahoo No-Baseline Degraded Hold Runtime Validation
+* Status: DONE
+
+### What was validated in this final evidence turn
+
+* Accepted the user's local runtime/manual validation for the no-baseline degraded-hold batch after applying the final v7 patch set.
+* Reconciled the repo/test/doc changes against the actual local outcomes rather than intermediate hypotheses from earlier failing test revisions.
+* Closed the bounded gap for the single-day Yahoo rate-limit backfill path when no prior readable publication exists.
+
+### Official accepted runtime evidence
+
+* Local targeted PHPUnit validation passed:
+  * `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → `OK (10 tests, 12 assertions)`
+  * `tests/Unit/MarketData/MarketDataBackfillServiceTest.php` → `OK (7 tests, 53 assertions)`
+  * `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → `OK (45 tests, 1093 assertions)`
+* Local full-suite validation passed:
+  * `vendor\bin\phpunit` → `OK (183 tests, 1882 assertions)`
+* Local runtime/manual validation passed for:
+  * `php artisan market-data:backfill 2026-03-02 2026-03-02 --output_dir=storage/app/market-data-yahoo-rate-limit-audit`
+* Accepted final runtime outcome now proves:
+  * `status = FAIL`
+  * `terminal_status = HELD`
+  * `publishability_state = NOT_READABLE`
+  * `source_attempt_count = 4`
+  * `final_reason_code = RUN_SOURCE_RATE_LIMIT`
+  * `final_outcome_note = SOURCE_UNAVAILABLE_NO_BASELINE`
+
+### Final behavior now locked by evidence
+
+* For Yahoo/provider rate-limit or timeout on ingest with a prior readable publication available:
+  * run remains eligible for the bounded degraded-hold path with fallback effective date behavior already introduced in the prior batch
+* For Yahoo/provider rate-limit on ingest with **no** prior readable publication available:
+  * run no longer hard-crashes as `FAILED` for this bounded source-blocker lane
+  * run now ends as `terminal_status=HELD`
+  * `publishability_state` remains `NOT_READABLE`
+  * `trade_date_effective` remains null
+  * final operator note is `SOURCE_UNAVAILABLE_NO_BASELINE`
+* Backfill command surface now completes gracefully and emits bounded failure output instead of surfacing this lane as an unhandled runtime error
+
+### What changed in this batch
+
+* `MarketDataPipelineService` now converts bounded `RUN_SOURCE_RATE_LIMIT` / `RUN_SOURCE_TIMEOUT` ingest failures into a no-baseline degraded hold when no readable fallback exists.
+* `MarketDataBackfillService` and `BackfillMarketDataCommand` now surface the final outcome note in exported/operator-visible output for this lane.
+* Unit/integration coverage was aligned to the final bounded contract:
+  * Yahoo no-baseline source blocker → `HELD`
+  * low-coverage with fallback → `HELD`
+  * low-coverage without fallback → `FAILED`
+  * correction reseal failure lane remains `FAILED`
+
+### Capability gained
+
+* Single-day backfill is no longer forced into a misleading hard failure when Yahoo rejects the first request and no baseline dataset exists.
+* Operators now get a stable, auditable terminal outcome for this lane instead of a raw crash-like error surface.
+* The codebase now distinguishes between:
+  * provider-blocked no-baseline hold
+  * degraded hold with readable fallback
+  * true failed lanes that still must remain failed
+
+### Final state
+
+* DONE for this bounded operational-strategy batch
+* Runtime evidence, targeted PHPUnit, integration coverage, and full-suite validation all passed
+* Official no-baseline Yahoo degraded-hold behavior is now implemented and validated
+* Project/repo overall remains PARTIAL at program level
+
+
+---
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Post Yahoo Rate-Limit Operational Strategy
 * Status: DONE
 
