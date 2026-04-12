@@ -1,13 +1,13 @@
 # Terminology and Scope
 
 ## Purpose
-Define the locked terminology and scope boundary for Market Data Platform (EOD) so all downstream documentation, schema, and implementation refer to the same meanings.
+Define locked terminology for the Market Data Platform (EOD) after the architecture split into **Import** and **Promote** phases.
 
-This document is upstream-only.
-It does not define watchlist scoring, grouping, ranking, trade signals, portfolio allocation, or broker execution behavior.
+This module remains upstream-only.
+It does not define watchlist scoring, ranking, trading signals, portfolio action, or broker execution.
 
 ## Scope of Market Data Platform (LOCKED)
-Market Data Platform is responsible for producing upstream market-data artifacts that are:
+Market Data Platform is responsible for producing upstream artifacts that are:
 - canonical
 - validated
 - deterministic
@@ -15,7 +15,7 @@ Market Data Platform is responsible for producing upstream market-data artifacts
 - sealable
 - safe for downstream consumption
 
-Its minimum upstream outputs are:
+Its minimum outputs remain:
 - canonical EOD bars
 - EOD indicators
 - eligibility snapshot
@@ -23,137 +23,112 @@ Its minimum upstream outputs are:
 - content hashes
 - seal/publication metadata
 
-Optional supplemental outputs may include:
-- session snapshots aligned to the readable effective trade date
-- replay results
-- correction history
-- operational audit artifacts
+## New phase terminology (LOCKED)
 
-## Out of scope (LOCKED)
-The following are outside Market Data Platform scope:
-- watchlist scoring
-- ranking/grouping logic
-- buy/sell signal generation
-- order execution
-- broker integration
-- portfolio construction
-- risk sizing
-- strategy-specific selection logic
-- streaming / tick-by-tick engine assumptions
+### Import
+Import is the upstream acquisition and bar-persistence phase.
 
-## Terminology
+Import includes:
+- acquisition
+- ticker-level processing
+- source mapping
+- dedup
+- validation
+- bars write
+- invalid-row write
+- bars coverage evidence
+- telemetry
 
-### Trade date
-The logical market date associated with a dataset artifact.
+Import does **not** include:
+- indicators
+- eligibility
+- hash
+- seal
+- finalize
 
-For sealed EOD artifacts, this is the date the artifact belongs to in upstream market-data terms.
+### Promote
+Promote is the phase that turns persisted import results into a consumer-readable candidate.
+
+Promote includes:
+- validation
+- bars coverage gate
+- indicators
+- eligibility
+- hash
+- seal
+- finalize
+
+Promote is the only phase allowed to create requested-date readable success.
+
+### Date-driven capability
+The locked capability that the platform accepts explicit requested dates as domain input.
+
+It means:
+- one specific requested trade date can be imported explicitly
+- one explicit trading-date range can be imported explicitly
+- historical and recent dates are both first-class inputs
+- provider transport defaults do not define the domain boundary
+
+### Provider limitation abstraction
+The rule that provider quirks such as `range=10d`, rate limit, per-ticker request fan-out, or transport-specific parameter shapes must be absorbed by the acquisition strategy rather than inherited as domain limits.
+
+### Fatal failure
+Failure that may stop the whole requested-date run immediately.
+Examples: invalid config, broken endpoint contract globally, broken global parser, DB/storage failure.
+
+### Per-ticker failure
+Failure that affects one ticker request/import unit only.
+Examples: rate limit, timeout, empty result, malformed single payload.
+
+Per-ticker failure must be recorded and tolerated during import.
+It is evaluated later through coverage/readiness, not as automatic full-run stop.
+
+### Bars coverage
+Coverage based on canonical valid bars after mapping, dedup, and validation.
+
+Bars coverage is **not** request-success coverage.
+
+## Existing terminology retained
 
 ### Requested trade date
 The date originally requested for processing by a run.
 
-Stored conceptually as:
-- `trade_date_requested`
-
 ### Effective trade date
-The consumer-readable date resolved by readiness rules.
-
-Stored conceptually as:
-- `trade_date_effective`
-
-Consumers must read using the effective trade date logic, not by guessing from the latest available raw date.
+The consumer-readable date resolved by readability rules after finalization.
 
 ### Canonical bars
 Validated EOD OHLCV rows that represent the authoritative upstream bar dataset for one trade date and one ticker.
 
-Canonical bars must be deterministic and must not contain ambiguous duplicate rows for the same `(trade_date, ticker_id)`.
-
 ### Invalid bars
-Source-derived rows rejected from canonical publication because they violate locked upstream validation rules.
-
-Invalid bars are audit artifacts, not consumer-readable canonical dataset members.
+Source-derived rows rejected from canonical publication because they violate locked validation rules.
 
 ### Indicators
-Deterministic derived metrics computed from canonical bars under locked formula, calendar, window, and null-policy rules.
-
-Indicators are upstream artifacts.
-They are not downstream signals by themselves.
+Deterministic derived metrics computed from canonical bars under locked formula and window rules.
 
 ### Eligibility snapshot
-One row per coverage-universe ticker for trade date D that explicitly states whether the ticker is upstream-readable and, if blocked, why.
-
-Eligibility is an upstream readiness artifact, not a trading recommendation.
-
-### Coverage universe
-The set of ticker identities that belong to upstream universe membership as-of trade date D.
-
-Coverage universe must be evaluated using temporal membership logic when historical as-of correctness is required.
-
-### Run
-A processing context that attempts to build upstream artifacts for a requested trade date.
-
-A run may end in terminal status such as:
-- `SUCCESS`
-- `HELD`
-- `FAILED`
+One row per coverage-universe ticker for trade date D stating whether the ticker is upstream-readable and, if blocked, why.
 
 ### Seal
-The act and metadata state that freeze a coherent consumer-readable dataset publication for one effective trade date D.
-
-A dataset must not be considered consumer-readable until the required seal conditions are satisfied.
+The act and metadata state that freeze a coherent consumer-readable dataset publication.
 
 ### Publication
-The current sealed consumer-readable upstream dataset state for one effective trade date D.
-
-If historical correction occurs, multiple historical publications may exist for the same D, but only one publication may be current.
-
-### Superseded publication
-A previously current publication for D that has been replaced by a newer corrected sealed publication.
-
-Superseded publications must remain auditable.
-
-### Historical correction
-A controlled process that replaces the current published sealed dataset for a historical date D with a newly sealed corrected publication, while preserving prior publication history.
+The current sealed consumer-readable dataset state for one effective trade date.
 
 ### Replay
-A controlled re-execution of historical upstream processing used to verify determinism, data quality, correction behavior, and publication/readiness outcomes.
-
-Replay is not a trading-strategy backtest.
+Controlled historical re-execution used to verify determinism and readiness behavior.
+Replay is not trading-strategy backtesting.
 
 ### Session snapshot
-An optional non-streaming upstream supplemental artifact captured at a real wall-clock time and aligned to the consumer-readable effective trade date D.
-
-Important:
-- `trade_date` for snapshot alignment refers to the effective readable dataset date
-- `captured_at` stores the actual wall-clock capture timestamp
-
-Session snapshot must not be described as inherently “same-day” unless the statement explicitly refers to `captured_at`, not `trade_date`.
-
-### Consumer-readable dataset
-The coherent sealed upstream dataset state that downstream consumers are allowed to read.
-
-At minimum, this includes:
-- canonical bars for D
-- indicators for D
-- eligibility snapshot for D
-- associated run/hash/seal metadata proving readability
-
-### Audit artifacts
-Operational and traceability artifacts that support investigation and reproducibility, for example:
-- invalid bars
-- run events
-- correction requests
-- replay results
-- failure evidence
-- optional fetch-failure rows
-
-Audit artifacts support proof and diagnosis, but they are not automatically part of the consumer-readable dataset.
+Optional non-streaming supplemental artifact aligned to the effective readable trade date and captured at a real wall-clock time.
 
 ## Locked interpretation rules
-1. Upstream readiness must never be confused with downstream desirability.
-2. Session snapshot must never be interpreted as a real-time streaming contract.
-3. Publication must never mean “latest row by timestamp”; it must mean the current sealed readable state.
-4. Historical correction must never silently mutate prior sealed publication history.
-5. Replay must never be interpreted as strategy-performance backtesting.
+1. Import completion must never be described as readable publication.
+2. Promote owns indicators, eligibility, hash, seal, and finalize.
+3. Per-ticker failure must never be described as automatic full-run fatality unless it is truly a global failure.
+4. Coverage must never mean successful HTTP request count.
+5. Publication must never mean “latest raw row by timestamp”; it means the current sealed readable state.
+6. Date-driven capability must never be reduced to provider default recent window behavior.
+7. Provider limitation abstraction must never be described as domain limitation.
 
 ## Anti-domain-leak rule (LOCKED)
 Any wording that implies:
@@ -163,4 +138,4 @@ Any wording that implies:
 - broker action
 - portfolio action
 
-is outside this module unless explicitly documented as downstream consumer behavior outside Market Data Platform.
+is outside this module unless explicitly documented as downstream consumer behavior.

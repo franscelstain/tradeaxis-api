@@ -1,112 +1,209 @@
 # EOD SOURCE OPERATIONAL RESILIENCE CONTRACT (LOCKED)
 
 ## Current State
-PARTIALLY IMPLEMENTED
+READY FOR IMPLEMENTATION
 
 ---
 
-## Scope
-Dokumen ini mengunci perilaku resilience minimum untuk akuisisi source EOD eksternal.
-Fokusnya hanya pada source acquisition upstream, bukan realtime/live trading system.
+## Purpose
+Dokumen ini mengunci resilience contract untuk **IMPORT PHASE** pada platform EOD Market Data.
+
+Dokumen ini tidak mengatur indicator compute, eligibility build, hash, seal, atau finalize.
+Semua itu berada di **PROMOTE PHASE**.
 
 ---
 
-## Implemented Behavior in Active Codebase
+## Locked architectural split
 
-### Retry
-Sudah diimplementasikan pada `PublicApiEodBarsAdapter`.
-- retry hanya untuk `RUN_SOURCE_TIMEOUT` dan `RUN_SOURCE_RATE_LIMIT`
-- jumlah retry dikendalikan oleh `market_data.provider.api_retry_max`, tetapi active codebase sekarang meng-cap effective retry budget ke maksimum `3` agar tidak melewati batas retry aman operator saat runtime config lebih agresif
-- retry tidak dipakai untuk auth/config error
+### Import phase
+Import phase hanya mencakup:
+- source acquisition
+- request loop per ticker
+- retry / backoff / throttle
+- mapping source payload menjadi source rows
+- dedup
+- validation row-level
+- write canonical `eod_bars`
+- write invalid rows
+- hitung bars coverage input evidence
+- simpan telemetry import
 
-### Backoff + throttle
-Sudah diimplementasikan pada `PublicApiEodBarsAdapter`.
-- backoff bersifat exponential berbasis `market_data.provider.api_backoff_ms`
-- throttle + jitter request menggunakan `market_data.provider.api_throttle_qps`
-- detail schedule operasional tetap mengacu ke `ops/Performance_SLO_and_Limits_LOCKED.md` sebagai guidance operator, tetapi active codebase tetap memaksa cap retry aman maksimum `3` untuk menghindari drift runtime yang memperburuk provider blocker
-- untuk provider `yahoo_finance` pada active codebase, satu requested date saat ini difan-out menjadi satu request per ticker di universe tanggal tersebut; sehingga throttle/retry diterapkan per request simbol, bukan sekali per requested date
+Import phase **tidak boleh**:
+- menghitung indicators
+- membangun eligibility
+- menghitung consumer dataset hash
+- membuat seal
+- memfinalisasi readability publication
 
-### Timeout
-Sudah diimplementasikan.
-- HTTP request membaca `market_data.source.api.timeout_seconds`
-- timeout / HTTP 408 / HTTP 5xx / transport failure diklasifikasikan sebagai `RUN_SOURCE_TIMEOUT`
-
-### Error classification
-Sudah diimplementasikan minimal untuk source adapter default.
-- `RUN_SOURCE_AUTH_ERROR` untuk 401/403 atau endpoint/auth config yang tidak valid
-- `RUN_SOURCE_RATE_LIMIT` untuk 429
-- `RUN_SOURCE_TIMEOUT` untuk timeout / transport failure / 408 / 5xx
-- `RUN_SOURCE_MALFORMED_PAYLOAD` untuk unexpected non-2xx response atau payload yang tidak bisa dipercaya
-- `RUN_SOURCE_RESPONSE_CHANGED` untuk provider payload yang berubah bentuk pada adapter provider-specific path
-
-### Failure event telemetry
-Sudah diimplementasikan minimal pada failure path ingest API.
-- exhaustion / non-retry source failure membawa `exception_context` ke `eod_run_events.event_payload_json`
-- context minimum berisi provider, retry_max, attempt_count, final_reason_code, dan daftar attempt
-- setiap attempt menyimpan minimal: `attempt_number`, `reason_code`, `http_status`, `throttle_delay_ms`, `backoff_delay_ms`, dan `will_retry`
-- enrichment ini adalah audit trail minimum untuk operator; ini tidak mengubah contract retry/fallback yang sudah ada
-
-### Finalize safety
-Sudah ditutup oleh finalize + coverage gate path.
-- requested date tidak boleh menjadi `READABLE` bila ingest/source failure membuat coverage gagal atau blocked
-- fallback publication lama boleh tetap menjadi effective readable date bila memang valid menurut finalize decision
-- untuk `RUN_SOURCE_RATE_LIMIT` atau `RUN_SOURCE_TIMEOUT`, active codebase sekarang boleh menghentikan pipeline lebih awal dengan `terminal_status=HELD`, `publishability_state=NOT_READABLE`, dan `trade_date_effective` menunjuk ke prior readable publication bila fallback valid memang ada
-- bila tidak ada prior readable publication yang valid, source failure harus berakhir `HELD + NOT_READABLE + trade_date_effective=NULL`; requested date tetap tidak readable, tetapi pipeline tidak boleh hard-crash atau melaporkan requested date sebagai sukses
-
-### Success-after-retry telemetry
-Sudah diimplementasikan minimal pada success path ingest API.
-- adapter menyimpan ringkasan acquisition terakhir untuk run ingest API
-- ringkasan minimum berisi `provider`, `source_name`, `timeout_seconds`, `retry_max`, `attempt_count`, `attempts`, `success_after_retry`, `final_http_status`, `final_reason_code`, dan `captured_at`
-- `EodBarsIngestService` meneruskan ringkasan ini ke hasil ingest
-- `MarketDataPipelineService` menulis ringkasan tersebut ke payload `STAGE_COMPLETED` dan ke `eod_runs.notes` minimum (`source_provider`, `source_timeout_seconds`, `source_retry_max`, `source_attempt_count`, `source_success_after_retry`, `source_final_http_status`)
-- `AbstractMarketDataCommand` sekarang mengekstrak ringkasan minimum itu ke output operator (`source_name`, `source_summary`) agar operator tidak harus membaca `notes` mentah; bila context tersedia, `source_summary` juga harus membawa `provider`, `timeout_seconds`, dan `retry_max`; bila notes minimum tipis tetapi attempt-level telemetry run masih ada, command boleh memulihkan field minimum operator-facing yang sama (`provider`, `timeout_seconds`, `retry_max`, `attempt_count`, `final_reason_code`, serta field tambahan yang tersedia seperti `success_after_retry` / `final_http_status`) dari telemetry persisted tersebut tanpa mengarang fakta baru; untuk proof operator yang lebih bounded, daily CLI dan `market_data_daily_summary.json` juga boleh menurunkan `source_attempt_event_type` dan `source_attempt_count` dari telemetry persisted tersebut bila field itu memang tersedia
-- `MarketDataEvidenceExportService` sekarang juga menurunkan source context minimum itu ke `run_summary.json`, `evidence_pack.json`, dan ringkasan `market-data:evidence:export` agar proof ops minimum tidak berhenti di notes mentah atau command harian saja; bila notes minimum tipis tetapi attempt-level telemetry run masih ada, export boleh memulihkan field minimum (`provider`, `timeout_seconds`, `retry_max`, `attempt_count`, `final_http_status`, `final_reason_code`) dari telemetry persisted tersebut tanpa mengarang fakta baru
-- bila telemetry attempt-level tersedia di `eod_run_events`, `MarketDataEvidenceExportService` juga harus dapat mengekspor `source_attempt_telemetry.json` dan menyertakannya ke `evidence_pack.json` agar proof ops minimum untuk retry/backoff tidak bergantung pada inspeksi tabel mentah
-- bila run gagal pada jalur source-acquisition, minimum failure-side source context (`source_name`, `source_provider`, `source_timeout_seconds`, `source_retry_max`, `source_attempt_count`, `source_final_http_status` bila ada, dan `source_final_reason_code`) juga harus ikut dipersist ke `eod_runs.notes` agar operator summary/backfill/evidence export tetap bisa menjelaskan kegagalan tanpa membaca raw event payload saja
-- tujuan batch ini tetap audit trail minimum, bukan operator dashboard penuh
-
-### Manual fallback operator path
-Sudah diimplementasikan minimum pada command harian utama.
-Operator manual fallback tetap valid, tetapi active codebase sekarang juga punya degraded auto-hold minimum untuk source blocker tertentu bila prior readable publication sudah ada.
-- operator dapat menjalankan `market-data:daily --source_mode=manual_file --input_file=...` saat API mode tidak aman dipakai
-- explicit input file `.json` / `.csv` mengoverride lookup direktori default hanya untuk eksekusi command tersebut
-- payload event stage ingest dan `eod_runs.notes` sekarang dapat membawa jejak minimum `input_file` / `source_input_file` untuk fallback manual yang dipicu operator
-- output command operator sekarang juga menampilkan `source_input_file` bila jejak itu tersedia
-- bila output operator atau artifact proof lokal menampilkan `input_file` / `source_input_file`, nilai path operator-facing itu harus dirender dalam bentuk normalized forward-slash untuk menjaga determinisme proof lintas Windows dan non-Windows tanpa mengubah target file input aktual
-- bila `market-data:daily` gagal setelah run failure-side notes sempat dipersist, command harus mencoba merender ulang ringkasan run terakhir untuk tanggal+source tersebut sebelum mengembalikan exit non-zero, agar operator tetap melihat `source_name` / `source_summary` minimum tanpa inspeksi manual ke tabel
-- bila operator memberi `--output_dir`, command harian juga harus menulis `market_data_daily_summary.json` berisi ringkasan run/operator minimum yang sama (`run_id`, requested/effective date bila ada, terminal/publishability state, coverage summary, source context minimum, dan `error_message` pada recovered failure path) agar proof runtime lokal tidak bergantung pada copy-paste terminal
-- bila operator memberi `--output_dir` dan telemetry attempt-level memang tersedia untuk run tersebut, command harian juga boleh mematerialkan `source_attempt_telemetry.json` bounded companion dengan payload telemetry persisted yang sama agar proof runtime lokal untuk retry/backoff operator harian tidak mengharuskan langkah export evidence terpisah
-
-### Manual rerun path
-Sudah tersedia minimum melalui command pipeline yang sudah ada.
-- operator dapat menjalankan ulang `market-data:daily` untuk requested date tertentu
-- operator dapat menjalankan `market-data:backfill {start_date} {end_date}` untuk rerun date-range yang mengikuti `market_calendar`
-- pada provider `yahoo_finance`, satu requested date di jalur backfill/daily saat ini dapat menghasilkan `ticker_universe_count * (1 + retry_max)` request maksimum pada jalur gagal total, karena adapter melakukan request chart per ticker lalu memberi retry per request
-- summary backfill sekarang membawa source context minimum per tanggal (`source_name`, `source_input_file`, `source_summary`) bila run notes memilikinya; untuk API path, `source_summary` harus ikut menurunkan `provider`, `timeout_seconds`, dan `retry_max` bila context itu dipersist; bila notes tipis tetapi attempt-level telemetry run masih tersedia, backfill summary boleh memulihkan field minimum yang sama dari telemetry persisted tersebut tanpa mengarang fakta baru
-- path manual-file yang tampil ke operator melalui ringkasan harian/backfill atau artifact proof lokal harus memakai bentuk normalized forward-slash agar proof runtime tidak drift hanya karena separator OS
-- bila `market-data:backfill` menerima exception setelah run gagal sudah tercatat, summary kasus `ERROR` harus mencoba memuat ulang run terakhir untuk tanggal+source tersebut dan tetap menurunkan `run_id`, `terminal_status`, `publishability_state`, serta source context minimum dari notes yang sudah dipersist
-- correction / reseal path tetap memakai command correction yang sudah terpisah bila konteksnya historical correction
+### Promote phase
+Promote phase membaca hasil import yang sudah tersimpan lalu:
+- memvalidasi readiness berbasis bars coverage
+- menghitung indicators
+- membangun eligibility
+- menghitung hash
+- membuat seal
+- memfinalisasi terminal status / publishability state
 
 ---
 
-## Remaining Operational Gaps
-Bagian berikut belum boleh dianggap selesai hanya karena adapter retry sudah ada:
-- live-source runtime proof di environment nyata
-- logging/audit trail saat ini sudah mencakup failure path, success-after-retry minimum, ringkasan backfill minimum, dan export attempt-telemetry minimum pada evidence export, tetapi belum punya operator dashboard khusus
-- failure handling yang lebih granular bila nanti source acquisition dibuat concurrent atau multi-provider
-- fallback exercise proof berbasis run nyata, bukan hanya contract/unit path
+## Date-driven capability (LOCKED)
+Resilience contract ini wajib mendukung **arbitrary date ingestion**.
+
+Artinya:
+- requested trade date tunggal apa pun harus bisa dicoba secara eksplisit
+- historical range apa pun harus bisa diproses bertahap secara operasional
+- adapter, retry, throttle, dan loop strategy harus melayani tanggal target domain
+- provider default yang punya jendela query terbatas tidak boleh memaksa operating model menjadi recent-only
+
+Date-driven capability di sini berarti kemampuan **mencoba dan memproses tanggal target secara sah**.
+Readable success tetap ditentukan kemudian oleh coverage gate dan promote outcome.
 
 ---
 
-## Test Requirement
-Minimal proof yang harus ada:
-- retry test untuk rate limit
-- retry test untuk timeout/transient failure
-- non-retry test untuk auth/config failure
-- finalize/fallback safety proof tetap ditutup di integration path publication outcome
+## Locked source order and fallback policy
+Urutan source resmi untuk jalur aktif adalah:
+1. **Primary:** `api_free` / `yahoo_finance`
+2. **Secondary controlled recovery:** `manual_file`
+
+Tidak ada source ketiga pada baseline ini.
+Tidak ada majority-vote resolution.
+Tidak ada merge antar source untuk membentuk satu requested-date publication.
+
+`manual_file` hanya boleh dipakai bila:
+- operator memang menjalankan source mode itu secara eksplisit; atau
+- kontrak recovery/correction resmi memerintahkan perpindahan ke jalur itu
 
 ---
 
-## Final State
-LOCKED
-PARTIAL IMPLEMENTATION ACKNOWLEDGED
+## Provider context locked for active path
+Untuk active default provider `yahoo_finance`:
+- request dilakukan **per ticker**
+- symbol IDX dirender sebagai `<ticker>.JK`
+- provider gratis dapat memberi `HTTP 429`
+- provider dapat memiliki default acquisition window seperti `10d`
+- karena request fan-out terjadi per ticker, ketahanan jalur import harus **partial-tolerant**
+- kegagalan beberapa ticker tidak boleh otomatis menghentikan seluruh import date-run
+
+Dokumen ini tidak mengunci provider baru.
+Dokumen ini hanya mengunci perilaku minimum untuk provider path aktif yang sudah ada.
+
+---
+
+## Provider limitation abstraction (LOCKED)
+Provider limitation harus diserap oleh import strategy, bukan diwariskan ke domain contract.
+
+Implementation wajib siap mendukung hal-hal berikut sesuai provider capability aktual:
+- explicit date-range request
+- `period1` / `period2` style request
+- windowing yang mencakup requested date target
+- batching historical fetch
+- retry / backoff / throttle untuk failure transient
+
+Provider limitation tidak boleh dipakai untuk:
+- menurunkan threshold coverage
+- mengganti requested date operator
+- mengklaim requested date readable saat data belum cukup
+
+---
+
+## Retry / backoff / handoff decision flow (LOCKED)
+Aturan resmi:
+1. coba primary source untuk ticker/date target
+2. bila gagal dengan transient class (`429`, timeout, temporary transport failure), lakukan retry sampai retry budget habis
+3. bila gagal dengan non-transient class (auth/config/parser/global mapping/date mismatch), tandai failure tanpa retry berlebihan
+4. setelah seluruh ticker selesai diproses atau retry budget habis, simpan hasil import evidence
+5. evaluate coverage pada promote
+6. hanya bila operating mode eksplisit memerintahkan recovery source, run berikutnya boleh memakai `manual_file`
+
+Satu run tidak boleh berpindah source-of-truth di tengah publication candidate lalu menggabungkan hasil dua source menjadi satu state tanpa kontrak correction/recovery yang eksplisit.
+
+---
+
+## Partial-tolerant import rule
+Untuk active path yang request per ticker:
+- partial ticker failure **boleh** terjadi pada import
+- command import tidak boleh crash hanya karena beberapa ticker gagal
+- hasil partial harus tetap disimpan pada telemetry / failure evidence
+- requested date tetap dievaluasi akhirnya melalui **bars coverage berbasis canonical valid bars**, bukan jumlah request sukses
+
+---
+
+## Conflict resolution (LOCKED)
+Jika source A dan source B menghasilkan nilai berbeda untuk ticker/date yang sama, aturan finalnya adalah:
+- tidak ada voting
+- tidak ada averaging
+- tidak ada merge-field-per-field
+- pemenang ditentukan oleh **source priority + run mode + validation**
+
+Detailnya:
+- dalam run normal, primary source yang lolos validasi menjadi source-of-truth
+- secondary `manual_file` hanya menjadi source-of-truth bila run memang dijalankan dalam mode itu atau correction resmi mempublikasikannya
+- bila source yang sedang aktif gagal lolos validasi keras, data tersebut tidak boleh dipromosikan; hasilnya harus non-readable sampai run recovery/correction resmi selesai
+
+---
+
+## Source-of-truth and traceability minimum
+Setiap canonical row / publication context harus dapat ditelusuri minimal ke:
+- `requested_trade_date`
+- `source_mode`
+- `source_name`
+- `run_id`
+- `ingested_at` atau acquisition timestamp ekuivalen
+- source attempt / failure summary
+- publication/correction reference bila source berubah melalui correction flow
+
+Tanpa jejak ini, publication tidak audit-safe.
+
+---
+
+## Retry budget boundary
+Retry/backoff/throttle hanya berlaku pada jalur **source acquisition import**.
+
+Aturan keras:
+- retry hanya untuk failure class yang memang transient, terutama rate limit dan timeout
+- retry budget efektif harus dibatasi secara aman oleh implementasi/operator policy
+- retry tidak boleh dipakai untuk auth/config/global parser failure
+- retry tidak boleh dipakai untuk menyamarkan hard integrity mismatch
+
+---
+
+## Final interpretation boundary
+Walaupun import bersifat partial-tolerant:
+- requested date tetap dievaluasi lewat coverage/promote
+- import retry bukan bentuk publishability override
+- import completion bukan readable success
+- fallback source bukan alasan untuk menggabungkan dua source state secara diam-diam
+
+---
+
+## Required audit-visible fields
+Minimum field yang harus tampak:
+- `requested_trade_date`
+- `source_mode`
+- `source_name`
+- `source_priority`
+- `retry_attempt_count`
+- `failure_class_summary`
+- `coverage_input_available_count`
+- `coverage_input_universe_count`
+- `source_of_truth_decision`
+
+---
+
+## Anti-ambiguity rules
+Tidak boleh:
+- menyebut provider limitation sebagai capability limit domain
+- mempromosikan requested date hanya karena sebagian ticker berhasil
+- menganggap manual fallback sebagai merge bebas antar-source
+- membiarkan dua source sama-sama dianggap source-of-truth untuk satu publication yang sama
+- memakai majority vote atau best-effort merge tanpa kontrak baru
+
+---
+
+## Cross-contract alignment
+Harus sinkron dengan:
+- `Source_Data_Acquisition_Contract_LOCKED.md`
+- `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
+- `Run_Status_and_Quality_Gates_LOCKED.md`
+- `CONSUMER_READ_CONTRACT_LOCKED.md`
+- `../ops/Commands_and_Runbook_LOCKED.md`

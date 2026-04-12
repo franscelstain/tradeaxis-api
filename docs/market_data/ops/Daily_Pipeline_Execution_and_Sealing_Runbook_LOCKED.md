@@ -1,67 +1,95 @@
-# Daily Pipeline Execution and Sealing Runbook (LOCKED)
+# DAILY IMPORT AND PROMOTE RUNBOOK (LOCKED)
+
+## Current State
+READY FOR IMPLEMENTATION
+
+---
 
 ## Purpose
-Ensure daily runs produce a frozen upstream dataset that downstream consumers can read safely.
+Dokumen ini menjelaskan alur operasional harian setelah phase dipisah.
 
-## Daily order (LOCKED)
-1) acquire and publish canonical EOD bars for requested date `T`
-2) compute indicators for `T` using locked semantics and version
-3) build eligibility for requested date `T`
-4) evaluate coverage gate for `T` using resolved universe, canonical valid-bar count, and explicit `COVERAGE_MIN`
-5) compute audit hashes for the candidate consumer-visible date
-6) write seal metadata for that date only if all seal preconditions pass
-7) finalize run status and resolve `trade_date_effective`
-8) generate run artifacts after final status is committed
+Command yang dipakai:
+- `market-data:daily`
+- `market-data:promote`
 
-## Coverage gate operator rule (LOCKED)
-Before requested date `T` can become readable, operators and code must be able to show:
-- resolved coverage universe for `T`
+---
+
+## Date-driven note
+Walaupun dokumen ini fokus pada flow harian, `market-data:daily` tetap command yang menerima **1 requested trade date eksplisit**.
+Dokumen ini tidak boleh dibaca sebagai recent-only shortcut yang mengikuti default provider window.
+
+---
+
+## Daily operator flow
+1. jalankan `market-data:daily` untuk tanggal target
+2. review import evidence minimum
+3. review ticker failure summary
+4. review bars coverage evidence minimum
+5. bila requested date perlu dibuka ke downstream, jalankan `market-data:promote`
+
+---
+
+## Import expectations
+`market-data:daily` hanya mengerjakan import:
+- acquisition
+- ticker loop
+- mapping
+- dedup
+- validation
+- write bars
+- write invalid rows
+- write telemetry
+- write bars coverage evidence minimum
+
+Import harian tidak boleh:
+- menghitung indicators
+- membangun eligibility
+- hash
+- seal
+- finalize
+
+---
+
+## Coverage rule
+Coverage dinilai pada promote, menggunakan canonical valid bars hasil import.
+Coverage tidak berasal dari request-success count.
+
+Evidence minimum yang harus terlihat untuk operator:
+- resolved coverage universe
 - `coverage_universe_count`
 - `coverage_available_count`
 - `coverage_ratio`
-- explicit threshold `COVERAGE_MIN`
-- final `coverage_gate_state`
+- `coverage_gate_state` bila promote sudah dijalankan
 
-Coverage denominator must come from resolved universe membership as-of `T`.
-It must not come from provider-return count or eligibility row count.
+---
 
-## Readiness rule (LOCKED)
-Downstream consumers may only use:
-- `trade_date_effective = D` that resolves to a finalized safe date
-- and a dataset that is `SEALED`
+## Promote expectations
+`market-data:promote` adalah satu-satunya jalur untuk:
+- coverage validation
+- indicators
+- eligibility
+- hash
+- seal
+- finalize
 
-If requested date is `HELD` / `FAILED` or unsealed:
-- effective date falls back when a prior readable publication exists
-- downstream readers must use fallback `D`
-- requested date itself remains non-readable
+Requested date hanya boleh readable bila:
+- import evidence tersedia
+- coverage lolos
+- indicators/eligibility/hash/seal/finalize lolos
 
-## Coverage-specific outcome guidance
-- coverage `PASS` is necessary but not sufficient for readable success
-- coverage `FAIL` means requested date must not be sealed/readable for requested-date publication
-- coverage `BLOCKED` means requested date must not be treated as publishable because the evaluation basis itself is not trustworthy or not meaningfully evaluable
+---
 
-## Sealing storage (LOCKED default)
-Recommended storage is on `eod_runs`:
-- `sealed_at`
-- `sealed_by`
-- `seal_note`
+## Failure interpretation
+- per-ticker import failure tidak otomatis menghentikan date-run
+- fatal import failure boleh menghentikan import
+- coverage fail membuat requested date tetap non-readable
+- promote failure setelah coverage pass tetap membuat requested date non-readable
 
-## Controlled correction
-If provider correction occurs for a sealed date:
-- create new run
-- recompute artifacts
-- recompute hashes
-- re-evaluate coverage gate
-- reseal only if requested date again satisfies all locked readability preconditions
-- preserve old run for audit
+---
 
-## Operator checklist
-- final status appropriate?
-- coverage denominator based on resolved universe?
-- coverage numerator based on canonical valid bars?
-- coverage ratio passes explicit threshold?
-- hashes non-null?
-- `sealed_at` non-null for consumable date?
-- fallback resolution recorded honestly when requested date is not readable?
-
-If any answer above is no, requested date is not ready.
+## Anti-drift rules
+Dokumen ini tidak boleh lagi dipakai untuk menyiratkan bahwa:
+- satu command harian langsung menjalankan publish path penuh
+- import harian otomatis membuat requested date readable
+- coverage basis berasal dari successful request count
+- `market-data:daily` hanya cocok untuk tanggal recent karena provider default punya jendela tertentu

@@ -1,227 +1,144 @@
-# Run Status and Quality Gates (LOCKED)
+# RUN STATUS AND QUALITY GATES (LOCKED)
 
 ## Purpose
-Define the minimum run-state model, quality-gate model, and publishability model so Market Data Platform can distinguish:
-- execution progress
-- terminal outcome
-- gate evaluation
-- consumer readability
+Mengunci cara requested date berpindah dari hasil import menuju outcome final platform.
 
-This contract exists so implementation does not collapse too many meanings into one status field.
-
-## Core state dimensions (LOCKED)
-A run must be understandable across four distinct dimensions:
-
-1. lifecycle state
-2. terminal status
-3. quality gate state
-4. publishability state
-
-These may be stored as separate columns or equivalent normalized state model, but the meanings must remain distinct.
+Dokumen ini sekarang mengikuti arsitektur **IMPORT vs PROMOTE split**.
 
 ---
 
-## 1. Lifecycle state
+## Phase ownership (LOCKED)
 
-### Meaning
-Execution progression state of the run itself.
+### Import phase
+Import phase hanya menghasilkan:
+- canonical bars
+- invalid rows
+- import telemetry
+- bars coverage evidence
 
-### Minimum lifecycle values
-- `PENDING`
-- `RUNNING`
-- `FINALIZING`
-- `COMPLETED`
-- `FAILED`
-- `CANCELLED`
+Import phase tidak memberi readable success.
+Import phase tidak membuat seal.
+Import phase tidak memutuskan final consumer publishability.
 
-### Interpretation
-- `PENDING`: run created but active processing not yet started
-- `RUNNING`: active processing in progress
-- `FINALIZING`: artifact generation completed enough to evaluate final state, but final commit/readability resolution not yet closed
-- `COMPLETED`: execution path completed
-- `FAILED`: execution path failed hard
-- `CANCELLED`: run intentionally cancelled and not publishable
-
-Lifecycle state is not the same as consumer readability.
+### Promote phase
+Promote phase memiliki ownership untuk:
+- coverage validation
+- indicators
+- eligibility
+- hash
+- seal
+- finalize
+- terminal status
+- publishability state
+- effective readable date resolution
 
 ---
 
-## 2. Terminal status
-
-### Meaning
-Consumer-facing terminal outcome for the requested date context.
-
-### Allowed terminal values
+## Allowed terminal status
+Terminal status platform yang diizinkan tetap:
 - `SUCCESS`
 - `HELD`
 - `FAILED`
 
-### Interpretation
-- `SUCCESS`: requested/effective date is readable according to publication rules
-- `HELD`: requested date is not readable, but fallback to prior readable date may keep consumers operational
-- `FAILED`: required stage failed or mandatory artifact is unusable
-
-Terminal status is not the same as lifecycle state.
-
-Example:
-- lifecycle may be `COMPLETED`
-- terminal status may still be `HELD`
+Tidak ada terminal enum baru yang diperkenalkan oleh split ini.
 
 ---
 
-## 3. Quality gate state
-
-### Meaning
-Evaluation result of the locked quality/readiness gates for the candidate artifact set.
-
-### Minimum gate-state values
-- `PENDING`
-- `PASS`
-- `FAIL`
-- `BLOCKED`
-
-### Interpretation
-- `PENDING`: not yet evaluated or not yet fully evaluable
-- `PASS`: all required gates passed
-- `FAIL`: one or more required gates failed
-- `BLOCKED`: evaluation could not complete because a required prerequisite artifact was missing or invalid
-
-### Minimum gates (LOCKED)
-At minimum, gates must cover:
-1. canonical bar artifact exists
-2. indicator artifact exists
-3. eligibility artifact exists
-4. coverage gate passes according to `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
-5. required hashes exist before readable success
-6. seal exists before readable success
-7. publication resolution is unambiguous
-8. cutoff/finalization timing policy is satisfied
-
----
-
-## 4. Publishability state
-
-### Meaning
-Whether the candidate state is consumer-readable.
-
-### Minimum publishability values
-- `NOT_READABLE`
+## Publishability state
+Publishability minimum:
 - `READABLE`
+- `NOT_READABLE`
 
-### Interpretation
-- `NOT_READABLE`: candidate or requested-date state must not be read by consumers
-- `READABLE`: a current sealed publication exists and may be read by consumers
-
-Publishability is the direct consumer-readability layer.
+Requested date hanya boleh `READABLE` bila promote phase menyelesaikan seluruh precondition sukses.
 
 ---
 
-## Terminal-outcome mapping rules (LOCKED)
+## Promote preconditions for readable success (LOCKED)
+Requested date hanya boleh berakhir `SUCCESS + READABLE` bila seluruh syarat ini terpenuhi:
 
-### SUCCESS
-A run may resolve to terminal `SUCCESS` only if:
-- lifecycle state has completed relevant execution successfully
-- quality gate state = `PASS`
-- publishability state = `READABLE`
-- hashes exist
-- seal exists
-- current publication is resolved unambiguously
+1. import phase selesai tanpa fatal corruption pada persisted bars
+2. bars coverage gate = `PASS`
+3. indicator artifact berhasil dihitung
+4. eligibility artifact berhasil dibangun
+5. required hash berhasil dihitung
+6. dataset berhasil diseal
+7. finalize menetapkan requested date/readable candidate itu sah untuk consumer
 
-### HELD
-A run should resolve to terminal `HELD` when:
-- requested date is not readable
-- prior readable fallback may still exist
-- lifecycle may have completed or partially completed
-- publishability state remains `NOT_READABLE`
-
-Typical causes:
-- coverage gate evaluated to `FAIL` and prior readable fallback still exists
-- requested date degraded below threshold but prior sealed readable publication still serves consumers
-- candidate not safely publishable even though fallback continuity remains
-
-### FAILED
-A run should resolve to terminal `FAILED` when:
-- required stage failed hard
-- mandatory artifact missing or unusable
-- candidate cannot be trusted for publication
-- publishability state remains `NOT_READABLE`
-
-Typical causes:
-- compute failure
-- source schema drift
-- coverage gate is `BLOCKED` because prerequisite universe or canonical-bar evidence is unusable
-- hash failure with no safe continuation
-- seal failure with no safe publish path
+Jika satu saja gagal, requested date tidak boleh dianggap readable.
 
 ---
 
-## Stage model
-Stage remains useful as a separate execution-location indicator, for example:
-- `INGEST_BARS`
-- `PUBLISH_BARS`
-- `COMPUTE_INDICATORS`
-- `BUILD_ELIGIBILITY`
-- `HASH`
-- `SEAL`
-- `FINALIZE`
+## HELD
+Requested date harus berakhir `HELD` bila requested date tidak readable, tetapi sistem masih berada pada jalur operasional yang terkontrol.
 
-Stage tells *where* the run is or failed.
-Lifecycle/terminal/gate/publishability tell *what that means*.
+Contoh minimum:
+- coverage gate `FAIL` dan prior readable fallback tersedia
+- source/import result parsial membuat requested date tidak lolos promote, tetapi prior readable fallback masih tersedia
+- source blocker terjadi dan implementation memilih menahan requested date sambil tetap menandai `NOT_READABLE`
 
-## Minimum state examples
+`HELD` bukan readable success.
+`HELD` bukan publish baru untuk requested date.
 
-### Example A — Normal readable success
-- lifecycle state: `COMPLETED`
-- terminal status: `SUCCESS`
-- quality gate state: `PASS`
-- publishability state: `READABLE`
+---
 
-### Example B — Held requested date with safe fallback
-- lifecycle state: `COMPLETED`
-- terminal status: `HELD`
-- quality gate state: `FAIL`
-- publishability state: `NOT_READABLE`
+## FAILED
+Requested date harus berakhir `FAILED` bila:
+- terjadi fatal failure global pada import atau promote
+- coverage/readiness tidak bisa dievaluasi secara terpercaya dan tidak ada jalur aman yang dipilih implementation
+- indicator / eligibility / hash / seal gagal tanpa safe continuation
+- publication/readability decision tidak dapat dipertahankan secara audit-safe
 
-### Example C — Hard compute failure
-- lifecycle state: `FAILED`
-- terminal status: `FAILED`
-- quality gate state: `BLOCKED` or `FAIL`
-- publishability state: `NOT_READABLE`
+`FAILED` menunjukkan run tidak dapat diselesaikan dengan outcome operasional yang dapat diterima untuk requested date itu.
 
-### Example D — Candidate ready except seal missing
-- lifecycle state: `FINALIZING`
-- terminal status: not yet final or eventually `FAILED` / `HELD`
-- quality gate state: `BLOCKED`
-- publishability state: `NOT_READABLE`
+---
 
-This state must never be treated as readable success.
+## Coverage interaction (LOCKED)
+Coverage dipakai di promote phase sebagai gate resmi.
 
-## Consumer rule
-Consumers do not interpret raw lifecycle/gate internals directly.
-Consumers rely on:
-- terminal status
-- effective trade date
-- publishability/current publication resolution
-- seal state
+- `PASS` memungkinkan promote lanjut ke stage berikutnya
+- `FAIL` membuat requested date non-readable
+- `BLOCKED` membuat requested date non-readable dan menandakan basis evaluasi tidak aman/tidak bermakna
 
-But the system must still preserve internal states to avoid ambiguity.
+Coverage sendiri tidak otomatis memberi `SUCCESS`.
+Coverage hanya salah satu gate wajib di promote.
 
-## Required cross-contract alignment
-This contract must remain aligned with:
-- `Downstream_Data_Readiness_Guarantee_LOCKED.md`
+---
+
+## Source-blocker interpretation after split
+Per-ticker source blocker pada import tidak otomatis berarti `FAILED`.
+Yang menentukan outcome final adalah hasil persisted bars + coverage + promote decision.
+
+Artinya:
+- partial import boleh terjadi
+- requested date tetap bisa ditahan (`HELD`) atau gagal (`FAILED`) di promote
+- requested date tidak boleh pernah dibaca sebagai sukses hanya karena sebagian ticker berhasil diimport
+
+---
+
+## Required audit-visible final fields
+Minimum field final yang harus audit-visible:
+- `trade_date_requested`
+- `trade_date_effective`
+- `terminal_status`
+- `publishability_state`
+- `coverage_gate_state`
+- final reason/final outcome note minimum
+- fallback outcome bila ada
+
+---
+
+## Anti-ambiguity rules
+Implementasi/dokumen tidak boleh:
+- menyebut import selesai sebagai publish success
+- menyebut per-ticker request success ratio sebagai readability gate
+- memotong phase boundary sehingga `market-data:daily` atau `market-data:backfill` dianggap otomatis menjalankan indicators/seal/finalize tanpa command promote
+- memperlakukan `HELD` sebagai requested-date readable success
+
+---
+
+## Cross-contract alignment
+Harus sinkron dengan:
+- `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
 - `Dataset_Seal_and_Freeze_Contract_LOCKED.md`
-- `Historical_Correction_and_Reseal_Contract_LOCKED.md`
-- `../ops/Failure_Playbook_LOCKED.md`
-- `../db/Database_Schema_Contracts_MariaDB.md`
-
-## Anti-ambiguity rule (LOCKED)
-If execution progress, gate evaluation, and consumer readability cannot be distinguished cleanly, then the run-state model is too compressed and must not be treated as sufficient.
-
-## Coverage gate alignment (LOCKED)
-Coverage gate semantics are owned by `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`.
-This run-status contract must not redefine the denominator, numerator, or pass/fail rule for coverage.
-
-Mandatory alignment:
-- coverage `PASS` is necessary but not sufficient for `SUCCESS`
-- coverage `FAIL` keeps the requested date non-readable and normally maps to `HELD` only when a prior readable fallback exists
-- coverage `BLOCKED` keeps the requested date non-readable and must never be collapsed into readable success
+- `EOD_Cutoff_and_Finalization_Contract_LOCKED.md`
+- `../ops/Commands_and_Runbook_LOCKED.md`

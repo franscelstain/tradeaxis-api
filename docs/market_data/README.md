@@ -1,216 +1,162 @@
-# Market Data Platform (EOD)
+# MARKET DATA PLATFORM (EOD)
 
 ## Purpose
-This documentation set is the locked source of truth for Market Data Platform (EOD).
-It is written as system specification, not as exploratory notes.
+Market Data Platform adalah domain upstream untuk menghasilkan dataset EOD yang canonical, deterministic, auditable, dan aman dibaca downstream.
 
-It defines the upstream market-data layer that produces:
+---
+
+## Official architecture split
+Mulai baseline ini, flow resmi dibagi menjadi dua phase.
+
+### 1. Import phase
+Fungsi resmi import:
+- source acquisition
+- ticker-level processing
+- mapping
+- dedup
+- validation
+- canonical bars write
+- invalid-row write
+- bars coverage evidence
+- telemetry
+
+Command resmi import:
+- `market-data:daily`
+- `market-data:backfill`
+
+### 2. Promote phase
+Fungsi resmi promote:
+- coverage validation
+- indicators
+- eligibility
+- hash
+- seal
+- finalize
+
+Command resmi promote:
+- `market-data:promote`
+
+Tidak ada alias command promote lain.
+
+---
+
+## Date-driven capability (LOCKED)
+Kapabilitas domain ini wajib **date-driven**.
+
+Artinya sistem harus mampu:
+- menerima **requested trade date** tunggal apa pun
+- menerima **date range** apa pun untuk trading dates yang valid
+- menjalankan import untuk tanggal historical maupun tanggal terbaru
+- memperlakukan tanggal target sebagai input domain utama, bukan turunan dari default provider
+
+Kontrak ini berlaku untuk seluruh jalur import dan promote.
+Kemampuan domain tidak boleh dibatasi oleh default query provider seperti `range=10d`.
+
+---
+
+## Deterministic platform decisions now locked
+Keputusan final lintas dokumen:
+- coverage minimum untuk requested-date readability = **95%**
+- partial import boleh terjadi, tetapi partial readable publication tidak boleh
+- sistem memilih **data cukup lengkap tapi boleh lebih lambat** dibanding **data cepat tapi belum cukup lengkap**
+- source order resmi = primary `api_free/yahoo_finance`, secondary controlled recovery `manual_file`
+- conflict resolution = **source priority + validation + correction flow**, bukan voting dan bukan merge bebas
+- consumer hanya boleh membaca publication yang sealed/current/readable melalui effective-date pointer contract
+- consumer dilarang membaca raw table tanpa publication context, dilarang memakai `MAX(date)`, dan dilarang menghitung ulang indicator
+- silent rewrite historical published data dilarang
+
+---
+
+## Provider limitation abstraction (LOCKED)
+Provider hanyalah mekanisme transport.
+Provider **bukan** source of truth domain dan **bukan** penentu batas capability sistem.
+
+Untuk jalur default aktif `yahoo_finance`:
+- request dilakukan per ticker
+- provider gratis dapat rate limit
+- provider dapat memiliki default query window seperti `range=10d`
+- provider dapat membutuhkan parameter seperti `period1` / `period2` atau windowing ekuivalen
+
+Konsekuensinya:
+- limitation provider wajib diisolasi di source adapter / import strategy
+- domain tetap wajib mendukung arbitrary date request
+- import strategy boleh memakai windowing, explicit date range, looping batch, retry, backoff, atau mekanisme lain yang menjaga kontrak date-driven
+- default provider window tidak boleh dianggap sebagai batas historis resmi platform
+
+---
+
+## Storage and maintenance policy summary (LOCKED)
+Ringkasan resmi:
+- canonical bars, indicators, eligibility, runs, publications, correction trail, dan current pointer adalah record jangka panjang dan tidak boleh di-purge dengan TTL operasional biasa
+- historical correction tidak boleh override diam-diam; harus lewat correction + reseal + supersession trail
+- artifact evidence non-authoritative boleh dipurge sesuai retention contract, tetapi minimum audit evidence harus tetap dipertahankan selama window retention resminya
+- maintenance dilakukan dengan partitioning by trade date sebagai default baseline
+
+---
+
+## Consumer safety summary (LOCKED)
+Watchlist dan consumer lain wajib:
+- baca hanya dari publication (sealed + readable + current)
+- resolve `trade_date_effective` dari publication pointer / readability contract
+- pakai publication context saat membaca bars/indicators/eligibility
+
+Watchlist dan consumer lain dilarang:
+- query raw table langsung tanpa publication context
+- pakai `MAX(date)`
+- hitung ulang indicator
+- bypass coverage gate
+- menentukan tanggal sendiri dengan recency guessing
+
+---
+
+## What this domain owns
+Domain ini tetap menjadi owner untuk:
 - canonical EOD bars
-- deterministic indicators
-- eligibility snapshot
-- run, hash, seal, and publication metadata
-- correction and replay evidence
-- immutable publication-bound history snapshots for production-grade auditability
-- optional supplemental session snapshots
+- indicators
+- eligibility/readiness semantics
+- coverage gate semantics
+- seal/publication/readability behavior
+- replay and correction behavior
+- upstream audit evidence
+- date-driven import contract
 
-It does not define downstream scoring, ranking, picks, signals, portfolio construction, or broker execution.
+---
 
-## Domain boundary
-Market Data Platform is an upstream data-production and publication-readiness module.
-
-It depends on shared-foundation master data outside this domain, especially the market calendar and ticker identity master.
-Those global dependencies may live under `docs/db/` or an equivalent shared-foundation owner.
-This domain consumes those dependencies, but it remains the authoritative owner for canonical EOD bars, EOD indicators, eligibility/readiness semantics, publication/read-model behavior, sealing, replay, correction handling, and upstream audit evidence.
-
-It may decide:
-- what data is canonical
-- what data is valid
-- what is readable as upstream dataset
-- what publication is current
-- whether a correction safely supersedes a prior publication
-- whether replay matched expectation
-
-It must never decide:
-- buy / sell
-- ranking / picks
-- entry / exit
-- strategy fit
-- portfolio action
-- broker action
-
-Read the boundary layer first:
-- `book/Terminology_and_Scope.md`
-- `book/Domain_Boundary_Invariants_LOCKED.md`
-
-
-## Downstream consumer intake rule
-This domain is the owner of upstream market-data meaning for downstream consumers.
-
-For the active documentation set, any downstream consumer such as `watchlist` must bind its intake to producer-facing contracts from this domain, especially consumer-readable and publication-aware contracts.
-
-A downstream consumer must not:
-- define its own replacement meaning for upstream readability
-- read raw internal pipeline states as if they were consumer-facing output
-- treat intermediate technical artifacts as the authoritative intake path
-
-Use these as the primary intake anchors for downstream consumption:
-- `book/Downstream_Consumer_Read_Model_Contract_LOCKED.md`
-- `book/EOD_Eligibility_Snapshot_Contract_LOCKED.md`
-- `book/Downstream_Data_Readiness_Guarantee_LOCKED.md`
-- `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`
-
-This README does not define downstream watchlist behavior. It only fixes the allowed upstream meaning that a downstream consumer may read.
-
-
-## Implementation checkpoint and audit path
-Untuk build, audit, dan penutupan status implementasi market-data, gunakan jalur berikut:
-- `audit/LUMEN_IMPLEMENTATION_STATUS.md`
-- `audit/LUMEN_CONTRACT_TRACKER.md`
-- `../system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
-
-Untuk ketahanan operasional source eksternal, gunakan contract tambahan berikut:
-- `book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
-
-Aturan penting:
-- checkpoint audit tidak menggantikan owner contract,
-- contract operasional source eksternal tidak menggantikan contract akuisisi source inti,
-- status `SELESAI` untuk contract/implementation harus dipisahkan dari status kesehatan operasi harian live source.
-
-## Start here
-This README is the orientation document itself. Before using it as the fourth read anchor referenced by `system/` and `audit/`, first read in this order:
+## Reading order
+Untuk memahami baseline implementasi baru, baca urutan ini:
 1. `book/Terminology_and_Scope.md`
-2. `book/Domain_Boundary_Invariants_LOCKED.md`
-3. `book/INDEX.md`
+2. `book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+3. `book/Source_Data_Acquisition_Contract_LOCKED.md`
+4. `book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
+5. `book/CONSUMER_READ_CONTRACT_LOCKED.md`
+6. `book/Run_Status_and_Quality_Gates_LOCKED.md`
+7. `book/EOD_Data_Retention_and_History_Rewrite_Policy_LOCKED.md`
+8. `ops/Commands_and_Runbook_LOCKED.md`
+9. `ops/Bootstrap_and_Backfill_Runbook_LOCKED.md`
+10. `ops/Performance_SLO_and_Limits_LOCKED.md`
 
-After those three anchors, return here and continue according to the work being done:
-- implementation and publication flow → read the implementation-critical contracts below first, then continue to `db/`, `ops/`, and `indicators/` as needed
-- compliance, replay, and correction proof → continue to `tests/`, `backtest/`, and the related proof contracts referenced by `book/INDEX.md`
-- example shape and executed evidence review → use `examples/` and `evidence/` only as companion material, not as a source of new behavior
+---
 
-## Implementation-critical contracts for build
-A builder should not guess the runtime path from the whole tree. For the main upstream build path, read these files first and keep them aligned as one set:
-1. `book/Domain_Boundary_Invariants_LOCKED.md`
-2. `book/EOD_Bars_Contract.md`
-3. `book/EOD_Indicators_Contract.md`
-4. `book/EOD_Eligibility_Snapshot_Contract_LOCKED.md`
-5. `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`
-6. `book/Downstream_Consumer_Read_Model_Contract_LOCKED.md`
-7. `book/Dataset_Seal_and_Freeze_Contract_LOCKED.md`
-8. `book/Historical_Correction_and_Reseal_Contract_LOCKED.md`
-9. `db/EOD_Current_Publication_Pointer_Table.sql`
-10. `db/Publication_Current_Pointer_Switch_Procedure_LOCKED.sql`
-11. `ops/Daily_Pipeline_Execution_and_Sealing_Runbook_LOCKED.md`
-12. `ops/Audit_Query_Cookbook_LOCKED.md`
+## Anti-assumption rules (LOCKED)
+Dokumen dalam domain ini tidak boleh lagi menyatakan atau menyiratkan bahwa:
+- provider default adalah source of truth domain
+- `range=10d` adalah capability limit platform
+- sistem hanya ditujukan untuk recent-only ingestion
+- `market-data:daily` menjalankan jalur publish/readability
+- `market-data:backfill` otomatis mempublish dataset
+- coverage dihitung dari successful request count
+- import success berarti requested date readable
+- import menjalankan indicators, eligibility, hash, seal, atau finalize
+- consumer boleh membaca raw table tanpa publication context
+- publish cepat boleh mengalahkan coverage/readability safety
 
-A builder should treat the files above as the shortest path to a coherent implementation. Everything else expands or supports that path; it must not silently replace it.
+---
 
-## Reading rule
-Use this README for orientation only.
-Use `book/INDEX.md` as the contract map for the Market Data Platform (EOD) book.
-Use the companion folders (`db/`, `ops/`, `tests/`, `registry/`, `backtest/`, `indicators/`, `session_snapshot/`) only after the boundary and book-level contract map are understood. Use `examples/` and `evidence/` only as companion review material.
+## State
+Documentation baseline ini adalah target resmi untuk sesi implementasi berikutnya.
 
-## Normative implementation and proof folders
-The following folders are normative parts of the same source of truth:
-
-Book-level contracts remain the primary behavioral owner for domain meaning and boundary. Companion folders may specify schema, formulas, procedures, tests, and proof obligations, but they must not redefine book-level ownership or create parallel contract authority.
-- `book/`
-- `db/`
-- `ops/`
-- `tests/`
-- `registry/`
-- `backtest/`
-- `indicators/`
-- `session_snapshot/`
-
-## Companion review folders
-The following folders are companion material and do not define new behavior beyond the normative contracts above:
-
-They may illustrate, archive, or demonstrate compliance, but they must never become a second source of truth for domain behavior.
-- `examples/`
-- `evidence/`
-
-## Production-grade auditability stance
-Production-grade row-history strategy is Strategy A:
-- immutable publication-bound history snapshots
-- publication-linked row history
-- append-only history semantics
-- preserved prior publication row state after correction
-
-This is reflected by:
-- `book/Canonical_Row_History_and_Versioning_Policy_LOCKED.md`
-- history tables in `db/Database_Schema_MariaDB.sql`
-- immutability guards in `ops/History_Table_Immutability_Guards_LOCKED.sql`
-
-## Proof-by-execution stance
-Proof specification alone is not the final target.
-
-A mature implementation should also preserve:
-- executed run evidence bundle
-- executed replay evidence
-- executed publication manifest
-- executed correction diff
-- executed test output evidence
-
-This is reflected by:
-- `ops/Run_Execution_Evidence_Pack_Contract_LOCKED.md`
-- `ops/Executed_Run_Admission_Criteria_LOCKED.md`
-- `tests/Executed_Proof_Admission_Criteria_LOCKED.md`
-- executed bundles archived under `evidence/`
-
-Illustrative shapes may still appear under `examples/`, but they do not count as executed proof.
-
-## Archived actual execution evidence
-Illustrative examples are not the same as archived actual execution evidence.
-
-A mature implementation should preserve archived actual evidence bundles separately from examples, for example under:
-- `evidence/runs/`
-- `evidence/replays/`
-- `evidence/corrections/`
-- `evidence/tests/`
-
-See:
-- `ops/Archived_Actual_Execution_Evidence_Contract_LOCKED.md`
-- `examples/ARCHIVED_EVIDENCE_FOLDER_STRUCTURE_LOCKED.md`
-
-## Current-publication precedence
-For the hardened production model, current publication resolution must use:
-1. `eod_current_publication_pointer`
-2. pointed publication validation
-3. supporting consistency checks on `eod_publications` and `eod_runs`
-
-Pointer mismatch is an operational incident and readability must fail safe until reconciled.
-
-See:
-- `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`
-
-## Freeze status
-This documentation set is the locked source of truth for Market Data Platform (EOD).
-It is written as system specification, not as exploratory notes.
-
-Changes to locked contracts, publication semantics, correction flow, replay proof, consumer-readiness behavior, schema enforcement, row-history strategy, or audit evidence requirements must be versioned and reviewed explicitly.
-
-## Anti-drift rule
-If a document changes behavior for:
-- current publication resolution
-- seal/readability semantics
-- correction switching
-- row-history strategy
-- hash/replay proof
-- indicator formulas
-- run-state interpretation
-- audit evidence requirements
-- schema enforcement invariants
-
-then the change must be treated as a versioned contract change, not an editorial cleanup.
-
-## Minimal compliance expectation
-A compliant implementation of this documentation set must be able to prove:
-- one coherent current readable publication per trade date
-- explicit fallback when requested date is not readable
-- reproducible artifact hashes for unchanged content
-- explicit correction supersession trail
-- immutable row-history snapshots for production-grade auditability
-- append-only run event trail
-- replay evidence and test evidence aligned with fixture-based proof contracts
-- hardened current-publication integrity through pointer or equivalently strong enforcement
-- clear distinction between illustrative examples and executed evidence
+Status:
+- READY FOR IMPLEMENTATION
+- DATE-DRIVEN READY
+- IMPORT vs PROMOTE CONSISTENT
+- CRITICAL EDGE CONTRACTS LOCKED

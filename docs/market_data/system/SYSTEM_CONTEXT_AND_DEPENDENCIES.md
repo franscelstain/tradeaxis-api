@@ -36,6 +36,16 @@ Untuk active codebase saat ini, operating-model choice yang disahkan adalah:
 
 Pilihan ini adalah perubahan yang sah karena sudah disinkronkan ke config/env, adapter implementation, proof tests, dan owner docs market-data. Ini bukan drift implementasi.
 
+## Date-driven interpretation note
+Walaupun active provider saat ini adalah Yahoo/public API, capability domain tetap harus dibaca sebagai **date-driven**.
+
+Artinya:
+- requested trade date adalah input domain utama
+- provider transport bukan source of truth domain
+- default provider query window tidak boleh dianggap batas historis platform
+- backfill tetap first-class untuk historical ingestion
+- promote tetap gate final untuk readability
+
 ## Dependency reading pointers
 - acquisition and source behavior → `book/Source_Data_Acquisition_Contract_LOCKED.md`
 - publication pointer integrity → `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`, `db/EOD_Current_Publication_Pointer_Table.sql`, `db/Publication_Current_Pointer_Switch_Procedure_LOCKED.sql`

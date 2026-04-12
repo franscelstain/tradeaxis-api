@@ -1,62 +1,162 @@
-# Source Data Acquisition Contract (API or Manual)
+# SOURCE DATA ACQUISITION CONTRACT (LOCKED)
 
 ## Purpose
-Lock acquisition behavior so outputs stay deterministic, auditable, and easy to implement whether data comes from public/free APIs or manual input.
+Mengunci kontrak akuisisi source untuk **IMPORT PHASE**.
 
-## Source adapter (LOCKED)
-Implementation must normalize every source through one adapter contract:
-- `fetchOrLoadEodBars(trade_date, ticker_codes[]) -> source_bars[]`
+Source acquisition hanya bertanggung jawab membawa raw/provider payload sampai menjadi canonical bar rows yang tervalidasi.
+Source acquisition bukan owner readability consumer.
 
-Allowed source modes:
-- public/free API pull
-- local CSV/JSON import
-- manual entry/import prepared in a controlled format
+---
 
-## Current selected default operating mode (LOCKED FOR ACTIVE CODEBASE)
-For the active market-data codebase, the selected default acquisition mode is:
-- `source_mode=api`
-- default provider = `yahoo_finance`
-- IDX ticker requests append suffix `.JK` before provider fetch
-- `manual_file` remains a valid controlled fallback mode for local recovery, deterministic replay support, and operator-led ingestion when API mode is unavailable
+## Phase boundary (LOCKED)
+Source acquisition berada sepenuhnya di **IMPORT PHASE**.
 
-This is a sanctioned operating-model choice for the active codebase, not an implementation drift. The downstream canonicalization contract remains source-mode agnostic after normalization.
+Tanggung jawabnya:
+- request source payload berdasarkan tanggal target eksplisit
+- normalize source payload
+- map ke source row internal
+- dedup source row
+- validasi row-level
+- persist canonical valid rows
+- persist invalid rows / rejection evidence
+- persist import telemetry dan provenance minimum
+- menyerahkan evidence yang cukup untuk coverage gate
 
-The downstream canonicalization contract must not care which source mode produced the row once it has been normalized.
+Source acquisition tidak boleh:
+- menghitung indicators
+- membangun eligibility
+- menghitung hash consumer dataset
+- membuat publication seal
+- mengubah current publication pointer
+- menentukan requested date readable
 
-## Minimum normalized source fields (LOCKED)
-Every normalized source row must provide:
-- `ticker_code`
-- `trade_date` (`YYYY-MM-DD`)
-- `open`
-- `high`
-- `low`
-- `close`
-- `volume`
-- `adj_close` (nullable)
-- `source_name`
-- `source_row_ref` (nullable but recommended)
-- `captured_at`
+---
 
-## Request/load rules (LOCKED)
-- bounded concurrency for API mode
-- throttle + jitter between requests when API mode is used
-- retry with backoff on transient API errors when API mode is used
-- manual-file mode must validate schema before rows are accepted
-- for operator fallback on the primary daily command, `source_mode=manual_file` may use an explicit `input_file` (`.json` / `.csv`) instead of directory-template lookup
-- every acquisition stage must record source mode and source name in run telemetry
-- for the active default `yahoo_finance` provider path, ingestion resolves the active ticker universe first, then fetches provider payloads per ticker symbol before normalization into canonical source rows
-- for the active default `yahoo_finance` provider path, EOD requests use daily interval semantics and provider-specific symbol mapping must stay inside the source adapter, not leak into downstream canonicalization
+## Allowed source modes
+Minimum source mode yang valid:
+- `api_free`
+- `manual_file`
 
-## Failure classification (LOCKED)
-- transient API error: retry, then `HELD` if unresolved
-- source format change / parsing failure: `FAILED`
-- manual file schema mismatch: `FAILED`
-- partial source coverage: allowed only if coverage >= `COVERAGE_MIN`, else `HELD`
+`manual_file` tetap valid untuk:
+- controlled recovery
+- replay-like controlled ingestion
+- operator-driven historical fill yang kontraknya eksplisit
 
-## Parsing + mapping (LOCKED)
-Map normalized source OHLCV into internal canonical bars as defined by `EOD_Bars_Contract.md`.
+---
 
-## Audit recording (LOCKED)
-- create/update `eod_runs` per stage
-- each `eod_bars` row records `source`, `ingested_at`, and `run_id`
-- source mode used for a run must be visible in logs or run notes
+## Date-driven input contract (LOCKED)
+Input domain utama adalah **requested trade date** atau **requested trading-date range**.
+
+Karena itu source acquisition wajib:
+- menerima tanggal target eksplisit
+- menjaga tanggal target itu tetap traceable sampai telemetry akhir
+- menolak perilaku yang diam-diam mengganti target date operator tanpa evidence
+
+Keberhasilan source acquisition tidak dinilai dari seluruh ticker harus sukses request.
+Keberhasilan import juga tidak berarti requested date readable.
+
+---
+
+## Allowed acquisition strategies
+Untuk memenuhi kontrak tanggal bebas, implementation source acquisition wajib siap memakai satu atau kombinasi strategi berikut:
+- explicit date request
+- explicit date-range request
+- `period1` / `period2`
+- bounded windowing yang tetap membuktikan requested date target
+- retry / backoff / throttle untuk failure transient
+- fallback ke `manual_file` bila operating model memang mengizinkan jalur recovery terkontrol
+
+Yang dilarang:
+- menjadikan default query window provider sebagai capability limit platform
+- mengganti requested date operator tanpa evidence dan without explicit contract
+- langsung menganggap requested date sukses publish hanya karena fetch berhasil
+
+---
+
+## Source order and acquisition winner (LOCKED)
+Urutan resmi:
+1. `api_free` / `yahoo_finance`
+2. `manual_file` sebagai controlled recovery path
+
+Winner untuk satu run ditentukan oleh source mode run itu sendiri.
+Satu run hanya boleh punya **satu source-of-truth mode** untuk publication candidate yang sedang dibangun.
+
+Artinya:
+- run `api_free` tidak boleh diam-diam mengisi sebagian ticker dari `manual_file` lalu mengaku satu source tunggal
+- run `manual_file` yang sah boleh menjadi source-of-truth hanya bila memang dijalankan sebagai recovery/correction resmi
+
+---
+
+## Row acceptance rule
+Satu canonical bar hanya boleh diterima bila:
+- ticker dapat dipetakan sah
+- trade date source dapat dibuktikan cocok dengan requested trade date target
+- field minimum lolos validasi row-level
+- row tersebut memenangkan dedup rule resmi
+
+Row yang gagal syarat ini harus masuk invalid/rejection evidence, bukan ikut numerator coverage.
+
+---
+
+## Minimum storage outputs
+Minimum storage outputs dari source acquisition:
+- canonical valid bars
+- invalid/rejected rows atau evidence ekuivalen
+- import telemetry minimum
+- source provenance minimum (`source_mode`, `source_name`, `ingested_at`, `run_id` atau ekuivalennya)
+- date-target evidence yang menunjukkan tanggal target import yang diminta
+
+---
+
+## Coverage handoff rule
+Source acquisition wajib menyerahkan basis coverage yang benar:
+- numerator basis = canonical valid bars untuk requested date
+- denominator mengikuti coverage universe contract
+- source acquisition tidak boleh mengganti coverage menjadi request-success ratio
+- date-driven capability tidak mengubah final gate coverage
+
+---
+
+## Minimum telemetry / evidence
+Minimum evidence yang harus tersedia:
+- requested date evidence yang eksplisit
+- ticker universe count
+- ticker attempted count
+- ticker success count
+- ticker failure count
+- failure reason summary
+- invalid-row evidence
+- coverage input metrics
+- source-of-truth identity
+
+Promote phase boleh menolak requested date bila coverage tidak cukup.
+Import phase sendiri tidak boleh mengklaim requested date readable.
+
+---
+
+## Conflict handling (LOCKED)
+Jika akuisisi menemukan perbedaan antara source aktif dan source recovery pada ticker/date yang sama:
+- jangan merge row antar source
+- jangan pilih nilai terbaru berdasarkan timestamp provider saja
+- gunakan source priority contract
+- jalankan correction/recovery flow bila memang mau mengganti source-of-truth publication
+
+---
+
+## Anti-ambiguity rules
+Tidak boleh:
+- menganggap fetch success = publish success
+- menulis canonical row tanpa provenance source minimum
+- menerima row untuk requested date yang tidak bisa dibuktikan cocok
+- menggabungkan dua source menjadi satu publication candidate tanpa kontrak correction/recovery
+- menurunkan quality bar hanya demi menyelesaikan import lebih cepat
+
+---
+
+## Cross-contract alignment
+Harus sinkron dengan:
+- `EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+- `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
+- `Run_Status_and_Quality_Gates_LOCKED.md`
+- `CONSUMER_READ_CONTRACT_LOCKED.md`
+- `../ops/Commands_and_Runbook_LOCKED.md`

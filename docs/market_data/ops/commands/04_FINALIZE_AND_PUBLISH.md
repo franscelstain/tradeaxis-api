@@ -1,39 +1,20 @@
-# FINALIZE DAN PUBLISH
+# FINALIZE AND PUBLISH COMMAND FAMILY
 
-## Commands
-- `market-data:dataset:seal`
-- `market-data:run:finalize`
+Finalize/publish family berada di dalam **PROMOTE PHASE**.
 
-## Fokus operator
-`market-data:run:finalize` adalah surface utama untuk membaca outcome requested date. Karena itu output finalize harus menampilkan coverage secara eksplisit bila telemetry coverage tersedia pada run.
+## Official command
+- `market-data:promote`
 
-## Surface output coverage minimum
-Minimal operator harus bisa langsung membaca:
-- `terminal_status`
-- `publishability_state`
-- `reason_code`
-- `coverage_gate_state`
-- `coverage_reason_code`
-- `coverage_summary`
-- `coverage_missing_sample` bila ada
+## Promote-owned stages
+Di dalam jalur promote, implementation boleh memanggil stage internal berikut:
+- coverage validation
+- indicators
+- eligibility
+- hash
+- seal
+- finalize
 
-## Contoh outcome held karena coverage gagal
-```text
-run_id=55
-requested_date=2026-03-24
-stage=FINALIZE
-lifecycle_state=COMPLETED
-terminal_status=HELD
-publishability_state=NOT_READABLE
-coverage_gate_state=FAIL
-coverage_reason_code=RUN_COVERAGE_LOW
-coverage_summary=available=854/900 | missing=46 | ratio=0.9489 | threshold=0.9800 | basis=ticker_master_active_on_trade_date | contract=coverage_gate_v1
-coverage_missing_sample=AALI,ACES,ADRO
-reason_code=RUN_COVERAGE_LOW
-```
+Stage internal itu bukan command operator terpisah pada baseline ini.
 
-## Interpretasi operator
-- `coverage_gate_state=FAIL` + `terminal_status=HELD` berarti run tidak meloloskan requested date, tetapi sistem masih punya fallback readable yang sah.
-- `coverage_gate_state=FAIL` + `terminal_status=FAILED` berarti requested date gagal dan fallback readable tidak tersedia.
-- `coverage_gate_state=BLOCKED` + `coverage_reason_code=RUN_COVERAGE_NOT_EVALUABLE` berarti coverage tidak bermakna untuk dinilai; requested date tetap harus dianggap not readable.
-- `coverage_missing_sample` hanya sampel cepat untuk operator, bukan daftar lengkap missing universe.
+## Boundary rule
+Tidak ada finalize/publish action yang boleh dijalankan oleh `market-data:daily` atau `market-data:backfill`.

@@ -1,18 +1,15 @@
-# Market Data Command Reference
+# COMMAND DOCUMENTATION INDEX
 
-Dokumen ini menjelaskan command yang tersedia di codebase berdasarkan implementasi aktual.
+## Import commands
+1. `01_DAILY_PIPELINE.md`
+2. `02_IMPORT_DATA.md`
+5. `05_BACKFILL.md`
 
-Urutan disusun berdasarkan:
-1. penggunaan harian
-2. kebutuhan operasional
+## Promote commands
+4. `04_FINALIZE_AND_PUBLISH.md`
 
-## Urutan
-
-1. DAILY PIPELINE
-2. IMPORT DATA
-3. PROCESS DATASET
-4. FINALIZE DAN PUBLISH
-5. BACKFILL
-6. CORRECTION
-7. REPLAY DAN EVIDENCE
-8. SESSION SNAPSHOT
+## Notes
+- penamaan file lama dipertahankan untuk stabilitas dokumentasi
+- semantik resmi tetap mengikuti split **IMPORT PHASE** vs **PROMOTE PHASE**
+- command surface resmi juga sekarang dikunci sebagai **date-driven**
+- `market-data:promote` adalah satu-satunya command promote

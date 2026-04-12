@@ -1,15 +1,22 @@
-# IMPORT DATA
+# `market-data:eod-bars:ingest`
 
-## Command
-market-data:eod-bars:ingest
+## Official role
+Stage command ini tetap milik **IMPORT PHASE**.
 
-## Signature
-php artisan market-data:eod-bars:ingest 
-  {--requested_date=} 
-  {--source_mode=} 
-  {--run_id=} 
-  {--correction_id=} 
-  {--latest}
+## Scope
+Command ini hanya menangani ingest bars:
+- baca source
+- normalize/map
+- dedup
+- validate
+- tulis canonical bars
+- tulis invalid rows
+- tulis telemetry minimum
 
-## Fungsi
-Mengambil data EOD bars dari source dan menyimpannya.
+## Boundary
+Command ini tidak boleh:
+- compute indicators
+- build eligibility
+- hash
+- seal
+- finalize

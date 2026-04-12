@@ -1,178 +1,117 @@
-# Performance SLO and Limits (LOCKED)
+# PERFORMANCE SLO AND LIMITS (LOCKED)
 
 ## Purpose
-Define the minimum operational limits, time expectations, and alertable thresholds for Market Data Platform so the system is operationally transparent, not just functionally correct.
+Mengunci pembacaan SLO operasional agar tidak bentrok dengan boundary kontrak import vs promote.
 
-This document is upstream-operational only.
-It does not define business SLAs to end users or trading-performance guarantees.
+Dokumen ini mengatur target operasional dan batas interpretasi.
+Dokumen ini tidak boleh dipakai untuk melonggarkan contract readiness, coverage, atau consumer safety.
+
+---
 
 ## Core principle (LOCKED)
-SLO and limit values here are not cosmetic.
-They define when a run is considered:
-- timely
-- stale
-- degraded
-- alert-worthy
-- at risk of unsafe publication timing
+Performa penting, tetapi **ketepatan tanggal, traceability source, dan consumer safety lebih penting**.
 
-## 1. Source acquisition limits
+Karena itu:
+- sistem memilih data yang cukup lengkap dan dapat diaudit dibanding publish cepat yang belum aman
+- SLO tidak boleh dipakai untuk menurunkan threshold coverage
+- SLO tidak boleh dipakai untuk mengizinkan bypass promote
+- SLO tidak boleh dipakai untuk mengubah source-of-truth rules
 
-### Throttle spacing
-Recommended request spacing for non-paid/public API acquisition:
-- minimum throttle interval: `300 ms`
-- maximum normal throttle interval: `800 ms`
+---
 
-### Retry policy
-Maximum retries per acquisition attempt:
-- `3`
+## Import phase SLO
 
-### Retry backoff schedule
-Recommended backoff sequence:
-- retry 1: `2 seconds`
-- retry 2: `5 seconds`
-- retry 3: `12 seconds`
+### Daily import target
+Untuk satu requested trading date:
+- import diharapkan selesai dalam waktu operasional yang wajar untuk ticker universe resmi
+- partial failure per ticker tetap dianggap penyelesaian import yang valid selama command tidak crash dan evidence tersimpan
+- requested date harus tetap tercatat eksplisit pada evidence import
 
-### Circuit breaker threshold
-If source-error rate reaches:
-- `25%` or more across the active acquisition window
+### Historical backfill target
+Untuk range tanggal:
+- progress harus dievaluasi per trading date, bukan sekadar per keseluruhan range
+- satu tanggal yang mengalami banyak per-ticker failure tidak boleh menjatuhkan seluruh range secara tidak terklasifikasi
+- resumability lebih penting daripada fail-fast semu
+- batching historical range adalah perilaku operasional utama, bukan pengecualian
 
-then the source should be treated as degraded and operator visibility must increase.
+### Import telemetry minimum
+Import harus cukup observably complete untuk operator:
+- ticker universe count
+- ticker attempted count
+- ticker success count
+- ticker failure count
+- failure reason summary
+- bars coverage evidence minimum
+- requested date / date range evidence
+- source identity / source mode evidence
 
-## 2. Stale run thresholds
+---
 
-### Requested-date stale threshold
-A run for requested date T should be considered stale if it remains non-terminal beyond:
-- `60 minutes` after the expected EOD processing window opens for that date
+## Promote phase SLO
 
-### Non-owner stale lock threshold
-A run ownership/lock should be considered suspect if:
-- the owning run shows no meaningful event progress for `15 minutes` during active critical stages
+### Promote latency target
+Untuk satu requested date yang import evidence-nya sudah siap dan coverage `PASS`:
+- indicators, eligibility, hash, seal, finalize harus selesai dalam jalur promote yang konsisten
+- target operasional promote harus dibaca terpisah dari import runtime
 
-This does not force takeover automatically, but must trigger inspection.
+### Coverage-first rule
+Promote tidak boleh menghabiskan resource ke indicators, eligibility, hash, seal, atau finalize bila coverage belum lolos.
+Coverage adalah gate awal promote.
 
-## 3. Seal latency targets
+---
 
-### Normal seal latency target
-For one requested date T that passes gates successfully, target seal completion:
-- within `15 minutes` after indicator and eligibility artifacts are complete
+## Rate-limit / timeout interpretation
+Pada jalur Yahoo aktif:
+- `429` dan timeout diperlakukan sebagai per-ticker import failure transient
+- itu bukan alasan otomatis untuk menghentikan seluruh import date-run
+- outcome final requested date diputuskan dari bars coverage dan promote result
+- keberadaan default query window seperti `10d` harus dianggap problem transport strategy, bukan batas domain capability
 
-### Seal delay alert threshold
-Alert-worthy if:
-- candidate readable dataset remains unsealed for more than `30 minutes` after all success preconditions appear satisfied
+---
 
-## 4. Correction publication latency targets
+## Hard limits that SLO may not override
+SLO tidak boleh mengoverride aturan berikut:
+- coverage minimum = **95%**
+- requested date `READABLE` hanya setelah promote sukses penuh
+- satu publication candidate hanya memiliki satu source-of-truth mode
+- consumer hanya boleh membaca publication sealed/current/readable
+- silent rewrite data lama dilarang
 
-### Approved correction execution target
-Once a correction request for historical date D is approved, target completion of correction execution and evidence preparation:
-- within `1 business day`
+---
 
-### Correction publication alert threshold
-If approved correction remains in non-published execution state for more than:
-- `2 business days`
+## Operational alert guidance
+Operator harus menganggap ini sebagai tanda masalah penting:
+- failure ratio ticker tinggi pada import
+- bars coverage mendekati threshold minimum
+- coverage di bawah threshold
+- promote gagal sebelum seal/finalize
+- hash/seal/finalize gagal setelah coverage pass
+- historical range membutuhkan retry berulang karena provider limitation yang persisten
+- source conflict memerlukan correction/recovery run resmi
 
-then operator review/escalation is required.
+---
 
-## 5. Replay performance targets
+## Outcome interpretation
+- import partial dengan evidence lengkap masih bisa dianggap import selesai
+- requested date baru bisa readable setelah promote sukses penuh
+- bila coverage gagal, requested date tetap `NOT_READABLE`
+- bila fallback/readability policy memilih `HELD`, itu tetap bukan requested-date success
+- performa yang baik tidak pernah membenarkan readable publication yang tidak aman
 
-### Normal replay target
-For replay over one date or one small controlled fixture scenario:
-- target completion within `15 minutes`
+---
 
-### Replay alert threshold
-Replay becomes operationally concerning if:
-- expected single-date or small-scope replay exceeds `30 minutes`
-- or repeated replay mismatch remains unresolved for `2 consecutive investigation cycles`
+## Storage growth and maintenance guardrail
+SLO ini juga harus dibaca bersama policy storage:
+- data canonical/published disimpan jangka panjang
+- maintenance dilakukan lewat partitioning, archive, dan purge artifact non-authoritative
+- purge tidak boleh menghapus bukti minimum yang masih berada dalam retention contract
 
-## 6. Artifact completeness thresholds
+---
 
-### Required readable-publication completeness
-A requested date may only become readable if all required artifact classes are present:
-- bars
-- indicators
-- eligibility
-- hashes
-- seal/publication state
-
-Required completeness for readable publication:
-- `100%` of required artifact classes present
-
-### Required held/failed evidence completeness
-Even if requested date is not readable, minimum evidence should still exist for:
-- run summary
-- reason-code summary or equivalent anomaly explanation
-- lifecycle/terminal state
-- publication/fallback implication
-
-Target evidence completeness:
-- `100%` of minimum evidence classes present
-
-## 7. Coverage thresholds
-Coverage threshold itself is controlled elsewhere by config/contracts, but operationally:
-
-### Coverage alert
-If actual coverage ratio approaches the locked minimum by less than:
-- `2 percentage points`
-
-the run should be marked operationally fragile even if it still passes.
-
-### Coverage failure
-If actual coverage falls below the locked minimum:
-- requested date must not become readable
-- fallback logic applies
-
-### Source-blocker degraded hold
-If source acquisition ends in `RUN_SOURCE_RATE_LIMIT` or `RUN_SOURCE_TIMEOUT` after bounded retry exhaustion:
-- requested date must not become readable
-- when a prior readable publication exists, operator-facing outcome may stop at `HELD` with fallback effective date
-- when no prior readable publication exists, outcome must still close as `HELD + NOT_READABLE + trade_date_effective=NULL`; this is a blocked operational outcome, not a requested-date readable success and not a silent pass
-
-## 8. Publication safety alert conditions
-Immediate operator visibility is required if any of the following occurs:
-- hash missing when candidate publication appears success-eligible
-- seal missing after success preconditions appear satisfied
-- ambiguous current publication state
-- replay mismatch on identical controlled inputs
-- config identity missing for a run that produced candidate output
-- correction candidate appears current without explicit switch evidence
-
-## 9. Minimum alertable conditions
-At minimum, the platform should surface an operator-visible alert when:
-- source schema drift detected
-- broad source timeout/retry exhaustion occurs
-- coverage below threshold
-- indicator compute hard failure
-- hash computation failure
-- seal write failure
-- ambiguous publication switch
-- current publication cannot be resolved uniquely
-- replay mismatch classified as `MISMATCH` or `UNEXPECTED`
-
-## 10. Session snapshot limits
-Session snapshot is supplemental, but still should have minimum expectations.
-
-### Snapshot lateness tolerance
-Allowed slot tolerance:
-- `15 minutes`
-
-### Snapshot failure handling
-Snapshot failure is not an EOD publication blocker by itself, but repeated snapshot failure should still be operator-visible.
-
-## 11. Escalation timing guidance
-Recommended escalation timing:
-- source schema drift: immediate
-- ambiguous publication state: immediate
-- hash reproducibility drift: immediate
-- approved correction stuck > 2 business days: escalate
-- stale owner lock > 15 minutes with no progress: investigate immediately
-- non-terminal requested-date run > 60 minutes beyond expected processing window: investigate immediately
-
-## 12. Cross-contract alignment
-This file must remain aligned with:
-- `Failure_Playbook_LOCKED.md`
+## Cross-contract alignment
+Harus sinkron dengan:
 - `Commands_and_Runbook_LOCKED.md`
-- `Historical_Correction_Runbook_LOCKED.md`
-- `Audit_Evidence_Pack_Contract_LOCKED.md`
-- readiness/seal/publication contracts
-
-## Anti-ambiguity rule (LOCKED)
-If a run can become stale, degraded, or operationally unsafe without crossing any defined threshold in this file, then the SLO/limits layer is too weak and must be hardened further.
+- `../book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+- `../book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
+- `../book/EOD_Data_Retention_and_History_Rewrite_Policy_LOCKED.md`
+- `../book/CONSUMER_READ_CONTRACT_LOCKED.md`

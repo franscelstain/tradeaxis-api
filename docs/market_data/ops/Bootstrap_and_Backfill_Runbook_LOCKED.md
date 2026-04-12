@@ -1,45 +1,90 @@
-# Bootstrap and Backfill Runbook (LOCKED)
+# BOOTSTRAP AND BACKFILL RUNBOOK (LOCKED)
 
 ## Purpose
-Ensure Market Data Platform has enough historical data to produce stable upstream indicators and eligibility without warmup-driven distortion.
+Menjamin bootstrap/backfill mengikuti split arsitektur baru.
 
-## Minimum bootstrap target (LOCKED)
-To support the baseline indicators:
-- minimum history per ticker: >= 60 trading days
-Recommended for production stability and replay confidence:
-- >= 3 years of trading days
+Backfill sekarang adalah **import-range command**, bukan full publish pipeline.
 
-## Steps
-### Step 0 — validate global dependencies
-- ticker master exists and is correct
-- market calendar exists and trading-day order is correct
+---
 
-### Step 1 — bars backfill
-- ingest canonical bars by date range
-- validate coverage and invalid-bar patterns
-- minimum range execution may be driven through `market-data:backfill {start_date} {end_date}` when operator needs resumable trading-day iteration rooted in `market_calendar`
+## Date-driven role of backfill (LOCKED)
+Backfill adalah **first-class citizen** untuk historical ingestion.
 
-### Step 2 — indicators backfill
-- compute indicators with explicit `indicator_set_version`
-- respect trading-day windows and null policy
+Artinya:
+- backfill bukan fitur tambahan
+- backfill adalah mekanisme inti untuk memasukkan historical bars berdasarkan tanggal target operator
+- backfill harus mampu memproses range tanggal trading apa pun yang sah
+- backfill harus tetap relevan baik untuk bootstrap awal maupun recovery historical date tertentu
 
-### Step 3 — eligibility build
-- build one eligibility row per ticker/date
-- warmup gaps become `eligible=0` with explicit reason code
+---
 
-### Step 4 — historical replay
-- verify deterministic hashes on stable inputs
-- verify effective-date and seal behavior on degraded scenarios
-- minimum proof writer may be executed through `market-data:replay:verify` against a completed run plus fixture package
-- built-in replay smoke coverage may be executed through `market-data:replay:smoke` before broader replay/backfill work is resumed
-- minimum historical replay range execution may be driven through `market-data:replay:backfill {start_date} {end_date}` when operator needs resumable date-range replay proof rooted in `market_calendar` and current readable publication pointers
+## Official sequence
 
-## Resume requirement (LOCKED)
-- backfill is resumable by date range
-- rerun is idempotent
-- operator-visible backfill summary should preserve enough per-date context to explain source path used during rerun without reopening raw run notes one by one
+### Step 1 — Import historical bars
+Jalankan:
+- `market-data:backfill {start_date} {end_date}`
 
-## Done criteria
-- recent sample dates meet coverage threshold
-- eligibility population is no longer dominated by insufficient history
-- downstream consumer read path can resolve and read D without missing upstream artifacts
+Tujuan:
+- import bars per trading day
+- simpan invalid rows
+- simpan telemetry
+- simpan bars coverage evidence minimum
+- mempertahankan requested date identity per hari dalam range
+
+### Step 2 — Review import readiness
+Operator menilai:
+- tanggal mana yang import evidence-nya cukup
+- tanggal mana yang perlu diulang
+- tanggal mana yang mungkin akan ditolak promote karena coverage lemah
+- tanggal mana yang terkena provider limitation tetapi belum menjadi fatal run-level blocker
+
+### Step 3 — Promote selected dates
+Jalankan:
+- `market-data:promote {requested_date}`
+
+Promote menangani:
+- coverage validation
+- indicators
+- eligibility
+- hash
+- seal
+- finalize
+
+---
+
+## Yahoo-specific note
+Karena active Yahoo path berjalan per ticker dan rawan `429`:
+- backfill harus partial-tolerant
+- backfill tidak boleh fail-fast hanya karena satu ticker/date mengalami rate limit
+- default Yahoo window seperti `10d` tidak boleh dianggap batas historis sistem
+- implementation boleh memakai windowing, `period1` / `period2`, looping batch, retry, backoff, dan throttle
+- keputusan publishability tetap dipindahkan ke promote
+
+---
+
+## Scalability and resumability expectation
+Backfill wajib diperlakukan sebagai jalur operasional yang scalable.
+
+Minimum expectation:
+- batch-aware per tanggal trading
+- retry-aware untuk failure transient
+- aman dijalankan ulang per range bila operating model mengizinkan
+- tidak menyamakan partial provider failure dengan kegagalan total seluruh historical range
+
+---
+
+## Acceptance expectations
+Bootstrap/backfill dianggap benar bila:
+- bars historis berhasil diimport terpisah dari publishability
+- coverage evidence tersedia
+- promote hanya dijalankan dari bars hasil import
+- tidak ada asumsi bahwa backfill otomatis menghasilkan readable publication
+- tidak ada asumsi bahwa provider recent window menentukan batas historical ingestion
+
+---
+
+## Cross-contract alignment
+Harus sinkron dengan:
+- `Commands_and_Runbook_LOCKED.md`
+- `../book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
+- `../book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
