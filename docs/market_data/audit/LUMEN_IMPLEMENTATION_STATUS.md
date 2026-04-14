@@ -2,6 +2,67 @@
 
 ## SESSION UPDATE
 
+* Batch: Yahoo Single-Day Deterministic Hardening
+* Status: PARTIAL
+
+### What changed in code in this session
+
+* `MarketDataBackfillService` now distinguishes `request_mode=single_day` vs `request_mode=range` and routes true one-date backfill requests through `MarketDataPipelineService::runSingleDay(...)` instead of silently treating them as generic range flow.
+* `MarketDataPipelineService` now exposes explicit `runSingleDay(...)` entrypoint, shares the same deterministic stage sequence, and rejects any attempt to switch `source_mode` mid-run across later stages.
+* `EodBarsIngestService` now enforces a single-day boundary on fetched source rows:
+  * mixed `trade_date` rows inside one requested date are rejected
+  * mixed `source_name` rows inside one run are rejected
+  * API ticker universe fan-out is deduplicated before acquisition
+* `PublicApiEodBarsAdapter` now deduplicates Yahoo ticker inputs and records aggregate single-day acquisition telemetry (`requested_ticker_count`, `unique_ticker_count`, `returned_row_count`, `missing_ticker_count`) so partial coverage diagnosis is less ambiguous.
+* `BackfillMarketDataCommand` now prints `request_mode` so operator output distinguishes one-date execution from true range execution.
+* Unit tests were expanded for:
+  * single-day backfill routing
+  * Yahoo duplicate ticker dedupe
+  * single-day mixed-source boundary rejection
+
+### What is now stronger than before
+
+* Single-date backfill no longer hides behind generic range semantics at the orchestration entrypoint.
+* Single-day ingest now rejects silent source mixing inside one run boundary instead of letting mixed rows flow downstream.
+* Yahoo per-date acquisition is less noisy because duplicate ticker requests are removed before HTTP fan-out.
+* Partial acquisition telemetry is more explicit for coverage/root-cause review.
+
+### What is still not fully proven here
+
+* Full local PHPUnit runtime proof is still required because `vendor/` is absent in this uploaded ZIP.
+* Real Yahoo runtime still needs local evidence to prove:
+  * retry success path
+  * retry exhausted path
+  * below-threshold coverage path flowing all the way through finalize
+* This session hardens deterministic boundary handling, but does not claim the external Yahoo provider blocker is solved.
+
+### Manual validation required locally
+
+* Run `vendor\bin\phpunit tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+* Run `vendor\bin\phpunit tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+* Run `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+* Re-run:
+  * `php artisan market-data:backfill 2026-03-02 2026-03-02 --source_mode=api --output_dir=storage/app/market-data-single-day-hardening`
+* Confirm:
+  * CLI prints `request_mode=single_day`
+  * summary JSON records `request_mode=single_day`
+  * source-attempt telemetry records aggregate ticker counts when acquisition succeeds
+  * mixed-source rows are rejected in tests
+  * duplicate ticker input does not trigger duplicate Yahoo requests in tests
+
+### Final state
+
+* PARTIAL
+* Real codebase hardening was applied
+* Runtime/local evidence is still required before this batch can be promoted to DONE
+
+
+---
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Yahoo No-Baseline Degraded Hold Runtime Validation
 * Status: DONE
 
@@ -393,3 +454,61 @@
   - no `trade_date_effective` line when no baseline exists
   - `final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE`
   - backfill case status should be `FAIL`, not `ERROR`
+
+
+---
+
+# SESSION UPDATE — SINGLE-DAY HARDENING FOLLOW-UP (RUNTIME EVIDENCE ALIGNMENT)
+
+- Status: PARTIAL
+- Evidence received from local runtime:
+  - syntax checks passed for all touched service, command, adapter, and test files
+  - `PublicApiEodBarsAdapterTest`: PASS (`12 tests, 68 assertions`)
+  - `EodBarsIngestServiceTest`: PASS (`4 tests, 29 assertions`)
+  - `MarketDataBackfillServiceTest`: one expectation drift and one status-classification mismatch exposed by local PHPUnit evidence
+- Root causes proven by runtime evidence:
+  - range request (`2026-03-20` → `2026-03-21`) was still asserted as `runSingleDay(...)` in one test even though the hardened backfill service now correctly classifies it as `request_mode=range`
+  - persisted failed/non-readable run recovered from exception path was still being surfaced as command-case `ERROR` in one path, while the contract-aligned operator outcome should be `FAIL` when the run already resolved to `FAILED|HELD + NOT_READABLE`
+- Fixes applied after evidence:
+  - `MarketDataBackfillService` catch path now maps persisted deterministic non-readable runs to case status `FAIL` and suppresses synthetic `error_message` noise for those resolved outcomes
+  - `MarketDataBackfillServiceTest` now aligns the two-date request with `runDaily(...)` instead of `runSingleDay(...)`
+  - `MarketDataBackfillServiceTest` now expects recovered persisted non-readable failure to surface as `FAIL`, not `ERROR`
+- Contract impact:
+  - single-day path remains isolated to exactly one requested trading date
+  - range path no longer gets mislabeled by leftover test expectations
+  - finalize/readability failure recovered from persisted run state is now operator-visible as deterministic `FAIL`, not an ambiguous command `ERROR`
+- Manual proof still required locally:
+  - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  - `vendor\bin\phpunit tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+  - `vendor\bin\phpunit tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+  - optional full suite: `vendor\bin\phpunit`
+
+---
+
+# SESSION UPDATE — MANUAL_FILE TRACEABILITY FOLLOW-UP (LOCAL TEST FAILURE REPAIR)
+
+- Status: PARTIAL
+- Evidence received from local PHPUnit:
+  - `LocalFileEodBarsAdapterTest`: FAIL because explicit manual-file override still surfaced payload `source_name=YAHOO_FINANCE` instead of the logical manual source boundary
+  - `EodBarsIngestServiceTest`: FAIL because invalid-row expectation still asserted legacy `MANUAL_FILE` while ingest now writes normalized manual source `LOCAL_FILE`
+- Root cause proven by evidence:
+  - manual-file adapter normalization was not fully enforced at row level, so payload-supplied `source_name` could still leak through explicit file input
+  - test expectations were still split between legacy manual labels and the newer logical manual source contract
+- Fixes applied after evidence:
+  - `LocalFileEodBarsAdapter::normalizeRow()` now always emits `source_name=LOCAL_FILE` (or configured default manual logical source) for manual sources, ignoring payload-supplied provider labels
+  - `LocalFileEodBarsAdapterTest` now expects the normalized logical manual source instead of raw payload `MANUAL_RECOVERY`
+  - `EodBarsIngestServiceTest` manual-file case now expects persisted valid/invalid rows and returned ingest summary to use `LOCAL_FILE`
+- Contract impact:
+  - manual-file single-day ingest now keeps provider/source labels from payload out of adapter output, ingest persistence, and ingest summary
+  - manual-file rows remain deterministic and traceable through `source_row_ref` and input-file notes, without leaking upstream/provider identity into `source_name`
+- Manual proof still required locally:
+  - `vendor\bin\phpunit tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php`
+  - `vendor\bin\phpunit tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+  - `php artisan market-data:backfill 2026-03-24 2026-03-24 --source_mode=manual_file --output_dir=storage/app/market-data-manual-single-day-readable`
+- Expected runtime proof:
+  - `terminal_status=SUCCESS`
+  - `publishability_state=READABLE`
+  - `trade_date_effective=2026-03-24`
+  - `source_mode=manual_file`
+  - `source_name=LOCAL_FILE`
+  - no payload/provider label such as `MANUAL_RECOVERY` or `YAHOO_FINANCE` leaks into run notes, ingest event payload, or operator summary for a valid manual-file single-day run

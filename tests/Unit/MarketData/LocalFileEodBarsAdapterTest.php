@@ -34,7 +34,7 @@ class LocalFileEodBarsAdapterTest extends \TestCase
         $this->assertCount(1, $rows);
         $this->assertSame('BBCA', $rows[0]['ticker_code']);
         $this->assertSame('2026-03-24', $rows[0]['trade_date']);
-        $this->assertSame('MANUAL_RECOVERY', $rows[0]['source_name']);
+        $this->assertSame('LOCAL_FILE', $rows[0]['source_name']);
         $this->assertSame('row-1', $rows[0]['source_row_ref']);
     }
 

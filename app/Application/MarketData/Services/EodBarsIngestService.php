@@ -42,6 +42,7 @@ class EodBarsIngestService
         }
 
         $sourceRows = $this->fetchSourceRows($requestedDate, $sourceMode);
+        $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
 
         $candidatePublication = $this->publications->getOrCreateCandidatePublication(
@@ -144,14 +145,48 @@ class EodBarsIngestService
     {
         if ($sourceMode === 'api') {
             $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
-            $tickerCodes = array_values(array_filter(array_map(function ($row) {
+            $tickerCodes = array_values(array_unique(array_filter(array_map(function ($row) {
                 return isset($row['ticker_code']) ? $row['ticker_code'] : null;
-            }, $universe)));
+            }, $universe))));
 
             return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes);
         }
 
         return $this->localSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode);
+    }
+
+    private function assertSingleDaySourceBoundary($requestedDate, $sourceMode, array $sourceRows)
+    {
+        if ($sourceRows === []) {
+            return;
+        }
+
+        $seenTradeDates = [];
+        $seenSourceNames = [];
+
+        foreach ($sourceRows as $row) {
+            $rowTradeDate = isset($row['trade_date']) ? (string) $row['trade_date'] : null;
+            if ($rowTradeDate !== null && $rowTradeDate !== '') {
+                $seenTradeDates[$rowTradeDate] = true;
+            }
+
+            $rowSourceName = isset($row['source_name']) ? strtoupper(trim((string) $row['source_name'])) : null;
+            if ($rowSourceName !== null && $rowSourceName !== '') {
+                $seenSourceNames[$rowSourceName] = true;
+            }
+        }
+
+        if (count($seenTradeDates) > 1 || (count($seenTradeDates) === 1 && ! isset($seenTradeDates[$requestedDate]))) {
+            throw new \RuntimeException('Single-day ingest received source rows outside the requested trade_date boundary.');
+        }
+
+        if (count($seenSourceNames) > 1) {
+            throw new \RuntimeException('Single-day ingest received mixed source_name rows within one run boundary.');
+        }
+
+        if ($sourceMode === 'manual_file' && count($seenSourceNames) === 1 && ! isset($seenSourceNames['MANUAL_FILE']) && ! isset($seenSourceNames['LOCAL_FILE'])) {
+            throw new \RuntimeException('Manual single-day ingest received unexpected source_name outside the manual boundary.');
+        }
     }
 
     private function choosePreferredRow(array $left, array $right)

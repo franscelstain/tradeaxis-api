@@ -56,14 +56,18 @@ class PublicApiEodBarsAdapter
         $rows = [];
         $index = 0;
 
-        foreach ($tickerCodes as $tickerCode) {
-            $tickerCode = $this->normalizeTickerCode($tickerCode);
-            if ($tickerCode === null || $tickerCode === '') {
-                continue;
-            }
+        $uniqueTickerCodes = array_values(array_unique(array_filter(array_map(function ($tickerCode) {
+            return $this->normalizeTickerCode($tickerCode);
+        }, $tickerCodes))));
 
+        foreach ($uniqueTickerCodes as $tickerCode) {
             $url = $this->buildYahooFinanceUrl($tradeDate, $tickerCode, $apiConfig);
-            $response = $this->requestWithRetry($url);
+            $response = $this->requestWithRetry($url, [
+                'trade_date' => $tradeDate,
+                'ticker_code' => $tickerCode,
+                'requested_ticker_count' => count($tickerCodes),
+                'unique_ticker_count' => count($uniqueTickerCodes),
+            ]);
             $row = $this->parseYahooFinancePayload($response['body'], $tradeDate, $tickerCode, $response['captured_at'], $apiConfig);
             if ($row === null) {
                 continue;
@@ -72,6 +76,19 @@ class PublicApiEodBarsAdapter
             $index++;
             $rows[] = $this->normalizeRow($row, $tradeDate, $index, $response['captured_at'], $apiConfig);
         }
+
+        $returnedTickerCodes = array_values(array_unique(array_map(function ($row) {
+            return isset($row['ticker_code']) ? (string) $row['ticker_code'] : '';
+        }, $rows)));
+
+        $this->rememberAcquisitionTelemetry(array_merge($this->lastAcquisitionTelemetry, [
+            'trade_date' => $tradeDate,
+            'requested_ticker_count' => count($tickerCodes),
+            'unique_ticker_count' => count($uniqueTickerCodes),
+            'returned_row_count' => count($rows),
+            'returned_ticker_count' => count(array_filter($returnedTickerCodes)),
+            'missing_ticker_count' => max(0, count($uniqueTickerCodes) - count(array_filter($returnedTickerCodes))),
+        ]));
 
         return $rows;
     }
@@ -161,7 +178,7 @@ class PublicApiEodBarsAdapter
         $this->lastAcquisitionTelemetry = $telemetry;
     }
 
-    private function requestWithRetry($url)
+    private function requestWithRetry($url, array $requestContext = [])
     {
         $retryMax = min(3, max(0, (int) config('market_data.provider.api_retry_max')));
         $baseBackoffMs = max(0, (int) config('market_data.provider.api_backoff_ms'));
@@ -207,7 +224,7 @@ class PublicApiEodBarsAdapter
                     'will_retry' => false,
                 ];
 
-                $this->rememberAcquisitionTelemetry([
+                $this->rememberAcquisitionTelemetry($requestContext + [
                     'provider' => $provider,
                     'source_name' => $sourceName,
                     'timeout_seconds' => $timeoutSeconds,
@@ -237,7 +254,7 @@ class PublicApiEodBarsAdapter
                     'will_retry' => $willRetry,
                 ];
 
-                $failureContext = [
+                $failureContext = $requestContext + [
                     'url' => $url,
                     'provider' => $provider,
                     'source_name' => $sourceName,

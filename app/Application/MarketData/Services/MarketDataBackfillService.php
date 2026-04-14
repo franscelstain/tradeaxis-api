@@ -41,10 +41,13 @@ class MarketDataBackfillService
         $cases = [];
         $telemetryCases = [];
         $allPassed = true;
+        $requestMode = ($startDate === $endDate && count($dates) === 1) ? 'single_day' : 'range';
 
         foreach ($dates as $requestedDate) {
             try {
-                $run = $this->pipeline->runDaily($requestedDate, $sourceMode, null);
+                $run = $requestMode === 'single_day'
+                    ? $this->pipeline->runSingleDay($requestedDate, $sourceMode, null)
+                    : $this->pipeline->runDaily($requestedDate, $sourceMode, null);
                 $passed = $this->runCountsAsPass($run);
                 if (! $passed) {
                     $allPassed = false;
@@ -78,12 +81,19 @@ class MarketDataBackfillService
                 ];
 
                 if ($failedRun) {
-                    $case = array_merge($case, [
+                    $case = [
+                        'requested_date' => $requestedDate,
+                        'status' => $this->failedRunCountsAsDeterministicFail($failedRun) ? 'FAIL' : 'ERROR',
                         'run_id' => (int) $failedRun->run_id,
                         'terminal_status' => (string) $failedRun->terminal_status,
                         'publishability_state' => (string) $failedRun->publishability_state,
                         'trade_date_effective' => $failedRun->trade_date_effective !== null ? (string) $failedRun->trade_date_effective : null,
-                    ], $this->buildSourceContextFromRun($failedRun));
+                    ] + $this->buildSourceContextFromRun($failedRun);
+
+                    if (! $this->failedRunCountsAsDeterministicFail($failedRun)) {
+                        $case['error_class'] = get_class($e);
+                        $case['error_message'] = $e->getMessage();
+                    }
 
                     $telemetryCase = $this->buildSourceAttemptTelemetryCase($requestedDate, $failedRun);
                     if ($telemetryCase !== null) {
@@ -108,6 +118,7 @@ class MarketDataBackfillService
                 'end_date' => $endDate,
             ],
             'source_mode' => $sourceMode,
+            'request_mode' => $requestMode,
             'trading_dates' => $dates,
             'all_passed' => $allPassed,
             'cases' => $cases,
@@ -157,6 +168,7 @@ class MarketDataBackfillService
                 'end_date' => (string) $endDate,
             ],
             'source_mode' => $sourceMode,
+            'request_mode' => ($startDate === $endDate) ? 'single_day' : 'range',
             'cases' => $telemetryCases,
         ];
 
@@ -338,6 +350,15 @@ class MarketDataBackfillService
     {
         return (string) $run->terminal_status === 'SUCCESS'
             && (string) $run->publishability_state === 'READABLE';
+    }
+
+    private function failedRunCountsAsDeterministicFail($run)
+    {
+        $terminalStatus = (string) ($run->terminal_status ?? '');
+        $publishabilityState = (string) ($run->publishability_state ?? '');
+
+        return in_array($terminalStatus, ['FAILED', 'HELD'], true)
+            && $publishabilityState === 'NOT_READABLE';
     }
 
     private function guardDateRange($startDate, $endDate)

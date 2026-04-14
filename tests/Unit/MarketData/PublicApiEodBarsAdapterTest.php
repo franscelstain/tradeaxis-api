@@ -246,6 +246,66 @@ class PublicApiEodBarsAdapterTest extends TestCase
     }
 
 
+
+    public function test_yahoo_finance_adapter_deduplicates_single_day_ticker_inputs_and_tracks_aggregate_counts()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 0, 0));
+
+        $requestedUrls = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+            $requestedUrls[] = $url;
+
+            return [
+                'status' => 200,
+                'body' => json_encode([
+                    'chart' => [
+                        'result' => [[
+                            'meta' => [
+                                'exchangeTimezoneName' => 'Asia/Jakarta',
+                            ],
+                            'timestamp' => [1773828000],
+                            'indicators' => [
+                                'quote' => [[
+                                    'open' => [100],
+                                    'high' => [110],
+                                    'low' => [99],
+                                    'close' => [108],
+                                    'volume' => [100000],
+                                ]],
+                                'adjclose' => [[
+                                    'adjclose' => [108],
+                                ]],
+                            ],
+                        ]],
+                    ],
+                ]),
+            ];
+        });
+
+        $rows = $adapter->fetchOrLoadEodBars('2026-03-18', 'api', ['bbca', 'BBCA', 'bbri']);
+        $telemetry = $adapter->consumeLastAcquisitionTelemetry();
+
+        $this->assertCount(2, $rows);
+        $this->assertSame([
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBRI.JK?interval=1d&range=10d',
+        ], $requestedUrls);
+        $this->assertSame(3, $telemetry['requested_ticker_count']);
+        $this->assertSame(2, $telemetry['unique_ticker_count']);
+        $this->assertSame(2, $telemetry['returned_row_count']);
+        $this->assertSame(0, $telemetry['missing_ticker_count']);
+        $this->assertSame('BBRI', $telemetry['ticker_code']);
+    }
+
     public function test_api_adapter_caps_rate_limit_retry_budget_to_locked_maximum()
     {
         $this->bindMarketDataConfig($this->config([

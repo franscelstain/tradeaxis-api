@@ -90,6 +90,10 @@ class MarketDataPipelineService
             'supersedes_run_id' => $supersedesRunId ?: $run->supersedes_run_id,
         ]);
 
+        if ((string) $run->source !== (string) $input->sourceMode) {
+            throw new \RuntimeException('Run source_mode is immutable within a single run and cannot switch across stages.');
+        }
+
         $this->runs->appendEvent(
             $run,
             $input->stage,
@@ -684,7 +688,17 @@ class MarketDataPipelineService
         }
     }
 
+    public function runSingleDay($requestedDate, $sourceMode = null, $correctionId = null)
+    {
+        return $this->executeStageSequence($requestedDate, $sourceMode, $correctionId);
+    }
+
     public function runDaily($requestedDate, $sourceMode = null, $correctionId = null)
+    {
+        return $this->executeStageSequence($requestedDate, $sourceMode, $correctionId);
+    }
+
+    private function executeStageSequence($requestedDate, $sourceMode = null, $correctionId = null)
     {
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
         $sequence = [
@@ -928,6 +942,22 @@ class MarketDataPipelineService
 
         if (array_key_exists('attempt_count', $sourceAcquisition)) {
             $segments[] = 'source_attempt_count='.(int) $sourceAcquisition['attempt_count'];
+        }
+
+        if (array_key_exists('requested_ticker_count', $sourceAcquisition) && $sourceAcquisition['requested_ticker_count'] !== null) {
+            $segments[] = 'source_requested_ticker_count='.(int) $sourceAcquisition['requested_ticker_count'];
+        }
+
+        if (array_key_exists('unique_ticker_count', $sourceAcquisition) && $sourceAcquisition['unique_ticker_count'] !== null) {
+            $segments[] = 'source_unique_ticker_count='.(int) $sourceAcquisition['unique_ticker_count'];
+        }
+
+        if (array_key_exists('returned_row_count', $sourceAcquisition) && $sourceAcquisition['returned_row_count'] !== null) {
+            $segments[] = 'source_returned_row_count='.(int) $sourceAcquisition['returned_row_count'];
+        }
+
+        if (array_key_exists('missing_ticker_count', $sourceAcquisition) && $sourceAcquisition['missing_ticker_count'] !== null) {
+            $segments[] = 'source_missing_ticker_count='.(int) $sourceAcquisition['missing_ticker_count'];
         }
 
         if (! empty($sourceAcquisition['success_after_retry'])) {

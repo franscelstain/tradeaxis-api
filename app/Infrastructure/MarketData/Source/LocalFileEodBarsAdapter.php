@@ -137,7 +137,7 @@ class LocalFileEodBarsAdapter
             'close' => array_key_exists('close', $row) ? $row['close'] : null,
             'volume' => array_key_exists('volume', $row) ? $row['volume'] : null,
             'adj_close' => array_key_exists('adj_close', $row) ? $row['adj_close'] : null,
-            'source_name' => $row['source_name'] ?? strtoupper(config('market_data.source.default_source_name')),
+            'source_name' => 'LOCAL_FILE',
             'source_row_ref' => $row['source_row_ref'] ?? $fallbackRowRef,
             'captured_at' => $capturedAt,
         ];
