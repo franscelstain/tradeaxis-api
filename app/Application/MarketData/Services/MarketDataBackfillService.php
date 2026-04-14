@@ -33,6 +33,8 @@ class MarketDataBackfillService
             throw new \RuntimeException('Backfill requires at least one trading date in market_calendar for the requested range.');
         }
 
+        $requestMode = $this->resolveRequestMode($startDate, $endDate, $dates);
+
         $outputDir = $outputDir ?: storage_path('app/market_data/evidence/backfills/backfill_'.$startDate.'_to_'.$endDate.'_'.Carbon::now(config('market_data.platform.timezone'))->format('Ymd_His'));
         if (! is_dir($outputDir)) {
             mkdir($outputDir, 0777, true);
@@ -40,65 +42,66 @@ class MarketDataBackfillService
 
         $cases = [];
         $telemetryCases = [];
-        $allPassed = true;
-        $requestMode = ($startDate === $endDate && count($dates) === 1) ? 'single_day' : 'range';
+        $allImported = true;
 
         foreach ($dates as $requestedDate) {
             try {
                 $run = $requestMode === 'single_day'
-                    ? $this->pipeline->runSingleDay($requestedDate, $sourceMode, null)
-                    : $this->pipeline->runDaily($requestedDate, $sourceMode, null);
-                $passed = $this->runCountsAsPass($run);
-                if (! $passed) {
-                    $allPassed = false;
+                    ? $this->pipeline->importSingleDay($requestedDate, $sourceMode, null)
+                    : $this->pipeline->importDaily($requestedDate, $sourceMode, null);
+
+                $case = [
+                    'requested_date' => $requestedDate,
+                    'run_id' => (int) $run->run_id,
+                ] + $this->buildSourceContextFromRun($run);
+
+                $case = array_merge($case, $this->buildImportContext($run));
+                $case['status'] = $this->resolveImportCaseStatus($case);
+
+                if (($case['import_status'] ?? null) !== 'IMPORTED') {
+                    $allImported = false;
                 }
 
-                $cases[] = [
-                    'requested_date' => $requestedDate,
-                    'status' => $passed ? 'PASS' : 'FAIL',
-                    'run_id' => (int) $run->run_id,
-                    'terminal_status' => (string) $run->terminal_status,
-                    'publishability_state' => (string) $run->publishability_state,
-                    'trade_date_effective' => $run->trade_date_effective !== null ? (string) $run->trade_date_effective : null,
-                ] + $this->buildSourceContextFromRun($run);
+                $cases[] = $case;
 
                 $telemetryCase = $this->buildSourceAttemptTelemetryCase($requestedDate, $run);
                 if ($telemetryCase !== null) {
                     $telemetryCases[] = $telemetryCase;
                 }
 
-                if (! $passed && ! $continueOnError) {
+                if (($case['import_status'] ?? null) !== 'IMPORTED' && ! $continueOnError) {
                     break;
                 }
             } catch (\Throwable $e) {
-                $allPassed = false;
+                $allImported = false;
                 $failedRun = $this->runs ? $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode) : null;
                 $case = [
                     'requested_date' => $requestedDate,
                     'status' => 'ERROR',
                     'error_class' => get_class($e),
                     'error_message' => $e->getMessage(),
+                    'import_status' => 'IMPORT_FAILED',
                 ];
 
                 if ($failedRun) {
                     $case = [
                         'requested_date' => $requestedDate,
-                        'status' => $this->failedRunCountsAsDeterministicFail($failedRun) ? 'FAIL' : 'ERROR',
                         'run_id' => (int) $failedRun->run_id,
-                        'terminal_status' => (string) $failedRun->terminal_status,
-                        'publishability_state' => (string) $failedRun->publishability_state,
-                        'trade_date_effective' => $failedRun->trade_date_effective !== null ? (string) $failedRun->trade_date_effective : null,
                     ] + $this->buildSourceContextFromRun($failedRun);
 
-                    if (! $this->failedRunCountsAsDeterministicFail($failedRun)) {
-                        $case['error_class'] = get_class($e);
-                        $case['error_message'] = $e->getMessage();
-                    }
+                    $case = array_merge($case, $this->buildImportContext($failedRun));
+                    $case['status'] = $this->resolveImportCaseStatus($case, true);
+                    $case['error_class'] = get_class($e);
+                    $case['error_message'] = $e->getMessage();
 
                     $telemetryCase = $this->buildSourceAttemptTelemetryCase($requestedDate, $failedRun);
                     if ($telemetryCase !== null) {
                         $telemetryCases[] = $telemetryCase;
                     }
+                }
+
+                if (($case['import_status'] ?? null) !== 'IMPORTED') {
+                    $allImported = false;
                 }
 
                 $cases[] = $case;
@@ -120,7 +123,8 @@ class MarketDataBackfillService
             'source_mode' => $sourceMode,
             'request_mode' => $requestMode,
             'trading_dates' => $dates,
-            'all_passed' => $allPassed,
+            'all_imported' => $allImported,
+            'all_passed' => $allImported,
             'cases' => $cases,
             'output_dir' => $outputDir,
             'source_attempt_telemetry_artifact' => $telemetryArtifactPath,
@@ -168,7 +172,7 @@ class MarketDataBackfillService
                 'end_date' => (string) $endDate,
             ],
             'source_mode' => $sourceMode,
-            'request_mode' => ($startDate === $endDate) ? 'single_day' : 'range',
+            'request_mode' => $this->resolveRequestMode($startDate, $endDate, array_column($telemetryCases, 'requested_date')),
             'cases' => $telemetryCases,
         ];
 
@@ -196,6 +200,7 @@ class MarketDataBackfillService
             'success_after_retry' => ($notesMap['source_success_after_retry'] ?? '') !== '' ? (string) $notesMap['source_success_after_retry'] : null,
             'final_http_status' => isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] != '' ? (int) $notesMap['source_final_http_status'] : null,
             'final_reason_code' => ($notesMap['source_final_reason_code'] ?? '') !== '' ? (string) $notesMap['source_final_reason_code'] : null,
+            'retry_exhausted' => ($notesMap['source_retry_exhausted'] ?? '') !== '' ? (string) $notesMap['source_retry_exhausted'] : null,
         ], $sourceAttemptTelemetry);
 
         $result = [];
@@ -263,6 +268,7 @@ class MarketDataBackfillService
             'success_after_retry' => 'success_after_retry',
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
+            'retry_exhausted' => 'retry_exhausted',
         ];
 
         foreach ($fieldMap as $contextKey => $telemetryKey) {
@@ -277,6 +283,20 @@ class MarketDataBackfillService
         return $merged;
     }
 
+
+
+    private function resolveRequestMode($startDate, $endDate, array $dates)
+    {
+        if ((string) $startDate !== (string) $endDate) {
+            return 'range';
+        }
+
+        if (count($dates) !== 1 || (string) $dates[0] !== (string) $startDate) {
+            throw new \RuntimeException('Single-day backfill requires exactly one trading date equal to requested start_date/end_date.');
+        }
+
+        return 'single_day';
+    }
 
     private function normalizeOptionalPathForDisplay($path)
     {
@@ -299,6 +319,7 @@ class MarketDataBackfillService
             'success_after_retry' => 'success_after_retry',
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
+            'retry_exhausted' => 'retry_exhausted',
         ] as $key => $label) {
             if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
                 continue;
@@ -344,6 +365,93 @@ class MarketDataBackfillService
         }
 
         return $parsed;
+    }
+
+
+    private function buildImportContext($run)
+    {
+        $context = [
+            'import_status' => $this->resolveImportStatus($run),
+        ];
+
+        if (isset($run->bars_rows_written) && $run->bars_rows_written !== null) {
+            $context['import_bars_rows_written'] = (int) $run->bars_rows_written;
+        }
+
+        if (isset($run->invalid_bar_count) && $run->invalid_bar_count !== null) {
+            $context['import_invalid_bar_count'] = (int) $run->invalid_bar_count;
+        }
+
+        if (isset($run->stage) && $run->stage !== null && $run->stage !== '') {
+            $context['import_stage_reached'] = (string) $run->stage;
+        }
+
+        return $context;
+    }
+
+    private function resolveImportStatus($run)
+    {
+        if ($run === null) {
+            return 'IMPORT_FAILED';
+        }
+
+        foreach (['bars_rows_written', 'invalid_bar_count', 'publication_version'] as $field) {
+            if (isset($run->{$field}) && $run->{$field} !== null && $run->{$field} !== '') {
+                return 'IMPORTED';
+            }
+        }
+
+        $stage = (string) ($run->stage ?? '');
+
+        if (in_array($stage, ['INGEST_BARS', 'COMPUTE_INDICATORS', 'BUILD_ELIGIBILITY', 'HASH', 'SEAL', 'FINALIZE'], true)) {
+            return 'IMPORTED';
+        }
+
+        return 'IMPORT_FAILED';
+    }
+
+    private function buildDeterministicFailureContext($run)
+    {
+        $context = [];
+
+        foreach ([
+            'quality_gate_state' => 'quality_gate_state',
+            'coverage_gate_state' => 'coverage_gate_state',
+            'coverage_ratio' => 'coverage_ratio',
+            'coverage_universe_count' => 'coverage_universe_count',
+            'coverage_available_count' => 'coverage_available_count',
+            'coverage_missing_count' => 'coverage_missing_count',
+            'coverage_min_threshold' => 'coverage_min_threshold',
+        ] as $field => $outputKey) {
+            if (isset($run->{$field}) && $run->{$field} !== null && $run->{$field} !== '') {
+                $context[$outputKey] = $run->{$field};
+            }
+        }
+
+        if ($this->runs !== null && isset($run->run_id)) {
+            $event = $this->runs->findLatestTerminalEventForRun((int) $run->run_id);
+            if ($event) {
+                if (isset($event->reason_code) && $event->reason_code !== null && $event->reason_code !== '') {
+                    $context['final_reason_code'] = (string) $event->reason_code;
+                }
+
+                if (isset($event->message) && $event->message !== null && $event->message !== '') {
+                    $context['final_reason_message'] = (string) $event->message;
+                }
+            }
+        }
+
+        return $context;
+    }
+
+
+    private function resolveImportCaseStatus(array $case, $encounteredException = false)
+    {
+        if (($case['import_status'] ?? null) === 'IMPORTED') {
+            return 'IMPORTED';
+        }
+
+        return $encounteredException ? 'ERROR' : 'FAIL';
     }
 
     private function runCountsAsPass($run)

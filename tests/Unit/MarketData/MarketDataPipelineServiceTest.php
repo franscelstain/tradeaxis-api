@@ -207,6 +207,74 @@ class MarketDataPipelineServiceTest extends TestCase
         config()->set('market_data.source.local_input_file', null);
     }
 
+
+    public function test_complete_ingest_manual_file_failure_keeps_local_file_source_identity_in_notes(): void
+    {
+        config()->set('market_data.source.default_source_name', 'YAHOO_FINANCE');
+        config()->set('market_data.source.local_input_file', 'storage/app/market_data/operator/manual-2026-04-14.csv');
+
+        $runs = m::mock(EodRunRepository::class);
+        $bars = m::mock(EodBarsIngestService::class);
+        $indicators = m::mock(EodIndicatorsComputeService::class);
+        $eligibility = m::mock(EodEligibilityBuildService::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+        $artifacts = m::mock(EodArtifactRepository::class);
+        $hashes = m::mock(DeterministicHashService::class);
+        $finalize = m::mock(FinalizeDecisionService::class);
+        $diffs = m::mock(PublicationDiffService::class);
+        $outcomes = m::mock(PublicationFinalizeOutcomeService::class);
+        $coverageGate = m::mock(CoverageGateEvaluator::class);
+
+        $run = $this->makeRun(76, '1.0000', null);
+        $run->trade_date_requested = '2026-04-14';
+        $run->stage = 'INGEST_BARS';
+        $run->source = 'manual_file';
+        $run->notes = null;
+        $run->supersedes_run_id = null;
+
+        $runs->shouldReceive('getOrCreateOwningRun')->once()->andReturn($run);
+        $runs->shouldReceive('touchStage')->once()->andReturn($run);
+        $runs->shouldReceive('appendEvent')->once()->withArgs(function ($runArg, $stage, $eventType, $severity, $message, $reasonCode, $payload) {
+            return $eventType === 'STAGE_STARTED'
+                && ($payload['source_mode'] ?? null) === 'manual_file'
+                && ($payload['source_name'] ?? null) === 'LOCAL_FILE'
+                && ($payload['input_file'] ?? null) === 'storage/app/market_data/operator/manual-2026-04-14.csv';
+        });
+        $runs->shouldReceive('updateTelemetry')->once()->with($run, m::on(function ($telemetry) {
+            $notes = (string) ($telemetry['notes'] ?? '');
+            return strpos($notes, 'source_name=LOCAL_FILE') !== false
+                && strpos($notes, 'source_input_file=manual-2026-04-14.csv') !== false
+                && strpos($notes, 'source_name=YAHOO_FINANCE') === false;
+        }))->andReturn($run);
+        $runs->shouldReceive('failStage')->once()->with(
+            $run,
+            'INGEST_BARS',
+            'RUN_SOURCE_MALFORMED_PAYLOAD',
+            m::type('string'),
+            m::on(function ($payload) {
+                return is_array($payload)
+                    && ($payload['source_mode'] ?? null) === 'manual_file'
+                    && ($payload['source_name'] ?? null) === 'LOCAL_FILE'
+                    && ($payload['input_file'] ?? null) === 'storage/app/market_data/operator/manual-2026-04-14.csv';
+            })
+        );
+
+        $bars->shouldReceive('ingest')->once()->andThrow(new RuntimeException('Explicit local input file not found: storage/app/market_data/operator/manual-2026-04-14.csv'));
+
+        $service = new MarketDataPipelineService($runs, $bars, $indicators, $eligibility, $publications, $corrections, $artifacts, $hashes, $finalize, $diffs, $outcomes, $coverageGate);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Explicit local input file not found: storage/app/market_data/operator/manual-2026-04-14.csv');
+
+        try {
+            $service->completeIngest(new MarketDataStageInput('2026-04-14', 'manual_file', null, 'INGEST_BARS', null));
+        } finally {
+            config()->set('market_data.source.default_source_name', null);
+            config()->set('market_data.source.local_input_file', null);
+        }
+    }
+
     public function test_complete_ingest_persists_source_name_in_notes_and_event_payload(): void
     {
         [$service, $runs, $publications, $corrections, $artifacts, $finalizeDecisions, $publicationDiffs, $coverageGateEvaluator, $eligibility, $barsIngest] = $this->makeService();
@@ -325,6 +393,7 @@ class MarketDataPipelineServiceTest extends TestCase
                     'provider' => 'yahoo_finance',
                     'retry_max' => 3,
                     'attempt_count' => 4,
+                    'retry_exhausted' => true,
                     'final_reason_code' => 'RUN_SOURCE_RATE_LIMIT',
                 ]
             ));
@@ -343,6 +412,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 return is_array($telemetry)
                     && isset($telemetry['notes'])
                     && strpos($telemetry['notes'], 'source_provider=yahoo_finance') !== false
+                    && strpos($telemetry['notes'], 'source_retry_exhausted=yes') !== false
                     && strpos($telemetry['notes'], 'fallback_trade_date=2026-03-16') !== false;
             }))
             ->andReturn($run);
@@ -362,7 +432,8 @@ class MarketDataPipelineServiceTest extends TestCase
                         && ($payload['fallback_publication_id'] ?? null) === 41
                         && ($payload['fallback_trade_date'] ?? null) === '2026-03-16'
                         && is_array($payload['exception_context'] ?? null)
-                        && ($payload['exception_context']['attempt_count'] ?? null) === 4;
+                        && ($payload['exception_context']['attempt_count'] ?? null) === 4
+                        && ($payload['exception_context']['retry_exhausted'] ?? null) === true;
                 })
             )
             ->andReturn($run);
@@ -407,6 +478,7 @@ class MarketDataPipelineServiceTest extends TestCase
                     'provider' => 'yahoo_finance',
                     'retry_max' => 3,
                     'attempt_count' => 4,
+                    'retry_exhausted' => true,
                     'final_reason_code' => 'RUN_SOURCE_RATE_LIMIT',
                 ]
             ));
@@ -424,6 +496,7 @@ class MarketDataPipelineServiceTest extends TestCase
                     && strpos($telemetry['notes'], 'source_provider=yahoo_finance') !== false
                     && strpos($telemetry['notes'], 'degraded_mode=NO_BASELINE_HELD') !== false
                     && strpos($telemetry['notes'], 'final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE') !== false
+                    && strpos($telemetry['notes'], 'source_retry_exhausted=yes') !== false
                     && strpos($telemetry['notes'], 'fallback_trade_date=') === false;
             }))
             ->andReturn($run);
@@ -447,7 +520,8 @@ class MarketDataPipelineServiceTest extends TestCase
                         && ($payload['degraded_mode'] ?? null) === 'NO_BASELINE_HELD'
                         && ($payload['final_outcome_note'] ?? null) === 'SOURCE_UNAVAILABLE_NO_BASELINE'
                         && is_array($payload['exception_context'] ?? null)
-                        && ($payload['exception_context']['attempt_count'] ?? null) === 4;
+                        && ($payload['exception_context']['attempt_count'] ?? null) === 4
+                        && ($payload['exception_context']['retry_exhausted'] ?? null) === true;
                 })
             )
             ->andReturn($run);
@@ -1126,6 +1200,83 @@ class MarketDataPipelineServiceTest extends TestCase
         $result = $service->completeFinalize($input);
 
         $this->assertSame($run, $result);
+    }
+
+
+    public function test_promote_single_day_short_circuits_to_finalize_when_coverage_gate_fails(): void
+    {
+        [$service] = $this->makeService();
+
+        $coverageRun = (object) [
+            'run_id' => 91,
+            'coverage_gate_state' => 'FAIL',
+            'terminal_status' => null,
+        ];
+
+        $finalizedRun = (object) [
+            'run_id' => 91,
+            'coverage_gate_state' => 'FAIL',
+            'terminal_status' => 'FAILED',
+            'publishability_state' => 'NOT_READABLE',
+        ];
+
+        $service->shouldReceive('completeCoverageEvaluation')
+            ->once()
+            ->with(m::on(function ($input) {
+                return $input instanceof MarketDataStageInput
+                    && $input->requestedDate === '2026-03-24'
+                    && $input->sourceMode === 'manual_file'
+                    && $input->runId === 55
+                    && $input->stage === 'PUBLISH_BARS';
+            }))
+            ->andReturn($coverageRun);
+
+        $service->shouldReceive('completeFinalize')
+            ->once()
+            ->with(m::on(function ($input) {
+                return $input instanceof MarketDataStageInput
+                    && $input->requestedDate === '2026-03-24'
+                    && $input->sourceMode === 'manual_file'
+                    && $input->runId === 91
+                    && $input->stage === 'FINALIZE';
+            }))
+            ->andReturn($finalizedRun);
+
+        $service->shouldNotReceive('completeIndicators');
+        $service->shouldNotReceive('completeEligibility');
+        $service->shouldNotReceive('completeHash');
+        $service->shouldNotReceive('completeSeal');
+
+        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, null);
+
+        $this->assertSame($finalizedRun, $result);
+    }
+
+    public function test_promote_single_day_runs_post_coverage_sequence_when_gate_passes(): void
+    {
+        [$service] = $this->makeService();
+
+        $coverageRun = (object) [
+            'run_id' => 91,
+            'coverage_gate_state' => 'PASS',
+            'terminal_status' => null,
+        ];
+        $indicatorsRun = (object) ['run_id' => 91, 'terminal_status' => null];
+        $eligibilityRun = (object) ['run_id' => 91, 'terminal_status' => null];
+        $hashRun = (object) ['run_id' => 91, 'terminal_status' => null];
+        $sealRun = (object) ['run_id' => 91, 'terminal_status' => null];
+        $finalizedRun = (object) ['run_id' => 91, 'terminal_status' => 'SUCCESS', 'publishability_state' => 'READABLE'];
+
+        $service->shouldReceive('completeCoverageEvaluation')->once()->andReturn($coverageRun);
+        $service->shouldReceive('completeIndicators')->once()->andReturn($indicatorsRun);
+        $service->shouldReceive('completeEligibility')->once()->andReturn($eligibilityRun);
+        $service->shouldReceive('completeHash')->once()->andReturn($hashRun);
+        $service->shouldReceive('completeSeal')->once()->andReturn($sealRun);
+        $service->shouldReceive('completeFinalize')->once()->andReturn($finalizedRun);
+
+        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, null);
+
+        $this->assertSame($finalizedRun, $result);
     }
 
     private function makeService(): array

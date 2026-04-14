@@ -232,6 +232,7 @@ class PublicApiEodBarsAdapter
                     'attempt_count' => $attemptCount,
                     'attempts' => $attempts,
                     'success_after_retry' => $attemptCount > 1,
+                    'retry_exhausted' => false,
                     'final_reason_code' => null,
                     'final_http_status' => $status,
                     'captured_at' => $capturedAt,
@@ -263,6 +264,7 @@ class PublicApiEodBarsAdapter
                     'attempt_count' => count($attemptLog),
                     'attempts' => $attemptLog,
                     'success_after_retry' => false,
+                    'retry_exhausted' => ! $willRetry && in_array($e->reasonCode(), ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT'], true),
                     'final_reason_code' => $e->reasonCode(),
                     'captured_at' => $capturedAt,
                 ];

@@ -37,6 +37,27 @@ class FinalizeDecisionService
             return $state;
         }
 
+        if ($coverageGateStatus === 'FAIL') {
+            $state['quality_gate_state'] = 'FAIL';
+            $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
+            $state['reason_code'] = 'RUN_COVERAGE_LOW';
+            $state['message'] = $fallbackTradeDate
+                ? 'Finalize held because coverage gate failed and fallback readable publication remains available.'
+                : 'Finalize failed because coverage gate failed and no readable fallback publication exists.';
+            return $state;
+        }
+
+        if ($coverageGateStatus === 'BLOCKED') {
+            $state['quality_gate_state'] = 'BLOCKED';
+            $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
+            $state['reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
+            $state['message'] = $fallbackTradeDate
+                ? 'Finalize held because coverage gate could not be evaluated safely and fallback readable publication remains available.'
+                : 'Finalize failed because coverage gate could not be evaluated safely and no readable fallback publication exists.';
+
+            return $state;
+        }
+
         if (! $runSealed || $candidateSealState !== 'SEALED') {
             $state['quality_gate_state'] = 'BLOCKED';
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
@@ -55,23 +76,6 @@ class FinalizeDecisionService
             $state['promotion_allowed'] = true;
             return $state;
         }
-
-        if ($coverageGateStatus === 'FAIL') {
-            $state['quality_gate_state'] = 'FAIL';
-            $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
-            $state['reason_code'] = 'RUN_COVERAGE_LOW';
-            $state['message'] = $fallbackTradeDate
-                ? 'Finalize held because coverage gate failed and fallback readable publication remains available.'
-                : 'Finalize failed because coverage gate failed and no readable fallback publication exists.';
-            return $state;
-        }
-
-        $state['quality_gate_state'] = 'BLOCKED';
-        $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
-        $state['reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
-        $state['message'] = $fallbackTradeDate
-            ? 'Finalize held because coverage gate could not be evaluated safely and fallback readable publication remains available.'
-            : 'Finalize failed because coverage gate could not be evaluated safely and no readable fallback publication exists.';
 
         return $state;
     }

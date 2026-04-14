@@ -2,39 +2,44 @@
 
 namespace App\Console\Commands\MarketData;
 
-class DailyPipelineCommand extends AbstractMarketDataCommand
-{
-    protected $signature = 'market-data:daily {--requested_date=} {--source_mode=} {--input_file=} {--output_dir=} {--correction_id=} {--latest}';
+use App\Application\MarketData\Services\MarketDataPipelineService;
 
-    protected $description = 'Run the minimum daily market-data import-only sequence for one requested trade date.';
+class PromoteMarketDataCommand extends AbstractMarketDataCommand
+{
+    protected $signature = 'market-data:promote {--requested_date=} {--source_mode=} {--run_id=} {--correction_id=} {--output_dir=} {--latest}';
+
+    protected $description = 'Promote one requested trade date from persisted import through coverage gate and finalize readability.';
 
     public function handle()
     {
-        $previousInputFile = config('market_data.source.local_input_file');
-        $configuredOverride = false;
-
-        if ($this->sourceMode() === 'manual_file' && $this->option('input_file')) {
-            config()->set('market_data.source.local_input_file', $this->option('input_file'));
-            $configuredOverride = true;
-        }
-
         $requestedDate = $this->requestedDate();
         $sourceMode = $this->sourceMode();
+        $runId = $this->option('run_id') ?: null;
         $correctionId = $this->option('correction_id') ?: null;
-
         $outputDir = $this->option('output_dir') ?: null;
 
+        if ($runId === null) {
+            $latestRun = $this->latestRunForRequestedDate($requestedDate, $sourceMode);
+            if (! $latestRun) {
+                $this->error('error=No persisted import run found for requested_date/source_mode.');
+                return 1;
+            }
+
+            $runId = (int) $latestRun->run_id;
+            $sourceMode = (string) $latestRun->source;
+        }
+
         try {
-            $run = $this->pipeline()->importDaily($requestedDate, $sourceMode, $correctionId);
+            $run = $this->pipeline()->promoteDaily($requestedDate, $sourceMode, $runId, $correctionId);
         } catch (\Throwable $e) {
-            $run = $this->latestRunForRequestedDate($requestedDate, $sourceMode);
+            $run = $this->runRepository()->findByRunId($runId);
             [$sourceTelemetryArtifactPath, $sourceAttemptTelemetry] = $run ? $this->writeSourceAttemptTelemetryArtifact($outputDir, $run) : [null, []];
             $sourceContext = $run ? $this->buildSourceContext($run, $sourceAttemptTelemetry) : null;
             $artifactPath = $run ? $this->writeRunSummaryArtifact(
                 $outputDir,
-                'market_data_daily_summary.json',
+                'market_data_promote_summary.json',
                 $this->buildRunSummaryPayload($run, [
-                    'command' => 'market-data:daily',
+                    'command' => 'market-data:promote',
                     'source_mode' => $sourceMode,
                     'status' => 'ERROR',
                     'error_message' => (string) $e->getMessage(),
@@ -51,10 +56,6 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
             }
 
             return 1;
-        } finally {
-            if ($configuredOverride) {
-                config()->set('market_data.source.local_input_file', $previousInputFile);
-            }
         }
 
         [$sourceTelemetryArtifactPath, $sourceAttemptTelemetry] = $this->writeSourceAttemptTelemetryArtifact($outputDir, $run);
@@ -62,19 +63,15 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
 
         $artifactPath = $this->writeRunSummaryArtifact(
             $outputDir,
-            'market_data_daily_summary.json',
+            'market_data_promote_summary.json',
             $this->buildRunSummaryPayload($run, [
-                'command' => 'market-data:daily',
+                'command' => 'market-data:promote',
                 'source_mode' => $sourceMode,
-                'status' => 'SUCCESS',
-                'input_file' => $configuredOverride ? $this->normalizeOptionalPathForDisplay((string) $this->option('input_file')) : null,
+                'status' => ((string) ($run->publishability_state ?? '')) === 'READABLE' ? 'SUCCESS' : 'NOT_READABLE',
             ], $sourceContext)
         );
 
         $this->renderRunSummary($run, $sourceContext);
-        if ($configuredOverride) {
-            $this->line('input_file='.(string) $this->normalizeOptionalPathForDisplay($this->option('input_file')));
-        }
         if ($artifactPath !== null) {
             $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));
             $this->line('summary_artifact='.$this->normalizePathForDisplay($artifactPath));
@@ -83,6 +80,6 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
             $this->line('source_attempt_telemetry_artifact='.$this->normalizePathForDisplay($sourceTelemetryArtifactPath));
         }
 
-        return 0;
+        return ((string) ($run->publishability_state ?? '')) === 'READABLE' ? 0 : 1;
     }
 }

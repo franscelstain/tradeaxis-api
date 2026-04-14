@@ -48,6 +48,9 @@ class EodBarsIngestServiceTest extends TestCase
             ->with('2026-03-24')
             ->willReturn(null);
 
+        $localSource->expects($this->never())
+            ->method('fetchOrLoadEodBars');
+
         $tickers->expects($this->once())
             ->method('getUniverseForTradeDate')
             ->with('2026-03-24')
@@ -343,6 +346,9 @@ class EodBarsIngestServiceTest extends TestCase
                 'captured_at' => '2026-03-24T17:00:00+07:00',
             ],
         ];
+
+        $apiSource->expects($this->never())
+            ->method('fetchOrLoadEodBars');
 
         $localSource->expects($this->once())
             ->method('fetchOrLoadEodBars')

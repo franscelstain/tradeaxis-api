@@ -29,7 +29,7 @@ class OpsCommandSurfaceTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_backfill_command_propagates_operator_options_and_renders_publishability_context(): void
+    public function test_backfill_command_propagates_operator_options_and_renders_import_context(): void
     {
         $service = m::mock(MarketDataBackfillService::class);
         $service->shouldReceive('execute')
@@ -42,17 +42,19 @@ class OpsCommandSurfaceTest extends TestCase
                     'end_date' => '2026-03-18',
                 ],
                 'source_mode' => 'manual_file',
+                'all_imported' => true,
                 'all_passed' => true,
                 'output_dir' => 'C:\\tmp\\backfill',
                 'source_attempt_telemetry_artifact' => 'C:\\tmp\\backfill\\source_attempt_telemetry.json',
                 'cases' => [
                     [
                         'requested_date' => '2026-03-17',
-                        'status' => 'PASS',
+                        'status' => 'IMPORTED',
+                        'import_status' => 'IMPORTED',
                         'run_id' => 41,
-                        'terminal_status' => 'SUCCESS',
-                        'publishability_state' => 'READABLE',
-                        'trade_date_effective' => '2026-03-17',
+                        'import_stage_reached' => 'INGEST_BARS',
+                        'import_bars_rows_written' => 901,
+                        'import_invalid_bar_count' => 0,
                         'source_name' => 'API_FREE',
                         'source_attempt_event_type' => 'STAGE_COMPLETED',
                         'source_attempt_count' => 2,
@@ -82,10 +84,11 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('start_date=2026-03-17', $display);
         $this->assertStringContainsString('end_date=2026-03-18', $display);
         $this->assertStringContainsString('source_mode=manual_file', $display);
+        $this->assertStringContainsString('all_imported=1', $display);
         $this->assertStringContainsString('all_passed=1', $display);
         $this->assertStringContainsString('output_dir=C:/tmp/backfill', $display);
         $this->assertStringContainsString('source_attempt_telemetry_artifact=C:/tmp/backfill/source_attempt_telemetry.json', $display);
-        $this->assertStringContainsString('requested_date=2026-03-17 | status=PASS | run_id=41 | terminal_status=SUCCESS | publishability_state=READABLE | trade_date_effective=2026-03-17 | source_name=API_FREE | source_attempt_event_type=STAGE_COMPLETED | source_attempt_count=2 | source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=IMPORTED | import_status=IMPORTED | run_id=41 | import_stage_reached=INGEST_BARS | import_bars_rows_written=901 | import_invalid_bar_count=0 | source_name=API_FREE | source_attempt_event_type=STAGE_COMPLETED | source_attempt_count=2 | source_summary=provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $display);
     }
 
     public function test_backfill_command_returns_failure_and_renders_error_case_lines(): void
@@ -101,16 +104,18 @@ class OpsCommandSurfaceTest extends TestCase
                     'end_date' => '2026-03-18',
                 ],
                 'source_mode' => 'manual_file',
+                'all_imported' => false,
                 'all_passed' => false,
                 'output_dir' => '/tmp/backfill',
                 'cases' => [
                     [
                         'requested_date' => '2026-03-17',
-                        'status' => 'FAIL',
+                        'status' => 'IMPORTED',
+                        'import_status' => 'IMPORTED',
                         'run_id' => 41,
-                        'terminal_status' => 'HELD',
-                        'publishability_state' => 'NOT_READABLE',
-                        'trade_date_effective' => '2026-03-16',
+                        'import_stage_reached' => 'INGEST_BARS',
+                        'import_bars_rows_written' => 5,
+                        'import_invalid_bar_count' => 0,
                         'source_name' => 'LOCAL_FILE',
                         'source_input_file' => 'C:\\ops\\manual-2026-03-17.csv',
                     ],
@@ -139,9 +144,65 @@ class OpsCommandSurfaceTest extends TestCase
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('source_mode=manual_file', $display);
+        $this->assertStringContainsString('all_imported=0', $display);
         $this->assertStringContainsString('all_passed=0', $display);
-        $this->assertStringContainsString('requested_date=2026-03-17 | status=FAIL | run_id=41 | terminal_status=HELD | publishability_state=NOT_READABLE | trade_date_effective=2026-03-16 | source_name=LOCAL_FILE | source_input_file=C:/ops/manual-2026-03-17.csv', $display);
+        $this->assertStringContainsString('requested_date=2026-03-17 | status=IMPORTED | import_status=IMPORTED | run_id=41 | import_stage_reached=INGEST_BARS | import_bars_rows_written=5 | import_invalid_bar_count=0 | source_name=LOCAL_FILE | source_input_file=C:/ops/manual-2026-03-17.csv', $display);
         $this->assertStringContainsString('requested_date=2026-03-18 | status=ERROR | error=Backfill requires at least one trading date in market_calendar for the requested range.', $display);
+    }
+
+
+    public function test_backfill_command_propagates_manual_input_file_override_without_leaking_config(): void
+    {
+        config()->set('market_data.source.local_input_file', null);
+
+        $service = m::mock(MarketDataBackfillService::class);
+        $service->shouldReceive('execute')
+            ->once()
+            ->with('2026-04-14', '2026-04-14', 'manual_file', 'C:\tmp\backfill', false)
+            ->andReturn([
+                'suite' => 'market_data_backfill_minimum',
+                'range' => [
+                    'start_date' => '2026-04-14',
+                    'end_date' => '2026-04-14',
+                ],
+                'source_mode' => 'manual_file',
+                'request_mode' => 'single_day',
+                'all_passed' => false,
+                'output_dir' => 'C:\tmp\backfill',
+                'cases' => [
+                    [
+                        'requested_date' => '2026-04-14',
+                        'status' => 'FAIL',
+                        'import_status' => 'IMPORT_FAILED',
+                        'run_id' => 76,
+                        'source_name' => 'LOCAL_FILE',
+                        'source_input_file' => 'C:\ops\manual-2026-04-14.csv',
+                        'source_summary' => 'final_reason_code=RUN_SOURCE_MALFORMED_PAYLOAD',
+                    ],
+                ],
+            ]);
+
+        $this->app->instance(MarketDataBackfillService::class, $service);
+
+        $command = new BackfillMarketDataCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'start_date' => '2026-04-14',
+            'end_date' => '2026-04-14',
+            '--source_mode' => 'manual_file',
+            '--input_file' => 'storage\app\market_data\operator\manual-2026-04-14.csv',
+            '--output_dir' => 'C:\tmp\backfill',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertNull(config('market_data.source.local_input_file'));
+        $this->assertStringContainsString('input_file=storage/app/market_data/operator/manual-2026-04-14.csv', $display);
+        $this->assertStringContainsString('source_name=LOCAL_FILE', $display);
+        $this->assertStringContainsString('source_input_file=C:/ops/manual-2026-04-14.csv', $display);
     }
 
     public function test_session_snapshot_capture_command_renders_summary(): void
@@ -1781,6 +1842,116 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('coverage_reason_code=RUN_COVERAGE_LOW', $display);
         $this->assertStringContainsString('coverage_summary=available=854/900 | missing=46 | ratio=0.9489 | threshold=0.9800 | basis=ticker_master_active_on_trade_date | contract=coverage_gate_v1', $display);
         $this->assertStringContainsString('coverage_missing_sample=AALI,ACES,ADRO', $display);
+        $this->assertStringContainsString('reason_code=RUN_COVERAGE_LOW', $display);
+    }
+
+
+    public function test_promote_command_renders_readable_success_summary(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-03-24', 'manual_file')
+            ->andReturn((object) [
+                'run_id' => 55,
+                'source' => 'manual_file',
+            ]);
+
+        $service->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-03-24', 'manual_file', 55, null)
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'coverage_gate_state' => 'PASS',
+                'coverage_available_count' => 900,
+                'coverage_universe_count' => 900,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => '1.0000',
+                'coverage_min_threshold' => '0.9500',
+                'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'notes' => 'source_name=LOCAL_FILE; source_input_file=C:\ops\manual-2026-03-24.csv',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodRunRepository::class, $runs);
+
+        $command = new \App\Console\Commands\MarketData\PromoteMarketDataCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'manual_file',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('terminal_status=SUCCESS', $display);
+        $this->assertStringContainsString('publishability_state=READABLE', $display);
+        $this->assertStringContainsString('coverage_gate_state=PASS', $display);
+    }
+
+    public function test_promote_command_renders_not_readable_coverage_failure_summary(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-03-24', 'manual_file')
+            ->andReturn((object) [
+                'run_id' => 55,
+                'source' => 'manual_file',
+            ]);
+
+        $service->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-03-24', 'manual_file', 55, null)
+            ->andReturn((object) [
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'coverage_gate_state' => 'FAIL',
+                'coverage_available_count' => 854,
+                'coverage_universe_count' => 900,
+                'coverage_missing_count' => 46,
+                'coverage_ratio' => '0.9489',
+                'coverage_min_threshold' => '0.9500',
+                'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'reason_code' => 'RUN_COVERAGE_LOW',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodRunRepository::class, $runs);
+
+        $command = new \App\Console\Commands\MarketData\PromoteMarketDataCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-24',
+            '--source_mode' => 'manual_file',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('terminal_status=FAILED', $display);
+        $this->assertStringContainsString('publishability_state=NOT_READABLE', $display);
+        $this->assertStringContainsString('coverage_gate_state=FAIL', $display);
         $this->assertStringContainsString('reason_code=RUN_COVERAGE_LOW', $display);
     }
 

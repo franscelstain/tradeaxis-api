@@ -191,6 +191,49 @@ class MarketDataPipelineService
         }
     }
 
+    public function completeCoverageEvaluation(MarketDataStageInput $input)
+    {
+        [$run] = $this->startStage($input);
+
+        try {
+            return DB::transaction(function () use ($run, $input) {
+                $coverage = $this->coverageGateEvaluator->evaluate($input->requestedDate);
+
+                $coverageGateState = strtoupper((string) ($coverage['coverage_gate_status'] ?? 'BLOCKED'));
+                $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
+
+                $run = $this->runs->updateTelemetry($run, [
+                    'quality_gate_state' => $qualityGateState,
+                    'coverage_universe_count' => $coverage['expected_universe_count'],
+                    'coverage_available_count' => $coverage['available_eod_count'],
+                    'coverage_missing_count' => $coverage['missing_eod_count'],
+                    'coverage_ratio' => $coverage['coverage_ratio'],
+                    'coverage_min_threshold' => $coverage['coverage_threshold_value'],
+                    'coverage_gate_state' => $coverageGateState,
+                    'coverage_threshold_mode' => $coverage['coverage_threshold_mode'],
+                    'coverage_universe_basis' => (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
+                    'coverage_contract_version' => $coverage['coverage_calibration_version'],
+                    'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
+                ]);
+
+                $this->runs->appendEvent(
+                    $run,
+                    $input->stage,
+                    'STAGE_COMPLETED',
+                    $coverageGateState === 'PASS' ? 'INFO' : 'WARN',
+                    'Coverage gate evaluated from persisted canonical valid bars.',
+                    $coverageGateState === 'PASS' ? null : ($coverageGateState === 'FAIL' ? 'RUN_COVERAGE_LOW' : 'RUN_COVERAGE_NOT_EVALUABLE'),
+                    ['coverage' => $coverage]
+                );
+
+                return $run;
+            });
+        } catch (\Throwable $e) {
+            $this->handleStageFailure($run, $input->stage, 'RUN_COVERAGE_EVALUATION_FAILED', $e);
+            throw $e;
+        }
+    }
+
     public function completeEligibility(MarketDataStageInput $input)
     {
         [$run] = $this->startStage($input);
@@ -688,20 +731,72 @@ class MarketDataPipelineService
         }
     }
 
+    public function promoteSingleDay($requestedDate, $sourceMode = null, $runId = null, $correctionId = null)
+    {
+        $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
+
+        $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId);
+        $run = $this->completeCoverageEvaluation($coverageInput);
+
+        if (strtoupper((string) ($run->coverage_gate_state ?? 'BLOCKED')) !== 'PASS') {
+            return $this->completeFinalize(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, 'FINALIZE', $correctionId));
+        }
+
+        foreach ([
+            'COMPUTE_INDICATORS' => 'completeIndicators',
+            'BUILD_ELIGIBILITY' => 'completeEligibility',
+            'HASH' => 'completeHash',
+            'SEAL' => 'completeSeal',
+            'FINALIZE' => 'completeFinalize',
+        ] as $stage => $method) {
+            $run = $this->{$method}(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, $stage, $correctionId));
+
+            if ($run && in_array((string) $run->terminal_status, ['HELD', 'FAILED'], true)) {
+                return $run;
+            }
+        }
+
+        return $run;
+    }
+
+    public function promoteDaily($requestedDate, $sourceMode = null, $runId = null, $correctionId = null)
+    {
+        return $this->promoteSingleDay($requestedDate, $sourceMode, $runId, $correctionId);
+    }
+
     public function runSingleDay($requestedDate, $sourceMode = null, $correctionId = null)
     {
-        return $this->executeStageSequence($requestedDate, $sourceMode, $correctionId);
+        return $this->executeStageSequence($requestedDate, $sourceMode, $correctionId, [
+            'INGEST_BARS' => 'completeIngest',
+            'COMPUTE_INDICATORS' => 'completeIndicators',
+            'BUILD_ELIGIBILITY' => 'completeEligibility',
+            'HASH' => 'completeHash',
+            'SEAL' => 'completeSeal',
+            'FINALIZE' => 'completeFinalize',
+        ]);
     }
 
     public function runDaily($requestedDate, $sourceMode = null, $correctionId = null)
     {
-        return $this->executeStageSequence($requestedDate, $sourceMode, $correctionId);
+        return $this->runSingleDay($requestedDate, $sourceMode, $correctionId);
     }
 
-    private function executeStageSequence($requestedDate, $sourceMode = null, $correctionId = null)
+    public function importSingleDay($requestedDate, $sourceMode = null, $correctionId = null)
+    {
+        return $this->executeStageSequence($requestedDate, $sourceMode, $correctionId, [
+            'INGEST_BARS' => 'completeIngest',
+        ]);
+    }
+
+    public function importDaily($requestedDate, $sourceMode = null, $correctionId = null)
+    {
+        return $this->importSingleDay($requestedDate, $sourceMode, $correctionId);
+    }
+
+    private function executeStageSequence($requestedDate, $sourceMode = null, $correctionId = null, array $sequence = [])
     {
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
-        $sequence = [
+        $sequence = $sequence ?: [
             'INGEST_BARS' => 'completeIngest',
             'COMPUTE_INDICATORS' => 'completeIndicators',
             'BUILD_ELIGIBILITY' => 'completeEligibility',
@@ -873,7 +968,12 @@ class MarketDataPipelineService
             // in the primary source_name emitted to run notes or operator summaries.
             $configuredSourceName = 'API_FREE';
         } elseif (in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
-            $configuredSourceName = strtoupper(trim((string) config('market_data.source.default_source_name', 'LOCAL_FILE')));
+            // CONTRACT: manual source identity must stay on the logical LOCAL_FILE
+            // label in both success and failure paths. Do not inherit the global
+            // default source name because that may point at an upstream provider
+            // such as YAHOO_FINANCE and leak provider identity into operator-facing
+            // run notes, summaries, or failure telemetry for manual runs.
+            $configuredSourceName = 'LOCAL_FILE';
         }
 
         $normalizedResolvedSourceName = $resolvedSourceName !== null
@@ -964,6 +1064,10 @@ class MarketDataPipelineService
             $segments[] = 'source_success_after_retry=yes';
         }
 
+        if (! empty($sourceAcquisition['retry_exhausted'])) {
+            $segments[] = 'source_retry_exhausted=yes';
+        }
+
         if (array_key_exists('final_http_status', $sourceAcquisition) && $sourceAcquisition['final_http_status'] !== null) {
             $segments[] = 'source_final_http_status='.(int) $sourceAcquisition['final_http_status'];
         }
@@ -1009,6 +1113,10 @@ class MarketDataPipelineService
 
         if (! empty($exceptionContext['success_after_retry'])) {
             $segments[] = 'source_success_after_retry=yes';
+        }
+
+        if (! empty($exceptionContext['retry_exhausted'])) {
+            $segments[] = 'source_retry_exhausted=yes';
         }
 
         if (array_key_exists('final_http_status', $exceptionContext) && $exceptionContext['final_http_status'] !== null) {

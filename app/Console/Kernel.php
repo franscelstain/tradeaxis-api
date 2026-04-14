@@ -9,6 +9,7 @@ use App\Console\Commands\MarketData\DailyPipelineCommand;
 use App\Console\Commands\MarketData\BackfillMarketDataCommand;
 use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
+use App\Console\Commands\MarketData\PromoteMarketDataCommand;
 use App\Console\Commands\MarketData\FinalizeRunCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
@@ -39,6 +40,7 @@ class Kernel extends ConsoleKernel
         BackfillMarketDataCommand::class,
         CaptureSessionSnapshotCommand::class,
         PurgeSessionSnapshotCommand::class,
+        PromoteMarketDataCommand::class,
         RequestCorrectionCommand::class,
         RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,

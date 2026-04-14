@@ -91,6 +91,16 @@ class EodRunRepository
         return $query->first();
     }
 
+
+    public function findLatestTerminalEventForRun($runId)
+    {
+        return EodRunEvent::query()
+            ->where('run_id', $runId)
+            ->whereIn('event_type', ['RUN_FINALIZED', 'STAGE_FAILED'])
+            ->orderByDesc('event_id')
+            ->first();
+    }
+
     public function touchStage(EodRun $run, $stage, array $attributes = [])
     {
         $run->stage = $stage;

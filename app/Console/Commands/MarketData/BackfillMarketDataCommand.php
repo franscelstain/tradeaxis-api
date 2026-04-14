@@ -6,19 +6,33 @@ use App\Application\MarketData\Services\MarketDataBackfillService;
 
 class BackfillMarketDataCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:backfill {start_date} {end_date} {--source_mode=} {--output_dir=} {--continue_on_error}';
+    protected $signature = 'market-data:backfill {start_date} {end_date} {--source_mode=} {--input_file=} {--output_dir=} {--continue_on_error}';
 
-    protected $description = 'Historical backfill/recompute per trading-date range.';
+    protected $description = 'Historical import-only backfill per trading-date range.';
 
     public function handle()
     {
-        $summary = app(MarketDataBackfillService::class)->execute(
-            $this->argument('start_date'),
-            $this->argument('end_date'),
-            $this->sourceMode(),
-            $this->option('output_dir') ?: null,
-            (bool) $this->option('continue_on_error')
-        );
+        $previousInputFile = config('market_data.source.local_input_file');
+        $configuredOverride = false;
+
+        if ($this->sourceMode() === 'manual_file' && $this->option('input_file')) {
+            config()->set('market_data.source.local_input_file', $this->option('input_file'));
+            $configuredOverride = true;
+        }
+
+        try {
+            $summary = app(MarketDataBackfillService::class)->execute(
+                $this->argument('start_date'),
+                $this->argument('end_date'),
+                $this->sourceMode(),
+                $this->option('output_dir') ?: null,
+                (bool) $this->option('continue_on_error')
+            );
+        } finally {
+            if ($configuredOverride) {
+                config()->set('market_data.source.local_input_file', $previousInputFile);
+            }
+        }
 
         $this->info('suite='.$summary['suite']);
         $this->line('start_date='.$summary['range']['start_date']);
@@ -27,8 +41,14 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
         if (isset($summary['request_mode'])) {
             $this->line('request_mode='.(string) $summary['request_mode']);
         }
+        if (array_key_exists('all_imported', $summary)) {
+            $this->line('all_imported='.(int) $summary['all_imported']);
+        }
         $this->line('all_passed='.(int) $summary['all_passed']);
         $this->line('output_dir='.$this->normalizePathForDisplay($summary['output_dir']));
+        if ($configuredOverride) {
+            $this->line('input_file='.$this->normalizeOptionalPathForDisplay((string) $this->option('input_file')));
+        }
 
         if (isset($summary['source_attempt_telemetry_artifact']) && $summary['source_attempt_telemetry_artifact'] !== null && $summary['source_attempt_telemetry_artifact'] !== '') {
             $this->line('source_attempt_telemetry_artifact='.$this->normalizePathForDisplay($summary['source_attempt_telemetry_artifact']));
@@ -38,10 +58,11 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
             $this->line(
                 'requested_date='.$case['requested_date']
                 .' | status='.$case['status']
+                .(isset($case['import_status']) ? ' | import_status='.$case['import_status'] : '')
                 .(isset($case['run_id']) ? ' | run_id='.$case['run_id'] : '')
-                .(isset($case['terminal_status']) ? ' | terminal_status='.$case['terminal_status'] : '')
-                .(isset($case['publishability_state']) ? ' | publishability_state='.$case['publishability_state'] : '')
-                .(isset($case['trade_date_effective']) && $case['trade_date_effective'] !== null ? ' | trade_date_effective='.$case['trade_date_effective'] : '')
+                .(isset($case['import_stage_reached']) ? ' | import_stage_reached='.$case['import_stage_reached'] : '')
+                .(isset($case['import_bars_rows_written']) ? ' | import_bars_rows_written='.$case['import_bars_rows_written'] : '')
+                .(isset($case['import_invalid_bar_count']) ? ' | import_invalid_bar_count='.$case['import_invalid_bar_count'] : '')
                 .(isset($case['source_name']) ? ' | source_name='.$case['source_name'] : '')
                 .(isset($case['source_input_file']) ? ' | source_input_file='.$this->normalizeOptionalPathForDisplay($case['source_input_file']) : '')
                 .(isset($case['source_attempt_event_type']) ? ' | source_attempt_event_type='.$case['source_attempt_event_type'] : '')

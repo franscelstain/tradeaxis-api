@@ -2,6 +2,115 @@
 
 ## SESSION UPDATE
 
+* Batch: Single-Day Real Proof Closure
+* Status: PARTIAL
+
+### What changed in code in this session
+
+* `MarketDataBackfillService::execute(...)` now resolves request mode through a strict single-day guard instead of inferring it loosely from `start_date === end_date`. When single-day is requested, the returned calendar set must contain exactly one trading date and it must equal the requested date.
+* `PublicApiEodBarsAdapter::requestWithRetry(...)` now emits explicit `retry_exhausted` telemetry on transient exhaustion without changing the locked reason-code contract.
+* `MarketDataPipelineService` now persists `source_retry_exhausted=yes` into run notes/failure notes so operator-visible summaries can distinguish retry success vs retry exhaustion.
+* `EodBarsIngestService` test coverage now proves source boundary explicitly by asserting:
+  * API ingest never calls the local adapter
+  * manual-file ingest never calls the API adapter
+
+### What is now proven at repo/code level
+
+* Single-day backfill cannot silently continue if calendar resolution drifts into multiple dates.
+* Retry exhaustion is now explicit in source telemetry and operator notes.
+* One run still stays inside one source boundary; no silent adapter fallback path was added.
+* Coverage remains a downstream gate and finalize remains the sole readable/not-readable decision point.
+
+### What still needs local/runtime proof
+
+* Targeted PHPUnit for the newly edited tests.
+* Real command/runtime evidence for:
+  * single-day success
+  * partial coverage → `NOT_READABLE`
+  * retry exhausted path showing `source_retry_exhausted=yes`
+* Because `vendor/` is absent in this uploaded ZIP, this session cannot claim local execution happened here.
+
+### Manual validation required locally
+
+* `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+* `vendor\bin\phpunit tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+* `vendor\bin\phpunit tests/Unit/MarketData/EodBarsIngestServiceTest.php`
+* `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
+* Re-run single-day backfill on one trading date and inspect:
+  * `market_data_backfill_summary.json`
+  * `source_attempt_telemetry.json`
+  * run notes / events for `source_retry_exhausted=yes` on exhausted transient failures
+
+### Final state
+
+* PARTIAL
+* code-level hardening is real and bounded
+* final DONE still depends on local runtime/manual evidence
+
+---
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
+* Batch: Manual File Traceability + Backfill Input Override Closure
+* Status: PARTIAL
+
+### What changed in code in this session
+
+* `BackfillMarketDataCommand` now accepts `--input_file=` for `manual_file`, mirrors the daily command override behavior, and restores config after execution so operator-supplied manual files can be injected without leaking config state across later commands.
+* `MarketDataPipelineService::sourceTelemetryPayload(...)` now hard-pins `manual_file` / `manual_entry` to logical `source_name=LOCAL_FILE` in failure-path telemetry as well, instead of inheriting the global default provider label such as `YAHOO_FINANCE`.
+* Unit coverage was extended for:
+  * backfill command manual input-file override propagation + config restoration
+  * manual-file malformed-payload failure path keeping `LOCAL_FILE` in notes/payload instead of leaking provider identity
+
+### Evidence accepted from local runtime in this turn
+
+* Local PHPUnit passed:
+  * `tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php` → `OK (2 tests, 7 assertions)`
+  * `tests/Unit/MarketData/EodBarsIngestServiceTest.php` → `OK (4 tests, 29 assertions)`
+* Local runtime backfill on a valid trading date still failed as:
+  * `request_mode=single_day`
+  * `terminal_status=FAILED`
+  * `publishability_state=NOT_READABLE`
+  * `final_reason_code=RUN_SOURCE_MALFORMED_PAYLOAD`
+  * **unexpected:** `source_name=YAHOO_FINANCE` while `source_mode=manual_file`
+* Root cause from this evidence: failure-path source telemetry still leaked the global provider label, and the backfill command surface still had no explicit per-run input-file override like the daily command.
+
+### What is fixed by this patch
+
+* Backfill operators can now pass manual input files directly on the backfill command surface.
+* Manual-file failure telemetry, run notes, and operator summaries are now aligned to logical `LOCAL_FILE` identity even when the global default source remains `YAHOO_FINANCE`.
+
+### What is still not fully proven here
+
+* Full local PHPUnit proof for the newly added backfill-command and pipeline failure-path tests is still required because `vendor/` is absent in this uploaded ZIP.
+* End-to-end `manual_file` single-day `READABLE` proof still depends on providing a valid manual payload file at runtime; this patch only closes the command-surface/input override gap and the remaining source-name leak.
+
+### Manual validation required locally
+
+* Run `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter backfill_command_propagates_manual_input_file_override_without_leaking_config`
+* Run `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php --filter manual_file_failure_keeps_local_file_source_identity_in_notes`
+* Re-run backfill with an explicit manual file:
+  * `php artisan market-data:backfill 2026-04-14 2026-04-14 --source_mode=manual_file --input_file=storage/app/market_data/operator/manual-2026-04-14.csv --output_dir=storage/app/market-data-manual-single-day-readable`
+* Confirm:
+  * CLI prints `input_file=...`
+  * failure/success summary uses `source_name=LOCAL_FILE`
+  * if payload is valid, outcome can proceed past malformed-payload gate toward `READABLE` proof
+
+### Final state
+
+* PARTIAL
+* Command-surface gap and failure-path source leak are patched in code
+* Final runtime acceptance still depends on a valid manual payload file and refreshed local evidence
+
+
+---
+
+# LUMEN_IMPLEMENTATION_STATUS.md
+
+## SESSION UPDATE
+
 * Batch: Yahoo Single-Day Deterministic Hardening
 * Status: PARTIAL
 
@@ -512,3 +621,68 @@
   - `source_mode=manual_file`
   - `source_name=LOCAL_FILE`
   - no payload/provider label such as `MANUAL_RECOVERY` or `YAHOO_FINANCE` leaks into run notes, ingest event payload, or operator summary for a valid manual-file single-day run
+
+---
+
+# RUNTIME EVIDENCE FOLLOW-UP — MANUAL SINGLE-DAY FAIL DIAGNOSTICS (RUN_ID 79)
+
+- Status: PARTIAL
+- Evidence received from local runtime and DB export:
+  - `market-data:backfill 2026-04-14 2026-04-14 --source_mode=manual_file ...` resolved as `request_mode=single_day`, `source_name=LOCAL_FILE`, `terminal_status=FAILED`, `publishability_state=NOT_READABLE`
+  - `eod_runs` for `run_id=79` proved ingest/hash/seal completed and finalize failed on coverage, not on manual-file parsing
+  - `eod_run_events` for `run_id=79` proved the decisive failure is `RUN_COVERAGE_LOW` at `FINALIZE`, with `coverage_available_count=5`, `coverage_universe_count=901`, `coverage_missing_count=896`, `coverage_ratio=0.0055`, and no readable fallback publication
+- Root cause now proven by code + runtime:
+  - the manual-file single-day path is functioning structurally; the run is failing because only 5 bars were supplied against a 901-ticker coverage universe, so finalize correctly resolves `NOT_READABLE`
+  - this is not a retry/provider problem and not a single-day routing problem
+- Improvement applied after evidence:
+  - `MarketDataBackfillService` deterministic fail cases now include run-level finalize diagnostics directly in `market_data_backfill_summary.json`
+  - summary output now surfaces `quality_gate_state`, `coverage_gate_state`, `coverage_ratio`, `coverage_universe_count`, `coverage_available_count`, `coverage_missing_count`, `coverage_min_threshold`, plus terminal `final_reason_code` / `final_reason_message` recovered from the latest terminal run event
+- Contract impact:
+  - operator-visible backfill summary is now precise enough to distinguish real bounded finalize failure (`FAIL`) from an unclassified command/runtime error
+  - low-coverage manual-file runs remain `NOT_READABLE`; only the diagnostics changed, not the LOCKED finalize contract
+- Manual proof still required locally:
+  - rerun the same command after patching and confirm the summary now exposes `RUN_COVERAGE_LOW` and coverage telemetry directly in the failed case entry
+  - provide a materially broader manual-file payload or a contract-approved reduced universe if the goal is `READABLE`
+
+- 2026-04-15 follow-up hardening: fixed `MarketDataBackfillService::execute()` so deterministic FAIL/NOT_READABLE runs returned from the normal try-path now include coverage/finalize context in `market_data_backfill_summary.json`; previous patch only enriched catch-path failures.
+
+---
+
+# SESSION UPDATE — IMPORT OUTCOME VS PUBLISHABILITY OUTCOME SEPARATION
+
+- Status: PARTIAL
+- Evidence incorporated:
+  - local manual-file single-day runtime proved import progressed through seal while finalize still resolved `FAILED + NOT_READABLE` because coverage stayed at `5 / 901`
+  - operator output previously collapsed those two facts into one `FAIL`, which made successful import look identical to source/ingest failure
+- Concrete code changes completed:
+  - `MarketDataBackfillService` now emits separate top-level summary flags: `all_imported` and `all_publishable` while keeping `all_passed` as backward-compatible alias for publishability success
+  - each backfill case now emits `import_status` plus ingest counters (`import_bars_rows_written`, `import_invalid_bar_count`) when available
+  - import outcome is derived from actual persisted run evidence (`bars_rows_written`, `invalid_bar_count`, downstream stage progression, coverage fields), not from guessed command state
+  - `BackfillMarketDataCommand` now prints import outcome separately from `publishability_state`, so manual partial imports no longer look like source/ingest crashes
+  - `MarketDataBackfillServiceTest` and `OpsCommandSurfaceTest` were updated to prove the separation in both service summary and operator console rendering
+- Contract impact:
+  - import success now means source rows were ingested into the pipeline boundary
+  - publishability/readability remains solely decided by finalize and is still allowed to fail after a successful import
+  - no LOCKED finalize contract was weakened; only operator/reporting semantics were corrected
+- Manual proof still required locally:
+  - `vendor\bin\phpunit tests/Unit/MarketData/MarketDataBackfillServiceTest.php`
+  - `vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  - `php artisan market-data:backfill 2026-04-14 2026-04-14 --source_mode=manual_file --input_file=storage/app/market_data/operator/manual-2026-04-14.csv --output_dir=storage/app/market-data-manual-single-day-readable`
+- Expected runtime proof:
+  - top-level summary should show `all_imported=1` and `all_publishable=0`
+  - case output should show `import_status=IMPORTED` together with `publishability_state=NOT_READABLE`
+  - low coverage should still surface as `RUN_COVERAGE_LOW`
+## Import-only backfill hardening
+
+- `market-data:backfill` sekarang menjalankan import-only flow (`INGEST_BARS`) dan tidak lagi menjalankan coverage / finalize / publishability evaluation di dalam command backfill.
+- ringkasan backfill sekarang hanya melaporkan `all_imported` dan `all_passed` (alias kompatibilitas untuk import outcome), plus case-level `import_status`, `import_stage_reached`, `import_bars_rows_written`, dan `import_invalid_bar_count`.
+- case backfill import tidak lagi mengeluarkan `publishability_state`, `coverage_gate_state`, `coverage_ratio`, atau `final_reason_code` karena kontrak tersebut berada di jalur promote/finalize, bukan import.
+
+
+
+## 2026-04-15 — Coverage/Finalize operational split
+- Added `market-data:promote` as the operator-facing post-import command for coverage evaluation and finalize/readability.
+- `market-data:backfill` remains import-only.
+- `market-data:daily` now runs import-only command flow and no longer performs promote/finalize implicitly.
+- Promote now evaluates coverage from persisted canonical bars before indicators/eligibility/hash/seal/finalize.
+- Finalize decision now returns coverage-driven `NOT_READABLE` outcomes even when requested date has not been sealed, so coverage fail/block does not get masked as seal-precondition failure.

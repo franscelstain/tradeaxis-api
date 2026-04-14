@@ -45,12 +45,12 @@ class MarketDataBackfillServiceTest extends TestCase
         foreach ([1001 => '2026-03-20', 1002 => '2026-03-23', 1003 => '2026-03-24'] as $runId => $date) {
             $run = (object) [
                 'run_id' => $runId,
-                'terminal_status' => 'SUCCESS',
-                'publishability_state' => 'READABLE',
-                'trade_date_effective' => $date,
+                'stage' => 'INGEST_BARS',
+                'bars_rows_written' => 10,
+                'invalid_bar_count' => 0,
                 'notes' => 'source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
             ];
-            $pipeline->shouldReceive('runDaily')->once()->with($date, 'manual_file', null)->andReturn($run);
+            $pipeline->shouldReceive('importDaily')->once()->with($date, 'manual_file', null)->andReturn($run);
         }
 
         $runs->shouldNotReceive('findLatestForRequestedDate');
@@ -58,7 +58,8 @@ class MarketDataBackfillServiceTest extends TestCase
         $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
         $summary = $service->execute('2026-03-20', '2026-03-24', 'manual_file', $outputDir, false);
 
-        $this->assertTrue($summary['all_passed']);
+        $this->assertTrue($summary['all_imported']);
+                $this->assertTrue($summary['all_passed']);
         $this->assertSame('range', $summary['request_mode']);
         $this->assertCount(3, $summary['cases']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
@@ -90,13 +91,13 @@ class MarketDataBackfillServiceTest extends TestCase
 
         $run = (object) [
             'run_id' => 1001,
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'READABLE',
-            'trade_date_effective' => '2026-03-20',
+            'stage' => 'INGEST_BARS',
+            'bars_rows_written' => 10,
+            'invalid_bar_count' => 0,
             'notes' => 'source_name=API_FREE',
         ];
 
-        $pipeline->shouldReceive('runSingleDay')->once()->with('2026-03-20', 'manual_file', null)->andReturn($run);
+        $pipeline->shouldReceive('importSingleDay')->once()->with('2026-03-20', 'manual_file', null)->andReturn($run);
         $runs->shouldNotReceive('findLatestForRequestedDate');
         $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(1001)->andReturn([
             'event_id' => 9001,
@@ -120,7 +121,8 @@ class MarketDataBackfillServiceTest extends TestCase
         $service = new MarketDataBackfillService($calendar, $pipeline, $runs, $evidence);
         $summary = $service->execute('2026-03-20', '2026-03-20', 'manual_file', $outputDir, false);
 
-        $this->assertTrue($summary['all_passed']);
+        $this->assertTrue($summary['all_imported']);
+                $this->assertTrue($summary['all_passed']);
         $this->assertSame('single_day', $summary['request_mode']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
         $this->assertSame('STAGE_COMPLETED', $summary['cases'][0]['source_attempt_event_type']);
@@ -144,11 +146,11 @@ class MarketDataBackfillServiceTest extends TestCase
             '2026-03-24',
         ]);
 
-        $pipeline->shouldReceive('runSingleDay')->once()->with('2026-03-24', 'manual_file', null)->andReturn((object) [
+        $pipeline->shouldReceive('importSingleDay')->once()->with('2026-03-24', 'manual_file', null)->andReturn((object) [
             'run_id' => 1001,
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'READABLE',
-            'trade_date_effective' => '2026-03-24',
+            'stage' => 'INGEST_BARS',
+            'bars_rows_written' => 8,
+            'invalid_bar_count' => 0,
             'notes' => 'source_name=LOCAL_FILE; source_input_file=C:\\ops\\manual-2026-03-24.csv',
         ]);
 
@@ -177,7 +179,7 @@ class MarketDataBackfillServiceTest extends TestCase
             '2026-03-20',
         ]);
 
-        $pipeline->shouldReceive('runSingleDay')->once()->with('2026-03-20', 'manual_file', null)->andThrow(new RuntimeException('boom'));
+        $pipeline->shouldReceive('importSingleDay')->once()->with('2026-03-20', 'manual_file', null)->andThrow(new RuntimeException('boom'));
         $runs->shouldReceive('findLatestForRequestedDate')->once()->with('2026-03-20', 'manual_file')->andReturn((object) [
             'run_id' => 1001,
             'terminal_status' => 'FAILED',
@@ -229,32 +231,41 @@ class MarketDataBackfillServiceTest extends TestCase
             '2026-03-21',
         ]);
 
-        $pipeline->shouldReceive('runDaily')->once()->with('2026-03-20', 'manual_file', null)->andReturn((object) [
+        $pipeline->shouldReceive('importDaily')->once()->with('2026-03-20', 'manual_file', null)->andReturn((object) [
             'run_id' => 1001,
-            'terminal_status' => 'HELD',
-            'publishability_state' => 'NOT_READABLE',
-            'trade_date_effective' => '2026-03-19',
+            'stage' => 'INGEST_BARS',
+            'bars_rows_written' => 25,
+            'invalid_bar_count' => 0,
             'notes' => 'source_name=LOCAL_FILE; source_input_file=manual-2026-03-20.csv',
         ]);
-        $pipeline->shouldNotReceive('runSingleDay');
-        $pipeline->shouldNotReceive('runDaily')->with('2026-03-21', 'manual_file', null);
+        $pipeline->shouldNotReceive('importSingleDay');
+        $pipeline->shouldNotReceive('importDaily')->with('2026-03-21', 'manual_file', null);
 
         $runs->shouldNotReceive('findLatestForRequestedDate');
 
         $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
         $summary = $service->execute('2026-03-20', '2026-03-21', 'manual_file', $outputDir, false);
 
-        $this->assertFalse($summary['all_passed']);
+        $this->assertTrue($summary['all_imported']);
+                $this->assertFalse($summary['all_passed']);
         $this->assertCount(1, $summary['cases']);
-        $this->assertSame('FAIL', $summary['cases'][0]['status']);
-        $this->assertSame('HELD', $summary['cases'][0]['terminal_status']);
-        $this->assertSame('NOT_READABLE', $summary['cases'][0]['publishability_state']);
+        $this->assertSame('IMPORTED', $summary['cases'][0]['status']);
+        $this->assertSame('IMPORTED', $summary['cases'][0]['import_status']);
         $this->assertSame('LOCAL_FILE', $summary['cases'][0]['source_name']);
         $this->assertSame('manual-2026-03-20.csv', $summary['cases'][0]['source_input_file']);
+        $this->assertSame('INGEST_BARS', $summary['cases'][0]['import_stage_reached']);
+        $this->assertSame(25, $summary['cases'][0]['import_bars_rows_written']);
+        $this->assertSame(0, $summary['cases'][0]['import_invalid_bar_count']);
+        $this->assertArrayNotHasKey('publishability_state', $summary['cases'][0]);
+        $this->assertArrayNotHasKey('coverage_gate_state', $summary['cases'][0]);
+        $this->assertArrayNotHasKey('final_reason_code', $summary['cases'][0]);
         $this->assertFileExists($outputDir.'/market_data_backfill_summary.json');
 
         $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
         $this->assertSame('manual-2026-03-20.csv', $summaryFile['cases'][0]['source_input_file']);
+        $this->assertArrayNotHasKey('publishability_state', $summaryFile['cases'][0]);
+        $this->assertArrayNotHasKey('coverage_gate_state', $summaryFile['cases'][0]);
+        $this->assertArrayNotHasKey('final_reason_code', $summaryFile['cases'][0]);
     }
 
 
@@ -269,11 +280,9 @@ class MarketDataBackfillServiceTest extends TestCase
             '2026-03-02',
         ]);
 
-        $pipeline->shouldReceive('runSingleDay')->once()->with('2026-03-02', 'api', null)->andReturn((object) [
+        $pipeline->shouldReceive('importSingleDay')->once()->with('2026-03-02', 'api', null)->andReturn((object) [
             'run_id' => 1070,
             'terminal_status' => 'HELD',
-            'publishability_state' => 'NOT_READABLE',
-            'trade_date_effective' => null,
             'notes' => 'source_name=API_FREE; source_provider=yahoo_finance; source_timeout_seconds=20; source_retry_max=3; source_attempt_count=4; source_final_reason_code=RUN_SOURCE_RATE_LIMIT; final_outcome_note=SOURCE_UNAVAILABLE_NO_BASELINE',
         ]);
 
@@ -282,15 +291,15 @@ class MarketDataBackfillServiceTest extends TestCase
         $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
         $summary = $service->execute('2026-03-02', '2026-03-02', 'api', $outputDir, false);
 
-        $this->assertFalse($summary['all_passed']);
+        $this->assertFalse($summary['all_imported']);
+                $this->assertFalse($summary['all_passed']);
+        $this->assertSame('IMPORT_FAILED', $summary['cases'][0]['import_status']);
         $this->assertSame('FAIL', $summary['cases'][0]['status']);
-        $this->assertSame('HELD', $summary['cases'][0]['terminal_status']);
         $this->assertSame('SOURCE_UNAVAILABLE_NO_BASELINE', $summary['cases'][0]['final_outcome_note']);
         $this->assertArrayNotHasKey('error_message', $summary['cases'][0]);
 
         $summaryFile = json_decode(file_get_contents($outputDir.'/market_data_backfill_summary.json'), true);
         $this->assertSame('FAIL', $summaryFile['cases'][0]['status']);
-        $this->assertSame('HELD', $summaryFile['cases'][0]['terminal_status']);
         $this->assertSame('SOURCE_UNAVAILABLE_NO_BASELINE', $summaryFile['cases'][0]['final_outcome_note']);
         $this->assertArrayNotHasKey('error_message', $summaryFile['cases'][0]);
     }
@@ -303,26 +312,51 @@ class MarketDataBackfillServiceTest extends TestCase
         $outputDir = sys_get_temp_dir().'/market_data_backfill_'.uniqid();
 
         $calendar->shouldReceive('tradingDatesBetween')->once()->andReturn(['2026-03-20', '2026-03-21']);
-        $pipeline->shouldReceive('runDaily')->once()->with('2026-03-20', 'manual_file', null)->andThrow(new RuntimeException('boom'));
-        $pipeline->shouldNotReceive('runSingleDay');
-        $pipeline->shouldNotReceive('runDaily')->with('2026-03-21', 'manual_file', null);
+        $pipeline->shouldReceive('importDaily')->once()->with('2026-03-20', 'manual_file', null)->andThrow(new RuntimeException('boom'));
+        $pipeline->shouldNotReceive('importSingleDay');
+        $pipeline->shouldNotReceive('importDaily')->with('2026-03-21', 'manual_file', null);
         $runs->shouldReceive('findLatestForRequestedDate')->once()->with('2026-03-20', 'manual_file')->andReturn((object) [
             'run_id' => 1001,
             'terminal_status' => 'FAILED',
-            'publishability_state' => 'NOT_READABLE',
-            'trade_date_effective' => null,
             'notes' => 'source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=3; source_final_reason_code=RUN_SOURCE_TIMEOUT',
         ]);
 
         $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
         $summary = $service->execute('2026-03-20', '2026-03-21', 'manual_file', $outputDir, false);
 
-        $this->assertFalse($summary['all_passed']);
+        $this->assertFalse($summary['all_imported']);
+                $this->assertFalse($summary['all_passed']);
         $this->assertCount(1, $summary['cases']);
         $this->assertSame('FAIL', $summary['cases'][0]['status']);
+        $this->assertSame('IMPORT_FAILED', $summary['cases'][0]['import_status']);
         $this->assertArrayNotHasKey('error_message', $summary['cases'][0]);
         $this->assertSame(1001, $summary['cases'][0]['run_id']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=3 | final_reason_code=RUN_SOURCE_TIMEOUT', $summary['cases'][0]['source_summary']);
     }
+
+
+    public function test_execute_rejects_single_day_calendar_drift_when_multiple_dates_are_returned(): void
+    {
+        $calendar = m::mock(MarketCalendarRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+
+        $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-20', '2026-03-20')->andReturn([
+            '2026-03-20',
+            '2026-03-21',
+        ]);
+
+        $pipeline->shouldNotReceive('importSingleDay');
+        $pipeline->shouldNotReceive('importDaily');
+        $runs->shouldNotReceive('findLatestForRequestedDate');
+
+        $service = new MarketDataBackfillService($calendar, $pipeline, $runs);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Single-day backfill requires exactly one trading date equal to requested start_date/end_date.');
+
+        $service->execute('2026-03-20', '2026-03-20', 'manual_file', sys_get_temp_dir().'/market_data_backfill_'.uniqid(), false);
+    }
+
 }

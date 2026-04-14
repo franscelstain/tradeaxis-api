@@ -461,6 +461,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame('API_FREE', $telemetry['source_name']);
         $this->assertSame(2, $telemetry['attempt_count']);
         $this->assertTrue($telemetry['success_after_retry']);
+        $this->assertFalse($telemetry['retry_exhausted']);
         $this->assertNull($telemetry['final_reason_code']);
         $this->assertSame(200, $telemetry['final_http_status']);
         $this->assertCount(2, $telemetry['attempts']);
@@ -502,6 +503,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
             $this->assertSame(3, $context['timeout_seconds']);
             $this->assertSame(2, $context['retry_max']);
             $this->assertSame(3, $context['attempt_count']);
+            $this->assertTrue($context['retry_exhausted']);
             $this->assertCount(3, $context['attempts']);
             $this->assertSame(1, $context['attempts'][0]['attempt_number']);
             $this->assertSame('RUN_SOURCE_TIMEOUT', $context['attempts'][0]['reason_code']);
