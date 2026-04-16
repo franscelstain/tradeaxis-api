@@ -34,6 +34,16 @@ class EodRunRepository
                 'publishability_state' => 'NOT_READABLE',
                 'stage' => $stage,
                 'source' => $sourceMode,
+                'source_name' => null,
+                'source_provider' => null,
+                'source_input_file' => null,
+                'source_timeout_seconds' => null,
+                'source_retry_max' => null,
+                'source_attempt_count' => null,
+                'source_success_after_retry' => null,
+                'source_retry_exhausted' => null,
+                'source_final_http_status' => null,
+                'source_final_reason_code' => null,
                 'coverage_universe_count' => null,
                 'coverage_available_count' => null,
                 'coverage_missing_count' => null,
@@ -59,8 +69,11 @@ class EodRunRepository
                 'config_hash' => null,
                 'config_snapshot_ref' => null,
                 'supersedes_run_id' => $supersedesRunId,
+                'publication_id' => null,
                 'publication_version' => null,
                 'is_current_publication' => 0,
+                'correction_id' => null,
+                'final_reason_code' => null,
                 'sealed_at' => null,
                 'sealed_by' => null,
                 'seal_note' => null,
@@ -164,6 +177,7 @@ class EodRunRepository
         $run->terminal_status = 'FAILED';
         $run->quality_gate_state = 'FAIL';
         $run->publishability_state = 'NOT_READABLE';
+        $run->final_reason_code = $reasonCode;
         $run->finished_at = $now;
         $run->updated_at = $now;
         $run->save();
@@ -195,6 +209,7 @@ class EodRunRepository
         $run->terminal_status = 'HELD';
         $run->quality_gate_state = 'BLOCKED';
         $run->publishability_state = 'NOT_READABLE';
+        $run->final_reason_code = $reasonCode;
         $run->trade_date_effective = $tradeDateEffective;
         $run->finished_at = $now;
         $run->updated_at = $now;
@@ -292,6 +307,12 @@ class EodRunRepository
 
         if (array_key_exists('coverage_missing_sample_json', $telemetry) && is_array($telemetry['coverage_missing_sample_json'])) {
             $telemetry['coverage_missing_sample_json'] = json_encode(array_values($telemetry['coverage_missing_sample_json']));
+        }
+
+        foreach (['source_success_after_retry', 'source_retry_exhausted'] as $booleanField) {
+            if (array_key_exists($booleanField, $telemetry) && $telemetry[$booleanField] !== null) {
+                $telemetry[$booleanField] = $telemetry[$booleanField] ? 1 : 0;
+            }
         }
 
         return $telemetry;

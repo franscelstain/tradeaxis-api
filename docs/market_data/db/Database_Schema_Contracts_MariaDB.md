@@ -69,10 +69,12 @@ Must support, at minimum:
 - publishability state
 - stage
 - counts and telemetry
+- first-class source traceability fields (not notes/logs only)
 - hash fields
 - seal metadata
 - config identity
 - correction/publication linkage
+- final publishability reason metadata
 
 #### Coverage-gate evidence required on runs
 For the locked coverage-gate contract, `eod_runs` must also support coverage evidence fields equivalent to:

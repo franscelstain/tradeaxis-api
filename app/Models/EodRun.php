@@ -15,6 +15,14 @@ class EodRun extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'source_timeout_seconds' => 'integer',
+        'source_retry_max' => 'integer',
+        'source_attempt_count' => 'integer',
+        'source_success_after_retry' => 'boolean',
+        'source_retry_exhausted' => 'boolean',
+        'source_final_http_status' => 'integer',
+        'publication_id' => 'integer',
+        'correction_id' => 'integer',
         'coverage_universe_count' => 'integer',
         'coverage_available_count' => 'integer',
         'coverage_missing_count' => 'integer',

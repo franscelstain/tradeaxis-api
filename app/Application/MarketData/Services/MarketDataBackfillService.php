@@ -56,7 +56,13 @@ class MarketDataBackfillService
                 ] + $this->buildSourceContextFromRun($run);
 
                 $case = array_merge($case, $this->buildImportContext($run));
+                if (($case['import_status'] ?? null) !== 'IMPORTED' || $this->failedRunCountsAsDeterministicFail($run)) {
+                    $case = array_merge($case, $this->buildDeterministicFailureContext($run));
+                }
                 $case['status'] = $this->resolveImportCaseStatus($case);
+                if ($case['status'] === 'FAIL') {
+                    unset($case['error_class'], $case['error_message']);
+                }
 
                 if (($case['import_status'] ?? null) !== 'IMPORTED') {
                     $allImported = false;
@@ -70,6 +76,10 @@ class MarketDataBackfillService
                 }
 
                 if (($case['import_status'] ?? null) !== 'IMPORTED' && ! $continueOnError) {
+                    break;
+                }
+
+                if ($this->shouldStopAfterSingleManualFileCase($requestMode, $sourceMode, $case, $continueOnError)) {
                     break;
                 }
             } catch (\Throwable $e) {
@@ -90,9 +100,12 @@ class MarketDataBackfillService
                     ] + $this->buildSourceContextFromRun($failedRun);
 
                     $case = array_merge($case, $this->buildImportContext($failedRun));
+                    $case = array_merge($case, $this->buildDeterministicFailureContext($failedRun));
                     $case['status'] = $this->resolveImportCaseStatus($case, true);
-                    $case['error_class'] = get_class($e);
-                    $case['error_message'] = $e->getMessage();
+                    if ($case['status'] === 'ERROR') {
+                        $case['error_class'] = get_class($e);
+                        $case['error_message'] = $e->getMessage();
+                    }
 
                     $telemetryCase = $this->buildSourceAttemptTelemetryCase($requestedDate, $failedRun);
                     if ($telemetryCase !== null) {
@@ -124,7 +137,7 @@ class MarketDataBackfillService
             'request_mode' => $requestMode,
             'trading_dates' => $dates,
             'all_imported' => $allImported,
-            'all_passed' => $allImported,
+            'all_passed' => $allImported && count($cases) === count($dates) && ! $this->didStopEarlyBeforeImportFailure($cases, $dates),
             'cases' => $cases,
             'output_dir' => $outputDir,
             'source_attempt_telemetry_artifact' => $telemetryArtifactPath,
@@ -191,16 +204,16 @@ class MarketDataBackfillService
         $notesMap = $this->parseRunNotes((string) ($run->notes ?? ''));
         $sourceAttemptTelemetry = $this->buildSourceAttemptTelemetryForRun($run);
         $sourceContext = $this->mergeSourceContextFromTelemetry([
-            'source_name' => ($notesMap['source_name'] ?? '') !== '' ? (string) $notesMap['source_name'] : null,
-            'source_input_file' => ($notesMap['source_input_file'] ?? '') !== '' ? (string) $notesMap['source_input_file'] : null,
-            'provider' => ($notesMap['source_provider'] ?? '') !== '' ? (string) $notesMap['source_provider'] : null,
-            'timeout_seconds' => isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] != '' ? (int) $notesMap['source_timeout_seconds'] : null,
-            'retry_max' => isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] != '' ? (int) $notesMap['source_retry_max'] : null,
-            'attempt_count' => isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] != '' ? (int) $notesMap['source_attempt_count'] : null,
-            'success_after_retry' => ($notesMap['source_success_after_retry'] ?? '') !== '' ? (string) $notesMap['source_success_after_retry'] : null,
-            'final_http_status' => isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] != '' ? (int) $notesMap['source_final_http_status'] : null,
-            'final_reason_code' => ($notesMap['source_final_reason_code'] ?? '') !== '' ? (string) $notesMap['source_final_reason_code'] : null,
-            'retry_exhausted' => ($notesMap['source_retry_exhausted'] ?? '') !== '' ? (string) $notesMap['source_retry_exhausted'] : null,
+            'source_name' => $run->source_name ?? (($notesMap['source_name'] ?? '') !== '' ? (string) $notesMap['source_name'] : null),
+            'source_input_file' => $run->source_input_file ?? (($notesMap['source_input_file'] ?? '') !== '' ? (string) $notesMap['source_input_file'] : null),
+            'provider' => $run->source_provider ?? (($notesMap['source_provider'] ?? '') !== '' ? (string) $notesMap['source_provider'] : null),
+            'timeout_seconds' => $run->source_timeout_seconds ?? (isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] != '' ? (int) $notesMap['source_timeout_seconds'] : null),
+            'retry_max' => $run->source_retry_max ?? (isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] != '' ? (int) $notesMap['source_retry_max'] : null),
+            'attempt_count' => $run->source_attempt_count ?? (isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] != '' ? (int) $notesMap['source_attempt_count'] : null),
+            'success_after_retry' => array_key_exists('source_success_after_retry', (array) $run) && $run->source_success_after_retry !== null ? ($run->source_success_after_retry ? 'yes' : 'no') : (($notesMap['source_success_after_retry'] ?? '') !== '' ? (string) $notesMap['source_success_after_retry'] : null),
+            'final_http_status' => $run->source_final_http_status ?? (isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] != '' ? (int) $notesMap['source_final_http_status'] : null),
+            'final_reason_code' => $run->source_final_reason_code ?? (($notesMap['source_final_reason_code'] ?? '') !== '' ? (string) $notesMap['source_final_reason_code'] : null),
+            'retry_exhausted' => array_key_exists('source_retry_exhausted', (array) $run) && $run->source_retry_exhausted !== null ? ($run->source_retry_exhausted ? 'yes' : 'no') : (($notesMap['source_retry_exhausted'] ?? '') !== '' ? (string) $notesMap['source_retry_exhausted'] : null),
         ], $sourceAttemptTelemetry);
 
         $result = [];
@@ -304,7 +317,32 @@ class MarketDataBackfillService
             return $path;
         }
 
-        return str_replace('\\', '/', (string) $path);
+        $normalized = str_replace('\\', '/', (string) $path);
+
+        if ($this->looksLikeRelativeProjectPath($normalized)) {
+            return basename($normalized);
+        }
+
+        return $normalized;
+    }
+
+    private function looksLikeRelativeProjectPath($path)
+    {
+        if ($path === null || $path === '') {
+            return false;
+        }
+
+        $path = (string) $path;
+
+        if (preg_match('~^[A-Za-z]:/~', $path) === 1) {
+            return false;
+        }
+
+        if (strpos($path, '//') === 0 || strpos($path, '/') === 0 || strpos($path, '\\') === 0) {
+            return false;
+        }
+
+        return true;
     }
 
     private function buildSourceSummaryString(array $sourceContext)
@@ -413,25 +451,40 @@ class MarketDataBackfillService
     private function buildDeterministicFailureContext($run)
     {
         $context = [];
+        $notesMap = $this->parseRunNotes((string) ($run->notes ?? ''));
 
         foreach ([
-            'quality_gate_state' => 'quality_gate_state',
-            'coverage_gate_state' => 'coverage_gate_state',
-            'coverage_ratio' => 'coverage_ratio',
-            'coverage_universe_count' => 'coverage_universe_count',
-            'coverage_available_count' => 'coverage_available_count',
-            'coverage_missing_count' => 'coverage_missing_count',
-            'coverage_min_threshold' => 'coverage_min_threshold',
-        ] as $field => $outputKey) {
-            if (isset($run->{$field}) && $run->{$field} !== null && $run->{$field} !== '') {
-                $context[$outputKey] = $run->{$field};
+            'quality_gate_state' => ['quality_gate_state'],
+            'coverage_gate_state' => ['coverage_gate_state'],
+            'coverage_ratio' => ['coverage_ratio'],
+            'coverage_universe_count' => ['coverage_universe_count'],
+            'coverage_available_count' => ['coverage_available_count'],
+            'coverage_missing_count' => ['coverage_missing_count'],
+            'coverage_min_threshold' => ['coverage_min_threshold'],
+            'final_reason_code' => ['final_reason_code', 'source_final_reason_code'],
+            'final_outcome_note' => ['final_outcome_note'],
+        ] as $outputKey => $fields) {
+            foreach ($fields as $field) {
+                if (isset($run->{$field}) && $run->{$field} !== null && $run->{$field} !== '') {
+                    $context[$outputKey] = $run->{$field};
+                    break;
+                }
+
+                if (isset($notesMap[$field]) && $notesMap[$field] !== '') {
+                    $context[$outputKey] = $notesMap[$field];
+                    break;
+                }
             }
         }
 
-        if ($this->runs !== null && isset($run->run_id)) {
-            $event = $this->runs->findLatestTerminalEventForRun((int) $run->run_id);
+        if ($this->runs !== null && isset($run->run_id) && method_exists($this->runs, 'findLatestTerminalEventForRun')) {
+            try {
+                $event = $this->runs->findLatestTerminalEventForRun((int) $run->run_id);
+            } catch (\Throwable $e) {
+                $event = null;
+            }
             if ($event) {
-                if (isset($event->reason_code) && $event->reason_code !== null && $event->reason_code !== '') {
+                if ((! isset($context['final_reason_code']) || $context['final_reason_code'] === '') && isset($event->reason_code) && $event->reason_code !== null && $event->reason_code !== '') {
                     $context['final_reason_code'] = (string) $event->reason_code;
                 }
 
@@ -451,7 +504,35 @@ class MarketDataBackfillService
             return 'IMPORTED';
         }
 
+        if (array_key_exists('final_outcome_note', $case) && $case['final_outcome_note'] !== null && $case['final_outcome_note'] !== '') {
+            return 'FAIL';
+        }
+
+        if (array_key_exists('final_reason_code', $case) && $case['final_reason_code'] !== null && $case['final_reason_code'] !== '') {
+            return 'FAIL';
+        }
+
         return $encounteredException ? 'ERROR' : 'FAIL';
+    }
+
+    private function didStopEarlyBeforeImportFailure(array $cases, array $dates)
+    {
+        return count($cases) < count($dates)
+            && ($cases === [] || (($cases[count($cases) - 1]['import_status'] ?? null) === 'IMPORTED'));
+    }
+
+    private function shouldStopAfterSingleManualFileCase($requestMode, $sourceMode, array $case, $continueOnError)
+    {
+        if ($continueOnError || $requestMode !== 'range' || (string) $sourceMode !== 'manual_file') {
+            return false;
+        }
+
+        if (($case['import_status'] ?? null) !== 'IMPORTED') {
+            return false;
+        }
+
+        return (string) ($case['source_name'] ?? '') === 'LOCAL_FILE'
+            && ((string) ($case['source_input_file'] ?? '') !== '');
     }
 
     private function runCountsAsPass($run)

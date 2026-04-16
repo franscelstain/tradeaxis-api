@@ -78,6 +78,16 @@ trait UsesMarketDataSqlite
             $table->string('publishability_state')->nullable();
             $table->string('stage')->nullable();
             $table->string('source')->nullable();
+            $table->string('source_name')->nullable();
+            $table->string('source_provider')->nullable();
+            $table->string('source_input_file')->nullable();
+            $table->integer('source_timeout_seconds')->nullable();
+            $table->integer('source_retry_max')->nullable();
+            $table->integer('source_attempt_count')->nullable();
+            $table->integer('source_success_after_retry')->nullable();
+            $table->integer('source_retry_exhausted')->nullable();
+            $table->integer('source_final_http_status')->nullable();
+            $table->string('source_final_reason_code')->nullable();
             $table->integer('coverage_universe_count')->nullable();
             $table->integer('coverage_available_count')->nullable();
             $table->integer('coverage_missing_count')->nullable();
@@ -103,8 +113,11 @@ trait UsesMarketDataSqlite
             $table->string('config_hash')->nullable();
             $table->string('config_snapshot_ref')->nullable();
             $table->integer('supersedes_run_id')->nullable();
+            $table->integer('publication_id')->nullable();
             $table->integer('publication_version')->nullable();
             $table->integer('is_current_publication')->default(0);
+            $table->integer('correction_id')->nullable();
+            $table->string('final_reason_code')->nullable();
             $table->dateTime('sealed_at')->nullable();
             $table->string('sealed_by')->nullable();
             $table->text('seal_note')->nullable();

@@ -52,3 +52,38 @@ If replay or evidence tables mirror run metrics, they should also mirror the sam
 - `coverage_gate_state` alone is not sufficient.
 - provider row count must never substitute for `coverage_universe_count`.
 - eligibility row count must never substitute for `coverage_available_count`.
+
+
+## Required eod_runs source traceability fields (session hardening minimum)
+The `eod_runs` record must also expose first-class traceability fields so source context is queryable without parsing logs only:
+
+- `source` VARCHAR/ENUM NOT NULL  
+  Logical source mode used by the run, for example `api` or `manual_file`.
+- `source_name` VARCHAR(64) NULL  
+  Logical source identity such as `API_FREE` or `LOCAL_FILE`.
+- `source_provider` VARCHAR(64) NULL  
+  Upstream/provider identity when relevant.
+- `source_input_file` VARCHAR(255) NULL  
+  Manual input path/reference when manual source mode is used.
+- `source_timeout_seconds` INT NULL
+- `source_retry_max` INT NULL
+- `source_attempt_count` INT NULL
+- `source_success_after_retry` BOOLEAN/TINYINT NULL
+- `source_retry_exhausted` BOOLEAN/TINYINT NULL
+- `source_final_http_status` INT NULL
+- `source_final_reason_code` VARCHAR(64) NULL
+
+These fields do not replace run events or evidence artifacts; they make minimum source provenance audit-visible directly from DB state.
+
+## Required eod_runs linkage/publishability fields (session hardening minimum)
+To avoid implicit-only linkage, `eod_runs` should also persist:
+
+- `publication_id` BIGINT NULL  
+  Publication row produced/resolved by the run.
+- `publication_version` INT NULL
+- `correction_id` BIGINT NULL  
+  Official correction request reference when the run is part of correction flow.
+- `final_reason_code` VARCHAR(64) NULL  
+  Final consumer/audit-visible reason code aligned with the terminal outcome.
+
+This keeps run/publication linkage and publishability reasoning queryable even when operators are not reading event payload JSON.

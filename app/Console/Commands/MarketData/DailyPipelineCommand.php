@@ -25,7 +25,7 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
         $outputDir = $this->option('output_dir') ?: null;
 
         try {
-            $run = $this->pipeline()->importDaily($requestedDate, $sourceMode, $correctionId);
+            $run = $this->pipeline()->runDaily($requestedDate, $sourceMode, $correctionId);
         } catch (\Throwable $e) {
             $run = $this->latestRunForRequestedDate($requestedDate, $sourceMode);
             [$sourceTelemetryArtifactPath, $sourceAttemptTelemetry] = $run ? $this->writeSourceAttemptTelemetryArtifact($outputDir, $run) : [null, []];

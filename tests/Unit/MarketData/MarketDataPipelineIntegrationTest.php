@@ -85,6 +85,10 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('READABLE', $run->publishability_state);
         $this->assertSame('COMPLETED', $run->lifecycle_state);
         $this->assertSame('2026-03-20', $run->trade_date_effective);
+        $this->assertSame('LOCAL_FILE', $run->source_name);
+        $this->assertSame(1, (int) $run->publication_id);
+        $this->assertNull($run->correction_id);
+        $this->assertNull($run->final_reason_code);
         $this->assertEquals(1.0, (float) $run->coverage_ratio);
         $this->assertNotNull($run->bars_batch_hash);
         $this->assertNotNull($run->indicators_batch_hash);

@@ -93,7 +93,7 @@ abstract class AbstractMarketDataCommand extends Command
 
         $this->renderSourceSummary($run, $sourceContext);
 
-        $reasonCode = $this->runField($run, 'reason_code');
+        $reasonCode = $this->runField($run, 'final_reason_code', $this->runField($run, 'reason_code'));
         if ($reasonCode !== null && $reasonCode !== '') {
             $this->line('reason_code='.(string) $reasonCode);
         }
@@ -117,6 +117,7 @@ abstract class AbstractMarketDataCommand extends Command
             'lifecycle_state' => $this->runField($run, 'lifecycle_state'),
             'terminal_status' => $this->runField($run, 'terminal_status'),
             'publishability_state' => $this->runField($run, 'publishability_state'),
+            'final_reason_code' => $this->runField($run, 'final_reason_code'),
             'trade_date_effective' => $this->runField($run, 'trade_date_effective'),
             'reason_code' => $this->runField($run, 'reason_code'),
             'notes' => $this->runField($run, 'notes'),
@@ -247,16 +248,20 @@ abstract class AbstractMarketDataCommand extends Command
     protected function buildSourceContext($run, array $sourceAttemptTelemetry = null)
     {
         $notesMap = $this->parseRunNotes((string) $this->runField($run, 'notes', ''));
+        $sourceSuccessAfterRetry = $this->runField($run, 'source_success_after_retry');
+        $sourceRetryExhausted = $this->runField($run, 'source_retry_exhausted');
+
         $sourceContext = [
-            'source_name' => $notesMap['source_name'] ?? null,
-            'source_input_file' => $notesMap['source_input_file'] ?? null,
-            'provider' => $notesMap['source_provider'] ?? null,
-            'timeout_seconds' => $notesMap['source_timeout_seconds'] ?? null,
-            'retry_max' => $notesMap['source_retry_max'] ?? null,
-            'attempt_count' => $notesMap['source_attempt_count'] ?? null,
-            'success_after_retry' => $notesMap['source_success_after_retry'] ?? null,
-            'final_http_status' => $notesMap['source_final_http_status'] ?? null,
-            'final_reason_code' => $notesMap['source_final_reason_code'] ?? null,
+            'source_name' => $this->runField($run, 'source_name', $notesMap['source_name'] ?? null),
+            'source_input_file' => $this->runField($run, 'source_input_file', $notesMap['source_input_file'] ?? null),
+            'provider' => $this->runField($run, 'source_provider', $notesMap['source_provider'] ?? null),
+            'timeout_seconds' => $this->runField($run, 'source_timeout_seconds', $notesMap['source_timeout_seconds'] ?? null),
+            'retry_max' => $this->runField($run, 'source_retry_max', $notesMap['source_retry_max'] ?? null),
+            'attempt_count' => $this->runField($run, 'source_attempt_count', $notesMap['source_attempt_count'] ?? null),
+            'success_after_retry' => $sourceSuccessAfterRetry !== null ? ($sourceSuccessAfterRetry ? 'yes' : 'no') : ($notesMap['source_success_after_retry'] ?? null),
+            'final_http_status' => $this->runField($run, 'source_final_http_status', $notesMap['source_final_http_status'] ?? null),
+            'final_reason_code' => $this->runField($run, 'source_final_reason_code', $notesMap['source_final_reason_code'] ?? null),
+            'retry_exhausted' => $sourceRetryExhausted !== null ? ($sourceRetryExhausted ? 'yes' : 'no') : ($notesMap['source_retry_exhausted'] ?? null),
             'source_attempt_event_type' => null,
             'source_attempt_count' => null,
         ];

@@ -146,6 +146,16 @@ CREATE TABLE IF NOT EXISTS eod_runs (
 
   stage ENUM('INGEST_BARS','PUBLISH_BARS','COMPUTE_INDICATORS','BUILD_ELIGIBILITY','HASH','SEAL','FINALIZE') NOT NULL,
   source VARCHAR(32) NOT NULL,
+  source_name VARCHAR(64) NULL,
+  source_provider VARCHAR(64) NULL,
+  source_input_file VARCHAR(255) NULL,
+  source_timeout_seconds INT NULL,
+  source_retry_max INT NULL,
+  source_attempt_count INT NULL,
+  source_success_after_retry TINYINT(1) NULL,
+  source_retry_exhausted TINYINT(1) NULL,
+  source_final_http_status INT NULL,
+  source_final_reason_code VARCHAR(64) NULL,
 
   coverage_universe_count INT NULL,
   coverage_available_count INT NULL,
@@ -177,8 +187,11 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   config_snapshot_ref VARCHAR(255) NULL,
 
   supersedes_run_id BIGINT UNSIGNED NULL,
+  publication_id BIGINT UNSIGNED NULL,
   publication_version INT UNSIGNED NULL,
   is_current_publication TINYINT(1) NOT NULL DEFAULT 0,
+  correction_id BIGINT UNSIGNED NULL,
+  final_reason_code VARCHAR(64) NULL,
 
   sealed_at DATETIME NULL,
   sealed_by VARCHAR(64) NULL,
@@ -198,7 +211,11 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   KEY idx_runs_coverage_gate_state (coverage_gate_state),
   KEY idx_runs_stage (stage),
   KEY idx_runs_trade_date_current_pub (trade_date_effective, is_current_publication),
-  KEY idx_runs_supersedes (supersedes_run_id)
+  KEY idx_runs_supersedes (supersedes_run_id),
+  KEY idx_runs_publication_id (publication_id),
+  KEY idx_runs_correction_id (correction_id),
+  KEY idx_runs_final_reason_code (final_reason_code),
+  KEY idx_runs_source_name (source_name)
 ) ENGINE=InnoDB;
 
 -- LOCKED SEMANTICS

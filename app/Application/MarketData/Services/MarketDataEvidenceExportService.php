@@ -8,6 +8,11 @@ use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 
 class MarketDataEvidenceExportService
 {
+    private function field($record, $name, $default = null)
+    {
+        return is_object($record) && property_exists($record, $name) ? $record->{$name} : $default;
+    }
+
     private $evidence;
     private $publications;
     private $corrections;
@@ -41,7 +46,7 @@ class MarketDataEvidenceExportService
         );
         $sourceAttemptTelemetry = $this->normalizeSourceAttemptTelemetryPaths($sourceAttemptTelemetry);
         $sourceSummary = $this->buildSourceSummaryString($runSummary['source_context'] ?? []);
-        $eventSummary = ['run_id' => (int) $run->run_id, 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
+        $eventSummary = ['run_id' => (int) $this->field($run, 'run_id'), 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
         $dominantReasonCodes = $this->evidence->dominantReasonCodes($run->run_id, $this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
         $eligibilityRows = $this->evidence->exportEligibilityRows($this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
         $invalidBarsRows = $this->evidence->exportInvalidBarsRows($run->trade_date_requested);
@@ -89,7 +94,7 @@ class MarketDataEvidenceExportService
         return [
             'selector' => ['type' => 'run', 'id' => (int) $run->run_id],
             'summary' => [
-                'run_id' => (int) $run->run_id,
+                'run_id' => (int) $this->field($run, 'run_id'),
                 'trade_date_requested' => $runSummary['trade_date_requested'],
                 'trade_date_effective' => $runSummary['trade_date_effective'],
                 'terminal_status' => $runSummary['terminal_status'],
@@ -257,37 +262,40 @@ class MarketDataEvidenceExportService
         $sourceContext = $this->normalizeSourceContextPaths($sourceContext);
 
         return [
-            'run_id' => (int) $run->run_id,
-            'trade_date_requested' => $run->trade_date_requested,
-            'trade_date_effective' => $run->trade_date_effective,
-            'lifecycle_state' => $run->lifecycle_state,
-            'terminal_status' => $run->terminal_status,
-            'quality_gate_state' => $run->quality_gate_state,
-            'publishability_state' => $run->publishability_state,
-            'stage' => $run->stage,
-            'source' => $run->source,
+            'run_id' => (int) $this->field($run, 'run_id'),
+            'trade_date_requested' => $this->field($run, 'trade_date_requested'),
+            'trade_date_effective' => $this->field($run, 'trade_date_effective'),
+            'lifecycle_state' => $this->field($run, 'lifecycle_state'),
+            'terminal_status' => $this->field($run, 'terminal_status'),
+            'quality_gate_state' => $this->field($run, 'quality_gate_state'),
+            'publishability_state' => $this->field($run, 'publishability_state'),
+            'stage' => $this->field($run, 'stage'),
+            'source' => $this->field($run, 'source'),
+            'final_reason_code' => $this->field($run, 'final_reason_code'),
             'source_context' => $sourceContext,
             'coverage' => $this->buildCoverageState($run),
-            'coverage_ratio' => $run->coverage_ratio !== null ? (float) $run->coverage_ratio : null,
-            'bars_rows_written' => $run->bars_rows_written !== null ? (int) $run->bars_rows_written : null,
-            'indicators_rows_written' => $run->indicators_rows_written !== null ? (int) $run->indicators_rows_written : null,
-            'eligibility_rows_written' => $run->eligibility_rows_written !== null ? (int) $run->eligibility_rows_written : null,
-            'invalid_bar_count' => $run->invalid_bar_count !== null ? (int) $run->invalid_bar_count : null,
-            'invalid_indicator_count' => $run->invalid_indicator_count !== null ? (int) $run->invalid_indicator_count : null,
-            'warning_count' => $run->warning_count !== null ? (int) $run->warning_count : null,
-            'hard_reject_count' => $run->hard_reject_count !== null ? (int) $run->hard_reject_count : null,
-            'bars_batch_hash' => $run->bars_batch_hash,
-            'indicators_batch_hash' => $run->indicators_batch_hash,
-            'eligibility_batch_hash' => $run->eligibility_batch_hash,
-            'sealed_at' => $run->sealed_at,
-            'config_version' => $run->config_version,
-            'config_hash' => $run->config_hash,
-            'config_snapshot_ref' => $run->config_snapshot_ref,
-            'publication_version' => $manifest ? (int) $manifest['publication_version'] : ($run->publication_version !== null ? (int) $run->publication_version : null),
-            'is_current_publication' => $manifest ? (bool) $manifest['is_current'] : (bool) $run->is_current_publication,
-            'supersedes_run_id' => $run->supersedes_run_id !== null ? (int) $run->supersedes_run_id : null,
-            'started_at' => $run->started_at,
-            'finished_at' => $run->finished_at,
+            'coverage_ratio' => $this->field($run, 'coverage_ratio') !== null ? (float) $this->field($run, 'coverage_ratio') : null,
+            'bars_rows_written' => $this->field($run, 'bars_rows_written') !== null ? (int) $this->field($run, 'bars_rows_written') : null,
+            'indicators_rows_written' => $this->field($run, 'indicators_rows_written') !== null ? (int) $this->field($run, 'indicators_rows_written') : null,
+            'eligibility_rows_written' => $this->field($run, 'eligibility_rows_written') !== null ? (int) $this->field($run, 'eligibility_rows_written') : null,
+            'invalid_bar_count' => $this->field($run, 'invalid_bar_count') !== null ? (int) $this->field($run, 'invalid_bar_count') : null,
+            'invalid_indicator_count' => $this->field($run, 'invalid_indicator_count') !== null ? (int) $this->field($run, 'invalid_indicator_count') : null,
+            'warning_count' => $this->field($run, 'warning_count') !== null ? (int) $this->field($run, 'warning_count') : null,
+            'hard_reject_count' => $this->field($run, 'hard_reject_count') !== null ? (int) $this->field($run, 'hard_reject_count') : null,
+            'bars_batch_hash' => $this->field($run, 'bars_batch_hash'),
+            'indicators_batch_hash' => $this->field($run, 'indicators_batch_hash'),
+            'eligibility_batch_hash' => $this->field($run, 'eligibility_batch_hash'),
+            'sealed_at' => $this->field($run, 'sealed_at'),
+            'config_version' => $this->field($run, 'config_version'),
+            'config_hash' => $this->field($run, 'config_hash'),
+            'config_snapshot_ref' => $this->field($run, 'config_snapshot_ref'),
+            'publication_id' => $this->field($run, 'publication_id') !== null ? (int) $this->field($run, 'publication_id') : ($manifest ? (int) $manifest['publication_id'] : null),
+            'publication_version' => $manifest ? (int) $manifest['publication_version'] : ($this->field($run, 'publication_version') !== null ? (int) $this->field($run, 'publication_version') : null),
+            'is_current_publication' => $manifest ? (bool) $manifest['is_current'] : (bool) $this->field($run, 'is_current_publication', false),
+            'supersedes_run_id' => $this->field($run, 'supersedes_run_id') !== null ? (int) $this->field($run, 'supersedes_run_id') : null,
+            'correction_id' => $this->field($run, 'correction_id') !== null ? (int) $this->field($run, 'correction_id') : null,
+            'started_at' => $this->field($run, 'started_at'),
+            'finished_at' => $this->field($run, 'finished_at'),
         ];
     }
 
@@ -343,15 +351,16 @@ class MarketDataEvidenceExportService
         $notesMap = $this->parseRunNotes((string) ($record->notes ?? ''));
 
         return [
-            'source_name' => $notesMap['source_name'] ?? null,
-            'source_input_file' => $notesMap['source_input_file'] ?? null,
-            'provider' => $notesMap['source_provider'] ?? null,
-            'timeout_seconds' => isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] !== '' ? (int) $notesMap['source_timeout_seconds'] : null,
-            'retry_max' => isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] !== '' ? (int) $notesMap['source_retry_max'] : null,
-            'attempt_count' => isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] !== '' ? (int) $notesMap['source_attempt_count'] : null,
-            'success_after_retry' => $notesMap['source_success_after_retry'] ?? null,
-            'final_http_status' => isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? (int) $notesMap['source_final_http_status'] : null,
-            'final_reason_code' => $notesMap['source_final_reason_code'] ?? null,
+            'source_name' => $record->source_name ?? ($notesMap['source_name'] ?? null),
+            'source_input_file' => $record->source_input_file ?? ($notesMap['source_input_file'] ?? null),
+            'provider' => $record->source_provider ?? ($notesMap['source_provider'] ?? null),
+            'timeout_seconds' => $this->normalizeNullableInt($record->source_timeout_seconds ?? (isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] !== '' ? $notesMap['source_timeout_seconds'] : null)),
+            'retry_max' => $this->normalizeNullableInt($record->source_retry_max ?? (isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] !== '' ? $notesMap['source_retry_max'] : null)),
+            'attempt_count' => $this->normalizeNullableInt($record->source_attempt_count ?? (isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] !== '' ? $notesMap['source_attempt_count'] : null)),
+            'success_after_retry' => property_exists($record, 'source_success_after_retry') && $record->source_success_after_retry !== null ? ($record->source_success_after_retry ? 'yes' : 'no') : ($notesMap['source_success_after_retry'] ?? null),
+            'final_http_status' => $this->normalizeNullableInt($record->source_final_http_status ?? (isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? $notesMap['source_final_http_status'] : null)),
+            'final_reason_code' => $record->source_final_reason_code ?? ($notesMap['source_final_reason_code'] ?? null),
+            'retry_exhausted' => property_exists($record, 'source_retry_exhausted') && $record->source_retry_exhausted !== null ? ($record->source_retry_exhausted ? 'yes' : 'no') : ($notesMap['source_retry_exhausted'] ?? null),
         ];
     }
 
@@ -415,7 +424,41 @@ class MarketDataEvidenceExportService
             return $path;
         }
 
-        return str_replace('\\', '/', (string) $path);
+        $normalized = str_replace('\\', '/', (string) $path);
+
+        if ($this->looksLikeRelativeProjectPath($normalized)) {
+            return basename($normalized);
+        }
+
+        return $normalized;
+    }
+
+    private function looksLikeRelativeProjectPath($path)
+    {
+        if ($path === null || $path === '') {
+            return false;
+        }
+
+        $path = (string) $path;
+
+        if (preg_match('~^[A-Za-z]:/~', $path) === 1) {
+            return false;
+        }
+
+        if (strpos($path, '//') === 0 || strpos($path, '/') === 0 || strpos($path, '\\') === 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function normalizeNullableInt($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value;
     }
 
     private function buildSourceSummaryString(array $sourceContext)

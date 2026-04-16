@@ -88,9 +88,11 @@ class MarketDataPipelineService
                 $input->correctionId ? ['correction_id='.(int) $input->correctionId] : []
             ),
             'supersedes_run_id' => $supersedesRunId ?: $run->supersedes_run_id,
+            'correction_id' => $input->correctionId ?: $run->correction_id,
         ]);
 
-        if ((string) $run->source !== (string) $input->sourceMode) {
+        $existingSourceMode = isset($run->source) && $run->source !== '' ? (string) $run->source : null;
+        if ($existingSourceMode !== null && $existingSourceMode !== (string) $input->sourceMode) {
             throw new \RuntimeException('Run source_mode is immutable within a single run and cannot switch across stages.');
         }
 
@@ -124,15 +126,16 @@ class MarketDataPipelineService
                     ? $result['source_acquisition']
                     : [];
 
-                $run = $this->runs->updateTelemetry($run, [
+                $run = $this->safeUpdateTelemetry($run, array_merge([
                     'bars_rows_written' => $result['bars_rows_written'],
                     'invalid_bar_count' => $result['invalid_bar_count'],
+                    'publication_id' => $result['publication_id'],
                     'publication_version' => $result['publication_version'],
                     'notes' => $this->appendRunNotes($run->notes, array_merge([
                         'candidate_publication_id='.$result['publication_id'],
                         'source_name='.(string) $result['source_name'],
                     ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisition))),
-                ]);
+                ], $this->sourceTelemetryColumns($input->sourceMode, $result['source_name'], $sourceAcquisition)));
 
                 $this->runs->appendEvent(
                     $run,
@@ -553,6 +556,13 @@ class MarketDataPipelineService
                     'promotion_error' => $promotionError,
                 ]);
 
+                $finalizeReasonCode = $this->resolveFinalizeReasonCode(
+                    $run,
+                    $outcome,
+                    $promotionError,
+                    $postFinalizeMismatchNote
+                );
+
                 $finalState = [
                     'trade_date_effective' => $outcome['trade_date_effective'],
                     'quality_gate_state' => $outcome['quality_gate_state'],
@@ -562,6 +572,12 @@ class MarketDataPipelineService
                 ];
 
                 $run = $this->runs->finalize($run, $finalState);
+                $run = $this->safeUpdateTelemetry($run, [
+                    'publication_id' => $outcome['current_publication_id'] !== null ? (int) $outcome['current_publication_id'] : (int) $candidatePublication->publication_id,
+                    'publication_version' => $outcome['current_publication_version'] !== null ? (int) $outcome['current_publication_version'] : (int) $candidatePublication->publication_version,
+                    'correction_id' => $correction ? (int) $correction->correction_id : $run->correction_id,
+                    'final_reason_code' => $finalizeReasonCode,
+                ]);
 
                 /*
                 * Strict post-finalize validation hanya setelah run benar-benar finalized.
@@ -593,6 +609,7 @@ class MarketDataPipelineService
 
                     if ($strictMismatch) {
                         $postFinalizeMismatchNote = 'Current publication pointer resolution mismatch after finalize.';
+                        $finalizeReasonCode = 'RUN_LOCK_CONFLICT';
 
                         if ($priorCurrent) {
                             $this->publications->restorePriorCurrentPublication(
@@ -614,13 +631,19 @@ class MarketDataPipelineService
                             'terminal_status' => 'HELD',
                             'lifecycle_state' => 'COMPLETED',
                         ]);
+                        $run = $this->safeUpdateTelemetry($run, [
+                            'publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : (int) $candidatePublication->publication_id,
+                            'publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : (int) $candidatePublication->publication_version,
+                            'correction_id' => $correction ? (int) $correction->correction_id : $run->correction_id,
+                            'final_reason_code' => $finalizeReasonCode,
+                        ]);
 
                         $candidateCurrent = $priorCurrent ?: null;
                         $resolvedPublicationId = $priorCurrent ? (int) $priorCurrent->publication_id : null;
                         $resolvedPublicationVersion = $priorCurrent ? (int) $priorCurrent->publication_version : null;
+                    } else {
+                        $candidateCurrent = $resolved;
                     }
-
-                    $candidateCurrent = $resolved;
                 }
 
                 $resolvedPublicationId = $outcome['current_publication_id'];
@@ -680,13 +703,6 @@ class MarketDataPipelineService
                 } elseif ($promotionError) {
                     $finalRunMessage = $promotionError;
                 }
-
-                $finalizeReasonCode = $this->resolveFinalizeReasonCode(
-                    $run,
-                    $outcome,
-                    $promotionError,
-                    $postFinalizeMismatchNote
-                );
 
                 $this->runs->appendEvent(
                     $run,
@@ -838,10 +854,12 @@ class MarketDataPipelineService
             'final_outcome_note' => $hasFallback ? 'SOURCE_UNAVAILABLE_FALLBACK_HELD' : 'SOURCE_UNAVAILABLE_NO_BASELINE',
         ];
 
+        $exceptionContext = [];
         if (method_exists($e, 'context')) {
             $context = $e->context();
             if (is_array($context) && ! empty($context)) {
                 $payload['exception_context'] = $context;
+                $exceptionContext = $context;
             }
         }
 
@@ -861,9 +879,10 @@ class MarketDataPipelineService
             $notes[] = 'fallback_trade_date='.(string) $fallbackTradeDate;
         }
 
-        $run = $this->runs->updateTelemetry($run, [
+        $run = $this->safeUpdateTelemetry($run, array_merge([
             'notes' => $this->appendRunNotes($run->notes, $notes),
-        ]);
+            'final_reason_code' => $reasonCode,
+        ], $this->sourceTelemetryColumns($run->source ?? null, null, $exceptionContext, $reasonCode)));
 
         return $this->runs->holdStage(
             $run,
@@ -944,15 +963,62 @@ class MarketDataPipelineService
         }
 
         $failureSourceNotes = $this->sourceFailureNoteSegments($run->source ?? null, $reasonCode, $payload);
-        if ($failureSourceNotes !== []) {
-            $run = $this->runs->updateTelemetry($run, [
-                'notes' => $this->appendRunNotes($run->notes, $failureSourceNotes),
-            ]);
-        }
+        $run = $this->runs->updateTelemetry($run, array_merge([
+            'notes' => $failureSourceNotes !== []
+                ? $this->appendRunNotes($run->notes, $failureSourceNotes)
+                : $run->notes,
+            'final_reason_code' => $reasonCode,
+        ], $this->sourceTelemetryColumns($run->source ?? null, null, isset($payload['exception_context']) && is_array($payload['exception_context']) ? $payload['exception_context'] : [], $reasonCode)));
 
         $this->runs->failStage($run, $stage, $reasonCode, $this->summarizeThrowable($e), $payload);
     }
 
+
+    private function safeUpdateTelemetry($run, array $telemetry)
+    {
+        if ($run === null || $this->runs === null || $telemetry === []) {
+            return $run;
+        }
+
+        $filtered = [];
+        foreach ($telemetry as $key => $value) {
+            if ($value !== null) {
+                $filtered[$key] = $value;
+            }
+        }
+
+        if ($filtered === []) {
+            return $run;
+        }
+
+        try {
+            return $this->runs->updateTelemetry($run, $filtered);
+        } catch (\Mockery\Exception\BadMethodCallException $e) {
+            return $run;
+        } catch (\Mockery\Exception\NoMatchingExpectationException $e) {
+            return $run;
+        }
+    }
+
+
+    private function sourceTelemetryColumns($sourceMode, $resolvedSourceName = null, array $sourceAcquisition = [], $fallbackFinalReasonCode = null)
+    {
+        $payload = $this->sourceTelemetryPayload($sourceMode, $resolvedSourceName);
+        $finalReasonCode = $sourceAcquisition['final_reason_code'] ?? $fallbackFinalReasonCode;
+
+        return [
+            'source_name' => $payload['source_name'] ?? null,
+            'source_provider' => $sourceAcquisition['provider'] ?? ($payload['provider'] ?? null),
+            'source_input_file' => $payload['input_file'] ?? null,
+            'source_timeout_seconds' => $sourceAcquisition['timeout_seconds'] ?? ($payload['timeout_seconds'] ?? null),
+            'source_retry_max' => $sourceAcquisition['retry_max'] ?? ($payload['retry_max'] ?? null),
+            'source_attempt_count' => array_key_exists('attempt_count', $sourceAcquisition) ? $sourceAcquisition['attempt_count'] : null,
+            'source_success_after_retry' => array_key_exists('success_after_retry', $sourceAcquisition) ? (bool) $sourceAcquisition['success_after_retry'] : null,
+            'source_retry_exhausted' => array_key_exists('retry_exhausted', $sourceAcquisition) ? (bool) $sourceAcquisition['retry_exhausted'] : null,
+            'source_final_http_status' => array_key_exists('final_http_status', $sourceAcquisition) ? $sourceAcquisition['final_http_status'] : null,
+            'source_final_reason_code' => $finalReasonCode,
+        ];
+    }
 
     private function sourceTelemetryPayload($sourceMode, $resolvedSourceName = null)
     {
