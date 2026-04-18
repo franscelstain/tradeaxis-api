@@ -81,14 +81,11 @@ class EodEvidenceRepository
             $counts[$row->reason_code] = (int) $row->total;
         }
 
-        $eligibility = DB::table('eod_eligibility')
-            ->select('reason_code', DB::raw('COUNT(*) as total'))
-            ->where('trade_date', $tradeDate)
-            ->whereNotNull('reason_code');
-        if ($publicationId !== null) {
-            $eligibility->where('publication_id', $publicationId);
-        }
-        foreach ($eligibility->groupBy('reason_code')->get() as $row) {
+        $eligibility = $this->readableEligibilityQuery($tradeDate, $publicationId)
+            ->select('elig.reason_code', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('elig.reason_code');
+
+        foreach ($eligibility->groupBy('elig.reason_code')->get() as $row) {
             $counts[$row->reason_code] = isset($counts[$row->reason_code]) ? $counts[$row->reason_code] + (int) $row->total : (int) $row->total;
         }
 
@@ -103,16 +100,47 @@ class EodEvidenceRepository
 
     public function exportEligibilityRows($tradeDate, $publicationId = null)
     {
-        $query = DB::table('eod_eligibility')
-            ->select('trade_date', 'ticker_id', 'eligible', 'reason_code')
-            ->where('trade_date', $tradeDate)
-            ->orderBy('ticker_id');
+        return $this->readableEligibilityQuery($tradeDate, $publicationId)
+            ->select('elig.trade_date', 'elig.ticker_id', 'elig.eligible', 'elig.reason_code')
+            ->orderBy('elig.ticker_id')
+            ->get()
+            ->map(function ($row) {
+                return (array) $row;
+            })->all();
+    }
+
+    private function readableEligibilityQuery($tradeDate, $publicationId = null)
+    {
+        $query = DB::table('eod_eligibility as elig')
+            ->join('eod_publications as pub', 'pub.publication_id', '=', 'elig.publication_id')
+            ->join('eod_current_publication_pointer as ptr', function ($join) {
+                $join->on('ptr.trade_date', '=', 'elig.trade_date')
+                    ->on('ptr.publication_id', '=', 'elig.publication_id')
+                    ->on('ptr.run_id', '=', 'pub.run_id')
+                    ->on('ptr.publication_version', '=', 'pub.publication_version');
+            })
+            ->join('eod_runs as runs', 'runs.run_id', '=', 'pub.run_id')
+            ->where('elig.trade_date', $tradeDate)
+            ->whereColumn('pub.trade_date', 'ptr.trade_date')
+            ->whereColumn('pub.trade_date', 'elig.trade_date')
+            ->where('pub.is_current', 1)
+            ->where('pub.seal_state', 'SEALED')
+            ->whereNotNull('ptr.sealed_at')
+            ->whereNotNull('pub.sealed_at')
+            ->whereNotNull('runs.sealed_at')
+            ->whereColumn('runs.trade_date_requested', 'ptr.trade_date')
+            ->where('runs.terminal_status', 'SUCCESS')
+            ->where('runs.publishability_state', 'READABLE')
+            ->where('runs.is_current_publication', 1)
+            ->whereColumn('elig.run_id', 'pub.run_id')
+            ->whereColumn('elig.run_id', 'ptr.run_id')
+            ->whereColumn('elig.run_id', 'runs.run_id');
+
         if ($publicationId !== null) {
-            $query->where('publication_id', $publicationId);
+            $query->where('elig.publication_id', $publicationId);
         }
-        return $query->get()->map(function ($row) {
-            return (array) $row;
-        })->all();
+
+        return $query;
     }
 
     public function exportInvalidBarsRows($tradeDate)
