@@ -224,6 +224,10 @@ class EodPublicationRepository
                 throw new \RuntimeException('Candidate publication is not sealed.');
             }
 
+            if (! $candidate->sealed_at) {
+                throw new \RuntimeException('Candidate publication is missing sealed_at timestamp.');
+            }
+
             $current = DB::table('eod_current_publication_pointer as ptr')
                 ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
                 ->where('ptr.trade_date', $run->trade_date_requested)
@@ -266,6 +270,22 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]
             );
+
+            DB::table('eod_runs')
+                ->where('trade_date_requested', $run->trade_date_requested)
+                ->update([
+                    'is_current_publication' => 0,
+                    'updated_at' => $now,
+                ]);
+
+            DB::table('eod_runs')
+                ->where('run_id', $run->run_id)
+                ->update([
+                    'publication_id' => $candidate->publication_id,
+                    'publication_version' => $candidate->publication_version,
+                    'is_current_publication' => 1,
+                    'updated_at' => $now,
+                ]);
 
             return DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->first();
         });
@@ -316,7 +336,48 @@ class EodPublicationRepository
                 ]
             );
 
+            DB::table('eod_runs')
+                ->where('trade_date_requested', $tradeDate)
+                ->update([
+                    'is_current_publication' => 0,
+                    'updated_at' => $now,
+                ]);
+
+            DB::table('eod_runs')
+                ->where('run_id', $priorRunId ?: $priorPublication->run_id)
+                ->update([
+                    'publication_id' => $priorPublicationId,
+                    'publication_version' => $priorPublication->publication_version,
+                    'is_current_publication' => 1,
+                    'updated_at' => $now,
+                ]);
+
             return DB::table('eod_publications')->where('publication_id', $priorPublicationId)->first();
+        });
+    }
+
+    public function clearCurrentPublicationState($tradeDate)
+    {
+        return DB::transaction(function () use ($tradeDate) {
+            $now = Carbon::now(config('market_data.platform.timezone'));
+
+            DB::table('eod_publications')
+                ->where('trade_date', $tradeDate)
+                ->update([
+                    'is_current' => 0,
+                    'updated_at' => $now,
+                ]);
+
+            DB::table('eod_current_publication_pointer')
+                ->where('trade_date', $tradeDate)
+                ->delete();
+
+            DB::table('eod_runs')
+                ->where('trade_date_requested', $tradeDate)
+                ->update([
+                    'is_current_publication' => 0,
+                    'updated_at' => $now,
+                ]);
         });
     }
 

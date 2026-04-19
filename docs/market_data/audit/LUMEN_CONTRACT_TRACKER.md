@@ -125,3 +125,75 @@ Status: DONE
 SESSION STATUS: DONE
 WRITE-SIDE PIPELINE: HARDENED
 READ-SIDE: ENFORCED
+
+
+## Consumer-surface-sweep execution
+
+Status: PARTIAL
+
+### Contract status update from this session
+
+1. **pointer enforcement** → DONE for run/replay evidence surfaces touched here
+   - replay evidence export no longer accepts ambiguous selector resolution; exact `trade_date` is mandatory.
+
+2. **anti raw bypass** → DONE for invalid-bars evidence export
+   - `eod_invalid_bars` evidence export is now scoped to the owning `run_id`, not just same-day raw rows.
+
+3. **anti MAX(date)** → DONE for replay evidence export path
+   - latest-row fallback via `orderByDesc('trade_date')->first()` is no longer reachable from consumer replay evidence export.
+
+4. **fail-safe consumption** → DONE for replay evidence selector
+   - command-level fail-fast guard now rejects replay evidence export without explicit `--trade_date`.
+
+### Concrete proof points
+- `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
+- `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+- `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`
+- `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+### Remaining work for full sweep completion
+- complete inventory/classification for any remaining downstream consumer surfaces outside evidence/replay/snapshot batch
+- run local PHPUnit/regression in vendor-backed environment and record final evidence
+
+
+## Publication-current-pointer readiness execution
+
+Status: PARTIAL
+
+### Contract status
+
+1. **finalize enforcement** → PARTIAL
+   - success-path finalize now must pass strict pointer-resolved current-publication validation before its readable claim is trusted;
+   - full runtime proof still pending because vendor-backed local test run was not available inside uploaded ZIP.
+
+2. **publication sync** → DONE in code patch
+   - publication switch now rejects sealed-state without `sealed_at`;
+   - publication current demotion/restore paths are explicit instead of relying on later service steps.
+
+3. **pointer enforcement** → DONE in code patch
+   - success-path mismatch now fails explicit and clears invalid pointer/current state when no safe baseline exists.
+
+4. **run/publication/pointer consistency** → DONE in code patch
+   - promotion and restore now sync `eod_runs.publication_id`, `publication_version`, and `is_current_publication` in the same transaction as publication/pointer writes.
+
+5. **fail-safe behavior** → DONE in code patch
+   - no-prior-baseline mismatch no longer leaves ambiguous current pointer/current publication behind.
+
+### Files touched
+
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+
+### Evidence status
+
+- syntax validation: DONE
+- targeted PHPUnit/runtime proof: PARTIAL (missing `vendor/bin/phpunit` inside uploaded ZIP)
+
+
+### Follow-up regression fix
+
+- Fixed success-path strict pointer validation so it validates against the **resolved current publication contract**, not always the newly created candidate publication.
+- This preserves the documented correction behavior for **unchanged artifacts**: correction request is cancelled, prior current publication remains current, and run stays `SUCCESS` / `READABLE`.

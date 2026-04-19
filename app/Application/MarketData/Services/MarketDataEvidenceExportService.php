@@ -49,7 +49,7 @@ class MarketDataEvidenceExportService
         $eventSummary = ['run_id' => (int) $this->field($run, 'run_id'), 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
         $dominantReasonCodes = $this->evidence->dominantReasonCodes($run->run_id, $this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
         $eligibilityRows = $this->evidence->exportEligibilityRows($this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
-        $invalidBarsRows = $this->evidence->exportInvalidBarsRows($run->trade_date_requested);
+        $invalidBarsRows = $this->evidence->exportInvalidBarsRows($run->trade_date_requested, $run->run_id);
         $anomalyReport = $this->buildAnomalyReport($runSummary, $dominantReasonCodes, $manifest);
 
         $payload = [
@@ -179,6 +179,10 @@ class MarketDataEvidenceExportService
 
     public function exportReplayEvidence($replayId, $tradeDate = null, $outputDir = null)
     {
+        if ($tradeDate === null || $tradeDate === '') {
+            throw new \RuntimeException('Replay evidence export requires explicit trade_date; latest-row resolution is not allowed on consumer read path.');
+        }
+
         $metric = $this->evidence->findReplayMetric($replayId, $tradeDate);
         if (! $metric) {
             throw new \RuntimeException('Replay result not found for evidence export.');

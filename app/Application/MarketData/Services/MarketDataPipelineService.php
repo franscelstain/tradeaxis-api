@@ -579,30 +579,44 @@ class MarketDataPipelineService
                     'final_reason_code' => $finalizeReasonCode,
                 ]);
 
+                $resolvedPublicationId = $outcome['current_publication_id'];
+                $resolvedPublicationVersion = $outcome['current_publication_version'];
+
                 /*
-                * Strict post-finalize validation hanya setelah run benar-benar finalized.
-                * Ini yang menutup family post_switch_resolution_mismatch tanpa membunuh
-                * correction publish normal.
+                * Strict post-finalize validation wajib berlaku untuk semua success path yang
+                * mengklaim readable current publication, bukan correction-only.
                 */
                 if (
-                    $correction
-                    && ! $unchangedCorrection
-                    && $outcome['terminal_status'] === 'SUCCESS'
-                    && $outcome['correction_outcome'] === 'PUBLISHED'
+                    $outcome['terminal_status'] === 'SUCCESS'
+                    && $outcome['publishability_state'] === 'READABLE'
+                    && $resolvedPublicationId !== null
                 ) {
                     $resolved = $this->publications->findPointerResolvedPublicationForTradeDate(
                         $input->requestedDate
                     );
 
                     $strictMismatch = false;
+                    $expectedPublicationId = (int) $resolvedPublicationId;
+                    $expectedPublicationVersion = $resolvedPublicationVersion !== null
+                        ? (int) $resolvedPublicationVersion
+                        : null;
+                    $expectedRunId = $candidateCurrent && isset($candidateCurrent->run_id)
+                        ? (int) $candidateCurrent->run_id
+                        : ($unchangedCorrection && $priorCurrent ? (int) $priorCurrent->run_id : (int) $run->run_id);
 
                     if (! $resolved) {
                         $strictMismatch = true;
-                    } elseif ((int) $resolved->publication_id !== (int) $candidatePublication->publication_id) {
+                    } elseif ((int) $resolved->publication_id !== $expectedPublicationId) {
                         $strictMismatch = true;
                     } elseif (
-                        isset($resolved->publication_version) &&
-                        (int) $resolved->publication_version !== (int) $candidatePublication->publication_version
+                        $expectedPublicationVersion !== null
+                        && isset($resolved->publication_version)
+                        && (int) $resolved->publication_version !== $expectedPublicationVersion
+                    ) {
+                        $strictMismatch = true;
+                    } elseif (
+                        isset($resolved->run_id)
+                        && (int) $resolved->run_id !== $expectedRunId
                     ) {
                         $strictMismatch = true;
                     }
@@ -621,6 +635,10 @@ class MarketDataPipelineService
                             $this->runs->syncCurrentPublicationMirror(
                                 $input->requestedDate,
                                 (int) $priorCurrent->run_id
+                            );
+                        } else {
+                            $this->publications->clearCurrentPublicationState(
+                                $input->requestedDate
                             );
                         }
 
@@ -645,9 +663,6 @@ class MarketDataPipelineService
                         $candidateCurrent = $resolved;
                     }
                 }
-
-                $resolvedPublicationId = $outcome['current_publication_id'];
-                $resolvedPublicationVersion = $outcome['current_publication_version'];
 
                 if (
                     $resolvedPublicationId &&

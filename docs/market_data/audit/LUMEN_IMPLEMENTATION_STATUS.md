@@ -165,3 +165,139 @@ Added/updated tests to prove:
 SESSION STATUS: DONE
 WRITE-SIDE PIPELINE: HARDENED
 READ-SIDE: ENFORCED
+
+
+## Consumer-surface-sweep execution
+
+Status: PARTIAL
+
+### Consumer inventory completed in this session
+
+Consumer read surfaces traced to real query/table level:
+- `app/Console/Commands/MarketData/ExportEvidenceCommand.php` → replay evidence export selector
+- `app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → run / replay evidence read service
+- `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php` → replay metric lookup + invalid bars export query
+- `app/Console/Commands/MarketData/CaptureSessionSnapshotCommand.php` → session snapshot consumer entry
+- `app/Application/MarketData/Services/SessionSnapshotService.php` → readable publication + scope resolution
+- `app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php` → pointer-anchored eligibility scope read
+- `app/Console/Commands/MarketData/ReplayBackfillCommand.php` → replay consumer batch entry
+- `app/Application/MarketData/Services/ReplayBackfillService.php` → current readable publication per trade date
+- `app/Console/Commands/MarketData/VerifyReplayCommand.php` → replay verify entry
+- `app/Application/MarketData/Services/ReplayVerificationService.php` → owning-run readable publication enforcement
+
+### Concrete violations fixed in this session
+
+1. **anti MAX(date) / latest manual fix on replay evidence export**
+   - Before this session, replay evidence export still allowed `--replay_id` without `--trade_date`.
+   - `MarketDataEvidenceExportService::exportReplayEvidence()` delegated to `EodEvidenceRepository::findReplayMetric($replayId, null)`.
+   - `EodEvidenceRepository::findReplayMetric()` resolved the row with `orderByDesc('trade_date')->first()` when `trade_date` was omitted.
+   - This was a real consumer violation because replay evidence could read the latest row instead of an explicit trade-date contract.
+
+   Fixed by:
+   - `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
+   - `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+   - replay evidence export now **requires explicit `--trade_date`** and fails fast otherwise.
+
+2. **anti raw-table leakage fix on invalid bars evidence export**
+   - Before this session, `EodEvidenceRepository::exportInvalidBarsRows()` read `eod_invalid_bars` by `trade_date` only.
+   - Schema proves `eod_invalid_bars` also stores `run_id`, so same-date rows from another run could leak into run evidence export.
+   - This was a real consumer violation because the evidence bundle for one run could include foreign raw invalid-bar rows from another run.
+
+   Fixed by:
+   - `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`
+   - `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+   - invalid bars export is now scoped by **`trade_date` + `run_id`**.
+
+### Files changed in this session
+- `app/Console/Commands/MarketData/ExportEvidenceCommand.php`
+- `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+- `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`
+- `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+### Test proof status
+- `php -l` syntax validation on all changed PHP files → PASS
+- PHPUnit in this container → **not runnable** because uploaded ZIP does not contain `vendor/` / `vendor/bin/phpunit`
+
+### Required local validation
+Run locally in the real project root:
+```bash
+vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php
+vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter evidence_export
+```
+Expected result:
+- replay evidence export without `--trade_date` must fail fast
+- replay evidence export with `--trade_date` must still pass
+- run evidence export must request invalid bars rows with the owning `run_id`
+
+### Session assessment
+- consumer inventory sweep → PARTIAL
+- read-path trace per consumer → PARTIAL but grounded for evidence / replay / snapshot surfaces touched here
+- violation hardening batch → DONE for the violations found above
+- regression proof → PARTIAL pending local PHPUnit with vendor present
+
+
+## Publication-current-pointer readiness execution
+
+Status: PARTIAL
+
+### Root cause readiness issue proved in code
+
+- success-path finalize previously promoted candidate publication and current pointer before run-final state was revalidated through the same strict pointer-resolved consumer contract;
+- strict post-finalize pointer validation was only applied on changed correction publish path, not on ordinary readable success path;
+- publication/pointer switch and `eod_runs.is_current_publication` mirror sync were split across repository/service steps, so write-path could leave partial current-state evidence unless every later step completed perfectly;
+- when post-switch mismatch happened without a prior readable baseline, code had no explicit cleanup path to clear invalid current pointer/current flag state.
+
+### Files changed
+
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+
+### Patch performed
+
+1. **success-path strict validation expanded**
+   - finalize now re-checks `findPointerResolvedPublicationForTradeDate(...)` for every `SUCCESS + READABLE` outcome that claims a current publication, not only correction publish flow.
+
+2. **explicit invalid-current cleanup added**
+   - if post-finalize resolver mismatch is detected with no prior readable current baseline, repository now clears `eod_publications.is_current`, removes `eod_current_publication_pointer`, and zeroes `eod_runs.is_current_publication` for that trade date.
+
+3. **promotion/restore transaction sync hardened**
+   - `promoteCandidateToCurrent(...)` now also syncs `eod_runs.publication_id`, `publication_version`, and `is_current_publication` inside the same DB transaction as publication/pointer switch.
+   - `restorePriorCurrentPublication(...)` now restores run mirror/linkage in the same DB transaction.
+
+4. **sealed candidate enforcement tightened**
+   - promotion now rejects candidate publication that claims `SEALED` but has missing `sealed_at`.
+
+### Test proof added in codebase
+
+- success-path integration proof now asserts repository consumer resolver can read the newly promoted current publication for a normal readable run;
+- new integration proof covers post-switch mismatch on ordinary success path and asserts finalize downgrades to `HELD` / `NOT_READABLE` plus clears invalid current pointer when there is no safe baseline;
+- repository integration proof now asserts promotion transaction also syncs `eod_runs` current mirror/linkage.
+
+### Validation status
+
+- local syntax validation completed:
+  - `php -l app/Application/MarketData/Services/MarketDataPipelineService.php`
+  - `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
+  - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+- targeted PHPUnit could not be executed in this ZIP because `vendor/bin/phpunit` is absent from the uploaded source bundle.
+
+### Final status
+
+- write-path hardening for current publication/pointer readiness: PARTIAL
+- code patch: DONE
+- runtime/phpunit proof from this session: BLOCKED by missing vendor
+
+### Remaining work
+
+- run targeted PHPUnit in local full environment;
+- run artisan/manual DB proof against a real finalize path to confirm at least one readable current publication resolves through repository consumer query.
+
+
+### Follow-up regression fix
+
+- Fixed success-path strict pointer validation so it validates against the **resolved current publication contract**, not always the newly created candidate publication.
+- This preserves the documented correction behavior for **unchanged artifacts**: correction request is cancelled, prior current publication remains current, and run stays `SUCCESS` / `READABLE`.

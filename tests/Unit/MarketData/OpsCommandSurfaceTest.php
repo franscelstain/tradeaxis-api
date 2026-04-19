@@ -632,6 +632,26 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('files=correction_evidence.json', $display);
     }
 
+    public function test_evidence_export_command_requires_trade_date_for_replay_selector(): void
+    {
+        $service = m::mock(MarketDataEvidenceExportService::class);
+        $service->shouldNotReceive('exportReplayEvidence');
+
+        $this->app->instance(MarketDataEvidenceExportService::class, $service);
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--replay_id' => 3001,
+            '--output_dir' => '/tmp/replay-evidence',
+        ]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('Replay evidence export requires --trade_date; latest-row resolution is not allowed.', $tester->getDisplay());
+    }
+
     public function test_evidence_export_command_exports_replay_evidence(): void
     {
         $service = m::mock(MarketDataEvidenceExportService::class);

@@ -103,6 +103,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertNotNull($pointer);
         $this->assertSame((int) $publication->publication_id, (int) $pointer->publication_id);
 
+        $repo = new EodPublicationRepository();
+        $resolvedCurrent = $repo->findCurrentPublicationForTradeDate('2026-03-20');
+        $resolvedReadableForRun = $repo->findReadableCurrentPublicationForRun($run->run_id, '2026-03-20');
+
+        $this->assertNotNull($resolvedCurrent);
+        $this->assertNotNull($resolvedReadableForRun);
+        $this->assertSame((int) $publication->publication_id, (int) $resolvedCurrent->publication_id);
+        $this->assertSame((int) $publication->publication_id, (int) $resolvedReadableForRun->publication_id);
+
         $this->assertSame(1, DB::table('eod_bars')->where('trade_date', '2026-03-20')->count());
         $this->assertSame(1, DB::table('eod_indicators')->where('trade_date', '2026-03-20')->count());
         $this->assertSame(1, DB::table('eod_eligibility')->where('trade_date', '2026-03-20')->where('eligible', 1)->count());
@@ -117,6 +126,44 @@ class MarketDataPipelineIntegrationTest extends TestCase
                 ->where('event_type', 'RUN_FINALIZED')
                 ->exists()
         );
+    }
+
+
+    public function test_run_daily_success_path_with_post_switch_resolution_mismatch_holds_and_clears_invalid_current_pointer(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $run = $this->makePipelineWithPublications(new PostSwitchResolutionMismatchPublicationRepository())->runDaily('2026-03-20', 'manual_file');
+
+        $this->assertSame('HELD', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame('RUN_LOCK_CONFLICT', $run->final_reason_code);
+        $this->assertNull($run->trade_date_effective);
+        $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $this->assertNotNull($publication);
+        $this->assertSame(0, (int) $publication->is_current);
+
+        $currentRun = DB::table('eod_runs')->where('run_id', $run->run_id)->first();
+        $this->assertSame(0, (int) $currentRun->is_current_publication);
+
+        $repo = new EodPublicationRepository();
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findReadableCurrentPublicationForRun($run->run_id, '2026-03-20'));
     }
 
 

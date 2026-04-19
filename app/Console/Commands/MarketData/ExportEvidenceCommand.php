@@ -34,6 +34,12 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
             return 1;
         }
 
+        if ($replayId && ! $this->option('trade_date')) {
+            $this->error('Replay evidence export requires --trade_date; latest-row resolution is not allowed.');
+
+            return 1;
+        }
+
         try {
             $service = app(MarketDataEvidenceExportService::class);
             if ($runId) {

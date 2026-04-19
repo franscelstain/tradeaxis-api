@@ -302,6 +302,14 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->assertSame('SUCCESS', $current->run_terminal_status);
         $this->assertSame('READABLE', $current->run_publishability_state);
 
+        $newRun = DB::table('eod_runs')->where('run_id', 27)->first();
+        $this->assertSame((int) $candidate->publication_id, (int) $newRun->publication_id);
+        $this->assertSame((int) $candidate->publication_version, (int) $newRun->publication_version);
+        $this->assertSame(1, (int) $newRun->is_current_publication);
+
+        $oldRun = DB::table('eod_runs')->where('run_id', 25)->first();
+        $this->assertSame(0, (int) $oldRun->is_current_publication);
+
         $old = DB::table('eod_publications')->where('publication_id', 10)->first();
         $this->assertNotNull($old);
         $this->assertSame(0, (int) $old->is_current);

@@ -130,7 +130,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $evidence->shouldReceive('exportEligibilityRows')->once()->andReturn([
             ['trade_date' => '2026-04-21', 'ticker_id' => 101, 'eligible' => 1, 'reason_code' => null],
         ]);
-        $evidence->shouldReceive('exportInvalidBarsRows')->once()->andReturn([
+        $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-21', 8124)->andReturn([
             ['trade_date' => '2026-04-21', 'ticker_id' => 999, 'source' => 'LOCAL_FILE', 'source_row_ref' => 'r1', 'invalid_reason_code' => 'BAR_NON_POSITIVE_PRICE'],
         ]);
 
@@ -186,6 +186,22 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(2, $result['summary']['source_attempt_count']);
     }
 
+
+    public function test_export_replay_evidence_requires_explicit_trade_date()
+    {
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+
+        $evidence->shouldNotReceive('findReplayMetric');
+
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Replay evidence export requires explicit trade_date; latest-row resolution is not allowed on consumer read path.');
+
+        $service->exportReplayEvidence(3001, null, sys_get_temp_dir().'/market_data_evidence_replay_'.uniqid());
+    }
 
     public function test_export_run_evidence_fails_when_run_is_not_readable()
     {
