@@ -437,16 +437,16 @@ class ReplayVerificationService
 
     private function resolvePublicationForRun($run)
     {
-        $publication = $this->evidence->findPublicationForRun($run->run_id);
-        if ($publication) {
-            return $publication;
+        if ($run->terminal_status !== 'SUCCESS' || $run->publishability_state !== 'READABLE') {
+            throw new \RuntimeException('Replay verification requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
         }
 
-        if ($run->trade_date_effective) {
-            return $this->publications->findPointerResolvedPublicationForTradeDate($run->trade_date_effective);
+        $publication = $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
+        if (! $publication) {
+            throw new \RuntimeException('Readable current publication not found for replay verification.');
         }
 
-        return null;
+        return $publication;
     }
 
     private function readJsonFile($path)

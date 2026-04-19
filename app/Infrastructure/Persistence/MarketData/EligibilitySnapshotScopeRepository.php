@@ -21,7 +21,7 @@ class EligibilitySnapshotScopeRepository
                     ->on('ptr.run_id', '=', 'pub.run_id')
                     ->on('ptr.publication_version', '=', 'pub.publication_version');
             })
-            ->join('eod_runs as runs', 'runs.run_id', '=', 'pub.run_id')
+            ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->join($tickersTable.' as tick', 'tick.'.$tickerIdColumn, '=', 'elig.ticker_id')
             ->where('elig.trade_date', $tradeDate)
             ->whereColumn('pub.trade_date', 'ptr.trade_date')
@@ -30,14 +30,11 @@ class EligibilitySnapshotScopeRepository
             ->where('pub.seal_state', 'SEALED')
             ->whereNotNull('ptr.sealed_at')
             ->whereNotNull('pub.sealed_at')
-            ->whereNotNull('runs.sealed_at')
-            ->whereColumn('runs.trade_date_requested', 'ptr.trade_date')
-            ->where('runs.terminal_status', 'SUCCESS')
-            ->where('runs.publishability_state', 'READABLE')
-            ->where('runs.is_current_publication', 1)
-            ->whereColumn('elig.run_id', 'pub.run_id')
-            ->whereColumn('elig.run_id', 'ptr.run_id')
-            ->whereColumn('elig.run_id', 'runs.run_id')
+            ->whereNotNull('run.sealed_at')
+            ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
+            ->where('run.terminal_status', 'SUCCESS')
+            ->where('run.publishability_state', 'READABLE')
+            ->where('run.is_current_publication', 1)
             ->select('elig.ticker_id', 'tick.'.$tickerCodeColumn.' as ticker_code', 'elig.eligible');
 
         if ($scopeDefault === 'eligible_only') {

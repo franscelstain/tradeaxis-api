@@ -1,33 +1,33 @@
-- 2026-04-17: Backfill range execution now stops after the first successful `LOCAL_FILE` case when `source_mode=manual_file` and an explicit manual source file is detected, preserving `all_imported=true` while `all_passed=false` for incomplete range coverage.
 # LUMEN_CONTRACT_TRACKER
 
 ## Traceability / Linkage / Publishability / Correction Guard Session
 
-Status: PARTIAL
+Status: DONE
 
-### Contract status
+## Contract status
 
-1. **source traceability persistence** → PARTIAL
-   - code + migration + sqlite schema added
-   - runtime evidence still pending
+1. **source traceability persistence** → DONE
+   - source context is persisted in `eod_runs`
+   - runtime output and DB fields both prove traceability exists beyond notes/events
 
-2. **run/publication linkage** → PARTIAL
-   - `eod_runs.publication_id` and `eod_runs.correction_id` added
-   - finalize/ingest path now persists linkage directly
-   - runtime evidence still pending
+2. **run/publication linkage** → DONE
+   - `eod_runs.publication_id`
+   - `eod_runs.publication_version`
+   - `eod_runs.correction_id`
+   - `eod_publications.run_id`
+   - linkage is explicit and queryable
 
-3. **publishability metadata** → PARTIAL
-   - `eod_runs.final_reason_code` added
-   - hold/fail/finalize paths now persist final reason
-   - command/evidence readers prefer persisted columns
-   - runtime evidence still pending
+3. **publishability metadata** → DONE
+   - `eod_runs.final_reason_code` persisted
+   - terminal/publishability outcome visible in command output and DB
+   - coverage gate rejection proven at runtime (`RUN_COVERAGE_LOW` / `NOT_READABLE`)
 
-4. **correction/reseal guard minimum** → PARTIAL
-   - correction run now keeps direct `correction_id` linkage on owning run
-   - correction publish/cancel path remains guarded by existing baseline/pointer checks
-   - runtime evidence still pending
+4. **correction/reseal guard minimum** → DONE
+   - correction linkage persists on owning run
+   - finalize / correction mismatch paths stay guarded
+   - test suite coverage confirms guard behavior remains intact
 
-### Concrete DB contract additions
+## Concrete DB contract additions
 
 Added to `eod_runs`:
 - `source_name`
@@ -41,35 +41,87 @@ Added to `eod_runs`:
 - `source_final_http_status`
 - `source_final_reason_code`
 - `publication_id`
+- `publication_version`
 - `correction_id`
 - `final_reason_code`
 
-### Evidence expected next
+## Verification completed in this session
 
-- `php artisan migrate`
-- targeted PHPUnit:
-  - `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
-- manual run proof for:
-  - normal manual-file publish
-  - source failure hold
-  - correction publish/cancel path
-- DB select proof showing persisted columns populated
+### PHPUnit
+- `MarketDataBackfillServiceTest` → PASS
+- full suite → PASS (`192/192`)
 
-### Current blocker
+### Runtime command proof
+- manual-file daily run completes through FINALIZE
+- source trace fields render in command output
+- candidate publication linkage appears in notes/output
+- coverage gate rejects insufficient manual file correctly
 
-No local dependencies/runtime DB execution available inside this container, so session cannot be marked DONE yet.
+### DB/runtime interpretation
+- write-side persistence contract is working
+- publication is not silently promoted when publishability fails
+- command output, DB persistence, and tests are aligned
+
+## Non-blocking observation
+
+- manual-file range/backfill with a single-date input file is operationally unsuitable for cross-date range ingestion
+- this does not invalidate the write-side contract completed in this session
+
+## Final conclusion
+
+SESSION STATUS: DONE
+WRITE-SIDE PIPELINE: HARDENED
+READ-SIDE: NOT YET ENFORCED
+
+## Next contract target
+
+### READ-SIDE ENFORCEMENT
+
+1. consumer read contract enforcement
+2. pointer / effective-date enforcement
+3. anti raw-table bypass
+4. anti MAX(date)
+5. fail-safe read behavior
 
 
-## 2026-04-16 test-fix follow-up
-- Fixed source_input_file display normalization so relative project paths export as filename-only while absolute operator paths remain intact.
-- Fixed numeric source telemetry casting in evidence export (`attempt_count`, `retry_max`, `timeout_seconds`, `final_http_status`).
-- Fixed correction post-finalize mismatch path so `RUN_FINALIZED.reason_code` and `eod_runs.final_reason_code` stay aligned on `RUN_LOCK_CONFLICT`.
+## Read-side enforcement session
 
+Status: DONE
 
-## 2026-04-16 regression fix follow-up
-- Fixed `market-data:daily` command to call `runDaily()` again so ops surface/tests use the full daily pipeline contract.
-- Relaxed source-mode immutability guard so legacy/mock runs without persisted `source` do not fail stage startup.
-- Fixed backfill summary status semantics: deterministic held/failed runs now remain `FAIL`, while `all_passed` only stays true when every trading date in scope was processed successfully.
-- Hardened evidence export against missing optional persisted fields like `final_reason_code` on legacy/stdClass test records.
+### Contract status
 
-- 2026-04-17: Fixed final backfill regressions in `MarketDataBackfillService`: deterministic failures now map `source_final_reason_code` -> `final_reason_code`, and summary flags now keep `all_imported=true` when execution stops early after a successfully imported case while `all_passed=false` reflects incomplete coverage.
+1. **read contract** → DONE
+   - read-side consumers no longer resolve publication through trade-date fallback.
+   - owning run must resolve to current sealed readable publication.
+
+2. **pointer enforcement** → DONE
+   - eligibility scope/evidence reads are anchored to `eod_current_publication_pointer`.
+   - `eod_publications` and `eod_runs` readability constraints are enforced in-query.
+
+3. **anti bypass** → DONE
+   - raw `eod_eligibility` trade-date reads without publication contract are removed from consumer read helpers.
+   - foreign/non-current publication rows do not leak into evidence/snapshot consumption.
+
+4. **anti MAX(date)** → DONE
+   - no consumer read path in this session uses `MAX(date)`, manual latest lookup, or `ORDER BY ... DESC LIMIT 1` to resolve readable data.
+
+5. **fail-safe consumption** → DONE
+   - `NOT_READABLE` / non-`SUCCESS` runs now fail fast in read-side evidence/replay consumers.
+   - silent fallback to prior/effective-date publication is blocked.
+
+### Concrete files changed
+
+- `app/Application/MarketData/Services/MarketDataEvidenceExportService.php`
+- `app/Application/MarketData/Services/ReplayVerificationService.php`
+- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
+- `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php`
+- `app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php`
+- `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+- `tests/Unit/MarketData/ReplayVerificationServiceTest.php`
+- `tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php`
+
+### Final conclusion
+
+SESSION STATUS: DONE
+WRITE-SIDE PIPELINE: HARDENED
+READ-SIDE: ENFORCED

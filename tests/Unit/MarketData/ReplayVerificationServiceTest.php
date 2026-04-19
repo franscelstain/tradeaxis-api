@@ -74,6 +74,7 @@ class ReplayVerificationServiceTest extends TestCase
             'trade_date_effective' => '2026-03-20',
             'source' => 'manual_file',
             'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
             'config_version' => 'v1',
             'publication_version' => 4,
             'coverage_universe_count' => 10,
@@ -110,7 +111,7 @@ class ReplayVerificationServiceTest extends TestCase
         $replays = m::mock(ReplayResultRepository::class);
 
         $evidence->shouldReceive('findRunById')->once()->with(91)->andReturn($run);
-        $evidence->shouldReceive('findPublicationForRun')->once()->with(91)->andReturn($publication);
+        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(91, '2026-03-20')->andReturn($publication);
         $evidence->shouldReceive('dominantReasonCodes')->once()->with(91, '2026-03-20', 44)->andReturn([
             ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
         ]);
@@ -158,7 +159,7 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertSame('fixture_replay_unchanged_input', $result['fixture_family']);
     }
 
-    public function test_verify_replay_marks_expected_degrade_when_fixture_and_actual_hold_match()
+    public function test_verify_replay_fails_when_run_is_not_readable()
     {
         $fixtureDir = $this->makeFixture([
             'manifest' => [
@@ -167,34 +168,12 @@ class ReplayVerificationServiceTest extends TestCase
                 'contract_areas' => ['replay'],
                 'files' => [
                     'expected/expected_replay_result.json',
-                    'expected/expected_run_summary.json',
-                    'expected/expected_reason_code_counts.json',
                 ],
-                'assertion_layers' => ['run', 'replay'],
+                'assertion_layers' => ['replay'],
             ],
             'expected/expected_replay_result.json' => [
                 'comparison_result' => 'EXPECTED_DEGRADE',
-                'expected_status' => 'HELD',
-                'expected_trade_date_effective' => '2026-03-19',
-                'expected_seal_state' => 'UNSEALED',
-                'comparison_note' => 'coverage intentionally degraded',
-                'coverage_universe_count' => 10,
-                'coverage_available_count' => 7,
-                'coverage_missing_count' => 3,
-                'coverage_ratio' => '0.7200',
-                'coverage_min_threshold' => '0.9800',
-                'coverage_gate_state' => 'FAIL',
-                'coverage_threshold_mode' => 'MIN_RATIO',
-                'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
-                'coverage_contract_version' => 'coverage_gate_v1',
-                'coverage_missing_sample' => ['BBCA', 'BMRI', 'TLKM'],
             ],
-            'expected/expected_run_summary.json' => [
-                'warning_count' => 5,
-                'hard_reject_count' => 2,
-                'eligible_count' => 0,
-            ],
-            'expected/expected_reason_code_counts.json' => [],
         ]);
 
         $run = (object) [
@@ -203,29 +182,7 @@ class ReplayVerificationServiceTest extends TestCase
             'trade_date_effective' => '2026-03-19',
             'source' => 'api',
             'terminal_status' => 'HELD',
-            'config_version' => 'v1',
-            'publication_version' => null,
-            'coverage_universe_count' => 10,
-            'coverage_available_count' => 7,
-            'coverage_missing_count' => 3,
-            'coverage_ratio' => '0.7200',
-            'coverage_min_threshold' => '0.9800',
-            'coverage_gate_state' => 'FAIL',
-            'coverage_threshold_mode' => 'MIN_RATIO',
-            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
-            'coverage_contract_version' => 'coverage_gate_v1',
-            'coverage_missing_sample_json' => json_encode(['BBCA', 'BMRI', 'TLKM']),
-            'bars_rows_written' => 7,
-            'indicators_rows_written' => 5,
-            'eligibility_rows_written' => 10,
-            'invalid_bar_count' => 3,
-            'invalid_indicator_count' => 5,
-            'warning_count' => 5,
-            'hard_reject_count' => 2,
-            'bars_batch_hash' => 'X1',
-            'indicators_batch_hash' => 'Y1',
-            'eligibility_batch_hash' => 'Z1',
-            'sealed_at' => null,
+            'publishability_state' => 'NOT_READABLE',
         ];
 
         $evidence = m::mock(EodEvidenceRepository::class);
@@ -233,28 +190,13 @@ class ReplayVerificationServiceTest extends TestCase
         $replays = m::mock(ReplayResultRepository::class);
 
         $evidence->shouldReceive('findRunById')->once()->with(92)->andReturn($run);
-        $evidence->shouldReceive('findPublicationForRun')->once()->with(92)->andReturn(null);
-        $publications->shouldReceive('findPointerResolvedPublicationForTradeDate')->once()->with('2026-03-19')->andReturn(null);
-        $evidence->shouldReceive('dominantReasonCodes')->once()->with(92, '2026-03-19', null)->andReturn([]);
-        $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-19', null)->andReturn([
-            ['eligible' => 0],
-            ['eligible' => 0],
-        ]);
-        $replays->shouldReceive('nextReplayId')->once()->andReturn(3003);
-        $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
-            return $metric['comparison_result'] === 'EXPECTED_DEGRADE'
-                && $metric['status'] === 'HELD'
-                && $metric['expected_seal_state'] === 'UNSEALED'
-                && $metric['expected_coverage_gate_state'] === 'FAIL'
-                && $metric['coverage_missing_sample_json'] === json_encode(['BBCA', 'BMRI', 'TLKM'], JSON_UNESCAPED_SLASHES);
-        }));
-        $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3003, '2026-03-20', []);
 
         $service = new ReplayVerificationService($evidence, $publications, $replays);
-        $result = $service->verifyRunAgainstFixture(92, $fixtureDir);
 
-        $this->assertSame('EXPECTED_DEGRADE', $result['comparison_result']);
-        $this->assertSame('none', $result['artifact_changed_scope']);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Replay verification requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
+
+        $service->verifyRunAgainstFixture(92, $fixtureDir);
     }
 
     public function test_verify_replay_marks_mismatch_when_reason_code_counts_diverge()
@@ -297,6 +239,7 @@ class ReplayVerificationServiceTest extends TestCase
             'trade_date_effective' => '2026-03-20',
             'source' => 'manual_file',
             'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
             'config_version' => 'v1',
             'publication_version' => 4,
             'coverage_universe_count' => 10,
@@ -333,7 +276,7 @@ class ReplayVerificationServiceTest extends TestCase
         $replays = m::mock(ReplayResultRepository::class);
 
         $evidence->shouldReceive('findRunById')->once()->with(93)->andReturn($run);
-        $evidence->shouldReceive('findPublicationForRun')->once()->with(93)->andReturn($publication);
+        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(93, '2026-03-20')->andReturn($publication);
         $evidence->shouldReceive('dominantReasonCodes')->once()->with(93, '2026-03-20', 45)->andReturn([
             ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
         ]);
@@ -396,6 +339,7 @@ class ReplayVerificationServiceTest extends TestCase
             'trade_date_effective' => '2026-03-20',
             'source' => 'manual_file',
             'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
             'config_version' => 'v1',
             'publication_version' => 4,
             'coverage_universe_count' => 10,
@@ -432,7 +376,7 @@ class ReplayVerificationServiceTest extends TestCase
         $replays = m::mock(ReplayResultRepository::class);
 
         $evidence->shouldReceive('findRunById')->once()->with(94)->andReturn($run);
-        $evidence->shouldReceive('findPublicationForRun')->once()->with(94)->andReturn($publication);
+        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(94, '2026-03-20')->andReturn($publication);
         $evidence->shouldReceive('dominantReasonCodes')->once()->with(94, '2026-03-20', 46)->andReturn([]);
         $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-20', 46)->andReturn([
             ['eligible' => 1],

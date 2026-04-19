@@ -237,19 +237,13 @@ class MarketDataEvidenceExportService
 
     private function resolvePublicationForRun($run)
     {
-        $publication = $this->evidence->findPublicationForRun($run->run_id);
-        if ($run->terminal_status === 'SUCCESS' && $run->publishability_state === 'READABLE') {
-            $current = $this->publications->findCurrentPublicationForTradeDate($run->trade_date_requested);
-            if ($current && (int) $current->run_id === (int) $run->run_id) {
-                return $current;
-            }
+        if ($run->terminal_status !== 'SUCCESS' || $run->publishability_state !== 'READABLE') {
+            throw new \RuntimeException('Run evidence export requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
         }
 
-        if ($run->trade_date_effective) {
-            $fallback = $this->publications->findCurrentPublicationForTradeDate($run->trade_date_effective);
-            if ($fallback) {
-                return $fallback;
-            }
+        $publication = $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
+        if (! $publication) {
+            throw new \RuntimeException('Readable current publication not found for run evidence export.');
         }
 
         return $publication;
