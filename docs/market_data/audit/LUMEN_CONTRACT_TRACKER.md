@@ -197,3 +197,12 @@ Status: PARTIAL
 
 - Fixed success-path strict pointer validation so it validates against the **resolved current publication contract**, not always the newly created candidate publication.
 - This preserves the documented correction behavior for **unchanged artifacts**: correction request is cancelled, prior current publication remains current, and run stays `SUCCESS` / `READABLE`.
+
+
+## Contract Tracker Update — 2026-04-19 Coverage Boundary Hardening
+
+- **Coverage gate enforcement boundary:** preserved as blocking on promote/finalize path only.
+- **Manual file intent classification:** `market-data:daily` is treated as `import_only`; `market-data:promote` is treated as `promote`.
+- **Import vs promote separation:** command surface is now aligned with existing pipeline split (`importDaily` vs `promoteDaily`).
+- **Publishability safety:** import-only runs remain `NOT_READABLE` and do not switch current publication. Coverage still governs publishability when promote is invoked.
+- **Schema impact:** none. Existing `eod_runs` coverage telemetry columns continue to store coverage only when coverage evaluation is actually executed.

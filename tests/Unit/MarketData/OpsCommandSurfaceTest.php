@@ -471,8 +471,8 @@ class OpsCommandSurfaceTest extends TestCase
                     'run_id' => 41,
                     'trade_date_requested' => '2026-03-17',
                     'trade_date_effective' => '2026-03-17',
-                    'terminal_status' => 'SUCCESS',
-                    'publishability_state' => 'READABLE',
+                    'terminal_status' => null,
+                    'publishability_state' => 'NOT_READABLE',
                 ],
                 'output_dir' => 'C:\\tmp\\run-evidence',
                 'file_count' => 2,
@@ -515,8 +515,8 @@ class OpsCommandSurfaceTest extends TestCase
                     'run_id' => 42,
                     'trade_date_requested' => '2026-03-18',
                     'trade_date_effective' => '2026-03-18',
-                    'terminal_status' => 'SUCCESS',
-                    'publishability_state' => 'READABLE',
+                    'terminal_status' => null,
+                    'publishability_state' => 'NOT_READABLE',
                     'source_name' => 'API_FREE',
                     'source_input_file' => null,
                     'source_summary' => 'provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT',
@@ -932,17 +932,16 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_writes_summary_artifact_for_success_path(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andReturn((object) [
                 'run_id' => 55,
                 'trade_date_requested' => '2026-03-24',
-                'trade_date_effective' => '2026-03-24',
-                'stage' => 'FINALIZE',
+                                'stage' => 'INGEST_BARS',
                 'lifecycle_state' => 'COMPLETED',
-                'terminal_status' => 'SUCCESS',
-                'publishability_state' => 'READABLE',
+                'terminal_status' => null,
+                'publishability_state' => 'NOT_READABLE',
                 'notes' => 'candidate_publication_id=44; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
             ]);
 
@@ -966,6 +965,7 @@ class OpsCommandSurfaceTest extends TestCase
         $normalizedArtifactPath = str_replace('\\', '/', $artifactPath);
 
         $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('request_mode=import_only', $display);
         $this->assertStringContainsString('output_dir='.$normalizedOutputDir, $display);
         $this->assertStringContainsString('summary_artifact='.$normalizedArtifactPath, $display);
         $this->assertFileExists($artifactPath);
@@ -973,6 +973,7 @@ class OpsCommandSurfaceTest extends TestCase
         $payload = json_decode((string) file_get_contents($artifactPath), true);
 
         $this->assertSame('market-data:daily', $payload['command']);
+        $this->assertSame('import_only', $payload['request_mode']);
         $this->assertSame('SUCCESS', $payload['status']);
         $this->assertSame('api', $payload['source_mode']);
         $this->assertSame(55, $payload['run_id']);
@@ -987,7 +988,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_writes_summary_artifact_for_recovered_failure_path(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andThrow(new RuntimeException('boom'));
@@ -1028,6 +1029,7 @@ class OpsCommandSurfaceTest extends TestCase
         $normalizedArtifactPath = str_replace('\\', '/', $artifactPath);
 
         $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('request_mode=import_only', $display);
         $this->assertStringContainsString('output_dir='.$normalizedOutputDir, $display);
         $this->assertStringContainsString('summary_artifact='.$normalizedArtifactPath, $display);
         $this->assertFileExists($artifactPath);
@@ -1035,6 +1037,7 @@ class OpsCommandSurfaceTest extends TestCase
         $payload = json_decode((string) file_get_contents($artifactPath), true);
 
         $this->assertSame('market-data:daily', $payload['command']);
+        $this->assertSame('import_only', $payload['request_mode']);
         $this->assertSame('ERROR', $payload['status']);
         $this->assertSame('api', $payload['source_mode']);
         $this->assertSame(44, $payload['run_id']);
@@ -1052,17 +1055,16 @@ class OpsCommandSurfaceTest extends TestCase
         config()->set('market_data.source.local_input_file', null);
 
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'manual_file', null)
             ->andReturn((object) [
                 'run_id' => 55,
                 'trade_date_requested' => '2026-03-24',
-                'trade_date_effective' => '2026-03-24',
-                'stage' => 'FINALIZE',
+                                'stage' => 'INGEST_BARS',
                 'lifecycle_state' => 'COMPLETED',
-                'terminal_status' => 'SUCCESS',
-                'publishability_state' => 'READABLE',
+                'terminal_status' => null,
+                'publishability_state' => 'NOT_READABLE',
                 'notes' => 'candidate_publication_id=44; source_name=LOCAL_FILE; source_input_file=C:\\ops\\manual-2026-03-24.csv',
             ]);
 
@@ -1102,7 +1104,7 @@ class OpsCommandSurfaceTest extends TestCase
         config()->set('market_data.source.local_input_file', null);
 
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'manual_file', null)
             ->andReturnUsing(function () {
@@ -1111,7 +1113,7 @@ class OpsCommandSurfaceTest extends TestCase
                 return (object) [
                     'run_id' => 55,
                     'trade_date_requested' => '2026-03-24',
-                    'stage' => 'FINALIZE',
+                    'stage' => 'INGEST_BARS',
                     'lifecycle_state' => 'COMPLETED',
                     'terminal_status' => 'SUCCESS',
                     'publishability_state' => 'READABLE',
@@ -1134,6 +1136,7 @@ class OpsCommandSurfaceTest extends TestCase
 
         $this->assertSame(0, $exitCode);
         $this->assertNull(config('market_data.source.local_input_file'));
+        $this->assertStringContainsString('request_mode=import_only', $display);
         $this->assertStringContainsString('input_file=storage/app/market_data/operator/manual-2026-03-24.csv', $display);
     }
 
@@ -1141,13 +1144,13 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_renders_source_summary_from_run_notes(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andReturn((object) [
                 'run_id' => 55,
                 'trade_date_requested' => '2026-03-24',
-                'stage' => 'FINALIZE',
+                'stage' => 'INGEST_BARS',
                 'lifecycle_state' => 'COMPLETED',
                 'terminal_status' => 'SUCCESS',
                 'publishability_state' => 'READABLE',
@@ -1194,7 +1197,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_renders_failed_source_summary_from_run_notes(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andReturn((object) [
@@ -1229,7 +1232,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_renders_source_summary_from_attempt_telemetry_when_notes_are_thin(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andReturn((object) [
@@ -1285,7 +1288,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_recovers_failed_source_summary_from_attempt_telemetry_when_pipeline_throws(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andThrow(new RuntimeException('boom'));
@@ -1352,7 +1355,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_writes_source_attempt_telemetry_artifact_for_success_path_when_attempts_exist(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andReturn((object) [
@@ -1440,7 +1443,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_writes_source_attempt_telemetry_artifact_for_recovered_failure_path_when_attempts_exist(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andThrow(new RuntimeException('boom'));
@@ -1540,7 +1543,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_writes_attempt_telemetry_fields_into_summary_artifact_when_notes_are_thin(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andReturn((object) [
@@ -1605,7 +1608,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_writes_recovered_attempt_telemetry_fields_into_summary_artifact_when_pipeline_throws(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andThrow(new RuntimeException('boom'));
@@ -1675,7 +1678,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_recovers_failed_run_summary_when_pipeline_throws(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'api', null)
             ->andThrow(new RuntimeException('boom'));
@@ -1735,7 +1738,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_renders_manual_source_input_file_from_run_notes(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'manual_file', null)
             ->andReturn((object) [
@@ -1769,7 +1772,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_daily_pipeline_command_renders_coverage_summary_for_pass_outcome(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
-        $service->shouldReceive('runDaily')
+        $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'manual_file', null)
             ->andReturn((object) [

@@ -25,7 +25,7 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
         $outputDir = $this->option('output_dir') ?: null;
 
         try {
-            $run = $this->pipeline()->runDaily($requestedDate, $sourceMode, $correctionId);
+            $run = $this->pipeline()->importDaily($requestedDate, $sourceMode, $correctionId);
         } catch (\Throwable $e) {
             $run = $this->latestRunForRequestedDate($requestedDate, $sourceMode);
             [$sourceTelemetryArtifactPath, $sourceAttemptTelemetry] = $run ? $this->writeSourceAttemptTelemetryArtifact($outputDir, $run) : [null, []];
@@ -35,6 +35,7 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
                 'market_data_daily_summary.json',
                 $this->buildRunSummaryPayload($run, [
                     'command' => 'market-data:daily',
+                    'request_mode' => 'import_only',
                     'source_mode' => $sourceMode,
                     'status' => 'ERROR',
                     'error_message' => (string) $e->getMessage(),
@@ -42,6 +43,7 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
             ) : null;
 
             $this->renderRecoveredFailureSummary($run, $e, $sourceContext);
+            $this->line('request_mode=import_only');
             if ($artifactPath !== null) {
                 $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));
                 $this->line('summary_artifact='.$this->normalizePathForDisplay($artifactPath));
@@ -65,6 +67,7 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
             'market_data_daily_summary.json',
             $this->buildRunSummaryPayload($run, [
                 'command' => 'market-data:daily',
+                'request_mode' => 'import_only',
                 'source_mode' => $sourceMode,
                 'status' => 'SUCCESS',
                 'input_file' => $configuredOverride ? $this->normalizeOptionalPathForDisplay((string) $this->option('input_file')) : null,
@@ -72,6 +75,7 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
         );
 
         $this->renderRunSummary($run, $sourceContext);
+        $this->line('request_mode=import_only');
         if ($configuredOverride) {
             $this->line('input_file='.(string) $this->normalizeOptionalPathForDisplay($this->option('input_file')));
         }

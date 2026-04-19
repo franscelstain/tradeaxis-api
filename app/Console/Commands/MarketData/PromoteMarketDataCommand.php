@@ -40,6 +40,7 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
                 'market_data_promote_summary.json',
                 $this->buildRunSummaryPayload($run, [
                     'command' => 'market-data:promote',
+                    'request_mode' => 'promote',
                     'source_mode' => $sourceMode,
                     'status' => 'ERROR',
                     'error_message' => (string) $e->getMessage(),
@@ -47,6 +48,7 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
             ) : null;
 
             $this->renderRecoveredFailureSummary($run, $e, $sourceContext);
+            $this->line('request_mode=promote');
             if ($artifactPath !== null) {
                 $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));
                 $this->line('summary_artifact='.$this->normalizePathForDisplay($artifactPath));
@@ -66,12 +68,14 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
             'market_data_promote_summary.json',
             $this->buildRunSummaryPayload($run, [
                 'command' => 'market-data:promote',
+                'request_mode' => 'promote',
                 'source_mode' => $sourceMode,
                 'status' => ((string) ($run->publishability_state ?? '')) === 'READABLE' ? 'SUCCESS' : 'NOT_READABLE',
             ], $sourceContext)
         );
 
         $this->renderRunSummary($run, $sourceContext);
+        $this->line('request_mode=promote');
         if ($artifactPath !== null) {
             $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));
             $this->line('summary_artifact='.$this->normalizePathForDisplay($artifactPath));

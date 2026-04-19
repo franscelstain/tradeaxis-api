@@ -301,3 +301,12 @@ Status: PARTIAL
 
 - Fixed success-path strict pointer validation so it validates against the **resolved current publication contract**, not always the newly created candidate publication.
 - This preserves the documented correction behavior for **unchanged artifacts**: correction request is cancelled, prior current publication remains current, and run stays `SUCCESS` / `READABLE`.
+
+
+## Session Update — 2026-04-19 Coverage Gate vs Manual File Publishability
+
+- `market-data:daily` now routes to `MarketDataPipelineService::importDaily(...)` instead of `runDaily(...)`.
+- `market-data:promote` remains the only CLI write-surface that executes coverage evaluation and finalize/publishability promotion.
+- Coverage gate contract remains enforced on promote/finalize path; no threshold relaxation or coverage bypass was introduced.
+- Ops summaries now emit explicit `request_mode` values (`import_only` for daily, `promote` for promote) so operator intent is visible in console output and summary artifacts.
+- Result: manual file partial ingestion is no longer forced through coverage gate merely by using `market-data:daily`.
