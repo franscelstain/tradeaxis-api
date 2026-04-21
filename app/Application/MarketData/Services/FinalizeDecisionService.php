@@ -4,13 +4,15 @@ namespace App\Application\MarketData\Services;
 
 class FinalizeDecisionService
 {
-    public function evaluate($cutoffSatisfied, $runSealed, $candidateSealState, array $coverageSummary, $fallbackTradeDate)
+    public function evaluate($cutoffSatisfied, $runSealed, $candidateSealState, array $coverageSummary, $fallbackTradeDate, array $intentContext = [])
     {
         $coverageGateStatus = strtoupper((string) ($coverageSummary['coverage_gate_status'] ?? 'BLOCKED'));
         $coverageThresholdValue = $coverageSummary['coverage_threshold_value'] ?? null;
         $coverageThresholdMode = $coverageSummary['coverage_threshold_mode'] ?? null;
         $coverageRatio = $coverageSummary['coverage_ratio'] ?? null;
 
+        $promoteMode = strtolower((string) ($intentContext['promote_mode'] ?? 'full_publish'));
+        $publishTarget = (string) ($intentContext['publish_target'] ?? ($promoteMode === 'full_publish' ? 'current_replace' : 'non_current_correction'));
         $qualityGateState = $this->mapCoverageGateStatusToQualityGateState($coverageGateStatus);
         $state = [
             'coverage_gate_status' => $coverageGateStatus,
@@ -27,6 +29,9 @@ class FinalizeDecisionService
                 'coverage_threshold_value' => $coverageThresholdValue !== null ? (float) $coverageThresholdValue : null,
                 'coverage_threshold_mode' => $coverageThresholdMode,
             ],
+            'promote_mode' => $promoteMode,
+            'publish_target' => $publishTarget,
+            'non_current_publish_allowed' => false,
         ];
 
         if (! $cutoffSatisfied) {
@@ -34,6 +39,26 @@ class FinalizeDecisionService
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
             $state['reason_code'] = 'RUN_FINALIZE_BEFORE_CUTOFF';
             $state['message'] = 'Finalize blocked because cutoff policy is not yet satisfied.';
+            return $state;
+        }
+
+
+        if ($promoteMode !== 'full_publish') {
+            if (! $runSealed || $candidateSealState !== 'SEALED') {
+                $state['quality_gate_state'] = 'BLOCKED';
+                $state['terminal_status'] = 'FAILED';
+                $state['reason_code'] = 'RUN_SEAL_PRECONDITION_FAILED';
+                $state['message'] = 'Finalize blocked because sealed publication state is missing for non-current correction publish.';
+                return $state;
+            }
+
+            $state['quality_gate_state'] = 'PASS';
+            $state['terminal_status'] = 'SUCCESS';
+            $state['publishability_state'] = 'NOT_READABLE';
+            $state['trade_date_effective'] = null;
+            $state['reason_code'] = null;
+            $state['message'] = 'Finalize completed as non-current correction publish; readable current publication remains unchanged.';
+            $state['non_current_publish_allowed'] = true;
             return $state;
         }
 

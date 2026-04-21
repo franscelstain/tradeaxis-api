@@ -310,3 +310,69 @@ Status: PARTIAL
 - Coverage gate contract remains enforced on promote/finalize path; no threshold relaxation or coverage bypass was introduced.
 - Ops summaries now emit explicit `request_mode` values (`import_only` for daily, `promote` for promote) so operator intent is visible in console output and summary artifacts.
 - Result: manual file partial ingestion is no longer forced through coverage gate merely by using `market-data:daily`.
+
+
+## Promote intent classification execution
+
+Status: DONE
+
+### Design selected
+- `market-data:promote --mode=full_publish|correction`
+- default behavior:
+  - no `correction_id` => `full_publish`
+  - with `correction_id` and no explicit mode => `correction`
+
+### Contract result
+- `full_publish` keeps existing full-universe coverage blocking semantics.
+- `correction` persists:
+  - `eod_runs.promote_mode`
+  - `eod_runs.publish_target`
+  - `eod_publications.promote_mode`
+  - `eod_publications.publish_target`
+- `correction` path no longer auto-assumes `current_replace`.
+- non-current correction promote finishes as sealed non-current publication and preserves existing readable current publication.
+
+### Files changed
+- `app/Console/Commands/MarketData/PromoteMarketDataCommand.php`
+- `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `app/Application/MarketData/Services/FinalizeDecisionService.php`
+- `app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php`
+- `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`
+- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
+- `database/migrations/2026_04_19_000001_add_promote_intent_fields.php`
+- `docs/market_data/db/Database_Schema_MariaDB.sql`
+- `tests/Support/UsesMarketDataSqlite.php`
+- `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+### Proof recorded
+- full publish path still blocks on coverage failure.
+- correction mode now requires `correction_id` so non-current publication stays isolated from current tables/history contract.
+- promote command now surfaces `promote_mode` and `publish_target`.
+
+## 2026-04-19 — Correction lifecycle guard & fast-fail ops surface hardening
+
+### Summary
+- Promote intent classification from the prior session remains in place: `full_publish` is coverage-blocked and `correction` is isolated as `non_current_correction`.
+- This session hardened correction lifecycle validation so `PUBLISHED` corrections are no longer reported as generic approval failures.
+- Fast-fail promote output now keeps operator-facing context even when correction validation fails before a new run is created.
+
+### Contract / behavior
+- correction status `APPROVED`, `EXECUTING`, or `RESEALED` remains executable for correction promote flow.
+- correction status `PUBLISHED` is explicitly rejected with: `Correction request is already PUBLISHED and cannot be executed again.`
+- correction status `REQUESTED` is explicitly rejected with: `Correction request is still REQUESTED and must be APPROVED before execution.`
+- other non-executable statuses are rejected with status-aware messaging instead of generic approval failure text.
+- fast-fail promote output now preserves: `requested_date`, `stage=PROMOTE_VALIDATION`, `lifecycle_state=FAILED`, `terminal_status=FAILED`, `publishability_state=NOT_READABLE`, `promote_mode`, `publish_target`, and a specific `reason_code`.
+
+### Files changed
+- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
+- `app/Console/Commands/MarketData/PromoteMarketDataCommand.php`
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+### Proof / regression target
+- correction `PUBLISHED` no longer emits misleading `must be APPROVED` error text.
+- correction fast-fail ops surface remains informative even when no new run is created.
+- full publish coverage blocking contract is unchanged.
+

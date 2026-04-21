@@ -1247,7 +1247,7 @@ class MarketDataPipelineServiceTest extends TestCase
         $service->shouldNotReceive('completeHash');
         $service->shouldNotReceive('completeSeal');
 
-        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, null);
+        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, null, 'full_publish');
 
         $this->assertSame($finalizedRun, $result);
     }
@@ -1274,9 +1274,47 @@ class MarketDataPipelineServiceTest extends TestCase
         $service->shouldReceive('completeSeal')->once()->andReturn($sealRun);
         $service->shouldReceive('completeFinalize')->once()->andReturn($finalizedRun);
 
-        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, null);
+        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, null, 'full_publish');
 
         $this->assertSame($finalizedRun, $result);
+    }
+
+
+    public function test_promote_single_day_correction_mode_continues_after_coverage_fail(): void
+    {
+        [$service] = $this->makeService();
+
+        $coverageRun = (object) [
+            'run_id' => 91,
+            'coverage_gate_state' => 'FAIL',
+            'terminal_status' => null,
+        ];
+        $indicatorsRun = (object) ['run_id' => 91, 'terminal_status' => null];
+        $eligibilityRun = (object) ['run_id' => 91, 'terminal_status' => null];
+        $hashRun = (object) ['run_id' => 91, 'terminal_status' => null];
+        $sealRun = (object) ['run_id' => 91, 'terminal_status' => null];
+        $finalizedRun = (object) ['run_id' => 91, 'terminal_status' => 'SUCCESS', 'publishability_state' => 'NOT_READABLE'];
+
+        $service->shouldReceive('completeCoverageEvaluation')->once()->andReturn($coverageRun);
+        $service->shouldReceive('completeIndicators')->once()->andReturn($indicatorsRun);
+        $service->shouldReceive('completeEligibility')->once()->andReturn($eligibilityRun);
+        $service->shouldReceive('completeHash')->once()->andReturn($hashRun);
+        $service->shouldReceive('completeSeal')->once()->andReturn($sealRun);
+        $service->shouldReceive('completeFinalize')->once()->andReturn($finalizedRun);
+
+        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, 44, 'correction');
+
+        $this->assertSame($finalizedRun, $result);
+    }
+
+    public function test_promote_single_day_correction_mode_requires_correction_id(): void
+    {
+        [$service] = $this->makeService();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Promote mode correction requires correction_id');
+
+        $service->promoteSingleDay('2026-03-24', 'manual_file', 55, null, 'correction');
     }
 
     private function makeService(): array

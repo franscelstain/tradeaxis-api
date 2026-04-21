@@ -86,6 +86,12 @@ abstract class AbstractMarketDataCommand extends Command
         $this->line('lifecycle_state='.(string) $this->runField($run, 'lifecycle_state', ''));
         $this->line('terminal_status='.(string) $this->runField($run, 'terminal_status', ''));
         $this->line('publishability_state='.(string) $this->runField($run, 'publishability_state', ''));
+        if ($this->runField($run, 'promote_mode') !== null && $this->runField($run, 'promote_mode') !== '') {
+            $this->line('promote_mode='.(string) $this->runField($run, 'promote_mode'));
+        }
+        if ($this->runField($run, 'publish_target') !== null && $this->runField($run, 'publish_target') !== '') {
+            $this->line('publish_target='.(string) $this->runField($run, 'publish_target'));
+        }
 
         $sourceContext = $sourceContext ?: $this->buildSourceContext($run);
 
@@ -117,6 +123,8 @@ abstract class AbstractMarketDataCommand extends Command
             'lifecycle_state' => $this->runField($run, 'lifecycle_state'),
             'terminal_status' => $this->runField($run, 'terminal_status'),
             'publishability_state' => $this->runField($run, 'publishability_state'),
+            'promote_mode' => $this->runField($run, 'promote_mode'),
+            'publish_target' => $this->runField($run, 'publish_target'),
             'final_reason_code' => $this->runField($run, 'final_reason_code'),
             'trade_date_effective' => $this->runField($run, 'trade_date_effective'),
             'reason_code' => $this->runField($run, 'reason_code'),

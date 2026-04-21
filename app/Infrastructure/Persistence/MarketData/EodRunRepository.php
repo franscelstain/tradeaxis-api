@@ -73,6 +73,8 @@ class EodRunRepository
                 'publication_version' => null,
                 'is_current_publication' => 0,
                 'correction_id' => null,
+                'promote_mode' => null,
+                'publish_target' => null,
                 'final_reason_code' => null,
                 'sealed_at' => null,
                 'sealed_by' => null,

@@ -108,4 +108,26 @@ class FinalizeDecisionServiceTest extends TestCase
         $this->assertSame('NOT_READABLE', $decision['publishability_state']);
         $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $decision['reason_code']);
     }
+
+
+    public function test_finalize_allows_non_current_correction_publish_without_current_promotion()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', [
+            'coverage_gate_status' => 'FAIL',
+            'coverage_ratio' => 0.0055,
+            'coverage_threshold_value' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+        ], '2026-04-19', [
+            'promote_mode' => 'correction',
+            'publish_target' => 'non_current_correction',
+        ]);
+
+        $this->assertFalse($decision['promotion_allowed']);
+        $this->assertTrue($decision['non_current_publish_allowed']);
+        $this->assertSame('SUCCESS', $decision['terminal_status']);
+        $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+        $this->assertNull($decision['reason_code']);
+    }
+
 }

@@ -117,6 +117,8 @@ trait UsesMarketDataSqlite
             $table->integer('publication_version')->nullable();
             $table->integer('is_current_publication')->default(0);
             $table->integer('correction_id')->nullable();
+            $table->string('promote_mode')->nullable();
+            $table->string('publish_target')->nullable();
             $table->string('final_reason_code')->nullable();
             $table->dateTime('sealed_at')->nullable();
             $table->string('sealed_by')->nullable();
@@ -166,6 +168,8 @@ trait UsesMarketDataSqlite
             $table->integer('publication_version');
             $table->integer('is_current')->default(0);
             $table->integer('supersedes_publication_id')->nullable();
+            $table->string('promote_mode')->nullable();
+            $table->string('publish_target')->nullable();
             $table->string('seal_state');
             $table->string('bars_batch_hash')->nullable();
             $table->string('indicators_batch_hash')->nullable();

@@ -63,11 +63,19 @@ class EodCorrectionRepository
             throw new \RuntimeException('Correction request trade_date mismatch against requested_date.');
         }
 
-        if ($correction->status !== 'APPROVED' && $correction->status !== 'EXECUTING' && $correction->status !== 'RESEALED') {
-            throw new \RuntimeException('Correction request must be APPROVED before execution.');
+        if ($correction->published_at !== null || $correction->status === 'PUBLISHED') {
+            throw new \RuntimeException('Correction request is already PUBLISHED and cannot be executed again.');
         }
 
-        return $correction;
+        if ($correction->status === 'APPROVED' || $correction->status === 'EXECUTING' || $correction->status === 'RESEALED') {
+            return $correction;
+        }
+
+        if ($correction->status === 'REQUESTED') {
+            throw new \RuntimeException('Correction request is still REQUESTED and must be APPROVED before execution.');
+        }
+
+        throw new \RuntimeException('Correction request is not executable. Current status='.(string) $correction->status);
     }
 
     public function markExecuting($correctionId, $priorRunId, $newRunId)

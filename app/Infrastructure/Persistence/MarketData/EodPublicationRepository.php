@@ -153,6 +153,8 @@ class EodPublicationRepository
                 'publication_version' => $currentMaxVersion + 1,
                 'is_current' => 0,
                 'supersedes_publication_id' => $supersedesPublicationId,
+                'publish_target' => $run->publish_target ?? 'current_replace',
+                'promote_mode' => $run->promote_mode ?? ($run->correction_id ? 'correction' : 'full_publish'),
                 'seal_state' => 'UNSEALED',
                 'bars_batch_hash' => null,
                 'indicators_batch_hash' => null,

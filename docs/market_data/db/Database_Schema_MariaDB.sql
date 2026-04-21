@@ -191,6 +191,8 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   publication_version INT UNSIGNED NULL,
   is_current_publication TINYINT(1) NOT NULL DEFAULT 0,
   correction_id BIGINT UNSIGNED NULL,
+  promote_mode VARCHAR(32) NULL,
+  publish_target VARCHAR(64) NULL,
   final_reason_code VARCHAR(64) NULL,
 
   sealed_at DATETIME NULL,
@@ -262,6 +264,8 @@ CREATE TABLE IF NOT EXISTS eod_publications (
   publication_version INT UNSIGNED NOT NULL,
   is_current TINYINT(1) NOT NULL DEFAULT 0,
   supersedes_publication_id BIGINT UNSIGNED NULL,
+  promote_mode VARCHAR(32) NULL,
+  publish_target VARCHAR(64) NULL,
   seal_state ENUM('SEALED','UNSEALED') NOT NULL DEFAULT 'UNSEALED',
   bars_batch_hash VARCHAR(64) NULL,
   indicators_batch_hash VARCHAR(64) NULL,

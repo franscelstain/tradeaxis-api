@@ -428,7 +428,11 @@ class MarketDataPipelineService
                         'coverage_threshold_mode' => $run->coverage_threshold_mode ?: config('market_data.coverage_gate.threshold_mode', 'MIN_RATIO'),
                         'coverage_calibration_version' => $run->coverage_contract_version,
                     ],
-                    $fallback ? $fallback->readable_trade_date : null
+                    $fallback ? $fallback->readable_trade_date : null,
+                    [
+                        'promote_mode' => $this->runPromoteMode($run, $correction),
+                        'publish_target' => $this->runPublishTarget($run, $correction),
+                    ]
                 );
 
                 $unchangedCorrection = false;
@@ -554,6 +558,8 @@ class MarketDataPipelineService
                     'prior_publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : null,
                     'unchanged_correction' => $unchangedCorrection,
                     'promotion_error' => $promotionError,
+                    'promote_mode' => $this->runPromoteMode($run, $correction),
+                    'publish_target' => $this->runPublishTarget($run, $correction),
                 ]);
 
                 $finalizeReasonCode = $this->resolveFinalizeReasonCode(
@@ -682,6 +688,29 @@ class MarketDataPipelineService
                             $priorCurrent ? $priorCurrent->run_id : null,
                             $outcome['correction_outcome_note']
                         );
+                    } elseif ($outcome['correction_outcome'] === 'PUBLISHED_NON_CURRENT' && $run->terminal_status === 'SUCCESS') {
+                        $this->corrections->markPublished(
+                            $correction->correction_id,
+                            $run->run_id,
+                            $priorCurrent ? $priorCurrent->run_id : null,
+                            $outcome['correction_outcome_note']
+                        );
+
+                        $this->runs->appendEvent(
+                            $run,
+                            $input->stage,
+                            'CORRECTION_PUBLISHED_NON_CURRENT',
+                            'INFO',
+                            'Historical correction sealed as non-current publication; readable current publication preserved.',
+                            null,
+                            [
+                                'correction_id' => (int) $correction->correction_id,
+                                'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                                'current_publication_id' => $resolvedPublicationId ? (int) $resolvedPublicationId : null,
+                                'current_publication_version' => $resolvedPublicationVersion ? (int) $resolvedPublicationVersion : null,
+                                'candidate_publication_id' => (int) $candidatePublication->publication_id,
+                            ]
+                        );
                     } elseif ($outcome['correction_outcome'] === 'PUBLISHED' && $run->terminal_status === 'SUCCESS') {
                         $this->corrections->markPublished(
                             $correction->correction_id,
@@ -740,6 +769,8 @@ class MarketDataPipelineService
                         'coverage_min' => (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                         'coverage_contract_version' => $run->coverage_contract_version,
                         'quality_gate_state' => $run->quality_gate_state,
+                        'promote_mode' => $this->runPromoteMode($run, $correction),
+                        'publish_target' => $this->runPublishTarget($run, $correction),
                         'requested_date' => $input->requestedDate,
                         'trade_date_effective' => $run->trade_date_effective,
                         'current_publication_id' => $resolvedPublicationId,
@@ -762,14 +793,33 @@ class MarketDataPipelineService
         }
     }
 
-    public function promoteSingleDay($requestedDate, $sourceMode = null, $runId = null, $correctionId = null)
+    public function promoteSingleDay($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null)
     {
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
+        $promoteIntent = $this->resolvePromoteIntent($promoteMode, $correctionId);
+
+        if ($runId !== null) {
+            $existingRun = $this->runs->findByRunId($runId);
+            if ($existingRun) {
+                $this->safeUpdateTelemetry($existingRun, [
+                    'promote_mode' => $promoteIntent['promote_mode'],
+                    'publish_target' => $promoteIntent['publish_target'],
+                    'correction_id' => $correctionId ?: $existingRun->correction_id,
+                ]);
+            }
+        }
 
         $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId);
         $run = $this->completeCoverageEvaluation($coverageInput);
+        $run = $this->safeUpdateTelemetry($run, [
+            'promote_mode' => $promoteIntent['promote_mode'],
+            'publish_target' => $promoteIntent['publish_target'],
+        ]);
 
-        if (strtoupper((string) ($run->coverage_gate_state ?? 'BLOCKED')) !== 'PASS') {
+        if (
+            $promoteIntent['promote_mode'] === 'full_publish'
+            && strtoupper((string) ($run->coverage_gate_state ?? 'BLOCKED')) !== 'PASS'
+        ) {
             return $this->completeFinalize(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, 'FINALIZE', $correctionId));
         }
 
@@ -790,9 +840,9 @@ class MarketDataPipelineService
         return $run;
     }
 
-    public function promoteDaily($requestedDate, $sourceMode = null, $runId = null, $correctionId = null)
+    public function promoteDaily($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null)
     {
-        return $this->promoteSingleDay($requestedDate, $sourceMode, $runId, $correctionId);
+        return $this->promoteSingleDay($requestedDate, $sourceMode, $runId, $correctionId, $promoteMode);
     }
 
     public function runSingleDay($requestedDate, $sourceMode = null, $correctionId = null)
@@ -849,6 +899,49 @@ class MarketDataPipelineService
         return $run;
     }
 
+
+
+    private function resolvePromoteIntent($promoteMode = null, $correctionId = null)
+    {
+        $promoteMode = strtolower(trim((string) ($promoteMode ?: '')));
+
+        if ($promoteMode === '') {
+            $promoteMode = $correctionId ? 'correction' : 'full_publish';
+        }
+
+        if (! in_array($promoteMode, ['full_publish', 'correction'], true)) {
+            throw new \InvalidArgumentException('Unsupported promote mode. Allowed values: full_publish, correction.');
+        }
+
+        if ($promoteMode === 'correction' && ! $correctionId) {
+            throw new \InvalidArgumentException('Promote mode correction requires correction_id so the publication can be isolated from current tables safely.');
+        }
+
+        return [
+            'promote_mode' => $promoteMode,
+            'publish_target' => $promoteMode === 'full_publish' ? 'current_replace' : 'non_current_correction',
+        ];
+    }
+
+    private function runPromoteMode($run, $correction = null)
+    {
+        $mode = isset($run->promote_mode) ? $run->promote_mode : null;
+        if ($mode !== null && $mode !== '') {
+            return (string) $mode;
+        }
+
+        return $correction || ! empty($run->correction_id) ? 'correction' : 'full_publish';
+    }
+
+    private function runPublishTarget($run, $correction = null)
+    {
+        $target = isset($run->publish_target) ? $run->publish_target : null;
+        if ($target !== null && $target !== '') {
+            return (string) $target;
+        }
+
+        return ($correction || ! empty($run->correction_id)) ? 'non_current_correction' : 'current_replace';
+    }
 
     private function handleRecoverableSourceFailure($run, $requestedDate, $stage, $reasonCode, \Throwable $e)
     {
