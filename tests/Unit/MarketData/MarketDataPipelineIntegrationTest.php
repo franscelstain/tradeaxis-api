@@ -632,7 +632,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             $this->makePipeline()->runDaily('2026-03-20', 'manual_file', $request->correction_id);
             $this->fail('Expected correction without approval to be rejected before run creation.');
         } catch (\RuntimeException $e) {
-            $this->assertSame('Correction request is still REQUESTED and must be APPROVED before execution.', $e->getMessage());
+            $this->assertSame('Correction request must be APPROVED before execution.', $e->getMessage());
         }
 
         $persistedCorrection = DB::table('eod_dataset_corrections')

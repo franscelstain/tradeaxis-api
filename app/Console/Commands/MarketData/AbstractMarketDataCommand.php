@@ -86,11 +86,15 @@ abstract class AbstractMarketDataCommand extends Command
         $this->line('lifecycle_state='.(string) $this->runField($run, 'lifecycle_state', ''));
         $this->line('terminal_status='.(string) $this->runField($run, 'terminal_status', ''));
         $this->line('publishability_state='.(string) $this->runField($run, 'publishability_state', ''));
-        if ($this->runField($run, 'promote_mode') !== null && $this->runField($run, 'promote_mode') !== '') {
-            $this->line('promote_mode='.(string) $this->runField($run, 'promote_mode'));
+
+        $promoteMode = $this->runField($run, 'promote_mode');
+        if ($promoteMode !== null && $promoteMode !== '') {
+            $this->line('promote_mode='.(string) $promoteMode);
         }
-        if ($this->runField($run, 'publish_target') !== null && $this->runField($run, 'publish_target') !== '') {
-            $this->line('publish_target='.(string) $this->runField($run, 'publish_target'));
+
+        $publishTarget = $this->runField($run, 'publish_target');
+        if ($publishTarget !== null && $publishTarget !== '') {
+            $this->line('publish_target='.(string) $publishTarget);
         }
 
         $sourceContext = $sourceContext ?: $this->buildSourceContext($run);

@@ -20,6 +20,7 @@ use App\Console\Commands\MarketData\ReplayBackfillCommand;
 use App\Console\Commands\MarketData\RequestCorrectionCommand;
 use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
+use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
@@ -44,6 +45,7 @@ class Kernel extends ConsoleKernel
         RequestCorrectionCommand::class,
         RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,
+        RepairCurrentPublicationIntegrityCommand::class,
     ];
 
     protected function schedule(Schedule $schedule)

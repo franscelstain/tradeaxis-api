@@ -87,6 +87,78 @@ class EodRunRepository
         });
     }
 
+
+    public function createPromoteRunFromSeed(EodRun $seedRun, $stage, array $overrides = [])
+    {
+        $now = Carbon::now(config('market_data.platform.timezone'));
+
+        $payload = [
+            'trade_date_requested' => $seedRun->trade_date_requested,
+            'trade_date_effective' => null,
+            'lifecycle_state' => 'PENDING',
+            'terminal_status' => null,
+            'quality_gate_state' => 'PENDING',
+            'publishability_state' => 'NOT_READABLE',
+            'stage' => $stage,
+            'source' => $seedRun->source,
+            'source_name' => $seedRun->source_name,
+            'source_provider' => $seedRun->source_provider,
+            'source_input_file' => $seedRun->source_input_file,
+            'source_timeout_seconds' => $seedRun->source_timeout_seconds,
+            'source_retry_max' => $seedRun->source_retry_max,
+            'source_attempt_count' => $seedRun->source_attempt_count,
+            'source_success_after_retry' => $seedRun->source_success_after_retry,
+            'source_retry_exhausted' => $seedRun->source_retry_exhausted,
+            'source_final_http_status' => $seedRun->source_final_http_status,
+            'source_final_reason_code' => $seedRun->source_final_reason_code,
+            'coverage_universe_count' => null,
+            'coverage_available_count' => null,
+            'coverage_missing_count' => null,
+            'coverage_ratio' => null,
+            'coverage_min_threshold' => null,
+            'coverage_gate_state' => null,
+            'coverage_threshold_mode' => null,
+            'coverage_universe_basis' => null,
+            'coverage_contract_version' => null,
+            'coverage_missing_sample_json' => null,
+            'bars_rows_written' => $seedRun->bars_rows_written,
+            'indicators_rows_written' => null,
+            'eligibility_rows_written' => null,
+            'invalid_bar_count' => $seedRun->invalid_bar_count,
+            'invalid_indicator_count' => null,
+            'hard_reject_count' => null,
+            'warning_count' => null,
+            'notes' => $seedRun->notes,
+            'bars_batch_hash' => null,
+            'indicators_batch_hash' => null,
+            'eligibility_batch_hash' => null,
+            'config_version' => $seedRun->config_version ?: config('market_data.indicators.set_version'),
+            'config_hash' => $seedRun->config_hash,
+            'config_snapshot_ref' => $seedRun->config_snapshot_ref,
+            'supersedes_run_id' => $seedRun->supersedes_run_id,
+            'publication_id' => null,
+            'publication_version' => null,
+            'is_current_publication' => 0,
+            'correction_id' => null,
+            'promote_mode' => null,
+            'publish_target' => null,
+            'final_reason_code' => null,
+            'sealed_at' => null,
+            'sealed_by' => null,
+            'seal_note' => null,
+            'started_at' => $now,
+            'finished_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        foreach ($overrides as $key => $value) {
+            $payload[$key] = $value;
+        }
+
+        return EodRun::query()->create($payload);
+    }
+
     public function findByRunId($runId)
     {
         return EodRun::query()->where('run_id', $runId)->first();

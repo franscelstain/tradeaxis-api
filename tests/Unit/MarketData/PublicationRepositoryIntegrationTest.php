@@ -315,6 +315,61 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->assertSame(0, (int) $old->is_current);
     }
 
+
+    public function test_find_invalid_current_publication_states_detects_failed_not_readable_current_pointer(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+        $invalid = $repo->findInvalidCurrentPublicationStates('2026-03-20');
+
+        $this->assertCount(1, $invalid);
+        $this->assertSame('2026-03-20', (string) $invalid[0]->pointer_trade_date);
+        $this->assertSame('FAILED', (string) $invalid[0]->terminal_status);
+        $this->assertSame('NOT_READABLE', (string) $invalid[0]->publishability_state);
+    }
+
+    public function test_promote_candidate_to_current_rejects_when_existing_current_pointer_integrity_is_invalid(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        DB::table('eod_publications')->insert([
+            'publication_id' => 11,
+            'trade_date' => '2026-03-20',
+            'run_id' => 27,
+            'publication_version' => 2,
+            'is_current' => 0,
+            'supersedes_publication_id' => 10,
+            'seal_state' => 'SEALED',
+            'bars_batch_hash' => 'bars-new',
+            'indicators_batch_hash' => 'ind-new',
+            'eligibility_batch_hash' => 'elig-new',
+            'sealed_at' => '2026-03-20 17:21:00',
+            'created_at' => '2026-03-20 17:21:00',
+            'updated_at' => '2026-03-20 17:21:00',
+        ]);
+
+        $run = \App\Models\EodRun::query()->where('run_id', 27)->firstOrFail();
+        $repo = new EodPublicationRepository();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Invalid current publication integrity detected for trade date 2026-03-20.');
+
+        $repo->promoteCandidateToCurrent($run);
+    }
+
     protected function seedPointerToPublicationWithDifferentVersion()
     {
         DB::table('eod_runs')->insert([

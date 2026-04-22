@@ -216,6 +216,8 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   KEY idx_runs_supersedes (supersedes_run_id),
   KEY idx_runs_publication_id (publication_id),
   KEY idx_runs_correction_id (correction_id),
+  KEY idx_runs_promote_mode (promote_mode),
+  KEY idx_runs_publish_target (publish_target),
   KEY idx_runs_final_reason_code (final_reason_code),
   KEY idx_runs_source_name (source_name)
 ) ENGINE=InnoDB;
@@ -264,8 +266,6 @@ CREATE TABLE IF NOT EXISTS eod_publications (
   publication_version INT UNSIGNED NOT NULL,
   is_current TINYINT(1) NOT NULL DEFAULT 0,
   supersedes_publication_id BIGINT UNSIGNED NULL,
-  promote_mode VARCHAR(32) NULL,
-  publish_target VARCHAR(64) NULL,
   seal_state ENUM('SEALED','UNSEALED') NOT NULL DEFAULT 'UNSEALED',
   bars_batch_hash VARCHAR(64) NULL,
   indicators_batch_hash VARCHAR(64) NULL,

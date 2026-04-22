@@ -946,7 +946,6 @@ class OpsCommandSurfaceTest extends TestCase
             ]);
 
         $this->app->instance(MarketDataPipelineService::class, $service);
-        $this->app->instance(EodRunRepository::class, $runs);
 
         $outputDir = sys_get_temp_dir().'/tradeaxis-daily-success-'.uniqid();
 
@@ -1783,6 +1782,8 @@ class OpsCommandSurfaceTest extends TestCase
                 'lifecycle_state' => 'COMPLETED',
                 'terminal_status' => 'SUCCESS',
                 'publishability_state' => 'READABLE',
+                'promote_mode' => 'full_publish',
+                'publish_target' => 'current_replace',
                 'coverage_gate_state' => 'PASS',
                 'coverage_available_count' => 900,
                 'coverage_universe_count' => 900,
@@ -1833,6 +1834,8 @@ class OpsCommandSurfaceTest extends TestCase
                 'lifecycle_state' => 'COMPLETED',
                 'terminal_status' => 'HELD',
                 'publishability_state' => 'NOT_READABLE',
+                'promote_mode' => 'full_publish',
+                'publish_target' => 'current_replace',
                 'coverage_gate_state' => 'FAIL',
                 'coverage_available_count' => 854,
                 'coverage_universe_count' => 900,
@@ -1980,41 +1983,40 @@ class OpsCommandSurfaceTest extends TestCase
     }
 
 
-
-    public function test_promote_command_renders_non_current_correction_success_summary(): void
+    public function test_promote_command_renders_incremental_non_current_summary(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
         $runs = m::mock(EodRunRepository::class);
 
         $runs->shouldReceive('findLatestForRequestedDate')
             ->once()
-            ->with('2026-03-20', 'manual_file')
+            ->with('2026-03-24', 'manual_file')
             ->andReturn((object) [
-                'run_id' => 93,
+                'run_id' => 55,
                 'source' => 'manual_file',
             ]);
+
         $service->shouldReceive('promoteDaily')
             ->once()
-            ->with('2026-03-20', 'manual_file', 93, 24, 'correction')
+            ->with('2026-03-24', 'manual_file', 55, null, 'incremental')
             ->andReturn((object) [
-                'run_id' => 93,
-                'trade_date_requested' => '2026-03-20',
+                'run_id' => 55,
+                'trade_date_requested' => '2026-03-24',
                 'stage' => 'FINALIZE',
                 'lifecycle_state' => 'COMPLETED',
-                'terminal_status' => 'SUCCESS',
+                'terminal_status' => 'HELD',
                 'publishability_state' => 'NOT_READABLE',
-                'promote_mode' => 'correction',
-                'publish_target' => 'non_current_correction',
+                'promote_mode' => 'incremental',
+                'publish_target' => 'incremental_candidate',
                 'coverage_gate_state' => 'FAIL',
-                'coverage_ratio' => 0.0055,
-                'coverage_min_threshold' => 0.98,
                 'coverage_available_count' => 5,
                 'coverage_universe_count' => 901,
                 'coverage_missing_count' => 896,
+                'coverage_ratio' => '0.0055',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
                 'coverage_contract_version' => 'coverage_gate_v1',
-                'coverage_universe_basis' => 'ACTIVE_LISTED_EQUITY_AS_OF_DATE',
-                'source_name' => 'LOCAL_FILE',
-                'source_input_file' => 'storage/app/market_data/operator/manual-2026-03-20.csv',
+                'reason_code' => 'RUN_NON_CURRENT_PROMOTION',
             ]);
 
         $this->app->instance(MarketDataPipelineService::class, $service);
@@ -2025,72 +2027,19 @@ class OpsCommandSurfaceTest extends TestCase
         $tester = new CommandTester($command);
 
         $exitCode = $tester->execute([
-            '--requested_date' => '2026-03-20',
+            '--requested_date' => '2026-03-24',
             '--source_mode' => 'manual_file',
-            '--correction_id' => 24,
-            '--mode' => 'correction',
-        ]);
-
-        $display = $tester->getDisplay();
-
-        $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('request_mode=promote', $display);
-        $this->assertStringContainsString('promote_mode=correction', $display);
-        $this->assertStringContainsString('publish_target=non_current_correction', $display);
-        $this->assertStringContainsString('terminal_status=SUCCESS', $display);
-        $this->assertStringContainsString('publishability_state=NOT_READABLE', $display);
-    }
-
-
-
-    public function test_promote_command_renders_fast_fail_correction_already_published_summary(): void
-    {
-        $service = m::mock(MarketDataPipelineService::class);
-        $runs = m::mock(EodRunRepository::class);
-
-        $runs->shouldReceive('findLatestForRequestedDate')
-            ->once()
-            ->with('2026-03-20', 'manual_file')
-            ->andReturn((object) [
-                'run_id' => 93,
-                'source' => 'manual_file',
-            ]);
-        $service->shouldReceive('promoteDaily')
-            ->once()
-            ->with('2026-03-20', 'manual_file', 93, 26, 'correction')
-            ->andThrow(new \RuntimeException('Correction request is already PUBLISHED and cannot be executed again.'));
-        $runs->shouldReceive('findByRunId')
-            ->once()
-            ->with(93)
-            ->andReturn(null);
-
-        $this->app->instance(MarketDataPipelineService::class, $service);
-        $this->app->instance(EodRunRepository::class, $runs);
-
-        $command = new \App\Console\Commands\MarketData\PromoteMarketDataCommand();
-        $command->setLaravel($this->app);
-        $tester = new CommandTester($command);
-
-        $exitCode = $tester->execute([
-            '--requested_date' => '2026-03-20',
-            '--source_mode' => 'manual_file',
-            '--correction_id' => 26,
-            '--mode' => 'correction',
+            '--mode' => 'incremental',
         ]);
 
         $display = $tester->getDisplay();
 
         $this->assertSame(1, $exitCode);
-        $this->assertStringContainsString('requested_date=2026-03-20', $display);
-        $this->assertStringContainsString('stage=PROMOTE_VALIDATION', $display);
-        $this->assertStringContainsString('lifecycle_state=FAILED', $display);
-        $this->assertStringContainsString('terminal_status=FAILED', $display);
+        $this->assertStringContainsString('terminal_status=HELD', $display);
         $this->assertStringContainsString('publishability_state=NOT_READABLE', $display);
-        $this->assertStringContainsString('promote_mode=correction', $display);
-        $this->assertStringContainsString('publish_target=non_current_correction', $display);
-        $this->assertStringContainsString('source_name=LOCAL_FILE', $display);
-        $this->assertStringContainsString('reason_code=CORRECTION_ALREADY_PUBLISHED', $display);
-        $this->assertStringContainsString('error=Correction request is already PUBLISHED and cannot be executed again.', $display);
+        $this->assertStringContainsString('promote_mode=incremental', $display);
+        $this->assertStringContainsString('publish_target=incremental_candidate', $display);
+        $this->assertStringContainsString('reason_code=RUN_NON_CURRENT_PROMOTION', $display);
     }
 
 }

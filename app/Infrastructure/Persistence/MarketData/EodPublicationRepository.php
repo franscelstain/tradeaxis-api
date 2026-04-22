@@ -8,6 +8,127 @@ use Illuminate\Support\Facades\DB;
 
 class EodPublicationRepository
 {
+    public function findRawCurrentPublicationStateForTradeDate($tradeDate)
+    {
+        return DB::table('eod_current_publication_pointer as ptr')
+            ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
+            ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
+            ->where('ptr.trade_date', $tradeDate)
+            ->select(
+                'ptr.trade_date as pointer_trade_date',
+                'ptr.publication_id as pointer_publication_id',
+                'ptr.run_id as pointer_run_id',
+                'ptr.publication_version as pointer_publication_version',
+                'ptr.sealed_at as pointer_sealed_at',
+                'pub.publication_id',
+                'pub.trade_date',
+                'pub.run_id',
+                'pub.publication_version',
+                'pub.is_current',
+                'pub.seal_state',
+                'pub.sealed_at',
+                'run.terminal_status',
+                'run.publishability_state',
+                'run.is_current_publication',
+                'run.sealed_at as run_sealed_at'
+            )
+            ->first();
+    }
+
+    public function findInvalidCurrentPublicationStates($tradeDate = null)
+    {
+        $rows = DB::table('eod_current_publication_pointer as ptr')
+            ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
+            ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
+            ->when($tradeDate !== null, function ($query) use ($tradeDate) {
+                $query->where('ptr.trade_date', $tradeDate);
+            })
+            ->orderBy('ptr.trade_date')
+            ->select(
+                'ptr.trade_date as pointer_trade_date',
+                'ptr.publication_id as pointer_publication_id',
+                'ptr.run_id as pointer_run_id',
+                'ptr.publication_version as pointer_publication_version',
+                'ptr.sealed_at as pointer_sealed_at',
+                'pub.publication_id',
+                'pub.trade_date',
+                'pub.run_id',
+                'pub.publication_version',
+                'pub.is_current',
+                'pub.seal_state',
+                'pub.sealed_at',
+                'run.terminal_status',
+                'run.publishability_state',
+                'run.is_current_publication',
+                'run.sealed_at as run_sealed_at'
+            )
+            ->get();
+
+        return $rows->filter(function ($row) {
+            return $this->determineCurrentIntegrityViolationReasons($row) !== [];
+        })->values();
+    }
+
+    protected function determineCurrentIntegrityViolationReasons($row)
+    {
+        if (! $row) {
+            return ['CURRENT_POINTER_ROW_MISSING'];
+        }
+
+        $reasons = [];
+
+        if ((string) ($row->trade_date ?? $row->pointer_trade_date ?? '') !== (string) ($row->pointer_trade_date ?? '')) {
+            $reasons[] = 'PUBLICATION_TRADE_DATE_MISMATCH';
+        }
+
+        if ((string) ($row->run_id ?? '') !== (string) ($row->pointer_run_id ?? '')) {
+            $reasons[] = 'POINTER_RUN_ID_MISMATCH';
+        }
+
+        if ((string) ($row->publication_version ?? '') !== (string) ($row->pointer_publication_version ?? '')) {
+            $reasons[] = 'POINTER_PUBLICATION_VERSION_MISMATCH';
+        }
+
+        if ((int) ($row->is_current ?? 0) !== 1) {
+            $reasons[] = 'PUBLICATION_NOT_MARKED_CURRENT';
+        }
+
+        if ((string) ($row->seal_state ?? '') !== 'SEALED') {
+            $reasons[] = 'PUBLICATION_NOT_SEALED';
+        }
+
+        if (empty($row->pointer_sealed_at)) {
+            $reasons[] = 'POINTER_SEALED_AT_MISSING';
+        }
+
+        if (empty($row->sealed_at)) {
+            $reasons[] = 'PUBLICATION_SEALED_AT_MISSING';
+        }
+
+        if (empty($row->run_id)) {
+            $reasons[] = 'RUN_ROW_MISSING';
+            return $reasons;
+        }
+
+        if (empty($row->run_sealed_at)) {
+            $reasons[] = 'RUN_SEALED_AT_MISSING';
+        }
+
+        if ((string) ($row->terminal_status ?? '') !== 'SUCCESS') {
+            $reasons[] = 'RUN_TERMINAL_STATUS_NOT_SUCCESS';
+        }
+
+        if ((string) ($row->publishability_state ?? '') !== 'READABLE') {
+            $reasons[] = 'RUN_PUBLISHABILITY_NOT_READABLE';
+        }
+
+        if ((int) ($row->is_current_publication ?? 0) !== 1) {
+            $reasons[] = 'RUN_CURRENT_MIRROR_NOT_SET';
+        }
+
+        return array_values(array_unique($reasons));
+    }
+
     public function findCurrentPublicationForTradeDate($tradeDate)
     {
         return DB::table('eod_current_publication_pointer as ptr')
@@ -153,8 +274,6 @@ class EodPublicationRepository
                 'publication_version' => $currentMaxVersion + 1,
                 'is_current' => 0,
                 'supersedes_publication_id' => $supersedesPublicationId,
-                'publish_target' => $run->publish_target ?? 'current_replace',
-                'promote_mode' => $run->promote_mode ?? ($run->correction_id ? 'correction' : 'full_publish'),
                 'seal_state' => 'UNSEALED',
                 'bars_batch_hash' => null,
                 'indicators_batch_hash' => null,
@@ -238,6 +357,15 @@ class EodPublicationRepository
                 ->first();
 
             if ($current && (int) $current->publication_id !== (int) $candidate->publication_id && ! $priorPublicationId) {
+                $rawCurrent = $this->findRawCurrentPublicationStateForTradeDate($run->trade_date_requested);
+                $integrityReasons = $this->determineCurrentIntegrityViolationReasons($rawCurrent);
+
+                if ($integrityReasons !== []) {
+                    throw new \RuntimeException(
+                        'Invalid current publication integrity detected for trade date '.$run->trade_date_requested.'. Repair current pointer/current mirrors before replacement. Reasons: '.implode(',', $integrityReasons)
+                    );
+                }
+
                 throw new \RuntimeException('Current publication already exists for trade date '.$run->trade_date_requested.'. Correction/reseal is required before replacing it.');
             }
 

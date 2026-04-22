@@ -207,68 +207,81 @@ Status: PARTIAL
 - **Publishability safety:** import-only runs remain `NOT_READABLE` and do not switch current publication. Coverage still governs publishability when promote is invoked.
 - **Schema impact:** none. Existing `eod_runs` coverage telemetry columns continue to store coverage only when coverage evaluation is actually executed.
 
+## Promote intent classification update — 2026-04-22
 
-## Promote intent classification execution
-
-Status: DONE
-
-### Design selected
-- `market-data:promote --mode=full_publish|correction`
-- default behavior:
-  - no `correction_id` => `full_publish`
-  - with `correction_id` and no explicit mode => `correction`
+Status: DONE IN CODE / PENDING LOCAL RUNTIME PROOF
 
 ### Contract result
-- `full_publish` keeps existing full-universe coverage blocking semantics.
-- `correction` persists:
-  - `eod_runs.promote_mode`
-  - `eod_runs.publish_target`
-  - `eod_publications.promote_mode`
-  - `eod_publications.publish_target`
-- `correction` path no longer auto-assumes `current_replace`.
-- non-current correction promote finishes as sealed non-current publication and preserves existing readable current publication.
 
-### Files changed
-- `app/Console/Commands/MarketData/PromoteMarketDataCommand.php`
-- `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
-- `app/Application/MarketData/Services/MarketDataPipelineService.php`
-- `app/Application/MarketData/Services/FinalizeDecisionService.php`
-- `app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php`
-- `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`
-- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
-- `database/migrations/2026_04_19_000001_add_promote_intent_fields.php`
-- `docs/market_data/db/Database_Schema_MariaDB.sql`
-- `tests/Support/UsesMarketDataSqlite.php`
-- `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
-- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+1. **promote intent classification** → DONE
+   - explicit `promote_mode` now exists on run context
+   - explicit `publish_target` now exists on run context
 
-### Proof recorded
-- full publish path still blocks on coverage failure.
-- correction mode now requires `correction_id` so non-current publication stays isolated from current tables/history contract.
-- promote command now surfaces `promote_mode` and `publish_target`.
+2. **coverage policy per intent** → DONE
+   - `full_publish/current_replace` remains coverage-blocked
+   - `incremental/incremental_candidate` records coverage but does not pretend to be current replacement
 
-## 2026-04-19 — Correction lifecycle guard & fast-fail ops surface hardening
+3. **manual correction / incremental handling** → PARTIAL/DONE
+   - incremental manual promote path is explicit and fail-safe
+   - correction path remains current-replacement oriented when a real approved `correction_id` is supplied
 
-### Summary
-- Promote intent classification from the prior session remains in place: `full_publish` is coverage-blocked and `correction` is isolated as `non_current_correction`.
-- This session hardened correction lifecycle validation so `PUBLISHED` corrections are no longer reported as generic approval failures.
-- Fast-fail promote output now keeps operator-facing context even when correction validation fails before a new run is created.
+4. **current publication protection** → DONE
+   - non-current incremental promote never becomes current automatically
+   - current readable publication remains authoritative
 
-### Contract / behavior
-- correction status `APPROVED`, `EXECUTING`, or `RESEALED` remains executable for correction promote flow.
-- correction status `PUBLISHED` is explicitly rejected with: `Correction request is already PUBLISHED and cannot be executed again.`
-- correction status `REQUESTED` is explicitly rejected with: `Correction request is still REQUESTED and must be APPROVED before execution.`
-- other non-executable statuses are rejected with status-aware messaging instead of generic approval failure text.
-- fast-fail promote output now preserves: `requested_date`, `stage=PROMOTE_VALIDATION`, `lifecycle_state=FAILED`, `terminal_status=FAILED`, `publishability_state=NOT_READABLE`, `promote_mode`, `publish_target`, and a specific `reason_code`.
+5. **ops/output clarity** → DONE
+   - command output + summary artifact now expose:
+     - `promote_mode`
+     - `publish_target`
 
-### Files changed
-- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
-- `app/Console/Commands/MarketData/PromoteMarketDataCommand.php`
-- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
-- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+### Concrete DB/schema additions
 
-### Proof / regression target
-- correction `PUBLISHED` no longer emits misleading `must be APPROVED` error text.
-- correction fast-fail ops surface remains informative even when no new run is created.
-- full publish coverage blocking contract is unchanged.
+Added to `eod_runs`:
+- `promote_mode`
+- `publish_target`
 
+### Operational interpretation
+
+- previous bug: partial `manual_file` promote was implicitly treated as full publish/current replacement
+- patched behavior: operator can classify promote intent explicitly, and incremental manual promote now lands as a sealed non-current candidate with `RUN_NON_CURRENT_PROMOTION`
+- coverage gate for readable current publication is still intact and unchanged for full publish
+
+- 2026-04-22 follow-up hotfix: promote retry/reclassification now forks a fresh promote run from the persisted import seed instead of reusing a previously finalized promote run. This prevents stale terminal_status/promote_mode from contaminating incremental/correction attempts and keeps the import-only run immutable.
+
+- 2026-04-22 hotfix: promote command no longer pre-binds to latest run before correction validation; correction promote now validates approval before run selection/forking so failed correction requests do not render stale incremental/full-promote run summaries.
+
+## 2026-04-22 — CURRENT PUBLICATION INTEGRITY HARDENING
+
+### Contract decision
+
+**Current publication integrity is now explicitly hardened as a blocking invariant.**
+
+A publication may only remain or become authoritative current state when all of the following are true:
+
+- pointer row exists for trade date
+- pointer `publication_id/run_id/publication_version` match publication/run rows
+- publication is `is_current = 1`
+- publication is `SEALED`
+- pointer/publication/run all have sealed timestamps
+- run `terminal_status = SUCCESS`
+- run `publishability_state = READABLE`
+- run `is_current_publication = 1`
+
+### Enforcement added
+
+- raw invalid-current detection is now available in repository layer
+- current replacement now refuses to proceed when existing current ownership is internally inconsistent
+- finalize now repairs stray current ownership if a non-readable/non-success run is detected as current after finalize flow
+- operator command added for explicit remediation of legacy broken current-pointer rows:
+  - `market-data:current-publication:repair`
+
+### Notes
+
+- `request_mode` is **not** a persisted `eod_runs` column and remains command/runtime output only
+- persisted current-publication integrity relies on:
+  - `eod_current_publication_pointer`
+  - `eod_publications.is_current`
+  - `eod_publications.seal_state`
+  - `eod_runs.terminal_status`
+  - `eod_runs.publishability_state`
+  - `eod_runs.is_current_publication`

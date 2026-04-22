@@ -311,68 +311,119 @@ Status: PARTIAL
 - Ops summaries now emit explicit `request_mode` values (`import_only` for daily, `promote` for promote) so operator intent is visible in console output and summary artifacts.
 - Result: manual file partial ingestion is no longer forced through coverage gate merely by using `market-data:daily`.
 
-
-## Promote intent classification execution
+## Manual-file promote intent classification execution
 
 Status: DONE
 
-### Design selected
-- `market-data:promote --mode=full_publish|correction`
-- default behavior:
-  - no `correction_id` => `full_publish`
-  - with `correction_id` and no explicit mode => `correction`
+### What changed
 
-### Contract result
-- `full_publish` keeps existing full-universe coverage blocking semantics.
-- `correction` persists:
-  - `eod_runs.promote_mode`
-  - `eod_runs.publish_target`
-  - `eod_publications.promote_mode`
-  - `eod_publications.publish_target`
-- `correction` path no longer auto-assumes `current_replace`.
-- non-current correction promote finishes as sealed non-current publication and preserves existing readable current publication.
+- Added explicit promote intent persistence on `eod_runs`:
+  - `promote_mode`
+  - `publish_target`
+- Added command surface support:
+  - `market-data:promote --mode=full_publish|correction|incremental`
+- Added intent resolution in promote path:
+  - default without `correction_id` → `full_publish`
+  - default with `correction_id` → `correction`
+  - explicit incremental manual promote → `incremental_candidate`
 
-### Files changed
+### Coverage policy after patch
+
+- `full_publish` + `current_replace`:
+  - coverage gate remains blocking
+  - only `PASS` may continue to readable current promotion
+- `correction` + `current_replace`:
+  - existing guarded correction/current replacement semantics remain active
+  - no global threshold weakening
+- `incremental` + `incremental_candidate`:
+  - coverage is still recorded as evidence
+  - promote no longer misclassifies partial manual file as full current-replacement attempt
+  - finalize seals a **non-current** candidate and keeps current readable publication authoritative
+
+### Current publication protection
+
+- incremental/manual non-current promote never calls current replacement path
+- `publishability_state` remains `NOT_READABLE`
+- final reason is explicit: `RUN_NON_CURRENT_PROMOTION`
+- readable current publication is preserved via existing fallback/current pointer contract
+
+### Files changed in this session
+
 - `app/Console/Commands/MarketData/PromoteMarketDataCommand.php`
 - `app/Console/Commands/MarketData/AbstractMarketDataCommand.php`
 - `app/Application/MarketData/Services/MarketDataPipelineService.php`
 - `app/Application/MarketData/Services/FinalizeDecisionService.php`
-- `app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php`
 - `app/Infrastructure/Persistence/MarketData/EodRunRepository.php`
-- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
-- `database/migrations/2026_04_19_000001_add_promote_intent_fields.php`
+- `app/Models/EodRun.php`
+- `database/migrations/2026_04_22_000001_add_promote_intent_fields_to_eod_runs.php`
 - `docs/market_data/db/Database_Schema_MariaDB.sql`
-- `tests/Support/UsesMarketDataSqlite.php`
+- `tests/Unit/MarketData/FinalizeDecisionServiceTest.php`
 - `tests/Unit/MarketData/MarketDataPipelineServiceTest.php`
 - `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
 
-### Proof recorded
-- full publish path still blocks on coverage failure.
-- correction mode now requires `correction_id` so non-current publication stays isolated from current tables/history contract.
-- promote command now surfaces `promote_mode` and `publish_target`.
+### Proof status in this container
 
-## 2026-04-19 — Correction lifecycle guard & fast-fail ops surface hardening
+- `php -l` on changed PHP files → PASS
+- PHPUnit runtime → not runnable here because uploaded ZIP does not contain `vendor/`
 
-### Summary
-- Promote intent classification from the prior session remains in place: `full_publish` is coverage-blocked and `correction` is isolated as `non_current_correction`.
-- This session hardened correction lifecycle validation so `PUBLISHED` corrections are no longer reported as generic approval failures.
-- Fast-fail promote output now keeps operator-facing context even when correction validation fails before a new run is created.
+### Remaining gap
 
-### Contract / behavior
-- correction status `APPROVED`, `EXECUTING`, or `RESEALED` remains executable for correction promote flow.
-- correction status `PUBLISHED` is explicitly rejected with: `Correction request is already PUBLISHED and cannot be executed again.`
-- correction status `REQUESTED` is explicitly rejected with: `Correction request is still REQUESTED and must be APPROVED before execution.`
-- other non-executable statuses are rejected with status-aware messaging instead of generic approval failure text.
-- fast-fail promote output now preserves: `requested_date`, `stage=PROMOTE_VALIDATION`, `lifecycle_state=FAILED`, `terminal_status=FAILED`, `publishability_state=NOT_READABLE`, `promote_mode`, `publish_target`, and a specific `reason_code`.
+- local operator/runtime proof still needs to be executed in user environment for:
+  - `--mode=incremental`
+  - `--mode=full_publish`
+  - `--mode=correction --correction_id=...`
 
-### Files changed
-- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
-- `app/Console/Commands/MarketData/PromoteMarketDataCommand.php`
-- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
-- `tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+- 2026-04-22 follow-up hotfix: promote retry/reclassification now forks a fresh promote run from the persisted import seed instead of reusing a previously finalized promote run. This prevents stale terminal_status/promote_mode from contaminating incremental/correction attempts and keeps the import-only run immutable.
 
-### Proof / regression target
-- correction `PUBLISHED` no longer emits misleading `must be APPROVED` error text.
-- correction fast-fail ops surface remains informative even when no new run is created.
-- full publish coverage blocking contract is unchanged.
+- 2026-04-22 hotfix: promote command no longer pre-binds to latest run before correction validation; correction promote now validates approval before run selection/forking so failed correction requests do not render stale incremental/full-promote run summaries.
 
+## 2026-04-22 — CURRENT PUBLICATION INTEGRITY HARDENING EXECUTION
+
+### Problem proven from runtime evidence
+
+Runtime and DB evidence proved an invalid current-pointer state for `2026-03-20`:
+
+- `eod_current_publication_pointer` existed and pointed to publication/run `55`
+- `eod_publications.is_current = 1`
+- `eod_publications.seal_state = SEALED`
+- but the pointed run had:
+  - `terminal_status = FAILED`
+  - `publishability_state = NOT_READABLE`
+  - `is_current_publication = 1`
+
+This is a contract violation. A failed / non-readable run must never remain authoritative as current publication.
+
+### Hardening delivered
+
+1. **raw current integrity inspection added**
+   - repository now exposes raw current-pointer inspection without silently filtering invalid rows away
+   - invalid current-pointer states can now be detected explicitly instead of only disappearing from strict readable resolvers
+
+2. **promotion guard strengthened**
+   - `promoteCandidateToCurrent()` now detects invalid existing current ownership and refuses replacement with a precise integrity-repair error instead of generic current-exists semantics
+
+3. **post-finalize integrity repair guard added**
+   - if a non-readable/non-success run somehow remains current after finalize logic, the pipeline now restores prior readable current publication when available, otherwise clears current ownership for that trade date
+   - this prevents future recurrence of `FAILED + NOT_READABLE + is_current = 1`
+
+4. **operator repair command added**
+   - new command: `market-data:current-publication:repair`
+   - supports dry-run detection and `--apply` clearing of invalid current ownership for specific trade date or all detected invalid rows
+
+### Files changed in this session
+
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
+- `app/Console/Commands/MarketData/RepairCurrentPublicationIntegrityCommand.php`
+- `app/Console/Kernel.php`
+- `tests/Support/UsesMarketDataSqlite.php`
+- `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+
+### Local manual proof still required
+
+Run in user environment:
+
+- `php artisan market-data:current-publication:repair --trade_date=2026-03-20`
+- `php artisan market-data:current-publication:repair --trade_date=2026-03-20 --apply`
+- verify pointer/current mirrors are cleared for invalid current state
+- verify subsequent correction still requires valid readable baseline unless a valid current publication is restored/published

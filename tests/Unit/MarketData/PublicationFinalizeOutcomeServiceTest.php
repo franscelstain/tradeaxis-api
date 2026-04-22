@@ -244,45 +244,4 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         $this->assertStringContainsString('Historical correction published safely', $state['message']);
         $this->assertStringContainsString('Historical correction published safely', $state['correction_outcome_note']);
     }
-
-
-    public function test_non_current_correction_publish_keeps_prior_current_publication()
-    {
-        $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'FAIL',
-            'quality_gate_state' => 'PASS',
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'NOT_READABLE',
-            'trade_date_effective' => null,
-            'reason_code' => null,
-            'message' => 'non-current correction publish',
-            'promotion_allowed' => false,
-            'non_current_publish_allowed' => true,
-            'promote_mode' => 'correction',
-            'publish_target' => 'non_current_correction',
-        ];
-
-        $state = $service->resolve($preDecision, [
-            'requested_date' => '2026-04-21',
-            'fallback_trade_date' => '2026-04-20',
-            'candidate_publication_id' => 88,
-            'candidate_publication_version' => 4,
-            'resolved_current_publication_id' => 55,
-            'resolved_current_publication_version' => 2,
-            'correction_id' => 9001,
-            'prior_publication_id' => 55,
-            'prior_publication_version' => 2,
-            'promote_mode' => 'correction',
-            'publish_target' => 'non_current_correction',
-        ]);
-
-        $this->assertSame('SUCCESS', $state['terminal_status']);
-        $this->assertSame('NOT_READABLE', $state['publishability_state']);
-        $this->assertSame(55, $state['current_publication_id']);
-        $this->assertSame('PUBLISHED_NON_CURRENT', $state['correction_outcome']);
-        $this->assertSame('correction', $state['promote_mode']);
-        $this->assertSame('non_current_correction', $state['publish_target']);
-    }
-
 }

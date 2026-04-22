@@ -21,8 +21,6 @@ class PublicationFinalizeOutcomeService
 
         $unchangedCorrection = (bool) ($context['unchanged_correction'] ?? false);
         $promotionError = $context['promotion_error'] ?? null;
-        $promoteMode = strtolower((string) ($context['promote_mode'] ?? ($preDecision['promote_mode'] ?? 'full_publish')));
-        $publishTarget = (string) ($context['publish_target'] ?? ($preDecision['publish_target'] ?? ($promoteMode === 'full_publish' ? 'current_replace' : 'non_current_correction')));
 
         $state = [
             'coverage_gate_status' => $preDecision['coverage_gate_status'] ?? null,
@@ -36,22 +34,7 @@ class PublicationFinalizeOutcomeService
             'current_publication_version' => null,
             'correction_outcome' => null,
             'correction_outcome_note' => null,
-            'promote_mode' => $promoteMode,
-            'publish_target' => $publishTarget,
         ];
-
-        if ($preDecision['non_current_publish_allowed'] ?? false) {
-            $state['terminal_status'] = 'SUCCESS';
-            $state['publishability_state'] = 'NOT_READABLE';
-            $state['trade_date_effective'] = $requestedDate;
-            $state['reason_code'] = null;
-            $state['message'] = 'Correction/manual promote finalized as sealed non-current publication; readable current publication preserved.';
-            $state['current_publication_id'] = $resolvedCurrentPublicationId ?: $priorPublicationId;
-            $state['current_publication_version'] = $resolvedCurrentPublicationVersion ?: $priorPublicationVersion;
-            $state['correction_outcome'] = 'PUBLISHED_NON_CURRENT';
-            $state['correction_outcome_note'] = 'Sealed non-current correction publication recorded; current readable publication preserved.';
-            return $state;
-        }
 
         if (! ($preDecision['promotion_allowed'] ?? false)) {
             $state['trade_date_effective'] = $fallbackTradeDate;

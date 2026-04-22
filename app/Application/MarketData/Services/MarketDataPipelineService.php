@@ -430,8 +430,8 @@ class MarketDataPipelineService
                     ],
                     $fallback ? $fallback->readable_trade_date : null,
                     [
-                        'promote_mode' => $this->runPromoteMode($run, $correction),
-                        'publish_target' => $this->runPublishTarget($run, $correction),
+                        'promote_mode' => $run->promote_mode ?: ($correction ? 'correction' : 'full_publish'),
+                        'publish_target' => $run->publish_target ?: ($correction ? 'current_replace' : 'current_replace'),
                     ]
                 );
 
@@ -558,8 +558,6 @@ class MarketDataPipelineService
                     'prior_publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : null,
                     'unchanged_correction' => $unchangedCorrection,
                     'promotion_error' => $promotionError,
-                    'promote_mode' => $this->runPromoteMode($run, $correction),
-                    'publish_target' => $this->runPublishTarget($run, $correction),
                 ]);
 
                 $finalizeReasonCode = $this->resolveFinalizeReasonCode(
@@ -680,6 +678,20 @@ class MarketDataPipelineService
                     ];
                 }
 
+                [$run, $candidateCurrent, $resolvedPublicationId, $resolvedPublicationVersion, $finalizeReasonCode, $postFinalizeMismatchNote] =
+                    $this->enforceNonReadableRunCannotRemainCurrent(
+                        $run,
+                        $input->requestedDate,
+                        $fallback ? $fallback->readable_trade_date : null,
+                        $priorCurrent,
+                        $candidatePublication,
+                        $candidateCurrent,
+                        $resolvedPublicationId,
+                        $resolvedPublicationVersion,
+                        $finalizeReasonCode,
+                        $postFinalizeMismatchNote
+                    );
+
                 if ($correction) {
                     if ($outcome['correction_outcome'] === 'CANCELLED') {
                         $this->corrections->markCancelled(
@@ -687,29 +699,6 @@ class MarketDataPipelineService
                             $run->run_id,
                             $priorCurrent ? $priorCurrent->run_id : null,
                             $outcome['correction_outcome_note']
-                        );
-                    } elseif ($outcome['correction_outcome'] === 'PUBLISHED_NON_CURRENT' && $run->terminal_status === 'SUCCESS') {
-                        $this->corrections->markPublished(
-                            $correction->correction_id,
-                            $run->run_id,
-                            $priorCurrent ? $priorCurrent->run_id : null,
-                            $outcome['correction_outcome_note']
-                        );
-
-                        $this->runs->appendEvent(
-                            $run,
-                            $input->stage,
-                            'CORRECTION_PUBLISHED_NON_CURRENT',
-                            'INFO',
-                            'Historical correction sealed as non-current publication; readable current publication preserved.',
-                            null,
-                            [
-                                'correction_id' => (int) $correction->correction_id,
-                                'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
-                                'current_publication_id' => $resolvedPublicationId ? (int) $resolvedPublicationId : null,
-                                'current_publication_version' => $resolvedPublicationVersion ? (int) $resolvedPublicationVersion : null,
-                                'candidate_publication_id' => (int) $candidatePublication->publication_id,
-                            ]
                         );
                     } elseif ($outcome['correction_outcome'] === 'PUBLISHED' && $run->terminal_status === 'SUCCESS') {
                         $this->corrections->markPublished(
@@ -769,8 +758,6 @@ class MarketDataPipelineService
                         'coverage_min' => (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                         'coverage_contract_version' => $run->coverage_contract_version,
                         'quality_gate_state' => $run->quality_gate_state,
-                        'promote_mode' => $this->runPromoteMode($run, $correction),
-                        'publish_target' => $this->runPublishTarget($run, $correction),
                         'requested_date' => $input->requestedDate,
                         'trade_date_effective' => $run->trade_date_effective,
                         'current_publication_id' => $resolvedPublicationId,
@@ -778,6 +765,8 @@ class MarketDataPipelineService
                         'fallback_publication_id' => $fallback ? (int) $fallback->publication_id : null,
                         'fallback_trade_date' => $fallback ? $fallback->readable_trade_date : null,
                         'correction_id' => $correction ? (int) $correction->correction_id : null,
+                        'promote_mode' => $run->promote_mode,
+                        'publish_target' => $run->publish_target,
                         'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
                         'manifest' => $manifest ? (array) $manifest : null,
                         'correction_outcome' => $outcome['correction_outcome'],
@@ -796,30 +785,26 @@ class MarketDataPipelineService
     public function promoteSingleDay($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null)
     {
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
-        $promoteIntent = $this->resolvePromoteIntent($promoteMode, $correctionId);
+        $promoteContext = $this->resolvePromoteContext($sourceMode, $correctionId, $promoteMode);
 
-        if ($runId !== null) {
-            $existingRun = $this->runs->findByRunId($runId);
-            if ($existingRun) {
-                $this->safeUpdateTelemetry($existingRun, [
-                    'promote_mode' => $promoteIntent['promote_mode'],
-                    'publish_target' => $promoteIntent['publish_target'],
-                    'correction_id' => $correctionId ?: $existingRun->correction_id,
-                ]);
-            }
+        if ($correctionId !== null) {
+            $this->corrections->requireApprovedForTradeDate($correctionId, $requestedDate);
         }
+
+        $runId = $this->preparePromoteRunId($requestedDate, $sourceMode, $runId, $correctionId, $promoteContext);
 
         $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId);
         $run = $this->completeCoverageEvaluation($coverageInput);
         $run = $this->safeUpdateTelemetry($run, [
-            'promote_mode' => $promoteIntent['promote_mode'],
-            'publish_target' => $promoteIntent['publish_target'],
+            'promote_mode' => $promoteContext['promote_mode'],
+            'publish_target' => $promoteContext['publish_target'],
+            'notes' => $this->appendRunNotes($run->notes ?? null, [
+                'promote_mode='.$promoteContext['promote_mode'],
+                'publish_target='.$promoteContext['publish_target'],
+            ]),
         ]);
 
-        if (
-            $promoteIntent['promote_mode'] === 'full_publish'
-            && strtoupper((string) ($run->coverage_gate_state ?? 'BLOCKED')) !== 'PASS'
-        ) {
+        if ($promoteContext['requires_full_coverage'] && strtoupper((string) ($run->coverage_gate_state ?? 'BLOCKED')) !== 'PASS') {
             return $this->completeFinalize(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, 'FINALIZE', $correctionId));
         }
 
@@ -900,49 +885,6 @@ class MarketDataPipelineService
     }
 
 
-
-    private function resolvePromoteIntent($promoteMode = null, $correctionId = null)
-    {
-        $promoteMode = strtolower(trim((string) ($promoteMode ?: '')));
-
-        if ($promoteMode === '') {
-            $promoteMode = $correctionId ? 'correction' : 'full_publish';
-        }
-
-        if (! in_array($promoteMode, ['full_publish', 'correction'], true)) {
-            throw new \InvalidArgumentException('Unsupported promote mode. Allowed values: full_publish, correction.');
-        }
-
-        if ($promoteMode === 'correction' && ! $correctionId) {
-            throw new \InvalidArgumentException('Promote mode correction requires correction_id so the publication can be isolated from current tables safely.');
-        }
-
-        return [
-            'promote_mode' => $promoteMode,
-            'publish_target' => $promoteMode === 'full_publish' ? 'current_replace' : 'non_current_correction',
-        ];
-    }
-
-    private function runPromoteMode($run, $correction = null)
-    {
-        $mode = isset($run->promote_mode) ? $run->promote_mode : null;
-        if ($mode !== null && $mode !== '') {
-            return (string) $mode;
-        }
-
-        return $correction || ! empty($run->correction_id) ? 'correction' : 'full_publish';
-    }
-
-    private function runPublishTarget($run, $correction = null)
-    {
-        $target = isset($run->publish_target) ? $run->publish_target : null;
-        if ($target !== null && $target !== '') {
-            return (string) $target;
-        }
-
-        return ($correction || ! empty($run->correction_id)) ? 'non_current_correction' : 'current_replace';
-    }
-
     private function handleRecoverableSourceFailure($run, $requestedDate, $stage, $reasonCode, \Throwable $e)
     {
         if (! in_array($reasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT'], true)) {
@@ -1002,6 +944,76 @@ class MarketDataPipelineService
             $hasFallback ? $fallbackTradeDate : null,
             $payload
         );
+    }
+
+
+    private function enforceNonReadableRunCannotRemainCurrent($run, $requestedDate, $fallbackTradeDate, $priorCurrent, $candidatePublication, $candidateCurrent, $resolvedPublicationId, $resolvedPublicationVersion, $finalizeReasonCode, $postFinalizeMismatchNote)
+    {
+        if (
+            (string) ($run->terminal_status ?? '') === 'SUCCESS'
+            && (string) ($run->publishability_state ?? '') === 'READABLE'
+        ) {
+            return [$run, $candidateCurrent, $resolvedPublicationId, $resolvedPublicationVersion, $finalizeReasonCode, $postFinalizeMismatchNote];
+        }
+
+        $rawCurrent = $this->publications->findRawCurrentPublicationStateForTradeDate($requestedDate);
+
+        if (! $rawCurrent || (int) ($rawCurrent->run_id ?? 0) !== (int) $run->run_id) {
+            return [$run, $candidateCurrent, $resolvedPublicationId, $resolvedPublicationVersion, $finalizeReasonCode, $postFinalizeMismatchNote];
+        }
+
+        if ($priorCurrent) {
+            $this->publications->restorePriorCurrentPublication(
+                $requestedDate,
+                (int) $priorCurrent->publication_id,
+                (int) $priorCurrent->run_id
+            );
+
+            $this->runs->syncCurrentPublicationMirror(
+                $requestedDate,
+                (int) $priorCurrent->run_id
+            );
+
+            $resolvedPublicationId = (int) $priorCurrent->publication_id;
+            $resolvedPublicationVersion = (int) $priorCurrent->publication_version;
+            $candidateCurrent = $priorCurrent;
+        } else {
+            $this->publications->clearCurrentPublicationState($requestedDate);
+            $resolvedPublicationId = null;
+            $resolvedPublicationVersion = null;
+            $candidateCurrent = null;
+        }
+
+        $run = $this->safeUpdateTelemetry($run, [
+            'publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : (int) $candidatePublication->publication_id,
+            'publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : (int) $candidatePublication->publication_version,
+            'final_reason_code' => 'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED',
+        ]);
+
+        $this->runs->appendEvent(
+            $run,
+            'FINALIZE',
+            'CURRENT_PUBLICATION_INTEGRITY_REPAIRED',
+            'WARN',
+            'Non-readable run was removed from current publication ownership.',
+            'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED',
+            [
+                'requested_date' => $requestedDate,
+                'run_id' => (int) $run->run_id,
+                'fallback_trade_date' => $fallbackTradeDate,
+                'restored_prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                'cleared_candidate_publication_id' => (int) $candidatePublication->publication_id,
+            ]
+        );
+
+        return [
+            $run,
+            $candidateCurrent,
+            $resolvedPublicationId,
+            $resolvedPublicationVersion,
+            'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED',
+            $postFinalizeMismatchNote,
+        ];
     }
 
     private function resolveFinalizeReasonCode($run, array $outcome, $promotionError, $postFinalizeMismatchNote)
@@ -1081,6 +1093,89 @@ class MarketDataPipelineService
         $this->runs->failStage($run, $stage, $reasonCode, $this->summarizeThrowable($e), $payload);
     }
 
+
+
+
+    private function preparePromoteRunId($requestedDate, $sourceMode, $runId = null, $correctionId = null, array $promoteContext = [])
+    {
+        if ($runId === null) {
+            $seedRun = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode);
+            if (! $seedRun) {
+                throw new \RuntimeException('No persisted import run found for requested_date/source_mode.');
+            }
+            $runId = (int) $seedRun->run_id;
+        }
+
+        $seedRun = $this->runs->findByRunId($runId);
+        if (! $seedRun) {
+            throw new \RuntimeException('Owning run context not found for market-data promote request.');
+        }
+
+        $existingPromoteMode = isset($seedRun->promote_mode) && $seedRun->promote_mode !== '' ? (string) $seedRun->promote_mode : null;
+        $existingPublishTarget = isset($seedRun->publish_target) && $seedRun->publish_target !== '' ? (string) $seedRun->publish_target : null;
+        $requestedPromoteMode = (string) ($promoteContext['promote_mode'] ?? 'full_publish');
+        $requestedPublishTarget = (string) ($promoteContext['publish_target'] ?? 'current_replace');
+
+        $requiresFreshPromoteRun = in_array((string) $seedRun->lifecycle_state, ['COMPLETED', 'FAILED'], true)
+            || (string) ($seedRun->terminal_status ?? '') !== ''
+            || $existingPromoteMode !== null
+            || $existingPublishTarget !== null
+            || ! in_array((string) $seedRun->stage, ['INGEST_BARS', 'PUBLISH_BARS'], true);
+
+        if (! $requiresFreshPromoteRun) {
+            return (int) $seedRun->run_id;
+        }
+
+        $notes = $this->appendRunNotes($seedRun->notes ?? null, [
+            'promote_seed_run_id='.(int) $seedRun->run_id,
+            'promote_mode='.$requestedPromoteMode,
+            'publish_target='.$requestedPublishTarget,
+        ]);
+
+        $derivedRun = $this->runs->createPromoteRunFromSeed($seedRun, 'PUBLISH_BARS', [
+            'notes' => $notes,
+            'correction_id' => $correctionId,
+        ]);
+
+        return (int) $derivedRun->run_id;
+    }
+
+    private function resolvePromoteContext($sourceMode, $correctionId = null, $promoteMode = null)
+    {
+        $resolvedMode = $promoteMode !== null && $promoteMode !== ''
+            ? (string) $promoteMode
+            : ($correctionId !== null ? 'correction' : 'full_publish');
+
+        if (! in_array($resolvedMode, ['full_publish', 'correction', 'incremental'], true)) {
+            throw new \InvalidArgumentException('Unsupported promote mode: '.$resolvedMode);
+        }
+
+        if ($resolvedMode === 'correction' && $correctionId === null) {
+            throw new \InvalidArgumentException('Promote mode correction requires correction_id.');
+        }
+
+        if ($resolvedMode === 'incremental') {
+            return [
+                'promote_mode' => 'incremental',
+                'publish_target' => 'incremental_candidate',
+                'requires_full_coverage' => false,
+            ];
+        }
+
+        if ($resolvedMode === 'correction') {
+            return [
+                'promote_mode' => 'correction',
+                'publish_target' => 'current_replace',
+                'requires_full_coverage' => true,
+            ];
+        }
+
+        return [
+            'promote_mode' => 'full_publish',
+            'publish_target' => 'current_replace',
+            'requires_full_coverage' => true,
+        ];
+    }
 
     private function safeUpdateTelemetry($run, array $telemetry)
     {

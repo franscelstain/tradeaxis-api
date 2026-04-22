@@ -168,8 +168,6 @@ trait UsesMarketDataSqlite
             $table->integer('publication_version');
             $table->integer('is_current')->default(0);
             $table->integer('supersedes_publication_id')->nullable();
-            $table->string('promote_mode')->nullable();
-            $table->string('publish_target')->nullable();
             $table->string('seal_state');
             $table->string('bars_batch_hash')->nullable();
             $table->string('indicators_batch_hash')->nullable();
