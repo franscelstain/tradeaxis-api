@@ -327,6 +327,25 @@ class EodPublicationRepository
         });
     }
 
+
+    public function sealCandidatePublicationPartial(EodRun $run, $sealedBy, $sealNote = null)
+    {
+        return DB::transaction(function () use ($run) {
+            $candidate = $this->getOrCreateCandidatePublication($run, null);
+            $now = Carbon::now(config('market_data.platform.timezone'));
+
+            DB::table('eod_publications')
+                ->where('publication_id', $candidate->publication_id)
+                ->update([
+                    'seal_state' => 'SEALED',
+                    'sealed_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+            return DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->first();
+        });
+    }
+
     public function promoteCandidateToCurrent(EodRun $run, $priorPublicationId = null)
     {
         return DB::transaction(function () use ($run, $priorPublicationId) {

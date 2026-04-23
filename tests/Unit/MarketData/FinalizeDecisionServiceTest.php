@@ -109,7 +109,7 @@ class FinalizeDecisionServiceTest extends TestCase
         $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $decision['reason_code']);
     }
 
-    public function test_finalize_allows_incremental_non_current_candidate_without_current_promotion()
+    public function test_finalize_allows_repair_candidate_non_current_without_current_promotion()
     {
         $service = new FinalizeDecisionService();
         $decision = $service->evaluate(true, true, 'SEALED', [
@@ -118,8 +118,8 @@ class FinalizeDecisionServiceTest extends TestCase
             'coverage_threshold_value' => 0.98,
             'coverage_threshold_mode' => 'MIN_RATIO',
         ], '2026-04-20', [
-            'promote_mode' => 'incremental',
-            'publish_target' => 'incremental_candidate',
+            'promote_mode' => 'repair_candidate',
+            'publish_target' => 'repair_candidate',
         ]);
 
         $this->assertFalse($decision['promotion_allowed']);

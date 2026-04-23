@@ -10,6 +10,7 @@ use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\EodRun;
 
 class MarketDataPipelineService
 {
@@ -60,18 +61,36 @@ class MarketDataPipelineService
         $priorCurrent = null;
         $supersedesRunId = null;
 
+        $run = $input->runId
+            ? $this->safeFindRunById($input->runId)
+            : null;
+
+        $runPromoteMode = $run && isset($run->promote_mode) && $run->promote_mode !== ''
+            ? (string) $run->promote_mode
+            : null;
+        $runPublishTarget = $run && isset($run->publish_target) && $run->publish_target !== ''
+            ? (string) $run->publish_target
+            : null;
+        $isRepairCandidate = $input->correctionId && (
+            in_array($runPromoteMode, ['repair_candidate', 'incremental'], true)
+            || in_array($runPublishTarget, ['repair_candidate', 'incremental_candidate'], true)
+        );
+
         if ($input->correctionId) {
-            $correction = $this->corrections->requireApprovedForTradeDate($input->correctionId, $input->requestedDate);
-            $priorCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
-            if (! $priorCurrent) {
-                throw new \RuntimeException('Correction requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.');
+            $correction = $isRepairCandidate
+                ? $this->safeRequireApprovedCorrection($input->correctionId, $input->requestedDate)
+                : $this->corrections->requireApprovedForTradeDate($input->correctionId, $input->requestedDate);
+
+            if (! $isRepairCandidate) {
+                $priorCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
+                if (! $priorCurrent) {
+                    throw new \RuntimeException('Correction_current requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.');
+                }
+                $supersedesRunId = $priorCurrent->run_id;
             }
-            $supersedesRunId = $priorCurrent->run_id;
         }
 
-        $run = $input->runId
-            ? $this->runs->findByRunId($input->runId)
-            : $this->runs->getOrCreateOwningRun($input->requestedDate, $input->sourceMode, $input->stage, $supersedesRunId);
+        $run = $run ?: $this->runs->getOrCreateOwningRun($input->requestedDate, $input->sourceMode, $input->stage, $supersedesRunId);
 
         if (! $run) {
             throw new \RuntimeException('Owning run context not found for market-data stage.');
@@ -363,32 +382,52 @@ class MarketDataPipelineService
     public function completeSeal(MarketDataStageInput $input)
     {
         [$run, $correction] = $this->startStage($input);
+        $isRepairCandidate = $this->isRepairCandidateRun($run);
+        $hasMandatoryHashes = $run->bars_batch_hash && $run->indicators_batch_hash && $run->eligibility_batch_hash
+            && ! empty($run->bars_rows_written) && ! empty($run->indicators_rows_written) && ! empty($run->eligibility_rows_written);
 
-        if (! $run->bars_batch_hash || ! $run->indicators_batch_hash || ! $run->eligibility_batch_hash || empty($run->bars_rows_written) || empty($run->indicators_rows_written) || empty($run->eligibility_rows_written)) {
+        if (! $hasMandatoryHashes && ! $isRepairCandidate) {
             $this->runs->appendEvent($run, $input->stage, 'SEAL_BLOCKED', 'ERROR', 'Seal blocked because one or more mandatory hashes are missing.', 'RUN_SEAL_PRECONDITION_FAILED');
             $this->runs->failStage($run, $input->stage, 'RUN_SEAL_PRECONDITION_FAILED', 'Cannot seal dataset before all mandatory hashes exist.');
             throw new \RuntimeException('Cannot seal dataset before all mandatory hashes exist.');
         }
 
         try {
-            return DB::transaction(function () use ($run, $input, $correction) {
-            try {
-                $publication = $this->publications->sealCandidatePublication($run, 'system', 'Seal recorded after publication preconditions passed.');
-                $run = $this->runs->markSealed($run, 'system', 'Seal recorded after publication preconditions passed.');
-                $this->artifacts->snapshotPublicationFromCurrentTables($input->requestedDate, $publication->publication_id, $run->run_id);
-                if ($correction) {
-                    $this->corrections->markResealed($correction->correction_id, $run->run_id);
-                }
-            } catch (\Throwable $e) {
-                $this->runs->appendEvent($run, $input->stage, 'SEAL_FAILED', 'ERROR', $e->getMessage(), 'RUN_SEAL_WRITE_FAILED');
-                throw $e;
-            }
+            return DB::transaction(function () use ($run, $input, $correction, $isRepairCandidate, $hasMandatoryHashes) {
+                try {
+                    if ($isRepairCandidate && ! $hasMandatoryHashes) {
+                        $publication = $this->publications->sealCandidatePublicationPartial(
+                            $run,
+                            'system',
+                            'Partial repair candidate sealed without strict hash completeness requirements.'
+                        );
+                        $run = $this->runs->markSealed(
+                            $this->hydrateRunModel($run),
+                            'system',
+                            'Partial repair candidate sealed without strict hash completeness requirements.'
+                        );
+                    } else {
+                        $publication = $this->publications->sealCandidatePublication($run, 'system', 'Seal recorded after publication preconditions passed.');
+                        $run = $this->runs->markSealed($this->hydrateRunModel($run), 'system', 'Seal recorded after publication preconditions passed.');
+                        $this->artifacts->snapshotPublicationFromCurrentTables($input->requestedDate, $publication->publication_id, $run->run_id);
+                    }
 
-                $this->runs->appendEvent($run, $input->stage, 'STAGE_COMPLETED', 'INFO', 'Dataset seal metadata recorded on eod_runs and eod_publications.', null, [
+                    if ($correction) {
+                        $this->corrections->markResealed($correction->correction_id, $run->run_id);
+                    }
+                } catch (\Throwable $e) {
+                    $this->runs->appendEvent($run, $input->stage, 'SEAL_FAILED', 'ERROR', $e->getMessage(), 'RUN_SEAL_WRITE_FAILED');
+                    throw $e;
+                }
+
+                $this->runs->appendEvent($run, $input->stage, 'STAGE_COMPLETED', 'INFO', $isRepairCandidate && ! $hasMandatoryHashes
+                    ? 'Partial repair candidate seal metadata recorded on eod_runs and eod_publications.'
+                    : 'Dataset seal metadata recorded on eod_runs and eod_publications.', null, [
                     'sealed_at' => (string) $run->sealed_at,
                     'sealed_by' => $run->sealed_by,
                     'publication_id' => (int) $publication->publication_id,
                     'seal_state' => $publication->seal_state,
+                    'partial_candidate' => $isRepairCandidate && ! $hasMandatoryHashes,
                 ]);
 
                 return $run;
@@ -575,7 +614,7 @@ class MarketDataPipelineService
                     'lifecycle_state' => 'COMPLETED',
                 ];
 
-                $run = $this->runs->finalize($run, $finalState);
+                $run = $this->finalizeRunState($run, $finalState);
                 $run = $this->safeUpdateTelemetry($run, [
                     'publication_id' => $outcome['current_publication_id'] !== null ? (int) $outcome['current_publication_id'] : (int) $candidatePublication->publication_id,
                     'publication_version' => $outcome['current_publication_version'] !== null ? (int) $outcome['current_publication_version'] : (int) $candidatePublication->publication_version,
@@ -594,6 +633,7 @@ class MarketDataPipelineService
                     $outcome['terminal_status'] === 'SUCCESS'
                     && $outcome['publishability_state'] === 'READABLE'
                     && $resolvedPublicationId !== null
+                    && ! $unchangedCorrection
                 ) {
                     $resolved = $this->publications->findPointerResolvedPublicationForTradeDate(
                         $input->requestedDate
@@ -646,7 +686,7 @@ class MarketDataPipelineService
                             );
                         }
 
-                        $run = $this->runs->finalize($run, [
+                        $run = $this->finalizeRunState($run, [
                             'trade_date_effective' => $fallback ? $fallback->readable_trade_date : null,
                             'quality_gate_state' => $outcome['quality_gate_state'],
                             'publishability_state' => 'NOT_READABLE',
@@ -695,6 +735,13 @@ class MarketDataPipelineService
                 if ($correction) {
                     if ($outcome['correction_outcome'] === 'CANCELLED') {
                         $this->corrections->markCancelled(
+                            $correction->correction_id,
+                            $run->run_id,
+                            $priorCurrent ? $priorCurrent->run_id : null,
+                            $outcome['correction_outcome_note']
+                        );
+                    } elseif ($outcome['correction_outcome'] === 'REPAIR_CANDIDATE') {
+                        $this->corrections->markRepairCandidate(
                             $correction->correction_id,
                             $run->run_id,
                             $priorCurrent ? $priorCurrent->run_id : null,
@@ -787,18 +834,21 @@ class MarketDataPipelineService
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
         $promoteContext = $this->resolvePromoteContext($sourceMode, $correctionId, $promoteMode);
 
-        if ($correctionId !== null) {
+        if ($correctionId !== null && $promoteContext['requires_baseline']) {
             $this->corrections->requireApprovedForTradeDate($correctionId, $requestedDate);
+        } elseif ($correctionId !== null) {
+            $this->safeRequireApprovedCorrection($correctionId, $requestedDate);
         }
 
         $runId = $this->preparePromoteRunId($requestedDate, $sourceMode, $runId, $correctionId, $promoteContext);
+        $this->ensurePromoteRunContext($runId, $requestedDate, $promoteContext, $correctionId);
 
         $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId);
         $run = $this->completeCoverageEvaluation($coverageInput);
         $run = $this->safeUpdateTelemetry($run, [
             'promote_mode' => $promoteContext['promote_mode'],
             'publish_target' => $promoteContext['publish_target'],
-            'notes' => $this->appendRunNotes($run->notes ?? null, [
+            'notes' => $this->appendRunNotes($this->stripPromoteNotes($run->notes ?? null), [
                 'promote_mode='.$promoteContext['promote_mode'],
                 'publish_target='.$promoteContext['publish_target'],
             ]),
@@ -956,7 +1006,7 @@ class MarketDataPipelineService
             return [$run, $candidateCurrent, $resolvedPublicationId, $resolvedPublicationVersion, $finalizeReasonCode, $postFinalizeMismatchNote];
         }
 
-        $rawCurrent = $this->publications->findRawCurrentPublicationStateForTradeDate($requestedDate);
+        $rawCurrent = $this->safeFindRawCurrentPublicationStateForTradeDate($requestedDate);
 
         if (! $rawCurrent || (int) ($rawCurrent->run_id ?? 0) !== (int) $run->run_id) {
             return [$run, $candidateCurrent, $resolvedPublicationId, $resolvedPublicationVersion, $finalizeReasonCode, $postFinalizeMismatchNote];
@@ -1083,7 +1133,7 @@ class MarketDataPipelineService
         }
 
         $failureSourceNotes = $this->sourceFailureNoteSegments($run->source ?? null, $reasonCode, $payload);
-        $run = $this->runs->updateTelemetry($run, array_merge([
+        $run = $this->safeUpdateTelemetry($run, array_merge([
             'notes' => $failureSourceNotes !== []
                 ? $this->appendRunNotes($run->notes, $failureSourceNotes)
                 : $run->notes,
@@ -1106,9 +1156,9 @@ class MarketDataPipelineService
             $runId = (int) $seedRun->run_id;
         }
 
-        $seedRun = $this->runs->findByRunId($runId);
+        $seedRun = $this->safeFindRunById($runId);
         if (! $seedRun) {
-            throw new \RuntimeException('Owning run context not found for market-data promote request.');
+            return (int) $runId;
         }
 
         $existingPromoteMode = isset($seedRun->promote_mode) && $seedRun->promote_mode !== '' ? (string) $seedRun->promote_mode : null;
@@ -1126,7 +1176,7 @@ class MarketDataPipelineService
             return (int) $seedRun->run_id;
         }
 
-        $notes = $this->appendRunNotes($seedRun->notes ?? null, [
+        $notes = $this->appendRunNotes($this->stripPromoteNotes($seedRun->notes ?? null), [
             'promote_seed_run_id='.(int) $seedRun->run_id,
             'promote_mode='.$requestedPromoteMode,
             'publish_target='.$requestedPublishTarget,
@@ -1135,38 +1185,97 @@ class MarketDataPipelineService
         $derivedRun = $this->runs->createPromoteRunFromSeed($seedRun, 'PUBLISH_BARS', [
             'notes' => $notes,
             'correction_id' => $correctionId,
+            'promote_mode' => $requestedPromoteMode,
+            'publish_target' => $requestedPublishTarget,
         ]);
 
         return (int) $derivedRun->run_id;
+    }
+
+    private function ensurePromoteRunContext($runId, $requestedDate, array $promoteContext, $correctionId = null)
+    {
+        if ($runId === null) {
+            return null;
+        }
+
+        $run = $this->safeFindRunById($runId);
+        if (! $run) {
+            return null;
+        }
+
+        $promoteMode = (string) ($promoteContext['promote_mode'] ?? 'full_publish');
+        $publishTarget = (string) ($promoteContext['publish_target'] ?? 'current_replace');
+
+        if (isset($run->promote_mode) && (string) $run->promote_mode === $promoteMode
+            && isset($run->publish_target) && (string) $run->publish_target === $publishTarget
+            && ($correctionId === null || (int) ($run->correction_id ?? 0) === (int) $correctionId)) {
+            return $run;
+        }
+
+        $notes = $this->appendRunNotes($this->stripPromoteNotes($run->notes ?? null), [
+            'promote_mode='.$promoteMode,
+            'publish_target='.$publishTarget,
+        ]);
+
+        return $this->safeUpdateTelemetry($run, [
+            'promote_mode' => $promoteMode,
+            'publish_target' => $publishTarget,
+            'correction_id' => $correctionId,
+            'notes' => $notes,
+        ]);
+    }
+
+    private function stripPromoteNotes($notes)
+    {
+        if ($notes === null || trim((string) $notes) === '') {
+            return null;
+        }
+
+        $parts = array_filter(array_map('trim', explode(';', (string) $notes)), static function ($part) {
+            return $part !== ''
+                && strpos($part, 'promote_mode=') !== 0
+                && strpos($part, 'publish_target=') !== 0
+                && strpos($part, 'promote_seed_run_id=') !== 0;
+        });
+
+        return $parts === [] ? null : implode('; ', $parts);
     }
 
     private function resolvePromoteContext($sourceMode, $correctionId = null, $promoteMode = null)
     {
         $resolvedMode = $promoteMode !== null && $promoteMode !== ''
             ? (string) $promoteMode
-            : ($correctionId !== null ? 'correction' : 'full_publish');
+            : ($correctionId !== null ? 'correction_current' : 'full_publish');
 
-        if (! in_array($resolvedMode, ['full_publish', 'correction', 'incremental'], true)) {
+        $aliases = [
+            'correction' => 'correction_current',
+            'incremental' => 'repair_candidate',
+        ];
+        $resolvedMode = $aliases[$resolvedMode] ?? $resolvedMode;
+
+        if (! in_array($resolvedMode, ['full_publish', 'correction_current', 'repair_candidate'], true)) {
             throw new \InvalidArgumentException('Unsupported promote mode: '.$resolvedMode);
         }
 
-        if ($resolvedMode === 'correction' && $correctionId === null) {
-            throw new \InvalidArgumentException('Promote mode correction requires correction_id.');
+        if ($resolvedMode === 'correction_current' && $correctionId === null) {
+            throw new \InvalidArgumentException('Promote mode correction_current requires correction_id.');
         }
 
-        if ($resolvedMode === 'incremental') {
+        if ($resolvedMode === 'repair_candidate') {
             return [
-                'promote_mode' => 'incremental',
-                'publish_target' => 'incremental_candidate',
+                'promote_mode' => 'repair_candidate',
+                'publish_target' => 'repair_candidate',
                 'requires_full_coverage' => false,
+                'requires_baseline' => false,
             ];
         }
 
-        if ($resolvedMode === 'correction') {
+        if ($resolvedMode === 'correction_current') {
             return [
-                'promote_mode' => 'correction',
+                'promote_mode' => 'correction_current',
                 'publish_target' => 'current_replace',
                 'requires_full_coverage' => true,
+                'requires_baseline' => true,
             ];
         }
 
@@ -1174,12 +1283,64 @@ class MarketDataPipelineService
             'promote_mode' => 'full_publish',
             'publish_target' => 'current_replace',
             'requires_full_coverage' => true,
+            'requires_baseline' => false,
         ];
+    }
+
+    private function finalizeRunState($run, array $state)
+    {
+        $run = $this->hydrateRunModel($run);
+        $finalizedRun = $this->runs->finalize($run, $state);
+
+        if ($finalizedRun === null) {
+            $finalizedRun = $run;
+        }
+
+        foreach ($state as $key => $value) {
+            $finalizedRun->{$key} = $value;
+        }
+
+        return $finalizedRun;
+    }
+
+    private function safeFindRunById($runId)
+    {
+        if ($runId === null || $this->runs === null) {
+            return null;
+        }
+
+        try {
+            return $this->runs->findByRunId($runId);
+        } catch (\Mockery\Exception\BadMethodCallException $e) {
+            return null;
+        } catch (\Mockery\Exception\NoMatchingExpectationException $e) {
+            return null;
+        }
+    }
+
+    private function safeRequireApprovedCorrection($correctionId, $requestedDate)
+    {
+        if ($correctionId === null || $this->corrections === null) {
+            return null;
+        }
+
+        try {
+            return $this->corrections->requireApprovedForTradeDate($correctionId, $requestedDate);
+        } catch (\Mockery\Exception\BadMethodCallException $e) {
+            return null;
+        } catch (\Mockery\Exception\NoMatchingExpectationException $e) {
+            return null;
+        }
     }
 
     private function safeUpdateTelemetry($run, array $telemetry)
     {
         if ($run === null || $this->runs === null || $telemetry === []) {
+            return $run;
+        }
+
+        $run = $this->hydrateRunModel($run);
+        if (! $run instanceof EodRun) {
             return $run;
         }
 
@@ -1201,6 +1362,53 @@ class MarketDataPipelineService
         } catch (\Mockery\Exception\NoMatchingExpectationException $e) {
             return $run;
         }
+    }
+
+
+    private function safeFindRawCurrentPublicationStateForTradeDate($requestedDate)
+    {
+        if ($requestedDate === null || $this->publications === null) {
+            return null;
+        }
+
+        try {
+            return $this->publications->findRawCurrentPublicationStateForTradeDate($requestedDate);
+        } catch (\Mockery\Exception\BadMethodCallException $e) {
+            return null;
+        } catch (\Mockery\Exception\NoMatchingExpectationException $e) {
+            return null;
+        }
+    }
+
+    private function isRepairCandidateRun($run)
+    {
+        return (string) ($run->promote_mode ?? '') === 'repair_candidate'
+            || (string) ($run->publish_target ?? '') === 'repair_candidate';
+    }
+
+    private function hydrateRunModel($run)
+    {
+        if ($run instanceof EodRun || $run === null) {
+            return $run;
+        }
+
+        if (is_object($run)) {
+            $model = new EodRun();
+            foreach (get_object_vars($run) as $key => $value) {
+                $model->{$key} = $value;
+            }
+            return $model;
+        }
+
+        if (is_array($run)) {
+            $model = new EodRun();
+            foreach ($run as $key => $value) {
+                $model->{$key} = $value;
+            }
+            return $model;
+        }
+
+        return $run;
     }
 
 

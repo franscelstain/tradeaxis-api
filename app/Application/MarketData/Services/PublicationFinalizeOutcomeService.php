@@ -38,6 +38,10 @@ class PublicationFinalizeOutcomeService
 
         if (! ($preDecision['promotion_allowed'] ?? false)) {
             $state['trade_date_effective'] = $fallbackTradeDate;
+            if ($correctionId && ($preDecision['reason_code'] ?? null) === 'RUN_REPAIR_CANDIDATE_PARTIAL') {
+                $state['correction_outcome'] = 'REPAIR_CANDIDATE';
+                $state['correction_outcome_note'] = 'Correction request finalized as non-current repair candidate without current publication replacement.';
+            }
             return $state;
         }
 

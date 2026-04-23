@@ -1983,7 +1983,7 @@ class OpsCommandSurfaceTest extends TestCase
     }
 
 
-    public function test_promote_command_renders_incremental_non_current_summary(): void
+    public function test_promote_command_renders_repair_candidate_non_current_summary(): void
     {
         $service = m::mock(MarketDataPipelineService::class);
         $runs = m::mock(EodRunRepository::class);
@@ -1998,7 +1998,7 @@ class OpsCommandSurfaceTest extends TestCase
 
         $service->shouldReceive('promoteDaily')
             ->once()
-            ->with('2026-03-24', 'manual_file', 55, null, 'incremental')
+            ->with('2026-03-24', 'manual_file', 55, null, 'repair_candidate')
             ->andReturn((object) [
                 'run_id' => 55,
                 'trade_date_requested' => '2026-03-24',
@@ -2006,8 +2006,8 @@ class OpsCommandSurfaceTest extends TestCase
                 'lifecycle_state' => 'COMPLETED',
                 'terminal_status' => 'HELD',
                 'publishability_state' => 'NOT_READABLE',
-                'promote_mode' => 'incremental',
-                'publish_target' => 'incremental_candidate',
+                'promote_mode' => 'repair_candidate',
+                'publish_target' => 'repair_candidate',
                 'coverage_gate_state' => 'FAIL',
                 'coverage_available_count' => 5,
                 'coverage_universe_count' => 901,
@@ -2037,8 +2037,8 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('terminal_status=HELD', $display);
         $this->assertStringContainsString('publishability_state=NOT_READABLE', $display);
-        $this->assertStringContainsString('promote_mode=incremental', $display);
-        $this->assertStringContainsString('publish_target=incremental_candidate', $display);
+        $this->assertStringContainsString('promote_mode=repair_candidate', $display);
+        $this->assertStringContainsString('publish_target=repair_candidate', $display);
         $this->assertStringContainsString('reason_code=RUN_NON_CURRENT_PROMOTION', $display);
     }
 

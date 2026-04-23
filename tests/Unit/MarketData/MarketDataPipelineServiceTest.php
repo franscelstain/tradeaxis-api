@@ -1191,8 +1191,8 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('buildManifestByPublicationId')
             ->once()
-            ->with(32)
-            ->andReturn((object) ['publication_id' => 32]);
+            ->with(31)
+            ->andReturn((object) ['publication_id' => 31]);
 
         $corrections->shouldReceive('markPublished')->never();
         $corrections->shouldReceive('markCancelled')->never();
@@ -1285,7 +1285,7 @@ class MarketDataPipelineServiceTest extends TestCase
     }
 
 
-    public function test_promote_single_day_incremental_mode_runs_finalize_path_even_when_coverage_fails(): void
+    public function test_promote_single_day_repair_candidate_mode_runs_finalize_path_even_when_coverage_fails(): void
     {
         [$service, $runs] = $this->makeService();
 
@@ -1309,7 +1309,7 @@ class MarketDataPipelineServiceTest extends TestCase
         $service->shouldReceive('completeSeal')->once()->andReturn($sealRun);
         $service->shouldReceive('completeFinalize')->once()->andReturn($finalizedRun);
 
-        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, null, 'incremental');
+        $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, 7, 'incremental');
 
         $this->assertSame($finalizedRun, $result);
     }

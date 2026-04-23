@@ -124,6 +124,29 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
+
+    public function markRepairCandidate($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null)
+    {
+        $now = Carbon::now(config('market_data.platform.timezone'));
+
+        $payload = [
+            'status' => 'REPAIR_CANDIDATE',
+            'new_run_id' => $newRunId,
+            'final_outcome_note' => $finalOutcomeNote,
+            'updated_at' => $now,
+        ];
+
+        if ($priorRunId !== null) {
+            $payload['prior_run_id'] = $priorRunId;
+        }
+
+        EodDatasetCorrection::query()
+            ->where('correction_id', $correctionId)
+            ->update($payload);
+
+        return $this->findById($correctionId);
+    }
+
     public function markRejected($correctionId, $finalOutcomeNote = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));

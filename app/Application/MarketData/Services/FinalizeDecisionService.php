@@ -40,6 +40,16 @@ class FinalizeDecisionService
         }
 
         if ($publishTarget !== 'current_replace') {
+            if ($promoteMode === 'repair_candidate') {
+                $state['quality_gate_state'] = $coverageGateStatus === 'PASS' ? 'PASS' : ($coverageGateStatus === 'FAIL' ? 'FAIL' : 'BLOCKED');
+                $state['terminal_status'] = 'SUCCESS';
+                $state['publishability_state'] = 'NOT_READABLE';
+                $state['trade_date_effective'] = $fallbackTradeDate;
+                $state['reason_code'] = 'RUN_REPAIR_CANDIDATE_PARTIAL';
+                $state['message'] = 'Repair candidate finalized as non-current partial dataset; current readable publication remains authoritative.';
+                return $state;
+            }
+
             if (! $runSealed || $candidateSealState !== 'SEALED') {
                 $state['quality_gate_state'] = 'BLOCKED';
                 $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';

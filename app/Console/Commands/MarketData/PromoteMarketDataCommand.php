@@ -17,16 +17,21 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
         $runId = $this->option('run_id') ?: null;
         $correctionId = $this->option('correction_id') ?: null;
         $outputDir = $this->option('output_dir') ?: null;
-        $promoteMode = $this->option('mode') ?: null;
+        $promoteMode = $this->normalizePromoteMode($this->option('mode') ?: null);
 
-        if ($promoteMode !== null && ! in_array($promoteMode, ['full_publish', 'correction', 'incremental'], true)) {
-            $this->error('error=Unsupported promote mode. Allowed values: full_publish, correction, incremental.');
+        if ($promoteMode !== null && ! in_array($promoteMode, ['full_publish', 'correction_current', 'repair_candidate'], true)) {
+            $this->error('error=Unsupported promote mode. Allowed values: full_publish, correction_current, repair_candidate. Aliases: correction, incremental.');
             return 1;
         }
 
-        if ($promoteMode === 'correction' && $correctionId === null) {
-            $this->error('error=Promote mode correction requires --correction_id.');
+        if ($promoteMode === 'correction_current' && $correctionId === null) {
+            $this->error('error=Promote mode correction_current requires --correction_id.');
             return 1;
+        }
+
+        if ($runId === null) {
+            $latestRun = $this->latestRunForRequestedDate($requestedDate, $sourceMode);
+            $runId = $latestRun ? $latestRun->run_id : null;
         }
 
         try {
@@ -85,5 +90,19 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
         }
 
         return ((string) ($run->publishability_state ?? '')) === 'READABLE' ? 0 : 1;
+    }
+
+    private function normalizePromoteMode($promoteMode)
+    {
+        if ($promoteMode === null || $promoteMode === '') {
+            return null;
+        }
+
+        $aliases = [
+            'correction' => 'correction_current',
+            'incremental' => 'repair_candidate',
+        ];
+
+        return $aliases[$promoteMode] ?? $promoteMode;
     }
 }
