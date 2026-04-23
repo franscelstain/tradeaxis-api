@@ -578,7 +578,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             ->first();
 
         $this->assertNotNull($persistedCorrection);
-        $this->assertSame('CANCELLED', $persistedCorrection->status);
+        $this->assertSame('CONSUMED_CURRENT', $persistedCorrection->status);
         $this->assertSame(
             'Correction rerun produced unchanged content; current publication preserved without version switch.',
             $persistedCorrection->final_outcome_note

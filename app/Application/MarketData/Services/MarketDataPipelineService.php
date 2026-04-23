@@ -78,13 +78,15 @@ class MarketDataPipelineService
 
         if ($input->correctionId) {
             $correction = $isRepairCandidate
-                ? $this->safeRequireApprovedCorrection($input->correctionId, $input->requestedDate)
+                ? $this->safeCanExecuteCorrection($input->correctionId, $input->requestedDate, 'repair_candidate')
                 : $this->corrections->requireApprovedForTradeDate($input->correctionId, $input->requestedDate);
 
             if (! $isRepairCandidate) {
                 $priorCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
                 if (! $priorCurrent) {
-                    throw new \RuntimeException('Correction_current requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.');
+                    throw new \RuntimeException(
+                        'Correction requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.'
+                    );
                 }
                 $supersedesRunId = $priorCurrent->run_id;
             }
@@ -98,7 +100,12 @@ class MarketDataPipelineService
 
         if ($correction && $input->stage === 'INGEST_BARS') {
             $this->artifacts->snapshotPublicationFromCurrentTables($input->requestedDate, $priorCurrent->publication_id, $priorCurrent->run_id);
-            $correction = $this->corrections->markExecuting($correction->correction_id, $priorCurrent->run_id, $run->run_id);
+            $correction = $this->corrections->markExecuting(
+                $correction->correction_id,
+                $priorCurrent->run_id,
+                $run->run_id,
+                $isRepairCandidate ? 'repair_candidate' : 'correction_current'
+            );
         }
 
         $run = $this->runs->touchStage($run, $input->stage, [
@@ -734,14 +741,14 @@ class MarketDataPipelineService
 
                 if ($correction) {
                     if ($outcome['correction_outcome'] === 'CANCELLED') {
-                        $this->corrections->markCancelled(
+                        $this->corrections->markConsumedForCurrent(
                             $correction->correction_id,
                             $run->run_id,
                             $priorCurrent ? $priorCurrent->run_id : null,
                             $outcome['correction_outcome_note']
                         );
                     } elseif ($outcome['correction_outcome'] === 'REPAIR_CANDIDATE') {
-                        $this->corrections->markRepairCandidate(
+                        $this->corrections->markRepairExecuted(
                             $correction->correction_id,
                             $run->run_id,
                             $priorCurrent ? $priorCurrent->run_id : null,
@@ -837,7 +844,7 @@ class MarketDataPipelineService
         if ($correctionId !== null && $promoteContext['requires_baseline']) {
             $this->corrections->requireApprovedForTradeDate($correctionId, $requestedDate);
         } elseif ($correctionId !== null) {
-            $this->safeRequireApprovedCorrection($correctionId, $requestedDate);
+            $this->safeCanExecuteCorrection($correctionId, $requestedDate, 'repair_candidate');
         }
 
         $runId = $this->preparePromoteRunId($requestedDate, $sourceMode, $runId, $correctionId, $promoteContext);
@@ -1320,11 +1327,20 @@ class MarketDataPipelineService
 
     private function safeRequireApprovedCorrection($correctionId, $requestedDate)
     {
+        return $this->safeCanExecuteCorrection($correctionId, $requestedDate, 'correction_current');
+    }
+
+    private function safeCanExecuteCorrection($correctionId, $requestedDate, $mode = 'correction_current')
+    {
         if ($correctionId === null || $this->corrections === null) {
             return null;
         }
 
         try {
+            if (method_exists($this->corrections, 'canExecuteCorrection')) {
+                return $this->corrections->canExecuteCorrection($correctionId, $requestedDate, $mode);
+            }
+
             return $this->corrections->requireApprovedForTradeDate($correctionId, $requestedDate);
         } catch (\Mockery\Exception\BadMethodCallException $e) {
             return null;

@@ -156,6 +156,9 @@ trait UsesMarketDataSqlite
             $table->string('approved_by')->nullable();
             $table->dateTime('approved_at')->nullable();
             $table->dateTime('published_at')->nullable();
+            $table->unsignedInteger('execution_count')->default(0);
+            $table->dateTime('last_executed_at')->nullable();
+            $table->dateTime('current_consumed_at')->nullable();
             $table->text('final_outcome_note')->nullable();
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();

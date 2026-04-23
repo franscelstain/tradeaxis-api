@@ -159,7 +159,7 @@ class CorrectionCommandsTest extends TestCase
         $cancelled = (object) [
             'correction_id' => 7,
             'trade_date' => '2026-03-17',
-            'status' => 'CANCELLED',
+            'status' => 'CONSUMED_CURRENT',
         ];
 
         $repo->shouldReceive('findById')
@@ -205,7 +205,7 @@ class CorrectionCommandsTest extends TestCase
         $this->assertStringContainsString('terminal_status=SUCCESS', $display);
         $this->assertStringContainsString('publishability_state=READABLE', $display);
         $this->assertStringContainsString('correction_id=7', $display);
-        $this->assertStringContainsString('correction_status=CANCELLED', $display);
+        $this->assertStringContainsString('correction_status=CONSUMED_CURRENT', $display);
     }
 
 

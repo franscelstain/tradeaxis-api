@@ -427,3 +427,81 @@ Run in user environment:
 - `php artisan market-data:current-publication:repair --trade_date=2026-03-20 --apply`
 - verify pointer/current mirrors are cleared for invalid current state
 - verify subsequent correction still requires valid readable baseline unless a valid current publication is restored/published
+
+## 2026-04-23 — CORRECTION REQUEST RE-EXECUTION POLICY EXECUTION
+
+Status: DONE IN CODE / PENDING LOCAL DB MIGRATION + PHPUnit PROOF
+
+### Policy implemented
+
+Adopted split lifecycle with mode-aware execution enforcement:
+
+- `correction_current`
+  - single-use for current replacement
+  - once a current-style execution reaches terminal consumption, the request becomes consumed and cannot be executed or approved again
+- `repair_candidate`
+  - reusable for iterative non-current repair execution
+  - same `correction_id` may rerun while status stays inside repair-capable lifecycle states
+  - repair execution never promotes to current automatically
+
+### Concrete schema changes
+
+Added to `eod_dataset_corrections`:
+- `execution_count`
+- `last_executed_at`
+- `current_consumed_at`
+
+Expanded status enum to include:
+- `REPAIR_ACTIVE`
+- `REPAIR_EXECUTED`
+- `CONSUMED_CURRENT`
+- `CLOSED`
+
+### Concrete code changes
+
+- `EodCorrectionRepository`
+  - added `canExecuteCorrection($correctionId, $tradeDate, $mode)`
+  - `requireApprovedForTradeDate()` now delegates to `correction_current` mode enforcement
+  - `markExecuting()` is now mode-aware
+  - added `markRepairExecuted()`
+  - added `markConsumedForCurrent()`
+  - `markRepairCandidate()` kept as compatibility alias to `markRepairExecuted()`
+  - `approve()` now blocks re-approval of already consumed current corrections
+
+- `MarketDataPipelineService`
+  - repair-candidate promote path now validates correction eligibility with mode-aware execution policy
+  - correction finalize now persists mode-specific terminal lifecycle:
+    - unchanged current correction → `CONSUMED_CURRENT`
+    - repair candidate finalize → `REPAIR_EXECUTED`
+    - successful current replacement → `PUBLISHED`
+
+### Files changed in this session
+
+- `app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php`
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+- `database/migrations/2026_04_23_000004_add_correction_reexecution_policy_fields.php`
+- `docs/market_data/db/Database_Schema_MariaDB.sql`
+- `tests/Support/UsesMarketDataSqlite.php`
+- `tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php`
+- `tests/Unit/MarketData/CorrectionCommandsTest.php`
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+
+### Proof status in this container
+
+- `php -l` on changed PHP files → PASS
+- PHPUnit runtime → not runnable here because uploaded ZIP does not contain `vendor/`
+
+### Local proof still required
+
+Run after `php artisan migrate` in user environment:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/CorrectionCommandsTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "correction|repair_candidate|unchanged_artifacts"`
+
+Suggested manual runtime proof:
+
+1. `repair_candidate` first execution with `market-data:promote --mode=incremental --correction_id=...`
+2. same `repair_candidate` second execution with same `correction_id` → must remain allowed
+3. `correction_current` execution with same `correction_id` after it becomes consumed → must fail
+4. verify current publication pointer remains unchanged for repair candidate executions

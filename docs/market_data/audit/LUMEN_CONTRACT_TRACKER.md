@@ -285,3 +285,62 @@ A publication may only remain or become authoritative current state when all of 
   - `eod_runs.terminal_status`
   - `eod_runs.publishability_state`
   - `eod_runs.is_current_publication`
+
+## 2026-04-23 — CORRECTION REQUEST RE-EXECUTION POLICY HARDENING
+
+### Contract decision
+
+The correction lifecycle is now **mode-specific** and no longer relies on one shared approval interpretation.
+
+#### correction_current
+- purpose: replace current publication safely
+- approval requirement: required
+- execution rule: single-use current lifecycle
+- terminal consumed states:
+  - `CONSUMED_CURRENT`
+  - `PUBLISHED`
+- after terminal current consumption:
+  - same `correction_id` cannot be executed again
+  - same `correction_id` cannot be approved again
+
+#### repair_candidate
+- purpose: iterative non-current repair / reseal attempts
+- approval requirement: required initially
+- reusable states for rerun:
+  - `APPROVED`
+  - `EXECUTING`
+  - `RESEALED`
+  - `REPAIR_ACTIVE`
+  - `REPAIR_EXECUTED`
+  - `REPAIR_CANDIDATE` (legacy compatibility)
+- terminal repair execution state:
+  - `REPAIR_EXECUTED`
+- repair execution must never auto-promote to current
+
+### Persisted lifecycle telemetry
+
+`eod_dataset_corrections` now carries explicit execution telemetry:
+- `execution_count`
+- `last_executed_at`
+- `current_consumed_at`
+
+### Allowed transition summary
+
+- `REQUESTED -> APPROVED`
+- `APPROVED -> EXECUTING` for `correction_current`
+- `APPROVED -> REPAIR_ACTIVE` for `repair_candidate`
+- `EXECUTING -> RESEALED`
+- `REPAIR_ACTIVE -> RESEALED`
+- `RESEALED -> PUBLISHED` when current replacement succeeds
+- `RESEALED -> CONSUMED_CURRENT` when current-style execution is unchanged/cancelled
+- `RESEALED -> REPAIR_EXECUTED` when repair-candidate finalize completes non-current
+- `REPAIR_EXECUTED -> APPROVED` only when operator explicitly re-approves for a new controlled execution attempt
+
+### Guardrail result
+
+This session closes the prior ambiguity where repair-candidate flow existed at promote/finalize level but correction approval remained effectively single-use without mode differentiation.
+
+The enforced invariant is now:
+- iterative repair is allowed
+- current replacement remains single-use and approval-consuming
+- repair execution cannot silently overwrite authoritative current publication
