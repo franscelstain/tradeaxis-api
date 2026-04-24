@@ -506,6 +506,7 @@ class MarketDataPipelineService
                     [
                         'promote_mode' => $run->promote_mode ?: ($correction ? 'correction' : 'full_publish'),
                         'publish_target' => $run->publish_target ?: ($correction ? 'current_replace' : 'current_replace'),
+                        'source_mode' => $input->sourceMode,
                     ]
                 );
 

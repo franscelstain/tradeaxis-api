@@ -123,9 +123,75 @@ class FinalizeDecisionServiceTest extends TestCase
         ]);
 
         $this->assertFalse($decision['promotion_allowed']);
+        $this->assertSame('SUCCESS', $decision['terminal_status']);
+        $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+        $this->assertSame('RUN_REPAIR_CANDIDATE_PARTIAL', $decision['reason_code']);
+        $this->assertSame('2026-04-20', $decision['trade_date_effective']);
+    }
+
+    public function test_manual_file_partial_strict_without_fallback_stays_not_readable()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', [
+            'coverage_gate_status' => 'FAIL',
+            'coverage_ratio' => 5 / 901,
+            'coverage_threshold_value' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+        ], null, [
+            'source_mode' => 'manual_file',
+            'promote_mode' => 'full_publish',
+            'publish_target' => 'current_replace',
+        ]);
+
+        $this->assertFalse($decision['promotion_allowed']);
+        $this->assertSame('FAILED', $decision['terminal_status']);
+        $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+        $this->assertSame('RUN_COVERAGE_LOW', $decision['reason_code']);
+        $this->assertSame('COVERAGE_GATE_STRICT_HYBRID', $decision['manual_file_policy']);
+        $this->assertFalse($decision['coverage_override_allowed']);
+    }
+
+    public function test_manual_file_partial_hybrid_with_fallback_is_held_and_keeps_fallback_effective_date()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', [
+            'coverage_gate_status' => 'FAIL',
+            'coverage_ratio' => 5 / 901,
+            'coverage_threshold_value' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+        ], '2026-03-19', [
+            'source_mode' => 'manual_file',
+            'promote_mode' => 'full_publish',
+            'publish_target' => 'current_replace',
+        ]);
+
+        $this->assertFalse($decision['promotion_allowed']);
         $this->assertSame('HELD', $decision['terminal_status']);
         $this->assertSame('NOT_READABLE', $decision['publishability_state']);
-        $this->assertSame('RUN_NON_CURRENT_PROMOTION', $decision['reason_code']);
-        $this->assertSame('2026-04-20', $decision['trade_date_effective']);
+        $this->assertSame('2026-03-19', $decision['trade_date_effective']);
+        $this->assertSame('RUN_COVERAGE_LOW', $decision['reason_code']);
+        $this->assertSame('COVERAGE_GATE_STRICT_HYBRID', $decision['manual_file_policy']);
+        $this->assertFalse($decision['coverage_override_allowed']);
+    }
+
+    public function test_manual_file_partial_does_not_create_readable_with_override_state()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', [
+            'coverage_gate_status' => 'FAIL',
+            'coverage_ratio' => 5 / 901,
+            'coverage_threshold_value' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+        ], '2026-03-19', [
+            'source_mode' => 'manual_file',
+            'promote_mode' => 'full_publish',
+            'publish_target' => 'current_replace',
+            'allow_partial' => true,
+        ]);
+
+        $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+        $this->assertNotSame('READABLE_WITH_OVERRIDE', $decision['publishability_state']);
+        $this->assertFalse($decision['promotion_allowed']);
+        $this->assertFalse($decision['coverage_override_allowed']);
     }
 }

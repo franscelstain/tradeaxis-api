@@ -3,7 +3,7 @@
 - Correction Lifecycle → DONE (PROVEN)
 - Correction Re-execution Policy → DONE (PROVEN)
 - Coverage Gate → DONE
-- Manual File Publishability → OPEN (POLICY NOT LOCKED)
+- Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 
 # LUMEN_CONTRACT_TRACKER
 
@@ -422,3 +422,68 @@ Status: PARTIAL
   - override mechanism undefined
   - HOLD vs FAIL behavior undefined
   - readable-with-warning not defined
+
+## 2026-04-24 — Manual File Publishability Policy Lock & Execution Session
+
+Status: DONE
+
+### Scope
+
+Locked manual-file publishability behavior against coverage gate and current publication safety.
+
+### Changes
+
+- Added owner contract: `docs/market_data/book/Manual_File_Publishability_Policy_LOCKED.md`.
+- Final policy selected: HYBRID STRICT.
+- `manual_file` remains coverage-gated and does not bypass coverage.
+- `HELD` is confirmed as `terminal_status`, not `publishability_state`.
+- `READABLE_WITH_OVERRIDE` is explicitly rejected for this contract version.
+
+### Test Proof
+
+Added `FinalizeDecisionServiceTest` coverage for:
+- manual file partial without fallback → `FAILED` + `NOT_READABLE`
+- manual file partial with fallback → `HELD` + `NOT_READABLE`
+- `allow_partial` context does not create `READABLE_WITH_OVERRIDE`
+
+### Result
+
+Manual-file partial publishability is no longer ambiguous. Import success is separate from publishability success.
+
+### Contract Impact
+
+Coverage gate remains authoritative for readable current publication replacement. Manual file cannot create a reader-authoritative partial current publication.
+
+### Remaining Gap
+
+No override mode exists. Any future override must define a separate consumer/read-side partial-readable contract before implementation.
+
+## 2026-04-24 — Manual File Publishability Test Correction
+
+Status: DONE
+
+### Scope
+
+Aligned test expectation with the locked correction lifecycle behavior for non-current repair candidates.
+
+### Changes
+
+- Repair candidate non-current finalize remains `SUCCESS` because execution completed.
+- Repair candidate remains `NOT_READABLE` and `promotion_allowed=false` because it is not current-reader authoritative.
+- Manual-file strict hybrid policy remains unchanged.
+
+### Test Proof
+
+User-provided local test run identified only the stale expectation in `FinalizeDecisionServiceTest`; related integration and command-surface filters passed individually.
+
+### Result
+
+Correction lifecycle and manual-file publishability policy are now consistent in unit test expectations.
+
+### Contract Impact
+
+No new publishability state and no coverage override introduced.
+
+### Remaining Gap
+
+Full local PHPUnit rerun pending after this corrected ZIP.

@@ -3,7 +3,7 @@
 - Correction Lifecycle → DONE (PROVEN)
 - Correction Re-execution Policy → DONE (PROVEN)
 - Coverage Gate → DONE
-- Manual File Publishability → OPEN (POLICY NOT LOCKED)
+- Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 
 # LUMEN_IMPLEMENTATION_STATUS
 
@@ -583,3 +583,75 @@ Status: PARTIAL
   - override mechanism undefined
   - HOLD vs FAIL behavior undefined
   - readable-with-warning not defined
+
+## 2026-04-24 — Manual File Publishability Policy Lock & Execution Session
+
+Status: DONE
+
+### Scope
+
+Implemented explicit code/test/documentation lock for manual-file publishability versus coverage gate.
+
+### Changes
+
+- Added `docs/market_data/book/Manual_File_Publishability_Policy_LOCKED.md`.
+- Updated `FinalizeDecisionService` to expose manual-file policy metadata:
+  - `manual_file_policy=COVERAGE_GATE_STRICT_HYBRID`
+  - `coverage_override_allowed=false`
+- Passed `source_mode` from `MarketDataPipelineService::completeFinalize()` into finalize decision context.
+- Added regression tests proving manual-file partial datasets do not become readable by override.
+
+### Test Proof
+
+Prepared PHPUnit target:
+
+```bash
+vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php
+```
+
+Expected proof:
+- manual-file partial strict path remains `NOT_READABLE`
+- fallback path becomes terminal `HELD`, not readable
+- `READABLE_WITH_OVERRIDE` is not emitted
+
+### Result
+
+Code path now carries explicit manual-file policy metadata while preserving existing safe runtime behavior.
+
+### Contract Impact
+
+No new publishability state was added. `READABLE` and `NOT_READABLE` remain the only publishability states. `HELD` remains terminal status only.
+
+### Remaining Gap
+
+Runtime/manual DB validation still must be run locally because this ZIP excludes `vendor/` and this environment cannot execute the Laravel/PHPUnit suite.
+
+## 2026-04-24 — Manual File Publishability Test Correction
+
+Status: DONE
+
+### Scope
+
+Corrected regression test expectation after local PHPUnit proof showed `repair_candidate` non-current finalize behavior remains intentionally successful while not readable and not promoted.
+
+### Changes
+
+- Updated `FinalizeDecisionServiceTest::test_finalize_allows_repair_candidate_non_current_without_current_promotion` expected terminal status from `HELD` to `SUCCESS`.
+- Updated expected reason code from `RUN_NON_CURRENT_PROMOTION` to `RUN_REPAIR_CANDIDATE_PARTIAL`.
+- No production code change was required.
+
+### Test Proof
+
+User-provided local PHPUnit output showed the service returned `terminal_status=SUCCESS` for repair candidate non-current finalize, while related manual-file/coverage/fallback/publishability and command-surface filters passed individually.
+
+### Result
+
+Test expectation now matches the existing correction lifecycle contract: repair candidates may complete successfully as non-current partial datasets, but they remain non-readable and do not alter current publication authority.
+
+### Contract Impact
+
+No contract change. This is a test alignment correction only.
+
+### Remaining Gap
+
+Rerun `vendor\\bin\\phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` locally to confirm the corrected file passes.

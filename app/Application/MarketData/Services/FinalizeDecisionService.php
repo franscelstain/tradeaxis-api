@@ -14,6 +14,18 @@ class FinalizeDecisionService
         $qualityGateState = $this->mapCoverageGateStatusToQualityGateState($coverageGateStatus);
         $promoteMode = (string) ($promoteContext['promote_mode'] ?? 'full_publish');
         $publishTarget = (string) ($promoteContext['publish_target'] ?? 'current_replace');
+        $sourceMode = (string) ($promoteContext['source_mode'] ?? '');
+        $isManualFileSource = in_array($sourceMode, ['manual_file', 'manual_entry'], true);
+
+        /*
+         * CONTRACT: manual_file is an acquisition/source mode, not a coverage bypass.
+         * Partial manual files remain blocked by the same coverage gate used for API
+         * publications. The safe outcome is HYBRID fail-safe: keep/fall back to the
+         * existing readable current publication when one exists.
+         */
+        $manualFilePolicy = $isManualFileSource ? 'COVERAGE_GATE_STRICT_HYBRID' : null;
+        $coverageOverrideAllowed = false;
+
         $state = [
             'coverage_gate_status' => $coverageGateStatus,
             'quality_gate_state' => $qualityGateState,
@@ -23,6 +35,9 @@ class FinalizeDecisionService
             'reason_code' => null,
             'message' => 'Run finalized without readable current publication for requested date.',
             'promotion_allowed' => false,
+            'source_mode' => $sourceMode !== '' ? $sourceMode : null,
+            'manual_file_policy' => $manualFilePolicy,
+            'coverage_override_allowed' => $coverageOverrideAllowed,
             'coverage_summary' => [
                 'coverage_gate_status' => $coverageGateStatus,
                 'coverage_ratio' => $coverageRatio !== null ? (float) $coverageRatio : null,
