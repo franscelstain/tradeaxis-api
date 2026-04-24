@@ -71,6 +71,7 @@ class MarketDataPipelineService
         $runPublishTarget = $run && isset($run->publish_target) && $run->publish_target !== ''
             ? (string) $run->publish_target
             : null;
+
         $isRepairCandidate = $input->correctionId && (
             in_array($runPromoteMode, ['repair_candidate', 'incremental'], true)
             || in_array($runPublishTarget, ['repair_candidate', 'incremental_candidate'], true)
@@ -81,28 +82,42 @@ class MarketDataPipelineService
                 ? $this->safeCanExecuteCorrection($input->correctionId, $input->requestedDate, 'repair_candidate')
                 : $this->corrections->requireApprovedForTradeDate($input->correctionId, $input->requestedDate);
 
+            $priorCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
+
+            if (! $priorCurrent) {
+                throw new \RuntimeException(
+                    'Correction requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.'
+                );
+            }
+
             if (! $isRepairCandidate) {
-                $priorCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
-                if (! $priorCurrent) {
-                    throw new \RuntimeException(
-                        'Correction requires an existing current sealed publication baseline resolved from current pointer/current publication for target trade date.'
-                    );
-                }
                 $supersedesRunId = $priorCurrent->run_id;
             }
         }
 
-        $run = $run ?: $this->runs->getOrCreateOwningRun($input->requestedDate, $input->sourceMode, $input->stage, $supersedesRunId);
+        $run = $run ?: $this->runs->getOrCreateOwningRun(
+            $input->requestedDate,
+            $input->sourceMode,
+            $input->stage,
+            $supersedesRunId
+        );
 
         if (! $run) {
             throw new \RuntimeException('Owning run context not found for market-data stage.');
         }
 
-        if ($correction && $input->stage === 'INGEST_BARS') {
-            $this->artifacts->snapshotPublicationFromCurrentTables($input->requestedDate, $priorCurrent->publication_id, $priorCurrent->run_id);
+        if ($correction && in_array($input->stage, ['INGEST_BARS', 'PUBLISH_BARS'], true)) {
+            if (! $isRepairCandidate) {
+                $this->artifacts->snapshotPublicationFromCurrentTables(
+                    $input->requestedDate,
+                    $priorCurrent->publication_id,
+                    $priorCurrent->run_id
+                );
+            }
+
             $correction = $this->corrections->markExecuting(
                 $correction->correction_id,
-                $priorCurrent->run_id,
+                $priorCurrent ? $priorCurrent->run_id : null,
                 $run->run_id,
                 $isRepairCandidate ? 'repair_candidate' : 'correction_current'
             );
@@ -111,15 +126,20 @@ class MarketDataPipelineService
         $run = $this->runs->touchStage($run, $input->stage, [
             'notes' => $this->appendRunNotes(
                 $run->notes,
-                $input->correctionId ? ['correction_id='.(int) $input->correctionId] : []
+                $input->correctionId ? ['correction_id=' . (int) $input->correctionId] : []
             ),
             'supersedes_run_id' => $supersedesRunId ?: $run->supersedes_run_id,
             'correction_id' => $input->correctionId ?: $run->correction_id,
         ]);
 
-        $existingSourceMode = isset($run->source) && $run->source !== '' ? (string) $run->source : null;
+        $existingSourceMode = isset($run->source) && $run->source !== ''
+            ? (string) $run->source
+            : null;
+
         if ($existingSourceMode !== null && $existingSourceMode !== (string) $input->sourceMode) {
-            throw new \RuntimeException('Run source_mode is immutable within a single run and cannot switch across stages.');
+            throw new \RuntimeException(
+                'Run source_mode is immutable within a single run and cannot switch across stages.'
+            );
         }
 
         $this->runs->appendEvent(
@@ -143,6 +163,14 @@ class MarketDataPipelineService
     public function completeIngest(MarketDataStageInput $input)
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
+
+        if ($priorCurrent === null) {
+            $baselineCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
+
+            if ($baselineCurrent) {
+                $priorCurrent = $baselineCurrent;
+            }
+        }
 
         try {
             return DB::transaction(function () use ($run, $input, $priorCurrent) {
@@ -1230,6 +1258,23 @@ class MarketDataPipelineService
             'correction_id' => $correctionId,
             'notes' => $notes,
         ]);
+    }
+
+    private function isRepairCandidateRunContext($run)
+    {
+        if (! $run) {
+            return false;
+        }
+
+        $promoteMode = isset($run->promote_mode) && $run->promote_mode !== ''
+            ? (string) $run->promote_mode
+            : null;
+        $publishTarget = isset($run->publish_target) && $run->publish_target !== ''
+            ? (string) $run->publish_target
+            : null;
+
+        return in_array($promoteMode, ['repair_candidate', 'incremental'], true)
+            || in_array($publishTarget, ['repair_candidate', 'incremental_candidate'], true);
     }
 
     private function stripPromoteNotes($notes)

@@ -372,4 +372,40 @@ class CorrectionCommandsTest extends TestCase
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('Correction request must be APPROVED/EXECUTING/RESEALED before execution. Current status=REQUESTED', $display);
     }
+
+    public function test_run_correction_command_rejects_repair_executed_status_to_preserve_mode_isolation(): void
+    {
+        $repo = m::mock(EodCorrectionRepository::class);
+        $pipeline = m::mock(MarketDataPipelineService::class);
+
+        $repo->shouldReceive('findById')
+            ->once()
+            ->with(10)
+            ->andReturn((object) [
+                'correction_id' => 10,
+                'trade_date' => '2026-03-17',
+                'status' => 'REPAIR_EXECUTED',
+            ]);
+
+        $pipeline->shouldNotReceive('runDaily');
+
+        $this->app->instance(EodCorrectionRepository::class, $repo);
+        $this->app->instance(MarketDataPipelineService::class, $pipeline);
+
+        $command = new RunCorrectionCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'correction_id' => 10,
+            '--requested_date' => '2026-03-17',
+            '--source_mode' => 'manual_file',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('Correction request must be APPROVED/EXECUTING/RESEALED before execution. Current status=REPAIR_EXECUTED', $display);
+    }
+
 }

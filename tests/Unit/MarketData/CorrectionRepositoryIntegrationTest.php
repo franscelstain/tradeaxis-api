@@ -71,7 +71,7 @@ class CorrectionRepositoryIntegrationTest extends TestCase
     }
 
 
-    public function test_correction_repository_allows_repair_candidate_rerun_but_blocks_current_rerun_after_consumption(): void
+    public function test_correction_repository_allows_repair_candidate_rerun_increments_metadata_and_preserves_non_current_state_until_current_publish(): void
     {
         $repo = new EodCorrectionRepository();
 
@@ -82,14 +82,28 @@ class CorrectionRepositoryIntegrationTest extends TestCase
         $this->assertSame('APPROVED', $eligibleRepair->status);
 
         $repo->markExecuting($approved->correction_id, 25, 27, 'repair_candidate');
-        $repairExecuted = $repo->markRepairExecuted($approved->correction_id, 27, 25, 'repair iteration completed');
+        $firstRepair = $repo->markRepairExecuted($approved->correction_id, 27, 25, 'repair iteration completed');
 
-        $this->assertSame('REPAIR_EXECUTED', $repairExecuted->status);
-        $this->assertSame(1, (int) $repairExecuted->execution_count);
-        $this->assertNotNull($repairExecuted->last_executed_at);
+        $this->assertSame('REPAIR_EXECUTED', $firstRepair->status);
+        $this->assertSame(1, (int) $firstRepair->execution_count);
+        $this->assertSame(25, (int) $firstRepair->prior_run_id);
+        $this->assertSame(27, (int) $firstRepair->new_run_id);
+        $this->assertNotNull($firstRepair->last_executed_at);
+        $this->assertNull($firstRepair->current_consumed_at);
 
         $eligibleRepairRerun = $repo->canExecuteCorrection($approved->correction_id, '2026-03-20', 'repair_candidate');
         $this->assertSame('REPAIR_EXECUTED', $eligibleRepairRerun->status);
+
+        $repo->markExecuting($approved->correction_id, 27, 29, 'repair_candidate');
+        $secondRepair = $repo->markRepairExecuted($approved->correction_id, 29, 27, 'repair rerun completed');
+
+        $this->assertSame('REPAIR_EXECUTED', $secondRepair->status);
+        $this->assertSame(2, (int) $secondRepair->execution_count);
+        $this->assertSame(27, (int) $secondRepair->prior_run_id);
+        $this->assertSame(29, (int) $secondRepair->new_run_id);
+        $this->assertSame('repair rerun completed', $secondRepair->final_outcome_note);
+        $this->assertNotNull($secondRepair->last_executed_at);
+        $this->assertNull($secondRepair->current_consumed_at);
 
         try {
             $repo->canExecuteCorrection($approved->correction_id, '2026-03-20', 'correction_current');
@@ -98,12 +112,18 @@ class CorrectionRepositoryIntegrationTest extends TestCase
             $this->assertSame('Correction request must be APPROVED before execution.', $e->getMessage());
         }
 
+        $persistedAfterRepair = DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->first();
+        $this->assertSame('REPAIR_EXECUTED', $persistedAfterRepair->status);
+        $this->assertSame(2, (int) $persistedAfterRepair->execution_count);
+        $this->assertNull($persistedAfterRepair->current_consumed_at);
+
         $reapproved = $repo->approve($approved->correction_id, 'reviewer-2');
         $this->assertSame('APPROVED', $reapproved->status);
 
-        $repo->markExecuting($approved->correction_id, 27, 28, 'correction_current');
-        $published = $repo->markPublished($approved->correction_id, 28, 27, 'current replaced');
+        $repo->markExecuting($approved->correction_id, 29, 30, 'correction_current');
+        $published = $repo->markPublished($approved->correction_id, 30, 29, 'current replaced');
         $this->assertSame('PUBLISHED', $published->status);
+        $this->assertSame(3, (int) $published->execution_count);
         $this->assertNotNull($published->current_consumed_at);
 
         try {

@@ -4173,9 +4173,127 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame(0, $payload['coverage_universe_count']);
         $this->assertSame(0, $payload['coverage_available_count']);
         $this->assertSame(0, $payload['coverage_missing_count']);
+
         $this->assertSame('coverage_gate_v1', $payload['coverage_contract_version']);
         $this->assertSame(0, (int) $publication->is_current);
         $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+    }
+
+    public function test_promote_single_day_repair_candidate_first_execution_marks_metadata_and_keeps_current_publication_non_current(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 131,
+            'high' => 135,
+            'low' => 130,
+            'close' => 134,
+            'volume' => 2400,
+            'adj_close' => 134,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'repair-first-pass', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        $pipeline = $this->makePipeline();
+        $importRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
+        $repairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $importRun->run_id, $approved->correction_id, 'repair_candidate');
+
+        $correctionRow = DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->first();
+        $candidatePublication = DB::table('eod_publications')->where('run_id', $repairRun->run_id)->first();
+        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $finalizedEvent = DB::table('eod_run_events')
+            ->where('run_id', $repairRun->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->first();
+        $payload = json_decode((string) $finalizedEvent->event_payload_json, true);
+
+        $this->assertSame('SUCCESS', $repairRun->terminal_status);
+        $this->assertSame('NOT_READABLE', $repairRun->publishability_state);
+        $this->assertSame('repair_candidate', $repairRun->promote_mode);
+        $this->assertSame('repair_candidate', $repairRun->publish_target);
+        $this->assertSame('REPAIR_EXECUTED', $correctionRow->status);
+        $this->assertSame(1, (int) $correctionRow->execution_count);
+        $this->assertSame((int) $repairRun->run_id, (int) $correctionRow->new_run_id);
+        $this->assertNotNull($correctionRow->last_executed_at);
+        $this->assertNull($correctionRow->current_consumed_at);
+        $this->assertNotNull($candidatePublication);
+        $this->assertSame(0, (int) $candidatePublication->is_current);
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
+        $this->assertSame('RUN_REPAIR_CANDIDATE_PARTIAL', $finalizedEvent->reason_code);
+        $this->assertSame('REPAIR_CANDIDATE', $payload['correction_outcome']);
+    }
+
+    public function test_promote_single_day_repair_candidate_rerun_increments_execution_count_and_preserves_current_pointer(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 141,
+            'high' => 146,
+            'low' => 140,
+            'close' => 145,
+            'volume' => 2600,
+            'adj_close' => 145,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'repair-rerun', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        $pipeline = $this->makePipeline();
+        $firstImportRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
+        $firstRepairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $firstImportRun->run_id, $approved->correction_id, 'repair_candidate');
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 143,
+            'high' => 148,
+            'low' => 142,
+            'close' => 147,
+            'volume' => 2800,
+            'adj_close' => 147,
+            'captured_at' => '2026-03-20T17:30:00+07:00',
+        ]]);
+
+        $secondImportRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
+        $secondRepairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $secondImportRun->run_id, $approved->correction_id, 'incremental');
+
+        $correctionRow = DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->first();
+        $firstCandidate = DB::table('eod_publications')->where('run_id', $firstRepairRun->run_id)->first();
+        $secondCandidate = DB::table('eod_publications')->where('run_id', $secondRepairRun->run_id)->first();
+        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+
+        $this->assertSame('SUCCESS', $firstRepairRun->terminal_status);
+        $this->assertSame('SUCCESS', $secondRepairRun->terminal_status);
+        $this->assertSame('NOT_READABLE', $secondRepairRun->publishability_state);
+        $this->assertSame('repair_candidate', $secondRepairRun->promote_mode);
+        $this->assertSame('repair_candidate', $secondRepairRun->publish_target);
+        $this->assertSame('REPAIR_EXECUTED', $correctionRow->status);
+        $this->assertSame(2, (int) $correctionRow->execution_count);
+        $this->assertSame((int) $secondRepairRun->run_id, (int) $correctionRow->new_run_id);
+        $this->assertNotNull($correctionRow->last_executed_at);
+        $this->assertNull($correctionRow->current_consumed_at);
+        $this->assertNotNull($firstCandidate);
+        $this->assertNotNull($secondCandidate);
+        $this->assertSame(0, (int) $firstCandidate->is_current);
+        $this->assertSame(0, (int) $secondCandidate->is_current);
+        $this->assertNotSame((int) $firstRepairRun->run_id, (int) $secondRepairRun->run_id);
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
     }
 
     private function deleteDirectory(string $path): void
