@@ -1,3 +1,10 @@
+## FINAL SYSTEM STATUS (LATEST)
+
+- Correction Lifecycle → DONE (PROVEN)
+- Correction Re-execution Policy → DONE (PROVEN)
+- Coverage Gate → DONE
+- Manual File Publishability → OPEN (POLICY NOT LOCKED)
+
 # LUMEN_CONTRACT_TRACKER
 
 ## Traceability / Linkage / Publishability / Correction Guard Session
@@ -344,3 +351,74 @@ The enforced invariant is now:
 - iterative repair is allowed
 - current replacement remains single-use and approval-consuming
 - repair execution cannot silently overwrite authoritative current publication
+
+## 2026-04-24 — CORRECTION LIFECYCLE TEST HARDENING
+
+Status: DONE (CODE + TEST PROVEN)
+
+### Scope
+- correction lifecycle validation
+- repair_candidate rerun validation
+- execution metadata verification
+- pipeline end-to-end proof
+
+### Changes
+- fixed priorCurrent propagation to ingest layer
+- ensured repair_candidate uses baseline current without superseding
+- enforced markExecuting for both INGEST_BARS and PUBLISH_BARS
+- ensured repair path does not trigger ingest guard incorrectly
+
+### Test Proof
+
+#### PHPUnit
+- MarketDataPipelineIntegrationTest --filter "correction" → PASS
+- MarketDataPipelineIntegrationTest --filter "repair" → PASS
+- MarketDataPipelineIntegrationTest --filter "unchanged_artifacts" → PASS
+- CorrectionRepositoryIntegrationTest → PASS
+- CorrectionCommandsTest → PASS
+
+### Result
+- correction_current proven single-use
+- repair_candidate proven rerunnable
+- repair execution does not affect current publication
+- execution_count increments correctly
+- last_executed_at updated per execution
+- current pointer remains stable during repair
+
+### Contract Impact
+- lifecycle behavior is now enforceable, not just defined
+- repair and current flows are fully isolated
+- pipeline behavior aligned with correction lifecycle contract
+
+### Remaining Gap
+- none for correction lifecycle
+
+## 2026-04-24 — CORRECTION REQUEST RE-EXECUTION POLICY EXECUTION
+
+Status: DONE (CODE + TEST PROVEN)
+
+### Result
+- correction_current → single-use enforced
+- repair_candidate → rerunnable enforced
+- execution lifecycle separated by mode
+- approval consumption only occurs in current lifecycle
+
+### Proof
+- repository integration tests → PASS
+- command tests → PASS
+- pipeline integration tests → PASS
+
+## 2026-04-24 — COVERAGE-GATE vs MANUAL-FILE PUBLISHABILITY
+
+Status: PARTIAL
+
+### Result
+- coverage gate fully enforced
+- publishability linked to coverage
+- manual file does not bypass coverage
+
+### Remaining Gap
+- manual file publishability policy not locked:
+  - override mechanism undefined
+  - HOLD vs FAIL behavior undefined
+  - readable-with-warning not defined
