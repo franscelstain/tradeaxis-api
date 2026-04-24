@@ -4,7 +4,7 @@
 - Correction Re-execution Policy → DONE (PROVEN)
 - Coverage Gate → DONE
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
-- Source Hash / Reseal Guard / Publication Lineage → PARTIAL (CODED, LOCAL RUNTIME PROOF PENDING)
+- Source Hash / Reseal Guard / Publication Lineage → DONE (PROVEN)
 
 # LUMEN_IMPLEMENTATION_STATUS
 
@@ -798,3 +798,43 @@ Local rerun required:
 ```bash
 vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php
 ```
+
+
+## 2026-04-25 — SOURCE HASH / RESEAL GUARD / PUBLICATION LINEAGE FINAL VALIDATION
+
+Status: DONE (PROVEN)
+
+### Scope
+Final validation for:
+- source file identity persistence
+- sealed publication immutability
+- publication lineage/versioning
+
+### Test Proof
+- All PHPUnit suites PASS (pipeline, integration, repository, ops, evidence)
+- Partial dataset → HELD / NOT_READABLE (coverage FAIL)
+- Full dataset → SUCCESS / READABLE (coverage PASS)
+
+### DB Proof
+- source_file_hash (SHA-256) stored
+- source_file_size_bytes > 0
+- source_file_row_count correct (901)
+- publication SEALED
+- is_current = 1
+- version incremented
+- previous_publication_id & replaced_publication_id populated
+
+### Result
+- source traceability → VERIFIED
+- reseal guard → VERIFIED
+- publication lineage → VERIFIED
+- pointer switch (valid path) → VERIFIED
+
+### Contract Impact
+No policy change. Proof-only session.
+
+### Remaining Gap
+None
+
+### Final Conclusion
+SESSION STATUS: DONE (PROVEN)
