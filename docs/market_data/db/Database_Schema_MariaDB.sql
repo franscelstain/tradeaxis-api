@@ -156,6 +156,10 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   source_retry_exhausted TINYINT(1) NULL,
   source_final_http_status INT NULL,
   source_final_reason_code VARCHAR(64) NULL,
+  source_file_hash VARCHAR(64) NULL,
+  source_file_hash_algorithm VARCHAR(32) NULL,
+  source_file_size_bytes BIGINT UNSIGNED NULL,
+  source_file_row_count INT UNSIGNED NULL,
 
   coverage_universe_count INT NULL,
   coverage_available_count INT NULL,
@@ -219,7 +223,8 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   KEY idx_runs_promote_mode (promote_mode),
   KEY idx_runs_publish_target (publish_target),
   KEY idx_runs_final_reason_code (final_reason_code),
-  KEY idx_runs_source_name (source_name)
+  KEY idx_runs_source_name (source_name),
+  KEY idx_runs_source_file_hash (source_file_hash)
 ) ENGINE=InnoDB;
 
 -- LOCKED SEMANTICS
@@ -266,10 +271,16 @@ CREATE TABLE IF NOT EXISTS eod_publications (
   publication_version INT UNSIGNED NOT NULL,
   is_current TINYINT(1) NOT NULL DEFAULT 0,
   supersedes_publication_id BIGINT UNSIGNED NULL,
+  previous_publication_id BIGINT UNSIGNED NULL,
+  replaced_publication_id BIGINT UNSIGNED NULL,
   seal_state ENUM('SEALED','UNSEALED') NOT NULL DEFAULT 'UNSEALED',
   bars_batch_hash VARCHAR(64) NULL,
   indicators_batch_hash VARCHAR(64) NULL,
   eligibility_batch_hash VARCHAR(64) NULL,
+  source_file_hash VARCHAR(64) NULL,
+  source_file_hash_algorithm VARCHAR(32) NULL,
+  source_file_size_bytes BIGINT UNSIGNED NULL,
+  source_file_row_count INT UNSIGNED NULL,
   sealed_at DATETIME NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
@@ -278,6 +289,9 @@ CREATE TABLE IF NOT EXISTS eod_publications (
   KEY idx_publication_trade_date_current (trade_date, is_current),
   KEY idx_publication_run (run_id),
   KEY idx_publication_supersedes (supersedes_publication_id),
+  KEY idx_publication_previous (previous_publication_id),
+  KEY idx_publication_replaced (replaced_publication_id),
+  KEY idx_publication_source_file_hash (source_file_hash),
   KEY idx_publication_trade_date_sealed (trade_date, seal_state, sealed_at)
 ) ENGINE=InnoDB;
 

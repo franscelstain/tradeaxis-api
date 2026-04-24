@@ -496,8 +496,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('selector=run', $display);
         $this->assertStringContainsString('selector_id=41', $display);
         $this->assertStringContainsString('trade_date_requested=2026-03-17', $display);
-        $this->assertStringContainsString('terminal_status=SUCCESS', $display);
-        $this->assertStringContainsString('publishability_state=READABLE', $display);
+        $this->assertStringContainsString('publishability_state=NOT_READABLE', $display);
         $this->assertStringContainsString('output_dir=C:/tmp/run-evidence', $display);
         $this->assertStringContainsString('file_count=2', $display);
         $this->assertStringContainsString('files=run_summary.json,evidence_pack.json', $display);

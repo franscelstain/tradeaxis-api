@@ -166,6 +166,11 @@ class MarketDataPipelineServiceTest extends TestCase
         $outcomes = m::mock(PublicationFinalizeOutcomeService::class);
         $coverageGate = m::mock(CoverageGateEvaluator::class);
 
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-03-24')
+            ->andReturn(null);
+
         $run = $this->makeRun(88, '1.0000', null);
         $run->trade_date_requested = '2026-03-24';
         $run->stage = 'INGEST_BARS';
@@ -225,6 +230,11 @@ class MarketDataPipelineServiceTest extends TestCase
         $diffs = m::mock(PublicationDiffService::class);
         $outcomes = m::mock(PublicationFinalizeOutcomeService::class);
         $coverageGate = m::mock(CoverageGateEvaluator::class);
+
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-04-14')
+            ->andReturn(null);
 
         $run = $this->makeRun(76, '1.0000', null);
         $run->trade_date_requested = '2026-04-14';
@@ -868,15 +878,17 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with(31)
             ->andReturn((object) ['publication_id' => 31]);
 
-        $corrections->shouldReceive('markCancelled')
+        $corrections->shouldReceive('markConsumedForCurrent')
             ->once()
             ->with(
                 4,
                 55,
                 31,
                 'Correction rerun produced unchanged content; current publication preserved without version switch.'
-            );
+            )
+            ->andReturn((object) []);
 
+        $corrections->shouldReceive('markCancelled')->never();
         $corrections->shouldReceive('markPublished')->never();
 
         $result = $service->completeFinalize($input);
@@ -1328,6 +1340,14 @@ class MarketDataPipelineServiceTest extends TestCase
         $publicationDiffs = m::mock(PublicationDiffService::class);
         $publicationFinalizeOutcomes = new PublicationFinalizeOutcomeService();
         $coverageGateEvaluator = m::mock(CoverageGateEvaluator::class);
+
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->byDefault()
+            ->andReturn(null);
+
+        $corrections->shouldReceive('markConsumedForCurrent')
+            ->byDefault()
+            ->andReturn((object) []);
 
         $service = m::mock(MarketDataPipelineService::class, [
             $runs,

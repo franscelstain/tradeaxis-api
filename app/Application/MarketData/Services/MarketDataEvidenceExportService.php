@@ -358,6 +358,10 @@ class MarketDataEvidenceExportService
             'success_after_retry' => property_exists($record, 'source_success_after_retry') && $record->source_success_after_retry !== null ? ($record->source_success_after_retry ? 'yes' : 'no') : ($notesMap['source_success_after_retry'] ?? null),
             'final_http_status' => $this->normalizeNullableInt($record->source_final_http_status ?? (isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? $notesMap['source_final_http_status'] : null)),
             'final_reason_code' => $record->source_final_reason_code ?? ($notesMap['source_final_reason_code'] ?? null),
+            'source_file_hash' => $record->source_file_hash ?? null,
+            'source_file_hash_algorithm' => $record->source_file_hash_algorithm ?? null,
+            'source_file_size_bytes' => isset($record->source_file_size_bytes) && $record->source_file_size_bytes !== null ? (int) $record->source_file_size_bytes : null,
+            'source_file_row_count' => isset($record->source_file_row_count) && $record->source_file_row_count !== null ? (int) $record->source_file_row_count : null,
             'retry_exhausted' => property_exists($record, 'source_retry_exhausted') && $record->source_retry_exhausted !== null ? ($record->source_retry_exhausted ? 'yes' : 'no') : ($notesMap['source_retry_exhausted'] ?? null),
         ];
     }

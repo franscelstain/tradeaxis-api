@@ -21,6 +21,8 @@ class EodRun extends Model
         'source_success_after_retry' => 'boolean',
         'source_retry_exhausted' => 'boolean',
         'source_final_http_status' => 'integer',
+        'source_file_size_bytes' => 'integer',
+        'source_file_row_count' => 'integer',
         'publication_id' => 'integer',
         'correction_id' => 'integer',
         'coverage_universe_count' => 'integer',

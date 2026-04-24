@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\EodRun;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\UsesMarketDataSqlite;
@@ -368,6 +369,55 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->expectExceptionMessage('Invalid current publication integrity detected for trade date 2026-03-20.');
 
         $repo->promoteCandidateToCurrent($run);
+    }
+
+
+    public function test_candidate_publication_persists_source_identity_and_lineage_fields(): void
+    {
+        DB::table('eod_runs')->where('run_id', 27)->update([
+            'source_file_hash' => str_repeat('a', 64),
+            'source_file_hash_algorithm' => 'SHA-256',
+            'source_file_size_bytes' => 128,
+            'source_file_row_count' => 2,
+            'updated_at' => '2026-03-20 17:22:00',
+        ]);
+
+        $run = EodRun::query()->where('run_id', 27)->first();
+        $repo = new EodPublicationRepository();
+
+        $candidate = $repo->getOrCreateCandidatePublication($run, 10);
+
+        $this->assertSame(2, (int) $candidate->publication_version);
+        $this->assertSame(10, (int) $candidate->supersedes_publication_id);
+        $this->assertSame(10, (int) $candidate->previous_publication_id);
+        $this->assertSame(10, (int) $candidate->replaced_publication_id);
+        $this->assertSame(str_repeat('a', 64), $candidate->source_file_hash);
+        $this->assertSame('SHA-256', $candidate->source_file_hash_algorithm);
+        $this->assertSame(128, (int) $candidate->source_file_size_bytes);
+        $this->assertSame(2, (int) $candidate->source_file_row_count);
+    }
+
+    public function test_sealed_publication_rejects_hash_mutation_with_immutable_reason_code(): void
+    {
+        $repo = new EodPublicationRepository();
+        $run = EodRun::query()->where('run_id', 27)->first();
+        $candidate = $repo->getOrCreateCandidatePublication($run, 10);
+
+        $repo->updateCandidateHashes($candidate->publication_id, [
+            'bars_batch_hash' => 'bars-new',
+            'indicators_batch_hash' => 'ind-new',
+            'eligibility_batch_hash' => 'elig-new',
+        ]);
+        $repo->sealCandidatePublication($run, 'system', 'test seal');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('SEALED_PUBLICATION_IMMUTABLE');
+
+        $repo->updateCandidateHashes($candidate->publication_id, [
+            'bars_batch_hash' => 'bars-mutated',
+            'indicators_batch_hash' => 'ind-mutated',
+            'eligibility_batch_hash' => 'elig-mutated',
+        ]);
     }
 
     protected function seedPointerToPublicationWithDifferentVersion()

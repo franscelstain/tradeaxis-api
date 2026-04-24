@@ -274,10 +274,16 @@ class EodPublicationRepository
                 'publication_version' => $currentMaxVersion + 1,
                 'is_current' => 0,
                 'supersedes_publication_id' => $supersedesPublicationId,
+                'previous_publication_id' => $supersedesPublicationId,
+                'replaced_publication_id' => $supersedesPublicationId,
                 'seal_state' => 'UNSEALED',
                 'bars_batch_hash' => null,
                 'indicators_batch_hash' => null,
                 'eligibility_batch_hash' => null,
+                'source_file_hash' => $run->source_file_hash ?? null,
+                'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
+                'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
+                'source_file_row_count' => $run->source_file_row_count ?? null,
                 'sealed_at' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -294,6 +300,8 @@ class EodPublicationRepository
 
     public function updateCandidateHashes($publicationId, array $hashes)
     {
+        $this->assertPublicationMutable($publicationId);
+
         DB::table('eod_publications')
             ->where('publication_id', $publicationId)
             ->update([
@@ -315,10 +323,16 @@ class EodPublicationRepository
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
+            $this->assertPublicationMutable($candidate->publication_id);
+
             DB::table('eod_publications')
                 ->where('publication_id', $candidate->publication_id)
                 ->update([
                     'seal_state' => 'SEALED',
+                    'source_file_hash' => $run->source_file_hash ?? null,
+                    'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
+                    'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
+                    'source_file_row_count' => $run->source_file_row_count ?? null,
                     'sealed_at' => $now,
                     'updated_at' => $now,
                 ]);
@@ -334,10 +348,16 @@ class EodPublicationRepository
             $candidate = $this->getOrCreateCandidatePublication($run, null);
             $now = Carbon::now(config('market_data.platform.timezone'));
 
+            $this->assertPublicationMutable($candidate->publication_id);
+
             DB::table('eod_publications')
                 ->where('publication_id', $candidate->publication_id)
                 ->update([
                     'seal_state' => 'SEALED',
+                    'source_file_hash' => $run->source_file_hash ?? null,
+                    'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
+                    'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
+                    'source_file_row_count' => $run->source_file_row_count ?? null,
                     'sealed_at' => $now,
                     'updated_at' => $now,
                 ]);
@@ -406,6 +426,8 @@ class EodPublicationRepository
                 ->update([
                     'is_current' => 1,
                     'supersedes_publication_id' => $priorPublicationId,
+                    'previous_publication_id' => $priorPublicationId,
+                    'replaced_publication_id' => $priorPublicationId,
                     'updated_at' => $now,
                 ]);
 
@@ -540,6 +562,24 @@ class EodPublicationRepository
         });
     }
 
+    public function assertPublicationMutable($publicationId)
+    {
+        $publication = DB::table('eod_publications')
+            ->where('publication_id', $publicationId)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $publication) {
+            throw new \RuntimeException('Publication not found for mutability guard.');
+        }
+
+        if ((string) ($publication->seal_state ?? '') === 'SEALED') {
+            throw new \RuntimeException('SEALED_PUBLICATION_IMMUTABLE');
+        }
+
+        return $publication;
+    }
+
     public function findLatestReadablePublicationBefore($tradeDate)
     {
         return DB::table('eod_current_publication_pointer as ptr')
@@ -580,6 +620,8 @@ class EodPublicationRepository
                 'pub.publication_version',
                 'pub.is_current',
                 'pub.supersedes_publication_id',
+                'pub.previous_publication_id',
+                'pub.replaced_publication_id',
                 'pub.seal_state',
                 'pub.sealed_at',
                 'run.config_version as config_identity',
@@ -589,7 +631,11 @@ class EodPublicationRepository
                 'run.bars_rows_written',
                 'run.indicators_rows_written',
                 'run.eligibility_rows_written',
-                'run.trade_date_effective'
+                'run.trade_date_effective',
+                'pub.source_file_hash',
+                'pub.source_file_hash_algorithm',
+                'pub.source_file_size_bytes',
+                'pub.source_file_row_count'
             )
             ->first();
     }

@@ -88,6 +88,10 @@ trait UsesMarketDataSqlite
             $table->integer('source_retry_exhausted')->nullable();
             $table->integer('source_final_http_status')->nullable();
             $table->string('source_final_reason_code')->nullable();
+            $table->string('source_file_hash')->nullable();
+            $table->string('source_file_hash_algorithm')->nullable();
+            $table->bigInteger('source_file_size_bytes')->nullable();
+            $table->integer('source_file_row_count')->nullable();
             $table->integer('coverage_universe_count')->nullable();
             $table->integer('coverage_available_count')->nullable();
             $table->integer('coverage_missing_count')->nullable();
@@ -171,10 +175,16 @@ trait UsesMarketDataSqlite
             $table->integer('publication_version');
             $table->integer('is_current')->default(0);
             $table->integer('supersedes_publication_id')->nullable();
+            $table->integer('previous_publication_id')->nullable();
+            $table->integer('replaced_publication_id')->nullable();
             $table->string('seal_state');
             $table->string('bars_batch_hash')->nullable();
             $table->string('indicators_batch_hash')->nullable();
             $table->string('eligibility_batch_hash')->nullable();
+            $table->string('source_file_hash')->nullable();
+            $table->string('source_file_hash_algorithm')->nullable();
+            $table->bigInteger('source_file_size_bytes')->nullable();
+            $table->integer('source_file_row_count')->nullable();
             $table->dateTime('sealed_at')->nullable();
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
@@ -285,6 +295,10 @@ trait UsesMarketDataSqlite
             $table->string('bars_batch_hash')->nullable();
             $table->string('indicators_batch_hash')->nullable();
             $table->string('eligibility_batch_hash')->nullable();
+            $table->string('source_file_hash')->nullable();
+            $table->string('source_file_hash_algorithm')->nullable();
+            $table->bigInteger('source_file_size_bytes')->nullable();
+            $table->integer('source_file_row_count')->nullable();
             $table->string('seal_state');
             $table->dateTime('sealed_at')->nullable();
             $table->string('expected_status')->nullable();

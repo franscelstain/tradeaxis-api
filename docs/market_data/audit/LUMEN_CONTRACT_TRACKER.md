@@ -4,6 +4,7 @@
 - Correction Re-execution Policy → DONE (PROVEN)
 - Coverage Gate → DONE
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
+- Source Hash / Reseal Guard / Publication Lineage → PARTIAL (CODED, LOCAL RUNTIME PROOF PENDING)
 
 # LUMEN_CONTRACT_TRACKER
 
@@ -487,3 +488,113 @@ No new publishability state and no coverage override introduced.
 ### Remaining Gap
 
 Full local PHPUnit rerun pending after this corrected ZIP.
+
+## 2026-04-24 — Source Hash, Reseal Guard & Publication Lineage Hardening
+
+Status: PARTIAL
+
+### Scope
+
+Audit-safety hardening only. No coverage gate, publishability decision, current pointer policy, manual-file policy, correction policy, or read-side enforcement logic was intentionally changed.
+
+### Changes
+
+- Added locked contract: `docs/market_data/book/Publication_Traceability_Immutability_Lineage_LOCKED.md`.
+- Added source file identity fields to `eod_runs` and `eod_publications`:
+  - `source_file_hash`
+  - `source_file_hash_algorithm`
+  - `source_file_size_bytes`
+  - `source_file_row_count`
+- Added publication lineage fields to `eod_publications`:
+  - `previous_publication_id`
+  - `replaced_publication_id`
+- Kept existing compatibility lineage field:
+  - `supersedes_publication_id`
+- Added repository-level immutable guard for sealed publication hash mutation with reason/message:
+  - `SEALED_PUBLICATION_IMMUTABLE`
+
+### Test Proof
+
+Static PHP syntax checks passed for modified PHP files. PHPUnit could not be executed in this environment because `vendor/bin/phpunit` is not present in the uploaded ZIP.
+
+Prepared local PHPUnit target:
+
+```bash
+vendor\bin\phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php --filter "source_identity|immutable"
+```
+
+### Result
+
+Contract and code paths for source identity persistence, reseal guard, and lineage metadata are implemented in the ZIP. Runtime proof remains pending until local PHPUnit and artisan/manual DB validation are run with project dependencies installed.
+
+### Contract Impact
+
+This is a contract extension for audit-safety metadata and immutability only. Existing coverage, publishability, current pointer, manual-file, correction, and read-side contracts remain unchanged.
+
+### Remaining Gap
+
+Local runtime validation is still required:
+- full publish stores source file identity and version lineage
+- partial publish remains non-readable and does not move pointer
+- re-publish increments version and records previous/replaced publication
+- sealed hash mutation fails with `SEALED_PUBLICATION_IMMUTABLE`
+
+## 2026-04-25 — Source Hash / Lineage Test Sync Follow-up
+
+Status: READY FOR LOCAL RERUN
+
+### Scope
+
+Follow-up fix based on user-provided local PHPUnit output after the source hash, reseal guard, and publication lineage ZIP was tested locally.
+
+### Changes
+
+- Synced `MarketDataPipelineServiceTest` with the baseline lookup performed by `completeIngest()`.
+- Added default mock expectation for `findCorrectionBaselinePublicationForTradeDate()` in shared service test setup.
+- Added default mock expectation for `markConsumedForCurrent()` for unchanged correction finalization path.
+- Corrected evidence export command-surface expectation for non-readable run evidence output.
+
+### Test Proof From User Run
+
+Before this fix:
+- `PublicationRepositoryIntegrationTest.php` passed: 17 tests / 80 assertions.
+- `MarketDataPipelineIntegrationTest.php` passed: 48 tests / 1143 assertions.
+- `MarketDataEvidenceExportServiceTest.php` passed: 3 tests / 44 assertions.
+- Remaining failures were stale unit/mock expectations in `MarketDataPipelineServiceTest.php` and one stale command-surface assertion in `OpsCommandSurfaceTest.php`.
+
+### Contract Impact
+
+No contract or policy change. This is a test synchronization fix only.
+Coverage gate, publishability decision, current pointer logic, manual-file policy, correction policy, and read-side enforcement remain unchanged.
+
+### Remaining Gap
+
+Local rerun required:
+```bash
+vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php
+vendor\bin\phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php
+```
+
+## 2026-04-25 — Source Hash / Lineage Test Sync Follow-up 2
+
+Status: READY FOR LOCAL RERUN
+
+### Scope
+
+Follow-up unit-test synchronization after the latest local run showed only one remaining stale expectation in the unchanged-correction finalize scenario.
+
+### Changes
+
+- Updated `MarketDataPipelineServiceTest` to expect `markConsumedForCurrent()` for unchanged correction reruns that preserve the current publication.
+- Explicitly asserted `markCancelled()` is not called in that path.
+
+### Contract Impact
+
+No policy or contract behavior was changed. This records alignment between test expectations and the already-current correction outcome behavior.
+
+### Remaining Gap
+
+Local rerun required:
+```bash
+vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php
+```

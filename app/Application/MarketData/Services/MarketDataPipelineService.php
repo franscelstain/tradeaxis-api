@@ -1479,7 +1479,9 @@ class MarketDataPipelineService
         $payload = $this->sourceTelemetryPayload($sourceMode, $resolvedSourceName);
         $finalReasonCode = $sourceAcquisition['final_reason_code'] ?? $fallbackFinalReasonCode;
 
-        return [
+        $sourceFileIdentity = $this->sourceFileIdentityColumns($payload['input_file'] ?? null);
+
+        return array_merge([
             'source_name' => $payload['source_name'] ?? null,
             'source_provider' => $sourceAcquisition['provider'] ?? ($payload['provider'] ?? null),
             'source_input_file' => $payload['input_file'] ?? null,
@@ -1490,7 +1492,67 @@ class MarketDataPipelineService
             'source_retry_exhausted' => array_key_exists('retry_exhausted', $sourceAcquisition) ? (bool) $sourceAcquisition['retry_exhausted'] : null,
             'source_final_http_status' => array_key_exists('final_http_status', $sourceAcquisition) ? $sourceAcquisition['final_http_status'] : null,
             'source_final_reason_code' => $finalReasonCode,
+        ], $sourceFileIdentity);
+    }
+
+    private function sourceFileIdentityColumns($inputFile)
+    {
+        if ($inputFile === null || trim((string) $inputFile) === '') {
+            return [
+                'source_file_hash' => null,
+                'source_file_hash_algorithm' => null,
+                'source_file_size_bytes' => null,
+                'source_file_row_count' => null,
+            ];
+        }
+
+        $path = (string) $inputFile;
+        if (! file_exists($path)) {
+            $basePath = base_path($path);
+            if (file_exists($basePath)) {
+                $path = $basePath;
+            }
+        }
+
+        if (! is_file($path)) {
+            return [
+                'source_file_hash' => null,
+                'source_file_hash_algorithm' => 'SHA-256',
+                'source_file_size_bytes' => null,
+                'source_file_row_count' => null,
+            ];
+        }
+
+        return [
+            'source_file_hash' => hash_file('sha256', $path),
+            'source_file_hash_algorithm' => 'SHA-256',
+            'source_file_size_bytes' => filesize($path),
+            'source_file_row_count' => $this->countSourceFileDataRows($path),
         ];
+    }
+
+    private function countSourceFileDataRows($path)
+    {
+        $handle = fopen($path, 'r');
+        if (! $handle) {
+            return null;
+        }
+
+        $rows = 0;
+        $hasHeader = false;
+        while (($line = fgets($handle)) !== false) {
+            if (trim($line) === '') {
+                continue;
+            }
+            if (! $hasHeader) {
+                $hasHeader = true;
+                continue;
+            }
+            $rows++;
+        }
+        fclose($handle);
+
+        return $hasHeader ? $rows : 0;
     }
 
     private function sourceTelemetryPayload($sourceMode, $resolvedSourceName = null)
