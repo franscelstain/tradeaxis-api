@@ -129,6 +129,43 @@ class MarketDataPipelineIntegrationTest extends TestCase
     }
 
 
+
+    public function test_complete_finalize_is_idempotent_for_already_completed_success_run(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $pipeline = $this->makePipeline();
+        $run = $pipeline->runDaily('2026-03-20', 'manual_file');
+        $pointerBefore = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $eventCountBefore = DB::table('eod_run_events')->where('run_id', $run->run_id)->count();
+
+        $rerun = $pipeline->completeFinalize(
+            new App\Application\MarketData\DTOs\MarketDataStageInput('2026-03-20', 'manual_file', $run->run_id, 'FINALIZE', null)
+        );
+
+        $pointerAfter = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $eventCountAfter = DB::table('eod_run_events')->where('run_id', $run->run_id)->count();
+
+        $this->assertSame((int) $run->run_id, (int) $rerun->run_id);
+        $this->assertSame('SUCCESS', $rerun->terminal_status);
+        $this->assertSame('READABLE', $rerun->publishability_state);
+        $this->assertSame((int) $pointerBefore->publication_id, (int) $pointerAfter->publication_id);
+        $this->assertSame((int) $pointerBefore->run_id, (int) $pointerAfter->run_id);
+        $this->assertSame((int) $eventCountBefore, (int) $eventCountAfter);
+    }
     public function test_run_daily_success_path_with_post_switch_resolution_mismatch_holds_and_clears_invalid_current_pointer(): void
     {
         $this->seedTicker(1, 'BBCA');

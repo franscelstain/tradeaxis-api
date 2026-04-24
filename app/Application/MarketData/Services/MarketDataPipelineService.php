@@ -475,6 +475,11 @@ class MarketDataPipelineService
     
     public function completeFinalize(MarketDataStageInput $input)
     {
+        $alreadyFinalized = $this->findCompletedFinalizeRun($input);
+        if ($alreadyFinalized !== null) {
+            return $alreadyFinalized;
+        }
+
         [$run, $correction, $priorCurrent] = $this->startStage($input);
 
         try {
@@ -970,6 +975,28 @@ class MarketDataPipelineService
         return $run;
     }
 
+
+    private function findCompletedFinalizeRun(MarketDataStageInput $input)
+    {
+        if ($input->runId === null) {
+            return null;
+        }
+
+        $run = $this->safeFindRunById($input->runId);
+        if (! $run) {
+            return null;
+        }
+
+        if (
+            (string) ($run->stage ?? '') === 'FINALIZE'
+            && (string) ($run->lifecycle_state ?? '') === 'COMPLETED'
+            && in_array((string) ($run->terminal_status ?? ''), ['SUCCESS', 'HELD', 'FAILED'], true)
+        ) {
+            return $run;
+        }
+
+        return null;
+    }
 
     private function handleRecoverableSourceFailure($run, $requestedDate, $stage, $reasonCode, \Throwable $e)
     {

@@ -5,6 +5,7 @@
 - Coverage Gate → DONE
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 - Source Hash / Reseal Guard / Publication Lineage → DONE (PROVEN)
+- Finalize Determinism / Lock Behavior / Pointer Switch → DONE (POLICY LOCKED: DETERMINISTIC LOCK)
 
 # LUMEN_CONTRACT_TRACKER
 
@@ -638,3 +639,37 @@ None
 
 ### Final Conclusion
 SESSION STATUS: DONE (PROVEN)
+
+## 2026-04-25 — FINALIZE / LOCK BEHAVIOR POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+- Locked finalize determinism, lock-conflict semantics, and current pointer switch consistency.
+- Scope intentionally did not redefine coverage gate, manual-file publishability, correction policy, or read-side consumer behavior.
+
+### Changes
+- Added `docs/market_data/book/Finalize_Lock_And_Pointer_Behavior_LOCKED.md` as the owner contract for finalize idempotency, `RUN_LOCK_CONFLICT` meaning, and pointer switch safety.
+- Updated `docs/market_data/book/INDEX.md` to include the new locked contract under run readiness, effective date, and consumer safety.
+- Added explicit finalize idempotency guard in `MarketDataPipelineService::completeFinalize(...)` for already completed FINALIZE runs.
+- Added DB-backed integration proof for re-finalize behavior preserving pointer and event count.
+
+### Test Proof
+- Static syntax check performed with `php -l` on:
+  - `app/Application/MarketData/Services/MarketDataPipelineService.php`
+  - `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- Full PHPUnit could not be executed in this container because `vendor/` is not present in the uploaded ZIP.
+- Required local validation command:
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "finalize|lock|pointer|correction|repair_candidate"`
+
+### Result
+- Final policy selected: OPTION C — DETERMINISTIC LOCK.
+- `RUN_LOCK_CONFLICT` is locked as a traceable unsafe ownership transition / pointer integrity conflict, not a generic database lock error.
+- Re-finalize of a completed run is terminal/idempotent and returns persisted state without duplicate finalize mutation.
+
+### Contract Impact
+- New contract is additive and does not change coverage/manual-file/correction/read-side contracts.
+- Pointer switch contract now requires promotion eligibility plus post-switch pointer identity match on publication, version, run, and trade date.
+
+### Remaining Gap
+- Local PHPUnit and artisan runtime proof must be run by the operator because uploaded ZIP excludes `vendor/`.

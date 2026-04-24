@@ -5,6 +5,7 @@
 - Coverage Gate → DONE
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 - Source Hash / Reseal Guard / Publication Lineage → DONE (PROVEN)
+- Finalize Determinism / Lock Behavior / Pointer Switch → DONE (POLICY LOCKED: DETERMINISTIC LOCK)
 
 # LUMEN_IMPLEMENTATION_STATUS
 
@@ -838,3 +839,40 @@ None
 
 ### Final Conclusion
 SESSION STATUS: DONE (PROVEN)
+
+## 2026-04-25 — FINALIZE / LOCK BEHAVIOR POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+- Implemented the locked deterministic finalize policy for already completed finalize runs.
+- Preserved existing coverage gate, publishability, manual-file, correction, and read-side behavior.
+
+### Changes
+- `app/Application/MarketData/Services/MarketDataPipelineService.php`
+  - `completeFinalize(...)` now checks for a completed FINALIZE run before touching stage state.
+  - Added `findCompletedFinalizeRun(...)` guard.
+  - Completed statuses treated as terminal for finalize rerun: `SUCCESS`, `HELD`, `FAILED` with `lifecycle_state = COMPLETED` and `stage = FINALIZE`.
+- `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - Added idempotency proof: first finalize creates readable current pointer; re-finalize of same run returns same run, preserves pointer identity, and does not append duplicate events.
+- `docs/market_data/book/Finalize_Lock_And_Pointer_Behavior_LOCKED.md`
+  - Added final policy, lock behavior mapping, pointer switch rules, and evidence requirements.
+- `docs/market_data/book/INDEX.md`
+  - Registered the new locked contract.
+
+### Test Proof
+- Syntax validation:
+  - `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` → no syntax errors detected.
+  - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → no syntax errors detected.
+- PHPUnit not executed in this container because `vendor/` is not included in uploaded source ZIP.
+
+### Result
+- Finalize determinism is enforced for completed finalize reruns.
+- Pointer switch remains predictable: only valid readable current candidates become current.
+- Conflict behavior remains fail-safe and traceable through `RUN_LOCK_CONFLICT`.
+
+### Contract Impact
+- Adds finalize lock/pointer owner contract without overriding other locked policies.
+
+### Remaining Gap
+- Operator must run local PHPUnit and manual artisan commands with project dependencies installed.
