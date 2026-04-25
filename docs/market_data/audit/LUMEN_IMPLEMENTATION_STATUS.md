@@ -1046,3 +1046,27 @@ vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "pro
 ### Remaining Gap
 - No force replacement operator mode exists.
 - Force replacement remains out of scope until separately locked and implemented.
+
+
+## 2026-04-26 — PUBLICATION LOCK & REPLACEMENT FINAL RUNTIME PROOF
+
+Status: DONE (PROVEN)
+
+### Scope
+Runtime validation of publication lock & replacement.
+
+### Test Proof
+- All relevant PHPUnit PASS
+
+### Runtime Evidence
+- conflict → HELD
+- success → READABLE
+
+### Result
+Lock, replacement, pointer all deterministic.
+
+### Contract Impact
+No change.
+
+### Remaining Gap
+force replace not implemented

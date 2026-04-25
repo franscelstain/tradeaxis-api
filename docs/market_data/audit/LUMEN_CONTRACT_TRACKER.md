@@ -861,3 +861,29 @@ Status: DONE (CODE + STATIC PROOF)
 ### Remaining Gap
 - Optional `force_replace` behavior is not implemented and is intentionally not part of this locked policy.
 - Any future force replacement needs separate operator contract, audit reason, and runtime telemetry.
+
+
+## 2026-04-26 — PUBLICATION LOCK & REPLACEMENT POLICY FINAL RUNTIME VALIDATION
+
+Status: DONE (PROVEN)
+
+### Scope
+Final runtime validation for deterministic publication lock & replacement behavior.
+
+### Test Proof
+- PublicationRepositoryIntegrationTest → PASS
+- MarketDataPipelineIntegrationTest → PASS
+- OpsCommandSurfaceTest → PASS
+
+### Runtime Proof
+- existing current → HELD (RUN_LOCK_CONFLICT)
+- after cleanup → SUCCESS (READABLE)
+
+### Result
+Deterministic lock & replacement proven in runtime.
+
+### Contract Impact
+No change.
+
+### Remaining Gap
+force_replace not implemented
