@@ -53,19 +53,33 @@ trait UsesMarketDataSqlite
         $schema = $this->schema();
 
         $schema->create('tickers', function (Blueprint $table) {
-            $table->integer('ticker_id')->primary();
-            $table->string('ticker_code');
-            $table->string('is_active')->nullable();
+            $table->increments('ticker_id');
+            $table->string('ticker_code', 10);
+            $table->string('company_name', 255)->default('');
+            $table->string('company_logo', 255)->nullable();
             $table->date('listed_date')->nullable();
             $table->date('delisted_date')->nullable();
+            $table->string('board_code', 10)->nullable();
+            $table->string('exchange_code', 10)->nullable();
+            $table->integer('is_active')->default(1);
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
+
+            $table->unique('ticker_code', 'ticker_code');
         });
 
         $schema->create('market_calendar', function (Blueprint $table) {
             $table->date('cal_date')->primary();
             $table->boolean('is_trading_day')->default(true);
-            $table->string('market_code', 16)->default('IDX');
+            $table->string('holiday_name', 120)->nullable();
+            $table->string('session_open_time', 5)->nullable();
+            $table->string('session_close_time', 5)->nullable();
+            $table->text('breaks_json')->nullable();
+            $table->string('source', 120)->nullable();
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
+
+            $table->index(['is_trading_day', 'cal_date'], 'market_calendar_trading_idx');
         });
 
         $schema->create('eod_runs', function (Blueprint $table) {
@@ -331,6 +345,31 @@ trait UsesMarketDataSqlite
             $table->date('trade_date');
             $table->string('reason_code');
             $table->integer('reason_count');
+        });
+
+
+        $schema->create('md_session_snapshots', function (Blueprint $table) {
+            $table->bigIncrements('snapshot_id');
+            $table->date('trade_date');
+            $table->string('snapshot_slot', 32);
+            $table->unsignedBigInteger('ticker_id');
+            $table->dateTime('captured_at');
+            $table->decimal('last_price', 18, 4)->nullable();
+            $table->decimal('prev_close', 18, 4)->nullable();
+            $table->decimal('chg_pct', 18, 10)->nullable();
+            $table->unsignedBigInteger('volume')->nullable();
+            $table->decimal('day_high', 18, 4)->nullable();
+            $table->decimal('day_low', 18, 4)->nullable();
+            $table->string('source', 32);
+            $table->unsignedBigInteger('run_id')->nullable();
+            $table->string('reason_code', 64)->nullable();
+            $table->string('error_note', 255)->nullable();
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
+
+            $table->index(['trade_date', 'snapshot_slot'], 'md_session_snapshots_trade_date_snapshot_slot_index');
+            $table->index(['captured_at'], 'md_session_snapshots_captured_at_index');
+            $table->unique(['trade_date', 'snapshot_slot', 'ticker_id'], 'md_session_snapshots_trade_date_snapshot_slot_ticker_id_unique');
         });
 
         $schema->create('eod_bars_history', function (Blueprint $table) {

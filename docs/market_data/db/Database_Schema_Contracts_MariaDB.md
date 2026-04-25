@@ -284,3 +284,47 @@ If a required audit artifact, invalid-row evidence, run-state dimension, publica
 
 **Publication-context integrity rule for live current tables.**
 For `eod_bars`, `eod_indicators`, and `eod_eligibility`, `publication_id` is a mandatory publication-context field used to bind the current readable rows to the resolved current publication. This field is required as an integrity anchor for downstream reads and operational verification. It must not be interpreted as permitting side-by-side storage of multiple publication versions in the live current tables for the same `(trade_date, ticker_id)` key. Live current tables retain a single current-state row per `(trade_date, ticker_id)`; publication-versioned history belongs in the publication trail and `*_history` tables.
+
+---
+
+## 2026-04-26 — DB Schema & Migration Sync Contract Addendum
+
+Status: LOCKED SYNC APPLIED
+
+This addendum records schema reconciliation from the DB schema sync session.
+
+Authoritative sync contract:
+- `docs/market_data/db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md`
+
+Tables now explicitly covered by the core SQL schema document:
+- `tickers`
+- `market_calendar`
+- `md_session_snapshots`
+
+Replay expected-context columns now explicitly covered by `md_replay_daily_metrics` in `Database_Schema_MariaDB.sql`:
+- `expected_config_identity`
+- `expected_publication_version`
+- `expected_coverage_universe_count`
+- `expected_coverage_available_count`
+- `expected_coverage_missing_count`
+- `expected_coverage_ratio`
+- `expected_coverage_min_threshold`
+- `expected_coverage_gate_state`
+- `expected_coverage_threshold_mode`
+- `expected_coverage_universe_basis`
+- `expected_coverage_contract_version`
+- `expected_coverage_missing_sample_json`
+- `expected_bars_batch_hash`
+- `expected_indicators_batch_hash`
+- `expected_eligibility_batch_hash`
+- `expected_reason_code_counts_json`
+
+SQLite mirror correction:
+- `tickers` now mirrors migration-owned ticker master fields and unique ticker code.
+- `market_calendar` now mirrors migration-owned calendar fields and index; previous SQLite-only `market_code` is removed.
+- `md_session_snapshots` now exists in SQLite with repository-required columns, unique key, and indexes.
+
+Compatibility exceptions remain allowed only where explicitly technical:
+- MariaDB `ENUM` -> SQLite `string`
+- MariaDB `JSON` -> SQLite `text`
+- MariaDB composite production primary keys may be mirrored with surrogate test IDs where existing integration tests depend on row insertion ergonomics.

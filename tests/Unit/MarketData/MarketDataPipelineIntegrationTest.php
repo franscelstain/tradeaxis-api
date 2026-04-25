@@ -4464,7 +4464,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             DB::table('market_calendar')->insert([
                 'cal_date' => $date->toDateString(),
                 'is_trading_day' => in_array($date->dayOfWeekIso, [6, 7], true) ? 0 : 1,
-                'market_code' => 'IDX',
+                'source' => 'test_fixture',
                 'created_at' => Carbon::now()->toDateTimeString(),
                 'updated_at' => Carbon::now()->toDateTimeString(),
             ]);

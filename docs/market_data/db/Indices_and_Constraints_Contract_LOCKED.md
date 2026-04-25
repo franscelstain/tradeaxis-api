@@ -101,3 +101,16 @@ Indexes must support at minimum:
 ## Anti-ambiguity rule (LOCKED)
 Lack of a direct partial unique index does not weaken the contract.
 The invariant must still be enforced deterministically by transaction or procedure discipline.
+---
+
+## 2026-04-26 — Schema Sync Index Addendum
+
+Status: LOCKED
+
+The following indexes/constraints are now included in the DB schema sync contract:
+
+- `tickers`: `PRIMARY KEY (ticker_id)`, `UNIQUE KEY ticker_code (ticker_code)`
+- `market_calendar`: `PRIMARY KEY (cal_date)`, `KEY market_calendar_trading_idx (is_trading_day, cal_date)`
+- `md_session_snapshots`: `PRIMARY KEY (snapshot_id)`, `UNIQUE KEY (trade_date, snapshot_slot, ticker_id)`, `KEY (trade_date, snapshot_slot)`, `KEY (captured_at)`
+
+SQLite mirror must include equivalent indexes where Laravel/SQLite supports them.

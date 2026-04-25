@@ -3,6 +3,44 @@
 -- LOCKED DDL
 -- =========================================================
 
+-- =========================================================
+-- Ticker master universe
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS tickers (
+  ticker_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ticker_code VARCHAR(10) NOT NULL,
+  company_name VARCHAR(255) NOT NULL,
+  company_logo VARCHAR(255) NULL,
+  listed_date DATE NULL,
+  delisted_date DATE NULL,
+  board_code VARCHAR(10) NULL,
+  exchange_code VARCHAR(10) NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (ticker_id),
+  UNIQUE KEY ticker_code (ticker_code)
+) ENGINE=InnoDB;
+
+-- =========================================================
+-- Market calendar
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS market_calendar (
+  cal_date DATE NOT NULL,
+  is_trading_day TINYINT(1) NOT NULL DEFAULT 1,
+  holiday_name VARCHAR(120) NULL,
+  session_open_time VARCHAR(5) NULL,
+  session_close_time VARCHAR(5) NULL,
+  breaks_json TEXT NULL,
+  source VARCHAR(120) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (cal_date),
+  KEY market_calendar_trading_idx (is_trading_day, cal_date)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS eod_reason_codes (
   code VARCHAR(64) NOT NULL,
   category VARCHAR(32) NOT NULL,
@@ -427,6 +465,34 @@ CREATE TABLE IF NOT EXISTS eod_eligibility_history (
 -- 5. Snapshot rows must never be updated or deleted in normal operation.
 
 -- =========================================================
+-- Intraday/session snapshot storage
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS md_session_snapshots (
+  snapshot_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  trade_date DATE NOT NULL,
+  snapshot_slot VARCHAR(32) NOT NULL,
+  ticker_id BIGINT UNSIGNED NOT NULL,
+  captured_at DATETIME NOT NULL,
+  last_price DECIMAL(18,4) NULL,
+  prev_close DECIMAL(18,4) NULL,
+  chg_pct DECIMAL(18,10) NULL,
+  volume BIGINT UNSIGNED NULL,
+  day_high DECIMAL(18,4) NULL,
+  day_low DECIMAL(18,4) NULL,
+  source VARCHAR(32) NOT NULL,
+  run_id BIGINT UNSIGNED NULL,
+  reason_code VARCHAR(64) NULL,
+  error_note VARCHAR(255) NULL,
+  created_at DATETIME NULL,
+  updated_at DATETIME NULL,
+  PRIMARY KEY (snapshot_id),
+  UNIQUE KEY md_session_snapshots_trade_date_snapshot_slot_ticker_id_unique (trade_date, snapshot_slot, ticker_id),
+  KEY md_session_snapshots_trade_date_snapshot_slot_index (trade_date, snapshot_slot),
+  KEY md_session_snapshots_captured_at_index (captured_at)
+) ENGINE=InnoDB;
+
+-- =========================================================
 -- Replay result storage
 -- =========================================================
 
@@ -467,6 +533,22 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   expected_status ENUM('SUCCESS','HELD','FAILED') NULL,
   expected_trade_date_effective DATE NULL,
   expected_seal_state ENUM('SEALED','UNSEALED') NULL,
+  expected_config_identity VARCHAR(128) NULL,
+  expected_publication_version INT UNSIGNED NULL,
+  expected_coverage_universe_count INT NULL,
+  expected_coverage_available_count INT NULL,
+  expected_coverage_missing_count INT NULL,
+  expected_coverage_ratio DECIMAL(8,6) NULL,
+  expected_coverage_min_threshold DECIMAL(8,6) NULL,
+  expected_coverage_gate_state VARCHAR(16) NULL,
+  expected_coverage_threshold_mode VARCHAR(32) NULL,
+  expected_coverage_universe_basis VARCHAR(64) NULL,
+  expected_coverage_contract_version VARCHAR(64) NULL,
+  expected_coverage_missing_sample_json JSON NULL,
+  expected_bars_batch_hash VARCHAR(64) NULL,
+  expected_indicators_batch_hash VARCHAR(64) NULL,
+  expected_eligibility_batch_hash VARCHAR(64) NULL,
+  expected_reason_code_counts_json LONGTEXT NULL,
   mismatch_summary VARCHAR(255) NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (replay_id, trade_date),

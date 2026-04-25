@@ -1,3 +1,5 @@
+# LUMEN_IMPLEMENTATION_STATUS
+
 ## FINAL SYSTEM STATUS (LATEST)
 
 - Correction Lifecycle → DONE (PROVEN)
@@ -6,8 +8,7 @@
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 - Source Hash / Reseal Guard / Publication Lineage → DONE (PROVEN)
 - Finalize Determinism / Lock Behavior / Pointer Switch → DONE (POLICY LOCKED: DETERMINISTIC LOCK)
-
-# LUMEN_IMPLEMENTATION_STATUS
+- DB Schema & Migration Sync → DONE (POLICY LOCKED: CONTRACT + RUNTIME RECONCILIATION)
 
 ## SESSION FINAL — TRACEABILITY / LINKAGE / PUBLISHABILITY / CORRECTION GUARD
 
@@ -876,3 +877,127 @@ Status: DONE
 
 ### Remaining Gap
 - Operator must run local PHPUnit and manual artisan commands with project dependencies installed.
+
+
+## 2026-04-26 — DB SCHEMA & MIGRATION SYNC POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+- Audited market-data schema consistency across SQL docs, DB contracts, Laravel migrations, SQLite test mirror, and repository usage.
+- Scope was limited to schema synchronization. No market-data business behavior was changed.
+
+### Changes
+- Added `docs/market_data/db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md`.
+- Updated `docs/market_data/db/Database_Schema_MariaDB.sql` to include migration-owned tables and replay expected-context columns:
+  - `tickers`
+  - `market_calendar`
+  - `md_session_snapshots`
+  - expected replay fields in `md_replay_daily_metrics`
+- Updated `tests/Support/UsesMarketDataSqlite.php`:
+  - `tickers` now mirrors migration-owned ticker columns and unique ticker code.
+  - `market_calendar` now mirrors migration-owned calendar columns/index and removes SQLite-only `market_code`.
+  - `md_session_snapshots` now exists in SQLite with repository-required fields, unique key, and indexes.
+- Appended sync notes to:
+  - `docs/market_data/db/Database_Schema_Contracts_MariaDB.md`
+  - `docs/market_data/db/DB_FIELDS_AND_METADATA.md`
+  - `docs/market_data/db/Indices_and_Constraints_Contract_LOCKED.md`
+
+### Test Proof
+- Static syntax checks completed:
+  - `php -l tests/Support/UsesMarketDataSqlite.php`
+  - `php -l tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php`
+- Full PHPUnit could not be executed in this container because the uploaded ZIP excludes `vendor/`.
+- Required local validation:
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReplayVerificationServiceTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+### Result
+- Final policy selected: OPTION C — LOCKED CONTRACT + RUNTIME RECONCILIATION.
+- SQL docs, migrations, SQLite mirror, and repository usage are reconciled for the proven drift items.
+- No runtime migration was added because migration path already contained the runtime tables/columns; the primary drift was SQL doc lag and SQLite mirror lag.
+
+### Contract Impact
+- New DB schema sync contract is now the controlling rule for future schema changes.
+- SQLite is explicitly locked as a test mirror, not a field experimentation layer.
+- Repository columns must remain backed by SQL docs + migration + SQLite when tested.
+
+### Remaining Gap
+- Operator must run local PHPUnit and MariaDB `SHOW COLUMNS` / `SHOW INDEX` validation with project dependencies and database available.
+
+## 2026-04-25 — DB Schema Sync Follow-up Validation Fix
+
+Manual validation found two follow-up issues after the DB schema sync patch:
+
+- `MarketDataPipelineIntegrationTest::seedMarketCalendarRange()` still inserted legacy test-only `market_code` into `market_calendar`, while the locked migration/SQLite/SQL contract intentionally does not define `market_code`.
+- Manual DB validation should use runtime replay tables `md_replay_daily_metrics` and `md_replay_reason_code_counts`, not a non-existent `replay_results` table name.
+
+Resolution:
+
+- Updated `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` to seed the supported `source` column instead of removed `market_code`.
+- Confirmed existing repository runtime table remains `md_replay_daily_metrics` / `md_replay_reason_code_counts` via `ReplayResultRepository`.
+
+Evidence supplied by local validation:
+
+- `MarketDataSqliteSchemaSyncTest.php` passed with 53 assertions.
+- Publication, correction, replay repository, readable publication, evidence export, replay verification, and ops command surface tests passed.
+- Remaining failing tests were isolated to the stale market calendar fixture field and are now patched.
+
+Manual validation correction:
+
+- Replace `SHOW COLUMNS FROM replay_results;` with `SHOW COLUMNS FROM md_replay_daily_metrics;`.
+- Add `SHOW COLUMNS FROM md_replay_reason_code_counts;` when validating replay persistence.
+
+
+## 2026-04-26 — DB SCHEMA SYNC FINAL RUNTIME VALIDATION (POST-PATCH)
+
+Status: DONE (PROVEN)
+
+### Scope
+Final runtime validation after DB schema sync and follow-up fixes.
+
+### Test Proof
+
+#### PHPUnit
+- full suite relevant to market-data → PASS
+- MarketDataPipelineIntegrationTest → PASS (49 tests)
+
+#### Runtime Proof
+
+php artisan market-data:promote --requested_date=2026-03-20 --source_mode=manual_file
+
+Result:
+- SUCCESS / READABLE
+- coverage PASS (901/901)
+- full publish current_replace successful
+
+#### Pointer Validation
+
+SELECT * FROM eod_current_publication_pointer WHERE trade_date='2026-03-20';
+
+Result:
+- pointer exists
+- publication_id matches promoted publication
+- run_id matches owning run
+- publication_version incremented
+- sealed_at exists
+
+### Result
+- schema sync validated against real runtime behavior
+- no missing column / default / constraint error
+- no repository mismatch
+- no SQLite mismatch
+
+### Operational Confirmation
+- previous RUN_LOCK_CONFLICT resolved by correcting publication state
+- system behaves deterministically after state cleanup
+
+### Remaining Gap
+- publication lock / replacement behavior still not explicitly locked

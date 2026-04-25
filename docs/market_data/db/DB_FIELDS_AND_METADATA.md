@@ -87,3 +87,87 @@ To avoid implicit-only linkage, `eod_runs` should also persist:
   Final consumer/audit-visible reason code aligned with the terminal outcome.
 
 This keeps run/publication linkage and publishability reasoning queryable even when operators are not reading event payload JSON.
+
+---
+
+## 2026-04-26 — DB Schema Sync Metadata Addendum
+
+Status: SYNCED WITH `DB_Schema_And_Migration_Sync_Contract_LOCKED.md`
+
+Newly documented / synchronized table metadata:
+
+### `tickers`
+
+Runtime owner: ticker universe / coverage universe lookup.  
+Repository: `TickerMasterRepository`.
+
+Required fields:
+- `ticker_id`
+- `ticker_code`
+- `company_name`
+- `company_logo`
+- `listed_date`
+- `delisted_date`
+- `board_code`
+- `exchange_code`
+- `is_active`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `ticker_id`
+- unique key `ticker_code`
+
+### `market_calendar`
+
+Runtime owner: trading date resolution.  
+Repository: `MarketCalendarRepository`.
+
+Required fields:
+- `cal_date`
+- `is_trading_day`
+- `holiday_name`
+- `session_open_time`
+- `session_close_time`
+- `breaks_json`
+- `source`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `cal_date`
+- index `market_calendar_trading_idx (is_trading_day, cal_date)`
+
+### `md_session_snapshots`
+
+Runtime owner: intraday/session snapshot persistence.  
+Repository: `SessionSnapshotRepository`.
+
+Required fields:
+- `snapshot_id`
+- `trade_date`
+- `snapshot_slot`
+- `ticker_id`
+- `captured_at`
+- `last_price`
+- `prev_close`
+- `chg_pct`
+- `volume`
+- `day_high`
+- `day_low`
+- `source`
+- `run_id`
+- `reason_code`
+- `error_note`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `snapshot_id`
+- unique key `(trade_date, snapshot_slot, ticker_id)`
+- index `(trade_date, snapshot_slot)`
+- index `(captured_at)`
+
+### `md_replay_daily_metrics`
+
+Replay expected-context fields are part of the DB schema contract and must stay synchronized with `ReplayResultRepository` and `ReplayVerificationService`.
