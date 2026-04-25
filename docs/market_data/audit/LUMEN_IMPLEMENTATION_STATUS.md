@@ -8,6 +8,7 @@
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 - Source Hash / Reseal Guard / Publication Lineage → DONE (PROVEN)
 - Finalize Determinism / Lock Behavior / Pointer Switch → DONE (POLICY LOCKED: DETERMINISTIC LOCK)
+- Publication Lock & Replacement Policy → DONE (POLICY LOCKED: DETERMINISTIC LOCK + EXPLICIT REPLACEMENT)
 - DB Schema & Migration Sync → DONE (POLICY LOCKED: CONTRACT + RUNTIME RECONCILIATION)
 
 ## SESSION FINAL — TRACEABILITY / LINKAGE / PUBLISHABILITY / CORRECTION GUARD
@@ -1001,3 +1002,47 @@ Result:
 
 ### Remaining Gap
 - publication lock / replacement behavior still not explicitly locked
+
+## 2026-04-26 — PUBLICATION LOCK & REPLACEMENT POLICY LOCK & EXECUTION SESSION
+
+Status: DONE (CODE + STATIC PROOF)
+
+### Scope
+Implemented documentation lock and regression proof for deterministic publication replacement behavior.
+
+### Changes
+- `docs/market_data/book/Publication_Lock_And_Replacement_Policy_LOCKED.md`
+  - defines `RUN_LOCK_CONFLICT` as ownership conflict;
+  - defines valid current publication;
+  - locks replacement, manual-file, pointer, idempotency, and multi-run rules.
+- `docs/market_data/book/INDEX.md`
+  - registers the new locked policy.
+- `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+  - adds proof that an uncontrolled candidate promotion is rejected when a valid current publication already exists.
+
+### Test Proof
+```bash
+php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php
+```
+Result: PASS.
+
+### Required Local PHPUnit
+```bash
+vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php --filter "blocks_uncontrolled_replace|promote_candidate"
+vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "finalize|lock|pointer"
+vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "promote"
+```
+
+### Result
+- Ordinary promote cannot overwrite valid current publication.
+- Current pointer remains protected on conflict.
+- Controlled correction/current replacement remains the replacement path.
+- Manual file is confirmed as non-override by default.
+
+### Operational Confirmation
+- Prior runtime evidence (`run 114` HELD / `RUN_LOCK_CONFLICT`, then `run 115` SUCCESS after cleanup) is now captured by an explicit contract.
+- The previous behavior is no longer treated as ambiguous/random; it is documented fail-safe ownership protection.
+
+### Remaining Gap
+- No force replacement operator mode exists.
+- Force replacement remains out of scope until separately locked and implemented.

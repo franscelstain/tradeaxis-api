@@ -317,6 +317,28 @@ class PublicationRepositoryIntegrationTest extends TestCase
     }
 
 
+    public function test_promote_candidate_to_current_blocks_uncontrolled_replace_when_valid_current_exists(): void
+    {
+        $repo = new EodPublicationRepository();
+        $run = App\Models\EodRun::query()->findOrFail(27);
+
+        $candidate = $repo->getOrCreateCandidatePublication($run, null);
+
+        $repo->updateCandidateHashes($candidate->publication_id, [
+            'bars_batch_hash' => 'bars-new',
+            'indicators_batch_hash' => 'ind-new',
+            'eligibility_batch_hash' => 'elig-new',
+        ]);
+
+        $repo->sealCandidatePublication($run, 'system');
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Current publication already exists for trade date 2026-03-20. Correction/reseal is required before replacing it.');
+
+        $repo->promoteCandidateToCurrent($run);
+    }
+
+
     public function test_find_invalid_current_publication_states_detects_failed_not_readable_current_pointer(): void
     {
         DB::table('eod_runs')

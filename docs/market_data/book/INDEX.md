@@ -43,6 +43,7 @@
 - Effective_Trade_Date_Contract_LOCKED.md
 - EOD_Cutoff_and_Finalization_Contract_LOCKED.md
 - Finalize_Lock_And_Pointer_Behavior_LOCKED.md
+- Publication_Lock_And_Replacement_Policy_LOCKED.md
 - EOD_Eligibility_Snapshot_Contract_LOCKED.md
 - Eligibility_Partial_Data_Behavior_LOCKED.md
 - Dataset_Seal_and_Freeze_Contract_LOCKED.md

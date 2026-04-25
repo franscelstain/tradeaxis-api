@@ -8,6 +8,7 @@
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 - Source Hash / Reseal Guard / Publication Lineage → DONE (PROVEN)
 - Finalize Determinism / Lock Behavior / Pointer Switch → DONE (POLICY LOCKED: DETERMINISTIC LOCK)
+- Publication Lock & Replacement Policy → DONE (POLICY LOCKED: DETERMINISTIC LOCK + EXPLICIT REPLACEMENT)
 - DB Schema & Migration Sync → DONE (POLICY LOCKED: CONTRACT + RUNTIME RECONCILIATION)
 
 ## Traceability / Linkage / Publishability / Correction Guard Session
@@ -822,3 +823,41 @@ Result:
 ### Remaining Gap
 - publication lock / replacement policy still not explicitly locked
 - RUN_LOCK_CONFLICT behavior still implicit (needs next session)
+
+## 2026-04-26 — PUBLICATION LOCK & REPLACEMENT POLICY LOCK & EXECUTION SESSION
+
+Status: DONE (CODE + STATIC PROOF)
+
+### Scope
+- Locked publication replacement ownership behavior for EOD market-data current publication and pointer switch.
+- Scope intentionally did not change coverage gate, manual-file publishability threshold, correction lifecycle, read-side enforcement, or schema.
+
+### Changes
+- Added owner contract: `docs/market_data/book/Publication_Lock_And_Replacement_Policy_LOCKED.md`.
+- Registered the new contract in `docs/market_data/book/INDEX.md`.
+- Added repository integration proof that ordinary promote cannot replace an existing valid current publication without a controlled prior baseline.
+
+### Test Proof
+- Static syntax check:
+  - `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → PASS
+- PHPUnit was not executed in this container because uploaded ZIP excludes `vendor/`.
+- Required local validation:
+  - `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php --filter "blocks_uncontrolled_replace|promote_candidate"`
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "finalize|lock|pointer"`
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "promote"`
+
+### Result
+- Final policy selected: OPTION C — DETERMINISTIC LOCK + EXPLICIT REPLACEMENT.
+- `RUN_LOCK_CONFLICT` is explicitly locked as publication ownership conflict, not a generic DB lock.
+- Valid current publication cannot be overwritten by ordinary promote.
+- Manual-file promote does not bypass current-publication lock.
+- Pointer may change only for eligible `SUCCESS` + `READABLE` publication switch.
+
+### Contract Impact
+- Adds a dedicated publication replacement owner contract.
+- Existing finalize lock contract remains valid and is now narrowed by explicit replacement rules.
+- Existing correction/current replacement path remains the controlled replacement mechanism.
+
+### Remaining Gap
+- Optional `force_replace` behavior is not implemented and is intentionally not part of this locked policy.
+- Any future force replacement needs separate operator contract, audit reason, and runtime telemetry.
