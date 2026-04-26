@@ -130,6 +130,112 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
 
 
+
+
+    public function test_promote_daily_without_force_replace_holds_when_valid_current_exists(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 126,
+            'low' => 120,
+            'close' => 125,
+            'volume' => 2500,
+            'adj_close' => 125,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $run = $this->makePipeline()->promoteDaily('2026-03-20', 'manual_file');
+
+        $this->assertSame('HELD', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame('RUN_LOCK_CONFLICT', $run->final_reason_code);
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame(1, (int) $pointer->publication_id);
+        $this->assertSame(90, (int) $pointer->run_id);
+
+        $this->assertFalse(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'RUN_FORCE_REPLACE_EXECUTED')
+                ->exists()
+        );
+    }
+
+    public function test_promote_daily_with_force_replace_switches_current_and_records_audit_event(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 126,
+            'low' => 120,
+            'close' => 125,
+            'volume' => 2500,
+            'adj_close' => 125,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $run = $this->makePipeline()->promoteDaily(
+            '2026-03-20',
+            'manual_file',
+            null,
+            null,
+            null,
+            true,
+            'operator approved replacement after manual import validation'
+        );
+
+        $this->assertSame('SUCCESS', $run->terminal_status);
+        $this->assertSame('READABLE', $run->publishability_state);
+        $this->assertNull($run->final_reason_code);
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame((int) $run->run_id, (int) $pointer->run_id);
+        $this->assertNotSame(1, (int) $pointer->publication_id);
+
+        $oldPublication = DB::table('eod_publications')->where('publication_id', 1)->first();
+        $this->assertSame(0, (int) $oldPublication->is_current);
+
+        $newPublication = DB::table('eod_publications')->where('publication_id', $pointer->publication_id)->first();
+        $this->assertSame(1, (int) $newPublication->is_current);
+        $this->assertSame(1, (int) $newPublication->supersedes_publication_id);
+        $this->assertSame(1, (int) $newPublication->previous_publication_id);
+        $this->assertSame(1, (int) $newPublication->replaced_publication_id);
+
+        $event = DB::table('eod_run_events')
+            ->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FORCE_REPLACE_EXECUTED')
+            ->first();
+
+        $this->assertNotNull($event);
+        $this->assertSame('WARN', $event->severity);
+
+        $payload = json_decode($event->event_payload_json, true);
+        $this->assertTrue((bool) $payload['force_replace']);
+        $this->assertSame(1, (int) $payload['previous_publication_id']);
+        $this->assertSame((int) $pointer->publication_id, (int) $payload['new_publication_id']);
+        $this->assertSame('operator approved replacement after manual import validation', $payload['force_replace_reason']);
+    }
+
     public function test_complete_finalize_is_idempotent_for_already_completed_success_run(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -5677,7 +5783,7 @@ class BaselineMismatchPromotionPublicationRepository extends EodPublicationRepos
         $this->conflictingPublicationVersion = $conflictingPublicationVersion;
     }
 
-    public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null)
+    public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null, $forceReplace = false)
     {
         throw new RuntimeException(
             sprintf(
@@ -5700,16 +5806,16 @@ class ThrowingPromotionPublicationRepository extends EodPublicationRepository
         $this->message = $message;
     }
 
-    public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null)
+    public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null, $forceReplace = false)
     {
         throw new RuntimeException($this->message);
     }
 }
 class PostSwitchResolutionMismatchPublicationRepository extends EodPublicationRepository
 {
-    public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null)
+    public function promoteCandidateToCurrent(App\Models\EodRun $run, $priorPublicationId = null, $forceReplace = false)
     {
-        $candidate = parent::promoteCandidateToCurrent($run, $priorPublicationId);
+        $candidate = parent::promoteCandidateToCurrent($run, $priorPublicationId, $forceReplace);
 
         DB::table('eod_publications')
             ->where('publication_id', $candidate->publication_id)

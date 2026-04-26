@@ -366,9 +366,9 @@ class EodPublicationRepository
         });
     }
 
-    public function promoteCandidateToCurrent(EodRun $run, $priorPublicationId = null)
+    public function promoteCandidateToCurrent(EodRun $run, $priorPublicationId = null, $forceReplace = false)
     {
-        return DB::transaction(function () use ($run, $priorPublicationId) {
+        return DB::transaction(function () use ($run, $priorPublicationId, $forceReplace) {
             $candidate = DB::table('eod_publications')
                 ->where('run_id', $run->run_id)
                 ->where('trade_date', $run->trade_date_requested)
@@ -405,7 +405,11 @@ class EodPublicationRepository
                     );
                 }
 
-                throw new \RuntimeException('Current publication already exists for trade date '.$run->trade_date_requested.'. Correction/reseal is required before replacing it.');
+                if (! $forceReplace) {
+                    throw new \RuntimeException('Current publication already exists for trade date '.$run->trade_date_requested.'. Use --force_replace=true with an audit reason to replace it via operator-controlled switch.');
+                }
+
+                $priorPublicationId = (int) $current->publication_id;
             }
 
             if ($priorPublicationId && $current && (int) $current->publication_id !== (int) $priorPublicationId) {

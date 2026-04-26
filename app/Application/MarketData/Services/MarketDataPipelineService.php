@@ -554,8 +554,33 @@ class MarketDataPipelineService
 
                             $promotedCurrent = $this->publications->promoteCandidateToCurrent(
                                 $run,
-                                $priorCurrent ? $priorCurrent->publication_id : null
+                                $priorCurrent ? $priorCurrent->publication_id : null,
+                                (bool) $input->forceReplace
                             );
+
+                            if ($input->forceReplace) {
+                                $previousPublicationId = $priorCurrent
+                                    ? (int) $priorCurrent->publication_id
+                                    : (isset($promotedCurrent->previous_publication_id) ? (int) $promotedCurrent->previous_publication_id : null);
+
+                                $this->runs->appendEvent(
+                                    $run,
+                                    $input->stage,
+                                    'RUN_FORCE_REPLACE_EXECUTED',
+                                    'WARN',
+                                    'Operator force replace switched current publication pointer.',
+                                    null,
+                                    [
+                                        'force_replace' => true,
+                                        'force_replace_reason' => $input->forceReplaceReason,
+                                        'run_id' => (int) $run->run_id,
+                                        'previous_publication_id' => $previousPublicationId,
+                                        'new_publication_id' => (int) $promotedCurrent->publication_id,
+                                        'new_publication_version' => (int) $promotedCurrent->publication_version,
+                                        'trade_date' => $input->requestedDate,
+                                    ]
+                                );
+                            }
 
                             $this->runs->syncCurrentPublicationMirror(
                                 $input->requestedDate,
@@ -870,7 +895,7 @@ class MarketDataPipelineService
         }
     }
 
-    public function promoteSingleDay($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null)
+    public function promoteSingleDay($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null, $forceReplace = false, $forceReplaceReason = null)
     {
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
         $promoteContext = $this->resolvePromoteContext($sourceMode, $correctionId, $promoteMode);
@@ -884,7 +909,7 @@ class MarketDataPipelineService
         $runId = $this->preparePromoteRunId($requestedDate, $sourceMode, $runId, $correctionId, $promoteContext);
         $this->ensurePromoteRunContext($runId, $requestedDate, $promoteContext, $correctionId);
 
-        $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId);
+        $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId, $forceReplace, $forceReplaceReason);
         $run = $this->completeCoverageEvaluation($coverageInput);
         $run = $this->safeUpdateTelemetry($run, [
             'promote_mode' => $promoteContext['promote_mode'],
@@ -892,11 +917,12 @@ class MarketDataPipelineService
             'notes' => $this->appendRunNotes($this->stripPromoteNotes($run->notes ?? null), [
                 'promote_mode='.$promoteContext['promote_mode'],
                 'publish_target='.$promoteContext['publish_target'],
+                $forceReplace ? 'force_replace=true' : null,
             ]),
         ]);
 
         if ($promoteContext['requires_full_coverage'] && strtoupper((string) ($run->coverage_gate_state ?? 'BLOCKED')) !== 'PASS') {
-            return $this->completeFinalize(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, 'FINALIZE', $correctionId));
+            return $this->completeFinalize(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, 'FINALIZE', $correctionId, $forceReplace, $forceReplaceReason));
         }
 
         foreach ([
@@ -906,7 +932,7 @@ class MarketDataPipelineService
             'SEAL' => 'completeSeal',
             'FINALIZE' => 'completeFinalize',
         ] as $stage => $method) {
-            $run = $this->{$method}(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, $stage, $correctionId));
+            $run = $this->{$method}(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, $stage, $correctionId, $forceReplace, $forceReplaceReason));
 
             if ($run && in_array((string) $run->terminal_status, ['HELD', 'FAILED'], true)) {
                 return $run;
@@ -916,9 +942,9 @@ class MarketDataPipelineService
         return $run;
     }
 
-    public function promoteDaily($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null)
+    public function promoteDaily($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null, $forceReplace = false, $forceReplaceReason = null)
     {
-        return $this->promoteSingleDay($requestedDate, $sourceMode, $runId, $correctionId, $promoteMode);
+        return $this->promoteSingleDay($requestedDate, $sourceMode, $runId, $correctionId, $promoteMode, $forceReplace, $forceReplaceReason);
     }
 
     public function runSingleDay($requestedDate, $sourceMode = null, $correctionId = null)
@@ -992,6 +1018,14 @@ class MarketDataPipelineService
             && (string) ($run->lifecycle_state ?? '') === 'COMPLETED'
             && in_array((string) ($run->terminal_status ?? ''), ['SUCCESS', 'HELD', 'FAILED'], true)
         ) {
+            if (
+                (bool) $input->forceReplace
+                && (string) ($run->terminal_status ?? '') === 'HELD'
+                && (string) ($run->final_reason_code ?? '') === 'RUN_LOCK_CONFLICT'
+            ) {
+                return null;
+            }
+
             return $run;
         }
 

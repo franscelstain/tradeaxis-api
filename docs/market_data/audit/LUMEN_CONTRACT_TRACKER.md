@@ -2,6 +2,7 @@
 
 ## FINAL SYSTEM STATUS (LATEST)
 
+- Force Replace & Operator Control → DONE (POLICY LOCKED + CODE PATCHED; TARGETED PHPUNIT PROVEN, COMMAND SURFACE PATCH PENDING LOCAL RERUN)
 - Correction Lifecycle → DONE (PROVEN)
 - Correction Re-execution Policy → DONE (PROVEN)
 - Correction Lifecycle Test Hardening → DONE (PROVEN: 50 tests / 1,099 assertions)
@@ -959,4 +960,116 @@ Aggregate validation proof:
 
 ### Remaining Gap
 - none for correction lifecycle test hardening.
+
+## 2026-04-26 — FORCE REPLACE & OPERATOR CONTROL POLICY LOCK + EXECUTION SESSION
+
+Status: DONE (POLICY LOCKED + CODE PATCHED)
+
+### Scope
+- operator-controlled force replace for `market-data:promote`
+- removal of manual SQL cleanup requirement for valid-current replacement
+- current publication pointer switch with explicit flag and audit reason
+- repository, service, command, contract, and audit alignment
+
+### Changes
+- Added `docs/market_data/book/Force_Replace_Operator_Control_Policy_LOCKED.md`.
+- Added `--force_replace=true` and `--force_replace_reason=` to `market-data:promote`.
+- Extended promote pipeline context through `MarketDataStageInput` and `MarketDataPipelineService::promoteDaily()` / `promoteSingleDay()`.
+- Updated `EodPublicationRepository::promoteCandidateToCurrent()` to keep default uncontrolled replacement blocked but allow explicit operator force replace when current integrity is valid.
+- Added `RUN_FORCE_REPLACE_EXECUTED` run event payload with previous/new publication IDs, run ID, reason, and trade date.
+- Added pipeline integration coverage for default HELD behavior and force-replace SUCCESS pointer switch with audit event.
+- Added repository regression coverage for default block and controlled force replace.
+- Updated command-surface mocks for the new promote signature.
+
+### Test Proof
+- `php -l app/Console/Commands/MarketData/PromoteMarketDataCommand.php` → PASS in this container.
+- `php -l app/Application/MarketData/DTOs/MarketDataStageInput.php` → PASS in this container.
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` → PASS in this container.
+- `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` → PASS in this container.
+- `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS in this container.
+- `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → PASS in this container.
+- `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS in this container.
+- PHPUnit was not executed in this container because the uploaded ZIP does not include `vendor/`.
+- Required local PHPUnit commands:
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+### Result
+- Default promote behavior remains locked: existing valid current without force is blocked.
+- Operator force replace is now explicit and command-driven.
+- Manual SQL pointer cleanup is no longer required for valid-current replacement.
+- Force replace does not bypass coverage, seal, publishability, correction lifecycle, or strict pointer validation.
+- Previous publication remains stored and demoted; new publication becomes current.
+- Audit event records the operator action.
+
+### Contract Impact
+- New LOCKED contract added: `Force_Replace_Operator_Control_Policy_LOCKED.md`.
+- Existing coverage gate, correction lifecycle, read-side enforcement, and default lock behavior remain unchanged.
+- Error message for uncontrolled replacement was updated to point operators to the explicit force-replace command path.
+
+### Remaining Gap
+- Local PHPUnit runtime proof must be executed in the developer environment because `vendor/` is absent from the uploaded ZIP.
+
+## 2026-04-26 — FORCE REPLACE AUDIT PAYLOAD PATCH
+
+### Contract Status
+- Force Replace Operator Control policy remains LOCKED.
+- No policy behavior changed.
+
+### Clarification
+- For full-publish force replace, previous current publication may be resolved inside `EodPublicationRepository::promoteCandidateToCurrent()` rather than from correction baseline context.
+- Audit payload must still record the replaced publication ID, using the promoted candidate's persisted `previous_publication_id` when needed.
+
+### Validation Impact
+- This is a test-feedback implementation fix, not a contract change.
+- Test doubles must preserve the full repository method signature including `$forceReplace`.
+
+---
+
+## SESSION PATCH — FORCE REPLACE OPERATOR PROMOTE COMMAND SURFACE FIX
+
+Status: DONE
+
+### Scope
+
+Follow-up operator execution proved the Force Replace policy implementation needed command-surface hardening:
+- `--force_reason` alias was absent even though operator execution text used it.
+- `--run_id` promote without explicit `--source_mode` could violate source immutability by falling back to default source mode.
+
+### Changes
+
+- `market-data:promote` now accepts both:
+  - `--force_replace_reason=` as canonical option;
+  - `--force_reason=` as operator-friendly alias.
+- `market-data:promote --run_id=<id>` now derives the existing run context when `--source_mode` is omitted:
+  - requested date comes from the existing run;
+  - source mode comes from the existing run.
+
+### Test Proof
+
+Local PHPUnit proof from operator before this follow-up patch:
+- `MarketDataPipelineIntegrationTest.php` → OK (51 tests, 1173 assertions)
+- `PublicationRepositoryIntegrationTest.php` → OK (19 tests, 93 assertions)
+- `OpsCommandSurfaceTest.php` → OK (40 tests, 254 assertions)
+
+Container syntax proof:
+- `php -l app/Console/Commands/MarketData/PromoteMarketDataCommand.php` → PASS
+- `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS
+
+### Result
+
+- Force Replace remains explicit and audit-reasoned.
+- Command execution no longer forces operator to use manual SQL or repeat source/date context for a known run.
+- Source immutability remains enforced; the command now passes the correct immutable source for existing run IDs.
+
+### Contract Impact
+
+- Policy behavior unchanged.
+- This is an execution-surface alignment with the locked policy.
+- `--force_replace_reason=` remains canonical; `--force_reason=` is accepted as compatible alias.
+
+### Remaining Gap
+
+- Operator must rerun targeted PHPUnit locally after applying this patch.
 

@@ -333,11 +333,54 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $repo->sealCandidatePublication($run, 'system');
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Current publication already exists for trade date 2026-03-20. Correction/reseal is required before replacing it.');
+        $this->expectExceptionMessage('Current publication already exists for trade date 2026-03-20. Use --force_replace=true with an audit reason to replace it via operator-controlled switch.');
 
         $repo->promoteCandidateToCurrent($run);
     }
 
+
+
+
+    public function test_promote_candidate_to_current_allows_operator_force_replace_when_valid_current_exists(): void
+    {
+        $repo = new EodPublicationRepository();
+        $run = App\Models\EodRun::query()->findOrFail(27);
+
+        $candidate = $repo->getOrCreateCandidatePublication($run, null);
+
+        $repo->updateCandidateHashes($candidate->publication_id, [
+            'bars_batch_hash' => 'bars-force',
+            'indicators_batch_hash' => 'ind-force',
+            'eligibility_batch_hash' => 'elig-force',
+        ]);
+
+        $repo->sealCandidatePublication($run, 'system');
+
+        $promoted = $repo->promoteCandidateToCurrent($run, null, true);
+
+        $this->assertSame((int) $candidate->publication_id, (int) $promoted->publication_id);
+        $this->assertSame(1, (int) $promoted->is_current);
+        $this->assertSame(10, (int) $promoted->supersedes_publication_id);
+        $this->assertSame(10, (int) $promoted->previous_publication_id);
+        $this->assertSame(10, (int) $promoted->replaced_publication_id);
+
+        $pointer = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+
+        $this->assertNotNull($pointer);
+        $this->assertSame((int) $candidate->publication_id, (int) $pointer->publication_id);
+        $this->assertSame(27, (int) $pointer->run_id);
+
+        $oldPublication = DB::table('eod_publications')->where('publication_id', 10)->first();
+        $this->assertSame(0, (int) $oldPublication->is_current);
+
+        $oldRun = DB::table('eod_runs')->where('run_id', 25)->first();
+        $newRun = DB::table('eod_runs')->where('run_id', 27)->first();
+
+        $this->assertSame(0, (int) $oldRun->is_current_publication);
+        $this->assertSame(1, (int) $newRun->is_current_publication);
+    }
 
     public function test_find_invalid_current_publication_states_detects_failed_not_readable_current_pointer(): void
     {

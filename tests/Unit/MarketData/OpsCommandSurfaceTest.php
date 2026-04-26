@@ -1887,7 +1887,7 @@ class OpsCommandSurfaceTest extends TestCase
 
         $service->shouldReceive('promoteDaily')
             ->once()
-            ->with('2026-03-24', 'manual_file', 55, null, null)
+            ->with('2026-03-24', 'manual_file', 55, null, null, false, null)
             ->andReturn((object) [
                 'run_id' => 55,
                 'trade_date_requested' => '2026-03-24',
@@ -1941,7 +1941,7 @@ class OpsCommandSurfaceTest extends TestCase
 
         $service->shouldReceive('promoteDaily')
             ->once()
-            ->with('2026-03-24', 'manual_file', 55, null, null)
+            ->with('2026-03-24', 'manual_file', 55, null, null, false, null)
             ->andReturn((object) [
                 'run_id' => 55,
                 'trade_date_requested' => '2026-03-24',
@@ -1997,7 +1997,7 @@ class OpsCommandSurfaceTest extends TestCase
 
         $service->shouldReceive('promoteDaily')
             ->once()
-            ->with('2026-03-24', 'manual_file', 55, null, 'repair_candidate')
+            ->with('2026-03-24', 'manual_file', 55, null, 'repair_candidate', false, null)
             ->andReturn((object) [
                 'run_id' => 55,
                 'trade_date_requested' => '2026-03-24',
@@ -2039,6 +2039,115 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('promote_mode=repair_candidate', $display);
         $this->assertStringContainsString('publish_target=repair_candidate', $display);
         $this->assertStringContainsString('reason_code=RUN_NON_CURRENT_PROMOTION', $display);
+    }
+
+
+    public function test_promote_command_uses_existing_run_context_when_run_id_is_given_without_source_mode(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+
+        $runs->shouldReceive('findByRunId')
+            ->once()
+            ->with('117')
+            ->andReturn((object) [
+                'run_id' => 117,
+                'trade_date_requested' => '2026-03-20',
+                'source' => 'manual_file',
+            ]);
+
+        $service->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-03-20', 'manual_file', '117', null, null, false, null)
+            ->andReturn((object) [
+                'run_id' => 117,
+                'trade_date_requested' => '2026-03-20',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'coverage_gate_state' => 'PASS',
+                'coverage_available_count' => 901,
+                'coverage_universe_count' => 901,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => '1.0000',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_universe_basis' => 'ACTIVE_LISTED_EQUITY_AS_OF_DATE',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'notes' => 'source_name=LOCAL_FILE; source_input_file=storage/app/market_data/operator/manual-2026-03-20.csv',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodRunRepository::class, $runs);
+
+        $command = new \App\Console\Commands\MarketData\PromoteMarketDataCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--run_id' => '117',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('requested_date=2026-03-20', $display);
+        $this->assertStringContainsString('source_name=LOCAL_FILE', $display);
+        $this->assertStringContainsString('force_replace=false', $display);
+    }
+
+    public function test_promote_command_accepts_force_reason_alias_for_operator_force_replace(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $runs = m::mock(EodRunRepository::class);
+
+        $runs->shouldReceive('findByRunId')
+            ->once()
+            ->with('117')
+            ->andReturn((object) [
+                'run_id' => 117,
+                'trade_date_requested' => '2026-03-20',
+                'source' => 'manual_file',
+            ]);
+
+        $service->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-03-20', 'manual_file', '117', null, null, true, 'operator approved replace current publication')
+            ->andReturn((object) [
+                'run_id' => 117,
+                'trade_date_requested' => '2026-03-20',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'SUCCESS',
+                'publishability_state' => 'READABLE',
+                'coverage_gate_state' => 'PASS',
+                'coverage_available_count' => 901,
+                'coverage_universe_count' => 901,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => '1.0000',
+                'coverage_min_threshold' => '0.9800',
+                'coverage_universe_basis' => 'ACTIVE_LISTED_EQUITY_AS_OF_DATE',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'notes' => 'source_name=LOCAL_FILE',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+        $this->app->instance(EodRunRepository::class, $runs);
+
+        $command = new \App\Console\Commands\MarketData\PromoteMarketDataCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--run_id' => '117',
+            '--force_replace' => 'true',
+            '--force_reason' => 'operator approved replace current publication',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('force_replace=true', $display);
     }
 
 }
