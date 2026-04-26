@@ -4,6 +4,7 @@
 
 - Correction Lifecycle → DONE (PROVEN)
 - Correction Re-execution Policy → DONE (PROVEN)
+- Correction Lifecycle Test Hardening → DONE (PROVEN: 50 tests / 1,099 assertions)
 - Coverage Gate → DONE
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 - Source Hash / Reseal Guard / Publication Lineage → DONE (PROVEN)
@@ -918,3 +919,44 @@ Status: DONE (TEST HARDENED)
 
 ### Remaining Gap
 - none for correction lifecycle contract proof.
+
+## 2026-04-26 — CORRECTION LIFECYCLE TEST HARDENING FINAL RUNTIME VALIDATION
+
+Status: DONE (PROVEN)
+
+### Scope
+- Final local PHPUnit validation for correction lifecycle test hardening.
+- Scope is proof-only for the latest correction lifecycle hardening session.
+- No policy, schema, runtime behavior, or error message contract was changed in this validation update.
+
+### Changes
+- Audit updated with operator-provided local PHPUnit evidence.
+- Previous container limitation (`vendor/` absent) is now closed by local project validation.
+- Existing correction lifecycle hardening result is upgraded from static/container proof to full local PHPUnit proof.
+
+### Test Proof
+- `vendor/bin/phpunit tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php` → PASS (`4 tests`, `55 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/CorrectionCommandsTest.php` → PASS (`8 tests`, `40 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "correction"` → PASS (`35 tests`, `948 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "repair"` → PASS (`2 tests`, `32 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "unchanged_artifacts"` → PASS (`1 test`, `24 assertions`).
+
+Aggregate validation proof:
+- `50 tests` PASS.
+- `1,099 assertions` PASS.
+
+### Result
+- `correction_current` single-use lifecycle is proven.
+- `repair_candidate` rerun lifecycle is proven.
+- `repair_candidate` remains non-current and does not move the current publication pointer.
+- approval/current consumption regression coverage is proven.
+- correction lifecycle metadata coverage is proven through repository and pipeline test coverage.
+
+### Contract Impact
+- No contract change.
+- No error message contract change.
+- This is final runtime validation evidence for the existing correction lifecycle contract and test hardening session.
+
+### Remaining Gap
+- none for correction lifecycle test hardening.
+
