@@ -2,7 +2,7 @@
 
 ## FINAL SYSTEM STATUS (LATEST)
 
-- Force Replace & Operator Control → DONE (POLICY LOCKED + CODE PATCHED; TARGETED PHPUNIT PROVEN, COMMAND SURFACE PATCH PENDING LOCAL RERUN)
+- Force Replace & Operator Control → DONE (POLICY LOCKED + CODE PATCHED + LOCAL PHPUNIT/COMMAND/DB/AUDIT PROVEN)
 - Correction Lifecycle → DONE (PROVEN)
 - Correction Re-execution Policy → DONE (PROVEN)
 - Correction Lifecycle Test Hardening → DONE (PROVEN: 50 tests / 1,099 assertions)
@@ -1271,3 +1271,51 @@ New test coverage added:
 
 - Local PHPUnit must be rerun after this follow-up patch because the container ZIP has no `vendor/` dependencies.
 
+
+## 2026-04-26 — FORCE REPLACE & OPERATOR CONTROL FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+- Final local PHPUnit, command, DB, and audit-event validation for Force Replace & Operator Control.
+- Scope is proof-only after the v3 command-surface fix.
+- No production behavior was changed in this audit update.
+
+### Changes
+- Closed the previous pending rerun gap for command-surface patch validation.
+- Recorded proof that `market-data:promote` accepts both `--force_reason=` and `--force_replace_reason=`.
+- Recorded proof that promote by `--run_id` correctly preserves existing manual-file source context.
+- Recorded proof that repeated force replace does not create duplicate current publication state.
+- Recorded proof that force replace writes audit event telemetry.
+
+### Test Proof
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → OK (`51 tests`, `1173 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → OK (`19 tests`, `93 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → OK (`42 tests`, `260 assertions`).
+
+Manual execution proof:
+- `php artisan market-data:promote --run_id=117 --force_replace=true --force_reason="operator approved replace current publication"` returned `SUCCESS` / `READABLE`, `force_replace=true`, output run `119`.
+- `php artisan market-data:promote --run_id=117 --force_replace=true --force_replace_reason="operator approved replace current publication"` returned `SUCCESS` / `READABLE`, `force_replace=true`, output run `120`.
+
+DB/audit proof:
+- `select trade_date, count(*) as total_current from eod_publications where trade_date = '2026-03-20' and is_current = 1 group by trade_date;` returned `total_current = 1`.
+- Uploaded `eod_publications` proof shows `publication_id=94/run_id=120` as the only current row and prior publications demoted.
+- Uploaded `eod_run_events` proof shows `RUN_FORCE_REPLACE_EXECUTED` events for force replace runs.
+
+### Result
+- Force Replace & Operator Control is DONE and proven end-to-end.
+- Existing valid current without force remains protected.
+- Explicit force replace can switch current safely without manual SQL cleanup.
+- Pointer/current state remains single-current and deterministic.
+- Audit trail exists for force replace execution.
+
+### Contract Impact
+- No coverage gate change.
+- No correction lifecycle change.
+- No read-side enforcement change.
+- No schema change.
+- No default publish behavior change without force replace.
+- The locked Force Replace Operator Control policy is now fully runtime-proven.
+
+### Remaining Gap
+- None for Force Replace & Operator Control.

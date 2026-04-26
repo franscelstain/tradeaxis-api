@@ -2,7 +2,7 @@
 
 ## FINAL SYSTEM STATUS (LATEST)
 
-- Force Replace & Operator Control → DONE (POLICY LOCKED + CODE PATCHED; TARGETED PHPUNIT PROVEN, COMMAND SURFACE PATCH PENDING LOCAL RERUN)
+- Force Replace & Operator Control → DONE (POLICY LOCKED + CODE PATCHED + LOCAL PHPUNIT/COMMAND/DB/AUDIT PROVEN)
 - Correction Lifecycle → DONE (PROVEN)
 - Correction Re-execution Policy → DONE (PROVEN)
 - Correction Lifecycle Test Hardening → DONE (PROVEN: 50 tests / 1,099 assertions)
@@ -1073,3 +1073,49 @@ Container syntax proof:
 
 - Operator must rerun targeted PHPUnit locally after applying this patch.
 
+
+## 2026-04-26 — FORCE REPLACE & OPERATOR CONTROL FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+- Final local runtime validation for the locked Force Replace & Operator Control policy.
+- Scope is proof-only after the command-surface fix.
+- No coverage gate, correction lifecycle, read-side enforcement, schema, or default non-force publish behavior was changed.
+
+### Changes
+- Updated audit status to close the previous command-surface local-rerun gap.
+- Recorded local PHPUnit proof for pipeline, repository, and ops command surfaces.
+- Recorded manual operator execution proof for both canonical and alias force-replace reason options.
+- Recorded DB proof that current publication remains single-current after repeated force replace execution.
+- Recorded audit-event proof that `RUN_FORCE_REPLACE_EXECUTED` is persisted for force replace runs.
+
+### Test Proof
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS (`51 tests`, `1173 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → PASS (`19 tests`, `93 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS (`42 tests`, `260 assertions`).
+- Manual command proof:
+  - `php artisan market-data:promote --run_id=117 --force_replace=true --force_reason=...` → `SUCCESS` / `READABLE`, `force_replace=true`, output run `119`.
+  - `php artisan market-data:promote --run_id=117 --force_replace=true --force_replace_reason=...` → `SUCCESS` / `READABLE`, `force_replace=true`, output run `120`.
+- DB proof supplied by operator:
+  - `eod_publications` for `2026-03-20` has exactly one `is_current = 1`.
+  - `publication_id=94`, `run_id=120`, `is_current=1`.
+  - `publication_id=93`, `run_id=119`, `is_current=0`.
+  - `publication_id=92`, `run_id=117`, `is_current=0`.
+  - `eod_run_events` contains `RUN_FORCE_REPLACE_EXECUTED` for force replace runs `119` and `120`.
+
+### Result
+- Force Replace & Operator Control is fully proven.
+- Manual SQL cleanup is no longer required for operator-approved current replacement.
+- Pointer/current state remains deterministic and single-current after repeated force replace.
+- Previous publications remain stored and are demoted, not deleted.
+- Audit event records the operator action.
+
+### Contract Impact
+- No new contract change.
+- Existing `Force_Replace_Operator_Control_Policy_LOCKED.md` is now validated by local PHPUnit, command execution, DB state, and audit events.
+- `--force_replace_reason=` remains canonical.
+- `--force_reason=` remains accepted alias for operator execution compatibility.
+
+### Remaining Gap
+- None for Force Replace & Operator Control.
