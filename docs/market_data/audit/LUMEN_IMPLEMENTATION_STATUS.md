@@ -1319,3 +1319,167 @@ DB/audit proof:
 
 ### Remaining Gap
 - None for Force Replace & Operator Control.
+
+## 2026-04-26 — DB SCHEMA & MIGRATION SYNC POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+
+Executed the DB schema and migration sync pass for market-data, covering schema ownership, migration alignment, SQLite mirror alignment, repository/query usage, schema sync testing, and append-only audit update.
+
+### Changes
+
+- Updated `docs/market_data/db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md` with 2026-04-26 evidence refresh and final drift resolution.
+- Updated `tests/Support/UsesMarketDataSqlite.php`:
+  - added `eod_reason_codes` table mirror;
+  - removed SQLite-only replay source-file fields from `md_replay_daily_metrics`.
+- Updated `tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php`:
+  - added `eod_reason_codes` column assertions;
+  - added guard that `md_replay_daily_metrics.source_file_*` fields must not exist as SQLite-only experiment fields.
+- No new migration was added because the only runtime-relevant drift was in the SQLite mirror; MariaDB SQL docs/migrations already own source identity on `eod_runs` and `eod_publications`, and replay repository does not write source-file fields to `md_replay_daily_metrics`.
+
+### Test Proof
+
+Static validation executed in this environment:
+
+- `php -l tests/Support/UsesMarketDataSqlite.php` → PASS
+- `php -l tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` → PASS
+
+PHPUnit was not executed because this uploaded ZIP does not include `vendor/`.
+
+### Result
+
+DONE. Schema owner policy is explicit, SQLite mirror drift was corrected, schema sync test coverage was hardened, and audit files were updated append-only.
+
+### Contract Impact
+
+DB Schema & Migration Sync remains locked under `OPTION C — LOCKED CONTRACT + RUNTIME RECONCILIATION`. No business behavior was changed.
+
+### Remaining Gap
+
+Local validation still required with full dependencies:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/ReplayVerificationServiceTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+
+## 2026-04-26 — DB SCHEMA & MIGRATION SYNC RUNTIME DB VALIDATION FOLLOW-UP
+
+Status: PARTIAL
+
+### Scope
+
+Follow-up validation after local PHPUnit passed and operator supplied `Column_and_Index.xlsx` containing runtime MariaDB `SHOW COLUMNS` / `SHOW INDEX` evidence for key market-data tables.
+
+### Changes
+
+- Added `database/migrations/2026_04_26_000001_sync_runtime_db_to_locked_schema_contract.php`.
+- Updated `docs/market_data/db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md` with runtime DB validation follow-up evidence and remediation rule.
+- Kept SQL schema snapshot unchanged because `Database_Schema_MariaDB.sql` already represents the locked target schema for fresh databases.
+- Kept SQLite mirror unchanged because local PHPUnit already proved the SQLite mirror contract after the prior patch.
+
+### Test Proof
+
+Operator local validation passed before this follow-up migration:
+
+- `php -l tests/Support/UsesMarketDataSqlite.php` → PASS.
+- `php -l tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` → PASS.
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` → OK (`2 tests`, `64 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → OK (`19 tests`, `93 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php` → OK (`4 tests`, `55 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php` → OK (`1 test`, `5 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` → OK (`4 tests`, `9 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → OK (`51 tests`, `1173 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → OK (`3 tests`, `44 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/ReplayVerificationServiceTest.php` → OK (`5 tests`, `15 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → OK (`42 tests`, `260 assertions`).
+
+Container static validation after adding the follow-up migration:
+
+- `php -l database/migrations/2026_04_26_000001_sync_runtime_db_to_locked_schema_contract.php` → PASS.
+
+Runtime DB evidence from `Column_and_Index.xlsx` found deployed DB drift:
+
+- `eod_publications.promote_mode` and `eod_publications.publish_target` existed in live DB but are not owned by the locked publication schema/repository.
+- `md_replay_daily_metrics` was missing actual replay coverage fields required by locked schema/replay persistence.
+- `md_replay_daily_metrics.coverage_ratio` existed as `DECIMAL(6,4)` while locked schema expects `DECIMAL(12,6)`.
+- replay/session secondary indexes were not proven present by the workbook and are recreated idempotently by the remediation migration.
+
+### Result
+
+PARTIAL until the new runtime remediation migration is executed locally and DB `SHOW COLUMNS` / `SHOW INDEX` proof is rerun.
+
+### Contract Impact
+
+- DB Schema & Migration Sync remains locked under `OPTION C — LOCKED CONTRACT + RUNTIME RECONCILIATION`.
+- Fresh DB path remains governed by `Database_Schema_MariaDB.sql`.
+- Existing DB drift must be fixed by forward-only remediation migrations, not by relying on edited SQL snapshots.
+- No coverage gate behavior changed.
+- No force replace behavior changed.
+- No correction lifecycle changed.
+- No manual-file publishability changed.
+- No read-side enforcement changed.
+- No finalize lock behavior changed.
+- No publication replacement policy changed.
+
+### Remaining Gap
+
+Run locally:
+
+- `php artisan migrate`
+- rerun `SHOW COLUMNS` / `SHOW INDEX` checks for `eod_publications`, `md_replay_daily_metrics`, `md_replay_reason_code_counts`, and `md_session_snapshots`.
+- rerun targeted PHPUnit if migration succeeds.
+
+## 2026-04-26 — DB SCHEMA & MIGRATION SYNC RUNTIME DB VALIDATION FINAL
+
+Status: DONE
+
+### Scope
+
+Finalized the DB schema and migration sync session after the operator executed the runtime remediation migration, reran targeted PHPUnit, and supplied fresh MariaDB `SHOW COLUMNS` / `SHOW INDEX` proof in `Column_Index.xlsx`.
+
+### Changes
+
+- Confirmed `database/migrations/2026_04_26_000001_sync_runtime_db_to_locked_schema_contract.php` migrated successfully in the operator environment.
+- Confirmed the seven supplied runtime DB evidence sheets now align with the locked schema columns for `eod_runs`, `eod_publications`, `eod_current_publication_pointer`, `eod_dataset_corrections`, `md_replay_daily_metrics`, `md_replay_reason_code_counts`, and `md_session_snapshots`.
+- Confirmed runtime indexes shown in the workbook align with locked index intent for the checked tables. Foreign key constraints are not expected to appear in `SHOW INDEX` output and remain validated by schema/migration contract review.
+- No additional schema patch was required after the runtime follow-up migration.
+
+### Test Proof
+
+- `php artisan migrate` → migrated `2026_04_26_000001_sync_runtime_db_to_locked_schema_contract` successfully.
+- `php -l database/migrations/2026_04_26_000001_sync_runtime_db_to_locked_schema_contract.php` → PASS.
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` → OK (`2 tests`, `64 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php` → OK (`1 test`, `5 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/ReplayVerificationServiceTest.php` → OK (`5 tests`, `15 assertions`).
+- Prior full local validation in this session also passed: `PublicationRepositoryIntegrationTest`, `CorrectionRepositoryIntegrationTest`, `ReadablePublicationReadContractIntegrationTest`, `MarketDataPipelineIntegrationTest`, `MarketDataEvidenceExportServiceTest`, and `OpsCommandSurfaceTest`.
+
+### Result
+
+DONE. The DB schema sync policy is locked, the SQLite mirror test is hardened, the deployed MariaDB runtime drift has been remediated by forward migration, and the supplied post-migration DB evidence confirms the checked runtime tables now match the locked schema shape.
+
+### Contract Impact
+
+- `DB_Schema_And_Migration_Sync_Contract_LOCKED.md` remains active.
+- Final policy remains **OPTION C — LOCKED CONTRACT + RUNTIME RECONCILIATION**.
+- Runtime schema drift must be fixed through forward-only migrations.
+- SQL snapshot remains the canonical fresh-install full schema.
+- SQLite remains a mirror for tested runtime tables, not a field experimentation layer.
+- No coverage gate behavior changed.
+- No force replace behavior changed.
+- No correction lifecycle changed.
+- No manual-file publishability changed.
+- No read-side enforcement changed.
+- No finalize lock behavior changed.
+- No publication replacement policy changed.
+
+### Remaining Gap
+
+None for the checked DB schema and migration sync scope.

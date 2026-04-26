@@ -82,6 +82,19 @@ trait UsesMarketDataSqlite
             $table->index(['is_trading_day', 'cal_date'], 'market_calendar_trading_idx');
         });
 
+
+        $schema->create('eod_reason_codes', function (Blueprint $table) {
+            $table->string('code', 64)->primary();
+            $table->string('category', 32);
+            $table->string('description', 255);
+            $table->string('severity', 16)->default('INFO');
+            $table->boolean('is_active')->default(true);
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
+
+            $table->index(['category', 'is_active'], 'idx_reason_codes_category_active');
+        });
+
         $schema->create('eod_runs', function (Blueprint $table) {
             $table->increments('run_id');
             $table->date('trade_date_requested');
@@ -309,10 +322,6 @@ trait UsesMarketDataSqlite
             $table->string('bars_batch_hash')->nullable();
             $table->string('indicators_batch_hash')->nullable();
             $table->string('eligibility_batch_hash')->nullable();
-            $table->string('source_file_hash')->nullable();
-            $table->string('source_file_hash_algorithm')->nullable();
-            $table->bigInteger('source_file_size_bytes')->nullable();
-            $table->integer('source_file_row_count')->nullable();
             $table->string('seal_state');
             $table->dateTime('sealed_at')->nullable();
             $table->string('expected_status')->nullable();

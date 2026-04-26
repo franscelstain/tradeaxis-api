@@ -175,3 +175,98 @@ SHOW INDEX FROM eod_dataset_corrections;
 SHOW INDEX FROM md_replay_daily_metrics;
 SHOW INDEX FROM md_session_snapshots;
 ```
+
+---
+
+## 10. 2026-04-26 Session Evidence Refresh
+
+Status: LOCKED + IMPLEMENTED
+
+### Policy Confirmation
+
+Selected policy remains **OPTION C — LOCKED CONTRACT + RUNTIME RECONCILIATION**.
+
+Authority is locked as:
+
+1. DB contract docs define schema governance and sync rules.
+2. `docs/market_data/db/Database_Schema_MariaDB.sql` is the canonical full MariaDB schema snapshot and is executed directly by the core market-data migration.
+3. Laravel/Lumen migrations implement runtime schema creation and runtime schema evolution.
+4. `tests/Support/UsesMarketDataSqlite.php` mirrors the runtime schema for tested market-data tables only, with explicit compatibility exceptions.
+5. Repository/model/query usage must be backed by contract + MariaDB schema + migration + SQLite mirror when covered by tests.
+
+### Current Drift Resolution
+
+| Area | Finding | Resolution |
+|---|---|---|
+| `eod_reason_codes` | Present in MariaDB SQL schema but missing from SQLite test mirror. | Added to SQLite mirror with the same contract columns and category/active index. |
+| `md_replay_daily_metrics.source_file_*` | Present only in SQLite test mirror. Repository replay persistence does not write these fields, and MariaDB SQL/migrations do not own them for replay metrics. | Removed from SQLite mirror. Source-file identity remains owned by `eod_runs` and `eod_publications`, not replay metrics. |
+| `eod_bars`, `eod_indicators`, `eod_eligibility`, history tables | SQLite has surrogate increment IDs while MariaDB uses contract primary keys or history IDs. | Allowed SQLite compatibility exception remains locked. These surrogate IDs are not business fields and must not be queried as domain contract fields. |
+
+### No-Orphan Rule Enforcement
+
+After this refresh, no market-data test mirror field is allowed to exist only in SQLite unless documented as a compatibility-only surrogate key. Replay source-file fields are explicitly not part of `md_replay_daily_metrics` until a future locked policy and runtime migration requires them.
+
+### Required Validation
+
+`MarketDataSqliteSchemaSyncTest` now checks:
+
+- `eod_reason_codes` exists in SQLite with contract columns.
+- `md_replay_daily_metrics` does not contain SQLite-only `source_file_*` fields.
+
+---
+
+## 11. 2026-04-26 Runtime DB Validation Follow-up
+
+Status: RUNTIME DRIFT FOUND + REMEDIATION MIGRATION ADDED
+
+The operator-supplied `SHOW COLUMNS` / `SHOW INDEX` workbook confirmed that PHPUnit/SQLite mirror validation passed, but the developer MariaDB runtime database still had deployed-state drift from the locked schema snapshot.
+
+### Runtime Drift Evidence
+
+| Table | Finding from runtime DB workbook | Locked schema state | Decision |
+|---|---|---|---|
+| `eod_publications` | `promote_mode` and `publish_target` existed in the live table. | These fields are not in `Database_Schema_MariaDB.sql`, not owned by the publication repository, and are not required for runtime publication behavior. Promote intent is owned by `eod_runs`. | Treat as DB-only orphan fields and remove through idempotent remediation migration. |
+| `md_replay_daily_metrics` | Actual coverage context fields such as `coverage_universe_count`, `coverage_available_count`, `coverage_missing_count`, `coverage_min_threshold`, `coverage_gate_state`, `coverage_threshold_mode`, `coverage_universe_basis`, `coverage_contract_version`, and `coverage_missing_sample_json` were missing from live DB. `coverage_ratio` existed but was `DECIMAL(6,4)` instead of locked `DECIMAL(12,6)`. | Locked schema and SQLite mirror contain actual replay coverage context fields used by `ReplayResultRepository` and `ReplayVerificationService`. | Add missing columns and widen `coverage_ratio` through idempotent remediation migration. |
+| `md_replay_daily_metrics` | Replay metric indexes were not proven present in runtime workbook. | Locked schema defines replay status/effective/comparison/coverage/artifact indexes. | Recreate indexes idempotently. Existing indexes are ignored by migration try/catch. |
+| `md_replay_reason_code_counts` | Secondary reason-code replay index was not proven present. | Locked schema defines `idx_replay_reason_code`. | Recreate index idempotently. |
+| `md_session_snapshots` | Snapshot unique/index rows were not proven present in runtime workbook. | Locked schema defines unique `(trade_date, snapshot_slot, ticker_id)` and lookup indexes. | Recreate indexes idempotently. |
+
+### Remediation Rule
+
+Fresh databases remain governed by `Database_Schema_MariaDB.sql` because the core schema migration executes that file. Existing developer/runtime databases that were created before later locked schema updates must be reconciled by forward-only remediation migrations instead of silently relying on edited SQL snapshots.
+
+### Remediation Migration
+
+Added:
+
+- `database/migrations/2026_04_26_000001_sync_runtime_db_to_locked_schema_contract.php`
+
+The migration is intentionally schema-only and does not change market-data business behavior. It:
+
+- adds missing replay actual coverage context fields to `md_replay_daily_metrics`;
+- widens `md_replay_daily_metrics.coverage_ratio` to the locked `DECIMAL(12,6)` precision where supported;
+- recreates locked replay/session indexes idempotently;
+- removes DB-only orphan publication intent fields from `eod_publications` when present.
+
+### Impact Lock
+
+This follow-up does not change coverage-gate decisions, correction lifecycle, manual-file publishability, force replace behavior, read-side enforcement, finalize lock behavior, or publication replacement policy. It only reconciles deployed schema shape to the already locked DB schema contract.
+
+## 12. 2026-04-26 Runtime DB Validation Final
+
+Status: LOCKED + IMPLEMENTED + VALIDATED
+
+The remediation migration was executed successfully in the operator environment:
+
+- `php artisan migrate` migrated `2026_04_26_000001_sync_runtime_db_to_locked_schema_contract` successfully.
+- `php -l database/migrations/2026_04_26_000001_sync_runtime_db_to_locked_schema_contract.php` passed.
+- Targeted PHPUnit replay/schema validation passed after migration:
+  - `MarketDataSqliteSchemaSyncTest` → OK (`2 tests`, `64 assertions`).
+  - `ReplayResultRepositoryIntegrationTest` → OK (`1 test`, `5 assertions`).
+  - `ReplayVerificationServiceTest` → OK (`5 tests`, `15 assertions`).
+
+The post-migration `Column_Index.xlsx` runtime DB evidence was reviewed for the supplied tables. The checked runtime table columns now align with the locked schema snapshot for `eod_runs`, `eod_publications`, `eod_current_publication_pointer`, `eod_dataset_corrections`, `md_replay_daily_metrics`, `md_replay_reason_code_counts`, and `md_session_snapshots`.
+
+The checked runtime indexes align with the locked index intent for the supplied tables. Foreign key constraints are governed by migration/schema contract review and are not expected to be represented as `SHOW INDEX` rows.
+
+Final result: **DB schema and migration sync scope is DONE for the checked market-data tables.**

@@ -40,6 +40,15 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
                 'created_at',
                 'updated_at',
             ],
+            'eod_reason_codes' => [
+                'code',
+                'category',
+                'description',
+                'severity',
+                'is_active',
+                'created_at',
+                'updated_at',
+            ],
             'md_session_snapshots' => [
                 'snapshot_id',
                 'trade_date',
@@ -84,6 +93,20 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
                     sprintf('Missing SQLite mirror column %s.%s', $table, $column)
                 );
             }
+        }
+    }
+    public function test_replay_metrics_does_not_contain_sqlite_only_source_file_columns(): void
+    {
+        foreach ([
+            'source_file_hash',
+            'source_file_hash_algorithm',
+            'source_file_size_bytes',
+            'source_file_row_count',
+        ] as $column) {
+            $this->assertFalse(
+                Schema::hasColumn('md_replay_daily_metrics', $column),
+                sprintf('SQLite-only replay metric column must not exist: md_replay_daily_metrics.%s', $column)
+            );
         }
     }
 }
