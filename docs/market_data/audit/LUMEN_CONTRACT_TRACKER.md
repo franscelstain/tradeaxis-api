@@ -887,3 +887,34 @@ No change.
 
 ### Remaining Gap
 force_replace not implemented
+
+## 2026-04-26 — CORRECTION LIFECYCLE TEST HARDENING SESSION
+
+Status: DONE (TEST HARDENED)
+
+### Scope
+- correction_current consumption enforcement
+- repair_candidate rerun proof inventory
+- lifecycle metadata guard validation
+
+### Changes
+- Added explicit repository-level single-use regression test for correction_current after `markConsumedForCurrent()`.
+- Preserved existing repair_candidate rerun contract tests and pipeline non-current candidate tests.
+- No contract definition was changed.
+
+### Test Proof
+- `php -l tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php` → PASS in this container.
+- PHPUnit must be run locally because `vendor/` is absent from uploaded ZIP.
+
+### Result
+- correction_current stays single-use.
+- consumed correction_current cannot be executed again.
+- consumed correction_current cannot be approved again.
+- repair_candidate remains isolated from current publication promotion.
+
+### Contract Impact
+- Contract remains immutable.
+- Added enforcement proof only.
+
+### Remaining Gap
+- none for correction lifecycle contract proof.

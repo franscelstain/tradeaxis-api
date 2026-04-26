@@ -134,4 +134,40 @@ class CorrectionRepositoryIntegrationTest extends TestCase
         }
     }
 
+
+    public function test_correction_repository_blocks_second_correction_current_execution_after_current_consumption(): void
+    {
+        $repo = new EodCorrectionRepository();
+
+        $created = $repo->createRequest('2026-03-20', 'READABILITY_FIX', 'Single-use current correction', 'system');
+        $approved = $repo->approve($created->correction_id, 'reviewer');
+
+        $eligibleCurrent = $repo->canExecuteCorrection($approved->correction_id, '2026-03-20', 'correction_current');
+        $this->assertSame('APPROVED', $eligibleCurrent->status);
+
+        $repo->markExecuting($approved->correction_id, 25, 27, 'correction_current');
+        $consumed = $repo->markConsumedForCurrent($approved->correction_id, 27, 25, 'current correction consumed');
+
+        $this->assertSame('CONSUMED_CURRENT', $consumed->status);
+        $this->assertSame(1, (int) $consumed->execution_count);
+        $this->assertSame(25, (int) $consumed->prior_run_id);
+        $this->assertSame(27, (int) $consumed->new_run_id);
+        $this->assertNotNull($consumed->last_executed_at);
+        $this->assertNotNull($consumed->current_consumed_at);
+
+        try {
+            $repo->canExecuteCorrection($approved->correction_id, '2026-03-20', 'correction_current');
+            $this->fail('Expected consumed correction_current request to block second current execution.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Correction request is already consumed for correction_current execution and cannot be executed again.', $e->getMessage());
+        }
+
+        try {
+            $repo->approve($approved->correction_id, 'reviewer-2');
+            $this->fail('Expected consumed correction_current request to block re-approval.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Correction request is already consumed for correction_current execution and cannot be approved again.', $e->getMessage());
+        }
+    }
+
 }

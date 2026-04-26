@@ -1070,3 +1070,41 @@ No change.
 
 ### Remaining Gap
 force replace not implemented
+
+## 2026-04-26 — CORRECTION LIFECYCLE TEST HARDENING SESSION
+
+Status: DONE (TEST HARDENED)
+
+### Scope
+- correction lifecycle regression hardening
+- explicit repository proof for correction_current single-use
+- repair_candidate rerun and non-current guard verification inventory
+
+### Changes
+- Added `CorrectionRepositoryIntegrationTest::test_correction_repository_blocks_second_correction_current_execution_after_current_consumption`.
+- Existing repair_candidate repository test remains the proof for first repair execution, second repair execution, metadata increment, re-approval before current promotion, and consumed-current lockout.
+- Existing pipeline integration tests remain the proof that repair_candidate first execution and rerun create non-current candidate publications and preserve the current pointer.
+
+### Test Proof
+- `php -l tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php` → PASS in this container.
+- PHPUnit was not executed in this container because uploaded ZIP does not include `vendor/`.
+- Required local PHPUnit commands remain:
+  - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionCommandsTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "correction"`
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "repair"`
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "unchanged_artifacts"`
+
+### Result
+- correction_current single-use is now explicitly proven at repository level after `current_consumed_at` is set.
+- second correction_current execution is blocked with the locked consumed-current error message.
+- re-approval after current consumption is blocked with the locked approval error message.
+- repair_candidate remains covered by existing repository and pipeline integration tests.
+
+### Contract Impact
+- No policy change.
+- No error message contract change.
+- This is proof hardening only.
+
+### Remaining Gap
+- none for correction lifecycle test hardening.
