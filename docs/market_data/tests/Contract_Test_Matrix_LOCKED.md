@@ -44,7 +44,7 @@ A test suite is not complete merely because code paths execute without error.
 | `coverage_pass_at_threshold` | Coverage gate | `fixture_coverage_exact_threshold` | numerator and denominator rows match expected resolved universe/canonical bars | coverage gate = `PASS` at exact threshold | optional | requested date still only becomes readable if all other prerequisites pass | optional |
 | `coverage_fail_with_fallback` | Coverage gate | `fixture_coverage_below_threshold_with_prior_publication` | numerator/denominator evidence recorded correctly | terminal status = `HELD`; requested date non-readable | optional | prior readable publication remains authoritative | optional |
 | `coverage_fail_without_fallback` | Coverage gate | `fixture_coverage_below_threshold_no_prior_publication` | numerator/denominator evidence recorded correctly | terminal status = `FAILED` or equivalent no-safe-fallback outcome; requested date non-readable | optional | no readable publication switch | optional |
-| `coverage_blocked_zero_universe` | Coverage gate | `fixture_coverage_zero_universe` | denominator = 0 evidenced explicitly | coverage gate = `BLOCKED`; requested date non-readable | optional | no readable publication switch | optional |
+| `coverage_blocked_zero_universe` | Coverage gate | `fixture_coverage_zero_universe` | denominator = 0 evidenced explicitly | coverage gate = `NOT_EVALUABLE`; requested date non-readable | optional | no readable publication switch | optional |
 | `coverage_denominator_uses_resolved_universe` | Coverage gate | `fixture_coverage_provider_under_return` | provider rows are fewer than resolved-universe rows and denominator still follows universe | coverage result proves denominator is not derived from provider-return count | optional | publication outcome follows true coverage, not provider row count illusion | optional |
 | `success_requires_seal` | Seal/finalize sequencing | `fixture_finalize_without_seal` | row-level optional | final readable success denied | none | no current readable publication switch | none |
 | `seal_requires_hashes` | Seal/finalize sequencing | `fixture_hash_precondition_fail` | row-level optional | seal denied / non-final outcome | missing hash proven | no readable publication | none |
@@ -119,4 +119,4 @@ Any implementation claiming coverage-gate compliance must prove at minimum:
 - numerator source = canonical valid EOD bars as-of requested date
 - threshold is explicit and audit-visible
 - zero-universe path does not auto-pass
-- requested date never becomes readable when coverage gate = `FAIL` or `BLOCKED`
+- requested date never becomes readable when coverage gate = `FAIL` or `NOT_EVALUABLE`

@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   coverage_missing_count INT NULL,
   coverage_ratio DECIMAL(8,6) NULL,
   coverage_min_threshold DECIMAL(8,6) NULL,
-  coverage_gate_state ENUM('PASS','FAIL','BLOCKED') NULL,
+  coverage_gate_state ENUM('PASS','FAIL','NOT_EVALUABLE','BLOCKED') NULL,
   coverage_threshold_mode VARCHAR(32) NULL,
   coverage_universe_basis VARCHAR(64) NULL,
   coverage_contract_version VARCHAR(64) NULL,

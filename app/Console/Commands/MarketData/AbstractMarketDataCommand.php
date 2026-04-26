@@ -497,7 +497,7 @@ abstract class AbstractMarketDataCommand extends Command
             return 'COVERAGE_BELOW_THRESHOLD';
         }
 
-        if ($coverageState === 'BLOCKED') {
+        if ($coverageState === 'NOT_EVALUABLE' || $coverageState === 'BLOCKED') {
             return 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 

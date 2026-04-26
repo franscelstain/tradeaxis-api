@@ -272,6 +272,8 @@ class MarketDataEvidenceExportService
             'final_reason_code' => $this->field($run, 'final_reason_code'),
             'source_context' => $sourceContext,
             'coverage' => $this->buildCoverageState($run),
+            'coverage_summary' => $this->buildCoverageState($run),
+            'coverage_reason_code' => $this->resolveCoverageReasonCodeFromState($this->field($run, 'coverage_gate_state')),
             'coverage_ratio' => $this->field($run, 'coverage_ratio') !== null ? (float) $this->field($run, 'coverage_ratio') : null,
             'bars_rows_written' => $this->field($run, 'bars_rows_written') !== null ? (int) $this->field($run, 'bars_rows_written') : null,
             'indicators_rows_written' => $this->field($run, 'indicators_rows_written') !== null ? (int) $this->field($run, 'indicators_rows_written') : null,
@@ -618,7 +620,27 @@ class MarketDataEvidenceExportService
             'coverage_universe_basis' => $record->coverage_universe_basis ?? null,
             'coverage_contract_version' => $record->coverage_contract_version ?? null,
             'coverage_missing_sample' => $this->decodeJsonArray($record->coverage_missing_sample_json ?? null),
+            'coverage_reason_code' => $this->resolveCoverageReasonCodeFromState($record->coverage_gate_state ?? null),
         ];
+    }
+
+    private function resolveCoverageReasonCodeFromState($coverageGateState)
+    {
+        $state = strtoupper((string) $coverageGateState);
+
+        if ($state === 'PASS') {
+            return 'COVERAGE_THRESHOLD_MET';
+        }
+
+        if ($state === 'FAIL') {
+            return 'COVERAGE_BELOW_THRESHOLD';
+        }
+
+        if ($state === 'NOT_EVALUABLE' || $state === 'BLOCKED') {
+            return 'RUN_COVERAGE_NOT_EVALUABLE';
+        }
+
+        return null;
     }
 
     private function buildExpectedCoverageState($record)
@@ -634,6 +656,7 @@ class MarketDataEvidenceExportService
             'coverage_universe_basis' => $record->expected_coverage_universe_basis ?? null,
             'coverage_contract_version' => $record->expected_coverage_contract_version ?? null,
             'coverage_missing_sample' => $this->decodeJsonArray($record->expected_coverage_missing_sample_json ?? null),
+            'coverage_reason_code' => $this->resolveCoverageReasonCodeFromState($record->expected_coverage_gate_state ?? null),
         ];
     }
 

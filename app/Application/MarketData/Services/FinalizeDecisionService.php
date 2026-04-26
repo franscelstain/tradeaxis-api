@@ -6,7 +6,7 @@ class FinalizeDecisionService
 {
     public function evaluate($cutoffSatisfied, $runSealed, $candidateSealState, array $coverageSummary, $fallbackTradeDate, array $promoteContext = [])
     {
-        $coverageGateStatus = strtoupper((string) ($coverageSummary['coverage_gate_status'] ?? 'BLOCKED'));
+        $coverageGateStatus = strtoupper((string) ($coverageSummary['coverage_gate_status'] ?? 'NOT_EVALUABLE'));
         $coverageThresholdValue = $coverageSummary['coverage_threshold_value'] ?? null;
         $coverageThresholdMode = $coverageSummary['coverage_threshold_mode'] ?? null;
         $coverageRatio = $coverageSummary['coverage_ratio'] ?? null;
@@ -95,7 +95,7 @@ class FinalizeDecisionService
             return $state;
         }
 
-        if ($coverageGateStatus === 'BLOCKED') {
+        if ($coverageGateStatus === 'NOT_EVALUABLE' || $coverageGateStatus === 'BLOCKED') {
             $state['quality_gate_state'] = 'BLOCKED';
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
             $state['reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';

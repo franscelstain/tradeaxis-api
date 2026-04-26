@@ -80,6 +80,7 @@ class ReplayVerificationService
             'expected_coverage_ratio' => $comparison['expected_coverage_ratio'],
             'expected_coverage_min_threshold' => $comparison['expected_coverage_min_threshold'],
             'expected_coverage_gate_state' => $comparison['expected_coverage_gate_state'],
+            'expected_coverage_reason_code' => $comparison['expected_coverage_reason_code'],
             'expected_coverage_threshold_mode' => $comparison['expected_coverage_threshold_mode'],
             'expected_coverage_universe_basis' => $comparison['expected_coverage_universe_basis'],
             'expected_coverage_contract_version' => $comparison['expected_coverage_contract_version'],
@@ -171,6 +172,7 @@ class ReplayVerificationService
             'coverage_universe_basis' => $run->coverage_universe_basis ?? null,
             'coverage_contract_version' => $run->coverage_contract_version ?? null,
             'coverage_missing_sample' => $this->decodeJsonArray($run->coverage_missing_sample_json ?? null),
+            'coverage_reason_code' => $this->resolveCoverageReasonCodeFromState($run->coverage_gate_state ?? null),
             'bars_rows_written' => $run->bars_rows_written !== null ? (int) $run->bars_rows_written : null,
             'indicators_rows_written' => $run->indicators_rows_written !== null ? (int) $run->indicators_rows_written : null,
             'eligibility_rows_written' => $run->eligibility_rows_written !== null ? (int) $run->eligibility_rows_written : null,
@@ -188,6 +190,25 @@ class ReplayVerificationService
         ];
     }
 
+    private function resolveCoverageReasonCodeFromState($coverageGateState)
+    {
+        $state = strtoupper((string) $coverageGateState);
+
+        if ($state === 'PASS') {
+            return 'COVERAGE_THRESHOLD_MET';
+        }
+
+        if ($state === 'FAIL') {
+            return 'COVERAGE_BELOW_THRESHOLD';
+        }
+
+        if ($state === 'NOT_EVALUABLE' || $state === 'BLOCKED') {
+            return 'RUN_COVERAGE_NOT_EVALUABLE';
+        }
+
+        return null;
+    }
+
     private function compareExpectedAndActual(array $fixture, array $actual)
     {
         $expectedReplay = $fixture['expected_replay_result'];
@@ -203,7 +224,7 @@ class ReplayVerificationService
         $this->compareField($mismatches, 'config_identity', $expectedReplay['config_identity'] ?? null, $actual['config_identity']);
         $this->compareField($mismatches, 'publication_version', $expectedReplay['publication_version'] ?? null, $actual['publication_version']);
 
-        foreach (['coverage_universe_count', 'coverage_available_count', 'coverage_missing_count', 'coverage_gate_state', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
+        foreach (['coverage_universe_count', 'coverage_available_count', 'coverage_missing_count', 'coverage_gate_state', 'coverage_reason_code', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
             $this->compareField($mismatches, $field, $expectedReplay[$field] ?? null, $actual[$field]);
         }
 
@@ -249,6 +270,7 @@ class ReplayVerificationService
             'expected_coverage_ratio' => $expectedReplay['coverage_ratio'] ?? null,
             'expected_coverage_min_threshold' => $expectedReplay['coverage_min_threshold'] ?? null,
             'expected_coverage_gate_state' => $expectedReplay['coverage_gate_state'] ?? null,
+            'expected_coverage_reason_code' => $expectedReplay['coverage_reason_code'] ?? null,
             'expected_coverage_threshold_mode' => $expectedReplay['coverage_threshold_mode'] ?? null,
             'expected_coverage_universe_basis' => $expectedReplay['coverage_universe_basis'] ?? null,
             'expected_coverage_contract_version' => $expectedReplay['coverage_contract_version'] ?? null,

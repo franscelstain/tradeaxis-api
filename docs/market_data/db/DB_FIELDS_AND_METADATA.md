@@ -20,7 +20,7 @@ The `eod_runs` record for a requested trade date must make these values audit-vi
 - `coverage_min_threshold` DECIMAL(8,6) NULL  
   Threshold actually used by the run.
 - `coverage_gate_state` ENUM/VARCHAR NULL  
-  Final allowed values: `PASS`, `FAIL`, `BLOCKED`.
+  Final allowed values: `PASS`, `FAIL`, `NOT_EVALUABLE`, `BLOCKED` (legacy compatibility only).
 - `coverage_threshold_mode` VARCHAR(32) NULL  
   Initial locked value: `MIN_RATIO`.
 - `coverage_universe_basis` VARCHAR(64) NULL  
@@ -35,7 +35,7 @@ They close the ambiguity that previously allowed coverage to be discussed withou
 - what denominator was used
 - what numerator was used
 - what threshold was used
-- why the gate ended in `PASS`, `FAIL`, or `BLOCKED`
+- why the gate ended in `PASS`, `FAIL`, or `NOT_EVALUABLE`
 
 ## Required config metadata linkage
 The persisted coverage values must stay explainable from runtime config. At minimum, config must expose:

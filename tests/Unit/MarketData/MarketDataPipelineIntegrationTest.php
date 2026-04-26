@@ -4252,7 +4252,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'coverage_missing_count' => 0,
             'coverage_ratio' => null,
             'coverage_min_threshold' => '0.9800',
-            'coverage_gate_state' => 'BLOCKED',
+            'coverage_gate_state' => 'NOT_EVALUABLE',
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',
@@ -4309,7 +4309,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('FAILED', $finalizedRun->terminal_status);
         $this->assertSame('NOT_READABLE', $finalizedRun->publishability_state);
         $this->assertSame('BLOCKED', $finalizedRun->quality_gate_state);
-        $this->assertSame('BLOCKED', $finalizedRun->coverage_gate_state);
+        $this->assertSame('NOT_EVALUABLE', $finalizedRun->coverage_gate_state);
         $this->assertNull($finalizedRun->trade_date_effective);
         $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $event->reason_code);
         $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $payload['coverage_reason_code']);

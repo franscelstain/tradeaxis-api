@@ -129,30 +129,14 @@ class EodPublicationRepository
         return array_values(array_unique($reasons));
     }
 
-    public function findCurrentPublicationForTradeDate($tradeDate)
-    {
-        return DB::table('eod_current_publication_pointer as ptr')
-            ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
-            ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
-            ->where('ptr.trade_date', $tradeDate)
-            ->whereColumn('pub.trade_date', 'ptr.trade_date')
-            ->whereColumn('ptr.run_id', 'pub.run_id')
-            ->whereColumn('ptr.publication_version', 'pub.publication_version')
-            ->where('pub.is_current', 1)
-            ->where('pub.seal_state', 'SEALED')
-            ->whereNotNull('ptr.sealed_at')
-            ->whereNotNull('pub.sealed_at')
-            ->whereNotNull('run.run_id')
-            ->whereNotNull('run.sealed_at')
-            ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
-            ->where('run.terminal_status', 'SUCCESS')
-            ->where('run.publishability_state', 'READABLE')
-            ->where('run.is_current_publication', 1)
-            ->select('pub.*', 'ptr.trade_date as pointer_trade_date', 'ptr.run_id as pointer_run_id', 'ptr.publication_version as pointer_publication_version', 'ptr.sealed_at as pointer_sealed_at')
-            ->first();
-    }
-
-    public function findPointerResolvedPublicationForTradeDate($tradeDate)
+    /**
+     * Official read-side gateway for consumer paths.
+     *
+     * This method is intentionally pointer-first: no caller may resolve the
+     * latest/current readable publication through MAX(date), MAX(publication_id),
+     * raw/staging artifacts, or publication flags without the pointer row.
+     */
+    public function resolveCurrentReadablePublicationForTradeDate($tradeDate)
     {
         return DB::table('eod_current_publication_pointer as ptr')
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
@@ -178,9 +162,20 @@ class EodPublicationRepository
                 'ptr.publication_version as pointer_publication_version',
                 'ptr.sealed_at as pointer_sealed_at',
                 'run.terminal_status as run_terminal_status',
-                'run.publishability_state as run_publishability_state'
+                'run.publishability_state as run_publishability_state',
+                'run.is_current_publication as run_is_current_publication'
             )
             ->first();
+    }
+
+    public function findCurrentPublicationForTradeDate($tradeDate)
+    {
+        return $this->resolveCurrentReadablePublicationForTradeDate($tradeDate);
+    }
+
+    public function findPointerResolvedPublicationForTradeDate($tradeDate)
+    {
+        return $this->resolveCurrentReadablePublicationForTradeDate($tradeDate);
     }
 
 

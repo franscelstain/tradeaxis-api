@@ -181,3 +181,18 @@ Examples:
 
 ## Anti-ambiguity rule (LOCKED)
 A test is incomplete if it only validates process completion without validating the contract outputs that matter to consumers and auditors.
+
+
+## Read-Side Enforcement / Anti Bypass Total Tests
+
+Required tests:
+
+- `ReadablePublicationReadContractIntegrationTest` proves pointer-resolved readable/current reads for eligibility/evidence consumers.
+- `PublicationRepositoryIntegrationTest` proves current publication resolution fails safe when pointer/publication/run state is invalid.
+- `ReadSideAntiBypassStaticContractTest` proves consumer read files do not introduce latest/current shortcuts such as `MAX(trade_date)`, `MAX(publication_id)`, unsafe latest naming, or direct artifact reads without pointer/readability validation.
+
+Acceptance:
+
+- Consumer read path returns data only when `eod_current_publication_pointer` resolves to a sealed current publication whose run is `SUCCESS` and `READABLE`.
+- Pointer missing, non-readable publication, invalid current mirror, or stale pointer must produce controlled empty/null/fail-safe behavior.
+- Direct raw/artifact table access remains allowed only for write/admin/test setup classifications.

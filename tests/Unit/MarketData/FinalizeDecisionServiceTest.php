@@ -95,14 +95,14 @@ class FinalizeDecisionServiceTest extends TestCase
     {
         $service = new FinalizeDecisionService();
         $decision = $service->evaluate(true, true, 'SEALED', [
-            'coverage_gate_status' => 'BLOCKED',
+            'coverage_gate_status' => 'NOT_EVALUABLE',
             'coverage_ratio' => null,
             'coverage_threshold_value' => 0.95,
             'coverage_threshold_mode' => 'MIN_RATIO',
         ], '2026-04-20');
 
         $this->assertFalse($decision['promotion_allowed']);
-        $this->assertSame('BLOCKED', $decision['coverage_gate_status']);
+        $this->assertSame('NOT_EVALUABLE', $decision['coverage_gate_status']);
         $this->assertSame('BLOCKED', $decision['quality_gate_state']);
         $this->assertSame('HELD', $decision['terminal_status']);
         $this->assertSame('NOT_READABLE', $decision['publishability_state']);

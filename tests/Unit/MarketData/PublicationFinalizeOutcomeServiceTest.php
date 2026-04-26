@@ -89,7 +89,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     {
         $service = new PublicationFinalizeOutcomeService();
         $preDecision = [
-            'coverage_gate_status' => 'BLOCKED',
+            'coverage_gate_status' => 'NOT_EVALUABLE',
             'quality_gate_state' => 'BLOCKED',
             'terminal_status' => 'HELD',
             'publishability_state' => 'NOT_READABLE',

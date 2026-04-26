@@ -20,6 +20,7 @@
 - Market_Calendar_Requirements_Contract.md
 - Tickers_and_Identity_Dependency_Contract_LOCKED.md
 - Coverage_Universe_Definition_LOCKED.md
+- Coverage_Gate_Enforcement_Contract_LOCKED.md
 - Symbol_Lifecycle_and_Mapping_Contract.md
 
 ## Source acquisition and canonical data

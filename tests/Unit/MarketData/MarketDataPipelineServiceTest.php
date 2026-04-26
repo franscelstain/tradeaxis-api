@@ -660,7 +660,7 @@ class MarketDataPipelineServiceTest extends TestCase
         ];
 
         $runs->shouldReceive('findByRunId')
-            ->once()
+            ->atLeast()->once()
             ->with(55)
             ->andReturn($run);
 
@@ -692,7 +692,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('getOrCreateCandidatePublication')
             ->once()
-            ->with($run, 31)
+            ->with(m::type(EodRun::class), 31)
             ->andReturn($candidatePublication);
 
         $finalizeDecisions->shouldReceive('evaluate')
@@ -718,7 +718,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('promoteCandidateToCurrent')
             ->once()
-            ->with($run, 31)
+            ->with(m::type(EodRun::class), 31, false)
             ->andReturn($candidatePublication);
 
         $runs->shouldReceive('syncCurrentPublicationMirror')
@@ -797,7 +797,7 @@ class MarketDataPipelineServiceTest extends TestCase
         ];
 
         $runs->shouldReceive('findByRunId')
-            ->once()
+            ->atLeast()->once()
             ->with(55)
             ->andReturn($run);
 
@@ -829,7 +829,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('getOrCreateCandidatePublication')
             ->once()
-            ->with($run, 31)
+            ->with(m::type(EodRun::class), 31)
             ->andReturn($candidatePublication);
 
         $finalizeDecisions->shouldReceive('evaluate')
@@ -928,7 +928,7 @@ class MarketDataPipelineServiceTest extends TestCase
         ];
 
         $runs->shouldReceive('findByRunId')
-            ->once()
+            ->atLeast()->once()
             ->with(57)
             ->andReturn($run);
 
@@ -996,7 +996,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('getOrCreateCandidatePublication')
             ->once()
-            ->with($run, 31)
+            ->with(m::type(EodRun::class), 31)
             ->andReturn($candidatePublication);
 
         $finalizeDecisions->shouldReceive('evaluate')
@@ -1022,7 +1022,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('promoteCandidateToCurrent')
             ->once()
-            ->with($run, 31)
+            ->with(m::type(EodRun::class), 31, false)
             ->andThrow(new RuntimeException('Promotion lost run ownership while switching current publication.'));
 
         $publications->shouldReceive('restorePriorCurrentPublication')
@@ -1101,7 +1101,7 @@ class MarketDataPipelineServiceTest extends TestCase
         ];
 
         $runs->shouldReceive('findByRunId')
-            ->once()
+            ->atLeast()->once()
             ->with(55)
             ->andReturn($run);
 
@@ -1133,7 +1133,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('getOrCreateCandidatePublication')
             ->once()
-            ->with($run, 31)
+            ->with(m::type(EodRun::class), 31)
             ->andReturn($candidatePublication);
 
         $finalizeDecisions->shouldReceive('evaluate')
@@ -1159,7 +1159,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('promoteCandidateToCurrent')
             ->once()
-            ->with($run, 31)
+            ->with(m::type(EodRun::class), 31, false)
             ->andReturn($publishedCandidate);
 
         $runs->shouldReceive('syncCurrentPublicationMirror')

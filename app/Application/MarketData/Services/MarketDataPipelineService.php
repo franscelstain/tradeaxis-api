@@ -256,7 +256,7 @@ class MarketDataPipelineService
             return DB::transaction(function () use ($run, $input) {
                 $coverage = $this->coverageGateEvaluator->evaluate($input->requestedDate);
 
-                $coverageGateState = strtoupper((string) ($coverage['coverage_gate_status'] ?? 'BLOCKED'));
+                $coverageGateState = strtoupper((string) ($coverage['coverage_gate_status'] ?? 'NOT_EVALUABLE'));
                 $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
                 $run = $this->runs->updateTelemetry($run, [
@@ -921,7 +921,7 @@ class MarketDataPipelineService
             ]),
         ]);
 
-        if ($promoteContext['requires_full_coverage'] && strtoupper((string) ($run->coverage_gate_state ?? 'BLOCKED')) !== 'PASS') {
+        if ($promoteContext['requires_full_coverage'] && strtoupper((string) ($run->coverage_gate_state ?? 'NOT_EVALUABLE')) !== 'PASS') {
             return $this->completeFinalize(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, 'FINALIZE', $correctionId, $forceReplace, $forceReplaceReason));
         }
 
@@ -1199,7 +1199,7 @@ class MarketDataPipelineService
             return 'COVERAGE_BELOW_THRESHOLD';
         }
 
-        if ($coverageState === 'BLOCKED') {
+        if ($coverageState === 'NOT_EVALUABLE' || $coverageState === 'BLOCKED') {
             return 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 

@@ -2,11 +2,12 @@
 
 ## FINAL SYSTEM STATUS (LATEST)
 
+- Read-Side Enforcement / Anti Bypass Total → DONE (POLICY LOCKED + GATEWAY NAMED + STATIC GUARD ADDED + LOCAL FULL REGRESSION PROVEN: 225 TESTS / 2251 ASSERTIONS)
 - Force Replace & Operator Control → DONE (POLICY LOCKED + CODE PATCHED + LOCAL PHPUNIT/COMMAND/DB/AUDIT PROVEN)
 - Correction Lifecycle → DONE (PROVEN)
 - Correction Re-execution Policy → DONE (PROVEN)
 - Correction Lifecycle Test Hardening → DONE (PROVEN: 50 tests / 1,099 assertions)
-- Coverage Gate → DONE
+- Coverage Gate → DONE (POLICY LOCKED + FULL ENFORCEMENT + NOT_EVALUABLE + EVIDENCE/REPLAY REASON CODE + LOCAL FULL REGRESSION PROVEN: 225 TESTS / 2251 ASSERTIONS)
 - Manual File Publishability → DONE (POLICY LOCKED: HYBRID STRICT)
 - Source Hash / Reseal Guard / Publication Lineage → DONE (PROVEN)
 - Finalize Determinism / Lock Behavior / Pointer Switch → DONE (POLICY LOCKED: DETERMINISTIC LOCK)
@@ -1256,3 +1257,214 @@ DONE. DB schema and migration sync contract is locked, implemented, migrated loc
 ### Remaining Gap
 
 None for the checked DB schema and migration sync scope.
+
+
+## 2026-04-26 — READ-SIDE ENFORCEMENT / ANTI BYPASS TOTAL POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+
+Locked the read-side consumer contract for market-data and hardened the repository/test surface so API/service/repository/command/evidence/replay consumer paths must resolve data only through current readable publication pointer semantics.
+
+### Changes
+
+- Added `docs/market_data/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md`.
+- Added official gateway `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)`.
+- Rewired existing compatibility methods `findCurrentPublicationForTradeDate()` and `findPointerResolvedPublicationForTradeDate()` to call the official gateway instead of duplicating pointer logic.
+- Added `tests/Unit/MarketData/ReadSideAntiBypassStaticContractTest.php` to guard against latest/current shortcut patterns in read-side consumer files.
+- Confirmed existing pointer-resolved consumer repositories remain aligned:
+  - `EligibilitySnapshotScopeRepository`
+  - `EodEvidenceRepository`
+
+### Test Proof
+
+Container syntax proof:
+
+- `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` → PASS.
+- `php -l tests/Unit/MarketData/ReadSideAntiBypassStaticContractTest.php` → PASS.
+- `php -l app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php` → PASS.
+- `php -l app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php` → PASS.
+
+Static grep classification from this session:
+
+- `MAX(trade_date)` / `MAX(publication_id)` findings in app code → none as executable shortcut. Mentions are contract/test text or gateway comment.
+- `EodArtifactRepository` direct artifact table access → `ALLOWED_WRITE_PATH`.
+- `EodEvidenceRepository::readableEligibilityQuery()` direct `eod_eligibility` access → allowed because it joins `eod_current_publication_pointer`, validates sealed/current/SUCCESS/READABLE, and therefore is pointer-resolved consumer read.
+- `EligibilitySnapshotScopeRepository::getScopeForTradeDate()` direct `eod_eligibility` access → allowed because it joins `eod_current_publication_pointer`, validates sealed/current/SUCCESS/READABLE, and therefore is pointer-resolved consumer read.
+
+PHPUnit was not executed in this container because the uploaded ZIP does not contain `vendor/`.
+
+### Result
+
+DONE. The read-side enforcement policy is locked, the repository gateway is explicit, existing consumer read paths remain pointer/readable-current guarded, and a static anti-bypass test now protects against reintroducing MAX/latest/current shortcuts in consumer files.
+
+### Contract Impact
+
+- New active contract: `Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md`.
+- Final policy: **OPTION C — Read-Side Contract + Pointer-Only Repository Gateway + Static/Runtime Tests**.
+- No coverage gate behavior changed.
+- No manual-file publishability behavior changed.
+- No correction lifecycle changed.
+- No force replace behavior changed.
+- No finalize lock behavior changed.
+- No publication replacement policy changed.
+- No DB schema change was required.
+
+### Remaining Gap
+
+Run local PHPUnit with dependencies installed:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/ReadSideAntiBypassStaticContractTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/ReplayVerificationServiceTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData`
+
+## 2026-04-26 — READ-SIDE ENFORCEMENT / LOCAL REGRESSION FOLLOW-UP
+
+Status: DONE
+
+### Scope
+
+Captured local validation results and fixed stale unit-test expectations related to finalize mock signatures and run hydration calls.
+
+### Changes
+
+- No contract rule changed.
+- Test expectations now align with existing force-replace-aware finalize behavior.
+
+### Test Proof
+
+User local validation proved the read-side anti-bypass contract tests and focused integration tests pass. The only full regression failures were stale mocks in `MarketDataPipelineServiceTest`, now updated syntactically.
+
+### Result
+
+DONE. Contract remains active and unchanged.
+
+### Contract Impact
+
+No change to coverage gate, correction lifecycle, force replace behavior, finalize lock behavior, schema sync, or read-side enforcement policy.
+
+### Remaining Gap
+
+Re-run full market-data PHPUnit locally after applying the updated ZIP.
+
+## 2026-04-26 — READ-SIDE ENFORCEMENT / ANTI BYPASS TOTAL FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+
+Final local runtime validation for the Read-Side Enforcement / Anti Bypass Total policy lock and execution session after stale `MarketDataPipelineServiceTest` mock expectations were corrected. Scope is proof-only after test synchronization; no read-side policy, repository gateway rule, schema, coverage gate, correction lifecycle, force replace behavior, finalize lock behavior, or publication replacement behavior was changed.
+
+### Changes
+
+- Closed the previous local regression rerun gap recorded in the read-side enforcement follow-up.
+- Confirmed `tests/Unit/MarketData/MarketDataPipelineServiceTest.php` was updated so Mockery expectations match the current finalize/promotion flow.
+- Confirmed `getOrCreateCandidatePublication(...)`, `promoteCandidateToCurrent(..., false)`, `syncCurrentPublicationMirror(...)`, and repeated `findByRunId(...)` calls are handled by the test expectations.
+- No production code change was introduced by this final validation update.
+
+### Test Proof
+
+Operator-provided local validation after applying the revised `MarketDataPipelineServiceTest.php`:
+
+- `php -l tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → PASS.
+- `vendor\bin\phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → PASS (`14 tests`, `17 assertions`).
+- `vendor\bin\phpunit tests/Unit/MarketData` → PASS (`225 tests`, `2251 assertions`).
+
+Prior read-side proof from the same session remains valid:
+
+- `ReadSideAntiBypassStaticContractTest.php` → PASS (`3 tests`, `58 assertions`).
+- `PublicationRepositoryIntegrationTest.php` → PASS (`19 tests`, `93 assertions`).
+- `ReadablePublicationReadContractIntegrationTest.php` → PASS (`4 tests`, `9 assertions`).
+- `MarketDataEvidenceExportServiceTest.php` → PASS (`3 tests`, `44 assertions`).
+- `ReplayVerificationServiceTest.php` → PASS (`5 tests`).
+- `OpsCommandSurfaceTest.php` → PASS (`42 tests`, `260 assertions`).
+- Manual scan for `MAX(trade_date)` / `MAX(publication_id)` returned no executable app shortcut findings.
+- Manual scan for raw/current terms only found SQLite test schema definitions, classified as `ALLOWED_TEST_SETUP`.
+
+### Result
+
+DONE. Read-Side Enforcement / Anti Bypass Total is now policy-locked, implementation-aligned, static-guarded, focused-test-proven, and full market-data regression-proven locally. The earlier four full-suite errors were stale unit-test mock expectations, not read-side bypass defects.
+
+### Contract Impact
+
+No contract change. `Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md` remains active under **OPTION C — Read-Side Contract + Pointer-Only Repository Gateway + Static/Runtime Tests**. Existing coverage gate, manual-file publishability, correction lifecycle, force replace behavior, finalize lock behavior, publication replacement policy, and DB schema sync policy remain unchanged.
+
+### Remaining Gap
+
+None for Read-Side Enforcement / Anti Bypass Total.
+
+
+## 2026-04-27 — COVERAGE GATE ENFORCEMENT POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+Locked coverage gate as the controlling contract for finalize outcome, publishability, current pointer ownership, evidence export, replay verification, and command visibility.
+
+### Changes
+- New contract: `docs/market_data/book/Coverage_Gate_Enforcement_Contract_LOCKED.md`.
+- Coverage statuses locked to `PASS`, `FAIL`, and `NOT_EVALUABLE` for new evaluations.
+- `BLOCKED` remains backward-compatible as a quality/readiness state only.
+- Finalize decision contract now treats `FAIL` and `NOT_EVALUABLE` as non-readable and non-promotable.
+- Evidence contract now requires `coverage_summary` and `coverage_reason_code`.
+- Replay contract now compares `coverage_reason_code` when fixtures declare it.
+- Schema contract updated to support `NOT_EVALUABLE` in `eod_runs.coverage_gate_state`.
+
+### Test Proof
+Static validation only; no PHPUnit/artisan runtime claim because `vendor/` is not in the ZIP.
+
+Manual proof required:
+- `php artisan migrate`
+- `vendor/bin/phpunit tests/Unit/MarketData`
+- replay/evidence command checks using fixtures with coverage PASS, FAIL, and NOT_EVALUABLE.
+
+### Result
+Coverage gate is no longer metadata-only. It is the authoritative enforcement gate for readable/current publication eligibility.
+
+### Contract Impact
+Coverage enforcement is now locked as a full enforcement policy. Any future override, partial coverage acceptance, or manual-file exception requires a new explicit locked contract.
+
+### Remaining Gap
+Runtime command output must be supplied by the user after running the manual validation commands locally.
+
+
+## 2026-04-27 — COVERAGE GATE ENFORCEMENT FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+Final local runtime validation for the Coverage Gate Enforcement Policy Lock & Execution Session. Scope is proof-only after the coverage enforcement patch; no additional production behavior, schema rule, threshold rule, read-side rule, correction lifecycle rule, force replace behavior, or finalize lock behavior was changed in this audit update.
+
+### Changes
+- Closed the previous runtime validation gap for Coverage Gate Enforcement.
+- Recorded operator-provided local syntax and PHPUnit evidence.
+- Confirmed coverage gate enforcement remains the controlling contract for finalize, publishability, current pointer eligibility, evidence export, replay verification, and command visibility.
+- Confirmed full market-data unit regression passes after adding `NOT_EVALUABLE` handling and coverage reason-code evidence/replay comparison.
+
+### Test Proof
+- `php -l app/Application/MarketData/Services/CoverageGateEvaluator.php` → PASS.
+- `php -l app/Application/MarketData/Services/FinalizeDecisionService.php` → PASS.
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` → PASS.
+- `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → PASS.
+- `php -l app/Application/MarketData/Services/ReplayVerificationService.php` → PASS.
+- `vendor/bin/phpunit tests/Unit/MarketData/CoverageGateEvaluatorTest.php` → PASS (`4 tests`, `38 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → PASS (`10 tests`, `54 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS (`51 tests`, `1173 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → PASS (`3 tests`, `44 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/ReplayVerificationServiceTest.php` → PASS (`5 tests`, `15 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → PASS (`42 tests`, `260 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData` → PASS (`225 tests`, `2251 assertions`).
+
+### Result
+Coverage Gate Enforcement is fully proven by local PHPUnit regression. Coverage `PASS` remains the only readable/current-eligible state; `FAIL` and `NOT_EVALUABLE` remain non-readable and non-promotable. Evidence export and replay verification are aligned with coverage reason-code enforcement.
+
+### Contract Impact
+No contract change. `Coverage_Gate_Enforcement_Contract_LOCKED.md` remains active as the single source of truth for coverage-controlled publishability and current publication eligibility. Any future override, partial coverage acceptance, or manual-file exception still requires a separate explicit locked contract.
+
+### Remaining Gap
+None for Coverage Gate Enforcement.
