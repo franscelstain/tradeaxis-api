@@ -42,7 +42,7 @@ class PublicationFinalizeOutcomeService
                 $state['correction_outcome'] = 'REPAIR_CANDIDATE';
                 $state['correction_outcome_note'] = 'Correction request finalized as non-current repair candidate without current publication replacement.';
             }
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         if ($promotionError) {
@@ -51,7 +51,7 @@ class PublicationFinalizeOutcomeService
             $state['trade_date_effective'] = $fallbackTradeDate;
             $state['reason_code'] = 'RUN_LOCK_CONFLICT';
             $state['message'] = $promotionError;
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         if ($unchangedCorrection && $correctionId) {
@@ -64,7 +64,7 @@ class PublicationFinalizeOutcomeService
             $state['current_publication_version'] = $resolvedCurrentPublicationVersion ?: $priorPublicationVersion;
             $state['correction_outcome'] = 'CANCELLED';
             $state['correction_outcome_note'] = 'Correction rerun produced unchanged content; current publication preserved without version switch.';
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         $resolvedMatchesCandidate =
@@ -85,7 +85,7 @@ class PublicationFinalizeOutcomeService
             $state['correction_outcome_note'] = $correctionId
                 ? 'Historical correction published safely via new sealed current publication.'
                 : null;
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         $state['terminal_status'] = 'HELD';
@@ -93,6 +93,30 @@ class PublicationFinalizeOutcomeService
         $state['trade_date_effective'] = $fallbackTradeDate;
         $state['reason_code'] = 'RUN_LOCK_CONFLICT';
         $state['message'] = 'Current publication pointer resolution mismatch after finalize.';
+
+        return $this->enforceStateMatrix($state);
+    }
+
+    private function enforceStateMatrix(array $state): array
+    {
+        $terminalStatus = strtoupper((string) ($state['terminal_status'] ?? ''));
+        $publishabilityState = strtoupper((string) ($state['publishability_state'] ?? ''));
+
+        if ($publishabilityState === 'READABLE' && $terminalStatus !== 'SUCCESS') {
+            throw new \LogicException('Invalid publication finalize outcome matrix: READABLE requires terminal_status SUCCESS.');
+        }
+
+        if (in_array($terminalStatus, ['FAILED', 'HELD'], true) && $publishabilityState !== 'NOT_READABLE') {
+            throw new \LogicException('Invalid publication finalize outcome matrix: FAILED/HELD requires NOT_READABLE.');
+        }
+
+        if ($terminalStatus === 'SUCCESS' && ! in_array($publishabilityState, ['READABLE', 'NOT_READABLE'], true)) {
+            throw new \LogicException('Invalid publication finalize outcome matrix: SUCCESS requires explicit publishability state.');
+        }
+
+        if ($terminalStatus === 'FAILED' || $terminalStatus === 'HELD') {
+            $state['publishability_state'] = 'NOT_READABLE';
+        }
 
         return $state;
     }

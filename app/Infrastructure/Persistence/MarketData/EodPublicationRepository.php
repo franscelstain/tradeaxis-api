@@ -479,6 +479,9 @@ class EodPublicationRepository
                 return null;
             }
 
+            $priorRunId = $priorRunId ?: $priorPublication->run_id;
+            $this->assertPublicationEligibleForCurrent($priorPublication, $priorRunId, $tradeDate);
+
             $now = Carbon::now(config('market_data.platform.timezone'));
 
             DB::table('eod_publications')
@@ -499,7 +502,7 @@ class EodPublicationRepository
                 ['trade_date' => $tradeDate],
                 [
                     'publication_id' => $priorPublicationId,
-                    'run_id' => $priorRunId ?: $priorPublication->run_id,
+                    'run_id' => $priorRunId,
                     'publication_version' => $priorPublication->publication_version,
                     'sealed_at' => $priorPublication->sealed_at,
                     'updated_at' => $now,
@@ -514,7 +517,7 @@ class EodPublicationRepository
                 ]);
 
             DB::table('eod_runs')
-                ->where('run_id', $priorRunId ?: $priorPublication->run_id)
+                ->where('run_id', $priorRunId)
                 ->update([
                     'publication_id' => $priorPublicationId,
                     'publication_version' => $priorPublication->publication_version,
@@ -524,6 +527,46 @@ class EodPublicationRepository
 
             return DB::table('eod_publications')->where('publication_id', $priorPublicationId)->first();
         });
+    }
+
+    private function assertPublicationEligibleForCurrent($publication, $runId, $tradeDate): void
+    {
+        if (! $publication) {
+            throw new \RuntimeException('Current publication integrity violation: publication row is missing.');
+        }
+
+        if ((string) ($publication->trade_date ?? '') !== (string) $tradeDate) {
+            throw new \RuntimeException('Current publication integrity violation: publication trade_date does not match pointer trade_date.');
+        }
+
+        if ((string) ($publication->seal_state ?? '') !== 'SEALED' || empty($publication->sealed_at)) {
+            throw new \RuntimeException('Current publication integrity violation: publication must be SEALED with sealed_at before it can become current.');
+        }
+
+        $run = DB::table('eod_runs')
+            ->where('run_id', $runId)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $run) {
+            throw new \RuntimeException('Current publication integrity violation: publication run row is missing.');
+        }
+
+        if ((string) ($run->trade_date_requested ?? '') !== (string) $tradeDate) {
+            throw new \RuntimeException('Current publication integrity violation: run trade_date_requested does not match pointer trade_date.');
+        }
+
+        if ((string) ($run->terminal_status ?? '') !== 'SUCCESS') {
+            throw new \RuntimeException('Current publication integrity violation: current pointer requires run terminal_status SUCCESS.');
+        }
+
+        if ((string) ($run->publishability_state ?? '') !== 'READABLE') {
+            throw new \RuntimeException('Current publication integrity violation: current pointer requires run publishability_state READABLE.');
+        }
+
+        if (empty($run->sealed_at)) {
+            throw new \RuntimeException('Current publication integrity violation: current pointer requires sealed run.');
+        }
     }
 
     public function clearCurrentPublicationState($tradeDate)

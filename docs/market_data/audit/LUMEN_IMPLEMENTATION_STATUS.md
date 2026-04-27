@@ -1,6 +1,7 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
 ## FINAL SYSTEM STATUS (LATEST)
+- Publishability State Integrity -> DONE (POLICY LOCKED + STATE MATRIX ENFORCED + FALLBACK RESTORE VALIDATED + LOCAL FULL REGRESSION PROVEN: 228 TESTS / 2261 ASSERTIONS)
 
 - Coverage Edge Cases -> DONE (POLICY LOCKED + CONTROLLED HOLD/FAILED EDGE HANDLING + LOCAL FULL REGRESSION PROVEN: 227 TESTS / 2259 ASSERTIONS + RUNTIME SOURCE FAILURE REASON PRESERVED)
 - Read-Side Enforcement / Anti Bypass Total → DONE (POLICY LOCKED + GATEWAY NAMED + STATIC GUARD ADDED + LOCAL FULL REGRESSION PROVEN: 225 TESTS / 2251 ASSERTIONS)
@@ -1847,3 +1848,88 @@ No coverage relaxation. No partial-readable override. No fallback to partial/sta
 
 ### Remaining Gap
 None for Coverage Edge Cases.
+
+## 2026-04-27 — PUBLISHABILITY STATE INTEGRITY POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+Implemented code-level guardrails for the locked publishability state matrix and deterministic fallback integrity.
+
+### Changes
+- Created `docs/market_data/book/Publishability_State_Integrity_Contract_LOCKED.md`.
+- Updated `docs/market_data/book/INDEX.md` with the new locked contract.
+- Updated `app/Application/MarketData/Services/FinalizeDecisionService.php` to validate outcome state combinations before returning decisions.
+- Updated `app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php` to validate final outcome state combinations before returning finalize outcomes.
+- Updated `app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` to validate fallback prior publication eligibility before restoring current pointer/mirrors.
+- Updated `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` with a fallback rejection test for NOT_READABLE prior runs.
+
+### Test Proof
+- Static lint performed in this workspace only:
+  - `php -l app/Application/MarketData/Services/FinalizeDecisionService.php`
+  - `php -l app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php`
+  - `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php`
+  - `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+- PHPUnit/artisan were not executed because uploaded ZIP has no `vendor/`.
+
+### Result
+Run/publication/pointer state integrity is stricter: invalid state combinations now fail fast in decision/outcome services, and fallback restore now rejects non-readable prior current candidates instead of silently rebuilding pointer state.
+
+### Contract Impact
+`Publishability_State_Integrity_Contract_LOCKED.md` is now the explicit owner contract for state matrix, pointer eligibility, current publication eligibility, and fallback eligibility.
+
+### Remaining Gap
+Run the full local validation on the developer machine with dependencies installed:
+- `vendor/bin/phpunit tests/Unit/MarketData`
+- targeted finalize/pointer/evidence/replay artisan commands for real DB/runtime proof.
+
+## 2026-04-27 — PUBLISHABILITY STATE INTEGRITY FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+Final local runtime validation for Publishability State Integrity after policy lock and code guard enforcement. Scope is proof-only after prior static validation and covers consistency across `eod_runs`, `eod_publications`, and `eod_current_publication_pointer`.
+
+### Changes
+- Closed the previous static-only validation gap.
+- Recorded operator-provided full local PHPUnit regression proof.
+- Confirmed state matrix enforcement across:
+  - `FinalizeDecisionService`
+  - `PublicationFinalizeOutcomeService`
+  - `EodPublicationRepository`
+- Confirmed fallback restore rejects prior publication/run combinations that are not `SUCCESS + READABLE`.
+- Confirmed no production behavior, schema rule, coverage rule, read-side rule, correction lifecycle rule, force replace behavior, or finalize lock behavior was changed by this proof update.
+
+### Test Proof
+Operator-provided local validation:
+
+- `php artisan migrate` → Nothing to migrate.
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → OK (`20 tests`, `95 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → OK (`12 tests`, `62 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → OK (`8 tests`, `39 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter finalize` → OK (`3 tests`, `35 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → OK (`42 tests`, `260 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData` → OK (`228 tests`, `2261 assertions`).
+
+Manual scan proof:
+
+- `Select-String -Path app/**/*.php,tests/**/*.php -Pattern "READABLE","NOT_READABLE","publishability_state","terminal_status","is_current" -CaseSensitive:$false`
+- Result only surfaced SQLite/test-support schema definitions for `terminal_status`, `publishability_state`, `is_current_publication`, and `is_current`.
+
+### Result
+Publishability State Integrity is fully runtime-proven.
+
+Validated outcomes:
+- `SUCCESS + READABLE` may become current.
+- `SUCCESS + NOT_READABLE` cannot become current.
+- `FAILED + NOT_READABLE` cannot become current.
+- `HELD + NOT_READABLE` cannot become current.
+- Pointer cannot reference non-readable publication.
+- Fallback restore is limited to prior `SUCCESS + READABLE` publication.
+
+### Contract Impact
+No contract definition changed. `Publishability_State_Integrity_Contract_LOCKED.md` remains the owner contract for the publishability state matrix, pointer eligibility, current publication eligibility, and fallback eligibility.
+
+### Remaining Gap
+None for Publishability State Integrity.
+

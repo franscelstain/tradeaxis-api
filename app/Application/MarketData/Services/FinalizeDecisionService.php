@@ -63,7 +63,7 @@ class FinalizeDecisionService
                 'RUN_FINALIZE_BEFORE_CUTOFF'
             );
             $state['message'] = 'Finalize blocked because cutoff policy is not yet satisfied.';
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         if ($publishTarget !== 'current_replace') {
@@ -74,7 +74,7 @@ class FinalizeDecisionService
                 $state['trade_date_effective'] = $fallbackTradeDate;
                 $state['reason_code'] = 'RUN_REPAIR_CANDIDATE_PARTIAL';
                 $state['message'] = 'Repair candidate finalized as non-current partial dataset; current readable publication remains authoritative.';
-                return $state;
+                return $this->enforceStateMatrix($state);
             }
 
             if (! $runSealed || $candidateSealState !== 'SEALED') {
@@ -82,7 +82,7 @@ class FinalizeDecisionService
                 $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
                 $state['reason_code'] = 'RUN_SEAL_PRECONDITION_FAILED';
                 $state['message'] = 'Finalize blocked because sealed publication state is missing.';
-                return $state;
+                return $this->enforceStateMatrix($state);
             }
 
             $state['quality_gate_state'] = $coverageGateStatus === 'PASS' ? 'PASS' : ($coverageGateStatus === 'FAIL' ? 'FAIL' : 'BLOCKED');
@@ -94,7 +94,7 @@ class FinalizeDecisionService
                 'Promote mode %s sealed a non-current publication candidate; current readable publication remains authoritative.',
                 $promoteMode
             );
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         if ($coverageGateStatus === 'FAIL') {
@@ -104,14 +104,14 @@ class FinalizeDecisionService
             if ($edgeCaseReasonCode === 'RUN_DATA_DELAYED') {
                 $state['terminal_status'] = 'HELD';
                 $state['message'] = 'Finalize held because coverage gate failed while delayed data is still inside the controlled delay window.';
-                return $state;
+                return $this->enforceStateMatrix($state);
             }
 
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
             $state['message'] = $fallbackTradeDate
                 ? 'Finalize held because coverage gate failed and fallback readable publication remains available.'
                 : 'Finalize failed because coverage gate failed and no readable fallback publication exists.';
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         if ($coverageGateStatus === 'NOT_EVALUABLE' || $coverageGateStatus === 'BLOCKED') {
@@ -122,7 +122,7 @@ class FinalizeDecisionService
                 ? 'Finalize held because coverage gate could not be evaluated safely and fallback readable publication remains available.'
                 : 'Finalize failed because coverage gate could not be evaluated safely and no readable fallback publication exists.';
 
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         if (! $runSealed || $candidateSealState !== 'SEALED') {
@@ -130,7 +130,7 @@ class FinalizeDecisionService
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
             $state['reason_code'] = 'RUN_SEAL_PRECONDITION_FAILED';
             $state['message'] = 'Finalize blocked because sealed publication state is missing.';
-            return $state;
+            return $this->enforceStateMatrix($state);
         }
 
         if ($coverageGateStatus === 'PASS') {
@@ -141,7 +141,31 @@ class FinalizeDecisionService
             $state['reason_code'] = null;
             $state['message'] = 'Finalize may promote candidate publication to current once pointer sync succeeds.';
             $state['promotion_allowed'] = true;
-            return $state;
+            return $this->enforceStateMatrix($state);
+        }
+
+        return $this->enforceStateMatrix($state);
+    }
+
+    private function enforceStateMatrix(array $state): array
+    {
+        $terminalStatus = strtoupper((string) ($state['terminal_status'] ?? ''));
+        $publishabilityState = strtoupper((string) ($state['publishability_state'] ?? ''));
+
+        if ($publishabilityState === 'READABLE' && $terminalStatus !== 'SUCCESS') {
+            throw new \LogicException('Invalid publishability state matrix: READABLE requires terminal_status SUCCESS.');
+        }
+
+        if (in_array($terminalStatus, ['FAILED', 'HELD'], true) && $publishabilityState !== 'NOT_READABLE') {
+            throw new \LogicException('Invalid publishability state matrix: FAILED/HELD requires NOT_READABLE.');
+        }
+
+        if ($terminalStatus === 'SUCCESS' && ! in_array($publishabilityState, ['READABLE', 'NOT_READABLE'], true)) {
+            throw new \LogicException('Invalid publishability state matrix: SUCCESS requires explicit publishability state.');
+        }
+
+        if ($terminalStatus === 'FAILED' || $terminalStatus === 'HELD') {
+            $state['publishability_state'] = 'NOT_READABLE';
         }
 
         return $state;

@@ -543,4 +543,21 @@ class PublicationRepositoryIntegrationTest extends TestCase
                 'updated_at' => '2026-03-20 17:21:00',
             ]);
     }
+    public function test_restore_prior_current_publication_rejects_not_readable_fallback_run(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'terminal_status' => 'HELD',
+                'publishability_state' => 'NOT_READABLE',
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Current publication integrity violation: current pointer requires run terminal_status SUCCESS.');
+
+        $repo->restorePriorCurrentPublication('2026-03-20', 10, 25);
+    }
 }
