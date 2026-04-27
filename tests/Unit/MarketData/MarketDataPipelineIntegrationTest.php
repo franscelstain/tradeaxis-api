@@ -4170,8 +4170,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('FAIL', $run->quality_gate_state);
         $this->assertSame('FAIL', $run->coverage_gate_state);
         $this->assertSame('2026-03-19', $run->trade_date_effective);
-        $this->assertSame('RUN_COVERAGE_LOW', $event->reason_code);
-        $this->assertSame('RUN_COVERAGE_LOW', $payload['coverage_reason_code']);
+        $this->assertSame('RUN_PARTIAL_DATA', $event->reason_code);
+        $this->assertSame('RUN_PARTIAL_DATA', $payload['coverage_reason_code']);
         $this->assertSame(1, $payload['coverage_available_count']);
         $this->assertSame(2, $payload['coverage_universe_count']);
         $this->assertSame(1, $payload['coverage_missing_count']);
@@ -4225,8 +4225,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('FAIL', $run->quality_gate_state);
         $this->assertSame('FAIL', $run->coverage_gate_state);
         $this->assertNull($run->trade_date_effective);
-        $this->assertSame('RUN_COVERAGE_LOW', $event->reason_code);
-        $this->assertSame('RUN_COVERAGE_LOW', $payload['coverage_reason_code']);
+        $this->assertSame('RUN_PARTIAL_DATA', $event->reason_code);
+        $this->assertSame('RUN_PARTIAL_DATA', $payload['coverage_reason_code']);
         $this->assertSame(1, $payload['coverage_available_count']);
         $this->assertSame(2, $payload['coverage_universe_count']);
         $this->assertSame(1, $payload['coverage_missing_count']);

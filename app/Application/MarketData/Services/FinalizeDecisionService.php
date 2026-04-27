@@ -10,11 +10,17 @@ class FinalizeDecisionService
         $coverageThresholdValue = $coverageSummary['coverage_threshold_value'] ?? null;
         $coverageThresholdMode = $coverageSummary['coverage_threshold_mode'] ?? null;
         $coverageRatio = $coverageSummary['coverage_ratio'] ?? null;
+        $expectedUniverseCount = isset($coverageSummary['expected_universe_count']) ? (int) $coverageSummary['expected_universe_count'] : null;
+        $availableEodCount = isset($coverageSummary['available_eod_count']) ? (int) $coverageSummary['available_eod_count'] : null;
+        $edgeCaseReasonCode = isset($coverageSummary['edge_case_reason_code']) ? (string) $coverageSummary['edge_case_reason_code'] : null;
 
         $qualityGateState = $this->mapCoverageGateStatusToQualityGateState($coverageGateStatus);
         $promoteMode = (string) ($promoteContext['promote_mode'] ?? 'full_publish');
         $publishTarget = (string) ($promoteContext['publish_target'] ?? 'current_replace');
         $sourceMode = (string) ($promoteContext['source_mode'] ?? '');
+        $sourceFinalReasonCode = isset($promoteContext['source_final_reason_code'])
+            ? (string) $promoteContext['source_final_reason_code']
+            : null;
         $isManualFileSource = in_array($sourceMode, ['manual_file', 'manual_entry'], true);
 
         /*
@@ -43,13 +49,19 @@ class FinalizeDecisionService
                 'coverage_ratio' => $coverageRatio !== null ? (float) $coverageRatio : null,
                 'coverage_threshold_value' => $coverageThresholdValue !== null ? (float) $coverageThresholdValue : null,
                 'coverage_threshold_mode' => $coverageThresholdMode,
+                'expected_universe_count' => $expectedUniverseCount,
+                'available_eod_count' => $availableEodCount,
+                'edge_case_reason_code' => $edgeCaseReasonCode,
             ],
         ];
 
         if (! $cutoffSatisfied) {
             $state['quality_gate_state'] = 'BLOCKED';
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
-            $state['reason_code'] = 'RUN_FINALIZE_BEFORE_CUTOFF';
+            $state['reason_code'] = $this->resolveOperationalBlockReasonCode(
+                $sourceFinalReasonCode,
+                'RUN_FINALIZE_BEFORE_CUTOFF'
+            );
             $state['message'] = 'Finalize blocked because cutoff policy is not yet satisfied.';
             return $state;
         }
@@ -87,8 +99,15 @@ class FinalizeDecisionService
 
         if ($coverageGateStatus === 'FAIL') {
             $state['quality_gate_state'] = 'FAIL';
+            $state['reason_code'] = $this->resolveCoverageFailReasonCode($availableEodCount, $expectedUniverseCount, $edgeCaseReasonCode);
+
+            if ($edgeCaseReasonCode === 'RUN_DATA_DELAYED') {
+                $state['terminal_status'] = 'HELD';
+                $state['message'] = 'Finalize held because coverage gate failed while delayed data is still inside the controlled delay window.';
+                return $state;
+            }
+
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
-            $state['reason_code'] = 'RUN_COVERAGE_LOW';
             $state['message'] = $fallbackTradeDate
                 ? 'Finalize held because coverage gate failed and fallback readable publication remains available.'
                 : 'Finalize failed because coverage gate failed and no readable fallback publication exists.';
@@ -98,7 +117,7 @@ class FinalizeDecisionService
         if ($coverageGateStatus === 'NOT_EVALUABLE' || $coverageGateStatus === 'BLOCKED') {
             $state['quality_gate_state'] = 'BLOCKED';
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
-            $state['reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
+            $state['reason_code'] = $this->resolveNotEvaluableReasonCode($sourceFinalReasonCode);
             $state['message'] = $fallbackTradeDate
                 ? 'Finalize held because coverage gate could not be evaluated safely and fallback readable publication remains available.'
                 : 'Finalize failed because coverage gate could not be evaluated safely and no readable fallback publication exists.';
@@ -126,6 +145,37 @@ class FinalizeDecisionService
         }
 
         return $state;
+    }
+
+    private function resolveNotEvaluableReasonCode($sourceFinalReasonCode)
+    {
+        if (in_array($sourceFinalReasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT'], true)) {
+            return $sourceFinalReasonCode;
+        }
+
+        return 'RUN_COVERAGE_NOT_EVALUABLE';
+    }
+
+    private function resolveOperationalBlockReasonCode($sourceFinalReasonCode, string $fallbackReasonCode): string
+    {
+        if (in_array($sourceFinalReasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT'], true)) {
+            return $sourceFinalReasonCode;
+        }
+
+        return $fallbackReasonCode;
+    }
+
+    private function resolveCoverageFailReasonCode($availableEodCount, $expectedUniverseCount, $edgeCaseReasonCode)
+    {
+        if (in_array($edgeCaseReasonCode, ['RUN_DATA_DELAYED', 'RUN_PARTIAL_DATA', 'RUN_STALE_DATA'], true)) {
+            return $edgeCaseReasonCode;
+        }
+
+        if ($expectedUniverseCount !== null && $expectedUniverseCount > 0 && $availableEodCount !== null && $availableEodCount > 0 && $availableEodCount < $expectedUniverseCount) {
+            return 'RUN_PARTIAL_DATA';
+        }
+
+        return 'RUN_COVERAGE_LOW';
     }
 
     private function mapCoverageGateStatusToQualityGateState($coverageGateStatus)

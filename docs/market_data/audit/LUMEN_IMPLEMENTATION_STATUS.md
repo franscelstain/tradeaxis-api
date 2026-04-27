@@ -2,6 +2,7 @@
 
 ## FINAL SYSTEM STATUS (LATEST)
 
+- Coverage Edge Cases -> DONE (POLICY LOCKED + CONTROLLED HOLD/FAILED EDGE HANDLING + LOCAL FULL REGRESSION PROVEN: 227 TESTS / 2259 ASSERTIONS + RUNTIME SOURCE FAILURE REASON PRESERVED)
 - Read-Side Enforcement / Anti Bypass Total → DONE (POLICY LOCKED + GATEWAY NAMED + STATIC GUARD ADDED + LOCAL FULL REGRESSION PROVEN: 225 TESTS / 2251 ASSERTIONS)
 - Force Replace & Operator Control → DONE (POLICY LOCKED + CODE PATCHED + LOCAL PHPUNIT/COMMAND/DB/AUDIT PROVEN)
 - Correction Lifecycle → DONE (PROVEN)
@@ -1717,3 +1718,132 @@ No contract change. Existing locked coverage enforcement policy remains active. 
 
 ### Remaining Gap
 None for Coverage Gate Enforcement.
+
+## 2026-04-27 - Coverage Edge Cases Policy Lock & Execution Session
+
+Status: DONE
+
+### Scope
+Locked and implemented controlled handling for coverage edge cases: multi-source boundary, partial dataset, delayed data window, retry exhaustion, stale data, specific reason-code mapping, and fallback safety. Coverage Gate threshold behavior was not weakened.
+
+### Changes
+- Added `docs/market_data/book/Coverage_Edge_Cases_Contract_LOCKED.md`.
+- Added coverage edge-case config block in `config/market_data.php`:
+  - `MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES`
+  - `MARKET_DATA_MULTI_SOURCE_MODE`
+  - `MARKET_DATA_ALLOW_MIXED_SOURCES`
+- Updated `FinalizeDecisionService` so coverage `FAIL` can produce specific locked reason codes:
+  - `RUN_PARTIAL_DATA`
+  - `RUN_DATA_DELAYED`
+  - `RUN_STALE_DATA`
+  - fallback to `RUN_COVERAGE_LOW` when no specific edge applies.
+- Updated `MarketDataPipelineService` to classify coverage-fail edge context before finalize decision:
+  - delay-window fail -> `RUN_DATA_DELAYED`
+  - partial available count below expected universe -> `RUN_PARTIAL_DATA`
+  - otherwise -> `RUN_COVERAGE_LOW`.
+- Updated `EodBarsIngestService` to reject rows outside requested single-day trade-date boundary as `RUN_STALE_DATA` instead of treating stale rows as available.
+- Updated reason-code registry seed with `RUN_PARTIAL_DATA`, `RUN_DATA_DELAYED`, and `RUN_STALE_DATA`.
+- Added unit coverage in `FinalizeDecisionServiceTest` for partial and delayed edge decisions.
+
+### Test Proof
+Static validation performed in this environment only because uploaded ZIP does not contain `vendor/`:
+- `php -l app/Application/MarketData/Services/FinalizeDecisionService.php` -> PASS.
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS.
+- `php -l app/Application/MarketData/Services/EodBarsIngestService.php` -> PASS.
+- `php -l config/market_data.php` -> PASS.
+- `php -l tests/Unit/MarketData/FinalizeDecisionServiceTest.php` -> PASS.
+
+Manual validation still required locally:
+- `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData`
+
+### Result
+Coverage Edge Cases are now contract-locked and implemented as controlled non-readable outcomes. Coverage `PASS` remains the only READABLE path. Partial, delayed, stale, timeout, and rate-limit conditions do not bypass coverage and do not promote partial/stale candidates to current readable publication.
+
+### Contract Impact
+New locked contract added. Existing Coverage Gate Enforcement remains authoritative and unchanged: coverage `PASS` is required for `SUCCESS + READABLE`. Edge cases only refine HOLD/FAILED reason-code behavior and do not create a coverage override.
+
+### Remaining Gap
+Local PHPUnit/artisan runtime proof must be executed by operator because `vendor/` is not present in the uploaded ZIP.
+
+
+## 2026-04-27 — COVERAGE EDGE CASES FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+Final implementation and runtime validation for Coverage Edge Cases after local PHPUnit and artisan execution. This closes the previous static-only validation gap and records the final source-failure reason-code precedence patch.
+
+### Changes
+- Updated integration expectations so low-coverage partial dataset cases expect `RUN_PARTIAL_DATA`.
+- Preserved edge-case-specific reason codes through finalize:
+  - `RUN_PARTIAL_DATA` for partial available universe.
+  - `RUN_DATA_DELAYED` for delay-window coverage fail.
+  - `RUN_STALE_DATA` for stale trade-date rows.
+  - `RUN_SOURCE_RATE_LIMIT` / `RUN_SOURCE_TIMEOUT` for source acquisition failure paths.
+- Updated `FinalizeDecisionService` so operational blockers such as cutoff and coverage-not-evaluable do not overwrite source failure reason codes when the root cause is source acquisition failure.
+- Updated `MarketDataPipelineService::completeFinalize(...)` so finalize-by-run receives `source_final_reason_code` from persisted run notes when the run was previously held during ingest.
+- Added helper to extract note values from semicolon-delimited run notes.
+- Confirmed evidence export remains fail-safe for non-readable runs.
+
+### Test Proof
+Operator-provided local validation:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/CoverageGateEvaluatorTest.php` → OK (`4 tests`, `38 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → OK (`12 tests`, `62 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → OK (`14 tests`, `17 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → OK (`51 tests`, `1173 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/EodBarsIngestServiceTest.php` → OK (`4 tests`, `31 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → OK (`42 tests`, `260 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` → OK (`3 tests`, `44 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData` → OK (`227 tests`, `2259 assertions`).
+- Recursive `php -l` scan across `app` and `tests` → PASS for all listed files.
+
+### Runtime Proof
+
+API source rate limit import:
+
+```bash
+php artisan market-data:daily --requested_date=2026-04-21 --source_mode=api
+```
+
+Observed:
+- `run_id=124`
+- `terminal_status=HELD`
+- `publishability_state=NOT_READABLE`
+- `source_attempt_count=4`
+- `source_summary=provider=yahoo_finance | timeout_seconds=20 | retry_max=3 | attempt_count=4 | success_after_retry=no | final_reason_code=RUN_SOURCE_RATE_LIMIT`
+- `reason_code=RUN_SOURCE_RATE_LIMIT`
+- `fallback_trade_date=2026-03-20`
+
+Finalize same run:
+
+```bash
+php artisan market-data:run:finalize --run_id=124
+```
+
+Observed:
+- `terminal_status=HELD`
+- `publishability_state=NOT_READABLE`
+- `reason_code=RUN_SOURCE_RATE_LIMIT`
+
+Non-readable evidence export guard:
+
+```bash
+php artisan market-data:evidence:export --run_id=121
+```
+
+Observed:
+- rejected because run evidence export requires `SUCCESS + READABLE`.
+
+### Result
+Coverage Edge Cases are DONE and proven. Source failure reason code now survives finalize and is no longer overwritten by cutoff or coverage-not-evaluable logic. Partial, delayed, stale, timeout, and rate-limit cases remain controlled non-readable outcomes.
+
+### Contract Impact
+No coverage relaxation. No partial-readable override. No fallback to partial/stale data. Existing Coverage Gate Enforcement remains authoritative: only `PASS` can become readable/current.
+
+### Remaining Gap
+None for Coverage Edge Cases.

@@ -78,3 +78,4 @@ This index maps the primary book-level contracts and the companion normative fol
 
 ## Evidence note
 Archived actual execution evidence is part of the normative proof ecosystem, but is expected to live outside the book folder in an evidence archive area or equivalent official repository.
+- [Coverage Edge Cases Contract LOCKED](Coverage_Edge_Cases_Contract_LOCKED.md)

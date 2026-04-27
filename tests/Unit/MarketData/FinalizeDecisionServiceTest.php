@@ -194,4 +194,41 @@ class FinalizeDecisionServiceTest extends TestCase
         $this->assertFalse($decision['promotion_allowed']);
         $this->assertFalse($decision['coverage_override_allowed']);
     }
+    public function test_partial_dataset_uses_specific_reason_code_and_never_becomes_readable()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', [
+            'coverage_gate_status' => 'FAIL',
+            'coverage_ratio' => 400 / 900,
+            'coverage_threshold_value' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'expected_universe_count' => 900,
+            'available_eod_count' => 400,
+        ], null);
+
+        $this->assertFalse($decision['promotion_allowed']);
+        $this->assertSame('FAILED', $decision['terminal_status']);
+        $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+        $this->assertSame('RUN_PARTIAL_DATA', $decision['reason_code']);
+    }
+
+    public function test_delayed_dataset_inside_window_is_held_not_readable()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', [
+            'coverage_gate_status' => 'FAIL',
+            'coverage_ratio' => 0.70,
+            'coverage_threshold_value' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'expected_universe_count' => 900,
+            'available_eod_count' => 630,
+            'edge_case_reason_code' => 'RUN_DATA_DELAYED',
+        ], null);
+
+        $this->assertFalse($decision['promotion_allowed']);
+        $this->assertSame('HELD', $decision['terminal_status']);
+        $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+        $this->assertSame('RUN_DATA_DELAYED', $decision['reason_code']);
+    }
+
 }

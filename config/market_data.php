@@ -14,6 +14,11 @@ return [
         'daily_enabled' => (bool) env('MARKET_DATA_DAILY_ENABLED', false),
         'default_source_mode' => env('MARKET_DATA_DEFAULT_SOURCE_MODE', 'api'),
     ],
+    'coverage_edge_cases' => [
+        'delay_window_minutes' => (int) env('MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES', 60),
+        'multi_source_mode' => env('MARKET_DATA_MULTI_SOURCE_MODE', 'PRIMARY_ONLY'),
+        'allow_mixed_sources' => (bool) env('MARKET_DATA_ALLOW_MIXED_SOURCES', false),
+    ],
     'coverage_gate' => [
         'enabled' => (bool) env('MARKET_DATA_COVERAGE_GATE_ENABLED', true),
         'min_ratio' => (float) env('MARKET_DATA_COVERAGE_MIN', 0.98),

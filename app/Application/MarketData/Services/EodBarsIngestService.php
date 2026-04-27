@@ -4,6 +4,7 @@ namespace App\Application\MarketData\Services;
 
 use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
 use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
@@ -177,11 +178,29 @@ class EodBarsIngestService
         }
 
         if (count($seenTradeDates) > 1 || (count($seenTradeDates) === 1 && ! isset($seenTradeDates[$requestedDate]))) {
-            throw new \RuntimeException('Single-day ingest received source rows outside the requested trade_date boundary.');
+            throw new SourceAcquisitionException(
+                'Single-day ingest received source rows outside the requested trade_date boundary.',
+                'RUN_STALE_DATA',
+                0,
+                null,
+                [
+                    'requested_date' => $requestedDate,
+                    'seen_trade_dates' => array_keys($seenTradeDates),
+                ]
+            );
         }
 
         if (count($seenSourceNames) > 1) {
-            throw new \RuntimeException('Single-day ingest received mixed source_name rows within one run boundary.');
+            throw new SourceAcquisitionException(
+                'Single-day ingest received mixed source_name rows within one run boundary.',
+                'RUN_SOURCE_RESPONSE_CHANGED',
+                0,
+                null,
+                [
+                    'requested_date' => $requestedDate,
+                    'seen_source_names' => array_keys($seenSourceNames),
+                ]
+            );
         }
 
         if ($sourceMode === 'manual_file' && count($seenSourceNames) === 1 && ! isset($seenSourceNames['MANUAL_FILE']) && ! isset($seenSourceNames['LOCAL_FILE'])) {

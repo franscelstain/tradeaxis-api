@@ -506,12 +506,20 @@ class MarketDataPipelineService
                             : (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                         'coverage_threshold_mode' => $run->coverage_threshold_mode ?: config('market_data.coverage_gate.threshold_mode', 'MIN_RATIO'),
                         'coverage_calibration_version' => $run->coverage_contract_version,
+                        'expected_universe_count' => $run->coverage_universe_count,
+                        'available_eod_count' => $run->coverage_available_count,
+                        'missing_eod_count' => $run->coverage_missing_count,
+                        'edge_case_reason_code' => $this->resolveCoverageEdgeCaseReasonCode($run, $input->requestedDate),
                     ],
                     $fallback ? $fallback->readable_trade_date : null,
                     [
                         'promote_mode' => $run->promote_mode ?: ($correction ? 'correction' : 'full_publish'),
                         'publish_target' => $run->publish_target ?: ($correction ? 'current_replace' : 'current_replace'),
                         'source_mode' => $input->sourceMode,
+                        'source_final_reason_code' => $this->extractNoteValue(
+                            (string) $run->notes,
+                            'source_final_reason_code'
+                        ),
                     ]
                 );
 
@@ -1187,7 +1195,7 @@ class MarketDataPipelineService
         $coverageState = strtoupper((string) ($run->coverage_gate_state ?? ''));
         $outcomeReasonCode = $outcome['reason_code'] ?? null;
 
-        if ($outcomeReasonCode === 'RUN_COVERAGE_LOW' || $outcomeReasonCode === 'RUN_COVERAGE_NOT_EVALUABLE') {
+        if (in_array($outcomeReasonCode, ['RUN_COVERAGE_LOW', 'RUN_COVERAGE_NOT_EVALUABLE', 'RUN_PARTIAL_DATA', 'RUN_DATA_DELAYED', 'RUN_STALE_DATA'], true)) {
             return $outcomeReasonCode;
         }
 
@@ -1734,6 +1742,10 @@ class MarketDataPipelineService
             $segments[] = 'source_final_http_status='.(int) $sourceAcquisition['final_http_status'];
         }
 
+        if (array_key_exists('final_reason_code', $sourceAcquisition) && $sourceAcquisition['final_reason_code'] !== null) {
+            $segments[] = 'source_final_reason_code='.(string) $sourceAcquisition['final_reason_code'];
+        }
+
         return $segments;
     }
 
@@ -1815,6 +1827,21 @@ class MarketDataPipelineService
         return empty($parts) ? null : implode('; ', $parts);
     }
 
+    private function extractNoteValue(string $notes, string $key): ?string
+    {
+        foreach (explode(';', $notes) as $part) {
+            $part = trim($part);
+
+            if (strpos($part, $key.'=') === 0) {
+                $value = trim(substr($part, strlen($key) + 1));
+
+                return $value !== '' ? $value : null;
+            }
+        }
+
+        return null;
+    }
+
     private function summarizeThrowable(\Throwable $e)
     {
         $message = trim((string) $e->getMessage());
@@ -1834,6 +1861,42 @@ class MarketDataPipelineService
         $rows = $query->orderBy('ticker_id')->get();
 
         return $this->hashes->hashRows($rows, $columns);
+    }
+
+    private function resolveCoverageEdgeCaseReasonCode($run, $requestedDate)
+    {
+        $coverageState = strtoupper((string) ($run->coverage_gate_state ?? ''));
+        if ($coverageState !== 'FAIL') {
+            return null;
+        }
+
+        if ($this->isCoverageDelayWindowOpen($requestedDate)) {
+            return 'RUN_DATA_DELAYED';
+        }
+
+        $expected = isset($run->coverage_universe_count) ? (int) $run->coverage_universe_count : null;
+        $available = isset($run->coverage_available_count) ? (int) $run->coverage_available_count : null;
+
+        if ($expected !== null && $expected > 0 && $available !== null && $available > 0 && $available < $expected) {
+            return 'RUN_PARTIAL_DATA';
+        }
+
+        return 'RUN_COVERAGE_LOW';
+    }
+
+    private function isCoverageDelayWindowOpen($requestedDate)
+    {
+        $delayMinutes = max(0, (int) config('market_data.coverage_edge_cases.delay_window_minutes', 0));
+        if ($delayMinutes <= 0) {
+            return false;
+        }
+
+        $timezone = config('market_data.platform.timezone');
+        $now = Carbon::now($timezone);
+        $cutoff = Carbon::parse($requestedDate.' '.config('market_data.platform.cutoff_time'), $timezone);
+        $delayDeadline = $cutoff->copy()->addMinutes($delayMinutes);
+
+        return $now->greaterThanOrEqualTo($cutoff) && $now->lessThanOrEqualTo($delayDeadline);
     }
 
     private function isFinalizeCutoffSatisfied($requestedDate)
