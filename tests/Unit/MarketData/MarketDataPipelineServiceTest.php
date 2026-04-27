@@ -80,6 +80,10 @@ class MarketDataPipelineServiceTest extends TestCase
         $run = new EodRun();
         $run->run_id = $runId;
         $run->coverage_ratio = $coverageRatio;
+        $run->coverage_gate_state = $coverageRatio !== null ? 'PASS' : null;
+        $run->coverage_min_threshold = $coverageRatio !== null ? '0.9800' : null;
+        $run->coverage_threshold_mode = $coverageRatio !== null ? 'MIN_RATIO' : null;
+        $run->coverage_contract_version = $coverageRatio !== null ? 'coverage_gate_v1' : null;
         $run->sealed_at = $sealedAt;
 
         return $run;
@@ -629,6 +633,10 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->supersedes_run_id = null;
         $run->terminal_status = 'SUCCESS';
         $run->quality_gate_state = 'PASS';
+        $run->coverage_gate_state = 'PASS';
+        $run->coverage_ratio = 1.0;
+        $run->coverage_min_threshold = 0.95;
+        $run->coverage_threshold_mode = 'MIN_RATIO';
         $run->trade_date_effective = '2026-03-17';
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
@@ -703,6 +711,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'publishability_state' => 'READABLE',
                 'trade_date_effective' => null,
                 'quality_gate_state' => 'PASS',
+                'coverage_gate_status' => 'PASS',
                 'reason_code' => null,
                 'message' => 'Finalize succeeded.',
             ]);
@@ -774,6 +783,10 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->supersedes_run_id = null;
         $run->terminal_status = 'SUCCESS';
         $run->quality_gate_state = 'PASS';
+        $run->coverage_gate_state = 'PASS';
+        $run->coverage_ratio = 1.0;
+        $run->coverage_min_threshold = 0.95;
+        $run->coverage_threshold_mode = 'MIN_RATIO';
         $run->trade_date_effective = '2026-03-17';
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
@@ -840,6 +853,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'publishability_state' => 'READABLE',
                 'trade_date_effective' => null,
                 'quality_gate_state' => 'PASS',
+                'coverage_gate_status' => 'PASS',
                 'reason_code' => null,
                 'message' => 'Finalize succeeded.',
             ]);
@@ -1065,6 +1079,10 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->supersedes_run_id = null;
         $run->terminal_status = 'HELD';
         $run->quality_gate_state = 'PASS';
+        $run->coverage_gate_state = 'PASS';
+        $run->coverage_ratio = 1.0;
+        $run->coverage_min_threshold = 0.95;
+        $run->coverage_threshold_mode = 'MIN_RATIO';
         $run->trade_date_effective = null;
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
@@ -1144,6 +1162,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'publishability_state' => 'READABLE',
                 'trade_date_effective' => null,
                 'quality_gate_state' => 'PASS',
+                'coverage_gate_status' => 'PASS',
                 'reason_code' => null,
                 'message' => 'Finalize succeeded.',
             ]);

@@ -244,4 +244,32 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         $this->assertStringContainsString('Historical correction published safely', $state['message']);
         $this->assertStringContainsString('Historical correction published safely', $state['correction_outcome_note']);
     }
+    public function test_readable_outcome_requires_coverage_pass(): void
+    {
+        $service = new PublicationFinalizeOutcomeService();
+        $preDecision = [
+            'coverage_gate_status' => 'FAIL',
+            'quality_gate_state' => 'FAIL',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'trade_date_effective' => null,
+            'reason_code' => null,
+            'message' => 'invalid promotion pending',
+            'promotion_allowed' => true,
+        ];
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('READABLE requires coverage_gate_status PASS');
+
+        $service->resolve($preDecision, [
+            'requested_date' => '2026-04-21',
+            'fallback_trade_date' => '2026-04-20',
+            'candidate_publication_id' => 77,
+            'candidate_publication_version' => 3,
+            'resolved_current_publication_id' => 77,
+            'resolved_current_publication_version' => 3,
+        ]);
+    }
+
+
 }

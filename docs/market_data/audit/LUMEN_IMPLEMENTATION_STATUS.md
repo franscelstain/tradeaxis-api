@@ -1,6 +1,7 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
 ## FINAL SYSTEM STATUS (LATEST)
+- Publishability vs Coverage vs Fallback Cross-Consistency -> DONE (POLICY LOCKED + FULL ENFORCEMENT + TEST FIXTURES REALIGNED + LOCAL FULL REGRESSION PROVEN: 231 TESTS / 2269 ASSERTIONS)
 - Publishability State Integrity -> DONE (POLICY LOCKED + STATE MATRIX ENFORCED + FALLBACK RESTORE VALIDATED + LOCAL FULL REGRESSION PROVEN: 228 TESTS / 2261 ASSERTIONS)
 
 - Coverage Edge Cases -> DONE (POLICY LOCKED + CONTROLLED HOLD/FAILED EDGE HANDLING + LOCAL FULL REGRESSION PROVEN: 227 TESTS / 2259 ASSERTIONS + RUNTIME SOURCE FAILURE REASON PRESERVED)
@@ -1933,3 +1934,91 @@ No contract definition changed. `Publishability_State_Integrity_Contract_LOCKED.
 ### Remaining Gap
 None for Publishability State Integrity.
 
+## 2026-04-27 — PUBLISHABILITY vs COVERAGE vs FALLBACK CROSS-CONSISTENCY POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+Locked and fully enforced cross-consistency between coverage gate, finalize decision, publishability state, fallback restore, and current publication pointer eligibility.
+
+### Changes
+- Created `docs/market_data/book/Publishability_Coverage_Fallback_Cross_Consistency_Contract_LOCKED.md`.
+- Registered the new locked contract in `docs/market_data/book/INDEX.md`.
+- Hardened `FinalizeDecisionService` so `READABLE` requires `coverage_gate_status=PASS` and `terminal_status=SUCCESS`.
+- Hardened `PublicationFinalizeOutcomeService` so final readable outcomes cannot be produced unless coverage is PASS.
+- Hardened `EodPublicationRepository` so pointer resolution requires:
+  - `SUCCESS`
+  - `READABLE`
+  - `coverage_gate_state=PASS`
+- Hardened fallback restore so prior publication must satisfy:
+  - `SUCCESS + READABLE + coverage PASS`
+- Rejected all invalid state combinations at decision and repository level.
+
+### Test Proof
+Operator-provided local validation:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter finalize` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → OK
+- Full suite → PASS (no regression)
+
+### Result
+Cross-consistency is now **fully enforced and runtime-proven**:
+
+- `READABLE` cannot exist without coverage PASS
+- fallback cannot restore non-PASS baseline
+- pointer cannot reference non-PASS publication
+- invalid state combinations are rejected
+
+### Contract Impact
+Cross-consistency is now a strict invariant:
+
+```
+coverage → finalize → publishability → fallback → pointer
+```
+
+No bypass exists.
+
+### Remaining Gap
+None
+
+
+## 2026-04-27 — PUBLISHABILITY vs COVERAGE vs FALLBACK TEST CONTRACT REALIGNMENT
+
+Status: DONE
+
+### Scope
+Realigned all PHPUnit fixtures to comply with strict cross-consistency contract requiring coverage PASS for any readable baseline, fallback, or current publication.
+
+### Changes
+- Updated `MarketDataPipelineIntegrationTest` baseline/current/fallback fixtures to include:
+  - `coverage_gate_state=PASS`
+  - `coverage_min_threshold`
+  - `coverage_threshold_mode`
+  - `coverage_contract_version`
+- Updated `MarketDataPipelineServiceTest::makeRun()` default mock to include coverage PASS for readable runs.
+- Removed all implicit/legacy assumptions allowing readable state without coverage metadata.
+
+### Test Proof
+Operator-provided local validation after patch:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → PASS
+- `vendor/bin/phpunit tests/Unit/MarketData` → PASS (full regression)
+
+### Result
+- All test fixtures are now aligned with locked contract
+- No readable baseline exists without coverage PASS
+- No fallback/correction path bypasses coverage enforcement
+
+### Contract Impact
+No contract change. This is a strict alignment of test layer to already locked invariant:
+
+```
+coverage → finalize → publishability → fallback → pointer
+```
+
+### Remaining Gap
+None

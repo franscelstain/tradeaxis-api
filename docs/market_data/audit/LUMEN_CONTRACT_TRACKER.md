@@ -1,6 +1,7 @@
 # LUMEN_CONTRACT_TRACKER
 
 ## FINAL SYSTEM STATUS (LATEST)
+- Publishability vs Coverage vs Fallback Cross-Consistency -> DONE (POLICY LOCKED + FULL ENFORCEMENT + TEST FIXTURES REALIGNED + LOCAL FULL REGRESSION PROVEN: 231 TESTS / 2269 ASSERTIONS)
 - Publishability State Integrity -> DONE (POLICY LOCKED + STATE MATRIX ENFORCED + FALLBACK RESTORE VALIDATED + LOCAL FULL REGRESSION PROVEN: 228 TESTS / 2261 ASSERTIONS)
 
 - Coverage Edge Cases -> DONE (POLICY LOCKED + CONTROLLED HOLD/FAILED EDGE HANDLING + LOCAL FULL REGRESSION PROVEN: 227 TESTS / 2259 ASSERTIONS + RUNTIME SOURCE FAILURE REASON PRESERVED)
@@ -1647,3 +1648,86 @@ No contract definition changed. `Publishability_State_Integrity_Contract_LOCKED.
 ### Remaining Gap
 None for Publishability State Integrity.
 
+## 2026-04-27 — PUBLISHABILITY vs COVERAGE vs FALLBACK CROSS-CONSISTENCY POLICY LOCK & EXECUTION SESSION
+
+Status: DONE
+
+### Scope
+Locked and fully enforced cross-consistency between coverage gate, finalize decision, publishability state, fallback restore, and current publication pointer eligibility.
+
+### Changes
+- Created `docs/market_data/book/Publishability_Coverage_Fallback_Cross_Consistency_Contract_LOCKED.md`.
+- Registered the new locked contract in `docs/market_data/book/INDEX.md`.
+- Hardened `FinalizeDecisionService` so `READABLE` requires `coverage_gate_status=PASS` and `terminal_status=SUCCESS`.
+- Hardened `PublicationFinalizeOutcomeService` so final readable outcomes cannot be produced unless coverage is PASS.
+- Hardened `EodPublicationRepository` read-side pointer resolution so current/readable/baseline/fallback queries require `run.coverage_gate_state=PASS` in addition to `SUCCESS + READABLE`.
+- Hardened current promotion and fallback restore so pointer writes require:
+  - `terminal_status=SUCCESS`
+  - `publishability_state=READABLE`
+  - `coverage_gate_state=PASS`
+- Added integration/unit test coverage for pointer rejection when prior/current coverage is not PASS and outcome rejection when readable is attempted with coverage FAIL.
+
+### Test Proof
+Operator local validation:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter finalize` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData` → OK (231 tests, 2269 assertions)
+
+### Result
+Cross-consistency is now fully enforced and runtime-proven:
+
+- `READABLE` cannot exist without coverage PASS  
+- fallback cannot restore non-PASS baseline  
+- pointer cannot reference non-PASS publication  
+- invalid state combinations are rejected  
+
+### Contract Impact
+Cross-consistency is now a strict invariant:
+
+coverage → finalize → publishability → fallback → pointer
+
+No bypass exists.
+
+### Remaining Gap
+None
+
+
+## 2026-04-27 — PUBLISHABILITY vs COVERAGE vs FALLBACK TEST CONTRACT REALIGNMENT
+
+Status: DONE
+
+### Scope
+Realigned market-data PHPUnit fixtures to comply with strict cross-consistency contract requiring coverage PASS for any readable baseline, fallback, or current publication.
+
+### Changes
+- Updated `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` baseline/current/fallback fixture seeders so readable baseline runs explicitly persist:
+  - `coverage_gate_state=PASS`
+  - `coverage_min_threshold`
+  - `coverage_threshold_mode`
+  - `coverage_contract_version`
+- Updated `tests/Unit/MarketData/MarketDataPipelineServiceTest.php::makeRun()` so default mocked runs that represent readable/success finalize paths also carry coverage PASS telemetry.
+- Removed all implicit/legacy assumptions allowing readable state without coverage metadata.
+
+### Test Proof
+Operator local validation after patch:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineServiceTest.php` → OK
+- `vendor/bin/phpunit tests/Unit/MarketData` → OK (231 tests, 2269 assertions)
+
+### Result
+- All test fixtures are now aligned with locked contract  
+- No readable baseline exists without coverage PASS  
+- No fallback/correction path bypasses coverage enforcement  
+
+### Contract Impact
+No contract change. This is strict alignment of test layer to invariant:
+
+coverage → finalize → publishability → fallback → pointer
+
+### Remaining Gap
+None

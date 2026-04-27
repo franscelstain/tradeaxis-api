@@ -21,6 +21,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'config_version' => 'cfg-old',
             'terminal_status' => 'SUCCESS',
             'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
             'bars_rows_written' => 2,
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
@@ -35,6 +36,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'config_version' => 'cfg-new',
             'terminal_status' => 'SUCCESS',
             'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
             'bars_rows_written' => 2,
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
@@ -498,6 +500,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'stage' => 'FINALIZE',
             'source' => 'manual_file',
             'coverage_ratio' => 1,
+            'coverage_gate_state' => 'PASS',
             'bars_rows_written' => 1,
             'indicators_rows_written' => 1,
             'eligibility_rows_written' => 1,
@@ -560,4 +563,37 @@ class PublicationRepositoryIntegrationTest extends TestCase
 
         $repo->restorePriorCurrentPublication('2026-03-20', 10, 25);
     }
+    public function test_pointer_resolution_returns_null_when_pointed_publication_coverage_gate_is_not_pass(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'coverage_gate_state' => 'FAIL',
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $repo = new EodPublicationRepository();
+
+        $this->assertNull($repo->findPointerResolvedPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCurrentPublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findCorrectionBaselinePublicationForTradeDate('2026-03-20'));
+        $this->assertNull($repo->findLatestReadablePublicationBefore('2026-03-21'));
+    }
+
+    public function test_restore_prior_current_publication_rejects_readable_run_without_coverage_pass(): void
+    {
+        DB::table('eod_runs')
+            ->where('run_id', 25)
+            ->update([
+                'coverage_gate_state' => 'FAIL',
+                'updated_at' => '2026-03-20 17:25:00',
+            ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('current pointer requires run coverage_gate_state PASS');
+
+        (new EodPublicationRepository())->restorePriorCurrentPublication('2026-03-20', 10, 25);
+    }
+
+
 }

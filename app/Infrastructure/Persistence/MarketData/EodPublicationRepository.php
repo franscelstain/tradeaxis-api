@@ -29,6 +29,7 @@ class EodPublicationRepository
                 'pub.sealed_at',
                 'run.terminal_status',
                 'run.publishability_state',
+                'run.coverage_gate_state',
                 'run.is_current_publication',
                 'run.sealed_at as run_sealed_at'
             )
@@ -59,6 +60,7 @@ class EodPublicationRepository
                 'pub.sealed_at',
                 'run.terminal_status',
                 'run.publishability_state',
+                'run.coverage_gate_state',
                 'run.is_current_publication',
                 'run.sealed_at as run_sealed_at'
             )
@@ -122,6 +124,10 @@ class EodPublicationRepository
             $reasons[] = 'RUN_PUBLISHABILITY_NOT_READABLE';
         }
 
+        if ((string) ($row->coverage_gate_state ?? '') !== 'PASS') {
+            $reasons[] = 'RUN_COVERAGE_GATE_NOT_PASS';
+        }
+
         if ((int) ($row->is_current_publication ?? 0) !== 1) {
             $reasons[] = 'RUN_CURRENT_MIRROR_NOT_SET';
         }
@@ -154,6 +160,7 @@ class EodPublicationRepository
             ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
+            ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
             ->select(
                 'pub.*',
@@ -163,6 +170,7 @@ class EodPublicationRepository
                 'ptr.sealed_at as pointer_sealed_at',
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
+                'run.coverage_gate_state as run_coverage_gate_state',
                 'run.is_current_publication as run_is_current_publication'
             )
             ->first();
@@ -198,6 +206,7 @@ class EodPublicationRepository
             ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
+            ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
             ->select(
                 'pub.*',
@@ -207,6 +216,7 @@ class EodPublicationRepository
                 'ptr.sealed_at as pointer_sealed_at',
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
+                'run.coverage_gate_state as run_coverage_gate_state',
                 'run.is_current_publication as run_is_current_publication'
             )
             ->first();
@@ -230,6 +240,7 @@ class EodPublicationRepository
             ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
+            ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
             ->select(
                 'pub.*',
@@ -239,6 +250,7 @@ class EodPublicationRepository
                 'ptr.sealed_at as pointer_sealed_at',
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
+                'run.coverage_gate_state as run_coverage_gate_state',
                 'run.is_current_publication as run_is_current_publication'
             )
             ->first();
@@ -381,6 +393,10 @@ class EodPublicationRepository
 
             if (! $candidate->sealed_at) {
                 throw new \RuntimeException('Candidate publication is missing sealed_at timestamp.');
+            }
+
+            if ((string) ($run->coverage_gate_state ?? '') !== 'PASS') {
+                throw new \RuntimeException('Current publication promotion requires coverage_gate_state PASS before pointer switch.');
             }
 
             $current = DB::table('eod_current_publication_pointer as ptr')
@@ -564,6 +580,10 @@ class EodPublicationRepository
             throw new \RuntimeException('Current publication integrity violation: current pointer requires run publishability_state READABLE.');
         }
 
+        if ((string) ($run->coverage_gate_state ?? '') !== 'PASS') {
+            throw new \RuntimeException('Current publication integrity violation: current pointer requires run coverage_gate_state PASS.');
+        }
+
         if (empty($run->sealed_at)) {
             throw new \RuntimeException('Current publication integrity violation: current pointer requires sealed run.');
         }
@@ -639,6 +659,7 @@ class EodPublicationRepository
             ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
+            ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
             ->orderByDesc('ptr.trade_date')
             ->select(

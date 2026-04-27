@@ -99,11 +99,16 @@ class PublicationFinalizeOutcomeService
 
     private function enforceStateMatrix(array $state): array
     {
+        $coverageGateStatus = strtoupper((string) ($state['coverage_gate_status'] ?? 'NOT_EVALUABLE'));
         $terminalStatus = strtoupper((string) ($state['terminal_status'] ?? ''));
         $publishabilityState = strtoupper((string) ($state['publishability_state'] ?? ''));
 
         if ($publishabilityState === 'READABLE' && $terminalStatus !== 'SUCCESS') {
             throw new \LogicException('Invalid publication finalize outcome matrix: READABLE requires terminal_status SUCCESS.');
+        }
+
+        if ($publishabilityState === 'READABLE' && $coverageGateStatus !== 'PASS') {
+            throw new \LogicException('Invalid publication finalize outcome matrix: READABLE requires coverage_gate_status PASS.');
         }
 
         if (in_array($terminalStatus, ['FAILED', 'HELD'], true) && $publishabilityState !== 'NOT_READABLE') {
