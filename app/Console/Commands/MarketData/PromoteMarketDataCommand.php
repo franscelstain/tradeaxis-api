@@ -95,7 +95,7 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
                 'source_mode' => $sourceMode,
                 'force_replace' => $forceReplace,
                 'force_replace_reason' => $forceReplaceReason,
-                'status' => ((string) ($run->publishability_state ?? '')) === 'READABLE' ? 'SUCCESS' : 'NOT_READABLE',
+                'status' => ((string) ($run->publishability_state ?? '')) === 'READABLE' && ((string) ($run->coverage_gate_state ?? '')) === 'PASS' ? 'SUCCESS' : 'NOT_READABLE',
             ], $sourceContext)
         );
 
@@ -110,7 +110,7 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
             $this->line('source_attempt_telemetry_artifact='.$this->normalizePathForDisplay($sourceTelemetryArtifactPath));
         }
 
-        return ((string) ($run->publishability_state ?? '')) === 'READABLE' ? 0 : 1;
+        return ((string) ($run->publishability_state ?? '')) === 'READABLE' && ((string) ($run->coverage_gate_state ?? '')) === 'PASS' ? 0 : 1;
     }
 
     private function normalizeForceReplace($value)

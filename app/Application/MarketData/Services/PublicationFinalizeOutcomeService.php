@@ -123,6 +123,8 @@ class PublicationFinalizeOutcomeService
             $state['publishability_state'] = 'NOT_READABLE';
         }
 
+        (new MarketDataInvariantGuard())->assertNoBypassState($state, 'PublicationFinalizeOutcomeService');
+
         return $state;
     }
 }

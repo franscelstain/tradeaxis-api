@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Persistence\MarketData;
 
 use App\Models\EodRun;
+use App\Application\MarketData\Services\MarketDataInvariantGuard;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -399,6 +400,7 @@ class EodPublicationRepository
                 throw new \RuntimeException('Current publication promotion requires coverage_gate_state PASS before pointer switch.');
             }
 
+
             $current = DB::table('eod_current_publication_pointer as ptr')
                 ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
                 ->where('ptr.trade_date', $run->trade_date_requested)
@@ -587,6 +589,20 @@ class EodPublicationRepository
         if (empty($run->sealed_at)) {
             throw new \RuntimeException('Current publication integrity violation: current pointer requires sealed run.');
         }
+
+        $guard = new MarketDataInvariantGuard();
+        $guard->assertValidFallbackTarget(
+            $publication,
+            $run,
+            $tradeDate,
+            'EodPublicationRepository::restorePriorCurrentPublication'
+        );
+        $guard->assertValidPointerTarget(
+            $publication,
+            $run,
+            $tradeDate,
+            'EodPublicationRepository::assertPublicationEligibleForCurrent'
+        );
     }
 
     public function clearCurrentPublicationState($tradeDate)

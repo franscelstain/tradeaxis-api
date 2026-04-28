@@ -173,6 +173,8 @@ class FinalizeDecisionService
             $state['publishability_state'] = 'NOT_READABLE';
         }
 
+        (new MarketDataInvariantGuard())->assertNoBypassState($state, 'FinalizeDecisionService');
+
         return $state;
     }
 

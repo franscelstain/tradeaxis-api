@@ -673,6 +673,8 @@ class MarketDataPipelineService
                     'promotion_error' => $promotionError,
                 ]);
 
+                (new MarketDataInvariantGuard())->assertNoBypassState($outcome, 'MarketDataPipelineService::finalize outcome');
+
                 $finalizeReasonCode = $this->resolveFinalizeReasonCode(
                     $run,
                     $outcome,

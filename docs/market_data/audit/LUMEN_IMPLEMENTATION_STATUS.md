@@ -1,6 +1,7 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
 ## FINAL SYSTEM STATUS (LATEST)
+- System Invariant Lock / Anti Future Regression -> DONE (GUARD PATCHED + POSITIONING FIX APPLIED + LOCAL PIPELINE REGRESSION PROVEN: 236 TESTS / 2277 ASSERTIONS)
 - Publishability vs Coverage vs Fallback Cross-Consistency -> DONE (POLICY LOCKED + FULL ENFORCEMENT + TEST FIXTURES REALIGNED + LOCAL FULL REGRESSION PROVEN: 231 TESTS / 2269 ASSERTIONS)
 - Publishability State Integrity -> DONE (POLICY LOCKED + STATE MATRIX ENFORCED + FALLBACK RESTORE VALIDATED + LOCAL FULL REGRESSION PROVEN: 228 TESTS / 2261 ASSERTIONS)
 
@@ -2022,3 +2023,163 @@ coverage → finalize → publishability → fallback → pointer
 
 ### Remaining Gap
 None
+
+## 2026-04-28 - SYSTEM INVARIANT LOCK (ANTI FUTURE REGRESSION)
+
+Status: PARTIAL
+
+### Scope
+- Locked cross-layer invariant guard for READABLE, coverage PASS, fallback target, pointer target, and promotion bypass state.
+- Scope limited to market-data finalize/outcome/pipeline/repository/command guardrails.
+- No new feature behavior added.
+
+### Changes
+- Added `app/Application/MarketData/Services/MarketDataInvariantGuard.php`.
+- `FinalizeDecisionService` now runs centralized no-bypass invariant validation before returning final decision state.
+- `PublicationFinalizeOutcomeService` now runs centralized no-bypass invariant validation before returning publication outcome state.
+- `MarketDataPipelineService` now validates resolved finalize outcome before persisting final run state.
+- `EodPublicationRepository::switchCurrentPublication()` now validates pointer target before pointer/current switch.
+- `EodPublicationRepository::assertPublicationEligibleForCurrent()` now validates fallback target and pointer target through centralized invariant guard before prior-current restore can write pointer/current mirrors.
+- `PromoteMarketDataCommand` command success/exit status now requires both `publishability_state=READABLE` and `coverage_gate_state=PASS`.
+- Added `tests/Unit/MarketData/MarketDataInvariantGuardTest.php` to lock direct guard behavior.
+
+### Test Proof
+- Static/lint proof completed inside uploaded ZIP environment:
+  - `php -l app/Application/MarketData/Services/MarketDataInvariantGuard.php` -> PASS
+  - `php -l app/Application/MarketData/Services/FinalizeDecisionService.php` -> PASS
+  - `php -l app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php` -> PASS
+  - `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS
+  - `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> PASS
+  - `php -l app/Console/Commands/MarketData/PromoteMarketDataCommand.php` -> PASS
+  - `php -l tests/Unit/MarketData/MarketDataInvariantGuardTest.php` -> PASS
+- Static scan proof:
+  - READABLE references were scanned across `app/Application/MarketData`, `app/Infrastructure/Persistence/MarketData`, and `app/Console/Commands/MarketData`.
+  - Pointer/read queries already require `terminal_status=SUCCESS`, `publishability_state=READABLE`, and `coverage_gate_state=PASS` in repository query paths.
+  - New write-side guard now protects promotion, pointer switch, and fallback restore against bypass state.
+- PHPUnit/artisan proof not executed because uploaded ZIP does not contain `vendor/`.
+
+### Result
+- Central fail-fast invariant guard is now present and wired into finalize, outcome, pipeline, repository pointer write, fallback restore, and promote command surface.
+- READABLE cannot be returned from finalize/outcome without coverage PASS.
+- Promotion cannot be allowed unless state is `SUCCESS + READABLE + coverage PASS`.
+- Pointer/current target cannot be written unless target publication is sealed and owning run is `SUCCESS + READABLE + coverage PASS`.
+- Fallback restore cannot target a prior publication unless the prior run is `SUCCESS + READABLE + coverage PASS`.
+
+### Contract Impact
+- Existing locked contracts are not changed.
+- This session adds enforcement hardening only: centralized guardrails prevent future regression against the already locked flow `coverage -> finalize -> publishability -> fallback -> pointer`.
+
+### Remaining Gap
+- Manual local regression proof is still required:
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataInvariantGuardTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData`
+- Status remains PARTIAL until local vendor-backed PHPUnit/artisan evidence is provided.
+
+## 2026-04-28 - SYSTEM INVARIANT LOCK POSITIONING FIX
+
+Status: PARTIAL
+
+### Scope
+- Corrected invariant guard placement after operator local PHPUnit evidence showed integration regression in `MarketDataPipelineIntegrationTest`.
+- Scope limited to guard positioning; no contract definition changed.
+
+### Changes
+- Removed premature `MarketDataInvariantGuard::assertValidPointerTarget()` call from `EodPublicationRepository::promoteCandidateToCurrent()` before pointer switch.
+- Kept existing explicit pre-switch checks already valid at that lifecycle stage:
+  - candidate publication must exist
+  - candidate publication must be sealed
+  - candidate publication must have `sealed_at`
+  - run coverage gate must be `PASS`
+- Preserved centralized hard guard in `EodPublicationRepository::assertPublicationEligibleForCurrent()` for final pointer/current eligibility validation after the owning run has final `SUCCESS + READABLE + coverage PASS` state.
+- Preserved finalize/outcome/pipeline no-bypass guards.
+
+### Test Proof
+- Operator-provided failed runtime proof showed regression before this fix:
+  - `MarketDataInvariantGuardTest.php` -> OK
+  - `FinalizeDecisionServiceTest.php` -> OK
+  - `PublicationFinalizeOutcomeServiceTest.php` -> OK
+  - `PublicationRepositoryIntegrationTest.php` -> OK
+  - `MarketDataPipelineIntegrationTest.php` -> FAILED (21 failures, 2 errors)
+  - `OpsCommandSurfaceTest.php` -> OK
+  - `tests/Unit/MarketData` -> FAILED (21 failures, 2 errors)
+- Static/lint proof after this positioning fix in uploaded ZIP environment:
+  - `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> PASS
+  - `php -l app/Application/MarketData/Services/MarketDataInvariantGuard.php` -> PASS
+  - `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS
+  - `php -l app/Application/MarketData/Services/FinalizeDecisionService.php` -> PASS
+  - `php -l app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php` -> PASS
+- PHPUnit/artisan proof not executed in this environment because uploaded ZIP does not contain `vendor/`.
+
+### Result
+- Guard no longer blocks pointer promotion before final run state exists.
+- Existing domain mismatch handling remains responsible for post-switch pointer resolution errors.
+- Final current pointer eligibility remains protected by `assertPublicationEligibleForCurrent()` and repository read contracts.
+- Evidence export should no longer be indirectly broken by valid success runs being downgraded to HELD through premature pointer guard failure.
+
+### Contract Impact
+- No contract change.
+- This is an enforcement-position correction: invariant remains `READABLE => coverage PASS`, `fallback => prior SUCCESS + READABLE + PASS`, and `pointer => SUCCESS + READABLE + PASS`.
+- The invariant is enforced at final eligibility/final state boundaries, not at premature lifecycle points where the run has not yet been finalized.
+
+### Remaining Gap
+- Manual local regression proof is required on the corrected ZIP:
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataInvariantGuardTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php`
+  - `vendor/bin/phpunit tests/Unit/MarketData`
+- System Invariant Lock remains PARTIAL until corrected local PHPUnit evidence is provided.
+
+## 2026-04-28 — SYSTEM INVARIANT LOCK FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+Final local runtime validation for System Invariant Lock / Anti Future Regression after the invariant guard positioning fix. Scope is proof-only after the positioning correction; no locked contract definition, schema rule, coverage rule, publishability rule, fallback rule, pointer rule, read-side rule, correction lifecycle rule, force replace behavior, or finalize lock behavior was changed by this audit update.
+
+### Changes
+- Closed the previous local regression proof gap for System Invariant Lock.
+- Upgraded the System Invariant Lock / Anti Future Regression status from PARTIAL to DONE based on operator-provided local PHPUnit evidence.
+- Confirmed the premature pointer-target guard regression was resolved by enforcing the invariant at final eligibility/final state boundaries instead of transient pre-finalize lifecycle boundaries.
+- Confirmed the centralized invariant guard remains active for final decision/outcome validation, pipeline final outcome validation, final pointer/current eligibility, fallback restore eligibility, and promote command success/exit status.
+
+### Test Proof
+Operator-provided local validation after applying the positioning fix:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → OK (`51 tests`, `1173 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData` → OK (`236 tests`, `2277 assertions`).
+
+Prior focused proof from the same System Invariant Lock session remains valid:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataInvariantGuardTest.php` → OK (`5 tests`, `8 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` → OK (`12 tests`, `62 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` → OK (`9 tests`, `41 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` → OK (`22 tests`, `101 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` → OK (`42 tests`, `260 assertions`).
+
+### Result
+System Invariant Lock is DONE and locally regression-proven. The invariant remains enforced without the previous integration regression:
+
+- `READABLE` requires coverage `PASS`.
+- fallback targets require prior `SUCCESS + READABLE + coverage PASS`.
+- pointer/current targets require `SUCCESS + READABLE + coverage PASS`.
+- valid PASS coverage pipeline runs remain `SUCCESS` and are no longer downgraded to `HELD` by premature guard execution.
+- domain-specific pointer mismatch behavior remains preserved and is not replaced by premature guard errors.
+
+### Contract Impact
+No contract definition changed. This validation confirms the already locked invariant flow remains active:
+
+`coverage -> finalize -> publishability -> fallback -> pointer`
+
+The enforcement boundary is now proven correct: fail-fast guard applies at final state/write eligibility boundaries, not before the owning run has reached final publishability state.
+
+### Remaining Gap
+None for System Invariant Lock / Anti Future Regression.
+
