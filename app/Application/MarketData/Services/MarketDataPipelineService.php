@@ -1028,14 +1028,6 @@ class MarketDataPipelineService
             && (string) ($run->lifecycle_state ?? '') === 'COMPLETED'
             && in_array((string) ($run->terminal_status ?? ''), ['SUCCESS', 'HELD', 'FAILED'], true)
         ) {
-            if (
-                (bool) $input->forceReplace
-                && (string) ($run->terminal_status ?? '') === 'HELD'
-                && (string) ($run->final_reason_code ?? '') === 'RUN_LOCK_CONFLICT'
-            ) {
-                return null;
-            }
-
             return $run;
         }
 

@@ -172,6 +172,67 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
+    public function test_completed_lock_conflict_finalize_rerun_with_force_replace_is_idempotent(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 126,
+            'low' => 120,
+            'close' => 125,
+            'volume' => 2500,
+            'adj_close' => 125,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $pipeline = $this->makePipeline();
+        $run = $pipeline->promoteDaily('2026-03-20', 'manual_file');
+
+        $pointerBefore = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+        $eventCountBefore = DB::table('eod_run_events')->where('run_id', $run->run_id)->count();
+        $candidateCountBefore = DB::table('eod_publications')->where('run_id', $run->run_id)->count();
+
+        $rerun = $pipeline->completeFinalize(
+            new App\Application\MarketData\DTOs\MarketDataStageInput(
+                '2026-03-20',
+                'manual_file',
+                $run->run_id,
+                'FINALIZE',
+                null,
+                true,
+                'late operator force replace must not mutate terminal lock-conflict run'
+            )
+        );
+
+        $pointerAfter = DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->first();
+        $eventCountAfter = DB::table('eod_run_events')->where('run_id', $run->run_id)->count();
+        $candidateCountAfter = DB::table('eod_publications')->where('run_id', $run->run_id)->count();
+
+        $this->assertSame((int) $run->run_id, (int) $rerun->run_id);
+        $this->assertSame('HELD', $rerun->terminal_status);
+        $this->assertSame('NOT_READABLE', $rerun->publishability_state);
+        $this->assertSame('RUN_LOCK_CONFLICT', $rerun->final_reason_code);
+        $this->assertSame((int) $pointerBefore->publication_id, (int) $pointerAfter->publication_id);
+        $this->assertSame((int) $pointerBefore->run_id, (int) $pointerAfter->run_id);
+        $this->assertSame((int) $eventCountBefore, (int) $eventCountAfter);
+        $this->assertSame((int) $candidateCountBefore, (int) $candidateCountAfter);
+        $this->assertFalse(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'RUN_FORCE_REPLACE_EXECUTED')
+                ->exists()
+        );
+    }
+
     public function test_promote_daily_with_force_replace_switches_current_and_records_audit_event(): void
     {
         $this->seedTicker(1, 'BBCA');

@@ -1,6 +1,7 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
 ## FINAL SYSTEM STATUS (LATEST)
+- Finalize / Lock / Pointer Determinism -> DONE (IDEMPOTENCY GUARD PATCHED + LOCK-CONFLICT FORCE-RERUN MUTATION BLOCKED + LOCAL FULL REGRESSION PROVEN: 237 TESTS / 2286 ASSERTIONS)
 - System Invariant Lock / Anti Future Regression -> DONE (GUARD PATCHED + POSITIONING FIX APPLIED + LOCAL PIPELINE REGRESSION PROVEN: 236 TESTS / 2277 ASSERTIONS)
 - Publishability vs Coverage vs Fallback Cross-Consistency -> DONE (POLICY LOCKED + FULL ENFORCEMENT + TEST FIXTURES REALIGNED + LOCAL FULL REGRESSION PROVEN: 231 TESTS / 2269 ASSERTIONS)
 - Publishability State Integrity -> DONE (POLICY LOCKED + STATE MATRIX ENFORCED + FALLBACK RESTORE VALIDATED + LOCAL FULL REGRESSION PROVEN: 228 TESTS / 2261 ASSERTIONS)
@@ -2183,3 +2184,89 @@ The enforcement boundary is now proven correct: fail-fast guard applies at final
 ### Remaining Gap
 None for System Invariant Lock / Anti Future Regression.
 
+
+## 2026-04-28 — FINALIZE / LOCK / POINTER DETERMINISM POLICY LOCK & EXECUTION SESSION
+
+Status: PARTIAL
+
+### Scope
+Finalize / lock / pointer determinism hardening for market-data finalize reruns. Scope is limited to terminal finalize idempotency, deterministic lock-conflict behavior, and pointer/current mutation prevention after a run has already reached a terminal completed state.
+
+### Changes
+- Patched `MarketDataPipelineService::findCompletedFinalizeRun()` so every completed terminal finalize run (`SUCCESS`, `HELD`, or `FAILED`) returns persisted state immediately.
+- Removed the previous special-case escape hatch that allowed a completed `HELD + RUN_LOCK_CONFLICT` finalize run to execute again when a later rerun supplied `forceReplace=true`.
+- Added integration test coverage proving a completed lock-conflict finalize rerun with `forceReplace=true` does not mutate pointer state, does not append duplicate events, does not create another publication for the same run, and does not record `RUN_FORCE_REPLACE_EXECUTED`.
+
+### Test Proof
+Static/lint proof completed inside uploaded ZIP environment:
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS
+- `php -l app/Application/MarketData/Services/FinalizeDecisionService.php` -> PASS
+- `php -l app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php` -> PASS
+- `php -l app/Application/MarketData/Services/MarketDataInvariantGuard.php` -> PASS
+- `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> PASS
+- `php -l app/Infrastructure/Persistence/MarketData/EodRunRepository.php` -> PASS
+- `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> PASS
+- `php -l tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> PASS
+- `php -l tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> PASS
+
+PHPUnit/artisan proof not executed in this environment because uploaded ZIP does not contain `vendor/`.
+
+### Result
+- Finalize rerun is now idempotent for all completed terminal outcomes, including `HELD + RUN_LOCK_CONFLICT`.
+- A late operator `forceReplace=true` cannot mutate a terminal held lock-conflict run.
+- Pointer/current publication state remains protected by existing invariant guards and repository validation.
+- Existing locked contracts are not changed.
+
+### Contract Impact
+No locked contract definition changed. This session tightens enforcement of the existing deterministic lock and pointer contract: once finalize is terminal and completed, rerun returns the persisted outcome and performs no promotion, pointer switch, fallback restore, or duplicate event append.
+
+### Remaining Gap
+Manual local regression proof is still required:
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "finalize|lock|pointer"`
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "finalize|promote|lock|pointer"`
+- `vendor/bin/phpunit tests/Unit/MarketData`
+
+Status remains PARTIAL until local vendor-backed PHPUnit/artisan evidence is provided.
+
+## 2026-04-28 — FINALIZE / LOCK / POINTER DETERMINISM FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+Final local runtime validation for Finalize / Lock / Pointer Determinism after the idempotency and terminal lock-conflict rerun patch. Scope is proof-only after the code patch; no locked coverage, publishability, fallback, pointer, schema, read-side, force replace, or correction lifecycle contract definition was changed by this audit update.
+
+### Changes
+- Closed the previous local PHPUnit proof gap for Finalize / Lock / Pointer Determinism.
+- Upgraded Finalize / Lock / Pointer Determinism from PARTIAL to DONE based on operator-provided local PHPUnit evidence.
+- Confirmed terminal finalize reruns return persisted state and do not trigger new promotion, pointer switch, fallback restore, or duplicate finalize event writes.
+- Confirmed the terminal `HELD + RUN_LOCK_CONFLICT` rerun path remains immutable even when a later rerun supplies force replace input.
+
+### Test Proof
+Operator-provided local validation after applying the finalize / lock / pointer determinism patch:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "finalize"` -> OK (`4 tests`, `44 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "lock"` -> OK (`2 tests`, `22 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "pointer"` -> OK (`17 tests`, `353 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> OK (`22 tests`, `101 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "finalize"` -> OK (`1 test`, `8 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "promote"` -> OK (`5 tests`, `21 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "lock"` -> No tests executed.
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "pointer"` -> No tests executed.
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (`237 tests`, `2286 assertions`).
+
+### Result
+Finalize / Lock / Pointer Determinism is DONE and locally regression-proven. The enforced behavior is now:
+
+- completed terminal finalize rerun returns persisted state only.
+- rerun finalize does not create another publication for the same terminal run.
+- rerun finalize does not append duplicate finalize/force-replace events.
+- late force replace input cannot mutate a terminal lock-conflict outcome.
+- pointer/current publication validity remains constrained to `SUCCESS + READABLE + coverage PASS + SEALED` targets through existing invariant and repository guards.
+- lock-conflict handling remains deterministic and does not corrupt current publication state.
+
+### Contract Impact
+No existing LOCKED contract definition was rewritten. This validation confirms the existing deterministic finalize / lock / pointer contract is enforced at the terminal rerun boundary.
+
+### Remaining Gap
+None for Finalize / Lock / Pointer Determinism.
