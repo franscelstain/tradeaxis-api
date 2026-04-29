@@ -1,6 +1,7 @@
 # LUMEN_CONTRACT_TRACKER
 
 ## FINAL SYSTEM STATUS (LATEST)
+- Correction Lifecycle Safety -> PARTIAL (CODE PATCHED + STATIC PHP-L PASSED + MANUAL PHPUNIT PENDING: vendor/ missing)
 - Finalize / Lock / Pointer Determinism -> DONE (IDEMPOTENCY GUARD PATCHED + LOCK-CONFLICT FORCE-RERUN MUTATION BLOCKED + LOCAL FULL REGRESSION PROVEN: 237 TESTS / 2286 ASSERTIONS)
 - System Invariant Lock / Anti Future Regression -> DONE (GUARD PATCHED + POSITIONING FIX APPLIED + LOCAL PIPELINE REGRESSION PROVEN: 236 TESTS / 2277 ASSERTIONS)
 - Publishability vs Coverage vs Fallback Cross-Consistency -> DONE (POLICY LOCKED + FULL ENFORCEMENT + TEST FIXTURES REALIGNED + LOCAL FULL REGRESSION PROVEN: 231 TESTS / 2269 ASSERTIONS)
@@ -1958,3 +1959,53 @@ No contract definition changed. This session closes the enforcement gap for the 
 
 ### Remaining Gap
 None for this contract area.
+
+## 2026-04-28 — CORRECTION LIFECYCLE SAFETY POLICY LOCK & EXECUTION SESSION
+
+Status: PARTIAL
+
+### Scope
+Contract enforcement for correction baseline immutability, pointer switch safety, unchanged artifact guard, reseal safety, correction-run-publication linkage, and deterministic no-op correction handling.
+
+### Changes
+- Correction no-op is now detected by hash equality before seal and recorded as `CORRECTION_SKIPPED`.
+- No-op correction preserves existing current publication and finalizes as consumed/cancelled without version switch.
+- Pointer mutation through `promoteCandidateToCurrent()` now requires `MarketDataInvariantGuard::assertValidPointerTarget()` against the actual run row.
+- Finalize prepares the run state as SUCCESS/READABLE/PASS before pointer mutation, preventing pointer update to a not-yet-readable run.
+
+### Test Proof
+Static validation completed by `php -l` for the patched pipeline/repository and related invariant/finalize services. Full PHPUnit is pending because dependencies are not present in the uploaded ZIP.
+
+### Result
+Contract implementation is patched and statically valid. Runtime contract proof remains pending local PHPUnit/artisan execution.
+
+### Contract Impact
+- Baseline immutability: strengthened.
+- Pointer safety: strengthened.
+- Unchanged artifact guard: strengthened.
+- Reseal safety: strengthened for no-op correction.
+- Linkage traceability: preserved through correction_id, prior publication/run, preserved publication, and event payloads.
+
+### Remaining Gap
+Manual local tests must prove no regression, no duplicate publication/event, and deterministic rerun behavior before marking DONE.
+
+## 2026-04-28 — CORRECTION LIFECYCLE SAFETY LOCAL REGRESSION FIX
+
+Status: PARTIAL
+
+### Scope
+Follow-up enforcement fix for correction lifecycle safety after local regression evidence exposed unsafe provisional finalize mutation and incorrect no-op correction event semantics.
+
+### Evidence
+Operator-provided local test results before this fix showed failures in correction-focused tests and full market-data regression, while `PublicationRepositoryIntegrationTest.php` remained passing.
+
+### Enforcement Update
+- Pointer-switch preparation is now invariant-only and does not persist terminal state before promotion/conflict resolution.
+- Terminal run state is persisted only from resolved finalize outcome.
+- Unchanged correction preservation now emits `CORRECTION_CANCELLED`, matching the no-op correction contract and integration assertion.
+
+### Contract Impact
+This strengthens the correction contract: provisional pointer preflight cannot mutate run state, lock-conflict paths keep their resolved HELD behavior, and no-op correction is explicitly represented as cancelled/consumed-current rather than finalized publication replacement.
+
+### Remaining Gap
+Await local PHPUnit PASS evidence before upgrading Correction Lifecycle Safety to DONE.

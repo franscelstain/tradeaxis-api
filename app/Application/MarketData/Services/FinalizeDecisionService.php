@@ -14,27 +14,31 @@ class FinalizeDecisionService
         $availableEodCount = isset($coverageSummary['available_eod_count']) ? (int) $coverageSummary['available_eod_count'] : null;
         $edgeCaseReasonCode = isset($coverageSummary['edge_case_reason_code']) ? (string) $coverageSummary['edge_case_reason_code'] : null;
 
-        $qualityGateState = $this->mapCoverageGateStatusToQualityGateState($coverageGateStatus);
         $promoteMode = (string) ($promoteContext['promote_mode'] ?? 'full_publish');
         $publishTarget = (string) ($promoteContext['publish_target'] ?? 'current_replace');
         $sourceMode = (string) ($promoteContext['source_mode'] ?? '');
         $sourceFinalReasonCode = isset($promoteContext['source_final_reason_code'])
             ? (string) $promoteContext['source_final_reason_code']
             : null;
+
         $isManualFileSource = in_array($sourceMode, ['manual_file', 'manual_entry'], true);
-
-        /*
-         * CONTRACT: manual_file is an acquisition/source mode, not a coverage bypass.
-         * Partial manual files remain blocked by the same coverage gate used for API
-         * publications. The safe outcome is HYBRID fail-safe: keep/fall back to the
-         * existing readable current publication when one exists.
-         */
         $manualFilePolicy = $isManualFileSource ? 'COVERAGE_GATE_STRICT_HYBRID' : null;
-        $coverageOverrideAllowed = false;
 
-        $state = [
+        $isCorrection = ! empty($promoteContext['correction_id'])
+            || ! empty($promoteContext['is_correction'])
+            || $promoteMode === 'correction';
+
+        $isUnchangedCorrection = $isCorrection && (
+            ! empty($promoteContext['unchanged_artifacts'])
+            || ! empty($promoteContext['unchanged_dataset'])
+            || ! empty($promoteContext['is_unchanged'])
+            || ! empty($promoteContext['correction_unchanged'])
+            || (($promoteContext['correction_outcome'] ?? null) === 'UNCHANGED')
+        );
+
+        $baseState = [
             'coverage_gate_status' => $coverageGateStatus,
-            'quality_gate_state' => $qualityGateState,
+            'quality_gate_state' => $this->mapCoverageGateStatusToQualityGateState($coverageGateStatus),
             'terminal_status' => $fallbackTradeDate ? 'HELD' : 'FAILED',
             'publishability_state' => 'NOT_READABLE',
             'trade_date_effective' => $fallbackTradeDate,
@@ -43,7 +47,7 @@ class FinalizeDecisionService
             'promotion_allowed' => false,
             'source_mode' => $sourceMode !== '' ? $sourceMode : null,
             'manual_file_policy' => $manualFilePolicy,
-            'coverage_override_allowed' => $coverageOverrideAllowed,
+            'coverage_override_allowed' => false,
             'coverage_summary' => [
                 'coverage_gate_status' => $coverageGateStatus,
                 'coverage_ratio' => $coverageRatio !== null ? (float) $coverageRatio : null,
@@ -55,7 +59,27 @@ class FinalizeDecisionService
             ],
         ];
 
+        /*
+        * Correction no-op is a completed safe lifecycle outcome.
+        * It must not request promotion, reseal, or create a new publication.
+        * The existing current readable publication remains authoritative.
+        */
+        if ($isUnchangedCorrection && $coverageGateStatus === 'PASS') {
+            $state = $baseState;
+            $state['quality_gate_state'] = 'PASS';
+            $state['terminal_status'] = 'SUCCESS';
+            $state['publishability_state'] = 'READABLE';
+            $state['trade_date_effective'] = null;
+            $state['reason_code'] = null;
+            $state['message'] = 'Correction cancelled because submitted artifacts are unchanged; current readable publication remains authoritative.';
+            $state['promotion_allowed'] = false;
+            $state['correction_outcome'] = 'CORRECTION_CANCELLED';
+
+            return $this->enforceStateMatrix($state);
+        }
+
         if (! $cutoffSatisfied) {
+            $state = $baseState;
             $state['quality_gate_state'] = 'BLOCKED';
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
             $state['reason_code'] = $this->resolveOperationalBlockReasonCode(
@@ -63,10 +87,13 @@ class FinalizeDecisionService
                 'RUN_FINALIZE_BEFORE_CUTOFF'
             );
             $state['message'] = 'Finalize blocked because cutoff policy is not yet satisfied.';
+
             return $this->enforceStateMatrix($state);
         }
 
         if ($publishTarget !== 'current_replace') {
+            $state = $baseState;
+
             if ($promoteMode === 'repair_candidate') {
                 $state['quality_gate_state'] = $coverageGateStatus === 'PASS' ? 'PASS' : ($coverageGateStatus === 'FAIL' ? 'FAIL' : 'BLOCKED');
                 $state['terminal_status'] = 'SUCCESS';
@@ -74,6 +101,7 @@ class FinalizeDecisionService
                 $state['trade_date_effective'] = $fallbackTradeDate;
                 $state['reason_code'] = 'RUN_REPAIR_CANDIDATE_PARTIAL';
                 $state['message'] = 'Repair candidate finalized as non-current partial dataset; current readable publication remains authoritative.';
+
                 return $this->enforceStateMatrix($state);
             }
 
@@ -82,6 +110,7 @@ class FinalizeDecisionService
                 $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
                 $state['reason_code'] = 'RUN_SEAL_PRECONDITION_FAILED';
                 $state['message'] = 'Finalize blocked because sealed publication state is missing.';
+
                 return $this->enforceStateMatrix($state);
             }
 
@@ -94,16 +123,23 @@ class FinalizeDecisionService
                 'Promote mode %s sealed a non-current publication candidate; current readable publication remains authoritative.',
                 $promoteMode
             );
+
             return $this->enforceStateMatrix($state);
         }
 
         if ($coverageGateStatus === 'FAIL') {
+            $state = $baseState;
             $state['quality_gate_state'] = 'FAIL';
-            $state['reason_code'] = $this->resolveCoverageFailReasonCode($availableEodCount, $expectedUniverseCount, $edgeCaseReasonCode);
+            $state['reason_code'] = $this->resolveCoverageFailReasonCode(
+                $availableEodCount,
+                $expectedUniverseCount,
+                $edgeCaseReasonCode
+            );
 
             if ($edgeCaseReasonCode === 'RUN_DATA_DELAYED') {
                 $state['terminal_status'] = 'HELD';
                 $state['message'] = 'Finalize held because coverage gate failed while delayed data is still inside the controlled delay window.';
+
                 return $this->enforceStateMatrix($state);
             }
 
@@ -111,10 +147,12 @@ class FinalizeDecisionService
             $state['message'] = $fallbackTradeDate
                 ? 'Finalize held because coverage gate failed and fallback readable publication remains available.'
                 : 'Finalize failed because coverage gate failed and no readable fallback publication exists.';
+
             return $this->enforceStateMatrix($state);
         }
 
         if ($coverageGateStatus === 'NOT_EVALUABLE' || $coverageGateStatus === 'BLOCKED') {
+            $state = $baseState;
             $state['quality_gate_state'] = 'BLOCKED';
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
             $state['reason_code'] = $this->resolveNotEvaluableReasonCode($sourceFinalReasonCode);
@@ -125,26 +163,34 @@ class FinalizeDecisionService
             return $this->enforceStateMatrix($state);
         }
 
-        if (! $runSealed || $candidateSealState !== 'SEALED') {
-            $state['quality_gate_state'] = 'BLOCKED';
-            $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
-            $state['reason_code'] = 'RUN_SEAL_PRECONDITION_FAILED';
-            $state['message'] = 'Finalize blocked because sealed publication state is missing.';
-            return $this->enforceStateMatrix($state);
-        }
-
         if ($coverageGateStatus === 'PASS') {
+            if (! $runSealed || $candidateSealState !== 'SEALED') {
+                $state = $baseState;
+                $state['quality_gate_state'] = 'BLOCKED';
+                $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
+                $state['reason_code'] = 'RUN_SEAL_PRECONDITION_FAILED';
+                $state['message'] = 'Finalize blocked because sealed publication state is missing.';
+
+                return $this->enforceStateMatrix($state);
+            }
+
+            $state = $baseState;
             $state['quality_gate_state'] = 'PASS';
             $state['terminal_status'] = 'SUCCESS';
             $state['publishability_state'] = 'READABLE';
             $state['trade_date_effective'] = null;
             $state['reason_code'] = null;
-            $state['message'] = 'Finalize may promote candidate publication to current once pointer sync succeeds.';
+            $state['message'] = 'Finalize completed with readable sealed publication; candidate may be promoted after pointer invariant validation.';
             $state['promotion_allowed'] = true;
+
+            if ($isCorrection) {
+                $state['correction_outcome'] = 'CORRECTION_PUBLISHED';
+            }
+
             return $this->enforceStateMatrix($state);
         }
 
-        return $this->enforceStateMatrix($state);
+        return $this->enforceStateMatrix($baseState);
     }
 
     private function enforceStateMatrix(array $state): array

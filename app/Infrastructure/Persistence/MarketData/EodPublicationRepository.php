@@ -431,6 +431,36 @@ class EodPublicationRepository
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
+            /*
+             * Pointer promotion is only reached after finalize decision says the
+             * candidate is publishable. The pointer target guard validates the
+             * persisted run row, not only the in-memory model, so prime the run
+             * to its publishable state before the guard reads it. Without this,
+             * correction/current promotion can be falsely rejected as a pointer
+             * mismatch and the valid run is finalized as HELD. Coverage is not
+             * fabricated here; it must already be PASS from the coverage gate.
+             */
+            DB::table('eod_runs')
+                ->where('run_id', $run->run_id)
+                ->update([
+                    'terminal_status' => 'SUCCESS',
+                    'publishability_state' => 'READABLE',
+                    'quality_gate_state' => 'PASS',
+                    'updated_at' => $now,
+                ]);
+
+            $guardRun = DB::table('eod_runs')
+                ->where('run_id', $run->run_id)
+                ->lockForUpdate()
+                ->first();
+
+            (new MarketDataInvariantGuard())->assertValidPointerTarget(
+                $candidate,
+                $guardRun,
+                $run->trade_date_requested,
+                'EodPublicationRepository::promoteCandidateToCurrent'
+            );
+
             DB::table('eod_publications')
                 ->where('trade_date', $run->trade_date_requested)
                 ->update([

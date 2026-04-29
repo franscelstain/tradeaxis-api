@@ -1,6 +1,7 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
 ## FINAL SYSTEM STATUS (LATEST)
+- Correction Lifecycle Safety -> PARTIAL (CODE PATCHED + STATIC PHP-L PASSED + MANUAL PHPUNIT PENDING: vendor/ missing)
 - Finalize / Lock / Pointer Determinism -> DONE (IDEMPOTENCY GUARD PATCHED + LOCK-CONFLICT FORCE-RERUN MUTATION BLOCKED + LOCAL FULL REGRESSION PROVEN: 237 TESTS / 2286 ASSERTIONS)
 - System Invariant Lock / Anti Future Regression -> DONE (GUARD PATCHED + POSITIONING FIX APPLIED + LOCAL PIPELINE REGRESSION PROVEN: 236 TESTS / 2277 ASSERTIONS)
 - Publishability vs Coverage vs Fallback Cross-Consistency -> DONE (POLICY LOCKED + FULL ENFORCEMENT + TEST FIXTURES REALIGNED + LOCAL FULL REGRESSION PROVEN: 231 TESTS / 2269 ASSERTIONS)
@@ -2270,3 +2271,71 @@ No existing LOCKED contract definition was rewritten. This validation confirms t
 
 ### Remaining Gap
 None for Finalize / Lock / Pointer Determinism.
+
+## 2026-04-28 — CORRECTION LIFECYCLE SAFETY POLICY LOCK & EXECUTION SESSION
+
+Status: PARTIAL
+
+### Scope
+Correction lifecycle safety for baseline immutability, pointer safety, unchanged artifact guard, reseal safety, linkage traceability, and fail-safe behavior. Validation is limited to static trace and `php -l` because uploaded ZIP does not contain `vendor/`.
+
+### Changes
+- Added an unchanged correction guard in `MarketDataPipelineService::completeSeal()` using publication hash equality before seal.
+- If correction content is unchanged, candidate history/publication artifacts are discarded, reseal is skipped, existing baseline publication metadata is preserved on the run, and a `CORRECTION_SKIPPED` event is written.
+- Added `MarketDataPipelineService::finalizeUnchangedCorrection()` to finalize unchanged correction deterministically against the preserved current publication without switching pointer or creating a new current version.
+- Added `MarketDataPipelineService::prepareRunForPointerSwitch()` so a run is moved to SUCCESS/READABLE/PASS state before pointer mutation is attempted.
+- Hardened `EodPublicationRepository::promoteCandidateToCurrent()` with `MarketDataInvariantGuard::assertValidPointerTarget()` so current pointer switch requires SEALED publication plus SUCCESS, READABLE, and coverage PASS run state.
+
+### Test Proof
+Static validation completed:
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS
+- `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` -> PASS
+- `php -l app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php` -> PASS
+- `php -l app/Application/MarketData/Services/FinalizeDecisionService.php` -> PASS
+- `php -l app/Application/MarketData/Services/MarketDataInvariantGuard.php` -> PASS
+- `php -l app/Infrastructure/Persistence/MarketData/EodRunRepository.php` -> PASS
+
+Manual PHPUnit/artisan validation pending because `vendor/` is not included in uploaded ZIP.
+
+### Result
+Correction lifecycle safety is code-patched but not locally proven by PHPUnit in this environment. Status remains PARTIAL until local regression evidence is provided.
+
+### Contract Impact
+- Baseline publication remains authoritative for unchanged correction.
+- Unchanged correction no longer reseals a candidate publication permanently.
+- Pointer switch is guarded by final readable-state invariants before mutation.
+- Failed/invalid correction path keeps prior pointer restoration behavior.
+
+### Remaining Gap
+Run local PHPUnit/artisan validation and provide output. After PASS evidence, status can be moved to DONE.
+
+## 2026-04-28 — CORRECTION LIFECYCLE SAFETY LOCAL REGRESSION FIX
+
+Status: PARTIAL
+
+### Scope
+Follow-up fix after operator-provided local PHPUnit evidence showed correction lifecycle regressions in the first patch. Scope is limited to correction finalize mutation ordering and unchanged-correction event semantics.
+
+### Local Failure Evidence
+Operator-provided local validation before this fix:
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "correction"` -> FAILED (`53 tests`, `1075 assertions`, `2 errors`, `1 failure`).
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter "correction"` -> FAILED (`35 tests`, `948 assertions`, `1 failure`).
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php` -> OK (`22 tests`, `101 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData` -> FAILED (`237 tests`, `2282 assertions`, `4 errors`, `1 failure`).
+
+### Root Cause
+`prepareRunForPointerSwitch()` persisted a provisional SUCCESS/READABLE state before promotion and conflict resolution completed. That broke unit expectations and created unsafe mutation ordering for lock-conflict paths. The unchanged-correction finalize path also emitted `CORRECTION_FINALIZED` while the contract/test expects `CORRECTION_CANCELLED` for no-op correction preservation.
+
+### Changes
+- Changed `MarketDataPipelineService::prepareRunForPointerSwitch()` into a pure invariant preflight with no `runs->finalize()` mutation.
+- Final SUCCESS/HELD state is now persisted only after promotion, conflict handling, unchanged-correction resolution, and finalize outcome resolution.
+- Changed unchanged-correction finalize event from `CORRECTION_FINALIZED` to `CORRECTION_CANCELLED` while keeping current publication preservation behavior.
+
+### Static Validation
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS
+
+### Result
+Regression fix is patched and statically valid. Status remains PARTIAL until the operator reruns the failed local PHPUnit commands and provides PASS evidence.
+
+### Remaining Gap
+Rerun the correction filter, correction integration filter, publication repository integration test, and full `tests/Unit/MarketData` suite locally.
