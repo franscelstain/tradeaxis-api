@@ -576,6 +576,18 @@ class MarketDataPipelineService
                     ]
                 );
 
+                if (
+                    strtoupper((string) ($run->coverage_gate_state ?? '')) === 'PASS'
+                    && $cutoffSatisfied
+                    && ($preDecision['promotion_allowed'] ?? false)
+                ) {
+                    $preDecision['terminal_status'] = 'SUCCESS';
+                    $preDecision['publishability_state'] = 'READABLE';
+                    $preDecision['quality_gate_state'] = 'PASS';
+                    $preDecision['trade_date_effective'] = $input->requestedDate;
+                    $preDecision['message'] = $preDecision['message'] ?? 'Finalize accepted after coverage gate PASS.';
+                }
+
                 if ($preDecision['promotion_allowed']) {
                     $run = $this->prepareRunForPointerSwitch($run, $preDecision);
 
@@ -686,11 +698,29 @@ class MarketDataPipelineService
                         return $run;
                     } else {
                         try {
+                            if ($correction) {
+                                try {
+                                    $this->artifacts->promotePublicationHistoryToCurrent(
+                                        $input->requestedDate,
+                                        $candidatePublication->publication_id,
+                                        $run->run_id
+                                    );
+                                } catch (\Throwable $e) {
+                                    throw new \RuntimeException(
+                                        'History promotion to current tables failed during correction finalize.'
+                                    );
+                                }
+                            }
+
                             $promotedCurrent = $this->publications->promoteCandidateToCurrent(
                                 $run,
                                 $priorCurrent ? $priorCurrent->publication_id : null,
                                 (bool) $input->forceReplace
                             );
+
+                            if (! $promotedCurrent) {
+                                throw new \RuntimeException('Current publication promotion returned no publication.');
+                            }
 
                             if ($input->forceReplace) {
                                 $previousPublicationId = $priorCurrent
@@ -720,23 +750,7 @@ class MarketDataPipelineService
 
                             $candidateCurrent = $promotedCurrent;
 
-                            if (! $candidateCurrent) {
-                                throw new \RuntimeException('Current publication promotion returned no publication.');
-                            }
-
                             if ($correction) {
-                                try {
-                                    $this->artifacts->promotePublicationHistoryToCurrent(
-                                        $input->requestedDate,
-                                        $candidatePublication->publication_id,
-                                        $run->run_id
-                                    );
-                                } catch (\Throwable $e) {
-                                    throw new \RuntimeException(
-                                        'History promotion to current tables failed during correction finalize.'
-                                    );
-                                }
-
                                 $candidateCurrent = (object) [
                                     'publication_id' => (int) $candidatePublication->publication_id,
                                     'publication_version' => (int) $candidatePublication->publication_version,
@@ -775,27 +789,49 @@ class MarketDataPipelineService
                                 throw new \RuntimeException('Current publication trade date mismatch after finalize.');
                             }
                         } catch (\Throwable $e) {
-                            if ($correction && $priorCurrent) {
-                                $this->publications->restorePriorCurrentPublication(
-                                    $input->requestedDate,
-                                    (int) $priorCurrent->publication_id,
-                                    (int) $priorCurrent->run_id
-                                );
-
-                                $this->runs->syncCurrentPublicationMirror(
-                                    $input->requestedDate,
-                                    (int) $priorCurrent->run_id
-                                );
-                            }
-
                             $message = $e->getMessage();
+                            $isPointerIntegrityError = strpos($message, 'invalid current pointer state after switch') !== false
+                                || strpos($message, 'current pointer did not resolve to a readable publication after switch') !== false
+                                || strpos($message, 'Current publication pointer resolution mismatch after finalize') !== false
+                                || strpos($message, 'Current publication version mismatch after finalize') !== false
+                                || strpos($message, 'Current publication run mismatch after finalize') !== false
+                                || strpos($message, 'Current publication trade date mismatch after finalize') !== false
+                                || strpos($message, 'Current publication integrity violation') !== false
+                                || strpos($message, 'Promotion lost run ownership') !== false
+                                || strpos($message, 'pointer target requires run terminal_status SUCCESS') !== false
+                                || strpos($message, 'Current publication promotion returned no publication') !== false;
 
-                            if (strpos($message, 'pointer target requires run terminal_status SUCCESS') !== false) {
-                                $message = 'Current publication pointer resolution mismatch after finalize.';
+                            if ($correction && $priorCurrent) {
+                                try {
+                                    $this->publications->restorePriorCurrentPublication(
+                                        $input->requestedDate,
+                                        (int) $priorCurrent->publication_id,
+                                        (int) $priorCurrent->run_id
+                                    );
+
+                                    $this->runs->syncCurrentPublicationMirror(
+                                        $input->requestedDate,
+                                        (int) $priorCurrent->run_id
+                                    );
+                                } catch (\Throwable $restoreException) {
+                                    // Preserve prior current ownership for correction recovery.
+                                    // A failed restore attempt must not clear the existing baseline pointer.
+                                }
+                            } elseif ($isPointerIntegrityError) {
+                                $this->publications->clearCurrentPublicationState($input->requestedDate);
                             }
 
-                            $promotionError = $message;
-                            $candidateCurrent = $priorCurrent ?: null;
+                            if ($isPointerIntegrityError) {
+                                $postFinalizeMismatchNote = strpos($message, 'Promotion lost run ownership') !== false
+                                    ? $message
+                                    : 'Current publication pointer resolution mismatch after finalize.';
+
+                                $promotionError = null;
+                                $candidateCurrent = $priorCurrent ?: null;
+                            } else {
+                                $promotionError = $message;
+                                $candidateCurrent = $priorCurrent ?: null;
+                            }
                         }
                     }
                 }
@@ -824,6 +860,26 @@ class MarketDataPipelineService
                     'promotion_error' => $promotionError,
                 ]);
 
+                if ($postFinalizeMismatchNote !== null) {
+                    $isPromotionLostOwnership = strpos($postFinalizeMismatchNote, 'Promotion lost run ownership') !== false;
+
+                    $outcome['terminal_status'] = 'HELD';
+                    $outcome['publishability_state'] = 'NOT_READABLE';
+
+                    if ($isPromotionLostOwnership) {
+                        $outcome['trade_date_effective'] = ! empty($run->trade_date_effective)
+                            ? $run->trade_date_effective
+                            : null;
+                    } elseif (empty($outcome['trade_date_effective'])) {
+                        $outcome['trade_date_effective'] = $input->requestedDate;
+                    }
+
+                    $outcome['quality_gate_state'] = $outcome['quality_gate_state'] ?? 'PASS';
+                    $outcome['current_publication_id'] = $priorCurrent ? (int) $priorCurrent->publication_id : null;
+                    $outcome['current_publication_version'] = $priorCurrent ? (int) $priorCurrent->publication_version : null;
+                    $outcome['message'] = $postFinalizeMismatchNote;
+                }
+
                 (new MarketDataInvariantGuard())->assertNoBypassState($outcome, 'MarketDataPipelineService::finalize outcome');
 
                 $finalizeReasonCode = $this->resolveFinalizeReasonCode(
@@ -832,6 +888,14 @@ class MarketDataPipelineService
                     $promotionError,
                     $postFinalizeMismatchNote
                 );
+
+                if (
+                    $postFinalizeMismatchNote !== null
+                    && strpos($postFinalizeMismatchNote, 'Promotion lost run ownership') === false
+                    && empty($outcome['trade_date_effective'])
+                ) {
+                    $outcome['trade_date_effective'] = $input->requestedDate;
+                }
 
                 $run = $this->finalizeRunState($run, [
                     'trade_date_effective' => $outcome['trade_date_effective'],
@@ -891,35 +955,44 @@ class MarketDataPipelineService
                     }
 
                     if ($strictMismatch) {
-                        $postFinalizeMismatchNote = 'Current publication pointer resolution mismatch after finalize.';
+                        if ($postFinalizeMismatchNote === null) {
+                            $postFinalizeMismatchNote = 'Current publication pointer resolution mismatch after finalize.';
+                        }
+
                         $finalizeReasonCode = 'RUN_LOCK_CONFLICT';
 
                         if ($priorCurrent) {
-                            $this->publications->restorePriorCurrentPublication(
-                                $input->requestedDate,
-                                (int) $priorCurrent->publication_id,
-                                (int) $priorCurrent->run_id
-                            );
+                            try {
+                                $this->publications->restorePriorCurrentPublication(
+                                    $input->requestedDate,
+                                    (int) $priorCurrent->publication_id,
+                                    (int) $priorCurrent->run_id
+                                );
 
-                            $this->runs->syncCurrentPublicationMirror(
-                                $input->requestedDate,
-                                (int) $priorCurrent->run_id
-                            );
+                                $this->runs->syncCurrentPublicationMirror(
+                                    $input->requestedDate,
+                                    (int) $priorCurrent->run_id
+                                );
+                            } catch (\Throwable $restoreException) {
+                                // Preserve prior current ownership for correction recovery.
+                            }
                         } else {
                             $this->publications->clearCurrentPublicationState($input->requestedDate);
                         }
 
-                        $run = $this->finalizeRunState($run, [
-                            'trade_date_effective' => $fallback ? $fallback->readable_trade_date : null,
-                            'quality_gate_state' => $outcome['quality_gate_state'],
-                            'publishability_state' => 'NOT_READABLE',
-                            'terminal_status' => 'HELD',
-                            'lifecycle_state' => 'COMPLETED',
-                        ]);
+                        if ($run->terminal_status === 'SUCCESS') {
+                            $run = $this->finalizeRunState($run, [
+                                'trade_date_effective' => null,
+                                'quality_gate_state' => $outcome['quality_gate_state'],
+                                'publishability_state' => 'NOT_READABLE',
+                                'terminal_status' => 'HELD',
+                                'lifecycle_state' => 'COMPLETED',
+                            ]);
+                        }
 
                         $run = $this->safeUpdateTelemetry($run, [
-                            'publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : (int) $candidatePublication->publication_id,
-                            'publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : (int) $candidatePublication->publication_version,
+                            'publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                            'publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : null,
                             'correction_id' => $correction ? (int) $correction->correction_id : $run->correction_id,
                             'final_reason_code' => $finalizeReasonCode,
                         ]);
@@ -1049,7 +1122,10 @@ class MarketDataPipelineService
                 }
 
                 if (! $unchangedCorrection) {
-                    $manifest = $resolvedPublicationId
+                    $skipManifestBuild = $postFinalizeMismatchNote !== null
+                        && strpos($postFinalizeMismatchNote, 'Promotion lost run ownership') !== false;
+
+                    $manifest = (! $skipManifestBuild && $resolvedPublicationId)
                         ? $this->publications->buildManifestByPublicationId($resolvedPublicationId)
                         : null;
                 }
@@ -1084,9 +1160,15 @@ class MarketDataPipelineService
                         'coverage_contract_version' => $run->coverage_contract_version,
                         'quality_gate_state' => $run->quality_gate_state,
                         'requested_date' => $input->requestedDate,
-                        'trade_date_effective' => $run->trade_date_effective,
-                        'current_publication_id' => $resolvedPublicationId,
-                        'current_publication_version' => $resolvedPublicationVersion,
+                        'trade_date_effective' => $outcome['trade_date_effective'],
+                        'current_publication_id' => (
+                            $postFinalizeMismatchNote !== null
+                            && strpos($postFinalizeMismatchNote, 'Promotion lost run ownership') !== false
+                        ) ? null : $resolvedPublicationId,
+                        'current_publication_version' => (
+                            $postFinalizeMismatchNote !== null
+                            && strpos($postFinalizeMismatchNote, 'Promotion lost run ownership') !== false
+                        ) ? null : $resolvedPublicationVersion,
                         'fallback_publication_id' => $fallback ? (int) $fallback->publication_id : null,
                         'fallback_trade_date' => $fallback ? $fallback->readable_trade_date : null,
                         'correction_id' => $correction ? (int) $correction->correction_id : null,
@@ -1094,8 +1176,8 @@ class MarketDataPipelineService
                         'publish_target' => $run->publish_target,
                         'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
                         'manifest' => $manifest ? (array) $manifest : null,
-                        'correction_outcome' => $outcome['correction_outcome'],
-                        'correction_outcome_note' => $outcome['correction_outcome_note'],
+                        'correction_outcome' => $outcome['correction_outcome'] ?? null,
+                        'correction_outcome_note' => $outcome['correction_outcome_note'] ?? null,
                     ]
                 );
 
@@ -1346,9 +1428,23 @@ class MarketDataPipelineService
         if (
             (string) ($run->stage ?? '') === 'FINALIZE'
             && (string) ($run->lifecycle_state ?? '') === 'COMPLETED'
-            && in_array((string) ($run->terminal_status ?? ''), ['SUCCESS', 'HELD', 'FAILED'], true)
         ) {
-            return $run;
+            $terminalStatus = (string) ($run->terminal_status ?? '');
+
+            if (
+                $terminalStatus === 'SUCCESS'
+                && ! empty($run->publication_id)
+                && ! empty($run->publication_version)
+            ) {
+                return $run;
+            }
+
+            if (
+                in_array($terminalStatus, ['HELD', 'FAILED'], true)
+                && (string) ($run->final_reason_code ?? '') !== ''
+            ) {
+                return $run;
+            }
         }
 
         return null;

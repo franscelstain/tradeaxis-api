@@ -13,9 +13,24 @@ class EodEvidenceRepository
 
     public function findPublicationForRun($runId)
     {
-        return DB::table('eod_publications')
-            ->where('run_id', $runId)
-            ->orderByDesc('publication_id')
+        return DB::table('eod_current_publication_pointer as ptr')
+            ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
+            ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
+            ->where('run.run_id', $runId)
+            ->whereColumn('pub.trade_date', 'ptr.trade_date')
+            ->whereColumn('ptr.run_id', 'pub.run_id')
+            ->whereColumn('ptr.publication_version', 'pub.publication_version')
+            ->where('pub.is_current', 1)
+            ->where('pub.seal_state', 'SEALED')
+            ->whereNotNull('ptr.sealed_at')
+            ->whereNotNull('pub.sealed_at')
+            ->whereNotNull('run.sealed_at')
+            ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
+            ->where('run.terminal_status', 'SUCCESS')
+            ->where('run.publishability_state', 'READABLE')
+            ->where('run.coverage_gate_state', 'PASS')
+            ->where('run.is_current_publication', 1)
+            ->select('pub.*')
             ->first();
     }
 
@@ -240,12 +255,14 @@ class EodEvidenceRepository
 
     public function findReplayMetric($replayId, $tradeDate = null)
     {
-        $query = DB::table('md_replay_daily_metrics')->where('replay_id', $replayId);
-        if ($tradeDate !== null) {
-            return $query->where('trade_date', $tradeDate)->first();
+        if ($tradeDate === null || $tradeDate === '') {
+            throw new \RuntimeException('Replay metric lookup requires explicit trade_date; latest-row resolution is not allowed.');
         }
 
-        return $query->orderByDesc('trade_date')->first();
+        return DB::table('md_replay_daily_metrics')
+            ->where('replay_id', $replayId)
+            ->where('trade_date', $tradeDate)
+            ->first();
     }
 
     public function replayReasonCodeCounts($replayId, $tradeDate)

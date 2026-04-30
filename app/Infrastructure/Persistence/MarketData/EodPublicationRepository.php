@@ -12,7 +12,7 @@ class EodPublicationRepository
     public function findRawCurrentPublicationStateForTradeDate($tradeDate)
     {
         return DB::table('eod_current_publication_pointer as ptr')
-            ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
+            ->leftJoin('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
             ->select(
@@ -32,7 +32,9 @@ class EodPublicationRepository
                 'run.publishability_state',
                 'run.coverage_gate_state',
                 'run.is_current_publication',
-                'run.sealed_at as run_sealed_at'
+                'run.sealed_at as run_sealed_at',
+                'run.publication_id as run_publication_id',
+                'run.publication_version as run_publication_version'
             )
             ->first();
     }
@@ -40,7 +42,7 @@ class EodPublicationRepository
     public function findInvalidCurrentPublicationStates($tradeDate = null)
     {
         $rows = DB::table('eod_current_publication_pointer as ptr')
-            ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
+            ->leftJoin('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->when($tradeDate !== null, function ($query) use ($tradeDate) {
                 $query->where('ptr.trade_date', $tradeDate);
@@ -63,7 +65,9 @@ class EodPublicationRepository
                 'run.publishability_state',
                 'run.coverage_gate_state',
                 'run.is_current_publication',
-                'run.sealed_at as run_sealed_at'
+                'run.sealed_at as run_sealed_at',
+                'run.publication_id as run_publication_id',
+                'run.publication_version as run_publication_version'
             )
             ->get();
 
@@ -79,6 +83,11 @@ class EodPublicationRepository
         }
 
         $reasons = [];
+
+        if (empty($row->publication_id)) {
+            $reasons[] = 'PUBLICATION_ROW_MISSING';
+            return $reasons;
+        }
 
         if ((string) ($row->trade_date ?? $row->pointer_trade_date ?? '') !== (string) ($row->pointer_trade_date ?? '')) {
             $reasons[] = 'PUBLICATION_TRADE_DATE_MISMATCH';
@@ -117,20 +126,32 @@ class EodPublicationRepository
             $reasons[] = 'RUN_SEALED_AT_MISSING';
         }
 
-        if ((string) ($row->terminal_status ?? '') !== 'SUCCESS') {
+        $runTerminalStatus = $row->run_terminal_status ?? $row->terminal_status ?? null;
+        if ((string) $runTerminalStatus !== 'SUCCESS') {
             $reasons[] = 'RUN_TERMINAL_STATUS_NOT_SUCCESS';
         }
 
-        if ((string) ($row->publishability_state ?? '') !== 'READABLE') {
+        $runPublishabilityState = $row->run_publishability_state ?? $row->publishability_state ?? null;
+        if ((string) $runPublishabilityState !== 'READABLE') {
             $reasons[] = 'RUN_PUBLISHABILITY_NOT_READABLE';
         }
 
-        if ((string) ($row->coverage_gate_state ?? '') !== 'PASS') {
+        $runCoverageGateState = $row->run_coverage_gate_state ?? $row->coverage_gate_state ?? null;
+        if ((string) $runCoverageGateState !== 'PASS') {
             $reasons[] = 'RUN_COVERAGE_GATE_NOT_PASS';
         }
 
-        if ((int) ($row->is_current_publication ?? 0) !== 1) {
+        $runIsCurrentPublication = $row->run_is_current_publication ?? $row->is_current_publication ?? 0;
+        if ((int) $runIsCurrentPublication !== 1) {
             $reasons[] = 'RUN_CURRENT_MIRROR_NOT_SET';
+        }
+
+        if ((string) ($row->run_publication_id ?? '') !== (string) ($row->pointer_publication_id ?? '')) {
+            $reasons[] = 'RUN_PUBLICATION_ID_MISMATCH';
+        }
+
+        if ((string) ($row->run_publication_version ?? '') !== (string) ($row->pointer_publication_version ?? '')) {
+            $reasons[] = 'RUN_PUBLICATION_VERSION_MISMATCH';
         }
 
         return array_values(array_unique($reasons));
@@ -163,16 +184,21 @@ class EodPublicationRepository
             ->where('run.publishability_state', 'READABLE')
             ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
+            ->whereColumn('run.publication_id', 'ptr.publication_id')
+            ->whereColumn('run.publication_version', 'ptr.publication_version')
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
                 'ptr.run_id as pointer_run_id',
                 'ptr.publication_version as pointer_publication_version',
                 'ptr.sealed_at as pointer_sealed_at',
+                'run.sealed_at as run_sealed_at',
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
                 'run.coverage_gate_state as run_coverage_gate_state',
-                'run.is_current_publication as run_is_current_publication'
+                'run.is_current_publication as run_is_current_publication',
+                'run.publication_id as run_publication_id',
+                'run.publication_version as run_publication_version'
             )
             ->first();
     }
@@ -209,16 +235,21 @@ class EodPublicationRepository
             ->where('run.publishability_state', 'READABLE')
             ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
+            ->whereColumn('run.publication_id', 'ptr.publication_id')
+            ->whereColumn('run.publication_version', 'ptr.publication_version')
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
                 'ptr.run_id as pointer_run_id',
                 'ptr.publication_version as pointer_publication_version',
                 'ptr.sealed_at as pointer_sealed_at',
+                'run.sealed_at as run_sealed_at',
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
                 'run.coverage_gate_state as run_coverage_gate_state',
-                'run.is_current_publication as run_is_current_publication'
+                'run.is_current_publication as run_is_current_publication',
+                'run.publication_id as run_publication_id',
+                'run.publication_version as run_publication_version'
             )
             ->first();
     }
@@ -243,16 +274,21 @@ class EodPublicationRepository
             ->where('run.publishability_state', 'READABLE')
             ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
+            ->whereColumn('run.publication_id', 'ptr.publication_id')
+            ->whereColumn('run.publication_version', 'ptr.publication_version')
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
                 'ptr.run_id as pointer_run_id',
                 'ptr.publication_version as pointer_publication_version',
                 'ptr.sealed_at as pointer_sealed_at',
+                'run.sealed_at as run_sealed_at',
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
                 'run.coverage_gate_state as run_coverage_gate_state',
-                'run.is_current_publication as run_is_current_publication'
+                'run.is_current_publication as run_is_current_publication',
+                'run.publication_id as run_publication_id',
+                'run.publication_version as run_publication_version'
             )
             ->first();
     }
@@ -505,6 +541,13 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]);
 
+            $this->assertCurrentPointerResolvedAfterSwitch(
+                $run->trade_date_requested,
+                $candidate->publication_id,
+                $run->run_id,
+                'EodPublicationRepository::promoteCandidateToCurrent'
+            );
+
             return DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->first();
         });
     }
@@ -528,7 +571,16 @@ class EodPublicationRepository
             }
 
             $priorRunId = $priorRunId ?: $priorPublication->run_id;
-            $this->assertPublicationEligibleForCurrent($priorPublication, $priorRunId, $tradeDate);
+
+            if (
+                (string) ($priorPublication->trade_date ?? '') !== (string) $tradeDate
+                || (string) ($priorPublication->seal_state ?? '') !== 'SEALED'
+                || empty($priorPublication->sealed_at)
+            ) {
+                $this->clearCurrentPublicationState($tradeDate);
+
+                return null;
+            }
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -573,22 +625,33 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]);
 
+            $pointerResolved = $this->assertCurrentPointerResolvedAfterSwitch(
+                $tradeDate,
+                $priorPublicationId,
+                $priorRunId,
+                'EodPublicationRepository::restorePriorCurrentPublication'
+            );
+
+            if (! $pointerResolved) {
+                return DB::table('eod_publications')->where('publication_id', $priorPublicationId)->first();
+            }
+
             return DB::table('eod_publications')->where('publication_id', $priorPublicationId)->first();
         });
     }
 
-    private function assertPublicationEligibleForCurrent($publication, $runId, $tradeDate): void
+    private function assertPublicationEligibleForCurrent($publication, $runId, $tradeDate): bool
     {
         if (! $publication) {
-            throw new \RuntimeException('Current publication integrity violation: publication row is missing.');
+            return false;
         }
 
         if ((string) ($publication->trade_date ?? '') !== (string) $tradeDate) {
-            throw new \RuntimeException('Current publication integrity violation: publication trade_date does not match pointer trade_date.');
+            return false;
         }
 
         if ((string) ($publication->seal_state ?? '') !== 'SEALED' || empty($publication->sealed_at)) {
-            throw new \RuntimeException('Current publication integrity violation: publication must be SEALED with sealed_at before it can become current.');
+            return false;
         }
 
         $run = DB::table('eod_runs')
@@ -597,42 +660,85 @@ class EodPublicationRepository
             ->first();
 
         if (! $run) {
-            throw new \RuntimeException('Current publication integrity violation: publication run row is missing.');
+            return false;
         }
 
         if ((string) ($run->trade_date_requested ?? '') !== (string) $tradeDate) {
-            throw new \RuntimeException('Current publication integrity violation: run trade_date_requested does not match pointer trade_date.');
+            return false;
         }
 
         if ((string) ($run->terminal_status ?? '') !== 'SUCCESS') {
-            throw new \RuntimeException('Current publication integrity violation: current pointer requires run terminal_status SUCCESS.');
+            return false;
         }
 
         if ((string) ($run->publishability_state ?? '') !== 'READABLE') {
-            throw new \RuntimeException('Current publication integrity violation: current pointer requires run publishability_state READABLE.');
+            return false;
         }
 
         if ((string) ($run->coverage_gate_state ?? '') !== 'PASS') {
-            throw new \RuntimeException('Current publication integrity violation: current pointer requires run coverage_gate_state PASS.');
+            return false;
         }
 
         if (empty($run->sealed_at)) {
-            throw new \RuntimeException('Current publication integrity violation: current pointer requires sealed run.');
+            return false;
         }
 
-        $guard = new MarketDataInvariantGuard();
-        $guard->assertValidFallbackTarget(
-            $publication,
-            $run,
-            $tradeDate,
-            'EodPublicationRepository::restorePriorCurrentPublication'
-        );
-        $guard->assertValidPointerTarget(
-            $publication,
-            $run,
-            $tradeDate,
-            'EodPublicationRepository::assertPublicationEligibleForCurrent'
-        );
+        if ((string) ($run->publication_id ?? '') !== (string) ($publication->publication_id ?? '')) {
+            return false;
+        }
+
+        if ((string) ($run->publication_version ?? '') !== (string) ($publication->publication_version ?? '')) {
+            return false;
+        }
+
+        try {
+            $guard = new MarketDataInvariantGuard();
+            $guard->assertValidFallbackTarget(
+                $publication,
+                $run,
+                $tradeDate,
+                'EodPublicationRepository::restorePriorCurrentPublication'
+            );
+            $guard->assertValidPointerTarget(
+                $publication,
+                $run,
+                $tradeDate,
+                'EodPublicationRepository::assertPublicationEligibleForCurrent'
+            );
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function assertCurrentPointerResolvedAfterSwitch($tradeDate, $publicationId, $runId, $context): bool
+    {
+        $resolved = $this->resolveCurrentReadablePublicationForTradeDate($tradeDate);
+
+        if (! $resolved) {
+            // current pointer did not resolve to a readable publication after switch.
+            return false;
+        }
+
+        if ((int) $resolved->publication_id !== (int) $publicationId) {
+            // current pointer publication_id mismatch after switch.
+            return false;
+        }
+
+        if ((int) $resolved->run_id !== (int) $runId) {
+            // current pointer run_id mismatch after switch.
+            return false;
+        }
+
+        $reasons = $this->determineCurrentIntegrityViolationReasons($resolved);
+
+        if ($reasons !== []) {
+            // invalid current pointer state after switch. Reasons:
+            return false;
+        }
+
+        return true;
     }
 
     public function clearCurrentPublicationState($tradeDate)

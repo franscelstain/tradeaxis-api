@@ -1,7 +1,9 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
 ## FINAL SYSTEM STATUS (LATEST)
-- Correction Lifecycle Safety -> PARTIAL (CODE PATCHED + STATIC PHP-L PASSED + MANUAL PHPUNIT PENDING: vendor/ missing)
+- Publication Current Pointer Readiness -> DONE (POINTER/RUN/PUBLICATION CONSISTENCY + POST-SWITCH RECOVERY + LOCK-CONFLICT PAYLOAD ALIGNMENT + LOCAL TARGETED REGRESSION PROVEN: STATIC GUARD 3 TESTS / 23 ASSERTIONS, FINALIZE 34 TESTS / 175 ASSERTIONS, POINTER 47 TESTS / 533 ASSERTIONS)
+- Consumer Surface Sweep / Full Coverage → DONE (EVIDENCE/REPLAY GAP PATCHED + STATIC GUARD ADDED + LOCAL FULL REGRESSION PROVEN: 240 TESTS / 2298 ASSERTIONS)
+- Correction Lifecycle Safety -> DONE (NO-OP CORRECTION FINALIZE + FALLBACK EFFECTIVE-DATE FIX PATCHED + LOCAL CORRECTION REGRESSION PROVEN: 53 TESTS / 1077 ASSERTIONS)
 - Finalize / Lock / Pointer Determinism -> DONE (IDEMPOTENCY GUARD PATCHED + LOCK-CONFLICT FORCE-RERUN MUTATION BLOCKED + LOCAL FULL REGRESSION PROVEN: 237 TESTS / 2286 ASSERTIONS)
 - System Invariant Lock / Anti Future Regression -> DONE (GUARD PATCHED + POSITIONING FIX APPLIED + LOCAL PIPELINE REGRESSION PROVEN: 236 TESTS / 2277 ASSERTIONS)
 - Publishability vs Coverage vs Fallback Cross-Consistency -> DONE (POLICY LOCKED + FULL ENFORCEMENT + TEST FIXTURES REALIGNED + LOCAL FULL REGRESSION PROVEN: 231 TESTS / 2269 ASSERTIONS)
@@ -2339,3 +2341,210 @@ Regression fix is patched and statically valid. Status remains PARTIAL until the
 
 ### Remaining Gap
 Rerun the correction filter, correction integration filter, publication repository integration test, and full `tests/Unit/MarketData` suite locally.
+
+## 2026-04-29 — CORRECTION LIFECYCLE SAFETY FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+Final local runtime validation for Correction Lifecycle Safety after the follow-up correction fix. Scope is proof-only after the code patch and regression fix; no locked coverage, publishability, pointer, schema, read-side, force replace, finalize lock, or correction lifecycle definition was rewritten by this audit update.
+
+### Changes
+- Closed the previous manual PHPUnit proof gap for Correction Lifecycle Safety.
+- Upgraded Correction Lifecycle Safety from PARTIAL to DONE based on operator-provided local PHPUnit evidence.
+- Confirmed unchanged/no-op correction finalization now preserves the prior current publication and returns the expected SUCCESS/READABLE outcome instead of falling into HELD because of an unsealed candidate.
+- Confirmed post-switch resolution mismatch paths no longer invent `trade_date_effective` from the requested date when fallback pointer/publication/run evidence is malformed, missing, mismatched, unsealed, non-readable, or otherwise invalid.
+- Confirmed the correction-focused regression batch now passes after the latest `MarketDataPipelineService` fix.
+
+### Test Proof
+Operator-provided local validation after applying the Correction Lifecycle Safety fix:
+
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "correction"` -> OK (`53 tests`, `1077 assertions`).
+
+### Result
+Correction Lifecycle Safety is DONE and locally regression-proven for the correction-focused suite. The enforced behavior is now:
+
+- unchanged/no-op correction is finalized through the dedicated unchanged-correction path.
+- unchanged correction does not create or promote a new unsealed candidate publication.
+- prior current publication remains authoritative when artifacts are unchanged.
+- correction run outcome remains `SUCCESS` / `READABLE` for the unchanged-current preservation path.
+- post-switch mismatch fallback uses only valid fallback evidence.
+- invalid fallback evidence results in `trade_date_effective = null`, not an invented requested trade date.
+
+### Contract Impact
+No existing LOCKED contract definition was rewritten. This validation closes the enforcement/proof gap for the already locked Correction Lifecycle Safety behavior and confirms the latest patch preserves baseline immutability, pointer safety, unchanged artifact guard, reseal safety, linkage traceability, and fail-safe fallback handling.
+
+### Remaining Gap
+None for Correction Lifecycle Safety correction-focused regression.
+
+## 2026-04-30 — CONSUMER SURFACE SWEEP POLICY LOCK & EXECUTION SESSION
+
+Status: PARTIAL
+
+### Scope
+Consumer surface sweep untuk memastikan API/service/repository/command/evidence/replay/snapshot/backfill membaca market-data hanya melalui current readable publication via pointer, tanpa raw bypass, tanpa latest-row shortcut, dan tanpa implicit fallback.
+
+### Changes
+- Hardened `EodEvidenceRepository::findPublicationForRun()` agar resolve publication melalui `eod_current_publication_pointer` + `eod_publications` + `eod_runs`, dengan guard `SUCCESS`, `READABLE`, `PASS`, `SEALED`, `sealed_at`, dan current mirror.
+- Removed replay latest-row fallback dari `EodEvidenceRepository::findReplayMetric()`; replay evidence lookup sekarang wajib menerima explicit `trade_date`.
+- Added `tests/Unit/MarketData/ConsumerSurfaceSweepStaticGuardTest.php` sebagai static regression guard untuk anti latest-row fallback, pointer-resolved evidence publication lookup, dan command-level replay `--trade_date` requirement.
+
+### Test Proof
+Static validation completed inside uploaded ZIP environment:
+- `php -l app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php` → PASS
+- `php -l tests/Unit/MarketData/ConsumerSurfaceSweepStaticGuardTest.php` → PASS
+- `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` → PASS
+- `php -l app/Application/MarketData/Services/ReplayVerificationService.php` → PASS
+- `php -l app/Application/MarketData/Services/SessionSnapshotService.php` → PASS
+- `php -l app/Application/MarketData/Services/ReplayBackfillService.php` → PASS
+- `php -l app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php` → PASS
+- `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` → PASS
+- `php -l app/Console/Commands/MarketData/ExportEvidenceCommand.php` → PASS
+
+Vendor is not included in uploaded ZIP, so PHPUnit/artisan were not executed in this environment.
+
+### Result
+Consumer surface sweep code patch is applied for the concrete evidence/replay gaps found in this pass. The remaining app-level `orderByDesc('publication_id')` occurrences are candidate/write-side publication creation or lookup paths, not consumer read paths. `findLatestReadablePublicationBefore()` remains a pipeline fallback resolver and still resolves through pointer/readable/current constraints.
+
+### Contract Impact
+Read-side consumer contract is strengthened: evidence publication lookup and replay evidence metric lookup can no longer resolve data through latest publication or latest replay row shortcuts. Replay evidence remains explicit-date only.
+
+### Remaining Gap
+Full status remains PARTIAL until local vendor-backed validation is run and returned: `vendor/bin/phpunit tests/Unit/MarketData`, `vendor/bin/phpunit tests/Unit/MarketData/*Evidence*`, `vendor/bin/phpunit tests/Unit/MarketData/*Replay*`, and targeted static guard test.
+
+## 2026-04-30 — CONSUMER SURFACE SWEEP LOCAL RERUN FIX
+
+Status: PARTIAL
+
+### Scope
+Follow-up fix after operator local PHPUnit rerun exposed test harness incompatibility and one correction finalize regression in the previous Consumer Surface Sweep ZIP.
+
+### Changes
+- Fixed `tests/Unit/MarketData/ConsumerSurfaceSweepStaticGuardTest.php` to avoid Lumen `base_path()` in plain PHPUnit unit context; the test now resolves project files with `dirname(__DIR__, 3)` and remains independent from Lumen application bootstrap.
+- Adjusted correction finalize flow in `MarketDataPipelineService::completeFinalize()` so correction artifact history promotion happens before pointer promotion. This restores the existing lock-conflict contract covered by `MarketDataPipelineServiceTest::test_complete_finalize_keeps_resealed_when_publication_promotion_throws_lock_conflict`.
+- Removed the duplicate artifact-history promotion block after pointer promotion to keep correction promotion single-shot and deterministic.
+
+### Test Proof
+Static validation completed in uploaded ZIP environment:
+- `php -l tests/Unit/MarketData/ConsumerSurfaceSweepStaticGuardTest.php` -> PASS
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS
+
+Vendor is not included in uploaded ZIP, so PHPUnit/artisan were not executed in this environment.
+
+### Result
+The local rerun blockers reported by the operator are patched. Consumer Surface Sweep remains PARTIAL until the operator reruns local PHPUnit and returns PASS evidence.
+
+### Remaining Gap
+Rerun locally:
+- `vendor/bin/phpunit tests/Unit/MarketData/ConsumerSurfaceSweepStaticGuardTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence|Replay|ConsumerSurfaceSweepStaticGuard"`
+- `vendor/bin/phpunit tests/Unit/MarketData`
+
+## 2026-04-30 — CONSUMER SURFACE SWEEP / FULL COVERAGE FINAL RUNTIME VALIDATION
+
+Status: DONE
+
+### Scope
+Final local runtime validation for Consumer Surface Sweep / Full Coverage after the evidence/replay gap patch and rerun fix. Scope covers consumer read enforcement for evidence, replay, snapshot/backfill-related read surfaces, explicit replay trade-date selection, invalid-bars run scoping, anti-latest fallback, anti-raw leakage, and full market-data regression proof.
+
+### Changes
+- Upgraded Consumer Surface Sweep / Full Coverage from PARTIAL to DONE based on operator-provided local PHPUnit evidence.
+- Confirmed `ConsumerSurfaceSweepStaticGuardTest.php` no longer depends on unsafe Lumen `base_path()` usage in unit context.
+- Confirmed replay evidence export requires explicit `trade_date` and no longer allows latest-row fallback.
+- Confirmed evidence publication lookup is pointer-resolved and aligned with current readable publication constraints.
+- Confirmed invalid-bars evidence export remains scoped to owning `run_id`, preventing same-date foreign raw rows from leaking into a run evidence bundle.
+- Confirmed full market-data unit regression passes after the rerun fix.
+
+### Test Proof
+Operator-provided local validation:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/ConsumerSurfaceSweepStaticGuardTest.php` → OK (`3 tests`, `12 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` → OK (`23 tests`, `184 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` → OK (`23 tests`, `190 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "ConsumerSurfaceSweepStaticGuard"` → OK (`3 tests`, `12 assertions`).
+- `vendor/bin/phpunit tests/Unit/MarketData` → OK (`240 tests`, `2298 assertions`).
+
+### Result
+Consumer Surface Sweep / Full Coverage is DONE and locally regression-proven. Evidence and replay consumers are guarded against ambiguous latest-row selection, replay evidence requires explicit trade-date input, invalid-bars evidence is scoped by owning run, and the full market-data unit suite passes.
+
+### Contract Impact
+No new locked contract definition was introduced by this validation update. Existing read-side enforcement remains active: consumer reads must resolve through current readable publication pointer semantics, must not use raw/latest shortcuts, and must fail-safe when readable publication requirements are not met.
+
+### Remaining Gap
+None for Consumer Surface Sweep / Full Coverage.
+
+
+## 2026-04-30 — Publication Current Pointer Readiness
+
+Status: PARTIAL
+
+### Scope
+Current pointer readiness hardening untuk menjaga sinkronisasi `eod_current_publication_pointer`, `eod_publications`, dan `eod_runs` pada finalize/promote/restore path.
+
+### Changes
+- `EodPublicationRepository` sekarang menolak readable current resolution jika `eod_runs.publication_id` atau `eod_runs.publication_version` tidak match dengan pointer.
+- Invalid current-state scanner sekarang memakai `leftJoin` ke publication agar ghost pointer ke publication yang hilang tetap terdeteksi.
+- Integrity reason baru ditambahkan untuk `PUBLICATION_ROW_MISSING`, `RUN_PUBLICATION_ID_MISMATCH`, dan `RUN_PUBLICATION_VERSION_MISMATCH`.
+- Promote dan restore current publication sekarang melakukan post-switch verification melalui pointer-resolved readable publication sebelum transaksi dianggap valid.
+- Restore prior current sekarang memvalidasi run/publication mirror sebelum pointer restore.
+- Test fixture baseline current publication diselaraskan agar `eod_runs.publication_id` ikut mencerminkan current publication.
+- Static guard test baru ditambahkan untuk mengunci pointer resolver, invalid-state scan, dan post-switch verification.
+
+### Test Proof
+Static proof yang dapat dijalankan di ZIP tanpa `vendor/`:
+- `php -l app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php` → no syntax errors detected
+- `php -l app/Infrastructure/Persistence/MarketData/EodRunRepository.php` → no syntax errors detected
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` → no syntax errors detected
+- `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → no syntax errors detected
+- `php -l tests/Unit/MarketData/PublicationCurrentPointerReadinessStaticGuardTest.php` → no syntax errors detected
+
+Manual PHPUnit masih wajib dijalankan lokal karena ZIP tidak mengandung `vendor/`:
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationCurrentPointerReadinessStaticGuardTest.php`
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "finalize"`
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"`
+- `vendor/bin/phpunit tests/Unit/MarketData`
+
+### Result
+Code patch menutup gap current pointer readiness utama: pointer tidak lagi dianggap readable jika run mirror tidak sinkron, ghost pointer masuk audit invalid-state, dan switch/restore pointer diverifikasi ulang setelah mutasi.
+
+### Contract Impact
+Current pointer contract diperketat: current readable publication harus memenuhi pointer → publication → run linkage penuh, termasuk run-level publication mirror. Finalize/promotion tidak boleh meninggalkan pointer yang tidak resolve sebagai readable current publication.
+
+### Remaining Gap
+Status tetap PARTIAL sampai PHPUnit lokal dan full regression user berjalan PASS dan hasilnya dikirim untuk audit update final.
+
+
+## 2026-04-30 — Publication Current Pointer Readiness Finalization
+
+Status: DONE
+
+### Scope
+Finalize the current pointer readiness session after local regression evidence confirmed pointer, finalize, and static guard behavior. The session covered run-publication-pointer consistency, post-switch mismatch handling, correction recovery, malformed fallback behavior, lock-conflict determinism, and event payload alignment.
+
+### Changes
+- `MarketDataPipelineService::completeFinalize()` was balanced so pointer mismatch paths hold safely without inventing `trade_date_effective`.
+- Correction malformed fallback and missing pointer-row paths preserve prior current publication while returning `HELD + NOT_READABLE` where required.
+- `Promotion lost run ownership while switching current publication.` remains traceable as the event/message for the lock-conflict path instead of being replaced by a generic pointer mismatch message.
+- Lock-conflict finalize payload and `RUN_FINALIZED` event payload were aligned with unit-test contract while keeping pointer integration behavior intact.
+- Manifest build is skipped for promotion-lost-ownership conflict paths, preventing unwanted read/manifest side effects during resealed conflict handling.
+- Strict mismatch recovery remains isolated so pointer integration tests keep `trade_date_effective = null` for invalid post-switch pointer states.
+
+### Test Proof
+Local PHPUnit evidence provided by user:
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationCurrentPointerReadinessStaticGuardTest.php` -> OK (3 tests, 23 assertions)
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "finalize"` -> OK (34 tests, 175 assertions)
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"` -> OK (47 tests, 533 assertions)
+
+### Result
+Publication Current Pointer Readiness is now DONE for the targeted readiness scope. Finalize and pointer behavior are both green locally: static guard protects future regression, finalize lock-conflict behavior is deterministic, and pointer/correction edge cases no longer invent effective dates or lose prior current ownership.
+
+### Contract Impact
+The current pointer contract is now proven across targeted finalize and pointer regression paths:
+- pointer must resolve to a valid readable publication and valid run mirror,
+- failed or mismatched post-switch promotion must hold safely,
+- correction recovery must preserve baseline/current ownership where applicable,
+- malformed fallback/current pointer cases must not invent `trade_date_effective`,
+- lock-conflict paths must keep original traceable messages and avoid manifest side effects.
+
+### Remaining Gap
+No remaining gap for the targeted Publication Current Pointer Readiness regression evidence above. Full `tests/Unit/MarketData` was not included in the final evidence set for this audit update.
