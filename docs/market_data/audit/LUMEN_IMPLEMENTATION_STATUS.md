@@ -3,22 +3,23 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- DB Schema & Migration Sync Execution Session
+- Read-Side Enforcement / Anti Bypass Total
 
-[SESSION_STATUS] COMPLETED
+[SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Synchronize market-data DB runtime structure across `Database_Schema_MariaDB.sql`, Laravel/Lumen migrations, SQLite test schema, repository/query usage, test fixtures, and pipeline recovery behavior.
-- Close the DB schema/migration sync session using final local migration and PHPUnit evidence.
-- Consolidate duplicate DB schema hotfix audit entries into one canonical implementation entry.
+- Enforce market-data consumer read paths through pointer-resolved current readable publication context.
+- Block consumer shortcuts that read latest/raw/staging/current artifacts without pointer, publication, run, coverage, and mirror validation.
+- Update audit state under governance without claiming DONE until local PHPUnit/artisan evidence is supplied.
 
 [SESSION_GOAL]
-- Mark the DB Schema & Migration Sync implementation scope as DONE only after migration, schema guard, repository, pipeline integration, and full MarketData PHPUnit evidence are recorded.
+- Mark implementation DONE after operator supplied targeted and full MarketData PHPUnit evidence confirming no regression.
+- Preserve prior DB Schema & Migration Sync DONE evidence while recording this read-side enforcement scope as validated.
 
 [SESSION_NOTES]
-- Governance recovery applied: prior DB schema hotfix entries were merged into one canonical entry to avoid duplicate audit scope.
-- The final local evidence proves this scope is complete for the current source-of-truth ZIP.
-- Future schema work must reopen this scope only if new schema, migration, SQLite mirror, repository, or fixture drift appears.
+- Static trace found read-side eligibility/evidence queries already pointer-joined but missing complete coverage-gate and run-publication mirror enforcement in several paths.
+- Static enforcement and repository predicates were hardened in this session.
+- Operator local validation confirmed targeted and full MarketData PHPUnit PASS after the regression patch.
 
 ---
 
@@ -40,6 +41,63 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Read-Side Enforcement / Anti Bypass Total → DONE
+
+  [LAST_UPDATED] 2026-05-01
+
+  [RELATED_CONTRACT] READ_SIDE_POINTER_ENFORCEMENT_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-01 → Read-side anti-bypass session opened against the latest source-of-truth ZIP.
+  - 2026-05-01 → Static trace reviewed repository, service, command, evidence, replay, test, DB schema, and locked book-contract surfaces for market-data read paths.
+  - 2026-05-01 → `EligibilitySnapshotScopeRepository` was hardened to require `coverage_gate_state = PASS` and run mirror match before returning pointer-scoped eligibility rows.
+  - 2026-05-01 → `EodEvidenceRepository` was hardened so publication lookup, eligibility export, and reason-code export require pointer/current/readable/PASS/mirror-valid context.
+  - 2026-05-01 → Static guard and integration tests were extended to prevent regression of coverage-gate and run-mirror enforcement.
+  - 2026-05-01 → Operator local PHPUnit evidence showed 4 MarketData integration regressions in correction/fallback behavior after run-mirror enforcement was applied too broadly to the internal prior-readable fallback lookup.
+  - 2026-05-01 → Regression patch restored `EodPublicationRepository::findLatestReadablePublicationBefore` as an internal pipeline fallback resolver while keeping consumer gateway, evidence, and eligibility scope mirror-enforced.
+  - 2026-05-01 → Operator retest confirmed targeted readable/pointer tests, full MarketData suite, readable-publication integration test, and pointer static guard all PASS after the regression patch.
+
+  [IMPLEMENTATION]
+  - Consumer eligibility scope reads are pointer-scoped through `eod_current_publication_pointer`, `eod_publications`, and `eod_runs`.
+  - Evidence eligibility export returns rows only when the requested publication is the current pointer target and the run is `SUCCESS`, `READABLE`, `coverage_gate_state = PASS`, current, sealed, and mirror-aligned.
+  - Evidence dominant reason-code export stops with an empty result when the publication/run context is not current-readable/PASS/mirror-valid, preventing event reason leakage from invalid read contexts.
+  - Prior-readable fallback lookup remains a pipeline/internal fallback path, not a public consumer resolver; it preserves fallback/correction behavior without weakening consumer read enforcement.
+  - The locked read-side contract document explicitly requires coverage PASS and run mirror validation for consumer read gateways.
+
+  [ENFORCEMENT]
+  - Static guards assert official pointer gateway predicates, consumer no-latest/no-MAX rules, pointer-scoped eligibility predicates, coverage PASS, and run publication mirror checks.
+  - Integration tests cover no-leak behavior for non-PASS coverage and run/publication mirror mismatch.
+  - Raw/current artifact table access remains allowed only for ingestion, build, seal/finalize, admin/repair, evidence invalid-row sampling, and test fixtures.
+  - Internal fallback lookup is explicitly classified as `ALLOWED_INTERNAL_PIPELINE_FALLBACK`, not a consumer read gateway.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Market-data consumer read paths are pointer-resolved, current-readable, publication-scoped, coverage-PASS, and fail-safe.
+  - No patched read-side consumer may return eligibility rows or evidence reason codes unless current pointer, sealed publication, SUCCESS/READABLE/PASS run, current mirror, run mirror, and publication scope all match.
+  - If the readable pointer context is absent or invalid, patched read paths return an empty controlled result or controlled failure; they do not fallback to raw/staging/latest/current artifact shortcuts.
+  - Correction/fallback pipeline behavior remains valid after the regression patch: internal prior-readable lookup can preserve prior current readable publication without becoming a consumer latest shortcut.
+
+  [EVIDENCE]
+  - Static scan: no consumer app path uses `MAX(trade_date)`, `max('trade_date')`, `latest('trade_date')`, or `orderByDesc('trade_date')` as a consumer readable-data resolver.
+  - Static scan: direct `eod_bars`, `eod_indicators`, and `eod_eligibility` app access is isolated to artifact build/write/finalize repositories or pointer-scoped evidence/scope reads.
+  - Static scan: no market-data HTTP/controller read path exists in the current source tree.
+  - Container syntax validation: changed PHP files passed `php -l`.
+  - Local command: `php artisan migrate:fresh --env=testing` → PASS; migrations completed successfully through `2026_04_27_000001_expand_coverage_gate_state_not_evaluable`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "readable"` → PASS; `OK (45 tests, 256 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"` → PASS; `OK (51 tests, 551 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData` → PASS; `OK (250 tests, 2355 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` → PASS; `OK (8 tests, 15 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData/PublicationCurrentPointerReadinessStaticGuardTest.php` → PASS; `OK (3 tests, 23 assertions)`.
+
+  [FINAL_CONSTRAINT]
+  - This implementation is DONE for the current source-of-truth ZIP.
+  - Future read-side changes must not create duplicate audit entries for this scope; append reconciliation notes under this canonical implementation concern.
+  - Any future consumer read path must resolve current readable publication via pointer, enforce SUCCESS/READABLE/PASS and run mirror checks, and fail-safe without raw/staging/latest fallback.
+
+
+---
 
 - Audit Rebuild Baseline / One-by-One Regression Review → DONE
 

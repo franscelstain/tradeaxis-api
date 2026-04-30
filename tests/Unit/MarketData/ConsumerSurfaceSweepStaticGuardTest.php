@@ -20,8 +20,23 @@ class ConsumerSurfaceSweepStaticGuardTest extends TestCase
         $this->assertStringContainsString('eod_current_publication_pointer as ptr', $method);
         $this->assertStringContainsString("run.terminal_status', 'SUCCESS'", $method);
         $this->assertStringContainsString("run.publishability_state', 'READABLE'", $method);
+        $this->assertStringContainsString("run.coverage_gate_state', 'PASS'", $method);
         $this->assertStringContainsString("pub.seal_state', 'SEALED'", $method);
+        $this->assertStringContainsString("whereColumn('run.publication_id', 'ptr.publication_id')", $method);
+        $this->assertStringContainsString("whereColumn('run.publication_version', 'ptr.publication_version')", $method);
         $this->assertStringNotContainsString('orderByDesc', $method);
+    }
+
+    public function test_readable_eligibility_queries_require_coverage_pass_and_run_publication_mirror()
+    {
+        $scopeSource = $this->readProjectFile('app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php');
+        $evidenceSource = $this->readProjectFile('app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php');
+
+        foreach ([$scopeSource, $evidenceSource] as $source) {
+            $this->assertStringContainsString("run.coverage_gate_state', 'PASS'", $source);
+            $this->assertStringContainsString("whereColumn('run.publication_id', 'ptr.publication_id')", $source);
+            $this->assertStringContainsString("whereColumn('run.publication_version', 'ptr.publication_version')", $source);
+        }
     }
 
     public function test_replay_evidence_command_requires_explicit_trade_date()

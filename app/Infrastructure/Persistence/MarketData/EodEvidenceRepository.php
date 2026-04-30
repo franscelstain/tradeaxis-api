@@ -30,6 +30,8 @@ class EodEvidenceRepository
             ->where('run.publishability_state', 'READABLE')
             ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
+            ->whereColumn('run.publication_id', 'ptr.publication_id')
+            ->whereColumn('run.publication_version', 'ptr.publication_version')
             ->select('pub.*')
             ->first();
     }
@@ -83,6 +85,10 @@ class EodEvidenceRepository
 
     public function dominantReasonCodes($runId, $tradeDate, $publicationId = null)
     {
+        if (! $this->readablePublicationContextExists($tradeDate, $publicationId, $runId)) {
+            return [];
+        }
+
         $counts = [];
 
         $eventReasons = DB::table('eod_run_events')
@@ -124,6 +130,39 @@ class EodEvidenceRepository
             })->all();
     }
 
+    private function readablePublicationContextExists($tradeDate, $publicationId = null, $runId = null)
+    {
+        $query = DB::table('eod_current_publication_pointer as ptr')
+            ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
+            ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
+            ->where('ptr.trade_date', $tradeDate)
+            ->whereColumn('pub.trade_date', 'ptr.trade_date')
+            ->whereColumn('ptr.run_id', 'pub.run_id')
+            ->whereColumn('ptr.publication_version', 'pub.publication_version')
+            ->where('pub.is_current', 1)
+            ->where('pub.seal_state', 'SEALED')
+            ->whereNotNull('ptr.sealed_at')
+            ->whereNotNull('pub.sealed_at')
+            ->whereNotNull('run.sealed_at')
+            ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
+            ->where('run.terminal_status', 'SUCCESS')
+            ->where('run.publishability_state', 'READABLE')
+            ->where('run.coverage_gate_state', 'PASS')
+            ->where('run.is_current_publication', 1)
+            ->whereColumn('run.publication_id', 'ptr.publication_id')
+            ->whereColumn('run.publication_version', 'ptr.publication_version');
+
+        if ($publicationId !== null) {
+            $query->where('ptr.publication_id', $publicationId);
+        }
+
+        if ($runId !== null) {
+            $query->where('run.run_id', $runId);
+        }
+
+        return $query->exists();
+    }
+
     private function readableEligibilityQuery($tradeDate, $publicationId = null)
     {
         $query = DB::table('eod_eligibility as elig')
@@ -146,7 +185,10 @@ class EodEvidenceRepository
             ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
-            ->where('run.is_current_publication', 1);
+            ->where('run.coverage_gate_state', 'PASS')
+            ->where('run.is_current_publication', 1)
+            ->whereColumn('run.publication_id', 'ptr.publication_id')
+            ->whereColumn('run.publication_version', 'ptr.publication_version');
 
         if ($publicationId !== null) {
             $query->where('elig.publication_id', $publicationId);

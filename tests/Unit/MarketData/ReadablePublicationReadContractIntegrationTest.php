@@ -32,8 +32,11 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
             'quality_gate_state' => 'PASS',
             'stage' => 'FINALIZE',
             'source' => 'manual_file',
+            'publication_id' => 10,
+            'publication_version' => 1,
             'terminal_status' => 'SUCCESS',
             'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
             'is_current_publication' => 1,
             'sealed_at' => '2026-03-20 17:20:00',
             'started_at' => '2026-03-20 17:00:00',
@@ -114,6 +117,28 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
         $this->assertSame([], $repository->getScopeForTradeDate('2026-03-20'));
     }
 
+    public function test_scope_repository_returns_empty_when_current_pointer_coverage_gate_is_not_pass(): void
+    {
+        DB::table('eod_runs')->where('run_id', 25)->update([
+            'coverage_gate_state' => 'FAIL',
+        ]);
+
+        $repository = new EligibilitySnapshotScopeRepository();
+
+        $this->assertSame([], $repository->getScopeForTradeDate('2026-03-20'));
+    }
+
+    public function test_scope_repository_returns_empty_when_run_publication_mirror_mismatches_pointer(): void
+    {
+        DB::table('eod_runs')->where('run_id', 25)->update([
+            'publication_id' => 999,
+        ]);
+
+        $repository = new EligibilitySnapshotScopeRepository();
+
+        $this->assertSame([], $repository->getScopeForTradeDate('2026-03-20'));
+    }
+
     public function test_evidence_repository_exports_only_pointer_resolved_readable_publication_rows(): void
     {
         $repository = new EodEvidenceRepository();
@@ -140,4 +165,50 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
         $this->assertSame([], $repository->exportEligibilityRows('2026-03-20', 10));
         $this->assertSame([], $repository->dominantReasonCodes(25, '2026-03-20', 10));
     }
+
+
+    public function test_evidence_repository_returns_empty_when_coverage_gate_is_not_pass(): void
+    {
+        $this->seedRunEventReason('RUN_REASON_SHOULD_NOT_LEAK');
+
+        DB::table('eod_runs')->where('run_id', 25)->update([
+            'coverage_gate_state' => 'FAIL',
+        ]);
+
+        $repository = new EodEvidenceRepository();
+
+        $this->assertSame([], $repository->exportEligibilityRows('2026-03-20', 10));
+        $this->assertSame([], $repository->dominantReasonCodes(25, '2026-03-20', 10));
+    }
+
+    public function test_evidence_repository_returns_empty_when_run_publication_mirror_mismatches_pointer(): void
+    {
+        $this->seedRunEventReason('RUN_REASON_SHOULD_NOT_LEAK');
+
+        DB::table('eod_runs')->where('run_id', 25)->update([
+            'publication_version' => 999,
+        ]);
+
+        $repository = new EodEvidenceRepository();
+
+        $this->assertSame([], $repository->exportEligibilityRows('2026-03-20', 10));
+        $this->assertSame([], $repository->dominantReasonCodes(25, '2026-03-20', 10));
+    }
+
+    private function seedRunEventReason(string $reasonCode): void
+    {
+        DB::table('eod_run_events')->insert([
+            'run_id' => 25,
+            'trade_date_requested' => '2026-03-20',
+            'event_time' => '2026-03-20 17:21:00',
+            'stage' => 'FINALIZE',
+            'event_type' => 'TEST_EVENT',
+            'severity' => 'WARN',
+            'reason_code' => $reasonCode,
+            'message' => 'Test event reason that must not leak when publication context is not readable.',
+            'event_payload_json' => null,
+            'created_at' => '2026-03-20 17:21:00',
+        ]);
+    }
+
 }

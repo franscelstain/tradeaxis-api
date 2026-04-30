@@ -3,22 +3,21 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- DB Schema & Migration Sync Execution Session
+- Read-Side Enforcement / Anti Bypass Total
 
-[SESSION_STATUS] COMPLETED
+[SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Lock the DB schema/migration synchronization contract using final local evidence.
-- Keep implementation and contract entries mapped one-to-one.
-- Consolidate duplicate DB schema hotfix contract fragments into one canonical locked contract.
+- Track the canonical read-side pointer enforcement contract.
+- Ensure all consumer read paths are current-pointer resolved, readable, coverage PASS, sealed, scoped by publication, and fail-safe.
+- Contract is LOCKED after local targeted and full MarketData PHPUnit evidence was supplied.
 
 [SESSION_GOAL]
-- Mark `DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT` as LOCKED only after migration, schema guard, repository, pipeline integration, and full MarketData PHPUnit evidence are recorded.
+- Maintain `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` as the one canonical contract for anti-bypass read-side enforcement.
 
 [SESSION_NOTES]
-- Governance recovery applied: prior DB schema contract sub-entries were merged into the canonical `DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT` entry.
-- No unresolved gap remains for this DB Schema & Migration Sync scope in the current source-of-truth ZIP.
-- Future schema-related work must preserve this locked rule or reopen it explicitly as a contract/policy change.
+- Static enforcement was strengthened in repository predicates and tests during this session.
+- Operator local validation confirmed targeted and full MarketData PHPUnit PASS after the regression patch.
 
 ---
 
@@ -40,6 +39,68 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT → LOCKED
+
+  [LAST_UPDATED] 2026-05-01
+
+  [RELATED_IMPLEMENTATION] Read-Side Enforcement / Anti Bypass Total
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-01 → Canonical read-side pointer enforcement contract opened under audit governance.
+  - 2026-05-01 → Static trace confirmed the official consumer gateway is `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)`.
+  - 2026-05-01 → Gap found: pointer-scoped eligibility/evidence reads did not uniformly require `coverage_gate_state = PASS` and run mirror fields matching pointer publication metadata.
+  - 2026-05-01 → Gap fixed in repository predicates and guarded through integration/static tests.
+  - 2026-05-01 → Contract document synchronized to explicitly include coverage PASS and run mirror validation.
+  - 2026-05-01 → Operator local PHPUnit evidence found correction/fallback regressions when consumer-only run mirror predicates were added to the internal prior-readable fallback lookup.
+  - 2026-05-01 → Contract clarified that internal fallback lookup is not a consumer read gateway; consumer gateway/evidence/eligibility scope remain mirror-enforced.
+  - 2026-05-01 → Operator retest confirmed targeted readable/pointer tests, full MarketData suite, readable-publication integration test, and pointer static guard all PASS after the regression patch.
+
+  [DEFINED]
+  - Consumer read paths must resolve through `eod_current_publication_pointer`.
+  - Valid readable context requires sealed current publication, pointer/publication/run identity match, `terminal_status = SUCCESS`, `publishability_state = READABLE`, `coverage_gate_state = PASS`, `run.is_current_publication = 1`, and run `publication_id/publication_version` mirror match to the pointer.
+  - Artifact rows returned to consumers must be scoped by `publication_id` and pointer-resolved `trade_date_effective`/trade date context.
+  - No readable pointer context means fail-safe: empty controlled output, not-readable response, controlled exception, or explicit command/evidence/replay failure.
+  - Internal prior-readable fallback lookup is allowed only for pipeline hold/degraded-mode/correction preservation and must not be used as an API/evidence/replay/consumer latest shortcut.
+
+  [IMPLEMENTED]
+  - `EligibilitySnapshotScopeRepository` enforces coverage PASS and run mirror match.
+  - `EodEvidenceRepository::findPublicationForRun` enforces pointer/current/sealed/SUCCESS/READABLE/PASS/current/mirror validation.
+  - `EodEvidenceRepository::exportEligibilityRows` enforces pointer-scoped readable eligibility context.
+  - `EodEvidenceRepository::dominantReasonCodes` no longer returns reason-code output when the publication/run context is not current-readable/PASS/mirror-valid.
+  - `EodPublicationRepository::findLatestReadablePublicationBefore` remains an internal fallback lookup only; it preserves pipeline correction/fallback behavior and must not be used as a consumer gateway.
+  - Static guards and integration tests were extended for coverage PASS and run mirror requirements.
+
+  [ENFORCED]
+  - Static guard coverage exists for forbidden latest/MAX shortcuts in consumer files.
+  - Static guard coverage exists for pointer gateway predicates.
+  - Static guard coverage exists for pointer-scoped eligibility/evidence coverage PASS and run mirror checks.
+  - Integration coverage exists for no-leak behavior when coverage is not PASS or run mirror mismatches pointer metadata.
+  - Regression reconciliation exists for internal fallback lookup so consumer enforcement does not break prior-readable preservation behavior.
+
+  [VALIDATED]
+  - Container static grep/query scan completed.
+  - Container `php -l` completed for changed PHP files.
+  - Local command: `php artisan migrate:fresh --env=testing` → PASS.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "readable"` → PASS; `OK (45 tests, 256 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"` → PASS; `OK (51 tests, 551 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData` → PASS; `OK (250 tests, 2355 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` → PASS; `OK (8 tests, 15 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData/PublicationCurrentPointerReadinessStaticGuardTest.php` → PASS; `OK (3 tests, 23 assertions)`.
+
+  [FINAL_RULE]
+  - LOCKED. No market-data consumer may read raw/staging/latest/current artifact data unless it is resolved through the current readable publication pointer and validated against sealed publication, SUCCESS/READABLE/PASS run, current state, run mirror metadata, and publication scope.
+  - No consumer may fallback to MAX/latest/raw/staging data when pointer resolution fails.
+  - Internal prior-readable fallback remains allowed only for pipeline hold/degraded-mode/correction preservation and must not be exposed as consumer latest/read gateway.
+
+  [LOCK_CONDITION]
+  - This contract is locked for the current source-of-truth ZIP after targeted and full MarketData PHPUnit validation.
+  - Reopen only if a future market-data read path, evidence/replay flow, repository method, command output, or fallback rule changes the pointer/readability enforcement contract.
+
+
+---
 
 - AUDIT_REBUILD_BASELINE_CONTRACT → LOCKED
 

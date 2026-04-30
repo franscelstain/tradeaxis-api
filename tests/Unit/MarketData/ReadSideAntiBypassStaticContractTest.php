@@ -23,9 +23,12 @@ class ReadSideAntiBypassStaticContractTest extends TestCase
         $this->assertStringContainsString("eod_current_publication_pointer as ptr", $source);
         $this->assertStringContainsString("run.terminal_status', 'SUCCESS", $source);
         $this->assertStringContainsString("run.publishability_state', 'READABLE", $source);
+        $this->assertStringContainsString("run.coverage_gate_state', 'PASS", $source);
         $this->assertStringContainsString("run.is_current_publication', 1", $source);
         $this->assertStringContainsString('whereColumn(\'ptr.run_id\', \'pub.run_id\')', $source);
         $this->assertStringContainsString('whereColumn(\'ptr.publication_version\', \'pub.publication_version\')', $source);
+        $this->assertStringContainsString('whereColumn(\'run.publication_id\', \'ptr.publication_id\')', $source);
+        $this->assertStringContainsString('whereColumn(\'run.publication_version\', \'ptr.publication_version\')', $source);
 
         $this->assertMatchesRegularExpression(
             '/function\s+findCurrentPublicationForTradeDate\s*\([^)]*\)\s*\{[^}]*resolveCurrentReadablePublicationForTradeDate/s',
@@ -63,6 +66,18 @@ class ReadSideAntiBypassStaticContractTest extends TestCase
                 $this->assertStringContainsString('publishability_state', $source, $file.' must enforce readable publication state.');
                 $this->assertStringContainsString('READABLE', $source, $file.' must enforce READABLE publication state.');
             }
+        }
+    }
+
+    public function test_pointer_scoped_eligibility_read_queries_require_coverage_pass_and_run_mirror_match(): void
+    {
+        $scopeSource = $this->read('app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php');
+        $evidenceSource = $this->read('app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php');
+
+        foreach ([$scopeSource, $evidenceSource] as $source) {
+            $this->assertStringContainsString("run.coverage_gate_state', 'PASS", $source);
+            $this->assertStringContainsString('whereColumn(\'run.publication_id\', \'ptr.publication_id\')', $source);
+            $this->assertStringContainsString('whereColumn(\'run.publication_version\', \'ptr.publication_version\')', $source);
         }
     }
 

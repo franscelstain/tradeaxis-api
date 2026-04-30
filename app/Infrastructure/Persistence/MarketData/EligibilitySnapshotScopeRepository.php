@@ -34,7 +34,10 @@ class EligibilitySnapshotScopeRepository
             ->whereColumn('run.trade_date_requested', 'ptr.trade_date')
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
+            ->where('run.coverage_gate_state', 'PASS')
             ->where('run.is_current_publication', 1)
+            ->whereColumn('run.publication_id', 'ptr.publication_id')
+            ->whereColumn('run.publication_version', 'ptr.publication_version')
             ->select('elig.ticker_id', 'tick.'.$tickerCodeColumn.' as ticker_code', 'elig.eligible');
 
         if ($scopeDefault === 'eligible_only') {

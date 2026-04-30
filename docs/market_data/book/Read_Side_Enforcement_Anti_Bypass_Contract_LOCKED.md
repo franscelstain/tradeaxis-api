@@ -30,8 +30,10 @@ A consumer read path must resolve readable data through the official pointer gat
 - validation that `pub.is_current = 1`
 - validation that `pub.seal_state = SEALED`
 - validation that pointer/publication/run identifiers match
+- validation that run mirror fields match the pointer (`run.publication_id`, `run.publication_version`)
 - validation that `run.terminal_status = SUCCESS`
 - validation that `run.publishability_state = READABLE`
+- validation that `run.coverage_gate_state = PASS`
 - validation that `run.is_current_publication = 1`
 - validation that trade date/effective date matches the locked publication contract
 
@@ -67,6 +69,7 @@ Direct raw/artifact/staging access is allowed only for non-consumer paths:
 - admin repair command
 - audit diagnostic command
 - test setup/assertion fixtures
+- `EodPublicationRepository::findLatestReadablePublicationBefore($tradeDate)` is an internal finalize/source-failure fallback resolver, not the official consumer gateway. It may resolve prior readable pointer rows for pipeline hold/degraded-mode decisions and must not be used by API/evidence/replay/consumer output as a latest shortcut.
 
 These paths must be named and scoped as write/admin/test behavior. They must not be used by API/public read/evidence/replay consumer outputs unless the query is pointer-resolved and readable-current validated.
 
@@ -94,6 +97,8 @@ Current pointer-resolved read repositories:
 - `EligibilitySnapshotScopeRepository::getScopeForTradeDate($tradeDate)`
 - `EodEvidenceRepository::exportEligibilityRows($tradeDate, $publicationId = null)`
 - `EodEvidenceRepository::dominantReasonCodes($runId, $tradeDate, $publicationId = null)`
+
+Pointer-resolved read repositories must enforce `coverage_gate_state = PASS` and the run mirror match before returning rows, counts, or reason-code output.
 
 ## H. Static Enforcement Rule
 
@@ -123,3 +128,20 @@ Every future read-side enforcement change must append a new audit session to:
 - `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
 
 Audit updates are append-only and must follow `AUDIT_UPDATE_GOVERNANCE.md`.
+
+## J. Validation Evidence
+
+Locked validation for this source-of-truth ZIP:
+
+- `php artisan migrate:fresh --env=testing` → PASS.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "readable"` → PASS; `OK (45 tests, 256 assertions)`.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"` → PASS; `OK (51 tests, 551 assertions)`.
+- `vendor/bin/phpunit tests/Unit/MarketData` → PASS; `OK (250 tests, 2355 assertions)`.
+- `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` → PASS; `OK (8 tests, 15 assertions)`.
+- `vendor/bin/phpunit tests/Unit/MarketData/PublicationCurrentPointerReadinessStaticGuardTest.php` → PASS; `OK (3 tests, 23 assertions)`.
+
+Regression reconciliation:
+
+- Consumer gateway, eligibility scope, and evidence reads remain mirror-enforced.
+- `EodPublicationRepository::findLatestReadablePublicationBefore($tradeDate)` remains internal-only fallback behavior for pipeline hold/degraded-mode/correction preservation and must not be used as a consumer latest shortcut.
+
