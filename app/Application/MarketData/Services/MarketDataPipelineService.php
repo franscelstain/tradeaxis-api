@@ -869,7 +869,7 @@ class MarketDataPipelineService
                     if ($isPromotionLostOwnership) {
                         $outcome['trade_date_effective'] = ! empty($run->trade_date_effective)
                             ? $run->trade_date_effective
-                            : null;
+                            : ($fallback ? $fallback->readable_trade_date : null);
                     } elseif (empty($outcome['trade_date_effective'])) {
                         $outcome['trade_date_effective'] = $input->requestedDate;
                     }
@@ -982,7 +982,7 @@ class MarketDataPipelineService
 
                         if ($run->terminal_status === 'SUCCESS') {
                             $run = $this->finalizeRunState($run, [
-                                'trade_date_effective' => null,
+                                'trade_date_effective' => $fallback ? $fallback->readable_trade_date : null,
                                 'quality_gate_state' => $outcome['quality_gate_state'],
                                 'publishability_state' => 'NOT_READABLE',
                                 'terminal_status' => 'HELD',

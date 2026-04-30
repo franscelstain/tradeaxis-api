@@ -95,6 +95,26 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
             }
         }
     }
+
+    public function test_sqlite_schema_does_not_contain_runtime_orphan_surrogate_keys_on_publication_bound_artifacts(): void
+    {
+        foreach ([
+            'eod_bars' => ['bar_id'],
+            'eod_indicators' => ['indicator_id'],
+            'eod_eligibility' => ['eligibility_id'],
+            'eod_bars_history' => ['history_id'],
+            'eod_indicators_history' => ['history_id'],
+            'eod_eligibility_history' => ['history_id'],
+        ] as $table => $columns) {
+            foreach ($columns as $column) {
+                $this->assertFalse(
+                    Schema::hasColumn($table, $column),
+                    sprintf('SQLite mirror must not contain runtime-orphan column %s.%s', $table, $column)
+                );
+            }
+        }
+    }
+
     public function test_replay_metrics_does_not_contain_sqlite_only_source_file_columns(): void
     {
         foreach ([

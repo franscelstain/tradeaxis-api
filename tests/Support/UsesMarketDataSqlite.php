@@ -62,8 +62,8 @@ trait UsesMarketDataSqlite
             $table->string('board_code', 10)->nullable();
             $table->string('exchange_code', 10)->nullable();
             $table->integer('is_active')->default(1);
-            $table->dateTime('created_at')->nullable();
-            $table->dateTime('updated_at')->nullable();
+            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
 
             $table->unique('ticker_code', 'ticker_code');
         });
@@ -76,7 +76,7 @@ trait UsesMarketDataSqlite
             $table->string('session_close_time', 5)->nullable();
             $table->text('breaks_json')->nullable();
             $table->string('source', 120)->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
 
             $table->index(['is_trading_day', 'cal_date'], 'market_calendar_trading_idx');
@@ -89,7 +89,7 @@ trait UsesMarketDataSqlite
             $table->string('description', 255);
             $table->string('severity', 16)->default('INFO');
             $table->boolean('is_active')->default(true);
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
 
             $table->index(['category', 'is_active'], 'idx_reason_codes_category_active');
@@ -104,7 +104,7 @@ trait UsesMarketDataSqlite
             $table->string('quality_gate_state')->nullable();
             $table->string('publishability_state')->nullable();
             $table->string('stage')->nullable();
-            $table->string('source')->nullable();
+            $table->string('source', 32);
             $table->string('source_name')->nullable();
             $table->string('source_provider')->nullable();
             $table->string('source_input_file')->nullable();
@@ -156,7 +156,7 @@ trait UsesMarketDataSqlite
             $table->text('seal_note')->nullable();
             $table->dateTime('started_at')->nullable();
             $table->dateTime('finished_at')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
         });
 
@@ -171,7 +171,7 @@ trait UsesMarketDataSqlite
             $table->string('reason_code')->nullable();
             $table->string('message')->nullable();
             $table->text('event_payload_json')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
         });
 
         $schema->create('eod_dataset_corrections', function (Blueprint $table) {
@@ -191,7 +191,7 @@ trait UsesMarketDataSqlite
             $table->dateTime('last_executed_at')->nullable();
             $table->dateTime('current_consumed_at')->nullable();
             $table->text('final_outcome_note')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
         });
 
@@ -213,7 +213,7 @@ trait UsesMarketDataSqlite
             $table->bigInteger('source_file_size_bytes')->nullable();
             $table->integer('source_file_row_count')->nullable();
             $table->dateTime('sealed_at')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
         });
 
@@ -227,19 +227,23 @@ trait UsesMarketDataSqlite
         });
 
         $schema->create('eod_bars', function (Blueprint $table) {
-            $table->increments('bar_id');
             $table->date('trade_date');
             $table->integer('ticker_id');
-            $table->decimal('open', 18, 4);
-            $table->decimal('high', 18, 4);
-            $table->decimal('low', 18, 4);
-            $table->decimal('close', 18, 4);
+            $table->decimal('open', 20, 4);
+            $table->decimal('high', 20, 4);
+            $table->decimal('low', 20, 4);
+            $table->decimal('close', 20, 4);
             $table->bigInteger('volume');
-            $table->decimal('adj_close', 18, 4)->nullable();
-            $table->string('source')->nullable();
+            $table->decimal('adj_close', 20, 4)->nullable();
+            $table->string('source', 32);
             $table->integer('run_id');
             $table->integer('publication_id');
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
+
+            $table->primary(['trade_date', 'ticker_id']);
+            $table->index(['ticker_id', 'trade_date'], 'idx_eod_bars_ticker_date');
+            $table->index(['run_id'], 'idx_eod_bars_run');
+            $table->index(['publication_id'], 'idx_eod_bars_publication');
         });
 
         $schema->create('eod_invalid_bars', function (Blueprint $table) {
@@ -247,47 +251,57 @@ trait UsesMarketDataSqlite
             $table->date('trade_date')->nullable();
             $table->integer('ticker_id')->nullable();
             $table->integer('run_id');
-            $table->string('source')->nullable();
+            $table->string('source', 32);
             $table->string('source_row_ref')->nullable();
             $table->decimal('open', 18, 4)->nullable();
             $table->decimal('high', 18, 4)->nullable();
             $table->decimal('low', 18, 4)->nullable();
             $table->decimal('close', 18, 4)->nullable();
             $table->bigInteger('volume')->nullable();
-            $table->decimal('adj_close', 18, 4)->nullable();
+            $table->decimal('adj_close', 20, 4)->nullable();
             $table->string('invalid_reason_code');
             $table->text('invalid_note')->nullable();
             $table->date('loser_of_trade_date')->nullable();
             $table->integer('loser_of_ticker_id')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
         });
 
         $schema->create('eod_indicators', function (Blueprint $table) {
-            $table->increments('indicator_id');
             $table->date('trade_date');
             $table->integer('ticker_id');
             $table->integer('is_valid');
             $table->string('invalid_reason_code')->nullable();
             $table->string('indicator_set_version');
             $table->decimal('dv20_idr', 24, 2)->nullable();
-            $table->decimal('atr14_pct', 18, 10)->nullable();
-            $table->decimal('vol_ratio', 18, 10)->nullable();
-            $table->decimal('roc20', 18, 10)->nullable();
-            $table->decimal('hh20', 18, 4)->nullable();
+            $table->decimal('atr14_pct', 20, 10)->nullable();
+            $table->decimal('vol_ratio', 20, 10)->nullable();
+            $table->decimal('roc20', 20, 10)->nullable();
+            $table->decimal('hh20', 20, 4)->nullable();
             $table->integer('run_id');
             $table->integer('publication_id');
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
+
+            $table->primary(['trade_date', 'ticker_id']);
+            $table->index(['ticker_id', 'trade_date'], 'idx_eod_indicators_ticker_date');
+            $table->index(['run_id'], 'idx_eod_indicators_run');
+            $table->index(['invalid_reason_code'], 'idx_eod_indicators_invalid_reason');
+            $table->index(['publication_id'], 'idx_eod_indicators_publication');
         });
 
         $schema->create('eod_eligibility', function (Blueprint $table) {
-            $table->increments('eligibility_id');
             $table->date('trade_date');
             $table->integer('ticker_id');
             $table->integer('eligible');
             $table->string('reason_code')->nullable();
             $table->integer('run_id');
             $table->integer('publication_id');
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
+
+            $table->primary(['trade_date', 'ticker_id']);
+            $table->index(['ticker_id', 'trade_date'], 'idx_eod_eligibility_ticker_date');
+            $table->index(['run_id'], 'idx_eod_eligibility_run');
+            $table->index(['reason_code'], 'idx_eod_eligibility_reason');
+            $table->index(['publication_id'], 'idx_eod_eligibility_publication');
         });
 
         $schema->create('md_replay_daily_metrics', function (Blueprint $table) {
@@ -344,7 +358,7 @@ trait UsesMarketDataSqlite
             $table->string('expected_eligibility_batch_hash')->nullable();
             $table->text('expected_reason_code_counts_json')->nullable();
             $table->text('mismatch_summary')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
 
             $table->primary(['replay_id', 'trade_date']);
         });
@@ -373,7 +387,7 @@ trait UsesMarketDataSqlite
             $table->unsignedBigInteger('run_id')->nullable();
             $table->string('reason_code', 64)->nullable();
             $table->string('error_note', 255)->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
 
             $table->index(['trade_date', 'snapshot_slot'], 'md_session_snapshots_trade_date_snapshot_slot_index');
@@ -382,7 +396,6 @@ trait UsesMarketDataSqlite
         });
 
         $schema->create('eod_bars_history', function (Blueprint $table) {
-            $table->increments('history_id');
             $table->integer('publication_id');
             $table->date('trade_date')->nullable();
             $table->integer('ticker_id')->nullable();
@@ -391,14 +404,18 @@ trait UsesMarketDataSqlite
             $table->decimal('low', 18, 4)->nullable();
             $table->decimal('close', 18, 4)->nullable();
             $table->bigInteger('volume')->nullable();
-            $table->decimal('adj_close', 18, 4)->nullable();
-            $table->string('source')->nullable();
+            $table->decimal('adj_close', 20, 4)->nullable();
+            $table->string('source', 32);
             $table->integer('run_id')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
+
+            $table->primary(['publication_id', 'trade_date', 'ticker_id']);
+            $table->index(['trade_date'], 'idx_bars_history_trade_date');
+            $table->index(['ticker_id', 'trade_date'], 'idx_bars_history_ticker_date');
+            $table->index(['run_id'], 'idx_bars_history_run');
         });
 
         $schema->create('eod_indicators_history', function (Blueprint $table) {
-            $table->increments('history_id');
             $table->integer('publication_id');
             $table->date('trade_date')->nullable();
             $table->integer('ticker_id')->nullable();
@@ -406,23 +423,32 @@ trait UsesMarketDataSqlite
             $table->string('invalid_reason_code')->nullable();
             $table->string('indicator_set_version')->nullable();
             $table->decimal('dv20_idr', 24, 2)->nullable();
-            $table->decimal('atr14_pct', 18, 10)->nullable();
-            $table->decimal('vol_ratio', 18, 10)->nullable();
-            $table->decimal('roc20', 18, 10)->nullable();
-            $table->decimal('hh20', 18, 4)->nullable();
+            $table->decimal('atr14_pct', 20, 10)->nullable();
+            $table->decimal('vol_ratio', 20, 10)->nullable();
+            $table->decimal('roc20', 20, 10)->nullable();
+            $table->decimal('hh20', 20, 4)->nullable();
             $table->integer('run_id')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
+
+            $table->primary(['publication_id', 'trade_date', 'ticker_id']);
+            $table->index(['trade_date'], 'idx_indicators_history_trade_date');
+            $table->index(['ticker_id', 'trade_date'], 'idx_indicators_history_ticker_date');
+            $table->index(['run_id'], 'idx_indicators_history_run');
         });
 
         $schema->create('eod_eligibility_history', function (Blueprint $table) {
-            $table->increments('history_id');
             $table->integer('publication_id');
             $table->date('trade_date')->nullable();
             $table->integer('ticker_id')->nullable();
             $table->integer('eligible')->nullable();
             $table->string('reason_code')->nullable();
             $table->integer('run_id')->nullable();
-            $table->dateTime('created_at')->nullable();
+            $table->dateTime('created_at');
+
+            $table->primary(['publication_id', 'trade_date', 'ticker_id']);
+            $table->index(['trade_date'], 'idx_eligibility_history_trade_date');
+            $table->index(['ticker_id', 'trade_date'], 'idx_eligibility_history_ticker_date');
+            $table->index(['run_id'], 'idx_eligibility_history_run');
         });
     }
 }

@@ -28,10 +28,17 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
             'run_id' => 25,
             'trade_date_requested' => '2026-03-20',
             'trade_date_effective' => '2026-03-20',
+            'lifecycle_state' => 'COMPLETED',
+            'quality_gate_state' => 'PASS',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
             'terminal_status' => 'SUCCESS',
             'publishability_state' => 'READABLE',
             'is_current_publication' => 1,
             'sealed_at' => '2026-03-20 17:20:00',
+            'started_at' => '2026-03-20 17:00:00',
+            'created_at' => '2026-03-20 17:00:00',
+            'updated_at' => '2026-03-20 17:20:00',
         ]);
 
         DB::table('eod_publications')->insert([

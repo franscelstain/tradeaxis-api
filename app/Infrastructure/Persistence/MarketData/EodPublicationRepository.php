@@ -582,6 +582,44 @@ class EodPublicationRepository
                 return null;
             }
 
+            $priorRun = DB::table('eod_runs')
+                ->where('run_id', $priorRunId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $priorRun) {
+                throw new \RuntimeException('Current publication integrity violation: current pointer requires existing run row.');
+            }
+
+            if ((string) ($priorRun->trade_date_requested ?? '') !== (string) $tradeDate) {
+                throw new \RuntimeException('Current publication integrity violation: current pointer requires run trade_date_requested to match pointer trade_date.');
+            }
+
+            if ((string) ($priorRun->terminal_status ?? '') !== 'SUCCESS') {
+                throw new \RuntimeException('Current publication integrity violation: current pointer requires run terminal_status SUCCESS.');
+            }
+
+            if ((string) ($priorRun->publishability_state ?? '') !== 'READABLE') {
+                throw new \RuntimeException('Current publication integrity violation: current pointer requires run publishability_state READABLE.');
+            }
+
+            if ((string) ($priorRun->coverage_gate_state ?? '') !== 'PASS') {
+                throw new \RuntimeException('Current publication integrity violation: current pointer requires run coverage_gate_state PASS.');
+            }
+
+            if (empty($priorRun->sealed_at)) {
+                throw new \RuntimeException('Current publication integrity violation: current pointer requires run sealed_at.');
+            }
+
+            if ((string) ($priorRun->publication_id ?? '') !== (string) $priorPublicationId) {
+                throw new \RuntimeException('Current publication integrity violation: current pointer requires run publication_id to match publication.');
+            }
+
+            if ((string) ($priorRun->publication_version ?? '') !== (string) ($priorPublication->publication_version ?? '')) {
+                throw new \RuntimeException('Current publication integrity violation: current pointer requires run publication_version to match publication.');
+            }
+
+
             $now = Carbon::now(config('market_data.platform.timezone'));
 
             DB::table('eod_publications')

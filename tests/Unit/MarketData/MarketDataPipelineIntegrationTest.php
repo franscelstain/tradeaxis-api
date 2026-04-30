@@ -4734,20 +4734,24 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'sealed_at' => '2026-03-20 17:20:00',
         ]);
 
-        DB::table('eod_bars')->insert([
-            'trade_date' => $publicationTradeDate,
-            'ticker_id' => $tickerId,
-            'open' => $close,
-            'high' => $close,
-            'low' => $close,
-            'close' => $close,
-            'volume' => 1000,
-            'adj_close' => $close,
-            'source' => 'MANUAL_FILE',
-            'run_id' => 90,
-            'publication_id' => 1,
-            'created_at' => Carbon::now()->toDateTimeString(),
-        ]);
+        DB::table('eod_bars')->updateOrInsert(
+            [
+                'trade_date' => $publicationTradeDate,
+                'ticker_id' => $tickerId,
+            ],
+            [
+                'open' => $close,
+                'high' => $close,
+                'low' => $close,
+                'close' => $close,
+                'volume' => 1000,
+                'adj_close' => $close,
+                'source' => 'MANUAL_FILE',
+                'run_id' => 90,
+                'publication_id' => 1,
+                'created_at' => Carbon::now()->toDateTimeString(),
+            ]
+        );
 
         DB::table('eod_indicators')->insert([
             'trade_date' => $publicationTradeDate,

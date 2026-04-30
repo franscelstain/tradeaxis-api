@@ -554,7 +554,9 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   PRIMARY KEY (replay_id, trade_date),
   KEY idx_replay_daily_status (replay_id, status),
   KEY idx_replay_daily_effective (replay_id, trade_date_effective),
-  KEY idx_replay_daily_compare (replay_id, comparison_result),
+  KEY idx_replay_daily_comparison (replay_id, comparison_result),
+  KEY idx_replay_daily_coverage_gate (replay_id, coverage_gate_state),
+  KEY idx_replay_daily_artifact_scope (replay_id, artifact_changed_scope),
   KEY idx_replay_daily_publication_version (replay_id, publication_version),
   KEY idx_replay_daily_config_identity (replay_id, config_identity)
 ) ENGINE=InnoDB;

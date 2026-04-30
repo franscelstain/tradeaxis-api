@@ -24,7 +24,7 @@ class CreateTickersTable extends Migration
 
             // match MySQL: created_at default current_timestamp(), updated_at default current_timestamp()
             $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
 
             $table->unique('ticker_code', 'ticker_code');
         });
