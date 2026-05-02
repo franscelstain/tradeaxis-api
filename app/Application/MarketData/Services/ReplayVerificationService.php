@@ -218,6 +218,7 @@ class ReplayVerificationService
         $expectedClass = $expectedReplay['comparison_result'] ?? 'MATCH';
 
         $mismatches = [];
+        // COVERAGE_FIELD_MISMATCH: coverage context mismatches must remain visible in replay results.
         $this->compareField($mismatches, 'status', $expectedReplay['expected_status'] ?? $expectedReplay['status'] ?? null, $actual['status']);
         $this->compareField($mismatches, 'trade_date_effective', $expectedReplay['expected_trade_date_effective'] ?? $expectedReplay['trade_date_effective'] ?? null, $actual['trade_date_effective']);
         $this->compareField($mismatches, 'seal_state', $expectedReplay['expected_seal_state'] ?? $expectedReplay['seal_state'] ?? null, $actual['seal_state']);

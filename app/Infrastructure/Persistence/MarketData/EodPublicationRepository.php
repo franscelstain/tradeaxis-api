@@ -31,6 +31,14 @@ class EodPublicationRepository
                 'run.terminal_status',
                 'run.publishability_state',
                 'run.coverage_gate_state',
+                'run.coverage_universe_count',
+                'run.coverage_available_count',
+                'run.coverage_missing_count',
+                'run.coverage_ratio',
+                'run.coverage_min_threshold',
+                'run.coverage_threshold_mode',
+                'run.coverage_universe_basis',
+                'run.coverage_contract_version',
                 'run.is_current_publication',
                 'run.sealed_at as run_sealed_at',
                 'run.publication_id as run_publication_id',
@@ -64,6 +72,14 @@ class EodPublicationRepository
                 'run.terminal_status',
                 'run.publishability_state',
                 'run.coverage_gate_state',
+                'run.coverage_universe_count',
+                'run.coverage_available_count',
+                'run.coverage_missing_count',
+                'run.coverage_ratio',
+                'run.coverage_min_threshold',
+                'run.coverage_threshold_mode',
+                'run.coverage_universe_basis',
+                'run.coverage_contract_version',
                 'run.is_current_publication',
                 'run.sealed_at as run_sealed_at',
                 'run.publication_id as run_publication_id',
@@ -139,6 +155,24 @@ class EodPublicationRepository
         $runCoverageGateState = $row->run_coverage_gate_state ?? $row->coverage_gate_state ?? null;
         if ((string) $runCoverageGateState !== 'PASS') {
             $reasons[] = 'RUN_COVERAGE_GATE_NOT_PASS';
+        } else {
+            try {
+                (new MarketDataInvariantGuard())->assertNoBypassState([
+                    'terminal_status' => $runTerminalStatus,
+                    'publishability_state' => $runPublishabilityState,
+                    'coverage_gate_state' => $runCoverageGateState,
+                    'expected_universe_count' => $row->run_coverage_universe_count ?? $row->coverage_universe_count ?? null,
+                    'available_eod_count' => $row->run_coverage_available_count ?? $row->coverage_available_count ?? null,
+                    'missing_eod_count' => $row->run_coverage_missing_count ?? $row->coverage_missing_count ?? null,
+                    'coverage_ratio' => $row->run_coverage_ratio ?? $row->coverage_ratio ?? null,
+                    'coverage_threshold_value' => $row->run_coverage_min_threshold ?? $row->coverage_min_threshold ?? null,
+                    'coverage_threshold_mode' => $row->run_coverage_threshold_mode ?? $row->coverage_threshold_mode ?? null,
+                    'coverage_universe_basis' => $row->run_coverage_universe_basis ?? $row->coverage_universe_basis ?? null,
+                    'coverage_contract_version' => $row->run_coverage_contract_version ?? $row->coverage_contract_version ?? null,
+                ], 'EodPublicationRepository::currentPointerIntegrity');
+            } catch (\Throwable $e) {
+                $reasons[] = 'RUN_COVERAGE_TELEMETRY_INVALID';
+            }
         }
 
         $runIsCurrentPublication = $row->run_is_current_publication ?? $row->is_current_publication ?? 0;
@@ -166,7 +200,7 @@ class EodPublicationRepository
      */
     public function resolveCurrentReadablePublicationForTradeDate($tradeDate)
     {
-        return DB::table('eod_current_publication_pointer as ptr')
+        $row = DB::table('eod_current_publication_pointer as ptr')
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
@@ -183,6 +217,15 @@ class EodPublicationRepository
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
             ->where('run.coverage_gate_state', 'PASS')
+            ->whereNotNull('run.coverage_universe_count')
+            ->where('run.coverage_universe_count', '>', 0)
+            ->whereNotNull('run.coverage_available_count')
+            ->whereNotNull('run.coverage_missing_count')
+            ->whereNotNull('run.coverage_ratio')
+            ->whereNotNull('run.coverage_min_threshold')
+            ->whereNotNull('run.coverage_threshold_mode')
+            ->whereNotNull('run.coverage_universe_basis')
+            ->whereNotNull('run.coverage_contract_version')
             ->where('run.is_current_publication', 1)
             ->whereColumn('run.publication_id', 'ptr.publication_id')
             ->whereColumn('run.publication_version', 'ptr.publication_version')
@@ -196,11 +239,25 @@ class EodPublicationRepository
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
                 'run.coverage_gate_state as run_coverage_gate_state',
+                'run.coverage_universe_count as run_coverage_universe_count',
+                'run.coverage_available_count as run_coverage_available_count',
+                'run.coverage_missing_count as run_coverage_missing_count',
+                'run.coverage_ratio as run_coverage_ratio',
+                'run.coverage_min_threshold as run_coverage_min_threshold',
+                'run.coverage_threshold_mode as run_coverage_threshold_mode',
+                'run.coverage_universe_basis as run_coverage_universe_basis',
+                'run.coverage_contract_version as run_coverage_contract_version',
                 'run.is_current_publication as run_is_current_publication',
                 'run.publication_id as run_publication_id',
                 'run.publication_version as run_publication_version'
             )
             ->first();
+
+        return $this->readablePublicationRowOrNull(
+            $row,
+            $tradeDate,
+            'EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate'
+        );
     }
 
     public function findCurrentPublicationForTradeDate($tradeDate)
@@ -217,7 +274,7 @@ class EodPublicationRepository
 
     public function findReadableCurrentPublicationForRun($runId, $tradeDate)
     {
-        return DB::table('eod_current_publication_pointer as ptr')
+        $row = DB::table('eod_current_publication_pointer as ptr')
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('run.run_id', $runId)
@@ -234,6 +291,15 @@ class EodPublicationRepository
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
             ->where('run.coverage_gate_state', 'PASS')
+            ->whereNotNull('run.coverage_universe_count')
+            ->where('run.coverage_universe_count', '>', 0)
+            ->whereNotNull('run.coverage_available_count')
+            ->whereNotNull('run.coverage_missing_count')
+            ->whereNotNull('run.coverage_ratio')
+            ->whereNotNull('run.coverage_min_threshold')
+            ->whereNotNull('run.coverage_threshold_mode')
+            ->whereNotNull('run.coverage_universe_basis')
+            ->whereNotNull('run.coverage_contract_version')
             ->where('run.is_current_publication', 1)
             ->whereColumn('run.publication_id', 'ptr.publication_id')
             ->whereColumn('run.publication_version', 'ptr.publication_version')
@@ -247,16 +313,30 @@ class EodPublicationRepository
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
                 'run.coverage_gate_state as run_coverage_gate_state',
+                'run.coverage_universe_count as run_coverage_universe_count',
+                'run.coverage_available_count as run_coverage_available_count',
+                'run.coverage_missing_count as run_coverage_missing_count',
+                'run.coverage_ratio as run_coverage_ratio',
+                'run.coverage_min_threshold as run_coverage_min_threshold',
+                'run.coverage_threshold_mode as run_coverage_threshold_mode',
+                'run.coverage_universe_basis as run_coverage_universe_basis',
+                'run.coverage_contract_version as run_coverage_contract_version',
                 'run.is_current_publication as run_is_current_publication',
                 'run.publication_id as run_publication_id',
                 'run.publication_version as run_publication_version'
             )
             ->first();
+
+        return $this->readablePublicationRowOrNull(
+            $row,
+            $tradeDate,
+            'EodPublicationRepository::findReadableCurrentPublicationForRun'
+        );
     }
 
     public function findCorrectionBaselinePublicationForTradeDate($tradeDate)
     {
-        return DB::table('eod_current_publication_pointer as ptr')
+        $row = DB::table('eod_current_publication_pointer as ptr')
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
@@ -273,6 +353,15 @@ class EodPublicationRepository
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
             ->where('run.coverage_gate_state', 'PASS')
+            ->whereNotNull('run.coverage_universe_count')
+            ->where('run.coverage_universe_count', '>', 0)
+            ->whereNotNull('run.coverage_available_count')
+            ->whereNotNull('run.coverage_missing_count')
+            ->whereNotNull('run.coverage_ratio')
+            ->whereNotNull('run.coverage_min_threshold')
+            ->whereNotNull('run.coverage_threshold_mode')
+            ->whereNotNull('run.coverage_universe_basis')
+            ->whereNotNull('run.coverage_contract_version')
             ->where('run.is_current_publication', 1)
             ->whereColumn('run.publication_id', 'ptr.publication_id')
             ->whereColumn('run.publication_version', 'ptr.publication_version')
@@ -286,11 +375,25 @@ class EodPublicationRepository
                 'run.terminal_status as run_terminal_status',
                 'run.publishability_state as run_publishability_state',
                 'run.coverage_gate_state as run_coverage_gate_state',
+                'run.coverage_universe_count as run_coverage_universe_count',
+                'run.coverage_available_count as run_coverage_available_count',
+                'run.coverage_missing_count as run_coverage_missing_count',
+                'run.coverage_ratio as run_coverage_ratio',
+                'run.coverage_min_threshold as run_coverage_min_threshold',
+                'run.coverage_threshold_mode as run_coverage_threshold_mode',
+                'run.coverage_universe_basis as run_coverage_universe_basis',
+                'run.coverage_contract_version as run_coverage_contract_version',
                 'run.is_current_publication as run_is_current_publication',
                 'run.publication_id as run_publication_id',
                 'run.publication_version as run_publication_version'
             )
             ->first();
+
+        return $this->readablePublicationRowOrNull(
+            $row,
+            $tradeDate,
+            'EodPublicationRepository::findCorrectionBaselinePublicationForTradeDate'
+        );
     }
 
     public function getOrCreateCandidatePublication(EodRun $run, $supersedesPublicationId = null)
@@ -834,7 +937,7 @@ class EodPublicationRepository
 
     public function findLatestReadablePublicationBefore($tradeDate)
     {
-        return DB::table('eod_current_publication_pointer as ptr')
+        $row = DB::table('eod_current_publication_pointer as ptr')
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', '<', $tradeDate)
@@ -850,15 +953,78 @@ class EodPublicationRepository
             ->where('run.terminal_status', 'SUCCESS')
             ->where('run.publishability_state', 'READABLE')
             ->where('run.coverage_gate_state', 'PASS')
+            ->whereNotNull('run.coverage_universe_count')
+            ->where('run.coverage_universe_count', '>', 0)
+            ->whereNotNull('run.coverage_available_count')
+            ->whereNotNull('run.coverage_missing_count')
+            ->whereNotNull('run.coverage_ratio')
+            ->whereNotNull('run.coverage_min_threshold')
+            ->whereNotNull('run.coverage_threshold_mode')
+            ->whereNotNull('run.coverage_universe_basis')
+            ->whereNotNull('run.coverage_contract_version')
             ->where('run.is_current_publication', 1)
+            ->whereColumn('run.publication_id', 'ptr.publication_id')
+            ->whereColumn('run.publication_version', 'ptr.publication_version')
             ->orderByDesc('ptr.trade_date')
             ->select(
+                'pub.*',
                 'ptr.trade_date as readable_trade_date',
-                'pub.publication_id',
-                'pub.publication_version',
-                'run.run_id'
+                'ptr.run_id as pointer_run_id',
+                'ptr.publication_version as pointer_publication_version',
+                'ptr.sealed_at as pointer_sealed_at',
+                'run.sealed_at as run_sealed_at',
+                'run.terminal_status as run_terminal_status',
+                'run.publishability_state as run_publishability_state',
+                'run.coverage_gate_state as run_coverage_gate_state',
+                'run.coverage_universe_count as run_coverage_universe_count',
+                'run.coverage_available_count as run_coverage_available_count',
+                'run.coverage_missing_count as run_coverage_missing_count',
+                'run.coverage_ratio as run_coverage_ratio',
+                'run.coverage_min_threshold as run_coverage_min_threshold',
+                'run.coverage_threshold_mode as run_coverage_threshold_mode',
+                'run.coverage_universe_basis as run_coverage_universe_basis',
+                'run.coverage_contract_version as run_coverage_contract_version',
+                'run.is_current_publication as run_is_current_publication',
+                'run.publication_id as run_publication_id',
+                'run.publication_version as run_publication_version'
             )
             ->first();
+
+        return $this->readablePublicationRowOrNull(
+            $row,
+            $row ? $row->readable_trade_date : null,
+            'EodPublicationRepository::findLatestReadablePublicationBefore'
+        );
+    }
+
+
+    private function readablePublicationRowOrNull($row, $tradeDate, string $context)
+    {
+        if (! $row) {
+            return null;
+        }
+
+        $runState = [
+            'terminal_status' => $row->run_terminal_status ?? $row->terminal_status ?? null,
+            'publishability_state' => $row->run_publishability_state ?? $row->publishability_state ?? null,
+            'coverage_gate_state' => $row->run_coverage_gate_state ?? $row->coverage_gate_state ?? null,
+            'expected_universe_count' => $row->run_coverage_universe_count ?? $row->coverage_universe_count ?? null,
+            'available_eod_count' => $row->run_coverage_available_count ?? $row->coverage_available_count ?? null,
+            'missing_eod_count' => $row->run_coverage_missing_count ?? $row->coverage_missing_count ?? null,
+            'coverage_ratio' => $row->run_coverage_ratio ?? $row->coverage_ratio ?? null,
+            'coverage_threshold_value' => $row->run_coverage_min_threshold ?? $row->coverage_min_threshold ?? null,
+            'coverage_threshold_mode' => $row->run_coverage_threshold_mode ?? $row->coverage_threshold_mode ?? null,
+            'coverage_universe_basis' => $row->run_coverage_universe_basis ?? $row->coverage_universe_basis ?? null,
+            'coverage_contract_version' => $row->run_coverage_contract_version ?? $row->coverage_contract_version ?? null,
+        ];
+
+        try {
+            (new MarketDataInvariantGuard())->assertValidPointerTarget($row, $runState, $tradeDate, $context);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return $row;
     }
 
     public function buildManifestByPublicationId($publicationId)
@@ -885,6 +1051,15 @@ class EodPublicationRepository
                 'run.indicators_rows_written',
                 'run.eligibility_rows_written',
                 'run.trade_date_effective',
+                'run.coverage_universe_count',
+                'run.coverage_available_count',
+                'run.coverage_missing_count',
+                'run.coverage_ratio',
+                'run.coverage_min_threshold',
+                'run.coverage_gate_state',
+                'run.coverage_threshold_mode',
+                'run.coverage_universe_basis',
+                'run.coverage_contract_version',
                 'pub.source_file_hash',
                 'pub.source_file_hash_algorithm',
                 'pub.source_file_size_bytes',

@@ -24,6 +24,8 @@ class PublicationFinalizeOutcomeService
 
         $state = [
             'coverage_gate_status' => $preDecision['coverage_gate_status'] ?? null,
+            'coverage_gate_state' => $preDecision['coverage_gate_state'] ?? ($preDecision['coverage_gate_status'] ?? null),
+            'coverage_summary' => $preDecision['coverage_summary'] ?? [],
             'quality_gate_state' => $preDecision['quality_gate_state'],
             'terminal_status' => $preDecision['terminal_status'],
             'publishability_state' => $preDecision['publishability_state'],

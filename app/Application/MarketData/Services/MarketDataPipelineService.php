@@ -268,7 +268,7 @@ class MarketDataPipelineService
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => $coverageGateState,
                     'coverage_threshold_mode' => $coverage['coverage_threshold_mode'],
-                    'coverage_universe_basis' => (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
+                    'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
                 ]);
@@ -313,7 +313,7 @@ class MarketDataPipelineService
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => $coverage['coverage_gate_status'],
                     'coverage_threshold_mode' => $coverage['coverage_threshold_mode'],
-                    'coverage_universe_basis' => (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
+                    'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
                 ]);
@@ -562,6 +562,8 @@ class MarketDataPipelineService
                             : (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                         'coverage_threshold_mode' => $run->coverage_threshold_mode ?: config('market_data.coverage_gate.threshold_mode', 'MIN_RATIO'),
                         'coverage_calibration_version' => $run->coverage_contract_version,
+                        'coverage_contract_version' => $run->coverage_contract_version,
+                        'coverage_universe_basis' => $run->coverage_universe_basis,
                         'expected_universe_count' => $run->coverage_universe_count,
                         'available_eod_count' => $run->coverage_available_count,
                         'missing_eod_count' => $run->coverage_missing_count,
@@ -676,6 +678,8 @@ class MarketDataPipelineService
                                 'coverage_missing_count' => $run->coverage_missing_count,
                                 'coverage_ratio' => $run->coverage_ratio,
                                 'coverage_min_threshold' => $run->coverage_min_threshold,
+                        'coverage_threshold_mode' => $run->coverage_threshold_mode,
+                        'coverage_universe_basis' => $run->coverage_universe_basis,
                                 'coverage_min' => (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                                 'coverage_contract_version' => $run->coverage_contract_version,
                                 'quality_gate_state' => 'PASS',
@@ -798,6 +802,7 @@ class MarketDataPipelineService
                                 || strpos($message, 'Current publication trade date mismatch after finalize') !== false
                                 || strpos($message, 'Current publication integrity violation') !== false
                                 || strpos($message, 'Promotion lost run ownership') !== false
+                                || strpos($message, 'Correction baseline no longer matches current publication pointer') !== false
                                 || strpos($message, 'pointer target requires run terminal_status SUCCESS') !== false
                                 || strpos($message, 'Current publication promotion returned no publication') !== false;
 
@@ -822,9 +827,12 @@ class MarketDataPipelineService
                             }
 
                             if ($isPointerIntegrityError) {
-                                $postFinalizeMismatchNote = strpos($message, 'Promotion lost run ownership') !== false
-                                    ? $message
-                                    : 'Current publication pointer resolution mismatch after finalize.';
+                                $postFinalizeMismatchNote = (
+                                        strpos($message, 'Promotion lost run ownership') !== false
+                                        || strpos($message, 'Correction baseline no longer matches current publication pointer') !== false
+                                    )
+                                        ? $message
+                                        : 'Current publication pointer resolution mismatch after finalize.';
 
                                 $promotionError = null;
                                 $candidateCurrent = $priorCurrent ?: null;
@@ -861,17 +869,17 @@ class MarketDataPipelineService
                 ]);
 
                 if ($postFinalizeMismatchNote !== null) {
-                    $isPromotionLostOwnership = strpos($postFinalizeMismatchNote, 'Promotion lost run ownership') !== false;
-
                     $outcome['terminal_status'] = 'HELD';
                     $outcome['publishability_state'] = 'NOT_READABLE';
 
-                    if ($isPromotionLostOwnership) {
-                        $outcome['trade_date_effective'] = ! empty($run->trade_date_effective)
-                            ? $run->trade_date_effective
-                            : ($fallback ? $fallback->readable_trade_date : null);
-                    } elseif (empty($outcome['trade_date_effective'])) {
-                        $outcome['trade_date_effective'] = $input->requestedDate;
+                    if (! empty($run->trade_date_effective) && (string) $run->trade_date_effective !== (string) $input->requestedDate) {
+                        $outcome['trade_date_effective'] = $run->trade_date_effective;
+                    } elseif ($fallback && ! empty($fallback->readable_trade_date)) {
+                        $outcome['trade_date_effective'] = $fallback->readable_trade_date;
+                    } else {
+                        // Malformed pointer/fallback resolution must not invent an effective date
+                        // by leaving the requested candidate date in a HELD/NOT_READABLE outcome.
+                        $outcome['trade_date_effective'] = null;
                     }
 
                     $outcome['quality_gate_state'] = $outcome['quality_gate_state'] ?? 'PASS';
@@ -889,12 +897,10 @@ class MarketDataPipelineService
                     $postFinalizeMismatchNote
                 );
 
-                if (
-                    $postFinalizeMismatchNote !== null
-                    && strpos($postFinalizeMismatchNote, 'Promotion lost run ownership') === false
-                    && empty($outcome['trade_date_effective'])
-                ) {
-                    $outcome['trade_date_effective'] = $input->requestedDate;
+                if ($postFinalizeMismatchNote !== null && empty($outcome['trade_date_effective'])) {
+                    $outcome['trade_date_effective'] = ($fallback && ! empty($fallback->readable_trade_date))
+                        ? $fallback->readable_trade_date
+                        : null;
                 }
 
                 $run = $this->finalizeRunState($run, [
@@ -1156,6 +1162,8 @@ class MarketDataPipelineService
                         'coverage_min_threshold' => $run->coverage_min_threshold !== null
                             ? (float) $run->coverage_min_threshold
                             : (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
+                        'coverage_threshold_mode' => $run->coverage_threshold_mode,
+                        'coverage_universe_basis' => $run->coverage_universe_basis,
                         'coverage_min' => (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min')),
                         'coverage_contract_version' => $run->coverage_contract_version,
                         'quality_gate_state' => $run->quality_gate_state,
@@ -1195,6 +1203,14 @@ class MarketDataPipelineService
             'terminal_status' => $preDecision['terminal_status'] ?? 'SUCCESS',
             'publishability_state' => $preDecision['publishability_state'] ?? 'READABLE',
             'coverage_gate_state' => $run->coverage_gate_state,
+            'expected_universe_count' => $run->coverage_universe_count,
+            'available_eod_count' => $run->coverage_available_count,
+            'missing_eod_count' => $run->coverage_missing_count,
+            'coverage_ratio' => $run->coverage_ratio,
+            'coverage_threshold_value' => $run->coverage_min_threshold,
+            'coverage_threshold_mode' => $run->coverage_threshold_mode,
+            'coverage_universe_basis' => $run->coverage_universe_basis,
+            'coverage_contract_version' => $run->coverage_contract_version,
             'promotion_allowed' => true,
         ];
 
@@ -1252,6 +1268,14 @@ class MarketDataPipelineService
 
         $state = [
             'coverage_gate_state' => $run->coverage_gate_state,
+            'expected_universe_count' => $run->coverage_universe_count,
+            'available_eod_count' => $run->coverage_available_count,
+            'missing_eod_count' => $run->coverage_missing_count,
+            'coverage_ratio' => $run->coverage_ratio,
+            'coverage_threshold_value' => $run->coverage_min_threshold,
+            'coverage_threshold_mode' => $run->coverage_threshold_mode,
+            'coverage_universe_basis' => $run->coverage_universe_basis,
+            'coverage_contract_version' => $run->coverage_contract_version,
             'quality_gate_state' => 'PASS',
             'terminal_status' => 'SUCCESS',
             'publishability_state' => 'READABLE',

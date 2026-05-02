@@ -140,6 +140,7 @@ abstract class AbstractMarketDataCommand extends Command
             'coverage_missing_count' => $this->runField($run, 'coverage_missing_count'),
             'coverage_ratio' => $this->runField($run, 'coverage_ratio'),
             'coverage_min_threshold' => $this->runField($run, 'coverage_min_threshold'),
+            'coverage_threshold_mode' => $this->runField($run, 'coverage_threshold_mode'),
             'coverage_universe_basis' => $this->runField($run, 'coverage_universe_basis'),
             'coverage_contract_version' => $this->runField($run, 'coverage_contract_version'),
         ];
@@ -429,6 +430,7 @@ abstract class AbstractMarketDataCommand extends Command
         $universe = $this->runField($run, 'coverage_universe_count');
         $missing = $this->runField($run, 'coverage_missing_count');
         $threshold = $this->runField($run, 'coverage_min_threshold');
+        $thresholdMode = $this->runField($run, 'coverage_threshold_mode');
         $basis = $this->runField($run, 'coverage_universe_basis');
         $contract = $this->runField($run, 'coverage_contract_version');
         $coverageReasonCode = $this->resolveCoverageReasonCode($run, $state);
@@ -461,6 +463,10 @@ abstract class AbstractMarketDataCommand extends Command
 
         if ($threshold !== null) {
             $summaryParts[] = 'threshold='.$this->formatCoverageDecimal($threshold);
+        }
+
+        if ($thresholdMode !== null && $thresholdMode !== '') {
+            $summaryParts[] = 'threshold_mode='.(string) $thresholdMode;
         }
 
         if ($basis !== null && $basis !== '') {

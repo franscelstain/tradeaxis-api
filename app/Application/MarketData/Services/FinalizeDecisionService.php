@@ -6,13 +6,18 @@ class FinalizeDecisionService
 {
     public function evaluate($cutoffSatisfied, $runSealed, $candidateSealState, array $coverageSummary, $fallbackTradeDate, array $promoteContext = [])
     {
-        $coverageGateStatus = strtoupper((string) ($coverageSummary['coverage_gate_status'] ?? 'NOT_EVALUABLE'));
-        $coverageThresholdValue = $coverageSummary['coverage_threshold_value'] ?? null;
-        $coverageThresholdMode = $coverageSummary['coverage_threshold_mode'] ?? null;
-        $coverageRatio = $coverageSummary['coverage_ratio'] ?? null;
-        $expectedUniverseCount = isset($coverageSummary['expected_universe_count']) ? (int) $coverageSummary['expected_universe_count'] : null;
-        $availableEodCount = isset($coverageSummary['available_eod_count']) ? (int) $coverageSummary['available_eod_count'] : null;
-        $edgeCaseReasonCode = isset($coverageSummary['edge_case_reason_code']) ? (string) $coverageSummary['edge_case_reason_code'] : null;
+        $coverageSummary = $this->normalizeCoverageSummary($coverageSummary);
+        $coverageGateStatus = $coverageSummary['coverage_gate_status'];
+        $coverageThresholdValue = $coverageSummary['coverage_threshold_value'];
+        $coverageThresholdMode = $coverageSummary['coverage_threshold_mode'];
+        $coverageRatio = $coverageSummary['coverage_ratio'];
+        $expectedUniverseCount = $coverageSummary['expected_universe_count'];
+        $availableEodCount = $coverageSummary['available_eod_count'];
+        $missingEodCount = $coverageSummary['missing_eod_count'];
+        $coverageUniverseBasis = $coverageSummary['coverage_universe_basis'];
+        $coverageContractVersion = $coverageSummary['coverage_contract_version'];
+        $coverageReasonCode = $coverageSummary['coverage_reason_code'];
+        $edgeCaseReasonCode = $coverageSummary['edge_case_reason_code'];
 
         $promoteMode = (string) ($promoteContext['promote_mode'] ?? 'full_publish');
         $publishTarget = (string) ($promoteContext['publish_target'] ?? 'current_replace');
@@ -50,11 +55,16 @@ class FinalizeDecisionService
             'coverage_override_allowed' => false,
             'coverage_summary' => [
                 'coverage_gate_status' => $coverageGateStatus,
+                'coverage_gate_state' => $coverageGateStatus,
                 'coverage_ratio' => $coverageRatio !== null ? (float) $coverageRatio : null,
                 'coverage_threshold_value' => $coverageThresholdValue !== null ? (float) $coverageThresholdValue : null,
                 'coverage_threshold_mode' => $coverageThresholdMode,
                 'expected_universe_count' => $expectedUniverseCount,
                 'available_eod_count' => $availableEodCount,
+                'missing_eod_count' => $missingEodCount,
+                'coverage_universe_basis' => $coverageUniverseBasis,
+                'coverage_contract_version' => $coverageContractVersion,
+                'coverage_reason_code' => $coverageReasonCode,
                 'edge_case_reason_code' => $edgeCaseReasonCode,
             ],
         ];
@@ -130,7 +140,7 @@ class FinalizeDecisionService
         if ($coverageGateStatus === 'FAIL') {
             $state = $baseState;
             $state['quality_gate_state'] = 'FAIL';
-            $state['reason_code'] = $this->resolveCoverageFailReasonCode(
+            $state['reason_code'] = $coverageReasonCode ?: $this->resolveCoverageFailReasonCode(
                 $availableEodCount,
                 $expectedUniverseCount,
                 $edgeCaseReasonCode
@@ -155,7 +165,7 @@ class FinalizeDecisionService
             $state = $baseState;
             $state['quality_gate_state'] = 'BLOCKED';
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
-            $state['reason_code'] = $this->resolveNotEvaluableReasonCode($sourceFinalReasonCode);
+            $state['reason_code'] = $coverageReasonCode ?: $this->resolveNotEvaluableReasonCode($sourceFinalReasonCode);
             $state['message'] = $fallbackTradeDate
                 ? 'Finalize held because coverage gate could not be evaluated safely and fallback readable publication remains available.'
                 : 'Finalize failed because coverage gate could not be evaluated safely and no readable fallback publication exists.';
@@ -190,6 +200,9 @@ class FinalizeDecisionService
             return $this->enforceStateMatrix($state);
         }
 
+        $baseState['quality_gate_state'] = 'BLOCKED';
+        $baseState['reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
+
         return $this->enforceStateMatrix($baseState);
     }
 
@@ -222,6 +235,100 @@ class FinalizeDecisionService
         (new MarketDataInvariantGuard())->assertNoBypassState($state, 'FinalizeDecisionService');
 
         return $state;
+    }
+
+    private function normalizeCoverageSummary(array $coverageSummary): array
+    {
+        $status = strtoupper((string) ($coverageSummary['coverage_gate_status'] ?? $coverageSummary['coverage_gate_state'] ?? 'NOT_EVALUABLE'));
+        if (! in_array($status, ['PASS', 'FAIL', 'NOT_EVALUABLE', 'BLOCKED'], true)) {
+            $status = 'NOT_EVALUABLE';
+        }
+
+        $summary = [
+            'coverage_gate_status' => $status,
+            'coverage_ratio' => $this->numberOrNull($coverageSummary['coverage_ratio'] ?? null),
+            'coverage_threshold_value' => $this->numberOrNull($coverageSummary['coverage_threshold_value'] ?? $coverageSummary['coverage_min_threshold'] ?? null),
+            'coverage_threshold_mode' => $coverageSummary['coverage_threshold_mode'] ?? null,
+            'expected_universe_count' => $this->intOrNull($coverageSummary['expected_universe_count'] ?? $coverageSummary['coverage_universe_count'] ?? null),
+            'available_eod_count' => $this->intOrNull($coverageSummary['available_eod_count'] ?? $coverageSummary['coverage_available_count'] ?? null),
+            'missing_eod_count' => $this->intOrNull($coverageSummary['missing_eod_count'] ?? $coverageSummary['coverage_missing_count'] ?? null),
+            'coverage_universe_basis' => $coverageSummary['coverage_universe_basis'] ?? null,
+            'coverage_contract_version' => $coverageSummary['coverage_contract_version'] ?? $coverageSummary['coverage_calibration_version'] ?? null,
+            'coverage_reason_code' => $coverageSummary['coverage_reason_code'] ?? $coverageSummary['reason_code'] ?? null,
+            'edge_case_reason_code' => $coverageSummary['edge_case_reason_code'] ?? null,
+        ];
+
+        if ($summary['coverage_gate_status'] === 'PASS' && ! $this->isReadableCoverageSummary($summary)) {
+            $summary['coverage_gate_status'] = 'NOT_EVALUABLE';
+            $summary['coverage_reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
+        }
+
+        if (in_array($summary['coverage_gate_status'], ['NOT_EVALUABLE', 'BLOCKED'], true) && ! $summary['coverage_reason_code']) {
+            $summary['coverage_reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
+        }
+
+        if ($summary['coverage_gate_status'] === 'FAIL' && ! $summary['coverage_reason_code']) {
+            $summary['coverage_reason_code'] = $this->resolveCoverageFailReasonCode(
+                $summary['available_eod_count'],
+                $summary['expected_universe_count'],
+                $summary['edge_case_reason_code']
+            );
+        }
+
+        return $summary;
+    }
+
+    private function isReadableCoverageSummary(array $summary): bool
+    {
+        $expected = $summary['expected_universe_count'];
+        $available = $summary['available_eod_count'];
+        $missing = $summary['missing_eod_count'];
+        $ratio = $summary['coverage_ratio'];
+        $threshold = $summary['coverage_threshold_value'];
+
+        if ($expected === null || $expected <= 0) {
+            return false;
+        }
+
+        if ($available === null || $available < 0 || $available > $expected) {
+            return false;
+        }
+
+        if ($missing === null || $missing < 0 || (int) $missing !== ((int) $expected - (int) $available)) {
+            return false;
+        }
+
+        if ($ratio === null || abs((float) $ratio - ((float) $available / (float) $expected)) > 0.0000001) {
+            return false;
+        }
+
+        if ($threshold === null || $threshold < 0 || $threshold > 1 || (float) $ratio + 0.0000001 < (float) $threshold) {
+            return false;
+        }
+
+        if (! $summary['coverage_threshold_mode'] || ! $summary['coverage_universe_basis'] || ! $summary['coverage_contract_version']) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function numberOrNull($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return is_numeric($value) ? $value + 0 : null;
+    }
+
+    private function intOrNull($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return is_numeric($value) ? (int) $value : null;
     }
 
     private function resolveNotEvaluableReasonCode($sourceFinalReasonCode)

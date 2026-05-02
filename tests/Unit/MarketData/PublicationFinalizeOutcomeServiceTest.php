@@ -8,18 +8,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     public function test_finalize_success_when_current_pointer_resolves_to_candidate_publication()
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'PASS',
-            'quality_gate_state' => 'PASS',
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'READABLE',
-            'trade_date_effective' => null,
-            'reason_code' => null,
-            'message' => 'promotion pending',
-            'promotion_allowed' => true,
-        ];
-
-        $state = $service->resolve($preDecision, [
+        $state = $service->resolve($this->preDecision('PASS', 'SUCCESS', 'READABLE', null, true), [
             'requested_date' => '2026-04-21',
             'fallback_trade_date' => '2026-04-20',
             'candidate_publication_id' => 77,
@@ -38,18 +27,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     public function test_outcome_keeps_held_not_readable_when_coverage_fail_has_fallback()
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'FAIL',
-            'quality_gate_state' => 'FAIL',
-            'terminal_status' => 'HELD',
-            'publishability_state' => 'NOT_READABLE',
-            'trade_date_effective' => '2026-04-20',
-            'reason_code' => 'RUN_COVERAGE_LOW',
-            'message' => 'Finalize held because coverage gate failed and fallback readable publication remains available.',
-            'promotion_allowed' => false,
-        ];
-
-        $state = $service->resolve($preDecision, [
+        $state = $service->resolve($this->preDecision('FAIL', 'HELD', 'NOT_READABLE', 'RUN_COVERAGE_LOW', false), [
             'requested_date' => '2026-04-21',
             'fallback_trade_date' => '2026-04-20',
         ]);
@@ -63,18 +41,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     public function test_outcome_keeps_failed_not_readable_when_coverage_fail_has_no_fallback()
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'FAIL',
-            'quality_gate_state' => 'FAIL',
-            'terminal_status' => 'FAILED',
-            'publishability_state' => 'NOT_READABLE',
-            'trade_date_effective' => null,
-            'reason_code' => 'RUN_COVERAGE_LOW',
-            'message' => 'Finalize failed because coverage gate failed and no readable fallback publication exists.',
-            'promotion_allowed' => false,
-        ];
-
-        $state = $service->resolve($preDecision, [
+        $state = $service->resolve($this->preDecision('FAIL', 'FAILED', 'NOT_READABLE', 'RUN_COVERAGE_LOW', false, null), [
             'requested_date' => '2026-04-21',
             'fallback_trade_date' => null,
         ]);
@@ -88,18 +55,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     public function test_outcome_keeps_blocked_non_readable_and_never_promotes()
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'NOT_EVALUABLE',
-            'quality_gate_state' => 'BLOCKED',
-            'terminal_status' => 'HELD',
-            'publishability_state' => 'NOT_READABLE',
-            'trade_date_effective' => '2026-04-20',
-            'reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
-            'message' => 'Finalize held because coverage gate could not be evaluated safely and fallback readable publication remains available.',
-            'promotion_allowed' => false,
-        ];
-
-        $state = $service->resolve($preDecision, [
+        $state = $service->resolve($this->preDecision('NOT_EVALUABLE', 'HELD', 'NOT_READABLE', 'RUN_COVERAGE_NOT_EVALUABLE', false), [
             'requested_date' => '2026-04-21',
             'fallback_trade_date' => '2026-04-20',
             'candidate_publication_id' => 77,
@@ -118,18 +74,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     public function test_finalize_held_when_current_pointer_resolution_does_not_match_candidate()
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'PASS',
-            'quality_gate_state' => 'PASS',
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'READABLE',
-            'trade_date_effective' => null,
-            'reason_code' => null,
-            'message' => 'promotion pending',
-            'promotion_allowed' => true,
-        ];
-
-        $state = $service->resolve($preDecision, [
+        $state = $service->resolve($this->preDecision('PASS', 'SUCCESS', 'READABLE', null, true), [
             'requested_date' => '2026-04-21',
             'fallback_trade_date' => '2026-04-20',
             'candidate_publication_id' => 77,
@@ -147,18 +92,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     public function test_finalize_held_when_promotion_errors_after_candidate_seal()
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'PASS',
-            'quality_gate_state' => 'PASS',
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'READABLE',
-            'trade_date_effective' => null,
-            'reason_code' => null,
-            'message' => 'promotion pending',
-            'promotion_allowed' => true,
-        ];
-
-        $state = $service->resolve($preDecision, [
+        $state = $service->resolve($this->preDecision('PASS', 'SUCCESS', 'READABLE', null, true), [
             'requested_date' => '2026-04-21',
             'fallback_trade_date' => '2026-04-20',
             'candidate_publication_id' => 77,
@@ -179,18 +113,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     public function test_correction_unchanged_keeps_prior_current_publication_and_marks_cancelled()
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'PASS',
-            'quality_gate_state' => 'PASS',
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'READABLE',
-            'trade_date_effective' => null,
-            'reason_code' => null,
-            'message' => 'promotion pending',
-            'promotion_allowed' => true,
-        ];
-
-        $state = $service->resolve($preDecision, [
+        $state = $service->resolve($this->preDecision('PASS', 'SUCCESS', 'READABLE', null, true), [
             'requested_date' => '2026-04-21',
             'fallback_trade_date' => '2026-04-20',
             'candidate_publication_id' => 88,
@@ -214,18 +137,7 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
     public function test_correction_changed_marks_published_after_current_pointer_matches_candidate()
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'PASS',
-            'quality_gate_state' => 'PASS',
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'READABLE',
-            'trade_date_effective' => null,
-            'reason_code' => null,
-            'message' => 'promotion pending',
-            'promotion_allowed' => true,
-        ];
-
-        $state = $service->resolve($preDecision, [
+        $state = $service->resolve($this->preDecision('PASS', 'SUCCESS', 'READABLE', null, true), [
             'requested_date' => '2026-04-21',
             'fallback_trade_date' => '2026-04-20',
             'candidate_publication_id' => 99,
@@ -244,19 +156,11 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         $this->assertStringContainsString('Historical correction published safely', $state['message']);
         $this->assertStringContainsString('Historical correction published safely', $state['correction_outcome_note']);
     }
+
     public function test_readable_outcome_requires_coverage_pass(): void
     {
         $service = new PublicationFinalizeOutcomeService();
-        $preDecision = [
-            'coverage_gate_status' => 'FAIL',
-            'quality_gate_state' => 'FAIL',
-            'terminal_status' => 'SUCCESS',
-            'publishability_state' => 'READABLE',
-            'trade_date_effective' => null,
-            'reason_code' => null,
-            'message' => 'invalid promotion pending',
-            'promotion_allowed' => true,
-        ];
+        $preDecision = $this->preDecision('FAIL', 'SUCCESS', 'READABLE', null, true);
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('READABLE requires coverage_gate_status PASS');
@@ -271,5 +175,60 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         ]);
     }
 
+    public function test_readable_outcome_requires_complete_coverage_summary(): void
+    {
+        $service = new PublicationFinalizeOutcomeService();
+        $preDecision = $this->preDecision('PASS', 'SUCCESS', 'READABLE', null, true);
+        unset($preDecision['coverage_summary']['expected_universe_count']);
 
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('READABLE requires expected_universe_count > 0');
+
+        $service->resolve($preDecision, [
+            'requested_date' => '2026-04-21',
+            'fallback_trade_date' => '2026-04-20',
+            'candidate_publication_id' => 77,
+            'candidate_publication_version' => 3,
+            'resolved_current_publication_id' => 77,
+            'resolved_current_publication_version' => 3,
+        ]);
+    }
+
+    private function preDecision(string $coverageState, string $terminalStatus, string $publishabilityState, $reasonCode, bool $promotionAllowed, $effectiveDate = '2026-04-20'): array
+    {
+        $coverageSummary = [
+            'coverage_gate_status' => $coverageState,
+            'coverage_gate_state' => $coverageState,
+            'expected_universe_count' => 100,
+            'available_eod_count' => $coverageState === 'PASS' ? 99 : 80,
+            'missing_eod_count' => $coverageState === 'PASS' ? 1 : 20,
+            'coverage_ratio' => $coverageState === 'PASS' ? 0.99 : 0.80,
+            'coverage_threshold_value' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_reason_code' => $coverageState === 'PASS' ? 'COVERAGE_THRESHOLD_MET' : 'RUN_COVERAGE_LOW',
+        ];
+
+        if ($coverageState === 'NOT_EVALUABLE') {
+            $coverageSummary['expected_universe_count'] = 0;
+            $coverageSummary['available_eod_count'] = 0;
+            $coverageSummary['missing_eod_count'] = 0;
+            $coverageSummary['coverage_ratio'] = null;
+            $coverageSummary['coverage_reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
+        }
+
+        return [
+            'coverage_gate_status' => $coverageState,
+            'coverage_gate_state' => $coverageState,
+            'coverage_summary' => $coverageSummary,
+            'quality_gate_state' => $coverageState === 'PASS' ? 'PASS' : ($coverageState === 'FAIL' ? 'FAIL' : 'BLOCKED'),
+            'terminal_status' => $terminalStatus,
+            'publishability_state' => $publishabilityState,
+            'trade_date_effective' => $effectiveDate,
+            'reason_code' => $reasonCode,
+            'message' => 'promotion pending',
+            'promotion_allowed' => $promotionAllowed,
+        ];
+    }
 }

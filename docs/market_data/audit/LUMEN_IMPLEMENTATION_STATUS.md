@@ -3,23 +3,21 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Read-Side Enforcement / Anti Bypass Total
+- Coverage Gate Enforcement / No Coverage Bypass
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce market-data consumer read paths through pointer-resolved current readable publication context.
-- Block consumer shortcuts that read latest/raw/staging/current artifacts without pointer, publication, run, coverage, and mirror validation.
-- Update audit state under governance without claiming DONE until local PHPUnit/artisan evidence is supplied.
+- Enforce deterministic coverage calculation and no-bypass behavior across finalize, publishability, pointer, evidence, replay, command, and repository surfaces.
+- Status is DONE based on operator-supplied local PHPUnit evidence for targeted and full MarketData suites.
 
 [SESSION_GOAL]
-- Mark implementation DONE after operator supplied targeted and full MarketData PHPUnit evidence confirming no regression.
-- Preserve prior DB Schema & Migration Sync DONE evidence while recording this read-side enforcement scope as validated.
+- DONE reached after operator supplied targeted and full MarketData PHPUnit evidence for coverage/finalize/publication/pointer/evidence/replay/command scopes.
 
 [SESSION_NOTES]
-- Static trace found read-side eligibility/evidence queries already pointer-joined but missing complete coverage-gate and run-publication mirror enforcement in several paths.
-- Static enforcement and repository predicates were hardened in this session.
-- Operator local validation confirmed targeted and full MarketData PHPUnit PASS after the regression patch.
+- Static trace found coverage status PASS checks that did not require complete expected/available/missing/ratio/threshold/mode/basis/contract context.
+- Static enforcement was patched so READABLE/current pointer decisions require complete and internally consistent coverage telemetry.
+- Operator local rerun exposed regressions in static guard path resolution, coverage alias conflict handling, test fixtures missing new coverage telemetry, and fallback/correction baseline resolution. Recovery patches were applied and final local rerun passed targeted and full MarketData PHPUnit suites.
 
 ---
 
@@ -41,6 +39,78 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Coverage Gate Enforcement / No Coverage Bypass -> DONE
+
+  [LAST_UPDATED] 2026-05-02
+
+  [RELATED_CONTRACT] COVERAGE_GATE_ENFORCEMENT_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-01 -> Coverage gate enforcement session opened against latest source-of-truth ZIP.
+  - 2026-05-01 -> Static trace reviewed coverage evaluator, finalize decision, publication outcome, pointer repository, pipeline finalize, evidence/replay/command coverage surfaces, and related tests.
+  - 2026-05-01 -> Gap found: PASS coverage state could be used as the primary readable/current gate without proving expected/available/missing/ratio/threshold/mode/basis/contract completeness.
+  - 2026-05-01 -> Static enforcement patch added complete coverage telemetry validation before READABLE, promotion_allowed, pointer target, and fallback target states.
+  - 2026-05-01 -> Coverage evaluator now counts unique universe tickers, emits canonical coverage basis/contract/reason fields, and returns NOT_EVALUABLE for empty universe instead of any implicit PASS path.
+  - 2026-05-01 -> Pointer/readable repository predicates now require persisted coverage telemetry fields, not only coverage_gate_state = PASS.
+  - 2026-05-01 -> Static guard and service tests were added/updated to prevent coverage bypass regression.
+  - 2026-05-01 -> Operator local validation showed failures: static guard used `base_path()` in a plain Container test, `coverage_gate_status`/`coverage_gate_state` alias conflict could hide FAIL, mocked finalize decisions lacked full coverage summary, and valid baseline/fallback fixtures lacked required coverage telemetry.
+  - 2026-05-01 -> Recovery patch replaced static guard path resolution, made conflicting coverage gate aliases fail-safe, completed coverage summaries in service mocks, aligned readable/correction/fallback fixtures with strict telemetry, extended evidence/eligibility read predicates to require complete coverage telemetry, and exposed `coverage_threshold_mode` in command output payload/summary.
+
+  - 2026-05-02 -> Operator final local validation passed: pipeline integration, pointer, coverage, finalize, publication, readable, evidence, replay, command, core service tests, static guard, and full `tests/Unit/MarketData` all PASS. Entry promoted to DONE.
+
+  [IMPLEMENTATION]
+  - `MarketDataInvariantGuard` rejects READABLE/promotion/current/fallback targets unless coverage PASS has complete expected/available/missing/ratio/threshold/mode/basis/contract telemetry and consistent count/ratio math.
+  - `FinalizeDecisionService` normalizes coverage aliases and downgrades incomplete PASS coverage to NOT_EVALUABLE with `RUN_COVERAGE_NOT_EVALUABLE`.
+  - `PublicationFinalizeOutcomeService` carries coverage summary into final outcome guard validation.
+  - `CoverageGateEvaluator` uses unique universe ticker count, deduped available ticker count, deterministic missing count, ratio, threshold, basis, contract version, and reason code aliases.
+  - `EodPublicationRepository` requires complete run coverage telemetry on readable pointer resolution and pointer/fallback integrity checks.
+  - `EodPublicationRepository` now re-validates pointer/fallback rows with `MarketDataInvariantGuard` after query resolution so non-null telemetry alone cannot bypass count/ratio/threshold consistency.
+  - `EligibilitySnapshotScopeRepository` and `EodEvidenceRepository` now require full persisted coverage telemetry, not only `coverage_gate_state = PASS`, before returning readable consumer/evidence data.
+  - Pipeline finalize guard states and RUN_FINALIZED payloads now carry coverage mode/basis/contract context.
+
+  [ENFORCEMENT]
+  - Static guard added: `CoverageGateNoBypassStaticGuardTest`.
+  - Guard tests now assert incomplete PASS coverage fails fast.
+  - Finalize/outcome tests now include complete coverage context and explicit downgrade behavior for incomplete PASS.
+  - Repository integration fixtures were aligned with strict coverage telemetry requirements.
+  - Recovery patch updated pipeline/readable fixtures and mocked finalize decisions so tests prove the stricter contract instead of passing through incomplete PASS context.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Coverage FAIL or NOT_EVALUABLE cannot produce READABLE/current publication through patched guard, finalize, outcome, or pointer repository paths.
+  - Incomplete PASS coverage is treated as NOT_EVALUABLE and fail-safe, not readable.
+  - Pointer resolution requires SUCCESS + READABLE + PASS plus complete coverage telemetry fields.
+
+  [EVIDENCE]
+  - Container static scan: no forbidden MAX/trade-date shortcut found in runtime coverage/finalize/evidence/replay paths.
+  - Container syntax validation: changed PHP files passed `php -l` with no syntax errors.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> PASS; `OK (52 tests, 1182 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"` -> PASS; `OK (52 tests, 586 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData` -> PASS; `OK (258 tests, 2461 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "coverage"` -> PASS; `OK (38 tests, 283 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "finalize"` -> PASS; `OK (37 tests, 216 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> PASS; `OK (79 tests, 836 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "readable"` -> PASS; `OK (49 tests, 297 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> PASS; `OK (26 tests, 216 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> PASS; `OK (24 tests, 215 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Command"` -> PASS; `OK (52 tests, 327 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/CoverageGateEvaluatorTest.php` -> PASS; `OK (4 tests, 38 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` -> PASS; `OK (13 tests, 66 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` -> PASS; `OK (10 tests, 43 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/CoverageGateNoBypassStaticGuardTest.php` -> PASS; `OK (4 tests, 96 assertions)`.
+
+  [GAP]
+  - None for this scope after final local validation.
+
+  [NEXT_ACTION]
+  - No immediate action. Reopen only if a future coverage/finalize/publication/pointer/evidence/replay/command path changes the contract.
+
+  [FINAL_CONSTRAINT]
+  - DONE for the current source-of-truth ZIP. Future changes must preserve no-coverage-bypass enforcement and rerun targeted/full MarketData tests.
+
+---
 
 - Read-Side Enforcement / Anti Bypass Total → DONE
 
@@ -196,3 +266,25 @@ ACTIVE SESSION:
   - Local command: `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` → PASS; `OK (52 tests, 1182 assertions)`.
   - Local command: `vendor/bin/phpunit tests/Unit/MarketData` → PASS; `OK (244 tests, 2327 assertions)`.
   - Container static validation during the session: changed PHP files passed `php -l` before local PHPUnit reruns.
+
+## Recovery-3 malformed fallback pointer fix — Coverage Gate Enforcement / No Coverage Bypass
+
+- Status: SUPERSEDED_BY_FINAL_LOCK.
+- Local evidence received: static guard, Coverage, Publication, readable, Evidence, Replay, and Command suites passed; one integration/pointer failure remained for malformed fallback pointer effective-date handling.
+- Recovery-3 fix: when correction pointer mismatch occurs and no contract-valid readable fallback exists, `trade_date_effective` is explicitly cleared to null instead of retaining the requested candidate date.
+- Final result: superseded by Recovery-5 final local validation; `MarketDataPipelineIntegrationTest`, pointer filter, and full `tests/Unit/MarketData` all PASS.
+
+## Recovery-4 fallback mirror fixture alignment — Coverage Gate Enforcement / No Coverage Bypass
+
+- Status: SUPERSEDED_BY_FINAL_LOCK.
+- Local evidence received after Recovery-3: static guard, Coverage, Publication, readable, Evidence, Replay, and Command suites passed; remaining failures were isolated to correction fallback/effective-date and low-coverage fallback preservation.
+- Recovery-4 fix: `seedReadableFallbackPublication()` now mirrors `eod_runs.publication_id` to the seeded fallback publication id instead of hard-coding publication `1`, so strict pointer/publication/run mirror validation can resolve valid fallback baselines while still rejecting malformed fallback pointers.
+- Recovery-4 fix: correction baseline pointer mismatch messages are classified as pointer-integrity failures, so failed correction promotion preserves prior current state and uses the contract-valid fallback date when one resolves.
+- Final result: superseded by Recovery-5 final local validation; `MarketDataPipelineIntegrationTest`, pointer filter, and full `tests/Unit/MarketData` all PASS.
+
+## Recovery-5 baseline pointer mismatch message preservation — Coverage Gate Enforcement / No Coverage Bypass
+
+- Status: DONE / LOCKED by final local validation.
+- Local evidence after Recovery-5: `MarketDataPipelineIntegrationTest`, pointer filter, targeted coverage/finalize/publication/readable/evidence/replay/command suites, core service tests, static guard, and full `tests/Unit/MarketData` all PASS.
+- Recovery-5 fix: pointer-integrity handling now preserves the explicit `Correction baseline no longer matches current publication pointer` note instead of collapsing it to the generic post-finalize pointer mismatch message.
+- Final lock completed for Coverage Gate Enforcement / No Coverage Bypass.

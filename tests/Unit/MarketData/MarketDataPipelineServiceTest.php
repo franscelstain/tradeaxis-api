@@ -82,11 +82,32 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->coverage_ratio = $coverageRatio;
         $run->coverage_gate_state = $coverageRatio !== null ? 'PASS' : null;
         $run->coverage_min_threshold = $coverageRatio !== null ? '0.9800' : null;
+        $run->coverage_universe_count = $coverageRatio !== null ? 100 : null;
+        $run->coverage_available_count = $coverageRatio !== null ? (int) round(((float) $coverageRatio) * 100) : null;
+        $run->coverage_missing_count = $coverageRatio !== null ? 100 - (int) round(((float) $coverageRatio) * 100) : null;
+        $run->coverage_universe_basis = $coverageRatio !== null ? 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE' : null;
         $run->coverage_threshold_mode = $coverageRatio !== null ? 'MIN_RATIO' : null;
         $run->coverage_contract_version = $coverageRatio !== null ? 'coverage_gate_v1' : null;
         $run->sealed_at = $sealedAt;
 
         return $run;
+    }
+
+    private function coverageSummaryPass(): array
+    {
+        return [
+            'coverage_gate_status' => 'PASS',
+            'coverage_gate_state' => 'PASS',
+            'expected_universe_count' => 100,
+            'available_eod_count' => 100,
+            'missing_eod_count' => 0,
+            'coverage_ratio' => 1.0,
+            'coverage_threshold_value' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_reason_code' => null,
+        ];
     }
 
 
@@ -636,7 +657,12 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->coverage_gate_state = 'PASS';
         $run->coverage_ratio = 1.0;
         $run->coverage_min_threshold = 0.95;
+        $run->coverage_universe_count = 100;
+        $run->coverage_available_count = 100;
+        $run->coverage_missing_count = 0;
+        $run->coverage_universe_basis = 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE';
         $run->coverage_threshold_mode = 'MIN_RATIO';
+        $run->coverage_contract_version = 'coverage_gate_v1';
         $run->trade_date_effective = '2026-03-17';
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
@@ -712,6 +738,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'trade_date_effective' => null,
                 'quality_gate_state' => 'PASS',
                 'coverage_gate_status' => 'PASS',
+                'coverage_summary' => $this->coverageSummaryPass(),
                 'reason_code' => null,
                 'message' => 'Finalize succeeded.',
             ]);
@@ -786,7 +813,12 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->coverage_gate_state = 'PASS';
         $run->coverage_ratio = 1.0;
         $run->coverage_min_threshold = 0.95;
+        $run->coverage_universe_count = 100;
+        $run->coverage_available_count = 100;
+        $run->coverage_missing_count = 0;
+        $run->coverage_universe_basis = 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE';
         $run->coverage_threshold_mode = 'MIN_RATIO';
+        $run->coverage_contract_version = 'coverage_gate_v1';
         $run->trade_date_effective = '2026-03-17';
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
@@ -854,6 +886,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'trade_date_effective' => null,
                 'quality_gate_state' => 'PASS',
                 'coverage_gate_status' => 'PASS',
+                'coverage_summary' => $this->coverageSummaryPass(),
                 'reason_code' => null,
                 'message' => 'Finalize succeeded.',
             ]);
@@ -1082,7 +1115,12 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->coverage_gate_state = 'PASS';
         $run->coverage_ratio = 1.0;
         $run->coverage_min_threshold = 0.95;
+        $run->coverage_universe_count = 100;
+        $run->coverage_available_count = 100;
+        $run->coverage_missing_count = 0;
+        $run->coverage_universe_basis = 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE';
         $run->coverage_threshold_mode = 'MIN_RATIO';
+        $run->coverage_contract_version = 'coverage_gate_v1';
         $run->trade_date_effective = null;
 
         $input = new MarketDataStageInput('2026-03-17', 'manual_file', 55, 'FINALIZE', 4);
@@ -1163,6 +1201,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'trade_date_effective' => null,
                 'quality_gate_state' => 'PASS',
                 'coverage_gate_status' => 'PASS',
+                'coverage_summary' => $this->coverageSummaryPass(),
                 'reason_code' => null,
                 'message' => 'Finalize succeeded.',
             ]);
