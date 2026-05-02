@@ -41,11 +41,15 @@ class ReplayVerificationService
             'trade_date_effective' => $actual['trade_date_effective'],
             'source' => $actual['source'],
             'status' => $actual['status'],
+            'publishability_state' => $actual['publishability_state'],
+            'publication_id' => $actual['publication_id'],
+            'publication_run_id' => $actual['publication_run_id'],
             'comparison_result' => $comparison['comparison_result'],
             'comparison_note' => $comparison['comparison_note'],
             'artifact_changed_scope' => $comparison['artifact_changed_scope'],
             'config_identity' => $actual['config_identity'],
             'publication_version' => $actual['publication_version'],
+            'is_current_publication' => $actual['is_current_publication'],
             'coverage_universe_count' => $actual['coverage_universe_count'],
             'coverage_available_count' => $actual['coverage_available_count'],
             'coverage_missing_count' => $actual['coverage_missing_count'],
@@ -70,10 +74,15 @@ class ReplayVerificationService
             'seal_state' => $actual['seal_state'],
             'sealed_at' => $actual['sealed_at'],
             'expected_status' => $comparison['expected_status'],
+            'expected_terminal_status' => $comparison['expected_terminal_status'],
+            'expected_publishability_state' => $comparison['expected_publishability_state'],
             'expected_trade_date_effective' => $comparison['expected_trade_date_effective'],
             'expected_seal_state' => $comparison['expected_seal_state'],
             'expected_config_identity' => $comparison['expected_config_identity'],
+            'expected_publication_id' => $comparison['expected_publication_id'],
+            'expected_publication_run_id' => $comparison['expected_publication_run_id'],
             'expected_publication_version' => $comparison['expected_publication_version'],
+            'expected_is_current_publication' => $comparison['expected_is_current_publication'],
             'expected_coverage_universe_count' => $comparison['expected_coverage_universe_count'],
             'expected_coverage_available_count' => $comparison['expected_coverage_available_count'],
             'expected_coverage_missing_count' => $comparison['expected_coverage_missing_count'],
@@ -160,8 +169,13 @@ class ReplayVerificationService
             'trade_date_effective' => $resolvedTradeDate,
             'source' => $run->source,
             'status' => $run->terminal_status,
+            'terminal_status' => $run->terminal_status,
+            'publishability_state' => $run->publishability_state,
             'config_identity' => $run->config_version,
+            'publication_id' => $publication && isset($publication->publication_id) && $publication->publication_id !== null ? (int) $publication->publication_id : (isset($run->publication_id) && $run->publication_id !== null ? (int) $run->publication_id : null),
+            'publication_run_id' => $publication && isset($publication->run_id) && $publication->run_id !== null ? (int) $publication->run_id : (isset($run->run_id) && $run->run_id !== null ? (int) $run->run_id : null),
             'publication_version' => $publication && $publication->publication_version !== null ? (int) $publication->publication_version : ($run->publication_version !== null ? (int) $run->publication_version : null),
+            'is_current_publication' => $publication && isset($publication->is_current) ? (bool) $publication->is_current : (isset($run->is_current_publication) ? (bool) $run->is_current_publication : false),
             'coverage_universe_count' => isset($run->coverage_universe_count) && $run->coverage_universe_count !== null ? (int) $run->coverage_universe_count : null,
             'coverage_available_count' => isset($run->coverage_available_count) && $run->coverage_available_count !== null ? (int) $run->coverage_available_count : null,
             'coverage_missing_count' => isset($run->coverage_missing_count) && $run->coverage_missing_count !== null ? (int) $run->coverage_missing_count : null,
@@ -220,10 +234,18 @@ class ReplayVerificationService
         $mismatches = [];
         // COVERAGE_FIELD_MISMATCH: coverage context mismatches must remain visible in replay results.
         $this->compareField($mismatches, 'status', $expectedReplay['expected_status'] ?? $expectedReplay['status'] ?? null, $actual['status']);
+        $this->compareField($mismatches, 'terminal_status', $expectedReplay['expected_terminal_status'] ?? $expectedReplay['terminal_status'] ?? null, $actual['terminal_status']);
+        $this->compareField($mismatches, 'publishability_state', $expectedReplay['expected_publishability_state'] ?? $expectedReplay['publishability_state'] ?? null, $actual['publishability_state']);
         $this->compareField($mismatches, 'trade_date_effective', $expectedReplay['expected_trade_date_effective'] ?? $expectedReplay['trade_date_effective'] ?? null, $actual['trade_date_effective']);
         $this->compareField($mismatches, 'seal_state', $expectedReplay['expected_seal_state'] ?? $expectedReplay['seal_state'] ?? null, $actual['seal_state']);
         $this->compareField($mismatches, 'config_identity', $expectedReplay['config_identity'] ?? null, $actual['config_identity']);
-        $this->compareField($mismatches, 'publication_version', $expectedReplay['publication_version'] ?? null, $actual['publication_version']);
+        $this->compareField($mismatches, 'publication_id', $expectedReplay['expected_publication_id'] ?? ($expectedReplay['publication_id'] ?? null), $actual['publication_id']);
+        $this->compareField($mismatches, 'publication_run_id', $expectedReplay['expected_publication_run_id'] ?? ($expectedReplay['publication_run_id'] ?? null), $actual['publication_run_id']);
+        $this->compareField($mismatches, 'publication_version', $expectedReplay['expected_publication_version'] ?? ($expectedReplay['publication_version'] ?? null), $actual['publication_version']);
+        $expectedCurrentPublication = array_key_exists('expected_is_current_publication', $expectedReplay)
+            ? (int) (bool) $expectedReplay['expected_is_current_publication']
+            : (array_key_exists('is_current_publication', $expectedReplay) ? (int) (bool) $expectedReplay['is_current_publication'] : null);
+        $this->compareField($mismatches, 'is_current_publication', $expectedCurrentPublication, (int) (bool) $actual['is_current_publication']);
 
         foreach (['coverage_universe_count', 'coverage_available_count', 'coverage_missing_count', 'coverage_gate_state', 'coverage_reason_code', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
             $this->compareField($mismatches, $field, $expectedReplay[$field] ?? null, $actual[$field]);
@@ -261,10 +283,17 @@ class ReplayVerificationService
 
         return [
             'expected_status' => $expectedReplay['expected_status'] ?? $expectedReplay['status'] ?? null,
+            'expected_terminal_status' => $expectedReplay['expected_terminal_status'] ?? $expectedReplay['terminal_status'] ?? null,
+            'expected_publishability_state' => $expectedReplay['expected_publishability_state'] ?? $expectedReplay['publishability_state'] ?? null,
             'expected_trade_date_effective' => $expectedReplay['expected_trade_date_effective'] ?? $expectedReplay['trade_date_effective'] ?? null,
             'expected_seal_state' => $expectedReplay['expected_seal_state'] ?? $expectedReplay['seal_state'] ?? null,
             'expected_config_identity' => $expectedReplay['config_identity'] ?? null,
-            'expected_publication_version' => $expectedReplay['publication_version'] ?? null,
+            'expected_publication_id' => $expectedReplay['expected_publication_id'] ?? ($expectedReplay['publication_id'] ?? null),
+            'expected_publication_run_id' => $expectedReplay['expected_publication_run_id'] ?? ($expectedReplay['publication_run_id'] ?? null),
+            'expected_publication_version' => $expectedReplay['expected_publication_version'] ?? ($expectedReplay['publication_version'] ?? null),
+            'expected_is_current_publication' => array_key_exists('expected_is_current_publication', $expectedReplay)
+                ? (bool) $expectedReplay['expected_is_current_publication']
+                : (array_key_exists('is_current_publication', $expectedReplay) ? (bool) $expectedReplay['is_current_publication'] : null),
             'expected_coverage_universe_count' => $expectedReplay['coverage_universe_count'] ?? null,
             'expected_coverage_available_count' => $expectedReplay['coverage_available_count'] ?? null,
             'expected_coverage_missing_count' => $expectedReplay['coverage_missing_count'] ?? null,

@@ -58,9 +58,21 @@ class MarketDataEvidenceExportService
             'run_event_summary' => $eventSummary,
             'dominant_reason_codes' => $dominantReasonCodes,
             'publication_resolution' => [
+                'trade_date_requested' => $runSummary['trade_date_requested'],
                 'trade_date_effective' => $runSummary['trade_date_effective'],
+                'terminal_status' => $runSummary['terminal_status'],
+                'publishability_state' => $runSummary['publishability_state'],
+                'coverage_gate_state' => $runSummary['coverage']['coverage_gate_state'] ?? null,
+                'publication_id' => $manifest ? (int) $manifest['publication_id'] : null,
+                'publication_run_id' => $manifest ? (int) $manifest['run_id'] : null,
                 'publication_version' => $manifest ? (int) $manifest['publication_version'] : null,
+                'publication_seal_state' => $manifest ? $manifest['seal_state'] : null,
+                'publication_sealed_at' => $manifest ? $manifest['sealed_at'] : null,
                 'is_current_publication' => $manifest ? (bool) $manifest['is_current'] : false,
+                'pointer_context' => [
+                    'resolver' => 'EodPublicationRepository::findReadableCurrentPublicationForRun',
+                    'readable_pointer_validated' => $manifest !== null && (bool) $manifest['is_current'],
+                ],
             ],
             'source_attempt_telemetry' => $sourceAttemptTelemetry,
         ];

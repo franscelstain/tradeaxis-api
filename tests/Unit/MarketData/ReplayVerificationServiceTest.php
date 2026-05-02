@@ -32,10 +32,15 @@ class ReplayVerificationServiceTest extends TestCase
             'expected/expected_replay_result.json' => [
                 'comparison_result' => 'MATCH',
                 'expected_status' => 'SUCCESS',
+                'expected_terminal_status' => 'SUCCESS',
+                'expected_publishability_state' => 'READABLE',
                 'expected_trade_date_effective' => '2026-03-20',
                 'expected_seal_state' => 'SEALED',
                 'config_identity' => 'v1',
+                'publication_id' => 44,
+                'publication_run_id' => 91,
                 'publication_version' => 4,
+                'is_current_publication' => true,
                 'coverage_universe_count' => 10,
                 'coverage_available_count' => 10,
                 'coverage_missing_count' => 0,
@@ -101,7 +106,9 @@ class ReplayVerificationServiceTest extends TestCase
         ];
         $publication = (object) [
             'publication_id' => 44,
+            'run_id' => 91,
             'publication_version' => 4,
+            'is_current' => 1,
             'seal_state' => 'SEALED',
             'sealed_at' => '2026-03-20 17:30:00',
         ];
@@ -133,8 +140,13 @@ class ReplayVerificationServiceTest extends TestCase
                 && $metric['comparison_result'] === 'MATCH'
                 && $metric['artifact_changed_scope'] === 'none'
                 && $metric['expected_status'] === 'SUCCESS'
+                && $metric['expected_terminal_status'] === 'SUCCESS'
+                && $metric['expected_publishability_state'] === 'READABLE'
                 && $metric['expected_config_identity'] === 'v1'
+                && $metric['expected_publication_id'] === 44
+                && $metric['expected_publication_run_id'] === 91
                 && $metric['expected_publication_version'] === 4
+                && $metric['expected_is_current_publication'] === true
                 && $metric['expected_coverage_gate_state'] === 'PASS'
                 && $metric['expected_coverage_universe_count'] === 10
                 && $metric['expected_bars_batch_hash'] === 'A1'

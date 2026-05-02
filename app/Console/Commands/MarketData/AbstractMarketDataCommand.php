@@ -87,6 +87,18 @@ abstract class AbstractMarketDataCommand extends Command
         $this->line('terminal_status='.(string) $this->runField($run, 'terminal_status', ''));
         $this->line('publishability_state='.(string) $this->runField($run, 'publishability_state', ''));
 
+        $effectiveDate = $this->runField($run, 'trade_date_effective');
+        if ($effectiveDate !== null && $effectiveDate !== '') {
+            $this->line('trade_date_effective='.(string) $effectiveDate);
+        }
+
+        foreach (['publication_id', 'publication_version', 'is_current_publication'] as $stateField) {
+            $value = $this->runField($run, $stateField);
+            if ($value !== null && $value !== '') {
+                $this->line($stateField.'='.(string) $value);
+            }
+        }
+
         $promoteMode = $this->runField($run, 'promote_mode');
         if ($promoteMode !== null && $promoteMode !== '') {
             $this->line('promote_mode='.(string) $promoteMode);
@@ -131,6 +143,9 @@ abstract class AbstractMarketDataCommand extends Command
             'publish_target' => $this->runField($run, 'publish_target'),
             'final_reason_code' => $this->runField($run, 'final_reason_code'),
             'trade_date_effective' => $this->runField($run, 'trade_date_effective'),
+            'publication_id' => $this->runField($run, 'publication_id'),
+            'publication_version' => $this->runField($run, 'publication_version'),
+            'is_current_publication' => $this->runField($run, 'is_current_publication'),
             'reason_code' => $this->runField($run, 'reason_code'),
             'notes' => $this->runField($run, 'notes'),
             'coverage_gate_state' => $this->runField($run, 'coverage_gate_state'),

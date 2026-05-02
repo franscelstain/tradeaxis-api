@@ -752,15 +752,25 @@ class MarketDataPipelineService
 
                             $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id);
 
-                            $candidateCurrent = $promotedCurrent;
+                            /*
+                             * Treat the pointer resolver as the authoritative post-switch
+                             * source. The object returned by promoteCandidateToCurrent() is
+                             * only the candidate row; it is not enough proof that consumer
+                             * reads will resolve through the current-readable pointer contract.
+                             */
+                            $candidateCurrent = $this->publications->resolveCurrentReadablePublicationForTradeDate($input->requestedDate);
+
+                            if (! $candidateCurrent) {
+                                throw new \RuntimeException('Current publication pointer resolution mismatch after finalize.');
+                            }
 
                             if ($correction) {
-                                $candidateCurrent = (object) [
-                                    'publication_id' => (int) $candidatePublication->publication_id,
-                                    'publication_version' => (int) $candidatePublication->publication_version,
-                                    'run_id' => (int) $run->run_id,
-                                    'trade_date' => $input->requestedDate,
-                                ];
+                                if ((int) $candidateCurrent->publication_id !== (int) $candidatePublication->publication_id
+                                    || (int) $candidateCurrent->publication_version !== (int) $candidatePublication->publication_version
+                                    || (int) $candidateCurrent->run_id !== (int) $run->run_id
+                                ) {
+                                    throw new \RuntimeException('Current publication pointer resolution mismatch after finalize.');
+                                }
                             }
 
                             if (
@@ -1238,7 +1248,7 @@ class MarketDataPipelineService
                         'terminal_status' => $state['terminal_status'],
                         'publishability_state' => $state['publishability_state'],
                         'quality_gate_state' => $preDecision['quality_gate_state'] ?? $run->quality_gate_state,
-                        'updated_at' => now(),
+                        'updated_at' => Carbon::now(config('market_data.platform.timezone')),
                     ]);
             }
         } catch (\Throwable $e) {

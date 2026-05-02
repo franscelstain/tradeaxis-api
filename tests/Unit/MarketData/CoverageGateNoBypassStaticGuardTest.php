@@ -79,6 +79,20 @@ class CoverageGateNoBypassStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString('COVERAGE_FIELD_MISMATCH', $replay);
+        $this->assertStringContainsString('publishability_state', $evidence);
+        $this->assertStringContainsString('publishability_state', $replay);
+        $this->assertStringContainsString('publication_id', $replay);
+        $this->assertStringContainsString('is_current_publication', $replay);
+    }
+
+    public function test_publication_outcome_requires_explicit_current_publication_identity_for_readable_state(): void
+    {
+        $source = file_get_contents($this->projectPath('app/Application/MarketData/Services/PublicationFinalizeOutcomeService.php'));
+
+        $this->assertStringContainsString('hasPublicationIdentity', $source);
+        $this->assertStringContainsString('samePublicationIdentity', $source);
+        $this->assertStringContainsString('READABLE requires resolved current publication identity', $source);
+        $this->assertStringNotContainsString('(string) $resolvedCurrentPublicationId === (string) $candidatePublicationId', $source);
     }
 
     public function test_no_forbidden_coverage_latest_trade_date_shortcuts_in_runtime_paths(): void

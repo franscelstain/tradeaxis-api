@@ -57,21 +57,46 @@ class PublicationFinalizeOutcomeService
         }
 
         if ($unchangedCorrection && $correctionId) {
-            $state['terminal_status'] = 'SUCCESS';
-            $state['publishability_state'] = 'READABLE';
-            $state['trade_date_effective'] = $requestedDate;
-            $state['reason_code'] = null;
-            $state['message'] = 'Correction rerun produced unchanged content; current publication preserved without version switch.';
-            $state['current_publication_id'] = $resolvedCurrentPublicationId ?: $priorPublicationId;
-            $state['current_publication_version'] = $resolvedCurrentPublicationVersion ?: $priorPublicationVersion;
-            $state['correction_outcome'] = 'CANCELLED';
-            $state['correction_outcome_note'] = 'Correction rerun produced unchanged content; current publication preserved without version switch.';
+            if ($this->hasPublicationIdentity($resolvedCurrentPublicationId, $resolvedCurrentPublicationVersion)
+                && (! $this->hasPublicationIdentity($priorPublicationId, $priorPublicationVersion)
+                    || $this->samePublicationIdentity(
+                        $resolvedCurrentPublicationId,
+                        $resolvedCurrentPublicationVersion,
+                        $priorPublicationId,
+                        $priorPublicationVersion
+                    ))
+            ) {
+                $state['terminal_status'] = 'SUCCESS';
+                $state['publishability_state'] = 'READABLE';
+                $state['trade_date_effective'] = $requestedDate;
+                $state['reason_code'] = null;
+                $state['message'] = 'Correction rerun produced unchanged content; current publication preserved without version switch.';
+                $state['current_publication_id'] = $resolvedCurrentPublicationId;
+                $state['current_publication_version'] = $resolvedCurrentPublicationVersion;
+                $state['correction_outcome'] = 'CANCELLED';
+                $state['correction_outcome_note'] = 'Correction rerun produced unchanged content; current publication preserved without version switch.';
+                return $this->enforceStateMatrix($state);
+            }
+
+            $state['terminal_status'] = 'HELD';
+            $state['publishability_state'] = 'NOT_READABLE';
+            $state['trade_date_effective'] = $fallbackTradeDate;
+            $state['reason_code'] = 'RUN_LOCK_CONFLICT';
+            $state['message'] = 'Correction unchanged outcome rejected because current readable pointer identity was not proven.';
+            $state['correction_outcome'] = 'FAILED';
+            $state['correction_outcome_note'] = 'Correction unchanged outcome rejected because current readable pointer identity was not proven.';
             return $this->enforceStateMatrix($state);
         }
 
         $resolvedMatchesCandidate =
-            (string) $resolvedCurrentPublicationId === (string) $candidatePublicationId
-            && (string) $resolvedCurrentPublicationVersion === (string) $candidatePublicationVersion;
+            $this->hasPublicationIdentity($candidatePublicationId, $candidatePublicationVersion)
+            && $this->hasPublicationIdentity($resolvedCurrentPublicationId, $resolvedCurrentPublicationVersion)
+            && $this->samePublicationIdentity(
+                $resolvedCurrentPublicationId,
+                $resolvedCurrentPublicationVersion,
+                $candidatePublicationId,
+                $candidatePublicationVersion
+            );
 
         if ($resolvedMatchesCandidate) {
             $state['terminal_status'] = 'SUCCESS';
@@ -99,9 +124,23 @@ class PublicationFinalizeOutcomeService
         return $this->enforceStateMatrix($state);
     }
 
+    private function hasPublicationIdentity($publicationId, $publicationVersion): bool
+    {
+        return $publicationId !== null
+            && $publicationId !== ''
+            && $publicationVersion !== null
+            && $publicationVersion !== '';
+    }
+
+    private function samePublicationIdentity($leftId, $leftVersion, $rightId, $rightVersion): bool
+    {
+        return (string) $leftId === (string) $rightId
+            && (string) $leftVersion === (string) $rightVersion;
+    }
+
     private function enforceStateMatrix(array $state): array
     {
-        $coverageGateStatus = strtoupper((string) ($state['coverage_gate_status'] ?? 'NOT_EVALUABLE'));
+        $coverageGateStatus = strtoupper((string) ($state['coverage_gate_status'] ?? ($state['coverage_gate_state'] ?? 'NOT_EVALUABLE')));
         $terminalStatus = strtoupper((string) ($state['terminal_status'] ?? ''));
         $publishabilityState = strtoupper((string) ($state['publishability_state'] ?? ''));
 
@@ -111,6 +150,12 @@ class PublicationFinalizeOutcomeService
 
         if ($publishabilityState === 'READABLE' && $coverageGateStatus !== 'PASS') {
             throw new \LogicException('Invalid publication finalize outcome matrix: READABLE requires coverage_gate_status PASS.');
+        }
+
+        if ($publishabilityState === 'READABLE'
+            && ! $this->hasPublicationIdentity($state['current_publication_id'] ?? null, $state['current_publication_version'] ?? null)
+        ) {
+            throw new \LogicException('Invalid publication finalize outcome matrix: READABLE requires resolved current publication identity.');
         }
 
         if (in_array($terminalStatus, ['FAILED', 'HELD'], true) && $publishabilityState !== 'NOT_READABLE') {

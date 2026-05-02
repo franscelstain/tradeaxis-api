@@ -12,6 +12,7 @@ class PublicationCurrentPointerReadinessStaticGuardTest extends TestCase
         $this->assertStringContainsString("eod_current_publication_pointer as ptr", $method);
         $this->assertStringContainsString("->whereColumn('run.publication_id', 'ptr.publication_id')", $method);
         $this->assertStringContainsString("->whereColumn('run.publication_version', 'ptr.publication_version')", $method);
+        $this->assertStringContainsString("ptr.publication_id as pointer_publication_id", $method);
         $this->assertStringContainsString("run.terminal_status', 'SUCCESS'", $method);
         $this->assertStringContainsString("run.publishability_state', 'READABLE'", $method);
         $this->assertStringContainsString("pub.seal_state', 'SEALED'", $method);
@@ -36,10 +37,31 @@ class PublicationCurrentPointerReadinessStaticGuardTest extends TestCase
         $restore = $this->extractMethod($source, 'restorePriorCurrentPublication');
         $postSwitch = $this->extractMethod($source, 'assertCurrentPointerResolvedAfterSwitch', 'private');
 
+        $this->assertStringContainsString('Current publication promotion requires pre-approved SUCCESS + READABLE run before pointer switch', $promote);
         $this->assertStringContainsString('assertCurrentPointerResolvedAfterSwitch', $promote);
         $this->assertStringContainsString('assertCurrentPointerResolvedAfterSwitch', $restore);
+        $this->assertStringContainsString('findRawCurrentPublicationStateForTradeDate', $postSwitch);
+        $this->assertStringContainsString('determineCurrentIntegrityViolationReasons', $postSwitch);
         $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $postSwitch);
+        $this->assertStringContainsString('pointer_publication_id', $postSwitch);
+        $this->assertStringContainsString('throw new \\RuntimeException', $postSwitch);
         $this->assertStringContainsString('current pointer did not resolve to a readable publication after switch', $postSwitch);
+        $this->assertStringNotContainsString('return false', $postSwitch);
+    }
+
+
+
+    public function test_pipeline_primes_run_with_carbon_timestamp_and_authoritative_pointer_resolver_before_readable_outcome()
+    {
+        $source = $this->readProjectFile('app/Application/MarketData/Services/MarketDataPipelineService.php');
+        $prepare = $this->extractMethod($source, 'prepareRunForPointerSwitch', 'private');
+        $finalize = $this->extractMethod($source, 'completeFinalize');
+
+        $this->assertStringContainsString("Carbon::now(config('market_data.platform.timezone'))", $prepare);
+        $this->assertStringNotContainsString('now()', $prepare);
+        $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate($input->requestedDate)', $finalize);
+        $this->assertStringContainsString('Current publication pointer resolution mismatch after finalize.', $finalize);
+        $this->assertStringContainsString('Treat the pointer resolver as the authoritative post-switch', $finalize);
     }
 
     private function readProjectFile($relativePath)

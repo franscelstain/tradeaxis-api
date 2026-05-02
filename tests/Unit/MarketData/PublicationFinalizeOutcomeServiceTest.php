@@ -89,6 +89,47 @@ class PublicationFinalizeOutcomeServiceTest extends TestCase
         $this->assertSame('RUN_LOCK_CONFLICT', $state['reason_code']);
     }
 
+    public function test_finalize_held_when_candidate_and_resolved_pointer_identity_are_missing()
+    {
+        $service = new PublicationFinalizeOutcomeService();
+        $state = $service->resolve($this->preDecision('PASS', 'SUCCESS', 'READABLE', null, true), [
+            'requested_date' => '2026-04-21',
+            'fallback_trade_date' => '2026-04-20',
+            'candidate_publication_id' => null,
+            'candidate_publication_version' => null,
+            'resolved_current_publication_id' => null,
+            'resolved_current_publication_version' => null,
+        ]);
+
+        $this->assertSame('HELD', $state['terminal_status']);
+        $this->assertSame('NOT_READABLE', $state['publishability_state']);
+        $this->assertSame('2026-04-20', $state['trade_date_effective']);
+        $this->assertSame('RUN_LOCK_CONFLICT', $state['reason_code']);
+        $this->assertNull($state['current_publication_id']);
+    }
+
+    public function test_unchanged_correction_held_when_current_pointer_identity_is_not_proven()
+    {
+        $service = new PublicationFinalizeOutcomeService();
+        $state = $service->resolve($this->preDecision('PASS', 'SUCCESS', 'READABLE', null, true), [
+            'requested_date' => '2026-04-21',
+            'fallback_trade_date' => '2026-04-20',
+            'candidate_publication_id' => 88,
+            'candidate_publication_version' => 4,
+            'resolved_current_publication_id' => null,
+            'resolved_current_publication_version' => null,
+            'correction_id' => 9001,
+            'prior_publication_id' => 55,
+            'prior_publication_version' => 2,
+            'unchanged_correction' => true,
+        ]);
+
+        $this->assertSame('HELD', $state['terminal_status']);
+        $this->assertSame('NOT_READABLE', $state['publishability_state']);
+        $this->assertSame('RUN_LOCK_CONFLICT', $state['reason_code']);
+        $this->assertSame('FAILED', $state['correction_outcome']);
+    }
+
     public function test_finalize_held_when_promotion_errors_after_candidate_seal()
     {
         $service = new PublicationFinalizeOutcomeService();

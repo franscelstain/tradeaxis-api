@@ -232,6 +232,7 @@ class EodPublicationRepository
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
+                'ptr.publication_id as pointer_publication_id',
                 'ptr.run_id as pointer_run_id',
                 'ptr.publication_version as pointer_publication_version',
                 'ptr.sealed_at as pointer_sealed_at',
@@ -306,6 +307,7 @@ class EodPublicationRepository
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
+                'ptr.publication_id as pointer_publication_id',
                 'ptr.run_id as pointer_run_id',
                 'ptr.publication_version as pointer_publication_version',
                 'ptr.sealed_at as pointer_sealed_at',
@@ -368,6 +370,7 @@ class EodPublicationRepository
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
+                'ptr.publication_id as pointer_publication_id',
                 'ptr.run_id as pointer_run_id',
                 'ptr.publication_version as pointer_publication_version',
                 'ptr.sealed_at as pointer_sealed_at',
@@ -539,6 +542,12 @@ class EodPublicationRepository
                 throw new \RuntimeException('Current publication promotion requires coverage_gate_state PASS before pointer switch.');
             }
 
+            if ((string) ($run->terminal_status ?? '') !== 'SUCCESS'
+                || (string) ($run->publishability_state ?? '') !== 'READABLE'
+            ) {
+                throw new \RuntimeException('Current publication promotion requires pre-approved SUCCESS + READABLE run before pointer switch.');
+            }
+
 
             $current = DB::table('eod_current_publication_pointer as ptr')
                 ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
@@ -572,26 +581,22 @@ class EodPublicationRepository
 
             /*
              * Pointer promotion is only reached after finalize decision says the
-             * candidate is publishable. The pointer target guard validates the
-             * persisted run row, not only the in-memory model, so prime the run
-             * to its publishable state before the guard reads it. Without this,
-             * correction/current promotion can be falsely rejected as a pointer
-             * mismatch and the valid run is finalized as HELD. Coverage is not
-             * fabricated here; it must already be PASS from the coverage gate.
+             * candidate is publishable. Validate the intended final run state
+             * without persisting READABLE before the pointer/current mirrors are
+             * switched; otherwise a failed switch could briefly create an invalid
+             * run/publication combination inside the transaction.
              */
-            DB::table('eod_runs')
-                ->where('run_id', $run->run_id)
-                ->update([
-                    'terminal_status' => 'SUCCESS',
-                    'publishability_state' => 'READABLE',
-                    'quality_gate_state' => 'PASS',
-                    'updated_at' => $now,
-                ]);
-
-            $guardRun = DB::table('eod_runs')
+            $guardRun = (array) DB::table('eod_runs')
                 ->where('run_id', $run->run_id)
                 ->lockForUpdate()
                 ->first();
+
+            $guardRun['terminal_status'] = 'SUCCESS';
+            $guardRun['publishability_state'] = 'READABLE';
+            $guardRun['quality_gate_state'] = 'PASS';
+            $guardRun['publication_id'] = $candidate->publication_id;
+            $guardRun['publication_version'] = $candidate->publication_version;
+            $guardRun['is_current_publication'] = 1;
 
             (new MarketDataInvariantGuard())->assertValidPointerTarget(
                 $candidate,
@@ -766,16 +771,12 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]);
 
-            $pointerResolved = $this->assertCurrentPointerResolvedAfterSwitch(
+            $this->assertCurrentPointerResolvedAfterSwitch(
                 $tradeDate,
                 $priorPublicationId,
                 $priorRunId,
                 'EodPublicationRepository::restorePriorCurrentPublication'
             );
-
-            if (! $pointerResolved) {
-                return DB::table('eod_publications')->where('publication_id', $priorPublicationId)->first();
-            }
 
             return DB::table('eod_publications')->where('publication_id', $priorPublicationId)->first();
         });
@@ -853,33 +854,28 @@ class EodPublicationRepository
         return true;
     }
 
-    private function assertCurrentPointerResolvedAfterSwitch($tradeDate, $publicationId, $runId, $context): bool
+    private function assertCurrentPointerResolvedAfterSwitch($tradeDate, $publicationId, $runId, $context): void
     {
+        $raw = $this->findRawCurrentPublicationStateForTradeDate($tradeDate);
+        $reasons = $this->determineCurrentIntegrityViolationReasons($raw);
+
+        if ($reasons !== []) {
+            throw new \RuntimeException($context.': invalid current pointer state after switch. Reasons: '.implode(',', $reasons));
+        }
+
+        if ((int) ($raw->pointer_publication_id ?? 0) !== (int) $publicationId) {
+            throw new \RuntimeException($context.': current pointer publication_id mismatch after switch.');
+        }
+
+        if ((int) ($raw->pointer_run_id ?? 0) !== (int) $runId) {
+            throw new \RuntimeException($context.': current pointer run_id mismatch after switch.');
+        }
+
         $resolved = $this->resolveCurrentReadablePublicationForTradeDate($tradeDate);
 
         if (! $resolved) {
-            // current pointer did not resolve to a readable publication after switch.
-            return false;
+            throw new \RuntimeException($context.': current pointer did not resolve to a readable publication after switch.');
         }
-
-        if ((int) $resolved->publication_id !== (int) $publicationId) {
-            // current pointer publication_id mismatch after switch.
-            return false;
-        }
-
-        if ((int) $resolved->run_id !== (int) $runId) {
-            // current pointer run_id mismatch after switch.
-            return false;
-        }
-
-        $reasons = $this->determineCurrentIntegrityViolationReasons($resolved);
-
-        if ($reasons !== []) {
-            // invalid current pointer state after switch. Reasons:
-            return false;
-        }
-
-        return true;
     }
 
     public function clearCurrentPublicationState($tradeDate)
@@ -969,6 +965,7 @@ class EodPublicationRepository
             ->select(
                 'pub.*',
                 'ptr.trade_date as readable_trade_date',
+                'ptr.publication_id as pointer_publication_id',
                 'ptr.run_id as pointer_run_id',
                 'ptr.publication_version as pointer_publication_version',
                 'ptr.sealed_at as pointer_sealed_at',

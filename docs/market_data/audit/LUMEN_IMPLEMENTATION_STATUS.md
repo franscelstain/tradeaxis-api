@@ -3,21 +3,20 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Coverage Gate Enforcement / No Coverage Bypass
+- Publishability State Integrity / No Invalid State Combination
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce deterministic coverage calculation and no-bypass behavior across finalize, publishability, pointer, evidence, replay, command, and repository surfaces.
-- Status is DONE based on operator-supplied local PHPUnit evidence for targeted and full MarketData suites.
+- Enforce valid state combinations across run terminal status, run publishability state, publication seal/current state, current pointer resolution, fallback preservation, correction safety, evidence export, replay verification, command output, repository persistence, schema mirror, and static guards.
+- Final operator-supplied PHPUnit evidence confirms targeted finalize/correction and full MarketData suite PASS.
 
 [SESSION_GOAL]
-- DONE reached after operator supplied targeted and full MarketData PHPUnit evidence for coverage/finalize/publication/pointer/evidence/replay/command scopes.
+- Prevent `SUCCESS + READABLE` or current pointer visibility unless the publication is sealed, pointer-resolved, mirror-valid, coverage PASS, and traceable through evidence/replay/command surfaces.
 
 [SESSION_NOTES]
-- Static trace found coverage status PASS checks that did not require complete expected/available/missing/ratio/threshold/mode/basis/contract context.
-- Static enforcement was patched so READABLE/current pointer decisions require complete and internally consistent coverage telemetry.
-- Operator local rerun exposed regressions in static guard path resolution, coverage alias conflict handling, test fixtures missing new coverage telemetry, and fallback/correction baseline resolution. Recovery patches were applied and final local rerun passed targeted and full MarketData PHPUnit suites.
+- Static trace found publishability outcome and pointer post-switch enforcement gaps that could allow ambiguous readable/current state handling.
+- Container validation remains limited to static scan and `php -l` because the uploaded ZIP does not contain `vendor/`; final runtime validation is based on operator-supplied local PHPUnit evidence.
 
 ---
 
@@ -39,6 +38,80 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Publishability State Integrity / No Invalid State Combination -> DONE
+
+  [LAST_UPDATED] 2026-05-02
+
+  [RELATED_CONTRACT] PUBLISHABILITY_STATE_INTEGRITY_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-02 -> Publishability state integrity session opened against latest source-of-truth ZIP.
+  - 2026-05-02 -> Static trace reviewed finalize decision, publication outcome, invariant guard, pointer repository, fallback/correction preservation, evidence export, replay verification, command surface, schema mirror, and static guards.
+  - 2026-05-02 -> Gap found: publication outcome could treat missing candidate/resolved pointer identity as a match because null identifiers were string-cast into empty strings.
+  - 2026-05-02 -> Gap found: post-switch pointer resolver assertion in `EodPublicationRepository` returned false on mismatch but promotion/restore callers did not fail the transaction.
+  - 2026-05-02 -> Gap found: evidence/replay context did not fully persist and compare publishability/publication/current-pointer state fields.
+  - 2026-05-02 -> Static enforcement patch added explicit publication identity checks before READABLE outcome, throwing post-switch pointer assertions, replay state-context persistence/comparison, command surface fields, schema/migration sync, and static/test coverage.
+  - 2026-05-02 -> Operator local validation exposed regression: valid publication promotion/correction paths were downgraded to HELD because post-switch integrity detection reported `RUN_PUBLICATION_ID_MISMATCH`.
+  - 2026-05-02 -> Recovery patch added missing `ptr.publication_id as pointer_publication_id` aliases to pointer-resolved publication queries, switched post-switch assertion to inspect raw pointer state before readable resolution, and removed repository-level persisted READABLE priming from the promotion method itself.
+  - 2026-05-02 -> Operator local validation after Recovery-1 confirmed pointer suite PASS but valid finalize/publication/correction/evidence paths still downgraded to HELD, proving the remaining regression sits in pipeline finalize priming/outcome flow rather than repository pointer switching.
+  - 2026-05-02 -> Recovery-2 replaced Lumen-unsafe `now()` usage in `prepareRunForPointerSwitch()` with `Carbon::now(config('market_data.platform.timezone'))` so the persisted run is actually pre-approved as SUCCESS + READABLE before repository pointer validation.
+  - 2026-05-02 -> Recovery-2 changed pipeline finalize to re-resolve the current readable publication through the pointer resolver after promotion before passing publication identity to outcome resolution.
+  - 2026-05-02 -> Operator local validation after Recovery-2 confirmed `Publication`, `Evidence`, and `MarketDataPipelineIntegrationTest` PASS; remaining full-suite errors were isolated to two `MarketDataPipelineServiceTest` Mockery expectations that did not model the new authoritative `resolveCurrentReadablePublicationForTradeDate()` proof.
+  - 2026-05-02 -> Recovery-3 aligned the two correction finalize unit tests with the enforced post-promotion resolver proof without weakening assertions or changing runtime contract.
+  - 2026-05-02 -> Final operator local validation after Recovery-3 passed targeted `Finalize`, targeted `Correction`, and full `tests/Unit/MarketData`; implementation promoted to DONE.
+
+  [IMPLEMENTATION]
+  - `PublicationFinalizeOutcomeService` now requires explicit candidate/resolved current publication identity before READABLE outcome and rejects unchanged correction when current readable pointer identity is not proven.
+  - `EodPublicationRepository` now throws on unresolved/mismatched post-switch pointer state so invalid promotion/restore rolls back instead of silently continuing.
+  - `EodPublicationRepository` recovery patch now carries `pointer_publication_id` aliases through pointer-resolved rows and validates post-switch state from raw pointer/publication/run mirrors before returning a readable-resolved row.
+  - `MarketDataPipelineService` Recovery-2 now persists pre-approved run state with `Carbon::now(config('market_data.platform.timezone'))` instead of the unavailable `now()` helper and uses `resolveCurrentReadablePublicationForTradeDate()` as the authoritative post-promotion identity proof.
+  - `MarketDataPipelineServiceTest` Recovery-3 now mocks that same authoritative resolver proof in correction publish/conflict tests so unit-level expectations match the runtime contract already proven by integration tests.
+  - Candidate promotion now requires the run to already be pre-approved as `SUCCESS + READABLE` before pointer switch and validates the intended final run identity in memory before persisting publication/current mirrors.
+  - `MarketDataEvidenceExportService` now exports run/publication/pointer/fallback state context including terminal status, publishability state, coverage state, publication identity, seal/current state, and pointer validation result.
+  - `ReplayVerificationService` and `ReplayResultRepository` now carry and compare expected/actual publishability/publication/current-pointer context.
+  - Replay schema, migration, SQLite mirror, schema sync test, command summary output, and static guard tests were updated for the new state context.
+
+  [ENFORCEMENT]
+  - READABLE publication outcome requires non-empty current publication id/version and candidate/resolved identity match.
+  - Post-switch current pointer resolution is mandatory and throws on no pointer, publication mismatch, run mismatch, or integrity reason.
+  - Pointer-resolved queries must expose pointer publication identity (`pointer_publication_id`) so mirror validation cannot compare run publication id against an absent alias.
+  - Pipeline finalize must not trust the object returned by `promoteCandidateToCurrent()` alone; it must re-read through the current-readable pointer resolver before a READABLE outcome is accepted.
+  - Run pre-approval before pointer switch must use Lumen-safe timestamp handling so DB priming is not swallowed and converted into false HELD outcomes.
+  - Replay verification compares terminal status, publishability state, publication id, publication run id, and current-publication flag when expected context exists.
+  - Static guard now prevents reintroducing the null-string publication identity match and pointer post-switch `return false` behavior.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Invalid run/publication/pointer state fails safe as NOT_READABLE/HELD/controlled exception, while valid sealed/current/pointer-mirrored promotion has two required proofs: persisted pre-approved run state and authoritative current-readable pointer resolver identity.
+  - Fallback preservation remains limited to previous readable pointer context; malformed fallback pointer cannot invent a readable effective date through the patched outcome path.
+
+  [EVIDENCE]
+  - Container syntax validation: changed PHP files passed `php -l` with no syntax errors.
+  - Container static scan: runtime fallback/pointer read paths do not introduce `MAX(trade_date)`, `max('trade_date')`, `latest('trade_date')`, or direct `orderByDesc('trade_date')` shortcut for consumer read resolution.
+  - PHPUnit/artisan not run in container because the uploaded ZIP does not contain `vendor/`.
+  - Operator local validation after the first patch: `migrate:fresh` PASS; Publishability, Fallback, Replay, Command, FinalizeDecisionService, PublicationFinalizeOutcomeService, and ReadablePublicationReadContractIntegrationTest PASS; full `tests/Unit/MarketData` failed with 4 errors and 6 failures driven by `RUN_PUBLICATION_ID_MISMATCH`/valid runs becoming HELD.
+  - Operator local validation after Recovery-1: pointer filter PASS (`OK (54 tests, 602 assertions)`), while Publication/Finalize/Correction/Evidence/Pipeline/full suite still failed because valid runs remained HELD and evidence export correctly rejected the resulting non-readable runs.
+  - Operator local validation after Recovery-2: `Publication` PASS (`OK (83 tests, 864 assertions)`), `Evidence` PASS (`OK (26 tests, 228 assertions)`), and `MarketDataPipelineIntegrationTest` PASS (`OK (52 tests, 1182 assertions)`); full `tests/Unit/MarketData` had only two remaining Mockery expectation errors in `MarketDataPipelineServiceTest`.
+  - Container Recovery-3 validation: changed PHP test file passed `php -l`; static trace confirms unit tests now model the post-promotion resolver proof required by runtime code.
+  - Operator local validation after Recovery-3: `vendor/bin/phpunit tests/Unit/MarketData --filter "Finalize"` -> PASS; `OK (39 tests, 225 assertions)`.
+  - Operator local validation after Recovery-3: `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"` -> PASS; `OK (54 tests, 1081 assertions)`.
+  - Operator local validation after Recovery-3: `vendor/bin/phpunit tests/Unit/MarketData` -> PASS; `OK (262 tests, 2519 assertions)`.
+
+  [GAP]
+  - None for this scoped session after final local validation.
+
+  [NEXT_ACTION]
+  - Continue one-by-one audit governance for the next market-data contract scope only when a new scoped session is opened.
+
+  [FINAL_RULE]
+  - DONE. No market-data path may expose a publication as READABLE/current unless terminal status, publishability state, sealed/current publication state, coverage PASS, run-publication mirror, pointer resolver, fallback/correction safety, evidence/replay context, and command surface agree on the same valid publication identity.
+
+  [FINAL_CONSTRAINT]
+  - Reopen this implementation only if a future finalize/publication/pointer/fallback/correction/evidence/replay/command/repository path changes publishability state behavior or introduces a new readable/current state combination.
+
+---
 
 - Coverage Gate Enforcement / No Coverage Bypass -> DONE
 

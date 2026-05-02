@@ -181,6 +181,14 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('RUN_SOURCE_TIMEOUT', $payload['run_summary']['source_context']['final_reason_code']);
         $this->assertSame('STAGE_COMPLETED', $payload['source_attempt_telemetry']['event_type']);
         $this->assertCount(2, $payload['source_attempt_telemetry']['attempts']);
+        $this->assertSame('SUCCESS', $payload['publication_resolution']['terminal_status']);
+        $this->assertSame('READABLE', $payload['publication_resolution']['publishability_state']);
+        $this->assertSame('PASS', $payload['publication_resolution']['coverage_gate_state']);
+        $this->assertSame(1201, $payload['publication_resolution']['publication_id']);
+        $this->assertSame(8124, $payload['publication_resolution']['publication_run_id']);
+        $this->assertSame('SEALED', $payload['publication_resolution']['publication_seal_state']);
+        $this->assertTrue($payload['publication_resolution']['is_current_publication']);
+        $this->assertTrue($payload['publication_resolution']['pointer_context']['readable_pointer_validated']);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $result['summary']['source_summary']);
         $this->assertSame('STAGE_COMPLETED', $result['summary']['source_attempt_event_type']);
         $this->assertSame(2, $result['summary']['source_attempt_count']);

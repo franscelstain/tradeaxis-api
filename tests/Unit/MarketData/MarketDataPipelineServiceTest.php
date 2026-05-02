@@ -761,6 +761,11 @@ class MarketDataPipelineServiceTest extends TestCase
             ->once()
             ->with('2026-03-17', 55);
 
+        $publications->shouldReceive('resolveCurrentReadablePublicationForTradeDate')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn($resolvedCurrent);
+
         $runs->shouldReceive('finalize')
             ->once()
             ->with($run, [
@@ -1223,6 +1228,11 @@ class MarketDataPipelineServiceTest extends TestCase
         $runs->shouldReceive('syncCurrentPublicationMirror')
             ->once()
             ->with('2026-03-17', 55);
+
+        $publications->shouldReceive('resolveCurrentReadablePublicationForTradeDate')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn($publishedCandidate);
 
         $runs->shouldReceive('finalize')
             ->once()
