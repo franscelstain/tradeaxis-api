@@ -314,7 +314,58 @@ class EodEvidenceRepository
 
     public function findCorrectionById($correctionId)
     {
-        return DB::table('eod_dataset_corrections')->where('correction_id', $correctionId)->first();
+        return DB::table('eod_dataset_corrections as corr')
+            ->leftJoin('eod_runs as prior_run', 'prior_run.run_id', '=', 'corr.prior_run_id')
+            ->leftJoin('eod_runs as new_run', 'new_run.run_id', '=', 'corr.new_run_id')
+            ->leftJoin('eod_publications as prior_pub', 'prior_pub.publication_id', '=', 'prior_run.publication_id')
+            ->leftJoin('eod_publications as new_pub', 'new_pub.publication_id', '=', 'new_run.publication_id')
+            ->where('corr.correction_id', $correctionId)
+            ->select([
+                'corr.*',
+                'prior_run.publication_id as prior_publication_id',
+                'prior_run.publication_version as prior_publication_version',
+                'prior_run.terminal_status as prior_run_terminal_status',
+                'prior_run.publishability_state as prior_run_publishability_state',
+                'prior_run.coverage_gate_state as prior_run_coverage_gate_state',
+                'new_run.publication_id as new_publication_id',
+                'new_run.publication_version as new_publication_version',
+                'new_run.terminal_status as new_run_terminal_status',
+                'new_run.publishability_state as new_run_publishability_state',
+                'new_run.coverage_gate_state as new_run_coverage_gate_state',
+                'prior_pub.seal_state as prior_publication_seal_state',
+                'prior_pub.is_current as prior_publication_is_current',
+                'new_pub.seal_state as new_publication_seal_state',
+                'new_pub.is_current as new_publication_is_current',
+            ])
+            ->first();
+    }
+
+    public function findCorrectionByRunId($runId)
+    {
+        return DB::table('eod_dataset_corrections as corr')
+            ->leftJoin('eod_runs as prior_run', 'prior_run.run_id', '=', 'corr.prior_run_id')
+            ->leftJoin('eod_runs as new_run', 'new_run.run_id', '=', 'corr.new_run_id')
+            ->leftJoin('eod_publications as prior_pub', 'prior_pub.publication_id', '=', 'prior_run.publication_id')
+            ->leftJoin('eod_publications as new_pub', 'new_pub.publication_id', '=', 'new_run.publication_id')
+            ->where('corr.new_run_id', $runId)
+            ->select([
+                'corr.*',
+                'prior_run.publication_id as prior_publication_id',
+                'prior_run.publication_version as prior_publication_version',
+                'prior_run.terminal_status as prior_run_terminal_status',
+                'prior_run.publishability_state as prior_run_publishability_state',
+                'prior_run.coverage_gate_state as prior_run_coverage_gate_state',
+                'new_run.publication_id as new_publication_id',
+                'new_run.publication_version as new_publication_version',
+                'new_run.terminal_status as new_run_terminal_status',
+                'new_run.publishability_state as new_run_publishability_state',
+                'new_run.coverage_gate_state as new_run_coverage_gate_state',
+                'prior_pub.seal_state as prior_publication_seal_state',
+                'prior_pub.is_current as prior_publication_is_current',
+                'new_pub.seal_state as new_publication_seal_state',
+                'new_pub.is_current as new_publication_is_current',
+            ])
+            ->first();
     }
 
     public function findPublicationById($publicationId)

@@ -83,3 +83,5 @@ Archived actual execution evidence is part of the normative proof ecosystem, but
 - [Publishability State Integrity Contract LOCKED](Publishability_State_Integrity_Contract_LOCKED.md)
 
 - [Publishability Coverage Fallback Cross-Consistency Contract LOCKED](Publishability_Coverage_Fallback_Cross_Consistency_Contract_LOCKED.md)
+
+- [Correction Lifecycle Safety Contract](Correction_Lifecycle_Safety_Contract.md) — ENFORCED contract for correction baseline safety, unchanged artifacts, reseal, linkage, pointer switch, evidence, replay, and command output.

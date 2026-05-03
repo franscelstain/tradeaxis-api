@@ -171,3 +171,20 @@ Required constraint/index:
 ### `md_replay_daily_metrics`
 
 Replay expected-context fields are part of the DB schema contract and must stay synchronized with `ReplayResultRepository` and `ReplayVerificationService`.
+
+Correction lifecycle replay fields are part of `md_replay_daily_metrics` and must remain synchronized with `ReplayResultRepository`, `ReplayVerificationService`, and replay evidence export:
+
+- `correction_id`
+- `correction_status`
+- `correction_outcome`
+- `correction_reseal_status`
+- `correction_publication_switch`
+- `baseline_publication_id`
+- `candidate_publication_id`
+- `expected_correction_id`
+- `expected_correction_status`
+- `expected_correction_outcome`
+- `expected_correction_reseal_status`
+- `expected_correction_publication_switch`
+- `expected_baseline_publication_id`
+- `expected_candidate_publication_id`

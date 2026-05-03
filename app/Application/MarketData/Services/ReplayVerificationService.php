@@ -31,7 +31,8 @@ class ReplayVerificationService
         }
 
         $publication = $this->resolvePublicationForRun($run);
-        $actual = $this->buildActualReplayState($run, $publication);
+        $correction = $this->findCorrectionForRun($run->run_id);
+        $actual = $this->buildActualReplayState($run, $publication, $correction);
         $comparison = $this->compareExpectedAndActual($fixture, $actual);
         $replayId = $replayId ?: $this->replays->nextReplayId();
 
@@ -50,6 +51,20 @@ class ReplayVerificationService
             'config_identity' => $actual['config_identity'],
             'publication_version' => $actual['publication_version'],
             'is_current_publication' => $actual['is_current_publication'],
+            'correction_id' => $actual['correction_id'],
+            'correction_status' => $actual['correction_status'],
+            'correction_outcome' => $actual['correction_outcome'],
+            'correction_reseal_status' => $actual['correction_reseal_status'],
+            'correction_publication_switch' => $actual['correction_publication_switch'],
+            'baseline_publication_id' => $actual['baseline_publication_id'],
+            'candidate_publication_id' => $actual['candidate_publication_id'],
+            'expected_correction_id' => $comparison['expected_correction_id'],
+            'expected_correction_status' => $comparison['expected_correction_status'],
+            'expected_correction_outcome' => $comparison['expected_correction_outcome'],
+            'expected_correction_reseal_status' => $comparison['expected_correction_reseal_status'],
+            'expected_correction_publication_switch' => $comparison['expected_correction_publication_switch'],
+            'expected_baseline_publication_id' => $comparison['expected_baseline_publication_id'],
+            'expected_candidate_publication_id' => $comparison['expected_candidate_publication_id'],
             'coverage_universe_count' => $actual['coverage_universe_count'],
             'coverage_available_count' => $actual['coverage_available_count'],
             'coverage_missing_count' => $actual['coverage_missing_count'],
@@ -146,7 +161,7 @@ class ReplayVerificationService
         ];
     }
 
-    private function buildActualReplayState($run, $publication = null)
+    private function buildActualReplayState($run, $publication = null, $correction = null)
     {
         $resolvedTradeDate = $run->trade_date_effective ?: $run->trade_date_requested;
         $reasonCodeCounts = [];
@@ -176,6 +191,13 @@ class ReplayVerificationService
             'publication_run_id' => $publication && isset($publication->run_id) && $publication->run_id !== null ? (int) $publication->run_id : (isset($run->run_id) && $run->run_id !== null ? (int) $run->run_id : null),
             'publication_version' => $publication && $publication->publication_version !== null ? (int) $publication->publication_version : ($run->publication_version !== null ? (int) $run->publication_version : null),
             'is_current_publication' => $publication && isset($publication->is_current) ? (bool) $publication->is_current : (isset($run->is_current_publication) ? (bool) $run->is_current_publication : false),
+            'correction_id' => $correction && isset($correction->correction_id) ? (int) $correction->correction_id : (isset($run->correction_id) && $run->correction_id !== null ? (int) $run->correction_id : null),
+            'correction_status' => $correction && isset($correction->status) ? $correction->status : null,
+            'correction_outcome' => $this->resolveCorrectionOutcome($correction),
+            'correction_reseal_status' => $this->resolveCorrectionResealStatus($correction),
+            'correction_publication_switch' => $correction && isset($correction->new_publication_is_current) && $correction->new_publication_is_current !== null ? (bool) $correction->new_publication_is_current : null,
+            'baseline_publication_id' => $correction && isset($correction->prior_publication_id) && $correction->prior_publication_id !== null ? (int) $correction->prior_publication_id : null,
+            'candidate_publication_id' => $correction && isset($correction->new_publication_id) && $correction->new_publication_id !== null ? (int) $correction->new_publication_id : null,
             'coverage_universe_count' => isset($run->coverage_universe_count) && $run->coverage_universe_count !== null ? (int) $run->coverage_universe_count : null,
             'coverage_available_count' => isset($run->coverage_available_count) && $run->coverage_available_count !== null ? (int) $run->coverage_available_count : null,
             'coverage_missing_count' => isset($run->coverage_missing_count) && $run->coverage_missing_count !== null ? (int) $run->coverage_missing_count : null,
@@ -198,10 +220,59 @@ class ReplayVerificationService
             'bars_batch_hash' => $run->bars_batch_hash,
             'indicators_batch_hash' => $run->indicators_batch_hash,
             'eligibility_batch_hash' => $run->eligibility_batch_hash,
-            'seal_state' => $publication && $publication->seal_state ? $publication->seal_state : ($run->sealed_at ? 'SEALED' : 'UNSEALED'),
-            'sealed_at' => $publication && $publication->sealed_at ? $publication->sealed_at : $run->sealed_at,
+            'seal_state' => $publication && isset($publication->seal_state) && $publication->seal_state ? $publication->seal_state : ($run->sealed_at ? 'SEALED' : 'UNSEALED'),
+            'sealed_at' => $publication && isset($publication->sealed_at) && $publication->sealed_at ? $publication->sealed_at : $run->sealed_at,
             'reason_code_counts' => $reasonCodeCounts,
         ];
+    }
+
+    private function findCorrectionForRun($runId)
+    {
+        try {
+            return $this->evidence->findCorrectionByRunId($runId);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function resolveCorrectionOutcome($correction)
+    {
+        if (! $correction || ! isset($correction->status)) {
+            return null;
+        }
+
+        $status = strtoupper((string) $correction->status);
+        if ($status === 'CONSUMED_CURRENT' || $status === 'CANCELLED') {
+            return 'UNCHANGED';
+        }
+
+        if ($status === 'PUBLISHED') {
+            return 'PUBLISHED';
+        }
+
+        if ($status === 'RESEALED' || $status === 'REPAIR_EXECUTED') {
+            return 'RESEALED';
+        }
+
+        return $status;
+    }
+
+    private function resolveCorrectionResealStatus($correction)
+    {
+        if (! $correction || ! isset($correction->status)) {
+            return null;
+        }
+
+        $status = strtoupper((string) $correction->status);
+        if ($status === 'CONSUMED_CURRENT' || $status === 'CANCELLED') {
+            return 'NOT_RESEALED_UNCHANGED';
+        }
+
+        if (in_array($status, ['PUBLISHED', 'RESEALED', 'REPAIR_EXECUTED'], true)) {
+            return 'RESEALED';
+        }
+
+        return null;
     }
 
     private function resolveCoverageReasonCodeFromState($coverageGateState)
@@ -246,6 +317,13 @@ class ReplayVerificationService
             ? (int) (bool) $expectedReplay['expected_is_current_publication']
             : (array_key_exists('is_current_publication', $expectedReplay) ? (int) (bool) $expectedReplay['is_current_publication'] : null);
         $this->compareField($mismatches, 'is_current_publication', $expectedCurrentPublication, (int) (bool) $actual['is_current_publication']);
+
+        foreach (['correction_id', 'correction_status', 'correction_outcome', 'correction_reseal_status', 'correction_publication_switch', 'baseline_publication_id', 'candidate_publication_id'] as $field) {
+            $expectedCorrectionValue = array_key_exists('expected_'.$field, $expectedReplay)
+                ? $expectedReplay['expected_'.$field]
+                : (array_key_exists($field, $expectedReplay) ? $expectedReplay[$field] : null);
+            $this->compareField($mismatches, $field, $expectedCorrectionValue, $actual[$field]);
+        }
 
         foreach (['coverage_universe_count', 'coverage_available_count', 'coverage_missing_count', 'coverage_gate_state', 'coverage_reason_code', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
             $this->compareField($mismatches, $field, $expectedReplay[$field] ?? null, $actual[$field]);
@@ -294,6 +372,13 @@ class ReplayVerificationService
             'expected_is_current_publication' => array_key_exists('expected_is_current_publication', $expectedReplay)
                 ? (bool) $expectedReplay['expected_is_current_publication']
                 : (array_key_exists('is_current_publication', $expectedReplay) ? (bool) $expectedReplay['is_current_publication'] : null),
+            'expected_correction_id' => $expectedReplay['expected_correction_id'] ?? ($expectedReplay['correction_id'] ?? null),
+            'expected_correction_status' => $expectedReplay['expected_correction_status'] ?? ($expectedReplay['correction_status'] ?? null),
+            'expected_correction_outcome' => $expectedReplay['expected_correction_outcome'] ?? ($expectedReplay['correction_outcome'] ?? null),
+            'expected_correction_reseal_status' => $expectedReplay['expected_correction_reseal_status'] ?? ($expectedReplay['correction_reseal_status'] ?? null),
+            'expected_correction_publication_switch' => $expectedReplay['expected_correction_publication_switch'] ?? ($expectedReplay['correction_publication_switch'] ?? null),
+            'expected_baseline_publication_id' => $expectedReplay['expected_baseline_publication_id'] ?? ($expectedReplay['baseline_publication_id'] ?? null),
+            'expected_candidate_publication_id' => $expectedReplay['expected_candidate_publication_id'] ?? ($expectedReplay['candidate_publication_id'] ?? null),
             'expected_coverage_universe_count' => $expectedReplay['coverage_universe_count'] ?? null,
             'expected_coverage_available_count' => $expectedReplay['coverage_available_count'] ?? null,
             'expected_coverage_missing_count' => $expectedReplay['coverage_missing_count'] ?? null,

@@ -3,20 +3,20 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Finalize / Lock / Pointer Determinism
+- Correction Lifecycle Safety
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Track idempotent finalize rerun behavior, lock/pointer mutation safety, authoritative current-readable pointer validation, fallback/correction preservation, evidence/replay context, command output, repository persistence, and static guard enforcement.
-- Operator local validation confirmed targeted and full MarketData suites PASS; contract is promoted to LOCKED.
+- Track correction baseline safety, unchanged artifact determinism, changed artifact reseal gating, correction-run-publication-artifact linkage, pointer switch fail-safe behavior, evidence/replay correction context, command output, repository persistence, DB schema sync, and static guard enforcement.
+- Contract is LOCKED after recovery validation passed targeted correction lifecycle suites and full `tests/Unit/MarketData`.
 
 [SESSION_GOAL]
-- `FINALIZE_LOCK_POINTER_DETERMINISM_CONTRACT` is locked: completed readable finalize reruns cannot bypass pointer validation and cannot return a false `SUCCESS + READABLE` state when the current pointer is malformed or mismatched.
+- `CORRECTION_LIFECYCLE_SAFETY_CONTRACT` prevents correction from damaging baseline/current pointer and makes unchanged/resealed/pointer/evidence/replay outcomes deterministic and auditable.
 
 [SESSION_NOTES]
-- Existing locked publishability/read-side/coverage contracts remain authoritative and were reconciled instead of duplicated.
-- Container validation covered static scan and `php -l`; operator local validation covered migration, targeted suites, full MarketData suite, and required focused test files.
+- This contract reconciles older finalize/pointer/readability/publishability/fallback/evidence/replay contracts instead of duplicating them.
+- Container validation covered static scan and `php -l`; local migration passed; recovery validation passed targeted correction lifecycle suites and full `tests/Unit/MarketData`, so the contract is LOCKED.
 
 ---
 
@@ -38,6 +38,70 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- CORRECTION_LIFECYCLE_SAFETY_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-03
+
+  [RELATED_IMPLEMENTATION] Correction Lifecycle Safety
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-03 -> Canonical correction lifecycle safety contract opened under audit governance.
+  - 2026-05-03 -> Static trace reconciled existing finalize/lock/pointer determinism, coverage gate enforcement, read-side pointer enforcement, publishability state integrity, fallback preservation, artifact seal, evidence export, replay verification, command output, repository persistence, and DB schema contracts.
+  - 2026-05-03 -> Gap found: correction evidence did not reliably derive baseline/candidate publication ids from prior/new run linkage.
+  - 2026-05-03 -> Gap found: artifact diff was boolean-only and lacked explicit invalid/incomplete hash state, reason code, changed scope, and hash context.
+  - 2026-05-03 -> Gap found: replay did not persist/compare correction lifecycle context, allowing correction expected/actual drift to remain hidden.
+  - 2026-05-03 -> Gap found: correction command did not display unchanged/reseal/baseline/candidate pointer state.
+  - 2026-05-03 -> Enforcement patch added deterministic artifact comparison, invalid diff fail-fast, unchanged no-reseal/no-switch context, correction evidence linkage derivation, replay correction expected/actual fields, command lifecycle output, DB/schema sync, and static guards.
+  - 2026-05-03 -> Operator-local validation returned migration PASS but targeted/full PHPUnit FAIL due evidence `seal_state` access, stale `PublicationDiffService` mock expectations, and static guard string interpolation.
+  - 2026-05-03 -> Recovery patch fixed those regressions without changing the final correction lifecycle contract rule.
+  - 2026-05-03 -> Operator-local recovery validation PASS: targeted Correction, Unchanged, Reseal, Hash, Evidence, Replay, Finalize, Publication suites and full `tests/Unit/MarketData` all passed; contract promoted to LOCKED.
+
+  [DEFINED]
+  - Correction baseline must be current-readable pointer-resolved and must satisfy `SUCCESS + READABLE + SEALED + coverage PASS + run/publication mirror`.
+  - Correction baseline must not use `MAX(trade_date)`, `latest('trade_date')`, `orderByDesc('trade_date')`, latest successful run, sealed-only fallback, raw/staging shortcut, or arbitrary latest date shortcut.
+  - Unchanged artifacts must produce unchanged/no-reseal/no-pointer-switch/no-new-current behavior.
+  - Changed artifacts must produce reseal/pointer switch only after complete deterministic hash comparison and valid linkage.
+  - Evidence/replay/command surfaces must expose correction lifecycle context.
+
+  [IMPLEMENTED]
+  - `PublicationDiffService::compare()` defines `INVALID`, `UNCHANGED`, and `CHANGED` decisions with reason code and hash context.
+  - `MarketDataPipelineService::completeFinalize()` blocks invalid correction artifact comparison before pointer switch and requires `CHANGED` before correction history promotion/reseal path.
+  - `EodEvidenceRepository` derives correction publication context from prior/new run linkage.
+  - `MarketDataEvidenceExportService` writes `correction_lifecycle` with baseline/candidate/run/seal/current/reseal/changed/final-outcome context.
+  - `ReplayVerificationService` and `ReplayResultRepository` carry and compare correction lifecycle context when fixture expectations provide it.
+  - Runtime migration, SQL schema, and SQLite mirror include correction lifecycle replay columns.
+  - `RunCorrectionCommand` outputs correction outcome, reseal status, baseline publication id, candidate publication id, candidate switch state, and final outcome note.
+  - `CorrectionLifecycleSafetyStaticGuardTest` guards the critical static invariants.
+  - Recovery patch aligns tests and evidence access with the enforced `PublicationDiffService::compare()` contract.
+
+  [ENFORCED]
+  - Invalid/incomplete correction hashes cannot proceed to pointer switch.
+  - Unchanged correction keeps previous current readable publication and records `NOT_RESEALED_UNCHANGED` context.
+  - Changed correction requires explicit changed artifact comparison before reseal/promotion.
+  - Replay can compare correction expected/actual lifecycle fields and fail on mismatch when expected fields are present.
+  - Evidence derives correction publication context from durable run/publication linkage rather than assuming non-schema correction columns.
+  - Command output no longer hides correction lifecycle state.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for all changed PHP files.
+  - `vendor/` and `vendor/bin/phpunit` are absent from uploaded ZIP; no PHPUnit/artisan command was run in container.
+  - Operator-local migration PASS.
+  - Operator-local first PHPUnit validation FAIL: Correction filter 3 errors + 1 failure; full `tests/Unit/MarketData` 5 errors + 1 failure; focused PipelineIntegration, PublicationFinalizeOutcome, and ReadablePublicationReadContractIntegration PASS.
+  - Recovery ZIP container `php -l` passed for changed recovery files.
+  - Operator-local recovery validation PASS: `Correction` 59 tests / 1146 assertions; `Unchanged` 9 / 63; `Reseal` 5 / 46; `Hash` 8 / 24; `Evidence` 27 / 241; `Replay` 25 / 257; `Finalize` 42 / 261; `Publication` 88 / 906.
+  - Operator-local full validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 271 tests / 2613 assertions.
+
+  [FINAL_RULE]
+  - LOCKED. Correction may publish a new readable current publication only when baseline is pointer-resolved, artifacts are complete and changed, reseal/linkage is valid, and post-switch pointer resolution matches the candidate. Unchanged or invalid corrections must preserve the previous current readable publication and expose the lifecycle outcome in evidence/replay/command surfaces.
+
+  [LOCK_CONDITION]
+  - Satisfied by operator-local targeted correction lifecycle validation and full `tests/Unit/MarketData` PASS.
+
+---
 
 - FINALIZE_LOCK_POINTER_DETERMINISM_CONTRACT -> LOCKED
 

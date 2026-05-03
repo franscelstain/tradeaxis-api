@@ -132,14 +132,52 @@ class MarketDataEvidenceExportService
             throw new \RuntimeException('Correction not found for evidence export.');
         }
 
-        $priorPublication = $correction->prior_publication_id ? $this->evidence->findPublicationById($correction->prior_publication_id) : null;
-        $newPublication = $correction->new_publication_id ? $this->evidence->findPublicationById($correction->new_publication_id) : null;
+        $priorPublicationId = $this->field($correction, 'prior_publication_id');
+        $newPublicationId = $this->field($correction, 'new_publication_id');
+        $priorPublication = $priorPublicationId ? $this->evidence->findPublicationById($priorPublicationId) : null;
+        $newPublication = $newPublicationId ? $this->evidence->findPublicationById($newPublicationId) : null;
+        $changedDecision = $this->resolveCorrectionChangedDecision($correction, $priorPublication, $newPublication);
+        $resealStatus = $this->resolveCorrectionResealStatus($correction, $changedDecision, $newPublication);
+        $publicationSwitch = $newPublication ? (bool) $newPublication->is_current : false;
+
         $payload = [
-            'correction_id' => (int) $correction->correction_id,
-            'trade_date' => $correction->trade_date,
+            'correction_id' => (int) $this->field($correction, 'correction_id'),
+            'trade_date' => $this->field($correction, 'trade_date'),
             'approval' => [
-                'approved_by' => $correction->approved_by,
-                'approved_at' => $correction->approved_at,
+                'approved_by' => $this->field($correction, 'approved_by'),
+                'approved_at' => $this->field($correction, 'approved_at'),
+            ],
+            'correction_lifecycle' => [
+                'correction_id' => (int) $this->field($correction, 'correction_id'),
+                'status' => $this->field($correction, 'status'),
+                'reason_code' => $this->field($correction, 'correction_reason_code'),
+                'reason_note' => $this->field($correction, 'correction_reason_note'),
+                'final_outcome_note' => $this->field($correction, 'final_outcome_note'),
+                'baseline_run_id' => $this->field($correction, 'prior_run_id') !== null ? (int) $this->field($correction, 'prior_run_id') : null,
+                'baseline_publication_id' => $priorPublicationId !== null ? (int) $priorPublicationId : null,
+                'baseline_publication_version' => $this->field($correction, 'prior_publication_version') !== null ? (int) $this->field($correction, 'prior_publication_version') : null,
+                'candidate_run_id' => $this->field($correction, 'new_run_id') !== null ? (int) $this->field($correction, 'new_run_id') : null,
+                'candidate_publication_id' => $newPublicationId !== null ? (int) $newPublicationId : null,
+                'candidate_publication_version' => $this->field($correction, 'new_publication_version') !== null ? (int) $this->field($correction, 'new_publication_version') : null,
+                'changed_decision' => $changedDecision,
+                'reseal_status' => $resealStatus,
+                'publication_switch' => $publicationSwitch,
+                'pointer_current_state' => [
+                    'baseline_was_current' => $this->field($correction, 'prior_publication_is_current') !== null ? (bool) $this->field($correction, 'prior_publication_is_current') : null,
+                    'candidate_is_current' => $this->field($correction, 'new_publication_is_current') !== null ? (bool) $this->field($correction, 'new_publication_is_current') : null,
+                ],
+                'run_state' => [
+                    'baseline_terminal_status' => $this->field($correction, 'prior_run_terminal_status'),
+                    'baseline_publishability_state' => $this->field($correction, 'prior_run_publishability_state'),
+                    'baseline_coverage_gate_state' => $this->field($correction, 'prior_run_coverage_gate_state'),
+                    'candidate_terminal_status' => $this->field($correction, 'new_run_terminal_status'),
+                    'candidate_publishability_state' => $this->field($correction, 'new_run_publishability_state'),
+                    'candidate_coverage_gate_state' => $this->field($correction, 'new_run_coverage_gate_state'),
+                ],
+                'publication_state' => [
+                    'baseline_seal_state' => $this->field($correction, 'prior_publication_seal_state'),
+                    'candidate_seal_state' => $this->field($correction, 'new_publication_seal_state'),
+                ],
             ],
             'prior_publication' => $priorPublication ? [
                 'publication_id' => (int) $priorPublication->publication_id,
@@ -163,24 +201,28 @@ class MarketDataEvidenceExportService
                 'indicators_batch_hash' => $newPublication->indicators_batch_hash,
                 'eligibility_batch_hash' => $newPublication->eligibility_batch_hash,
             ] : null,
-            'publication_switch' => $newPublication ? (bool) $newPublication->is_current : false,
-            'status' => $correction->status,
-            'final_outcome_note' => $correction->final_outcome_note ?? null,
+            'publication_switch' => $publicationSwitch,
+            'status' => $this->field($correction, 'status'),
+            'final_outcome_note' => $this->field($correction, 'final_outcome_note'),
+            'changed_decision' => $changedDecision,
+            'reseal_status' => $resealStatus,
             'comparison_summary' => $this->buildCorrectionComparisonSummary($priorPublication, $newPublication),
         ];
 
-        $dir = $outputDir ?: $this->defaultCorrectionOutputDir($correction->correction_id);
+        $dir = $outputDir ?: $this->defaultCorrectionOutputDir($this->field($correction, 'correction_id'));
         $this->ensureDirectory($dir);
         $this->writeJson($dir.'/correction_evidence.json', $payload);
 
         $files = ['correction_evidence.json'];
 
         return [
-            'selector' => ['type' => 'correction', 'id' => (int) $correction->correction_id],
+            'selector' => ['type' => 'correction', 'id' => (int) $this->field($correction, 'correction_id')],
             'summary' => [
-                'correction_id' => (int) $correction->correction_id,
-                'trade_date' => $correction->trade_date,
-                'status' => $correction->status,
+                'correction_id' => (int) $this->field($correction, 'correction_id'),
+                'trade_date' => $this->field($correction, 'trade_date'),
+                'status' => $this->field($correction, 'status'),
+                'changed_decision' => $changedDecision,
+                'reseal_status' => $resealStatus,
                 'publication_switch' => $payload['publication_switch'],
             ],
             'output_dir' => $dir,
@@ -556,7 +598,8 @@ class MarketDataEvidenceExportService
             'comparison_note' => $metric->comparison_note,
             'artifact_changed_scope' => $metric->artifact_changed_scope,
             'config_identity' => $metric->config_identity,
-            'publication_version' => $metric->publication_version !== null ? (int) $metric->publication_version : null,
+            'publication_version' => $this->field($metric, 'publication_version') !== null ? (int) $this->field($metric, 'publication_version') : null,
+            'correction_lifecycle' => $this->buildReplayCorrectionLifecycle($metric),
             'coverage' => $this->buildCoverageState($metric),
             'expected_coverage' => $this->buildExpectedCoverageState($metric),
             'coverage_ratio' => $metric->coverage_ratio !== null ? (float) $metric->coverage_ratio : null,
@@ -581,6 +624,8 @@ class MarketDataEvidenceExportService
             'expected_bars_batch_hash' => $metric->expected_bars_batch_hash ?? null,
             'expected_indicators_batch_hash' => $metric->expected_indicators_batch_hash ?? null,
             'expected_eligibility_batch_hash' => $metric->expected_eligibility_batch_hash ?? null,
+            'expected_correction_lifecycle' => $this->buildReplayExpectedCorrectionLifecycle($metric),
+            'actual_correction_lifecycle' => $this->buildReplayActualCorrectionLifecycle($metric),
             'mismatch_summary' => $metric->mismatch_summary,
             'created_at' => $metric->created_at,
         ];
@@ -599,6 +644,7 @@ class MarketDataEvidenceExportService
             'indicators_batch_hash' => $metric->expected_indicators_batch_hash ?? null,
             'eligibility_batch_hash' => $metric->expected_eligibility_batch_hash ?? null,
             'reason_code_counts' => $expectedReasonCodeCounts,
+            'correction_lifecycle' => $this->buildReplayExpectedCorrectionLifecycle($metric),
         ];
     }
 
@@ -615,6 +661,41 @@ class MarketDataEvidenceExportService
             'indicators_batch_hash' => $metric->indicators_batch_hash,
             'eligibility_batch_hash' => $metric->eligibility_batch_hash,
             'reason_code_counts' => $reasonCodes,
+            'correction_lifecycle' => $this->buildReplayActualCorrectionLifecycle($metric),
+        ];
+    }
+
+    private function buildReplayCorrectionLifecycle($metric)
+    {
+        return [
+            'actual' => $this->buildReplayActualCorrectionLifecycle($metric),
+            'expected' => $this->buildReplayExpectedCorrectionLifecycle($metric),
+        ];
+    }
+
+    private function buildReplayActualCorrectionLifecycle($metric)
+    {
+        return [
+            'correction_id' => $this->field($metric, 'correction_id') !== null ? (int) $this->field($metric, 'correction_id') : null,
+            'correction_status' => $this->field($metric, 'correction_status'),
+            'correction_outcome' => $this->field($metric, 'correction_outcome'),
+            'correction_reseal_status' => $this->field($metric, 'correction_reseal_status'),
+            'correction_publication_switch' => $this->field($metric, 'correction_publication_switch') !== null ? (bool) $this->field($metric, 'correction_publication_switch') : null,
+            'baseline_publication_id' => $this->field($metric, 'baseline_publication_id') !== null ? (int) $this->field($metric, 'baseline_publication_id') : null,
+            'candidate_publication_id' => $this->field($metric, 'candidate_publication_id') !== null ? (int) $this->field($metric, 'candidate_publication_id') : null,
+        ];
+    }
+
+    private function buildReplayExpectedCorrectionLifecycle($metric)
+    {
+        return [
+            'correction_id' => $this->field($metric, 'expected_correction_id') !== null ? (int) $this->field($metric, 'expected_correction_id') : null,
+            'correction_status' => $this->field($metric, 'expected_correction_status'),
+            'correction_outcome' => $this->field($metric, 'expected_correction_outcome'),
+            'correction_reseal_status' => $this->field($metric, 'expected_correction_reseal_status'),
+            'correction_publication_switch' => $this->field($metric, 'expected_correction_publication_switch') !== null ? (bool) $this->field($metric, 'expected_correction_publication_switch') : null,
+            'baseline_publication_id' => $this->field($metric, 'expected_baseline_publication_id') !== null ? (int) $this->field($metric, 'expected_baseline_publication_id') : null,
+            'candidate_publication_id' => $this->field($metric, 'expected_candidate_publication_id') !== null ? (int) $this->field($metric, 'expected_candidate_publication_id') : null,
         ];
     }
 
@@ -713,15 +794,55 @@ class MarketDataEvidenceExportService
         return implode("\n", $lines)."\n";
     }
 
+    private function resolveCorrectionChangedDecision($correction, $priorPublication, $newPublication)
+    {
+        $status = strtoupper((string) $this->field($correction, 'status'));
+        if ($status === 'CONSUMED_CURRENT' || $status === 'CANCELLED') {
+            return 'UNCHANGED';
+        }
+
+        if ($priorPublication && $newPublication
+            && (string) $this->field($priorPublication, 'bars_batch_hash') === (string) $this->field($newPublication, 'bars_batch_hash')
+            && (string) $this->field($priorPublication, 'indicators_batch_hash') === (string) $this->field($newPublication, 'indicators_batch_hash')
+            && (string) $this->field($priorPublication, 'eligibility_batch_hash') === (string) $this->field($newPublication, 'eligibility_batch_hash')) {
+            return 'UNCHANGED';
+        }
+
+        if ($priorPublication && $newPublication) {
+            return 'CHANGED';
+        }
+
+        return 'UNKNOWN';
+    }
+
+    private function resolveCorrectionResealStatus($correction, $changedDecision, $newPublication)
+    {
+        $status = strtoupper((string) $this->field($correction, 'status'));
+
+        if ($changedDecision === 'UNCHANGED') {
+            return 'NOT_RESEALED_UNCHANGED';
+        }
+
+        if ($changedDecision === 'CHANGED' && $newPublication && (string) $this->field($newPublication, 'seal_state') === 'SEALED') {
+            return 'RESEALED';
+        }
+
+        if (in_array($status, ['RESEALED', 'PUBLISHED'], true)) {
+            return 'RESEAL_EXPECTED_BUT_NOT_PROVEN';
+        }
+
+        return 'NOT_RESEALED';
+    }
+
     private function buildCorrectionComparisonSummary($priorPublication, $newPublication)
     {
         if (! $priorPublication && ! $newPublication) {
             return 'No prior or new publication found.';
         }
         if ($priorPublication && $newPublication
-            && (string) $priorPublication->bars_batch_hash === (string) $newPublication->bars_batch_hash
-            && (string) $priorPublication->indicators_batch_hash === (string) $newPublication->indicators_batch_hash
-            && (string) $priorPublication->eligibility_batch_hash === (string) $newPublication->eligibility_batch_hash) {
+            && (string) $this->field($priorPublication, 'bars_batch_hash') === (string) $this->field($newPublication, 'bars_batch_hash')
+            && (string) $this->field($priorPublication, 'indicators_batch_hash') === (string) $this->field($newPublication, 'indicators_batch_hash')
+            && (string) $this->field($priorPublication, 'eligibility_batch_hash') === (string) $this->field($newPublication, 'eligibility_batch_hash')) {
             return 'No consumer-visible hash change detected.';
         }
 

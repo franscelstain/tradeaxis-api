@@ -3,20 +3,24 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Finalize / Lock / Pointer Determinism
+- Correction Lifecycle Safety
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce idempotent finalize rerun behavior, lock-protected pointer mutation, current-readable pointer validation, fallback preservation, correction safety, evidence/replay state context, command output, repository persistence, and static guards.
-- Operator local validation completed: migration, targeted MarketData suites, full `tests/Unit/MarketData`, and required focused test files all PASS.
+- Enforce correction baseline safety, unchanged artifact determinism, changed artifact reseal gating, correction-run-publication-artifact linkage, pointer switch fail-safe behavior, evidence/replay correction context, command output, repository persistence, DB schema sync, and static guards.
+- Container validation completed with static trace and `php -l`; operator-local recovery validation now passes targeted correction lifecycle suites and full `tests/Unit/MarketData`, so the session is promoted to DONE.
 
 [SESSION_GOAL]
-- Finalize rerun is now locked as deterministic/idempotent: completed `SUCCESS + READABLE + current` runs must prove that the current-readable pointer resolves back to the same run/publication/version before returning an idempotent final outcome.
+- Correction must preserve baseline/current readable publication unless candidate artifacts are deterministically changed, resealed, linked, pointer-resolved, and replay/evidence-auditable.
 
 [SESSION_NOTES]
-- Static trace confirmed most finalize/pointer contracts already exist: transaction-wrapped promotion, post-switch pointer resolver assertion, pointer-first readable resolver, coverage PASS predicates, fallback through previous readable pointer context, evidence/replay state context, and command status output.
-- New enforcement closes the remaining rerun gap where a completed readable run could be returned as idempotent even if the current pointer was later malformed or no longer resolved to the same publication identity.
+- Gap found: correction evidence derived `prior_publication_id` / `new_publication_id` from fields not owned by `eod_dataset_corrections`; runtime evidence could lose baseline/candidate publication context even though mock tests supplied those fields.
+- Gap found: unchanged/changed artifact comparison was boolean-only and did not expose invalid/incomplete hash context or changed scope for events/evidence/replay.
+- Gap found: replay persistence/export did not carry correction lifecycle expected/actual context, so replay could pass while correction state drifted.
+- Gap found: correction command output hid unchanged/reseal/baseline/candidate pointer context.
+- Operator-local validation exposed recovery issues: unsafe `seal_state` property access in correction evidence, stale pipeline tests still mocking `isUnchanged()` instead of `compare()`, and one static guard string interpolation bug.
+- Recovery patch applied: evidence reseal/hash comparison now uses guarded field access, pipeline tests now expect `PublicationDiffService::compare()`, and replay static guard assertion now checks the literal expected-key prefix without interpolating `$field`.
 
 ---
 
@@ -38,6 +42,63 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Correction Lifecycle Safety -> DONE
+
+  [LAST_UPDATED] 2026-05-03
+
+  [RELATED_CONTRACT] CORRECTION_LIFECYCLE_SAFETY_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-03 -> Correction Lifecycle Safety session opened against latest source-of-truth ZIP.
+  - 2026-05-03 -> Static trace reviewed correction baseline resolver, artifact diff, reseal, finalize pointer switch, fallback preservation, evidence export, replay verification, command surface, repository persistence, DB schema, and static guard coverage.
+  - 2026-05-03 -> Gap found: correction evidence repository returned raw correction row only, while evidence export expected derived `prior_publication_id` and `new_publication_id`; runtime evidence could miss baseline/candidate publication context.
+  - 2026-05-03 -> Gap found: artifact comparison was boolean-only; invalid/incomplete correction hashes were not represented as a deterministic guarded state.
+  - 2026-05-03 -> Gap found: replay expected/actual state did not persist or compare correction lifecycle fields.
+  - 2026-05-03 -> Gap found: correction command output exposed only correction id/status and hid unchanged/reseal/pointer/linkage context.
+  - 2026-05-03 -> Enforcement patch added deterministic artifact comparison, invalid hash fail-fast before pointer switch, unchanged no-reseal/no-switch event context, correction evidence linkage derivation, replay correction lifecycle fields, command lifecycle output, DB/schema sync, and static guard coverage.
+  - 2026-05-03 -> Operator-local validation returned migration PASS but targeted/full PHPUnit FAIL due recovery issues in evidence property access, stale `PublicationDiffService` mock expectations, and replay static guard string interpolation.
+  - 2026-05-03 -> Recovery patch fixed guarded evidence field access, updated pipeline unit tests from `isUnchanged()` to `compare()` expectations, and corrected replay static guard assertion.
+  - 2026-05-03 -> Operator-local recovery validation PASS: targeted Correction, Unchanged, Reseal, Hash, Evidence, Replay, Finalize, Publication suites and full `tests/Unit/MarketData` all passed; implementation promoted to DONE.
+
+  [IMPLEMENTATION]
+  - `PublicationDiffService` now returns explicit `INVALID`, `UNCHANGED`, or `CHANGED` decisions with reason code, changed scope, changed fields, and baseline/candidate hash context.
+  - `MarketDataPipelineService::completeFinalize()` now blocks correction pointer switch when artifact comparison is invalid, treats unchanged artifacts as no-reseal/no-switch/no-new-current outcome, and requires changed artifact comparison before history promotion/reseal/pointer switch.
+  - `EodEvidenceRepository::findCorrectionById()` now derives baseline/candidate publication ids, versions, run states, coverage states, seal states, and current flags from prior/new run linkage.
+  - `MarketDataEvidenceExportService::exportCorrectionEvidence()` now writes `correction_lifecycle` context including changed decision, reseal status, baseline/candidate publication ids, run state, seal state, pointer/current state, and final outcome note.
+  - `ReplayVerificationService`, `ReplayResultRepository`, SQL schema, migration, and SQLite mirror now carry correction lifecycle actual/expected fields and compare them when fixture expectations provide them.
+  - `RunCorrectionCommand` now prints correction outcome, reseal status, baseline publication id, candidate publication id, candidate pointer switch state, and final outcome note.
+  - `CorrectionLifecycleSafetyStaticGuardTest` guards baseline pointer resolution, no latest/MAX-date baseline shortcut, invalid diff blocking, unchanged candidate discard/no switch, changed reseal requirement, evidence linkage derivation, replay correction context, and command output.
+  - Recovery patch keeps existing contract behavior unchanged and only fixes local regression causes exposed by the first operator PHPUnit run.
+
+  [ENFORCEMENT]
+  - Correction baseline remains pointer-resolved through current readable publication contract; no latest/MAX date path was introduced.
+  - Correction pointer switch is blocked when artifact hashes are incomplete or baseline/candidate comparison is invalid.
+  - Unchanged correction preserves previous current pointer and records `NOT_RESEALED_UNCHANGED` context.
+  - Changed correction requires explicit changed artifact comparison before reseal/current promotion.
+  - Evidence and replay now expose correction lifecycle context rather than hiding linkage/state mismatch.
+  - Static guard prevents regression of baseline shortcut, invalid diff bypass, unchanged publication creation/switch, missing evidence/replay context, and weak command output.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Correction baseline is pointer-resolved, unchanged correction preserves previous current readable publication without reseal/switch, changed correction requires deterministic artifact comparison and reseal/linkage validity, and evidence/replay/command surfaces expose correction lifecycle state.
+
+  [EVIDENCE]
+  - Container confirmed uploaded ZIP has no `vendor/` and no executable `vendor/bin/phpunit`.
+  - Container static trace completed across correction baseline, artifact diff, reseal, pointer switch, fallback, evidence, replay, command, repository, DB schema, and static guard paths.
+  - Container `php -l` passed for all changed PHP files.
+  - Operator-local `php artisan migrate:fresh --env=testing` PASS through `2026_05_03_000001_add_correction_lifecycle_context_to_replay_metrics`.
+  - Operator-local first PHPUnit pass exposed failures: Correction filter had 3 errors + 1 failure; full `tests/Unit/MarketData` had 5 errors + 1 failure; recovery patch addressed evidence property access, stale diff-service mocks, and static guard assertion drift.
+  - Recovery ZIP container `php -l` passed for `MarketDataEvidenceExportService.php`, `ReplayVerificationService.php`, `MarketDataPipelineServiceTest.php`, and `CorrectionLifecycleSafetyStaticGuardTest.php`.
+  - Operator-local recovery validation PASS: `Correction` 59 tests / 1146 assertions; `Unchanged` 9 / 63; `Reseal` 5 / 46; `Hash` 8 / 24; `Evidence` 27 / 241; `Replay` 25 / 257; `Finalize` 42 / 261; `Publication` 88 / 906.
+  - Operator-local full validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 271 tests / 2613 assertions.
+
+  [LOCK_CONDITION]
+  - Satisfied by operator-local targeted correction lifecycle validation and full `tests/Unit/MarketData` PASS.
+  - Implementation status promoted to DONE.
+
+---
 
 - Finalize / Lock / Pointer Determinism -> DONE
 

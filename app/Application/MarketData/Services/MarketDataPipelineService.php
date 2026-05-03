@@ -549,6 +549,7 @@ class MarketDataPipelineService
                 $promotionError = null;
                 $postFinalizeMismatchNote = null;
                 $manifest = null;
+                $artifactComparison = null;
 
                 $preDecision = $this->finalizeDecisions->evaluate(
                     $cutoffSatisfied,
@@ -593,7 +594,15 @@ class MarketDataPipelineService
                 if ($preDecision['promotion_allowed']) {
                     $run = $this->prepareRunForPointerSwitch($run, $preDecision);
 
-                    if ($correction && $priorCurrent && $this->publicationDiffs->isUnchanged($priorCurrent, $candidatePublication)) {
+                    if ($correction && $priorCurrent) {
+                        $artifactComparison = $this->publicationDiffs->compare($priorCurrent, $candidatePublication);
+
+                        if ($artifactComparison['decision'] === 'INVALID') {
+                            throw new \RuntimeException('Correction artifact comparison invalid; pointer switch blocked. reason_code='.$artifactComparison['reason_code']);
+                        }
+                    }
+
+                    if ($correction && $priorCurrent && $artifactComparison && $artifactComparison['decision'] === 'UNCHANGED') {
                         $unchangedCorrection = true;
                         $candidateCurrent = $priorCurrent;
                         $manifest = $this->publications->buildManifestByPublicationId($priorCurrent->publication_id);
@@ -613,6 +622,7 @@ class MarketDataPipelineService
                                 'current_publication_version' => (int) $priorCurrent->publication_version,
                                 'correction_outcome' => 'CANCELLED',
                                 'correction_outcome_note' => 'Correction rerun produced unchanged content; current publication preserved without version switch.',
+                                'artifact_comparison' => $artifactComparison,
                             ],
                             null,
                             null
@@ -655,6 +665,7 @@ class MarketDataPipelineService
                                 'manifest' => $manifest ? (array) $manifest : null,
                                 'candidate_publication_id' => (int) $candidatePublication->publication_id,
                                 'unchanged_correction' => true,
+                                'artifact_comparison' => $artifactComparison,
                             ]
                         );
 
@@ -696,6 +707,8 @@ class MarketDataPipelineService
                                 'manifest' => $manifest ? (array) $manifest : null,
                                 'correction_outcome' => 'CANCELLED',
                                 'correction_outcome_note' => 'Correction rerun produced unchanged content; current publication preserved without version switch.',
+                                'artifact_comparison' => $artifactComparison,
+                                'reseal_status' => 'NOT_RESEALED_UNCHANGED',
                             ]
                         );
 
@@ -703,6 +716,10 @@ class MarketDataPipelineService
                     } else {
                         try {
                             if ($correction) {
+                                if (! $artifactComparison || $artifactComparison['decision'] !== 'CHANGED') {
+                                    throw new \RuntimeException('Correction reseal requires a valid changed artifact comparison before pointer switch.');
+                                }
+
                                 try {
                                     $this->artifacts->promotePublicationHistoryToCurrent(
                                         $input->requestedDate,
@@ -1132,6 +1149,8 @@ class MarketDataPipelineService
                                 'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
                                 'current_publication_id' => $resolvedPublicationId ? (int) $resolvedPublicationId : null,
                                 'current_publication_version' => $resolvedPublicationVersion ? (int) $resolvedPublicationVersion : null,
+                                'artifact_comparison' => $artifactComparison,
+                                'reseal_status' => 'RESEALED',
                             ]
                         );
                     }
@@ -1196,6 +1215,8 @@ class MarketDataPipelineService
                         'manifest' => $manifest ? (array) $manifest : null,
                         'correction_outcome' => $outcome['correction_outcome'] ?? null,
                         'correction_outcome_note' => $outcome['correction_outcome_note'] ?? null,
+                        'artifact_comparison' => $artifactComparison,
+                        'reseal_status' => $correction && $artifactComparison && $artifactComparison['decision'] === 'CHANGED' ? 'RESEALED' : ($unchangedCorrection ? 'NOT_RESEALED_UNCHANGED' : null),
                     ]
                 );
 

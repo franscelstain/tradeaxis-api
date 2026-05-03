@@ -743,10 +743,16 @@ class MarketDataPipelineServiceTest extends TestCase
                 'message' => 'Finalize succeeded.',
             ]);
 
-        $publicationDiffs->shouldReceive('isUnchanged')
+        $publicationDiffs->shouldReceive('compare')
             ->once()
             ->with($priorCurrent, $candidatePublication)
-            ->andReturn(false);
+            ->andReturn([
+                'decision' => 'CHANGED',
+                'changed_scope' => ['bars'],
+                'changed_fields' => ['bars_batch_hash'],
+                'reason_code' => 'CORRECTION_ARTIFACT_CHANGED',
+                'hash_context' => [],
+            ]);
 
         $artifacts->shouldReceive('promotePublicationHistoryToCurrent')
             ->once()
@@ -896,10 +902,16 @@ class MarketDataPipelineServiceTest extends TestCase
                 'message' => 'Finalize succeeded.',
             ]);
 
-        $publicationDiffs->shouldReceive('isUnchanged')
+        $publicationDiffs->shouldReceive('compare')
             ->once()
             ->with($priorCurrent, $candidatePublication)
-            ->andReturn(true);
+            ->andReturn([
+                'decision' => 'UNCHANGED',
+                'changed_scope' => [],
+                'changed_fields' => [],
+                'reason_code' => 'CORRECTION_ARTIFACT_UNCHANGED',
+                'hash_context' => [],
+            ]);
 
         $publications->shouldReceive('discardCandidatePublication')
             ->once()
@@ -1063,10 +1075,16 @@ class MarketDataPipelineServiceTest extends TestCase
                 'message' => 'Finalize succeeded.',
             ]);
 
-        $publicationDiffs->shouldReceive('isUnchanged')
+        $publicationDiffs->shouldReceive('compare')
             ->once()
             ->with($priorCurrent, $candidatePublication)
-            ->andReturn(false);
+            ->andReturn([
+                'decision' => 'CHANGED',
+                'changed_scope' => ['bars'],
+                'changed_fields' => ['bars_batch_hash'],
+                'reason_code' => 'CORRECTION_ARTIFACT_CHANGED',
+                'hash_context' => [],
+            ]);
 
         $artifacts->shouldReceive('promotePublicationHistoryToCurrent')
             ->once()
@@ -1211,10 +1229,16 @@ class MarketDataPipelineServiceTest extends TestCase
                 'message' => 'Finalize succeeded.',
             ]);
 
-        $publicationDiffs->shouldReceive('isUnchanged')
+        $publicationDiffs->shouldReceive('compare')
             ->once()
             ->with($priorCurrent, $candidatePublication)
-            ->andReturn(false);
+            ->andReturn([
+                'decision' => 'CHANGED',
+                'changed_scope' => ['bars'],
+                'changed_fields' => ['bars_batch_hash'],
+                'reason_code' => 'CORRECTION_ARTIFACT_CHANGED',
+                'hash_context' => [],
+            ]);
 
         $artifacts->shouldReceive('promotePublicationHistoryToCurrent')
             ->once()
