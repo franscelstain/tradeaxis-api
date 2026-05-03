@@ -333,6 +333,63 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame((int) $pointerBefore->run_id, (int) $pointerAfter->run_id);
         $this->assertSame((int) $eventCountBefore, (int) $eventCountAfter);
     }
+
+    public function test_completed_success_finalize_rerun_with_invalid_pointer_fails_safe_without_duplicate_publication(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $pipeline = $this->makePipeline();
+        $run = $pipeline->runDaily('2026-03-20', 'manual_file');
+
+        $publicationCountBefore = DB::table('eod_publications')
+            ->where('run_id', $run->run_id)
+            ->count();
+
+        DB::table('eod_current_publication_pointer')
+            ->where('trade_date', '2026-03-20')
+            ->update([
+                'publication_version' => 999,
+            ]);
+
+        $rerun = $pipeline->completeFinalize(
+            new App\Application\MarketData\DTOs\MarketDataStageInput('2026-03-20', 'manual_file', $run->run_id, 'FINALIZE', null)
+        );
+
+        $publicationCountAfter = DB::table('eod_publications')
+            ->where('run_id', $run->run_id)
+            ->count();
+
+        $this->assertSame((int) $run->run_id, (int) $rerun->run_id);
+        $this->assertSame('HELD', $rerun->terminal_status);
+        $this->assertSame('NOT_READABLE', $rerun->publishability_state);
+        $this->assertSame('RUN_LOCK_CONFLICT', $rerun->final_reason_code);
+        $this->assertNull($rerun->trade_date_effective);
+        $this->assertSame((int) $publicationCountBefore, (int) $publicationCountAfter);
+        $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+        $this->assertSame(0, DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->count());
+
+        $this->assertTrue(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID')
+                ->where('reason_code', 'RUN_LOCK_CONFLICT')
+                ->exists()
+        );
+    }
+
     public function test_run_daily_success_path_with_post_switch_resolution_mismatch_holds_and_clears_invalid_current_pointer(): void
     {
         $this->seedTicker(1, 'BBCA');

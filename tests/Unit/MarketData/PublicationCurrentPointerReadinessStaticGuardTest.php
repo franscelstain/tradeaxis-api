@@ -64,6 +64,26 @@ class PublicationCurrentPointerReadinessStaticGuardTest extends TestCase
         $this->assertStringContainsString('Treat the pointer resolver as the authoritative post-switch', $finalize);
     }
 
+    public function test_completed_success_finalize_idempotency_validates_current_pointer_before_short_circuit()
+    {
+        $source = $this->readProjectFile('app/Application/MarketData/Services/MarketDataPipelineService.php');
+        $idempotency = $this->extractMethod($source, 'findCompletedFinalizeRun', 'private');
+        $pointerCheck = $this->extractMethod($source, 'completedCurrentReadableRunStillPointerResolved', 'private');
+        $failSafe = $this->extractMethod($source, 'failSafeCompletedReadableRunPointerMismatch', 'private');
+
+        $this->assertStringContainsString('completedCurrentReadableRunStillPointerResolved', $idempotency);
+        $this->assertStringContainsString('failSafeCompletedReadableRunPointerMismatch', $idempotency);
+        $this->assertStringContainsString('findReadableCurrentPublicationForRun', $pointerCheck);
+        $this->assertStringContainsString('publication_id', $pointerCheck);
+        $this->assertStringContainsString('publication_version', $pointerCheck);
+        $this->assertStringContainsString('run_id', $pointerCheck);
+        $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $failSafe);
+        $this->assertStringContainsString('clearCurrentPublicationState', $failSafe);
+        $this->assertStringContainsString('RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID', $failSafe);
+        $this->assertStringContainsString('RUN_LOCK_CONFLICT', $failSafe);
+    }
+
+
     private function readProjectFile($relativePath)
     {
         $path = dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

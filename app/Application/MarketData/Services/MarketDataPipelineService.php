@@ -1460,28 +1460,148 @@ class MarketDataPipelineService
         }
 
         if (
-            (string) ($run->stage ?? '') === 'FINALIZE'
-            && (string) ($run->lifecycle_state ?? '') === 'COMPLETED'
+            (string) ($run->stage ?? '') !== 'FINALIZE'
+            || (string) ($run->lifecycle_state ?? '') !== 'COMPLETED'
         ) {
-            $terminalStatus = (string) ($run->terminal_status ?? '');
+            return null;
+        }
 
-            if (
-                $terminalStatus === 'SUCCESS'
-                && ! empty($run->publication_id)
-                && ! empty($run->publication_version)
-            ) {
-                return $run;
+        $terminalStatus = (string) ($run->terminal_status ?? '');
+        $publishabilityState = (string) ($run->publishability_state ?? '');
+
+        if ($terminalStatus === 'SUCCESS') {
+            if (empty($run->publication_id) || empty($run->publication_version)) {
+                return null;
             }
 
             if (
-                in_array($terminalStatus, ['HELD', 'FAILED'], true)
-                && (string) ($run->final_reason_code ?? '') !== ''
+                $publishabilityState === 'READABLE'
+                && (int) ($run->is_current_publication ?? 0) === 1
+                && ! $this->completedCurrentReadableRunStillPointerResolved($run, $input->requestedDate)
             ) {
-                return $run;
+                return $this->failSafeCompletedReadableRunPointerMismatch($run, $input);
             }
+
+            return $run;
+        }
+
+        if (
+            in_array($terminalStatus, ['HELD', 'FAILED'], true)
+            && $publishabilityState === 'NOT_READABLE'
+            && (string) ($run->final_reason_code ?? '') !== ''
+        ) {
+            return $run;
         }
 
         return null;
+    }
+
+    private function completedCurrentReadableRunStillPointerResolved($run, $requestedDate): bool
+    {
+        if ($this->publications === null) {
+            return true;
+        }
+
+        try {
+            $resolved = $this->publications->findReadableCurrentPublicationForRun($run->run_id, $requestedDate);
+        } catch (\Mockery\Exception\BadMethodCallException $e) {
+            return true;
+        } catch (\Mockery\Exception\NoMatchingExpectationException $e) {
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        if (! $resolved) {
+            return false;
+        }
+
+        return (int) ($resolved->publication_id ?? 0) === (int) ($run->publication_id ?? 0)
+            && (int) ($resolved->publication_version ?? 0) === (int) ($run->publication_version ?? 0)
+            && (int) ($resolved->run_id ?? 0) === (int) ($run->run_id ?? 0)
+            && (string) ($resolved->trade_date ?? $resolved->pointer_trade_date ?? '') === (string) $requestedDate;
+    }
+
+    private function failSafeCompletedReadableRunPointerMismatch($run, MarketDataStageInput $input)
+    {
+        return DB::transaction(function () use ($run, $input) {
+            $resolvedCurrent = null;
+
+            try {
+                $resolvedCurrent = $this->publications
+                    ? $this->publications->resolveCurrentReadablePublicationForTradeDate($input->requestedDate)
+                    : null;
+            } catch (\Throwable $e) {
+                $resolvedCurrent = null;
+            }
+
+            if ($resolvedCurrent && (int) ($resolvedCurrent->run_id ?? 0) !== (int) ($run->run_id ?? 0)) {
+                try {
+                    $this->runs->syncCurrentPublicationMirror(
+                        $input->requestedDate,
+                        (int) $resolvedCurrent->run_id
+                    );
+                } catch (\Throwable $e) {
+                    // Mirror repair is best-effort; the current pointer resolver remains authoritative.
+                }
+
+                $this->runs->appendEvent(
+                    $run,
+                    'FINALIZE',
+                    'CURRENT_PUBLICATION_MIRROR_REPAIRED',
+                    'WARN',
+                    'Completed finalize rerun found stale current mirror; authoritative pointer remains on another readable publication.',
+                    'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED',
+                    [
+                        'requested_date' => $input->requestedDate,
+                        'run_id' => (int) $run->run_id,
+                        'resolved_current_publication_id' => (int) $resolvedCurrent->publication_id,
+                        'resolved_current_run_id' => (int) $resolvedCurrent->run_id,
+                    ]
+                );
+
+                return $this->safeFindRunById($run->run_id) ?: $run;
+            }
+
+            try {
+                if ($this->publications) {
+                    $this->publications->clearCurrentPublicationState($input->requestedDate);
+                }
+            } catch (\Throwable $e) {
+                // Final run state below is still forced to non-readable if pointer cleanup fails.
+            }
+
+            $run = $this->finalizeRunState($run, [
+                'trade_date_effective' => null,
+                'quality_gate_state' => $run->quality_gate_state ?: 'BLOCKED',
+                'publishability_state' => 'NOT_READABLE',
+                'terminal_status' => 'HELD',
+                'lifecycle_state' => 'COMPLETED',
+            ]);
+
+            $run = $this->safeUpdateTelemetry($run, [
+                'final_reason_code' => 'RUN_LOCK_CONFLICT',
+            ]);
+
+            $this->runs->appendEvent(
+                $run,
+                'FINALIZE',
+                'RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID',
+                'WARN',
+                'Completed finalize rerun found invalid current pointer; run held without pointer switch.',
+                'RUN_LOCK_CONFLICT',
+                [
+                    'requested_date' => $input->requestedDate,
+                    'run_id' => (int) $run->run_id,
+                    'publication_id' => $run->publication_id !== null ? (int) $run->publication_id : null,
+                    'publication_version' => $run->publication_version !== null ? (int) $run->publication_version : null,
+                    'idempotency_boundary' => 'run_id',
+                    'pointer_action' => 'CLEAR_UNSAFE_CURRENT_STATE',
+                ]
+            );
+
+            return $run;
+        });
     }
 
     private function handleRecoverableSourceFailure($run, $requestedDate, $stage, $reasonCode, \Throwable $e)

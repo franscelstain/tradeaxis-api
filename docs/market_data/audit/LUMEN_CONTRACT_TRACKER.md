@@ -3,20 +3,20 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Publishability State Integrity / No Invalid State Combination
+- Finalize / Lock / Pointer Determinism
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Track no-invalid-state-combination enforcement across run, publication, current pointer, fallback, correction, evidence, replay, command, repository, schema, and tests.
-- Contract is LOCKED after operator-supplied targeted finalize/correction and full MarketData PHPUnit evidence passed.
+- Track idempotent finalize rerun behavior, lock/pointer mutation safety, authoritative current-readable pointer validation, fallback/correction preservation, evidence/replay context, command output, repository persistence, and static guard enforcement.
+- Operator local validation confirmed targeted and full MarketData suites PASS; contract is promoted to LOCKED.
 
 [SESSION_GOAL]
-- `PUBLISHABILITY_STATE_INTEGRITY_CONTRACT` is locked after local validation proved READABLE/current states cannot bypass terminal SUCCESS, sealed publication, coverage PASS, run-publication mirror, pointer resolver, and fallback/correction safety.
+- `FINALIZE_LOCK_POINTER_DETERMINISM_CONTRACT` is locked: completed readable finalize reruns cannot bypass pointer validation and cannot return a false `SUCCESS + READABLE` state when the current pointer is malformed or mismatched.
 
 [SESSION_NOTES]
-- Static enforcement was added for publication identity matching, post-switch pointer assertion, evidence/replay state context, and replay persistence/schema sync.
-- Container cannot validate PHPUnit/artisan because `vendor/` is not present in the ZIP; final runtime validation is based on operator-supplied local PHPUnit evidence.
+- Existing locked publishability/read-side/coverage contracts remain authoritative and were reconciled instead of duplicated.
+- Container validation covered static scan and `php -l`; operator local validation covered migration, targeted suites, full MarketData suite, and required focused test files.
 
 ---
 
@@ -38,6 +38,79 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- FINALIZE_LOCK_POINTER_DETERMINISM_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-03
+
+  [RELATED_IMPLEMENTATION] Finalize / Lock / Pointer Determinism
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-02 -> Canonical finalize/lock/pointer determinism contract opened under audit governance.
+  - 2026-05-02 -> Static trace reconciled existing publishability state integrity, coverage gate enforcement, read-side pointer enforcement, fallback preservation, correction safety, evidence export, replay verification, command output, repository persistence, and static guards.
+  - 2026-05-02 -> Existing contract coverage confirmed: pointer promotion is transaction-protected, post-switch pointer resolver mismatch throws, readable resolver enforces SUCCESS/READABLE/PASS/SEALED/current/mirror state, and fallback does not use raw/staging/latest shortcut.
+  - 2026-05-02 -> Gap found and patched: completed `SUCCESS + READABLE + current` finalize rerun could return idempotently from run state without re-validating current-readable pointer identity.
+  - 2026-05-02 -> Enforcement added: completed-readable rerun must resolve through the current-readable pointer contract to the same run/publication/version; malformed pointer fails safe as `HELD + NOT_READABLE + RUN_LOCK_CONFLICT` without duplicate publication or pointer switch.
+  - 2026-05-02 -> Static guard and integration test were added for the idempotency pointer corruption edge.
+  - 2026-05-03 -> Operator local validation passed migration, targeted finalize/idempotent/lock/pointer/publication/readable/correction/fallback/evidence/replay/command suites, full `tests/Unit/MarketData`, and required focused test files. Contract promoted to LOCKED.
+
+  [DEFINED]
+  - Finalize idempotency boundary is `run_id`, constrained by requested trade date and the persisted final state.
+  - Completed `SUCCESS + READABLE + current` finalize rerun is valid only when current-readable pointer resolution returns the same run id, publication id, publication version, and trade date.
+  - Pointer validity requires sealed current publication, run/publication mirror consistency, run terminal status SUCCESS, publishability state READABLE, coverage PASS, and pointer-resolved identity.
+  - Lock/promotion mutation must remain atomic: invalid post-switch state rolls back or fails safe without leaving candidate current.
+  - Fallback/correction must preserve previous readable pointer context and must not invent effective date or switch to latest/MAX date shortcut.
+
+  [IMPLEMENTED]
+  - `MarketDataPipelineService` validates completed-readable idempotency through `findReadableCurrentPublicationForRun()` before short-circuiting.
+  - `MarketDataPipelineService` fails safe when a completed-readable rerun no longer resolves to the same current-readable pointer identity.
+  - Existing `EodPublicationRepository` current-readable resolver remains the authoritative pointer gate and enforces SUCCESS/READABLE/PASS/SEALED/current/mirror predicates.
+  - Existing promotion path remains transaction-wrapped and post-switch resolver-asserted.
+  - Integration and static guard tests cover the idempotency pointer corruption edge.
+
+  [ENFORCED]
+  - Completed readable rerun cannot return from run state alone.
+  - Malformed current pointer cannot keep a run exposed as readable through finalize idempotency.
+  - Duplicate publication/current pointer creation is blocked on completed-run rerun.
+  - Static guard checks the presence of pointer validation, identity comparison, fail-safe clearing, explicit event, and `RUN_LOCK_CONFLICT` reason code.
+  - Runtime tests confirm finalize/idempotent/lock/pointer/publication/readable/correction/fallback/evidence/replay/command paths remain compatible with the contract.
+
+  [VALIDATED]
+  - Container static scan completed.
+  - Container `php -l` passed for changed PHP files.
+  - Operator local command: `php artisan migrate:fresh --env=testing` -> PASS.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Finalize"` -> PASS; `OK (41 tests, 248 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "finalize"` -> PASS; `OK (41 tests, 248 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Idempotent"` -> PASS; `OK (2 tests, 15 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "idempotent"` -> PASS; `OK (2 tests, 15 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Lock"` -> PASS; `OK (16 tests, 87 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "lock"` -> PASS; `OK (16 tests, 87 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> PASS; `OK (57 tests, 633 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"` -> PASS; `OK (57 tests, 633 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> PASS; `OK (85 tests, 887 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "readable"` -> PASS; `OK (51 tests, 309 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"` -> PASS; `OK (54 tests, 1081 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Fallback"` -> PASS; `OK (29 tests, 609 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> PASS; `OK (26 tests, 228 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> PASS; `OK (24 tests, 237 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Command"` -> PASS; `OK (52 tests, 331 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData` -> PASS; `OK (264 tests, 2542 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> PASS; `OK (53 tests, 1191 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/FinalizeDecisionServiceTest.php` -> PASS; `OK (13 tests, 66 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/PublicationFinalizeOutcomeServiceTest.php` -> PASS; `OK (12 tests, 52 assertions)`.
+  - Operator local command: `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` -> PASS; `OK (8 tests, 15 assertions)`.
+
+  [FINAL_RULE]
+  - LOCKED. Finalize rerun may return an existing final outcome only if the final run state and current-readable pointer identity still agree. A completed `SUCCESS + READABLE` run with malformed/mismatched pointer must fail safe and must not create another publication, switch pointer blindly, or expose an invalid readable/current state.
+  - Pointer-valid readable state requires `SUCCESS + READABLE + PASS + SEALED + current + pointer-resolved + run/publication mirror` consistency.
+  - Fallback/correction paths must preserve deterministic previous-readable pointer context and must not use latest/MAX/raw/staging shortcuts.
+
+  [LOCK_CONDITION]
+  - LOCKED after operator local validation confirmed targeted finalize/idempotent/lock/pointer/publication/readable/correction/fallback/evidence/replay/command suites, full `tests/Unit/MarketData`, and focused pipeline/finalize/outcome/readable test files all PASS.
+  - Reopen only if a future finalize/pointer/lock/fallback/correction/evidence/replay/command/repository path changes this idempotency or pointer-determinism contract.
+---
 
 - PUBLISHABILITY_STATE_INTEGRITY_CONTRACT -> LOCKED
 
