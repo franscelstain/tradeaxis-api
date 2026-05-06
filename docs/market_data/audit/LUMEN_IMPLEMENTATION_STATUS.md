@@ -3,24 +3,24 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Correction Lifecycle Safety
+- Source / Provider Resilience
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce correction baseline safety, unchanged artifact determinism, changed artifact reseal gating, correction-run-publication-artifact linkage, pointer switch fail-safe behavior, evidence/replay correction context, command output, repository persistence, DB schema sync, and static guards.
-- Container validation completed with static trace and `php -l`; operator-local recovery validation now passes targeted correction lifecycle suites and full `tests/Unit/MarketData`, so the session is promoted to DONE.
+- Enforce source/provider resilience across API provider ingest, manual-file ingest, timeout/retry/rate-limit handling, partial provider response telemetry, source identity persistence, controlled source failure state, evidence/replay source context, command output, reason-code registry, DB schema, and static guards.
+- Container validation completed with static trace and `php -l`; uploaded ZIP has no `vendor/`, so PHPUnit/artisan validation was completed operator-local.
+- Operator-local targeted recovery suites and full `tests/Unit/MarketData` validation passed; Source / Provider Resilience is finalized.
 
 [SESSION_GOAL]
-- Correction must preserve baseline/current readable publication unless candidate artifacts are deterministically changed, resealed, linked, pointer-resolved, and replay/evidence-auditable.
+- Source failure must never be silent, must never create `SUCCESS + READABLE` by accident, must keep manual-file and API identity distinct, and must preserve pointer/current publication through explicit `HELD` / `NOT_READABLE` / controlled failure or deterministic prior-readable fallback behavior.
 
 [SESSION_NOTES]
-- Gap found: correction evidence derived `prior_publication_id` / `new_publication_id` from fields not owned by `eod_dataset_corrections`; runtime evidence could lose baseline/candidate publication context even though mock tests supplied those fields.
-- Gap found: unchanged/changed artifact comparison was boolean-only and did not expose invalid/incomplete hash context or changed scope for events/evidence/replay.
-- Gap found: replay persistence/export did not carry correction lifecycle expected/actual context, so replay could pass while correction state drifted.
-- Gap found: correction command output hid unchanged/reseal/baseline/candidate pointer context.
-- Operator-local validation exposed recovery issues: unsafe `seal_state` property access in correction evidence, stale pipeline tests still mocking `isUnchanged()` instead of `compare()`, and one static guard string interpolation bug.
-- Recovery patch applied: evidence reseal/hash comparison now uses guarded field access, pipeline tests now expect `PublicationDiffService::compare()`, and replay static guard assertion now checks the literal expected-key prefix without interpolating `$field`.
+- Gap found: manual-file adapter used generic runtime exceptions for missing/unreadable/malformed inputs, so source failure reason codes were not explicit.
+- Gap found: Yahoo per-ticker acquisition did not aggregate attempt/failure telemetry across ticker requests and could not expose partial response state distinctly from coverage state.
+- Gap found: evidence/replay source context was incomplete; replay did not persist/compare source/provider lifecycle fields and non-readable source-failure runs could not be replayed without a readable publication path.
+- Gap found: replay DB schema and SQLite mirror lacked source/provider lifecycle fields.
+- Recovery-2 patch applied and operator-local PHPUnit passed for targeted source/provider recovery tests plus full `tests/Unit/MarketData`, so status is promoted to DONE under audit governance.
 
 ---
 
@@ -42,6 +42,66 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Source / Provider Resilience -> DONE
+
+  [LAST_UPDATED] 2026-05-06
+
+  [RELATED_CONTRACT] SOURCE_PROVIDER_RESILIENCE_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-03 -> Source / Provider Resilience session opened against latest source-of-truth ZIP.
+  - 2026-05-03 -> Static trace reviewed source adapters, ingest service, pipeline source failure/fallback path, coverage/finalize interaction, evidence export, replay verification, command output, repository persistence, DB schema, reason-code registry, and static guards.
+  - 2026-05-03 -> Gap found: manual-file missing/unreadable/malformed failures used generic runtime exceptions and did not emit explicit source reason codes.
+  - 2026-05-03 -> Gap found: Yahoo per-ticker acquisition did not aggregate attempt telemetry across ticker requests and did not expose `RUN_SOURCE_PARTIAL_RESPONSE` for partial provider results.
+  - 2026-05-03 -> Gap found: evidence/replay did not carry enough source/provider lifecycle context, and replay could not verify non-readable source-failure runs without requiring a readable publication path.
+  - 2026-05-03 -> Enforcement patch added explicit manual-file source exceptions, aggregate Yahoo source telemetry, partial response reason code, replay source expected/actual fields, evidence source context, command `source_mode` output, runtime/schema sync, registry sync, and `SourceProviderResilienceStaticGuardTest`.
+  - 2026-05-03 -> Container `php -l` passed for changed PHP files; vendor/PHPUnit unavailable in uploaded ZIP, so local validation remains pending.
+  - 2026-05-03 -> Operator-local validation returned FAIL for `tests/Unit/MarketData --filter Source` and `--filter Provider`: replay metrics incorrectly added actual `source_file_*` columns, and source/provider static guard expected camel-case `sourceFinalReasonCode` in `MarketDataPipelineService`.
+  - 2026-05-03 -> Recovery patch removed actual replay `source_file_*` columns from runtime/schema/SQLite/repository, added cleanup migration for already-applied prior ZIP migration, and corrected the static guard to assert `source_final_reason_code`.
+  - 2026-05-06 -> Operator-local targeted recovery validation PASS: `PublicApiEodBarsAdapterTest.php` 12 tests / 70 assertions; `MarketDataEvidenceExportServiceTest.php` 3 tests / 52 assertions; `ReadablePublicationReadContractIntegrationTest.php` 8 tests / 15 assertions; `ReplayVerificationServiceTest.php` 5 tests / 15 assertions.
+  - 2026-05-06 -> Operator-local full validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 276 tests / 2722 assertions.
+  - 2026-05-06 -> Source / Provider Resilience promoted to DONE after recovery validation confirmed no regression against full MarketData unit suite.
+
+  [IMPLEMENTATION]
+  - `LocalFileEodBarsAdapter` now throws `SourceAcquisitionException` with explicit manual-file reason codes for unsupported mode, missing file, unreadable file, malformed JSON/CSV, missing header, missing columns, and row/header mismatch.
+  - `PublicApiEodBarsAdapter` now aggregates Yahoo per-ticker request telemetry, failed ticker codes, missing ticker codes, failure reason summary, attempt count, retry exhausted state, and final source status. Partial Yahoo source output uses `RUN_SOURCE_PARTIAL_RESPONSE` and remains subject to coverage gate.
+  - `EodEvidenceRepository::dominantReasonCodes()` remains gated by valid readable pointer/publication/run context for readable-publication evidence, while source-failure evidence is exported through explicit source telemetry paths without leaking non-readable run reason codes into readable-only evidence queries.
+  - `MarketDataEvidenceExportService` now includes `source_mode` and source final status in run evidence, allows non-readable run evidence without forcing publication read path, and exports replay actual/expected source context.
+  - `ReplayVerificationService` now supports non-readable source-failure runs, persists source/provider lifecycle fields, and compares expected source context when fixtures provide it.
+  - `ReplayResultRepository`, `Database_Schema_MariaDB.sql`, SQLite test schema, and migration `2026_05_03_000002_add_source_provider_context_to_replay_metrics.php` now carry replay source/provider context fields.
+  - Recovery migration `2026_05_03_000003_drop_actual_source_file_columns_from_replay_metrics.php` removes actual replay `source_file_*` columns if the prior ZIP migration was already applied; replay keeps expected source file fields but does not persist actual source file hash columns in `md_replay_daily_metrics`.
+  - `AbstractMarketDataCommand` now renders `source_mode` and merges source lifecycle telemetry into command/operator context while preserving existing source summary shape.
+  - `Reason_Codes_Seed.sql` and `Reason_Codes_Registry.md` now include source partial/manual-file reason codes.
+  - `SourceProviderResilienceStaticGuardTest` guards API retry/rate-limit/timeout/partial telemetry, manual-file/API identity separation, controlled source failure state, evidence/replay context, and forbidden latest trade-date shortcuts.
+
+  [ENFORCEMENT]
+  - Manual-file and API source identity remain separated: manual file reports `LOCAL_FILE` and provider `null`; API reports provider/source identity from API config.
+  - Timeout and rate-limit keep explicit reason codes and attempt telemetry.
+  - Partial Yahoo response is traceable as source partial context and still relies on coverage/finalize for publishability.
+  - Non-readable source-failure runs can be evidenced/replayed for source context without pretending a readable publication exists.
+  - Replay can fail on source mode/provider/retry/reason/file context mismatch when expected fields are supplied.
+  - Static guard blocks regressions for silent source failure, identity mixing, missing source context, and latest trade-date shortcut patterns.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Source/provider resilience is enforced by code/static guards and validated by operator-local targeted recovery suites plus full `tests/Unit/MarketData` PASS.
+
+  [EVIDENCE]
+  - Container confirmed uploaded ZIP has no `vendor/`; `vendor/bin/phpunit` unavailable.
+  - Container static trace completed across source adapters, ingest, pipeline source failure/fallback, evidence, replay, repository, command, DB schema, registry, and static guard paths.
+  - Container `php -l` passed for: `MarketDataEvidenceExportService.php`, `ReplayVerificationService.php`, `AbstractMarketDataCommand.php`, `LocalFileEodBarsAdapter.php`, `PublicApiEodBarsAdapter.php`, `EodEvidenceRepository.php`, `ReplayResultRepository.php`, new replay source migration, SQLite schema support, and `SourceProviderResilienceStaticGuardTest.php`.
+  - Container runtime shortcut scan found no forbidden latest trade-date fallback patterns in app runtime paths; only static guard/test strings contain forbidden literals by design.
+  - Operator-local validation evidence received: Source filter initially failed 2 tests and Provider filter initially failed 1 test due recovery issues in schema/static guard, not source/provider runtime behavior.
+  - Recovery patch static validation completed in container.
+  - Operator-local targeted recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` -> 12 tests / 70 assertions; `MarketDataEvidenceExportServiceTest.php` -> 3 tests / 52 assertions; `ReadablePublicationReadContractIntegrationTest.php` -> 8 tests / 15 assertions; `ReplayVerificationServiceTest.php` -> 5 tests / 15 assertions.
+  - Operator-local full validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 276 tests / 2722 assertions.
+
+  [LOCK_CONDITION]
+  - Satisfied for implementation DONE by operator-local targeted source/provider recovery validation and full `tests/Unit/MarketData` PASS.
+
+---
 
 - Correction Lifecycle Safety -> DONE
 

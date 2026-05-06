@@ -55,6 +55,8 @@ class PublicApiEodBarsAdapter
 
         $rows = [];
         $index = 0;
+        $requestTelemetry = [];
+        $failureTelemetry = [];
 
         $uniqueTickerCodes = array_values(array_unique(array_filter(array_map(function ($tickerCode) {
             return $this->normalizeTickerCode($tickerCode);
@@ -62,35 +64,191 @@ class PublicApiEodBarsAdapter
 
         foreach ($uniqueTickerCodes as $tickerCode) {
             $url = $this->buildYahooFinanceUrl($tradeDate, $tickerCode, $apiConfig);
-            $response = $this->requestWithRetry($url, [
+            $requestContext = [
                 'trade_date' => $tradeDate,
                 'ticker_code' => $tickerCode,
                 'requested_ticker_count' => count($tickerCodes),
                 'unique_ticker_count' => count($uniqueTickerCodes),
-            ]);
-            $row = $this->parseYahooFinancePayload($response['body'], $tradeDate, $tickerCode, $response['captured_at'], $apiConfig);
-            if ($row === null) {
-                continue;
-            }
+            ];
 
-            $index++;
-            $rows[] = $this->normalizeRow($row, $tradeDate, $index, $response['captured_at'], $apiConfig);
+            try {
+                $response = $this->requestWithRetry($url, $requestContext);
+                $telemetry = $this->consumeLastAcquisitionTelemetry();
+                $requestTelemetry[] = $this->withTickerTelemetry($telemetry, $tickerCode);
+
+                $row = $this->parseYahooFinancePayload($response['body'], $tradeDate, $tickerCode, $response['captured_at'], $apiConfig);
+                if ($row === null) {
+                    continue;
+                }
+
+                $index++;
+                $rows[] = $this->normalizeRow($row, $tradeDate, $index, $response['captured_at'], $apiConfig);
+            } catch (SourceAcquisitionException $e) {
+                $telemetry = $this->withTickerTelemetry($e->context(), $tickerCode);
+                if (empty($telemetry)) {
+                    $telemetry = $this->withTickerTelemetry([
+                        'trade_date' => $tradeDate,
+                        'ticker_code' => $tickerCode,
+                        'provider' => $this->providerName($apiConfig),
+                        'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
+                        'final_reason_code' => $e->reasonCode(),
+                        'source_final_status' => 'FAILED',
+                    ], $tickerCode);
+                }
+
+                $requestTelemetry[] = $telemetry;
+                $failureTelemetry[] = $telemetry + [
+                    'final_reason_code' => $e->reasonCode(),
+                    'source_final_status' => 'FAILED',
+                ];
+
+                if (! $this->isYahooPartialTolerantFailure($e->reasonCode())) {
+                    $aggregate = $this->buildYahooAggregateTelemetry(
+                        $tradeDate,
+                        $tickerCodes,
+                        $uniqueTickerCodes,
+                        $rows,
+                        $requestTelemetry,
+                        $failureTelemetry,
+                        $apiConfig
+                    );
+
+                    $this->rememberAcquisitionTelemetry($aggregate);
+                    throw $e->withContext($aggregate);
+                }
+            }
         }
 
-        $returnedTickerCodes = array_values(array_unique(array_map(function ($row) {
-            return isset($row['ticker_code']) ? (string) $row['ticker_code'] : '';
-        }, $rows)));
+        $aggregate = $this->buildYahooAggregateTelemetry(
+            $tradeDate,
+            $tickerCodes,
+            $uniqueTickerCodes,
+            $rows,
+            $requestTelemetry,
+            $failureTelemetry,
+            $apiConfig
+        );
 
-        $this->rememberAcquisitionTelemetry(array_merge($this->lastAcquisitionTelemetry, [
-            'trade_date' => $tradeDate,
-            'requested_ticker_count' => count($tickerCodes),
-            'unique_ticker_count' => count($uniqueTickerCodes),
-            'returned_row_count' => count($rows),
-            'returned_ticker_count' => count(array_filter($returnedTickerCodes)),
-            'missing_ticker_count' => max(0, count($uniqueTickerCodes) - count(array_filter($returnedTickerCodes))),
-        ]));
+        $this->rememberAcquisitionTelemetry($aggregate);
+
+        if (empty($rows) && ! empty($failureTelemetry)) {
+            throw new SourceAcquisitionException(
+                'Yahoo Finance source acquisition failed for all requested tickers.',
+                $this->dominantYahooFailureReasonCode($failureTelemetry),
+                0,
+                null,
+                $aggregate
+            );
+        }
 
         return $rows;
+    }
+
+    private function withTickerTelemetry(array $telemetry, $tickerCode)
+    {
+        $telemetry['ticker_code'] = $tickerCode;
+
+        if (isset($telemetry['attempts']) && is_array($telemetry['attempts'])) {
+            $telemetry['attempts'] = array_map(function ($attempt) use ($tickerCode) {
+                return is_array($attempt) ? ($attempt + ['ticker_code' => $tickerCode]) : $attempt;
+            }, $telemetry['attempts']);
+        }
+
+        return $telemetry;
+    }
+
+    private function isYahooPartialTolerantFailure($reasonCode)
+    {
+        return in_array($reasonCode, ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT'], true);
+    }
+
+    private function buildYahooAggregateTelemetry($tradeDate, array $requestedTickerCodes, array $uniqueTickerCodes, array $rows, array $requestTelemetry, array $failureTelemetry, array $apiConfig)
+    {
+        $attempts = [];
+        $attemptCount = 0;
+        $successAfterRetry = false;
+        $retryExhausted = false;
+        $lastHttpStatus = null;
+
+        foreach ($requestTelemetry as $telemetry) {
+            $attemptCount += (int) ($telemetry['attempt_count'] ?? 0);
+            $successAfterRetry = $successAfterRetry || (bool) ($telemetry['success_after_retry'] ?? false);
+            $retryExhausted = $retryExhausted || (bool) ($telemetry['retry_exhausted'] ?? false);
+            if (array_key_exists('final_http_status', $telemetry) && $telemetry['final_http_status'] !== null) {
+                $lastHttpStatus = $telemetry['final_http_status'];
+            }
+            if (isset($telemetry['attempts']) && is_array($telemetry['attempts'])) {
+                $attempts = array_merge($attempts, $telemetry['attempts']);
+            }
+        }
+
+        $returnedTickerCodes = array_values(array_filter(array_unique(array_map(function ($row) {
+            return isset($row['ticker_code']) ? (string) $row['ticker_code'] : '';
+        }, $rows))));
+
+        $missingTickerCodes = array_values(array_diff($uniqueTickerCodes, $returnedTickerCodes));
+        $failureReasonSummary = $this->summarizeYahooFailureReasons($failureTelemetry);
+        $isPartial = count($rows) > 0 && (count($failureTelemetry) > 0 || count($missingTickerCodes) > 0);
+        $isFailed = count($rows) === 0 && count($failureTelemetry) > 0;
+        $finalReasonCode = null;
+        if ($isFailed) {
+            $finalReasonCode = $this->dominantYahooFailureReasonCode($failureTelemetry);
+        } elseif ($isPartial) {
+            $finalReasonCode = 'RUN_SOURCE_PARTIAL_RESPONSE';
+        }
+
+        return [
+            'source_mode' => 'api',
+            'provider' => $this->providerName($apiConfig),
+            'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
+            'timeout_seconds' => $this->timeoutSeconds(),
+            'retry_max' => min(3, max(0, (int) config('market_data.provider.api_retry_max'))),
+            'attempt_count' => $attemptCount,
+            'attempts' => $attempts,
+            'success_after_retry' => $successAfterRetry,
+            'retry_exhausted' => $retryExhausted,
+            'final_reason_code' => $finalReasonCode,
+            'final_http_status' => $finalReasonCode === null ? $lastHttpStatus : null,
+            'source_final_status' => $isFailed ? 'FAILED' : ($isPartial ? 'PARTIAL' : 'SUCCESS'),
+            'trade_date' => $tradeDate,
+            'ticker_code' => count($uniqueTickerCodes) > 0 ? (string) $uniqueTickerCodes[count($uniqueTickerCodes) - 1] : null,
+            'requested_ticker_count' => count($requestedTickerCodes),
+            'unique_ticker_count' => count($uniqueTickerCodes),
+            'returned_row_count' => count($rows),
+            'returned_ticker_count' => count($returnedTickerCodes),
+            'missing_ticker_count' => max(0, count($missingTickerCodes)),
+            'missing_ticker_codes' => $missingTickerCodes,
+            'failed_ticker_count' => count($failureTelemetry),
+            'failed_ticker_codes' => array_values(array_filter(array_map(function ($telemetry) {
+                return isset($telemetry['ticker_code']) ? (string) $telemetry['ticker_code'] : null;
+            }, $failureTelemetry))),
+            'failure_reason_summary' => $failureReasonSummary,
+        ];
+    }
+
+    private function dominantYahooFailureReasonCode(array $failureTelemetry)
+    {
+        $summary = $this->summarizeYahooFailureReasons($failureTelemetry);
+        if (empty($summary)) {
+            return 'RUN_SOURCE_TIMEOUT';
+        }
+
+        arsort($summary);
+        return (string) array_key_first($summary);
+    }
+
+    private function summarizeYahooFailureReasons(array $failureTelemetry)
+    {
+        $summary = [];
+        foreach ($failureTelemetry as $telemetry) {
+            $reasonCode = (string) ($telemetry['final_reason_code'] ?? 'RUN_SOURCE_TIMEOUT');
+            if ($reasonCode === '') {
+                $reasonCode = 'RUN_SOURCE_TIMEOUT';
+            }
+            $summary[$reasonCode] = ($summary[$reasonCode] ?? 0) + 1;
+        }
+
+        return $summary;
     }
 
     private function buildYahooFinanceUrl($tradeDate, $tickerCode, array $apiConfig)

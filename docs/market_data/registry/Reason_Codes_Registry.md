@@ -37,6 +37,11 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `RUN_SOURCE_AUTH_ERROR` | RUN | HARD | Source authentication failure or credential/config error blocked data acquisition. |
 | `RUN_SOURCE_RESPONSE_CHANGED` | RUN | HARD | A source schema or response-contract change was detected. |
 | `RUN_SOURCE_PARTIAL_COVERAGE` | RUN | WARN | The source returned incomplete symbol coverage for the requested date. |
+| `RUN_SOURCE_PARTIAL_RESPONSE` | RUN | WARN | The source adapter returned only part of the requested provider response and coverage gate must decide publishability. |
+| `RUN_SOURCE_MANUAL_FILE_NOT_FOUND` | RUN | HARD | The configured manual-file source was not found. |
+| `RUN_SOURCE_MANUAL_FILE_NOT_READABLE` | RUN | HARD | The configured manual-file source could not be opened or read. |
+| `RUN_SOURCE_MANUAL_FILE_MALFORMED` | RUN | HARD | The configured manual-file source could not be parsed or normalized safely. |
+| `RUN_SOURCE_MODE_UNSUPPORTED` | RUN | HARD | The requested source mode is not supported by the selected source adapter. |
 | `RUN_SOURCE_MALFORMED_PAYLOAD` | RUN | HARD | The source payload could not be normalized safely. |
 | `BAR_DUPLICATE_SOURCE_ROW` | BAR | WARN | More than one source row mapped to the same `(trade_date, ticker_id)`, requiring deterministic winner selection. |
 | `BAR_INVALID_OHLC_ORDER` | BAR | HARD | Received OHLC values violated canonical ordering rules. |

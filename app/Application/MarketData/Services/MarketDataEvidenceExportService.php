@@ -34,6 +34,10 @@ class MarketDataEvidenceExportService
             throw new \RuntimeException('Run not found for evidence export.');
         }
 
+        if ((string) ($run->terminal_status ?? '') !== 'SUCCESS' || (string) ($run->publishability_state ?? '') !== 'READABLE') {
+            throw new \RuntimeException('Run evidence export requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
+        }
+
         $publication = $this->resolvePublicationForRun($run);
         $manifest = $publication ? (array) $this->publications->buildManifestByPublicationId($publication->publication_id) : null;
         $runSummary = $this->buildRunSummary($run, $manifest);
@@ -296,7 +300,7 @@ class MarketDataEvidenceExportService
     private function resolvePublicationForRun($run)
     {
         if ($run->terminal_status !== 'SUCCESS' || $run->publishability_state !== 'READABLE') {
-            throw new \RuntimeException('Run evidence export requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
+            return null;
         }
 
         $publication = $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
@@ -361,6 +365,10 @@ class MarketDataEvidenceExportService
             return null;
         }
 
+        if (($telemetry['source_mode'] ?? null) === null && ($sourceContext['source_mode'] ?? null) !== null) {
+            $telemetry['source_mode'] = $sourceContext['source_mode'];
+        }
+
         if (($telemetry['source_name'] ?? null) === null && ($sourceContext['source_name'] ?? null) !== null) {
             $telemetry['source_name'] = $sourceContext['source_name'];
         }
@@ -397,6 +405,14 @@ class MarketDataEvidenceExportService
             $telemetry['final_reason_code'] = $sourceContext['final_reason_code'];
         }
 
+        if (($telemetry['retry_exhausted'] ?? null) === null && ($sourceContext['retry_exhausted'] ?? null) !== null) {
+            $telemetry['retry_exhausted'] = $sourceContext['retry_exhausted'];
+        }
+
+        if (($telemetry['source_final_status'] ?? null) === null && ($sourceContext['source_final_status'] ?? null) !== null) {
+            $telemetry['source_final_status'] = $sourceContext['source_final_status'];
+        }
+
         return $this->normalizeSourceAttemptTelemetryPaths($telemetry);
     }
 
@@ -405,6 +421,7 @@ class MarketDataEvidenceExportService
         $notesMap = $this->parseRunNotes((string) ($record->notes ?? ''));
 
         return [
+            'source_mode' => $record->source ?? ($notesMap['source_mode'] ?? null),
             'source_name' => $record->source_name ?? ($notesMap['source_name'] ?? null),
             'source_input_file' => $record->source_input_file ?? ($notesMap['source_input_file'] ?? null),
             'provider' => $record->source_provider ?? ($notesMap['source_provider'] ?? null),
@@ -419,7 +436,22 @@ class MarketDataEvidenceExportService
             'source_file_size_bytes' => isset($record->source_file_size_bytes) && $record->source_file_size_bytes !== null ? (int) $record->source_file_size_bytes : null,
             'source_file_row_count' => isset($record->source_file_row_count) && $record->source_file_row_count !== null ? (int) $record->source_file_row_count : null,
             'retry_exhausted' => property_exists($record, 'source_retry_exhausted') && $record->source_retry_exhausted !== null ? ($record->source_retry_exhausted ? 'yes' : 'no') : ($notesMap['source_retry_exhausted'] ?? null),
+            'source_final_status' => $notesMap['source_final_status'] ?? $this->deriveSourceFinalStatus($record),
         ];
+    }
+
+    private function deriveSourceFinalStatus($record)
+    {
+        $sourceReason = $record->source_final_reason_code ?? null;
+        if ($sourceReason === 'RUN_SOURCE_PARTIAL_RESPONSE') {
+            return 'PARTIAL';
+        }
+
+        if ($sourceReason !== null && $sourceReason !== '') {
+            return 'FAILED';
+        }
+
+        return $this->field($record, 'terminal_status') === 'SUCCESS' ? 'SUCCESS' : null;
     }
 
     private function mergeSourceContextFromTelemetry(array $sourceContext, $sourceAttemptTelemetry)
@@ -430,6 +462,7 @@ class MarketDataEvidenceExportService
 
         $merged = $sourceContext;
         $fieldMap = [
+            'source_mode' => 'source_mode',
             'source_name' => 'source_name',
             'source_input_file' => 'source_input_file',
             'provider' => 'provider',
@@ -439,6 +472,8 @@ class MarketDataEvidenceExportService
             'success_after_retry' => 'success_after_retry',
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
+            'retry_exhausted' => 'retry_exhausted',
+            'source_final_status' => 'source_final_status',
         ];
 
         foreach ($fieldMap as $contextKey => $telemetryKey) {
@@ -593,6 +628,8 @@ class MarketDataEvidenceExportService
             'trade_date' => $metric->trade_date,
             'trade_date_effective' => $metric->trade_date_effective,
             'source' => $metric->source,
+            'source_context' => $this->buildReplayActualSourceContext($metric),
+            'expected_source_context' => $this->buildReplayExpectedSourceContext($metric),
             'status' => $metric->status,
             'comparison_result' => $metric->comparison_result,
             'comparison_note' => $metric->comparison_note,
@@ -645,6 +682,7 @@ class MarketDataEvidenceExportService
             'eligibility_batch_hash' => $metric->expected_eligibility_batch_hash ?? null,
             'reason_code_counts' => $expectedReasonCodeCounts,
             'correction_lifecycle' => $this->buildReplayExpectedCorrectionLifecycle($metric),
+            'source_context' => $this->buildReplayExpectedSourceContext($metric),
         ];
     }
 
@@ -662,6 +700,50 @@ class MarketDataEvidenceExportService
             'eligibility_batch_hash' => $metric->eligibility_batch_hash,
             'reason_code_counts' => $reasonCodes,
             'correction_lifecycle' => $this->buildReplayActualCorrectionLifecycle($metric),
+            'source_context' => $this->buildReplayActualSourceContext($metric),
+        ];
+    }
+
+
+    private function buildReplayActualSourceContext($metric)
+    {
+        return [
+            'source_mode' => $this->field($metric, 'source_mode') ?? $this->field($metric, 'source'),
+            'source_name' => $this->field($metric, 'source_name'),
+            'provider' => $this->field($metric, 'source_provider'),
+            'timeout_seconds' => $this->field($metric, 'source_timeout_seconds') !== null ? (int) $this->field($metric, 'source_timeout_seconds') : null,
+            'retry_max' => $this->field($metric, 'source_retry_max') !== null ? (int) $this->field($metric, 'source_retry_max') : null,
+            'attempt_count' => $this->field($metric, 'source_attempt_count') !== null ? (int) $this->field($metric, 'source_attempt_count') : null,
+            'success_after_retry' => $this->field($metric, 'source_success_after_retry') !== null ? (bool) $this->field($metric, 'source_success_after_retry') : null,
+            'retry_exhausted' => $this->field($metric, 'source_retry_exhausted') !== null ? (bool) $this->field($metric, 'source_retry_exhausted') : null,
+            'final_http_status' => $this->field($metric, 'source_final_http_status') !== null ? (int) $this->field($metric, 'source_final_http_status') : null,
+            'final_reason_code' => $this->field($metric, 'source_final_reason_code'),
+            'source_input_file' => $this->field($metric, 'source_input_file'),
+            'source_file_hash' => $this->field($metric, 'source_file_hash'),
+            'source_file_hash_algorithm' => $this->field($metric, 'source_file_hash_algorithm'),
+            'source_file_size_bytes' => $this->field($metric, 'source_file_size_bytes') !== null ? (int) $this->field($metric, 'source_file_size_bytes') : null,
+            'source_file_row_count' => $this->field($metric, 'source_file_row_count') !== null ? (int) $this->field($metric, 'source_file_row_count') : null,
+        ];
+    }
+
+    private function buildReplayExpectedSourceContext($metric)
+    {
+        return [
+            'source_mode' => $this->field($metric, 'expected_source_mode') ?? $this->field($metric, 'expected_source'),
+            'source_name' => $this->field($metric, 'expected_source_name'),
+            'provider' => $this->field($metric, 'expected_source_provider'),
+            'timeout_seconds' => $this->field($metric, 'expected_source_timeout_seconds') !== null ? (int) $this->field($metric, 'expected_source_timeout_seconds') : null,
+            'retry_max' => $this->field($metric, 'expected_source_retry_max') !== null ? (int) $this->field($metric, 'expected_source_retry_max') : null,
+            'attempt_count' => $this->field($metric, 'expected_source_attempt_count') !== null ? (int) $this->field($metric, 'expected_source_attempt_count') : null,
+            'success_after_retry' => $this->field($metric, 'expected_source_success_after_retry') !== null ? (bool) $this->field($metric, 'expected_source_success_after_retry') : null,
+            'retry_exhausted' => $this->field($metric, 'expected_source_retry_exhausted') !== null ? (bool) $this->field($metric, 'expected_source_retry_exhausted') : null,
+            'final_http_status' => $this->field($metric, 'expected_source_final_http_status') !== null ? (int) $this->field($metric, 'expected_source_final_http_status') : null,
+            'final_reason_code' => $this->field($metric, 'expected_source_final_reason_code'),
+            'source_input_file' => $this->field($metric, 'expected_source_input_file'),
+            'source_file_hash' => $this->field($metric, 'expected_source_file_hash'),
+            'source_file_hash_algorithm' => $this->field($metric, 'expected_source_file_hash_algorithm'),
+            'source_file_size_bytes' => $this->field($metric, 'expected_source_file_size_bytes') !== null ? (int) $this->field($metric, 'expected_source_file_size_bytes') : null,
+            'source_file_row_count' => $this->field($metric, 'expected_source_file_row_count') !== null ? (int) $this->field($metric, 'expected_source_file_row_count') : null,
         ];
     }
 

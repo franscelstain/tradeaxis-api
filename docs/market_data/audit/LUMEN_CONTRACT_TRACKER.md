@@ -3,20 +3,20 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Correction Lifecycle Safety
+- Source / Provider Resilience
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Track correction baseline safety, unchanged artifact determinism, changed artifact reseal gating, correction-run-publication-artifact linkage, pointer switch fail-safe behavior, evidence/replay correction context, command output, repository persistence, DB schema sync, and static guard enforcement.
-- Contract is LOCKED after recovery validation passed targeted correction lifecycle suites and full `tests/Unit/MarketData`.
+- Track source/provider resilience across source mode identity, API provider timeout/retry/rate-limit, manual-file separation, partial source response, controlled source failure, fallback preservation, evidence/replay source context, command output, reason-code registry, schema persistence, and static guard enforcement.
+- Contract is LOCKED by static patch, `php -l`, targeted operator-local recovery validation, and full `tests/Unit/MarketData` PASS.
 
 [SESSION_GOAL]
-- `CORRECTION_LIFECYCLE_SAFETY_CONTRACT` prevents correction from damaging baseline/current pointer and makes unchanged/resealed/pointer/evidence/replay outcomes deterministic and auditable.
+- `SOURCE_PROVIDER_RESILIENCE_CONTRACT` prevents source/provider failure from becoming silent, ambiguous, mixed-identity, pointer-corrupting, or falsely readable.
 
 [SESSION_NOTES]
-- This contract reconciles older finalize/pointer/readability/publishability/fallback/evidence/replay contracts instead of duplicating them.
-- Container validation covered static scan and `php -l`; local migration passed; recovery validation passed targeted correction lifecycle suites and full `tests/Unit/MarketData`, so the contract is LOCKED.
+- This contract reconciles source identity, ingest, degraded source, fallback, coverage gate, finalize/publishability, evidence, replay, command, and schema contracts instead of duplicating them.
+- Container validation covered static trace and `php -l`; PHPUnit/artisan was validated operator-local because uploaded ZIP has no `vendor/`.
 
 ---
 
@@ -38,6 +38,73 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- SOURCE_PROVIDER_RESILIENCE_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-06
+
+  [RELATED_IMPLEMENTATION] Source / Provider Resilience
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-03 -> Canonical source/provider resilience contract opened under audit governance.
+  - 2026-05-03 -> Static trace reconciled existing source identity, ingest, degraded source, fallback preservation, coverage gate, finalize/publishability, evidence export, replay verification, command output, reason-code registry, repository persistence, and DB schema contracts.
+  - 2026-05-03 -> Gap found: manual-file failure reason codes were not explicit because missing/unreadable/malformed input paths used generic runtime exceptions.
+  - 2026-05-03 -> Gap found: Yahoo provider request telemetry was last-request based and did not aggregate per-ticker attempts/failures/missing tickers.
+  - 2026-05-03 -> Gap found: partial provider output lacked a distinct source lifecycle reason code separate from coverage failure reason.
+  - 2026-05-03 -> Gap found: evidence/replay did not fully persist and compare source/provider lifecycle context.
+  - 2026-05-03 -> Enforcement patch added explicit manual-file source exceptions, aggregate Yahoo attempt/failure telemetry, source partial response reason code, source context evidence/replay persistence/comparison, command source-mode output, schema/registry sync, and static guards.
+  - 2026-05-03 -> Operator-local validation found recovery gaps: `md_replay_daily_metrics` must not persist actual `source_file_*` columns, and static guard must assert the pipeline snake-case `source_final_reason_code` field instead of unrelated camel-case naming.
+  - 2026-05-03 -> Recovery patch reconciled replay schema with existing SQLite contract, added a cleanup migration for prior-ZIP actual source file columns, and corrected source/provider static guard assertion.
+  - 2026-05-06 -> Recovery-2 validation confirmed targeted source/provider recovery suites PASS: `PublicApiEodBarsAdapterTest.php` 12 tests / 70 assertions; `MarketDataEvidenceExportServiceTest.php` 3 tests / 52 assertions; `ReadablePublicationReadContractIntegrationTest.php` 8 tests / 15 assertions; `ReplayVerificationServiceTest.php` 5 tests / 15 assertions.
+  - 2026-05-06 -> Full operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 276 tests / 2722 assertions.
+  - 2026-05-06 -> Contract promoted from ENFORCED to LOCKED after targeted and full MarketData unit validation passed.
+
+  [DEFINED]
+  - Source mode must be explicit and immutable for the run lifecycle.
+  - API and manual-file source identities must not be mixed.
+  - Timeout, rate-limit, retry exhaustion, manual-file missing/unreadable/malformed, and partial source response must have explicit reason codes.
+  - Source failure must not create `SUCCESS + READABLE`, switch pointer, make candidate current, hide reason code, or bypass coverage/finalize.
+  - Partial source output must remain under coverage gate and finalize/publishability decision.
+  - Valid source fallback must use internal previous readable publication resolver only, never raw/staging/latest/MAX-date shortcut.
+  - Evidence, replay, and command surfaces must expose source/provider lifecycle context.
+
+  [IMPLEMENTED]
+  - `LocalFileEodBarsAdapter` maps manual-file input failures to explicit `SourceAcquisitionException` reason codes.
+  - `PublicApiEodBarsAdapter` aggregates Yahoo per-ticker telemetry and marks partial source output with `RUN_SOURCE_PARTIAL_RESPONSE`.
+  - `MarketDataEvidenceExportService` preserves source-failure evidence through explicit source telemetry paths, while `EodEvidenceRepository::dominantReasonCodes()` remains gated by valid readable pointer/publication/run context to prevent non-readable reason-code leakage.
+  - `ReplayVerificationService` and `ReplayResultRepository` persist and compare source/provider expected/actual context.
+  - Runtime migration, SQL schema, and SQLite mirror include replay source/provider lifecycle columns.
+  - Replay actual source file hash columns are intentionally not persisted in `md_replay_daily_metrics`; only expected source file fields remain there, while run/publication/evidence context keeps source file identity where the schema already permits it.
+  - `AbstractMarketDataCommand` exposes source mode and source lifecycle context for operator output/artifacts.
+  - Reason-code registry/seed includes partial/manual-file source codes.
+  - `SourceProviderResilienceStaticGuardTest` protects source/provider resilience invariants.
+
+  [ENFORCED]
+  - Manual file is `LOCAL_FILE` with provider `null`; API remains provider-backed and does not read manual file.
+  - Source timeout/rate-limit/retry attempt context is carried to run/evidence/command and replay.
+  - Partial provider output is not silently full success; it is traceable and still coverage-gated.
+  - Non-readable source-failure run evidence/replay does not require a fake readable publication path.
+  - Replay can detect source mode/provider/reason/retry/file context mismatch when fixture expectations provide those fields.
+  - Static guard blocks identity mixing, silent source failure, missing source lifecycle context, and latest-date shortcut patterns.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for all changed PHP files.
+  - `vendor/` and `vendor/bin/phpunit` are absent from uploaded ZIP; PHPUnit/artisan validation was performed operator-local.
+  - Container runtime shortcut scan found no forbidden latest trade-date fallback patterns in app runtime paths; forbidden literals exist only in static guard/test docs by design.
+  - Operator-local first validation failed for Source/Provider filters due schema/static-guard recovery issues; recovery patch was applied.
+  - Operator-local targeted source/provider recovery validation PASS: `PublicApiEodBarsAdapterTest.php` -> 12 tests / 70 assertions; `MarketDataEvidenceExportServiceTest.php` -> 3 tests / 52 assertions; `ReadablePublicationReadContractIntegrationTest.php` -> 8 tests / 15 assertions; `ReplayVerificationServiceTest.php` -> 5 tests / 15 assertions.
+  - Operator-local full validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 276 tests / 2722 assertions.
+
+  [FINAL_RULE]
+  - LOCKED. Source/provider failure must remain explicit, traceable, and non-readable unless coverage/finalize produce a valid readable publication or internal fallback preserves a previous readable publication. API/manual-file identity, timeout/retry/rate-limit telemetry, partial response handling, evidence/replay source context, command output, and pointer preservation are protected by code/static guards and validated by targeted plus full MarketData unit PASS evidence.
+
+  [LOCK_CONDITION]
+  - Satisfied by operator-local targeted source/provider recovery validation and full `tests/Unit/MarketData` PASS.
+
+---
 
 - CORRECTION_LIFECYCLE_SAFETY_CONTRACT -> LOCKED
 

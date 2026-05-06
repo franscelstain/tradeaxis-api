@@ -160,6 +160,10 @@ abstract class AbstractMarketDataCommand extends Command
             'coverage_contract_version' => $this->runField($run, 'coverage_contract_version'),
         ];
 
+        if (($sourceContext['source_mode'] ?? null) !== null && $sourceContext['source_mode'] !== '') {
+            $payload['source_mode'] = $sourceContext['source_mode'];
+        }
+
         if (($sourceContext['source_name'] ?? null) !== null && $sourceContext['source_name'] !== '') {
             $payload['source_name'] = $sourceContext['source_name'];
         }
@@ -248,8 +252,13 @@ abstract class AbstractMarketDataCommand extends Command
     protected function renderSourceSummary($run, array $sourceContext = null)
     {
         $sourceContext = $sourceContext ?: $this->buildSourceContext($run);
+        $sourceMode = $sourceContext['source_mode'] ?? null;
         $sourceName = $sourceContext['source_name'] ?? null;
         $inputFile = $sourceContext['source_input_file'] ?? null;
+
+        if ($sourceMode !== null && $sourceMode !== '') {
+            $this->line('source_mode='.(string) $sourceMode);
+        }
 
         if ($sourceName !== null && $sourceName !== '') {
             $this->line('source_name='.(string) $sourceName);
@@ -280,6 +289,7 @@ abstract class AbstractMarketDataCommand extends Command
         $sourceRetryExhausted = $this->runField($run, 'source_retry_exhausted');
 
         $sourceContext = [
+            'source_mode' => $this->runField($run, 'source', $notesMap['source_mode'] ?? null),
             'source_name' => $this->runField($run, 'source_name', $notesMap['source_name'] ?? null),
             'source_input_file' => $this->runField($run, 'source_input_file', $notesMap['source_input_file'] ?? null),
             'provider' => $this->runField($run, 'source_provider', $notesMap['source_provider'] ?? null),
@@ -290,6 +300,7 @@ abstract class AbstractMarketDataCommand extends Command
             'final_http_status' => $this->runField($run, 'source_final_http_status', $notesMap['source_final_http_status'] ?? null),
             'final_reason_code' => $this->runField($run, 'source_final_reason_code', $notesMap['source_final_reason_code'] ?? null),
             'retry_exhausted' => $sourceRetryExhausted !== null ? ($sourceRetryExhausted ? 'yes' : 'no') : ($notesMap['source_retry_exhausted'] ?? null),
+            'source_final_status' => $notesMap['source_final_status'] ?? null,
             'source_attempt_event_type' => null,
             'source_attempt_count' => null,
         ];
@@ -349,7 +360,7 @@ abstract class AbstractMarketDataCommand extends Command
 
         $hasTelemetrySeed = $sourceName !== '' || $hasSourceInputFile;
 
-        foreach (['provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'success_after_retry', 'final_http_status', 'final_reason_code'] as $key) {
+        foreach (['source_mode', 'provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'success_after_retry', 'final_http_status', 'final_reason_code', 'retry_exhausted', 'source_final_status'] as $key) {
             if (array_key_exists($key, $sourceContext) && $sourceContext[$key] !== null && $sourceContext[$key] !== '') {
                 $hasTelemetrySeed = true;
                 break;
@@ -364,7 +375,7 @@ abstract class AbstractMarketDataCommand extends Command
             return false;
         }
 
-        foreach (['provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'final_reason_code', 'source_attempt_event_type', 'source_attempt_count'] as $key) {
+        foreach (['source_mode', 'provider', 'timeout_seconds', 'retry_max', 'attempt_count', 'final_reason_code', 'retry_exhausted', 'source_final_status', 'source_attempt_event_type', 'source_attempt_count'] as $key) {
             if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
                 return true;
             }
@@ -382,6 +393,7 @@ abstract class AbstractMarketDataCommand extends Command
         $merged = $sourceContext;
 
         foreach ([
+            'source_mode' => 'source_mode',
             'source_name' => 'source_name',
             'source_input_file' => 'source_input_file',
             'provider' => 'provider',
@@ -391,6 +403,8 @@ abstract class AbstractMarketDataCommand extends Command
             'success_after_retry' => 'success_after_retry',
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
+            'retry_exhausted' => 'retry_exhausted',
+            'source_final_status' => 'source_final_status',
             'source_attempt_event_type' => 'event_type',
             'source_attempt_count' => 'attempt_count',
         ] as $contextKey => $telemetryKey) {

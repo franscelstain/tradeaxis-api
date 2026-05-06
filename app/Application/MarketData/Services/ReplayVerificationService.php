@@ -30,6 +30,10 @@ class ReplayVerificationService
             throw new \RuntimeException('Run not found for replay verification.');
         }
 
+        if ((string) ($run->terminal_status ?? '') !== 'SUCCESS' || (string) ($run->publishability_state ?? '') !== 'READABLE') {
+            throw new \RuntimeException('Replay verification requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
+        }
+
         $publication = $this->resolvePublicationForRun($run);
         $correction = $this->findCorrectionForRun($run->run_id);
         $actual = $this->buildActualReplayState($run, $publication, $correction);
@@ -41,6 +45,21 @@ class ReplayVerificationService
             'trade_date' => $actual['trade_date'],
             'trade_date_effective' => $actual['trade_date_effective'],
             'source' => $actual['source'],
+            'source_mode' => $actual['source_mode'],
+            'source_name' => $actual['source_name'],
+            'source_provider' => $actual['source_provider'],
+            'source_timeout_seconds' => $actual['source_timeout_seconds'],
+            'source_retry_max' => $actual['source_retry_max'],
+            'source_attempt_count' => $actual['source_attempt_count'],
+            'source_success_after_retry' => $actual['source_success_after_retry'],
+            'source_retry_exhausted' => $actual['source_retry_exhausted'],
+            'source_final_http_status' => $actual['source_final_http_status'],
+            'source_final_reason_code' => $actual['source_final_reason_code'],
+            'source_input_file' => $actual['source_input_file'],
+            'source_file_hash' => $actual['source_file_hash'],
+            'source_file_hash_algorithm' => $actual['source_file_hash_algorithm'],
+            'source_file_size_bytes' => $actual['source_file_size_bytes'],
+            'source_file_row_count' => $actual['source_file_row_count'],
             'status' => $actual['status'],
             'publishability_state' => $actual['publishability_state'],
             'publication_id' => $actual['publication_id'],
@@ -93,6 +112,21 @@ class ReplayVerificationService
             'expected_publishability_state' => $comparison['expected_publishability_state'],
             'expected_trade_date_effective' => $comparison['expected_trade_date_effective'],
             'expected_seal_state' => $comparison['expected_seal_state'],
+            'expected_source_mode' => $comparison['expected_source_mode'],
+            'expected_source_name' => $comparison['expected_source_name'],
+            'expected_source_provider' => $comparison['expected_source_provider'],
+            'expected_source_timeout_seconds' => $comparison['expected_source_timeout_seconds'],
+            'expected_source_retry_max' => $comparison['expected_source_retry_max'],
+            'expected_source_attempt_count' => $comparison['expected_source_attempt_count'],
+            'expected_source_success_after_retry' => $comparison['expected_source_success_after_retry'],
+            'expected_source_retry_exhausted' => $comparison['expected_source_retry_exhausted'],
+            'expected_source_final_http_status' => $comparison['expected_source_final_http_status'],
+            'expected_source_final_reason_code' => $comparison['expected_source_final_reason_code'],
+            'expected_source_input_file' => $comparison['expected_source_input_file'],
+            'expected_source_file_hash' => $comparison['expected_source_file_hash'],
+            'expected_source_file_hash_algorithm' => $comparison['expected_source_file_hash_algorithm'],
+            'expected_source_file_size_bytes' => $comparison['expected_source_file_size_bytes'],
+            'expected_source_file_row_count' => $comparison['expected_source_file_row_count'],
             'expected_config_identity' => $comparison['expected_config_identity'],
             'expected_publication_id' => $comparison['expected_publication_id'],
             'expected_publication_run_id' => $comparison['expected_publication_run_id'],
@@ -183,6 +217,21 @@ class ReplayVerificationService
             'trade_date' => $run->trade_date_requested,
             'trade_date_effective' => $resolvedTradeDate,
             'source' => $run->source,
+            'source_mode' => $run->source,
+            'source_name' => $run->source_name ?? null,
+            'source_provider' => $run->source_provider ?? null,
+            'source_timeout_seconds' => isset($run->source_timeout_seconds) && $run->source_timeout_seconds !== null ? (int) $run->source_timeout_seconds : null,
+            'source_retry_max' => isset($run->source_retry_max) && $run->source_retry_max !== null ? (int) $run->source_retry_max : null,
+            'source_attempt_count' => isset($run->source_attempt_count) && $run->source_attempt_count !== null ? (int) $run->source_attempt_count : null,
+            'source_success_after_retry' => isset($run->source_success_after_retry) && $run->source_success_after_retry !== null ? (bool) $run->source_success_after_retry : null,
+            'source_retry_exhausted' => isset($run->source_retry_exhausted) && $run->source_retry_exhausted !== null ? (bool) $run->source_retry_exhausted : null,
+            'source_final_http_status' => isset($run->source_final_http_status) && $run->source_final_http_status !== null ? (int) $run->source_final_http_status : null,
+            'source_final_reason_code' => $run->source_final_reason_code ?? null,
+            'source_input_file' => $run->source_input_file ?? null,
+            'source_file_hash' => $run->source_file_hash ?? null,
+            'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
+            'source_file_size_bytes' => isset($run->source_file_size_bytes) && $run->source_file_size_bytes !== null ? (int) $run->source_file_size_bytes : null,
+            'source_file_row_count' => isset($run->source_file_row_count) && $run->source_file_row_count !== null ? (int) $run->source_file_row_count : null,
             'status' => $run->terminal_status,
             'terminal_status' => $run->terminal_status,
             'publishability_state' => $run->publishability_state,
@@ -300,6 +349,7 @@ class ReplayVerificationService
         $expectedRun = $fixture['expected_run_summary'] ?: [];
         $expectedHashes = $fixture['expected_hashes'] ?: [];
         $expectedReasonCodeCounts = $fixture['expected_reason_code_counts'] ?: [];
+        $expectedSourceContext = $this->expectedSourceContext($expectedReplay, $expectedRun);
         $expectedClass = $expectedReplay['comparison_result'] ?? 'MATCH';
 
         $mismatches = [];
@@ -317,6 +367,20 @@ class ReplayVerificationService
             ? (int) (bool) $expectedReplay['expected_is_current_publication']
             : (array_key_exists('is_current_publication', $expectedReplay) ? (int) (bool) $expectedReplay['is_current_publication'] : null);
         $this->compareField($mismatches, 'is_current_publication', $expectedCurrentPublication, (int) (bool) $actual['is_current_publication']);
+
+        foreach (['source_mode', 'source_name', 'source_provider', 'source_final_reason_code', 'source_input_file', 'source_file_hash', 'source_file_hash_algorithm'] as $field) {
+            $this->compareField($mismatches, $field, $expectedSourceContext[$field] ?? null, $actual[$field]);
+        }
+
+        foreach (['source_timeout_seconds', 'source_retry_max', 'source_attempt_count', 'source_final_http_status', 'source_file_size_bytes', 'source_file_row_count'] as $field) {
+            $this->compareNumericField($mismatches, $field, $expectedSourceContext[$field] ?? null, $actual[$field]);
+        }
+
+        foreach (['source_success_after_retry', 'source_retry_exhausted'] as $field) {
+            $expectedBool = $this->normalizeBooleanForComparison($expectedSourceContext[$field] ?? null);
+            $actualBool = $this->normalizeBooleanForComparison($actual[$field]);
+            $this->compareField($mismatches, $field, $expectedBool, $actualBool);
+        }
 
         foreach (['correction_id', 'correction_status', 'correction_outcome', 'correction_reseal_status', 'correction_publication_switch', 'baseline_publication_id', 'candidate_publication_id'] as $field) {
             $expectedCorrectionValue = array_key_exists('expected_'.$field, $expectedReplay)
@@ -365,6 +429,21 @@ class ReplayVerificationService
             'expected_publishability_state' => $expectedReplay['expected_publishability_state'] ?? $expectedReplay['publishability_state'] ?? null,
             'expected_trade_date_effective' => $expectedReplay['expected_trade_date_effective'] ?? $expectedReplay['trade_date_effective'] ?? null,
             'expected_seal_state' => $expectedReplay['expected_seal_state'] ?? $expectedReplay['seal_state'] ?? null,
+            'expected_source_mode' => $expectedSourceContext['source_mode'] ?? null,
+            'expected_source_name' => $expectedSourceContext['source_name'] ?? null,
+            'expected_source_provider' => $expectedSourceContext['source_provider'] ?? null,
+            'expected_source_timeout_seconds' => $expectedSourceContext['source_timeout_seconds'] ?? null,
+            'expected_source_retry_max' => $expectedSourceContext['source_retry_max'] ?? null,
+            'expected_source_attempt_count' => $expectedSourceContext['source_attempt_count'] ?? null,
+            'expected_source_success_after_retry' => $expectedSourceContext['source_success_after_retry'] ?? null,
+            'expected_source_retry_exhausted' => $expectedSourceContext['source_retry_exhausted'] ?? null,
+            'expected_source_final_http_status' => $expectedSourceContext['source_final_http_status'] ?? null,
+            'expected_source_final_reason_code' => $expectedSourceContext['source_final_reason_code'] ?? null,
+            'expected_source_input_file' => $expectedSourceContext['source_input_file'] ?? null,
+            'expected_source_file_hash' => $expectedSourceContext['source_file_hash'] ?? null,
+            'expected_source_file_hash_algorithm' => $expectedSourceContext['source_file_hash_algorithm'] ?? null,
+            'expected_source_file_size_bytes' => $expectedSourceContext['source_file_size_bytes'] ?? null,
+            'expected_source_file_row_count' => $expectedSourceContext['source_file_row_count'] ?? null,
             'expected_config_identity' => $expectedReplay['config_identity'] ?? null,
             'expected_publication_id' => $expectedReplay['expected_publication_id'] ?? ($expectedReplay['publication_id'] ?? null),
             'expected_publication_run_id' => $expectedReplay['expected_publication_run_id'] ?? ($expectedReplay['publication_run_id'] ?? null),
@@ -400,6 +479,75 @@ class ReplayVerificationService
             'mismatch_summary' => $mismatchSummary,
             'mismatches' => $mismatches,
         ];
+    }
+
+    private function expectedSourceContext(array $expectedReplay, array $expectedRun)
+    {
+        $contexts = [];
+        foreach (['expected_source_context', 'source_context'] as $key) {
+            if (isset($expectedReplay[$key]) && is_array($expectedReplay[$key])) {
+                $contexts[] = $expectedReplay[$key];
+            }
+        }
+        if (isset($expectedRun['source_context']) && is_array($expectedRun['source_context'])) {
+            $contexts[] = $expectedRun['source_context'];
+        }
+        $contexts[] = $expectedReplay;
+        $contexts[] = $expectedRun;
+
+        $aliases = [
+            'source_mode' => ['expected_source_mode', 'source_mode', 'source'],
+            'source_name' => ['expected_source_name', 'source_name'],
+            'source_provider' => ['expected_source_provider', 'source_provider', 'provider'],
+            'source_timeout_seconds' => ['expected_source_timeout_seconds', 'source_timeout_seconds', 'timeout_seconds'],
+            'source_retry_max' => ['expected_source_retry_max', 'source_retry_max', 'retry_max'],
+            'source_attempt_count' => ['expected_source_attempt_count', 'source_attempt_count', 'attempt_count'],
+            'source_success_after_retry' => ['expected_source_success_after_retry', 'source_success_after_retry', 'success_after_retry'],
+            'source_retry_exhausted' => ['expected_source_retry_exhausted', 'source_retry_exhausted', 'retry_exhausted'],
+            'source_final_http_status' => ['expected_source_final_http_status', 'source_final_http_status', 'final_http_status'],
+            'source_final_reason_code' => ['expected_source_final_reason_code', 'source_final_reason_code', 'final_reason_code'],
+            'source_input_file' => ['expected_source_input_file', 'source_input_file'],
+            'source_file_hash' => ['expected_source_file_hash', 'source_file_hash'],
+            'source_file_hash_algorithm' => ['expected_source_file_hash_algorithm', 'source_file_hash_algorithm'],
+            'source_file_size_bytes' => ['expected_source_file_size_bytes', 'source_file_size_bytes'],
+            'source_file_row_count' => ['expected_source_file_row_count', 'source_file_row_count'],
+        ];
+
+        $resolved = [];
+        foreach ($aliases as $field => $keys) {
+            $resolved[$field] = null;
+            foreach ($contexts as $context) {
+                foreach ($keys as $key) {
+                    if (array_key_exists($key, $context) && $context[$key] !== null && $context[$key] !== '') {
+                        $resolved[$field] = $context[$key];
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        return $resolved;
+    }
+
+    private function normalizeBooleanForComparison($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_bool($value)) {
+            return (int) $value;
+        }
+
+        $normalized = strtolower(trim((string) $value));
+        if (in_array($normalized, ['1', 'true', 'yes', 'y'], true)) {
+            return 1;
+        }
+        if (in_array($normalized, ['0', 'false', 'no', 'n'], true)) {
+            return 0;
+        }
+
+        return (int) (bool) $value;
     }
 
     private function compareField(array &$mismatches, $field, $expected, $actual)
@@ -575,7 +723,7 @@ class ReplayVerificationService
     private function resolvePublicationForRun($run)
     {
         if ($run->terminal_status !== 'SUCCESS' || $run->publishability_state !== 'READABLE') {
-            throw new \RuntimeException('Replay verification requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
+            return null;
         }
 
         $publication = $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);

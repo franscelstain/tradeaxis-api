@@ -10,7 +10,11 @@ class LocalFileEodBarsAdapter
     public function fetchOrLoadEodBars($tradeDate, $sourceMode)
     {
         if (! in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
-            throw new \RuntimeException('Source mode '.$sourceMode.' belum diimplementasikan. Gunakan manual_file atau manual_entry.');
+            throw $this->manualFileException(
+                'Source mode '.$sourceMode.' belum diimplementasikan. Gunakan manual_file atau manual_entry.',
+                'RUN_SOURCE_MODE_UNSUPPORTED',
+                ['source_mode_requested' => $sourceMode]
+            );
         }
 
         $explicitInputFile = $this->resolveExplicitInputFilePath();
@@ -30,7 +34,15 @@ class LocalFileEodBarsAdapter
             return $this->loadCsv($csvPath, $tradeDate);
         }
 
-        throw new \RuntimeException('Sumber bars lokal untuk '.$tradeDate.' tidak ditemukan pada path JSON/CSV yang dikonfigurasi.');
+        throw $this->manualFileException(
+            'Sumber bars lokal untuk '.$tradeDate.' tidak ditemukan pada path JSON/CSV yang dikonfigurasi.',
+            'RUN_SOURCE_MANUAL_FILE_NOT_FOUND',
+            [
+                'trade_date' => $tradeDate,
+                'json_path' => $jsonPath,
+                'csv_path' => $csvPath,
+            ]
+        );
     }
 
     private function resolveExplicitInputFilePath()
@@ -43,7 +55,14 @@ class LocalFileEodBarsAdapter
         $candidate = $this->isAbsolutePath($configured) ? $configured : base_path($configured);
 
         if (! file_exists($candidate)) {
-            throw new \RuntimeException('Explicit local input file not found: '.$configured);
+            throw $this->manualFileException(
+                'Explicit local input file not found: '.$configured,
+                'RUN_SOURCE_MANUAL_FILE_NOT_FOUND',
+                [
+                    'source_input_file' => $configured,
+                    'resolved_source_input_file' => $candidate,
+                ]
+            );
         }
 
         return $candidate;
@@ -61,7 +80,23 @@ class LocalFileEodBarsAdapter
             return $this->loadCsv($path, $tradeDate);
         }
 
-        throw new \RuntimeException('Explicit local input file must use .json or .csv extension.');
+        throw $this->manualFileException(
+            'Explicit local input file must use .json or .csv extension.',
+            'RUN_SOURCE_MANUAL_FILE_MALFORMED',
+            ['source_input_file' => $path]
+        );
+    }
+
+
+    private function manualFileException($message, $reasonCode, array $context = [])
+    {
+        return new SourceAcquisitionException($message, $reasonCode, 0, null, array_merge([
+            'source_mode' => 'manual_file',
+            'source_name' => 'LOCAL_FILE',
+            'provider' => null,
+            'final_reason_code' => $reasonCode,
+            'source_final_status' => 'FAILED',
+        ], $context));
     }
 
     private function isAbsolutePath($path)
@@ -72,13 +107,45 @@ class LocalFileEodBarsAdapter
 
     private function loadJson($path, $tradeDate)
     {
-        $payload = json_decode(file_get_contents($path), true);
-
-        if (! is_array($payload)) {
-            throw new \RuntimeException('File JSON bars lokal tidak valid.');
+        if (! is_readable($path)) {
+            throw $this->manualFileException(
+                'File JSON bars lokal tidak dapat dibaca.',
+                'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
+                ['source_input_file' => $path]
+            );
         }
 
-        return collect($payload)->map(function ($row, $index) use ($tradeDate) {
+        $contents = file_get_contents($path);
+        if ($contents === false) {
+            throw $this->manualFileException(
+                'File JSON bars lokal tidak dapat dibuka.',
+                'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
+                ['source_input_file' => $path]
+            );
+        }
+
+        $payload = json_decode($contents, true);
+
+        if (! is_array($payload)) {
+            throw $this->manualFileException(
+                'File JSON bars lokal tidak valid.',
+                'RUN_SOURCE_MANUAL_FILE_MALFORMED',
+                ['source_input_file' => $path]
+            );
+        }
+
+        return collect($payload)->map(function ($row, $index) use ($tradeDate, $path) {
+            if (! is_array($row)) {
+                throw $this->manualFileException(
+                    'File JSON bars lokal berisi row yang bukan object/array.',
+                    'RUN_SOURCE_MANUAL_FILE_MALFORMED',
+                    [
+                        'source_input_file' => $path,
+                        'source_row_ref' => 'json:'.($index + 1),
+                    ]
+                );
+            }
+
             return $this->normalizeRow($row, $tradeDate, 'json:'.($index + 1));
         })->all();
     }
@@ -88,14 +155,22 @@ class LocalFileEodBarsAdapter
         $handle = fopen($path, 'r');
 
         if ($handle === false) {
-            throw new \RuntimeException('File CSV bars lokal tidak dapat dibuka.');
+            throw $this->manualFileException(
+                'File CSV bars lokal tidak dapat dibuka.',
+                'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
+                ['source_input_file' => $path]
+            );
         }
 
         $header = fgetcsv($handle);
 
         if (! is_array($header)) {
             fclose($handle);
-            throw new \RuntimeException('Header CSV bars lokal tidak ditemukan.');
+            throw $this->manualFileException(
+                'Header CSV bars lokal tidak ditemukan.',
+                'RUN_SOURCE_MANUAL_FILE_MALFORMED',
+                ['source_input_file' => $path]
+            );
         }
 
         $normalizedHeader = array_map(function ($item) {
@@ -106,7 +181,14 @@ class LocalFileEodBarsAdapter
         foreach ($required as $column) {
             if (! in_array($column, $normalizedHeader, true)) {
                 fclose($handle);
-                throw new \RuntimeException('Header CSV bars lokal tidak lengkap. Kolom wajib hilang: '.$column);
+                throw $this->manualFileException(
+                    'Header CSV bars lokal tidak lengkap. Kolom wajib hilang: '.$column,
+                    'RUN_SOURCE_MANUAL_FILE_MALFORMED',
+                    [
+                        'source_input_file' => $path,
+                        'missing_column' => $column,
+                    ]
+                );
             }
         }
 
@@ -114,6 +196,18 @@ class LocalFileEodBarsAdapter
         $line = 1;
         while (($data = fgetcsv($handle)) !== false) {
             $line++;
+            if (count($data) !== count($normalizedHeader)) {
+                fclose($handle);
+                throw $this->manualFileException(
+                    'Row CSV bars lokal memiliki jumlah kolom yang tidak cocok dengan header.',
+                    'RUN_SOURCE_MANUAL_FILE_MALFORMED',
+                    [
+                        'source_input_file' => $path,
+                        'source_row_ref' => 'csv:'.$line,
+                    ]
+                );
+            }
+
             $rows[] = $this->normalizeRow(array_combine($normalizedHeader, $data), $tradeDate, 'csv:'.$line);
         }
 
