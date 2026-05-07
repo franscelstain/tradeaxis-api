@@ -150,7 +150,10 @@ class MarketDataPipelineService
             'Stage started in owning run context.',
             null,
             $this->sourceTelemetryPayload($input->sourceMode) + [
+                'run_id' => (int) $run->run_id,
                 'requested_date' => $input->requestedDate,
+                'trade_date_requested' => $input->requestedDate,
+                'trade_date_effective' => $run->trade_date_effective,
                 'source_mode' => $input->sourceMode,
                 'stage' => $input->stage,
                 'correction_id' => $input->correctionId ? (int) $input->correctionId : null,
@@ -455,7 +458,7 @@ class MarketDataPipelineService
                                 "CORRECTION_SKIPPED",
                                 "INFO",
                                 "Correction content unchanged; reseal skipped and current publication preserved.",
-                                null,
+                                'CORRECTION_ARTIFACT_UNCHANGED',
                                 [
                                     "correction_id" => (int) $correction->correction_id,
                                     "prior_publication_id" => $priorCurrent ? (int) $priorCurrent->publication_id : null,
@@ -656,7 +659,7 @@ class MarketDataPipelineService
                             'CORRECTION_CANCELLED',
                             'INFO',
                             'Correction content unchanged; current publication preserved.',
-                            null,
+                            'CORRECTION_ARTIFACT_UNCHANGED',
                             [
                                 'correction_id' => (int) $correction->correction_id,
                                 'prior_publication_id' => (int) $priorCurrent->publication_id,
@@ -846,8 +849,22 @@ class MarketDataPipelineService
                                         (int) $priorCurrent->run_id
                                     );
                                 } catch (\Throwable $restoreException) {
-                                    // Preserve prior current ownership for correction recovery.
-                                    // A failed restore attempt must not clear the existing baseline pointer.
+                                    $this->runs->appendEvent(
+                                        $run,
+                                        $input->stage,
+                                        'POINTER_RESTORE_FAILED',
+                                        'WARN',
+                                        'Prior current publication restore failed during correction pointer recovery.',
+                                        'RUN_LOCK_CONFLICT',
+                                        [
+                                            'requested_date' => $input->requestedDate,
+                                            'run_id' => (int) $run->run_id,
+                                            'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                                            'prior_run_id' => $priorCurrent ? (int) $priorCurrent->run_id : null,
+                                            'exception_class' => get_class($restoreException),
+                                            'exception_message' => $restoreException->getMessage(),
+                                        ]
+                                    );
                                 }
                             } elseif ($isPointerIntegrityError) {
                                 $this->publications->clearCurrentPublicationState($input->requestedDate);
@@ -1007,7 +1024,22 @@ class MarketDataPipelineService
                                     (int) $priorCurrent->run_id
                                 );
                             } catch (\Throwable $restoreException) {
-                                // Preserve prior current ownership for correction recovery.
+                                $this->runs->appendEvent(
+                                    $run,
+                                    $input->stage,
+                                    'POINTER_RESTORE_FAILED',
+                                    'WARN',
+                                    'Prior current publication restore failed during post-finalize pointer recovery.',
+                                    'RUN_LOCK_CONFLICT',
+                                    [
+                                        'requested_date' => $input->requestedDate,
+                                        'run_id' => (int) $run->run_id,
+                                        'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                                        'prior_run_id' => $priorCurrent ? (int) $priorCurrent->run_id : null,
+                                        'exception_class' => get_class($restoreException),
+                                        'exception_message' => $restoreException->getMessage(),
+                                    ]
+                                );
                             }
                         } else {
                             $this->publications->clearCurrentPublicationState($input->requestedDate);
@@ -1143,7 +1175,7 @@ class MarketDataPipelineService
                             'CORRECTION_PUBLISHED',
                             'INFO',
                             'Historical correction replaced current publication safely.',
-                            null,
+                            'CORRECTION_PUBLISHED',
                             [
                                 'correction_id' => (int) $correction->correction_id,
                                 'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
@@ -1273,8 +1305,11 @@ class MarketDataPipelineService
                     ]);
             }
         } catch (\Throwable $e) {
-            // Some isolated unit tests mock repositories without a runtime DB schema.
-            // The authoritative finalize() call below remains the durable state write.
+            $run->notes = $this->appendRunNotes($run->notes ?? null, [
+                'pointer_switch_prime_status=SKIPPED',
+                'pointer_switch_prime_reason_code=RUN_LOCK_CONFLICT',
+                'pointer_switch_prime_error=' . get_class($e),
+            ]);
         }
 
         return $run;
@@ -1335,7 +1370,7 @@ class MarketDataPipelineService
 
         $manifest = $this->publications->buildManifestByPublicationId($priorCurrent->publication_id);
 
-        $this->runs->appendEvent($run, $input->stage, 'CORRECTION_CANCELLED', 'INFO', $state['correction_outcome_note'], null, [
+        $this->runs->appendEvent($run, $input->stage, 'CORRECTION_CANCELLED', 'INFO', $state['correction_outcome_note'], 'CORRECTION_ARTIFACT_UNCHANGED', [
             'correction_id' => (int) $correction->correction_id,
             'prior_publication_id' => (int) $priorCurrent->publication_id,
             'current_publication_id' => (int) $priorCurrent->publication_id,
@@ -1554,6 +1589,21 @@ class MarketDataPipelineService
                     : null;
             } catch (\Throwable $e) {
                 $resolvedCurrent = null;
+
+                $this->runs->appendEvent(
+                    $run,
+                    'FINALIZE',
+                    'POINTER_RESOLUTION_FAILED',
+                    'WARN',
+                    'Current pointer resolution failed during idempotent finalize verification.',
+                    'RUN_LOCK_CONFLICT',
+                    [
+                        'requested_date' => $input->requestedDate,
+                        'run_id' => (int) $run->run_id,
+                        'exception_class' => get_class($e),
+                        'exception_message' => $e->getMessage(),
+                    ]
+                );
             }
 
             if ($resolvedCurrent && (int) ($resolvedCurrent->run_id ?? 0) !== (int) ($run->run_id ?? 0)) {
@@ -1563,7 +1613,21 @@ class MarketDataPipelineService
                         (int) $resolvedCurrent->run_id
                     );
                 } catch (\Throwable $e) {
-                    // Mirror repair is best-effort; the current pointer resolver remains authoritative.
+                    $this->runs->appendEvent(
+                        $run,
+                        'FINALIZE',
+                        'CURRENT_PUBLICATION_MIRROR_REPAIR_FAILED',
+                        'WARN',
+                        'Current publication mirror repair failed; pointer resolver remains authoritative.',
+                        'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED',
+                        [
+                            'requested_date' => $input->requestedDate,
+                            'run_id' => (int) $run->run_id,
+                            'resolved_current_run_id' => (int) $resolvedCurrent->run_id,
+                            'exception_class' => get_class($e),
+                            'exception_message' => $e->getMessage(),
+                        ]
+                    );
                 }
 
                 $this->runs->appendEvent(
@@ -1589,7 +1653,20 @@ class MarketDataPipelineService
                     $this->publications->clearCurrentPublicationState($input->requestedDate);
                 }
             } catch (\Throwable $e) {
-                // Final run state below is still forced to non-readable if pointer cleanup fails.
+                $this->runs->appendEvent(
+                    $run,
+                    'FINALIZE',
+                    'POINTER_CLEANUP_FAILED',
+                    'WARN',
+                    'Unsafe current pointer cleanup failed before fail-safe finalize hold.',
+                    'RUN_LOCK_CONFLICT',
+                    [
+                        'requested_date' => $input->requestedDate,
+                        'run_id' => (int) $run->run_id,
+                        'exception_class' => get_class($e),
+                        'exception_message' => $e->getMessage(),
+                    ]
+                );
             }
 
             $run = $this->finalizeRunState($run, [

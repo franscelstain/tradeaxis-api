@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Command Surface Safety / Ops Layer
+- Logging / Traceability / Reason Codes
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define and enforce `COMMAND_SURFACE_SAFETY_OPS_LAYER_CONTRACT` across market-data artisan command input validation, destructive action guards, dry-run/apply behavior, idempotency expectations, operator-grade output, and registered reason-code failure surfaces.
-- Uploaded ZIP has no `vendor/`; container validation is static/`php -l` only. Operator-local targeted and full PHPUnit validation has passed after Fix2.
+- Define and enforce `LOGGING_TRACEABILITY_REASON_CODES_CONTRACT` across market-data lifecycle event persistence, reason-code registration, no-silent-failure behavior, and operator/audit traceability.
+- Uploaded ZIP has no `vendor/`; container validation was static/`php -l` only. Operator-local targeted and full PHPUnit validation was supplied and passed before LOCKED.
 
 [SESSION_GOAL]
-- Command surface must prevent accidental destructive mutation, misleading success/readable/published output, silent failure, unregistered reason codes, and operator workflows that bypass locked service/repository contracts.
+- Logging must explain every important market-data lifecycle outcome from run creation through publication/readability/finalize/correction/replay/evidence using persisted trace context and registered reason codes.
 
 ---
 ## OPERATIONAL STATUS
@@ -33,6 +33,60 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+
+- LOGGING_TRACEABILITY_REASON_CODES_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_IMPLEMENTATION] Logging / Traceability / Reason Codes
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-07 -> Contract opened as canonical logging/traceability/reason-code contract under audit governance.
+  - 2026-05-07 -> Static trace found registry/seed drift for runtime-used reason-code families and incomplete persisted trace for run creation and selected pointer/correction recovery paths.
+  - 2026-05-07 -> Enforcement patch added `RUN_CREATED` persisted events, enriched stage-start context, reason-coded correction outcome events, reason-coded pointer recovery trace events, registry/seed reconciliation, logging inventory, and static guard coverage.
+  - 2026-05-07 -> Contract held at ENFORCED because uploaded ZIP has no `vendor/`; local targeted/full PHPUnit is required before LOCKED.
+  - 2026-05-07 -> Contract promoted from ENFORCED to LOCKED after operator-local validation passed: `LoggingTraceabilityReasonCodesStaticGuardTest.php` OK (7 tests, 134 assertions); targeted filters `Reason`, `Trace`, `Log`, `Event`, `Lifecycle`, `CommandSurface`, `Coverage`, `Finalize`, `Pointer`, `Publication`, `Correction`, `Replay`, `Evidence`, `Source`, `Provider`, `ManualFile`, and `Integration` all PASS; full `tests/Unit/MarketData` OK (319 tests, 4033 assertions).
+
+  [DEFINED]
+  - Every important market-data lifecycle event must be persisted or represented by an auditable trace artifact.
+  - Failure, held, blocked, skipped, not-readable, mismatch, destructive, correction, replay, and evidence-incomplete outcomes must use registered reason codes.
+  - Run lifecycle must be traceable from `RUN_CREATED` through stage events and terminal finalize/held/failed events.
+  - Source/API/manual-file, coverage, finalize, pointer/publication, correction, replay, evidence, session snapshot, repair, and command surfaces must preserve enough context for operator/audit explanation.
+  - Reason-code registry and seed must remain synchronized.
+
+  [IMPLEMENTED]
+  - `EodRunRepository` persists `RUN_CREATED` for newly created owning runs and seed-derived promote runs.
+  - `MarketDataPipelineService` enriches `STAGE_STARTED` payloads and reason-codes correction unchanged/published events.
+  - Pointer restore/resolution/mirror-repair/cleanup recovery branches append reason-coded trace events.
+  - `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` were reconciled for run, coverage, publication, pointer, correction, evidence, and replay reason-code families.
+  - `LOGGING_TRACEABILITY_REASON_CODES_INVENTORY.md` defines the current traceability inventory and static/PHPUnit status.
+  - `LoggingTraceabilityReasonCodesStaticGuardTest` enforces registry/seed sync and minimum lifecycle/recovery traceability constraints.
+
+  [ENFORCED]
+  - Static guard fails if registry and seed drift.
+  - Static guard fails if critical lifecycle trace events, failure reason codes, correction/pointer trace markers, logging inventory, or no-latest shortcut protections are removed.
+  - Runtime code now writes explicit trace events for run creation and selected pointer/correction recovery paths.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` PASS for changed PHP files and new static guard.
+  - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`.
+  - Operator-local `vendor/bin/phpunit tests/Unit/MarketData/LoggingTraceabilityReasonCodesStaticGuardTest.php` -> PASS: OK (7 tests, 134 assertions).
+  - Operator-local targeted filters `Reason`, `Trace`, `Log`, `Event`, `Lifecycle`, `CommandSurface`, `Coverage`, `Finalize`, `Pointer`, `Publication`, `Correction`, `Replay`, `Evidence`, `Source`, `Provider`, `ManualFile`, and `Integration` -> PASS.
+  - Operator-local full `vendor/bin/phpunit tests/Unit/MarketData` -> PASS: OK (319 tests, 4033 assertions).
+
+  [FINAL_RULE]
+  - LOCKED. Market-data code must not create final failure/held/not-readable/skipped/blocked/mismatch/destructive outcomes without a registered reason code and auditable trace context.
+  - `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` must stay synchronized.
+  - `RUN_CREATED`, `STAGE_STARTED`, stage completion/failure, and terminal finalize/held/failed events are the minimum run lifecycle trace chain.
+  - Correction unchanged/published and pointer recovery outcomes must be reason-coded and linked to run/publication/correction context.
+
+  [NEXT_ACTION]
+  - Keep this as the canonical locked contract for logging/traceability/reason codes.
+  - Future changes touching lifecycle logging, reason codes, registry/seed, command output, provider/manual file, correction, replay, evidence, pointer, finalize, coverage, or publication state must rerun targeted filters plus full `tests/Unit/MarketData`.
 
 
 - COMMAND_SURFACE_SAFETY_OPS_LAYER_CONTRACT -> LOCKED

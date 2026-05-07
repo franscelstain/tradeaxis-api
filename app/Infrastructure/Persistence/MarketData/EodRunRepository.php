@@ -25,7 +25,7 @@ class EodRunRepository
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
-            return EodRun::query()->create([
+            $run = EodRun::query()->create([
                 'trade_date_requested' => $requestedDate,
                 'trade_date_effective' => null,
                 'lifecycle_state' => 'PENDING',
@@ -88,6 +88,26 @@ class EodRunRepository
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
+
+            $this->appendEvent(
+                $run,
+                $stage,
+                'RUN_CREATED',
+                'INFO',
+                'Market-data run created with owning run context.',
+                null,
+                [
+                    'run_id' => (int) $run->run_id,
+                    'trade_date_requested' => $requestedDate,
+                    'trade_date_effective' => null,
+                    'source_mode' => $sourceMode,
+                    'supersedes_run_id' => $supersedesRunId,
+                    'lifecycle_state' => 'PENDING',
+                    'publishability_state' => 'NOT_READABLE',
+                ]
+            );
+
+            return $run;
         });
     }
 
@@ -164,7 +184,29 @@ class EodRunRepository
             $payload[$key] = $value;
         }
 
-        return EodRun::query()->create($payload);
+        $run = EodRun::query()->create($payload);
+
+        $this->appendEvent(
+            $run,
+            $stage,
+            'RUN_CREATED',
+            'INFO',
+            'Market-data promote run created from seed run context.',
+            null,
+            [
+                'run_id' => (int) $run->run_id,
+                'seed_run_id' => (int) $seedRun->run_id,
+                'trade_date_requested' => $run->trade_date_requested,
+                'trade_date_effective' => null,
+                'source_mode' => $run->source,
+                'promote_mode' => $run->promote_mode,
+                'publish_target' => $run->publish_target,
+                'lifecycle_state' => 'PENDING',
+                'publishability_state' => 'NOT_READABLE',
+            ]
+        );
+
+        return $run;
     }
 
     public function findByRunId($runId)

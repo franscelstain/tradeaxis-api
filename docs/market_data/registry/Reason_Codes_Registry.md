@@ -75,6 +75,44 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `COMMAND_EXECUTION_FAILED` | COMMAND | HARD | Operator command execution failed and surfaced a reason-coded blocking outcome. |
 | `COMMAND_CORRECTION_NOT_FOUND` | COMMAND | HARD | Operator command referenced a correction id that does not exist. |
 | `COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE` | COMMAND | HARD | Operator command attempted to execute a correction whose lifecycle status is not executable. |
+| `RUN_PARTIAL_DATA` | RUN | HARD | Coverage failed because only part of the requested-date universe had canonical valid EOD data. |
+| `RUN_DATA_DELAYED` | RUN | WARN | Coverage failed while requested-date data was still inside the controlled delayed-data window. |
+| `RUN_STALE_DATA` | RUN | HARD | Source rows were outside the requested trade date and must not count as available coverage. |
+| `RUN_COMPUTE_FAILED` | RUN | HARD | Indicator computation stage failed and the run cannot continue silently. |
+| `RUN_COVERAGE_EVALUATION_FAILED` | RUN | HARD | Coverage evaluation failed before a deterministic gate result could be persisted. |
+| `RUN_ELIGIBILITY_FAILED` | RUN | HARD | Eligibility build stage failed and the run cannot continue silently. |
+| `RUN_FINALIZE_FAILED` | RUN | HARD | Finalize stage failed before a safe terminal state could be completed. |
+| `RUN_NON_CURRENT_PROMOTION` | RUN | HARD | Promotion was requested for a target that must not become the current readable publication. |
+| `RUN_REPAIR_CANDIDATE_PARTIAL` | RUN | WARN | Repair candidate is intentionally partial and must not be promoted as normal current readable data. |
+| `RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED` | RUN | WARN | Current publication mirror or pointer integrity was repaired or fail-safed to preserve readable-state contract. |
+| `RUN_TERMINAL_STATUS_NOT_SUCCESS` | RUN | HARD | Publication pointer validation found a run whose terminal status is not SUCCESS. |
+| `RUN_PUBLISHABILITY_NOT_READABLE` | RUN | HARD | Publication pointer validation found a run whose publishability state is not READABLE. |
+| `RUN_COVERAGE_GATE_NOT_PASS` | RUN | HARD | Publication pointer validation found a run whose coverage gate state is not PASS. |
+| `RUN_COVERAGE_TELEMETRY_INVALID` | RUN | HARD | Readable pointer validation found invalid coverage telemetry for a candidate run. |
+| `RUN_CURRENT_MIRROR_NOT_SET` | RUN | HARD | Readable pointer validation found that the run current-publication mirror is not set. |
+| `RUN_PUBLICATION_ID_MISMATCH` | RUN | HARD | Readable pointer validation found a mismatch between run publication id and pointer publication id. |
+| `RUN_PUBLICATION_VERSION_MISMATCH` | RUN | HARD | Readable pointer validation found a mismatch between run publication version and pointer publication version. |
+| `RUN_ROW_MISSING` | RUN | HARD | Readable pointer validation could not find the linked run row. |
+| `RUN_SEALED_AT_MISSING` | RUN | HARD | Readable pointer validation found the linked run has no sealed timestamp. |
+| `PUBLICATION_ROW_MISSING` | PUBLICATION | HARD | Current pointer validation could not find the linked publication row. |
+| `PUBLICATION_TRADE_DATE_MISMATCH` | PUBLICATION | HARD | Current pointer validation found publication trade date mismatch. |
+| `PUBLICATION_NOT_MARKED_CURRENT` | PUBLICATION | HARD | Current pointer validation found the publication row is not marked current. |
+| `PUBLICATION_NOT_SEALED` | PUBLICATION | HARD | Current pointer validation found the publication is not SEALED. |
+| `PUBLICATION_SEALED_AT_MISSING` | PUBLICATION | HARD | Current pointer validation found a sealed publication without sealed timestamp. |
+| `POINTER_RUN_ID_MISMATCH` | POINTER | HARD | Current pointer validation found run id mismatch between pointer and publication/run context. |
+| `POINTER_PUBLICATION_ID_MISMATCH` | POINTER | HARD | Current pointer validation found publication id mismatch between expected and resolved pointer target. |
+| `POINTER_PUBLICATION_VERSION_MISMATCH` | POINTER | HARD | Current pointer validation found publication version mismatch. |
+| `POINTER_SEALED_AT_MISSING` | POINTER | HARD | Current pointer validation found pointer sealed timestamp is missing. |
+| `CORRECTION_ARTIFACT_BASELINE_OR_CANDIDATE_MISSING` | CORRECTION | HARD | Correction artifact comparison cannot run because baseline or candidate publication is missing. |
+| `CORRECTION_ARTIFACT_HASH_INCOMPLETE` | CORRECTION | HARD | Correction artifact comparison found missing hash context and cannot prove deterministic change. |
+| `CORRECTION_ARTIFACT_UNCHANGED` | CORRECTION | INFO | Correction artifact comparison found no content change; current publication must be preserved. |
+| `CORRECTION_ARTIFACT_CHANGED` | CORRECTION | INFO | Correction artifact comparison found deterministic content change and reseal/publish may proceed through normal guards. |
+| `CORRECTION_PUBLISHED` | CORRECTION | INFO | Correction lifecycle published a changed, resealed publication safely. |
+| `CORRECTION_FAILED` | CORRECTION | HARD | Correction lifecycle failed or was blocked before safe publication. |
+| `CORRECTION_CANCELLED` | CORRECTION | INFO | Correction lifecycle was consumed without publication because current content was unchanged or cancelled safely. |
+| `EVIDENCE_COMPLETE` | EVIDENCE | INFO | Evidence export includes all required operator-grade context sections. |
+| `EVIDENCE_INCOMPLETE` | EVIDENCE | WARN | Evidence export completed with one or more missing context sections that must be visible to the operator. |
+| `REPLAY_MATCH` | REPLAY | INFO | Replay expected proof matched observed proof across deterministic fields. |
 
 | `REPLAY_FIXTURE_SCHEMA_MISMATCH` | REPLAY | HARD | Replay fixture manifest or schema version does not match the locked replay fixture contract. |
 | `REPLAY_EXPECTED_PROOF_INCOMPLETE` | REPLAY | HARD | Replay expected proof package is missing required deterministic lifecycle context. |
