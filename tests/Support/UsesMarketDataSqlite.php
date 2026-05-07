@@ -158,6 +158,25 @@ trait UsesMarketDataSqlite
             $table->dateTime('finished_at')->nullable();
             $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
+
+            $table->index(['trade_date_requested', 'lifecycle_state'], 'idx_runs_requested_lifecycle');
+            $table->index(['trade_date_requested', 'terminal_status'], 'idx_runs_requested_terminal');
+            $table->index(['trade_date_effective', 'terminal_status'], 'idx_runs_effective_terminal');
+            $table->index(['trade_date_effective', 'publishability_state'], 'idx_runs_effective_publishability');
+            $table->index(['quality_gate_state'], 'idx_runs_gate_state');
+            $table->index(['coverage_gate_state'], 'idx_runs_coverage_gate_state');
+            $table->index(['stage'], 'idx_runs_stage');
+            $table->index(['trade_date_effective', 'is_current_publication'], 'idx_runs_trade_date_current_pub');
+            $table->index(['trade_date_effective', 'terminal_status', 'publishability_state', 'coverage_gate_state', 'is_current_publication'], 'idx_runs_effective_readable_contract');
+            $table->index(['supersedes_run_id'], 'idx_runs_supersedes');
+            $table->index(['publication_id'], 'idx_runs_publication_id');
+            $table->index(['correction_id'], 'idx_runs_correction_id');
+            $table->index(['promote_mode'], 'idx_runs_promote_mode');
+            $table->index(['publish_target'], 'idx_runs_publish_target');
+            $table->index(['final_reason_code'], 'idx_runs_final_reason_code');
+            $table->index(['source_name'], 'idx_runs_source_name');
+            $table->index(['source_file_hash'], 'idx_runs_source_file_hash');
+            $table->index(['source', 'source_name', 'source_provider', 'source_file_hash'], 'idx_runs_source_identity');
         });
 
         $schema->create('eod_run_events', function (Blueprint $table) {
@@ -172,6 +191,12 @@ trait UsesMarketDataSqlite
             $table->string('message')->nullable();
             $table->text('event_payload_json')->nullable();
             $table->dateTime('created_at');
+
+            $table->index(['run_id', 'event_time'], 'idx_run_events_run_time');
+            $table->index(['trade_date_requested', 'event_time'], 'idx_run_events_trade_date_time');
+            $table->index(['stage', 'event_time'], 'idx_run_events_stage_time');
+            $table->index(['reason_code'], 'idx_run_events_reason_code');
+            $table->index(['severity', 'event_time'], 'idx_run_events_severity_time');
         });
 
         $schema->create('eod_dataset_corrections', function (Blueprint $table) {
@@ -193,6 +218,12 @@ trait UsesMarketDataSqlite
             $table->text('final_outcome_note')->nullable();
             $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
+
+            $table->index(['trade_date', 'status'], 'idx_corr_trade_date_status');
+            $table->index(['trade_date', 'status', 'execution_count'], 'idx_corr_trade_date_status_execution');
+            $table->index(['prior_run_id'], 'idx_corr_prior_run');
+            $table->index(['new_run_id'], 'idx_corr_new_run');
+            $table->index(['prior_run_id', 'new_run_id'], 'idx_corr_prior_new_run');
         });
 
         $schema->create('eod_publications', function (Blueprint $table) {
@@ -215,6 +246,17 @@ trait UsesMarketDataSqlite
             $table->dateTime('sealed_at')->nullable();
             $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
+
+            $table->unique(['trade_date', 'publication_version'], 'uq_publication_trade_date_version');
+            $table->index(['trade_date', 'is_current'], 'idx_publication_trade_date_current');
+            $table->index(['trade_date', 'is_current', 'seal_state', 'publication_version', 'run_id'], 'idx_publication_readable_lookup');
+            $table->index(['run_id'], 'idx_publication_run');
+            $table->index(['run_id', 'trade_date', 'publication_id'], 'idx_publication_run_trade_date');
+            $table->index(['supersedes_publication_id'], 'idx_publication_supersedes');
+            $table->index(['previous_publication_id'], 'idx_publication_previous');
+            $table->index(['replaced_publication_id'], 'idx_publication_replaced');
+            $table->index(['source_file_hash'], 'idx_publication_source_file_hash');
+            $table->index(['trade_date', 'seal_state', 'sealed_at'], 'idx_publication_trade_date_sealed');
         });
 
         $schema->create('eod_current_publication_pointer', function (Blueprint $table) {
@@ -224,6 +266,10 @@ trait UsesMarketDataSqlite
             $table->integer('publication_version');
             $table->dateTime('sealed_at')->nullable();
             $table->dateTime('updated_at')->nullable();
+
+            $table->unique(['publication_id'], 'uq_current_publication_pointer_publication');
+            $table->index(['run_id'], 'idx_current_publication_pointer_run');
+            $table->index(['run_id', 'publication_version'], 'idx_current_publication_pointer_run_version');
         });
 
         $schema->create('eod_bars', function (Blueprint $table) {
@@ -244,6 +290,7 @@ trait UsesMarketDataSqlite
             $table->index(['ticker_id', 'trade_date'], 'idx_eod_bars_ticker_date');
             $table->index(['run_id'], 'idx_eod_bars_run');
             $table->index(['publication_id'], 'idx_eod_bars_publication');
+            $table->index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_bars_publication_date_ticker');
         });
 
         $schema->create('eod_invalid_bars', function (Blueprint $table) {
@@ -264,6 +311,12 @@ trait UsesMarketDataSqlite
             $table->date('loser_of_trade_date')->nullable();
             $table->integer('loser_of_ticker_id')->nullable();
             $table->dateTime('created_at');
+
+            $table->index(['trade_date', 'ticker_id'], 'idx_invalid_bars_trade_date_ticker');
+            $table->index(['run_id'], 'idx_invalid_bars_run');
+            $table->index(['invalid_reason_code'], 'idx_invalid_bars_reason_code');
+            $table->index(['source_row_ref'], 'idx_invalid_bars_source_row_ref');
+            $table->index(['loser_of_trade_date', 'loser_of_ticker_id'], 'idx_invalid_bars_duplicate_loser');
         });
 
         $schema->create('eod_indicators', function (Blueprint $table) {
@@ -286,6 +339,7 @@ trait UsesMarketDataSqlite
             $table->index(['run_id'], 'idx_eod_indicators_run');
             $table->index(['invalid_reason_code'], 'idx_eod_indicators_invalid_reason');
             $table->index(['publication_id'], 'idx_eod_indicators_publication');
+            $table->index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_indicators_publication_date_ticker');
         });
 
         $schema->create('eod_eligibility', function (Blueprint $table) {
@@ -302,6 +356,7 @@ trait UsesMarketDataSqlite
             $table->index(['run_id'], 'idx_eod_eligibility_run');
             $table->index(['reason_code'], 'idx_eod_eligibility_reason');
             $table->index(['publication_id'], 'idx_eod_eligibility_publication');
+            $table->index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_eligibility_publication_date_ticker');
         });
 
         $schema->create('md_replay_daily_metrics', function (Blueprint $table) {
@@ -425,6 +480,15 @@ trait UsesMarketDataSqlite
             $table->dateTime('created_at');
 
             $table->primary(['replay_id', 'trade_date']);
+            $table->index(['replay_id', 'status'], 'idx_replay_daily_status');
+            $table->index(['replay_id', 'publishability_state'], 'idx_replay_daily_publishability');
+            $table->index(['replay_id', 'publication_id', 'publication_version'], 'idx_replay_daily_publication_identity');
+            $table->index(['replay_id', 'trade_date_effective'], 'idx_replay_daily_effective');
+            $table->index(['replay_id', 'comparison_result'], 'idx_replay_daily_comparison');
+            $table->index(['replay_id', 'coverage_gate_state'], 'idx_replay_daily_coverage_gate');
+            $table->index(['replay_id', 'artifact_changed_scope'], 'idx_replay_daily_artifact_scope');
+            $table->index(['replay_id', 'publication_version'], 'idx_replay_daily_publication_version');
+            $table->index(['replay_id', 'config_identity'], 'idx_replay_daily_config_identity');
         });
 
         $schema->create('md_replay_reason_code_counts', function (Blueprint $table) {
@@ -432,6 +496,9 @@ trait UsesMarketDataSqlite
             $table->date('trade_date');
             $table->string('reason_code');
             $table->integer('reason_count');
+
+            $table->primary(['replay_id', 'trade_date', 'reason_code']);
+            $table->index(['replay_id', 'reason_code'], 'idx_replay_reason_code');
         });
 
 

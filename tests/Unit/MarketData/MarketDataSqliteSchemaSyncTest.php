@@ -138,4 +138,109 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
             );
         }
     }
+
+    public function test_sqlite_schema_enforces_db_integrity_keys_and_runtime_indexes(): void
+    {
+        foreach ([
+            'tickers' => ['ticker_id'],
+            'market_calendar' => ['cal_date'],
+            'eod_reason_codes' => ['code'],
+            'eod_runs' => ['run_id'],
+            'eod_run_events' => ['event_id'],
+            'eod_dataset_corrections' => ['correction_id'],
+            'eod_publications' => ['publication_id'],
+            'eod_current_publication_pointer' => ['trade_date'],
+            'eod_bars' => ['trade_date', 'ticker_id'],
+            'eod_invalid_bars' => ['invalid_bar_id'],
+            'eod_indicators' => ['trade_date', 'ticker_id'],
+            'eod_eligibility' => ['trade_date', 'ticker_id'],
+            'md_replay_daily_metrics' => ['replay_id', 'trade_date'],
+            'md_replay_reason_code_counts' => ['replay_id', 'trade_date', 'reason_code'],
+            'md_session_snapshots' => ['snapshot_id'],
+            'eod_bars_history' => ['publication_id', 'trade_date', 'ticker_id'],
+            'eod_indicators_history' => ['publication_id', 'trade_date', 'ticker_id'],
+            'eod_eligibility_history' => ['publication_id', 'trade_date', 'ticker_id'],
+        ] as $table => $columns) {
+            $this->assertPrimaryKeyColumns($table, $columns);
+        }
+
+        foreach ([
+            'tickers' => ['ticker_code'],
+            'eod_publications' => [
+                'uq_publication_trade_date_version',
+                'idx_publication_readable_lookup',
+                'idx_publication_run_trade_date',
+            ],
+            'eod_current_publication_pointer' => [
+                'uq_current_publication_pointer_publication',
+                'idx_current_publication_pointer_run',
+                'idx_current_publication_pointer_run_version',
+            ],
+            'eod_runs' => [
+                'idx_runs_effective_readable_contract',
+                'idx_runs_source_identity',
+                'idx_runs_publication_id',
+                'idx_runs_correction_id',
+            ],
+            'eod_bars' => ['idx_eod_bars_publication_date_ticker'],
+            'eod_indicators' => ['idx_eod_indicators_publication_date_ticker'],
+            'eod_eligibility' => ['idx_eod_eligibility_publication_date_ticker'],
+            'eod_dataset_corrections' => [
+                'idx_corr_trade_date_status_execution',
+                'idx_corr_prior_new_run',
+            ],
+            'md_replay_daily_metrics' => [
+                'idx_replay_daily_status',
+                'idx_replay_daily_publishability',
+                'idx_replay_daily_publication_identity',
+                'idx_replay_daily_effective',
+                'idx_replay_daily_comparison',
+                'idx_replay_daily_coverage_gate',
+            ],
+            'md_replay_reason_code_counts' => ['idx_replay_reason_code'],
+            'md_session_snapshots' => [
+                'md_session_snapshots_trade_date_snapshot_slot_ticker_id_unique',
+                'md_session_snapshots_trade_date_snapshot_slot_index',
+            ],
+        ] as $table => $indexes) {
+            $this->assertTableHasIndexes($table, $indexes);
+        }
+    }
+
+    private function assertPrimaryKeyColumns(string $table, array $expectedColumns): void
+    {
+        $rows = $this->db()->select("PRAGMA table_info('".$table."')");
+        $actual = [];
+
+        foreach ($rows as $row) {
+            if ((int) $row->pk > 0) {
+                $actual[(int) $row->pk] = $row->name;
+            }
+        }
+
+        ksort($actual);
+
+        $this->assertSame(
+            $expectedColumns,
+            array_values($actual),
+            sprintf('SQLite mirror primary key mismatch for %s', $table)
+        );
+    }
+
+    private function assertTableHasIndexes(string $table, array $expectedIndexes): void
+    {
+        $rows = $this->db()->select("PRAGMA index_list('".$table."')");
+        $actual = array_map(static function ($row) {
+            return $row->name;
+        }, $rows);
+
+        foreach ($expectedIndexes as $index) {
+            $this->assertContains(
+                $index,
+                $actual,
+                sprintf('Missing SQLite mirror index %s on %s', $index, $table)
+            );
+        }
+    }
+
 }

@@ -553,7 +553,8 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-version-mismatch',
             'eligibility_batch_hash' => 'elig-version-mismatch',
             'config_version' => 'v1',
-            'publication_version' => 1,
+            'publication_version' => 2,
+            'publication_id' => 110,
             'is_current_publication' => 1,
             'sealed_at' => '2026-03-20 17:21:00',
             'sealed_by' => 'system',
@@ -567,7 +568,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
         DB::table('eod_publications')->insert([
             'publication_id' => 110,
             'trade_date' => '2026-03-20',
-            'publication_version' => 1,
+            'publication_version' => 2,
             'run_id' => 125,
             'seal_state' => 'SEALED',
             'is_current' => 1,

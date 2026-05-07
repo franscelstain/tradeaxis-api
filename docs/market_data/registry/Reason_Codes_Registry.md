@@ -32,6 +32,7 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `RUN_SEAL_WRITE_FAILED` | RUN | HARD | Seal metadata could not be written successfully. |
 | `RUN_FINALIZE_BEFORE_CUTOFF` | RUN | HARD | Final success was attempted before the cutoff policy allowed it. |
 | `RUN_LOCK_CONFLICT` | RUN | HARD | Run-ownership conflict or duplicate writer activity occurred during hash, seal, or finalize stages. |
+| `RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID` | RUN | HARD | A previously completed readable finalize run no longer matches the current publication pointer and must be fail-safed before idempotent short-circuit. |
 | `RUN_SOURCE_TIMEOUT` | RUN | WARN | The source timed out and retry policy was already applied or exhausted. |
 | `RUN_SOURCE_RATE_LIMIT` | RUN | WARN | The source hit rate limiting and affected data acquisition. |
 | `RUN_SOURCE_AUTH_ERROR` | RUN | HARD | Source authentication failure or credential/config error blocked data acquisition. |

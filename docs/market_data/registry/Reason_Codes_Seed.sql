@@ -15,6 +15,7 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('RUN_SEAL_WRITE_FAILED', 'RUN', 'Seal metadata could not be written successfully.', 'HARD', 1),
 ('RUN_FINALIZE_BEFORE_CUTOFF', 'RUN', 'Final success was attempted before the cutoff policy allowed it.', 'HARD', 1),
 ('RUN_LOCK_CONFLICT', 'RUN', 'Run-ownership conflict or duplicate writer activity occurred during hash, seal, or finalize stages.', 'HARD', 1),
+('RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID', 'RUN', 'A previously completed readable finalize run no longer matches the current publication pointer and must be fail-safed before idempotent short-circuit.', 'HARD', 1),
 ('RUN_SOURCE_TIMEOUT', 'RUN', 'The source timed out and retry policy was already applied or exhausted.', 'WARN', 1),
 ('RUN_SOURCE_RATE_LIMIT', 'RUN', 'The source hit rate limiting and affected data acquisition.', 'WARN', 1),
 ('RUN_SOURCE_AUTH_ERROR', 'RUN', 'Source authentication failure or credential/config error blocked data acquisition.', 'HARD', 1),

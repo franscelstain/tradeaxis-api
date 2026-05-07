@@ -3,23 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Test Coverage Behavioral
+- DB Integrity & Constraint Enforcement
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Build behavioral test coverage inventory and enforce that critical market-data lifecycle proof is DB-backed/runtime-like, not mock-heavy unit confidence.
-- Patch added explicit manual-file import-only and manual-file promote coverage-gate integration proof.
-- Patch added `TestCoverageBehavioralStaticGuardTest` and `docs/market_data/tests/Behavioral_Test_Coverage_Inventory.md` to prevent future false-proof drift.
-- Container validation was limited to static trace and `php -l` because uploaded ZIP has no `vendor/`; operator-local targeted and full PHPUnit validation later passed, so this session is promoted to DONE.
+- Enforce market-data DB integrity across primary keys, business-key uniqueness, runtime indexes, enum-like values, nullable/default assumptions, implicit integrity guards, SQL schema docs, migrations, SQLite test mirror, and static tests.
+- Source-of-truth ZIP has no `vendor/`; container validation was static/`php -l` only, and operator-local PHPUnit validation has now confirmed the DB integrity enforcement suite and full MarketData suite pass.
 
 [SESSION_GOAL]
-- Test coverage must prove ingest/import/promote through finalize, coverage, publication, pointer, correction, evidence, replay, read-side, and command behavior with real state wherever feasible.
-
-[SESSION_NOTES]
-- DB-backed lifecycle proof already exists for pipeline, publication repository, pointer/read-side, correction, coverage, fallback, and replay result persistence.
-- Gap found: manual-file import-only versus promote coverage behavior lacked explicit DB-backed proof.
-- Gap found: command surface tests remain internal mock-heavy, so they are support-only and must not be counted as lifecycle proof.
+- No repository/service/command/read-side flow may rely on an unguaranteed schema structure, ambiguous pointer/publication/run relation, unmirrored SQLite test schema, or undocumented reason/status value.
 
 ---
 ## OPERATIONAL STATUS
@@ -40,6 +33,63 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- DB Integrity & Constraint Enforcement -> DONE
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_CONTRACT] DB_INTEGRITY_CONSTRAINT_ENFORCEMENT_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-07 -> DB Integrity & Constraint Enforcement session opened against latest source-of-truth ZIP.
+  - 2026-05-07 -> Static trace reviewed locked SQL schema, runtime migrations, SQLite mirror, publication/pointer repositories, evidence/correction/replay repositories, registry/seed files, and existing schema/read-side/static guards.
+  - 2026-05-07 -> Gap found: SQLite mirror did not fully represent runtime integrity indexes and composite replay reason-code identity, allowing tests to run against a weaker schema than the locked MariaDB contract.
+  - 2026-05-07 -> Gap found: run readable lookup, publication readable lookup, artifact publication-scoped reads, pointer run/version lookup, source identity lookup, and correction prior/new linkage needed explicit index enforcement across SQL schema, additive migration, and SQLite mirror.
+  - 2026-05-07 -> Gap found: `RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID` was used by runtime/tests but was not registered in reason-code registry/seed.
+  - 2026-05-07 -> Patch added DB-integrity indexes to `Database_Schema_MariaDB.sql`, additive idempotent migration `2026_05_07_000002_enforce_market_data_db_integrity_indexes.php`, SQLite mirror indexes/primary keys, `MarketDataSqliteSchemaSyncTest` integrity assertions, and `DbIntegrityConstraintEnforcementStaticGuardTest`.
+  - 2026-05-07 -> Container `php -l` passed for changed PHP files; PHPUnit/artisan were not run because uploaded ZIP has no `vendor/`.
+  - 2026-05-07 -> Operator-local validation reported 2 regressions after DB integrity enforcement: `PublicationRepositoryIntegrationTest::test_pointer_resolution_returns_null_when_pointer_publication_version_mismatches_pointed_publication` violated new `(trade_date, publication_version)` uniqueness in its negative fixture, and `TestCoverageBehavioralStaticGuardTest` still required the historical `ENFORCED_PENDING_LOCAL_PHPUNIT` inventory marker.
+  - 2026-05-07 -> Follow-up patch adjusted the pointer-version mismatch fixture to use publication version `2` before corrupting pointer version to `999`, preserving the new uniqueness contract while still proving fail-safe pointer resolution; behavioral inventory now retains the historical enforcement marker without downgrading the locked behavioral coverage status.
+  - 2026-05-07 -> Operator-local final validation PASS: targeted `Repository`, `Pointer`, `Publication`, `Coverage`, `Integration`, and full `vendor/bin/phpunit tests/Unit/MarketData` all passed; full suite result `OK (305 tests, 3795 assertions)`. DB Integrity & Constraint Enforcement promoted to DONE.
+
+  [IMPLEMENTATION]
+  - Runtime SQL schema now explicitly declares supporting indexes for readable run lookup, publication readable lookup, source identity lookup, pointer run/version lookup, publication-scoped artifact reads, correction status/execution lookup, correction prior/new linkage, replay publication identity, and replay reason-code lookup.
+  - Additive migration `2026_05_07_000002_enforce_market_data_db_integrity_indexes.php` creates the same integrity indexes idempotently for databases bootstrapped from an older schema state.
+  - SQLite mirror now carries the same critical primary keys, unique keys, and runtime indexes used by repository/query paths.
+  - `md_replay_reason_code_counts` SQLite mirror now uses composite primary key `(replay_id, trade_date, reason_code)` to match the locked SQL schema.
+  - `MarketDataSqliteSchemaSyncTest` now verifies critical primary key columns and index names instead of only checking column presence.
+  - `DbIntegrityConstraintEnforcementStaticGuardTest` guards SQL primary keys, business keys, runtime indexes, implicit integrity policy, repository pointer guards, enum-like values, reason-code registry/seed sync, and forbidden latest-date shortcuts.
+  - Reason-code registry and seed now include `RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID`.
+
+  [ENFORCEMENT]
+  - Test schema can no longer silently omit runtime indexes and replay reason-code identity.
+  - Pointer/current resolution stays guarded by pointer primary key, pointer publication uniqueness, publication trade-date/version uniqueness, run/publication mirror checks, coverage PASS, `SUCCESS + READABLE`, and sealed publication state.
+  - Pointer-version mismatch negative fixtures must respect `(trade_date, publication_version)` uniqueness and corrupt only the pointer mirror fields being tested.
+  - Non-FK lifecycle relations remain governed by explicit implicit integrity policy and repository/static guards until a physical FK is proven feasible for that lifecycle path.
+  - Reason code usage must remain backed by registry and seed entries.
+
+  [FINAL_BEHAVIOR]
+  - DONE. DB integrity enforcement is now backed by SQL schema, additive migration, SQLite mirror, static/schema guards, reason-code registry/seed sync, fixed schema-valid negative fixture behavior, targeted local validation, and full MarketData suite PASS evidence.
+
+  [EVIDENCE]
+  - Container static trace completed across SQL schema, migrations, SQLite mirror, repositories, registry/seed, and tests.
+  - Container `php -l` passed for: `database/migrations/2026_05_07_000002_enforce_market_data_db_integrity_indexes.php`, `tests/Support/UsesMarketDataSqlite.php`, `tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php`, `tests/Unit/MarketData/DbIntegrityConstraintEnforcementStaticGuardTest.php`, and `tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php`.
+  - `vendor/` and `vendor/bin/phpunit` are absent from uploaded ZIP, so container PHPUnit/artisan validation was not possible; operator-local validation evidence supplied by the operator is now recorded below.
+  - Operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Repository"` -> OK (38 tests, 220 assertions).
+  - Operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> OK (65 tests, 837 assertions).
+  - Operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> OK (90 tests, 1007 assertions).
+  - Operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Coverage"` -> OK (48 tests, 527 assertions).
+  - Operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Integration"` -> OK (91 tests, 1443 assertions).
+  - Operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (305 tests, 3795 assertions).
+
+  [NEXT_ACTION]
+  - None for this session. Continue using DB integrity static/schema guards and full `tests/Unit/MarketData` as regression validation for future market-data schema or repository changes.
+
+---
+
+## RECENT LOCKED ENTRY
 
 - Test Coverage Behavioral -> DONE
 

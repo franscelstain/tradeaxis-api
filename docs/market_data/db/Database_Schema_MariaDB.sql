@@ -74,7 +74,8 @@ CREATE TABLE IF NOT EXISTS eod_bars (
   PRIMARY KEY (trade_date, ticker_id),
   KEY idx_eod_bars_ticker_date (ticker_id, trade_date),
   KEY idx_eod_bars_run (run_id),
-  KEY idx_eod_bars_publication (publication_id)
+  KEY idx_eod_bars_publication (publication_id),
+  KEY idx_eod_bars_publication_date_ticker (publication_id, trade_date, ticker_id)
 ) ENGINE=InnoDB;
 
 -- LOCKED NOTE
@@ -136,7 +137,8 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   KEY idx_eod_indicators_ticker_date (ticker_id, trade_date),
   KEY idx_eod_indicators_run (run_id),
   KEY idx_eod_indicators_invalid_reason (invalid_reason_code),
-  KEY idx_eod_indicators_publication (publication_id)
+  KEY idx_eod_indicators_publication (publication_id),
+  KEY idx_eod_indicators_publication_date_ticker (publication_id, trade_date, ticker_id)
 ) ENGINE=InnoDB;
 
 -- LOCKED NOTE
@@ -160,7 +162,8 @@ CREATE TABLE IF NOT EXISTS eod_eligibility (
   KEY idx_eod_eligibility_ticker_date (ticker_id, trade_date),
   KEY idx_eod_eligibility_run (run_id),
   KEY idx_eod_eligibility_reason (reason_code),
-  KEY idx_eod_eligibility_publication (publication_id)
+  KEY idx_eod_eligibility_publication (publication_id),
+  KEY idx_eod_eligibility_publication_date_ticker (publication_id, trade_date, ticker_id)
 ) ENGINE=InnoDB;
 
 -- LOCKED NOTE
@@ -255,6 +258,7 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   KEY idx_runs_coverage_gate_state (coverage_gate_state),
   KEY idx_runs_stage (stage),
   KEY idx_runs_trade_date_current_pub (trade_date_effective, is_current_publication),
+  KEY idx_runs_effective_readable_contract (trade_date_effective, terminal_status, publishability_state, coverage_gate_state, is_current_publication),
   KEY idx_runs_supersedes (supersedes_run_id),
   KEY idx_runs_publication_id (publication_id),
   KEY idx_runs_correction_id (correction_id),
@@ -262,7 +266,8 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   KEY idx_runs_publish_target (publish_target),
   KEY idx_runs_final_reason_code (final_reason_code),
   KEY idx_runs_source_name (source_name),
-  KEY idx_runs_source_file_hash (source_file_hash)
+  KEY idx_runs_source_file_hash (source_file_hash),
+  KEY idx_runs_source_identity (source, source_name, source_provider, source_file_hash)
 ) ENGINE=InnoDB;
 
 -- LOCKED SEMANTICS
@@ -325,7 +330,9 @@ CREATE TABLE IF NOT EXISTS eod_publications (
   PRIMARY KEY (publication_id),
   UNIQUE KEY uq_publication_trade_date_version (trade_date, publication_version),
   KEY idx_publication_trade_date_current (trade_date, is_current),
+  KEY idx_publication_readable_lookup (trade_date, is_current, seal_state, publication_version, run_id),
   KEY idx_publication_run (run_id),
+  KEY idx_publication_run_trade_date (run_id, trade_date, publication_id),
   KEY idx_publication_supersedes (supersedes_publication_id),
   KEY idx_publication_previous (previous_publication_id),
   KEY idx_publication_replaced (replaced_publication_id),
@@ -353,6 +360,7 @@ CREATE TABLE IF NOT EXISTS eod_current_publication_pointer (
   PRIMARY KEY (trade_date),
   UNIQUE KEY uq_current_publication_pointer_publication (publication_id),
   KEY idx_current_publication_pointer_run (run_id),
+  KEY idx_current_publication_pointer_run_version (run_id, publication_version),
   CONSTRAINT fk_current_publication_pointer_publication
     FOREIGN KEY (publication_id) REFERENCES eod_publications(publication_id)
 ) ENGINE=InnoDB;
@@ -363,6 +371,10 @@ CREATE TABLE IF NOT EXISTS eod_current_publication_pointer (
 -- 3. publication_id uniqueness guarantees one publication cannot be current for multiple trade dates.
 -- 4. Consumer-readable current publication resolution must prefer this pointer table where implemented.
 -- 5. eod_publications history and eod_runs state remain required supporting evidence; the pointer does not replace them.
+-- 6. Runtime integrity is enforced by the pointer primary key, publication unique version,
+--    publication/run mirror checks, and repository guards. Physical FK coverage is intentionally
+--    selective because correction/evidence/replay lifecycle rows may be created before all
+--    terminal linkage fields are known; any non-FK relation must have an implicit guard test.
 
 -- =========================================================
 -- Correction request table
@@ -389,8 +401,10 @@ CREATE TABLE IF NOT EXISTS eod_dataset_corrections (
   updated_at DATETIME NOT NULL,
   PRIMARY KEY (correction_id),
   KEY idx_corr_trade_date_status (trade_date, status),
+  KEY idx_corr_trade_date_status_execution (trade_date, status, execution_count),
   KEY idx_corr_prior_run (prior_run_id),
-  KEY idx_corr_new_run (new_run_id)
+  KEY idx_corr_new_run (new_run_id),
+  KEY idx_corr_prior_new_run (prior_run_id, new_run_id)
 ) ENGINE=InnoDB;
 
 -- =========================================================
