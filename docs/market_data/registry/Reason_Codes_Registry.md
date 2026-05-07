@@ -64,6 +64,34 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `SNAP_PARTIAL_SCOPE` | INTRADAY | WARN | The session snapshot captured only part of the planned scope. |
 | `SNAP_SOURCE_ERROR` | INTRADAY | WARN | The session-snapshot source failed for an operational reason that does not block EOD. |
 
+| `REPLAY_FIXTURE_SCHEMA_MISMATCH` | REPLAY | HARD | Replay fixture manifest or schema version does not match the locked replay fixture contract. |
+| `REPLAY_EXPECTED_PROOF_INCOMPLETE` | REPLAY | HARD | Replay expected proof package is missing required deterministic lifecycle context. |
+| `REPLAY_ACTUAL_PROOF_INCOMPLETE` | REPLAY | HARD | Replay actual proof package is missing required lifecycle evidence. |
+| `REPLAY_REQUESTED_DATE_MISMATCH` | REPLAY | HARD | Replay requested trade date differs between expected proof and actual proof. |
+| `REPLAY_EFFECTIVE_DATE_MISMATCH` | REPLAY | HARD | Replay effective trade date differs between expected proof and actual proof. |
+| `REPLAY_REQUEST_MODE_MISMATCH` | REPLAY | HARD | Replay request/promote/publish target context differs between expected proof and actual proof. |
+| `REPLAY_SOURCE_MODE_MISMATCH` | REPLAY | HARD | Replay source mode differs between expected proof and actual proof. |
+| `REPLAY_SOURCE_IDENTITY_MISMATCH` | REPLAY | HARD | Replay source identity or source row-count context differs between expected proof and actual proof. |
+| `REPLAY_SOURCE_FILE_HASH_MISMATCH` | REPLAY | HARD | Replay manual source file hash differs between expected proof and actual proof. |
+| `REPLAY_PROVIDER_CONTEXT_MISMATCH` | REPLAY | HARD | Replay provider/API retry, timeout, or HTTP context differs between expected proof and actual proof. |
+| `REPLAY_COVERAGE_STATE_MISMATCH` | REPLAY | HARD | Replay coverage gate state or coverage count context differs between expected proof and actual proof. |
+| `REPLAY_COVERAGE_RATIO_MISMATCH` | REPLAY | HARD | Replay coverage ratio or threshold differs between expected proof and actual proof. |
+| `REPLAY_COVERAGE_REASON_MISMATCH` | REPLAY | HARD | Replay coverage reason code differs between expected proof and actual proof. |
+| `REPLAY_ARTIFACT_HASH_MISMATCH` | REPLAY | HARD | Replay artifact hash or artifact row-count context differs between expected proof and actual proof. |
+| `REPLAY_SEAL_STATE_MISMATCH` | REPLAY | HARD | Replay seal state differs between expected proof and actual proof. |
+| `REPLAY_PUBLICATION_STATE_MISMATCH` | REPLAY | HARD | Replay publication state/readability context differs between expected proof and actual proof. |
+| `REPLAY_PUBLICATION_VERSION_MISMATCH` | REPLAY | HARD | Replay publication version differs between expected proof and actual proof. |
+| `REPLAY_POINTER_TARGET_MISMATCH` | REPLAY | HARD | Replay pointer target differs between expected proof and actual proof. |
+| `REPLAY_POINTER_RESOLUTION_MISMATCH` | REPLAY | HARD | Replay pointer resolution state differs between expected proof and actual proof. |
+| `REPLAY_FALLBACK_CONTEXT_MISMATCH` | REPLAY | HARD | Replay fallback context differs between expected proof and actual proof. |
+| `REPLAY_CORRECTION_BASELINE_MISMATCH` | REPLAY | HARD | Replay correction baseline or candidate publication context differs between expected proof and actual proof. |
+| `REPLAY_FINAL_STATUS_MISMATCH` | REPLAY | HARD | Replay final terminal or publishability state differs between expected proof and actual proof. |
+| `REPLAY_FINAL_REASON_CODE_MISMATCH` | REPLAY | HARD | Replay final reason code or reason-code counts differ between expected proof and actual proof. |
+| `REPLAY_LINEAGE_MISMATCH` | REPLAY | HARD | Replay lineage chain differs between expected proof and actual proof. |
+| `REPLAY_UNEXPECTED_SUCCESS` | REPLAY | HARD | Replay produced a success-looking result when the expected proof required failure or degrade. |
+| `REPLAY_UNEXPECTED_FAILURE` | REPLAY | HARD | Replay produced failure when the expected proof required a successful deterministic match. |
+| `REPLAY_NON_DETERMINISTIC_OUTPUT` | REPLAY | HARD | Replay output contains a deterministic-field mismatch not covered by a more specific replay reason code. |
+
 ## Locked usage notes
 - `ELIG_MISSING_BAR` and `ELIG_INSUFFICIENT_HISTORY` may coexist as different row outcomes on different dates/tickers, but one row stores only the single most specific blocking reason.
 - `RUN_SOURCE_TIMEOUT` and `RUN_SOURCE_RATE_LIMIT` do not automatically force `FAILED`; terminal status still follows the decision table and gate results.
@@ -71,3 +99,4 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 - `COVERAGE_THRESHOLD_MET`, `COVERAGE_BELOW_THRESHOLD`, and `COVERAGE_UNIVERSE_EMPTY` are coverage-evaluation outcomes and may appear in coverage telemetry or coverage-oriented operator surfaces even when the dominant run reason code is different.
 - `RUN_COVERAGE_NOT_EVALUABLE` is the run-level blocked/not-readable reason used when finalize consumes a non-meaningful coverage evaluation outcome.
 - Session snapshot reason codes must never be used to justify fallback of sealed EOD datasets.
+- Replay reason codes are proof/comparison outcomes. They do not create readable publications; they explain why fixture vs actual proof matched, mismatched, or failed safe.

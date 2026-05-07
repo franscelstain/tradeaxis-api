@@ -1074,6 +1074,13 @@ class MarketDataEvidenceExportService
     {
         return [
             'replay_id' => (int) $metric->replay_id,
+            'replay_suite' => $this->field($metric, 'replay_suite'),
+            'replay_case' => $this->field($metric, 'replay_case'),
+            'fixture_id' => $this->field($metric, 'fixture_id'),
+            'fixture_version' => $this->field($metric, 'fixture_version'),
+            'fixture_schema_version' => $this->field($metric, 'fixture_schema_version'),
+            'fixture_source' => $this->field($metric, 'fixture_source'),
+            'fixture_created_at' => $this->field($metric, 'fixture_created_at'),
             'trade_date' => $metric->trade_date,
             'trade_date_effective' => $metric->trade_date_effective,
             'source' => $metric->source,
@@ -1119,6 +1126,14 @@ class MarketDataEvidenceExportService
             'expected_correction_lifecycle' => $this->buildReplayExpectedCorrectionLifecycle($metric),
             'actual_correction_lifecycle' => $this->buildReplayActualCorrectionLifecycle($metric),
             'mismatch_summary' => $metric->mismatch_summary,
+            'mismatch_count' => $this->field($metric, 'mismatch_count') !== null ? (int) $this->field($metric, 'mismatch_count') : null,
+            'mismatch_reason_codes' => $this->decodeJsonArray($this->field($metric, 'mismatch_reason_codes_json')),
+            'mismatches' => $this->decodeJsonArray($this->field($metric, 'mismatches_json')),
+            'expected_context' => $this->decodeJsonObject($this->field($metric, 'expected_context_json')),
+            'actual_context' => $this->decodeJsonObject($this->field($metric, 'actual_context_json')),
+            'ignored_volatile_fields' => $this->decodeJsonArray($this->field($metric, 'ignored_volatile_fields_json')),
+            'deterministic_fields_checked' => $this->decodeJsonArray($this->field($metric, 'deterministic_fields_checked_json')),
+            'final_reason_code' => $this->field($metric, 'final_reason_code'),
             'created_at' => $metric->created_at,
         ];
     }
@@ -1126,6 +1141,10 @@ class MarketDataEvidenceExportService
     private function buildReplayExpectedState($metric, array $expectedReasonCodeCounts)
     {
         return [
+            'fixture_id' => $this->field($metric, 'fixture_id'),
+            'fixture_version' => $this->field($metric, 'fixture_version'),
+            'fixture_schema_version' => $this->field($metric, 'fixture_schema_version'),
+            'expected_context' => $this->decodeJsonObject($this->field($metric, 'expected_context_json')),
             'status' => $metric->expected_status,
             'terminal_status' => $this->field($metric, 'expected_terminal_status') ?: $metric->expected_status,
             'publishability_state' => $this->field($metric, 'expected_publishability_state'),
@@ -1148,6 +1167,7 @@ class MarketDataEvidenceExportService
     private function buildReplayActualState($metric, array $reasonCodes)
     {
         return [
+            'actual_context' => $this->decodeJsonObject($this->field($metric, 'actual_context_json')),
             'status' => $metric->status,
             'terminal_status' => $metric->status,
             'publishability_state' => $this->field($metric, 'publishability_state'),
@@ -1393,6 +1413,21 @@ class MarketDataEvidenceExportService
         $decoded = json_decode($value, true);
 
         return is_array($decoded) ? array_values($decoded) : [];
+    }
+
+    private function decodeJsonObject($value)
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return $value;
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     private function decodeExpectedReasonCodeCounts($json)

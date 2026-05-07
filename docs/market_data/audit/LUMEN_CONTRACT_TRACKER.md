@@ -3,23 +3,18 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Evidence Export Completeness
+- Replay Determinism
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Track evidence export completeness across run, source, coverage, artifact/hash/seal, publication, pointer, fallback, correction, replay, lineage, command output, repository export, and static guard enforcement.
-- Contract is LOCKED by static trace, code patch, static guard, PHP syntax validation, recovery patch for isolated config access, recovery patch for the explicit pointer validation proof key, and operator-local targeted/full MarketData PHPUnit PASS evidence.
+- Define and enforce `REPLAY_DETERMINISM_CONTRACT` for stable replay fixtures, explicit expected-vs-actual lifecycle comparison, reason-coded mismatches, volatile-field exclusion, command/replay artifact proof, and audit-governed validation.
+- Container validation completed static trace and `php -l`; operator-local targeted, filtered, integration, static guard, and full PHPUnit validation PASS on 2026-05-07.
 
 [SESSION_GOAL]
-- `EVIDENCE_EXPORT_COMPLETENESS_CONTRACT` prevents evidence export from requiring manual database lookup or hiding source, coverage, publication, pointer, fallback, correction, replay, or failure-state proof.
-
-[SESSION_NOTES]
-- This contract reconciles source/provider resilience, manual file policy, coverage gate enforcement, publishability state integrity, finalize/lock/pointer determinism, correction lifecycle safety, replay verification, and command surface consistency instead of duplicating those contracts.
-- Container validation covered static trace and `php -l`; operator-local PHPUnit validation reported an isolated config-binding failure and then a missing pointer validation proof key, both were patched, and final recovery retest passed targeted evidence plus full MarketData suite.
+- Replay must be a proof mechanism for deterministic publication behavior, not a smoke command that can pass without complete expected/actual proof.
 
 ---
-
 ## OPERATIONAL STATUS
 
 [CURRENT_AUDIT_MODE]
@@ -39,130 +34,60 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING CONTRACT
 
-- EVIDENCE_EXPORT_COMPLETENESS_CONTRACT -> LOCKED
+- REPLAY_DETERMINISM_CONTRACT -> LOCKED
 
   [LAST_UPDATED] 2026-05-07
 
-  [RELATED_IMPLEMENTATION] Evidence Export Completeness
+  [RELATED_IMPLEMENTATION] Replay Determinism
 
   [REVIEW_STATUS] REVIEWED_OK
 
   [HISTORY]
-  - 2026-05-07 -> Canonical evidence export completeness contract opened under audit governance.
-  - 2026-05-07 -> Static trace reconciled existing evidence export, replay verification, source/provider resilience, manual file policy, coverage gate, publishability state, finalize/pointer determinism, correction lifecycle safety, command output, DB schema, reason-code registry, and static guards.
-  - 2026-05-07 -> Gap found: non-readable run evidence was rejected by the export service, which prevented HELD/FAILED/NOT_READABLE proof packages from standing alone.
-  - 2026-05-07 -> Gap found: run evidence lacked stable top-level completeness, publication, pointer, fallback, correction, artifact/seal, and lineage proof sections/files.
-  - 2026-05-07 -> Gap found: replay evidence lacked explicit expected/actual publication and pointer context in exported proof.
-  - 2026-05-07 -> Enforcement patch added failure-state evidence export, evidence completeness state/reason/missing-sections, lineage file, first-class proof contexts, replay expected/actual publication+pointer contexts, command incomplete warning, and static guard coverage.
-  - 2026-05-07 -> Contract status set to ENFORCED because static enforcement and `php -l` pass, but targeted/full PHPUnit validation is pending operator-local.
-  - 2026-05-07 -> Operator-local validation reported 2 errors in evidence tests and full MarketData suite caused by direct `config()` helper resolution without a bootstrapped config binding in isolated service tests.
-  - 2026-05-07 -> Recovery patch replaced direct evidence export config lookups with guarded config/storage fallback helpers for platform timezone, hash algorithm, and evidence output directory.
-  - 2026-05-07 -> Operator-local recovery retest reduced failure from 2 errors to 1 error: missing `readable_pointer_validated` under `publication_resolution.pointer_context`.
-  - 2026-05-07 -> Recovery patch restored `readable_pointer_validated` as explicit pointer proof and strengthened static guard coverage for the pointer validation key.
-  - 2026-05-07 -> Operator-local recovery validation PASS: `MarketDataEvidenceExportServiceTest.php` passed 3 tests / 87 assertions, targeted Evidence filter passed 34 tests / 518 assertions, and full `tests/Unit/MarketData` passed 285 tests / 3022 assertions. Contract promoted to LOCKED.
+  - 2026-05-07 -> Contract opened as canonical replay determinism contract under audit governance.
+  - 2026-05-07 -> Static trace found fixture metadata/completeness, reason-coded mismatch, non-readable actual proof, replay artifact schema, command output, and registry gaps.
+  - 2026-05-07 -> Enforcement patch implemented fixture schema v2 validation, complete expected/actual lifecycle context comparison, reason-coded mismatch families, fail-safe proof-incomplete behavior, deterministic-vs-volatile field separation, replay artifact persistence, command proof summary, fixture updates, and static guards.
+  - 2026-05-07 -> Contract held at ENFORCED because container cannot run PHPUnit/artisan without `vendor/`; operator-local targeted and full validation still required before LOCKED.
+  - 2026-05-07 -> Operator-local targeted validation PASS: replay verifier, replay static guard, replay evidence export, market-data evidence export, and ops command surface tests passed.
+  - 2026-05-07 -> Operator-local filtered validation PASS: Replay/replay, Evidence, Command, Coverage, Pointer, Finalize, Correction, Manual, and Source filters passed.
+  - 2026-05-07 -> Operator-local integration validation PASS: MarketData pipeline integration and readable publication read contract integration passed.
+  - 2026-05-07 -> Operator-local full validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 291 tests / 3183 assertions.
+  - 2026-05-07 -> Contract promoted from ENFORCED to LOCKED after targeted, filtered, integration, static guard, and full MarketData unit validation passed.
 
   [DEFINED]
-  - Evidence export is a proof package, not just a run summary.
-  - Evidence must be self-contained enough to explain ingest source, run lifecycle, coverage decision, artifacts, seal, finalize result, publication, pointer, fallback, correction, replay, reason code, and lineage without manual database lookup.
-  - Evidence must preserve failure states as failure proof and must never turn HELD/FAILED/NOT_READABLE into success-looking output.
-  - Readable evidence proof requires coverage PASS, mandatory artifact hashes, SEALED publication, valid run-publication context, and pointer-resolved current publication.
-  - Incomplete evidence must remain explicit via completeness state, reason code, and missing sections.
+  - Replay fixture is the expected proof source and must be stable, versioned, schema-checked, and self-contained.
+  - Replay actual proof must come from evidence lifecycle context, not raw/staging/latest/MAX-date shortcut or volatile current DB state as expected source.
+  - Replay must compare run, requested/effective date, request/source/provider/manual-file, coverage, artifact/hash/seal, publication, pointer, fallback, correction, final reason, and lineage context.
+  - Every mismatch must have an explicit replay reason code and be persisted/exported in replay artifact/evidence.
+  - Replay must ignore documented volatile runtime fields only; deterministic fields remain compared.
+  - Incomplete fixture/actual proof must fail safe and cannot become wildcard PASS.
 
   [IMPLEMENTED]
-  - `MarketDataEvidenceExportService` exports non-readable run evidence without resolving a readable publication.
-  - Run evidence includes first-class run/source/coverage/artifact/seal/publication/pointer/fallback/correction/lineage sections and writes `lineage.json` plus `evidence_completeness.json`.
-  - Publication and pointer context record id/version/run/current/seal/terminal/publishability/mirror/resolve/switch/validation/mismatch details, including `readable_pointer_validated` for backward-compatible pointer proof.
-  - Fallback context records used/not-used status, reason, target publication/run/version/effective-date and validity checks.
-  - Replay evidence exports expected/actual publication and pointer context alongside source, coverage, correction, and reason-code comparison context.
-  - Evidence command emits an explicit warning when completeness is incomplete.
-  - `EvidenceExportCompletenessStaticGuardTest` guards required sections, lifecycle fields, replay comparison context, no latest-date shortcuts, and no non-readable evidence rejection.
+  - `ReplayVerificationService` fixture loading, expected proof validation, actual evidence context building, comparison, mismatch reason coding, volatile-field tracking, and non-readable run handling.
+  - `ReplayResultRepository`, migration, SQL schema, and SQLite test schema replay metric columns for fixture metadata, expected/actual contexts, mismatches, mismatch reason codes, deterministic fields checked, ignored volatile fields, and final reason code.
+  - `MarketDataEvidenceExportService` replay export context extensions.
+  - `VerifyReplayCommand` operator-grade output.
+  - `ReplayDeterminismStaticGuardTest`, updated `ReplayVerificationServiceTest`, replay fixture v2 packages, and reason-code registry/seed entries.
 
   [ENFORCED]
-  - Non-readable run evidence is exportable and reason-coded.
-  - Missing proof sections downgrade evidence to `INCOMPLETE`; no missing pointer/source/coverage/artifact context is treated as proof of readability.
-  - Replay exported evidence now contains expected/actual publication and pointer context needed to diagnose mismatch.
-  - Evidence proof paths do not use `MAX(trade_date)`, `max('trade_date')`, `latest('trade_date')`, `orderByDesc('trade_date')`, or `ORDER BY trade_date DESC` shortcuts.
-  - Static guard blocks regression for the completeness contract, including the explicit pointer validation proof key.
+  - `REPLAY_FIXTURE_SCHEMA_MISMATCH` for missing/incompatible fixture schema.
+  - `REPLAY_EXPECTED_PROOF_INCOMPLETE` for missing expected fixture sections/files.
+  - `REPLAY_ACTUAL_PROOF_INCOMPLETE` for missing actual run proof.
+  - Specific replay reason-code families for source, provider, coverage, artifact/seal, publication, pointer, fallback, correction, final status/reason, lineage, unexpected success/failure, and non-deterministic output.
+  - Static guard prevents latest/MAX/raw/staging shortcut usage in replay verifier/commands/repository and requires command/artifact/schema/registry surfaces.
 
   [VALIDATED]
   - Container static trace completed.
   - Container `php -l` passed for changed PHP files.
-  - Container forbidden latest-date shortcut scan found no forbidden latest/MAX trade-date patterns in evidence proof paths.
-  - Operator-local validation exposed isolated direct `config()` helper errors, then a remaining missing `readable_pointer_validated` proof key in evidence export tests and full MarketData suite; both were recovered without weakening tests.
-  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` passed 3 tests / 87 assertions.
-  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` passed 34 tests / 518 assertions.
-  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` passed 285 tests / 3022 assertions.
+  - Operator-local targeted replay/evidence/command/static guard validation PASS.
+  - Operator-local filtered replay/evidence/command/coverage/pointer/finalize/correction/manual/source validation PASS.
+  - Operator-local integration validation PASS.
+  - Operator-local full `tests/Unit/MarketData` validation PASS: 291 tests / 3183 assertions.
 
   [FINAL_RULE]
-  - LOCKED. Evidence export must emit deterministic, self-contained lifecycle proof. It may export incomplete proof, but must mark it `INCOMPLETE`, list missing sections, warn the operator, and avoid any readable/current claim unless coverage, seal, publication, and pointer proof are present.
+  - LOCKED. Replay may only produce deterministic MATCH when stable expected fixture proof and actual lifecycle proof match under explicit comparison. Any missing proof or divergent deterministic field must produce a failed/mismatched replay result with clear reason code. Replay verification must not mutate fixtures, derive expected from actual, or use latest/MAX/raw/staging shortcuts.
 
-  [LOCK_CONDITION]
-  - Satisfied by operator-local recovery validation: evidence service test, targeted Evidence filter, and full `tests/Unit/MarketData` all PASS.
-
-- MANUAL_FILE_POLICY_ENFORCEMENT_CONTRACT -> LOCKED
-
-  [LAST_UPDATED] 2026-05-07
-
-  [RELATED_IMPLEMENTATION] Manual File Policy Enforcement
-
-  [REVIEW_STATUS] REVIEWED_OK
-
-  [HISTORY]
-  - 2026-05-06 -> Canonical manual-file policy enforcement contract opened under audit governance.
-  - 2026-05-06 -> Static trace reconciled existing source/provider resilience, import-only separation, promote coverage gate, publishability state integrity, finalize/pointer determinism, correction lifecycle safety, evidence, replay, command output, DB/source persistence, and static guards.
-  - 2026-05-06 -> Existing policy confirmed: daily manual-file path is import-only, promote path is coverage-gated, correction current requires approval/baseline, repair candidate remains non-current policy path, and finalize/pointer paths cannot validly expose readable/current state without pointer-resolved publication identity.
-  - 2026-05-06 -> Gap found and patched: manual-file success path lacked complete acquisition telemetry for auto-resolved local files.
-  - 2026-05-06 -> Gap found and patched: accepted/rejected/invalid row counts were not consistently visible across evidence/replay/command/backfill surfaces.
-  - 2026-05-06 -> Gap found and patched: replay lacked explicit manual-file policy mismatch classes for provider leakage, wrong manual source name, and readable-without-coverage-PASS.
-  - 2026-05-06 -> Contract status set to ENFORCED because static enforcement is complete but operator-local PHPUnit/artisan validation is still pending.
-  - 2026-05-07 -> Operator-local validation failed with 7 failures and 1 error in full `tests/Unit/MarketData`; contract remains ENFORCED, not LOCKED.
-  - 2026-05-07 -> Remediation patch tightened command/output/evidence/replay compatibility: `publish_target` is surfaced in promote, `coverage_reason_code` is surfaced in backfill, manual evidence path is normalized to basename, source summary no longer leaks row/file telemetry into API/manual summary strings, and replay manual source-name policy no longer converts legacy unchanged fixtures to mismatch when source name is absent.
-  - 2026-05-07 -> Operator-local remediation retest passed static guard and replay tests; full suite remaining failure was narrowed to manual backfill summary artifact path exposure. Follow-up patch keeps manual file identity traceable via source name/hash/row telemetry while omitting `source_input_file` from LOCAL_FILE backfill summary case output per existing integration contract.
-  - 2026-05-07 -> Operator-local follow-up retest passed pipeline integration but exposed service-level summary compatibility errors because returned backfill summaries and persisted artifact summaries require different `source_input_file` visibility rules.
-  - 2026-05-07 -> Contract enforcement refined: runtime/service summaries may retain normalized manual `source_input_file` for internal/operator compatibility, while persisted backfill summary artifacts redact LOCAL_FILE path exposure only when durable file identity fields are available.
-  - 2026-05-07 -> Operator-local final validation passed targeted filters, focused files, and full MarketData PHPUnit suite: full `tests/Unit/MarketData` PASS with 280 tests / 2840 assertions. Contract promoted to LOCKED.
-
-  [DEFINED]
-  - Manual file is a source input mode, not a publishability shortcut.
-  - Manual file source identity must be explicit, local, immutable for the run lifecycle, and distinct from API provider identity.
-  - Manual file missing/unreadable/malformed/invalid/partial conditions must be deterministic, reason-coded, and traceable.
-  - Manual-file import-only must not publish current/readable state.
-  - Manual-file promote must evaluate coverage before readable promotion.
-  - Manual-file correction must preserve baseline/current pointer unless the correction lifecycle contract allows a valid changed readable replacement.
-  - Evidence/replay/command/backfill surfaces must expose manual file mode, file identity, row counts, coverage state, final state, and reason context.
-
-  [IMPLEMENTED]
-  - `LocalFileEodBarsAdapter` emits manual-file acquisition telemetry with file identity/hash/size/row-count and local source identity.
-  - `EodBarsIngestService` merges source acquisition telemetry with canonical accepted/rejected/invalid row counts after ticker/dedup/canonical validation.
-  - `MarketDataPipelineService` persists manual file source identity and file metadata from acquisition telemetry, keeps manual source name fixed to `LOCAL_FILE`, and normalizes persisted manual source file identity to basename for evidence/output safety.
-  - `AbstractMarketDataCommand`, `BackfillMarketDataCommand`, `PromoteMarketDataCommand`, and `MarketDataBackfillService` expose manual file file/row/final-state, publish target, and coverage reason telemetry to operator output/artifacts.
-  - `MarketDataEvidenceExportService` exports manual-file row telemetry in run summary/source context.
-  - `ReplayVerificationService` compares manual source/file context and adds explicit manual-file policy mismatch checks without breaking legacy unchanged fixtures that lack optional manual source-name context.
-  - `ManualFilePolicyEnforcementStaticGuardTest` guards source identity separation, import/promote separation, manual context visibility, and no latest-date shortcuts.
-
-  [ENFORCED]
-  - Manual file cannot inherit API provider identity in source telemetry.
-  - API adapter does not read local input file config.
-  - Import-only manual path remains separated from promote/full publish path.
-  - Manual-file promote remains coverage-gated before finalize/readability.
-  - Readable manual-file replay state is invalid if coverage gate is not PASS.
-  - Evidence/replay/command/backfill no longer hide manual file file/row context.
-  - Static guard blocks regressions for manual/API identity mixing and forbidden latest trade-date shortcuts.
-
-  [VALIDATED]
-  - Container static trace completed.
-  - Container `php -l` passed for all changed PHP files.
-  - Container full PHP syntax scan passed for all app/tests/database PHP files: 133 files.
-  - Container forbidden latest-date shortcut scan found no forbidden latest/MAX trade-date patterns in patched manual-file runtime paths.
-  - Operator-local targeted filters PASS: Manual/manual 19 tests / 191 assertions; LocalFile 2 / 7; local 4 / 26; Import/import 2 / 19; Promote/promote 19 / 132; Correction/correction 59 / 1146; Coverage/coverage 40 / 300; Finalize 42 / 261; Pointer/pointer 60 / 669; Evidence 29 / 336; Replay 27 / 352; Command 54 / 400.
-  - Operator-local full MarketData suite PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 280 tests / 2840 assertions.
-  - Focused operator-local files PASS: `LocalFileEodBarsAdapterTest.php` 2 / 7; `EodBarsIngestServiceTest.php` 4 / 31; `MarketDataPipelineIntegrationTest.php` 53 / 1191; `OpsCommandSurfaceTest.php` 42 / 260; `ReadablePublicationReadContractIntegrationTest.php` 8 / 15; `MarketDataEvidenceExportServiceTest.php` 3 / 52; `ReplayVerificationServiceTest.php` 5 / 15; `ManualFilePolicyEnforcementStaticGuardTest.php` 4 / 118; `MarketDataBackfillServiceTest.php` 8 / 71.
-
-  [FINAL_RULE]
-  - LOCKED. Manual file may only become readable/current through the same valid contract chain as other sources: source validation, canonical accepted rows, coverage PASS, mandatory hashes, SEALED dataset, finalize promotion allowed, pointer switch success, post-switch pointer resolution, run/publication mirror validity, and no correction/fallback invariant violation. Any failure must remain non-readable, reason-coded, traceable, and pointer-safe.
-
-  [LOCK_CONDITION]
-  - Satisfied by operator-local targeted manual-file policy validation, focused file validation, and full `tests/Unit/MarketData` PASS.
+  [NEXT_ACTION]
+  - None for replay determinism. Future replay changes must preserve this contract and re-run targeted plus full MarketData validation before any tracker change.
 
 ---
 

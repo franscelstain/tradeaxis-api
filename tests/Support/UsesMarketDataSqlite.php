@@ -407,6 +407,21 @@ trait UsesMarketDataSqlite
             $table->string('expected_eligibility_batch_hash')->nullable();
             $table->text('expected_reason_code_counts_json')->nullable();
             $table->text('mismatch_summary')->nullable();
+            $table->string('replay_suite')->nullable();
+            $table->string('replay_case')->nullable();
+            $table->string('fixture_id')->nullable();
+            $table->string('fixture_version')->nullable();
+            $table->string('fixture_schema_version')->nullable();
+            $table->string('fixture_source')->nullable();
+            $table->string('fixture_created_at')->nullable();
+            $table->integer('mismatch_count')->nullable();
+            $table->text('mismatch_reason_codes_json')->nullable();
+            $table->text('mismatches_json')->nullable();
+            $table->text('expected_context_json')->nullable();
+            $table->text('actual_context_json')->nullable();
+            $table->text('ignored_volatile_fields_json')->nullable();
+            $table->text('deterministic_fields_checked_json')->nullable();
+            $table->string('final_reason_code')->nullable();
             $table->dateTime('created_at');
 
             $table->primary(['replay_id', 'trade_date']);

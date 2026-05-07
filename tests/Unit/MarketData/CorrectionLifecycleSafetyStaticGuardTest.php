@@ -69,7 +69,13 @@ class CorrectionLifecycleSafetyStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString('findCorrectionByRunId', $service);
-        $this->assertStringContainsString("array_key_exists('expected_'.", $service);
+        foreach ([
+            'expected_correction_context',
+            'actual_correction_context',
+            'REPLAY_CORRECTION_BASELINE_MISMATCH',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $service);
+        }
         $this->assertStringContainsString('buildReplayActualCorrectionLifecycle', $this->readProjectFile('app/Application/MarketData/Services/MarketDataEvidenceExportService.php'));
     }
 

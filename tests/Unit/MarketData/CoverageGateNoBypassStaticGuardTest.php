@@ -78,7 +78,13 @@ class CoverageGateNoBypassStaticGuardTest extends TestCase
             $this->assertStringContainsString($field, $command);
         }
 
-        $this->assertStringContainsString('COVERAGE_FIELD_MISMATCH', $replay);
+        foreach ([
+            'REPLAY_COVERAGE_STATE_MISMATCH',
+            'REPLAY_COVERAGE_RATIO_MISMATCH',
+            'REPLAY_COVERAGE_REASON_MISMATCH',
+        ] as $reasonCode) {
+            $this->assertStringContainsString($reasonCode, $replay);
+        }
         $this->assertStringContainsString('publishability_state', $evidence);
         $this->assertStringContainsString('publishability_state', $replay);
         $this->assertStringContainsString('publication_id', $replay);

@@ -17,6 +17,13 @@ class ReplayResultRepository
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         $payload = [
+            'replay_suite' => $metric['replay_suite'] ?? null,
+            'replay_case' => $metric['replay_case'] ?? null,
+            'fixture_id' => $metric['fixture_id'] ?? null,
+            'fixture_version' => $metric['fixture_version'] ?? null,
+            'fixture_schema_version' => $metric['fixture_schema_version'] ?? null,
+            'fixture_source' => $metric['fixture_source'] ?? null,
+            'fixture_created_at' => $metric['fixture_created_at'] ?? null,
             'trade_date_effective' => $metric['trade_date_effective'] ?? null,
             'source' => $metric['source'],
             'source_mode' => $metric['source_mode'] ?? ($metric['source'] ?? null),
@@ -117,6 +124,14 @@ class ReplayResultRepository
             'expected_eligibility_batch_hash' => $metric['expected_eligibility_batch_hash'] ?? null,
             'expected_reason_code_counts_json' => $metric['expected_reason_code_counts_json'] ?? null,
             'mismatch_summary' => $metric['mismatch_summary'] ?? null,
+            'mismatch_count' => $metric['mismatch_count'] ?? null,
+            'mismatch_reason_codes_json' => $metric['mismatch_reason_codes_json'] ?? null,
+            'mismatches_json' => $metric['mismatches_json'] ?? null,
+            'expected_context_json' => $metric['expected_context_json'] ?? null,
+            'actual_context_json' => $metric['actual_context_json'] ?? null,
+            'ignored_volatile_fields_json' => $metric['ignored_volatile_fields_json'] ?? null,
+            'deterministic_fields_checked_json' => $metric['deterministic_fields_checked_json'] ?? null,
+            'final_reason_code' => $metric['final_reason_code'] ?? null,
             'created_at' => $metric['created_at'] ?? $now,
         ];
 
