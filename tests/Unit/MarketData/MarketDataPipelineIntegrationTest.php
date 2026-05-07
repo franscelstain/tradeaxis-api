@@ -4199,6 +4199,111 @@ class MarketDataPipelineIntegrationTest extends TestCase
     }
 
 
+
+    public function test_manual_file_import_only_writes_candidate_bars_without_finalize_or_pointer_switch(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $run = $this->makePipeline()->importDaily('2026-03-20', 'manual_file');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+
+        $this->assertSame('INGEST_BARS', $run->stage);
+        $this->assertSame('RUNNING', $run->lifecycle_state);
+        $this->assertNull($run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertNull($run->coverage_gate_state);
+        $this->assertNull($run->bars_batch_hash);
+        $this->assertNull($run->sealed_at);
+        $this->assertNull($run->final_reason_code);
+        $this->assertSame(1, (int) $run->bars_rows_written);
+
+        $this->assertNotNull($publication);
+        $this->assertSame('UNSEALED', $publication->seal_state);
+        $this->assertSame(0, (int) $publication->is_current);
+        $this->assertNull($publication->sealed_at);
+
+        $this->assertSame(1, DB::table('eod_bars')->where('run_id', $run->run_id)->count());
+        $this->assertSame(0, DB::table('eod_indicators')->where('run_id', $run->run_id)->count());
+        $this->assertSame(0, DB::table('eod_eligibility')->where('run_id', $run->run_id)->count());
+        $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+
+        $this->assertTrue(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('stage', 'INGEST_BARS')
+                ->where('event_type', 'STAGE_COMPLETED')
+                ->exists()
+        );
+
+        $this->assertFalse(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('event_type', 'RUN_FINALIZED')
+                ->exists()
+        );
+    }
+
+    public function test_manual_file_promote_from_imported_partial_dataset_enforces_coverage_gate_and_does_not_switch_pointer(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedTicker(2, 'BBRI');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 2, 80.0, 900);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 121,
+            'high' => 125,
+            'low' => 120,
+            'close' => 124,
+            'volume' => 2000,
+            'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $pipeline = $this->makePipeline();
+        $importRun = $pipeline->importDaily('2026-03-20', 'manual_file');
+        $promoteRun = $pipeline->promoteDaily('2026-03-20', 'manual_file', $importRun->run_id);
+        $event = DB::table('eod_run_events')
+            ->where('run_id', $promoteRun->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->first();
+        $payload = json_decode((string) $event->event_payload_json, true);
+        $candidate = DB::table('eod_publications')->where('run_id', $promoteRun->run_id)->first();
+
+        $this->assertSame('FAILED', $promoteRun->terminal_status);
+        $this->assertSame('NOT_READABLE', $promoteRun->publishability_state);
+        $this->assertSame('FAIL', $promoteRun->coverage_gate_state);
+        $this->assertSame('full_publish', $promoteRun->promote_mode);
+        $this->assertSame('current_replace', $promoteRun->publish_target);
+        $this->assertSame(2, (int) $promoteRun->coverage_universe_count);
+        $this->assertSame(1, (int) $promoteRun->coverage_available_count);
+        $this->assertSame(1, (int) $promoteRun->coverage_missing_count);
+        $this->assertSame('RUN_PARTIAL_DATA', $event->reason_code);
+        $this->assertSame('RUN_PARTIAL_DATA', $payload['coverage_reason_code']);
+        $this->assertSame(2, $payload['coverage_universe_count']);
+        $this->assertSame(1, $payload['coverage_available_count']);
+        $this->assertSame(1, $payload['coverage_missing_count']);
+
+        $this->assertNotNull($candidate);
+        $this->assertSame(0, (int) $candidate->is_current);
+        $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+        $this->assertSame(0, DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->count());
+    }
+
     public function test_run_daily_full_coverage_persists_finalize_coverage_payload_and_readable_publication(): void
     {
         $this->seedTicker(1, 'BBCA');

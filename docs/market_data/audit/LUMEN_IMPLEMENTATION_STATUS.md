@@ -3,23 +3,23 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Replay Determinism
+- Test Coverage Behavioral
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce replay determinism across fixture metadata, expected context, actual evidence lifecycle context, comparison rules, mismatch reason codes, volatile-field handling, command output, replay artifact persistence, schema, registry, and static guards.
-- Container validation completed static trace and `php -l`; operator-local targeted and full PHPUnit validation PASS on 2026-05-07.
-- This session reconciles replay behavior with evidence export completeness, source/provider resilience, manual-file policy, coverage gate, finalize/pointer determinism, publishability integrity, fallback, and correction lifecycle safety.
+- Build behavioral test coverage inventory and enforce that critical market-data lifecycle proof is DB-backed/runtime-like, not mock-heavy unit confidence.
+- Patch added explicit manual-file import-only and manual-file promote coverage-gate integration proof.
+- Patch added `TestCoverageBehavioralStaticGuardTest` and `docs/market_data/tests/Behavioral_Test_Coverage_Inventory.md` to prevent future false-proof drift.
+- Container validation was limited to static trace and `php -l` because uploaded ZIP has no `vendor/`; operator-local targeted and full PHPUnit validation later passed, so this session is promoted to DONE.
 
 [SESSION_GOAL]
-- Replay must prove deterministic publication behavior from a stable fixture/proof package without using volatile current DB state, raw/staging/latest shortcuts, or silent wildcard comparison.
+- Test coverage must prove ingest/import/promote through finalize, coverage, publication, pointer, correction, evidence, replay, read-side, and command behavior with real state wherever feasible.
 
 [SESSION_NOTES]
-- Gap found: replay fixture schema was still permissive and did not require self-contained fixture metadata or complete expected lifecycle sections.
-- Gap found: replay mismatch output was not consistently reason-coded per compared field/context.
-- Gap found: non-readable source/failure runs could be blocked before replay proof was emitted, reducing replay to success-path smoke behavior.
-- Patch applied: replay now emits expected/actual context, mismatch arrays, reason-code families, deterministic/volatile field metadata, operator-grade command summary, schema persistence, registry/seed sync, fixture v2 metadata, and static guard coverage.
+- DB-backed lifecycle proof already exists for pipeline, publication repository, pointer/read-side, correction, coverage, fallback, and replay result persistence.
+- Gap found: manual-file import-only versus promote coverage behavior lacked explicit DB-backed proof.
+- Gap found: command surface tests remain internal mock-heavy, so they are support-only and must not be counted as lifecycle proof.
 
 ---
 ## OPERATIONAL STATUS
@@ -40,6 +40,58 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Test Coverage Behavioral -> DONE
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_CONTRACT] TEST_COVERAGE_BEHAVIORAL_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-07 -> Test Coverage Behavioral session opened against latest source-of-truth ZIP.
+  - 2026-05-07 -> Static trace reviewed market-data tests, test support, command tests, integration tests, replay/evidence tests, read-side tests, static guards, audit governance, and test docs.
+  - 2026-05-07 -> Inventory created in `docs/market_data/tests/Behavioral_Test_Coverage_Inventory.md` mapping critical areas to existing coverage, mock level, runtime proof state, gaps, and action.
+  - 2026-05-07 -> Gap found: manual-file import-only behavior was guarded mostly by policy/static/command support, but did not have explicit DB-backed proof that import-only stays unfinalized, unsealed, non-current, and pointerless.
+  - 2026-05-07 -> Gap found: manual-file promote from imported partial data did not have explicit DB-backed proof that coverage gate blocks readable publication and pointer switch.
+  - 2026-05-07 -> Gap found: command surface tests are internal mock-heavy and must stay support-only until real command runtime tests assert DB/evidence/replay state locally.
+  - 2026-05-07 -> Patch added two `MarketDataPipelineIntegrationTest` cases for manual-file import-only and manual-file promote coverage enforcement.
+  - 2026-05-07 -> Patch added `TestCoverageBehavioralStaticGuardTest` to guard the inventory, DB-backed proof files, import/promote/finalize/coverage/pointer/correction proof names, mock policy, and static-guard-as-support rule.
+  - 2026-05-07 -> Container `php -l` passed for changed PHP files; PHPUnit/artisan were not run because uploaded ZIP has no `vendor/`.
+  - 2026-05-07 -> Operator-local targeted validation PASS: manual-file import-only 1 test / 19 assertions; manual-file promote partial 1 test / 17 assertions; `TestCoverageBehavioralStaticGuardTest.php` 5 tests / 108 assertions.
+  - 2026-05-07 -> Operator-local filtered validation PASS: Behavior 5 tests / 108 assertions; Integration 91 tests / 1443 assertions; Pipeline 91 tests / 1432 assertions; Finalize 44 tests / 311 assertions; Coverage 48 tests / 527 assertions; Pointer 65 tests / 837 assertions; Correction 61 tests / 1208 assertions; Replay 34 tests / 550 assertions; Evidence 34 tests / 520 assertions; Readable 54 tests / 375 assertions; Command 58 tests / 475 assertions; Manual 21 tests / 227 assertions; Source 35 tests / 386 assertions.
+  - 2026-05-07 -> Operator-local focused file validation PASS: `MarketDataPipelineIntegrationTest.php` 55 tests / 1227 assertions; `ReadablePublicationReadContractIntegrationTest.php` 8 tests / 15 assertions; `ReplayVerificationServiceTest.php` 6 tests / 17 assertions; `ReplayDeterminismStaticGuardTest.php` 5 tests / 155 assertions; `MarketDataEvidenceExportServiceTest.php` 3 tests / 87 assertions; `OpsCommandSurfaceTest.php` 42 tests / 260 assertions.
+  - 2026-05-07 -> Operator-local full validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 298 tests / 3327 assertions.
+  - 2026-05-07 -> Test Coverage Behavioral promoted to DONE after targeted, filtered, focused file, static guard, integration, and full MarketData unit validation passed.
+
+  [IMPLEMENTATION]
+  - Added DB-backed integration proof in `tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` for manual-file import-only and manual-file promote coverage-gate behavior.
+  - Added `tests/Unit/MarketData/TestCoverageBehavioralStaticGuardTest.php` to prevent critical lifecycle proof from drifting into mock-heavy false confidence.
+  - Added `docs/market_data/tests/Behavioral_Test_Coverage_Inventory.md` with area-by-area behavioral coverage inventory, mock policy, support-only test classification, and local validation boundary.
+
+  [ENFORCEMENT]
+  - Import-only proof asserts stage/state, no terminal status, no coverage gate, no hashes/seal, unsealed non-current publication, no pointer, no finalize event, and persisted bars only.
+  - Promote proof asserts coverage FAIL, NOT_READABLE, no pointer/current publication, reason-coded finalize event, coverage expected/available/missing counts, and promote context.
+  - Static guard requires lifecycle proof files to remain `UsesMarketDataSqlite` + `DB::table` backed and free from internal Mockery/`shouldReceive` proof.
+  - Static guard requires command surface mock-heavy status to remain explicitly documented as support-only.
+
+  [FINAL_BEHAVIOR]
+  - Behavioral coverage proof is LOCKED for this source-of-truth ZIP after local targeted and full validation passed.
+  - Manual-file import-only cannot silently become publishable; it persists candidate bars without finalize, seal, coverage gate, current publication, or pointer switch.
+  - Manual-file promote from a partial imported dataset cannot bypass coverage; it remains NOT_READABLE and pointer-safe with reason-coded finalization.
+  - Existing DB-backed integration proof remains the primary source for finalize, coverage, pointer, fallback, publishability, correction, read-side, and repository behavior.
+  - Command tests remain operator-surface support only and are not treated as primary lifecycle proof, even though command filter validation passed locally.
+
+  [EVIDENCE]
+  - Container static trace completed.
+  - `php -l tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> no syntax errors detected.
+  - `php -l tests/Unit/MarketData/TestCoverageBehavioralStaticGuardTest.php` -> no syntax errors detected.
+  - Operator-local targeted, filtered, focused-file, static guard, integration, command-surface, replay/evidence/read-side, and full MarketData PHPUnit validation passed.
+  - Full suite evidence: `vendor/bin/phpunit tests/Unit/MarketData` -> 298 tests / 3327 assertions.
+
+  [NEXT_ACTION]
+  - None for this session. Use this ZIP as the next source of truth.
 
 - Replay Determinism -> DONE
 
