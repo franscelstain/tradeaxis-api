@@ -11,6 +11,10 @@ class EodArtifactRepository
     public function replaceBars($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows, $useHistory = false)
     {
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory) {
+            if (! $useHistory) {
+                $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_bars');
+            }
+
             if ($useHistory) {
                 DB::table('eod_bars_history')
                     ->where('trade_date', $tradeDate)
@@ -35,6 +39,48 @@ class EodArtifactRepository
                 DB::table('eod_invalid_bars')->insert($invalidRows);
             }
         });
+    }
+
+
+    public function ensureBarsHistoryFromCurrentTradeDate($tradeDate, $publicationId, $runId)
+    {
+        if ($publicationId === null || $publicationId === '') {
+            return;
+        }
+
+        if (DB::table('eod_bars_history')
+            ->where('trade_date', $tradeDate)
+            ->where('publication_id', $publicationId)
+            ->exists()) {
+            return;
+        }
+
+        $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
+        $bars = $this->applyStableArtifactOrder(
+            DB::table('eod_bars')->where('trade_date', $tradeDate)
+        )->get();
+
+        $insert = [];
+        foreach ($bars as $row) {
+            $insert[] = [
+                'publication_id' => $publicationId,
+                'trade_date' => $row->trade_date,
+                'ticker_id' => $row->ticker_id,
+                'open' => $row->open,
+                'high' => $row->high,
+                'low' => $row->low,
+                'close' => $row->close,
+                'volume' => $row->volume,
+                'adj_close' => $row->adj_close,
+                'source' => $row->source,
+                'run_id' => $runId,
+                'created_at' => $now,
+            ];
+        }
+
+        if (! empty($insert)) {
+            DB::table('eod_bars_history')->insert($insert);
+        }
     }
 
     public function loadBarsWindow($tradeDate, $lookbackDays, $requestedPublicationId = null)
@@ -85,6 +131,10 @@ class EodArtifactRepository
     public function replaceIndicators($tradeDate, $runId, array $rows, $publicationId = null, $useHistory = false)
     {
         return DB::transaction(function () use ($tradeDate, $rows, $publicationId, $useHistory) {
+            if (! $useHistory) {
+                $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_indicators');
+            }
+
             $table = $useHistory ? 'eod_indicators_history' : 'eod_indicators';
             $query = DB::table($table)->where('trade_date', $tradeDate);
 
@@ -145,6 +195,10 @@ class EodArtifactRepository
     public function replaceEligibility($tradeDate, $runId, array $rows, $publicationId = null, $useHistory = false)
     {
         return DB::transaction(function () use ($tradeDate, $rows, $publicationId, $useHistory) {
+            if (! $useHistory) {
+                $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_eligibility');
+            }
+
             $table = $useHistory ? 'eod_eligibility_history' : 'eod_eligibility';
             $query = DB::table($table)->where('trade_date', $tradeDate);
 
@@ -346,6 +400,30 @@ class EodArtifactRepository
 
         if (! empty($insert)) {
             DB::table('eod_eligibility')->insert($insert);
+        }
+    }
+
+    protected function assertLiveArtifactMutationAllowed($tradeDate, $publicationId, $artifactTable)
+    {
+        $query = DB::table($artifactTable.' as artifact')
+            ->join('eod_publications as pub', 'pub.publication_id', '=', 'artifact.publication_id')
+            ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
+            ->where('artifact.trade_date', $tradeDate)
+            ->where('pub.seal_state', 'SEALED')
+            ->where(function ($query) {
+                $query->where('pub.is_current', 1)
+                    ->orWhere(function ($query) {
+                        $query->where('run.terminal_status', 'SUCCESS')
+                            ->where('run.publishability_state', 'READABLE');
+                    });
+            });
+
+        if ($publicationId !== null && $publicationId !== '') {
+            $query->where('artifact.publication_id', '<>', $publicationId);
+        }
+
+        if ($query->exists()) {
+            throw new \RuntimeException('SEALED_DATASET_MUTATION_BLOCKED: '.$artifactTable.' for trade date '.$tradeDate.' is already sealed/finalized/readable. Use correction history flow instead of mutating the baseline dataset.');
         }
     }
 

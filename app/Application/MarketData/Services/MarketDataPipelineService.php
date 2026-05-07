@@ -346,10 +346,23 @@ class MarketDataPipelineService
         try {
             $candidatePublication = $this->publications->getOrCreateCandidatePublication($run);
             $correctionMode = $input->correctionId !== null;
+            $useHistory = $correctionMode
+                || (int) ($candidatePublication->publication_version ?? 1) > 1
+                || ! empty($candidatePublication->supersedes_publication_id)
+                || ! empty($candidatePublication->previous_publication_id)
+                || ! empty($candidatePublication->replaced_publication_id);
+
+            if ($useHistory) {
+                $this->artifacts->ensureBarsHistoryFromCurrentTradeDate(
+                    $input->requestedDate,
+                    $candidatePublication->publication_id,
+                    $run->run_id
+                );
+            }
 
             $hashes = [
                 'bars_batch_hash' => $this->hashForTable(
-                    $correctionMode ? 'eod_bars_history' : 'eod_bars',
+                    $useHistory ? 'eod_bars_history' : 'eod_bars',
                     'trade_date',
                     $input->requestedDate,
                     [
@@ -363,10 +376,10 @@ class MarketDataPipelineService
                         'adj_close',
                         'source',
                     ],
-                    $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []
+                    $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
                 'indicators_batch_hash' => $this->hashForTable(
-                    $correctionMode ? 'eod_indicators_history' : 'eod_indicators',
+                    $useHistory ? 'eod_indicators_history' : 'eod_indicators',
                     'trade_date',
                     $input->requestedDate,
                     [
@@ -381,10 +394,10 @@ class MarketDataPipelineService
                         'roc20',
                         'hh20',
                     ],
-                    $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []
+                    $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
                 'eligibility_batch_hash' => $this->hashForTable(
-                    $correctionMode ? 'eod_eligibility_history' : 'eod_eligibility',
+                    $useHistory ? 'eod_eligibility_history' : 'eod_eligibility',
                     'trade_date',
                     $input->requestedDate,
                     [
@@ -393,7 +406,7 @@ class MarketDataPipelineService
                         'eligible',
                         'reason_code',
                     ],
-                    $correctionMode ? ['publication_id' => $candidatePublication->publication_id] : []
+                    $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
             ];
 
@@ -406,8 +419,15 @@ class MarketDataPipelineService
                 'STAGE_COMPLETED',
                 'INFO',
                 'Audit hash stage completed for current artifact set.',
-                null,
-                $hashes + ['publication_id' => (int) $candidatePublication->publication_id]
+                'DATASET_HASH_CREATED',
+                $hashes + [
+                    'publication_id' => (int) $candidatePublication->publication_id,
+                    'hash_algorithm' => config('market_data.hash.algorithm', 'SHA-256'),
+                    'hash_delimiter' => config('market_data.hash.delimiter', '|'),
+                    'hash_line_separator' => config('market_data.hash.line_separator', "\n"),
+                    'hash_null_token' => config('market_data.hash.null_token', '[empty]'),
+                    'canonical_ordering_rule' => 'trade_date ASC, ticker_id ASC plus DeterministicHashService canonical sort',
+                ]
             );
 
             return $run;
@@ -744,6 +764,20 @@ class MarketDataPipelineService
 
                             if (! $promotedCurrent) {
                                 throw new \RuntimeException('Current publication promotion returned no publication.');
+                            }
+
+                            if (! $correction && $this->artifacts->historySnapshotExists($candidatePublication->publication_id)) {
+                                try {
+                                    $this->artifacts->promotePublicationHistoryToCurrent(
+                                        $input->requestedDate,
+                                        $candidatePublication->publication_id,
+                                        $run->run_id
+                                    );
+                                } catch (\Throwable $e) {
+                                    throw new \RuntimeException(
+                                        'History promotion to current tables failed during force-replace finalize.'
+                                    );
+                                }
                             }
 
                             if ($input->forceReplace) {
@@ -2346,7 +2380,7 @@ class MarketDataPipelineService
 
         if ($sourceMode === 'api') {
             $payload['provider'] = strtolower((string) config('market_data.source.api.provider', 'generic'));
-            $payload['timeout_seconds'] = max(1, (int) config('market_data.source.api.timeout_seconds', 15));
+            $payload['timeout_seconds'] = max(1, (int) config('market_data.source.api.timeout_seconds', 20));
             $payload['retry_max'] = min(3, max(0, (int) config('market_data.provider.api_retry_max', 0)));
             $payload['throttle_qps'] = max(1, (int) config('market_data.provider.api_throttle_qps', 1));
         }
@@ -2564,7 +2598,10 @@ class MarketDataPipelineService
         foreach ($extraWhere as $k => $v) {
             $query->where($k, $v);
         }
-        $rows = $query->orderBy('ticker_id')->get();
+        $rows = $query
+            ->orderBy($dateColumn)
+            ->orderBy('ticker_id')
+            ->get();
 
         return $this->hashes->hashRows($rows, $columns);
     }

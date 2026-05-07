@@ -13,6 +13,7 @@ trait UsesMarketDataSqlite
     protected function bootMarketDataSqlite(): void
     {
         config()->set('database.default', $this->marketDataSqliteConnection);
+        config()->set('market_data.source.api.timeout_seconds', 20);
         config()->set("database.connections.{$this->marketDataSqliteConnection}", [
             'driver' => 'sqlite',
             'database' => ':memory:',

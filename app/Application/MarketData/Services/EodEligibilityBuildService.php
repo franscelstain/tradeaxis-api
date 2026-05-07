@@ -29,9 +29,15 @@ class EodEligibilityBuildService
     public function build($run, $requestedDate, $correctionMode = false)
     {
         $candidatePublication = $this->publications->getOrCreateCandidatePublication($run);
+        $useHistory = $correctionMode
+            || (int) ($candidatePublication->publication_version ?? 1) > 1
+            || ! empty($candidatePublication->supersedes_publication_id)
+            || ! empty($candidatePublication->previous_publication_id)
+            || ! empty($candidatePublication->replaced_publication_id);
+
         $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
-        $bars = $this->artifacts->loadBarsForTradeDate($requestedDate, $correctionMode ? $candidatePublication->publication_id : null);
-        $indicators = $this->artifacts->loadIndicatorsForTradeDate($requestedDate, $correctionMode ? $candidatePublication->publication_id : null);
+        $bars = $this->artifacts->loadBarsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
+        $indicators = $this->artifacts->loadIndicatorsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
         $rows = [];
         $blockedCount = 0;
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
@@ -59,7 +65,7 @@ class EodEligibilityBuildService
             ];
         }
 
-        $this->artifacts->replaceEligibility($requestedDate, $run->run_id, $rows, $candidatePublication->publication_id, $correctionMode);
+        $this->artifacts->replaceEligibility($requestedDate, $run->run_id, $rows, $candidatePublication->publication_id, $useHistory);
 
         $eligibilityRowsWritten = count($rows);
         $eligibleRows = $eligibilityRowsWritten - $blockedCount;
@@ -71,7 +77,7 @@ class EodEligibilityBuildService
             'blocked_rows' => $blockedCount,
             'eligible_rows' => $eligibleRows,
             'eligibility_pass_ratio' => $eligibilityRowsWritten > 0 ? round($eligibleRows / $eligibilityRowsWritten, 4) : null,
-            'storage_target' => $correctionMode ? 'eod_eligibility_history' : 'eod_eligibility',
+            'storage_target' => $useHistory ? 'eod_eligibility_history' : 'eod_eligibility',
         ];
     }
 }

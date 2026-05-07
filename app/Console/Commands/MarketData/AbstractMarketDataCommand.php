@@ -169,6 +169,8 @@ abstract class AbstractMarketDataCommand extends Command
 
         $this->renderSourceSummary($run, $sourceContext);
 
+        $this->renderDatasetIntegritySummary($run);
+
         foreach ([
             'accepted_row_count' => $this->runField($run, 'bars_rows_written'),
             'rejected_row_count' => $this->runField($run, 'invalid_bar_count'),
@@ -192,6 +194,26 @@ abstract class AbstractMarketDataCommand extends Command
     }
 
 
+
+    protected function renderDatasetIntegritySummary($run)
+    {
+        foreach ([
+            'hash_algorithm' => config('market_data.hash.algorithm', 'SHA-256'),
+            'hash_delimiter' => config('market_data.hash.delimiter', '|'),
+            'hash_line_separator' => json_encode(config('market_data.hash.line_separator', "\n")),
+            'hash_null_token' => config('market_data.hash.null_token', '[empty]'),
+            'bars_batch_hash' => $this->runField($run, 'bars_batch_hash'),
+            'indicators_batch_hash' => $this->runField($run, 'indicators_batch_hash'),
+            'eligibility_batch_hash' => $this->runField($run, 'eligibility_batch_hash'),
+            'seal_state' => $this->runField($run, 'sealed_at') ? 'SEALED' : 'UNSEALED',
+            'sealed_at' => $this->runField($run, 'sealed_at'),
+            'sealed_by' => $this->runField($run, 'sealed_by'),
+        ] as $label => $value) {
+            if ($value !== null && $value !== '') {
+                $this->line($label.'='.(string) $value);
+            }
+        }
+    }
 
     protected function buildRunSummaryPayload($run, array $overrides = [], array $sourceContext = null)
     {
@@ -226,6 +248,16 @@ abstract class AbstractMarketDataCommand extends Command
             'accepted_row_count' => $this->runField($run, 'bars_rows_written'),
             'rejected_row_count' => $this->runField($run, 'invalid_bar_count'),
             'invalid_row_count' => $this->runField($run, 'invalid_bar_count'),
+            'hash_algorithm' => config('market_data.hash.algorithm', 'SHA-256'),
+            'hash_delimiter' => config('market_data.hash.delimiter', '|'),
+            'hash_line_separator' => config('market_data.hash.line_separator', "\n"),
+            'hash_null_token' => config('market_data.hash.null_token', '[empty]'),
+            'bars_batch_hash' => $this->runField($run, 'bars_batch_hash'),
+            'indicators_batch_hash' => $this->runField($run, 'indicators_batch_hash'),
+            'eligibility_batch_hash' => $this->runField($run, 'eligibility_batch_hash'),
+            'seal_state' => $this->runField($run, 'sealed_at') ? 'SEALED' : 'UNSEALED',
+            'sealed_at' => $this->runField($run, 'sealed_at'),
+            'sealed_by' => $this->runField($run, 'sealed_by'),
         ];
 
         if (($sourceContext['source_mode'] ?? null) !== null && $sourceContext['source_mode'] !== '') {

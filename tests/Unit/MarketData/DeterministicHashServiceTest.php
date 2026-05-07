@@ -30,4 +30,41 @@ class DeterministicHashServiceTest extends TestCase
 
         $this->assertNotSame($service->hashRows($rowsA, $columns), $service->hashRows($rowsB, $columns));
     }
+
+    public function test_input_order_does_not_change_hash()
+    {
+        $service = new DeterministicHashService();
+        $columns = ['trade_date', 'ticker_id', 'close'];
+
+        $rowsA = [
+            ['trade_date' => '2026-03-10', 'ticker_id' => 101, 'close' => 100],
+            ['trade_date' => '2026-03-10', 'ticker_id' => 102, 'close' => 200],
+        ];
+        $rowsB = array_reverse($rowsA);
+
+        $this->assertSame($service->hashRows($rowsA, $columns), $service->hashRows($rowsB, $columns));
+    }
+
+    public function test_null_and_empty_string_are_not_ambiguous()
+    {
+        $service = new DeterministicHashService();
+        $columns = ['trade_date', 'ticker_id', 'note'];
+
+        $nullHash = $service->hashRows([['trade_date' => '2026-03-10', 'ticker_id' => 101, 'note' => null]], $columns);
+        $emptyHash = $service->hashRows([['trade_date' => '2026-03-10', 'ticker_id' => 101, 'note' => '']], $columns);
+
+        $this->assertNotSame($nullHash, $emptyHash);
+    }
+
+    public function test_changed_value_changes_hash()
+    {
+        $service = new DeterministicHashService();
+        $columns = ['trade_date', 'ticker_id', 'close'];
+
+        $rowsA = [['trade_date' => '2026-03-10', 'ticker_id' => 101, 'close' => 100]];
+        $rowsB = [['trade_date' => '2026-03-10', 'ticker_id' => 101, 'close' => 101]];
+
+        $this->assertNotSame($service->hashRows($rowsA, $columns), $service->hashRows($rowsB, $columns));
+    }
+
 }

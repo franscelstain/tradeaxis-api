@@ -41,7 +41,7 @@ return [
         'algorithm' => env('MARKET_DATA_HASH_ALGORITHM', 'SHA-256'),
         'delimiter' => env('MARKET_DATA_HASH_DELIMITER', '|'),
         'line_separator' => env('MARKET_DATA_HASH_LINE_SEPARATOR', "\n"),
-        'null_token' => env('MARKET_DATA_HASH_NULL_TOKEN', ''),
+        'null_token' => env('MARKET_DATA_HASH_NULL_TOKEN', '[empty]'),
     ],
     'source' => [
         'local_directory' => env('MARKET_DATA_SOURCE_LOCAL_DIRECTORY', 'storage/app/market_data/eod_bars'),
@@ -53,7 +53,7 @@ return [
             'endpoint_template' => env('MARKET_DATA_SOURCE_API_ENDPOINT_TEMPLATE', 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com'),
             'response_format' => env('MARKET_DATA_SOURCE_API_RESPONSE_FORMAT', 'json'),
             'response_rows_path' => env('MARKET_DATA_SOURCE_API_ROWS_PATH', ''),
-            'timeout_seconds' => (int) env('MARKET_DATA_SOURCE_API_TIMEOUT_SECONDS', 15),
+            'timeout_seconds' => (int) env('MARKET_DATA_SOURCE_API_TIMEOUT_SECONDS', 20),
             'auth_header_name' => env('MARKET_DATA_SOURCE_API_AUTH_HEADER_NAME', ''),
             'auth_token' => env('MARKET_DATA_SOURCE_API_AUTH_TOKEN', ''),
             'source_name' => env('MARKET_DATA_SOURCE_API_NAME', 'YAHOO_FINANCE'),

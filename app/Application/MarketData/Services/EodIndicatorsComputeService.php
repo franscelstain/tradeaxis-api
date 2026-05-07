@@ -22,6 +22,20 @@ class EodIndicatorsComputeService
     public function compute($run, $requestedDate, $correctionMode = false)
     {
         $candidatePublication = $this->publications->getOrCreateCandidatePublication($run);
+        $useHistory = $correctionMode
+            || (int) ($candidatePublication->publication_version ?? 1) > 1
+            || ! empty($candidatePublication->supersedes_publication_id)
+            || ! empty($candidatePublication->previous_publication_id)
+            || ! empty($candidatePublication->replaced_publication_id);
+
+        if ($useHistory) {
+            $this->artifacts->ensureBarsHistoryFromCurrentTradeDate(
+                $requestedDate,
+                $candidatePublication->publication_id,
+                $run->run_id
+            );
+        }
+
         $windowDays = max(
             (int) config('market_data.indicators.dv_window_days'),
             (int) config('market_data.indicators.vol_ratio_lookback_days') + 1,
@@ -30,7 +44,7 @@ class EodIndicatorsComputeService
             (int) config('market_data.indicators.atr_window_days') + 1
         );
 
-        $barsByTicker = $this->artifacts->loadBarsWindow($requestedDate, $windowDays + 5, $correctionMode ? $candidatePublication->publication_id : null);
+        $barsByTicker = $this->artifacts->loadBarsWindow($requestedDate, $windowDays + 5, $useHistory ? $candidatePublication->publication_id : null);
         $rows = [];
         $invalidCount = 0;
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
@@ -48,14 +62,14 @@ class EodIndicatorsComputeService
             $rows[] = $row;
         }
 
-        $this->artifacts->replaceIndicators($requestedDate, $run->run_id, $rows, $candidatePublication->publication_id, $correctionMode);
+        $this->artifacts->replaceIndicators($requestedDate, $run->run_id, $rows, $candidatePublication->publication_id, $useHistory);
 
         return [
             'publication_id' => (int) $candidatePublication->publication_id,
             'publication_version' => (int) $candidatePublication->publication_version,
             'indicators_rows_written' => count($rows),
             'invalid_indicator_count' => $invalidCount,
-            'storage_target' => $correctionMode ? 'eod_indicators_history' : 'eod_indicators',
+            'storage_target' => $useHistory ? 'eod_indicators_history' : 'eod_indicators',
         ];
     }
 

@@ -30,6 +30,17 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `RUN_HASH_FAILED` | RUN | HARD | Hash computation failed or produced unusable output. |
 | `RUN_SEAL_PRECONDITION_FAILED` | RUN | HARD | Seal execution was attempted before all locked preconditions were satisfied. |
 | `RUN_SEAL_WRITE_FAILED` | RUN | HARD | Seal metadata could not be written successfully. |
+| `DATASET_HASH_CREATED` | DATASET | INFO | Dataset hash was created from canonical serialized artifact rows. |
+| `DATASET_HASH_VERIFIED` | DATASET | INFO | Dataset hash/seal context was verified against stored canonical manifest context. |
+| `DATASET_HASH_MISSING` | DATASET | HARD | Dataset seal or finalize was blocked because mandatory artifact hash context is missing. |
+| `DATASET_HASH_MISMATCH` | DATASET | HARD | Recomputed or mirrored dataset hash does not match stored artifact hash context. |
+| `DATASET_MANIFEST_INVALID` | DATASET | HARD | Dataset manifest is missing required run/date/source/hash/coverage context. |
+| `DATASET_SEAL_INVALID` | DATASET | HARD | Dataset seal state is invalid or cannot be verified from manifest/hash context. |
+| `SEALED_DATASET_MUTATION_BLOCKED` | DATASET | HARD | Runtime attempted to mutate a sealed/finalized/readable dataset through a normal artifact path and was blocked. |
+| `FINALIZE_HASH_MISSING` | RUN | HARD | Finalize was blocked because the candidate publication or run is missing mandatory hash context. |
+| `FINALIZE_HASH_MISMATCH` | RUN | HARD | Finalize was blocked because run hash context differs from candidate publication hash context. |
+| `FINALIZE_SEAL_MISSING` | RUN | HARD | Finalize was blocked because candidate publication seal state is missing. |
+| `FINALIZE_SEAL_INVALID` | RUN | HARD | Finalize was blocked because candidate publication seal timestamp or verification context is invalid. |
 | `RUN_FINALIZE_BEFORE_CUTOFF` | RUN | HARD | Final success was attempted before the cutoff policy allowed it. |
 | `RUN_LOCK_CONFLICT` | RUN | HARD | Run-ownership conflict or duplicate writer activity occurred during hash, seal, or finalize stages. |
 | `RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID` | RUN | HARD | A previously completed readable finalize run no longer matches the current publication pointer and must be fail-safed before idempotent short-circuit. |

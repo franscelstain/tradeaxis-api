@@ -452,14 +452,30 @@ class EodPublicationRepository
     {
         $this->assertPublicationMutable($publicationId);
 
+        $now = Carbon::now(config('market_data.platform.timezone'));
+        $publication = DB::table('eod_publications')
+            ->where('publication_id', $publicationId)
+            ->first();
+
         DB::table('eod_publications')
             ->where('publication_id', $publicationId)
             ->update([
                 'bars_batch_hash' => $hashes['bars_batch_hash'],
                 'indicators_batch_hash' => $hashes['indicators_batch_hash'],
                 'eligibility_batch_hash' => $hashes['eligibility_batch_hash'],
-                'updated_at' => Carbon::now(config('market_data.platform.timezone')),
+                'updated_at' => $now,
             ]);
+
+        if ($publication && ! empty($publication->run_id)) {
+            DB::table('eod_runs')
+                ->where('run_id', $publication->run_id)
+                ->update([
+                    'bars_batch_hash' => $hashes['bars_batch_hash'],
+                    'indicators_batch_hash' => $hashes['indicators_batch_hash'],
+                    'eligibility_batch_hash' => $hashes['eligibility_batch_hash'],
+                    'updated_at' => $now,
+                ]);
+        }
     }
 
     public function sealCandidatePublication(EodRun $run, $sealedBy, $sealNote = null)
@@ -468,8 +484,10 @@ class EodPublicationRepository
             $candidate = $this->getOrCreateCandidatePublication($run, null);
 
             if (! $candidate->bars_batch_hash || ! $candidate->indicators_batch_hash || ! $candidate->eligibility_batch_hash) {
-                throw new \RuntimeException('Cannot seal publication before all candidate hashes exist.');
+                throw new \RuntimeException('DATASET_HASH_MISSING: Cannot seal publication before all candidate hashes exist.');
             }
+
+            $this->assertPublicationIntegrityContextComplete($candidate, $run, false);
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -496,6 +514,7 @@ class EodPublicationRepository
     {
         return DB::transaction(function () use ($run) {
             $candidate = $this->getOrCreateCandidatePublication($run, null);
+            $this->assertPublicationIntegrityContextComplete($candidate, $run, true);
             $now = Carbon::now(config('market_data.platform.timezone'));
 
             $this->assertPublicationMutable($candidate->publication_id);
@@ -530,20 +549,29 @@ class EodPublicationRepository
                 throw new \RuntimeException('Candidate publication not found for finalize/current-switch.');
             }
 
+            $freshRun = DB::table('eod_runs')
+                ->where('run_id', $run->run_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $freshRun) {
+                throw new \RuntimeException('Candidate run not found for finalize/current-switch.');
+            }
+
             if ($candidate->seal_state !== 'SEALED') {
-                throw new \RuntimeException('Candidate publication is not sealed.');
+                throw new \RuntimeException('FINALIZE_SEAL_MISSING: Candidate publication is not sealed.');
             }
 
             if (! $candidate->sealed_at) {
-                throw new \RuntimeException('Candidate publication is missing sealed_at timestamp.');
+                throw new \RuntimeException('FINALIZE_SEAL_INVALID: Candidate publication is missing sealed_at timestamp.');
             }
 
-            if ((string) ($run->coverage_gate_state ?? '') !== 'PASS') {
+            if ((string) ($freshRun->coverage_gate_state ?? '') !== 'PASS') {
                 throw new \RuntimeException('Current publication promotion requires coverage_gate_state PASS before pointer switch.');
             }
 
-            if ((string) ($run->terminal_status ?? '') !== 'SUCCESS'
-                || (string) ($run->publishability_state ?? '') !== 'READABLE'
+            if ((string) ($freshRun->terminal_status ?? '') !== 'SUCCESS'
+                || (string) ($freshRun->publishability_state ?? '') !== 'READABLE'
             ) {
                 throw new \RuntimeException('Current publication promotion requires pre-approved SUCCESS + READABLE run before pointer switch.');
             }
@@ -576,6 +604,8 @@ class EodPublicationRepository
             if ($priorPublicationId && $current && (int) $current->publication_id !== (int) $priorPublicationId) {
                 throw new \RuntimeException('Correction baseline no longer matches current publication pointer.');
             }
+
+            $this->assertSealedPublicationMatchesRunHashes($candidate, $freshRun);
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -780,6 +810,53 @@ class EodPublicationRepository
 
             return DB::table('eod_publications')->where('publication_id', $priorPublicationId)->first();
         });
+    }
+
+    private function assertPublicationIntegrityContextComplete($publication, EodRun $run, $allowPartial = false): void
+    {
+        $missing = [];
+
+        if (empty($publication->publication_id)) {
+            $missing[] = 'publication_id';
+        }
+        if (empty($publication->run_id) || (int) $publication->run_id !== (int) $run->run_id) {
+            $missing[] = 'run_id';
+        }
+        if (empty($publication->trade_date) || (string) $publication->trade_date !== (string) $run->trade_date_requested) {
+            $missing[] = 'trade_date';
+        }
+
+        foreach (['bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash'] as $hashField) {
+            if (! $allowPartial && empty($publication->{$hashField})) {
+                $missing[] = $hashField;
+            }
+        }
+
+        foreach (['bars_rows_written', 'indicators_rows_written', 'eligibility_rows_written'] as $rowCountField) {
+            if (! $allowPartial && (empty($run->{$rowCountField}) && (int) ($run->{$rowCountField} ?? 0) <= 0)) {
+                $missing[] = $rowCountField;
+            }
+        }
+
+        if ($missing !== []) {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: Candidate publication cannot be sealed; missing integrity context: '.implode(',', array_unique($missing)));
+        }
+    }
+
+    private function assertSealedPublicationMatchesRunHashes($publication, $run): void
+    {
+        foreach (['bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash'] as $hashField) {
+            $publicationHash = (string) ($publication->{$hashField} ?? '');
+            $runHash = (string) ($run->{$hashField} ?? '');
+
+            if ($publicationHash === '' || $runHash === '') {
+                throw new \RuntimeException('FINALIZE_HASH_MISSING: '.$hashField.' is required before readable publication promotion.');
+            }
+
+            if (! hash_equals($publicationHash, $runHash)) {
+                throw new \RuntimeException('FINALIZE_HASH_MISMATCH: '.$hashField.' differs between run and publication candidate.');
+            }
+        }
     }
 
     private function assertPublicationEligibleForCurrent($publication, $runId, $tradeDate): bool
@@ -1026,7 +1103,7 @@ class EodPublicationRepository
 
     public function buildManifestByPublicationId($publicationId)
     {
-        return DB::table('eod_publications as pub')
+        $row = DB::table('eod_publications as pub')
             ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('pub.publication_id', $publicationId)
             ->select(
@@ -1047,7 +1124,13 @@ class EodPublicationRepository
                 'run.bars_rows_written',
                 'run.indicators_rows_written',
                 'run.eligibility_rows_written',
+                'run.trade_date_requested',
                 'run.trade_date_effective',
+                'run.source as source_mode',
+                'run.source_name',
+                'run.source_provider',
+                'run.promote_mode',
+                'run.publish_target',
                 'run.coverage_universe_count',
                 'run.coverage_available_count',
                 'run.coverage_missing_count',
@@ -1063,5 +1146,64 @@ class EodPublicationRepository
                 'pub.source_file_row_count'
             )
             ->first();
+
+        if (! $row) {
+            return null;
+        }
+
+        $manifest = (array) $row;
+        $manifest['manifest_schema_version'] = 'market_data_dataset_integrity_manifest_v1';
+        $manifest['artifact_type'] = 'market_data_eod_publication';
+        $manifest['artifact_version'] = (int) $row->publication_version;
+        $manifest['dataset_scope'] = [
+            'bars' => 'eod_bars/eod_bars_history',
+            'indicators' => 'eod_indicators/eod_indicators_history',
+            'eligibility' => 'eod_eligibility/eod_eligibility_history',
+        ];
+        $manifest['hash_algorithm'] = config('market_data.hash.algorithm', 'SHA-256');
+        $manifest['hash_delimiter'] = config('market_data.hash.delimiter', '|');
+        $manifest['hash_line_separator'] = config('market_data.hash.line_separator', "\n");
+        $manifest['hash_null_token'] = config('market_data.hash.null_token', '[empty]');
+        $manifest['canonical_ordering_rule'] = 'trade_date ASC, ticker_id ASC; DeterministicHashService sorts canonical serialized rows before hashing';
+        $manifest['component_hashes'] = [
+            'bars_batch_hash' => $row->bars_batch_hash,
+            'indicators_batch_hash' => $row->indicators_batch_hash,
+            'eligibility_batch_hash' => $row->eligibility_batch_hash,
+        ];
+        $manifest['component_row_counts'] = [
+            'bars_rows_written' => $row->bars_rows_written,
+            'indicators_rows_written' => $row->indicators_rows_written,
+            'eligibility_rows_written' => $row->eligibility_rows_written,
+        ];
+        $manifest['component_column_contract'] = [
+            'bars' => ['trade_date', 'ticker_id', 'open', 'high', 'low', 'close', 'volume', 'adj_close', 'source'],
+            'indicators' => ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc20', 'hh20'],
+            'eligibility' => ['trade_date', 'ticker_id', 'eligible', 'reason_code'],
+        ];
+        $manifest['coverage_context'] = [
+            'coverage_universe_count' => $row->coverage_universe_count,
+            'coverage_available_count' => $row->coverage_available_count,
+            'coverage_missing_count' => $row->coverage_missing_count,
+            'coverage_ratio' => $row->coverage_ratio,
+            'coverage_min_threshold' => $row->coverage_min_threshold,
+            'coverage_gate_state' => $row->coverage_gate_state,
+            'coverage_threshold_mode' => $row->coverage_threshold_mode,
+            'coverage_universe_basis' => $row->coverage_universe_basis,
+            'coverage_contract_version' => $row->coverage_contract_version,
+        ];
+        $manifest['source_context'] = [
+            'source_mode' => $row->source_mode,
+            'source_name' => $row->source_name,
+            'source_provider' => $row->source_provider,
+            'source_file_hash' => $row->source_file_hash,
+            'source_file_hash_algorithm' => $row->source_file_hash_algorithm,
+            'source_file_size_bytes' => $row->source_file_size_bytes,
+            'source_file_row_count' => $row->source_file_row_count,
+        ];
+        $manifest['seal_verification_status'] = $row->seal_state === 'SEALED' && $row->sealed_at ? 'VERIFIED_BY_STORED_HASH_CONTEXT' : 'NOT_VERIFIED_UNSEALED';
+        $manifest['seal_verification_reason_code'] = $row->seal_state === 'SEALED' && $row->sealed_at ? 'DATASET_HASH_VERIFIED' : 'DATASET_SEAL_INVALID';
+
+        return (object) $manifest;
     }
+
 }

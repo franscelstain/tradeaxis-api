@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Logging / Traceability / Reason Codes
+- Hash / Seal / Dataset Integrity
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define and enforce `LOGGING_TRACEABILITY_REASON_CODES_CONTRACT` across market-data lifecycle event persistence, reason-code registration, no-silent-failure behavior, and operator/audit traceability.
+- Define and enforce `HASH_SEAL_DATASET_INTEGRITY_CONTRACT` across deterministic hash, seal preconditions, manifest proof, immutable sealed/current/readable datasets, finalize guards, replacement candidate history, replay/evidence integrity context, command output, and reason-code sync.
 - Uploaded ZIP has no `vendor/`; container validation was static/`php -l` only. Operator-local targeted and full PHPUnit validation was supplied and passed before LOCKED.
 
 [SESSION_GOAL]
-- Logging must explain every important market-data lifecycle outcome from run creation through publication/readability/finalize/correction/replay/evidence using persisted trace context and registered reason codes.
+- Hash/seal must prove dataset integrity deterministically: unchanged logical data keeps the same hash, changed data changes hash, sealed/current/readable baselines are immutable through normal artifact paths, and readable/current promotion requires valid hash/seal/manifest proof.
 
 ---
 ## OPERATIONAL STATUS
@@ -34,6 +34,67 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING CONTRACT
 
+
+- HASH_SEAL_DATASET_INTEGRITY_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_IMPLEMENTATION] Hash / Seal / Dataset Integrity
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-07 -> Contract opened for deterministic hash, seal, manifest, immutability, finalize, correction, replay/evidence proof, command output, and reason-code sync.
+  - 2026-05-07 -> Runtime/static patch added config-driven canonical hash serialization, seal/finalize integrity guards, live sealed artifact mutation guard, enriched manifest, command summary integrity output, registry/seed sync, and static guard tests.
+  - 2026-05-07 -> Contract held at ENFORCED because uploaded ZIP has no `vendor/`; targeted and full local PHPUnit required before LOCKED.
+  - 2026-05-07 -> Recovery applied after operator-local failures: source/API timeout default reconciled to 20, candidate hash/run mirror synchronized, promotion validation order fixed, and replacement candidate artifacts/hash are isolated in history until force-replace promotion.
+  - 2026-05-07 -> Recovery round 2 applied after local retest: SQLite test bootstrap now enforces the 20-second source/API baseline, and replacement candidate publication versions are history-backed for indicators, eligibility, and hash from the compute/build/hash stages.
+  - 2026-05-07 -> Recovery round 3 applied after local retest: replacement candidates materialize candidate-bound bars history from current live rows when missing, so seal preconditions are complete without mutating sealed/current/readable baseline rows.
+  - 2026-05-07 -> Contract promoted from ENFORCED to LOCKED after operator-local final validation passed: `Finalize` filter OK (46 tests, 355 assertions); `Integration` filter OK (91 tests, 1443 assertions); full `tests/Unit/MarketData` OK (329 tests, 4110 assertions).
+
+  [DEFINED]
+  - Dataset hash must be deterministic, repeatable, config-driven, input-order independent, and based only on explicit artifact columns.
+  - Seal must require valid hash and manifest context before normal publication can become SEALED.
+  - Finalize must reject missing or mismatched hash/seal context before readable/current promotion.
+  - Sealed/current/readable datasets must be immutable through normal artifact mutation paths.
+  - Replacement promote flows must build candidate artifacts in publication-bound history and may not overwrite sealed baseline live rows before finalize authorization.
+  - Correction must preserve baseline and publish changes through a new candidate/seal path.
+  - Evidence/replay/command output must expose hash/seal/source/coverage/manifest context.
+  - Reason codes used by integrity guards must be registered and seeded.
+
+  [IMPLEMENTED]
+  - `DeterministicHashService` implements config-driven canonical serialization and canonical row sorting.
+  - `MarketDataPipelineService` records `DATASET_HASH_CREATED` and hash contract context, including history-backed replacement candidates.
+  - `EodPublicationRepository` verifies manifest/hash context before seal and hash equality before promotion; manifest output includes hash/seal/source/coverage/column/order proof.
+  - `EodArtifactRepository` blocks sealed/current/readable live artifact mutation via `SEALED_DATASET_MUTATION_BLOCKED`.
+  - `EodArtifactRepository::ensureBarsHistoryFromCurrentTradeDate()` materializes missing candidate-bound bars history from current live rows without mutating the sealed/current/readable baseline.
+  - `AbstractMarketDataCommand` renders hash/seal/integrity summary fields.
+  - Registry/seed and static guard tests cover the new contract.
+  - Market-data SQLite bootstrap pins source/API timeout to `20` for deterministic source/provider contract tests.
+  - Replacement candidate publication versions use history-backed bars, indicators, eligibility, and hash generation before finalize/pointer decisions.
+
+  [ENFORCED]
+  - Seal/finalize mutation paths now fail-safe on missing/mismatched integrity context.
+  - Live artifact replacement cannot overwrite a different sealed/current/readable baseline; replacement candidates must stay in history until an allowed pointer switch.
+  - Static guard prevents removal of config-driven hash, manifest context, mutation guard, command output, and reason-code sync.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for changed PHP files.
+  - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`.
+  - Operator-local `vendor/bin/phpunit tests/Unit/MarketData --filter "Finalize"` -> PASS: OK (46 tests, 355 assertions).
+  - Operator-local `vendor/bin/phpunit tests/Unit/MarketData --filter "Integration"` -> PASS: OK (91 tests, 1443 assertions).
+  - Operator-local full `vendor/bin/phpunit tests/Unit/MarketData` -> PASS: OK (329 tests, 4110 assertions).
+
+  [FINAL_RULE]
+  - LOCKED. Hash/seal/dataset integrity must remain deterministic, config-driven, reason-coded, and auditable. No publication may become readable/current through missing or mismatched hash/seal/manifest context.
+  - Sealed/current/readable live datasets must not be mutated through normal artifact replacement; correction and replacement promote flows must use publication-bound candidate history until finalize authorizes pointer/current promotion.
+  - Future changes touching hash serialization, seal lifecycle, artifact mutation, finalize promotion, replacement candidates, correction, replay/evidence integrity proof, command output, or reason-code registry/seed must rerun targeted integrity/finalize/integration tests plus full `tests/Unit/MarketData`.
+
+  [LOCK_CONDITION]
+  - This contract remains LOCKED for the current source-of-truth ZIP. Reopen only if a future hash/seal/dataset mutation policy change or integrity regression is introduced.
+
+---
 
 - LOGGING_TRACEABILITY_REASON_CODES_CONTRACT -> LOCKED
 
@@ -846,3 +907,10 @@ ACTIVE SESSION:
 - Local evidence after Recovery-5: `MarketDataPipelineIntegrationTest`, pointer filter, targeted coverage/finalize/publication/readable/evidence/replay/command suites, core service tests, static guard, and full `tests/Unit/MarketData` all PASS.
 - Enforcement recovery: pointer-integrity failures keep specific operator/audit messages for correction baseline mismatch while generic post-switch mismatch cases continue using the generic current publication pointer resolution message.
 - Final lock completed for `COVERAGE_GATE_ENFORCEMENT_CONTRACT`.
+
+## HASH_SEAL_DATASET_INTEGRITY_CONTRACT — Recovery round 3
+
+- Status: LOCKED by final local validation.
+- Enforcement recovery: replacement candidates must own a complete hashable candidate artifact scope before seal. When a promote run is derived from an existing current/complete seed without fresh candidate bars history, the system creates candidate-bound bars history from current live rows and keeps all derived artifacts/hash/seal operations in history scope.
+- Final validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "Finalize"` PASS with `OK (46 tests, 355 assertions)`; `vendor/bin/phpunit tests/Unit/MarketData --filter "Integration"` PASS with `OK (91 tests, 1443 assertions)`; full `vendor/bin/phpunit tests/Unit/MarketData` PASS with `OK (329 tests, 4110 assertions)`.
+- Final rule locked: sealed/current/readable live artifacts cannot be mutated before finalize authorizes pointer promotion; candidate replacement artifacts must be built and verified through publication-bound history.
