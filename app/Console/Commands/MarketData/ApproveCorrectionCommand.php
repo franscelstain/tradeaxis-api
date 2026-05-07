@@ -3,9 +3,7 @@
 namespace App\Console\Commands\MarketData;
 
 use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
-use Illuminate\Console\Command;
-
-class ApproveCorrectionCommand extends Command
+class ApproveCorrectionCommand extends AbstractMarketDataCommand
 {
     protected $signature = 'market-data:correction:approve {correction_id} {--approved_by=system}';
 
@@ -13,8 +11,16 @@ class ApproveCorrectionCommand extends Command
 
     public function handle()
     {
+        $correctionId = (int) $this->argument('correction_id');
+        if ($correctionId <= 0) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'correction_id must be a positive integer.', [
+                'correction_id' => $this->argument('correction_id'),
+            ]);
+            return 1;
+        }
+
         $correction = app(EodCorrectionRepository::class)->approve(
-            (int) $this->argument('correction_id'),
+            $correctionId,
             $this->option('approved_by') ?: 'system'
         );
 

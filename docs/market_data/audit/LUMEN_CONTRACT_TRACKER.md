@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- DB Integrity & Constraint Enforcement
+- Command Surface Safety / Ops Layer
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define and enforce `DB_INTEGRITY_CONSTRAINT_ENFORCEMENT_CONTRACT` across market-data schema, migration, SQLite test mirror, repository assumptions, implicit integrity guards, runtime indexes, enum-like values, and reason-code registry/seed.
-- Uploaded ZIP has no `vendor/`; container validation was static/`php -l` only, and operator-local targeted/full PHPUnit validation has now passed.
+- Define and enforce `COMMAND_SURFACE_SAFETY_OPS_LAYER_CONTRACT` across market-data artisan command input validation, destructive action guards, dry-run/apply behavior, idempotency expectations, operator-grade output, and registered reason-code failure surfaces.
+- Uploaded ZIP has no `vendor/`; container validation is static/`php -l` only. Operator-local targeted and full PHPUnit validation has passed after Fix2.
 
 [SESSION_GOAL]
-- DB integrity must prevent ambiguous pointer/publication/run/correction/evidence/replay state and prevent code from depending on schema assumptions that are not guaranteed or guarded.
+- Command surface must prevent accidental destructive mutation, misleading success/readable/published output, silent failure, unregistered reason codes, and operator workflows that bypass locked service/repository contracts.
 
 ---
 ## OPERATIONAL STATUS
@@ -33,6 +33,68 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+
+- COMMAND_SURFACE_SAFETY_OPS_LAYER_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_IMPLEMENTATION] Command Surface Safety / Ops Layer
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-07 -> Contract opened as canonical command/ops layer safety contract under audit governance.
+  - 2026-05-07 -> Static trace found destructive purge gap in `market-data:session-snapshot:purge`: row deletion had no explicit apply guard and no dry-run default.
+  - 2026-05-07 -> Enforcement patch added dry-run/apply purge behavior, candidate counting, reason-coded operator output, command validation helpers, command reason-code registry/seed entries, command surface inventory, session snapshot runbook update, and static guard coverage.
+  - 2026-05-07 -> Contract held at ENFORCED because uploaded ZIP has no `vendor/`; operator-local targeted/full PHPUnit is required before LOCKED.
+  - 2026-05-07 -> Operator-local validation confirmed purge dry-run/apply behavior and most targeted filters, but exposed one static guard false negative coupling `COMMAND_DRY_RUN_ONLY` to the command file instead of the service-owned purge summary.
+  - 2026-05-07 -> Fix2 updates the static guard architecture check and makes `SessionSnapshotService::purge()` dry-run by default unless `$apply=true` is explicit.
+  - 2026-05-07 -> Contract promoted from ENFORCED to LOCKED after operator-local Fix2 validation passed: `CommandSurfaceSafetyStaticGuardTest.php` OK (5 tests, 81 assertions); `SessionSnapshotServiceTest.php` OK (6 tests, 38 assertions); `CommandSurface` filter OK (47 tests, 348 assertions); `DryRun` filter OK (2 tests, 15 assertions); `Apply` filter OK (4 tests, 26 assertions); full `tests/Unit/MarketData` OK (312 tests, 3899 assertions).
+
+  [DEFINED]
+  - Every market-data command must have clear input/output behavior.
+  - Destructive operations must be non-mutating by default unless protected by a narrower lifecycle contract.
+  - Purge/repair commands must require explicit `--apply` for mutation.
+  - Invalid operator input must return `status=BLOCKED` and a registered `COMMAND_*` reason code.
+  - Promote force behavior must remain default-off and auditable by reason.
+  - Command output must not claim readable/published/success without the underlying service/repository contract proving that state.
+
+  [IMPLEMENTED]
+  - `COMMAND_SURFACE_SAFETY_INVENTORY.md` lists all registered market-data commands and their safety posture.
+  - `SessionSnapshotService::purge()` defaults to dry-run, supports explicit apply, and includes candidate-row count.
+  - `SessionSnapshotRepository::countBefore()` supports non-mutating purge previews.
+  - `PurgeSessionSnapshotCommand` defaults to dry-run and requires `--apply` for deletion.
+  - `RepairCurrentPublicationIntegrityCommand` renders dry-run/apply reason-code context.
+  - `AbstractMarketDataCommand` centralizes command blocked output and common date/source validation.
+  - `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` include `COMMAND_*` reason codes.
+  - `CommandSurfaceSafetyStaticGuardTest` guards inventory, destructive purge protection, service-owned purge reason codes, registry/seed sync, promote force guard, and repair apply guard.
+
+  [ENFORCED]
+  - `market-data:session-snapshot:purge` default execution is `DRY_RUN` and does not delete rows.
+  - Purge delete only happens when `--apply` is supplied.
+  - Command validation failures must be reason-coded and operator-readable.
+  - Command-surface static guard prevents removal of purge/repair apply protection and command reason-code registry/seed sync.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for changed PHP files.
+  - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`.
+  - Operator-local pre-Fix2 evidence showed one static guard false negative while behavior-level purge/ops/session snapshot validations passed.
+  - Operator-local Fix2 PASS: `CommandSurfaceSafetyStaticGuardTest.php` -> OK (5 tests, 81 assertions).
+  - Operator-local Fix2 PASS: `SessionSnapshotServiceTest.php` -> OK (6 tests, 38 assertions).
+  - Operator-local Fix2 PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "CommandSurface"` -> OK (47 tests, 348 assertions).
+  - Operator-local Fix2 PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "DryRun"` -> OK (2 tests, 15 assertions).
+  - Operator-local Fix2 PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Apply"` -> OK (4 tests, 26 assertions).
+  - Operator-local Fix2 PASS: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (312 tests, 3899 assertions).
+
+  [FINAL_RULE]
+  - LOCKED. Market-data command surfaces may not perform destructive mutation by default, application services behind destructive commands must default to non-mutating behavior unless apply is explicit where the operation is destructive, command output must render registered reason-code summaries, and commands may not bypass locked publication/pointer/coverage/correction/replay/evidence service contracts. Purge and repair commands require explicit `--apply` for mutation; force-like behavior must remain default-off and reason-auditable.
+
+  [NEXT_ACTION]
+  - None for this contract. Future market-data command changes must preserve the command-surface static guard, registered reason-code registry/seed sync, destructive dry-run/apply behavior, and full MarketData PHPUnit validation.
+
+---
 
 - DB_INTEGRITY_CONSTRAINT_ENFORCEMENT_CONTRACT -> LOCKED
 

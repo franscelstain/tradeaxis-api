@@ -13,11 +13,28 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
-        $result = app(ReplayVerificationService::class)->verifyRunAgainstFixture(
-            (int) $this->argument('run_id'),
-            $this->argument('fixture_path'),
-            $this->option('replay_id') ? (int) $this->option('replay_id') : null
-        );
+        $runId = (int) $this->argument('run_id');
+        if ($runId <= 0) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'run_id must be a positive integer.', [
+                'run_id' => $this->argument('run_id'),
+            ]);
+            return 1;
+        }
+
+        try {
+            $result = app(ReplayVerificationService::class)->verifyRunAgainstFixture(
+                $runId,
+                $this->argument('fixture_path'),
+                $this->option('replay_id') ? (int) $this->option('replay_id') : null
+            );
+        } catch (\Throwable $e) {
+            $this->renderCommandBlocked('COMMAND_EXECUTION_FAILED', $e->getMessage(), [
+                'run_id' => $runId,
+                'fixture_path' => $this->normalizePathForDisplay((string) $this->argument('fixture_path')),
+            ]);
+
+            return 1;
+        }
 
         $this->info('replay_id='.$result['replay_id']);
         $this->line('replay_suite='.(string) ($result['replay_suite'] ?? $result['fixture_family'] ?? ''));

@@ -12,6 +12,11 @@ class ReplayBackfillCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
+        if (! $this->validateDateString($this->argument('start_date'), 'start_date')
+            || ! $this->validateDateString($this->argument('end_date'), 'end_date')) {
+            return 1;
+        }
+
         $summary = app(ReplayBackfillService::class)->execute(
             $this->argument('start_date'),
             $this->argument('end_date'),

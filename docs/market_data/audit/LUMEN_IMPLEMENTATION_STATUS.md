@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- DB Integrity & Constraint Enforcement
+- Command Surface Safety / Ops Layer
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce market-data DB integrity across primary keys, business-key uniqueness, runtime indexes, enum-like values, nullable/default assumptions, implicit integrity guards, SQL schema docs, migrations, SQLite test mirror, and static tests.
-- Source-of-truth ZIP has no `vendor/`; container validation was static/`php -l` only, and operator-local PHPUnit validation has now confirmed the DB integrity enforcement suite and full MarketData suite pass.
+- Enforce market-data artisan command surface safety across input validation, operator-grade output, destructive-action guard, dry-run/apply behavior, idempotency guard, and reason-coded fail-safe behavior.
+- Source-of-truth ZIP has no `vendor/`; container validation is static/`php -l` only. Operator-local targeted and full PHPUnit validation has passed after Fix2.
 
 [SESSION_GOAL]
-- No repository/service/command/read-side flow may rely on an unguaranteed schema structure, ambiguous pointer/publication/run relation, unmirrored SQLite test schema, or undocumented reason/status value.
+- No market-data command may mutate destructive state by default, hide operator failure, omit reason code on blocked/failure outcome, or present a misleading success/readable/published output that bypasses locked service/repository contracts.
 
 ---
 ## OPERATIONAL STATUS
@@ -33,6 +33,64 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+
+- Command Surface Safety / Ops Layer -> DONE
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_CONTRACT] COMMAND_SURFACE_SAFETY_OPS_LAYER_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-07 -> Command Surface Safety / Ops Layer session opened against latest source-of-truth ZIP.
+  - 2026-05-07 -> Static trace inventoried registered market-data commands in `app/Console/Kernel.php` and command implementations under `app/Console/Commands/MarketData`.
+  - 2026-05-07 -> Gap found: `market-data:session-snapshot:purge` was destructive and deleted rows without an explicit `--apply` guard or dry-run default.
+  - 2026-05-07 -> Patch added dry-run/apply behavior to session snapshot purge, candidate-row counting before deletion, reason-coded `COMMAND_DRY_RUN_ONLY` / `COMMAND_APPLY_CONFIRMED` output, and operator next action.
+  - 2026-05-07 -> Patch added common command blocked-output helpers and date/source validation for core market-data commands.
+  - 2026-05-07 -> Patch added reason-coded guard output for promote force-replace validation, evidence selector validation, replay verify execution failure, correction request/approve/run validation, and current-publication repair dry-run/apply output.
+  - 2026-05-07 -> Patch added `COMMAND_*` reason codes to registry/seed, `COMMAND_SURFACE_SAFETY_INVENTORY.md`, session-snapshot purge runbook update, service/command tests, and `CommandSurfaceSafetyStaticGuardTest`.
+  - 2026-05-07 -> Container `php -l` passed for changed PHP files; PHPUnit/artisan were not run because uploaded ZIP has no `vendor/`.
+  - 2026-05-07 -> Operator-local validation showed command behavior PASS for purge dry-run/apply and related OpsCommand/SessionSnapshot tests, but full MarketData suite failed on one static guard false negative that expected `COMMAND_DRY_RUN_ONLY` literal in the command file instead of service-owned reason-code summary output.
+  - 2026-05-07 -> Fix2 corrected the static guard to assert command summary reason-code rendering plus service-owned `COMMAND_DRY_RUN_ONLY` / `COMMAND_APPLY_CONFIRMED`, and hardened `SessionSnapshotService::purge()` to default to non-mutating dry-run unless `$apply=true` is explicit.
+  - 2026-05-07 -> Operator-local Fix2 validation PASS: `CommandSurfaceSafetyStaticGuardTest.php` OK (5 tests, 81 assertions); `SessionSnapshotServiceTest.php` OK (6 tests, 38 assertions); `--filter "CommandSurface"` OK (47 tests, 348 assertions); `--filter "DryRun"` OK (2 tests, 15 assertions); `--filter "Apply"` OK (4 tests, 26 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (312 tests, 3899 assertions).
+
+  [IMPLEMENTATION]
+  - `SessionSnapshotService::purge()` now defaults to non-mutating dry-run, accepts an explicit `$apply` flag, counts candidate rows, writes operation mode and reason code, and does not delete rows unless `$apply=true`.
+  - `SessionSnapshotRepository` now exposes `countBefore()` so purge dry-run can preview the mutation without executing delete.
+  - `PurgeSessionSnapshotCommand` now defaults to dry-run and requires `--apply` for deletion.
+  - `RepairCurrentPublicationIntegrityCommand` now renders dry-run/apply reason-code context while preserving the existing `--apply` guard.
+  - `AbstractMarketDataCommand` now centralizes `status=BLOCKED`, registered reason code output, date validation, and source-mode validation.
+  - Core stage, daily, backfill, promote, replay-backfill, session-snapshot, evidence, replay-verify, and correction commands now use stronger input/operator-failure guard paths.
+  - Command surface inventory and session snapshot purge runbook define the final dry-run/apply and destructive action policies.
+
+  [ENFORCEMENT]
+  - Destructive purge cannot delete snapshot rows unless `--apply` is supplied.
+  - Dry-run purge must render `COMMAND_DRY_RUN_ONLY`, candidate rows, deleted rows `0`, cutoff context, and next action.
+  - Applied purge must render `COMMAND_APPLY_CONFIRMED`, candidate rows, actual deleted rows, cutoff context, and artifact path.
+  - Invalid date/source/mode/selector/correction command inputs return `status=BLOCKED` with registered `COMMAND_*` reason codes.
+  - Static guard now checks command inventory registration, purge dry-run/apply protection without false coupling to service-owned reason-code literals in command files, command reason-code registry/seed sync, promote force guard, and repair apply guard.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Command surface safety / ops layer is enforced and locally validated. Destructive purge is dry-run by default, apply is explicit, reason-code output is registered, command inventory is complete for registered market-data commands, and targeted plus full MarketData PHPUnit validation passed locally.
+
+  [EVIDENCE]
+  - Container static trace completed across command files, session snapshot service/repository, reason-code registry/seed, ops docs, and command tests.
+  - Container `php -l` passed for all changed PHP files.
+  - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`.
+  - Operator-local pre-Fix2 evidence: purge dry-run/apply command output behaved correctly; OpsCommand, SessionSnapshot, Reason, Correction, Replay, Evidence, and Integration filters passed; one static guard false negative blocked full suite.
+  - Operator-local Fix2 PASS: `CommandSurfaceSafetyStaticGuardTest.php` -> OK (5 tests, 81 assertions).
+  - Operator-local Fix2 PASS: `SessionSnapshotServiceTest.php` -> OK (6 tests, 38 assertions).
+  - Operator-local Fix2 PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "CommandSurface"` -> OK (47 tests, 348 assertions).
+  - Operator-local Fix2 PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "DryRun"` -> OK (2 tests, 15 assertions).
+  - Operator-local Fix2 PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Apply"` -> OK (4 tests, 26 assertions).
+  - Operator-local Fix2 PASS: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (312 tests, 3899 assertions).
+
+  [NEXT_ACTION]
+  - None for this session. Future market-data command changes must preserve command inventory, destructive dry-run/apply guard, registered reason-code output, and full MarketData PHPUnit validation.
+
+---
 
 - DB Integrity & Constraint Enforcement -> DONE
 

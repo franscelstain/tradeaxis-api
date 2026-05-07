@@ -1,0 +1,39 @@
+# Command Surface Safety Inventory
+
+Status: LOCKED by `CommandSurfaceSafetyStaticGuardTest`, command-output tests, session-snapshot service tests, and operator-local full MarketData PHPUnit validation. This inventory is the operator-safety index for market-data artisan commands. It does not replace the locked runbooks; it maps each command to its safety posture, guard, dry-run/apply behavior, idempotency expectation, and runtime proof family.
+
+| Command | Type | State Changing | Destructive | Guard | Dry-run / Apply | Idempotency | Reason Code Output | Runtime Proof | Gap / Action |
+|---|---|---:|---:|---|---|---|---|---|---|
+| `market-data:daily` | import pipeline | Yes | No | date/source validation | Not required; import-only | Same requested date/source context must not corrupt final state | run/final/source reason code via run summary | Ops command test + pipeline tests | Keep import-only; no readable publish claim |
+| `market-data:eod-bars:ingest` | stage command | Yes | No | date/source validation | Not required | run_id/requested date guarded by pipeline | run/final/source reason code via run summary | Pipeline/service tests | Keep stage summary complete |
+| `market-data:eod-indicators:compute` | stage command | Yes | No | date/source validation | Not required | run_id/requested date guarded by pipeline | run/final reason code via run summary | Pipeline/service tests | Keep deterministic artifact behavior |
+| `market-data:eod-eligibility:build` | stage command | Yes | No | date/source validation | Not required | run_id/requested date guarded by pipeline | run/final/coverage reason code via run summary | Pipeline/service tests | Keep coverage context visible |
+| `market-data:audit:hash` | stage command | Yes | No | date/source validation | Not required | content hash must be deterministic | run/final reason code via run summary | Hash/service tests | Keep artifact hashes stable |
+| `market-data:dataset:seal` | stage command | Yes | No | date/source validation | Not required | seal rerun must be safe for same artifact | run/final/seal context via run summary | Pipeline/finalize tests | Do not mark readable without finalize |
+| `market-data:run:finalize` | finalize / pointer gate | Yes | Yes, pointer switch | date/source validation + pipeline pointer validation | Not separate; finalize service owns pointer guard | Required for same run/publication context | run/final/coverage/pointer reason code via run summary | Finalize/pointer tests | Force must never bypass pointer contract |
+| `market-data:promote` | publish / coverage gate | Yes | Yes, current replace | date/source/mode validation + force reason guard | `force_replace=false` by default; force requires reason | Required for same candidate | run/final/coverage/source reason code via run summary | Ops + pipeline tests | Promote must enforce coverage gate |
+| `market-data:backfill` | import backfill | Yes | No | start/end/source validation | Not required; import-only | Date range repeat must not corrupt publications | case-level reason/source context | Backfill service tests | Keep cases reason-coded |
+| `market-data:evidence:export` | evidence export | No DB mutation except artifacts | Artifact overwrite possible | exactly-one selector + trade-date validation | Output artifact writes are explicit by `--output_dir` | Same selector must be repeatable | command blocked/execution reason code | Evidence export tests | No latest replay evidence without trade_date |
+| `market-data:replay:verify` | replay proof | Yes, replay result rows | Artifact write optional | positive run_id + service fixture proof | Output evidence export explicit by `--output_dir` | Same fixture/context must be repeatable | replay mismatch/failure reason code | Replay verification tests | No volatile expected proof |
+| `market-data:replay:smoke` | replay suite | Yes, replay proof rows | Artifact write optional | run_id through service contract | Output artifact explicit by `--output_dir` | Built-in cases repeatable | case mismatch reason code | Replay smoke tests | Keep case identifiers visible |
+| `market-data:replay:backfill` | replay backfill | Yes, replay proof rows | Artifact write optional | date validation | Output artifact explicit by `--output_dir` | Same fixture/date range repeatable | case mismatch/error reason code | Replay backfill tests | Keep fixture path visible |
+| `market-data:session-snapshot` | supplemental snapshot capture | Yes | Slot overwrite by replace | date/source validation + readable publication service guard | Not separate; replace is slot-scoped and deterministic | Same slot/date replaces same scope deterministically | snapshot partial reason code via service events | Session snapshot service tests | Keep readable current publication guard |
+| `market-data:session-snapshot:purge` | retention purge | Yes | Yes, delete rows | `--apply` required for mutation | Default `DRY_RUN`; `APPLIED` only with `--apply` | Same cutoff after apply should become no-op/candidate 0 | `COMMAND_DRY_RUN_ONLY` / `COMMAND_APPLY_CONFIRMED` | Command + service + static guard tests | Patched: dry-run counts candidates without delete |
+| `market-data:correction:request` | correction lifecycle | Yes | No | trade_date/reason_code required + date validation | Not required | Duplicate policy owned by repository | command input reason code + request reason code | Correction command tests | Keep request reason visible |
+| `market-data:correction:approve` | correction lifecycle | Yes | No | positive correction_id | Not required | Repository owns status transition guard | command blocked reason code on invalid id | Correction command tests | Keep status visible |
+| `market-data:correction:run` | correction pipeline | Yes | Yes, candidate/current switch through finalize | correction status guard + date/source validation | Not separate; correction service owns baseline guard | Terminal correction rerun must be blocked/skipped by lifecycle | command correction reason code + run reason code | Correction lifecycle tests | Preserve baseline/current pointer |
+| `market-data:current-publication:repair` | integrity repair | Yes | Yes, clears invalid current state | `--apply` required for mutation | Default dry-run; applies only after review | Same invalid state clear is idempotent after first apply | `COMMAND_DRY_RUN_ONLY` / `COMMAND_APPLY_CONFIRMED` + integrity reasons | Static guard + repository tests | Keep repair narrow; no valid pointer rewrite |
+
+## Final policy
+
+Destructive command behavior must be non-mutating by default unless the command is already protected by a narrower lifecycle service contract. Purge and repair commands must preview with `COMMAND_DRY_RUN_ONLY` and only mutate with `--apply`, emitting `COMMAND_APPLY_CONFIRMED`. Force-like promote behavior must stay default-off and must include an auditable force reason. Invalid operator input must return `status=BLOCKED` with a registered `COMMAND_*` reason code.
+
+
+## Validation
+
+- 2026-05-07 operator-local PASS: `CommandSurfaceSafetyStaticGuardTest.php` -> OK (5 tests, 81 assertions).
+- 2026-05-07 operator-local PASS: `SessionSnapshotServiceTest.php` -> OK (6 tests, 38 assertions).
+- 2026-05-07 operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "CommandSurface"` -> OK (47 tests, 348 assertions).
+- 2026-05-07 operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "DryRun"` -> OK (2 tests, 15 assertions).
+- 2026-05-07 operator-local PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Apply"` -> OK (4 tests, 26 assertions).
+- 2026-05-07 operator-local PASS: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (312 tests, 3899 assertions).

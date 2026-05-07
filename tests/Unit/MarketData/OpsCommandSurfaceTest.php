@@ -261,12 +261,15 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldReceive('purge')
             ->once()
-            ->with('2026-03-01', null)
+            ->with('2026-03-01', null, true)
             ->andReturn([
+                'operation_mode' => 'APPLIED',
+                'reason_code' => 'COMMAND_APPLY_CONFIRMED',
                 'cutoff_timestamp' => '2026-03-01 23:59:59',
                 'cutoff_source' => 'explicit_before_date',
                 'before_date' => '2026-03-01',
                 'retention_days' => null,
+                'candidate_rows' => 250,
                 'deleted_rows' => 250,
                 'output_dir' => 'C:\\tmp\\session-purge',
             ]);
@@ -279,14 +282,18 @@ class OpsCommandSurfaceTest extends TestCase
 
         $exitCode = $tester->execute([
             '--before_date' => '2026-03-01',
+            '--apply' => true,
         ]);
 
         $display = $tester->getDisplay();
 
         $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('operation_mode=APPLIED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_APPLY_CONFIRMED', $display);
         $this->assertStringContainsString('cutoff_timestamp=2026-03-01 23:59:59', $display);
         $this->assertStringContainsString('cutoff_source=explicit_before_date', $display);
         $this->assertStringContainsString('before_date=2026-03-01', $display);
+        $this->assertStringContainsString('candidate_rows=250', $display);
         $this->assertStringContainsString('deleted_rows=250', $display);
         $this->assertStringContainsString('output_dir=C:/tmp/session-purge', $display);
     }
@@ -296,13 +303,16 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldReceive('purge')
             ->once()
-            ->with(null, '/tmp/session-purge-default')
+            ->with(null, '/tmp/session-purge-default', false)
             ->andReturn([
+                'operation_mode' => 'DRY_RUN',
+                'reason_code' => 'COMMAND_DRY_RUN_ONLY',
                 'cutoff_timestamp' => '2026-03-24 12:00:00',
                 'cutoff_source' => 'default_retention_days',
                 'before_date' => null,
                 'retention_days' => 30,
-                'deleted_rows' => 25,
+                'candidate_rows' => 25,
+                'deleted_rows' => 0,
                 'output_dir' => '/tmp/session-purge-default',
             ]);
 
@@ -319,11 +329,15 @@ class OpsCommandSurfaceTest extends TestCase
         $display = $tester->getDisplay();
 
         $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('operation_mode=DRY_RUN', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_DRY_RUN_ONLY', $display);
         $this->assertStringContainsString('cutoff_timestamp=2026-03-24 12:00:00', $display);
         $this->assertStringContainsString('cutoff_source=default_retention_days', $display);
         $this->assertStringContainsString('retention_days=30', $display);
         $this->assertStringNotContainsString('before_date=', $display);
-        $this->assertStringContainsString('deleted_rows=25', $display);
+        $this->assertStringContainsString('candidate_rows=25', $display);
+        $this->assertStringContainsString('deleted_rows=0', $display);
+        $this->assertStringContainsString('next_action=Re-run with --apply after reviewing candidate_rows and cutoff context.', $display);
         $this->assertStringContainsString('output_dir=/tmp/session-purge-default', $display);
     }
 

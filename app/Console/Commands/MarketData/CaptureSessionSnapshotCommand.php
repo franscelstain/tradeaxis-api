@@ -10,6 +10,10 @@ class CaptureSessionSnapshotCommand extends AbstractMarketDataCommand
 
     public function handle(SessionSnapshotService $service)
     {
+        if (! $this->validateDateString($this->argument('trade_date'), 'trade_date') || ! $this->validateSourceModeString($this->option('source_mode'))) {
+            return 1;
+        }
+
         $summary = $service->capture(
             $this->argument('trade_date'),
             $this->argument('snapshot_slot'),

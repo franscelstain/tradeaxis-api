@@ -12,6 +12,60 @@ use Illuminate\Support\Facades\File;
 
 abstract class AbstractMarketDataCommand extends Command
 {
+
+    protected function renderCommandBlocked($reasonCode, $message, array $context = [])
+    {
+        $this->error('status=BLOCKED');
+        $this->line('reason_code='.(string) $reasonCode);
+        $this->line('error='.(string) $message);
+
+        foreach ($context as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $this->line($key.'='.(string) $value);
+        }
+    }
+
+    protected function validateDateString($value, $label)
+    {
+        if ($value === null || $value === '') {
+            return true;
+        }
+
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $value)) {
+            $this->renderCommandBlocked(
+                'COMMAND_INVALID_DATE_FORMAT',
+                $label.' must use YYYY-MM-DD format.',
+                [$label => $value]
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function validateSourceModeString($value)
+    {
+        if ($value === null || $value === '') {
+            return true;
+        }
+
+        if (! in_array((string) $value, ['api', 'manual_file'], true)) {
+            $this->renderCommandBlocked(
+                'COMMAND_INVALID_SOURCE_MODE',
+                'source_mode must be api or manual_file.',
+                ['source_mode' => $value]
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
     protected function requestedDate()
     {
         if ($this->option('requested_date')) {

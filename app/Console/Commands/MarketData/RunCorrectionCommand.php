@@ -13,16 +13,32 @@ class RunCorrectionCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
+        if (! $this->validateDateString($this->option('requested_date'), 'requested_date') || ! $this->validateSourceModeString($this->option('source_mode'))) {
+            return 1;
+        }
+
         $correctionId = (int) $this->argument('correction_id');
+        if ($correctionId <= 0) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'correction_id must be a positive integer.', [
+                'correction_id' => $this->argument('correction_id'),
+            ]);
+            return 1;
+        }
+
         $correction = app(EodCorrectionRepository::class)->findById($correctionId);
 
         if (! $correction) {
-            $this->error('Correction request not found: '.$correctionId);
+            $this->renderCommandBlocked('COMMAND_CORRECTION_NOT_FOUND', 'Correction request not found: '.$correctionId, [
+                'correction_id' => $correctionId,
+            ]);
             return 1;
         }
 
         if (! in_array($correction->status, ['APPROVED', 'EXECUTING', 'RESEALED'], true)) {
-            $this->error('Correction request must be APPROVED/EXECUTING/RESEALED before execution. Current status='.$correction->status);
+            $this->renderCommandBlocked('COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE', 'Correction request must be APPROVED/EXECUTING/RESEALED before execution. Current status='.$correction->status, [
+                'correction_id' => $correctionId,
+                'correction_status' => $correction->status,
+            ]);
             return 1;
         }
 

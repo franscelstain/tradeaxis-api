@@ -21,6 +21,13 @@ class SessionSnapshotRepository
         });
     }
 
+    public function countBefore($cutoffTimestamp)
+    {
+        return DB::table('md_session_snapshots')
+            ->where('captured_at', '<', $cutoffTimestamp)
+            ->count();
+    }
+
     public function purgeBefore($cutoffTimestamp)
     {
         return DB::table('md_session_snapshots')

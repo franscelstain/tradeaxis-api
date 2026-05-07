@@ -169,7 +169,7 @@ class SessionSnapshotService
         return abs($captured->diffInSeconds($anchor, false)) <= ($slotToleranceMinutes * 60);
     }
 
-    public function purge($beforeDate = null, $outputDir = null)
+    public function purge($beforeDate = null, $outputDir = null, $apply = false)
     {
         $timezone = config('market_data.platform.timezone');
         $retentionDays = (int) config('market_data.session_snapshot.retention_days', 30);
@@ -177,10 +177,16 @@ class SessionSnapshotService
             ? Carbon::parse($beforeDate, $timezone)->endOfDay()
             : Carbon::now($timezone)->subDays($retentionDays);
 
-        $deleted = $this->snapshots->purgeBefore($cutoff->toDateTimeString());
+        $operationMode = $apply ? 'APPLIED' : 'DRY_RUN';
+        $candidateRows = (int) $this->snapshots->countBefore($cutoff->toDateTimeString());
+        $deleted = $apply ? (int) $this->snapshots->purgeBefore($cutoff->toDateTimeString()) : 0;
+
         $summary = [
+            'operation_mode' => $operationMode,
+            'reason_code' => $apply ? 'COMMAND_APPLY_CONFIRMED' : 'COMMAND_DRY_RUN_ONLY',
             'cutoff_timestamp' => $cutoff->toDateTimeString(),
             'cutoff_source' => $beforeDate ? 'explicit_before_date' : 'default_retention_days',
+            'candidate_rows' => $candidateRows,
             'deleted_rows' => (int) $deleted,
             'retention_days' => $beforeDate ? null : $retentionDays,
             'before_date' => $beforeDate,

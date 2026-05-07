@@ -3,9 +3,7 @@
 namespace App\Console\Commands\MarketData;
 
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
-use Illuminate\Console\Command;
-
-class RepairCurrentPublicationIntegrityCommand extends Command
+class RepairCurrentPublicationIntegrityCommand extends AbstractMarketDataCommand
 {
     protected $signature = 'market-data:current-publication:repair {--trade_date=} {--apply}';
 
@@ -15,6 +13,10 @@ class RepairCurrentPublicationIntegrityCommand extends Command
     {
         /** @var EodPublicationRepository $repo */
         $repo = app(EodPublicationRepository::class);
+        if (! $this->validateDateString($this->option('trade_date'), 'trade_date')) {
+            return 1;
+        }
+
         $tradeDate = $this->option('trade_date') ?: null;
         $apply = (bool) $this->option('apply');
 
@@ -83,9 +85,14 @@ class RepairCurrentPublicationIntegrityCommand extends Command
             $this->line('is_current_publication='.(string) ($row->is_current_publication ?? ''));
             $this->line('integrity_reasons='.implode(',', $reasons));
 
+            $this->line('operation_mode='.($apply ? 'APPLIED' : 'DRY_RUN'));
+            $this->line('reason_code='.($apply ? 'COMMAND_APPLY_CONFIRMED' : 'COMMAND_DRY_RUN_ONLY'));
+
             if ($apply) {
                 $repo->clearCurrentPublicationState($row->pointer_trade_date);
                 $this->info('repair_action=CLEARED_INVALID_CURRENT_STATE');
+            } else {
+                $this->line('next_action=Re-run with --apply after reviewing integrity_reasons.');
             }
         }
 

@@ -10,6 +10,10 @@ class ComputeIndicatorsCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
+        if (! $this->validateDateString($this->option('requested_date'), 'requested_date') || ! $this->validateSourceModeString($this->option('source_mode'))) {
+            return 1;
+        }
+
         $run = $this->pipeline()->completeIndicators($this->makeStageInput('COMPUTE_INDICATORS'));
         $this->renderRunSummary($run);
 

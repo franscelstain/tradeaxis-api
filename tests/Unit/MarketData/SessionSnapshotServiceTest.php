@@ -121,7 +121,7 @@ class SessionSnapshotServiceTest extends TestCase
         $this->assertFileExists($outputDir.'/market_data_session_snapshot_summary.json');
     }
 
-    public function test_purge_writes_summary()
+    public function test_purge_apply_writes_summary()
     {
         $publications = m::mock(EodPublicationRepository::class);
         $runs = m::mock(EodRunRepository::class);
@@ -129,14 +129,18 @@ class SessionSnapshotServiceTest extends TestCase
         $snapshots = m::mock(SessionSnapshotRepository::class);
         $adapter = m::mock(LocalFileSessionSnapshotAdapter::class);
 
+        $snapshots->shouldReceive('countBefore')->once()->andReturn(12);
         $snapshots->shouldReceive('purgeBefore')->once()->andReturn(12);
         $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
         $outputDir = sys_get_temp_dir().'/session_snapshot_purge_'.uniqid();
-        $summary = $service->purge('2026-03-01', $outputDir);
+        $summary = $service->purge('2026-03-01', $outputDir, true);
 
         $this->assertSame('explicit_before_date', $summary['cutoff_source']);
         $this->assertSame('2026-03-01', $summary['before_date']);
         $this->assertNull($summary['retention_days']);
+        $this->assertSame('APPLIED', $summary['operation_mode']);
+        $this->assertSame('COMMAND_APPLY_CONFIRMED', $summary['reason_code']);
+        $this->assertSame(12, $summary['candidate_rows']);
         $this->assertSame(12, $summary['deleted_rows']);
         $this->assertFileExists($outputDir.'/market_data_session_snapshot_purge_summary.json');
     }
@@ -161,6 +165,11 @@ class SessionSnapshotServiceTest extends TestCase
             ->subDays(30)
             ->toDateTimeString();
 
+        $snapshots->shouldReceive('countBefore')
+            ->once()
+            ->with($expectedCutoff)
+            ->andReturn(3);
+
         $snapshots->shouldReceive('purgeBefore')
             ->once()
             ->with($expectedCutoff)
@@ -168,15 +177,64 @@ class SessionSnapshotServiceTest extends TestCase
 
         $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
         $outputDir = sys_get_temp_dir().'/session_snapshot_purge_default_'.uniqid();
-        $summary = $service->purge(null, $outputDir);
+        $summary = $service->purge(null, $outputDir, true);
 
         $this->assertSame('default_retention_days', $summary['cutoff_source']);
+        $this->assertSame('APPLIED', $summary['operation_mode']);
+        $this->assertSame('COMMAND_APPLY_CONFIRMED', $summary['reason_code']);
+        $this->assertSame(3, $summary['candidate_rows']);
         $this->assertSame(3, $summary['deleted_rows']);
         $this->assertSame(30, $summary['retention_days']);
         $this->assertNull($summary['before_date']);
         $this->assertFileExists($outputDir.'/market_data_session_snapshot_purge_summary.json');
 
         \Carbon\Carbon::setTestNow();
+    }
+
+
+    public function test_purge_defaults_to_DryRun_without_deleting_rows()
+    {
+        $publications = m::mock(EodPublicationRepository::class);
+        $runs = m::mock(EodRunRepository::class);
+        $scope = m::mock(EligibilitySnapshotScopeRepository::class);
+        $snapshots = m::mock(SessionSnapshotRepository::class);
+        $adapter = m::mock(LocalFileSessionSnapshotAdapter::class);
+
+        $snapshots->shouldReceive('countBefore')->once()->andReturn(5);
+        $snapshots->shouldNotReceive('purgeBefore');
+
+        $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
+        $outputDir = sys_get_temp_dir().'/session_snapshot_purge_default_dry_run_'.uniqid();
+        $summary = $service->purge('2026-03-01', $outputDir);
+
+        $this->assertSame('DRY_RUN', $summary['operation_mode']);
+        $this->assertSame('COMMAND_DRY_RUN_ONLY', $summary['reason_code']);
+        $this->assertSame(5, $summary['candidate_rows']);
+        $this->assertSame(0, $summary['deleted_rows']);
+        $this->assertFileExists($outputDir.'/market_data_session_snapshot_purge_summary.json');
+    }
+
+
+    public function test_purge_dry_run_counts_candidates_without_deleting_rows()
+    {
+        $publications = m::mock(EodPublicationRepository::class);
+        $runs = m::mock(EodRunRepository::class);
+        $scope = m::mock(EligibilitySnapshotScopeRepository::class);
+        $snapshots = m::mock(SessionSnapshotRepository::class);
+        $adapter = m::mock(LocalFileSessionSnapshotAdapter::class);
+
+        $snapshots->shouldReceive('countBefore')->once()->andReturn(7);
+        $snapshots->shouldNotReceive('purgeBefore');
+
+        $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
+        $outputDir = sys_get_temp_dir().'/session_snapshot_purge_dry_run_'.uniqid();
+        $summary = $service->purge('2026-03-01', $outputDir, false);
+
+        $this->assertSame('DRY_RUN', $summary['operation_mode']);
+        $this->assertSame('COMMAND_DRY_RUN_ONLY', $summary['reason_code']);
+        $this->assertSame(7, $summary['candidate_rows']);
+        $this->assertSame(0, $summary['deleted_rows']);
+        $this->assertFileExists($outputDir.'/market_data_session_snapshot_purge_summary.json');
     }
 
 }

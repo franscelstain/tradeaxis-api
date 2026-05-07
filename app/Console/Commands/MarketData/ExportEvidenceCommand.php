@@ -25,17 +25,25 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
         });
 
         if (count($selected) === 0) {
-            $this->error('Exactly one of --run_id, --correction_id, or --replay_id must be provided.');
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'Exactly one of --run_id, --correction_id, or --replay_id must be provided.');
             return 1;
         }
 
         if (count($selected) > 1) {
-            $this->error('Evidence export selector is ambiguous. Provide exactly one of --run_id, --correction_id, or --replay_id.');
+            $this->renderCommandBlocked('COMMAND_CONFLICTING_OPTIONS', 'Evidence export selector is ambiguous. Provide exactly one of --run_id, --correction_id, or --replay_id.', [
+                'selected_inputs' => implode(',', array_keys($selected)),
+            ]);
+            return 1;
+        }
+
+        if ($this->option('trade_date') && ! $this->validateDateString($this->option('trade_date'), 'trade_date')) {
             return 1;
         }
 
         if ($replayId && ! $this->option('trade_date')) {
-            $this->error('Replay evidence export requires --trade_date; latest-row resolution is not allowed.');
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'Replay evidence export requires --trade_date; latest-row resolution is not allowed.', [
+                'replay_id' => $replayId,
+            ]);
 
             return 1;
         }
@@ -50,7 +58,7 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
                 $result = $service->exportReplayEvidence($replayId, $this->option('trade_date') ?: null, $this->option('output_dir') ?: null);
             }
         } catch (\Throwable $e) {
-            $this->error('error='.$e->getMessage());
+            $this->renderCommandBlocked('COMMAND_EXECUTION_FAILED', $e->getMessage());
 
             return 1;
         }

@@ -64,6 +64,17 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `SNAP_SOURCE_RATE_LIMIT` | INTRADAY | WARN | The session-snapshot source hit rate limiting. |
 | `SNAP_PARTIAL_SCOPE` | INTRADAY | WARN | The session snapshot captured only part of the planned scope. |
 | `SNAP_SOURCE_ERROR` | INTRADAY | WARN | The session-snapshot source failed for an operational reason that does not block EOD. |
+| `COMMAND_MISSING_REQUIRED_INPUT` | COMMAND | HARD | Operator command input is missing or empty for a required argument or option. |
+| `COMMAND_INVALID_DATE_FORMAT` | COMMAND | HARD | Operator command date input does not use the locked `YYYY-MM-DD` format. |
+| `COMMAND_INVALID_SOURCE_MODE` | COMMAND | HARD | Operator command source mode is outside the locked API/manual-file source modes. |
+| `COMMAND_INVALID_PROMOTE_MODE` | COMMAND | HARD | Operator command promote mode is unsupported by the locked promote contract. |
+| `COMMAND_CONFLICTING_OPTIONS` | COMMAND | HARD | Operator command options are mutually exclusive or ambiguous. |
+| `COMMAND_DESTRUCTIVE_GUARD_REQUIRED` | COMMAND | HARD | Operator command requested a destructive or force action without the required explicit guard/reason. |
+| `COMMAND_DRY_RUN_ONLY` | COMMAND | INFO | Operator command completed a dry-run preview and intentionally did not mutate final state. |
+| `COMMAND_APPLY_CONFIRMED` | COMMAND | INFO | Operator command mutation was executed only after explicit apply confirmation. |
+| `COMMAND_EXECUTION_FAILED` | COMMAND | HARD | Operator command execution failed and surfaced a reason-coded blocking outcome. |
+| `COMMAND_CORRECTION_NOT_FOUND` | COMMAND | HARD | Operator command referenced a correction id that does not exist. |
+| `COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE` | COMMAND | HARD | Operator command attempted to execute a correction whose lifecycle status is not executable. |
 
 | `REPLAY_FIXTURE_SCHEMA_MISMATCH` | REPLAY | HARD | Replay fixture manifest or schema version does not match the locked replay fixture contract. |
 | `REPLAY_EXPECTED_PROOF_INCOMPLETE` | REPLAY | HARD | Replay expected proof package is missing required deterministic lifecycle context. |

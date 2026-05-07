@@ -12,6 +12,12 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
+        if (! $this->validateDateString($this->argument('start_date'), 'start_date')
+            || ! $this->validateDateString($this->argument('end_date'), 'end_date')
+            || ! $this->validateSourceModeString($this->option('source_mode'))) {
+            return 1;
+        }
+
         $previousInputFile = config('market_data.source.local_input_file');
         $configuredOverride = false;
 

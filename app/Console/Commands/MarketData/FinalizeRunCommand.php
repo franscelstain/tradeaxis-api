@@ -10,6 +10,10 @@ class FinalizeRunCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
+        if (! $this->validateDateString($this->option('requested_date'), 'requested_date') || ! $this->validateSourceModeString($this->option('source_mode'))) {
+            return 1;
+        }
+
         $run = $this->pipeline()->completeFinalize($this->makeStageInput('FINALIZE'));
         $this->renderRunSummary($run);
 

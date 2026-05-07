@@ -10,6 +10,10 @@ class DailyPipelineCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
+        if (! $this->validateDateString($this->option('requested_date'), 'requested_date') || ! $this->validateSourceModeString($this->option('source_mode'))) {
+            return 1;
+        }
+
         $previousInputFile = config('market_data.source.local_input_file');
         $configuredOverride = false;
 

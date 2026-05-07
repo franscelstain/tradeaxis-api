@@ -12,6 +12,10 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
+        if (! $this->validateDateString($this->option('requested_date'), 'requested_date') || ! $this->validateSourceModeString($this->option('source_mode'))) {
+            return 1;
+        }
+
         $requestedDate = $this->requestedDate();
         $sourceMode = $this->sourceMode();
         $runId = $this->option('run_id') ?: null;
@@ -30,17 +34,17 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
         $forceReplaceReason = $this->option('force_replace_reason') ?: $this->option('force_reason') ?: null;
 
         if ($promoteMode !== null && ! in_array($promoteMode, ['full_publish', 'correction_current', 'repair_candidate'], true)) {
-            $this->error('error=Unsupported promote mode. Allowed values: full_publish, correction_current, repair_candidate. Aliases: correction, incremental.');
+            $this->renderCommandBlocked('COMMAND_INVALID_PROMOTE_MODE', 'Unsupported promote mode. Allowed values: full_publish, correction_current, repair_candidate. Aliases: correction, incremental.', ['promote_mode' => $promoteMode]);
             return 1;
         }
 
         if ($promoteMode === 'correction_current' && $correctionId === null) {
-            $this->error('error=Promote mode correction_current requires --correction_id.');
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'Promote mode correction_current requires --correction_id.', ['promote_mode' => $promoteMode]);
             return 1;
         }
 
         if ($forceReplace && ($forceReplaceReason === null || trim((string) $forceReplaceReason) === '')) {
-            $this->error('error=--force_replace=true requires --force_replace_reason or --force_reason for audit trail.');
+            $this->renderCommandBlocked('COMMAND_DESTRUCTIVE_GUARD_REQUIRED', '--force_replace=true requires --force_replace_reason or --force_reason for audit trail.', ['force_replace' => 'true']);
             return 1;
         }
 
