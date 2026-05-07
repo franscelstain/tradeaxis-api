@@ -145,12 +145,47 @@ class MarketDataBackfillService
 
         file_put_contents(
             $outputDir.'/market_data_backfill_summary.json',
-            json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            json_encode($this->buildSummaryArtifactPayload($summary), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
 
         return $summary;
     }
 
+
+
+    private function buildSummaryArtifactPayload(array $summary)
+    {
+        $artifact = $summary;
+
+        if (! isset($artifact['cases']) || ! is_array($artifact['cases'])) {
+            return $artifact;
+        }
+
+        foreach ($artifact['cases'] as $index => $case) {
+            if (! is_array($case)) {
+                continue;
+            }
+
+            if ($this->shouldRedactManualSourceInputFileFromArtifact($case)) {
+                unset($case['source_input_file']);
+            }
+
+            $artifact['cases'][$index] = $case;
+        }
+
+        return $artifact;
+    }
+
+    private function shouldRedactManualSourceInputFileFromArtifact(array $case)
+    {
+        if ((string) ($case['source_name'] ?? '') !== 'LOCAL_FILE') {
+            return false;
+        }
+
+        return ((string) ($case['source_file_hash'] ?? '') !== '')
+            || array_key_exists('source_file_size_bytes', $case)
+            || array_key_exists('source_file_row_count', $case);
+    }
 
     private function buildSourceAttemptTelemetryCase($requestedDate, $run)
     {
@@ -206,6 +241,13 @@ class MarketDataBackfillService
         $sourceContext = $this->mergeSourceContextFromTelemetry([
             'source_name' => $run->source_name ?? (($notesMap['source_name'] ?? '') !== '' ? (string) $notesMap['source_name'] : null),
             'source_input_file' => $run->source_input_file ?? (($notesMap['source_input_file'] ?? '') !== '' ? (string) $notesMap['source_input_file'] : null),
+            'source_file_hash' => $run->source_file_hash ?? (($notesMap['source_file_hash'] ?? '') !== '' ? (string) $notesMap['source_file_hash'] : null),
+            'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? (($notesMap['source_file_hash_algorithm'] ?? '') !== '' ? (string) $notesMap['source_file_hash_algorithm'] : null),
+            'source_file_size_bytes' => $run->source_file_size_bytes ?? (isset($notesMap['source_file_size_bytes']) && $notesMap['source_file_size_bytes'] !== '' ? (int) $notesMap['source_file_size_bytes'] : null),
+            'source_file_row_count' => $run->source_file_row_count ?? (isset($notesMap['source_file_row_count']) && $notesMap['source_file_row_count'] !== '' ? (int) $notesMap['source_file_row_count'] : null),
+            'accepted_row_count' => $run->bars_rows_written ?? (isset($notesMap['accepted_row_count']) && $notesMap['accepted_row_count'] !== '' ? (int) $notesMap['accepted_row_count'] : null),
+            'rejected_row_count' => $run->invalid_bar_count ?? (isset($notesMap['rejected_row_count']) && $notesMap['rejected_row_count'] !== '' ? (int) $notesMap['rejected_row_count'] : null),
+            'invalid_row_count' => $run->invalid_bar_count ?? (isset($notesMap['invalid_row_count']) && $notesMap['invalid_row_count'] !== '' ? (int) $notesMap['invalid_row_count'] : null),
             'provider' => $run->source_provider ?? (($notesMap['source_provider'] ?? '') !== '' ? (string) $notesMap['source_provider'] : null),
             'timeout_seconds' => $run->source_timeout_seconds ?? (isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] != '' ? (int) $notesMap['source_timeout_seconds'] : null),
             'retry_max' => $run->source_retry_max ?? (isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] != '' ? (int) $notesMap['source_retry_max'] : null),
@@ -228,6 +270,12 @@ class MarketDataBackfillService
 
         if (($sourceContext['source_input_file'] ?? null) !== null) {
             $result['source_input_file'] = $this->normalizeOptionalPathForDisplay($sourceContext['source_input_file']);
+        }
+
+        foreach (['source_file_hash', 'source_file_hash_algorithm', 'source_file_size_bytes', 'source_file_row_count', 'accepted_row_count', 'rejected_row_count', 'invalid_row_count'] as $field) {
+            if (($sourceContext[$field] ?? null) !== null && $sourceContext[$field] !== '') {
+                $result[$field] = $sourceContext[$field];
+            }
         }
 
         if (is_array($sourceAttemptTelemetry)) {
@@ -274,6 +322,10 @@ class MarketDataBackfillService
         $fieldMap = [
             'source_name' => 'source_name',
             'source_input_file' => 'source_input_file',
+            'source_file_hash' => 'source_file_hash',
+            'source_file_hash_algorithm' => 'source_file_hash_algorithm',
+            'source_file_size_bytes' => 'source_file_size_bytes',
+            'source_file_row_count' => 'source_file_row_count',
             'provider' => 'provider',
             'timeout_seconds' => 'timeout_seconds',
             'retry_max' => 'retry_max',
@@ -456,6 +508,7 @@ class MarketDataBackfillService
         foreach ([
             'quality_gate_state' => ['quality_gate_state'],
             'coverage_gate_state' => ['coverage_gate_state'],
+            'coverage_reason_code' => ['coverage_reason_code'],
             'coverage_ratio' => ['coverage_ratio'],
             'coverage_universe_count' => ['coverage_universe_count'],
             'coverage_available_count' => ['coverage_available_count'],
@@ -475,6 +528,10 @@ class MarketDataBackfillService
                     break;
                 }
             }
+        }
+
+        if ((! isset($context['coverage_reason_code']) || $context['coverage_reason_code'] === '') && isset($context['coverage_gate_state']) && $context['coverage_gate_state'] !== '') {
+            $context['coverage_reason_code'] = $this->resolveCoverageReasonCodeFromState($context['coverage_gate_state']);
         }
 
         if ($this->runs !== null && isset($run->run_id) && method_exists($this->runs, 'findLatestTerminalEventForRun')) {
@@ -532,7 +589,11 @@ class MarketDataBackfillService
         }
 
         return (string) ($case['source_name'] ?? '') === 'LOCAL_FILE'
-            && ((string) ($case['source_input_file'] ?? '') !== '');
+            && (
+                ((string) ($case['source_file_hash'] ?? '') !== '')
+                || array_key_exists('source_file_row_count', $case)
+                || array_key_exists('accepted_row_count', $case)
+            );
     }
 
     private function runCountsAsPass($run)
@@ -548,6 +609,25 @@ class MarketDataBackfillService
 
         return in_array($terminalStatus, ['FAILED', 'HELD'], true)
             && $publishabilityState === 'NOT_READABLE';
+    }
+
+    private function resolveCoverageReasonCodeFromState($coverageGateState)
+    {
+        $state = strtoupper((string) $coverageGateState);
+
+        if ($state === 'PASS') {
+            return 'COVERAGE_THRESHOLD_MET';
+        }
+
+        if ($state === 'FAIL') {
+            return 'COVERAGE_BELOW_THRESHOLD';
+        }
+
+        if ($state === 'NOT_EVALUABLE' || $state === 'BLOCKED') {
+            return 'RUN_COVERAGE_NOT_EVALUABLE';
+        }
+
+        return null;
     }
 
     private function guardDateRange($startDate, $endDate)

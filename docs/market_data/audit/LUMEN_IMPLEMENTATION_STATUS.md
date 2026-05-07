@@ -3,24 +3,24 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Source / Provider Resilience
+- Manual File Policy Enforcement
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce source/provider resilience across API provider ingest, manual-file ingest, timeout/retry/rate-limit handling, partial provider response telemetry, source identity persistence, controlled source failure state, evidence/replay source context, command output, reason-code registry, DB schema, and static guards.
-- Container validation completed with static trace and `php -l`; uploaded ZIP has no `vendor/`, so PHPUnit/artisan validation was completed operator-local.
-- Operator-local targeted recovery suites and full `tests/Unit/MarketData` validation passed; Source / Provider Resilience is finalized.
+- Enforce manual-file policy across source identity, local file validation, import-only, promote, coverage gate, finalize/publishability, correction safety, pointer preservation, evidence, replay, command output, backfill output, repository persistence, and static guards.
+- Container validation completed with static trace and `php -l`; uploaded ZIP has no `vendor/`, so PHPUnit/artisan validation was performed operator-local.
+- Operator-local targeted and full MarketData PHPUnit validation passed; implementation is promoted to DONE.
 
 [SESSION_GOAL]
-- Source failure must never be silent, must never create `SUCCESS + READABLE` by accident, must keep manual-file and API identity distinct, and must preserve pointer/current publication through explicit `HELD` / `NOT_READABLE` / controlled failure or deterministic prior-readable fallback behavior.
+- Manual file may be a source input, but must not become a shortcut to `SUCCESS + READABLE`, pointer switch, current publication, coverage bypass, correction bypass, or evidence/replay ambiguity.
 
 [SESSION_NOTES]
-- Gap found: manual-file adapter used generic runtime exceptions for missing/unreadable/malformed inputs, so source failure reason codes were not explicit.
-- Gap found: Yahoo per-ticker acquisition did not aggregate attempt/failure telemetry across ticker requests and could not expose partial response state distinctly from coverage state.
-- Gap found: evidence/replay source context was incomplete; replay did not persist/compare source/provider lifecycle fields and non-readable source-failure runs could not be replayed without a readable publication path.
-- Gap found: replay DB schema and SQLite mirror lacked source/provider lifecycle fields.
-- Recovery-2 patch applied and operator-local PHPUnit passed for targeted source/provider recovery tests plus full `tests/Unit/MarketData`, so status is promoted to DONE under audit governance.
+- Gap found: manual-file success telemetry did not consistently expose source file identity/hash/size/row count when file was auto-resolved from configured local JSON/CSV directory.
+- Gap found: accepted/rejected/invalid row telemetry was not consistently surfaced in source acquisition notes, evidence source context, replay comparison aliases, and operator command output.
+- Gap found: replay compared configured expected source fields but did not explicitly enforce manual-file policy mismatch classes for provider leakage, wrong source name, or READABLE without coverage PASS.
+- Patch applied: manual-file telemetry, import ingest row telemetry, source identity persistence, evidence/replay/manual policy mismatch guard, command/backfill output visibility, and `ManualFilePolicyEnforcementStaticGuardTest`.
+- Operator-local final retest passed targeted manual/import/promote/correction/coverage/finalize/pointer/evidence/replay/command suites, focused files, and full `tests/Unit/MarketData`.
 
 ---
 
@@ -42,6 +42,71 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Manual File Policy Enforcement -> DONE
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_CONTRACT] MANUAL_FILE_POLICY_ENFORCEMENT_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-06 -> Manual File Policy Enforcement session opened against latest source-of-truth ZIP.
+  - 2026-05-06 -> Static trace reviewed manual source adapter, ingest service, import-only daily flow, promote flow, coverage/finalize interaction, correction baseline path, pointer preservation, evidence export, replay verification, command output, backfill output, repository source persistence, and existing static guards.
+  - 2026-05-06 -> Existing behavior confirmed: `market-data:daily` uses import-only ingest path, `market-data:promote` performs coverage gate before finalize, correction current requires approved correction/baseline, repair candidate remains non-current policy path, and finalize/pointer paths preserve prior readable/current state on invalid state.
+  - 2026-05-06 -> Gap found: manual-file adapter success path did not emit durable acquisition telemetry for auto-resolved JSON/CSV source file identity, hash, size, and row count.
+  - 2026-05-06 -> Gap found: accepted/rejected/invalid row counts were not consistently visible across source acquisition notes, evidence, replay comparison, command summaries, and backfill output.
+  - 2026-05-06 -> Gap found: replay lacked explicit manual-file policy mismatch classes for source-name/provider leakage and `READABLE` without coverage PASS.
+  - 2026-05-06 -> Enforcement patch added manual-file acquisition telemetry, ingest row telemetry, source file identity persistence, evidence/replay source context, manual policy replay mismatches, operator-grade command/backfill fields, and `ManualFilePolicyEnforcementStaticGuardTest`.
+  - 2026-05-06 -> Container `php -l` passed for changed PHP files and all app/tests/database PHP files; vendor/PHPUnit unavailable in uploaded ZIP, so local validation remains pending.
+  - 2026-05-07 -> Operator-local manual tests returned 7 failures and 1 error in full `tests/Unit/MarketData`; failure cluster was static guard coverage/publish-target visibility, manual source path normalization, backfill `source_summary` regression, API source summary row-count leakage, and replay unchanged fixture mismatch.
+  - 2026-05-07 -> Remediation patch applied: promote output/artifact now exposes `publish_target`, backfill output/service exposes `coverage_reason_code`, manual persisted source input is normalized to basename for pipeline evidence, backfill `source_summary` is restricted to provider/retry source summary fields, and replay manual source-name mismatch no longer breaks legacy unchanged fixtures when source name is absent.
+  - 2026-05-07 -> Container `php -l` passed for the remediation-changed PHP files; PHPUnit remains pending because uploaded ZIP has no `vendor/`.
+  - 2026-05-07 -> Operator-local remediation retest improved status: `ManualFilePolicyEnforcementStaticGuardTest.php` PASS, `ReplayVerificationServiceTest.php` PASS, and full `tests/Unit/MarketData` reduced to 1 remaining failure isolated to manual backfill summary artifact carrying `source_input_file` where the existing integration contract forbids it.
+  - 2026-05-07 -> Follow-up remediation patch suppresses manual LOCAL_FILE `source_input_file` from `market_data_backfill_summary.json` case output while preserving source file/hash/row telemetry and backfill stop behavior through non-path source identity fields.
+  - 2026-05-07 -> Operator-local follow-up retest passed `MarketDataPipelineIntegrationTest.php`, but full `tests/Unit/MarketData` exposed two `MarketDataBackfillServiceTest` errors because service-level summary contracts still expect `source_input_file` while the persisted backfill artifact must redact durable LOCAL_FILE path exposure.
+  - 2026-05-07 -> Remediation patch adjusted `MarketDataBackfillService` to preserve normalized `source_input_file` in returned service summaries while redacting it only from `market_data_backfill_summary.json` when durable manual file identity fields such as hash/size/row count are available.
+  - 2026-05-07 -> Operator-local final validation passed: manual/manual lowercase, LocalFile/local, Import/import, Promote/promote, Correction/correction, Coverage/coverage, Finalize, Pointer/pointer, Evidence, Replay, Command filters all PASS; full `tests/Unit/MarketData` PASS with 280 tests / 2840 assertions; focused LocalFileEodBarsAdapter, EodBarsIngestService, MarketDataPipelineIntegration, OpsCommandSurface, ReadablePublicationReadContractIntegration, MarketDataEvidenceExportService, ReplayVerificationService, ManualFilePolicyEnforcementStaticGuard, and MarketDataBackfillService tests all PASS. Implementation promoted to DONE.
+
+  [IMPLEMENTATION]
+  - `LocalFileEodBarsAdapter` now records manual-file acquisition telemetry on successful JSON/CSV load: `LOCAL_FILE`, provider `null`, input file, file hash, hash algorithm, file size, source file row count, returned row count, accepted/rejected/invalid row seed counts, and source final status.
+  - `EodBarsIngestService` now consumes manual-file acquisition telemetry, overwrites accepted/rejected/invalid counts with canonical ingest results, and preserves manual/API source acquisition shape consistently.
+  - `MarketDataPipelineService` now persists source file identity from acquisition telemetry even when manual file was auto-resolved instead of explicitly configured, forces manual source display identity to `LOCAL_FILE`, writes file/row telemetry into run notes, and normalizes manual `source_input_file` to basename for persisted evidence/output identity.
+  - `AbstractMarketDataCommand` and `BackfillMarketDataCommand` now expose source file hash/algorithm/size/row-count plus accepted/rejected/invalid row counts in operator output and summary payloads.
+  - `MarketDataEvidenceExportService` now includes accepted/rejected/invalid row counts and manual-file row telemetry in run summary/source context.
+  - `ReplayVerificationService` now exposes accepted/rejected/invalid row aliases and adds explicit manual-file policy mismatch detection for wrong source mode, non-empty wrong source name, provider leakage, and `READABLE` without coverage PASS.
+  - `MarketDataBackfillService` now carries manual file source file fields and row telemetry into per-case output, exposes coverage reason context, and keeps `source_summary` limited to provider/retry summary fields to avoid API/manual summary contract regression.
+  - `ManualFilePolicyEnforcementStaticGuardTest` guards manual/API identity separation, import-only/promote separation, coverage interaction, command/evidence/replay/manual context visibility, and forbidden latest trade-date shortcuts in manual-file runtime paths.
+
+  [ENFORCEMENT]
+  - Manual file success/failure paths use `source_name=LOCAL_FILE` and provider `null`; API provider identity is not reused for manual file.
+  - Manual file import-only remains ingest-only and does not run pointer switch through the daily command path.
+  - Manual file promote remains coverage-gated before finalize; coverage failure can finalize as non-readable but cannot validly become `SUCCESS + READABLE`.
+  - Manual file source file identity is persisted from adapter telemetry, not only from explicit config input.
+  - Evidence/replay/command/backfill surfaces now expose manual file context and canonical row-count telemetry.
+  - Replay can now flag manual-file policy mismatch even when the fixture does not rely only on raw equality fields.
+  - Static guard blocks regression for manual/API identity mixing, hidden manual context, import-only/publish confusion, and latest/MAX trade-date shortcuts in touched runtime paths.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Manual file is an explicit local source input, not a publishability shortcut. It remains separate from API provider identity, import-only does not publish current/readable state, promote remains coverage-gated, correction remains baseline/pointer-safe, persisted evidence/output normalizes or redacts local path exposure where required, and replay/command/backfill surfaces expose manual file lifecycle context.
+
+  [EVIDENCE]
+  - Container confirmed uploaded ZIP has no `vendor/`; container PHPUnit/artisan was not run, and operator-local PHPUnit evidence was used for final lifecycle status.
+  - Container static trace completed across manual adapter, source resolver, ingest, import-only daily command, promote command, coverage/finalize, correction baseline path, pointer preservation, evidence, replay, backfill, command output, repository source persistence, and static guard paths.
+  - Container `php -l` passed for changed files: `LocalFileEodBarsAdapter.php`, `EodBarsIngestService.php`, `MarketDataPipelineService.php`, `AbstractMarketDataCommand.php`, `BackfillMarketDataCommand.php`, `MarketDataBackfillService.php`, `MarketDataEvidenceExportService.php`, `ReplayVerificationService.php`, and `ManualFilePolicyEnforcementStaticGuardTest.php`.
+  - Container full PHP syntax scan passed for all app/tests/database PHP files: 133 files.
+  - Container forbidden latest-date shortcut scan found no `MAX(trade_date)`, `max('trade_date')`, `latest('trade_date')`, `orderByDesc('trade_date')`, or `ORDER BY trade_date DESC` in patched manual-file runtime paths.
+  - Operator-local targeted filters PASS: Manual/manual 19 tests / 191 assertions; LocalFile 2 / 7; local 4 / 26; Import/import 2 / 19; Promote/promote 19 / 132; Correction/correction 59 / 1146; Coverage/coverage 40 / 300; Finalize 42 / 261; Pointer/pointer 60 / 669; Evidence 29 / 336; Replay 27 / 352; Command 54 / 400.
+  - Operator-local full MarketData suite PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 280 tests / 2840 assertions.
+  - Focused operator-local files PASS: `LocalFileEodBarsAdapterTest.php` 2 / 7; `EodBarsIngestServiceTest.php` 4 / 31; `MarketDataPipelineIntegrationTest.php` 53 / 1191; `OpsCommandSurfaceTest.php` 42 / 260; `ReadablePublicationReadContractIntegrationTest.php` 8 / 15; `MarketDataEvidenceExportServiceTest.php` 3 / 52; `ReplayVerificationServiceTest.php` 5 / 15; `ManualFilePolicyEnforcementStaticGuardTest.php` 4 / 118; `MarketDataBackfillServiceTest.php` 8 / 71.
+
+  [LOCK_CONDITION]
+  - Satisfied for implementation DONE by operator-local targeted manual-file policy validation, focused file validation, and full `tests/Unit/MarketData` PASS.
+
+---
+
+## VERIFIED IMPLEMENTATION ENTRIES
 
 - Source / Provider Resilience -> DONE
 
@@ -459,8 +524,6 @@ ACTIVE SESSION:
   - Future audit restoration must continue one scope at a time and must not reintroduce broad DONE/LOCKED claims without fresh evidence.
 
 ---
-
-## VERIFIED IMPLEMENTATION ENTRIES
 
 - DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization → DONE
 

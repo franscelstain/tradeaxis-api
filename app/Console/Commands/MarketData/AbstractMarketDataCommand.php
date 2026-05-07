@@ -115,8 +115,19 @@ abstract class AbstractMarketDataCommand extends Command
 
         $this->renderSourceSummary($run, $sourceContext);
 
+        foreach ([
+            'accepted_row_count' => $this->runField($run, 'bars_rows_written'),
+            'rejected_row_count' => $this->runField($run, 'invalid_bar_count'),
+            'invalid_row_count' => $this->runField($run, 'invalid_bar_count'),
+        ] as $label => $value) {
+            if ($value !== null && $value !== '') {
+                $this->line($label.'='.(string) $value);
+            }
+        }
+
         $reasonCode = $this->runField($run, 'final_reason_code', $this->runField($run, 'reason_code'));
         if ($reasonCode !== null && $reasonCode !== '') {
+            $this->line('final_reason_code='.(string) $reasonCode);
             $this->line('reason_code='.(string) $reasonCode);
         }
 
@@ -158,6 +169,9 @@ abstract class AbstractMarketDataCommand extends Command
             'coverage_threshold_mode' => $this->runField($run, 'coverage_threshold_mode'),
             'coverage_universe_basis' => $this->runField($run, 'coverage_universe_basis'),
             'coverage_contract_version' => $this->runField($run, 'coverage_contract_version'),
+            'accepted_row_count' => $this->runField($run, 'bars_rows_written'),
+            'rejected_row_count' => $this->runField($run, 'invalid_bar_count'),
+            'invalid_row_count' => $this->runField($run, 'invalid_bar_count'),
         ];
 
         if (($sourceContext['source_mode'] ?? null) !== null && $sourceContext['source_mode'] !== '') {
@@ -170,6 +184,12 @@ abstract class AbstractMarketDataCommand extends Command
 
         if (($sourceContext['source_input_file'] ?? null) !== null && $sourceContext['source_input_file'] !== '') {
             $payload['source_input_file'] = $this->normalizeOptionalPathForDisplay($sourceContext['source_input_file']);
+        }
+
+        foreach (['source_file_hash', 'source_file_hash_algorithm', 'source_file_size_bytes', 'source_file_row_count'] as $fileField) {
+            if (($sourceContext[$fileField] ?? null) !== null && $sourceContext[$fileField] !== '') {
+                $payload[$fileField] = $sourceContext[$fileField];
+            }
         }
 
         if (($sourceContext['source_attempt_event_type'] ?? null) !== null && $sourceContext['source_attempt_event_type'] !== '') {
@@ -228,12 +248,17 @@ abstract class AbstractMarketDataCommand extends Command
 
         foreach ([
             'provider' => 'provider',
+            'source_file_hash' => 'source_file_hash',
+            'source_file_hash_algorithm' => 'source_file_hash_algorithm',
+            'source_file_size_bytes' => 'source_file_size_bytes',
+            'source_file_row_count' => 'source_file_row_count',
             'timeout_seconds' => 'timeout_seconds',
             'retry_max' => 'retry_max',
             'attempt_count' => 'attempt_count',
             'success_after_retry' => 'success_after_retry',
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
+            'source_final_status' => 'source_final_status',
         ] as $key => $label) {
             if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
                 continue;
@@ -268,6 +293,12 @@ abstract class AbstractMarketDataCommand extends Command
             $this->line('source_input_file='.(string) $this->normalizeOptionalPathForDisplay($inputFile));
         }
 
+        foreach (['source_file_hash', 'source_file_hash_algorithm', 'source_file_size_bytes', 'source_file_row_count'] as $fileField) {
+            if (($sourceContext[$fileField] ?? null) !== null && $sourceContext[$fileField] !== '') {
+                $this->line($fileField.'='.(string) $sourceContext[$fileField]);
+            }
+        }
+
         if (($sourceContext['source_attempt_event_type'] ?? null) !== null && $sourceContext['source_attempt_event_type'] !== '') {
             $this->line('source_attempt_event_type='.(string) $sourceContext['source_attempt_event_type']);
         }
@@ -293,6 +324,10 @@ abstract class AbstractMarketDataCommand extends Command
             'source_name' => $this->runField($run, 'source_name', $notesMap['source_name'] ?? null),
             'source_input_file' => $this->runField($run, 'source_input_file', $notesMap['source_input_file'] ?? null),
             'provider' => $this->runField($run, 'source_provider', $notesMap['source_provider'] ?? null),
+            'source_file_hash' => $this->runField($run, 'source_file_hash', $notesMap['source_file_hash'] ?? null),
+            'source_file_hash_algorithm' => $this->runField($run, 'source_file_hash_algorithm', $notesMap['source_file_hash_algorithm'] ?? null),
+            'source_file_size_bytes' => $this->runField($run, 'source_file_size_bytes', $notesMap['source_file_size_bytes'] ?? null),
+            'source_file_row_count' => $this->runField($run, 'source_file_row_count', $notesMap['source_file_row_count'] ?? null),
             'timeout_seconds' => $this->runField($run, 'source_timeout_seconds', $notesMap['source_timeout_seconds'] ?? null),
             'retry_max' => $this->runField($run, 'source_retry_max', $notesMap['source_retry_max'] ?? null),
             'attempt_count' => $this->runField($run, 'source_attempt_count', $notesMap['source_attempt_count'] ?? null),
@@ -396,6 +431,10 @@ abstract class AbstractMarketDataCommand extends Command
             'source_mode' => 'source_mode',
             'source_name' => 'source_name',
             'source_input_file' => 'source_input_file',
+            'source_file_hash' => 'source_file_hash',
+            'source_file_hash_algorithm' => 'source_file_hash_algorithm',
+            'source_file_size_bytes' => 'source_file_size_bytes',
+            'source_file_row_count' => 'source_file_row_count',
             'provider' => 'provider',
             'timeout_seconds' => 'timeout_seconds',
             'retry_max' => 'retry_max',

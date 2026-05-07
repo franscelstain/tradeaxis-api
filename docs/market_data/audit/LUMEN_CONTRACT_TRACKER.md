@@ -3,20 +3,20 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Source / Provider Resilience
+- Manual File Policy Enforcement
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Track source/provider resilience across source mode identity, API provider timeout/retry/rate-limit, manual-file separation, partial source response, controlled source failure, fallback preservation, evidence/replay source context, command output, reason-code registry, schema persistence, and static guard enforcement.
-- Contract is LOCKED by static patch, `php -l`, targeted operator-local recovery validation, and full `tests/Unit/MarketData` PASS.
+- Track manual-file policy enforcement across source identity, validation, import-only, promote, coverage gate, correction lifecycle, finalize/publishability, pointer preservation, evidence, replay, command/backfill output, and static guard enforcement.
+- Contract is LOCKED after remediation patch, targeted operator-local validation, focused file validation, and full MarketData PHPUnit validation passed.
 
 [SESSION_GOAL]
-- `SOURCE_PROVIDER_RESILIENCE_CONTRACT` prevents source/provider failure from becoming silent, ambiguous, mixed-identity, pointer-corrupting, or falsely readable.
+- `MANUAL_FILE_POLICY_ENFORCEMENT_CONTRACT` prevents manual file from bypassing publishability, coverage gate, seal/finalize, correction lifecycle, pointer, evidence, replay, or operator-output contracts.
 
 [SESSION_NOTES]
-- This contract reconciles source identity, ingest, degraded source, fallback, coverage gate, finalize/publishability, evidence, replay, command, and schema contracts instead of duplicating them.
-- Container validation covered static trace and `php -l`; PHPUnit/artisan was validated operator-local because uploaded ZIP has no `vendor/`.
+- This contract reconciles source/provider resilience, coverage gate enforcement, publishability state integrity, finalize/lock/pointer determinism, correction lifecycle safety, evidence export, replay verification, and command surface consistency instead of duplicating those contracts.
+- Container validation covered static trace and `php -l`; operator-local PHPUnit validation passed for targeted filters, focused files, and full MarketData suite.
 
 ---
 
@@ -38,6 +38,75 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- MANUAL_FILE_POLICY_ENFORCEMENT_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_IMPLEMENTATION] Manual File Policy Enforcement
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-06 -> Canonical manual-file policy enforcement contract opened under audit governance.
+  - 2026-05-06 -> Static trace reconciled existing source/provider resilience, import-only separation, promote coverage gate, publishability state integrity, finalize/pointer determinism, correction lifecycle safety, evidence, replay, command output, DB/source persistence, and static guards.
+  - 2026-05-06 -> Existing policy confirmed: daily manual-file path is import-only, promote path is coverage-gated, correction current requires approval/baseline, repair candidate remains non-current policy path, and finalize/pointer paths cannot validly expose readable/current state without pointer-resolved publication identity.
+  - 2026-05-06 -> Gap found and patched: manual-file success path lacked complete acquisition telemetry for auto-resolved local files.
+  - 2026-05-06 -> Gap found and patched: accepted/rejected/invalid row counts were not consistently visible across evidence/replay/command/backfill surfaces.
+  - 2026-05-06 -> Gap found and patched: replay lacked explicit manual-file policy mismatch classes for provider leakage, wrong manual source name, and readable-without-coverage-PASS.
+  - 2026-05-06 -> Contract status set to ENFORCED because static enforcement is complete but operator-local PHPUnit/artisan validation is still pending.
+  - 2026-05-07 -> Operator-local validation failed with 7 failures and 1 error in full `tests/Unit/MarketData`; contract remains ENFORCED, not LOCKED.
+  - 2026-05-07 -> Remediation patch tightened command/output/evidence/replay compatibility: `publish_target` is surfaced in promote, `coverage_reason_code` is surfaced in backfill, manual evidence path is normalized to basename, source summary no longer leaks row/file telemetry into API/manual summary strings, and replay manual source-name policy no longer converts legacy unchanged fixtures to mismatch when source name is absent.
+  - 2026-05-07 -> Operator-local remediation retest passed static guard and replay tests; full suite remaining failure was narrowed to manual backfill summary artifact path exposure. Follow-up patch keeps manual file identity traceable via source name/hash/row telemetry while omitting `source_input_file` from LOCAL_FILE backfill summary case output per existing integration contract.
+  - 2026-05-07 -> Operator-local follow-up retest passed pipeline integration but exposed service-level summary compatibility errors because returned backfill summaries and persisted artifact summaries require different `source_input_file` visibility rules.
+  - 2026-05-07 -> Contract enforcement refined: runtime/service summaries may retain normalized manual `source_input_file` for internal/operator compatibility, while persisted backfill summary artifacts redact LOCAL_FILE path exposure only when durable file identity fields are available.
+  - 2026-05-07 -> Operator-local final validation passed targeted filters, focused files, and full MarketData PHPUnit suite: full `tests/Unit/MarketData` PASS with 280 tests / 2840 assertions. Contract promoted to LOCKED.
+
+  [DEFINED]
+  - Manual file is a source input mode, not a publishability shortcut.
+  - Manual file source identity must be explicit, local, immutable for the run lifecycle, and distinct from API provider identity.
+  - Manual file missing/unreadable/malformed/invalid/partial conditions must be deterministic, reason-coded, and traceable.
+  - Manual-file import-only must not publish current/readable state.
+  - Manual-file promote must evaluate coverage before readable promotion.
+  - Manual-file correction must preserve baseline/current pointer unless the correction lifecycle contract allows a valid changed readable replacement.
+  - Evidence/replay/command/backfill surfaces must expose manual file mode, file identity, row counts, coverage state, final state, and reason context.
+
+  [IMPLEMENTED]
+  - `LocalFileEodBarsAdapter` emits manual-file acquisition telemetry with file identity/hash/size/row-count and local source identity.
+  - `EodBarsIngestService` merges source acquisition telemetry with canonical accepted/rejected/invalid row counts after ticker/dedup/canonical validation.
+  - `MarketDataPipelineService` persists manual file source identity and file metadata from acquisition telemetry, keeps manual source name fixed to `LOCAL_FILE`, and normalizes persisted manual source file identity to basename for evidence/output safety.
+  - `AbstractMarketDataCommand`, `BackfillMarketDataCommand`, `PromoteMarketDataCommand`, and `MarketDataBackfillService` expose manual file file/row/final-state, publish target, and coverage reason telemetry to operator output/artifacts.
+  - `MarketDataEvidenceExportService` exports manual-file row telemetry in run summary/source context.
+  - `ReplayVerificationService` compares manual source/file context and adds explicit manual-file policy mismatch checks without breaking legacy unchanged fixtures that lack optional manual source-name context.
+  - `ManualFilePolicyEnforcementStaticGuardTest` guards source identity separation, import/promote separation, manual context visibility, and no latest-date shortcuts.
+
+  [ENFORCED]
+  - Manual file cannot inherit API provider identity in source telemetry.
+  - API adapter does not read local input file config.
+  - Import-only manual path remains separated from promote/full publish path.
+  - Manual-file promote remains coverage-gated before finalize/readability.
+  - Readable manual-file replay state is invalid if coverage gate is not PASS.
+  - Evidence/replay/command/backfill no longer hide manual file file/row context.
+  - Static guard blocks regressions for manual/API identity mixing and forbidden latest trade-date shortcuts.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for all changed PHP files.
+  - Container full PHP syntax scan passed for all app/tests/database PHP files: 133 files.
+  - Container forbidden latest-date shortcut scan found no forbidden latest/MAX trade-date patterns in patched manual-file runtime paths.
+  - Operator-local targeted filters PASS: Manual/manual 19 tests / 191 assertions; LocalFile 2 / 7; local 4 / 26; Import/import 2 / 19; Promote/promote 19 / 132; Correction/correction 59 / 1146; Coverage/coverage 40 / 300; Finalize 42 / 261; Pointer/pointer 60 / 669; Evidence 29 / 336; Replay 27 / 352; Command 54 / 400.
+  - Operator-local full MarketData suite PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> 280 tests / 2840 assertions.
+  - Focused operator-local files PASS: `LocalFileEodBarsAdapterTest.php` 2 / 7; `EodBarsIngestServiceTest.php` 4 / 31; `MarketDataPipelineIntegrationTest.php` 53 / 1191; `OpsCommandSurfaceTest.php` 42 / 260; `ReadablePublicationReadContractIntegrationTest.php` 8 / 15; `MarketDataEvidenceExportServiceTest.php` 3 / 52; `ReplayVerificationServiceTest.php` 5 / 15; `ManualFilePolicyEnforcementStaticGuardTest.php` 4 / 118; `MarketDataBackfillServiceTest.php` 8 / 71.
+
+  [FINAL_RULE]
+  - LOCKED. Manual file may only become readable/current through the same valid contract chain as other sources: source validation, canonical accepted rows, coverage PASS, mandatory hashes, SEALED dataset, finalize promotion allowed, pointer switch success, post-switch pointer resolution, run/publication mirror validity, and no correction/fallback invariant violation. Any failure must remain non-readable, reason-coded, traceable, and pointer-safe.
+
+  [LOCK_CONDITION]
+  - Satisfied by operator-local targeted manual-file policy validation, focused file validation, and full `tests/Unit/MarketData` PASS.
+
+---
+
+## VERIFIED CONTRACT ENTRIES
 
 - SOURCE_PROVIDER_RESILIENCE_CONTRACT -> LOCKED
 
@@ -477,8 +546,6 @@ ACTIVE SESSION:
   - This governance baseline remains locked unless the audit strategy itself changes through an explicit audit-governance session.
 
 ---
-
-## VERIFIED CONTRACT ENTRIES
 
 - DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT → LOCKED
 

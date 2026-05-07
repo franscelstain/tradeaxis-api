@@ -232,6 +232,9 @@ class ReplayVerificationService
             'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
             'source_file_size_bytes' => isset($run->source_file_size_bytes) && $run->source_file_size_bytes !== null ? (int) $run->source_file_size_bytes : null,
             'source_file_row_count' => isset($run->source_file_row_count) && $run->source_file_row_count !== null ? (int) $run->source_file_row_count : null,
+            'accepted_row_count' => $run->bars_rows_written !== null ? (int) $run->bars_rows_written : null,
+            'rejected_row_count' => $run->invalid_bar_count !== null ? (int) $run->invalid_bar_count : null,
+            'invalid_row_count' => $run->invalid_bar_count !== null ? (int) $run->invalid_bar_count : null,
             'status' => $run->terminal_status,
             'terminal_status' => $run->terminal_status,
             'publishability_state' => $run->publishability_state,
@@ -376,6 +379,8 @@ class ReplayVerificationService
             $this->compareNumericField($mismatches, $field, $expectedSourceContext[$field] ?? null, $actual[$field]);
         }
 
+        $this->appendManualFilePolicyMismatches($mismatches, $expectedSourceContext, $actual);
+
         foreach (['source_success_after_retry', 'source_retry_exhausted'] as $field) {
             $expectedBool = $this->normalizeBooleanForComparison($expectedSourceContext[$field] ?? null);
             $actualBool = $this->normalizeBooleanForComparison($actual[$field]);
@@ -399,6 +404,11 @@ class ReplayVerificationService
         $this->compareListField($mismatches, 'coverage_missing_sample', $expectedReplay['coverage_missing_sample'] ?? null, $actual['coverage_missing_sample']);
 
         foreach (['bars_rows_written', 'indicators_rows_written', 'eligibility_rows_written', 'invalid_bar_count', 'invalid_indicator_count', 'warning_count', 'hard_reject_count', 'eligible_count'] as $field) {
+            $expectedValue = array_key_exists($field, $expectedRun) ? $expectedRun[$field] : (array_key_exists($field, $expectedReplay) ? $expectedReplay[$field] : null);
+            $this->compareField($mismatches, $field, $expectedValue, $actual[$field]);
+        }
+
+        foreach (['accepted_row_count', 'rejected_row_count', 'invalid_row_count'] as $field) {
             $expectedValue = array_key_exists($field, $expectedRun) ? $expectedRun[$field] : (array_key_exists($field, $expectedReplay) ? $expectedReplay[$field] : null);
             $this->compareField($mismatches, $field, $expectedValue, $actual[$field]);
         }       
@@ -479,6 +489,60 @@ class ReplayVerificationService
             'mismatch_summary' => $mismatchSummary,
             'mismatches' => $mismatches,
         ];
+    }
+
+
+    private function appendManualFilePolicyMismatches(array &$mismatches, array $expectedSourceContext, array $actual)
+    {
+        $expectedMode = strtolower((string) ($expectedSourceContext['source_mode'] ?? ''));
+        $actualMode = strtolower((string) ($actual['source_mode'] ?? ''));
+        $actualSourceName = strtoupper((string) ($actual['source_name'] ?? ''));
+        $actualProvider = $actual['source_provider'] ?? null;
+
+        $expectedManual = in_array($expectedMode, ['manual_file', 'manual_entry'], true);
+        $actualManual = in_array($actualMode, ['manual_file', 'manual_entry'], true);
+
+        if ($expectedManual && ! $actualManual) {
+            $mismatches[] = [
+                'field' => 'manual_file_source_mode_policy',
+                'expected' => $expectedMode,
+                'actual' => $actualMode,
+            ];
+        }
+
+        if ($expectedMode !== '' && ! $expectedManual && $actualManual) {
+            $mismatches[] = [
+                'field' => 'api_source_mode_policy',
+                'expected' => $expectedMode,
+                'actual' => $actualMode,
+            ];
+        }
+
+        if ($actualManual && $actualSourceName !== '' && ! in_array($actualSourceName, ['LOCAL_FILE', 'MANUAL_FILE'], true)) {
+            $mismatches[] = [
+                'field' => 'manual_file_source_name_policy',
+                'expected' => 'LOCAL_FILE',
+                'actual' => $actualSourceName,
+            ];
+        }
+
+        if ($actualManual && $actualProvider !== null && $actualProvider !== '') {
+            $mismatches[] = [
+                'field' => 'manual_file_provider_policy',
+                'expected' => null,
+                'actual' => $actualProvider,
+            ];
+        }
+
+        if ($actualManual
+            && (string) ($actual['publishability_state'] ?? '') === 'READABLE'
+            && strtoupper((string) ($actual['coverage_gate_state'] ?? '')) !== 'PASS') {
+            $mismatches[] = [
+                'field' => 'manual_file_readable_coverage_policy',
+                'expected' => 'coverage_gate_state=PASS before READABLE',
+                'actual' => $actual['coverage_gate_state'] ?? null,
+            ];
+        }
     }
 
     private function expectedSourceContext(array $expectedReplay, array $expectedRun)

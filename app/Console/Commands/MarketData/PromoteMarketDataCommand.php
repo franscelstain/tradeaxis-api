@@ -62,6 +62,7 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
                     'command' => 'market-data:promote',
                     'request_mode' => 'promote',
                     'source_mode' => $sourceMode,
+                    'publish_target' => $run ? ($run->publish_target ?? null) : null,
                     'force_replace' => $forceReplace,
                     'force_replace_reason' => $forceReplaceReason,
                     'status' => 'ERROR',
@@ -71,6 +72,9 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
 
             $this->renderRecoveredFailureSummary($run, $e, $sourceContext);
             $this->line('request_mode=promote');
+            if ($run && isset($run->publish_target) && $run->publish_target !== null && $run->publish_target !== '') {
+                $this->line('publish_target='.(string) $run->publish_target);
+            }
             $this->line('force_replace='.($forceReplace ? 'true' : 'false'));
             if ($artifactPath !== null) {
                 $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));
@@ -93,6 +97,7 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
                 'command' => 'market-data:promote',
                 'request_mode' => 'promote',
                 'source_mode' => $sourceMode,
+                'publish_target' => $run->publish_target ?? null,
                 'force_replace' => $forceReplace,
                 'force_replace_reason' => $forceReplaceReason,
                 'status' => ((string) ($run->publishability_state ?? '')) === 'READABLE' && ((string) ($run->coverage_gate_state ?? '')) === 'PASS' ? 'SUCCESS' : 'NOT_READABLE',
@@ -101,6 +106,9 @@ class PromoteMarketDataCommand extends AbstractMarketDataCommand
 
         $this->renderRunSummary($run, $sourceContext);
         $this->line('request_mode=promote');
+        if (isset($run->publish_target) && $run->publish_target !== null && $run->publish_target !== '') {
+            $this->line('publish_target='.(string) $run->publish_target);
+        }
         $this->line('force_replace='.($forceReplace ? 'true' : 'false'));
         if ($artifactPath !== null) {
             $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));

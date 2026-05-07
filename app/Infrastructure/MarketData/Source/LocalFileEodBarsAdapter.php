@@ -7,8 +7,12 @@ use Illuminate\Support\Str;
 
 class LocalFileEodBarsAdapter
 {
+    private $lastAcquisitionTelemetry = [];
+
     public function fetchOrLoadEodBars($tradeDate, $sourceMode)
     {
+        $this->lastAcquisitionTelemetry = [];
+
         if (! in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
             throw $this->manualFileException(
                 'Source mode '.$sourceMode.' belum diimplementasikan. Gunakan manual_file atau manual_entry.',
@@ -87,6 +91,41 @@ class LocalFileEodBarsAdapter
         );
     }
 
+    public function consumeLastAcquisitionTelemetry()
+    {
+        $telemetry = $this->lastAcquisitionTelemetry;
+        $this->lastAcquisitionTelemetry = [];
+
+        return $telemetry;
+    }
+
+    private function rememberManualFileTelemetry($path, $tradeDate, $format, array $rows)
+    {
+        $sourceFileHash = is_file($path) ? hash_file('sha256', $path) : null;
+        $sourceFileSize = is_file($path) ? filesize($path) : null;
+        $rowCount = count($rows);
+
+        $this->lastAcquisitionTelemetry = [
+            'source_mode' => 'manual_file',
+            'source_name' => 'LOCAL_FILE',
+            'provider' => null,
+            'input_file' => $path,
+            'source_input_file' => $path,
+            'source_file_format' => $format,
+            'source_file_hash' => $sourceFileHash,
+            'source_file_hash_algorithm' => 'SHA-256',
+            'source_file_size_bytes' => $sourceFileSize,
+            'source_file_row_count' => $rowCount,
+            'returned_row_count' => $rowCount,
+            'accepted_row_count' => $rowCount,
+            'rejected_row_count' => 0,
+            'invalid_row_count' => 0,
+            'trade_date' => $tradeDate,
+            'source_final_status' => 'SUCCESS',
+            'final_reason_code' => null,
+        ];
+    }
+
 
     private function manualFileException($message, $reasonCode, array $context = [])
     {
@@ -134,7 +173,7 @@ class LocalFileEodBarsAdapter
             );
         }
 
-        return collect($payload)->map(function ($row, $index) use ($tradeDate, $path) {
+        $rows = collect($payload)->map(function ($row, $index) use ($tradeDate, $path) {
             if (! is_array($row)) {
                 throw $this->manualFileException(
                     'File JSON bars lokal berisi row yang bukan object/array.',
@@ -148,6 +187,10 @@ class LocalFileEodBarsAdapter
 
             return $this->normalizeRow($row, $tradeDate, 'json:'.($index + 1));
         })->all();
+
+        $this->rememberManualFileTelemetry($path, $tradeDate, 'json', $rows);
+
+        return $rows;
     }
 
     private function loadCsv($path, $tradeDate)
@@ -212,6 +255,8 @@ class LocalFileEodBarsAdapter
         }
 
         fclose($handle);
+
+        $this->rememberManualFileTelemetry($path, $tradeDate, 'csv', $rows);
 
         return $rows;
     }

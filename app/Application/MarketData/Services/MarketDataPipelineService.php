@@ -2132,13 +2132,22 @@ class MarketDataPipelineService
     {
         $payload = $this->sourceTelemetryPayload($sourceMode, $resolvedSourceName);
         $finalReasonCode = $sourceAcquisition['final_reason_code'] ?? $fallbackFinalReasonCode;
+        $sourceInputFile = $sourceAcquisition['source_input_file']
+            ?? ($sourceAcquisition['input_file'] ?? ($payload['input_file'] ?? null));
 
-        $sourceFileIdentity = $this->sourceFileIdentityColumns($payload['input_file'] ?? null);
+        $sourceFileIdentity = $this->sourceFileIdentityColumns($sourceInputFile);
+        foreach (['source_file_hash', 'source_file_hash_algorithm', 'source_file_size_bytes', 'source_file_row_count'] as $field) {
+            if (array_key_exists($field, $sourceAcquisition) && $sourceAcquisition[$field] !== null && $sourceAcquisition[$field] !== '') {
+                $sourceFileIdentity[$field] = $sourceAcquisition[$field];
+            }
+        }
+
+        $sourceInputFileForDisplay = $this->sourceInputFileForDisplay($sourceMode, $sourceInputFile);
 
         return array_merge([
             'source_name' => $payload['source_name'] ?? null,
             'source_provider' => $sourceAcquisition['provider'] ?? ($payload['provider'] ?? null),
-            'source_input_file' => $payload['input_file'] ?? null,
+            'source_input_file' => $sourceInputFileForDisplay,
             'source_timeout_seconds' => $sourceAcquisition['timeout_seconds'] ?? ($payload['timeout_seconds'] ?? null),
             'source_retry_max' => $sourceAcquisition['retry_max'] ?? ($payload['retry_max'] ?? null),
             'source_attempt_count' => array_key_exists('attempt_count', $sourceAcquisition) ? $sourceAcquisition['attempt_count'] : null,
@@ -2147,6 +2156,19 @@ class MarketDataPipelineService
             'source_final_http_status' => array_key_exists('final_http_status', $sourceAcquisition) ? $sourceAcquisition['final_http_status'] : null,
             'source_final_reason_code' => $finalReasonCode,
         ], $sourceFileIdentity);
+    }
+
+    private function sourceInputFileForDisplay($sourceMode, $sourceInputFile)
+    {
+        if ($sourceInputFile === null || trim((string) $sourceInputFile) === '') {
+            return $sourceInputFile;
+        }
+
+        if (in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
+            return basename(str_replace('\\', '/', (string) $sourceInputFile));
+        }
+
+        return $sourceInputFile;
     }
 
     private function sourceFileIdentityColumns($inputFile)
@@ -2237,6 +2259,8 @@ class MarketDataPipelineService
 
         if ($sourceMode === 'api') {
             $payload['source_name'] = $configuredSourceName !== '' ? $configuredSourceName : 'API_FREE';
+        } elseif (in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
+            $payload['source_name'] = 'LOCAL_FILE';
         } elseif ($normalizedResolvedSourceName !== null && $normalizedResolvedSourceName !== '') {
             $payload['source_name'] = $normalizedResolvedSourceName;
         } elseif ($configuredSourceName !== null && $configuredSourceName !== '') {
@@ -2282,6 +2306,26 @@ class MarketDataPipelineService
         }
 
         $segments = [];
+
+        $sourceInputFile = $sourceAcquisition['source_input_file'] ?? ($sourceAcquisition['input_file'] ?? null);
+        if ($sourceInputFile !== null && $sourceInputFile !== '') {
+            $segments[] = 'source_input_file='.(string) basename((string) $sourceInputFile);
+        }
+
+        foreach ([
+            'source_file_hash' => 'source_file_hash',
+            'source_file_hash_algorithm' => 'source_file_hash_algorithm',
+            'source_file_size_bytes' => 'source_file_size_bytes',
+            'source_file_row_count' => 'source_file_row_count',
+            'accepted_row_count' => 'accepted_row_count',
+            'rejected_row_count' => 'rejected_row_count',
+            'invalid_row_count' => 'invalid_row_count',
+            'source_final_status' => 'source_final_status',
+        ] as $field => $label) {
+            if (array_key_exists($field, $sourceAcquisition) && $sourceAcquisition[$field] !== null && $sourceAcquisition[$field] !== '') {
+                $segments[] = $label.'='.(string) $sourceAcquisition[$field];
+            }
+        }
 
         if (($sourceAcquisition['provider'] ?? '') !== '') {
             $segments[] = 'source_provider='.(string) $sourceAcquisition['provider'];

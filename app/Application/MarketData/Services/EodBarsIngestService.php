@@ -130,15 +130,46 @@ class EodBarsIngestService
 
         $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
 
+        $sourceAcquisition = $this->consumeSourceAcquisitionTelemetry($sourceMode);
+        $sourceAcquisition = array_merge($sourceAcquisition, [
+            'source_mode' => $sourceMode,
+            'accepted_row_count' => count($validRows),
+            'rejected_row_count' => count($invalidRows),
+            'invalid_row_count' => count($invalidRows),
+            'returned_row_count' => count($sourceRows),
+        ]);
+
         return [
             'publication_id' => (int) $candidatePublication->publication_id,
             'publication_version' => (int) $candidatePublication->publication_version,
             'bars_rows_written' => count($validRows),
             'invalid_bar_count' => count($invalidRows),
+            'accepted_row_count' => count($validRows),
+            'rejected_row_count' => count($invalidRows),
+            'invalid_row_count' => count($invalidRows),
             'source_name' => strtoupper((string) ($sourceRows[0]['source_name'] ?? config('market_data.source.default_source_name'))),
             'storage_target' => $useHistory ? 'eod_bars_history' : 'eod_bars',
-            'source_acquisition' => $sourceMode === 'api' ? $this->apiSourceAdapter->consumeLastAcquisitionTelemetry() : [],
+            'source_acquisition' => $sourceAcquisition,
         ];
+    }
+
+
+    private function consumeSourceAcquisitionTelemetry($sourceMode)
+    {
+        if ($sourceMode === 'api') {
+            $telemetry = $this->apiSourceAdapter->consumeLastAcquisitionTelemetry();
+
+            return is_array($telemetry) ? $telemetry : [];
+        }
+
+        if (in_array($sourceMode, ['manual_file', 'manual_entry'], true)
+            && method_exists($this->localSourceAdapter, 'consumeLastAcquisitionTelemetry')) {
+            $telemetry = $this->localSourceAdapter->consumeLastAcquisitionTelemetry();
+
+            return is_array($telemetry) ? $telemetry : [];
+        }
+
+        return [];
     }
 
 
@@ -203,7 +234,7 @@ class EodBarsIngestService
             );
         }
 
-        if ($sourceMode === 'manual_file' && count($seenSourceNames) === 1 && ! isset($seenSourceNames['MANUAL_FILE']) && ! isset($seenSourceNames['LOCAL_FILE'])) {
+        if (in_array($sourceMode, ['manual_file', 'manual_entry'], true) && count($seenSourceNames) === 1 && ! isset($seenSourceNames['MANUAL_FILE']) && ! isset($seenSourceNames['LOCAL_FILE'])) {
             throw new \RuntimeException('Manual single-day ingest received unexpected source_name outside the manual boundary.');
         }
     }
