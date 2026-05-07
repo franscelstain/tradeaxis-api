@@ -74,6 +74,10 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
             $this->line($key.'='.$this->stringifyValue($value));
         }
 
+        if (($summary['evidence_completeness_state'] ?? null) === 'INCOMPLETE') {
+            $this->warn('evidence_warning=EVIDENCE_INCOMPLETE; proof package exported but lifecycle is not fully self-contained. Check evidence_completeness.json missing_sections.');
+        }
+
         $this->line('output_dir='.$this->normalizePathForDisplay($result['output_dir']));
         $this->line('file_count='.(string) ($result['file_count'] ?? count($result['files'] ?? [])));
         $this->line('files='.implode(',', $result['files']));

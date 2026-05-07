@@ -34,9 +34,6 @@ class MarketDataEvidenceExportService
             throw new \RuntimeException('Run not found for evidence export.');
         }
 
-        if ((string) ($run->terminal_status ?? '') !== 'SUCCESS' || (string) ($run->publishability_state ?? '') !== 'READABLE') {
-            throw new \RuntimeException('Run evidence export requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
-        }
 
         $publication = $this->resolvePublicationForRun($run);
         $manifest = $publication ? (array) $this->publications->buildManifestByPublicationId($publication->publication_id) : null;
@@ -49,34 +46,43 @@ class MarketDataEvidenceExportService
             )
         );
         $sourceAttemptTelemetry = $this->normalizeSourceAttemptTelemetryPaths($sourceAttemptTelemetry);
-        $sourceSummary = $this->buildSourceSummaryString($runSummary['source_context'] ?? []);
+        $runSummary['source_context']['source_summary'] = $this->buildSourceSummaryString($runSummary['source_context'] ?? []);
+        $sourceSummary = $runSummary['source_context']['source_summary'];
         $eventSummary = ['run_id' => (int) $this->field($run, 'run_id'), 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
-        $dominantReasonCodes = $this->evidence->dominantReasonCodes($run->run_id, $this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
-        $eligibilityRows = $this->evidence->exportEligibilityRows($this->resolvedTradeDate($run), $publication ? $publication->publication_id : null);
+        $dominantReasonCodes = $publication
+            ? $this->evidence->dominantReasonCodes($run->run_id, $this->resolvedTradeDate($run), $publication->publication_id)
+            : $this->dominantReasonCodesFromRunEvents($eventSummary);
+        $eligibilityRows = $publication
+            ? $this->evidence->exportEligibilityRows($this->resolvedTradeDate($run), $publication->publication_id)
+            : [];
         $invalidBarsRows = $this->evidence->exportInvalidBarsRows($run->trade_date_requested, $run->run_id);
-        $anomalyReport = $this->buildAnomalyReport($runSummary, $dominantReasonCodes, $manifest);
+        $publicationContext = $this->buildPublicationContext($run, $publication, $manifest);
+        $pointerContext = $this->buildPointerContext($run, $publication, $manifest);
+        $fallbackContext = $this->buildFallbackContext($run, $pointerContext, $publicationContext);
+        $artifactContext = $this->buildArtifactSealContext($run, $manifest);
+        $correctionContext = $this->buildRunCorrectionContext($run);
+        $lineage = $this->buildLineageContext($runSummary, $artifactContext, $publicationContext, $pointerContext, $fallbackContext, $correctionContext);
+        $completeness = $this->buildEvidenceCompleteness($runSummary, $publicationContext, $pointerContext, $fallbackContext, $artifactContext, $lineage, $correctionContext);
+        $runSummary['evidence_completeness_state'] = $completeness['evidence_completeness_state'];
+        $runSummary['evidence_missing_sections'] = $completeness['missing_sections'];
+        $anomalyReport = $this->buildAnomalyReport($runSummary, $dominantReasonCodes, $manifest, $completeness);
 
         $payload = [
+            'evidence_completeness' => $completeness,
             'run_summary' => $runSummary,
+            'source_context' => $runSummary['source_context'],
+            'coverage_context' => $runSummary['coverage'],
+            'artifact_context' => $artifactContext,
             'publication_manifest' => $manifest,
+            'publication_context' => $publicationContext,
+            'pointer_context' => $pointerContext,
+            'fallback_context' => $fallbackContext,
+            'correction_context' => $correctionContext,
+            'lineage' => $lineage,
             'run_event_summary' => $eventSummary,
             'dominant_reason_codes' => $dominantReasonCodes,
-            'publication_resolution' => [
-                'trade_date_requested' => $runSummary['trade_date_requested'],
-                'trade_date_effective' => $runSummary['trade_date_effective'],
-                'terminal_status' => $runSummary['terminal_status'],
-                'publishability_state' => $runSummary['publishability_state'],
-                'coverage_gate_state' => $runSummary['coverage']['coverage_gate_state'] ?? null,
-                'publication_id' => $manifest ? (int) $manifest['publication_id'] : null,
-                'publication_run_id' => $manifest ? (int) $manifest['run_id'] : null,
-                'publication_version' => $manifest ? (int) $manifest['publication_version'] : null,
-                'publication_seal_state' => $manifest ? $manifest['seal_state'] : null,
-                'publication_sealed_at' => $manifest ? $manifest['sealed_at'] : null,
-                'is_current_publication' => $manifest ? (bool) $manifest['is_current'] : false,
-                'pointer_context' => [
-                    'resolver' => 'EodPublicationRepository::findReadableCurrentPublicationForRun',
-                    'readable_pointer_validated' => $manifest !== null && (bool) $manifest['is_current'],
-                ],
+            'publication_resolution' => $publicationContext + [
+                'pointer_context' => $pointerContext,
             ],
             'source_attempt_telemetry' => $sourceAttemptTelemetry,
         ];
@@ -94,6 +100,8 @@ class MarketDataEvidenceExportService
         $this->writeCsv($dir.'/eligibility_export.csv', ['trade_date', 'ticker_id', 'eligible', 'reason_code'], $eligibilityRows);
         $this->writeCsv($dir.'/invalid_bars_export.csv', ['trade_date', 'ticker_id', 'source', 'source_row_ref', 'invalid_reason_code'], $invalidBarsRows);
         file_put_contents($dir.'/anomaly_report.md', $anomalyReport);
+        $this->writeJson($dir.'/lineage.json', $lineage);
+        $this->writeJson($dir.'/evidence_completeness.json', $completeness);
         $this->writeJson($dir.'/evidence_pack.json', $payload);
 
         $files = array_values(array_filter([
@@ -104,6 +112,8 @@ class MarketDataEvidenceExportService
             'eligibility_export.csv',
             'invalid_bars_export.csv',
             'anomaly_report.md',
+            'lineage.json',
+            'evidence_completeness.json',
             'evidence_pack.json',
         ]));
 
@@ -115,6 +125,12 @@ class MarketDataEvidenceExportService
                 'trade_date_effective' => $runSummary['trade_date_effective'],
                 'terminal_status' => $runSummary['terminal_status'],
                 'publishability_state' => $runSummary['publishability_state'],
+                'coverage_gate_state' => $runSummary['coverage']['coverage_gate_state'] ?? null,
+                'final_reason_code' => $runSummary['final_reason_code'] ?? null,
+                'evidence_completeness_state' => $completeness['evidence_completeness_state'],
+                'publication_id' => $publicationContext['publication_id'] ?? null,
+                'pointer_resolve_status' => $pointerContext['pointer_resolve_status'] ?? null,
+                'fallback_used' => $fallbackContext['fallback_used'] ?? false,
                 'source_name' => $runSummary['source_context']['source_name'] ?? null,
                 'source_input_file' => isset($runSummary['source_context']['source_input_file'])
                     ? $this->normalizeOptionalPathForDisplay($runSummary['source_context']['source_input_file'])
@@ -127,6 +143,335 @@ class MarketDataEvidenceExportService
             'file_count' => count($files),
             'files' => $files,
         ];
+    }
+
+    private function buildPublicationContext($run, $publication, $manifest)
+    {
+        $publicationId = $manifest ? (int) $manifest['publication_id'] : ($this->field($publication, 'publication_id') !== null ? (int) $this->field($publication, 'publication_id') : ($this->field($run, 'publication_id') !== null ? (int) $this->field($run, 'publication_id') : null));
+        $publicationRunId = $manifest ? (int) $manifest['run_id'] : ($this->field($publication, 'run_id') !== null ? (int) $this->field($publication, 'run_id') : null);
+        $publicationVersion = $manifest ? (int) $manifest['publication_version'] : ($this->field($publication, 'publication_version') !== null ? (int) $this->field($publication, 'publication_version') : ($this->field($run, 'publication_version') !== null ? (int) $this->field($run, 'publication_version') : null));
+        $isCurrent = $manifest ? (bool) $manifest['is_current'] : ($this->field($publication, 'is_current') !== null ? (bool) $this->field($publication, 'is_current') : false);
+        $sealState = $manifest ? ($manifest['seal_state'] ?? null) : $this->field($publication, 'seal_state');
+        $runPublicationMirrorValid = $publicationId !== null
+            && $publicationVersion !== null
+            && (string) $this->field($run, 'publication_id') === (string) $publicationId
+            && (string) $this->field($run, 'publication_version') === (string) $publicationVersion;
+
+        return [
+            'trade_date_requested' => $this->field($run, 'trade_date_requested'),
+            'trade_date_effective' => $this->field($run, 'trade_date_effective'),
+            'terminal_status' => $this->field($run, 'terminal_status'),
+            'publishability_state' => $this->field($run, 'publishability_state'),
+            'coverage_gate_state' => $this->field($run, 'coverage_gate_state'),
+            'publication_id' => $publicationId,
+            'publication_version' => $publicationVersion,
+            'publication_run_id' => $publicationRunId,
+            'publication_trade_date' => $manifest ? ($manifest['trade_date'] ?? null) : $this->field($publication, 'trade_date'),
+            'publication_trade_date_effective' => $manifest ? ($manifest['trade_date_effective'] ?? null) : $this->field($run, 'trade_date_effective'),
+            'publication_state' => $publicationId === null ? 'NOT_CREATED_OR_NOT_READABLE' : ($isCurrent ? 'CURRENT' : 'NON_CURRENT'),
+            'publication_seal_state' => $sealState,
+            'publication_publishability_state' => $this->field($run, 'publishability_state'),
+            'publication_terminal_status' => $this->field($run, 'terminal_status'),
+            'publication_is_current' => $isCurrent,
+            'publication_created_at' => $manifest ? ($manifest['created_at'] ?? null) : $this->field($publication, 'created_at'),
+            'publication_updated_at' => $manifest ? ($manifest['updated_at'] ?? null) : $this->field($publication, 'updated_at'),
+            'publication_reason_code' => $this->field($run, 'final_reason_code') ?: $this->resolveCoverageReasonCodeFromState($this->field($run, 'coverage_gate_state')),
+            'publication_reason_message' => $this->resolveReasonMessage($this->field($run, 'final_reason_code') ?: $this->resolveCoverageReasonCodeFromState($this->field($run, 'coverage_gate_state'))),
+            'publication_sealed_at' => $manifest ? ($manifest['sealed_at'] ?? null) : $this->field($publication, 'sealed_at'),
+            'is_current_publication' => $isCurrent,
+            'run_publication_mirror_valid' => $runPublicationMirrorValid,
+            'publication_artifact_lineage' => [
+                'bars_batch_hash' => $manifest ? ($manifest['bars_batch_hash'] ?? null) : $this->field($run, 'bars_batch_hash'),
+                'indicators_batch_hash' => $manifest ? ($manifest['indicators_batch_hash'] ?? null) : $this->field($run, 'indicators_batch_hash'),
+                'eligibility_batch_hash' => $manifest ? ($manifest['eligibility_batch_hash'] ?? null) : $this->field($run, 'eligibility_batch_hash'),
+                'source_file_hash' => $manifest ? ($manifest['source_file_hash'] ?? null) : $this->field($run, 'source_file_hash'),
+            ],
+        ];
+    }
+
+    private function buildPointerContext($run, $publication, $manifest)
+    {
+        $rawPointer = null;
+        if (! $publication) {
+            try {
+                $rawPointer = $this->publications->findRawCurrentPublicationStateForTradeDate($this->field($run, 'trade_date_requested'));
+            } catch (\Throwable $e) {
+                $rawPointer = null;
+            }
+        }
+
+        $pointerPublicationId = $this->field($publication, 'pointer_publication_id')
+            ?: ($manifest ? ($manifest['publication_id'] ?? null) : null)
+            ?: $this->field($rawPointer, 'pointer_publication_id');
+        $pointerRunId = $this->field($publication, 'pointer_run_id')
+            ?: ($manifest ? ($manifest['run_id'] ?? null) : null)
+            ?: $this->field($rawPointer, 'pointer_run_id');
+        $pointerVersion = $this->field($publication, 'pointer_publication_version')
+            ?: ($manifest ? ($manifest['publication_version'] ?? null) : null)
+            ?: $this->field($rawPointer, 'pointer_publication_version');
+        $resolvedStatus = $publication
+            ? 'RESOLVED_READABLE_CURRENT'
+            : ($rawPointer ? 'RAW_POINTER_NOT_READABLE' : 'MISSING');
+        $mismatchReason = null;
+
+        if ($publication && $pointerPublicationId !== null && (string) $pointerPublicationId !== (string) $this->field($publication, 'publication_id')) {
+            $mismatchReason = 'POINTER_PUBLICATION_ID_MISMATCH';
+        } elseif ($publication && $pointerRunId !== null && (string) $pointerRunId !== (string) $this->field($publication, 'run_id')) {
+            $mismatchReason = 'POINTER_RUN_ID_MISMATCH';
+        } elseif (! $publication && $this->isReadableRun($run)) {
+            $mismatchReason = 'READABLE_RUN_WITHOUT_POINTER_RESOLVED_PUBLICATION';
+        } elseif (! $publication && ! $rawPointer) {
+            $mismatchReason = 'CURRENT_POINTER_ROW_MISSING';
+        }
+
+        $readablePointerValidated = $publication !== null && $mismatchReason === null;
+
+        return [
+            'pointer_id' => null,
+            'pointer_trade_date' => $this->field($publication, 'pointer_trade_date') ?: $this->field($rawPointer, 'pointer_trade_date') ?: $this->field($run, 'trade_date_requested'),
+            'pointer_publication_id' => $pointerPublicationId !== null ? (int) $pointerPublicationId : null,
+            'pointer_publication_version' => $pointerVersion !== null ? (int) $pointerVersion : null,
+            'pointer_run_id' => $pointerRunId !== null ? (int) $pointerRunId : null,
+            'pointer_state' => $publication ? 'CURRENT_READABLE' : ($rawPointer ? 'PRESENT_BUT_NOT_READABLE' : 'ABSENT'),
+            'pointer_resolved_publication_id' => $publication ? (int) $this->field($publication, 'publication_id') : null,
+            'pointer_resolved_run_id' => $publication ? (int) $this->field($publication, 'run_id') : null,
+            'pointer_resolve_status' => $resolvedStatus,
+            'pointer_switched' => $publication !== null && $manifest !== null && (bool) ($manifest['is_current'] ?? false),
+            'pointer_switch_allowed' => $this->isReadableRun($run) && (string) $this->field($run, 'coverage_gate_state') === 'PASS' && $publication !== null,
+            'pointer_switch_reason_code' => $this->field($run, 'final_reason_code') ?: $this->resolveCoverageReasonCodeFromState($this->field($run, 'coverage_gate_state')),
+            'pointer_previous_publication_id' => $manifest ? ($manifest['previous_publication_id'] ?? ($manifest['supersedes_publication_id'] ?? ($manifest['replaced_publication_id'] ?? null))) : null,
+            'pointer_previous_run_id' => $this->field($run, 'supersedes_run_id') !== null ? (int) $this->field($run, 'supersedes_run_id') : null,
+            'pointer_post_switch_validation' => $readablePointerValidated,
+            'readable_pointer_validated' => $readablePointerValidated,
+            'pointer_mismatch_reason' => $mismatchReason,
+            'raw_pointer_context' => $rawPointer ? [
+                'publication_id' => $this->field($rawPointer, 'publication_id') !== null ? (int) $this->field($rawPointer, 'publication_id') : null,
+                'run_id' => $this->field($rawPointer, 'run_id') !== null ? (int) $this->field($rawPointer, 'run_id') : null,
+                'publication_version' => $this->field($rawPointer, 'publication_version') !== null ? (int) $this->field($rawPointer, 'publication_version') : null,
+                'seal_state' => $this->field($rawPointer, 'seal_state'),
+                'terminal_status' => $this->field($rawPointer, 'terminal_status'),
+                'publishability_state' => $this->field($rawPointer, 'publishability_state'),
+                'coverage_gate_state' => $this->field($rawPointer, 'coverage_gate_state'),
+            ] : null,
+        ];
+    }
+
+    private function buildFallbackContext($run, array $pointerContext, array $publicationContext)
+    {
+        $requested = (string) $this->field($run, 'trade_date_requested');
+        $effective = (string) $this->field($run, 'trade_date_effective');
+        $fallbackUsed = ! $this->isReadableRun($run)
+            && $effective !== ''
+            && $requested !== ''
+            && $effective !== $requested;
+        $rawPointer = is_array($pointerContext['raw_pointer_context'] ?? null) ? $pointerContext['raw_pointer_context'] : [];
+
+        return [
+            'fallback_used' => $fallbackUsed,
+            'fallback_reason_code' => $fallbackUsed
+                ? ($this->field($run, 'final_reason_code') ?: $this->field($run, 'source_final_reason_code') ?: $this->resolveCoverageReasonCodeFromState($this->field($run, 'coverage_gate_state')))
+                : ($this->isReadableRun($run) ? 'FALLBACK_NOT_REQUIRED' : 'NO_READABLE_FALLBACK_CLAIMED'),
+            'fallback_reason_message' => $fallbackUsed ? 'Run is not readable and effective date differs from requested date; previous readable context must be used by consumers.' : 'No fallback publication is claimed by this evidence export.',
+            'fallback_publication_id' => $fallbackUsed ? ($rawPointer['publication_id'] ?? null) : null,
+            'fallback_run_id' => $fallbackUsed ? ($rawPointer['run_id'] ?? null) : null,
+            'fallback_publication_version' => $fallbackUsed ? ($rawPointer['publication_version'] ?? null) : null,
+            'fallback_trade_date_effective' => $fallbackUsed ? $effective : null,
+            'fallback_pointer_resolved' => $fallbackUsed ? (($pointerContext['pointer_resolve_status'] ?? null) === 'RESOLVED_READABLE_CURRENT') : false,
+            'fallback_publication_sealed' => $fallbackUsed ? (($rawPointer['seal_state'] ?? null) === 'SEALED') : false,
+            'fallback_publication_readable' => $fallbackUsed ? (($rawPointer['publishability_state'] ?? null) === 'READABLE') : false,
+            'fallback_publication_success' => $fallbackUsed ? (($rawPointer['terminal_status'] ?? null) === 'SUCCESS') : false,
+            'fallback_coverage_pass' => $fallbackUsed ? (($rawPointer['coverage_gate_state'] ?? null) === 'PASS') : false,
+            'fallback_source_mode' => $fallbackUsed ? $this->field($run, 'source') : null,
+            'fallback_lineage' => $fallbackUsed ? [
+                'requested_run_id' => (int) $this->field($run, 'run_id'),
+                'requested_trade_date' => $requested,
+                'effective_trade_date' => $effective,
+                'pointer_publication_id' => $pointerContext['pointer_publication_id'] ?? null,
+            ] : null,
+        ];
+    }
+
+    private function buildArtifactSealContext($run, $manifest)
+    {
+        $artifacts = [
+            'bars' => [
+                'artifact_id' => null,
+                'artifact_type' => 'eod_bars',
+                'artifact_path' => null,
+                'artifact_name' => 'bars_batch_hash',
+                'artifact_hash' => $manifest ? ($manifest['bars_batch_hash'] ?? null) : $this->field($run, 'bars_batch_hash'),
+                'hash_algorithm' => (string) $this->configValue('market_data.hash.algorithm', 'SHA-256'),
+                'artifact_row_count' => $manifest ? ($manifest['bars_rows_written'] ?? null) : $this->field($run, 'bars_rows_written'),
+            ],
+            'indicators' => [
+                'artifact_id' => null,
+                'artifact_type' => 'eod_indicators',
+                'artifact_path' => null,
+                'artifact_name' => 'indicators_batch_hash',
+                'artifact_hash' => $manifest ? ($manifest['indicators_batch_hash'] ?? null) : $this->field($run, 'indicators_batch_hash'),
+                'hash_algorithm' => (string) $this->configValue('market_data.hash.algorithm', 'SHA-256'),
+                'artifact_row_count' => $manifest ? ($manifest['indicators_rows_written'] ?? null) : $this->field($run, 'indicators_rows_written'),
+            ],
+            'eligibility' => [
+                'artifact_id' => null,
+                'artifact_type' => 'eod_eligibility',
+                'artifact_path' => null,
+                'artifact_name' => 'eligibility_batch_hash',
+                'artifact_hash' => $manifest ? ($manifest['eligibility_batch_hash'] ?? null) : $this->field($run, 'eligibility_batch_hash'),
+                'hash_algorithm' => (string) $this->configValue('market_data.hash.algorithm', 'SHA-256'),
+                'artifact_row_count' => $manifest ? ($manifest['eligibility_rows_written'] ?? null) : $this->field($run, 'eligibility_rows_written'),
+            ],
+        ];
+
+        $missing = [];
+        foreach ($artifacts as $name => $artifact) {
+            if (($artifact['artifact_hash'] ?? null) === null || ($artifact['artifact_hash'] ?? '') === '') {
+                $missing[] = $name;
+            }
+        }
+
+        return [
+            'artifacts' => $artifacts,
+            'mandatory_artifact_presence' => $missing === [],
+            'missing_artifact_reason' => $missing === [] ? null : 'MISSING_ARTIFACT_HASH: '.implode(',', $missing),
+            'artifact_created_at' => $this->field($run, 'finished_at') ?: $this->field($run, 'updated_at'),
+            'seal_state' => $manifest ? ($manifest['seal_state'] ?? null) : ($this->field($run, 'sealed_at') ? 'SEALED' : 'UNSEALED'),
+            'seal_hash' => $manifest ? ($manifest['bars_batch_hash'] ?? null).'|'.($manifest['indicators_batch_hash'] ?? null).'|'.($manifest['eligibility_batch_hash'] ?? null) : $this->field($run, 'bars_batch_hash').'|'.$this->field($run, 'indicators_batch_hash').'|'.$this->field($run, 'eligibility_batch_hash'),
+            'seal_manifest' => $manifest,
+            'seal_reason' => $missing === [] ? null : 'Dataset seal cannot be proven because one or more mandatory artifact hashes are missing.',
+            'dataset_seal_state' => $manifest ? ($manifest['seal_state'] ?? null) : ($this->field($run, 'sealed_at') ? 'SEALED' : 'UNSEALED'),
+            'dataset_seal_timestamp' => $manifest ? ($manifest['sealed_at'] ?? null) : $this->field($run, 'sealed_at'),
+        ];
+    }
+
+    private function buildRunCorrectionContext($run)
+    {
+        $correction = null;
+        try {
+            if ($this->field($run, 'correction_id') !== null) {
+                $correction = $this->evidence->findCorrectionByRunId($this->field($run, 'run_id'));
+            }
+        } catch (\Throwable $e) {
+            $correction = null;
+        }
+
+        return [
+            'correction_related' => $correction !== null || $this->field($run, 'correction_id') !== null,
+            'correction_id' => $correction && $this->field($correction, 'correction_id') !== null ? (int) $this->field($correction, 'correction_id') : ($this->field($run, 'correction_id') !== null ? (int) $this->field($run, 'correction_id') : null),
+            'correction_status' => $this->field($correction, 'status'),
+            'correction_reason_code' => $this->field($correction, 'correction_reason_code'),
+            'correction_reason_message' => $this->resolveReasonMessage($this->field($correction, 'correction_reason_code')),
+            'correction_baseline_publication_id' => $this->field($correction, 'prior_publication_id') !== null ? (int) $this->field($correction, 'prior_publication_id') : null,
+            'correction_baseline_run_id' => $this->field($correction, 'prior_run_id') !== null ? (int) $this->field($correction, 'prior_run_id') : null,
+            'correction_candidate_publication_id' => $this->field($correction, 'new_publication_id') !== null ? (int) $this->field($correction, 'new_publication_id') : null,
+            'correction_candidate_run_id' => $this->field($correction, 'new_run_id') !== null ? (int) $this->field($correction, 'new_run_id') : null,
+        ];
+    }
+
+    private function buildLineageContext(array $runSummary, array $artifactContext, array $publicationContext, array $pointerContext, array $fallbackContext, array $correctionContext)
+    {
+        return [
+            'ingest_source_to_run' => [
+                'source_mode' => $runSummary['source_context']['source_mode'] ?? $runSummary['source_mode'] ?? null,
+                'source_name' => $runSummary['source_context']['source_name'] ?? null,
+                'source_provider' => $runSummary['source_context']['source_provider'] ?? ($runSummary['source_context']['provider'] ?? null),
+                'source_input_file' => $runSummary['source_context']['source_input_file'] ?? null,
+                'source_file_hash' => $runSummary['source_context']['source_file_hash'] ?? null,
+                'run_id' => $runSummary['run_id'],
+            ],
+            'run_to_artifacts' => [
+                'run_id' => $runSummary['run_id'],
+                'bars_batch_hash' => $runSummary['bars_batch_hash'] ?? null,
+                'indicators_batch_hash' => $runSummary['indicators_batch_hash'] ?? null,
+                'eligibility_batch_hash' => $runSummary['eligibility_batch_hash'] ?? null,
+                'artifacts' => $artifactContext['artifacts'] ?? [],
+            ],
+            'run_to_coverage_decision' => [
+                'run_id' => $runSummary['run_id'],
+                'coverage_gate_state' => $runSummary['coverage']['coverage_gate_state'] ?? null,
+                'coverage_reason_code' => $runSummary['coverage']['coverage_reason_code'] ?? null,
+            ],
+            'run_to_finalize_decision' => [
+                'run_id' => $runSummary['run_id'],
+                'terminal_status' => $runSummary['terminal_status'],
+                'publishability_state' => $runSummary['publishability_state'],
+                'final_reason_code' => $runSummary['final_reason_code'],
+            ],
+            'run_to_publication' => [
+                'run_id' => $runSummary['run_id'],
+                'publication_id' => $publicationContext['publication_id'] ?? null,
+                'publication_version' => $publicationContext['publication_version'] ?? null,
+                'run_publication_mirror_valid' => $publicationContext['run_publication_mirror_valid'] ?? false,
+            ],
+            'publication_to_pointer' => [
+                'publication_id' => $publicationContext['publication_id'] ?? null,
+                'pointer_publication_id' => $pointerContext['pointer_publication_id'] ?? null,
+                'pointer_resolve_status' => $pointerContext['pointer_resolve_status'] ?? null,
+                'pointer_post_switch_validation' => $pointerContext['pointer_post_switch_validation'] ?? false,
+            ],
+            'correction_to_publication' => $correctionContext,
+            'fallback_to_previous_readable_publication' => $fallbackContext,
+            'replay_expected_actual_lifecycle' => null,
+        ];
+    }
+
+    private function buildEvidenceCompleteness(array $runSummary, array $publicationContext, array $pointerContext, array $fallbackContext, array $artifactContext, array $lineage, array $correctionContext)
+    {
+        $missing = [];
+        $this->markMissingSection($missing, 'run_context', $runSummary['run_id'] ?? null);
+        $this->markMissingSection($missing, 'source_context', $runSummary['source_context']['source_mode'] ?? null);
+        $this->markMissingSection($missing, 'coverage_context', $runSummary['coverage']['coverage_gate_state'] ?? null);
+        $this->markMissingSection($missing, 'reason_code_context', $runSummary['final_reason_code'] ?? ($runSummary['coverage']['coverage_reason_code'] ?? null));
+        $this->markMissingSection($missing, 'artifact_hash_context', $artifactContext['mandatory_artifact_presence'] ?? false);
+
+        if ((string) ($runSummary['publishability_state'] ?? '') === 'READABLE') {
+            $this->markMissingSection($missing, 'publication_context', $publicationContext['publication_id'] ?? null);
+            $this->markMissingSection($missing, 'pointer_context', ($pointerContext['pointer_resolve_status'] ?? null) === 'RESOLVED_READABLE_CURRENT');
+        }
+
+        if (! array_key_exists('fallback_used', $fallbackContext)) {
+            $missing[] = 'fallback_context';
+        }
+
+        $this->markMissingSection($missing, 'lineage_context', $lineage['run_to_finalize_decision']['run_id'] ?? null);
+
+        if (($correctionContext['correction_related'] ?? false) && empty($correctionContext['correction_id'])) {
+            $missing[] = 'correction_context';
+        }
+
+        $missing = array_values(array_unique($missing));
+
+        return [
+            'evidence_completeness_state' => $missing === [] ? 'COMPLETE' : 'INCOMPLETE',
+            'evidence_completeness_reason_code' => $missing === [] ? 'EVIDENCE_COMPLETE' : 'EVIDENCE_INCOMPLETE',
+            'missing_sections' => $missing,
+            'proof_scope' => 'run/source/coverage/artifact/seal/publication/pointer/fallback/correction/lineage',
+            'database_lookup_required_after_export' => false,
+            'deterministic_export' => true,
+        ];
+    }
+
+    private function markMissingSection(array &$missing, $section, $value)
+    {
+        if ($value === null || $value === '' || $value === false) {
+            $missing[] = $section;
+        }
+    }
+
+    private function dominantReasonCodesFromRunEvents(array $eventSummary)
+    {
+        $counts = $eventSummary['reason_code_counts'] ?? [];
+        if (! is_array($counts)) {
+            return [];
+        }
+
+        arsort($counts);
+        $result = [];
+        foreach ($counts as $reasonCode => $count) {
+            $result[] = ['reason_code' => $reasonCode, 'count' => (int) $count];
+        }
+
+        return $result;
     }
 
     public function exportCorrectionEvidence($correctionId, $outputDir = null)
@@ -299,39 +644,49 @@ class MarketDataEvidenceExportService
 
     private function resolvePublicationForRun($run)
     {
-        if ($run->terminal_status !== 'SUCCESS' || $run->publishability_state !== 'READABLE') {
+        if (! $this->isReadableRun($run)) {
             return null;
         }
 
-        $publication = $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
-        if (! $publication) {
-            throw new \RuntimeException('Readable current publication not found for run evidence export.');
-        }
-
-        return $publication;
+        return $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
     }
 
     private function buildRunSummary($run, $manifest = null)
     {
         $sourceContext = $this->buildSourceContext($run);
-
         $sourceContext = $this->normalizeSourceContextPaths($sourceContext);
+        $notesMap = $this->parseRunNotes((string) ($this->field($run, 'notes') ?? ''));
+        $coverage = $this->buildCoverageState($run);
+        $coverageReasonCode = $coverage['coverage_reason_code'] ?? null;
+        $finalReasonCode = $this->field($run, 'final_reason_code')
+            ?: ($sourceContext['final_reason_code'] ?? null)
+            ?: $coverageReasonCode;
 
         return [
             'run_id' => (int) $this->field($run, 'run_id'),
+            'run_uuid' => $this->field($run, 'run_uuid'),
+            'requested_date' => $this->field($run, 'requested_date') ?: $this->field($run, 'trade_date_requested'),
             'trade_date_requested' => $this->field($run, 'trade_date_requested'),
             'trade_date_effective' => $this->field($run, 'trade_date_effective'),
+            'platform_timezone' => (string) $this->configValue('market_data.platform.timezone', 'Asia/Jakarta'),
+            'request_mode' => $this->field($run, 'request_mode') ?: ($notesMap['request_mode'] ?? null),
+            'promote_mode' => $this->field($run, 'promote_mode') ?: ($notesMap['promote_mode'] ?? null),
+            'publish_target' => $this->field($run, 'publish_target') ?: ($notesMap['publish_target'] ?? null),
             'lifecycle_state' => $this->field($run, 'lifecycle_state'),
             'terminal_status' => $this->field($run, 'terminal_status'),
             'quality_gate_state' => $this->field($run, 'quality_gate_state'),
             'publishability_state' => $this->field($run, 'publishability_state'),
             'stage' => $this->field($run, 'stage'),
+            'stage_reached' => $this->field($run, 'stage'),
             'source' => $this->field($run, 'source'),
-            'final_reason_code' => $this->field($run, 'final_reason_code'),
+            'source_mode' => $this->field($run, 'source'),
+            'final_reason_code' => $finalReasonCode,
+            'final_reason_message' => $this->resolveReasonMessage($finalReasonCode),
+            'final_outcome_note' => $this->field($run, 'final_outcome_note') ?: ($notesMap['final_outcome_note'] ?? $this->deriveFinalOutcomeNote($run, $finalReasonCode)),
             'source_context' => $sourceContext,
-            'coverage' => $this->buildCoverageState($run),
-            'coverage_summary' => $this->buildCoverageState($run),
-            'coverage_reason_code' => $this->resolveCoverageReasonCodeFromState($this->field($run, 'coverage_gate_state')),
+            'coverage' => $coverage,
+            'coverage_summary' => $coverage,
+            'coverage_reason_code' => $coverageReasonCode,
             'coverage_ratio' => $this->field($run, 'coverage_ratio') !== null ? (float) $this->field($run, 'coverage_ratio') : null,
             'bars_rows_written' => $this->field($run, 'bars_rows_written') !== null ? (int) $this->field($run, 'bars_rows_written') : null,
             'accepted_row_count' => $this->field($run, 'bars_rows_written') !== null ? (int) $this->field($run, 'bars_rows_written') : null,
@@ -356,10 +711,63 @@ class MarketDataEvidenceExportService
             'supersedes_run_id' => $this->field($run, 'supersedes_run_id') !== null ? (int) $this->field($run, 'supersedes_run_id') : null,
             'correction_id' => $this->field($run, 'correction_id') !== null ? (int) $this->field($run, 'correction_id') : null,
             'started_at' => $this->field($run, 'started_at'),
+            'completed_at' => $this->field($run, 'completed_at') ?: $this->field($run, 'finished_at'),
             'finished_at' => $this->field($run, 'finished_at'),
+            'duration_ms' => $this->durationMillis($this->field($run, 'started_at'), $this->field($run, 'finished_at') ?: $this->field($run, 'completed_at')),
+            'created_at' => $this->field($run, 'created_at'),
+            'updated_at' => $this->field($run, 'updated_at'),
         ];
     }
 
+    private function isReadableRun($run)
+    {
+        return (string) $this->field($run, 'terminal_status') === 'SUCCESS'
+            && (string) $this->field($run, 'publishability_state') === 'READABLE';
+    }
+
+    private function durationMillis($startedAt, $finishedAt)
+    {
+        if ($startedAt === null || $startedAt === '' || $finishedAt === null || $finishedAt === '') {
+            return null;
+        }
+
+        try {
+            $start = new \DateTime((string) $startedAt);
+            $finish = new \DateTime((string) $finishedAt);
+            return max(0, (int) round(($finish->getTimestamp() - $start->getTimestamp()) * 1000));
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function deriveFinalOutcomeNote($run, $finalReasonCode = null)
+    {
+        if ($this->isReadableRun($run)) {
+            return 'Run is SUCCESS + READABLE; readable proof still requires coverage PASS, SEALED publication, and pointer-resolved current publication.';
+        }
+
+        $reason = $finalReasonCode ?: $this->field($run, 'source_final_reason_code') ?: $this->resolveCoverageReasonCodeFromState($this->field($run, 'coverage_gate_state'));
+
+        return 'Run is not readable; evidence export records failure context and does not claim consumer-readable publication. reason_code='.(string) ($reason ?: 'UNKNOWN');
+    }
+
+    private function resolveReasonMessage($reasonCode)
+    {
+        $messages = [
+            'COVERAGE_THRESHOLD_MET' => 'Coverage gate met the configured minimum threshold.',
+            'COVERAGE_BELOW_THRESHOLD' => 'Coverage gate failed because available data is below the configured threshold.',
+            'RUN_COVERAGE_NOT_EVALUABLE' => 'Coverage gate could not be evaluated for this run.',
+            'RUN_SOURCE_TIMEOUT' => 'Source acquisition timed out.',
+            'RUN_SOURCE_RATE_LIMIT' => 'Source acquisition was rate limited.',
+            'RUN_SOURCE_MANUAL_FILE_NOT_FOUND' => 'Manual source file was not found.',
+            'RUN_SOURCE_MANUAL_FILE_NOT_READABLE' => 'Manual source file was not readable.',
+            'RUN_SOURCE_MANUAL_FILE_MALFORMED' => 'Manual source file was malformed.',
+            'RUN_SOURCE_PARTIAL_RESPONSE' => 'Source returned a partial response.',
+            'RUN_LOCK_CONFLICT' => 'Run finalization hit a lock conflict and was held safely.',
+        ];
+
+        return $reasonCode && isset($messages[$reasonCode]) ? $messages[$reasonCode] : null;
+    }
 
     private function buildSourceAttemptTelemetry($run, array $sourceContext)
     {
@@ -422,26 +830,53 @@ class MarketDataEvidenceExportService
     private function buildSourceContext($record)
     {
         $notesMap = $this->parseRunNotes((string) ($record->notes ?? ''));
+        $sourceMode = $record->source ?? ($notesMap['source_mode'] ?? null);
+        $sourceName = $record->source_name ?? ($notesMap['source_name'] ?? null);
+        $provider = $record->source_provider ?? ($notesMap['source_provider'] ?? null);
+        $sourceInputFile = $record->source_input_file ?? ($notesMap['source_input_file'] ?? null);
+        $sourceFileHash = $record->source_file_hash ?? null;
+        $sourceIdentity = implode('|', array_filter([
+            $sourceMode ? 'mode='.$sourceMode : null,
+            $sourceName ? 'name='.$sourceName : null,
+            $provider ? 'provider='.$provider : null,
+            $sourceInputFile ? 'input='.basename(str_replace('\\', '/', (string) $sourceInputFile)) : null,
+            $sourceFileHash ? 'hash='.$sourceFileHash : null,
+        ]));
+        $attemptCount = $this->normalizeNullableInt($record->source_attempt_count ?? (isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] !== '' ? $notesMap['source_attempt_count'] : null));
+        $successAfterRetry = property_exists($record, 'source_success_after_retry') && $record->source_success_after_retry !== null ? ($record->source_success_after_retry ? 'yes' : 'no') : ($notesMap['source_success_after_retry'] ?? null);
+        $retryExhausted = property_exists($record, 'source_retry_exhausted') && $record->source_retry_exhausted !== null ? ($record->source_retry_exhausted ? 'yes' : 'no') : ($notesMap['source_retry_exhausted'] ?? null);
+        $finalHttpStatus = $this->normalizeNullableInt($record->source_final_http_status ?? (isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? $notesMap['source_final_http_status'] : null));
+        $finalReasonCode = $record->source_final_reason_code ?? ($notesMap['source_final_reason_code'] ?? null);
 
         return [
-            'source_mode' => $record->source ?? ($notesMap['source_mode'] ?? null),
-            'source_name' => $record->source_name ?? ($notesMap['source_name'] ?? null),
-            'source_input_file' => $record->source_input_file ?? ($notesMap['source_input_file'] ?? null),
-            'provider' => $record->source_provider ?? ($notesMap['source_provider'] ?? null),
+            'source_mode' => $sourceMode,
+            'source_name' => $sourceName,
+            'source_identity' => $sourceIdentity !== '' ? $sourceIdentity : null,
+            'source_provider' => $provider,
+            'provider' => $provider,
+            'source_input_file' => $sourceInputFile,
             'timeout_seconds' => $this->normalizeNullableInt($record->source_timeout_seconds ?? (isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] !== '' ? $notesMap['source_timeout_seconds'] : null)),
+            'source_timeout_seconds' => $this->normalizeNullableInt($record->source_timeout_seconds ?? (isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] !== '' ? $notesMap['source_timeout_seconds'] : null)),
             'retry_max' => $this->normalizeNullableInt($record->source_retry_max ?? (isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] !== '' ? $notesMap['source_retry_max'] : null)),
-            'attempt_count' => $this->normalizeNullableInt($record->source_attempt_count ?? (isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] !== '' ? $notesMap['source_attempt_count'] : null)),
-            'success_after_retry' => property_exists($record, 'source_success_after_retry') && $record->source_success_after_retry !== null ? ($record->source_success_after_retry ? 'yes' : 'no') : ($notesMap['source_success_after_retry'] ?? null),
-            'final_http_status' => $this->normalizeNullableInt($record->source_final_http_status ?? (isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] !== '' ? $notesMap['source_final_http_status'] : null)),
-            'final_reason_code' => $record->source_final_reason_code ?? ($notesMap['source_final_reason_code'] ?? null),
-            'source_file_hash' => $record->source_file_hash ?? null,
+            'source_retry_max' => $this->normalizeNullableInt($record->source_retry_max ?? (isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] !== '' ? $notesMap['source_retry_max'] : null)),
+            'attempt_count' => $attemptCount,
+            'source_attempt_count' => $attemptCount,
+            'success_after_retry' => $successAfterRetry,
+            'source_success_after_retry' => $successAfterRetry,
+            'final_http_status' => $finalHttpStatus,
+            'source_final_http_status' => $finalHttpStatus,
+            'final_reason_code' => $finalReasonCode,
+            'source_final_reason_code' => $finalReasonCode,
+            'source_final_reason_message' => $this->resolveReasonMessage($finalReasonCode),
+            'source_file_hash' => $sourceFileHash,
             'source_file_hash_algorithm' => $record->source_file_hash_algorithm ?? null,
             'source_file_size_bytes' => isset($record->source_file_size_bytes) && $record->source_file_size_bytes !== null ? (int) $record->source_file_size_bytes : null,
             'source_file_row_count' => isset($record->source_file_row_count) && $record->source_file_row_count !== null ? (int) $record->source_file_row_count : null,
             'accepted_row_count' => isset($record->bars_rows_written) && $record->bars_rows_written !== null ? (int) $record->bars_rows_written : (isset($notesMap['accepted_row_count']) && $notesMap['accepted_row_count'] !== '' ? (int) $notesMap['accepted_row_count'] : null),
             'rejected_row_count' => isset($record->invalid_bar_count) && $record->invalid_bar_count !== null ? (int) $record->invalid_bar_count : (isset($notesMap['rejected_row_count']) && $notesMap['rejected_row_count'] !== '' ? (int) $notesMap['rejected_row_count'] : null),
             'invalid_row_count' => isset($record->invalid_bar_count) && $record->invalid_bar_count !== null ? (int) $record->invalid_bar_count : (isset($notesMap['invalid_row_count']) && $notesMap['invalid_row_count'] !== '' ? (int) $notesMap['invalid_row_count'] : null),
-            'retry_exhausted' => property_exists($record, 'source_retry_exhausted') && $record->source_retry_exhausted !== null ? ($record->source_retry_exhausted ? 'yes' : 'no') : ($notesMap['source_retry_exhausted'] ?? null),
+            'retry_exhausted' => $retryExhausted,
+            'source_retry_exhausted' => $retryExhausted,
             'source_final_status' => $notesMap['source_final_status'] ?? $this->deriveSourceFinalStatus($record),
         ];
     }
@@ -472,6 +907,14 @@ class MarketDataEvidenceExportService
             'source_name' => 'source_name',
             'source_input_file' => 'source_input_file',
             'provider' => 'provider',
+            'source_provider' => 'provider',
+            'source_timeout_seconds' => 'timeout_seconds',
+            'source_retry_max' => 'retry_max',
+            'source_attempt_count' => 'attempt_count',
+            'source_success_after_retry' => 'success_after_retry',
+            'source_retry_exhausted' => 'retry_exhausted',
+            'source_final_http_status' => 'final_http_status',
+            'source_final_reason_code' => 'final_reason_code',
             'timeout_seconds' => 'timeout_seconds',
             'retry_max' => 'retry_max',
             'attempt_count' => 'attempt_count',
@@ -636,7 +1079,13 @@ class MarketDataEvidenceExportService
             'source' => $metric->source,
             'source_context' => $this->buildReplayActualSourceContext($metric),
             'expected_source_context' => $this->buildReplayExpectedSourceContext($metric),
+            'publication_context' => $this->buildReplayActualPublicationContext($metric),
+            'expected_publication_context' => $this->buildReplayExpectedPublicationContext($metric),
+            'pointer_context' => $this->buildReplayActualPointerContext($metric),
+            'expected_pointer_context' => $this->buildReplayExpectedPointerContext($metric),
             'status' => $metric->status,
+            'terminal_status' => $metric->status,
+            'publishability_state' => $this->field($metric, 'publishability_state'),
             'comparison_result' => $metric->comparison_result,
             'comparison_note' => $metric->comparison_note,
             'artifact_changed_scope' => $metric->artifact_changed_scope,
@@ -678,10 +1127,14 @@ class MarketDataEvidenceExportService
     {
         return [
             'status' => $metric->expected_status,
+            'terminal_status' => $this->field($metric, 'expected_terminal_status') ?: $metric->expected_status,
+            'publishability_state' => $this->field($metric, 'expected_publishability_state'),
             'trade_date_effective' => $metric->expected_trade_date_effective,
             'seal_state' => $metric->expected_seal_state,
             'config_identity' => $metric->expected_config_identity ?? null,
             'publication_version' => $metric->expected_publication_version !== null ? (int) $metric->expected_publication_version : null,
+            'publication_context' => $this->buildReplayExpectedPublicationContext($metric),
+            'pointer_context' => $this->buildReplayExpectedPointerContext($metric),
             'coverage' => $this->buildExpectedCoverageState($metric),
             'bars_batch_hash' => $metric->expected_bars_batch_hash ?? null,
             'indicators_batch_hash' => $metric->expected_indicators_batch_hash ?? null,
@@ -696,10 +1149,14 @@ class MarketDataEvidenceExportService
     {
         return [
             'status' => $metric->status,
+            'terminal_status' => $metric->status,
+            'publishability_state' => $this->field($metric, 'publishability_state'),
             'trade_date_effective' => $metric->trade_date_effective,
             'seal_state' => $metric->seal_state,
             'config_identity' => $metric->config_identity,
             'publication_version' => $metric->publication_version !== null ? (int) $metric->publication_version : null,
+            'publication_context' => $this->buildReplayActualPublicationContext($metric),
+            'pointer_context' => $this->buildReplayActualPointerContext($metric),
             'coverage' => $this->buildCoverageState($metric),
             'bars_batch_hash' => $metric->bars_batch_hash,
             'indicators_batch_hash' => $metric->indicators_batch_hash,
@@ -729,6 +1186,9 @@ class MarketDataEvidenceExportService
             'source_file_hash_algorithm' => $this->field($metric, 'source_file_hash_algorithm'),
             'source_file_size_bytes' => $this->field($metric, 'source_file_size_bytes') !== null ? (int) $this->field($metric, 'source_file_size_bytes') : null,
             'source_file_row_count' => $this->field($metric, 'source_file_row_count') !== null ? (int) $this->field($metric, 'source_file_row_count') : null,
+            'accepted_row_count' => $this->field($metric, 'bars_rows_written') !== null ? (int) $this->field($metric, 'bars_rows_written') : null,
+            'rejected_row_count' => $this->field($metric, 'invalid_bar_count') !== null ? (int) $this->field($metric, 'invalid_bar_count') : null,
+            'invalid_row_count' => $this->field($metric, 'invalid_bar_count') !== null ? (int) $this->field($metric, 'invalid_bar_count') : null,
         ];
     }
 
@@ -750,6 +1210,67 @@ class MarketDataEvidenceExportService
             'source_file_hash_algorithm' => $this->field($metric, 'expected_source_file_hash_algorithm'),
             'source_file_size_bytes' => $this->field($metric, 'expected_source_file_size_bytes') !== null ? (int) $this->field($metric, 'expected_source_file_size_bytes') : null,
             'source_file_row_count' => $this->field($metric, 'expected_source_file_row_count') !== null ? (int) $this->field($metric, 'expected_source_file_row_count') : null,
+            'accepted_row_count' => null,
+            'rejected_row_count' => null,
+            'invalid_row_count' => null,
+        ];
+    }
+
+    private function buildReplayActualPublicationContext($metric)
+    {
+        return [
+            'publication_id' => $this->field($metric, 'publication_id') !== null ? (int) $this->field($metric, 'publication_id') : null,
+            'publication_run_id' => $this->field($metric, 'publication_run_id') !== null ? (int) $this->field($metric, 'publication_run_id') : null,
+            'publication_version' => $this->field($metric, 'publication_version') !== null ? (int) $this->field($metric, 'publication_version') : null,
+            'publication_terminal_status' => $this->field($metric, 'status'),
+            'publication_publishability_state' => $this->field($metric, 'publishability_state'),
+            'publication_is_current' => $this->field($metric, 'is_current_publication') !== null ? (bool) $this->field($metric, 'is_current_publication') : null,
+            'publication_seal_state' => $this->field($metric, 'seal_state'),
+            'publication_artifact_lineage' => [
+                'bars_batch_hash' => $this->field($metric, 'bars_batch_hash'),
+                'indicators_batch_hash' => $this->field($metric, 'indicators_batch_hash'),
+                'eligibility_batch_hash' => $this->field($metric, 'eligibility_batch_hash'),
+            ],
+        ];
+    }
+
+    private function buildReplayExpectedPublicationContext($metric)
+    {
+        return [
+            'publication_id' => $this->field($metric, 'expected_publication_id') !== null ? (int) $this->field($metric, 'expected_publication_id') : null,
+            'publication_run_id' => $this->field($metric, 'expected_publication_run_id') !== null ? (int) $this->field($metric, 'expected_publication_run_id') : null,
+            'publication_version' => $this->field($metric, 'expected_publication_version') !== null ? (int) $this->field($metric, 'expected_publication_version') : null,
+            'publication_terminal_status' => $this->field($metric, 'expected_terminal_status') ?: $this->field($metric, 'expected_status'),
+            'publication_publishability_state' => $this->field($metric, 'expected_publishability_state'),
+            'publication_is_current' => $this->field($metric, 'expected_is_current_publication') !== null ? (bool) $this->field($metric, 'expected_is_current_publication') : null,
+            'publication_seal_state' => $this->field($metric, 'expected_seal_state'),
+            'publication_artifact_lineage' => [
+                'bars_batch_hash' => $this->field($metric, 'expected_bars_batch_hash'),
+                'indicators_batch_hash' => $this->field($metric, 'expected_indicators_batch_hash'),
+                'eligibility_batch_hash' => $this->field($metric, 'expected_eligibility_batch_hash'),
+            ],
+        ];
+    }
+
+    private function buildReplayActualPointerContext($metric)
+    {
+        return [
+            'pointer_publication_id' => $this->field($metric, 'publication_id') !== null ? (int) $this->field($metric, 'publication_id') : null,
+            'pointer_run_id' => $this->field($metric, 'publication_run_id') !== null ? (int) $this->field($metric, 'publication_run_id') : null,
+            'pointer_publication_version' => $this->field($metric, 'publication_version') !== null ? (int) $this->field($metric, 'publication_version') : null,
+            'pointer_resolve_status' => ($this->field($metric, 'publishability_state') === 'READABLE' && $this->field($metric, 'is_current_publication') !== null && (bool) $this->field($metric, 'is_current_publication')) ? 'RESOLVED_READABLE_CURRENT' : 'NOT_RESOLVED_READABLE_CURRENT',
+            'pointer_switched' => $this->field($metric, 'is_current_publication') !== null ? (bool) $this->field($metric, 'is_current_publication') : null,
+        ];
+    }
+
+    private function buildReplayExpectedPointerContext($metric)
+    {
+        return [
+            'pointer_publication_id' => $this->field($metric, 'expected_publication_id') !== null ? (int) $this->field($metric, 'expected_publication_id') : null,
+            'pointer_run_id' => $this->field($metric, 'expected_publication_run_id') !== null ? (int) $this->field($metric, 'expected_publication_run_id') : null,
+            'pointer_publication_version' => $this->field($metric, 'expected_publication_version') !== null ? (int) $this->field($metric, 'expected_publication_version') : null,
+            'pointer_resolve_status' => ($this->field($metric, 'expected_publishability_state') === 'READABLE' && $this->field($metric, 'expected_is_current_publication') !== null && (bool) $this->field($metric, 'expected_is_current_publication')) ? 'RESOLVED_READABLE_CURRENT' : 'NOT_RESOLVED_READABLE_CURRENT',
+            'pointer_switched' => $this->field($metric, 'expected_is_current_publication') !== null ? (bool) $this->field($metric, 'expected_is_current_publication') : null,
         ];
     }
 
@@ -790,18 +1311,27 @@ class MarketDataEvidenceExportService
 
     private function buildCoverageState($record)
     {
+        $reasonCode = $this->resolveCoverageReasonCodeFromState($record->coverage_gate_state ?? null);
+        $missingSample = $this->decodeJsonArray($record->coverage_missing_sample_json ?? null);
+
         return [
             'coverage_universe_count' => isset($record->coverage_universe_count) && $record->coverage_universe_count !== null ? (int) $record->coverage_universe_count : null,
+            'coverage_expected_count' => isset($record->coverage_universe_count) && $record->coverage_universe_count !== null ? (int) $record->coverage_universe_count : null,
             'coverage_available_count' => isset($record->coverage_available_count) && $record->coverage_available_count !== null ? (int) $record->coverage_available_count : null,
             'coverage_missing_count' => isset($record->coverage_missing_count) && $record->coverage_missing_count !== null ? (int) $record->coverage_missing_count : null,
             'coverage_ratio' => isset($record->coverage_ratio) && $record->coverage_ratio !== null ? (float) $record->coverage_ratio : null,
             'coverage_min_threshold' => isset($record->coverage_min_threshold) && $record->coverage_min_threshold !== null ? (float) $record->coverage_min_threshold : null,
             'coverage_gate_state' => $record->coverage_gate_state ?? null,
+            'coverage_passed' => (string) ($record->coverage_gate_state ?? '') === 'PASS',
             'coverage_threshold_mode' => $record->coverage_threshold_mode ?? null,
             'coverage_universe_basis' => $record->coverage_universe_basis ?? null,
             'coverage_contract_version' => $record->coverage_contract_version ?? null,
-            'coverage_missing_sample' => $this->decodeJsonArray($record->coverage_missing_sample_json ?? null),
-            'coverage_reason_code' => $this->resolveCoverageReasonCodeFromState($record->coverage_gate_state ?? null),
+            'coverage_policy_version' => $record->coverage_contract_version ?? null,
+            'coverage_missing_sample' => $missingSample,
+            'coverage_failed_symbols' => $missingSample,
+            'coverage_evaluated_at' => $this->field($record, 'finished_at') ?: $this->field($record, 'updated_at'),
+            'coverage_reason_code' => $reasonCode,
+            'coverage_reason_message' => $this->resolveReasonMessage($reasonCode),
         ];
     }
 
@@ -826,18 +1356,27 @@ class MarketDataEvidenceExportService
 
     private function buildExpectedCoverageState($record)
     {
+        $reasonCode = $this->resolveCoverageReasonCodeFromState($record->expected_coverage_gate_state ?? null);
+        $missingSample = $this->decodeJsonArray($record->expected_coverage_missing_sample_json ?? null);
+
         return [
             'coverage_universe_count' => isset($record->expected_coverage_universe_count) && $record->expected_coverage_universe_count !== null ? (int) $record->expected_coverage_universe_count : null,
+            'coverage_expected_count' => isset($record->expected_coverage_universe_count) && $record->expected_coverage_universe_count !== null ? (int) $record->expected_coverage_universe_count : null,
             'coverage_available_count' => isset($record->expected_coverage_available_count) && $record->expected_coverage_available_count !== null ? (int) $record->expected_coverage_available_count : null,
             'coverage_missing_count' => isset($record->expected_coverage_missing_count) && $record->expected_coverage_missing_count !== null ? (int) $record->expected_coverage_missing_count : null,
             'coverage_ratio' => isset($record->expected_coverage_ratio) && $record->expected_coverage_ratio !== null ? (float) $record->expected_coverage_ratio : null,
             'coverage_min_threshold' => isset($record->expected_coverage_min_threshold) && $record->expected_coverage_min_threshold !== null ? (float) $record->expected_coverage_min_threshold : null,
             'coverage_gate_state' => $record->expected_coverage_gate_state ?? null,
+            'coverage_passed' => (string) ($record->expected_coverage_gate_state ?? '') === 'PASS',
             'coverage_threshold_mode' => $record->expected_coverage_threshold_mode ?? null,
             'coverage_universe_basis' => $record->expected_coverage_universe_basis ?? null,
             'coverage_contract_version' => $record->expected_coverage_contract_version ?? null,
-            'coverage_missing_sample' => $this->decodeJsonArray($record->expected_coverage_missing_sample_json ?? null),
-            'coverage_reason_code' => $this->resolveCoverageReasonCodeFromState($record->expected_coverage_gate_state ?? null),
+            'coverage_policy_version' => $record->expected_coverage_contract_version ?? null,
+            'coverage_missing_sample' => $missingSample,
+            'coverage_failed_symbols' => $missingSample,
+            'coverage_evaluated_at' => $this->field($record, 'created_at'),
+            'coverage_reason_code' => $reasonCode,
+            'coverage_reason_message' => $this->resolveReasonMessage($reasonCode),
         ];
     }
 
@@ -968,18 +1507,53 @@ class MarketDataEvidenceExportService
         }
     }
 
+
+    private function defaultEvidenceOutputDir()
+    {
+        return rtrim((string) $this->configValue('market_data.evidence.output_directory', $this->storagePathValue('app/market_data/evidence')), '/');
+    }
+
+    private function configValue($key, $default = null)
+    {
+        try {
+            if (function_exists('app')) {
+                $app = app();
+                if (is_object($app) && method_exists($app, 'bound') && $app->bound('config')) {
+                    return config($key, $default);
+                }
+            }
+        } catch (\Throwable $exception) {
+            return $default;
+        }
+
+        return $default;
+    }
+
+    private function storagePathValue($path)
+    {
+        try {
+            if (function_exists('storage_path')) {
+                return storage_path($path);
+            }
+        } catch (\Throwable $exception) {
+            // Fall through to deterministic local path for isolated unit tests.
+        }
+
+        return rtrim(getcwd(), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+    }
+
     private function defaultRunOutputDir($runId)
     {
-        return rtrim((string) config('market_data.evidence.output_directory', storage_path('app/market_data/evidence')), '/').'/runs/run_'.$runId;
+        return $this->defaultEvidenceOutputDir().'/runs/run_'.$runId;
     }
 
     private function defaultCorrectionOutputDir($correctionId)
     {
-        return rtrim((string) config('market_data.evidence.output_directory', storage_path('app/market_data/evidence')), '/').'/corrections/correction_'.$correctionId;
+        return $this->defaultEvidenceOutputDir().'/corrections/correction_'.$correctionId;
     }
 
     private function defaultReplayOutputDir($replayId, $tradeDate)
     {
-        return rtrim((string) config('market_data.evidence.output_directory', storage_path('app/market_data/evidence')), '/').'/replays/replay_'.$replayId.'_'.$tradeDate;
+        return $this->defaultEvidenceOutputDir().'/replays/replay_'.$replayId.'_'.$tradeDate;
     }
 }

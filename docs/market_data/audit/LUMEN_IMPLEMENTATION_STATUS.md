@@ -3,24 +3,23 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Manual File Policy Enforcement
+- Evidence Export Completeness
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce manual-file policy across source identity, local file validation, import-only, promote, coverage gate, finalize/publishability, correction safety, pointer preservation, evidence, replay, command output, backfill output, repository persistence, and static guards.
+- Enforce evidence export completeness across run, source, coverage, artifact/hash/seal, publication, pointer, fallback, correction, replay, lineage, command output, repository export, and static guards.
 - Container validation completed with static trace and `php -l`; uploaded ZIP has no `vendor/`, so PHPUnit/artisan validation was performed operator-local.
-- Operator-local targeted and full MarketData PHPUnit validation passed; implementation is promoted to DONE.
+- Operator-local validation found and recovered the evidence/full suite failure cluster: isolated `config()` helper usage was replaced with guarded fallback helpers, the backward-compatible `readable_pointer_validated` pointer proof key was restored, and recovery retest passed targeted Evidence plus full MarketData PHPUnit.
 
 [SESSION_GOAL]
-- Manual file may be a source input, but must not become a shortcut to `SUCCESS + READABLE`, pointer switch, current publication, coverage bypass, correction bypass, or evidence/replay ambiguity.
+- Evidence export must become a self-contained proof package that can explain the lifecycle from ingest to publication without manual database lookup, including non-readable/failure states.
 
 [SESSION_NOTES]
-- Gap found: manual-file success telemetry did not consistently expose source file identity/hash/size/row count when file was auto-resolved from configured local JSON/CSV directory.
-- Gap found: accepted/rejected/invalid row telemetry was not consistently surfaced in source acquisition notes, evidence source context, replay comparison aliases, and operator command output.
-- Gap found: replay compared configured expected source fields but did not explicitly enforce manual-file policy mismatch classes for provider leakage, wrong source name, or READABLE without coverage PASS.
-- Patch applied: manual-file telemetry, import ingest row telemetry, source identity persistence, evidence/replay/manual policy mismatch guard, command/backfill output visibility, and `ManualFilePolicyEnforcementStaticGuardTest`.
-- Operator-local final retest passed targeted manual/import/promote/correction/coverage/finalize/pointer/evidence/replay/command suites, focused files, and full `tests/Unit/MarketData`.
+- Gap found: run evidence export rejected `HELD` / `NOT_READABLE` runs, which hid failure proof and forced operators back to database inspection.
+- Gap found: evidence pack did not expose first-class completeness, publication, pointer, fallback, correction, artifact/seal, and lineage sections as stable top-level proof objects.
+- Gap found: replay evidence did not export explicit expected/actual publication and pointer context objects.
+- Patch applied: run evidence now exports non-readable failure proof with `evidence_completeness_state`, missing sections, pointer/fallback context, lineage, and command warning when proof is incomplete. Follow-up patches removed direct `config()` helper dependency from evidence export paths and restored the legacy-compatible `readable_pointer_validated` pointer proof key.
 
 ---
 
@@ -42,6 +41,64 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Evidence Export Completeness -> DONE
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_CONTRACT] EVIDENCE_EXPORT_COMPLETENESS_CONTRACT
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-07 -> Evidence Export Completeness session opened against latest source-of-truth ZIP.
+  - 2026-05-07 -> Static trace reviewed audit governance, implementation status, contract tracker, schema, reason-code registry, evidence export service, evidence repository, publication repository, replay evidence, replay verification, command surface, and related static guards.
+  - 2026-05-07 -> Gap found: `MarketDataEvidenceExportService::exportRunEvidence()` required `SUCCESS + READABLE` and threw for non-readable runs, so HELD/FAILED/NOT_READABLE lifecycle evidence could not stand alone.
+  - 2026-05-07 -> Gap found: run evidence did not produce stable top-level completeness, artifact/seal, publication, pointer, fallback, correction, and lineage sections/files.
+  - 2026-05-07 -> Gap found: replay evidence did not expose explicit expected/actual publication and pointer context sections in the exported proof package.
+  - 2026-05-07 -> Enforcement patch added non-readable run evidence export, `evidence_completeness.json`, `lineage.json`, top-level proof contexts, replay expected/actual publication and pointer context, command incomplete-evidence warning, updated evidence/replay tests, and `EvidenceExportCompletenessStaticGuardTest`.
+  - 2026-05-07 -> Container `php -l` passed for changed PHP files; `vendor/` is absent in uploaded ZIP, so PHPUnit/artisan validation is not run in container and remains pending operator-local.
+  - 2026-05-07 -> Operator-local validation reported 2 errors in `MarketDataEvidenceExportServiceTest` and full `tests/Unit/MarketData`: direct `config()` helper usage in `MarketDataEvidenceExportService` attempted to resolve an unavailable `config` container binding during isolated unit tests.
+  - 2026-05-07 -> Recovery patch added guarded config/storage fallback helpers and replaced direct evidence export `config()` calls for platform timezone, hash algorithm, and default evidence output directory.
+  - 2026-05-07 -> Operator-local recovery retest reduced failure from 2 errors to 1 error: `readable_pointer_validated` was missing from `publication_resolution.pointer_context` while existing test still asserts that readable pointer validation proof key.
+  - 2026-05-07 -> Recovery patch restored `readable_pointer_validated` as an explicit pointer proof alias to `pointer_post_switch_validation` and strengthened the evidence completeness static guard to require it.
+  - 2026-05-07 -> Operator-local recovery validation PASS: `MarketDataEvidenceExportServiceTest.php` passed 3 tests / 87 assertions, targeted Evidence filter passed 34 tests / 518 assertions, and full `tests/Unit/MarketData` passed 285 tests / 3022 assertions. Implementation promoted to DONE.
+
+  [IMPLEMENTATION]
+  - `MarketDataEvidenceExportService` now exports evidence for non-readable runs instead of hiding them behind a readable-publication exception.
+  - Run evidence pack now includes `evidence_completeness`, `source_context`, `coverage_context`, `artifact_context`, `publication_context`, `pointer_context`, `fallback_context`, `correction_context`, and `lineage` as first-class proof sections.
+  - Run evidence now writes `lineage.json` and `evidence_completeness.json` beside the existing pack files.
+  - Publication proof records publication id/version/run/date/state, seal state, terminal status, publishability, current flag, run-publication mirror status, and artifact lineage.
+  - Pointer proof records pointer/resolved publication/run/version, switch decision, post-switch validation, legacy-compatible `readable_pointer_validated`, previous publication/run, raw pointer context when readable resolution fails, and mismatch reason.
+  - Fallback proof records fallback used/not-used, reason, publication/run/version/effective date, pointer/readable/seal/success/coverage checks, and lineage.
+  - Replay evidence now exports expected/actual publication context and pointer context in both result and state files.
+  - `market-data:evidence:export` command now warns when evidence is exported but `evidence_completeness_state=INCOMPLETE`.
+
+  [ENFORCEMENT]
+  - Failure evidence is exported as failure evidence; it is not converted into success-looking output and does not claim a readable publication unless pointer-resolved proof exists.
+  - Incomplete proof remains explicit through `evidence_completeness_state=INCOMPLETE`, reason code `EVIDENCE_INCOMPLETE`, and `missing_sections`.
+  - Evidence completeness blocks silent assumptions for missing source, coverage, artifact hash, publication, pointer, correction, or lineage context.
+  - Static guard blocks regression for missing evidence sections, missing lifecycle fields, missing pointer validation proof key, missing replay expected/actual lifecycle context, non-readable run rejection, and latest/MAX trade-date shortcuts in evidence proof paths.
+
+  [VALIDATION]
+  - Container `php -l` passed for changed PHP files.
+  - Container forbidden latest-date shortcut scan completed for evidence service, evidence repository, and evidence command.
+  - Operator-local validation exposed isolated `config()` helper errors in evidence export tests and full MarketData suite; recovery patch fixed direct config access in evidence export paths.
+  - First recovery retest reduced the suite to one remaining `Undefined index: readable_pointer_validated` error in `MarketDataEvidenceExportServiceTest`; second recovery patch restored the pointer proof key.
+  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` passed 3 tests / 87 assertions.
+  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` passed 34 tests / 518 assertions.
+  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` passed 285 tests / 3022 assertions.
+
+  [FINAL_BEHAVIOR]
+  - Evidence export can now produce a deterministic proof package for both readable and non-readable runs. Readable proof still requires coverage PASS, mandatory artifact hashes, SEALED publication, valid publication context, and pointer-resolved current publication. Non-readable proof remains reason-coded and pointer-safe.
+
+  [EVIDENCE]
+  - Static trace: `MarketDataEvidenceExportService`, `EodEvidenceRepository`, `EodPublicationRepository`, replay evidence/export code, command surface, schema fields, and static guards.
+  - Syntax validation: `php -l` on changed PHP files passed.
+  - Runtime validation: targeted evidence service, Evidence filter, and full MarketData PHPUnit passed after recovery patches.
+
+  [NEXT_ACTION]
+  - Preserve this DONE state by rerunning targeted Evidence and full MarketData PHPUnit after future evidence/replay/source/coverage/finalize/pointer/correction changes.
 
 - Manual File Policy Enforcement -> DONE
 

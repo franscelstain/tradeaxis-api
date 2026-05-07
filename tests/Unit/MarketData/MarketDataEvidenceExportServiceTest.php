@@ -36,6 +36,9 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',
             'coverage_missing_sample_json' => json_encode([]),
+            'final_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'final_outcome_note' => 'Run finalized as readable publication.',
+            'publication_id' => 1201,
             'bars_rows_written' => 2,
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
@@ -142,7 +145,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(8124, $result['selector']['id']);
         $this->assertSame('SUCCESS', $result['summary']['terminal_status']);
         $this->assertSame('READABLE', $result['summary']['publishability_state']);
-        $this->assertSame(8, $result['file_count']);
+        $this->assertSame(10, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/run_summary.json');
         $this->assertFileExists($dir.'/publication_manifest.json');
@@ -151,6 +154,8 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertFileExists($dir.'/eligibility_export.csv');
         $this->assertFileExists($dir.'/invalid_bars_export.csv');
         $this->assertFileExists($dir.'/anomaly_report.md');
+        $this->assertFileExists($dir.'/lineage.json');
+        $this->assertFileExists($dir.'/evidence_completeness.json');
         $this->assertFileExists($dir.'/evidence_pack.json');
 
         $summary = json_decode(file_get_contents($dir.'/run_summary.json'), true);
@@ -158,6 +163,8 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('SUCCESS', $summary['terminal_status']);
         $this->assertTrue($summary['is_current_publication']);
         $this->assertSame('PASS', $summary['coverage']['coverage_gate_state']);
+        $this->assertSame('COVERAGE_THRESHOLD_MET', $summary['coverage']['coverage_reason_code']);
+        $this->assertTrue($summary['coverage']['coverage_passed']);
         $this->assertSame(2, $summary['coverage']['coverage_universe_count']);
         $this->assertSame(0.98, $summary['coverage']['coverage_min_threshold']);
         $this->assertSame([], $summary['coverage']['coverage_missing_sample']);
@@ -181,6 +188,13 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('RUN_SOURCE_TIMEOUT', $payload['run_summary']['source_context']['final_reason_code']);
         $this->assertSame('STAGE_COMPLETED', $payload['source_attempt_telemetry']['event_type']);
         $this->assertCount(2, $payload['source_attempt_telemetry']['attempts']);
+        $this->assertSame('COMPLETE', $payload['evidence_completeness']['evidence_completeness_state']);
+        $this->assertFalse($payload['evidence_completeness']['database_lookup_required_after_export']);
+        $this->assertSame(1201, $payload['publication_context']['publication_id']);
+        $this->assertSame('RESOLVED_READABLE_CURRENT', $payload['pointer_context']['pointer_resolve_status']);
+        $this->assertFalse($payload['fallback_context']['fallback_used']);
+        $this->assertSame(8124, $payload['lineage']['run_to_publication']['run_id']);
+        $this->assertSame(1201, $payload['lineage']['run_to_publication']['publication_id']);
         $this->assertSame('SUCCESS', $payload['publication_resolution']['terminal_status']);
         $this->assertSame('READABLE', $payload['publication_resolution']['publishability_state']);
         $this->assertSame('PASS', $payload['publication_resolution']['coverage_gate_state']);
@@ -211,14 +225,42 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $service->exportReplayEvidence(3001, null, sys_get_temp_dir().'/market_data_evidence_replay_'.uniqid());
     }
 
-    public function test_export_run_evidence_fails_when_run_is_not_readable()
+    public function test_export_run_evidence_exports_not_readable_failure_proof_without_read_path()
     {
         $run = (object) [
             'run_id' => 8125,
             'trade_date_requested' => '2026-04-22',
             'trade_date_effective' => '2026-04-21',
+            'lifecycle_state' => 'COMPLETED',
             'terminal_status' => 'HELD',
+            'quality_gate_state' => 'FAIL',
             'publishability_state' => 'NOT_READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'source_name' => 'LOCAL_FILE',
+            'source_input_file' => 'storage/app/market-data/manual/partial.csv',
+            'source_file_hash' => 'FILE_HASH',
+            'source_file_hash_algorithm' => 'SHA-256',
+            'source_file_size_bytes' => 4096,
+            'source_file_row_count' => 5,
+            'bars_rows_written' => 5,
+            'invalid_bar_count' => 1,
+            'coverage_universe_count' => 901,
+            'coverage_available_count' => 5,
+            'coverage_missing_count' => 896,
+            'coverage_ratio' => 0.0055,
+            'coverage_min_threshold' => 0.98,
+            'coverage_gate_state' => 'FAIL',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode(['BBCA', 'TLKM']),
+            'final_reason_code' => 'COVERAGE_BELOW_THRESHOLD',
+            'final_outcome_note' => 'Manual file imported but not promoted to readable publication.',
+            'started_at' => '2026-04-22T17:00:00+07:00',
+            'finished_at' => '2026-04-22T17:03:00+07:00',
+            'created_at' => '2026-04-22T17:00:00+07:00',
+            'updated_at' => '2026-04-22T17:03:00+07:00',
         ];
 
         $evidence = m::mock(EodEvidenceRepository::class);
@@ -226,13 +268,56 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $corrections = m::mock(EodCorrectionRepository::class);
 
         $evidence->shouldReceive('findRunById')->once()->with(8125)->andReturn($run);
+        $publications->shouldNotReceive('findReadableCurrentPublicationForRun');
+        $publications->shouldNotReceive('buildManifestByPublicationId');
+        $publications->shouldReceive('findRawCurrentPublicationStateForTradeDate')->once()->with('2026-04-22')->andReturn(null);
+        $evidence->shouldReceive('summarizeRunEvents')->once()->with(8125)->andReturn([
+            'event_count' => 2,
+            'first_event_time' => '2026-04-22T17:00:00+07:00',
+            'last_event_time' => '2026-04-22T17:03:00+07:00',
+            'first_event_type' => 'RUN_CREATED',
+            'last_event_type' => 'RUN_HELD',
+            'highest_severity' => 'WARN',
+            'stage_counts' => ['INGEST' => 1, 'FINALIZE' => 1],
+            'reason_code_counts' => ['COVERAGE_BELOW_THRESHOLD' => 1],
+        ]);
+        $evidence->shouldNotReceive('dominantReasonCodes');
+        $evidence->shouldNotReceive('exportEligibilityRows');
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8125)->andReturn([]);
+        $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-22', 8125)->andReturn([]);
 
         $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
+        $result = $service->exportRunEvidence(8125, $dir);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Run evidence export requires a SUCCESS + READABLE run; non-readable runs cannot be consumed through publication read path.');
+        $this->assertSame('run', $result['selector']['type']);
+        $this->assertSame(8125, $result['selector']['id']);
+        $this->assertSame('HELD', $result['summary']['terminal_status']);
+        $this->assertSame('NOT_READABLE', $result['summary']['publishability_state']);
+        $this->assertSame('COVERAGE_BELOW_THRESHOLD', $result['summary']['final_reason_code']);
+        $this->assertSame('INCOMPLETE', $result['summary']['evidence_completeness_state']);
+        $this->assertSame('MISSING', $result['summary']['pointer_resolve_status']);
+        $this->assertTrue($result['summary']['fallback_used']);
+        $this->assertFileExists($dir.'/evidence_pack.json');
+        $this->assertFileExists($dir.'/lineage.json');
+        $this->assertFileExists($dir.'/evidence_completeness.json');
+        $this->assertFileDoesNotExist($dir.'/publication_manifest.json');
 
-        $service->exportRunEvidence(8125, sys_get_temp_dir().'/market_data_evidence_run_'.uniqid());
+        $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
+        $this->assertSame('INCOMPLETE', $payload['evidence_completeness']['evidence_completeness_state']);
+        $this->assertContains('artifact_hash_context', $payload['evidence_completeness']['missing_sections']);
+        $this->assertSame('FAIL', $payload['coverage_context']['coverage_gate_state']);
+        $this->assertSame(901, $payload['coverage_context']['coverage_expected_count']);
+        $this->assertSame(5, $payload['coverage_context']['coverage_available_count']);
+        $this->assertSame('manual_file', $payload['source_context']['source_mode']);
+        $this->assertSame('LOCAL_FILE', $payload['source_context']['source_name']);
+        $this->assertSame('FILE_HASH', $payload['source_context']['source_file_hash']);
+        $this->assertSame('NOT_CREATED_OR_NOT_READABLE', $payload['publication_context']['publication_state']);
+        $this->assertSame('MISSING', $payload['pointer_context']['pointer_resolve_status']);
+        $this->assertSame('CURRENT_POINTER_ROW_MISSING', $payload['pointer_context']['pointer_mismatch_reason']);
+        $this->assertTrue($payload['fallback_context']['fallback_used']);
+        $this->assertSame('COVERAGE_BELOW_THRESHOLD', $payload['fallback_context']['fallback_reason_code']);
+        $this->assertSame(8125, $payload['lineage']['run_to_finalize_decision']['run_id']);
     }
 
 }

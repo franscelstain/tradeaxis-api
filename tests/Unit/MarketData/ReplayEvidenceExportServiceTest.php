@@ -21,7 +21,19 @@ class ReplayEvidenceExportServiceTest extends TestCase
             'trade_date' => '2025-12-10',
             'trade_date_effective' => '2025-12-09',
             'source' => 'manual_file',
+            'source_mode' => 'manual_file',
+            'source_name' => 'LOCAL_FILE',
+            'source_provider' => 'manual_import',
+            'source_input_file' => 'storage/app/market-data/manual/degraded.csv',
+            'source_file_hash' => 'FILE_HASH_ACTUAL',
+            'source_file_hash_algorithm' => 'SHA-256',
+            'source_file_size_bytes' => 2048,
+            'source_file_row_count' => 842,
             'status' => 'HELD',
+            'publishability_state' => 'NOT_READABLE',
+            'publication_id' => null,
+            'publication_run_id' => null,
+            'is_current_publication' => 0,
             'comparison_result' => 'EXPECTED_DEGRADE',
             'comparison_note' => 'coverage intentionally degraded',
             'artifact_changed_scope' => 'bars_indicators_eligibility',
@@ -51,6 +63,19 @@ class ReplayEvidenceExportServiceTest extends TestCase
             'seal_state' => 'UNSEALED',
             'sealed_at' => null,
             'expected_status' => 'HELD',
+            'expected_terminal_status' => 'HELD',
+            'expected_publishability_state' => 'NOT_READABLE',
+            'expected_source_mode' => 'manual_file',
+            'expected_source_name' => 'LOCAL_FILE',
+            'expected_source_provider' => 'manual_import',
+            'expected_source_input_file' => 'storage/app/market-data/manual/degraded.csv',
+            'expected_source_file_hash' => 'FILE_HASH_ACTUAL',
+            'expected_source_file_hash_algorithm' => 'SHA-256',
+            'expected_source_file_size_bytes' => 2048,
+            'expected_source_file_row_count' => 842,
+            'expected_publication_id' => null,
+            'expected_publication_run_id' => null,
+            'expected_is_current_publication' => 0,
             'expected_trade_date_effective' => '2025-12-09',
             'expected_seal_state' => 'UNSEALED',
             'expected_config_identity' => 'cfg_2025_12_v2',
@@ -113,18 +138,32 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $expectedState = json_decode(file_get_contents($dir.'/replay_expected_state.json'), true);
         $this->assertSame('HELD', $expectedState['status']);
         $this->assertSame('A1', $expectedState['bars_batch_hash']);
+        $this->assertSame('manual_file', $expectedState['source_context']['source_mode']);
+        $this->assertSame('FILE_HASH_ACTUAL', $expectedState['source_context']['source_file_hash']);
+        $this->assertSame('NOT_READABLE', $expectedState['publication_context']['publication_publishability_state']);
+        $this->assertSame('NOT_RESOLVED_READABLE_CURRENT', $expectedState['pointer_context']['pointer_resolve_status']);
         $this->assertCount(2, $expectedState['reason_code_counts']);
         $this->assertSame(1000, $expectedState['coverage']['coverage_universe_count']);
 
         $actualState = json_decode(file_get_contents($dir.'/replay_actual_state.json'), true);
         $this->assertSame('HELD', $actualState['status']);
         $this->assertSame('B1', $actualState['indicators_batch_hash']);
+        $this->assertSame('manual_file', $actualState['source_context']['source_mode']);
+        $this->assertSame('FILE_HASH_ACTUAL', $actualState['source_context']['source_file_hash']);
+        $this->assertSame(842, $actualState['source_context']['accepted_row_count']);
+        $this->assertSame(18, $actualState['source_context']['invalid_row_count']);
+        $this->assertSame('NOT_READABLE', $actualState['publication_context']['publication_publishability_state']);
+        $this->assertSame('NOT_RESOLVED_READABLE_CURRENT', $actualState['pointer_context']['pointer_resolve_status']);
         $this->assertCount(2, $actualState['reason_code_counts']);
         $this->assertSame(['BBCA', 'TLKM'], $actualState['coverage']['coverage_missing_sample']);
 
         $payload = json_decode(file_get_contents($dir.'/replay_evidence_pack.json'), true);
         $this->assertSame('HELD', $payload['replay_result']['status']);
         $this->assertSame('cfg_2025_12_v2', $payload['expected_state']['config_identity']);
+        $this->assertSame('manual_file', $payload['replay_result']['source_context']['source_mode']);
+        $this->assertSame('manual_file', $payload['replay_result']['expected_source_context']['source_mode']);
+        $this->assertSame('NOT_RESOLVED_READABLE_CURRENT', $payload['replay_result']['pointer_context']['pointer_resolve_status']);
+        $this->assertSame('NOT_RESOLVED_READABLE_CURRENT', $payload['replay_result']['expected_pointer_context']['pointer_resolve_status']);
         $this->assertCount(2, $payload['reason_code_counts']);
     }
 }

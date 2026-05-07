@@ -3,20 +3,20 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Manual File Policy Enforcement
+- Evidence Export Completeness
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Track manual-file policy enforcement across source identity, validation, import-only, promote, coverage gate, correction lifecycle, finalize/publishability, pointer preservation, evidence, replay, command/backfill output, and static guard enforcement.
-- Contract is LOCKED after remediation patch, targeted operator-local validation, focused file validation, and full MarketData PHPUnit validation passed.
+- Track evidence export completeness across run, source, coverage, artifact/hash/seal, publication, pointer, fallback, correction, replay, lineage, command output, repository export, and static guard enforcement.
+- Contract is LOCKED by static trace, code patch, static guard, PHP syntax validation, recovery patch for isolated config access, recovery patch for the explicit pointer validation proof key, and operator-local targeted/full MarketData PHPUnit PASS evidence.
 
 [SESSION_GOAL]
-- `MANUAL_FILE_POLICY_ENFORCEMENT_CONTRACT` prevents manual file from bypassing publishability, coverage gate, seal/finalize, correction lifecycle, pointer, evidence, replay, or operator-output contracts.
+- `EVIDENCE_EXPORT_COMPLETENESS_CONTRACT` prevents evidence export from requiring manual database lookup or hiding source, coverage, publication, pointer, fallback, correction, replay, or failure-state proof.
 
 [SESSION_NOTES]
-- This contract reconciles source/provider resilience, coverage gate enforcement, publishability state integrity, finalize/lock/pointer determinism, correction lifecycle safety, evidence export, replay verification, and command surface consistency instead of duplicating those contracts.
-- Container validation covered static trace and `php -l`; operator-local PHPUnit validation passed for targeted filters, focused files, and full MarketData suite.
+- This contract reconciles source/provider resilience, manual file policy, coverage gate enforcement, publishability state integrity, finalize/lock/pointer determinism, correction lifecycle safety, replay verification, and command surface consistency instead of duplicating those contracts.
+- Container validation covered static trace and `php -l`; operator-local PHPUnit validation reported an isolated config-binding failure and then a missing pointer validation proof key, both were patched, and final recovery retest passed targeted evidence plus full MarketData suite.
 
 ---
 
@@ -38,6 +38,66 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- EVIDENCE_EXPORT_COMPLETENESS_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-07
+
+  [RELATED_IMPLEMENTATION] Evidence Export Completeness
+
+  [REVIEW_STATUS] REVIEWED_OK
+
+  [HISTORY]
+  - 2026-05-07 -> Canonical evidence export completeness contract opened under audit governance.
+  - 2026-05-07 -> Static trace reconciled existing evidence export, replay verification, source/provider resilience, manual file policy, coverage gate, publishability state, finalize/pointer determinism, correction lifecycle safety, command output, DB schema, reason-code registry, and static guards.
+  - 2026-05-07 -> Gap found: non-readable run evidence was rejected by the export service, which prevented HELD/FAILED/NOT_READABLE proof packages from standing alone.
+  - 2026-05-07 -> Gap found: run evidence lacked stable top-level completeness, publication, pointer, fallback, correction, artifact/seal, and lineage proof sections/files.
+  - 2026-05-07 -> Gap found: replay evidence lacked explicit expected/actual publication and pointer context in exported proof.
+  - 2026-05-07 -> Enforcement patch added failure-state evidence export, evidence completeness state/reason/missing-sections, lineage file, first-class proof contexts, replay expected/actual publication+pointer contexts, command incomplete warning, and static guard coverage.
+  - 2026-05-07 -> Contract status set to ENFORCED because static enforcement and `php -l` pass, but targeted/full PHPUnit validation is pending operator-local.
+  - 2026-05-07 -> Operator-local validation reported 2 errors in evidence tests and full MarketData suite caused by direct `config()` helper resolution without a bootstrapped config binding in isolated service tests.
+  - 2026-05-07 -> Recovery patch replaced direct evidence export config lookups with guarded config/storage fallback helpers for platform timezone, hash algorithm, and evidence output directory.
+  - 2026-05-07 -> Operator-local recovery retest reduced failure from 2 errors to 1 error: missing `readable_pointer_validated` under `publication_resolution.pointer_context`.
+  - 2026-05-07 -> Recovery patch restored `readable_pointer_validated` as explicit pointer proof and strengthened static guard coverage for the pointer validation key.
+  - 2026-05-07 -> Operator-local recovery validation PASS: `MarketDataEvidenceExportServiceTest.php` passed 3 tests / 87 assertions, targeted Evidence filter passed 34 tests / 518 assertions, and full `tests/Unit/MarketData` passed 285 tests / 3022 assertions. Contract promoted to LOCKED.
+
+  [DEFINED]
+  - Evidence export is a proof package, not just a run summary.
+  - Evidence must be self-contained enough to explain ingest source, run lifecycle, coverage decision, artifacts, seal, finalize result, publication, pointer, fallback, correction, replay, reason code, and lineage without manual database lookup.
+  - Evidence must preserve failure states as failure proof and must never turn HELD/FAILED/NOT_READABLE into success-looking output.
+  - Readable evidence proof requires coverage PASS, mandatory artifact hashes, SEALED publication, valid run-publication context, and pointer-resolved current publication.
+  - Incomplete evidence must remain explicit via completeness state, reason code, and missing sections.
+
+  [IMPLEMENTED]
+  - `MarketDataEvidenceExportService` exports non-readable run evidence without resolving a readable publication.
+  - Run evidence includes first-class run/source/coverage/artifact/seal/publication/pointer/fallback/correction/lineage sections and writes `lineage.json` plus `evidence_completeness.json`.
+  - Publication and pointer context record id/version/run/current/seal/terminal/publishability/mirror/resolve/switch/validation/mismatch details, including `readable_pointer_validated` for backward-compatible pointer proof.
+  - Fallback context records used/not-used status, reason, target publication/run/version/effective-date and validity checks.
+  - Replay evidence exports expected/actual publication and pointer context alongside source, coverage, correction, and reason-code comparison context.
+  - Evidence command emits an explicit warning when completeness is incomplete.
+  - `EvidenceExportCompletenessStaticGuardTest` guards required sections, lifecycle fields, replay comparison context, no latest-date shortcuts, and no non-readable evidence rejection.
+
+  [ENFORCED]
+  - Non-readable run evidence is exportable and reason-coded.
+  - Missing proof sections downgrade evidence to `INCOMPLETE`; no missing pointer/source/coverage/artifact context is treated as proof of readability.
+  - Replay exported evidence now contains expected/actual publication and pointer context needed to diagnose mismatch.
+  - Evidence proof paths do not use `MAX(trade_date)`, `max('trade_date')`, `latest('trade_date')`, `orderByDesc('trade_date')`, or `ORDER BY trade_date DESC` shortcuts.
+  - Static guard blocks regression for the completeness contract, including the explicit pointer validation proof key.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for changed PHP files.
+  - Container forbidden latest-date shortcut scan found no forbidden latest/MAX trade-date patterns in evidence proof paths.
+  - Operator-local validation exposed isolated direct `config()` helper errors, then a remaining missing `readable_pointer_validated` proof key in evidence export tests and full MarketData suite; both were recovered without weakening tests.
+  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` passed 3 tests / 87 assertions.
+  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` passed 34 tests / 518 assertions.
+  - Final operator-local recovery validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` passed 285 tests / 3022 assertions.
+
+  [FINAL_RULE]
+  - LOCKED. Evidence export must emit deterministic, self-contained lifecycle proof. It may export incomplete proof, but must mark it `INCOMPLETE`, list missing sections, warn the operator, and avoid any readable/current claim unless coverage, seal, publication, and pointer proof are present.
+
+  [LOCK_CONDITION]
+  - Satisfied by operator-local recovery validation: evidence service test, targeted Evidence filter, and full `tests/Unit/MarketData` all PASS.
 
 - MANUAL_FILE_POLICY_ENFORCEMENT_CONTRACT -> LOCKED
 
