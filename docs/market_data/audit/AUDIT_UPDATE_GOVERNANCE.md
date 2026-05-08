@@ -1117,3 +1117,41 @@ DILARANG menandai sesi baru DONE tanpa reconciliation jika menyentuh area yang s
 - evidence harus spesifik
 - duplicate entry membuat audit INVALID
 - pelanggaran governance adalah HARD STOP
+---
+
+# 29. 📌 AUDIT DOCS SYNCHRONIZATION HARD RULE
+
+Every session that changes code, tests, schema, command output, reason-code registry/seed, evidence, replay, publication behavior, pointer behavior, or contract policy must update audit docs in the same patch set.
+
+WAJIB:
+
+- update `LUMEN_IMPLEMENTATION_STATUS.md`
+- update `LUMEN_CONTRACT_TRACKER.md`
+- update or create the relevant inventory file when the session scope introduces a new proof surface
+- keep ACTIVE SESSION aligned between implementation status and contract tracker
+- keep the current working entry/contract as the first non-empty entry under the current working sections
+- preserve meaningful history; use append-only HISTORY entries for significant changes
+- prevent duplicate canonical contract names
+- record targeted local PHPUnit evidence when available
+- record full `tests/Unit/MarketData` evidence when available
+- explicitly mark static-only work as IN_PROGRESS/ENFORCED, not DONE/LOCKED
+- keep Reason_Codes_Registry.md and Reason_Codes_Seed.sql synchronized when reason-code behavior changes
+- write NEXT_ACTION for any non-DONE implementation or non-LOCKED contract
+
+DILARANG:
+
+- claim DONE without implementation evidence
+- claim LOCKED without targeted and full local PHPUnit evidence
+- hide failed or pending validation
+- delete meaningful history to make status look clean
+- create a new contract name for an existing concern
+- leave ACTIVE SESSION pointing to a previous completed scope
+- let audit docs become more optimistic than code/test proof
+
+A dedicated static guard must protect these rules. For this codebase the canonical guard is:
+
+- `tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php`
+
+The canonical audit-docs synchronization contract is:
+
+- `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT`

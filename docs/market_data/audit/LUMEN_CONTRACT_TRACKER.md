@@ -3,16 +3,19 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Fail-Safe Behavior / No Silent Failure
+- Audit Docs Synchronization
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define and enforce `FAIL_SAFE_NO_SILENT_FAILURE_CONTRACT` across source failure, manual/API no-data handling, zero valid bars, finalize no-fake-success, pointer preservation, evidence/replay proof, registry/seed, and audit inventory.
-- Uploaded ZIP has no `vendor/`; container validation remains static/`php -l`, and operator-local targeted/full MarketData PHPUnit PASS evidence has now locked the contract.
+- Define and enforce `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` across audit governance, implementation status, contract tracker, inventory, locked evidence checks, latest full-suite evidence references, regression reconciliation, registry/seed sync proof, and static guard coverage.
+- Source-of-truth ZIP has no `vendor/`; container validation is static/`php -l` only, and this contract remains ENFORCED until operator-local targeted and full MarketData PHPUnit evidence is provided.
 
 [SESSION_GOAL]
-- Empty/failed/unproven data must never become readable, sealed, published, or pointer-switched; every safe stop must be reason-coded and traceable.
+- Audit docs must be the truthful source of implementation/contract status and must not drift ahead of code/test proof, duplicate contracts, hide gaps, or claim LOCKED/DONE without evidence.
+
+[SESSION_NOTES]
+- Latest carried local full-suite baseline evidence remains the Fail-Safe session result: full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions). This is regression evidence carried into docs, not a new container PHPUnit run.
 
 ---
 ## OPERATIONAL STATUS
@@ -33,6 +36,63 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-08
+
+  [RELATED_IMPLEMENTATION] Audit Docs Synchronization
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-08 -> Contract opened as canonical audit-docs synchronization contract under audit governance.
+  - 2026-05-08 -> Static trace found active-session drift, missing audit-docs canonical contract, missing dedicated inventory, and no dedicated guard preventing audit docs drift.
+  - 2026-05-08 -> Enforcement patch added active-session synchronization, implementation/tracker alignment, audit-docs inventory, governance hard rules, registry/seed sync verification, latest full-suite evidence recording, and `AuditDocsSynchronizationStaticGuardTest.php`.
+  - 2026-05-08 -> Contract held at ENFORCED because uploaded ZIP has no `vendor/`; targeted and full local PHPUnit were required before LOCKED.
+  - 2026-05-08 -> Operator-local first retest found two AuditDocs/static/full-suite failures: the guard missed unicode-arrow historical contract headings and the inventory lacked the exact phrase `not a new container PHPUnit run`.
+  - 2026-05-08 -> Follow-up patch fixed canonical contract parsing for both `->` and `→`, added the exact inventory evidence phrase, and preserved the first failed retest as reconciliation history.
+  - 2026-05-08 -> Contract promoted from ENFORCED to LOCKED after operator-local validation PASS: `AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 153 assertions); `AuditDocs` filter OK (9 tests, 153 assertions); `StaticGuard` filter OK (93 tests, 2160 assertions); `Evidence` filter OK (39 tests, 678 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (358 tests, 4711 assertions).
+
+  [DEFINED]
+  - Audit docs are the official implementation-status and contract-status record for market-data.
+  - Docs must never be more optimistic than code/test proof.
+  - DONE implementation entries require concrete targeted or full local evidence.
+  - LOCKED contracts require code/test enforcement, targeted local PASS, full MarketData local PASS, audit docs update, and regression reconciliation.
+  - Existing audit history must remain append-only; stale claims are reconciled, not deleted.
+  - Canonical contracts must not be duplicated.
+  - `LUMEN_IMPLEMENTATION_STATUS.md`, `LUMEN_CONTRACT_TRACKER.md`, governance, registry/seed, and inventory must remain synchronized.
+
+  [IMPLEMENTED]
+  - Active session changed to Audit Docs Synchronization in implementation status and contract tracker.
+  - Current working implementation/contract entries placed first under their respective current working sections.
+  - `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` added as the canonical contract.
+  - `AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md` added and updated with final local validation evidence.
+  - `AUDIT_UPDATE_GOVERNANCE.md` strengthened with audit-docs synchronization hard rules.
+  - `AuditDocsSynchronizationStaticGuardTest.php` added and fixed to parse both ASCII `->` and unicode `→` canonical contract headings.
+
+  [ENFORCED]
+  - Static guard enforces active-session alignment, current-working positioning, canonical contract uniqueness, implementation/tracker contract synchronization, locked evidence, governance hard rules, latest full-suite evidence recording, registry/seed synchronization, and locked audit-docs proof.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` passed.
+  - Reason-code registry/seed static scan found 315 registry codes and 315 seed codes with no mismatch.
+  - Latest carried full-suite baseline retained: full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions) from the Fail-Safe Behavior / No Silent Failure session. This is not a new container PHPUnit run.
+  - Operator-local first retest before follow-up fix failed and was reconciled: full `tests/Unit/MarketData` reached 358 tests / 4707 assertions with 2 AuditDocs failures.
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 153 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` OK (9 tests, 153 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` OK (93 tests, 2160 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` OK (39 tests, 678 assertions).
+  - Operator-local validation PASS: full `vendor/bin/phpunit tests/Unit/MarketData` OK (358 tests, 4711 assertions).
+  - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`; local operator evidence is the LOCKED evidence.
+
+  [FINAL_RULE]
+  - LOCKED. Audit docs synchronization is mandatory for every future market-data contract, behavior, code, test, command, reason-code, registry/seed, evidence, replay, or regression change. Updates must be append-only, anti-duplication, evidence-backed, synchronized between implementation status and contract tracker, and protected by static guard coverage.
+
+  [NEXT_ACTION]
+  - Maintain this contract as the canonical owner for future audit-docs drift prevention. Do not create a duplicate audit-docs synchronization contract.
+
 
 
 

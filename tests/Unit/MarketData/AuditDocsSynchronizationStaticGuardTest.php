@@ -1,0 +1,219 @@
+<?php
+
+use PHPUnit\Framework\TestCase;
+
+class AuditDocsSynchronizationStaticGuardTest extends TestCase
+{
+    private function projectPath(string $path): string
+    {
+        return dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path);
+    }
+
+    private function readProjectFile(string $path): string
+    {
+        $fullPath = $this->projectPath($path);
+        $this->assertFileExists($fullPath);
+
+        return file_get_contents($fullPath);
+    }
+
+    public function test_audit_docs_have_active_session_and_contract_tracker_alignment(): void
+    {
+        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+
+        foreach ([$status, $tracker] as $document) {
+            $this->assertStringContainsString("ACTIVE SESSION:\n- Audit Docs Synchronization", $document);
+            $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $document);
+            $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $document);
+        }
+
+        $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $status);
+        $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Audit Docs Synchronization', $tracker);
+    }
+
+    public function test_current_working_sections_start_with_audit_docs_synchronization(): void
+    {
+        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+
+        $implementationEntry = $this->firstNonEmptyLineAfter($status, '## CURRENT WORKING ENTRY');
+        $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
+
+        $this->assertSame('- Audit Docs Synchronization -> DONE', $implementationEntry);
+        $this->assertSame('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $contractEntry);
+    }
+
+    public function test_locked_contracts_have_concrete_validation_evidence(): void
+    {
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        $lockedBlocks = $this->contractBlocksByStatus($tracker, 'LOCKED');
+
+        $this->assertNotEmpty($lockedBlocks);
+
+        foreach ($lockedBlocks as $contractName => $block) {
+            $this->assertStringContainsString('[VALIDATED]', $block, $contractName.' must have a VALIDATED section.');
+            $this->assertStringContainsString('[FINAL_RULE]', $block, $contractName.' must have a FINAL_RULE section.');
+            $this->assertMatchesRegularExpression('/(Operator-local|Operator local|Local PHPUnit|PHPUnit\/artisan validation was supplied by operator|local validation)/i', $block, $contractName.' must cite local/operator validation.');
+            $this->assertMatchesRegularExpression('/(OK \(|PASS|passed)/i', $block, $contractName.' must cite a passing validation result.');
+            $this->assertStringContainsString('tests/Unit/MarketData', $block, $contractName.' must cite MarketData validation scope.');
+        }
+    }
+
+    public function test_audit_docs_do_not_duplicate_canonical_contracts(): void
+    {
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        preg_match_all('/^- ([A-Z0-9_]+_CONTRACT) (?:->|→)/mu', $tracker, $matches);
+
+        $contracts = $matches[1];
+        $this->assertNotEmpty($contracts);
+        $this->assertCount(count(array_unique($contracts)), $contracts, 'Canonical contract names must not be duplicated.');
+        $this->assertSame(1, substr_count($tracker, '- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT ->'));
+    }
+
+    public function test_implementation_status_and_contract_tracker_are_synchronized(): void
+    {
+        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+
+        $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
+        $trackerContracts = $this->canonicalContractsFromTracker($tracker);
+
+        foreach ($implementationContracts as $contractName) {
+            $this->assertContains($contractName, $trackerContracts, $contractName.' is referenced by implementation status but missing from contract tracker.');
+        }
+
+        $this->assertContains('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $implementationContracts);
+        $this->assertContains('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $trackerContracts);
+    }
+
+    public function test_audit_governance_enforces_append_only_anti_duplication_and_static_guard(): void
+    {
+        $governance = $this->readProjectFile('docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md');
+        $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md');
+
+        foreach ([
+            'AUDIT DOCS SYNCHRONIZATION HARD RULE',
+            'append-only',
+            'anti-duplication',
+            'ACTIVE SESSION',
+            'targeted and full local PHPUnit evidence',
+            'LOCKED_LOCAL_PHPUNIT_PASS',
+            'AuditDocsSynchronizationStaticGuardTest.php',
+            'AUDIT_DOCS_SYNCHRONIZATION_CONTRACT',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $governance.$inventory);
+        }
+    }
+
+    public function test_latest_market_data_full_suite_evidence_is_recorded(): void
+    {
+        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md');
+
+        foreach ([$status, $tracker, $inventory] as $document) {
+            $this->assertStringContainsString('349 tests, 4558 assertions', $document);
+            $this->assertStringContainsString('358 tests, 4711 assertions', $document);
+            $this->assertStringContainsString('vendor/bin/phpunit tests/Unit/MarketData', $document);
+            $this->assertStringContainsString('not a new container PHPUnit run', $document);
+        }
+    }
+
+    public function test_reason_code_registry_and_seed_are_synchronized(): void
+    {
+        $registry = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Registry.md');
+        $seed = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Seed.sql');
+
+        preg_match_all('/^\| `([A-Z0-9_]+)` \|/m', $registry, $registryMatches);
+        preg_match_all("/\('([A-Z0-9_]+)'\s*,/", $seed, $seedMatches);
+
+        $registryCodes = array_values(array_unique($registryMatches[1]));
+        $seedCodes = array_values(array_unique($seedMatches[1]));
+        sort($registryCodes);
+        sort($seedCodes);
+
+        $this->assertCount(315, $registryCodes);
+        $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
+    }
+
+    public function test_locked_audit_docs_scope_has_local_pass_evidence_and_no_pending_claim(): void
+    {
+        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+
+        $implementationBlock = $this->implementationBlock($status, 'Audit Docs Synchronization');
+        $contractBlock = $this->contractBlock($tracker, 'AUDIT_DOCS_SYNCHRONIZATION_CONTRACT');
+
+        $this->assertStringContainsString('[NEXT_ACTION]', $implementationBlock);
+        $this->assertStringContainsString('[NEXT_ACTION]', $contractBlock);
+        $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $implementationBlock.$contractBlock);
+        $this->assertStringContainsString('OK (9 tests, 153 assertions)', $implementationBlock.$contractBlock);
+        $this->assertStringContainsString('OK (358 tests, 4711 assertions)', $implementationBlock.$contractBlock);
+        $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
+        $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringNotContainsString('PENDING_LOCAL_PHPUNIT', $implementationBlock.$contractBlock);
+        $this->assertStringNotContainsString('ENFORCED, not LOCKED', $contractBlock);
+    }
+
+    private function firstNonEmptyLineAfter(string $document, string $heading): string
+    {
+        $position = strpos($document, $heading);
+        $this->assertNotFalse($position, $heading.' heading must exist.');
+
+        $afterHeading = substr($document, $position + strlen($heading));
+        foreach (preg_split('/\R/', $afterHeading) as $line) {
+            if (trim($line) !== '') {
+                return trim($line);
+            }
+        }
+
+        $this->fail('No non-empty line found after '.$heading.'.');
+    }
+
+    private function contractBlocksByStatus(string $tracker, string $status): array
+    {
+        preg_match_all('/^- ([A-Z0-9_]+_CONTRACT) -> '.preg_quote($status, '/').'\R(?P<body>.*?)(?=^- [A-Z0-9_]+_CONTRACT ->|\z)/ms', $tracker, $matches, PREG_SET_ORDER);
+
+        $blocks = [];
+        foreach ($matches as $match) {
+            $blocks[$match[1]] = $match[0];
+        }
+
+        return $blocks;
+    }
+
+    private function relatedContractsFromImplementationStatus(string $status): array
+    {
+        preg_match_all('/\[RELATED_CONTRACT\] ([A-Z0-9_]+_CONTRACT)/', $status, $matches);
+
+        return array_values(array_unique($matches[1]));
+    }
+
+    private function canonicalContractsFromTracker(string $tracker): array
+    {
+        preg_match_all('/^- ([A-Z0-9_]+_CONTRACT) (?:->|→)/mu', $tracker, $matches);
+
+        return array_values(array_unique($matches[1]));
+    }
+
+    private function implementationBlock(string $status, string $name): string
+    {
+        $pattern = '/^- '.preg_quote($name, '/').' -> [A-Z_]+\R.*?(?=^- .+ -> [A-Z_]+\R|\z)/ms';
+        $this->assertMatchesRegularExpression($pattern, $status);
+        preg_match($pattern, $status, $match);
+
+        return $match[0];
+    }
+
+    private function contractBlock(string $tracker, string $name): string
+    {
+        $pattern = '/^- '.preg_quote($name, '/').' (?:->|→) [A-Z_]+\R.*?(?=^- [A-Z0-9_]+_CONTRACT (?:->|→) [A-Z_]+\R|\z)/msu';
+        $this->assertMatchesRegularExpression($pattern, $tracker);
+        preg_match($pattern, $tracker, $match);
+
+        return $match[0];
+    }
+}
