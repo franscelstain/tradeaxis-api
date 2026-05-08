@@ -187,6 +187,7 @@ CREATE TABLE IF NOT EXISTS eod_runs (
 
   stage ENUM('INGEST_BARS','PUBLISH_BARS','COMPUTE_INDICATORS','BUILD_ELIGIBILITY','HASH','SEAL','FINALIZE') NOT NULL,
   source VARCHAR(32) NOT NULL,
+  request_mode VARCHAR(32) NULL,
   source_name VARCHAR(64) NULL,
   source_provider VARCHAR(64) NULL,
   source_input_file VARCHAR(255) NULL,
@@ -257,6 +258,7 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   KEY idx_runs_gate_state (quality_gate_state),
   KEY idx_runs_coverage_gate_state (coverage_gate_state),
   KEY idx_runs_stage (stage),
+  KEY idx_runs_request_mode (request_mode),
   KEY idx_runs_trade_date_current_pub (trade_date_effective, is_current_publication),
   KEY idx_runs_effective_readable_contract (trade_date_effective, terminal_status, publishability_state, coverage_gate_state, is_current_publication),
   KEY idx_runs_supersedes (supersedes_run_id),

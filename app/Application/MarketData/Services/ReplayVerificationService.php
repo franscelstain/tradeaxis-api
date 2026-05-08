@@ -80,6 +80,7 @@ class ReplayVerificationService
             'status' => $actual['status'],
             'publishability_state' => $actual['publishability_state'],
             'publication_id' => $actual['publication_id'],
+            'current_publication_id' => $actual['current_publication_id'],
             'publication_run_id' => $actual['publication_run_id'],
             'comparison_result' => $comparison['comparison_result'],
             'comparison_note' => $comparison['comparison_note'],
@@ -322,6 +323,18 @@ class ReplayVerificationService
         $publicationVersion = $publication && isset($publication->publication_version) && $publication->publication_version !== null ? (int) $publication->publication_version : (isset($run->publication_version) && $run->publication_version !== null ? (int) $run->publication_version : null);
         $isCurrentPublication = $publication && isset($publication->is_current) ? (bool) $publication->is_current : (isset($run->is_current_publication) ? (bool) $run->is_current_publication : false);
         $sealState = $publication && isset($publication->seal_state) && $publication->seal_state ? $publication->seal_state : ($run->sealed_at ? 'SEALED' : 'UNSEALED');
+        $requestMode = $run->request_mode ?? ($notes['request_mode'] ?? null);
+        $promoted = (string) ($run->terminal_status ?? '') === 'SUCCESS'
+            && (string) ($run->publishability_state ?? '') === 'READABLE'
+            && $isCurrentPublication;
+        $importStatus = (string) $requestMode === 'import_only'
+            ? (isset($run->bars_rows_written) && $run->bars_rows_written !== null ? 'COMPLETED' : 'PENDING')
+            : (isset($run->bars_rows_written) && $run->bars_rows_written !== null ? 'COMPLETED' : 'NOT_APPLICABLE');
+        $promoteStatus = $promoted
+            ? 'PROMOTED'
+            : ((string) $requestMode === 'import_only'
+                ? 'NOT_PROMOTED'
+                : (in_array((string) ($run->terminal_status ?? ''), ['HELD', 'FAILED', 'BLOCKED'], true) ? (string) $run->terminal_status : 'NOT_PROMOTED'));
         $sourceMode = $run->source ?? ($notes['source_mode'] ?? null);
         $sourceName = $run->source_name ?? ($notes['source_name'] ?? null);
         $sourceProvider = $run->source_provider ?? ($notes['source_provider'] ?? null);
@@ -330,7 +343,11 @@ class ReplayVerificationService
             'run_id' => isset($run->run_id) ? (int) $run->run_id : null,
             'trade_date_requested' => $run->trade_date_requested ?? null,
             'trade_date_effective' => $resolvedTradeDate,
-            'request_mode' => $run->request_mode ?? ($notes['request_mode'] ?? null),
+            'request_mode' => $requestMode,
+            'import_status' => $importStatus,
+            'promote_status' => $promoteStatus,
+            'promoted' => $promoted,
+            'pointer_switched' => $isCurrentPublication,
             'promote_mode' => $run->promote_mode ?? ($notes['promote_mode'] ?? null),
             'publish_target' => $run->publish_target ?? ($notes['publish_target'] ?? null),
             'terminal_status' => $run->terminal_status ?? null,
@@ -392,6 +409,7 @@ class ReplayVerificationService
         ];
         $publicationContext = [
             'publication_id' => $publicationId,
+            'current_publication_id' => $isCurrentPublication ? $publicationId : null,
             'publication_run_id' => $publicationRunId,
             'publication_version' => $publicationVersion,
             'publication_terminal_status' => $run->terminal_status ?? null,
@@ -423,6 +441,7 @@ class ReplayVerificationService
         $lineage = [
             'run_id' => $runContext['run_id'],
             'publication_id' => $publicationId,
+            'current_publication_id' => $isCurrentPublication ? $publicationId : null,
             'publication_run_id' => $publicationRunId,
             'correction_id' => $correctionContext['correction_id'],
             'source_file_hash' => $sourceContext['source_file_hash'],
@@ -457,8 +476,14 @@ class ReplayVerificationService
             'status' => $runContext['terminal_status'],
             'terminal_status' => $runContext['terminal_status'],
             'publishability_state' => $runContext['publishability_state'],
+            'request_mode' => $requestMode,
+            'import_status' => $importStatus,
+            'promote_status' => $promoteStatus,
+            'promoted' => $promoted,
+            'pointer_switched' => $isCurrentPublication,
             'config_identity' => $run->config_version ?? null,
             'publication_id' => $publicationId,
+            'current_publication_id' => $isCurrentPublication ? $publicationId : null,
             'publication_run_id' => $publicationRunId,
             'publication_version' => $publicationVersion,
             'is_current_publication' => $isCurrentPublication,
@@ -497,6 +522,15 @@ class ReplayVerificationService
         ];
         $actual['context'] = [
             'actual_run_context' => $runContext,
+            'actual_import_promote_context' => [
+                'request_mode' => $requestMode,
+                'source_mode' => $sourceMode,
+                'import_status' => $importStatus,
+                'promote_status' => $promoteStatus,
+                'promoted' => $promoted,
+                'pointer_switched' => $isCurrentPublication,
+                'current_publication_id' => $isCurrentPublication ? $publicationId : null,
+            ],
             'actual_source_context' => $sourceContext,
             'actual_coverage_context' => $coverageContext,
             'actual_artifact_context' => $artifactContext,
@@ -564,6 +598,10 @@ class ReplayVerificationService
         $this->compareField($mismatches, 'trade_date_requested', $this->ctx($expectedContext, 'expected_run_context.trade_date_requested'), $actual['trade_date']);
         $this->compareField($mismatches, 'trade_date_effective', $this->ctx($expectedContext, 'expected_run_context.trade_date_effective'), $actual['trade_date_effective']);
         $this->compareField($mismatches, 'request_mode', $this->ctx($expectedContext, 'expected_run_context.request_mode'), $actual['context']['actual_run_context']['request_mode']);
+        $this->compareField($mismatches, 'import_status', $this->ctx($expectedContext, 'expected_run_context.import_status'), $actual['context']['actual_import_promote_context']['import_status']);
+        $this->compareField($mismatches, 'promote_status', $this->ctx($expectedContext, 'expected_run_context.promote_status'), $actual['context']['actual_import_promote_context']['promote_status']);
+        $this->compareField($mismatches, 'promoted', $this->ctx($expectedContext, 'expected_run_context.promoted'), $actual['context']['actual_import_promote_context']['promoted']);
+        $this->compareField($mismatches, 'pointer_switched', $this->ctx($expectedContext, 'expected_run_context.pointer_switched'), $actual['context']['actual_import_promote_context']['pointer_switched']);
         $this->compareField($mismatches, 'promote_mode', $this->ctx($expectedContext, 'expected_run_context.promote_mode'), $actual['context']['actual_run_context']['promote_mode']);
         $this->compareField($mismatches, 'publish_target', $this->ctx($expectedContext, 'expected_run_context.publish_target'), $actual['context']['actual_run_context']['publish_target']);
         $this->compareField($mismatches, 'terminal_status', $this->ctx($expectedContext, 'expected_final_state.terminal_status'), $actual['terminal_status']);
@@ -733,6 +771,10 @@ class ReplayVerificationService
             'trade_date_requested' => $r['expected_trade_date_requested'] ?? ($r['trade_date_requested'] ?? null),
             'trade_date_effective' => $r['expected_trade_date_effective'] ?? ($r['trade_date_effective'] ?? null),
             'request_mode' => $r['expected_request_mode'] ?? ($r['request_mode'] ?? null),
+            'import_status' => $r['expected_import_status'] ?? ($r['import_status'] ?? null),
+            'promote_status' => $r['expected_promote_status'] ?? ($r['promote_status'] ?? null),
+            'promoted' => $r['expected_promoted'] ?? ($r['promoted'] ?? null),
+            'pointer_switched' => $r['expected_pointer_switched'] ?? ($r['pointer_switched'] ?? null),
             'promote_mode' => $r['expected_promote_mode'] ?? ($r['promote_mode'] ?? null),
             'publish_target' => $r['expected_publish_target'] ?? ($r['publish_target'] ?? null),
             'terminal_status' => $r['expected_terminal_status'] ?? ($r['expected_status'] ?? ($r['status'] ?? null)),
@@ -1006,6 +1048,9 @@ class ReplayVerificationService
         if ($field === 'trade_date_requested') return 'REPLAY_REQUESTED_DATE_MISMATCH';
         if ($field === 'trade_date_effective') return 'REPLAY_EFFECTIVE_DATE_MISMATCH';
         if ($field === 'request_mode' || $field === 'promote_mode' || $field === 'publish_target') return 'REPLAY_REQUEST_MODE_MISMATCH';
+        if ($field === 'import_status') return 'REPLAY_IMPORT_STATUS_MISMATCH';
+        if ($field === 'promote_status' || $field === 'promoted') return 'REPLAY_PROMOTE_STATUS_MISMATCH';
+        if ($field === 'pointer_switched') return 'REPLAY_UNEXPECTED_PUBLICATION_PROMOTION';
         if (strpos($field, 'source_file_hash') !== false) return 'REPLAY_SOURCE_FILE_HASH_MISMATCH';
         if (strpos($field, 'source_mode') !== false) return 'REPLAY_SOURCE_MODE_MISMATCH';
         if (strpos($field, 'source_provider') !== false || $field === 'provider' || strpos($field, 'http') !== false || strpos($field, 'retry') !== false || strpos($field, 'timeout') !== false || strpos($field, 'attempt') !== false) return 'REPLAY_PROVIDER_CONTEXT_MISMATCH';

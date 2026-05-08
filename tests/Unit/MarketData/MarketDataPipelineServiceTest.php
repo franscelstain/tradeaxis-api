@@ -129,17 +129,20 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $runs->shouldReceive('getOrCreateOwningRun')
             ->once()
-            ->with('2026-04-05', 'api', 'INGEST_BARS', null)
+            ->with('2026-04-05', 'api', 'INGEST_BARS', null, 'import_only')
             ->andReturn($run);
 
         $runs->shouldReceive('touchStage')
             ->once()
             ->with($run, 'INGEST_BARS', m::on(function ($attributes) {
                 return is_array($attributes)
+                    && ($attributes['request_mode'] ?? null) === 'import_only'
                     && array_key_exists('notes', $attributes)
-                    && $attributes['notes'] === null
+                    && $attributes['notes'] === 'request_mode=import_only'
                     && array_key_exists('supersedes_run_id', $attributes)
-                    && $attributes['supersedes_run_id'] === null;
+                    && $attributes['supersedes_run_id'] === null
+                    && array_key_exists('correction_id', $attributes)
+                    && $attributes['correction_id'] === null;
             }))
             ->andReturn($run);
 
@@ -151,7 +154,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'STAGE_STARTED',
                 'INFO',
                 'Stage started in owning run context.',
-                null,
+                'IMPORT_ONLY_ACCEPTED',
                 m::on(function ($payload) {
                     return is_array($payload)
                         && ($payload['requested_date'] ?? null) === '2026-04-05'
@@ -205,17 +208,42 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $runs->shouldReceive('getOrCreateOwningRun')->once()->andReturn($run);
         $runs->shouldReceive('touchStage')->once()->andReturn($run);
-        $runs->shouldReceive('appendEvent')->twice()->withArgs(function ($runArg, $stage, $eventType, $severity, $message, $reasonCode, $payload) {
+        $runs->shouldReceive('appendEvent')->times(3)->withArgs(function ($runArg, $stage, $eventType, $severity, $message, $reasonCode, $payload) {
             if ($eventType === 'STAGE_STARTED') {
-                return ($payload['source_mode'] ?? null) === 'manual_file'
+                return $reasonCode === 'IMPORT_ONLY_ACCEPTED'
+                    && ($payload['source_mode'] ?? null) === 'manual_file'
+                    && ($payload['request_mode'] ?? null) === 'import_only'
                     && ($payload['input_file'] ?? null) === 'storage/app/market_data/operator/manual-2026-03-24.csv';
             }
 
-            return ($payload['source_mode'] ?? null) === 'manual_file'
-                && ($payload['input_file'] ?? null) === 'storage/app/market_data/operator/manual-2026-03-24.csv';
+            if ($eventType === 'STAGE_COMPLETED') {
+                return $reasonCode === 'IMPORT_ONLY_COMPLETED'
+                    && ($payload['source_mode'] ?? null) === 'manual_file'
+                    && ($payload['request_mode'] ?? null) === 'import_only'
+                    && ($payload['input_file'] ?? null) === 'storage/app/market_data/operator/manual-2026-03-24.csv'
+                    && ($payload['promote_status'] ?? null) === 'NOT_PROMOTED'
+                    && ($payload['promoted'] ?? null) === false
+                    && ($payload['pointer_switched'] ?? null) === false;
+            }
+
+            if ($eventType === 'IMPORT_ONLY_NOT_PROMOTED') {
+                return $reasonCode === 'IMPORT_ONLY_NOT_PROMOTED'
+                    && ($payload['source_mode'] ?? null) === 'manual_file'
+                    && ($payload['request_mode'] ?? null) === 'import_only'
+                    && ($payload['promote_status'] ?? null) === 'NOT_PROMOTED'
+                    && ($payload['promoted'] ?? null) === false
+                    && ($payload['pointer_switched'] ?? null) === false;
+            }
+
+            return false;
         });
         $runs->shouldReceive('updateTelemetry')->once()->with($run, m::on(function ($telemetry) {
-            return ($telemetry['notes'] ?? null) === 'candidate_publication_id=44; source_name=LOCAL_FILE; source_input_file=manual-2026-03-24.csv';
+            $notes = (string) ($telemetry['notes'] ?? '');
+
+            return strpos($notes, 'request_mode=import_only') !== false
+                && strpos($notes, 'candidate_publication_id=44') !== false
+                && strpos($notes, 'source_name=LOCAL_FILE') !== false
+                && strpos($notes, 'source_input_file=manual-2026-03-24.csv') !== false;
         }))->andReturn($run);
 
         $bars->shouldReceive('ingest')->once()->andReturn([
@@ -359,21 +387,28 @@ class MarketDataPipelineServiceTest extends TestCase
                     && ($telemetry['bars_rows_written'] ?? null) === 900
                     && ($telemetry['invalid_bar_count'] ?? null) === 3
                     && ($telemetry['publication_version'] ?? null) === 6
-                    && ($telemetry['notes'] ?? null) === 'correction_id=7; candidate_publication_id=44; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200';
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'correction_id=7') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'request_mode=import_only') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'candidate_publication_id=44') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'source_name=API_FREE') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'source_provider=generic') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'source_timeout_seconds=15') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'source_retry_max=3') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'source_attempt_count=2') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'source_success_after_retry=yes') !== false
+                    && strpos((string) ($telemetry['notes'] ?? ''), 'source_final_http_status=200') !== false;
             }))
             ->andReturn($run);
 
         $runs->shouldReceive('appendEvent')
-            ->once()
-            ->with(
-                $run,
-                'INGEST_BARS',
-                'STAGE_COMPLETED',
-                'INFO',
-                'Bars ingest stage completed with canonical artifact writes.',
-                null,
-                m::on(function ($payload) {
-                    return is_array($payload)
+            ->twice()
+            ->withArgs(function ($runArg, $stage, $eventType, $severity, $message, $reasonCode, $payload) {
+                if ($eventType === 'STAGE_COMPLETED') {
+                    return $stage === 'INGEST_BARS'
+                        && $severity === 'INFO'
+                        && $message === 'Bars ingest stage completed with canonical artifact writes.'
+                        && $reasonCode === 'IMPORT_ONLY_COMPLETED'
+                        && is_array($payload)
                         && ($payload['publication_id'] ?? null) === 44
                         && ($payload['source_mode'] ?? null) === 'api'
                         && ($payload['source_name'] ?? null) === 'API_FREE'
@@ -381,12 +416,31 @@ class MarketDataPipelineServiceTest extends TestCase
                         && ($payload['timeout_seconds'] ?? null) === 15
                         && ($payload['retry_max'] ?? null) === 3
                         && ($payload['throttle_qps'] ?? null) === 5
+                        && ($payload['request_mode'] ?? null) === 'import_only'
+                        && ($payload['import_status'] ?? null) === 'COMPLETED'
+                        && ($payload['promote_status'] ?? null) === 'NOT_PROMOTED'
+                        && ($payload['promoted'] ?? null) === false
+                        && ($payload['pointer_switched'] ?? null) === false
                         && is_array($payload['source_acquisition'] ?? null)
                         && ($payload['source_acquisition']['attempt_count'] ?? null) === 2
                         && ($payload['source_acquisition']['success_after_retry'] ?? null) === true
                         && ($payload['source_acquisition']['final_http_status'] ?? null) === 200;
-                })
-            );
+                }
+
+                if ($eventType === 'IMPORT_ONLY_NOT_PROMOTED') {
+                    return $stage === 'INGEST_BARS'
+                        && $severity === 'INFO'
+                        && $reasonCode === 'IMPORT_ONLY_NOT_PROMOTED'
+                        && is_array($payload)
+                        && ($payload['request_mode'] ?? null) === 'import_only'
+                        && ($payload['import_status'] ?? null) === 'COMPLETED'
+                        && ($payload['promote_status'] ?? null) === 'NOT_PROMOTED'
+                        && ($payload['promoted'] ?? null) === false
+                        && ($payload['pointer_switched'] ?? null) === false;
+                }
+
+                return false;
+            });
 
         $runs->shouldReceive('failStage')->never();
 
@@ -1023,7 +1077,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'STAGE_STARTED',
                 'INFO',
                 'Stage started in owning run context.',
-                null,
+                'CORRECTION_PROMOTE_REQUIRED',
                 m::on(function ($payload) {
                     return is_array($payload)
                         && ($payload['requested_date'] ?? null) === '2026-03-17'

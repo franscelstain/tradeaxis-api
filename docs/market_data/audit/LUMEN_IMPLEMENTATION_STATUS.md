@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Run / Publication / Pointer Linkage
+- Import vs Promote Separation
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce deterministic, traceable linkage across `run → publication → pointer → correction`, including run-publication mirror validation, pointer target validation, correction baseline/replacement publication lineage, replay/evidence lineage proof, command summary linkage context, and reason-code registry/seed sync.
-- Source-of-truth ZIP has no `vendor/`; container validation was static/`php -l` only. Operator-local targeted and full PHPUnit validation has now passed and is recorded as final implementation evidence.
+- Enforce explicit separation between import/ingest and promote/publish so data can be accepted from manual file or API without becoming consumer-readable until promote gates pass.
+- Source-of-truth ZIP has no `vendor/`; container validation is static/`php -l` only. Final DONE status is based on operator-local targeted and full MarketData PHPUnit PASS evidence.
 
 [SESSION_GOAL]
-- Every publication must trace to a valid run, every current pointer must target a valid publication, and every correction must preserve baseline/replacement lineage without mutating or orphaning the current pointer.
+- `import_only` must not set READABLE, current publication, current pointer, or correction published state. `promote` must pass coverage, hash, seal, finalize, run-publication mirror, pointer validation, evidence, and replay proof.
 
 ---
 ## OPERATIONAL STATUS
@@ -35,6 +35,59 @@ ACTIVE SESSION:
 ## CURRENT WORKING ENTRY
 
 
+
+
+- Import vs Promote Separation -> DONE
+
+  [LAST_UPDATED] 2026-05-08
+
+  [RELATED_CONTRACT] IMPORT_PROMOTE_SEPARATION_CONTRACT
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-08 -> Session opened from uploaded Import vs Promote Separation prompt and latest source-of-truth ZIP.
+  - 2026-05-08 -> Static trace confirmed `market-data:daily` already routes to `importDaily()` and `market-data:promote` routes to `promoteDaily()`, but `request_mode` was not yet a first-class persisted run contract and import/promote proof was still partially inferred from output/notes.
+  - 2026-05-08 -> Patch added `eod_runs.request_mode`, DTO normalization, repository persistence, promote-run derivation, request-mode immutability guard, import-only side-effect assertion, reason-coded import-only completion, enriched command output, evidence/replay import-promote context, schema/docs sync, registry/seed sync, inventory, and static guard coverage.
+  - 2026-05-08 -> Container `php -l` passed for changed PHP files. PHPUnit/artisan were not run because uploaded ZIP has no `vendor/`.
+  - 2026-05-08 -> Operator-local PHPUnit reported targeted failures after the first ZIP: static guard over-asserted `promote`/`current_publication_id`, strict Mockery expectations did not include new `request_mode` arguments/reason codes, and import-only validation attempted a candidate publication repository call during guard inspection.
+  - 2026-05-08 -> Follow-up patch narrowed import-only guard to non-mutating inspection, exposed `current_publication_id` in replay context, made DTO allowed request modes explicit, and reconciled affected unit-test expectations for request mode, import/promote reason codes, and enriched notes. Container `php -l` passed again.
+  - 2026-05-08 -> Operator-local rerun passed ImportPromote static guard, ImportPromote filter, Manual, Finalize, Publication, Evidence, and StaticGuard filters; Source filter had one remaining Mockery expectation error for `touchStage()` attributes after request-mode notes enrichment. Patch updated that expectation to require `request_mode=import_only`, `notes=request_mode=import_only`, null supersession, and null correction context.
+  - 2026-05-08 -> Operator-local rerun after the Source expectation patch passed Source, Provider, Coverage, Pointer, Correction, CommandSurface, and Integration filters. Replay filter and full suite had two remaining errors in `ReplayVerificationServiceTest` because expected replay lineage fixtures did not include the newly exported `current_publication_id`. Patch updated replay fixture expectations to include `current_publication_id` in publication and lineage context.
+  - 2026-05-08 -> Final operator-local validation PASS: `Replay` filter OK (37 tests, 624 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (341 tests, 4436 assertions). Implementation promoted to DONE.
+
+  [IMPLEMENTATION]
+  - `MarketDataStageInput` now carries normalized `requestMode`.
+  - `eod_runs.request_mode` is added through migration, SQLite test bootstrap, and MariaDB schema docs.
+  - `EodRunRepository` persists request mode on new runs and derived promote runs.
+  - `MarketDataPipelineService` validates allowed request modes, blocks `import_only` from non-ingest stages, prevents request/source mode mutation inside a run, and asserts import-only never becomes readable/current/pointer-switched.
+  - `market-data:daily` remains import-only; `market-data:promote` remains explicit promote.
+  - `AbstractMarketDataCommand` renders `import_status`, `promote_status`, `promoted`, `pointer_switched`, and `current_publication_id` when applicable.
+  - `MarketDataEvidenceExportService` exports `import_promote_boundary` context.
+  - `ReplayVerificationService` compares request/import/promote/pointer context when expected proof provides it.
+  - `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` include import/promote separation reason-code families.
+  - `IMPORT_PROMOTE_SEPARATION_INVENTORY.md` records the boundary inventory.
+  - `ImportPromoteSeparationStaticGuardTest` guards runtime/schema/command/evidence/replay/reason-code/no-shortcut expectations.
+
+  [ENFORCEMENT]
+  - `request_mode=import_only` may ingest and record candidate/import context, but may not write READABLE, current publication, current pointer, or correction published state.
+  - `request_mode=promote` is the explicit path for coverage/hash/seal/finalize/pointer validation.
+  - Evidence and replay must expose import/promote distinction without requiring raw DB inspection.
+  - Command output must show import/promote/pointer state to operators.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Import vs Promote Separation is enforced by first-class `request_mode` persistence, import-only side-effect blocking, explicit promote gate context, command/evidence/replay import-promote proof, reason-code registry/seed sync, static guard coverage, targeted local validation, and full MarketData suite PASS evidence.
+
+  [EVIDENCE]
+  - Static trace completed across command, DTO, pipeline, repository, schema, evidence, replay, registry/seed, docs, and tests.
+  - Container `php -l` passed for changed PHP files after each patch. PHPUnit/artisan were not run in container because uploaded ZIP has no `vendor/`; final runtime proof is operator-local PHPUnit evidence.
+  - Operator-local PASS: `ImportPromoteSeparationStaticGuardTest.php` OK (6 tests, 136 assertions); `ImportPromote` filter OK (6 tests, 136 assertions); `Manual` OK (21 tests, 227 assertions); `Source` OK (36 tests, 400 assertions); `Provider` OK (7 tests, 135 assertions); `Coverage` OK (50 tests, 577 assertions); `Finalize` OK (46 tests, 355 assertions); `Publication` OK (97 tests, 1182 assertions); `Pointer` OK (73 tests, 1054 assertions); `Correction` OK (64 tests, 1276 assertions); `Evidence` OK (37 tests, 594 assertions); `Replay` OK (37 tests, 624 assertions); `CommandSurface` OK (47 tests, 348 assertions); `StaticGuard` OK (79 tests, 1899 assertions); `Integration` OK (91 tests, 1450 assertions); full `tests/Unit/MarketData` OK (341 tests, 4436 assertions).
+
+  [GAPS]
+  - No open gap for this scope after operator-local targeted and full MarketData validation passed.
+
+  [NEXT_ACTION]
+  - Keep this implementation locked. Any future change touching request mode, source mode, import-only ingest, promote/finalize, current pointer switch, correction publish flow, command output, evidence, replay, schema, or reason-code registry/seed must rerun targeted ImportPromote/Source/Replay/CommandSurface/Integration filters plus full `tests/Unit/MarketData`.
 
 - Run / Publication / Pointer Linkage -> DONE
 
@@ -143,7 +196,9 @@ ACTIVE SESSION:
 
   [EVIDENCE]
   - Static trace completed across hash, seal, artifact mutation, finalize, manifest, command output, reason-code registry/seed, and inventory.
-  - Container `php -l` passed for changed PHP files.
+  - Container `php -l` passed for changed PHP files after the follow-up patch.
+  - Operator-local rerun passed ImportPromote static guard, ImportPromote filter, Manual, Finalize, Publication, Evidence, and StaticGuard filters.
+  - Operator-local Source filter exposed one remaining strict Mockery expectation mismatch for enriched `touchStage()` attributes; patch applied in `MarketDataPipelineServiceTest`.
   - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`.
   - Operator-local `vendor/bin/phpunit tests/Unit/MarketData --filter "Finalize"` -> PASS: OK (46 tests, 355 assertions).
   - Operator-local `vendor/bin/phpunit tests/Unit/MarketData --filter "Integration"` -> PASS: OK (91 tests, 1443 assertions).

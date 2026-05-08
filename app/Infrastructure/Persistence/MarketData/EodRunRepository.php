@@ -9,9 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class EodRunRepository
 {
-    public function getOrCreateOwningRun($requestedDate, $sourceMode, $stage, $supersedesRunId = null)
+    public function getOrCreateOwningRun($requestedDate, $sourceMode, $stage, $supersedesRunId = null, $requestMode = null)
     {
-        return DB::transaction(function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId) {
+        return DB::transaction(function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId, $requestMode) {
             $activeRun = EodRun::query()
                 ->where('trade_date_requested', $requestedDate)
                 ->whereIn('lifecycle_state', ['PENDING', 'RUNNING', 'FINALIZING'])
@@ -34,6 +34,7 @@ class EodRunRepository
                 'publishability_state' => 'NOT_READABLE',
                 'stage' => $stage,
                 'source' => $sourceMode,
+                'request_mode' => $requestMode,
                 'source_name' => null,
                 'source_provider' => null,
                 'source_input_file' => null,
@@ -101,6 +102,7 @@ class EodRunRepository
                     'trade_date_requested' => $requestedDate,
                     'trade_date_effective' => null,
                     'source_mode' => $sourceMode,
+                    'request_mode' => $requestMode,
                     'supersedes_run_id' => $supersedesRunId,
                     'lifecycle_state' => 'PENDING',
                     'publishability_state' => 'NOT_READABLE',
@@ -125,6 +127,7 @@ class EodRunRepository
             'publishability_state' => 'NOT_READABLE',
             'stage' => $stage,
             'source' => $seedRun->source,
+            'request_mode' => $overrides['request_mode'] ?? 'promote',
             'source_name' => $seedRun->source_name,
             'source_provider' => $seedRun->source_provider,
             'source_input_file' => $seedRun->source_input_file,
@@ -199,6 +202,7 @@ class EodRunRepository
                 'trade_date_requested' => $run->trade_date_requested,
                 'trade_date_effective' => null,
                 'source_mode' => $run->source,
+                'request_mode' => $run->request_mode ?? ($overrides['request_mode'] ?? 'promote'),
                 'promote_mode' => $run->promote_mode,
                 'publish_target' => $run->publish_target,
                 'lifecycle_state' => 'PENDING',

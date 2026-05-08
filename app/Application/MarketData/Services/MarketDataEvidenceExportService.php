@@ -661,6 +661,17 @@ class MarketDataEvidenceExportService
         $finalReasonCode = $this->field($run, 'final_reason_code')
             ?: ($sourceContext['final_reason_code'] ?? null)
             ?: $coverageReasonCode;
+        $requestMode = $this->field($run, 'request_mode') ?: ($notesMap['request_mode'] ?? null);
+        $isCurrentPublication = $manifest ? (bool) $manifest['is_current'] : (bool) $this->field($run, 'is_current_publication', false);
+        $promoted = (string) $this->field($run, 'terminal_status') === 'SUCCESS'
+            && (string) $this->field($run, 'publishability_state') === 'READABLE'
+            && $isCurrentPublication;
+        $importStatus = $this->deriveImportStatus($run, $requestMode);
+        $promoteStatus = $this->derivePromoteStatus($run, $requestMode, $promoted);
+        $pointerSwitched = $isCurrentPublication;
+        $publicationId = $this->field($run, 'publication_id') !== null ? (int) $this->field($run, 'publication_id') : ($manifest ? (int) $manifest['publication_id'] : null);
+        $publicationVersion = $manifest ? (int) $manifest['publication_version'] : ($this->field($run, 'publication_version') !== null ? (int) $this->field($run, 'publication_version') : null);
+        $sourceMode = $this->field($run, 'source');
 
         return [
             'run_id' => (int) $this->field($run, 'run_id'),
@@ -669,7 +680,7 @@ class MarketDataEvidenceExportService
             'trade_date_requested' => $this->field($run, 'trade_date_requested'),
             'trade_date_effective' => $this->field($run, 'trade_date_effective'),
             'platform_timezone' => (string) $this->configValue('market_data.platform.timezone', 'Asia/Jakarta'),
-            'request_mode' => $this->field($run, 'request_mode') ?: ($notesMap['request_mode'] ?? null),
+            'request_mode' => $requestMode,
             'promote_mode' => $this->field($run, 'promote_mode') ?: ($notesMap['promote_mode'] ?? null),
             'publish_target' => $this->field($run, 'publish_target') ?: ($notesMap['publish_target'] ?? null),
             'lifecycle_state' => $this->field($run, 'lifecycle_state'),
@@ -678,8 +689,24 @@ class MarketDataEvidenceExportService
             'publishability_state' => $this->field($run, 'publishability_state'),
             'stage' => $this->field($run, 'stage'),
             'stage_reached' => $this->field($run, 'stage'),
-            'source' => $this->field($run, 'source'),
-            'source_mode' => $this->field($run, 'source'),
+            'source' => $sourceMode,
+            'source_mode' => $sourceMode,
+            'import_status' => $importStatus,
+            'promote_status' => $promoteStatus,
+            'promoted' => $promoted,
+            'pointer_switched' => $pointerSwitched,
+            'current_publication_id' => $pointerSwitched ? $publicationId : null,
+            'import_promote_boundary' => [
+                'request_mode' => $requestMode,
+                'source_mode' => $sourceMode,
+                'import_status' => $importStatus,
+                'promote_status' => $promoteStatus,
+                'promoted' => $promoted,
+                'pointer_switched' => $pointerSwitched,
+                'boundary_rule' => $requestMode === 'import_only'
+                    ? 'import_only must not create READABLE publication or switch current pointer'
+                    : 'promote must pass coverage/hash/seal/finalize before pointer switch',
+            ],
             'final_reason_code' => $finalReasonCode,
             'final_reason_message' => $this->resolveReasonMessage($finalReasonCode),
             'final_outcome_note' => $this->field($run, 'final_outcome_note') ?: ($notesMap['final_outcome_note'] ?? $this->deriveFinalOutcomeNote($run, $finalReasonCode)),
@@ -705,9 +732,9 @@ class MarketDataEvidenceExportService
             'config_version' => $this->field($run, 'config_version'),
             'config_hash' => $this->field($run, 'config_hash'),
             'config_snapshot_ref' => $this->field($run, 'config_snapshot_ref'),
-            'publication_id' => $this->field($run, 'publication_id') !== null ? (int) $this->field($run, 'publication_id') : ($manifest ? (int) $manifest['publication_id'] : null),
-            'publication_version' => $manifest ? (int) $manifest['publication_version'] : ($this->field($run, 'publication_version') !== null ? (int) $this->field($run, 'publication_version') : null),
-            'is_current_publication' => $manifest ? (bool) $manifest['is_current'] : (bool) $this->field($run, 'is_current_publication', false),
+            'publication_id' => $publicationId,
+            'publication_version' => $publicationVersion,
+            'is_current_publication' => $isCurrentPublication,
             'supersedes_run_id' => $this->field($run, 'supersedes_run_id') !== null ? (int) $this->field($run, 'supersedes_run_id') : null,
             'correction_id' => $this->field($run, 'correction_id') !== null ? (int) $this->field($run, 'correction_id') : null,
             'started_at' => $this->field($run, 'started_at'),
@@ -717,6 +744,34 @@ class MarketDataEvidenceExportService
             'created_at' => $this->field($run, 'created_at'),
             'updated_at' => $this->field($run, 'updated_at'),
         ];
+    }
+
+
+    private function deriveImportStatus($run, $requestMode)
+    {
+        if ((string) $requestMode === 'import_only') {
+            return $this->field($run, 'bars_rows_written') !== null ? 'COMPLETED' : 'PENDING';
+        }
+
+        return $this->field($run, 'bars_rows_written') !== null ? 'COMPLETED' : 'NOT_APPLICABLE';
+    }
+
+    private function derivePromoteStatus($run, $requestMode, $promoted)
+    {
+        if ($promoted) {
+            return 'PROMOTED';
+        }
+
+        if ((string) $requestMode === 'import_only') {
+            return 'NOT_PROMOTED';
+        }
+
+        $terminalStatus = (string) $this->field($run, 'terminal_status', '');
+        if (in_array($terminalStatus, ['HELD', 'FAILED', 'BLOCKED'], true)) {
+            return $terminalStatus;
+        }
+
+        return 'NOT_PROMOTED';
     }
 
     private function isReadableRun($run)

@@ -27,6 +27,7 @@
 - Source_Data_Acquisition_Contract_LOCKED.md
 - EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md
 - Source_Mapping_Contract_LOCKED.md
+- Import_Promote_Separation_Contract.md
 - Canonicalization_Contract_EOD_Bars.md
 - EOD_Bars_Contract.md
 - Invalid_Bar_Storage_Policy_LOCKED.md

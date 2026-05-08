@@ -560,6 +560,7 @@ class ReplayVerificationServiceTest extends TestCase
             ],
             'expected_publication_context' => [
                 'publication_id' => $v['publication_id'],
+                'current_publication_id' => $v['publication_is_current'] ? $v['publication_id'] : null,
                 'publication_run_id' => $v['publication_run_id'],
                 'publication_version' => $v['publication_version'],
                 'publication_terminal_status' => $v['terminal_status'],
@@ -597,6 +598,7 @@ class ReplayVerificationServiceTest extends TestCase
             'expected_lineage' => [
                 'run_id' => $v['run_id'] ?? $v['publication_run_id'],
                 'publication_id' => $v['publication_id'],
+                'current_publication_id' => $v['publication_is_current'] ? $v['publication_id'] : null,
                 'publication_run_id' => $v['publication_run_id'],
                 'correction_id' => $v['correction_id'] ?? null,
                 'source_file_hash' => $v['source_file_hash'],

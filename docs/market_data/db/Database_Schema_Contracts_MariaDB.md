@@ -68,6 +68,7 @@ Must support, at minimum:
 - quality gate state
 - publishability state
 - stage
+- explicit `request_mode` separating `import_only` from `promote` / publish flows
 - counts and telemetry
 - first-class source traceability fields (not notes/logs only)
 - hash fields

@@ -95,15 +95,38 @@ class MarketDataPipelineService
             }
         }
 
+        $this->assertAllowedRequestMode($input->requestMode, $input->stage);
+
         $run = $run ?: $this->runs->getOrCreateOwningRun(
             $input->requestedDate,
             $input->sourceMode,
             $input->stage,
-            $supersedesRunId
+            $supersedesRunId,
+            $input->requestMode
         );
 
         if (! $run) {
             throw new \RuntimeException('Owning run context not found for market-data stage.');
+        }
+
+        $existingSourceMode = isset($run->source) && $run->source !== ''
+            ? (string) $run->source
+            : null;
+
+        if ($existingSourceMode !== null && $existingSourceMode !== (string) $input->sourceMode) {
+            throw new \RuntimeException(
+                'Run source_mode is immutable within a single run and cannot switch across stages.'
+            );
+        }
+
+        $existingRequestMode = isset($run->request_mode) && $run->request_mode !== ''
+            ? (string) $run->request_mode
+            : $this->extractNoteValue((string) ($run->notes ?? ''), 'request_mode');
+
+        if ($existingRequestMode !== null && $existingRequestMode !== (string) $input->requestMode) {
+            throw new \RuntimeException(
+                'Run request_mode is immutable within a single run and cannot switch across import/promote boundary.'
+            );
         }
 
         if ($correction && in_array($input->stage, ['INGEST_BARS', 'PUBLISH_BARS'], true)) {
@@ -126,23 +149,17 @@ class MarketDataPipelineService
         }
 
         $run = $this->runs->touchStage($run, $input->stage, [
+            'request_mode' => $input->requestMode,
             'notes' => $this->appendRunNotes(
                 $run->notes,
-                $input->correctionId ? ['correction_id=' . (int) $input->correctionId] : []
+                array_filter([
+                    'request_mode=' . (string) $input->requestMode,
+                    $input->correctionId ? 'correction_id=' . (int) $input->correctionId : null,
+                ])
             ),
             'supersedes_run_id' => $supersedesRunId ?: $run->supersedes_run_id,
             'correction_id' => $input->correctionId ?: $run->correction_id,
         ]);
-
-        $existingSourceMode = isset($run->source) && $run->source !== ''
-            ? (string) $run->source
-            : null;
-
-        if ($existingSourceMode !== null && $existingSourceMode !== (string) $input->sourceMode) {
-            throw new \RuntimeException(
-                'Run source_mode is immutable within a single run and cannot switch across stages.'
-            );
-        }
 
         $this->runs->appendEvent(
             $run,
@@ -150,13 +167,14 @@ class MarketDataPipelineService
             'STAGE_STARTED',
             'INFO',
             'Stage started in owning run context.',
-            null,
+            $this->requestModeStartReasonCode($input),
             $this->sourceTelemetryPayload($input->sourceMode) + [
                 'run_id' => (int) $run->run_id,
                 'requested_date' => $input->requestedDate,
                 'trade_date_requested' => $input->requestedDate,
                 'trade_date_effective' => $run->trade_date_effective,
                 'source_mode' => $input->sourceMode,
+                'request_mode' => $input->requestMode,
                 'stage' => $input->stage,
                 'correction_id' => $input->correctionId ? (int) $input->correctionId : null,
                 'baseline_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
@@ -188,11 +206,13 @@ class MarketDataPipelineService
                     : [];
 
                 $run = $this->safeUpdateTelemetry($run, array_merge([
+                    'request_mode' => $input->requestMode,
                     'bars_rows_written' => $result['bars_rows_written'],
                     'invalid_bar_count' => $result['invalid_bar_count'],
                     'publication_id' => $result['publication_id'],
                     'publication_version' => $result['publication_version'],
                     'notes' => $this->appendRunNotes($run->notes, array_merge([
+                        'request_mode='.(string) $input->requestMode,
                         'candidate_publication_id='.$result['publication_id'],
                         'source_name='.(string) $result['source_name'],
                     ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisition))),
@@ -204,11 +224,40 @@ class MarketDataPipelineService
                     'STAGE_COMPLETED',
                     'INFO',
                     'Bars ingest stage completed with canonical artifact writes.',
-                    null,
+                    $input->requestMode === 'import_only' ? 'IMPORT_ONLY_COMPLETED' : null,
                     $result + $this->sourceTelemetryPayload($input->sourceMode, $result['source_name']) + [
+                        'request_mode' => $input->requestMode,
+                        'import_status' => 'COMPLETED',
+                        'promote_status' => 'NOT_PROMOTED',
+                        'promoted' => false,
+                        'pointer_switched' => false,
                         'source_acquisition' => $sourceAcquisition,
                     ]
                 );
+
+                if ($input->requestMode === 'import_only') {
+                    $this->assertImportOnlyDidNotPromote($run, $input, $result);
+                    $this->runs->appendEvent(
+                        $run,
+                        $input->stage,
+                        'IMPORT_ONLY_NOT_PROMOTED',
+                        'INFO',
+                        'Import-only completed without readable publication or current pointer switch.',
+                        'IMPORT_ONLY_NOT_PROMOTED',
+                        [
+                            'run_id' => (int) $run->run_id,
+                            'requested_date' => $input->requestedDate,
+                            'source_mode' => $input->sourceMode,
+                            'request_mode' => $input->requestMode,
+                            'publication_id' => (int) $result['publication_id'],
+                            'publication_version' => (int) $result['publication_version'],
+                            'import_status' => 'COMPLETED',
+                            'promote_status' => 'NOT_PROMOTED',
+                            'promoted' => false,
+                            'pointer_switched' => false,
+                        ]
+                    );
+                }
 
                 return $run;
             });
@@ -1490,12 +1539,14 @@ class MarketDataPipelineService
         $runId = $this->preparePromoteRunId($requestedDate, $sourceMode, $runId, $correctionId, $promoteContext);
         $this->ensurePromoteRunContext($runId, $requestedDate, $promoteContext, $correctionId);
 
-        $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId, $forceReplace, $forceReplaceReason);
+        $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId, $forceReplace, $forceReplaceReason, 'promote');
         $run = $this->completeCoverageEvaluation($coverageInput);
         $run = $this->safeUpdateTelemetry($run, [
+            'request_mode' => 'promote',
             'promote_mode' => $promoteContext['promote_mode'],
             'publish_target' => $promoteContext['publish_target'],
             'notes' => $this->appendRunNotes($this->stripPromoteNotes($run->notes ?? null), [
+                'request_mode=promote',
                 'promote_mode='.$promoteContext['promote_mode'],
                 'publish_target='.$promoteContext['publish_target'],
                 $forceReplace ? 'force_replace=true' : null,
@@ -1503,7 +1554,7 @@ class MarketDataPipelineService
         ]);
 
         if ($promoteContext['requires_full_coverage'] && strtoupper((string) ($run->coverage_gate_state ?? 'NOT_EVALUABLE')) !== 'PASS') {
-            return $this->completeFinalize(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, 'FINALIZE', $correctionId, $forceReplace, $forceReplaceReason));
+            return $this->completeFinalize(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, 'FINALIZE', $correctionId, $forceReplace, $forceReplaceReason, 'promote'));
         }
 
         foreach ([
@@ -1513,7 +1564,7 @@ class MarketDataPipelineService
             'SEAL' => 'completeSeal',
             'FINALIZE' => 'completeFinalize',
         ] as $stage => $method) {
-            $run = $this->{$method}(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, $stage, $correctionId, $forceReplace, $forceReplaceReason));
+            $run = $this->{$method}(new MarketDataStageInput($requestedDate, $sourceMode, $run->run_id, $stage, $correctionId, $forceReplace, $forceReplaceReason, 'promote'));
 
             if ($run && in_array((string) $run->terminal_status, ['HELD', 'FAILED'], true)) {
                 return $run;
@@ -1537,7 +1588,7 @@ class MarketDataPipelineService
             'HASH' => 'completeHash',
             'SEAL' => 'completeSeal',
             'FINALIZE' => 'completeFinalize',
-        ]);
+        ], $correctionId !== null ? 'correction' : 'full_publish');
     }
 
     public function runDaily($requestedDate, $sourceMode = null, $correctionId = null)
@@ -1549,7 +1600,7 @@ class MarketDataPipelineService
     {
         return $this->executeStageSequence($requestedDate, $sourceMode, $correctionId, [
             'INGEST_BARS' => 'completeIngest',
-        ]);
+        ], 'import_only');
     }
 
     public function importDaily($requestedDate, $sourceMode = null, $correctionId = null)
@@ -1557,7 +1608,7 @@ class MarketDataPipelineService
         return $this->importSingleDay($requestedDate, $sourceMode, $correctionId);
     }
 
-    private function executeStageSequence($requestedDate, $sourceMode = null, $correctionId = null, array $sequence = [])
+    private function executeStageSequence($requestedDate, $sourceMode = null, $correctionId = null, array $sequence = [], $requestMode = null)
     {
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
         $sequence = $sequence ?: [
@@ -1571,7 +1622,7 @@ class MarketDataPipelineService
 
         $run = null;
         foreach ($sequence as $stage => $method) {
-            $input = new MarketDataStageInput($requestedDate, $sourceMode, $run ? $run->run_id : null, $stage, $correctionId);
+            $input = new MarketDataStageInput($requestedDate, $sourceMode, $run ? $run->run_id : null, $stage, $correctionId, false, null, $requestMode);
             $run = $this->{$method}($input);
 
             if ($run && in_array((string) $run->terminal_status, ['HELD', 'FAILED'], true)) {
@@ -1989,7 +2040,64 @@ class MarketDataPipelineService
         $this->runs->failStage($run, $stage, $reasonCode, $this->summarizeThrowable($e), $payload);
     }
 
+    private function assertAllowedRequestMode($requestMode, $stage): void
+    {
+        $allowed = ['import_only', 'promote', 'full_publish', 'correction', 'repair_candidate', 'replay_verify', 'evidence_export'];
+        if (! in_array((string) $requestMode, $allowed, true)) {
+            throw new \InvalidArgumentException('REQUEST_MODE_INVALID: Unsupported request_mode for market-data run context.');
+        }
 
+        if ((string) $requestMode === 'import_only' && $stage !== 'INGEST_BARS') {
+            throw new \InvalidArgumentException('REQUEST_MODE_IMPORT_BLOCKED_FROM_PROMOTE: import_only may only run ingest/import stages and cannot enter promote/finalize stages.');
+        }
+    }
+
+    private function requestModeStartReasonCode(MarketDataStageInput $input)
+    {
+        if ($input->requestMode === 'import_only') {
+            return 'IMPORT_ONLY_ACCEPTED';
+        }
+
+        if ($input->requestMode === 'promote') {
+            return 'PROMOTE_STARTED';
+        }
+
+        if ($input->requestMode === 'correction') {
+            return 'CORRECTION_PROMOTE_REQUIRED';
+        }
+
+        return null;
+    }
+
+    private function assertImportOnlyDidNotPromote($run, MarketDataStageInput $input, array $result): void
+    {
+        if ((string) ($run->publishability_state ?? '') === 'READABLE') {
+            throw new \RuntimeException('IMPORT_READABLE_STATE_BLOCKED: import_only cannot mark a run READABLE.');
+        }
+
+        if ((int) ($run->is_current_publication ?? 0) === 1) {
+            throw new \RuntimeException('IMPORT_PUBLICATION_CURRENT_BLOCKED: import_only cannot mark a run as current publication.');
+        }
+
+        try {
+            $current = $this->publications->findReadableCurrentPublicationForRun($run->run_id, $input->requestedDate);
+        } catch (\Throwable $e) {
+            $current = null;
+        }
+
+        if ($current) {
+            throw new \RuntimeException('IMPORT_POINTER_WRITE_BLOCKED: import_only cannot update current publication pointer.');
+        }
+
+        if (isset($result['publication_id']) && (int) $result['publication_id'] > 0) {
+            // Candidate publications are allowed as import artifacts, but import-only
+            // must not create, promote, or mutate publication/current state while
+            // validating the boundary. Only inspect fields that are already present.
+            if ((int) ($result['is_current'] ?? 0) === 1 || (int) ($result['publication_is_current'] ?? 0) === 1) {
+                throw new \RuntimeException('IMPORT_PUBLICATION_CURRENT_BLOCKED: import_only candidate cannot become current.');
+            }
+        }
+    }
 
 
     private function preparePromoteRunId($requestedDate, $sourceMode, $runId = null, $correctionId = null, array $promoteContext = [])
@@ -2023,12 +2131,14 @@ class MarketDataPipelineService
         }
 
         $notes = $this->appendRunNotes($this->stripPromoteNotes($seedRun->notes ?? null), [
+            'request_mode=promote',
             'promote_seed_run_id='.(int) $seedRun->run_id,
             'promote_mode='.$requestedPromoteMode,
             'publish_target='.$requestedPublishTarget,
         ]);
 
         $derivedRun = $this->runs->createPromoteRunFromSeed($seedRun, 'PUBLISH_BARS', [
+            'request_mode' => 'promote',
             'notes' => $notes,
             'correction_id' => $correctionId,
             'promote_mode' => $requestedPromoteMode,
@@ -2054,16 +2164,19 @@ class MarketDataPipelineService
 
         if (isset($run->promote_mode) && (string) $run->promote_mode === $promoteMode
             && isset($run->publish_target) && (string) $run->publish_target === $publishTarget
+            && isset($run->request_mode) && (string) $run->request_mode === 'promote'
             && ($correctionId === null || (int) ($run->correction_id ?? 0) === (int) $correctionId)) {
             return $run;
         }
 
         $notes = $this->appendRunNotes($this->stripPromoteNotes($run->notes ?? null), [
+            'request_mode=promote',
             'promote_mode='.$promoteMode,
             'publish_target='.$publishTarget,
         ]);
 
         return $this->safeUpdateTelemetry($run, [
+            'request_mode' => 'promote',
             'promote_mode' => $promoteMode,
             'publish_target' => $publishTarget,
             'correction_id' => $correctionId,
@@ -2096,6 +2209,7 @@ class MarketDataPipelineService
 
         $parts = array_filter(array_map('trim', explode(';', (string) $notes)), static function ($part) {
             return $part !== ''
+                && strpos($part, 'request_mode=') !== 0
                 && strpos($part, 'promote_mode=') !== 0
                 && strpos($part, 'publish_target=') !== 0
                 && strpos($part, 'promote_seed_run_id=') !== 0;

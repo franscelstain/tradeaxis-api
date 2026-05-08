@@ -106,6 +106,7 @@ trait UsesMarketDataSqlite
             $table->string('publishability_state')->nullable();
             $table->string('stage')->nullable();
             $table->string('source', 32);
+            $table->string('request_mode', 32)->nullable();
             $table->string('source_name')->nullable();
             $table->string('source_provider')->nullable();
             $table->string('source_input_file')->nullable();
@@ -167,6 +168,7 @@ trait UsesMarketDataSqlite
             $table->index(['quality_gate_state'], 'idx_runs_gate_state');
             $table->index(['coverage_gate_state'], 'idx_runs_coverage_gate_state');
             $table->index(['stage'], 'idx_runs_stage');
+            $table->index(['request_mode'], 'idx_runs_request_mode');
             $table->index(['trade_date_effective', 'is_current_publication'], 'idx_runs_trade_date_current_pub');
             $table->index(['trade_date_effective', 'terminal_status', 'publishability_state', 'coverage_gate_state', 'is_current_publication'], 'idx_runs_effective_readable_contract');
             $table->index(['supersedes_run_id'], 'idx_runs_supersedes');

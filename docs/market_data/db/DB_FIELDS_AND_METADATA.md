@@ -59,6 +59,8 @@ The `eod_runs` record must also expose first-class traceability fields so source
 
 - `source` VARCHAR/ENUM NOT NULL  
   Logical source mode used by the run, for example `api` or `manual_file`.
+- `request_mode` VARCHAR(32) NULL  
+  Explicit import/promote intent for the run. Runtime values include `import_only`, `promote`, `full_publish`, `correction`, `repair_candidate`, `replay_verify`, and `evidence_export`. `import_only` must not be interpreted as consumer-readable publication proof.
 - `source_name` VARCHAR(64) NULL  
   Logical source identity such as `API_FREE` or `LOCAL_FILE`.
 - `source_provider` VARCHAR(64) NULL  

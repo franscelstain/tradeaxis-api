@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Run / Publication / Pointer Linkage
+- Import vs Promote Separation
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define and enforce `RUN_PUBLICATION_POINTER_LINKAGE_CONTRACT` across run-publication mirror validation, current pointer target validation, pointer switch proof, correction baseline/replacement lineage, replay/evidence lineage proof, command output linkage context, and reason-code registry/seed sync.
-- Uploaded ZIP has no `vendor/`; container validation was static/`php -l` only. Operator-local targeted and full PHPUnit validation has now passed and is recorded as final LOCKED evidence.
+- Define and enforce `IMPORT_PROMOTE_SEPARATION_CONTRACT` across request mode, source mode, import-only side-effect blocking, promote gates, command output, evidence, replay, registry/seed, and audit inventory.
+- Uploaded ZIP has no `vendor/`; container validation is static/`php -l` only. Final LOCKED status is based on operator-local targeted and full MarketData PHPUnit PASS evidence.
 
 [SESSION_GOAL]
-- Run, publication, pointer, and correction relationships must remain traceable, deterministic, non-orphan, and reason-coded from ingest/finalize through evidence/replay.
+- Import must accept data without making it readable/current. Promote must be explicit and gate-bound before any readable publication or pointer switch.
 
 ---
 ## OPERATIONAL STATUS
@@ -35,6 +35,57 @@ ACTIVE SESSION:
 ## CURRENT WORKING CONTRACT
 
 
+
+
+- IMPORT_PROMOTE_SEPARATION_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-08
+
+  [RELATED_IMPLEMENTATION] Import vs Promote Separation
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-08 -> Contract opened as canonical import/promote boundary contract under audit governance.
+  - 2026-05-08 -> Static trace found request mode was not yet first-class persisted DB/run contract, even though daily/promote command split already existed.
+  - 2026-05-08 -> Enforcement patch added request-mode persistence, request-mode immutability, import-only side-effect checks, explicit promote gate context, command/evidence/replay import-promote proof, reason-code registry/seed sync, schema docs sync, inventory, and static guard coverage.
+  - 2026-05-08 -> Contract held at ENFORCED because uploaded ZIP has no `vendor/`; targeted and full local PHPUnit required before LOCKED.
+  - 2026-05-08 -> Operator-local validation found failures in the new static guard and older strict Mockery expectations. Follow-up enforcement patch fixed the static assertions, removed mutating candidate lookup from import-only guard validation, and reconciled affected request-mode/reason-code test expectations.
+  - 2026-05-08 -> Operator-local rerun passed ImportPromote static guard, ImportPromote filter, Manual, Finalize, Publication, Evidence, and StaticGuard filters. Source filter had one remaining strict Mockery expectation mismatch for enriched `touchStage()` attributes; latest patch updates that expectation.
+  - 2026-05-08 -> Operator-local rerun after the Source expectation patch passed Source, Provider, Coverage, Pointer, Correction, CommandSurface, and Integration filters. Replay filter and full suite had two remaining errors in `ReplayVerificationServiceTest` because expected replay lineage fixtures did not include newly exported `current_publication_id`; latest patch updates the replay expected publication/lineage context. Contract remains ENFORCED pending Replay rerun and full suite.
+  - 2026-05-08 -> Contract promoted from ENFORCED to LOCKED after final operator-local validation passed: `Replay` filter OK (37 tests, 624 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (341 tests, 4436 assertions).
+
+  [DEFINED]
+  - `import_only` is allowed to receive/store data and candidate/import context only.
+  - `import_only` must not set `READABLE`, current publication, current pointer, or correction published/consumed state.
+  - `promote` must be explicit and must pass coverage, hash, seal, finalize, run-publication mirror, pointer target, and post-switch resolver validation.
+  - Manual file and API source identity must remain traceable and must not imply publishability.
+  - Evidence/replay/command surfaces must distinguish import-only from promoted publication.
+  - Reason codes used by import/promote guards must be registered and seeded.
+
+  [IMPLEMENTED]
+  - `eod_runs.request_mode` added to migration, SQLite bootstrap, and MariaDB schema docs.
+  - `MarketDataStageInput`, `EodRunRepository`, and `MarketDataPipelineService` now carry and enforce request mode.
+  - Import-only side-effect assertion blocks readable/current/pointer violations.
+  - Promote run context is derived as `request_mode=promote` and continues through coverage/hash/seal/finalize.
+  - Command output, evidence export, and replay verification expose import/promote boundary context.
+  - `Import_Promote_Separation_Contract.md` and `IMPORT_PROMOTE_SEPARATION_INVENTORY.md` define the proof surface.
+  - Registry/seed are synchronized for import/promote reason-code families.
+
+  [ENFORCED]
+  - Static guard fails if request mode persistence, import-only block, promote gate strings, command/evidence/replay proof, registry/seed reason codes, or forbidden latest-date shortcuts disappear.
+  - Runtime guard fails if `import_only` attempts to enter non-ingest stages or if an import-only result becomes readable/current/pointer-switched.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for changed PHP files after each patch. PHPUnit/artisan were not run in container because uploaded ZIP has no `vendor/`; final runtime proof is operator-local PHPUnit evidence.
+  - Operator-local PASS: `ImportPromoteSeparationStaticGuardTest.php` OK (6 tests, 136 assertions); `ImportPromote` filter OK (6 tests, 136 assertions); `Manual` OK (21 tests, 227 assertions); `Source` OK (36 tests, 400 assertions); `Provider` OK (7 tests, 135 assertions); `Coverage` OK (50 tests, 577 assertions); `Finalize` OK (46 tests, 355 assertions); `Publication` OK (97 tests, 1182 assertions); `Pointer` OK (73 tests, 1054 assertions); `Correction` OK (64 tests, 1276 assertions); `Evidence` OK (37 tests, 594 assertions); `Replay` OK (37 tests, 624 assertions); `CommandSurface` OK (47 tests, 348 assertions); `StaticGuard` OK (79 tests, 1899 assertions); `Integration` OK (91 tests, 1450 assertions); full `tests/Unit/MarketData` OK (341 tests, 4436 assertions).
+
+  [FINAL_RULE]
+  - LOCKED. `request_mode=import_only` is an ingest/import contract only and must not create consumer-readable publication state, current publication state, current pointer switch, or correction published state. `request_mode=promote` is the explicit publish path and must pass coverage, hash, seal, finalize, run-publication mirror, pointer target, post-switch resolver, command/evidence/replay, and reason-code proof before any readable/current publication is exposed.
+
+  [NEXT_ACTION]
+  - Keep this contract LOCKED. Reopen only for a future import/promote policy change or regression touching request mode, source mode, import-only side effects, promote gates, correction publish flow, command output, evidence, replay, schema, or reason-code registry/seed.
 
 - RUN_PUBLICATION_POINTER_LINKAGE_CONTRACT -> LOCKED
 
@@ -136,7 +187,9 @@ ACTIVE SESSION:
 
   [VALIDATED]
   - Container static trace completed.
-  - Container `php -l` passed for changed PHP files.
+  - Container `php -l` passed for changed PHP files after the follow-up patch.
+  - Operator-local rerun passed ImportPromote static guard, ImportPromote filter, Manual, Finalize, Publication, Evidence, and StaticGuard filters.
+  - Operator-local Source filter exposed one remaining strict Mockery expectation mismatch for enriched `touchStage()` attributes; patch applied in `MarketDataPipelineServiceTest`.
   - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`.
   - Operator-local `vendor/bin/phpunit tests/Unit/MarketData --filter "Finalize"` -> PASS: OK (46 tests, 355 assertions).
   - Operator-local `vendor/bin/phpunit tests/Unit/MarketData --filter "Integration"` -> PASS: OK (91 tests, 1443 assertions).
@@ -249,7 +302,9 @@ ACTIVE SESSION:
 
   [VALIDATED]
   - Container static trace completed.
-  - Container `php -l` passed for changed PHP files.
+  - Container `php -l` passed for changed PHP files after the follow-up patch.
+  - Operator-local rerun passed ImportPromote static guard, ImportPromote filter, Manual, Finalize, Publication, Evidence, and StaticGuard filters.
+  - Operator-local Source filter exposed one remaining strict Mockery expectation mismatch for enriched `touchStage()` attributes; patch applied in `MarketDataPipelineServiceTest`.
   - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`.
   - Operator-local pre-Fix2 evidence showed one static guard false negative while behavior-level purge/ops/session snapshot validations passed.
   - Operator-local Fix2 PASS: `CommandSurfaceSafetyStaticGuardTest.php` -> OK (5 tests, 81 assertions).

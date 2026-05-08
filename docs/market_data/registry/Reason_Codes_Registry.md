@@ -199,6 +199,75 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `REPLAY_UNEXPECTED_FAILURE` | REPLAY | HARD | Replay produced failure when the expected proof required a successful deterministic match. |
 | `REPLAY_NON_DETERMINISTIC_OUTPUT` | REPLAY | HARD | Replay output contains a deterministic-field mismatch not covered by a more specific replay reason code. |
 
+| `IMPORT_ONLY_ACCEPTED` | IMPORT_PROMOTE | INFO | Import-only request accepted; data may be ingested but not promoted. |
+| `IMPORT_ONLY_COMPLETED` | IMPORT_PROMOTE | INFO | Import-only ingest completed with traceable candidate/import context. |
+| `IMPORT_ONLY_NOT_PROMOTED` | IMPORT_PROMOTE | INFO | Import-only run completed without readable publication or pointer switch. |
+| `IMPORT_PROMOTE_BOUNDARY_VERIFIED` | IMPORT_PROMOTE | INFO | Import/promote boundary was verified. |
+| `IMPORT_PROMOTE_BOUNDARY_VIOLATION` | IMPORT_PROMOTE | HARD | Import/promote boundary violation detected. |
+| `REQUEST_MODE_MISSING` | IMPORT_PROMOTE | HARD | Request mode is missing from a run context that requires explicit intent. |
+| `REQUEST_MODE_INVALID` | IMPORT_PROMOTE | HARD | Request mode is not one of the allowed market-data intents. |
+| `REQUEST_MODE_IMPORT_BLOCKED_FROM_PROMOTE` | IMPORT_PROMOTE | HARD | Import-only request attempted to enter a promote/publish stage. |
+| `REQUEST_MODE_PROMOTE_GATE_REQUIRED` | IMPORT_PROMOTE | HARD | Promote request requires publishability gates before publication. |
+| `SOURCE_MODE_VERIFIED` | SOURCE | INFO | Source mode and source identity were verified. |
+| `SOURCE_MODE_MISSING` | SOURCE | HARD | Source mode is missing. |
+| `SOURCE_MODE_INVALID` | SOURCE | HARD | Source mode is invalid. |
+| `SOURCE_MODE_IMMUTABLE` | SOURCE | HARD | Source mode changed within a run and was blocked. |
+| `MANUAL_FILE_IMPORT_ACCEPTED` | SOURCE | INFO | Manual file import was accepted as import-only context. |
+| `MANUAL_FILE_IMPORT_FAILED` | SOURCE | HARD | Manual file import failed. |
+| `API_IMPORT_ACCEPTED` | SOURCE | INFO | API import was accepted as import-only context. |
+| `API_IMPORT_FAILED` | SOURCE | HARD | API import failed. |
+| `SOURCE_IMPORT_NOT_PROMOTED` | SOURCE | INFO | Source import completed without promotion. |
+| `SOURCE_PROVIDER_RATE_LIMITED` | SOURCE | WARN | Source provider rate limited the request. |
+| `SOURCE_PROVIDER_TIMEOUT` | SOURCE | WARN | Source provider timed out. |
+| `SOURCE_PROVIDER_UNAVAILABLE` | SOURCE | WARN | Source provider unavailable. |
+| `IMPORT_SIDE_EFFECT_BLOCKED` | IMPORT_PROMOTE | HARD | Import-only side effect was blocked. |
+| `IMPORT_POINTER_WRITE_BLOCKED` | IMPORT_PROMOTE | HARD | Import-only attempted to update current pointer. |
+| `IMPORT_READABLE_STATE_BLOCKED` | IMPORT_PROMOTE | HARD | Import-only attempted to mark a run readable. |
+| `IMPORT_PUBLICATION_CURRENT_BLOCKED` | IMPORT_PROMOTE | HARD | Import-only attempted to mark a publication or run current. |
+| `IMPORT_CORRECTION_PUBLISH_BLOCKED` | IMPORT_PROMOTE | HARD | Import-only attempted to publish a correction. |
+| `PROMOTE_STARTED` | IMPORT_PROMOTE | INFO | Promote request started. |
+| `PROMOTE_COMPLETED` | IMPORT_PROMOTE | INFO | Promote request completed after all gates passed. |
+| `PROMOTE_BLOCKED` | IMPORT_PROMOTE | HARD | Promote request was blocked before publication. |
+| `PROMOTE_COVERAGE_REQUIRED` | IMPORT_PROMOTE | HARD | Promote requires coverage gate evaluation. |
+| `PROMOTE_COVERAGE_FAILED` | IMPORT_PROMOTE | HARD | Promote blocked because coverage gate failed. |
+| `PROMOTE_HASH_REQUIRED` | IMPORT_PROMOTE | HARD | Promote requires deterministic hash proof. |
+| `PROMOTE_SEAL_REQUIRED` | IMPORT_PROMOTE | HARD | Promote requires sealed dataset proof. |
+| `PROMOTE_FINALIZE_REQUIRED` | IMPORT_PROMOTE | HARD | Promote requires finalize decision. |
+| `PROMOTE_POINTER_VALIDATION_REQUIRED` | IMPORT_PROMOTE | HARD | Promote requires pointer target validation. |
+| `PROMOTE_POINTER_SWITCH_COMPLETED` | IMPORT_PROMOTE | INFO | Promote completed current pointer switch. |
+| `PROMOTE_POINTER_SWITCH_BLOCKED` | IMPORT_PROMOTE | HARD | Promote pointer switch was blocked. |
+| `MANUAL_FILE_IMPORT_ONLY_ACCEPTED` | IMPORT_PROMOTE | INFO | Manual file import-only run accepted. |
+| `MANUAL_FILE_IMPORT_ONLY_NOT_PROMOTED` | IMPORT_PROMOTE | INFO | Manual file import-only run did not promote. |
+| `MANUAL_FILE_PROMOTE_STARTED` | IMPORT_PROMOTE | INFO | Manual file promote started. |
+| `MANUAL_FILE_PROMOTE_COVERAGE_REQUIRED` | IMPORT_PROMOTE | HARD | Manual file promote requires coverage gate. |
+| `MANUAL_FILE_PROMOTE_COVERAGE_FAILED` | IMPORT_PROMOTE | HARD | Manual file promote coverage failed. |
+| `MANUAL_FILE_PROMOTE_COMPLETED` | IMPORT_PROMOTE | INFO | Manual file promote completed. |
+| `MANUAL_FILE_FORMAT_INVALID` | SOURCE | HARD | Manual file format is invalid. |
+| `MANUAL_FILE_SOURCE_HASH_RECORDED` | SOURCE | INFO | Manual file source hash was recorded. |
+| `API_IMPORT_STARTED` | SOURCE | INFO | API import started. |
+| `API_IMPORT_COMPLETED` | SOURCE | INFO | API import completed. |
+| `API_IMPORT_HELD` | SOURCE | WARN | API import entered HELD state. |
+| `API_IMPORT_RATE_LIMITED` | SOURCE | WARN | API import was rate limited. |
+| `API_IMPORT_TIMEOUT` | SOURCE | WARN | API import timed out. |
+| `API_IMPORT_PARTIAL_DATA` | SOURCE | WARN | API import returned partial data and must not promote automatically. |
+| `API_PROMOTE_COVERAGE_REQUIRED` | IMPORT_PROMOTE | HARD | API promote requires coverage gate. |
+| `API_PROMOTE_COVERAGE_FAILED` | IMPORT_PROMOTE | HARD | API promote coverage failed. |
+| `API_PROMOTE_COMPLETED` | IMPORT_PROMOTE | INFO | API promote completed. |
+| `CORRECTION_IMPORT_ACCEPTED` | CORRECTION | INFO | Correction import accepted without publication. |
+| `CORRECTION_IMPORT_NOT_PROMOTED` | CORRECTION | INFO | Correction import was not promoted. |
+| `CORRECTION_PROMOTE_REQUIRED` | CORRECTION | HARD | Correction publication requires explicit promote/finalize path. |
+| `CORRECTION_PROMOTE_BLOCKED` | CORRECTION | HARD | Correction promote blocked. |
+| `CORRECTION_PROMOTE_COMPLETED` | CORRECTION | INFO | Correction promote completed. |
+| `EVIDENCE_IMPORT_CONTEXT_INCLUDED` | EVIDENCE | INFO | Evidence export included import context. |
+| `EVIDENCE_PROMOTE_CONTEXT_INCLUDED` | EVIDENCE | INFO | Evidence export included promote context. |
+| `EVIDENCE_IMPORT_PROMOTE_BOUNDARY_INCLUDED` | EVIDENCE | INFO | Evidence export included import/promote boundary context. |
+| `EVIDENCE_IMPORT_PROMOTE_CONTEXT_MISSING` | EVIDENCE | WARN | Evidence export is missing import/promote boundary context. |
+| `REPLAY_IMPORT_PROMOTE_MATCHED` | REPLAY | INFO | Replay import/promote context matched expected proof. |
+| `REPLAY_IMPORT_PROMOTE_MISMATCH` | REPLAY | HARD | Replay import/promote context mismatch. |
+| `REPLAY_IMPORT_STATUS_MISMATCH` | REPLAY | HARD | Replay import status mismatch. |
+| `REPLAY_PROMOTE_STATUS_MISMATCH` | REPLAY | HARD | Replay promote status mismatch. |
+| `REPLAY_UNEXPECTED_PUBLICATION_PROMOTION` | REPLAY | HARD | Replay detected unexpected publication promotion or pointer switch. |
+
 ## Locked usage notes
 - `ELIG_MISSING_BAR` and `ELIG_INSUFFICIENT_HISTORY` may coexist as different row outcomes on different dates/tickers, but one row stores only the single most specific blocking reason.
 - `RUN_SOURCE_TIMEOUT` and `RUN_SOURCE_RATE_LIMIT` do not automatically force `FAILED`; terminal status still follows the decision table and gate results.

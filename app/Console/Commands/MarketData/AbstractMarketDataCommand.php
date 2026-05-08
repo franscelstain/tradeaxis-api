@@ -141,6 +141,13 @@ abstract class AbstractMarketDataCommand extends Command
         $this->line('terminal_status='.(string) $this->runField($run, 'terminal_status', ''));
         $this->line('publishability_state='.(string) $this->runField($run, 'publishability_state', ''));
 
+        $requestMode = $this->runField($run, 'request_mode', $this->extractRunNoteValue((string) $this->runField($run, 'notes', ''), 'request_mode'));
+        if ($requestMode !== null && $requestMode !== '') {
+            $this->line('request_mode='.(string) $requestMode);
+        }
+
+        $this->renderImportPromoteBoundarySummary($run, $requestMode);
+
         $effectiveDate = $this->runField($run, 'trade_date_effective');
         if ($effectiveDate !== null && $effectiveDate !== '') {
             $this->line('trade_date_effective='.(string) $effectiveDate);
@@ -197,6 +204,62 @@ abstract class AbstractMarketDataCommand extends Command
 
 
 
+
+
+    protected function renderImportPromoteBoundarySummary($run, $requestMode = null)
+    {
+        $this->line('import_status='.(string) $this->deriveImportStatus($run, $requestMode));
+        $this->line('promote_status='.(string) $this->derivePromoteStatus($run, $requestMode));
+        $this->line('promoted='.($this->isPromotedRun($run) ? 'true' : 'false'));
+        $this->line('pointer_switched='.($this->isPointerSwitched($run) ? 'true' : 'false'));
+
+        if ($this->isPointerSwitched($run)) {
+            $this->line('current_publication_id='.(string) $this->runField($run, 'publication_id'));
+        }
+    }
+
+    protected function deriveImportStatus($run, $requestMode = null)
+    {
+        if ($requestMode === 'import_only') {
+            return $this->runField($run, 'bars_rows_written') !== null ? 'COMPLETED' : 'PENDING';
+        }
+
+        if ($this->runField($run, 'bars_rows_written') !== null) {
+            return 'COMPLETED';
+        }
+
+        return 'NOT_APPLICABLE';
+    }
+
+    protected function derivePromoteStatus($run, $requestMode = null)
+    {
+        if ($this->isPromotedRun($run)) {
+            return 'PROMOTED';
+        }
+
+        if ($requestMode === 'import_only') {
+            return 'NOT_PROMOTED';
+        }
+
+        $terminalStatus = (string) $this->runField($run, 'terminal_status', '');
+        if (in_array($terminalStatus, ['HELD', 'FAILED', 'BLOCKED'], true)) {
+            return $terminalStatus;
+        }
+
+        return 'NOT_PROMOTED';
+    }
+
+    protected function isPromotedRun($run)
+    {
+        return (string) $this->runField($run, 'terminal_status', '') === 'SUCCESS'
+            && (string) $this->runField($run, 'publishability_state', '') === 'READABLE'
+            && $this->isPointerSwitched($run);
+    }
+
+    protected function isPointerSwitched($run)
+    {
+        return (int) $this->runField($run, 'is_current_publication', 0) === 1;
+    }
 
     protected function renderLineageSummary($run)
     {
@@ -255,6 +318,12 @@ abstract class AbstractMarketDataCommand extends Command
             'lifecycle_state' => $this->runField($run, 'lifecycle_state'),
             'terminal_status' => $this->runField($run, 'terminal_status'),
             'publishability_state' => $this->runField($run, 'publishability_state'),
+            'request_mode' => $this->runField($run, 'request_mode', $this->extractRunNoteValue((string) $this->runField($run, 'notes', ''), 'request_mode')),
+            'import_status' => $this->deriveImportStatus($run, $this->runField($run, 'request_mode', $this->extractRunNoteValue((string) $this->runField($run, 'notes', ''), 'request_mode'))),
+            'promote_status' => $this->derivePromoteStatus($run, $this->runField($run, 'request_mode', $this->extractRunNoteValue((string) $this->runField($run, 'notes', ''), 'request_mode'))),
+            'promoted' => $this->isPromotedRun($run) ? 'true' : 'false',
+            'pointer_switched' => $this->isPointerSwitched($run) ? 'true' : 'false',
+            'current_publication_id' => $this->isPointerSwitched($run) ? $this->runField($run, 'publication_id') : null,
             'promote_mode' => $this->runField($run, 'promote_mode'),
             'publish_target' => $this->runField($run, 'publish_target'),
             'final_reason_code' => $this->runField($run, 'final_reason_code'),
@@ -727,6 +796,19 @@ abstract class AbstractMarketDataCommand extends Command
         }
 
         return number_format((float) $value, 4, '.', '');
+    }
+
+    protected function extractRunNoteValue(string $notes, string $key)
+    {
+        foreach (explode(';', $notes) as $part) {
+            $part = trim($part);
+            if (strpos($part, $key.'=') === 0) {
+                $value = trim(substr($part, strlen($key) + 1));
+                return $value !== '' ? $value : null;
+            }
+        }
+
+        return null;
     }
 
     protected function runField($run, $field, $default = null)
