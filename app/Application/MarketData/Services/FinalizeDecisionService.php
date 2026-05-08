@@ -25,6 +25,7 @@ class FinalizeDecisionService
         $sourceFinalReasonCode = isset($promoteContext['source_final_reason_code'])
             ? (string) $promoteContext['source_final_reason_code']
             : null;
+        $explicitValidDataCount = $this->extractExplicitValidDataCount($promoteContext);
 
         $isManualFileSource = in_array($sourceMode, ['manual_file', 'manual_entry'], true);
         $manualFilePolicy = $isManualFileSource ? 'COVERAGE_GATE_STRICT_HYBRID' : null;
@@ -68,6 +69,25 @@ class FinalizeDecisionService
                 'edge_case_reason_code' => $edgeCaseReasonCode,
             ],
         ];
+
+        if ($explicitValidDataCount !== null && $explicitValidDataCount <= 0) {
+            $state = $baseState;
+            $state['coverage_gate_status'] = 'NOT_EVALUABLE';
+            $state['quality_gate_state'] = 'BLOCKED';
+            $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
+            $state['publishability_state'] = 'NOT_READABLE';
+            $state['trade_date_effective'] = $fallbackTradeDate;
+            $state['reason_code'] = $sourceFinalReasonCode ?: 'RUN_SOURCE_NO_VALID_DATA';
+            $state['message'] = 'Finalize blocked because valid data count is zero; empty dataset cannot become readable.';
+            $state['promotion_allowed'] = false;
+            $state['coverage_summary']['coverage_gate_status'] = 'NOT_EVALUABLE';
+            $state['coverage_summary']['coverage_gate_state'] = 'NOT_EVALUABLE';
+            $state['coverage_summary']['coverage_reason_code'] = $state['reason_code'];
+            $state['valid_data_count'] = $explicitValidDataCount;
+            $state['empty_artifact_blocked'] = true;
+
+            return $this->enforceStateMatrix($state);
+        }
 
         /*
         * Correction no-op is a completed safe lifecycle outcome.
@@ -290,7 +310,7 @@ class FinalizeDecisionService
             return false;
         }
 
-        if ($available === null || $available < 0 || $available > $expected) {
+        if ($available === null || $available <= 0 || $available > $expected) {
             return false;
         }
 
@@ -313,6 +333,17 @@ class FinalizeDecisionService
         return true;
     }
 
+    private function extractExplicitValidDataCount(array $promoteContext)
+    {
+        foreach (['valid_row_count', 'accepted_row_count', 'bars_rows_written', 'available_eod_count'] as $key) {
+            if (array_key_exists($key, $promoteContext) && $promoteContext[$key] !== null && $promoteContext[$key] !== '') {
+                return is_numeric($promoteContext[$key]) ? (int) $promoteContext[$key] : 0;
+            }
+        }
+
+        return null;
+    }
+
     private function numberOrNull($value)
     {
         if ($value === null || $value === '') {
@@ -333,7 +364,7 @@ class FinalizeDecisionService
 
     private function resolveNotEvaluableReasonCode($sourceFinalReasonCode)
     {
-        if (in_array($sourceFinalReasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT'], true)) {
+        if (in_array($sourceFinalReasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_NO_VALID_DATA'], true)) {
             return $sourceFinalReasonCode;
         }
 
@@ -342,7 +373,7 @@ class FinalizeDecisionService
 
     private function resolveOperationalBlockReasonCode($sourceFinalReasonCode, string $fallbackReasonCode): string
     {
-        if (in_array($sourceFinalReasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT'], true)) {
+        if (in_array($sourceFinalReasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_NO_VALID_DATA'], true)) {
             return $sourceFinalReasonCode;
         }
 

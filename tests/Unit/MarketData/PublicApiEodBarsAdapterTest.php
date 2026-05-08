@@ -562,6 +562,35 @@ class PublicApiEodBarsAdapterTest extends TestCase
         }
     }
 
+
+    public function test_api_adapter_blocks_empty_success_response_as_no_valid_data()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'endpoint_template' => 'https://example.test/eod/{date}',
+            'response_rows_path' => 'data.items',
+        ], 0, 0));
+
+        $adapter = new PublicApiEodBarsAdapter(function () {
+            return [
+                'status' => 200,
+                'body' => json_encode(['data' => ['items' => []]]),
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBars('2026-03-20', 'api');
+            $this->fail('Expected empty API response to be blocked as no valid data.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+
+            $this->assertSame('RUN_SOURCE_NO_VALID_DATA', $e->reasonCode());
+            $this->assertSame('FAILED', $context['source_final_status']);
+            $this->assertSame(0, $context['returned_row_count']);
+            $this->assertSame(0, $context['accepted_row_count']);
+            $this->assertTrue($context['empty_response_blocked']);
+        }
+    }
+
     private function config(array $apiSource = [], $retryMax = 3, $backoffMs = 0)
     {
         return [

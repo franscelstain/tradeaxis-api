@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Import vs Promote Separation
+- Fail-Safe Behavior / No Silent Failure
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define and enforce `IMPORT_PROMOTE_SEPARATION_CONTRACT` across request mode, source mode, import-only side-effect blocking, promote gates, command output, evidence, replay, registry/seed, and audit inventory.
-- Uploaded ZIP has no `vendor/`; container validation is static/`php -l` only. Final LOCKED status is based on operator-local targeted and full MarketData PHPUnit PASS evidence.
+- Define and enforce `FAIL_SAFE_NO_SILENT_FAILURE_CONTRACT` across source failure, manual/API no-data handling, zero valid bars, finalize no-fake-success, pointer preservation, evidence/replay proof, registry/seed, and audit inventory.
+- Uploaded ZIP has no `vendor/`; container validation remains static/`php -l`, and operator-local targeted/full MarketData PHPUnit PASS evidence has now locked the contract.
 
 [SESSION_GOAL]
-- Import must accept data without making it readable/current. Promote must be explicit and gate-bound before any readable publication or pointer switch.
+- Empty/failed/unproven data must never become readable, sealed, published, or pointer-switched; every safe stop must be reason-coded and traceable.
 
 ---
 ## OPERATIONAL STATUS
@@ -36,6 +36,61 @@ ACTIVE SESSION:
 
 
 
+
+
+- FAIL_SAFE_NO_SILENT_FAILURE_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-08
+
+  [RELATED_IMPLEMENTATION] Fail-Safe Behavior / No Silent Failure
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-08 -> Contract opened as canonical fail-safe/no-silent-failure contract under audit governance.
+  - 2026-05-08 -> Static trace identified empty-success gaps in manual file, generic API, Yahoo no-target-date bars, ingest zero-valid-bars, and finalize explicit zero-valid-data handling.
+  - 2026-05-08 -> Enforcement patch added reason-coded no-data blocking, pointer-preserving recoverable API no-valid-data handling, finalize no-fake-success guard, registry/seed sync, inventory, and static guard coverage.
+  - 2026-05-08 -> Contract held at ENFORCED because uploaded ZIP has no `vendor/`; targeted and full local PHPUnit are required before LOCKED.
+  - 2026-05-08 -> Operator-local PHPUnit found a static guard literal mismatch and generic API retry telemetry regression: evidence/backfill source summaries missed `attempt_count`, `success_after_retry`, and `final_http_status`, and full suite raised `Undefined index: attempt_count`.
+  - 2026-05-08 -> Follow-up enforcement patch corrected the static guard assertion and preserved generic API request/retry telemetry into terminal source context for success, empty-response, and malformed-response outcomes.
+  - 2026-05-08 -> Contract promoted from ENFORCED to LOCKED after operator-local validation PASS: `FailSafeNoSilentFailureStaticGuardTest.php` OK (5 tests, 108 assertions); `Source` filter OK (37 tests, 420 assertions); `Evidence` filter OK (37 tests, 594 assertions); `Integration` filter OK (91 tests, 1450 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions).
+
+  [DEFINED]
+  - No valid data means no readable publication.
+  - Empty manual/API source output is not valid input proof.
+  - Zero valid canonical bars cannot create a publishable artifact.
+  - Finalize cannot produce `SUCCESS + READABLE` when explicit valid data proof is zero.
+  - Source failures and no-data outcomes must be reason-coded.
+  - Current pointer and correction baseline must be preserved when candidate proof is unsafe.
+  - Evidence/replay/command surfaces must expose final status, reason code, source context, row counts, and pointer preservation context.
+  - Reason codes used by fail-safe guards must be registered and seeded.
+
+  [IMPLEMENTED]
+  - Empty manual CSV/JSON blocked by `LocalFileEodBarsAdapter`.
+  - Empty/no-valid API output blocked by `PublicApiEodBarsAdapter`; generic API retry telemetry remains available in source context after successful retry and fail-safe no-data/malformed outcomes.
+  - Empty source rows and zero valid canonical bars blocked by `EodBarsIngestService`.
+  - API `RUN_SOURCE_NO_VALID_DATA` routed through recoverable source failure fallback preservation.
+  - Explicit zero valid data proof blocked by `FinalizeDecisionService`.
+  - `FAIL_SAFE_NO_SILENT_FAILURE_INVENTORY.md` and `FailSafeNoSilentFailureStaticGuardTest` added.
+  - Registry/seed synchronized for fail-safe reason-code family.
+
+  [ENFORCED]
+  - Static guard fails if no-data/manual-empty/finalize-zero-data guards, registry/seed codes, audit inventory, or no-shortcut constraints disappear.
+  - Runtime paths now throw `SourceAcquisitionException` with failed telemetry instead of returning empty success for the patched source/ingest cases.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for changed PHP files.
+  - Operator-local failure output reviewed; follow-up patch prepared and validated.
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/FailSafeNoSilentFailureStaticGuardTest.php` OK (5 tests, 108 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Source"` OK (37 tests, 420 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` OK (37 tests, 594 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Integration"` OK (91 tests, 1450 assertions).
+  - Operator-local validation PASS: full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions).
+  - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`; local operator evidence is the LOCKED evidence.
+
+  [FINAL_RULE]
+  - LOCKED. Empty/failed/unproven data must never become readable, sealed, published, or pointer-switched. Manual/API no-data, zero valid canonical bars, empty/failing source proof, coverage-not-evaluable proof, and explicit zero valid data finalize context must end as reason-coded `FAILED`, `HELD`, `BLOCKED`, or `NOT_READABLE`, while preserving the current pointer/correction baseline. Evidence, replay, command output, registry, seed, and static guards must keep this behavior visible and regression-resistant.
 
 - IMPORT_PROMOTE_SEPARATION_CONTRACT -> LOCKED
 

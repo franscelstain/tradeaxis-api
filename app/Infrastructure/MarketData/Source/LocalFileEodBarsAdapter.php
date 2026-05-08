@@ -126,6 +126,44 @@ class LocalFileEodBarsAdapter
         ];
     }
 
+    private function rememberManualFileFailureTelemetry($path, $tradeDate, $format, $reasonCode, array $context = [])
+    {
+        $sourceFileHash = is_file($path) ? hash_file('sha256', $path) : null;
+        $sourceFileSize = is_file($path) ? filesize($path) : null;
+        $rowCount = array_key_exists('source_file_row_count', $context) ? $context['source_file_row_count'] : null;
+
+        $this->lastAcquisitionTelemetry = array_merge([
+            'source_mode' => 'manual_file',
+            'source_name' => 'LOCAL_FILE',
+            'provider' => null,
+            'input_file' => $path,
+            'source_input_file' => $path,
+            'source_file_format' => $format,
+            'source_file_hash' => $sourceFileHash,
+            'source_file_hash_algorithm' => 'SHA-256',
+            'source_file_size_bytes' => $sourceFileSize,
+            'source_file_row_count' => $rowCount,
+            'returned_row_count' => 0,
+            'accepted_row_count' => 0,
+            'rejected_row_count' => 0,
+            'invalid_row_count' => 0,
+            'trade_date' => $tradeDate,
+            'source_final_status' => 'FAILED',
+            'final_reason_code' => $reasonCode,
+            'manual_file_empty_blocked' => true,
+        ], $context);
+    }
+
+    private function blockEmptyManualFile($path, $tradeDate, $format, $reasonCode, array $context = [])
+    {
+        $this->rememberManualFileFailureTelemetry($path, $tradeDate, $format, $reasonCode, $context);
+
+        throw $this->manualFileException(
+            'Manual file source contains no valid data rows and is blocked from import/promote.',
+            $reasonCode,
+            $this->lastAcquisitionTelemetry
+        );
+    }
 
     private function manualFileException($message, $reasonCode, array $context = [])
     {
@@ -187,6 +225,12 @@ class LocalFileEodBarsAdapter
 
             return $this->normalizeRow($row, $tradeDate, 'json:'.($index + 1));
         })->all();
+
+        if (count($rows) === 0) {
+            $this->blockEmptyManualFile($path, $tradeDate, 'json', 'RUN_SOURCE_MANUAL_FILE_EMPTY', [
+                'source_file_row_count' => 0,
+            ]);
+        }
 
         $this->rememberManualFileTelemetry($path, $tradeDate, 'json', $rows);
 
@@ -255,6 +299,12 @@ class LocalFileEodBarsAdapter
         }
 
         fclose($handle);
+
+        if (count($rows) === 0) {
+            $this->blockEmptyManualFile($path, $tradeDate, 'csv', 'RUN_SOURCE_MANUAL_FILE_EMPTY', [
+                'source_file_row_count' => 0,
+            ]);
+        }
 
         $this->rememberManualFileTelemetry($path, $tradeDate, 'csv', $rows);
 

@@ -185,6 +185,22 @@ class FinalizeDecisionServiceTest extends TestCase
         $this->assertSame('RUN_DATA_DELAYED', $decision['reason_code']);
     }
 
+
+    public function test_finalize_blocks_explicit_zero_valid_data_even_when_coverage_claims_pass()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('PASS', 100, 100, 0.95), null, [
+            'bars_rows_written' => 0,
+            'source_final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
+        ]);
+
+        $this->assertFalse($decision['promotion_allowed']);
+        $this->assertSame('FAILED', $decision['terminal_status']);
+        $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+        $this->assertSame('RUN_SOURCE_NO_VALID_DATA', $decision['reason_code']);
+        $this->assertTrue($decision['empty_artifact_blocked']);
+    }
+
     private function coverage(string $state, int $expected, int $available, float $threshold, array $override = []): array
     {
         $ratio = $expected > 0 ? $available / $expected : null;

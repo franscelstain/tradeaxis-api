@@ -38,12 +38,41 @@ class PublicApiEodBarsAdapter
             $urlTemplate
         );
 
-        $response = $this->requestWithRetry($url);
-        $rows = $this->parsePayload($response['body'], $tradeDate, $response['captured_at']);
+        $response = $this->requestWithRetry($url, [
+            'trade_date' => $tradeDate,
+            'requested_ticker_count' => count($tickerCodes),
+        ]);
+        $requestTelemetry = $this->consumeLastAcquisitionTelemetry();
 
-        return array_map(function ($row, $index) use ($tradeDate, $response, $apiConfig) {
+        try {
+            $rows = $this->parsePayload($response['body'], $tradeDate, $response['captured_at']);
+        } catch (SourceAcquisitionException $e) {
+            $telemetry = $this->buildGenericFailureTelemetry($tradeDate, $tickerCodes, $apiConfig, $requestTelemetry, $e->reasonCode());
+            $this->rememberAcquisitionTelemetry($telemetry);
+
+            throw $e->withContext($telemetry);
+        }
+
+        if (count($rows) === 0) {
+            $telemetry = $this->buildGenericEmptyResponseTelemetry($tradeDate, $tickerCodes, $apiConfig, $requestTelemetry);
+            $this->rememberAcquisitionTelemetry($telemetry);
+
+            throw new SourceAcquisitionException(
+                'Source API response contained no valid EOD rows for requested trade_date.',
+                'RUN_SOURCE_NO_VALID_DATA',
+                0,
+                null,
+                $telemetry
+            );
+        }
+
+        $normalizedRows = array_map(function ($row, $index) use ($tradeDate, $response, $apiConfig) {
             return $this->normalizeRow($row, $tradeDate, $index + 1, $response['captured_at'], $apiConfig);
         }, $rows, array_keys($rows));
+
+        $this->rememberAcquisitionTelemetry($this->buildGenericSuccessTelemetry($tradeDate, $tickerCodes, $normalizedRows, $apiConfig, $requestTelemetry));
+
+        return $normalizedRows;
     }
 
 
@@ -141,7 +170,117 @@ class PublicApiEodBarsAdapter
             );
         }
 
+        if (empty($rows)) {
+            $aggregate['source_final_status'] = 'FAILED';
+            $aggregate['final_reason_code'] = 'RUN_SOURCE_NO_VALID_DATA';
+            $aggregate['no_valid_data'] = true;
+            $aggregate['empty_response_blocked'] = true;
+            $aggregate['failure_reason_summary'] = ['RUN_SOURCE_NO_VALID_DATA' => 1];
+
+            $this->rememberAcquisitionTelemetry($aggregate);
+
+            throw new SourceAcquisitionException(
+                'Yahoo Finance source returned no valid EOD bars for requested trade_date.',
+                'RUN_SOURCE_NO_VALID_DATA',
+                0,
+                null,
+                $aggregate
+            );
+        }
+
         return $rows;
+    }
+
+    private function buildGenericSuccessTelemetry($tradeDate, array $tickerCodes, array $rows, array $apiConfig, array $requestTelemetry = [])
+    {
+        return $this->mergeGenericTelemetry($requestTelemetry, [
+            'source_mode' => 'api',
+            'provider' => $this->providerName($apiConfig),
+            'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
+            'timeout_seconds' => $this->timeoutSeconds(),
+            'retry_max' => min(3, max(0, (int) config('market_data.provider.api_retry_max'))),
+            'final_reason_code' => null,
+            'source_final_status' => 'SUCCESS',
+            'trade_date' => $tradeDate,
+            'requested_ticker_count' => count($tickerCodes),
+            'returned_row_count' => count($rows),
+            'accepted_row_count' => count($rows),
+            'rejected_row_count' => 0,
+            'invalid_row_count' => 0,
+        ]);
+    }
+
+    private function buildGenericEmptyResponseTelemetry($tradeDate, array $tickerCodes, array $apiConfig, array $requestTelemetry = [])
+    {
+        return $this->mergeGenericTelemetry($requestTelemetry, [
+            'source_mode' => 'api',
+            'provider' => $this->providerName($apiConfig),
+            'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
+            'timeout_seconds' => $this->timeoutSeconds(),
+            'retry_max' => min(3, max(0, (int) config('market_data.provider.api_retry_max'))),
+            'attempt_count' => null,
+            'attempts' => [],
+            'success_after_retry' => false,
+            'retry_exhausted' => false,
+            'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
+            'source_final_status' => 'FAILED',
+            'trade_date' => $tradeDate,
+            'requested_ticker_count' => count($tickerCodes),
+            'returned_row_count' => 0,
+            'accepted_row_count' => 0,
+            'rejected_row_count' => 0,
+            'invalid_row_count' => 0,
+            'no_valid_data' => true,
+            'empty_response_blocked' => true,
+            'failure_reason_summary' => ['RUN_SOURCE_NO_VALID_DATA' => 1],
+        ]);
+    }
+
+    private function buildGenericFailureTelemetry($tradeDate, array $tickerCodes, array $apiConfig, array $requestTelemetry, string $reasonCode)
+    {
+        return $this->mergeGenericTelemetry($requestTelemetry, [
+            'source_mode' => 'api',
+            'provider' => $this->providerName($apiConfig),
+            'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
+            'timeout_seconds' => $this->timeoutSeconds(),
+            'retry_max' => min(3, max(0, (int) config('market_data.provider.api_retry_max'))),
+            'final_reason_code' => $reasonCode,
+            'source_final_status' => 'FAILED',
+            'trade_date' => $tradeDate,
+            'requested_ticker_count' => count($tickerCodes),
+            'returned_row_count' => 0,
+            'accepted_row_count' => 0,
+            'rejected_row_count' => 0,
+            'invalid_row_count' => 0,
+            'no_valid_data' => true,
+            'empty_response_blocked' => true,
+            'failure_reason_summary' => [$reasonCode => 1],
+        ]);
+    }
+
+    private function mergeGenericTelemetry(array $requestTelemetry, array $terminalTelemetry)
+    {
+        $merged = array_merge($terminalTelemetry, array_filter($requestTelemetry, function ($value) {
+            return $value !== null;
+        }));
+
+        foreach ($terminalTelemetry as $key => $value) {
+            if (in_array($key, [
+                'final_reason_code',
+                'source_final_status',
+                'returned_row_count',
+                'accepted_row_count',
+                'rejected_row_count',
+                'invalid_row_count',
+                'no_valid_data',
+                'empty_response_blocked',
+                'failure_reason_summary',
+            ], true)) {
+                $merged[$key] = $value;
+            }
+        }
+
+        return $merged;
     }
 
     private function withTickerTelemetry(array $telemetry, $tickerCode)

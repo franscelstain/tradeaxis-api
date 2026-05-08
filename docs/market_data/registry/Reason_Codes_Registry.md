@@ -50,6 +50,75 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `RUN_SOURCE_RESPONSE_CHANGED` | RUN | HARD | A source schema or response-contract change was detected. |
 | `RUN_SOURCE_PARTIAL_COVERAGE` | RUN | WARN | The source returned incomplete symbol coverage for the requested date. |
 | `RUN_SOURCE_PARTIAL_RESPONSE` | RUN | WARN | The source adapter returned only part of the requested provider response and coverage gate must decide publishability. |
+| `RUN_SOURCE_NO_VALID_DATA` | RUN | HARD | Source acquisition produced zero valid canonical EOD bars; empty source output must remain non-readable and must not publish. |
+| `RUN_SOURCE_MANUAL_FILE_EMPTY` | RUN | HARD | Manual file existed but contained no data rows; empty manual file import/promote is blocked. |
+| `RUN_SOURCE_MANUAL_FILE_NO_VALID_ROWS` | RUN | HARD | Manual file rows were parsed but no row produced a valid canonical bar; run must remain non-readable. |
+| `SOURCE_PROVIDER_HTTP_ERROR` | SOURCE | HARD | Source provider returned a non-transient HTTP error that must not be treated as successful data. |
+| `SOURCE_PROVIDER_MALFORMED_RESPONSE` | SOURCE | HARD | Source provider response could not be parsed into canonical market-data payload. |
+| `SOURCE_PROVIDER_RETRY_EXHAUSTED` | SOURCE | HARD | Source provider retry policy was exhausted without usable data. |
+| `SOURCE_PROVIDER_PARTIAL_RESPONSE` | SOURCE | WARN | Source provider returned only partial usable response context. |
+| `SOURCE_ALL_SYMBOLS_FAILED` | SOURCE | HARD | All requested symbols failed source acquisition. |
+| `SOURCE_FAILURE_HELD` | SOURCE | WARN | Source failure caused the run to be held safely without readable publication. |
+| `SOURCE_FAILURE_NOT_READABLE` | SOURCE | HARD | Source failure caused the output to remain not readable. |
+| `MANUAL_FILE_MISSING` | SOURCE | HARD | Manual file path was missing or unresolved. |
+| `MANUAL_FILE_UNREADABLE` | SOURCE | HARD | Manual file could not be opened or read. |
+| `MANUAL_FILE_EMPTY` | SOURCE | HARD | Manual file contained no data rows. |
+| `MANUAL_FILE_HEADER_INVALID` | SOURCE | HARD | Manual file header is missing or invalid. |
+| `MANUAL_FILE_ALL_ROWS_INVALID` | SOURCE | HARD | Manual file rows were all rejected as invalid. |
+| `MANUAL_FILE_NO_VALID_ROWS` | SOURCE | HARD | Manual file produced zero valid canonical rows. |
+| `MANUAL_FILE_ROW_COUNT_MISMATCH` | SOURCE | HARD | Manual file reported row count does not match accepted canonical row count. |
+| `MANUAL_FILE_SOURCE_HASH_MISSING` | SOURCE | HARD | Manual file source hash is missing and source identity cannot be proven. |
+| `MANUAL_FILE_IMPORT_BLOCKED` | SOURCE | HARD | Manual file import was blocked by fail-safe policy. |
+| `MANUAL_FILE_NOT_READABLE` | SOURCE | HARD | Manual file output must remain not readable. |
+| `BARS_ARTIFACT_EMPTY` | ARTIFACT | HARD | Bars artifact contained zero valid rows. |
+| `INDICATORS_ARTIFACT_EMPTY` | ARTIFACT | HARD | Indicators artifact contained zero rows required for publication proof. |
+| `ELIGIBILITY_ARTIFACT_EMPTY` | ARTIFACT | HARD | Eligibility artifact contained zero rows and coverage cannot pass. |
+| `HASH_INPUT_EMPTY` | ARTIFACT | HARD | Hash input was empty and cannot produce publication proof. |
+| `SEAL_TARGET_EMPTY` | ARTIFACT | HARD | Seal target was empty and cannot be sealed as readable. |
+| `PUBLICATION_CANDIDATE_EMPTY` | ARTIFACT | HARD | Publication candidate had no valid rows or proof context. |
+| `EVIDENCE_PROOF_INCOMPLETE` | EVIDENCE | HARD | Evidence proof is incomplete and must not be treated as replayable proof. |
+| `FINALIZE_BLOCKED_NO_VALID_DATA` | RUN | HARD | Finalize was blocked because there was no valid data proof. |
+| `FINALIZE_BLOCKED_SOURCE_FAILED` | RUN | HARD | Finalize was blocked because source acquisition failed. |
+| `FINALIZE_BLOCKED_EMPTY_ARTIFACT` | RUN | HARD | Finalize was blocked because required artifact proof was empty. |
+| `FINALIZE_BLOCKED_COVERAGE_NOT_EVALUABLE` | RUN | HARD | Finalize was blocked because coverage could not be evaluated. |
+| `FINALIZE_BLOCKED_COVERAGE_FAILED` | RUN | HARD | Finalize was blocked because coverage failed. |
+| `FINALIZE_BLOCKED_HASH_MISSING` | RUN | HARD | Finalize was blocked because hash proof was missing. |
+| `FINALIZE_BLOCKED_SEAL_MISSING` | RUN | HARD | Finalize was blocked because seal proof was missing. |
+| `FINALIZE_BLOCKED_CANDIDATE_MISSING` | RUN | HARD | Finalize was blocked because candidate publication was missing. |
+| `FINALIZE_BLOCKED_POINTER_INVALID` | RUN | HARD | Finalize was blocked because pointer target validation failed. |
+| `FINALIZE_NOT_READABLE_NO_VALID_DATA` | RUN | HARD | Finalize produced not-readable state because no valid data existed. |
+| `FINALIZE_HELD_SOURCE_FAILURE` | RUN | WARN | Finalize held the run because source failure prevented a readable publication. |
+| `PUBLISHABILITY_BLOCKED_NO_VALID_DATA` | PUBLISHABILITY | HARD | Publishability was blocked because no valid data existed. |
+| `PUBLISHABILITY_BLOCKED_SOURCE_FAILURE` | PUBLISHABILITY | HARD | Publishability was blocked because source acquisition failed. |
+| `PUBLISHABILITY_BLOCKED_EMPTY_ARTIFACT` | PUBLISHABILITY | HARD | Publishability was blocked because artifact proof was empty. |
+| `PUBLISHABILITY_BLOCKED_COVERAGE_NOT_EVALUABLE` | PUBLISHABILITY | HARD | Publishability was blocked because coverage was not evaluable. |
+| `PUBLISHABILITY_BLOCKED_MISSING_SEAL` | PUBLISHABILITY | HARD | Publishability was blocked because seal proof was missing. |
+| `PUBLISHABILITY_BLOCKED_POINTER_INVALID` | PUBLISHABILITY | HARD | Publishability was blocked because pointer target was invalid. |
+| `PUBLISHABILITY_NOT_READABLE_FAIL_SAFE` | PUBLISHABILITY | HARD | Publishability was forced to not readable by fail-safe policy. |
+| `POINTER_SWITCH_BLOCKED_NO_VALID_DATA` | POINTER | HARD | Pointer switch was blocked because candidate had no valid data. |
+| `POINTER_SWITCH_BLOCKED_SOURCE_FAILURE` | POINTER | HARD | Pointer switch was blocked because source acquisition failed. |
+| `POINTER_SWITCH_BLOCKED_EMPTY_CANDIDATE` | POINTER | HARD | Pointer switch was blocked because candidate publication proof was empty. |
+| `POINTER_SWITCH_BLOCKED_NOT_READABLE` | POINTER | HARD | Pointer switch was blocked because candidate was not readable. |
+| `POINTER_SWITCH_BLOCKED_INVALID_TARGET` | POINTER | HARD | Pointer switch was blocked because target validation failed. |
+| `CURRENT_PUBLICATION_PRESERVED` | POINTER | INFO | Current publication pointer was preserved after failed candidate. |
+| `CORRECTION_BASELINE_PRESERVED_FAIL_SAFE` | POINTER | INFO | Correction baseline was preserved because candidate failed fail-safe proof. |
+| `EVIDENCE_SOURCE_FAILURE_INCLUDED` | EVIDENCE | INFO | Evidence included source failure context. |
+| `EVIDENCE_EMPTY_DATASET_INCLUDED` | EVIDENCE | INFO | Evidence included empty dataset context. |
+| `EVIDENCE_POINTER_PRESERVATION_INCLUDED` | EVIDENCE | INFO | Evidence included pointer preservation context. |
+| `EVIDENCE_FAIL_SAFE_CONTEXT_MISSING` | EVIDENCE | HARD | Evidence is missing required fail-safe context. |
+| `REPLAY_NO_VALID_DATA_MISMATCH` | REPLAY | HARD | Replay detected no-valid-data context mismatch. |
+| `REPLAY_SOURCE_FAILURE_MISMATCH` | REPLAY | HARD | Replay detected source-failure context mismatch. |
+| `REPLAY_EMPTY_ARTIFACT_MISMATCH` | REPLAY | HARD | Replay detected empty-artifact context mismatch. |
+| `REPLAY_UNEXPECTED_READABLE_OUTPUT` | REPLAY | HARD | Replay detected unexpected readable output. |
+| `REPLAY_UNEXPECTED_POINTER_SWITCH` | REPLAY | HARD | Replay detected unexpected pointer switch. |
+| `REPLAY_FAIL_SAFE_CONTEXT_MISSING` | REPLAY | HARD | Replay proof is missing required fail-safe context. |
+| `SOURCE_NO_VALID_DATA` | SOURCE | HARD | Canonical fail-safe alias for source acquisition that produced no valid data. |
+| `SOURCE_PROVIDER_EMPTY_RESPONSE` | SOURCE | HARD | Canonical fail-safe alias for provider response that contained no usable rows. |
+| `ARTIFACT_EMPTY` | ARTIFACT | HARD | Canonical fail-safe alias for an artifact with zero valid rows. |
+| `EMPTY_ARTIFACT_NOT_READABLE` | ARTIFACT | HARD | Empty artifact cannot be sealed, finalized, promoted, or exposed as readable. |
+| `POINTER_PRESERVED_FAIL_SAFE` | POINTER | INFO | Current pointer was preserved because candidate proof was unsafe or non-readable. |
+| `EVIDENCE_FAIL_SAFE_CONTEXT_INCLUDED` | EVIDENCE | INFO | Evidence export included no-data/source-failure/pointer-preservation fail-safe context. |
+| `REPLAY_FAIL_SAFE_REASON_MISMATCH` | REPLAY | HARD | Replay detected a mismatch in expected vs actual fail-safe reason context. |
 | `RUN_SOURCE_MANUAL_FILE_NOT_FOUND` | RUN | HARD | The configured manual-file source was not found. |
 | `RUN_SOURCE_MANUAL_FILE_NOT_READABLE` | RUN | HARD | The configured manual-file source could not be opened or read. |
 | `RUN_SOURCE_MANUAL_FILE_MALFORMED` | RUN | HARD | The configured manual-file source could not be parsed or normalized safely. |

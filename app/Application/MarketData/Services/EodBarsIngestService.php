@@ -43,13 +43,18 @@ class EodBarsIngestService
         }
 
         $sourceRows = $this->fetchSourceRows($requestedDate, $sourceMode);
+        if ($sourceRows === []) {
+            throw new SourceAcquisitionException(
+                'Source returned zero rows for requested trade_date; empty source output is not a valid ingest artifact.',
+                $this->noValidSourceDataReasonCode($sourceMode),
+                0,
+                null,
+                $this->emptySourceAcquisitionContext($requestedDate, $sourceMode)
+            );
+        }
+
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
-
-        $candidatePublication = $this->publications->getOrCreateCandidatePublication(
-            $run,
-            $priorCurrentPublication ? $priorCurrentPublication->publication_id : null
-        );
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
@@ -107,7 +112,6 @@ class EodBarsIngestService
                     'adj_close' => $row['adj_close'],
                     'source' => strtoupper($row['source_name']),
                     'run_id' => $run->run_id,
-                    'publication_id' => $candidatePublication->publication_id,
                     'created_at' => $now,
                 ];
                 continue;
@@ -128,9 +132,44 @@ class EodBarsIngestService
             );
         }
 
+        $sourceAcquisition = $this->consumeSourceAcquisitionTelemetry($sourceMode);
+
+        if (count($validRows) === 0) {
+            $context = array_merge($sourceAcquisition, [
+                'source_mode' => $sourceMode,
+                'trade_date' => $requestedDate,
+                'returned_row_count' => count($sourceRows),
+                'accepted_row_count' => 0,
+                'rejected_row_count' => count($invalidRows),
+                'invalid_row_count' => count($invalidRows),
+                'source_final_status' => 'FAILED',
+                'final_reason_code' => $this->noValidSourceDataReasonCode($sourceMode),
+                'no_valid_data' => true,
+                'empty_artifact_blocked' => true,
+            ]);
+
+            throw new SourceAcquisitionException(
+                'Source rows produced zero valid canonical bars; empty bars artifact is blocked from publication.',
+                $this->noValidSourceDataReasonCode($sourceMode),
+                0,
+                null,
+                $context
+            );
+        }
+
+        $candidatePublication = $this->publications->getOrCreateCandidatePublication(
+            $run,
+            $priorCurrentPublication ? $priorCurrentPublication->publication_id : null
+        );
+
+        $validRows = array_map(function (array $row) use ($candidatePublication) {
+            $row['publication_id'] = $candidatePublication->publication_id;
+
+            return $row;
+        }, $validRows);
+
         $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
 
-        $sourceAcquisition = $this->consumeSourceAcquisitionTelemetry($sourceMode);
         $sourceAcquisition = array_merge($sourceAcquisition, [
             'source_mode' => $sourceMode,
             'accepted_row_count' => count($validRows),
@@ -153,6 +192,31 @@ class EodBarsIngestService
         ];
     }
 
+
+    private function noValidSourceDataReasonCode($sourceMode)
+    {
+        return in_array($sourceMode, ['manual_file', 'manual_entry'], true)
+            ? 'RUN_SOURCE_MANUAL_FILE_NO_VALID_ROWS'
+            : 'RUN_SOURCE_NO_VALID_DATA';
+    }
+
+    private function emptySourceAcquisitionContext($requestedDate, $sourceMode)
+    {
+        $telemetry = $this->consumeSourceAcquisitionTelemetry($sourceMode);
+
+        return array_merge($telemetry, [
+            'source_mode' => $sourceMode,
+            'trade_date' => $requestedDate,
+            'returned_row_count' => 0,
+            'accepted_row_count' => 0,
+            'rejected_row_count' => 0,
+            'invalid_row_count' => 0,
+            'source_final_status' => 'FAILED',
+            'final_reason_code' => $this->noValidSourceDataReasonCode($sourceMode),
+            'no_valid_data' => true,
+            'empty_response_blocked' => true,
+        ]);
+    }
 
     private function consumeSourceAcquisitionTelemetry($sourceMode)
     {

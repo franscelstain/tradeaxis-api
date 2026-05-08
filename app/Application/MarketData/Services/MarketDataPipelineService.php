@@ -653,6 +653,8 @@ class MarketDataPipelineService
                         'publish_target' => $run->publish_target ?: 'current_replace',
                         'source_mode' => $input->sourceMode,
                         'source_final_reason_code' => $this->extractNoteValue((string) $run->notes, 'source_final_reason_code'),
+                        'bars_rows_written' => isset($run->bars_rows_written) ? (int) $run->bars_rows_written : null,
+                        'accepted_row_count' => isset($run->bars_rows_written) ? (int) $run->bars_rows_written : null,
                     ]
                 );
 
@@ -1834,7 +1836,11 @@ class MarketDataPipelineService
 
     private function handleRecoverableSourceFailure($run, $requestedDate, $stage, $reasonCode, \Throwable $e)
     {
-        if (! in_array($reasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT'], true)) {
+        if (! in_array($reasonCode, ['RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_NO_VALID_DATA'], true)) {
+            return null;
+        }
+
+        if ($reasonCode === 'RUN_SOURCE_NO_VALID_DATA' && in_array((string) ($run->source ?? ''), ['manual_file', 'manual_entry'], true)) {
             return null;
         }
 

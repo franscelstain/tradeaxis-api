@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Import vs Promote Separation
+- Fail-Safe Behavior / No Silent Failure
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce explicit separation between import/ingest and promote/publish so data can be accepted from manual file or API without becoming consumer-readable until promote gates pass.
-- Source-of-truth ZIP has no `vendor/`; container validation is static/`php -l` only. Final DONE status is based on operator-local targeted and full MarketData PHPUnit PASS evidence.
+- Enforce no-silent-failure behavior so empty source data, provider no-data output, manual file empty/all-invalid input, zero valid canonical bars, and finalize zero-data proof cannot become readable, sealed, published, or pointer-switched.
+- Source-of-truth ZIP has no `vendor/`; container validation remains static/`php -l`, and operator-local PHPUnit evidence has now promoted this implementation to DONE.
 
 [SESSION_GOAL]
-- `import_only` must not set READABLE, current publication, current pointer, or correction published state. `promote` must pass coverage, hash, seal, finalize, run-publication mirror, pointer validation, evidence, and replay proof.
+- No valid data means no readable publication. Source/manual/API/artifact/finalize failures must be reason-coded, evidence/replay visible, and must preserve current pointer/correction baseline where applicable.
 
 ---
 ## OPERATIONAL STATUS
@@ -36,6 +36,62 @@ ACTIVE SESSION:
 
 
 
+
+
+- Fail-Safe Behavior / No Silent Failure -> DONE
+
+  [LAST_UPDATED] 2026-05-08
+
+  [RELATED_CONTRACT] FAIL_SAFE_NO_SILENT_FAILURE_CONTRACT
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-08 -> Session opened from uploaded Fail-Safe Behavior / No Silent Failure prompt and latest source-of-truth ZIP.
+  - 2026-05-08 -> Static trace found no-data gaps: manual JSON/CSV with zero rows could previously be accepted as `source_final_status=SUCCESS` with zero accepted rows; generic API response with empty rows and Yahoo successful responses without target-date bars could return empty arrays; ingest could create/replace an empty bars artifact; finalize did not explicitly block a supplied zero valid data count before readable promotion.
+  - 2026-05-08 -> Patch added manual-file empty blocking, API empty/no-valid-data blocking, ingest zero-valid-canonical-bars blocking, finalize explicit zero-valid-data blocking, source failure telemetry context, reason-code registry/seed sync, fail-safe inventory, and static guard coverage.
+  - 2026-05-08 -> Container `php -l` passed for changed PHP files. PHPUnit/artisan were not run in container because uploaded ZIP has no `vendor/`.
+  - 2026-05-08 -> Operator-local PHPUnit reported remaining failures: static guard looked for array-literal `empty_artifact_blocked` while implementation used assignment syntax; generic API success-after-retry telemetry was lost from source context, causing missing `attempt_count`, `success_after_retry`, and `final_http_status` in evidence/backfill summaries and full-suite `Undefined index: attempt_count`.
+  - 2026-05-08 -> Follow-up patch aligned the static guard with the actual finalize assignment syntax and preserved generic API request/retry telemetry into terminal source acquisition telemetry for success, empty-response, and malformed-response paths. Container `php -l` passed for the patched files.
+  - 2026-05-08 -> Final operator-local validation PASS after follow-up patch: `FailSafeNoSilentFailureStaticGuardTest.php` OK (5 tests, 108 assertions); `Source` filter OK (37 tests, 420 assertions); `Evidence` filter OK (37 tests, 594 assertions); `Integration` filter OK (91 tests, 1450 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions). Implementation promoted from IN_PROGRESS to DONE.
+
+  [IMPLEMENTATION]
+  - `LocalFileEodBarsAdapter` now blocks empty manual CSV/JSON with `RUN_SOURCE_MANUAL_FILE_EMPTY`, failed telemetry, file identity, row counts, and `manual_file_empty_blocked=true`.
+  - `PublicApiEodBarsAdapter` now blocks generic empty API responses and Yahoo no-target-date/no-valid-data responses with `RUN_SOURCE_NO_VALID_DATA`, failed telemetry, row counts, and `empty_response_blocked=true`; generic API success/empty/malformed paths preserve retry telemetry (`attempt_count`, `success_after_retry`, `final_http_status`, attempt log).
+  - `EodBarsIngestService` now rejects empty source rows and zero valid canonical bars before writing a candidate bars artifact.
+  - `MarketDataPipelineService` treats API `RUN_SOURCE_NO_VALID_DATA` as recoverable source failure for HELD/NOT_READABLE fallback preservation and passes explicit bars row count into finalize decision context.
+  - `FinalizeDecisionService` now blocks explicit zero valid data proof even if coverage input incorrectly claims PASS.
+  - `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` include fail-safe no-data/manual-empty/artifact/evidence/replay/pointer codes.
+  - `FAIL_SAFE_NO_SILENT_FAILURE_INVENTORY.md` records fail-safe behavior inventory.
+  - `FailSafeNoSilentFailureStaticGuardTest` guards no-empty-success behavior, finalize no-fake-success behavior, registry/seed sync, inventory/audit presence, and forbidden latest-date shortcuts.
+
+  [ENFORCEMENT]
+  - Manual file empty input cannot become successful source telemetry.
+  - API source no-data output cannot become successful empty source rows.
+  - Ingest cannot write an empty valid bars artifact.
+  - Finalize cannot promote explicit zero valid data proof to `SUCCESS + READABLE`.
+  - API no-valid-data failure preserves current pointer through recoverable source failure handling when a prior readable fallback exists.
+  - Reason codes used by new fail-safe paths are registered and seeded.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Fail-safe/no-silent-failure behavior is enforced by source/manual/API no-data blocking, zero-valid canonical-bars blocking, finalize no-fake-success blocking, pointer-preserving recoverable source failure handling, registry/seed sync, audit inventory, static guard coverage, targeted local validation, and full MarketData suite PASS evidence.
+
+  [EVIDENCE]
+  - Static trace completed across source adapters, ingest service, finalize decision service, pipeline source failure handling, evidence/replay surfaces, registry/seed, audit inventory, and static tests.
+  - Container `php -l` passed for changed PHP files.
+  - Operator-local PHPUnit failure output was reviewed and mapped to the follow-up patch for static guard syntax and generic API retry telemetry preservation.
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/FailSafeNoSilentFailureStaticGuardTest.php` OK (5 tests, 108 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Source"` OK (37 tests, 420 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` OK (37 tests, 594 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Integration"` OK (91 tests, 1450 assertions).
+  - Operator-local validation PASS: full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions).
+  - PHPUnit/artisan were not run in container because uploaded ZIP has no `vendor/`; local operator evidence is the promotion evidence.
+
+  [GAPS]
+  - None for this scoped fail-safe/no-silent-failure session after local full-suite PASS.
+
+  [NEXT_ACTION]
+  - Continue with the next market-data hardening contract only from a fresh source-of-truth ZIP. Preserve this implementation as DONE unless a future scoped regression provides contrary evidence.
 
 - Import vs Promote Separation -> DONE
 

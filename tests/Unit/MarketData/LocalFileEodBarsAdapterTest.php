@@ -53,4 +53,29 @@ class LocalFileEodBarsAdapterTest extends \TestCase
 
         (new LocalFileEodBarsAdapter())->fetchOrLoadEodBars('2026-03-24', 'manual_file');
     }
+
+    public function test_empty_manual_csv_is_blocked_with_reason_code(): void
+    {
+        $path = base_path('storage/framework/testing/manual-source-explicit.csv');
+        if (! is_dir(dirname($path))) {
+            mkdir(dirname($path), 0777, true);
+        }
+
+        file_put_contents($path, 'ticker_code,trade_date,open,high,low,close,volume,adj_close,source_name,source_row_ref,captured_at'."
+");
+        config()->set('market_data.source.local_input_file', 'storage/framework/testing/manual-source-explicit.csv');
+
+        try {
+            (new LocalFileEodBarsAdapter())->fetchOrLoadEodBars('2026-03-24', 'manual_file');
+            $this->fail('Expected empty manual CSV to be blocked.');
+        } catch (\App\Infrastructure\MarketData\Source\SourceAcquisitionException $e) {
+            $context = $e->context();
+
+            $this->assertSame('RUN_SOURCE_MANUAL_FILE_EMPTY', $e->reasonCode());
+            $this->assertSame('FAILED', $context['source_final_status']);
+            $this->assertSame(0, $context['accepted_row_count']);
+            $this->assertTrue($context['manual_file_empty_blocked']);
+        }
+    }
+
 }
