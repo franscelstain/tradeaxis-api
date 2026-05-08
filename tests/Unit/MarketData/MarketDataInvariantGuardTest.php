@@ -75,6 +75,31 @@ class MarketDataInvariantGuardTest extends TestCase
         $this->assertTrue(true);
     }
 
+
+    public function test_pointer_target_rejects_run_publication_mirror_mismatch()
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('RUN_PUBLICATION_MIRROR_MISMATCH');
+
+        $publication = (object) [
+            'publication_id' => 101,
+            'publication_version' => 3,
+            'trade_date' => '2026-04-21',
+            'run_id' => 501,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-04-21 17:20:00',
+        ];
+
+        $run = (object) $this->readablePassState([
+            'run_id' => 501,
+            'trade_date_requested' => '2026-04-21',
+            'publication_id' => 999,
+            'publication_version' => 3,
+        ]);
+
+        (new MarketDataInvariantGuard())->assertValidPointerTarget($publication, $run, '2026-04-21', 'unit');
+    }
+
     public function test_fallback_target_requires_prior_success_readable_pass()
     {
         $this->expectException(LogicException::class);

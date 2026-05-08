@@ -171,6 +171,8 @@ abstract class AbstractMarketDataCommand extends Command
 
         $this->renderDatasetIntegritySummary($run);
 
+        $this->renderLineageSummary($run);
+
         foreach ([
             'accepted_row_count' => $this->runField($run, 'bars_rows_written'),
             'rejected_row_count' => $this->runField($run, 'invalid_bar_count'),
@@ -194,6 +196,33 @@ abstract class AbstractMarketDataCommand extends Command
     }
 
 
+
+
+    protected function renderLineageSummary($run)
+    {
+        $runId = $this->runField($run, 'run_id');
+        $publicationId = $this->runField($run, 'publication_id');
+        $publicationVersion = $this->runField($run, 'publication_version');
+        $currentFlag = $this->runField($run, 'is_current_publication');
+
+        $lineage = [];
+        foreach ([
+            'lineage_run_id' => $runId,
+            'lineage_publication_id' => $publicationId,
+            'lineage_publication_version' => $publicationVersion,
+            'lineage_current_publication' => $currentFlag,
+            'lineage_verification_status' => ($runId && $publicationId && $publicationVersion) ? 'RUN_PUBLICATION_LINK_PRESENT' : 'RUN_PUBLICATION_LINK_PENDING',
+        ] as $label => $value) {
+            if ($value !== null && $value !== '') {
+                $lineage[] = $label.'='.(string) $value;
+                $this->line($label.'='.(string) $value);
+            }
+        }
+
+        if ($lineage !== []) {
+            $this->line('lineage_summary='.implode(' | ', $lineage));
+        }
+    }
 
     protected function renderDatasetIntegritySummary($run)
     {
@@ -258,6 +287,11 @@ abstract class AbstractMarketDataCommand extends Command
             'seal_state' => $this->runField($run, 'sealed_at') ? 'SEALED' : 'UNSEALED',
             'sealed_at' => $this->runField($run, 'sealed_at'),
             'sealed_by' => $this->runField($run, 'sealed_by'),
+            'lineage_run_id' => $this->runField($run, 'run_id'),
+            'lineage_publication_id' => $this->runField($run, 'publication_id'),
+            'lineage_publication_version' => $this->runField($run, 'publication_version'),
+            'lineage_current_publication' => $this->runField($run, 'is_current_publication'),
+            'lineage_verification_status' => ($this->runField($run, 'run_id') && $this->runField($run, 'publication_id') && $this->runField($run, 'publication_version')) ? 'RUN_PUBLICATION_LINK_PRESENT' : 'RUN_PUBLICATION_LINK_PENDING',
         ];
 
         if (($sourceContext['source_mode'] ?? null) !== null && $sourceContext['source_mode'] !== '') {

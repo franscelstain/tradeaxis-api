@@ -49,6 +49,9 @@ class EnforceMarketDataDbIntegrityIndexes extends Migration
             'eod_dataset_corrections' => [
                 'idx_corr_trade_date_status_execution' => 'CREATE INDEX idx_corr_trade_date_status_execution ON eod_dataset_corrections (trade_date, status, execution_count)',
                 'idx_corr_prior_new_run' => 'CREATE INDEX idx_corr_prior_new_run ON eod_dataset_corrections (prior_run_id, new_run_id)',
+                'idx_corr_baseline_publication' => 'CREATE INDEX idx_corr_baseline_publication ON eod_dataset_corrections (baseline_publication_id)',
+                'idx_corr_replacement_publication' => 'CREATE INDEX idx_corr_replacement_publication ON eod_dataset_corrections (replacement_publication_id)',
+                'idx_corr_baseline_replacement_publication' => 'CREATE INDEX idx_corr_baseline_replacement_publication ON eod_dataset_corrections (baseline_publication_id, replacement_publication_id)',
             ],
         ];
     }

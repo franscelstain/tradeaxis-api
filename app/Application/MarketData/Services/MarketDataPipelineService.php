@@ -119,7 +119,9 @@ class MarketDataPipelineService
                 $correction->correction_id,
                 $priorCurrent ? $priorCurrent->run_id : null,
                 $run->run_id,
-                $isRepairCandidate ? 'repair_candidate' : 'correction_current'
+                $isRepairCandidate ? 'repair_candidate' : 'correction_current',
+                $priorCurrent ? $priorCurrent->publication_id : null,
+                null
             );
         }
 
@@ -157,6 +159,8 @@ class MarketDataPipelineService
                 'source_mode' => $input->sourceMode,
                 'stage' => $input->stage,
                 'correction_id' => $input->correctionId ? (int) $input->correctionId : null,
+                'baseline_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                'replacement_publication_id' => null,
             ]
         );
 
@@ -509,7 +513,7 @@ class MarketDataPipelineService
                     }
 
                     if ($correction) {
-                        $this->corrections->markResealed($correction->correction_id, $run->run_id);
+                        $this->corrections->markResealed($correction->correction_id, $run->run_id, $publication ? $publication->publication_id : null);
                     }
                 } catch (\Throwable $e) {
                     $this->runs->appendEvent($run, $input->stage, 'SEAL_FAILED', 'ERROR', $e->getMessage(), 'RUN_SEAL_WRITE_FAILED');
@@ -573,6 +577,7 @@ class MarketDataPipelineService
                 $postFinalizeMismatchNote = null;
                 $manifest = null;
                 $artifactComparison = null;
+                $preSwitchCurrent = null;
 
                 $preDecision = $this->finalizeDecisions->evaluate(
                     $cutoffSatisfied,
@@ -670,7 +675,9 @@ class MarketDataPipelineService
                             $correction->correction_id,
                             $run->run_id,
                             $priorCurrent->run_id,
-                            'Correction rerun produced unchanged content; current publication preserved without version switch.'
+                            'Correction rerun produced unchanged content; current publication preserved without version switch.',
+                            $priorCurrent->publication_id,
+                            null
                         );
 
                         $this->runs->appendEvent(
@@ -727,6 +734,8 @@ class MarketDataPipelineService
                                 'promote_mode' => $run->promote_mode,
                                 'publish_target' => $run->publish_target,
                                 'prior_publication_id' => (int) $priorCurrent->publication_id,
+                                'baseline_publication_id' => (int) $priorCurrent->publication_id,
+                                'replacement_publication_id' => null,
                                 'manifest' => $manifest ? (array) $manifest : null,
                                 'correction_outcome' => 'CANCELLED',
                                 'correction_outcome_note' => 'Correction rerun produced unchanged content; current publication preserved without version switch.',
@@ -756,9 +765,13 @@ class MarketDataPipelineService
                                 }
                             }
 
+                            if (! $correction && ! $preSwitchCurrent) {
+                                $preSwitchCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
+                            }
+
                             $promotedCurrent = $this->publications->promoteCandidateToCurrent(
                                 $run,
-                                $priorCurrent ? $priorCurrent->publication_id : null,
+                                $correction && $priorCurrent ? $priorCurrent->publication_id : null,
                                 (bool) $input->forceReplace
                             );
 
@@ -791,7 +804,7 @@ class MarketDataPipelineService
                                     'RUN_FORCE_REPLACE_EXECUTED',
                                     'WARN',
                                     'Operator force replace switched current publication pointer.',
-                                    null,
+                                    'CURRENT_PUBLICATION_FORCE_REPLACED',
                                     [
                                         'force_replace' => true,
                                         'force_replace_reason' => $input->forceReplaceReason,
@@ -868,6 +881,13 @@ class MarketDataPipelineService
                                 || strpos($message, 'Promotion lost run ownership') !== false
                                 || strpos($message, 'Correction baseline no longer matches current publication pointer') !== false
                                 || strpos($message, 'pointer target requires run terminal_status SUCCESS') !== false
+                                || strpos($message, 'RUN_PUBLICATION_LINK_') !== false
+                                || strpos($message, 'RUN_PUBLICATION_MIRROR_MISMATCH') !== false
+                                || strpos($message, 'PUBLICATION_RUN_') !== false
+                                || strpos($message, 'POINTER_PUBLICATION_') !== false
+                                || strpos($message, 'POINTER_ORPHAN_DETECTED') !== false
+                                || strpos($message, 'CORRECTION_BASELINE_LINK_INVALID') !== false
+                                || strpos($message, 'CURRENT_PUBLICATION_REPLACE_BLOCKED') !== false
                                 || strpos($message, 'Current publication promotion returned no publication') !== false;
 
                             if ($correction && $priorCurrent) {
@@ -901,22 +921,25 @@ class MarketDataPipelineService
                                     );
                                 }
                             } elseif ($isPointerIntegrityError) {
-                                $this->publications->clearCurrentPublicationState($input->requestedDate);
+                                if (! $preSwitchCurrent || strpos($message, 'CURRENT_PUBLICATION_REPLACE_BLOCKED') === false) {
+                                    $this->publications->clearCurrentPublicationState($input->requestedDate);
+                                }
                             }
 
                             if ($isPointerIntegrityError) {
                                 $postFinalizeMismatchNote = (
                                         strpos($message, 'Promotion lost run ownership') !== false
                                         || strpos($message, 'Correction baseline no longer matches current publication pointer') !== false
+                                        || strpos($message, 'CURRENT_PUBLICATION_REPLACE_BLOCKED') !== false
                                     )
                                         ? $message
                                         : 'Current publication pointer resolution mismatch after finalize.';
 
                                 $promotionError = null;
-                                $candidateCurrent = $priorCurrent ?: null;
+                                $candidateCurrent = $priorCurrent ?: $preSwitchCurrent ?: null;
                             } else {
                                 $promotionError = $message;
-                                $candidateCurrent = $priorCurrent ?: null;
+                                $candidateCurrent = $priorCurrent ?: $preSwitchCurrent ?: null;
                             }
                         }
                     }
@@ -961,8 +984,9 @@ class MarketDataPipelineService
                     }
 
                     $outcome['quality_gate_state'] = $outcome['quality_gate_state'] ?? 'PASS';
-                    $outcome['current_publication_id'] = $priorCurrent ? (int) $priorCurrent->publication_id : null;
-                    $outcome['current_publication_version'] = $priorCurrent ? (int) $priorCurrent->publication_version : null;
+                    $preservedCurrent = $priorCurrent ?: $preSwitchCurrent ?: null;
+                    $outcome['current_publication_id'] = $preservedCurrent ? (int) $preservedCurrent->publication_id : null;
+                    $outcome['current_publication_version'] = $preservedCurrent ? (int) $preservedCurrent->publication_version : null;
                     $outcome['message'] = $postFinalizeMismatchNote;
                 }
 
@@ -1045,17 +1069,19 @@ class MarketDataPipelineService
 
                         $finalizeReasonCode = 'RUN_LOCK_CONFLICT';
 
-                        if ($priorCurrent) {
+                        $preservedCurrent = $priorCurrent ?: $preSwitchCurrent ?: null;
+
+                        if ($preservedCurrent) {
                             try {
                                 $this->publications->restorePriorCurrentPublication(
                                     $input->requestedDate,
-                                    (int) $priorCurrent->publication_id,
-                                    (int) $priorCurrent->run_id
+                                    (int) $preservedCurrent->publication_id,
+                                    (int) $preservedCurrent->run_id
                                 );
 
                                 $this->runs->syncCurrentPublicationMirror(
                                     $input->requestedDate,
-                                    (int) $priorCurrent->run_id
+                                    (int) $preservedCurrent->run_id
                                 );
                             } catch (\Throwable $restoreException) {
                                 $this->runs->appendEvent(
@@ -1068,8 +1094,8 @@ class MarketDataPipelineService
                                     [
                                         'requested_date' => $input->requestedDate,
                                         'run_id' => (int) $run->run_id,
-                                        'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
-                                        'prior_run_id' => $priorCurrent ? (int) $priorCurrent->run_id : null,
+                                        'prior_publication_id' => $preservedCurrent ? (int) $preservedCurrent->publication_id : null,
+                                        'prior_run_id' => $preservedCurrent ? (int) $preservedCurrent->run_id : null,
                                         'exception_class' => get_class($restoreException),
                                         'exception_message' => $restoreException->getMessage(),
                                     ]
@@ -1089,16 +1115,18 @@ class MarketDataPipelineService
                             ]);
                         }
 
+                        $preservedCurrent = $priorCurrent ?: $preSwitchCurrent ?: null;
+
                         $run = $this->safeUpdateTelemetry($run, [
-                            'publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
-                            'publication_version' => $priorCurrent ? (int) $priorCurrent->publication_version : null,
+                            'publication_id' => $preservedCurrent ? (int) $preservedCurrent->publication_id : null,
+                            'publication_version' => $preservedCurrent ? (int) $preservedCurrent->publication_version : null,
                             'correction_id' => $correction ? (int) $correction->correction_id : $run->correction_id,
                             'final_reason_code' => $finalizeReasonCode,
                         ]);
 
-                        $candidateCurrent = $priorCurrent ?: null;
-                        $resolvedPublicationId = $priorCurrent ? (int) $priorCurrent->publication_id : null;
-                        $resolvedPublicationVersion = $priorCurrent ? (int) $priorCurrent->publication_version : null;
+                        $candidateCurrent = $preservedCurrent ?: null;
+                        $resolvedPublicationId = $preservedCurrent ? (int) $preservedCurrent->publication_id : null;
+                        $resolvedPublicationVersion = $preservedCurrent ? (int) $preservedCurrent->publication_version : null;
                     } else {
                         $candidateCurrent = $resolved;
                     }
@@ -1186,21 +1214,27 @@ class MarketDataPipelineService
                             $correction->correction_id,
                             $run->run_id,
                             $priorCurrent ? $priorCurrent->run_id : null,
-                            $outcome['correction_outcome_note']
+                            $outcome['correction_outcome_note'],
+                            $priorCurrent ? $priorCurrent->publication_id : null,
+                            null
                         );
                     } elseif ($outcome['correction_outcome'] === 'REPAIR_CANDIDATE') {
                         $this->corrections->markRepairExecuted(
                             $correction->correction_id,
                             $run->run_id,
                             $priorCurrent ? $priorCurrent->run_id : null,
-                            $outcome['correction_outcome_note']
+                            $outcome['correction_outcome_note'],
+                            $priorCurrent ? $priorCurrent->publication_id : null,
+                            $resolvedPublicationId ?: ($candidatePublication ? $candidatePublication->publication_id : null)
                         );
                     } elseif ($outcome['correction_outcome'] === 'PUBLISHED' && $run->terminal_status === 'SUCCESS') {
                         $this->corrections->markPublished(
                             $correction->correction_id,
                             $run->run_id,
                             $priorCurrent ? $priorCurrent->run_id : null,
-                            $outcome['correction_outcome_note']
+                            $outcome['correction_outcome_note'],
+                            $priorCurrent ? $priorCurrent->publication_id : null,
+                            $resolvedPublicationId ?: ($candidatePublication ? $candidatePublication->publication_id : null)
                         );
 
                         $this->runs->appendEvent(
@@ -1213,6 +1247,8 @@ class MarketDataPipelineService
                             [
                                 'correction_id' => (int) $correction->correction_id,
                                 'prior_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                                'baseline_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                                'replacement_publication_id' => $resolvedPublicationId ? (int) $resolvedPublicationId : null,
                                 'current_publication_id' => $resolvedPublicationId ? (int) $resolvedPublicationId : null,
                                 'current_publication_version' => $resolvedPublicationVersion ? (int) $resolvedPublicationVersion : null,
                                 'artifact_comparison' => $artifactComparison,
@@ -1400,7 +1436,14 @@ class MarketDataPipelineService
             'final_reason_code' => null,
         ]);
 
-        $this->corrections->markConsumedForCurrent($correction->correction_id, $run->run_id, $priorCurrent ? $priorCurrent->run_id : null, $state['correction_outcome_note']);
+        $this->corrections->markConsumedForCurrent(
+            $correction->correction_id,
+            $run->run_id,
+            $priorCurrent ? $priorCurrent->run_id : null,
+            $state['correction_outcome_note'],
+            $priorCurrent ? $priorCurrent->publication_id : null,
+            null
+        );
 
         $manifest = $this->publications->buildManifestByPublicationId($priorCurrent->publication_id);
 
@@ -1409,6 +1452,8 @@ class MarketDataPipelineService
             'prior_publication_id' => (int) $priorCurrent->publication_id,
             'current_publication_id' => (int) $priorCurrent->publication_id,
             'current_publication_version' => (int) $priorCurrent->publication_version,
+            'baseline_publication_id' => (int) $priorCurrent->publication_id,
+            'replacement_publication_id' => null,
             'unchanged_correction' => true,
             'manifest' => $manifest ? (array) $manifest : null,
         ]);

@@ -205,6 +205,8 @@ trait UsesMarketDataSqlite
             $table->date('trade_date');
             $table->integer('prior_run_id')->nullable();
             $table->integer('new_run_id')->nullable();
+            $table->integer('baseline_publication_id')->nullable();
+            $table->integer('replacement_publication_id')->nullable();
             $table->string('correction_reason_code');
             $table->text('correction_reason_note')->nullable();
             $table->string('status');
@@ -225,6 +227,9 @@ trait UsesMarketDataSqlite
             $table->index(['prior_run_id'], 'idx_corr_prior_run');
             $table->index(['new_run_id'], 'idx_corr_new_run');
             $table->index(['prior_run_id', 'new_run_id'], 'idx_corr_prior_new_run');
+            $table->index(['baseline_publication_id'], 'idx_corr_baseline_publication');
+            $table->index(['replacement_publication_id'], 'idx_corr_replacement_publication');
+            $table->index(['baseline_publication_id', 'replacement_publication_id'], 'idx_corr_baseline_replacement_publication');
         });
 
         $schema->create('eod_publications', function (Blueprint $table) {

@@ -114,6 +114,52 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `POINTER_PUBLICATION_ID_MISMATCH` | POINTER | HARD | Current pointer validation found publication id mismatch between expected and resolved pointer target. |
 | `POINTER_PUBLICATION_VERSION_MISMATCH` | POINTER | HARD | Current pointer validation found publication version mismatch. |
 | `POINTER_SEALED_AT_MISSING` | POINTER | HARD | Current pointer validation found pointer sealed timestamp is missing. |
+| `RUN_PUBLICATION_LINK_CREATED` | RUN | INFO | Publication lineage link was created from a valid originating run. |
+| `RUN_PUBLICATION_LINK_VERIFIED` | RUN | INFO | Publication lineage link to its originating run was verified. |
+| `RUN_PUBLICATION_LINK_MISSING` | RUN | HARD | Publication lineage is missing either the publication row or originating run. |
+| `RUN_PUBLICATION_LINK_INVALID` | RUN | HARD | Publication lineage points to an invalid originating run or invalid publication context. |
+| `RUN_PUBLICATION_MIRROR_MISMATCH` | RUN | HARD | Run-publication mirror fields disagree across run, publication, pointer, or trade-date context. |
+| `PUBLICATION_RUN_NOT_FOUND` | PUBLICATION | HARD | Publication lineage points to a run id that cannot be found. |
+| `PUBLICATION_RUN_STATE_INVALID` | PUBLICATION | HARD | Publication lineage points to a run whose state cannot produce a readable/current publication. |
+| `POINTER_PUBLICATION_LINK_CREATED` | POINTER | INFO | Current pointer linkage to a publication was created. |
+| `POINTER_PUBLICATION_LINK_VERIFIED` | POINTER | INFO | Current pointer linkage to its target publication was verified. |
+| `POINTER_PUBLICATION_LINK_MISSING` | POINTER | HARD | Current pointer linkage is missing the target publication relationship. |
+| `POINTER_PUBLICATION_LINK_INVALID` | POINTER | HARD | Current pointer linkage points to an invalid publication target. |
+| `POINTER_PUBLICATION_NOT_FOUND` | POINTER | HARD | Current pointer target publication row could not be found. |
+| `POINTER_PUBLICATION_TRADE_DATE_MISMATCH` | POINTER | HARD | Current pointer target publication trade date does not match pointer trade date. |
+| `POINTER_PUBLICATION_STATE_INVALID` | POINTER | HARD | Current pointer target publication or run state is not readable/current-safe. |
+| `POINTER_PUBLICATION_SEAL_INVALID` | POINTER | HARD | Current pointer target publication is not sealed with valid seal metadata. |
+| `POINTER_PUBLICATION_HASH_INVALID` | POINTER | HARD | Current pointer target publication hash context is missing or mismatched. |
+| `POINTER_ORPHAN_DETECTED` | POINTER | HARD | Current pointer is orphaned from a valid publication/run lineage. |
+| `POINTER_SWITCH_STARTED` | POINTER | INFO | Atomic pointer switch validation started. |
+| `POINTER_SWITCH_COMPLETED` | POINTER | INFO | Atomic pointer switch completed after validation. |
+| `POINTER_SWITCH_FAILED` | POINTER | HARD | Atomic pointer switch failed before a valid current publication was established. |
+| `POINTER_SWITCH_ROLLED_BACK` | POINTER | WARN | Pointer switch was rolled back or previous current publication was restored. |
+| `POINTER_POST_SWITCH_VERIFIED` | POINTER | INFO | Pointer resolver returned the promoted publication after switch. |
+| `POINTER_POST_SWITCH_MISMATCH` | POINTER | HARD | Pointer resolver did not return the expected promoted publication after switch. |
+| `CURRENT_PUBLICATION_DEMOTED` | PUBLICATION | INFO | Previous current publication was demoted during an allowed pointer switch. |
+| `CURRENT_PUBLICATION_PROMOTED` | PUBLICATION | INFO | Candidate publication was promoted to current after all validation passed. |
+| `CURRENT_PUBLICATION_REPLACE_BLOCKED` | PUBLICATION | HARD | Replacement of an existing current publication was blocked because force/audit controls were missing or invalid. |
+| `CURRENT_PUBLICATION_FORCE_REPLACED` | PUBLICATION | WARN | Operator-controlled force replace switched current publication with audit reason. |
+| `CORRECTION_BASELINE_LINK_VERIFIED` | CORRECTION | INFO | Correction baseline publication/run linkage was verified. |
+| `CORRECTION_BASELINE_LINK_MISSING` | CORRECTION | HARD | Correction baseline publication/run linkage is missing. |
+| `CORRECTION_BASELINE_LINK_INVALID` | CORRECTION | HARD | Correction baseline linkage is not a valid current readable publication. |
+| `CORRECTION_REPLACEMENT_LINK_CREATED` | CORRECTION | INFO | Correction replacement publication/run linkage was created. |
+| `CORRECTION_REPLACEMENT_LINK_VERIFIED` | CORRECTION | INFO | Correction replacement publication/run linkage was verified before publication. |
+| `CORRECTION_REPLACEMENT_LINK_INVALID` | CORRECTION | HARD | Correction replacement publication/run linkage is invalid. |
+| `CORRECTION_POINTER_SWITCH_CREATED` | CORRECTION | INFO | Correction pointer switch was created for a valid replacement publication. |
+| `CORRECTION_POINTER_SWITCH_BLOCKED` | CORRECTION | HARD | Correction pointer switch was blocked because replacement or baseline linkage was unsafe. |
+| `CORRECTION_LINEAGE_INCOMPLETE` | CORRECTION | HARD | Correction lineage is incomplete across baseline, replacement, run, publication, or pointer switch. |
+| `CORRECTION_BASELINE_POINTER_PRESERVED` | CORRECTION | INFO | Correction preserved the baseline current pointer on unchanged or failed replacement. |
+| `REPLAY_LINEAGE_MATCHED` | REPLAY | INFO | Replay lineage matched expected run-publication-pointer-correction proof. |
+| `REPLAY_RUN_PUBLICATION_MISMATCH` | REPLAY | HARD | Replay detected a run-publication lineage mismatch. |
+| `REPLAY_POINTER_PUBLICATION_MISMATCH` | REPLAY | HARD | Replay detected a pointer-publication lineage mismatch. |
+| `REPLAY_CORRECTION_LINEAGE_MISMATCH` | REPLAY | HARD | Replay detected correction baseline/replacement lineage mismatch. |
+| `EVIDENCE_LINEAGE_CONTEXT_INCLUDED` | EVIDENCE | INFO | Evidence export included full run-publication-pointer-correction lineage context. |
+| `EVIDENCE_RUN_PUBLICATION_CONTEXT_INCLUDED` | EVIDENCE | INFO | Evidence export included run-publication linkage context. |
+| `EVIDENCE_POINTER_CONTEXT_INCLUDED` | EVIDENCE | INFO | Evidence export included current pointer target context. |
+| `EVIDENCE_CORRECTION_LINEAGE_CONTEXT_INCLUDED` | EVIDENCE | INFO | Evidence export included correction baseline/replacement lineage context. |
+| `EVIDENCE_LINEAGE_CONTEXT_MISSING` | EVIDENCE | WARN | Evidence export found missing lineage context and marked evidence incomplete. |
 | `CORRECTION_ARTIFACT_BASELINE_OR_CANDIDATE_MISSING` | CORRECTION | HARD | Correction artifact comparison cannot run because baseline or candidate publication is missing. |
 | `CORRECTION_ARTIFACT_HASH_INCOMPLETE` | CORRECTION | HARD | Correction artifact comparison found missing hash context and cannot prove deterministic change. |
 | `CORRECTION_ARTIFACT_UNCHANGED` | CORRECTION | INFO | Correction artifact comparison found no content change; current publication must be preserved. |

@@ -51,8 +51,10 @@ class RunCorrectionCommand extends AbstractMarketDataCommand
         $this->line('correction_status='.(string) optional($correctionLifecycle)->status);
         $this->line('correction_outcome='.$this->resolveCorrectionOutcome($correctionLifecycle));
         $this->line('correction_reseal_status='.$this->resolveResealStatus($correctionLifecycle));
-        $this->line('baseline_publication_id='.$this->optionalScalar($correctionLifecycle, 'prior_publication_id'));
-        $this->line('candidate_publication_id='.$this->optionalScalar($correctionLifecycle, 'new_publication_id'));
+        $baselinePublicationId = $this->optionalScalar($correctionLifecycle, 'baseline_publication_id') ?: $this->optionalScalar($correctionLifecycle, 'prior_publication_id');
+        $candidatePublicationId = $this->optionalScalar($correctionLifecycle, 'replacement_publication_id') ?: $this->optionalScalar($correctionLifecycle, 'new_publication_id');
+        $this->line('baseline_publication_id='.$baselinePublicationId);
+        $this->line('candidate_publication_id='.$candidatePublicationId);
         $this->line('candidate_publication_switch='.$this->optionalBoolString($correctionLifecycle, 'new_publication_is_current'));
         $this->line('final_outcome_note='.$this->optionalScalar($correctionLifecycle, 'final_outcome_note'));
 

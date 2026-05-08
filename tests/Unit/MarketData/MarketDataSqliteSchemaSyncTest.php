@@ -188,6 +188,9 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
             'eod_dataset_corrections' => [
                 'idx_corr_trade_date_status_execution',
                 'idx_corr_prior_new_run',
+                'idx_corr_baseline_publication',
+                'idx_corr_replacement_publication',
+                'idx_corr_baseline_replacement_publication',
             ],
             'md_replay_daily_metrics' => [
                 'idx_replay_daily_status',

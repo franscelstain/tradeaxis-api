@@ -82,6 +82,9 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
             'KEY idx_eod_eligibility_publication_date_ticker (publication_id, trade_date, ticker_id)',
             'KEY idx_corr_trade_date_status_execution (trade_date, status, execution_count)',
             'KEY idx_corr_prior_new_run (prior_run_id, new_run_id)',
+            'KEY idx_corr_baseline_publication (baseline_publication_id)',
+            'KEY idx_corr_replacement_publication (replacement_publication_id)',
+            'KEY idx_corr_baseline_replacement_publication (baseline_publication_id, replacement_publication_id)',
             'KEY idx_replay_daily_publication_identity (replay_id, publication_id, publication_version)',
             'KEY idx_replay_reason_code (replay_id, reason_code)',
         ] as $definition) {
@@ -98,6 +101,9 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
             "index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_bars_publication_date_ticker')",
             "index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_indicators_publication_date_ticker')",
             "index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_eligibility_publication_date_ticker')",
+            "index(['baseline_publication_id'], 'idx_corr_baseline_publication')",
+            "index(['replacement_publication_id'], 'idx_corr_replacement_publication')",
+            "index(['baseline_publication_id', 'replacement_publication_id'], 'idx_corr_baseline_replacement_publication')",
             "primary(['replay_id', 'trade_date', 'reason_code'])",
         ] as $definition) {
             $this->assertStringContainsString($definition, $sqlite, 'SQLite mirror missing integrity definition: '.$definition);
@@ -114,6 +120,9 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
             'idx_eod_eligibility_publication_date_ticker',
             'idx_corr_trade_date_status_execution',
             'idx_corr_prior_new_run',
+            'idx_corr_baseline_publication',
+            'idx_corr_replacement_publication',
+            'idx_corr_baseline_replacement_publication',
         ] as $index) {
             $this->assertStringContainsString($index, $migration, 'Integrity migration missing index '.$index);
         }

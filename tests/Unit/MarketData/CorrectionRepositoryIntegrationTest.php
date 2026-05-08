@@ -34,26 +34,33 @@ class CorrectionRepositoryIntegrationTest extends TestCase
         $this->assertSame('APPROVED', $approved->status);
         $this->assertSame('reviewer', $approved->approved_by);
 
-        $executing = $repo->markExecuting($created->correction_id, 25, 27);
+        $executing = $repo->markExecuting($created->correction_id, 25, 27, 'correction_current', 2501, null);
         $this->assertSame('EXECUTING', $executing->status);
         $this->assertSame(25, (int) $executing->prior_run_id);
         $this->assertSame(27, (int) $executing->new_run_id);
+        $this->assertSame(2501, (int) $executing->baseline_publication_id);
+        $this->assertNull($executing->replacement_publication_id);
         $this->assertSame(1, (int) $executing->execution_count);
         $this->assertNotNull($executing->last_executed_at);
 
-        $resealed = $repo->markResealed($created->correction_id, 27);
+        $resealed = $repo->markResealed($created->correction_id, 27, 2701);
         $this->assertSame('RESEALED', $resealed->status);
         $this->assertSame(27, (int) $resealed->new_run_id);
+        $this->assertSame(2701, (int) $resealed->replacement_publication_id);
 
-        $published = $repo->markPublished($created->correction_id, 27, 25, 'publication switched');
+        $published = $repo->markPublished($created->correction_id, 27, 25, 'publication switched', 2501, 2701);
         $this->assertSame('PUBLISHED', $published->status);
         $this->assertSame('publication switched', $published->final_outcome_note);
+        $this->assertSame(2501, (int) $published->baseline_publication_id);
+        $this->assertSame(2701, (int) $published->replacement_publication_id);
         $this->assertNotNull($published->published_at);
 
         $persisted = DB::table('eod_dataset_corrections')->where('correction_id', $created->correction_id)->first();
         $this->assertSame('PUBLISHED', $persisted->status);
         $this->assertSame(25, (int) $persisted->prior_run_id);
         $this->assertSame(27, (int) $persisted->new_run_id);
+        $this->assertSame(2501, (int) $persisted->baseline_publication_id);
+        $this->assertSame(2701, (int) $persisted->replacement_publication_id);
     }
 
     public function test_correction_repository_can_cancel_with_outcome_note(): void

@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Hash / Seal / Dataset Integrity
+- Run / Publication / Pointer Linkage
 
-[SESSION_STATUS] LOCKED
+[SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Enforce deterministic hash, seal preconditions, dataset manifest completeness, immutable sealed/current/readable artifact behavior, finalize hash/seal guards, evidence/replay integrity context, command output integrity summary, and reason-code registry/seed sync.
-- Source-of-truth ZIP has no `vendor/`; container validation was static/`php -l` only. Operator-local targeted and full PHPUnit validation was supplied and passed before DONE/LOCKED.
+- Enforce deterministic, traceable linkage across `run → publication → pointer → correction`, including run-publication mirror validation, pointer target validation, correction baseline/replacement publication lineage, replay/evidence lineage proof, command summary linkage context, and reason-code registry/seed sync.
+- Source-of-truth ZIP has no `vendor/`; container validation was static/`php -l` only. Operator-local targeted and full PHPUnit validation has now passed and is recorded as final implementation evidence.
 
 [SESSION_GOAL]
-- Hash/seal must prove dataset integrity deterministically. Same logical dataset must produce the same hash regardless of input order; changed data must change hash; sealed/current/readable datasets must not be mutated through normal artifact paths.
+- Every publication must trace to a valid run, every current pointer must target a valid publication, and every correction must preserve baseline/replacement lineage without mutating or orphaning the current pointer.
 
 ---
 ## OPERATIONAL STATUS
@@ -34,6 +34,59 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING ENTRY
 
+
+
+- Run / Publication / Pointer Linkage -> DONE
+
+  [LAST_UPDATED] 2026-05-08
+
+  [RELATED_CONTRACT] RUN_PUBLICATION_POINTER_LINKAGE_CONTRACT
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-08 -> Session opened from uploaded Run / Publication / Pointer Linkage prompt and latest source-of-truth ZIP.
+  - 2026-05-08 -> Static trace found correction lineage gap: `eod_dataset_corrections` persisted `prior_run_id` and `new_run_id` but did not persist baseline/replacement publication ids explicitly.
+  - 2026-05-08 -> Patch added correction baseline/replacement publication linkage fields, schema/index/test bootstrap sync, repository persistence, pipeline propagation, evidence/replay lineage fallback, command summary linkage output, invariant mirror guard, reason-code registry/seed sync, and static guard coverage.
+  - 2026-05-08 -> Container `php -l` passed for changed PHP files. PHPUnit/artisan were not run because uploaded ZIP has no `vendor/`.
+  - 2026-05-08 -> Operator-local retest reported failures in `RunPublicationPointerLinkageStaticGuardTest`, `Publication`, `Finalize`, `StaticGuard`, and `Integration`: pipeline lacked explicit lineage-field strings, hash/seal static guard expected finalize seal reason codes, correction service tests still expected old 4-argument calls, and non-correction lock-conflict handling cleared the existing current pointer.
+  - 2026-05-08 -> Recovery patch added explicit `baseline_publication_id`/`replacement_publication_id` payload keys in pipeline lineage events, restored `FINALIZE_SEAL_MISSING`/`FINALIZE_SEAL_INVALID` reason-code literals, updated correction service test expectations for explicit publication lineage arguments, and changed non-correction `CURRENT_PUBLICATION_REPLACE_BLOCKED` handling to preserve the pre-switch current pointer instead of clearing it.
+  - 2026-05-08 -> Operator-local validation PASS: `RunPublicationPointerLinkageStaticGuardTest.php` OK (5 tests, 169 assertions); `Publication` filter OK (97 tests, 1182 assertions); `Pointer` filter OK (73 tests, 1054 assertions); `Finalize` filter OK (46 tests, 355 assertions); `StaticGuard` filter OK (73 tests, 1763 assertions); `Integration` filter OK (91 tests, 1450 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (335 tests, 4300 assertions). Implementation promoted to DONE.
+
+  [IMPLEMENTATION]
+  - `eod_dataset_corrections` now carries `baseline_publication_id` and `replacement_publication_id` as explicit correction lineage fields.
+  - `EodCorrectionRepository` persists baseline/replacement publication lineage across executing, resealed, published, repair, consumed, and cancelled correction states.
+  - `MarketDataPipelineService` propagates pointer-resolved baseline publication id and replacement publication id through correction execution/finalize outcomes while preserving baseline pointer on unchanged/cancelled/failed outcomes.
+  - `MarketDataInvariantGuard` now exposes `assertRunPublicationMirror()` and pointer target validation calls it before accepting a pointer candidate.
+  - `EodPublicationRepository` now surfaces linkage-specific reason-code prefixes for missing candidate publication, missing run, invalid state, unsealed target, current replace block, correction baseline mismatch, restore mismatch, and pointer orphan cases.
+  - `MarketDataEvidenceExportService` and `ReplayVerificationService` now prefer explicit correction publication lineage fields and retain fallback aliases for compatibility.
+  - `AbstractMarketDataCommand` now includes run/publication/current-pointer linkage summary fields in run command output payloads.
+  - `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` include run-publication, pointer-publication, correction-lineage, replay-lineage, and evidence-lineage reason-code families.
+  - `RUN_PUBLICATION_POINTER_LINKAGE_INVENTORY.md` records the linkage inventory and final local validation state.
+  - `RunPublicationPointerLinkageStaticGuardTest` guards schema/index/linkage/replay/evidence/command/reason-code/no-shortcut expectations.
+
+  [ENFORCEMENT]
+  - Publication/current pointer promotion must validate run-publication mirror and pointer target state.
+  - Current pointer targets must remain `SUCCESS + READABLE + SEALED + coverage PASS` and trade-date aligned.
+  - Correction execution must persist pointer-resolved baseline publication linkage and replacement publication linkage when a replacement is produced.
+  - Failed/unchanged/cancelled correction paths must preserve baseline pointer lineage.
+  - Replay/evidence/command output must expose enough linkage context for audit without manual raw database probing.
+  - Reason-code registry and seed must stay synchronized for lineage failures and proof events.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Run / Publication / Pointer Linkage is enforced by explicit correction baseline/replacement publication lineage, run-publication mirror validation, pointer target validation, pointer switch post-verification, reason-coded force/blocked replacement behavior, replay/evidence lineage proof, command output linkage context, targeted local validation, and full MarketData suite PASS evidence.
+
+  [EVIDENCE]
+  - Static trace completed across run, publication, pointer, correction, replay, evidence, command output, schema, SQLite bootstrap, reason-code registry/seed, and inventory.
+  - Container `php -l` passed for changed PHP files.
+  - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`; final runtime proof is operator-local PHPUnit evidence.
+  - Operator-local PASS: `RunPublicationPointerLinkageStaticGuardTest.php` OK (5 tests, 169 assertions); `Publication` OK (97 tests, 1182 assertions); `Pointer` OK (73 tests, 1054 assertions); `Finalize` OK (46 tests, 355 assertions); `StaticGuard` OK (73 tests, 1763 assertions); `Integration` OK (91 tests, 1450 assertions); full `tests/Unit/MarketData` OK (335 tests, 4300 assertions).
+
+  [GAPS]
+  - No open gap for this scope after operator-local targeted and full MarketData validation passed.
+
+  [NEXT_ACTION]
+  - Keep this implementation locked. Any future change touching run-publication mirror, pointer target validation, pointer switch, correction baseline/replacement publication lineage, replay/evidence lineage proof, command output, schema/indexes, or reason-code registry/seed must rerun the targeted linkage filters plus full `tests/Unit/MarketData`.
 
 - Hash / Seal / Dataset Integrity -> DONE
 

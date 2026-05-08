@@ -546,7 +546,7 @@ class EodPublicationRepository
                 ->first();
 
             if (! $candidate) {
-                throw new \RuntimeException('Candidate publication not found for finalize/current-switch.');
+                throw new \RuntimeException('RUN_PUBLICATION_LINK_MISSING: Candidate publication not found for finalize/current-switch.');
             }
 
             $freshRun = DB::table('eod_runs')
@@ -555,25 +555,25 @@ class EodPublicationRepository
                 ->first();
 
             if (! $freshRun) {
-                throw new \RuntimeException('Candidate run not found for finalize/current-switch.');
+                throw new \RuntimeException('PUBLICATION_RUN_NOT_FOUND: Candidate run not found for finalize/current-switch.');
             }
 
             if ($candidate->seal_state !== 'SEALED') {
-                throw new \RuntimeException('FINALIZE_SEAL_MISSING: Candidate publication is not sealed.');
+                throw new \RuntimeException('FINALIZE_SEAL_INVALID: POINTER_PUBLICATION_SEAL_INVALID: Candidate publication is not sealed.');
             }
 
             if (! $candidate->sealed_at) {
-                throw new \RuntimeException('FINALIZE_SEAL_INVALID: Candidate publication is missing sealed_at timestamp.');
+                throw new \RuntimeException('FINALIZE_SEAL_MISSING: POINTER_PUBLICATION_SEAL_INVALID: Candidate publication is missing sealed_at timestamp.');
             }
 
             if ((string) ($freshRun->coverage_gate_state ?? '') !== 'PASS') {
-                throw new \RuntimeException('Current publication promotion requires coverage_gate_state PASS before pointer switch.');
+                throw new \RuntimeException('POINTER_PUBLICATION_STATE_INVALID: Current publication promotion requires coverage_gate_state PASS before pointer switch.');
             }
 
             if ((string) ($freshRun->terminal_status ?? '') !== 'SUCCESS'
                 || (string) ($freshRun->publishability_state ?? '') !== 'READABLE'
             ) {
-                throw new \RuntimeException('Current publication promotion requires pre-approved SUCCESS + READABLE run before pointer switch.');
+                throw new \RuntimeException('PUBLICATION_RUN_STATE_INVALID: Current publication promotion requires pre-approved SUCCESS + READABLE run before pointer switch.');
             }
 
 
@@ -590,19 +590,19 @@ class EodPublicationRepository
 
                 if ($integrityReasons !== []) {
                     throw new \RuntimeException(
-                        'Invalid current publication integrity detected for trade date '.$run->trade_date_requested.'. Repair current pointer/current mirrors before replacement. Reasons: '.implode(',', $integrityReasons)
+                        'POINTER_PUBLICATION_LINK_INVALID: Invalid current publication integrity detected for trade date '.$run->trade_date_requested.'. Repair current pointer/current mirrors before replacement. Reasons: '.implode(',', $integrityReasons)
                     );
                 }
 
                 if (! $forceReplace) {
-                    throw new \RuntimeException('Current publication already exists for trade date '.$run->trade_date_requested.'. Use --force_replace=true with an audit reason to replace it via operator-controlled switch.');
+                    throw new \RuntimeException('CURRENT_PUBLICATION_REPLACE_BLOCKED: Current publication already exists for trade date '.$run->trade_date_requested.'. Use --force_replace=true with an audit reason to replace it via operator-controlled switch.');
                 }
 
                 $priorPublicationId = (int) $current->publication_id;
             }
 
             if ($priorPublicationId && $current && (int) $current->publication_id !== (int) $priorPublicationId) {
-                throw new \RuntimeException('Correction baseline no longer matches current publication pointer.');
+                throw new \RuntimeException('CORRECTION_BASELINE_LINK_INVALID: Correction baseline no longer matches current publication pointer.');
             }
 
             $this->assertSealedPublicationMatchesRunHashes($candidate, $freshRun);
@@ -726,35 +726,35 @@ class EodPublicationRepository
                 ->first();
 
             if (! $priorRun) {
-                throw new \RuntimeException('Current publication integrity violation: current pointer requires existing run row.');
+                throw new \RuntimeException('POINTER_ORPHAN_DETECTED: Current publication integrity violation: current pointer requires existing run row.');
             }
 
             if ((string) ($priorRun->trade_date_requested ?? '') !== (string) $tradeDate) {
-                throw new \RuntimeException('Current publication integrity violation: current pointer requires run trade_date_requested to match pointer trade_date.');
+                throw new \RuntimeException('POINTER_PUBLICATION_TRADE_DATE_MISMATCH: Current publication integrity violation: current pointer requires run trade_date_requested to match pointer trade_date.');
             }
 
             if ((string) ($priorRun->terminal_status ?? '') !== 'SUCCESS') {
-                throw new \RuntimeException('Current publication integrity violation: current pointer requires run terminal_status SUCCESS.');
+                throw new \RuntimeException('POINTER_PUBLICATION_STATE_INVALID: Current publication integrity violation: current pointer requires run terminal_status SUCCESS.');
             }
 
             if ((string) ($priorRun->publishability_state ?? '') !== 'READABLE') {
-                throw new \RuntimeException('Current publication integrity violation: current pointer requires run publishability_state READABLE.');
+                throw new \RuntimeException('POINTER_PUBLICATION_STATE_INVALID: Current publication integrity violation: current pointer requires run publishability_state READABLE.');
             }
 
             if ((string) ($priorRun->coverage_gate_state ?? '') !== 'PASS') {
-                throw new \RuntimeException('Current publication integrity violation: current pointer requires run coverage_gate_state PASS.');
+                throw new \RuntimeException('POINTER_PUBLICATION_STATE_INVALID: Current publication integrity violation: current pointer requires run coverage_gate_state PASS.');
             }
 
             if (empty($priorRun->sealed_at)) {
-                throw new \RuntimeException('Current publication integrity violation: current pointer requires run sealed_at.');
+                throw new \RuntimeException('POINTER_PUBLICATION_SEAL_INVALID: Current publication integrity violation: current pointer requires run sealed_at.');
             }
 
             if ((string) ($priorRun->publication_id ?? '') !== (string) $priorPublicationId) {
-                throw new \RuntimeException('Current publication integrity violation: current pointer requires run publication_id to match publication.');
+                throw new \RuntimeException('RUN_PUBLICATION_MIRROR_MISMATCH: Current publication integrity violation: current pointer requires run publication_id to match publication.');
             }
 
             if ((string) ($priorRun->publication_version ?? '') !== (string) ($priorPublication->publication_version ?? '')) {
-                throw new \RuntimeException('Current publication integrity violation: current pointer requires run publication_version to match publication.');
+                throw new \RuntimeException('RUN_PUBLICATION_MIRROR_MISMATCH: Current publication integrity violation: current pointer requires run publication_version to match publication.');
             }
 
 

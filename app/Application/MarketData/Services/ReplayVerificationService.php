@@ -417,8 +417,8 @@ class ReplayVerificationService
             'correction_outcome' => $this->resolveCorrectionOutcome($correction),
             'correction_reseal_status' => $this->resolveCorrectionResealStatus($correction),
             'correction_publication_switch' => $correction && isset($correction->new_publication_is_current) && $correction->new_publication_is_current !== null ? (bool) $correction->new_publication_is_current : null,
-            'baseline_publication_id' => $correction && isset($correction->prior_publication_id) && $correction->prior_publication_id !== null ? (int) $correction->prior_publication_id : null,
-            'candidate_publication_id' => $correction && isset($correction->new_publication_id) && $correction->new_publication_id !== null ? (int) $correction->new_publication_id : null,
+            'baseline_publication_id' => $correction && isset($correction->baseline_publication_id) && $correction->baseline_publication_id !== null ? (int) $correction->baseline_publication_id : ($correction && isset($correction->prior_publication_id) && $correction->prior_publication_id !== null ? (int) $correction->prior_publication_id : null),
+            'candidate_publication_id' => $correction && isset($correction->replacement_publication_id) && $correction->replacement_publication_id !== null ? (int) $correction->replacement_publication_id : ($correction && isset($correction->new_publication_id) && $correction->new_publication_id !== null ? (int) $correction->new_publication_id : null),
         ];
         $lineage = [
             'run_id' => $runContext['run_id'],

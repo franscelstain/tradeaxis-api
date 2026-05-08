@@ -70,6 +70,9 @@ Recommended:
 - `(trade_date, status)`
 - `(prior_run_id)`
 - `(new_run_id)`
+- `(baseline_publication_id)`
+- `(replacement_publication_id)`
+- `(baseline_publication_id, replacement_publication_id)`
 
 ## Integrity semantics that may require application enforcement
 Some invariants are logically mandatory even if MariaDB cannot express them as a partial unique constraint.
@@ -85,6 +88,8 @@ Foreign keys are recommended where operationally safe, for example:
 - publication -> run
 - correction.prior_run_id -> run
 - correction.new_run_id -> run
+- correction.baseline_publication_id -> publication
+- correction.replacement_publication_id -> publication
 - indicator.invalid_reason_code -> reason-code registry (if registry design supports it)
 - eligibility.reason_code -> reason-code registry (if registry design supports it)
 

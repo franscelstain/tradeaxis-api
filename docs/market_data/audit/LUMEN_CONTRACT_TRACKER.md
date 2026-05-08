@@ -3,16 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Hash / Seal / Dataset Integrity
+- Run / Publication / Pointer Linkage
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define and enforce `HASH_SEAL_DATASET_INTEGRITY_CONTRACT` across deterministic hash, seal preconditions, manifest proof, immutable sealed/current/readable datasets, finalize guards, replacement candidate history, replay/evidence integrity context, command output, and reason-code sync.
-- Uploaded ZIP has no `vendor/`; container validation was static/`php -l` only. Operator-local targeted and full PHPUnit validation was supplied and passed before LOCKED.
+- Define and enforce `RUN_PUBLICATION_POINTER_LINKAGE_CONTRACT` across run-publication mirror validation, current pointer target validation, pointer switch proof, correction baseline/replacement lineage, replay/evidence lineage proof, command output linkage context, and reason-code registry/seed sync.
+- Uploaded ZIP has no `vendor/`; container validation was static/`php -l` only. Operator-local targeted and full PHPUnit validation has now passed and is recorded as final LOCKED evidence.
 
 [SESSION_GOAL]
-- Hash/seal must prove dataset integrity deterministically: unchanged logical data keeps the same hash, changed data changes hash, sealed/current/readable baselines are immutable through normal artifact paths, and readable/current promotion requires valid hash/seal/manifest proof.
+- Run, publication, pointer, and correction relationships must remain traceable, deterministic, non-orphan, and reason-coded from ingest/finalize through evidence/replay.
 
 ---
 ## OPERATIONAL STATUS
@@ -34,6 +34,62 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING CONTRACT
 
+
+
+- RUN_PUBLICATION_POINTER_LINKAGE_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-08
+
+  [RELATED_IMPLEMENTATION] Run / Publication / Pointer Linkage
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-08 -> Contract opened as canonical run/publication/pointer/correction lineage contract under audit governance.
+  - 2026-05-08 -> Static trace found missing explicit correction baseline/replacement publication lineage.
+  - 2026-05-08 -> Enforcement patch added correction publication linkage schema/indexes, repository persistence, pipeline propagation, run-publication mirror guard, pointer-linkage reason-coded failures, replay/evidence lineage context, command output linkage summary, registry/seed sync, inventory, and static guard coverage.
+  - 2026-05-08 -> Contract held at ENFORCED because uploaded ZIP has no `vendor/`; targeted and full local PHPUnit required before LOCKED.
+  - 2026-05-08 -> Operator-local retest found linkage/static/runtime regressions: missing explicit lineage strings in pipeline static guard, missing finalize seal reason literals in hash/seal static guard, outdated correction mock expectations, and unsafe clearing of a valid current pointer on uncontrolled non-correction replacement block.
+  - 2026-05-08 -> Recovery patch preserves current pointer on `CURRENT_PUBLICATION_REPLACE_BLOCKED`, keeps correction publication lineage arguments explicit, restores finalize seal reason literals, and keeps contract status at ENFORCED pending local retest.
+  - 2026-05-08 -> Contract promoted from ENFORCED to LOCKED after operator-local validation passed: `RunPublicationPointerLinkageStaticGuardTest.php` OK (5 tests, 169 assertions); `Publication` filter OK (97 tests, 1182 assertions); `Pointer` filter OK (73 tests, 1054 assertions); `Finalize` filter OK (46 tests, 355 assertions); `StaticGuard` filter OK (73 tests, 1763 assertions); `Integration` filter OK (91 tests, 1450 assertions); full `tests/Unit/MarketData` OK (335 tests, 4300 assertions).
+
+  [DEFINED]
+  - Every publication must have a valid source run and a consistent run-publication mirror.
+  - Every current pointer must target an existing, trade-date aligned, `SUCCESS + READABLE + SEALED + coverage PASS` publication/run pair.
+  - Pointer switch must be validated before switch, updated atomically, and post-verified through the pointer resolver.
+  - Correction must record pointer-resolved baseline publication/run lineage and replacement publication/run lineage when published.
+  - Failed, unchanged, or cancelled corrections must preserve the baseline current pointer.
+  - Replay and evidence must include lineage proof sufficient to explain run/publication/pointer/correction state without raw database shortcuts.
+  - Reason codes used by linkage guards must be registered and seeded.
+
+  [IMPLEMENTED]
+  - `eod_dataset_corrections` includes `baseline_publication_id` and `replacement_publication_id`.
+  - `EodCorrectionRepository` persists correction publication linkage across correction state transitions.
+  - `MarketDataPipelineService` propagates baseline/replacement publication ids and force-replace reason-coded context.
+  - `MarketDataInvariantGuard` enforces run-publication mirror validation as part of pointer target validation.
+  - `EodPublicationRepository` exposes reason-coded linkage failures for missing publication/run, invalid target state, current replace block, correction baseline mismatch, and pointer orphan/mismatch recovery.
+  - `ReplayVerificationService`, `MarketDataEvidenceExportService`, and `AbstractMarketDataCommand` expose lineage context.
+  - `RUN_PUBLICATION_POINTER_LINKAGE_INVENTORY.md` and `RunPublicationPointerLinkageStaticGuardTest` define and guard the contract.
+  - Registry/seed are synchronized for linkage reason-code families.
+
+  [ENFORCED]
+  - Static guard fails if correction publication linkage fields/indexes disappear.
+  - Static guard fails if pointer switch no longer validates target/mirror/post-switch resolver.
+  - Static guard fails if replay/evidence/command lineage context is removed.
+  - Static guard fails if linkage reason-code registry/seed drift or forbidden current-selection shortcuts reappear in key files.
+
+  [VALIDATED]
+  - Container static trace completed.
+  - Container `php -l` passed for changed PHP files.
+  - PHPUnit/artisan not run in container because uploaded ZIP has no `vendor/`; final runtime proof is operator-local PHPUnit evidence.
+  - Operator-local PASS: `RunPublicationPointerLinkageStaticGuardTest.php` OK (5 tests, 169 assertions); `Publication` OK (97 tests, 1182 assertions); `Pointer` OK (73 tests, 1054 assertions); `Finalize` OK (46 tests, 355 assertions); `StaticGuard` OK (73 tests, 1763 assertions); `Integration` OK (91 tests, 1450 assertions); full `tests/Unit/MarketData` OK (335 tests, 4300 assertions).
+
+  [FINAL_RULE]
+  - LOCKED. Every readable/current publication must remain traceable to a valid source run through a consistent run-publication mirror; every current pointer must resolve to an existing trade-date aligned `SUCCESS + READABLE + SEALED + coverage PASS` publication/run pair; correction must preserve explicit baseline publication lineage and replacement publication lineage when published; failed/unchanged/cancelled correction paths must preserve the baseline current pointer; replay/evidence/command surfaces must expose lineage proof and reason-coded failure context without raw/staging/latest/MAX(date) shortcuts.
+  - Future changes touching run-publication mirror, pointer target validation, pointer switch, correction baseline/replacement linkage, replay/evidence lineage proof, command output, schema/indexes, or reason-code registry/seed must rerun targeted linkage filters plus full `tests/Unit/MarketData`.
+
+  [NEXT_ACTION]
+  - Keep this contract LOCKED. Reopen only for a future lineage policy change or regression.
 
 - HASH_SEAL_DATASET_INTEGRITY_CONTRACT -> LOCKED
 

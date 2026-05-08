@@ -56,7 +56,51 @@ class MarketDataInvariantGuard
         }
 
         $effectiveRun = $run ?: $publication;
+        if ($run !== null) {
+            $this->assertRunPublicationMirror($publication, $effectiveRun, $tradeDate, $context.': pointer target mirror');
+        }
         $this->assertRunAllowsReadablePublication($effectiveRun, $context.': pointer target');
+    }
+
+
+    public function assertRunPublicationMirror($publication, $run, $tradeDate = null, $context = 'run-publication mirror'): void
+    {
+        if (! $publication) {
+            throw new \LogicException($context.': RUN_PUBLICATION_LINK_MISSING publication is missing.');
+        }
+
+        if (! $run) {
+            throw new \LogicException($context.': RUN_PUBLICATION_LINK_MISSING run is missing.');
+        }
+
+        $publicationId = $this->value($publication, 'publication_id', $this->value($publication, 'pointer_publication_id'));
+        $runPublicationId = $this->value($run, 'publication_id', $this->value($run, 'run_publication_id'));
+        $publicationVersion = $this->value($publication, 'publication_version', $this->value($publication, 'pointer_publication_version'));
+        $runPublicationVersion = $this->value($run, 'publication_version', $this->value($run, 'run_publication_version'));
+        $publicationRunId = $this->value($publication, 'run_id', $this->value($publication, 'pointer_run_id'));
+        $runId = $this->value($run, 'run_id', $this->value($run, 'pointer_run_id'));
+        $publicationTradeDate = $this->value($publication, 'trade_date', $this->value($publication, 'pointer_trade_date'));
+        $runTradeDate = $this->value($run, 'trade_date_requested', $this->value($run, 'trade_date', $this->value($run, 'pointer_trade_date')));
+
+        if ($tradeDate !== null && (string) $publicationTradeDate !== (string) $tradeDate) {
+            throw new \LogicException($context.': RUN_PUBLICATION_MIRROR_MISMATCH publication trade_date does not match expected trade_date.');
+        }
+
+        if ($tradeDate !== null && $runTradeDate !== null && (string) $runTradeDate !== (string) $tradeDate) {
+            throw new \LogicException($context.': RUN_PUBLICATION_MIRROR_MISMATCH run trade_date_requested does not match expected trade_date.');
+        }
+
+        if ($runId !== null && $publicationRunId !== null && (string) $publicationRunId !== (string) $runId) {
+            throw new \LogicException($context.': RUN_PUBLICATION_MIRROR_MISMATCH publication run_id does not match run_id.');
+        }
+
+        if ($runPublicationId !== null && $publicationId !== null && (string) $runPublicationId !== (string) $publicationId) {
+            throw new \LogicException($context.': RUN_PUBLICATION_MIRROR_MISMATCH run publication_id does not match publication_id.');
+        }
+
+        if ($runPublicationVersion !== null && $publicationVersion !== null && (string) $runPublicationVersion !== (string) $publicationVersion) {
+            throw new \LogicException($context.': RUN_PUBLICATION_MIRROR_MISMATCH run publication_version does not match publication_version.');
+        }
     }
 
     public function assertNoBypassState($state, $context = 'state'): void

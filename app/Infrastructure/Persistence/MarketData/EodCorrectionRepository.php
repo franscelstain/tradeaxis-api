@@ -16,6 +16,8 @@ class EodCorrectionRepository
             'trade_date' => $tradeDate,
             'prior_run_id' => null,
             'new_run_id' => null,
+            'baseline_publication_id' => null,
+            'replacement_publication_id' => null,
             'correction_reason_code' => $reasonCode,
             'correction_reason_note' => $reasonNote,
             'status' => 'REQUESTED',
@@ -96,7 +98,7 @@ class EodCorrectionRepository
         return $correction;
     }
 
-    public function markExecuting($correctionId, $priorRunId, $newRunId, $mode = 'correction_current')
+    public function markExecuting($correctionId, $priorRunId, $newRunId, $mode = 'correction_current', $baselinePublicationId = null, $replacementPublicationId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -108,6 +110,8 @@ class EodCorrectionRepository
                 'status' => $status,
                 'prior_run_id' => $priorRunId,
                 'new_run_id' => $newRunId,
+                'baseline_publication_id' => $baselinePublicationId,
+                'replacement_publication_id' => $replacementPublicationId,
                 'execution_count' => DB::raw('COALESCE(execution_count, 0) + 1'),
                 'last_executed_at' => $now,
                 'updated_at' => $now,
@@ -116,7 +120,7 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
-    public function markResealed($correctionId, $newRunId)
+    public function markResealed($correctionId, $newRunId, $replacementPublicationId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -125,19 +129,22 @@ class EodCorrectionRepository
             ->update([
                 'status' => 'RESEALED',
                 'new_run_id' => $newRunId,
+                'replacement_publication_id' => $replacementPublicationId,
                 'updated_at' => $now,
             ]);
 
         return $this->findById($correctionId);
     }
 
-    public function markPublished($correctionId, $newRunId, $priorRunId = null, $finalOutcomeNote = null)
+    public function markPublished($correctionId, $newRunId, $priorRunId = null, $finalOutcomeNote = null, $baselinePublicationId = null, $replacementPublicationId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         $payload = [
             'status' => 'PUBLISHED',
             'new_run_id' => $newRunId,
+            'baseline_publication_id' => $baselinePublicationId,
+            'replacement_publication_id' => $replacementPublicationId,
             'published_at' => $now,
             'current_consumed_at' => $now,
             'final_outcome_note' => $finalOutcomeNote,
@@ -156,13 +163,15 @@ class EodCorrectionRepository
     }
 
 
-    public function markRepairExecuted($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null)
+    public function markRepairExecuted($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null, $baselinePublicationId = null, $replacementPublicationId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         $payload = [
             'status' => 'REPAIR_EXECUTED',
             'new_run_id' => $newRunId,
+            'baseline_publication_id' => $baselinePublicationId,
+            'replacement_publication_id' => $replacementPublicationId,
             'final_outcome_note' => $finalOutcomeNote,
             'last_executed_at' => $now,
             'updated_at' => $now,
@@ -179,18 +188,20 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
-    public function markRepairCandidate($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null)
+    public function markRepairCandidate($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null, $baselinePublicationId = null, $replacementPublicationId = null)
     {
-        return $this->markRepairExecuted($correctionId, $newRunId, $priorRunId, $finalOutcomeNote);
+        return $this->markRepairExecuted($correctionId, $newRunId, $priorRunId, $finalOutcomeNote, $baselinePublicationId, $replacementPublicationId);
     }
 
-    public function markConsumedForCurrent($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null)
+    public function markConsumedForCurrent($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null, $baselinePublicationId = null, $replacementPublicationId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         $payload = [
             'status' => 'CONSUMED_CURRENT',
             'new_run_id' => $newRunId,
+            'baseline_publication_id' => $baselinePublicationId,
+            'replacement_publication_id' => $replacementPublicationId,
             'final_outcome_note' => $finalOutcomeNote,
             'current_consumed_at' => $now,
             'updated_at' => $now,
@@ -222,13 +233,15 @@ class EodCorrectionRepository
         return $this->findById($correctionId);
     }
 
-    public function markCancelled($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null, $consumeCurrent = true)
+    public function markCancelled($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null, $consumeCurrent = true, $baselinePublicationId = null, $replacementPublicationId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         $payload = [
             'status' => $consumeCurrent ? 'CONSUMED_CURRENT' : 'CANCELLED',
             'new_run_id' => $newRunId,
+            'baseline_publication_id' => $baselinePublicationId,
+            'replacement_publication_id' => $replacementPublicationId,
             'final_outcome_note' => $finalOutcomeNote,
             'updated_at' => $now,
         ];

@@ -802,7 +802,9 @@ class MarketDataPipelineServiceTest extends TestCase
                 4,
                 55,
                 31,
-                'Historical correction published safely via new sealed current publication.'
+                'Historical correction published safely via new sealed current publication.',
+                31,
+                32
             );
 
         $corrections->shouldReceive('markCancelled')->never();
@@ -948,7 +950,9 @@ class MarketDataPipelineServiceTest extends TestCase
                 4,
                 55,
                 31,
-                'Correction rerun produced unchanged content; current publication preserved without version switch.'
+                'Correction rerun produced unchanged content; current publication preserved without version switch.',
+                31,
+                null
             )
             ->andReturn((object) []);
 

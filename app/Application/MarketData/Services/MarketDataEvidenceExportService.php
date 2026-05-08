@@ -361,9 +361,9 @@ class MarketDataEvidenceExportService
             'correction_status' => $this->field($correction, 'status'),
             'correction_reason_code' => $this->field($correction, 'correction_reason_code'),
             'correction_reason_message' => $this->resolveReasonMessage($this->field($correction, 'correction_reason_code')),
-            'correction_baseline_publication_id' => $this->field($correction, 'prior_publication_id') !== null ? (int) $this->field($correction, 'prior_publication_id') : null,
+            'correction_baseline_publication_id' => $this->field($correction, 'baseline_publication_id') !== null ? (int) $this->field($correction, 'baseline_publication_id') : ($this->field($correction, 'prior_publication_id') !== null ? (int) $this->field($correction, 'prior_publication_id') : null),
             'correction_baseline_run_id' => $this->field($correction, 'prior_run_id') !== null ? (int) $this->field($correction, 'prior_run_id') : null,
-            'correction_candidate_publication_id' => $this->field($correction, 'new_publication_id') !== null ? (int) $this->field($correction, 'new_publication_id') : null,
+            'correction_candidate_publication_id' => $this->field($correction, 'replacement_publication_id') !== null ? (int) $this->field($correction, 'replacement_publication_id') : ($this->field($correction, 'new_publication_id') !== null ? (int) $this->field($correction, 'new_publication_id') : null),
             'correction_candidate_run_id' => $this->field($correction, 'new_run_id') !== null ? (int) $this->field($correction, 'new_run_id') : null,
         ];
     }
@@ -481,8 +481,8 @@ class MarketDataEvidenceExportService
             throw new \RuntimeException('Correction not found for evidence export.');
         }
 
-        $priorPublicationId = $this->field($correction, 'prior_publication_id');
-        $newPublicationId = $this->field($correction, 'new_publication_id');
+        $priorPublicationId = $this->field($correction, 'baseline_publication_id') !== null ? $this->field($correction, 'baseline_publication_id') : $this->field($correction, 'prior_publication_id');
+        $newPublicationId = $this->field($correction, 'replacement_publication_id') !== null ? $this->field($correction, 'replacement_publication_id') : $this->field($correction, 'new_publication_id');
         $priorPublication = $priorPublicationId ? $this->evidence->findPublicationById($priorPublicationId) : null;
         $newPublication = $newPublicationId ? $this->evidence->findPublicationById($newPublicationId) : null;
         $changedDecision = $this->resolveCorrectionChangedDecision($correction, $priorPublication, $newPublication);

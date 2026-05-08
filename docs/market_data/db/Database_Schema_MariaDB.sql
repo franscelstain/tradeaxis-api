@@ -385,6 +385,8 @@ CREATE TABLE IF NOT EXISTS eod_dataset_corrections (
   trade_date DATE NOT NULL,
   prior_run_id BIGINT UNSIGNED NULL,
   new_run_id BIGINT UNSIGNED NULL,
+  baseline_publication_id BIGINT UNSIGNED NULL,
+  replacement_publication_id BIGINT UNSIGNED NULL,
   correction_reason_code VARCHAR(64) NOT NULL,
   correction_reason_note TEXT NULL,
   status ENUM('REQUESTED','APPROVED','EXECUTING','RESEALED','REPAIR_ACTIVE','REPAIR_EXECUTED','REPAIR_CANDIDATE','CONSUMED_CURRENT','PUBLISHED','REJECTED','CANCELLED','CLOSED') NOT NULL,
@@ -404,7 +406,10 @@ CREATE TABLE IF NOT EXISTS eod_dataset_corrections (
   KEY idx_corr_trade_date_status_execution (trade_date, status, execution_count),
   KEY idx_corr_prior_run (prior_run_id),
   KEY idx_corr_new_run (new_run_id),
-  KEY idx_corr_prior_new_run (prior_run_id, new_run_id)
+  KEY idx_corr_prior_new_run (prior_run_id, new_run_id),
+  KEY idx_corr_baseline_publication (baseline_publication_id),
+  KEY idx_corr_replacement_publication (replacement_publication_id),
+  KEY idx_corr_baseline_replacement_publication (baseline_publication_id, replacement_publication_id)
 ) ENGINE=InnoDB;
 
 -- =========================================================
