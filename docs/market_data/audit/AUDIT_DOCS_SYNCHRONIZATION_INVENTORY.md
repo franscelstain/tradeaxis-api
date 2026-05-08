@@ -23,7 +23,7 @@ This inventory records the audit-docs synchronization state for the current sour
 | Governance | `docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md` | Governance defines append-only, anti-duplication, evidence, session transition, locked rules, and audit-docs synchronization hard rules. | Must require audit-docs synchronization, inventory upkeep, latest full-suite evidence recording, and static guard coverage. | Closed. | Added Audit Docs Synchronization hard rules. | Static trace + AuditDocs guard PASS. | LOCKED_LOCAL_PHPUNIT_PASS |
 | Implementation status | `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md` | ACTIVE SESSION is Audit Docs Synchronization and current implementation entry is first under CURRENT WORKING ENTRY. | Must be DONE only after local targeted/full PHPUnit evidence. | Closed. | Promoted `Audit Docs Synchronization -> DONE`. | AuditDocs/static/evidence/full local PASS. | DONE |
 | Contract tracker | `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md` | `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` exists as canonical current contract. | Must be LOCKED only after local targeted/full PHPUnit evidence. | Closed. | Promoted `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED`. | AuditDocs/static/evidence/full local PASS. | LOCKED |
-| Active session | `LUMEN_IMPLEMENTATION_STATUS.md`, `LUMEN_CONTRACT_TRACKER.md` | Both files name Audit Docs Synchronization. | Both active session blocks must stay aligned. | Closed. | Static guard enforces alignment. | `AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 153 assertions). | LOCKED |
+| Active session | `LUMEN_IMPLEMENTATION_STATUS.md`, `LUMEN_CONTRACT_TRACKER.md` | Both files name the same active session while preserving Audit Docs Synchronization history. | Both active session blocks must stay aligned. | Closed. | Static guard enforces alignment. | `AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 153 assertions). | LOCKED |
 | Current working entry | `LUMEN_IMPLEMENTATION_STATUS.md`, `LUMEN_CONTRACT_TRACKER.md` | Audit Docs Synchronization implementation/contract are first under current working sections. | Current working position must not drift. | Closed. | Static guard enforces positioning. | AuditDocs filter OK (9 tests, 153 assertions). | LOCKED |
 | Locked contract evidence | `LUMEN_CONTRACT_TRACKER.md` | LOCKED entries retain validation sections and concrete operator-local evidence. | LOCKED entries must keep concrete validation markers and final rules. | Closed. | Static guard checks locked evidence. | StaticGuard filter OK (93 tests, 2160 assertions). | LOCKED |
 | Full suite evidence | `LUMEN_IMPLEMENTATION_STATUS.md`, `LUMEN_CONTRACT_TRACKER.md`, this inventory | Latest carried baseline and final local full suite are recorded. | Must record exact full suite evidence without pretending container execution. | Closed. | Recorded carried baseline and final local pass. | Previous baseline: 349 tests, 4558 assertions; final local full suite: 358 tests, 4711 assertions. | LOCKED |
@@ -92,3 +92,8 @@ Latest carried local full-suite baseline remains recorded for regression continu
 - `Audit Docs Synchronization -> DONE`
 - `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED`
 - No open audit-docs synchronization gap after final local validation.
+
+
+## Latest operational readiness full-suite evidence
+
+- Operator-local Operational Readiness validation added latest full-suite evidence: full `vendor/bin/phpunit tests/Unit/MarketData` OK (368 tests, 4927 assertions). This is not a new container PHPUnit run.

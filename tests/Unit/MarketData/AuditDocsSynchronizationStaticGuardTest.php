@@ -22,19 +22,30 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
 
+        $statusActiveSession = $this->activeSessionName($status);
+        $trackerActiveSession = $this->activeSessionName($tracker);
+
+        $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
+        $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
+        $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
+
         foreach ([$status, $tracker] as $document) {
-            $this->assertStringContainsString("ACTIVE SESSION:\n- Audit Docs Synchronization", $document);
             $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $document);
             $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $document);
+            $this->assertStringContainsString('OPERATIONAL_READINESS_CONTRACT', $document);
         }
 
         $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $status);
         $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Audit Docs Synchronization', $tracker);
+        $this->assertStringContainsString('- Operational Readiness -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] OPERATIONAL_READINESS_CONTRACT', $status);
+        $this->assertStringContainsString('- OPERATIONAL_READINESS_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Operational Readiness', $tracker);
     }
 
-    public function test_current_working_sections_start_with_audit_docs_synchronization(): void
+    public function test_current_working_sections_start_with_active_session(): void
     {
         $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
@@ -42,8 +53,8 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $implementationEntry = $this->firstNonEmptyLineAfter($status, '## CURRENT WORKING ENTRY');
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
-        $this->assertSame('- Audit Docs Synchronization -> DONE', $implementationEntry);
-        $this->assertSame('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $contractEntry);
+        $this->assertSame('- Operational Readiness -> DONE', $implementationEntry);
+        $this->assertSame('- OPERATIONAL_READINESS_CONTRACT -> LOCKED', $contractEntry);
     }
 
     public function test_locked_contracts_have_concrete_validation_evidence(): void
@@ -117,6 +128,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         foreach ([$status, $tracker, $inventory] as $document) {
             $this->assertStringContainsString('349 tests, 4558 assertions', $document);
             $this->assertStringContainsString('358 tests, 4711 assertions', $document);
+            $this->assertStringContainsString('368 tests, 4927 assertions', $document);
             $this->assertStringContainsString('vendor/bin/phpunit tests/Unit/MarketData', $document);
             $this->assertStringContainsString('not a new container PHPUnit run', $document);
         }
@@ -156,6 +168,14 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
         $this->assertStringNotContainsString('PENDING_LOCAL_PHPUNIT', $implementationBlock.$contractBlock);
         $this->assertStringNotContainsString('ENFORCED, not LOCKED', $contractBlock);
+    }
+
+    private function activeSessionName(string $document): string
+    {
+        $this->assertMatchesRegularExpression('/ACTIVE SESSION:\R- (?P<session>[^\r\n]+)/', $document);
+        preg_match('/ACTIVE SESSION:\R- (?P<session>[^\r\n]+)/', $document, $match);
+
+        return trim($match['session']);
     }
 
     private function firstNonEmptyLineAfter(string $document, string $heading): string

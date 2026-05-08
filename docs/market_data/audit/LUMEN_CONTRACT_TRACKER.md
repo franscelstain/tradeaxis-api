@@ -3,19 +3,19 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Audit Docs Synchronization
+- Operational Readiness
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define and enforce `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` across audit governance, implementation status, contract tracker, inventory, locked evidence checks, latest full-suite evidence references, regression reconciliation, registry/seed sync proof, and static guard coverage.
-- Source-of-truth ZIP has no `vendor/`; container validation is static/`php -l` only, and this contract remains ENFORCED until operator-local targeted and full MarketData PHPUnit evidence is provided.
+- Define and lock `OPERATIONAL_READINESS_CONTRACT` so operators can run import/ingest, promote/finalize, evidence export, replay verification, correction, backfill, session snapshot, and manual DB policy flows without hidden steps.
+- Source-of-truth ZIP has no `vendor/`; container validation remains static/`php -l` only, but operator-local targeted and full MarketData PHPUnit/artisan evidence has now been supplied and recorded as LOCKED proof.
 
 [SESSION_GOAL]
-- Audit docs must be the truthful source of implementation/contract status and must not drift ahead of code/test proof, duplicate contracts, hide gaps, or claim LOCKED/DONE without evidence.
+- Operational readiness must prove command sequence, input/output, terminal-state handling, reason-code next actions, evidence export, replay proof, correction flow, manual file safety, manual DB policy, and forbidden shortcut coverage.
 
 [SESSION_NOTES]
-- Latest carried local full-suite baseline evidence remains the Fail-Safe session result: full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions). This is regression evidence carried into docs, not a new container PHPUnit run.
+- Previous Audit Docs Synchronization remains LOCKED as history below. Operational Readiness is now LOCKED after operator-local targeted/full suite validation and artisan command discovery/help spot checks passed.
 
 ---
 ## OPERATIONAL STATUS
@@ -36,6 +36,69 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- OPERATIONAL_READINESS_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-08
+
+  [RELATED_IMPLEMENTATION] Operational Readiness
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-08 -> Contract opened as canonical operational readiness contract under audit governance.
+  - 2026-05-08 -> Static trace found the command surface was registered and several supporting ops docs existed, but no single canonical operational runbook made the complete operator flow executable without source-code knowledge.
+  - 2026-05-08 -> Enforcement patch added operational runbook, operational readiness inventory, command docs index alignment, and `OperationalReadinessStaticGuardTest.php`.
+  - 2026-05-08 -> Contract initially remained ENFORCED, not LOCKED, because uploaded ZIP had no `vendor/`; targeted and full local MarketData PHPUnit validation were required.
+  - 2026-05-08 -> Operator-local validation PASS: `OperationalReadinessStaticGuardTest.php` OK (10 tests, 196 assertions); `OperationalReadiness` filter OK (10 tests, 196 assertions); `CommandSurface` filter OK (47 tests, 348 assertions); `Evidence` filter OK (41 tests, 718 assertions); `Replay` filter OK (38 tests, 643 assertions); `Correction` filter OK (65 tests, 1287 assertions); `FailSafe` filter OK (5 tests, 108 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (368 tests, 4927 assertions).
+  - 2026-05-08 -> Operator-local artisan validation PASS: `php artisan list | findstr market-data` listed 19 market-data commands, and help spot checks passed for `market-data:daily`, `market-data:promote`, `market-data:evidence:export`, `market-data:replay:verify`, `market-data:correction:request`, `market-data:correction:approve`, and `market-data:correction:run`.
+  - 2026-05-08 -> Contract promoted from ENFORCED to LOCKED after local PHPUnit/artisan evidence confirmed operator runbook coverage, command surface alignment, evidence/replay/correction/fail-safe related behavior, and full MarketData regression suite.
+
+  [DEFINED]
+  - Operators must be able to run market-data without reading source code.
+  - Runbook is the operational source of truth.
+  - Commands must document required input, safe default, expected output, reason code, terminal state, and next action.
+  - HELD / FAILED / NOT_READABLE states must block readable publication and preserve pointer safety.
+  - Evidence export must prove run/publication/pointer/coverage/source/reason/correction/replay metadata without manual DB query.
+  - Replay verification must be proof mechanism, not smoke-only decoration.
+  - Manual file import-only must not bypass promote, coverage, seal, finalize, or pointer gates.
+  - Correction lifecycle must be request/approve/run/evidence/replay driven and preserve previous current on unsafe candidates.
+  - Manual DB action must be exceptional, documented, reason-coded, backed up, and followed by evidence/replay or pointer validation.
+  - raw/staging/latest/MAX(date), coverage bypass, seal bypass, finalize bypass, direct pointer update, direct readable update, and empty-success output are forbidden operational shortcuts.
+
+  [IMPLEMENTED]
+  - `docs/market_data/ops/OPERATIONAL_RUNBOOK.md` defines the operator flow and checklists.
+  - `docs/market_data/audit/OPERATIONAL_READINESS_INVENTORY.md` records the readiness inventory.
+  - `docs/market_data/ops/commands/README.md` now references the operational runbook as canonical operator source of truth.
+  - `tests/Unit/MarketData/OperationalReadinessStaticGuardTest.php` protects the runbook/command/audit docs synchronization.
+  - `tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` no longer hardcodes a pending Operational Readiness state; it now recognizes the active Operational Readiness session as DONE/LOCKED while preserving the locked Audit Docs Synchronization contract and evidence history.
+
+  [ENFORCED]
+  - Static guard checks all registered commands are documented.
+  - Static guard checks terminal states, next action, evidence/replay, manual file import/promote, correction lifecycle, manual DB policy, and forbidden shortcut terms.
+  - Audit docs identify this contract as LOCKED with local targeted/full PHPUnit and artisan command discovery/help evidence.
+
+  [VALIDATED]
+  - Container static trace completed across command classes, Console Kernel, ops docs, audit docs, command safety inventory, evidence/replay/correction/fail-safe docs and tests.
+  - Container `php -l tests/Unit/MarketData/OperationalReadinessStaticGuardTest.php` passed.
+  - Container `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` passed.
+  - Container grep/static scan confirmed operational runbook, contract name, all registered commands, terminal states, reason-code handling, next action, manual file import-only/promote, coverage gate, seal, finalize, pointer, evidence, replay, manual DB policy, and raw/staging/latest/MAX(date) forbidden shortcut coverage.
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/OperationalReadinessStaticGuardTest.php` OK (10 tests, 196 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "OperationalReadiness"` OK (10 tests, 196 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "CommandSurface"` OK (47 tests, 348 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` OK (41 tests, 718 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` OK (38 tests, 643 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"` OK (65 tests, 1287 assertions).
+  - Operator-local validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "FailSafe"` OK (5 tests, 108 assertions).
+  - Operator-local validation PASS: full `vendor/bin/phpunit tests/Unit/MarketData` OK (368 tests, 4927 assertions).
+  - Operator-local artisan discovery PASS: `php artisan list | findstr market-data` listed 19 market-data commands including daily, promote, evidence export, replay verify/smoke/backfill, correction request/approve/run, current-publication repair, session snapshot, and session snapshot purge.
+  - Operator-local artisan help spot checks PASS for `market-data:daily`, `market-data:promote`, `market-data:evidence:export`, `market-data:replay:verify`, `market-data:correction:request`, `market-data:correction:approve`, and `market-data:correction:run`.
+
+  [FINAL_RULE]
+  - LOCKED. Operational readiness may be claimed only when the operational runbook remains the operator source of truth, every registered market-data command is documented, terminal states have reason-coded next actions, evidence/replay/correction/manual-file/manual-DB flows are operator-runnable, forbidden shortcuts remain explicit, and targeted OperationalReadiness/CommandSurface/Evidence/Replay/Correction/FailSafe plus full `tests/Unit/MarketData` validation remain passing.
+
+  [NEXT_ACTION]
+  - Continue with the next market-data hardening contract from a fresh source-of-truth ZIP. Preserve OPERATIONAL_READINESS_CONTRACT as LOCKED unless a future scoped regression provides contrary evidence.
 
 - AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED
 
