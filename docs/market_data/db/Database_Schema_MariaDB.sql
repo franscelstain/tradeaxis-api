@@ -626,7 +626,7 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   expected_indicators_batch_hash VARCHAR(64) NULL,
   expected_eligibility_batch_hash VARCHAR(64) NULL,
   expected_reason_code_counts_json LONGTEXT NULL,
-  mismatch_summary VARCHAR(255) NULL,
+  mismatch_summary LONGTEXT NULL,
   mismatch_count INT NULL,
   mismatch_reason_codes_json JSON NULL,
   mismatches_json LONGTEXT NULL,

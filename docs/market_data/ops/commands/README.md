@@ -33,6 +33,7 @@ The command-specific docs below remain supporting material. They must not contra
 - `market-data:replay:verify`
 - `market-data:replay:smoke`
 - `market-data:replay:backfill`
+- `market-data:replay:fixture:generate`
 - `market-data:backfill`
 - `market-data:session-snapshot`
 - `market-data:session-snapshot:purge`

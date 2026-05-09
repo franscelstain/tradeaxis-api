@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   expected_indicators_batch_hash VARCHAR(64) NULL,
   expected_eligibility_batch_hash VARCHAR(64) NULL,
   expected_reason_code_counts_json JSON NULL,
-  mismatch_summary VARCHAR(255) NULL,
+  mismatch_summary LONGTEXT NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (replay_id, trade_date),
   KEY idx_replay_daily_status (replay_id, status),

@@ -33,6 +33,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $document);
             $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $document);
             $this->assertStringContainsString('OPERATIONAL_READINESS_CONTRACT', $document);
+            $this->assertStringContainsString('PRODUCTION_VALIDATION_CONTRACT', $document);
         }
 
         $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
@@ -53,8 +54,8 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $implementationEntry = $this->firstNonEmptyLineAfter($status, '## CURRENT WORKING ENTRY');
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
-        $this->assertSame('- Operational Readiness -> DONE', $implementationEntry);
-        $this->assertSame('- OPERATIONAL_READINESS_CONTRACT -> LOCKED', $contractEntry);
+        $this->assertSame('- Production Validation / Manual + Runtime Proof -> DONE', $implementationEntry);
+        $this->assertSame('- PRODUCTION_VALIDATION_CONTRACT -> LOCKED', $contractEntry);
     }
 
     public function test_locked_contracts_have_concrete_validation_evidence(): void

@@ -28,7 +28,7 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
                 $this->option('replay_id') ? (int) $this->option('replay_id') : null
             );
         } catch (\Throwable $e) {
-            $this->renderCommandBlocked('COMMAND_EXECUTION_FAILED', $e->getMessage(), [
+            $this->renderCommandBlocked($this->reasonCodeFromException($e), $e->getMessage(), [
                 'run_id' => $runId,
                 'fixture_path' => $this->normalizePathForDisplay((string) $this->argument('fixture_path')),
             ]);
@@ -72,5 +72,14 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
         }
 
         return $result['comparison_result'] === 'UNEXPECTED' || $result['comparison_result'] === 'MISMATCH' ? 1 : 0;
+    }
+
+    private function reasonCodeFromException(\Throwable $e)
+    {
+        if (preg_match('/^([A-Z0-9_]+):/', (string) $e->getMessage(), $matches)) {
+            return $matches[1];
+        }
+
+        return 'COMMAND_EXECUTION_FAILED';
     }
 }

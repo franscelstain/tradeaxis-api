@@ -17,6 +17,16 @@ class ReplaySmokeSuiteService
 
     public function execute($runId, $fixtureRoot = null, $outputDir = null)
     {
+        return $this->executeInternal($runId, $fixtureRoot, $outputDir, false);
+    }
+
+    public function executeWithGeneratedValidCase($runId, $fixtureRoot = null, $outputDir = null)
+    {
+        return $this->executeInternal($runId, $fixtureRoot, $outputDir, true);
+    }
+
+    private function executeInternal($runId, $fixtureRoot = null, $outputDir = null, $generateRuntimeValidCase = false)
+    {
         $fixtureRoot = $fixtureRoot ?: storage_path('app/market_data/replay-fixtures');
         $outputDir = $outputDir ?: storage_path('app/market_data/evidence/replay_smoke_suites/run_'.$runId.'_'.date('Ymd_His'));
 
@@ -35,11 +45,22 @@ class ReplaySmokeSuiteService
             throw new \RuntimeException('Unable to create replay smoke output directory: '.$outputDir);
         }
 
+        $generatedValidFixture = null;
+        if ($generateRuntimeValidCase) {
+            $generatedValidFixture = $this->replays->generateFixtureFromRun(
+                $runId,
+                rtrim($outputDir, '/').'/generated-fixtures/valid_case',
+                'valid_case'
+            );
+        }
+
         $results = [];
         $allPassed = true;
 
         foreach ($cases as $caseName => $expectedOutcome) {
-            $fixturePath = rtrim($fixtureRoot, '/').'/'.$caseName;
+            $fixturePath = $generateRuntimeValidCase && $caseName === 'valid_case'
+                ? $generatedValidFixture['fixture_path']
+                : rtrim($fixtureRoot, '/').'/'.$caseName;
             $caseOutputDir = rtrim($outputDir, '/').'/'.$caseName;
             $record = [
                 'fixture_case' => $caseName,
@@ -78,6 +99,8 @@ class ReplaySmokeSuiteService
             'suite' => 'replay_smoke_minimum',
             'all_passed' => $allPassed,
             'executed_at' => date(DATE_ATOM),
+            'runtime_valid_fixture_generated' => $generateRuntimeValidCase,
+            'generated_valid_fixture_path' => $generatedValidFixture ? $this->normalizePathForDisplay($generatedValidFixture['fixture_path']) : null,
             'cases' => $results,
         ];
 

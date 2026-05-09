@@ -193,6 +193,155 @@ class ReplayVerificationService
         ];
     }
 
+    public function generateFixtureFromRun($runId, $fixturePath, $caseName = 'valid_case')
+    {
+        $run = $this->evidence->findRunById($runId);
+        if (! $run) {
+            throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Run not found for replay fixture generation.');
+        }
+
+        $publication = $this->resolvePublicationForRun($run);
+        $correction = $this->findCorrectionForRun($run->run_id);
+        $actual = $this->buildActualReplayState($run, $publication, $correction);
+        $fixturePath = rtrim((string) $fixturePath, '/\\');
+        if ($fixturePath === '') {
+            throw new \RuntimeException('COMMAND_MISSING_REQUIRED_INPUT: output_dir must be provided for replay fixture generation.');
+        }
+
+        $expectedDir = $fixturePath.'/expected';
+        if (! is_dir($expectedDir) && ! mkdir($expectedDir, 0777, true) && ! is_dir($expectedDir)) {
+            throw new \RuntimeException('COMMAND_EXECUTION_FAILED: Unable to create replay fixture directory: '.$expectedDir);
+        }
+
+        $manifest = [
+            'fixture_id' => $caseName,
+            'fixture_family' => 'runtime_generated_valid_case',
+            'fixture_version' => 'generated-v1',
+            'fixture_schema_version' => 'replay_fixture_v2',
+            'fixture_created_at' => date(DATE_ATOM),
+            'fixture_source' => 'generated_from_run_'.$runId,
+            'version' => 'generated-v1',
+            'contract_areas' => [
+                'replay_verification',
+                'replay_determinism',
+                'evidence_export_completeness',
+                'production_validation_runtime_proof',
+            ],
+            'files' => [
+                'expected/expected_replay_result.json',
+                'expected/expected_reason_code_counts.json',
+            ],
+            'assertion_layers' => [
+                'run',
+                'source',
+                'coverage',
+                'hash',
+                'seal',
+                'publication',
+                'pointer',
+                'fallback',
+                'correction',
+                'lineage',
+                'replay',
+            ],
+        ];
+
+        $expectedReplay = $this->buildExpectedReplayResultFromActual($actual, $runId);
+        $reasonCodeCounts = $this->normalizeReasonCodeCounts($actual['reason_code_counts']);
+
+        $this->writeJsonFile($fixturePath.'/manifest.json', $manifest);
+        $this->writeJsonFile($expectedDir.'/expected_replay_result.json', $expectedReplay);
+        $this->writeJsonFile($expectedDir.'/expected_reason_code_counts.json', $reasonCodeCounts);
+
+        return [
+            'run_id' => (int) $runId,
+            'fixture_id' => $caseName,
+            'fixture_family' => $manifest['fixture_family'],
+            'fixture_path' => $fixturePath,
+            'manifest_path' => $fixturePath.'/manifest.json',
+            'expected_replay_result_path' => $expectedDir.'/expected_replay_result.json',
+            'expected_reason_code_counts_path' => $expectedDir.'/expected_reason_code_counts.json',
+            'trade_date' => $actual['trade_date'],
+            'trade_date_effective' => $actual['trade_date_effective'],
+            'expected_result' => 'MATCH',
+            'source_mode' => $actual['source_mode'],
+            'publication_id' => $actual['publication_id'],
+            'publication_run_id' => $actual['publication_run_id'],
+            'pointer_publication_id' => $actual['context']['actual_pointer_context']['pointer_publication_id'] ?? null,
+            'pointer_run_id' => $actual['context']['actual_pointer_context']['pointer_run_id'] ?? null,
+            'coverage_gate_state' => $actual['coverage_gate_state'],
+            'coverage_ratio' => $actual['coverage_ratio'],
+            'bars_batch_hash' => $actual['bars_batch_hash'],
+            'indicators_batch_hash' => $actual['indicators_batch_hash'],
+            'eligibility_batch_hash' => $actual['eligibility_batch_hash'],
+        ];
+    }
+
+    private function buildExpectedReplayResultFromActual(array $actual, $runId)
+    {
+        $runContext = $actual['context']['actual_run_context'];
+        $sourceContext = $actual['context']['actual_source_context'];
+        $coverageContext = $actual['context']['actual_coverage_context'];
+        $artifactContext = $actual['context']['actual_artifact_context'];
+        $sealContext = $actual['context']['actual_seal_context'];
+        $publicationContext = $actual['context']['actual_publication_context'];
+        $pointerContext = $actual['context']['actual_pointer_context'];
+        $fallbackContext = $actual['context']['actual_fallback_context'];
+        $correctionContext = $actual['context']['actual_correction_context'];
+        $finalState = $actual['context']['actual_final_state'];
+        $lineage = $actual['context']['actual_lineage'];
+
+        return [
+            'comparison_result' => 'MATCH',
+            'comparison_note' => 'Runtime-generated replay fixture expectation for run_id='.$runId.'.',
+            'expected_config_identity' => $actual['config_identity'],
+            'expected_run_context' => [
+                'trade_date_requested' => $runContext['trade_date_requested'],
+                'trade_date_effective' => $runContext['trade_date_effective'],
+                'request_mode' => $runContext['request_mode'],
+                'import_status' => $runContext['import_status'],
+                'promote_status' => $runContext['promote_status'],
+                'promoted' => $runContext['promoted'],
+                'pointer_switched' => $runContext['pointer_switched'],
+                'promote_mode' => $runContext['promote_mode'],
+                'publish_target' => $runContext['publish_target'],
+                'terminal_status' => $runContext['terminal_status'],
+                'publishability_state' => $runContext['publishability_state'],
+                'final_reason_code' => $runContext['final_reason_code'],
+            ],
+            'expected_source_context' => $sourceContext,
+            'expected_coverage_context' => $coverageContext,
+            'expected_artifact_context' => $artifactContext,
+            'expected_seal_context' => [
+                'seal_state' => $sealContext['seal_state'],
+            ],
+            'expected_publication_context' => [
+                'publication_id' => $publicationContext['publication_id'],
+                'publication_run_id' => $publicationContext['publication_run_id'],
+                'publication_version' => $publicationContext['publication_version'],
+                'publication_terminal_status' => $publicationContext['publication_terminal_status'],
+                'publication_publishability_state' => $publicationContext['publication_publishability_state'],
+                'publication_is_current' => $publicationContext['publication_is_current'],
+                'publication_seal_state' => $publicationContext['publication_seal_state'],
+            ],
+            'expected_pointer_context' => $pointerContext,
+            'expected_fallback_context' => $fallbackContext,
+            'expected_correction_context' => $correctionContext,
+            'expected_final_state' => $finalState,
+            'expected_reason_code' => $finalState['final_reason_code'],
+            'expected_lineage' => $lineage,
+        ];
+    }
+
+    private function writeJsonFile($path, array $payload)
+    {
+        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new \RuntimeException('COMMAND_EXECUTION_FAILED: Unable to encode replay fixture JSON.');
+        }
+        file_put_contents($path, $json."\n");
+    }
+
     private function loadFixturePackage($fixturePath)
     {
         $manifestPath = rtrim($fixturePath, '/').'/manifest.json';
@@ -671,13 +820,11 @@ class ReplayVerificationService
         }
 
         $artifactChangedScope = $this->resolveArtifactChangedScope($expectedContext['expected_artifact_context'], $actual);
-        $mismatchSummary = empty($mismatches) ? null : implode('; ', array_map(function ($item) {
-            return $item['reason_code'].' '.$item['field'].': expected '.var_export($item['expected'], true).' got '.var_export($item['actual'], true);
-        }, $mismatches));
         $mismatchReasonCodes = array_values(array_unique(array_map(function ($item) {
             return $item['reason_code'];
         }, $mismatches)));
         sort($mismatchReasonCodes);
+        $mismatchSummary = $this->buildOperatorMismatchSummary($mismatches, $mismatchReasonCodes);
 
         $comparisonResult = empty($mismatches)
             ? ($expectedClass === 'EXPECTED_DEGRADE' ? 'EXPECTED_DEGRADE' : 'MATCH')
@@ -748,6 +895,36 @@ class ReplayVerificationService
             'deterministic_fields_checked' => array_values(array_unique($this->deterministicFieldsChecked)),
             'final_reason_code' => $finalReasonCode,
         ];
+    }
+
+    private function buildOperatorMismatchSummary(array $mismatches, array $mismatchReasonCodes)
+    {
+        if (empty($mismatches)) {
+            return null;
+        }
+
+        $reasonCounts = [];
+        foreach ($mismatches as $mismatch) {
+            $reasonCode = (string) ($mismatch['reason_code'] ?? 'REPLAY_MISMATCH');
+            $reasonCounts[$reasonCode] = ($reasonCounts[$reasonCode] ?? 0) + 1;
+        }
+        ksort($reasonCounts);
+
+        $parts = [];
+        foreach ($reasonCounts as $reasonCode => $count) {
+            $parts[] = $reasonCode.':'.$count;
+        }
+
+        $firstFields = array_slice(array_map(function ($mismatch) {
+            return (string) ($mismatch['field'] ?? 'unknown');
+        }, $mismatches), 0, 5);
+
+        $summary = 'mismatch_count='.count($mismatches)
+            .' | reason_codes='.implode(',', $parts)
+            .' | first_fields='.implode(',', $firstFields)
+            .' | details=mismatches_json';
+
+        return strlen($summary) > 1000 ? substr($summary, 0, 997).'...' : $summary;
     }
 
     private function buildExpectedContext(array $fixture)

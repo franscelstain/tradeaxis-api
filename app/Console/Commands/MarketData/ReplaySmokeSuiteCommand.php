@@ -6,17 +6,26 @@ use App\Application\MarketData\Services\ReplaySmokeSuiteService;
 
 class ReplaySmokeSuiteCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:replay:smoke {run_id} {--fixture_root=} {--output_dir=}';
+    protected $signature = 'market-data:replay:smoke {run_id} {--fixture_root=} {--output_dir=} {--generate_runtime_valid_case}';
 
     protected $description = 'Execute the built-in replay smoke suite against one completed run and write a suite summary artifact.';
 
     public function handle()
     {
-        $summary = app(ReplaySmokeSuiteService::class)->execute(
-            (int) $this->argument('run_id'),
-            $this->option('fixture_root') ?: null,
-            $this->option('output_dir') ?: null
-        );
+        $service = app(ReplaySmokeSuiteService::class);
+        if ((bool) $this->option('generate_runtime_valid_case')) {
+            $summary = $service->executeWithGeneratedValidCase(
+                (int) $this->argument('run_id'),
+                $this->option('fixture_root') ?: null,
+                $this->option('output_dir') ?: null
+            );
+        } else {
+            $summary = $service->execute(
+                (int) $this->argument('run_id'),
+                $this->option('fixture_root') ?: null,
+                $this->option('output_dir') ?: null
+            );
+        }
 
         $fixtureRoot = $summary['fixture_root'] ?? ($this->option('fixture_root') ?: null);
         $outputDir = $summary['output_dir'] ?? ($this->option('output_dir') ?: null);
@@ -29,6 +38,10 @@ class ReplaySmokeSuiteCommand extends AbstractMarketDataCommand
         }
         if ($outputDir !== null && $outputDir !== '') {
             $this->line('output_dir='.$this->normalizePathForDisplay($outputDir));
+        }
+        if (! empty($summary['runtime_valid_fixture_generated'])) {
+            $this->line('runtime_valid_fixture_generated=1');
+            $this->line('generated_valid_fixture_path='.$this->normalizePathForDisplay((string) ($summary['generated_valid_fixture_path'] ?? '')));
         }
 
         foreach ($summary['cases'] as $case) {

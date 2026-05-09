@@ -103,6 +103,7 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
             ['class' => 'VerifyReplayCommand', 'signature' => 'market-data:replay:verify'],
             ['class' => 'ReplaySmokeSuiteCommand', 'signature' => 'market-data:replay:smoke'],
             ['class' => 'ReplayBackfillCommand', 'signature' => 'market-data:replay:backfill'],
+            ['class' => 'GenerateReplayFixtureCommand', 'signature' => 'market-data:replay:fixture:generate'],
             ['class' => 'CaptureSessionSnapshotCommand', 'signature' => 'market-data:session-snapshot'],
             ['class' => 'PurgeSessionSnapshotCommand', 'signature' => 'market-data:session-snapshot:purge'],
             ['class' => 'RequestCorrectionCommand', 'signature' => 'market-data:correction:request'],

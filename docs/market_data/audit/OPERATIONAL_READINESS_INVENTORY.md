@@ -61,3 +61,10 @@ Completed local commands:
 - `vendor/bin/phpunit tests/Unit/MarketData` -> OK (368 tests, 4927 assertions)
 - `php artisan list | findstr market-data` -> PASS, 19 market-data commands listed
 - Command help spot checks -> PASS for `market-data:daily`, `market-data:promote`, `market-data:evidence:export`, `market-data:replay:verify`, `market-data:correction:request`, `market-data:correction:approve`, and `market-data:correction:run`
+
+## 2026-05-08 Replay fixture generation update
+
+- `market-data:replay:fixture:generate` was added after Production Validation runtime replay proved that committed `valid_case` can become stale against local run context.
+- Expected command discovery after this patch is 20 market-data commands, including `market-data:replay:fixture:generate`.
+- Operators must use generated runtime fixtures for local MATCH proof when committed smoke fixtures do not match the local run/publication/pointer context.
+- Required proof remains: generated fixture verify returns `comparison_result=MATCH`, `mismatch_count=0`, and smoke with `--generate_runtime_valid_case` returns `all_passed=1`.

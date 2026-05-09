@@ -41,6 +41,7 @@ The operator must stop when terminal output contains `status=BLOCKED`, `terminal
 | `market-data:replay:verify` | Verify executed run against fixture package | `run_id`, `fixture_path` | deterministic proof | replay id/status/mismatch reason | Mismatch blocks acceptance; next action is compare fixture/output and fix root cause | replay |
 | `market-data:replay:smoke` | Run built-in replay cases | `run_id` | deterministic smoke suite | valid/broken/missing/reason mismatch cases | Any failed case blocks readiness claim | replay |
 | `market-data:replay:backfill` | Replay verification over date range | start/end date, fixture case/root | deterministic range proof | case summaries | Failed case must be reason-coded and investigated | replay/backfill |
+| `market-data:replay:fixture:generate` | Generate runtime MATCH replay fixture from one executed run | `run_id`, `--case`, `--output_dir` | artifact generation only | fixture path, manifest path, expected proof files, next verify command | Use when committed `valid_case` is stale against local run; then verify generated fixture must MATCH | replay/fixture |
 | `market-data:session-snapshot` | Capture supplemental session snapshot | trade date, slot, source file | pointer-resolved only | publication/run/scope/captured counts | If no readable current publication, stop; do not query raw/latest | session snapshot |
 | `market-data:session-snapshot:purge` | Retention purge | optional `--before_date`, `--dry-run` or `--apply` | dry-run | candidate count, operation mode | Apply only after reviewed dry-run; next action re-run with `--apply` | command safety |
 | `market-data:correction:request` | Register correction request | `--trade_date`, `--reason_code`, `--reason_note` | request only | correction id/status | If missing reason, blocked; next action supply registered reason | correction |
@@ -61,6 +62,7 @@ php artisan market-data:daily --help
 php artisan market-data:promote --help
 php artisan market-data:evidence:export --help
 php artisan market-data:replay:verify --help
+php artisan market-data:replay:fixture:generate --help
 php artisan market-data:correction:request --help
 php artisan market-data:correction:approve --help
 php artisan market-data:correction:run --help
@@ -314,6 +316,16 @@ Smoke suite:
 ```text
 php artisan market-data:replay:smoke <run_id> --fixture_root=storage/app/market_data/replay/fixtures --output_dir=storage/app/market_data/replay/output/YYYY-MM-DD/smoke
 ```
+
+Generate a runtime MATCH fixture from the actual run when the committed `valid_case` does not match the local run context:
+
+```text
+php artisan market-data:replay:fixture:generate <run_id> --case=valid_case --output_dir=storage/app/market_data/replay-fixtures/generated-valid-run-<run_id>
+php artisan market-data:replay:verify <run_id> storage/app/market_data/replay-fixtures/generated-valid-run-<run_id> --output_dir=storage/app/market-data/replay
+php artisan market-data:replay:smoke <run_id> --generate_runtime_valid_case --output_dir=storage/app/market-data/replay
+```
+
+Generated fixture acceptance requires `comparison_result=MATCH`, `mismatch_count=0`, generated `manifest.json`, generated `expected/expected_replay_result.json`, and generated `expected/expected_reason_code_counts.json`.
 
 Replay backfill:
 

@@ -3,19 +3,19 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Operational Readiness
+- Production Validation
 
-[SESSION_STATUS] LOCKED
+[SESSION_STATUS] DONE_LOCKED_RUNTIME_PROOF
 
 [SESSION_SCOPE]
-- Define and lock `OPERATIONAL_READINESS_CONTRACT` so operators can run import/ingest, promote/finalize, evidence export, replay verification, correction, backfill, session snapshot, and manual DB policy flows without hidden steps.
-- Source-of-truth ZIP has no `vendor/`; container validation remains static/`php -l` only, but operator-local targeted and full MarketData PHPUnit/artisan evidence has now been supplied and recorded as LOCKED proof.
+- Define and enforce `PRODUCTION_VALIDATION_CONTRACT` as the final proof gate for market-data DONE/LOCKED claims.
+- Source-of-truth ZIP has no `vendor/`; container validation remains static/`php -l` only. Runtime contract locking requires operator-local targeted/full PHPUnit plus artisan/evidence/replay proof.
 
 [SESSION_GOAL]
-- Operational readiness must prove command sequence, input/output, terminal-state handling, reason-code next actions, evidence export, replay proof, correction flow, manual file safety, manual DB policy, and forbidden shortcut coverage.
+- Production Validation must prove that no market-data contract, command, evidence, replay, runtime flow, or audit entry is declared DONE/LOCKED without actual test or runtime output.
 
 [SESSION_NOTES]
-- Previous Audit Docs Synchronization remains LOCKED as history below. Operational Readiness is now LOCKED after operator-local targeted/full suite validation and artisan command discovery/help spot checks passed.
+- Previous Operational Readiness remains LOCKED as history below. Production Validation is LOCKED because PHPUnit, 20-command command/help proof, success flow, failed/held flow, run/replay/correction evidence, replay generated MATCH, replay smoke all_passed=1, and correction lifecycle proof have been supplied.
 
 ---
 ## OPERATIONAL STATUS
@@ -36,6 +36,76 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- PRODUCTION_VALIDATION_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-09
+
+  [RELATED_IMPLEMENTATION] Production Validation / Manual + Runtime Proof
+
+  [REVIEW_STATUS] LOCKED_LOCAL_RUNTIME_PROOF
+
+  [HISTORY]
+  - 2026-05-08 -> Contract opened as canonical production validation proof contract under audit governance.
+  - 2026-05-08 -> Static trace found many prior contracts had targeted/full local proof recorded, but production validation needed a single inventory that distinguishes historical proof, static proof, missing proof, and actual runtime proof.
+  - 2026-05-08 -> Enforcement patch added `PRODUCTION_VALIDATION_INVENTORY.md` and `ProductionValidationRuntimeProofStaticGuardTest.php`.
+  - 2026-05-08 -> Contract initially held at ENFORCED because `vendor/` is absent in the uploaded ZIP and new local PHPUnit/artisan/evidence/replay runtime proof had not yet been supplied.
+  - 2026-05-08 -> Operator supplied local runtime proof: related targeted PHPUnit filters passed (OperationalReadiness 10/199, CommandSurface 47/348, Evidence 44/767, Replay 39/655, Correction 65/1287, FailSafe 5/108), artisan list showed 19 market-data commands, and seven core help surfaces displayed usage/options without fatal error.
+  - 2026-05-08 -> ProductionValidation guard/filter and full MarketData suite initially failed only because the inventory lacked the exact lowercase string `manual validation`; fix1 corrected the inventory and operator-local rerun passed ProductionValidation and full MarketData suite.
+  - 2026-05-08 -> Operator supplied daily/import-only, promote/finalize, and run evidence export output. These passed and were recorded as runtime proof.
+  - 2026-05-08 -> Operator replay smoke/verify exposed `SQLSTATE[22001]` on `md_replay_daily_metrics.mismatch_summary` during mismatch persistence; the committed valid fixture also does not match the runtime `run_id=1` data and should produce MISMATCH, not SQL failure.
+  - 2026-05-08 -> Contract patch added replay mismatch persistence hardening, schema/migration/docs sync to LONGTEXT, concise operator mismatch summaries with full JSON detail retention, and command reason-code preservation for fixture domain errors.
+  - 2026-05-09 -> Operator supplied failed/held runtime proof and held-run evidence proof for low-coverage manual file `run_id=2`.
+  - 2026-05-09 -> Operator supplied correction request/guard/approve/run proof and correction evidence proof for `correction_id=1`.
+
+  [DEFINED]
+  - Production validation is the final proof layer before any market-data implementation can be called DONE or any contract can be called LOCKED.
+  - Static proof may support validation but must not replace targeted PHPUnit, full MarketData PHPUnit, artisan command list/help, evidence output, replay verification, and runtime flow/failure proof.
+  - Missing runtime proof must be recorded as PENDING_RUNTIME_EVIDENCE, PENDING_EVIDENCE_RUNTIME_PROOF, PENDING_REPLAY_RUNTIME_PROOF, or PENDING_FLOW_RUNTIME_PROOF.
+  - Partial proof must be recorded as PARTIAL_RUNTIME_PROOF and must list remaining gaps.
+  - READY_FOR_LOCAL_RUNTIME_VALIDATION is the maximum status when the ZIP lacks `vendor/` and commands/tests cannot be executed in container.
+
+  [IMPLEMENTED]
+  - `docs/market_data/audit/PRODUCTION_VALIDATION_INVENTORY.md` defines proof categories, runtime inventory, PHPUnit matrix, artisan matrix, evidence/replay/flow/failure checklists, regression reconciliation, expected output, and pass/fail criteria.
+  - `tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php` statically guards the production validation inventory and audit docs against false DONE/LOCKED claims.
+  - `LUMEN_IMPLEMENTATION_STATUS.md` now tracks `Production Validation / Manual + Runtime Proof` as DONE after operator-local full production-validation proof was supplied.
+  - `LUMEN_CONTRACT_TRACKER.md` now tracks `PRODUCTION_VALIDATION_CONTRACT` as LOCKED after full runtime proof was supplied.
+  - `database/migrations/2026_05_08_000001_expand_replay_mismatch_summary_to_longtext.php` upgrades runtime replay persistence for long mismatch summaries.
+  - `ReplayVerificationService` now writes concise operator summaries and keeps detailed mismatch proof in `mismatches_json`.
+  - `VerifyReplayCommand` now preserves domain reason codes from fixture/replay exceptions when the exception message starts with a reason-code prefix.
+  - Failed/held production validation evidence now records `run_id=2` low-coverage proof with `HELD`, `NOT_READABLE`, `COVERAGE_BELOW_THRESHOLD`, `RUN_PARTIAL_DATA`, and `pointer_switched=false`.
+  - Correction production validation evidence now records `correction_id=1` request guard, approval, published correction run `3`, resealed candidate publication `3`, and correction evidence export.
+
+  [ENFORCED]
+  - Static guard requires runtime proof language, required PHPUnit commands, required artisan commands, evidence export proof, replay proof, missing-proof pending statuses, expected output, and pass/fail criteria.
+  - Static guard fails if Production Validation is marked DONE or `PRODUCTION_VALIDATION_CONTRACT` is marked LOCKED without runtime evidence.
+  - Audit docs keep prior DONE/LOCKED history intact while preventing the new production validation scope from inheriting old runtime proof as a false current claim.
+  - Replay runtime persistence fix is tracked in the inventory, schema docs, migration, service, command, and static guard so future replay defects cannot be patched without audit trace.
+  - Failed/held runtime proof and correction lifecycle/evidence proof are tracked in the inventory, implementation status, and contract tracker before any final DONE/LOCKED promotion.
+
+  [VALIDATED]
+  - Container static file creation completed.
+  - Container `php -l tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php` passed for this ZIP release.
+  - PHPUnit/artisan/evidence/replay were not run in container because `vendor/` is absent.
+  - Operator-local ProductionValidation proof PASS: direct guard OK (10 tests, 131 assertions); ProductionValidation filter OK (10 tests, 131 assertions).
+  - Operator-local related targeted PHPUnit proof PASS: OperationalReadiness OK (10 tests, 199 assertions); CommandSurface OK (47 tests, 348 assertions); Evidence OK (44 tests, 767 assertions); Replay OK (39 tests, 655 assertions); Correction OK (65 tests, 1287 assertions); FailSafe OK (5 tests, 108 assertions).
+  - Operator-local full MarketData proof PASS: `vendor/bin/phpunit tests/Unit/MarketData` OK (378 tests, 5072 assertions).
+  - Operator-local artisan command list/help proof PASS after fixture generator: command discovery shows 20 commands including `market-data:replay:fixture:generate`, and required help surfaces display usage/options without fatal error.
+  - Operator-local flow proof PASS: daily import-only created `run_id=1` without promotion/current pointer switch; promote/finalize made publication `1` current/readable/sealed with coverage PASS; run evidence export produced complete 9-file evidence.
+  - Operator-local replay proof PARTIAL after fix3: replay smoke/verify no longer hits `SQLSTATE[22001]`; stale committed `valid_case` returns clean MISMATCH, reason-code mismatch returns clean MISMATCH/pass, and broken/missing fixture cases surface `REPLAY_FIXTURE_SCHEMA_MISMATCH` / `REPLAY_EXPECTED_PROOF_INCOMPLETE`.
+  - Operator-local replay proof PASS after fix4: generated runtime fixture command produced `fixture_generated=1` and `expected_result=MATCH`; generated fixture verify produced `replay_id=5`, `comparison_result=MATCH`, `mismatch_count=0`, `artifact_changed_scope=none`, and replay artifact path; smoke with `--generate_runtime_valid_case` produced `all_passed=1`, generated valid MATCH/pass, reason-code mismatch MISMATCH/pass, broken manifest ERROR/pass, and missing file ERROR/pass.
+  - Operator-local replay evidence export PASS after fix5: `market-data:evidence:export --replay_id=5 --trade_date=2026-02-18 --output_dir=storage/app/market-data/evidence` produced selector `replay`, status `SUCCESS`, comparison `MATCH`, 5 files, and replay evidence pack files.
+  - Operator-local failed/held runtime proof PASS after fix6: `run_id=2` daily import-only accepted 5 rows and stayed unpromoted/current; promote produced `HELD`, `NOT_READABLE`, `coverage_gate_state=FAIL`, `coverage_reason_code=COVERAGE_BELOW_THRESHOLD`, `coverage_summary=available=5/901 | missing=896 | ratio=0.0055 | threshold=0.9800`, `final_reason_code=RUN_PARTIAL_DATA`, and `pointer_switched=false`.
+  - Operator-local held-run evidence export PASS_WITH_WARNING after fix6: `market-data:evidence:export --run_id=2` produced `evidence_completeness_state=INCOMPLETE`, `pointer_resolve_status=MISSING`, `fallback_used=1`, `file_count=8`, and `EVIDENCE_INCOMPLETE` warning for the non-readable held run.
+  - Operator-local correction proof PASS after fix6: request produced `correction_id=1`; premature run was blocked with `COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE`; approve transitioned to `APPROVED`; correction run produced `run_id=3`, `SUCCESS`, `READABLE`, `PUBLISHED`, `RESEALED`, baseline publication `1`, candidate publication `3`, and pointer switched to current publication `3`; correction evidence export produced `correction_evidence.json`.
+  - Operator-local fresh command-list/full-help proof PASS after fix7: `php artisan list | findstr market-data` shows 20 registered market-data commands including `market-data:replay:fixture:generate`; `replay:fixture:generate --help` shows `run_id`, `--case`, and `--output_dir`; `replay:smoke --help` shows `--generate_runtime_valid_case`; `replay:verify`, `evidence:export`, `daily`, `promote`, `run:finalize`, `correction:request`, `correction:approve`, and `correction:run` help surfaces display usage/options without fatal error.
+  - Replay generated MATCH artifact, replay evidence export by `--replay_id=5`, failed/held coverage proof, held-run evidence, correction lifecycle, correction guard, correction evidence export, and fresh command-list/full-help proof are now RUNTIME_PROOF_PASS or PASS_WITH_WARNING where the held run is intentionally incomplete.
+
+  [FINAL_RULE]
+  - LOCKED. Production Validation contract is locked because targeted/full PHPUnit, artisan command discovery/help, flow, evidence, replay, failure, and correction runtime proof are recorded with actual output. Static guard and PHPUnit proof alone are not substitutes for runtime artifacts.
+
+  [NEXT_ACTION]
+  - Continue append-only runtime evidence updates after future command/behavior changes.
 
 - OPERATIONAL_READINESS_CONTRACT -> LOCKED
 
