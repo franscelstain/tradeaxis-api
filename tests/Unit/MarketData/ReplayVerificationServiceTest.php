@@ -272,10 +272,22 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-20', 45)->andReturn([['eligible' => 1]]);
         $replays->shouldReceive('nextReplayId')->once()->andReturn(3004);
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
-            $reasonCodes = json_decode($metric['mismatch_reason_codes_json'], true);
-            return $metric['comparison_result'] === 'MISMATCH'
+            $reasonCodes = json_decode($metric['mismatch_reason_codes_json'] ?? '[]', true);
+            $summary = (string) ($metric['mismatch_summary'] ?? '');
+            $mismatches = json_decode($metric['mismatches_json'] ?? '[]', true);
+
+            return is_array($metric)
+                && ($metric['replay_id'] ?? null) === 3004
+                && ($metric['replay_suite'] ?? null) === 'fixture_replay_reason_code_mismatch'
+                && ($metric['replay_case'] ?? null) === 'fixture_replay_reason_code_mismatch'
+                && ($metric['comparison_result'] ?? null) === 'MISMATCH'
+                && (int) ($metric['mismatch_count'] ?? 0) > 0
+                && is_array($reasonCodes)
                 && in_array('REPLAY_FINAL_REASON_CODE_MISMATCH', $reasonCodes, true)
-                && strpos((string) $metric['mismatch_summary'], 'REPLAY_FINAL_REASON_CODE_MISMATCH reason_code_counts') !== false;
+                && strpos($summary, 'REPLAY_FINAL_REASON_CODE_MISMATCH') !== false
+                && strpos($summary, 'reason_code_counts') !== false
+                && is_array($mismatches)
+                && isset($metric['mismatches_json']);
         }));
         $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3004, '2026-03-20', [
             ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
