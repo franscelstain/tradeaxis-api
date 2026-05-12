@@ -3,19 +3,29 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Production Validation
+- Read-Side Consumer Surface Final Sweep
 
-[SESSION_STATUS] DONE_LOCKED_RUNTIME_PROOF
+[SESSION_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
 
 [SESSION_SCOPE]
-- Define and enforce `PRODUCTION_VALIDATION_CONTRACT` as the final proof gate for market-data DONE/LOCKED claims.
-- Container validation remains support evidence only; final runtime authority for this session is the operator-local environment. Operator-local proof now confirms PHP extensions are available, testing migration/seed completed, targeted Replay/Evidence/StaticGuard filters passed, and full `tests/Unit/MarketData` passed. Runtime contract locking requires this actual operator-local PHPUnit/artisan/evidence/replay proof, not container/static proof alone.
+- Revalidate `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` against actual consumer surfaces in the latest source-of-truth ZIP.
+- Keep the existing read-side anti-bypass contract as owner; do not create a duplicate contract.
+- Record static proof and operator-local targeted/full PHPUnit proof before this final sweep is locked.
 
 [SESSION_GOAL]
-- Production Validation must prove that no market-data contract, command, evidence, replay, runtime flow, or audit entry is declared DONE/LOCKED without actual test or runtime output.
+- Prove every real market-data read-side consumer resolves through the current readable publication pointer, or classify the path as producer/evidence/replay/audit/admin/test/docs/non-market-data.
 
 [SESSION_NOTES]
-- Previous Operational Readiness remains LOCKED as history below. Production Validation is LOCKED because the operator-local environment completed the required runtime proof: PHP 7.4.33 with required extensions, testing migration/seed PASS, 20 registered market-data commands command/help proof, Replay/Evidence/StaticGuard targeted filters PASS, full MarketData suite PASS, success flow, failed/held flow, run/replay/correction evidence, replay generated MATCH, replay smoke all_passed=1, and correction lifecycle proof.
+- Static trace found no consumer bypass and no market-data HTTP/dashboard/API consumer in this ZIP.
+- Session snapshot was confirmed pointer-resolved; evidence/replay/admin/producer surfaces were classified separately.
+- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local final proof is now available for ReadSide/Readable/Pointer/Publication/Consumer/CommandSurface/Replay/Evidence/StaticGuard, the direct final-sweep guard, and full MarketData suite. The earlier Production Validation audit-phrase compatibility issue was patched and rerun successfully.
+
+[RUNTIME_ENVIRONMENT]
+- Operator-local PHP version: PHP 7.4.33
+- Operator-local PHPUnit version: PHPUnit 9.6.34
+- Required PHP extensions available locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
+- Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, xmlwriter
+- Runtime authority for DONE/LOCKED: operator-local PHPUnit output, not container PHPUnit, because container PHPUnit is extension-blocked.
 
 ---
 ## OPERATIONAL STATUS
@@ -36,6 +46,113 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-12
+
+  [RELATED_IMPLEMENTATION] Read-Side Consumer Surface Final Sweep
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [RUNTIME_ENVIRONMENT]
+  - Operator-local PHP version: PHP 7.4.33
+  - Operator-local PHPUnit version: PHPUnit 9.6.34
+  - Required PHP extensions available locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
+  - Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, xmlwriter
+  - Runtime authority for LOCKED: operator-local PHPUnit output, not container PHPUnit, because container PHPUnit is extension-blocked.
+
+  [HISTORICAL_CONTEXT_2026_05_01]
+  - Historical baseline is preserved inside this same canonical `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` entry, not duplicated as a second contract entry.
+  - Historical related implementation: `Read-Side Enforcement / Anti Bypass Total`.
+  - Historical review status: `REVIEWED_OK`.
+  - Historical last updated: `2026-05-01`.
+  - Historical lock proof remains below in `[HISTORY]`, `[DEFINED]`, `[IMPLEMENTED]`, `[ENFORCED]`, `[VALIDATED]`, `[FINAL_RULE]`, and `[LOCK_CONDITION]`.
+
+  [HISTORY]
+  - 2026-05-12 -> Read-Side Consumer Surface Final Sweep reopened this existing contract against the latest source-of-truth ZIP; the purpose is final consumer-surface proof, not a new read-side contract.
+  - 2026-05-12 -> Static trace found no HTTP/controller/resource/dashboard/report market-data consumer; session snapshot capture and scope are the real read-side consumer surfaces and remain pointer-resolved.
+  - 2026-05-12 -> Evidence/replay paths were classified as `EVIDENCE_REPLAY_AUDIT`, repair path as `ADMIN_REPAIR_DIAGNOSTIC`, and ingest/build/promote/finalize/artifact paths as `WRITE_SIDE_PRODUCER`.
+  - 2026-05-12 -> Added `READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md` and `ReadSideConsumerSurfaceFinalSweepStaticGuardTest.php` to guard this final sweep.
+  - 2026-05-12 -> Container static validation passed `php -l` for changed guard files, but PHPUnit is blocked in this container by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; contract cannot be promoted back to current LOCKED status for this sweep until operator-local targeted/full PHPUnit proof is supplied.
+  - 2026-05-12 -> Operator-local partial final-sweep validation supplied: `ReadSide` OK (12 tests, 226 assertions), `Readable` OK (57 tests, 426 assertions), `Pointer` OK (76 tests, 1117 assertions), `Publication` OK (98 tests, 1193 assertions), `Consumer` OK (13 tests, 222 assertions), `CommandSurface` OK (49 tests, 359 assertions), `Replay` OK (43 tests, 717 assertions), and direct final-sweep guard OK (8 tests, 157 assertions).
+  - 2026-05-12 -> `Evidence` and `StaticGuard` initially failed only at `ProductionValidationRuntimeProofStaticGuardTest::test_validation_inventory_requires_runtime_evidence_before_done`; the missing exact audit evidence marker was `20-command command list/full help`.
+  - 2026-05-12 -> Patched the Production Validation audit wording to include the exact `20-command command list/full help` marker while preserving the locked Production Validation runtime proof.
+  - 2026-05-12 -> Operator-local final rerun passed after the audit-phrase patch: `Evidence` OK (45 tests, 812 assertions), `StaticGuard` OK (124 tests, 2785 assertions), and full `vendor/bin/phpunit tests/Unit/MarketData` OK (391 tests, 5345 assertions).
+  - 2026-05-12 -> Current final sweep re-promoted `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` to LOCKED for this ZIP because no consumer bypass remains and targeted/full MarketData proof passed locally.
+  - 2026-05-12 -> Runtime environment baseline was recorded in the always-read audit materials: operator-local PHP 7.4.33, PHPUnit 9.6.34, required PHP extensions, and container PHPUnit blocked by missing XML/mbstring extensions.
+  - 2026-05-12 -> Audit-doc correction restored the original 2026-05-01 read-side locked baseline details that had been flattened during final-sweep tracker update; history is preserved inside the single canonical contract entry rather than as a duplicate contract.
+  - 2026-05-01 → Canonical read-side pointer enforcement contract opened under audit governance.
+  - 2026-05-01 → Static trace confirmed the official consumer gateway is `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)`.
+  - 2026-05-01 → Gap found: pointer-scoped eligibility/evidence reads did not uniformly require `coverage_gate_state = PASS` and run mirror fields matching pointer publication metadata.
+  - 2026-05-01 → Gap fixed in repository predicates and guarded through integration/static tests.
+  - 2026-05-01 → Contract document synchronized to explicitly include coverage PASS and run mirror validation.
+  - 2026-05-01 → Operator local PHPUnit evidence found correction/fallback regressions when consumer-only run mirror predicates were added to the internal prior-readable fallback lookup.
+  - 2026-05-01 → Contract clarified that internal fallback lookup is not a consumer read gateway; consumer gateway/evidence/eligibility scope remain mirror-enforced.
+  - 2026-05-01 → Operator retest confirmed targeted readable/pointer tests, full MarketData suite, readable-publication integration test, and pointer static guard all PASS after the regression patch.
+
+  [DEFINED]
+  - Consumer read paths must resolve through `eod_current_publication_pointer`.
+  - Valid readable context requires sealed current publication, pointer/publication/run identity match, `terminal_status = SUCCESS`, `publishability_state = READABLE`, `coverage_gate_state = PASS`, `run.is_current_publication = 1`, and run `publication_id/publication_version` mirror match to the pointer.
+  - Artifact rows returned to consumers must be scoped by `publication_id` and pointer-resolved `trade_date_effective`/trade date context.
+  - No readable pointer context means fail-safe: empty controlled output, not-readable response, controlled exception, or explicit command/evidence/replay failure.
+  - Internal prior-readable fallback lookup is allowed only for pipeline hold/degraded-mode/correction preservation and must not be used as an API/evidence/replay/consumer latest shortcut.
+
+  [IMPLEMENTED]
+  - `EligibilitySnapshotScopeRepository` enforces coverage PASS and run mirror match.
+  - `EodEvidenceRepository::findPublicationForRun` enforces pointer/current/sealed/SUCCESS/READABLE/PASS/current/mirror validation.
+  - `EodEvidenceRepository::exportEligibilityRows` enforces pointer-scoped readable eligibility context.
+  - `EodEvidenceRepository::dominantReasonCodes` no longer returns reason-code output when the publication/run context is not current-readable/PASS/mirror-valid.
+  - `EodPublicationRepository::findLatestReadablePublicationBefore` remains an internal fallback lookup only; it preserves pipeline correction/fallback behavior and must not be used as a consumer gateway.
+  - Static guards and integration tests were extended for coverage PASS and run mirror requirements.
+
+  [ENFORCED]
+  - Static guard coverage exists for forbidden latest/MAX shortcuts in consumer files.
+  - Static guard coverage exists for pointer gateway predicates.
+  - Static guard coverage exists for pointer-scoped eligibility/evidence coverage PASS and run mirror checks.
+  - Integration coverage exists for no-leak behavior when coverage is not PASS or run mirror mismatches pointer metadata.
+  - Regression reconciliation exists for internal fallback lookup so consumer enforcement does not break prior-readable preservation behavior.
+
+  [VALIDATED]
+  - Container static grep/query scan completed.
+  - Container `php -l` completed for changed PHP files.
+  - Local command: `php artisan migrate:fresh --env=testing` → PASS.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "readable"` → PASS; `OK (45 tests, 256 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"` → PASS; `OK (51 tests, 551 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData` → PASS; `OK (250 tests, 2355 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` → PASS; `OK (8 tests, 15 assertions)`.
+  - Local command: `vendor/bin/phpunit tests/Unit/MarketData/PublicationCurrentPointerReadinessStaticGuardTest.php` → PASS; `OK (3 tests, 23 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData/ReadSideConsumerSurfaceFinalSweepStaticGuardTest.php` -> PASS; `OK (8 tests, 157 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "ReadSide"` -> PASS; `OK (12 tests, 226 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Readable"` -> PASS; `OK (57 tests, 426 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> PASS; `OK (76 tests, 1117 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> PASS; `OK (98 tests, 1193 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Consumer"` -> PASS; `OK (13 tests, 222 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "CommandSurface"` -> PASS; `OK (49 tests, 359 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> PASS; `OK (43 tests, 717 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> PASS; `OK (45 tests, 812 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> PASS; `OK (124 tests, 2785 assertions)`.
+  - Operator-local final-sweep command: `vendor/bin/phpunit tests/Unit/MarketData` -> PASS; `OK (391 tests, 5345 assertions)`.
+
+  [CURRENT_FINAL_SWEEP_STATUS]
+  - Current final-sweep status is LOCKED for this ZIP: local ReadSide/Readable/Pointer/Publication/Consumer/CommandSurface/Replay/direct final-sweep guard/Evidence/StaticGuard/full MarketData proof has been supplied.
+  - Static result is `NO_CONSUMER_BYPASS_FOUND`: no real consumer was found using raw/staging/latest/MAX(date) shortcuts.
+  - Historical 2026-05-01 LOCKED proof remains preserved below as prior evidence for the same contract; the 2026-05-12 final-sweep lock is based on fresh operator-local proof for this latest ZIP.
+  - Required local validation is documented and recorded in `docs/market_data/audit/READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md`.
+
+  [FINAL_RULE]
+  - LOCKED. No market-data consumer may read raw/staging/latest/current artifact data unless it is resolved through the current readable publication pointer and validated against sealed publication, SUCCESS/READABLE/PASS run, current state, run mirror metadata, and publication scope.
+  - No consumer may fallback to MAX/latest/raw/staging data when pointer resolution fails.
+  - Internal prior-readable fallback remains allowed only for pipeline hold/degraded-mode/correction preservation and must not be exposed as consumer latest/read gateway.
+
+  [CURRENT_LOCK_CONDITION]
+  - Satisfied for the current final-sweep ZIP: direct final-sweep guard, ReadSide, Readable, Pointer, Publication, Consumer, CommandSurface, Replay, Evidence, StaticGuard, and full `tests/Unit/MarketData` all passed locally with concrete output.
+
+  [LOCK_CONDITION]
+  - This contract is locked for the current source-of-truth ZIP after targeted and full MarketData PHPUnit validation.
+  - Reopen only if a future market-data read path, evidence/replay flow, repository method, command output, or fallback rule changes the pointer/readability enforcement contract.
+
+---
 
 - PRODUCTION_VALIDATION_CONTRACT -> LOCKED
 
@@ -111,6 +228,8 @@ ACTIVE SESSION:
 
   [NEXT_ACTION]
   - Continue append-only runtime evidence updates after future command/behavior changes.
+
+---
 
 - OPERATIONAL_READINESS_CONTRACT -> LOCKED
 

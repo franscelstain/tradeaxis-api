@@ -54,8 +54,8 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $implementationEntry = $this->firstNonEmptyLineAfter($status, '## CURRENT WORKING ENTRY');
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
-        $this->assertSame('- Production Validation / Manual + Runtime Proof -> DONE', $implementationEntry);
-        $this->assertSame('- PRODUCTION_VALIDATION_CONTRACT -> LOCKED', $contractEntry);
+        $this->assertSame('- Read-Side Consumer Surface Final Sweep -> DONE', $implementationEntry);
+        $this->assertSame('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $contractEntry);
     }
 
     public function test_locked_contracts_have_concrete_validation_evidence(): void
@@ -115,6 +115,9 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             'LOCKED_LOCAL_PHPUNIT_PASS',
             'AuditDocsSynchronizationStaticGuardTest.php',
             'AUDIT_DOCS_SYNCHRONIZATION_CONTRACT',
+            'RUNTIME ENVIRONMENT BASELINE HARD RULE',
+            'operator-local PHP version',
+            'operator-local PHPUnit version',
         ] as $needle) {
             $this->assertStringContainsString($needle, $governance.$inventory);
         }

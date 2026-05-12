@@ -52,10 +52,11 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('LOCKED', $tracker.$inventory);
 
-        $this->assertStringContainsString("ACTIVE SESSION:\n- Production Validation", $status);
-        $this->assertStringContainsString("ACTIVE SESSION:\n- Production Validation", $tracker);
-        $this->assertStringContainsString('- Production Validation / Manual + Runtime Proof -> DONE', $status);
-        $this->assertStringContainsString('- PRODUCTION_VALIDATION_CONTRACT -> LOCKED', $tracker);
+        $implementationBlock = $this->implementationBlock($status, 'Production Validation / Manual + Runtime Proof');
+        $contractBlock = $this->contractBlock($tracker, 'PRODUCTION_VALIDATION_CONTRACT');
+
+        $this->assertStringContainsString('- Production Validation / Manual + Runtime Proof -> DONE', $implementationBlock);
+        $this->assertStringContainsString('- PRODUCTION_VALIDATION_CONTRACT -> LOCKED', $contractBlock);
         $this->assertStringContainsString('ProductionValidation filter OK (10 tests, 131 assertions)', $status.$tracker.$inventory);
         $this->assertStringContainsString('full MarketData suite OK (378 tests, 5072 assertions)', $status.$tracker.$inventory);
     }

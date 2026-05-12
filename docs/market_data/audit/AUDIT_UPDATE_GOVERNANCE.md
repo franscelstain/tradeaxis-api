@@ -1100,6 +1100,40 @@ DILARANG menandai sesi baru DONE tanpa reconciliation jika menyentuh area yang s
 
 ---
 
+# 31. 📌 RUNTIME ENVIRONMENT BASELINE HARD RULE
+
+Every session that claims DONE, LOCKED, or operator-local runtime proof MUST record the runtime environment baseline in the always-read audit materials.
+
+WAJIB dicatat di:
+
+- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
+- the relevant session inventory file, if the session creates or updates one
+
+Minimal environment baseline yang WAJIB dicatat:
+
+- operator-local PHP version
+- operator-local PHPUnit version
+- required PHP extensions used by test/runtime proof
+- container PHPUnit status when container validation differs from local validation
+- which environment is the runtime authority for DONE/LOCKED
+
+DILARANG:
+
+- claiming DONE/LOCKED from PHPUnit output without PHP/PHPUnit version context
+- treating container PHPUnit as failed runtime proof when it is only blocked by missing extensions
+- hiding environment mismatch between container and operator-local validation
+- recording only test counts without environment baseline when the proof is used as final audit authority
+
+Current baseline example for the Read-Side Consumer Surface Final Sweep:
+
+- Operator-local PHP version: PHP 7.4.33
+- Operator-local PHPUnit version: PHPUnit 9.6.34
+- Required PHP extensions available locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
+- Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, xmlwriter
+- Runtime authority for DONE/LOCKED: operator-local PHPUnit output
+
+
 # 🧠 RINGKASAN INTI
 
 - satu topik = satu entry
