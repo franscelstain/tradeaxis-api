@@ -650,7 +650,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $coverageGateEvaluator->shouldReceive('evaluate')
             ->once()
-            ->with('2026-04-03', null)
+            ->with('2026-04-03', 15)
             ->andReturn([
                 'expected_universe_count' => 900,
                 'available_eod_count' => 870,

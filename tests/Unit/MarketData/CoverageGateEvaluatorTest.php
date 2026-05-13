@@ -136,6 +136,13 @@ class CoverageGateEvaluatorTest extends TestCase
         $this->assertSame(0.975, $result['coverage_threshold_value']);
         $this->assertSame('MIN_RATIO', $result['coverage_threshold_mode']);
         $this->assertSame('coverage_gate_v1_calibrated', $result['coverage_calibration_version']);
+        $this->assertSame('CandidatePublication', $result['coverage_basis']);
+        $this->assertSame(77, $result['coverage_basis_publication_id']);
+        $this->assertSame(77, $result['candidate_publication_id']);
+        $this->assertSame('candidate_publication_artifact', $result['coverage_basis_artifact_scope']);
+        $this->assertSame(10, $result['candidate_available_count']);
+        $this->assertSame(0, $result['candidate_missing_count']);
+        $this->assertEquals(1.0, $result['candidate_coverage_ratio']);
     }
 
     protected function bindCoverageGateConfig(array $coverageOverrides = []): void

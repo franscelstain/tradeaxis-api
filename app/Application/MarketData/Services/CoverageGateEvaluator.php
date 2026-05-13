@@ -20,6 +20,13 @@ class CoverageGateEvaluator
 
     public function evaluate($tradeDate, $requestedPublicationId = null)
     {
+        $coverageBasis = $requestedPublicationId !== null && $requestedPublicationId !== ''
+            ? 'CandidatePublication'
+            : 'CanonicalTradeDateArtifact';
+        $coverageBasisPublicationId = $requestedPublicationId !== null && $requestedPublicationId !== ''
+            ? (int) $requestedPublicationId
+            : null;
+
         $universe = $this->tickerMasterRepository->getUniverseForTradeDate($tradeDate);
 
         $thresholdValue = (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min', 0.98));
@@ -57,6 +64,13 @@ class CoverageGateEvaluator
                 'coverage_contract_version' => $contractVersion,
                 'coverage_calibration_version' => $contractVersion,
                 'coverage_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
+                'coverage_basis' => $coverageBasis,
+                'coverage_basis_publication_id' => $coverageBasisPublicationId,
+                'candidate_publication_id' => $coverageBasisPublicationId,
+                'coverage_basis_artifact_scope' => $coverageBasisPublicationId !== null ? 'candidate_publication_artifact' : 'trade_date_artifact',
+                'candidate_available_count' => 0,
+                'candidate_missing_count' => 0,
+                'candidate_coverage_ratio' => null,
                 'reason_code' => 'COVERAGE_UNIVERSE_EMPTY',
                 'reason_codes' => ['COVERAGE_UNIVERSE_EMPTY', 'RUN_COVERAGE_NOT_EVALUABLE'],
                 'missing_ticker_ids' => [],
@@ -112,6 +126,13 @@ class CoverageGateEvaluator
             'coverage_contract_version' => $contractVersion,
             'coverage_calibration_version' => $contractVersion,
             'coverage_reason_code' => $coverageReasonCode,
+            'coverage_basis' => $coverageBasis,
+            'coverage_basis_publication_id' => $coverageBasisPublicationId,
+            'candidate_publication_id' => $coverageBasisPublicationId,
+            'coverage_basis_artifact_scope' => $coverageBasisPublicationId !== null ? 'candidate_publication_artifact' : 'trade_date_artifact',
+            'candidate_available_count' => $availableEodCount,
+            'candidate_missing_count' => $missingEodCount,
+            'candidate_coverage_ratio' => $coverageRatio,
             'reason_code' => $reasonCode,
             'reason_codes' => [$reasonCode, $coverageReasonCode],
             'missing_ticker_ids' => array_values(array_map(function ($row) {

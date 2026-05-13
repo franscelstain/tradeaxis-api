@@ -3,22 +3,23 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Read-Side Consumer Surface Final Sweep
+- Coverage Gate Candidate Scope Hardening
 
 [SESSION_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
 
 [SESSION_SCOPE]
-- Revalidate `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` against actual consumer surfaces in the latest source-of-truth ZIP.
-- Keep the existing read-side anti-bypass contract as owner; do not create a duplicate contract.
-- Record static proof and operator-local targeted/full PHPUnit proof before this final sweep is locked.
+- Harden `COVERAGE_GATE_ENFORCEMENT_CONTRACT` so promote/manual promote/correction coverage evaluation uses the candidate publication / candidate artifact scope.
+- This is not coverage gate enforcement ulang; keep the existing coverage/publishability contract as owner and add only candidate-scope hardening proof.
+- The correction candidate must be evaluated separately from baseline/current publication.
+- Operator-local targeted/full PHPUnit proof has passed; this hardening is LOCKED under the existing coverage/publishability contract owner.
 
 [SESSION_GOAL]
-- Prove every real market-data read-side consumer resolves through the current readable publication pointer, or classify the path as producer/evidence/replay/audit/admin/test/docs/non-market-data.
+- Candidate coverage must be evaluated from candidate artifact rows, not live/current artifact, not latest artifact, and not correction baseline/current publication.
 
 [SESSION_NOTES]
-- Static trace found no consumer bypass and no market-data HTTP/dashboard/API consumer in this ZIP.
-- Session snapshot was confirmed pointer-resolved; evidence/replay/admin/producer surfaces were classified separately.
-- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local final proof is now available for ReadSide/Readable/Pointer/Publication/Consumer/CommandSurface/Replay/Evidence/StaticGuard, the direct final-sweep guard, and full MarketData suite. The earlier Production Validation audit-phrase compatibility issue was patched and rerun successfully.
+- Static trace found candidate-scope risk in promote/manual promote/correction coverage when evaluator calls did not always carry explicit candidate publication context.
+- Patch now records `coverage_basis`, `coverage_basis_publication_id`, `candidate_publication_id`, and `baseline_publication_id` in runtime notes and proof surfaces.
+- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local targeted/full PHPUnit proof is the runtime authority and has passed.
 
 [RUNTIME_ENVIRONMENT]
 - Operator-local PHP version: PHP 7.4.33
@@ -46,6 +47,46 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- COVERAGE_GATE_ENFORCEMENT_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-13
+
+  [RELATED_IMPLEMENTATION] Coverage Gate Candidate Scope Hardening
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-13 -> Candidate-scope hardening opened under existing coverage gate contract; this is not coverage gate enforcement ulang.
+  - 2026-05-13 -> Promote/manual promote/correction coverage path patched to resolve candidate publication context before coverage evaluation.
+  - 2026-05-13 -> Candidate artifact coverage lookup patched to filter by `publication_id` and avoid current/latest/baseline fallback.
+  - 2026-05-13 -> Command/evidence/replay proof surfaces now expose candidate coverage basis fields.
+  - 2026-05-13 -> Operator-local first retest exposed recovery gap: finalize transaction closure did not import `$correction`, causing candidate/promotion/finalize/correction integration paths to error before proof completion.
+  - 2026-05-13 -> Recovery patch imported `$correction` into finalize closure and removed duplicate canonical contract tracking by preserving the prior coverage/read-side locked history as historical context inside the tracker.
+  - 2026-05-13 -> Fix1 operator-local retest passed direct candidate-scope guard and most targeted filters, but exposed remaining Promote/Finalize/Integration status regressions where direct manual promote without a candidate import produced `FAILED` instead of controlled `HELD` or successful force-replace publication.
+  - 2026-05-13 -> Fix2 operator-local retest passed Finalize, StaticGuard, and Integration; remaining Promote errors were command-surface DB isolation issues where source telemetry export queried `eod_run_events` through the default MySQL connection without an output artifact request.
+  - 2026-05-13 -> Fix3 made source telemetry artifact export lazy when no `output_dir` is requested, preserving operator telemetry artifact behavior while avoiding unintended DB access in command-surface summaries.
+  - 2026-05-13 -> Operator-local fix3 retest passed Promote, Finalize, StaticGuard, and Integration; full suite still exposed command-surface source telemetry recovery gaps and a stale eligibility unit expectation for candidate publication coverage.
+  - 2026-05-13 -> Fix4 made source telemetry DB lookup fail-safe on connection refusal, lets no-output command summaries still recover telemetry from mocked evidence repositories, and updates eligibility unit proof to expect candidate `publication_id` scoped coverage.
+  - 2026-05-13 -> Operator-local final validation after fix4 passed full `vendor/bin/phpunit tests/Unit/MarketData`: `OK (397 tests, 5461 assertions)`. Contract promoted to LOCKED for candidate-scope hardening.
+  - 2026-05-13 -> Fix2 keeps coverage candidate-scoped by materializing direct manual promote into a candidate publication before coverage, not by falling back to live/current baseline; pointer conflict outcomes are explicitly reason-coded before invariant validation.
+
+  [FINAL_RULE]
+  - Promote/manual promote/correction coverage must use candidate publication artifact scope. Baseline/current publication is lineage/comparison/preservation only.
+  - Missing/incomplete candidate artifacts must fail/hold/not-readable and must not switch pointer.
+
+  [VALIDATED]
+  - Container `php -l` passed for changed PHP files.
+  - Operator-local fix1 partial retest passed candidate-scope guard, Manual, Correction, Publication, Pointer, Evidence, Replay, and CommandSurface; remaining failures before fix2 were Promote, Finalize, StaticGuard, and Integration.
+  - Operator-local fix2 partial retest passed Finalize, StaticGuard, and Integration; Promote still errored in OpsCommandSurface because no-output command summaries attempted source telemetry DB export against the default MySQL connection.
+  - Recovery patch `php -l` passed for `MarketDataPipelineService.php`, `AuditDocsSynchronizationStaticGuardTest.php`, and `CoverageGateCandidateScopeHardeningStaticGuardTest.php`; fix3/fix4 `php -l` passed for `AbstractMarketDataCommand.php`, and fix4 `php -l` passed for `MarketDataPipelineServiceTest.php`.
+  - Operator-local fix3 retest passed Promote, Finalize, StaticGuard, and Integration.
+  - Operator-local fix4 final full-suite validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> `OK (397 tests, 5461 assertions)`.
+  - Operator-local first retest FAILED before recovery patch with `Undefined variable: correction` across promote/manual/correction/finalize/publication/pointer/evidence/integration paths and audit-doc static guard failures.
+  - Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`.
+
+  [LOCK_CONDITION]
+  - Satisfied. Operator-local targeted filters passed across candidate-scope, Promote, Manual, Correction, Finalize, Publication, Pointer, Evidence, Replay, CommandSurface, StaticGuard, and Integration surfaces; full `tests/Unit/MarketData` passed with `OK (397 tests, 5461 assertions)`.
 
 - READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED
 
@@ -1144,7 +1185,7 @@ ACTIVE SESSION:
 
 ---
 
-- COVERAGE_GATE_ENFORCEMENT_CONTRACT -> LOCKED
+[HISTORICAL_CONTEXT_2026_05_02_COVERAGE_GATE_ENFORCEMENT_LOCKED]
 
   [LAST_UPDATED] 2026-05-02
 
@@ -1212,7 +1253,7 @@ ACTIVE SESSION:
 
 ---
 
-- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT → LOCKED
+[HISTORICAL_CONTEXT_2026_05_01_READ_SIDE_POINTER_ENFORCEMENT_LOCKED]
 
   [LAST_UPDATED] 2026-05-01
 
@@ -1397,3 +1438,18 @@ ACTIVE SESSION:
 - Enforcement recovery: replacement candidates must own a complete hashable candidate artifact scope before seal. When a promote run is derived from an existing current/complete seed without fresh candidate bars history, the system creates candidate-bound bars history from current live rows and keeps all derived artifacts/hash/seal operations in history scope.
 - Final validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "Finalize"` PASS with `OK (46 tests, 355 assertions)`; `vendor/bin/phpunit tests/Unit/MarketData --filter "Integration"` PASS with `OK (91 tests, 1443 assertions)`; full `vendor/bin/phpunit tests/Unit/MarketData` PASS with `OK (329 tests, 4110 assertions)`.
 - Final rule locked: sealed/current/readable live artifacts cannot be mutated before finalize authorizes pointer promotion; candidate replacement artifacts must be built and verified through publication-bound history.
+
+
+## COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING — COVERAGE_GATE_ENFORCEMENT_CONTRACT
+
+- Status: PARTIAL / STATIC_GUARDED / WAITING_OPERATOR_LOCAL_PHPUNIT.
+- Related implementation: Coverage Gate Candidate Scope Hardening.
+- Existing owner: `COVERAGE_GATE_ENFORCEMENT_CONTRACT`; this is not coverage gate enforcement ulang and does not replace prior coverage gate enforcement history.
+- Enforcement hardening: promote, manual promote, and correction coverage evaluation must use candidate publication / candidate artifact scope as coverage basis.
+- Baseline/current publication may be used for correction lineage, comparison, fallback preservation, and unchanged detection only. It must not be used as coverage basis for candidate publishability.
+- Runtime patch: `MarketDataPipelineService` resolves `coverageBasisPublicationId` before coverage evaluation and records candidate/baseline proof in run notes.
+- Runtime patch: `EodArtifactRepository` resolves candidate coverage ticker ids from `eod_bars_history` and `eod_bars` using explicit `publication_id`; no current pointer/latest/MAX-date fallback is used.
+- Proof surface: command output, evidence export, and replay actual context expose `coverage_basis`, `coverage_basis_publication_id`, `coverage_basis_artifact_scope`, `candidate_publication_id`, and `baseline_publication_id`.
+- Static guard: `CoverageGateCandidateScopeHardeningStaticGuardTest.php`.
+- Inventory: `COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING_INVENTORY.md`.
+- Lock condition: promote/manual promote/correction targeted filters and full `vendor/bin/phpunit tests/Unit/MarketData` must PASS in operator-local environment before this hardening can be marked LOCKED.

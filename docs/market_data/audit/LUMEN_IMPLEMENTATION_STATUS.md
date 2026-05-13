@@ -3,23 +3,24 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Read-Side Consumer Surface Final Sweep
+- Coverage Gate Candidate Scope Hardening
 
 [SESSION_STATUS] DONE_LOCAL_PHPUNIT_PASS
 
 [SESSION_SCOPE]
-- Perform the final sweep of real market-data consumer surfaces against the existing read-side anti-bypass contract.
-- Do not recreate the read-side contract; map this sweep to `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` and prove whether API/service/resource/dashboard/command-facing paths use the current readable publication pointer.
+- Harden promote/manual promote/correction coverage evaluation so it always uses the candidate publication / candidate artifact scope being promoted.
+- This is not coverage gate enforcement ulang; reuse the existing coverage/publishability contract and close only the candidate-scope edge case.
+- The correction candidate must be evaluated separately from baseline/current publication.
 - Container validation is static only because PHPUnit is blocked by missing PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter`.
 
 [SESSION_GOAL]
-- Every real market-data read-side consumer must be classified and traced to a pointer-resolved readable publication path, or explicitly classified as producer/evidence/replay/audit/admin/test/docs/non-market-data.
+- Candidate coverage basis must be explicit for promote/manual promote/correction; incomplete candidate artifacts must fail coverage even when live/current or baseline publication is complete.
 
 [SESSION_NOTES]
-- Static trace found no HTTP/API/dashboard/report market-data consumer in the current ZIP.
-- The real consumer surface found in app runtime is session snapshot capture/scope, and it resolves through `findCurrentPublicationForTradeDate` / `resolveCurrentReadablePublicationForTradeDate` plus pointer-scoped eligibility queries.
-- Evidence/replay/admin/producer paths were classified separately and not patched as consumer bypasses.
-- Operator-local final proof is now supplied for the full final-sweep validation set: ReadSide, Readable, Pointer, Publication, Consumer, CommandSurface, Replay, Evidence, StaticGuard, the direct final-sweep static guard, and full `tests/Unit/MarketData`. Evidence and StaticGuard initially failed only because `ProductionValidationRuntimeProofStaticGuardTest` expected the exact phrase `20-command command list/full help`; that audit-phrase compatibility gap was patched and the rerun passed.
+- Static trace found candidate-scope risk in promote/manual promote/correction coverage evaluation when the evaluator is called without an explicit candidate publication context.
+- Patch now resolves `coverage_basis_publication_id` before coverage evaluation and stores proof fields in run notes, command output, evidence export, and replay actual context.
+- Candidate artifact lookup for coverage is now filtered by `publication_id`; baseline/current publication remains lineage/comparison/preservation only.
+- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local targeted/full PHPUnit proof is the runtime authority and has passed for this session.
 
 [RUNTIME_ENVIRONMENT]
 - Operator-local PHP version: PHP 7.4.33
@@ -47,6 +48,71 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Coverage Gate Candidate Scope Hardening -> DONE
+
+  [LAST_UPDATED] 2026-05-13
+
+  [RELATED_CONTRACT] COVERAGE_GATE_ENFORCEMENT_CONTRACT / PUBLISHABILITY_STATE_INTEGRITY_CONTRACT
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [RUNTIME_ENVIRONMENT]
+  - Container PHP version: PHP 8.4.16.
+  - Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV because `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
+  - Runtime authority for DONE/LOCKED: operator-local PHPUnit output.
+
+  [HISTORY]
+  - 2026-05-13 -> Session opened to close candidate-scope edge case from audit: promote/manual promote/correction coverage must evaluate candidate publication artifacts, not live/current artifact or correction baseline.
+  - 2026-05-13 -> Confirmed this is not coverage gate enforcement ulang; existing coverage gate/pass/fail/threshold/reason-code behavior remains owner-controlled by existing coverage and publishability contracts.
+  - 2026-05-13 -> Patched `MarketDataPipelineService::completeCoverageEvaluation()` to resolve `coverageBasisPublicationId` before evaluation.
+  - 2026-05-13 -> Patched `MarketDataPipelineService::completeEligibility()` to pass result `publication_id` for candidate-scoped coverage across all publish flows.
+  - 2026-05-13 -> Patched `EodArtifactRepository::loadCanonicalBarTickerIdsForTradeDate()` so candidate publication coverage reads `eod_bars_history` and `eod_bars` filtered by `publication_id`, with no current/latest/baseline fallback.
+  - 2026-05-13 -> Patched command/evidence/replay surfaces to expose `coverage_basis`, `coverage_basis_publication_id`, `coverage_basis_artifact_scope`, `candidate_publication_id`, and `baseline_publication_id`.
+  - 2026-05-13 -> Added `CoverageGateCandidateScopeHardeningStaticGuardTest.php` and `COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING_INVENTORY.md`.
+  - 2026-05-13 -> Operator-local retest reported a runtime regression: `MarketDataPipelineService::completeFinalize()` closure referenced `$correction` without importing it, causing Promote/Manual/Correction/Finalize/Publication/Pointer/Evidence/Integration filters to error at line 615.
+  - 2026-05-13 -> Recovery patch imported `$correction` into the finalize transaction closure and reconciled audit docs/static guard expectations so candidate hardening is tracked under the existing coverage contract without duplicating canonical contract entries.
+  - 2026-05-13 -> Operator-local fix1 retest confirmed the `$correction` fatal error was resolved: direct candidate-scope guard, Manual, Correction, Publication, Pointer, Evidence, Replay, and CommandSurface passed; remaining failures were Promote/Finalize/Integration status regressions (`HELD/SUCCESS` became `FAILED`) and stale Read-Side static guard active-session assumptions.
+  - 2026-05-13 -> Fix2 materialized direct manual promote candidates before candidate-scoped coverage and reconciled Read-Side static guard assumptions; operator-local fix2 rerun passed Finalize, StaticGuard, and Integration, but Promote still errored because command summary source telemetry queried `eod_run_events` through the default MySQL connection when no output directory was requested by command-surface tests.
+  - 2026-05-13 -> Fix3 made source attempt telemetry export lazy for command summaries: when no output directory is requested, the command does not query `eod_run_events` and uses empty telemetry instead. This keeps command-surface tests isolated from external/default DB while preserving telemetry artifact export when `--output_dir` is supplied.
+  - 2026-05-13 -> Operator-local fix3 retest passed Promote, Finalize, StaticGuard, and Integration, but full suite still failed in two isolated areas: source telemetry recovery no longer called mocked evidence telemetry when no output directory was supplied, and `completeEligibility()` unit expectation still assumed coverage evaluation without candidate `publication_id`.
+  - 2026-05-13 -> Fix4 changed source telemetry export to fail-safe on DB connection refusal instead of failing command summaries, returns `null` telemetry for no-output summaries so mocked evidence telemetry can still be used, and aligns `completeEligibility()` unit proof with candidate publication id coverage evaluation.
+  - 2026-05-13 -> Fix2 materializes a direct manual promote candidate artifact before coverage when a promote run has no candidate publication yet, so direct `manual_file` promote no longer satisfies candidate coverage from live/current baseline; it ingests into a non-current candidate first, then evaluates candidate-scoped coverage.
+  - 2026-05-13 -> Fix2 also keeps pointer conflict outcomes reason-coded as `RUN_LOCK_CONFLICT` before invariant validation and relaxes historical Read-Side final-sweep static guard checks so DONE history remains guarded without requiring that older session to stay active forever.
+
+  [IMPLEMENTATION]
+  - Coverage evaluator now emits candidate-basis proof fields: `coverage_basis`, `coverage_basis_publication_id`, `coverage_basis_artifact_scope`, `candidate_publication_id`, `candidate_available_count`, `candidate_missing_count`, and `candidate_coverage_ratio`.
+  - Promote/correction coverage basis is captured in run notes because no schema column exists for this proof field in the current contract.
+  - Baseline publication remains a lineage/comparison/preservation field only and is not used as candidate coverage basis.
+
+  [VALIDATED]
+  - Static patch completed in container.
+  - Operator-local fix1 partial retest: `CoverageGateCandidateScopeHardeningStaticGuardTest.php` PASS (5 tests, 53 assertions); `Manual` PASS (25 tests, 262 assertions); `Correction` PASS (67 tests, 1321 assertions); `Publication` PASS (100 tests, 1215 assertions); `Pointer` PASS (76 tests, 1117 assertions); `Evidence` PASS (46 tests, 827 assertions); `Replay` PASS (44 tests, 732 assertions); `CommandSurface` PASS (49 tests, 359 assertions).
+  - Operator-local fix1 remaining failures before fix2: `Promote` 2 failures (`HELD/SUCCESS` became `FAILED`), `Finalize` 1 failure (`HELD` became `FAILED`), `StaticGuard` 2 historical Read-Side guard failures, and `Integration` 3 failures mirroring Promote/Finalize.
+  - Container `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS after recovery patch.
+  - Container `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> PASS after recovery patch.
+  - Container `php -l tests/Unit/MarketData/CoverageGateCandidateScopeHardeningStaticGuardTest.php` -> PASS after recovery patch.
+  - Operator-local first retest FAILED before recovery patch: direct candidate-scope static guard had 1 doc assertion failure; Promote/Manual/Correction/Finalize/Publication/Pointer/Evidence/Integration filters errored with `Undefined variable: correction`; Replay and CommandSurface passed.
+  - PHPUnit not executed in container because required PHP extensions are missing.
+  - Operator-local fix3 retest: `Promote` PASS (30 tests, 340 assertions), `Finalize` PASS (48 tests, 372 assertions), `StaticGuard` PASS (130 tests, 2894 assertions), and `Integration` PASS (91 tests, 1450 assertions).
+  - Operator-local fix4 final full-suite validation PASS: `vendor/bin/phpunit tests/Unit/MarketData` -> `OK (397 tests, 5461 assertions)`.
+  - Operator-local full suite before fix4 FAILED with 4 DB telemetry errors, 4 missing source-attempt field failures, and 1 candidate eligibility unit expectation error.
+  - Container `php -l app/Console/Commands/MarketData/AbstractMarketDataCommand.php` -> PASS after fix4.
+  - Container `php -l tests/Unit/MarketData/MarketDataPipelineServiceTest.php` -> PASS after fix4.
+  - Operator-local targeted/full PHPUnit rerun required after fix4 before DONE/LOCKED.
+
+  [FINAL_BEHAVIOR]
+  - Candidate incomplete coverage should fail even if live/current or baseline publication is complete.
+  - Pointer switch remains allowed only after candidate coverage PASS plus hash/seal/finalize validity.
+  [FINAL_CLOSURE_2026_05_13]
+  - Operator-local final validation passed after fix4: full `vendor/bin/phpunit tests/Unit/MarketData` returned `OK (397 tests, 5461 assertions)`.
+  - Candidate-scope hardening is DONE because Promote, Finalize, StaticGuard, Integration, and full MarketData suite all passed locally.
+
+
+  [GAP]
+  - Runtime proof is pending operator-local PHPUnit rerun after fix4.
+  - Current implementation remains PARTIAL until full `tests/Unit/MarketData` passes locally.
+
 
 - Read-Side Consumer Surface Final Sweep -> DONE
 

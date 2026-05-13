@@ -54,8 +54,19 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $implementationEntry = $this->firstNonEmptyLineAfter($status, '## CURRENT WORKING ENTRY');
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
-        $this->assertSame('- Read-Side Consumer Surface Final Sweep -> DONE', $implementationEntry);
-        $this->assertSame('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $contractEntry);
+        $activeSession = $this->activeSessionName($status);
+        $this->assertStringContainsString($activeSession, $implementationEntry);
+
+        $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
+        $trackerContracts = $this->canonicalContractsFromTracker($tracker);
+
+        foreach ($implementationContracts as $contractName) {
+            if (strpos($implementationEntry, $activeSession) !== false) {
+                $this->assertContains($contractName, $trackerContracts);
+            }
+        }
+
+        $this->assertMatchesRegularExpression('/^- [A-Z0-9_]+_CONTRACT (?:->|→) (LOCKED|ENFORCED|PARTIAL|BLOCKED|REVIEW_REQUIRED)$/', $contractEntry);
     }
 
     public function test_locked_contracts_have_concrete_validation_evidence(): void

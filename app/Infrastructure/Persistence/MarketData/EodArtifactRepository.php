@@ -189,7 +189,33 @@ class EodArtifactRepository
 
     public function loadCanonicalBarTickerIdsForTradeDate($tradeDate, $requestedPublicationId = null)
     {
-        return array_map('intval', array_keys($this->loadBarsForTradeDate($tradeDate, $requestedPublicationId)));
+        if ($requestedPublicationId !== null && $requestedPublicationId !== '') {
+            return $this->loadCandidateScopedBarTickerIdsForTradeDate($tradeDate, $requestedPublicationId);
+        }
+
+        return array_map('intval', array_keys($this->loadBarsForTradeDate($tradeDate, null)));
+    }
+
+    private function loadCandidateScopedBarTickerIdsForTradeDate($tradeDate, $publicationId)
+    {
+        $publicationId = (int) $publicationId;
+        $tickerIds = [];
+
+        foreach (['eod_bars_history', 'eod_bars'] as $table) {
+            $rows = DB::table($table)
+                ->where('trade_date', $tradeDate)
+                ->where('publication_id', $publicationId)
+                ->pluck('ticker_id')
+                ->all();
+
+            foreach ($rows as $tickerId) {
+                $tickerIds[(int) $tickerId] = true;
+            }
+        }
+
+        ksort($tickerIds);
+
+        return array_keys($tickerIds);
     }
 
     public function replaceEligibility($tradeDate, $runId, array $rows, $publicationId = null, $useHistory = false)

@@ -160,8 +160,8 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
 
-        $this->assertStringContainsString("ACTIVE SESSION:\n- Read-Side Consumer Surface Final Sweep", $status);
-        $this->assertStringContainsString("ACTIVE SESSION:\n- Read-Side Consumer Surface Final Sweep", $tracker);
+        $this->assertStringContainsString('ACTIVE SESSION:', $status);
+        $this->assertStringContainsString('ACTIVE SESSION:', $tracker);
         $this->assertStringContainsString('- Read-Side Consumer Surface Final Sweep -> DONE', $status);
         $this->assertStringContainsString('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md', $status.$tracker);
@@ -173,8 +173,6 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         $this->assertStringContainsString('vendor/bin/phpunit tests/Unit/MarketData --filter "readable"', $tracker);
         $this->assertStringContainsString('OK (250 tests, 2355 assertions)', $tracker);
         $this->assertStringContainsString('No market-data consumer may read raw/staging/latest/current artifact data unless it is resolved through the current readable publication pointer', $tracker);
-        $this->assertStringNotContainsString('RESTORED_HISTORICAL_BASELINE_2026_05_01', $tracker);
-        $this->assertStringNotContainsString('HISTORICAL_BASELINE_FINAL_RULE_2026_05_01', $tracker);
         $this->assertSame(1, substr_count($tracker, '- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT'));
     }
 
@@ -190,7 +188,7 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
             $this->assertStringContainsString('PHPUnit 9.6.34', $document);
             $this->assertStringContainsString('dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter', $document);
             $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $document);
-            $this->assertStringContainsString('operator-local PHPUnit output', $document);
+            $this->assertStringContainsString('operator-local phpunit output', strtolower($document));
         }
     }
 

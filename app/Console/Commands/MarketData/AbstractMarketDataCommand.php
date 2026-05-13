@@ -546,7 +546,14 @@ abstract class AbstractMarketDataCommand extends Command
             return [];
         }
 
-        $telemetry = $this->evidenceRepository()->exportRunSourceAttemptTelemetry($runId);
+        try {
+            $telemetry = $this->evidenceRepository()->exportRunSourceAttemptTelemetry($runId);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return [];
+        } catch (\PDOException $e) {
+            return [];
+        }
+
         if (! is_array($telemetry)) {
             return [];
         }
@@ -560,11 +567,11 @@ abstract class AbstractMarketDataCommand extends Command
 
     protected function writeSourceAttemptTelemetryArtifact($outputDir, $run)
     {
-        $telemetry = $this->exportRunSourceAttemptTelemetry($run);
-
         if ($outputDir === null || trim((string) $outputDir) === '') {
-            return [null, $telemetry];
+            return [null, null];
         }
+
+        $telemetry = $this->exportRunSourceAttemptTelemetry($run);
 
         if (! is_array($telemetry) || $telemetry === [] || ! isset($telemetry['attempts']) || ! is_array($telemetry['attempts']) || $telemetry['attempts'] === []) {
             return [null, $telemetry];
@@ -690,6 +697,12 @@ abstract class AbstractMarketDataCommand extends Command
         $thresholdMode = $this->runField($run, 'coverage_threshold_mode');
         $basis = $this->runField($run, 'coverage_universe_basis');
         $contract = $this->runField($run, 'coverage_contract_version');
+        $notes = $this->parseRunNotes((string) $this->runField($run, 'notes', ''));
+        $coverageBasis = $notes['coverage_basis'] ?? null;
+        $coverageBasisPublicationId = $notes['coverage_basis_publication_id'] ?? null;
+        $candidatePublicationId = $notes['candidate_publication_id'] ?? null;
+        $baselinePublicationId = $notes['baseline_publication_id'] ?? null;
+        $coverageBasisArtifactScope = $notes['coverage_basis_artifact_scope'] ?? null;
         $coverageReasonCode = $this->resolveCoverageReasonCode($run, $state);
 
         if ($state === null && $ratio === null && $available === null && $universe === null && $missing === null && $threshold === null && $coverageReasonCode === null) {
@@ -702,6 +715,22 @@ abstract class AbstractMarketDataCommand extends Command
 
         if ($coverageReasonCode !== null && $coverageReasonCode !== '') {
             $this->line('coverage_reason_code='.(string) $coverageReasonCode);
+        }
+
+        if ($coverageBasis !== null && $coverageBasis !== '') {
+            $this->line('coverage_basis='.(string) $coverageBasis);
+        }
+
+        if ($coverageBasisPublicationId !== null && $coverageBasisPublicationId !== '') {
+            $this->line('coverage_basis_publication_id='.(string) $coverageBasisPublicationId);
+        }
+
+        if ($candidatePublicationId !== null && $candidatePublicationId !== '') {
+            $this->line('candidate_publication_id='.(string) $candidatePublicationId);
+        }
+
+        if ($baselinePublicationId !== null && $baselinePublicationId !== '') {
+            $this->line('baseline_publication_id='.(string) $baselinePublicationId);
         }
 
         $summaryParts = [];
@@ -728,6 +757,14 @@ abstract class AbstractMarketDataCommand extends Command
 
         if ($basis !== null && $basis !== '') {
             $summaryParts[] = 'basis='.(string) $basis;
+        }
+
+        if ($coverageBasis !== null && $coverageBasis !== '') {
+            $summaryParts[] = 'coverage_basis='.(string) $coverageBasis;
+        }
+
+        if ($coverageBasisArtifactScope !== null && $coverageBasisArtifactScope !== '') {
+            $summaryParts[] = 'artifact_scope='.(string) $coverageBasisArtifactScope;
         }
 
         if ($contract !== null && $contract !== '') {

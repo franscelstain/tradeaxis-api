@@ -538,6 +538,11 @@ class ReplayVerificationService
             'coverage_universe_basis' => $run->coverage_universe_basis ?? null,
             'coverage_contract_version' => $run->coverage_contract_version ?? null,
             'coverage_missing_sample' => $this->decodeJsonArray($run->coverage_missing_sample_json ?? null),
+            'coverage_basis' => $notes['coverage_basis'] ?? null,
+            'coverage_basis_publication_id' => isset($notes['coverage_basis_publication_id']) && $notes['coverage_basis_publication_id'] !== '' ? (int) $notes['coverage_basis_publication_id'] : null,
+            'coverage_basis_artifact_scope' => $notes['coverage_basis_artifact_scope'] ?? null,
+            'candidate_publication_id' => isset($notes['candidate_publication_id']) && $notes['candidate_publication_id'] !== '' ? (int) $notes['candidate_publication_id'] : null,
+            'baseline_publication_id' => isset($notes['baseline_publication_id']) && $notes['baseline_publication_id'] !== '' ? (int) $notes['baseline_publication_id'] : null,
         ];
         $artifactContext = [
             'bars_rows_written' => isset($run->bars_rows_written) && $run->bars_rows_written !== null ? (int) $run->bars_rows_written : null,
@@ -654,6 +659,11 @@ class ReplayVerificationService
             'coverage_contract_version' => $coverageContext['coverage_contract_version'],
             'coverage_missing_sample' => $coverageContext['coverage_missing_sample'],
             'coverage_reason_code' => $coverageContext['coverage_reason_code'],
+            'coverage_basis' => $coverageContext['coverage_basis'] ?? null,
+            'coverage_basis_publication_id' => $coverageContext['coverage_basis_publication_id'] ?? null,
+            'coverage_basis_artifact_scope' => $coverageContext['coverage_basis_artifact_scope'] ?? null,
+            'coverage_candidate_publication_id' => $coverageContext['candidate_publication_id'] ?? null,
+            'coverage_baseline_publication_id' => $coverageContext['baseline_publication_id'] ?? null,
             'bars_rows_written' => $artifactContext['bars_rows_written'],
             'indicators_rows_written' => $artifactContext['indicators_rows_written'],
             'eligibility_rows_written' => $artifactContext['eligibility_rows_written'],

@@ -306,11 +306,12 @@ class MarketDataPipelineService
 
     public function completeCoverageEvaluation(MarketDataStageInput $input)
     {
-        [$run] = $this->startStage($input);
+        [$run, $correction, $priorCurrent] = $this->startStage($input);
 
         try {
-            return DB::transaction(function () use ($run, $input) {
-                $coverage = $this->coverageGateEvaluator->evaluate($input->requestedDate);
+            return DB::transaction(function () use ($run, $input, $priorCurrent) {
+                $coverageBasisPublicationId = $this->resolveCandidateCoveragePublicationId($run, $input, $priorCurrent);
+                $coverage = $this->coverageGateEvaluator->evaluate($input->requestedDate, $coverageBasisPublicationId);
 
                 $coverageGateState = strtoupper((string) ($coverage['coverage_gate_status'] ?? 'NOT_EVALUABLE'));
                 $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
@@ -327,6 +328,7 @@ class MarketDataPipelineService
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
+                    'notes' => $this->appendRunNotes($run->notes ?? null, $this->coverageBasisNoteSegments($coverage, $coverageBasisPublicationId, $priorCurrent)),
                 ]);
 
                 $this->runs->appendEvent(
@@ -336,7 +338,14 @@ class MarketDataPipelineService
                     $coverageGateState === 'PASS' ? 'INFO' : 'WARN',
                     'Coverage gate evaluated from persisted canonical valid bars.',
                     $coverageGateState === 'PASS' ? null : ($coverageGateState === 'FAIL' ? 'RUN_COVERAGE_LOW' : 'RUN_COVERAGE_NOT_EVALUABLE'),
-                    ['coverage' => $coverage]
+                    [
+                        'coverage' => $coverage,
+                        'coverage_basis' => $coverage['coverage_basis'] ?? null,
+                        'coverage_basis_publication_id' => $coverageBasisPublicationId,
+                        'candidate_publication_id' => $coverageBasisPublicationId,
+                        'baseline_publication_id' => $priorCurrent ? (int) $priorCurrent->publication_id : null,
+                        'coverage_basis_artifact_scope' => $coverage['coverage_basis_artifact_scope'] ?? null,
+                    ]
                 );
 
                 return $run;
@@ -356,7 +365,7 @@ class MarketDataPipelineService
                 $result = $this->eligibility->build($run, $input->requestedDate, $input->correctionId !== null);
                 $coverage = $this->coverageGateEvaluator->evaluate(
                     $input->requestedDate,
-                    $input->correctionId !== null ? $result['publication_id'] : null
+                    $result['publication_id']
                 );
 
                 $run = $this->runs->updateTelemetry($run, [
@@ -372,6 +381,7 @@ class MarketDataPipelineService
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
+                    'notes' => $this->appendRunNotes($run->notes ?? null, $this->coverageBasisNoteSegments($coverage, $result['publication_id'], null)),
                 ]);
 
                 $this->runs->appendEvent(
@@ -1035,6 +1045,7 @@ class MarketDataPipelineService
                     }
 
                     $outcome['quality_gate_state'] = $outcome['quality_gate_state'] ?? 'PASS';
+                    $outcome['reason_code'] = 'RUN_LOCK_CONFLICT';
                     $preservedCurrent = $priorCurrent ?: $preSwitchCurrent ?: null;
                     $outcome['current_publication_id'] = $preservedCurrent ? (int) $preservedCurrent->publication_id : null;
                     $outcome['current_publication_version'] = $preservedCurrent ? (int) $preservedCurrent->publication_version : null;
@@ -1381,6 +1392,61 @@ class MarketDataPipelineService
         }
     }
 
+    private function resolveCandidateCoveragePublicationId($run, MarketDataStageInput $input, $priorCurrent = null)
+    {
+        $notes = (string) ($run->notes ?? '');
+        $noteCandidatePublicationId = $this->extractNoteValue($notes, 'candidate_publication_id');
+
+        if ($noteCandidatePublicationId !== null && $noteCandidatePublicationId !== '') {
+            return (int) $noteCandidatePublicationId;
+        }
+
+        if (! empty($run->publication_id)) {
+            return (int) $run->publication_id;
+        }
+
+        $isCandidateScopedRequest = in_array((string) $input->requestMode, ['promote', 'correction', 'full_publish'], true)
+            || $input->correctionId !== null
+            || $priorCurrent !== null;
+
+        if (! $isCandidateScopedRequest) {
+            return null;
+        }
+
+        try {
+            $candidate = $this->publications->getOrCreateCandidatePublication(
+                $run,
+                $priorCurrent ? $priorCurrent->publication_id : null
+            );
+
+            return $candidate && ! empty($candidate->publication_id) ? (int) $candidate->publication_id : 0;
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    private function coverageBasisNoteSegments(array $coverage, $candidatePublicationId = null, $priorCurrent = null): array
+    {
+        return array_values(array_filter([
+            'coverage_basis=' . (string) ($coverage['coverage_basis'] ?? 'CandidatePublication'),
+            $candidatePublicationId !== null && $candidatePublicationId !== ''
+                ? 'coverage_basis_publication_id=' . (int) $candidatePublicationId
+                : null,
+            $candidatePublicationId !== null && $candidatePublicationId !== ''
+                ? 'candidate_publication_id=' . (int) $candidatePublicationId
+                : null,
+            $priorCurrent ? 'baseline_publication_id=' . (int) $priorCurrent->publication_id : null,
+            'coverage_basis_artifact_scope=' . (string) ($coverage['coverage_basis_artifact_scope'] ?? 'candidate_publication_artifact'),
+            isset($coverage['candidate_available_count']) ? 'candidate_available_count=' . (int) $coverage['candidate_available_count'] : null,
+            isset($coverage['candidate_missing_count']) ? 'candidate_missing_count=' . (int) $coverage['candidate_missing_count'] : null,
+            isset($coverage['candidate_coverage_ratio']) && $coverage['candidate_coverage_ratio'] !== null
+                ? 'candidate_coverage_ratio=' . number_format((float) $coverage['candidate_coverage_ratio'], 4, '.', '')
+                : null,
+        ], static function ($value) {
+            return $value !== null && $value !== '';
+        }));
+    }
+
     private function prepareRunForPointerSwitch(EodRun $run, array $preDecision): EodRun
     {
         $state = [
@@ -1527,6 +1593,53 @@ class MarketDataPipelineService
         return $notes !== null && strpos((string) $notes, $needle) !== false;
     }
 
+
+    private function materializeDirectManualPromoteCandidateIfNeeded($requestedDate, $sourceMode, $runId, $correctionId = null, $forceReplace = false, $forceReplaceReason = null)
+    {
+        if (! in_array((string) $sourceMode, ['manual_file', 'manual_entry'], true)) {
+            return null;
+        }
+
+        if ($correctionId !== null) {
+            return null;
+        }
+
+        if ($runId === null) {
+            return null;
+        }
+
+        $run = $this->safeFindRunById($runId);
+        if (! $run) {
+            return null;
+        }
+
+        /*
+         * Promote can be invoked directly from an operator-supplied manual file in
+         * older command/test flows. Candidate-scope hardening must not satisfy that
+         * path by reading the already-current/live artifact. When the promote run has
+         * no candidate publication yet, materialize a candidate artifact first, then
+         * let the normal candidate-scoped coverage gate evaluate that publication.
+         *
+         * This keeps import-only semantics intact: import-only still does not promote,
+         * while direct promote receives its own non-current candidate publication and
+         * must pass coverage/hash/seal/finalize before any pointer switch.
+         */
+        if (! empty($run->publication_id)) {
+            return null;
+        }
+
+        return $this->completeIngest(new MarketDataStageInput(
+            $requestedDate,
+            $sourceMode,
+            (int) $runId,
+            'INGEST_BARS',
+            null,
+            $forceReplace,
+            $forceReplaceReason,
+            'promote'
+        ));
+    }
+
     public function promoteSingleDay($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null, $forceReplace = false, $forceReplaceReason = null)
     {
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
@@ -1540,6 +1653,18 @@ class MarketDataPipelineService
 
         $runId = $this->preparePromoteRunId($requestedDate, $sourceMode, $runId, $correctionId, $promoteContext);
         $this->ensurePromoteRunContext($runId, $requestedDate, $promoteContext, $correctionId);
+        $materializedRun = $this->materializeDirectManualPromoteCandidateIfNeeded(
+            $requestedDate,
+            $sourceMode,
+            $runId,
+            $correctionId,
+            $forceReplace,
+            $forceReplaceReason
+        );
+
+        if ($materializedRun && in_array((string) $materializedRun->terminal_status, ['HELD', 'FAILED'], true)) {
+            return $materializedRun;
+        }
 
         $coverageInput = new MarketDataStageInput($requestedDate, $sourceMode, $runId, 'PUBLISH_BARS', $correctionId, $forceReplace, $forceReplaceReason, 'promote');
         $run = $this->completeCoverageEvaluation($coverageInput);

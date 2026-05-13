@@ -1388,6 +1388,7 @@ class MarketDataEvidenceExportService
     {
         $reasonCode = $this->resolveCoverageReasonCodeFromState($record->coverage_gate_state ?? null);
         $missingSample = $this->decodeJsonArray($record->coverage_missing_sample_json ?? null);
+        $notesMap = $this->parseRunNotes((string) ($this->field($record, 'notes') ?? ''));
 
         return [
             'coverage_universe_count' => isset($record->coverage_universe_count) && $record->coverage_universe_count !== null ? (int) $record->coverage_universe_count : null,
@@ -1407,6 +1408,14 @@ class MarketDataEvidenceExportService
             'coverage_evaluated_at' => $this->field($record, 'finished_at') ?: $this->field($record, 'updated_at'),
             'coverage_reason_code' => $reasonCode,
             'coverage_reason_message' => $this->resolveReasonMessage($reasonCode),
+            'coverage_basis' => $notesMap['coverage_basis'] ?? null,
+            'coverage_basis_publication_id' => isset($notesMap['coverage_basis_publication_id']) && $notesMap['coverage_basis_publication_id'] !== '' ? (int) $notesMap['coverage_basis_publication_id'] : null,
+            'coverage_basis_artifact_scope' => $notesMap['coverage_basis_artifact_scope'] ?? null,
+            'candidate_publication_id' => isset($notesMap['candidate_publication_id']) && $notesMap['candidate_publication_id'] !== '' ? (int) $notesMap['candidate_publication_id'] : null,
+            'baseline_publication_id' => isset($notesMap['baseline_publication_id']) && $notesMap['baseline_publication_id'] !== '' ? (int) $notesMap['baseline_publication_id'] : null,
+            'candidate_available_count' => isset($notesMap['candidate_available_count']) && $notesMap['candidate_available_count'] !== '' ? (int) $notesMap['candidate_available_count'] : null,
+            'candidate_missing_count' => isset($notesMap['candidate_missing_count']) && $notesMap['candidate_missing_count'] !== '' ? (int) $notesMap['candidate_missing_count'] : null,
+            'candidate_coverage_ratio' => isset($notesMap['candidate_coverage_ratio']) && $notesMap['candidate_coverage_ratio'] !== '' ? (float) $notesMap['candidate_coverage_ratio'] : null,
         ];
     }
 
