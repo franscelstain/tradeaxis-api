@@ -45,6 +45,137 @@ class EodEvidenceRepository
             ->first();
     }
 
+
+    public function resolvePublicationForEvidenceAudit(array $selector)
+    {
+        $selectorType = isset($selector['type']) ? (string) $selector['type'] : 'run_id';
+        $runId = isset($selector['run_id']) && $selector['run_id'] !== null && $selector['run_id'] !== '' ? (int) $selector['run_id'] : null;
+        $publicationId = isset($selector['publication_id']) && $selector['publication_id'] !== null && $selector['publication_id'] !== '' ? (int) $selector['publication_id'] : null;
+        $tradeDate = isset($selector['trade_date']) && $selector['trade_date'] !== null && $selector['trade_date'] !== '' ? (string) $selector['trade_date'] : null;
+
+        if ($runId === null && $publicationId === null) {
+            throw new \RuntimeException('EVIDENCE_SELECTOR_MISSING: Historical publication audit resolution requires explicit run_id or publication_id.');
+        }
+
+        $query = DB::table('eod_publications as pub')
+            ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
+            ->leftJoin('eod_current_publication_pointer as ptr', function ($join) {
+                $join->on('ptr.trade_date', '=', 'pub.trade_date');
+            })
+            ->select(
+                'pub.*',
+                'ptr.trade_date as pointer_trade_date',
+                'ptr.publication_id as pointer_publication_id',
+                'ptr.run_id as pointer_run_id',
+                'ptr.publication_version as pointer_publication_version',
+                'ptr.sealed_at as pointer_sealed_at',
+                'run.trade_date_requested as run_trade_date_requested',
+                'run.trade_date_effective as run_trade_date_effective',
+                'run.terminal_status as run_terminal_status',
+                'run.publishability_state as run_publishability_state',
+                'run.coverage_gate_state as run_coverage_gate_state',
+                'run.coverage_universe_count as run_coverage_universe_count',
+                'run.coverage_available_count as run_coverage_available_count',
+                'run.coverage_missing_count as run_coverage_missing_count',
+                'run.coverage_ratio as run_coverage_ratio',
+                'run.coverage_min_threshold as run_coverage_min_threshold',
+                'run.coverage_threshold_mode as run_coverage_threshold_mode',
+                'run.coverage_universe_basis as run_coverage_universe_basis',
+                'run.coverage_contract_version as run_coverage_contract_version',
+                'run.sealed_at as run_sealed_at',
+                'run.publication_id as run_publication_id',
+                'run.publication_version as run_publication_version',
+                'run.is_current_publication as run_is_current_publication'
+            );
+
+        if ($runId !== null) {
+            $query->where('run.run_id', $runId);
+        }
+
+        if ($publicationId !== null) {
+            $query->where('pub.publication_id', $publicationId);
+        }
+
+        if ($tradeDate !== null) {
+            $query->where('pub.trade_date', $tradeDate);
+        }
+
+        $row = $query->first();
+        if (! $row) {
+            throw new \RuntimeException('EVIDENCE_PUBLICATION_NOT_FOUND: No publication matched the explicit evidence selector.');
+        }
+
+        if ($runId !== null && (int) $row->run_id !== $runId) {
+            throw new \RuntimeException('EVIDENCE_PUBLICATION_RUN_MISMATCH: Publication does not belong to the selected run.');
+        }
+
+        if ($publicationId !== null && (int) $row->publication_id !== $publicationId) {
+            throw new \RuntimeException('EVIDENCE_PUBLICATION_SELECTOR_MISMATCH: Resolved publication does not match selected publication_id.');
+        }
+
+        if ((string) ($row->run_publication_id ?? '') !== (string) $row->publication_id
+            || (string) ($row->run_publication_version ?? '') !== (string) $row->publication_version) {
+            throw new \RuntimeException('EVIDENCE_RUN_PUBLICATION_MIRROR_MISMATCH: Run mirror does not match the publication being evidenced.');
+        }
+
+        if ((string) ($row->run_trade_date_requested ?? '') !== (string) $row->trade_date) {
+            throw new \RuntimeException('EVIDENCE_PUBLICATION_TRADE_DATE_MISMATCH: Publication trade_date does not match run requested trade date.');
+        }
+
+        if ((string) ($row->seal_state ?? '') !== 'SEALED' || empty($row->sealed_at)) {
+            throw new \RuntimeException('EVIDENCE_HISTORICAL_PUBLICATION_UNSEALED: Evidence artifact proof requires a sealed publication.');
+        }
+
+        if (empty($row->run_sealed_at)) {
+            throw new \RuntimeException('EVIDENCE_RUN_SEAL_MISSING: Evidence artifact proof requires the source run to be sealed.');
+        }
+
+        if ((string) ($row->run_terminal_status ?? '') !== 'SUCCESS') {
+            throw new \RuntimeException('EVIDENCE_RUN_TERMINAL_STATUS_INVALID: Historical publication evidence requires a successful source run.');
+        }
+
+        if ((string) ($row->run_publishability_state ?? '') !== 'READABLE') {
+            throw new \RuntimeException('EVIDENCE_RUN_PUBLISHABILITY_INVALID: Historical publication evidence requires the source run to be readable.');
+        }
+
+        if ((string) ($row->run_coverage_gate_state ?? '') !== 'PASS') {
+            throw new \RuntimeException('EVIDENCE_COVERAGE_CONTEXT_INVALID: Historical publication evidence requires PASS coverage context.');
+        }
+
+        foreach (['run_coverage_universe_count', 'run_coverage_available_count', 'run_coverage_missing_count', 'run_coverage_ratio', 'run_coverage_min_threshold', 'run_coverage_threshold_mode', 'run_coverage_universe_basis', 'run_coverage_contract_version'] as $coverageField) {
+            if (! property_exists($row, $coverageField) || $row->{$coverageField} === null || $row->{$coverageField} === '') {
+                throw new \RuntimeException('EVIDENCE_COVERAGE_CONTEXT_MISSING: Historical publication evidence requires complete coverage telemetry.');
+            }
+        }
+
+        foreach (['bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash'] as $hashField) {
+            if (! property_exists($row, $hashField) || $row->{$hashField} === null || $row->{$hashField} === '') {
+                throw new \RuntimeException('EVIDENCE_PUBLICATION_ARTIFACT_HASH_MISSING: Historical publication evidence requires publication-scoped artifact hashes.');
+            }
+        }
+
+        $isCurrentPointer = (string) ($row->pointer_publication_id ?? '') === (string) $row->publication_id
+            && (string) ($row->pointer_run_id ?? '') === (string) $row->run_id
+            && (string) ($row->pointer_publication_version ?? '') === (string) $row->publication_version
+            && (int) ($row->is_current ?? 0) === 1
+            && (int) ($row->run_is_current_publication ?? 0) === 1;
+
+        $row->evidence_resolution_mode = $isCurrentPointer ? 'CURRENT_READABLE_PUBLICATION_AUDIT' : 'HISTORICAL_PUBLICATION_AUDIT';
+        $row->evidence_publication_scope = $isCurrentPointer ? 'CURRENT_POINTER_PUBLICATION' : 'HISTORICAL_SEALED_PUBLICATION';
+        $row->evidence_selector_type = $selectorType;
+        $row->evidence_selector_id = $publicationId !== null ? $publicationId : $runId;
+        $row->historical_publication_allowed = ! $isCurrentPointer;
+        $row->current_pointer_required = $isCurrentPointer;
+        $row->current_pointer_status = $isCurrentPointer ? 'RESOLVED_READABLE_CURRENT' : 'NOT_CURRENT_POINTER';
+        $row->artifact_scope = 'PUBLICATION_SCOPED';
+        $row->coverage_basis_publication_id = (int) $row->publication_id;
+        $row->coverage_basis_run_id = (int) $row->run_id;
+        $row->lineage_verification_status = 'LINEAGE_VERIFIED';
+        $row->evidence_reason_code = $isCurrentPointer ? 'CURRENT_READABLE_PUBLICATION_RESOLVED' : 'HISTORICAL_SEALED_PUBLICATION_RESOLVED';
+
+        return $row;
+    }
+
     public function summarizeRunEvents($runId)
     {
         $events = DB::table('eod_run_events')
@@ -222,6 +353,72 @@ class EodEvidenceRepository
         }
 
         return $query;
+    }
+
+
+    public function dominantReasonCodesForEvidencePublication($runId, $tradeDate, $publicationId, $isCurrentPublication = false)
+    {
+        $counts = [];
+
+        $eventReasons = DB::table('eod_run_events')
+            ->select('reason_code', DB::raw('COUNT(*) as total'))
+            ->where('run_id', $runId)
+            ->whereNotNull('reason_code')
+            ->groupBy('reason_code')
+            ->get();
+
+        foreach ($eventReasons as $row) {
+            $counts[$row->reason_code] = (int) $row->total;
+        }
+
+        $eligibilityQuery = $this->evidenceEligibilityQuery($tradeDate, $publicationId, $isCurrentPublication)
+            ->select('elig.reason_code', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('elig.reason_code');
+
+        foreach ($eligibilityQuery->groupBy('elig.reason_code')->get() as $row) {
+            $counts[$row->reason_code] = isset($counts[$row->reason_code]) ? $counts[$row->reason_code] + (int) $row->total : (int) $row->total;
+        }
+
+        arsort($counts);
+        $result = [];
+        foreach ($counts as $reasonCode => $count) {
+            $result[] = ['reason_code' => $reasonCode, 'count' => (int) $count];
+        }
+
+        return $result;
+    }
+
+    public function exportEligibilityRowsForEvidencePublication($tradeDate, $publicationId, $isCurrentPublication = false)
+    {
+        return $this->evidenceEligibilityQuery($tradeDate, $publicationId, $isCurrentPublication)
+            ->select('elig.trade_date', 'elig.ticker_id', 'elig.eligible', 'elig.reason_code')
+            ->orderBy('elig.ticker_id')
+            ->get()
+            ->map(function ($row) {
+                return (array) $row;
+            })->all();
+    }
+
+    private function evidenceEligibilityQuery($tradeDate, $publicationId, $isCurrentPublication = false)
+    {
+        $historyExists = DB::table('eod_eligibility_history')
+            ->where('trade_date', $tradeDate)
+            ->where('publication_id', $publicationId)
+            ->exists();
+
+        $table = $historyExists || ! $isCurrentPublication ? 'eod_eligibility_history' : 'eod_eligibility';
+
+        return DB::table($table.' as elig')
+            ->join('eod_publications as pub', 'pub.publication_id', '=', 'elig.publication_id')
+            ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
+            ->where('elig.trade_date', $tradeDate)
+            ->where('elig.publication_id', $publicationId)
+            ->whereColumn('pub.trade_date', 'elig.trade_date')
+            ->where('pub.seal_state', 'SEALED')
+            ->whereNotNull('pub.sealed_at')
+            ->whereNotNull('run.sealed_at')
+            ->whereColumn('run.publication_id', 'pub.publication_id')
+            ->whereColumn('run.publication_version', 'pub.publication_version');
     }
 
     public function exportInvalidBarsRows($tradeDate, $runId)

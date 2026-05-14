@@ -22,7 +22,9 @@ class CorrectionEvidenceExportServiceTest extends TestCase
             'approved_by' => 'ops_lead',
             'approved_at' => '2026-03-06T09:00:00+07:00',
             'prior_publication_id' => 1188,
+            'prior_run_id' => 5001,
             'new_publication_id' => 1201,
+            'new_run_id' => 5009,
             'status' => 'PUBLISHED',
             'final_outcome_note' => 'Historical correction published safely via new sealed current publication.',
         ];
@@ -52,6 +54,48 @@ class CorrectionEvidenceExportServiceTest extends TestCase
         $evidence->shouldReceive('findCorrectionById')->once()->with(9001)->andReturn($correction);
         $evidence->shouldReceive('findPublicationById')->once()->with(1188)->andReturn($priorPublication);
         $evidence->shouldReceive('findPublicationById')->once()->with(1201)->andReturn($newPublication);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with([
+            'type' => 'publication_id',
+            'publication_id' => 1188,
+            'run_id' => 5001,
+        ])->andReturn((object) [
+            'publication_id' => 1188,
+            'run_id' => 5001,
+            'publication_version' => 1,
+            'is_current' => 0,
+            'seal_state' => 'SEALED',
+            'evidence_resolution_mode' => 'HISTORICAL_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'HISTORICAL_SEALED_PUBLICATION',
+            'current_pointer_required' => false,
+            'current_pointer_status' => 'NOT_CURRENT_POINTER',
+            'historical_publication_allowed' => true,
+            'lineage_verification_status' => 'LINEAGE_VERIFIED',
+            'artifact_scope' => 'PUBLICATION_SCOPED',
+            'coverage_basis_publication_id' => 1188,
+            'coverage_basis_run_id' => 5001,
+            'evidence_reason_code' => 'HISTORICAL_SEALED_PUBLICATION_RESOLVED',
+        ]);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with([
+            'type' => 'publication_id',
+            'publication_id' => 1201,
+            'run_id' => 5009,
+        ])->andReturn((object) [
+            'publication_id' => 1201,
+            'run_id' => 5009,
+            'publication_version' => 2,
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'evidence_resolution_mode' => 'CURRENT_READABLE_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'CURRENT_POINTER_PUBLICATION',
+            'current_pointer_required' => true,
+            'current_pointer_status' => 'RESOLVED_READABLE_CURRENT',
+            'historical_publication_allowed' => false,
+            'lineage_verification_status' => 'LINEAGE_VERIFIED',
+            'artifact_scope' => 'PUBLICATION_SCOPED',
+            'coverage_basis_publication_id' => 1201,
+            'coverage_basis_run_id' => 5009,
+            'evidence_reason_code' => 'CURRENT_READABLE_PUBLICATION_RESOLVED',
+        ]);
 
         $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
         $dir = sys_get_temp_dir().'/market_data_evidence_correction_'.uniqid();
@@ -70,6 +114,10 @@ class CorrectionEvidenceExportServiceTest extends TestCase
         $this->assertSame('H1B', $payload['old_hashes']['bars_batch_hash']);
         $this->assertSame('H2B', $payload['new_hashes']['bars_batch_hash']);
         $this->assertTrue($payload['publication_switch']);
+        $this->assertSame('HISTORICAL_PUBLICATION_AUDIT', $payload['baseline_historical_publication_proof']['evidence_resolution_mode']);
+        $this->assertSame('HISTORICAL_SEALED_PUBLICATION_RESOLVED', $payload['baseline_historical_publication_proof']['evidence_reason_code']);
+        $this->assertSame('CURRENT_READABLE_PUBLICATION_AUDIT', $payload['candidate_historical_publication_proof']['evidence_resolution_mode']);
+        $this->assertSame('PUBLICATION_SCOPED', $payload['correction_lifecycle']['historical_lineage_proof']['baseline_publication_proof']['artifact_scope']);
         $this->assertStringContainsString('Historical correction published safely', $payload['final_outcome_note']);
     }
 }

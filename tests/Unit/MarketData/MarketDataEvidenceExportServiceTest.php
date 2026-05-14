@@ -60,7 +60,25 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'finished_at' => '2026-04-21T17:21:00+07:00',
             'notes' => 'candidate_publication_id=1201; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
         ];
-        $publication = (object) ['publication_id' => 1201, 'run_id' => 8124, 'publication_version' => 1, 'is_current' => 1, 'seal_state' => 'SEALED'];
+        $publication = (object) [
+            'publication_id' => 1201,
+            'run_id' => 8124,
+            'publication_version' => 1,
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'evidence_resolution_mode' => 'CURRENT_READABLE_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'CURRENT_POINTER_PUBLICATION',
+            'evidence_selector_type' => 'run_id',
+            'evidence_selector_id' => 8124,
+            'current_pointer_required' => true,
+            'current_pointer_status' => 'RESOLVED_READABLE_CURRENT',
+            'historical_publication_allowed' => false,
+            'artifact_scope' => 'PUBLICATION_SCOPED',
+            'coverage_basis_publication_id' => 1201,
+            'coverage_basis_run_id' => 8124,
+            'lineage_verification_status' => 'LINEAGE_VERIFIED',
+            'evidence_reason_code' => 'CURRENT_READABLE_PUBLICATION_RESOLVED',
+        ];
         $manifest = (object) [
             'publication_id' => 1201,
             'trade_date' => '2026-04-21',
@@ -85,7 +103,11 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $corrections = m::mock(EodCorrectionRepository::class);
 
         $evidence->shouldReceive('findRunById')->once()->with(8124)->andReturn($run);
-        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(8124, '2026-04-21')->andReturn($publication);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with([
+            'type' => 'run_id',
+            'run_id' => 8124,
+            'trade_date' => '2026-04-21',
+        ])->andReturn($publication);
         $publications->shouldReceive('buildManifestByPublicationId')->once()->with(1201)->andReturn($manifest);
         $evidence->shouldReceive('summarizeRunEvents')->once()->with(8124)->andReturn([
             'event_count' => 3,
@@ -97,7 +119,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'stage_counts' => ['FINALIZE' => 1, 'HASH' => 1, 'SEAL' => 1],
             'reason_code_counts' => [],
         ]);
-        $evidence->shouldReceive('dominantReasonCodes')->once()->andReturn([]);
+        $evidence->shouldReceive('dominantReasonCodesForEvidencePublication')->once()->with(8124, '2026-04-21', 1201, true)->andReturn([]);
         $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8124)->andReturn([
             'event_id' => 991,
             'event_time' => '2026-04-21T17:04:00+07:00',
@@ -130,7 +152,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
                 ],
             ],
         ]);
-        $evidence->shouldReceive('exportEligibilityRows')->once()->andReturn([
+        $evidence->shouldReceive('exportEligibilityRowsForEvidencePublication')->once()->with('2026-04-21', 1201, true)->andReturn([
             ['trade_date' => '2026-04-21', 'ticker_id' => 101, 'eligible' => 1, 'reason_code' => null],
         ]);
         $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-21', 8124)->andReturn([
@@ -203,6 +225,11 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('SEALED', $payload['publication_resolution']['publication_seal_state']);
         $this->assertTrue($payload['publication_resolution']['is_current_publication']);
         $this->assertTrue($payload['publication_resolution']['pointer_context']['readable_pointer_validated']);
+        $this->assertSame('CURRENT_READABLE_PUBLICATION_AUDIT', $payload['publication_resolution']['evidence_resolution_mode']);
+        $this->assertSame('CURRENT_POINTER_PUBLICATION', $payload['publication_resolution']['evidence_publication_scope']);
+        $this->assertTrue($payload['publication_resolution']['current_pointer_required']);
+        $this->assertSame('PUBLICATION_SCOPED', $payload['publication_resolution']['artifact_scope']);
+        $this->assertSame('LINEAGE_VERIFIED', $payload['publication_resolution']['lineage_verification_status']);
         $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $result['summary']['source_summary']);
         $this->assertSame('STAGE_COMPLETED', $result['summary']['source_attempt_event_type']);
         $this->assertSame(2, $result['summary']['source_attempt_count']);
@@ -268,7 +295,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $corrections = m::mock(EodCorrectionRepository::class);
 
         $evidence->shouldReceive('findRunById')->once()->with(8125)->andReturn($run);
-        $publications->shouldNotReceive('findReadableCurrentPublicationForRun');
+        $evidence->shouldNotReceive('resolvePublicationForEvidenceAudit');
         $publications->shouldNotReceive('buildManifestByPublicationId');
         $publications->shouldReceive('findRawCurrentPublicationStateForTradeDate')->once()->with('2026-04-22')->andReturn(null);
         $evidence->shouldReceive('summarizeRunEvents')->once()->with(8125)->andReturn([
@@ -319,5 +346,136 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('COVERAGE_BELOW_THRESHOLD', $payload['fallback_context']['fallback_reason_code']);
         $this->assertSame(8125, $payload['lineage']['run_to_finalize_decision']['run_id']);
     }
+
+
+    public function test_export_run_evidence_resolves_historical_sealed_publication_without_current_pointer_dependency()
+    {
+        $run = (object) [
+            'run_id' => 8126,
+            'trade_date_requested' => '2026-04-20',
+            'trade_date_effective' => '2026-04-20',
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS',
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'coverage_universe_count' => 2,
+            'coverage_available_count' => 2,
+            'coverage_missing_count' => 0,
+            'coverage_ratio' => 1.0,
+            'coverage_min_threshold' => 0.98,
+            'coverage_gate_state' => 'PASS',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
+            'final_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'final_outcome_note' => 'Historical publication remains sealed and evidenceable.',
+            'publication_id' => 1200,
+            'publication_version' => 1,
+            'is_current_publication' => 0,
+            'bars_rows_written' => 2,
+            'indicators_rows_written' => 2,
+            'eligibility_rows_written' => 2,
+            'bars_batch_hash' => 'HB_OLD',
+            'indicators_batch_hash' => 'HI_OLD',
+            'eligibility_batch_hash' => 'HE_OLD',
+            'sealed_at' => '2026-04-20T17:20:00+07:00',
+            'config_version' => 'cfg_v1',
+            'created_at' => '2026-04-20T17:00:00+07:00',
+            'updated_at' => '2026-04-20T17:21:00+07:00',
+        ];
+        $publication = (object) [
+            'publication_id' => 1200,
+            'run_id' => 8126,
+            'publication_version' => 1,
+            'is_current' => 0,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-04-20T17:20:00+07:00',
+            'pointer_publication_id' => 1201,
+            'pointer_run_id' => 8127,
+            'pointer_publication_version' => 2,
+            'evidence_resolution_mode' => 'HISTORICAL_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'HISTORICAL_SEALED_PUBLICATION',
+            'evidence_selector_type' => 'run_id',
+            'evidence_selector_id' => 8126,
+            'current_pointer_required' => false,
+            'current_pointer_status' => 'NOT_CURRENT_POINTER',
+            'historical_publication_allowed' => true,
+            'artifact_scope' => 'PUBLICATION_SCOPED',
+            'coverage_basis_publication_id' => 1200,
+            'coverage_basis_run_id' => 8126,
+            'lineage_verification_status' => 'LINEAGE_VERIFIED',
+            'evidence_reason_code' => 'HISTORICAL_SEALED_PUBLICATION_RESOLVED',
+        ];
+        $manifest = (object) [
+            'publication_id' => 1200,
+            'trade_date' => '2026-04-20',
+            'run_id' => 8126,
+            'publication_version' => 1,
+            'is_current' => 0,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-04-20T17:20:00+07:00',
+            'bars_batch_hash' => 'HB_OLD',
+            'indicators_batch_hash' => 'HI_OLD',
+            'eligibility_batch_hash' => 'HE_OLD',
+            'bars_rows_written' => 2,
+            'indicators_rows_written' => 2,
+            'eligibility_rows_written' => 2,
+            'trade_date_effective' => '2026-04-20',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(8126)->andReturn($run);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with([
+            'type' => 'run_id',
+            'run_id' => 8126,
+            'trade_date' => '2026-04-20',
+        ])->andReturn($publication);
+        $publications->shouldNotReceive('findReadableCurrentPublicationForRun');
+        $publications->shouldReceive('buildManifestByPublicationId')->once()->with(1200)->andReturn($manifest);
+        $evidence->shouldReceive('summarizeRunEvents')->once()->with(8126)->andReturn([
+            'event_count' => 1,
+            'first_event_time' => '2026-04-20T17:21:00+07:00',
+            'last_event_time' => '2026-04-20T17:21:00+07:00',
+            'first_event_type' => 'RUN_FINALIZED',
+            'last_event_type' => 'RUN_FINALIZED',
+            'highest_severity' => 'INFO',
+            'stage_counts' => ['FINALIZE' => 1],
+            'reason_code_counts' => [],
+        ]);
+        $evidence->shouldReceive('dominantReasonCodesForEvidencePublication')->once()->with(8126, '2026-04-20', 1200, false)->andReturn([]);
+        $evidence->shouldReceive('exportEligibilityRowsForEvidencePublication')->once()->with('2026-04-20', 1200, false)->andReturn([
+            ['trade_date' => '2026-04-20', 'ticker_id' => 101, 'eligible' => 1, 'reason_code' => null],
+        ]);
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8126)->andReturn([]);
+        $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-20', 8126)->andReturn([]);
+
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $dir = sys_get_temp_dir().'/market_data_evidence_historical_run_'.uniqid();
+        $result = $service->exportRunEvidence(8126, $dir);
+
+        $this->assertSame('run', $result['selector']['type']);
+        $this->assertSame('COMPLETE', $result['summary']['evidence_completeness_state']);
+        $this->assertSame('HISTORICAL_SEALED_PUBLICATION_RESOLVED', $result['summary']['pointer_resolve_status']);
+
+        $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
+        $this->assertSame('HISTORICAL_PUBLICATION_AUDIT', $payload['publication_context']['evidence_resolution_mode']);
+        $this->assertSame('HISTORICAL_SEALED_PUBLICATION', $payload['publication_context']['evidence_publication_scope']);
+        $this->assertFalse($payload['publication_context']['current_pointer_required']);
+        $this->assertTrue($payload['publication_context']['historical_publication_allowed']);
+        $this->assertSame('PUBLICATION_SCOPED', $payload['publication_context']['artifact_scope']);
+        $this->assertSame('LINEAGE_VERIFIED', $payload['publication_context']['lineage_verification_status']);
+        $this->assertSame('HISTORICAL_PUBLICATION_NOT_CURRENT_POINTER', $payload['pointer_context']['pointer_mismatch_reason']);
+        $this->assertSame('HISTORICAL_SEALED_PUBLICATION_RESOLVED', $payload['publication_context']['evidence_reason_code']);
+        $this->assertSame(1200, $payload['lineage']['publication_to_pointer']['publication_id']);
+        $this->assertFalse($payload['lineage']['publication_to_pointer']['current_pointer_required']);
+        $this->assertTrue($payload['lineage']['publication_to_pointer']['historical_publication_allowed']);
+    }
+
 
 }

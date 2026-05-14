@@ -3,30 +3,34 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Coverage Gate Candidate Scope Hardening
+- Evidence Historical Lineage Completeness
 
-[SESSION_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+[SESSION_STATUS] DONE / LOCKED_LOCAL_PHPUNIT_PASS
 
 [SESSION_SCOPE]
-- Harden `COVERAGE_GATE_ENFORCEMENT_CONTRACT` so promote/manual promote/correction coverage evaluation uses the candidate publication / candidate artifact scope.
-- This is not coverage gate enforcement ulang; keep the existing coverage/publishability contract as owner and add only candidate-scope hardening proof.
-- The correction candidate must be evaluated separately from baseline/current publication.
-- Operator-local targeted/full PHPUnit proof has passed; this hardening is LOCKED under the existing coverage/publishability contract owner.
+- Harden evidence export so historical sealed publication proof is not blocked by the current readable pointer resolver.
+- This is not a read-side consumer relaxation; consumer read resolver tetap current-pointer-only.
+- Evidence audit resolver is selector-scoped and lineage-validated for run/publication/correction/replay proof.
+- Operator-local targeted filters, StaticGuard, and full MarketData suite passed after audit-doc synchronization fix.
 
 [SESSION_GOAL]
-- Candidate coverage must be evaluated from candidate artifact rows, not live/current artifact, not latest artifact, and not correction baseline/current publication.
+- Evidence export can prove historical sealed publication lineage without current pointer fallback, latest/MAX shortcut, raw/staging bypass, or changing the current pointer.
 
 [SESSION_NOTES]
-- Static trace found candidate-scope risk in promote/manual promote/correction coverage when evaluator calls did not always carry explicit candidate publication context.
-- Patch now records `coverage_basis`, `coverage_basis_publication_id`, `candidate_publication_id`, and `baseline_publication_id` in runtime notes and proof surfaces.
-- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local targeted/full PHPUnit proof is the runtime authority and has passed.
+- Static trace found run evidence still used current-readable run publication resolution, which blocks old sealed publication proof once another publication becomes current.
+- Patch adds `EodEvidenceRepository::resolvePublicationForEvidenceAudit()` and evidence-specific publication-scoped artifact/reason-code export methods.
+- Correction and replay evidence now expose historical lineage fields so baseline/candidate/expected/actual publication proof remains clear even when not current.
+- Consumer resolver in `EodPublicationRepository` remains unchanged and current-pointer-only.
+- Candidate-scope hardening remains preserved as a locked historical/current contract entry below; this session does not replace the coverage contract.
+- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local StaticGuard and full MarketData PHPUnit proof passed and is the DONE/LOCKED authority.
 
 [RUNTIME_ENVIRONMENT]
-- Operator-local PHP version: PHP 7.4.33
-- Operator-local PHPUnit version: PHPUnit 9.6.34
-- Required PHP extensions available locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
+- Container PHP version: PHP 8.4.16
 - Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, xmlwriter
-- Runtime authority for DONE/LOCKED: operator-local PHPUnit output, not container PHPUnit, because container PHPUnit is extension-blocked.
+- Operator-local PHP version: PHP 7.4.33 from supplied runtime output
+- Operator-local PHPUnit version: PHPUnit 9.6.34 from supplied runtime output
+- Required PHP extensions available locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
+- Runtime authority for DONE/LOCKED: operator-local PHPUnit output because container PHPUnit is extension-blocked.
 
 ---
 ## OPERATIONAL STATUS
@@ -47,6 +51,63 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- EVIDENCE_HISTORICAL_LINEAGE_COMPLETENESS_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-14
+
+  [RELATED_IMPLEMENTATION] Evidence Historical Lineage Completeness
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-13 → Contract opened as hardening under existing evidence/replay/read-side/linkage governance, not as a duplicate consumer read contract.
+  - 2026-05-13 → Static trace found evidence resolver risk: run evidence could depend on current readable publication resolution and fail for old sealed publications after pointer replacement.
+  - 2026-05-13 → Patch added selector-scoped evidence audit resolver, historical publication output labels, publication-scoped historical artifact export, correction/replay historical lineage proof fields, and static guard coverage.
+
+  [DEFINED]
+  - Evidence export is an audit/proof surface and may resolve historical sealed publication by explicit selector.
+  - Consumer read resolver remains current-pointer-only and must not be made historical-aware.
+  - Historical evidence proof must be selector-scoped, lineage-validated, reason-coded, and publication-scoped.
+
+  [IMPLEMENTED]
+  - `EodEvidenceRepository::resolvePublicationForEvidenceAudit()` resolves explicit historical/current publication proof without using current pointer fallback.
+  - `MarketDataEvidenceExportService` uses the audit resolver for run evidence and labels output with current vs historical resolution mode.
+  - Correction and replay evidence include historical lineage fields.
+  - `EVIDENCE_HISTORICAL_LINEAGE_COMPLETENESS_INVENTORY.md` records matrices and validation requirements.
+  - `EvidenceHistoricalLineageCompletenessStaticGuardTest.php` guards separation between consumer resolver and evidence audit resolver.
+
+  [ENFORCED]
+  - Historical resolver validates publication exists, selector matches, run-publication mirror, trade date, SEALED state, source run seal, SUCCESS/READABLE/PASS state, coverage telemetry, and artifact hashes.
+  - Historical artifact evidence uses `publication_id`-scoped lookup and historical table for non-current eligibility proof.
+  - Unsealed/missing/mismatched historical proof fails with reason code instead of falling back to current publication.
+  - Consumer resolver was not modified and remains current pointer only.
+
+  [VALIDATED]
+  - Static syntax proof passed for changed PHP files and the new static guard.
+  - Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter` extensions.
+  - Initial state before local proof: operator-local targeted/full PHPUnit proof was required before this contract could become LOCKED. READY_FOR_LOCAL_RUNTIME_VALIDATION is retained here as historical transition marker.
+  - Operator-local `StaticGuard` PASS after audit-doc synchronization fix: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> `OK (135 tests, 2952 assertions)`.
+  - Operator-local full MarketData suite PASS after audit-doc synchronization fix: `vendor/bin/phpunit tests/Unit/MarketData` -> `OK (403 tests, 5542 assertions)`.
+
+  [FINAL_RULE]
+  - Evidence export may prove historical sealed publication only through explicit selector-scoped audit resolution.
+  - Evidence audit resolver must never use current pointer fallback, latest publication fallback, raw/staging shortcut, or `MAX(date)` style lookup for historical proof.
+  - Consumer read resolver must remain current-pointer-only and must not expose historical non-current publication as readable consumer data.
+
+  [OPERATOR_LOCAL_EVIDENCE_2026_05_14]
+  - Direct historical lineage static guard PASS: `OK (5 tests, 51 assertions)`.
+  - Targeted Evidence/Replay/Correction/Publication/Pointer/Readable/ReadSide/CommandSurface/Integration filters PASS in operator-local environment.
+  - StaticGuard/full suite failures were audit-doc synchronization failures only: implementation status active session was `Evidence Historical Lineage Completeness`, while contract tracker/current working entries still pointed to `Coverage Gate Candidate Scope Hardening`.
+  - Fix1 synchronized the active session/current working contract without changing runtime evidence resolver code.
+  - Operator-local `StaticGuard` PASS after fix1: `OK (135 tests, 2952 assertions)`.
+  - Operator-local full `tests/Unit/MarketData` PASS after fix1: `OK (403 tests, 5542 assertions)`.
+
+  [FINAL_CLOSURE_2026_05_14]
+  - Contract promoted to LOCKED because direct historical-lineage guard, targeted Evidence/Replay/Correction/Publication/Pointer/Readable/ReadSide/CommandSurface/Integration filters, StaticGuard, and full MarketData suite all passed locally.
+
+  [NEXT_ACTION]
+  - Keep this contract locked. Future changes touching evidence export, historical publication proof, correction/replay evidence, publication-scoped artifact export, current pointer resolver, audit docs, or static guards must rerun targeted evidence/replay/read-side/static filters plus full `tests/Unit/MarketData`.
 
 - COVERAGE_GATE_ENFORCEMENT_CONTRACT -> LOCKED
 
@@ -1446,6 +1507,7 @@ ACTIVE SESSION:
 - Related implementation: Coverage Gate Candidate Scope Hardening.
 - Existing owner: `COVERAGE_GATE_ENFORCEMENT_CONTRACT`; this is not coverage gate enforcement ulang and does not replace prior coverage gate enforcement history.
 - Enforcement hardening: promote, manual promote, and correction coverage evaluation must use candidate publication / candidate artifact scope as coverage basis.
+- The correction candidate must be evaluated separately from baseline/current publication.
 - Baseline/current publication may be used for correction lineage, comparison, fallback preservation, and unchanged detection only. It must not be used as coverage basis for candidate publishability.
 - Runtime patch: `MarketDataPipelineService` resolves `coverageBasisPublicationId` before coverage evaluation and records candidate/baseline proof in run notes.
 - Runtime patch: `EodArtifactRepository` resolves candidate coverage ticker ids from `eod_bars_history` and `eod_bars` using explicit `publication_id`; no current pointer/latest/MAX-date fallback is used.
@@ -1453,3 +1515,6 @@ ACTIVE SESSION:
 - Static guard: `CoverageGateCandidateScopeHardeningStaticGuardTest.php`.
 - Inventory: `COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING_INVENTORY.md`.
 - Lock condition: promote/manual promote/correction targeted filters and full `vendor/bin/phpunit tests/Unit/MarketData` must PASS in operator-local environment before this hardening can be marked LOCKED.
+
+
+---
