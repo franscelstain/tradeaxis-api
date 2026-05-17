@@ -171,6 +171,19 @@ CREATE TABLE IF NOT EXISTS eod_eligibility (
 -- publication_id is mandatory publication context on every live current row,
 -- but live-table identity remains (trade_date, ticker_id).
 
+-- DB INTEGRITY FK / IMPLICIT INTEGRITY DECISION - LOCKED POLICY
+-- Final policy: HYBRID_REQUIRED.
+-- Current live artifact tables intentionally keep mandatory run_id/publication_id columns
+-- plus publication-scoped indexes, but do not add physical FK constraints to
+-- publication/run/ticker in this session because import/promote/correction/replay lifecycles
+-- are phase-dependent and validated by repository/service/static/integration guards.
+-- Stable immutable proof tables keep explicit publication FK constraints:
+-- eod_bars_history, eod_indicators_history, and eod_eligibility_history.
+-- Current pointer keeps explicit FK to eod_publications(publication_id), while pointer
+-- run/version/readability/coverage mirror checks remain implicit guard invariants.
+-- Audit scope note: this decision does not mean the whole schema sync failed; it only
+-- closes the live artifact relation risk with an explicit FK-vs-implicit policy.
+
 -- =========================================================
 -- Runs with separated state model
 -- =========================================================

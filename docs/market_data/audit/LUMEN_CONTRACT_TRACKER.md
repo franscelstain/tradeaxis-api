@@ -3,36 +3,32 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Replay Historical Determinism Hardening
+- DB Integrity FK / Implicit Integrity Decision
 
-[SESSION_STATUS] COMPLETED
+[SESSION_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
 
 [SESSION_SCOPE]
-- Harden replay actual-state verification so a historical sealed run/publication can be verified after the current pointer moves to a newer publication.
-- This is not replay determinism umum; existing Replay Determinism fixture schema, deterministic comparison, reason-coded mismatch, expected/actual context persistence, and volatile-field exclusion remain preserved.
-- This is not a read-side consumer relaxation; consumer read resolver tetap current-pointer-only.
-- Evidence Historical Lineage Completeness remains the audit resolver source for selector-scoped historical publication proof, wrapped by replay-specific actual-state context.
+- Decide and lock the live artifact DB integrity policy: explicit FK, implicit guard, hybrid, no relation, or deferred with reason.
+- This is scoped live artifact relation hardening, not a claim that the whole schema sync failed.
+- Existing DB Integrity & Constraint Enforcement remains the owner baseline; this session adds the FK-vs-implicit decision matrix and guard.
 
 [SESSION_GOAL]
-- Replay verification can prove historical sealed publication actual state by explicit selector and lineage validation, without current pointer fallback, latest/MAX shortcut, raw/staging bypass, or pointer mutation.
+- Lock `HYBRID_REQUIRED` as the final validated policy: keep stable explicit FKs for current pointer and immutable history publication proof; keep phase-dependent live artifact/current/correction/replay/evidence relations under mandatory implicit repository/service/static guard proof.
 
 [SESSION_NOTES]
-- Static trace found `ReplayVerificationService::resolvePublicationForRun()` was still current-pointer dependent for replay verify.
-- Patch adds `ReplayVerificationService::resolvePublicationForReplayActualState()` and routes historical expected context through `EodEvidenceRepository::resolvePublicationForEvidenceAudit()`.
-- Replay actual/expected context now exposes `actual_replay_resolution_context` / `expected_replay_resolution_context`, current vs historical mode, selector, current pointer requirement, artifact scope, lineage status, and replay reason code.
-- Historical replay reason-code counts and eligibility proof use publication-scoped evidence methods.
-- Consumer resolver in `EodPublicationRepository` remains unchanged and current-pointer-only.
-- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; final LOCKED authority comes from operator-local PHPUnit output.
-- 2026-05-17 operator-local feedback first showed guard expectation failures only; follow-up patch fixed the repository-method assertion and reason-code count drift.
-- 2026-05-17 operator-local rerun passed ReplayHistorical, Replay, StaticGuard, and full `tests/Unit/MarketData`; contract is now LOCKED for this source-of-truth ZIP.
+- Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local PHPUnit is the runtime authority for this session.
+- Static trace confirms `eod_current_publication_pointer` has FK to `eod_publications(publication_id)` and immutable history artifact tables have publication FKs.
+- Static trace confirms current live artifact tables carry mandatory `run_id` and `publication_id` plus publication-scoped indexes, while lifecycle relations remain implicit by policy.
+- Patch adds `DB_INTEGRITY_FK_IMPLICIT_INTEGRITY_DECISION_INVENTORY.md`, schema policy comments, and `DbIntegrityFkImplicitIntegrityDecisionStaticGuardTest.php`.
+- No physical FK/migration was added in this session because live artifact publication/run/ticker relations are phase-dependent; this decision is now validated by operator-local targeted and full PHPUnit proof.
 
 [RUNTIME_ENVIRONMENT]
 - Container PHP version: PHP 8.4.16
-- Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, xmlwriter
+- Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, and xmlwriter
 - Operator-local PHP version: PHP 7.4.33 expected from prior runtime baseline
-- Operator-local PHPUnit version: PHPUnit 9.6.34 from supplied local PHPUnit output
-- Required PHP extensions available locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
-- Runtime authority for DONE/LOCKED: operator-local PHPUnit output because container PHPUnit is extension-blocked.
+- Operator-local PHPUnit version: PHPUnit 9.6.34 validated by supplied local output
+- Required PHP extensions expected locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
+- Runtime authority for DONE/LOCKED: operator-local PHPUnit output because container PHPUnit is extension-blocked. Supplied local output passed direct guard, DbIntegrity filter, StaticGuard filter, and full MarketData suite.
 
 ---
 ## OPERATIONAL STATUS
@@ -53,6 +49,51 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- DB_INTEGRITY_FK_IMPLICIT_INTEGRITY_DECISION_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-17
+
+  [RELATED_IMPLEMENTATION] DB Integrity FK / Implicit Integrity Decision
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-17 -> Contract opened as a scoped hardening layer under existing DB integrity governance.
+  - 2026-05-17 -> Contract explicitly rejects the false claim that the whole schema sync failed; only live artifact relation policy needed classification.
+  - 2026-05-17 -> Relation decisions were classified as `EXPLICIT_FK_REQUIRED`, `IMPLICIT_GUARD_ACCEPTED`, or `HYBRID_REQUIRED`; no relation is left `TBD` without blocker in the new inventory.
+  - 2026-05-17 -> Static guard added to preserve the policy and prevent accidental live artifact FK/implicit guard drift.
+  - 2026-05-17 -> Operator-local PHPUnit proof supplied and passed: direct DbIntegrity FK/Implicit static guard, DbIntegrity filter, StaticGuard filter, and full MarketData suite.
+
+  [DEFINED]
+  - Every live artifact relation must be either explicitly DB-enforced, implicitly guarded with tests, hybrid, no-relation, or deferred with reason.
+  - Stable immutable proof relations may use FK.
+  - Phase-dependent lifecycle relations may stay implicit only when repository/service/static/evidence/replay tests guard them.
+  - Current read-side contract remains pointer-only and must not be relaxed by this DB integrity decision.
+
+  [IMPLEMENTED]
+  - `DB_INTEGRITY_FK_IMPLICIT_INTEGRITY_DECISION_INVENTORY.md` records the decision matrices.
+  - `Database_Schema_MariaDB.sql` documents the `HYBRID_REQUIRED` policy and scoped audit interpretation.
+  - `DbIntegrityFkImplicitIntegrityDecisionStaticGuardTest.php` guards inventory, schema comments, existing explicit FKs, implicit guard surfaces, audit-doc local proof status, and anti latest/MAX shortcuts.
+
+  [ENFORCED]
+  - Explicit FKs remain required for pointer publication and immutable history publication relations.
+  - Current live artifact publication/run/ticker relations are not upgraded to FK in this session; they remain mandatory context plus implicit guard.
+  - Publication/run mirror, pointer run/version, correction lineage, evidence historical resolver, and replay historical resolver stay reason-coded implicit integrity.
+
+  [VALIDATED]
+  - Container syntax passed: `php -l tests/Unit/MarketData/DbIntegrityFkImplicitIntegrityDecisionStaticGuardTest.php` -> No syntax errors detected.
+  - Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; container is not the runtime authority for this LOCKED claim.
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData/DbIntegrityFkImplicitIntegrityDecisionStaticGuardTest.php` -> OK (5 tests, 434 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "DbIntegrity"` -> OK (11 tests, 874 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (146 tests, 3470 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (416 tests, 6066 assertions).
+
+  [FINAL_RULE]
+  - LOCKED. The final rule is `HYBRID_REQUIRED`: explicit FK only for stable pointer/history publication proof; implicit guard required for phase-dependent live artifact/current/correction/replay/evidence relations; no raw/latest/MAX/current-pointer bypass may be introduced.
+
+  [NEXT_ACTION]
+  - No remaining runtime blocker for this contract. Any future FK expansion must be handled as a separate migration/data-cleanup contract with fresh local runtime proof.
 
 - REPLAY_HISTORICAL_DETERMINISM_HARDENING_CONTRACT -> LOCKED
 
