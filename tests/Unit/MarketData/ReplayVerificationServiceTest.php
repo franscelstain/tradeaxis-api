@@ -435,6 +435,142 @@ class ReplayVerificationServiceTest extends TestCase
         $service->verifyRunAgainstFixture(1, $fixtureDir);
     }
 
+    public function test_verify_replay_resolves_historical_publication_without_current_pointer_fallback()
+    {
+        $expected = $this->expectedReplayResult([
+            'trade_date_requested' => '2026-03-20',
+            'trade_date_effective' => '2026-03-20',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'final_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'source_mode' => 'manual_file',
+            'source_identity' => 'mode=manual_file',
+            'publication_id' => 144,
+            'publication_run_id' => 191,
+            'publication_version' => 4,
+            'publication_is_current' => false,
+            'coverage_universe_count' => 10,
+            'coverage_available_count' => 10,
+            'coverage_missing_count' => 0,
+            'coverage_ratio' => '1.0000',
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'PASS',
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'bars_batch_hash' => 'A1',
+            'indicators_batch_hash' => 'B1',
+            'eligibility_batch_hash' => 'C1',
+            'bars_rows_written' => 10,
+            'indicators_rows_written' => 10,
+            'eligibility_rows_written' => 10,
+            'eligible_count' => 7,
+            'invalid_bar_count' => 0,
+            'invalid_indicator_count' => 0,
+            'warning_count' => 0,
+            'hard_reject_count' => 0,
+        ]);
+        $expected['expected_pointer_context']['pointer_resolve_status'] = 'NOT_CURRENT_POINTER';
+
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $expected,
+            'expected/expected_reason_code_counts.json' => [
+                ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
+            ],
+        ], 'fixture_replay_historical_pointer_moved'));
+
+        $run = (object) array_merge($this->successReadableRun(191, '2026-03-20'), [
+            'bars_rows_written' => 10,
+            'indicators_rows_written' => 10,
+            'eligibility_rows_written' => 10,
+            'eligible_count' => 7,
+        ]);
+        $historicalPublication = (object) [
+            'publication_id' => 144,
+            'run_id' => 191,
+            'publication_version' => 4,
+            'is_current' => 0,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-03-20 17:30:00',
+            'evidence_resolution_mode' => 'HISTORICAL_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'HISTORICAL_SEALED_PUBLICATION',
+            'historical_publication_allowed' => true,
+            'current_pointer_required' => false,
+            'current_pointer_status' => 'NOT_CURRENT_POINTER',
+            'artifact_scope' => 'publication:144',
+            'lineage_verification_status' => 'LINEAGE_VERIFIED',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(191)->andReturn($run);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
+            return $selector['type'] === 'replay_historical_actual_state'
+                && $selector['run_id'] === 191
+                && $selector['publication_id'] === 144
+                && $selector['trade_date'] === '2026-03-20';
+        }))->andReturn($historicalPublication);
+        $evidence->shouldReceive('dominantReasonCodesForEvidencePublication')->once()->with(191, '2026-03-20', 144, false)->andReturn([
+            ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
+        ]);
+        $evidence->shouldReceive('exportEligibilityRowsForEvidencePublication')->once()->with('2026-03-20', 144, false)->andReturn([
+            ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 0], ['eligible' => 0], ['eligible' => 0],
+        ]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3101);
+        $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
+            $actualContext = json_decode($metric['actual_context_json'], true);
+            return $metric['comparison_result'] === 'MATCH'
+                && $metric['publication_id'] === 144
+                && $metric['current_publication_id'] === null
+                && $metric['is_current_publication'] === false
+                && ($actualContext['actual_replay_resolution_context']['replay_actual_resolution_mode'] ?? null) === 'HISTORICAL_PUBLICATION_AUDIT'
+                && ($actualContext['actual_replay_resolution_context']['current_pointer_required'] ?? null) === false
+                && ($actualContext['actual_replay_resolution_context']['historical_publication_allowed'] ?? null) === true
+                && ($actualContext['actual_replay_resolution_context']['artifact_scope'] ?? null) === 'publication:144'
+                && ($actualContext['actual_pointer_context']['pointer_resolve_status'] ?? null) === 'NOT_CURRENT_POINTER';
+        }));
+        $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3101, '2026-03-20', [
+            ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
+        ]);
+
+        $service = new ReplayVerificationService($evidence, $publications, $replays);
+        $result = $service->verifyRunAgainstFixture(191, $fixtureDir);
+
+        $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame('HISTORICAL_PUBLICATION_AUDIT', $result['actual_context']['actual_replay_resolution_context']['replay_actual_resolution_mode']);
+        $this->assertFalse($result['actual_context']['actual_replay_resolution_context']['current_pointer_required']);
+        $this->assertTrue($result['actual_context']['actual_replay_resolution_context']['historical_publication_allowed']);
+    }
+
+    public function test_verify_replay_maps_unsealed_historical_publication_to_reason_coded_failure()
+    {
+        $expected = $this->expectedReplayResult([
+            'publication_id' => 145,
+            'publication_run_id' => 192,
+            'publication_is_current' => false,
+            'run_id' => 192,
+        ]);
+        $expected['expected_pointer_context']['pointer_resolve_status'] = 'NOT_CURRENT_POINTER';
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $expected,
+            'expected/expected_reason_code_counts.json' => [],
+        ], 'fixture_replay_historical_unsealed'));
+
+        $run = (object) $this->successReadableRun(192, '2026-03-20');
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+        $evidence->shouldReceive('findRunById')->once()->with(192)->andReturn($run);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andThrow(new RuntimeException('EVIDENCE_HISTORICAL_PUBLICATION_UNSEALED: Historical publication must be SEALED for audit evidence.'));
+
+        $service = new ReplayVerificationService($evidence, $publications, $replays);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('REPLAY_HISTORICAL_PUBLICATION_UNSEALED');
+
+        $service->verifyRunAgainstFixture(192, $fixtureDir);
+    }
+
     private function successReadableRun($runId, $tradeDate)
     {
         return [
@@ -513,11 +649,15 @@ class ReplayVerificationServiceTest extends TestCase
             'warning_count' => 0,
             'hard_reject_count' => 0,
         ], $overrides);
+        if (! array_key_exists('run_id', $v) && array_key_exists('publication_run_id', $v)) {
+            $v['run_id'] = $v['publication_run_id'];
+        }
 
         return [
             'comparison_result' => $v['comparison_result'],
             'comparison_note' => 'deterministic replay fixture expectation',
             'expected_run_context' => [
+                'run_id' => $v['run_id'] ?? null,
                 'trade_date_requested' => $v['trade_date_requested'],
                 'trade_date_effective' => $v['trade_date_effective'],
                 'request_mode' => $v['request_mode'] ?? null,

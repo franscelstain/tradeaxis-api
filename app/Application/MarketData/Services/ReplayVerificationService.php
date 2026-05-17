@@ -43,10 +43,11 @@ class ReplayVerificationService
             throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Run not found for replay verification.');
         }
 
-        $publication = $this->resolvePublicationForRun($run);
+        $expectedContext = $this->buildExpectedContext($fixture);
+        $publication = $this->resolvePublicationForReplayActualState($run, $expectedContext);
         $correction = $this->findCorrectionForRun($run->run_id);
-        $actual = $this->buildActualReplayState($run, $publication, $correction);
-        $comparison = $this->compareExpectedAndActual($fixture, $actual);
+        $actual = $this->buildActualReplayState($run, $publication, $correction, $expectedContext);
+        $comparison = $this->compareExpectedAndActual($fixture, $actual, $expectedContext);
         $replayId = $replayId ?: $this->replays->nextReplayId();
 
         $manifest = $fixture['manifest'];
@@ -202,7 +203,7 @@ class ReplayVerificationService
 
         $publication = $this->resolvePublicationForRun($run);
         $correction = $this->findCorrectionForRun($run->run_id);
-        $actual = $this->buildActualReplayState($run, $publication, $correction);
+        $actual = $this->buildActualReplayState($run, $publication, $correction, null);
         $fixturePath = rtrim((string) $fixturePath, '/\\');
         if ($fixturePath === '') {
             throw new \RuntimeException('COMMAND_MISSING_REQUIRED_INPUT: output_dir must be provided for replay fixture generation.');
@@ -295,6 +296,7 @@ class ReplayVerificationService
             'comparison_result' => 'MATCH',
             'comparison_note' => 'Runtime-generated replay fixture expectation for run_id='.$runId.'.',
             'expected_config_identity' => $actual['config_identity'],
+            'expected_replay_resolution_context' => $actual['context']['actual_replay_resolution_context'],
             'expected_run_context' => [
                 'trade_date_requested' => $runContext['trade_date_requested'],
                 'trade_date_effective' => $runContext['trade_date_effective'],
@@ -450,14 +452,14 @@ class ReplayVerificationService
         return $missing;
     }
 
-    private function buildActualReplayState($run, $publication = null, $correction = null)
+    private function buildActualReplayState($run, $publication = null, $correction = null, array $expectedContext = null)
     {
         $notes = $this->parseNotes((string) ($run->notes ?? ''));
         $resolvedTradeDate = $run->trade_date_effective ?: $run->trade_date_requested;
         $reasonCodeCounts = $this->actualReasonCodeCounts($run, $resolvedTradeDate, $publication);
         $eligibleCount = 0;
         if ($publication) {
-            foreach ($this->evidence->exportEligibilityRows($resolvedTradeDate, $publication->publication_id) as $row) {
+            foreach ($this->exportReplayEligibilityRows($run, $resolvedTradeDate, $publication) as $row) {
                 if ((int) ($row['eligible'] ?? 0) === 1) {
                     $eligibleCount++;
                 }
@@ -487,6 +489,7 @@ class ReplayVerificationService
         $sourceMode = $run->source ?? ($notes['source_mode'] ?? null);
         $sourceName = $run->source_name ?? ($notes['source_name'] ?? null);
         $sourceProvider = $run->source_provider ?? ($notes['source_provider'] ?? null);
+        $replayResolutionContext = $this->buildReplayActualResolutionContext($run, $publication, $expectedContext, $publicationId, $publicationRunId, $publicationVersion, $isCurrentPublication, $sealState);
 
         $runContext = [
             'run_id' => isset($run->run_id) ? (int) $run->run_id : null,
@@ -556,6 +559,7 @@ class ReplayVerificationService
             'bars_batch_hash' => $run->bars_batch_hash ?? null,
             'indicators_batch_hash' => $run->indicators_batch_hash ?? null,
             'eligibility_batch_hash' => $run->eligibility_batch_hash ?? null,
+            'artifact_scope' => $replayResolutionContext['artifact_scope'],
         ];
         $sealContext = [
             'seal_state' => $sealState,
@@ -570,13 +574,23 @@ class ReplayVerificationService
             'publication_publishability_state' => $run->publishability_state ?? null,
             'publication_is_current' => $isCurrentPublication,
             'publication_seal_state' => $sealState,
+            'replay_actual_resolution_mode' => $replayResolutionContext['replay_actual_resolution_mode'],
+            'replay_publication_scope' => $replayResolutionContext['replay_publication_scope'],
+            'historical_publication_allowed' => $replayResolutionContext['historical_publication_allowed'],
+            'current_pointer_required' => $replayResolutionContext['current_pointer_required'],
+            'current_pointer_status' => $replayResolutionContext['current_pointer_status'],
+            'artifact_scope' => $replayResolutionContext['artifact_scope'],
+            'lineage_verification_status' => $replayResolutionContext['lineage_verification_status'],
+            'replay_reason_code' => $replayResolutionContext['replay_reason_code'],
         ];
         $pointerContext = [
             'pointer_publication_id' => $publicationId,
             'pointer_run_id' => $publicationRunId,
             'pointer_publication_version' => $publicationVersion,
-            'pointer_resolve_status' => ((string) ($run->terminal_status ?? '') === 'SUCCESS' && (string) ($run->publishability_state ?? '') === 'READABLE' && $isCurrentPublication) ? 'RESOLVED_READABLE_CURRENT' : 'NOT_RESOLVED_READABLE_CURRENT',
+            'pointer_resolve_status' => $replayResolutionContext['current_pointer_status'],
             'pointer_switched' => $isCurrentPublication,
+            'current_pointer_required' => $replayResolutionContext['current_pointer_required'],
+            'historical_publication_allowed' => $replayResolutionContext['historical_publication_allowed'],
         ];
         $fallbackContext = [
             'fallback_used' => $this->normalizeBoolean($run->fallback_used ?? ($notes['fallback_used'] ?? false)),
@@ -680,6 +694,7 @@ class ReplayVerificationService
             'reason_code_counts' => $reasonCodeCounts,
         ];
         $actual['context'] = [
+            'actual_replay_resolution_context' => $replayResolutionContext,
             'actual_run_context' => $runContext,
             'actual_import_promote_context' => [
                 'request_mode' => $requestMode,
@@ -713,7 +728,11 @@ class ReplayVerificationService
     {
         $reasonCodeCounts = [];
         if ($publication) {
-            foreach ($this->evidence->dominantReasonCodes($run->run_id, $resolvedTradeDate, $publication->publication_id) as $row) {
+            $rows = $this->isHistoricalReplayPublication($publication)
+                ? $this->evidence->dominantReasonCodesForEvidencePublication($run->run_id, $resolvedTradeDate, $publication->publication_id, (bool) ($publication->is_current ?? false))
+                : $this->evidence->dominantReasonCodes($run->run_id, $resolvedTradeDate, $publication->publication_id);
+
+            foreach ($rows as $row) {
                 $reasonCodeCounts[] = [
                     'reason_code' => $row['reason_code'],
                     'reason_count' => (int) $row['count'],
@@ -739,7 +758,7 @@ class ReplayVerificationService
         return $this->normalizeReasonCodeCounts($reasonCodeCounts);
     }
 
-    private function compareExpectedAndActual(array $fixture, array $actual)
+    private function compareExpectedAndActual(array $fixture, array $actual, array $expectedContext = null)
     {
         $this->deterministicFieldsChecked = [];
         $expectedReplay = $fixture['expected_replay_result'];
@@ -747,7 +766,7 @@ class ReplayVerificationService
         $expectedHashes = $fixture['expected_hashes'] ?: [];
         $expectedReasonCodeCounts = $fixture['expected_reason_code_counts'];
         $expectedClass = $expectedReplay['comparison_result'] ?? 'MATCH';
-        $expectedContext = $this->buildExpectedContext($fixture);
+        $expectedContext = $expectedContext ?: $this->buildExpectedContext($fixture);
         $mismatches = [];
 
         foreach ($fixture['expected_proof_missing'] as $missingPath) {
@@ -809,6 +828,11 @@ class ReplayVerificationService
                 $expectedValue = $expectedHashes[$field];
             }
             $this->compareFieldAllowNull($mismatches, $field, $expectedValue, $actual[$field]);
+        }
+        $this->compareFieldAllowNull($mismatches, 'artifact_scope', $this->ctx($expectedContext, 'expected_artifact_context.artifact_scope'), $actual['context']['actual_artifact_context']['artifact_scope'] ?? null);
+
+        foreach (['replay_actual_resolution_mode', 'replay_publication_scope', 'replay_selector_type', 'replay_selector_id', 'historical_publication_allowed', 'current_pointer_required', 'current_pointer_status', 'publication_id', 'publication_version', 'publication_run_id', 'run_id', 'run_publication_mirror_status', 'seal_state', 'is_current_publication', 'artifact_scope', 'coverage_basis_publication_id', 'coverage_basis_run_id', 'lineage_verification_status', 'replay_reason_code'] as $field) {
+            $this->compareFieldAllowNull($mismatches, 'replay_'.$field, $this->ctx($expectedContext, 'expected_replay_resolution_context.'.$field), $actual['context']['actual_replay_resolution_context'][$field] ?? null);
         }
 
         foreach (['publication_id', 'publication_run_id', 'publication_version', 'publication_terminal_status', 'publication_publishability_state', 'publication_is_current', 'publication_seal_state'] as $field) {
@@ -953,8 +977,10 @@ class ReplayVerificationService
         $expectedCorrection = $r['expected_correction_context'] ?? [];
         $expectedFinal = $r['expected_final_state'] ?? [];
         $expectedLineage = $r['expected_lineage'] ?? [];
+        $expectedReplayResolution = $r['expected_replay_resolution_context'] ?? [];
 
         $expectedRun = $this->mergeMissing($expectedRun, [
+            'run_id' => $r['expected_run_id'] ?? ($r['run_id'] ?? null),
             'trade_date_requested' => $r['expected_trade_date_requested'] ?? ($r['trade_date_requested'] ?? null),
             'trade_date_effective' => $r['expected_trade_date_effective'] ?? ($r['trade_date_effective'] ?? null),
             'request_mode' => $r['expected_request_mode'] ?? ($r['request_mode'] ?? null),
@@ -1012,12 +1038,23 @@ class ReplayVerificationService
             'publication_is_current' => array_key_exists('expected_is_current_publication', $r) ? $r['expected_is_current_publication'] : ($r['is_current_publication'] ?? null),
             'publication_seal_state' => $r['expected_seal_state'] ?? ($r['seal_state'] ?? null),
         ]);
+        $expectedPointerResolveStatus = 'NOT_RESOLVED_READABLE_CURRENT';
+        if (($expectedPublication['publication_id'] ?? null) !== null && ($expectedPublication['publication_id'] ?? null) !== '') {
+            $expectedPointerResolveStatus = (($expectedPublication['publication_publishability_state'] ?? null) === 'READABLE' && ($expectedPublication['publication_is_current'] ?? null))
+                ? 'RESOLVED_READABLE_CURRENT'
+                : 'NOT_CURRENT_POINTER';
+        }
+
         $expectedPointer = $this->mergeMissing($expectedPointer, [
             'pointer_publication_id' => $expectedPublication['publication_id'] ?? null,
             'pointer_run_id' => $expectedPublication['publication_run_id'] ?? null,
             'pointer_publication_version' => $expectedPublication['publication_version'] ?? null,
-            'pointer_resolve_status' => (($expectedPublication['publication_publishability_state'] ?? null) === 'READABLE' && ($expectedPublication['publication_is_current'] ?? null)) ? 'RESOLVED_READABLE_CURRENT' : 'NOT_RESOLVED_READABLE_CURRENT',
+            'pointer_resolve_status' => $expectedPointerResolveStatus,
             'pointer_switched' => $expectedPublication['publication_is_current'] ?? null,
+        ]);
+        $expectedReplayResolution = $this->mergeMissing($expectedReplayResolution, $this->expectedReplayResolutionContext($expectedPublication, $expectedRun, $expectedSeal, $expectedPointer));
+        $expectedArtifact = $this->mergeMissing($expectedArtifact, [
+            'artifact_scope' => $expectedReplayResolution['artifact_scope'] ?? null,
         ]);
         $expectedSource = $this->mergeMissing($expectedSource, $this->expectedSourceContext($r, $run));
         $expectedSource = $this->mergeMissing($expectedSource, [
@@ -1046,6 +1083,7 @@ class ReplayVerificationService
                 'fixture_created_at' => $fixture['manifest']['fixture_created_at'] ?? null,
                 'fixture_source' => $fixture['manifest']['fixture_source'] ?? null,
             ],
+            'expected_replay_resolution_context' => $expectedReplayResolution,
             'expected_run_context' => $expectedRun,
             'expected_source_context' => $expectedSource,
             'expected_coverage_context' => $expectedCoverage,
@@ -1248,7 +1286,10 @@ class ReplayVerificationService
         if ($field === 'coverage_reason_code') return 'REPLAY_COVERAGE_REASON_MISMATCH';
         if (strpos($field, 'coverage_') !== false) return 'REPLAY_COVERAGE_STATE_MISMATCH';
         if (strpos($field, 'batch_hash') !== false) return 'REPLAY_ARTIFACT_HASH_MISMATCH';
-        if ($field === 'seal_state') return 'REPLAY_SEAL_STATE_MISMATCH';
+        if ($field === 'artifact_scope' || strpos($field, 'replay_artifact_scope') !== false) return 'REPLAY_HISTORICAL_ARTIFACT_SCOPE_MISMATCH';
+        if (strpos($field, 'replay_replay_actual_resolution_mode') !== false || strpos($field, 'replay_replay_publication_scope') !== false || strpos($field, 'replay_current_pointer_required') !== false || strpos($field, 'replay_historical_publication_allowed') !== false || strpos($field, 'replay_current_pointer_status') !== false || strpos($field, 'replay_replay_reason_code') !== false) return 'REPLAY_EXPECTED_HISTORICAL_ACTUAL_CURRENT_MISMATCH';
+        if (strpos($field, 'replay_run_publication_mirror_status') !== false || strpos($field, 'replay_lineage_verification_status') !== false || strpos($field, 'replay_publication_run_id') !== false || strpos($field, 'replay_run_id') !== false) return 'REPLAY_PUBLICATION_RUN_MISMATCH';
+        if ($field === 'seal_state' || strpos($field, 'replay_seal_state') !== false) return 'REPLAY_SEAL_STATE_MISMATCH';
         if (strpos($field, 'publication_version') !== false) return 'REPLAY_PUBLICATION_VERSION_MISMATCH';
         if (strpos($field, 'publication_') !== false && strpos($field, 'pointer_') === false) return 'REPLAY_PUBLICATION_STATE_MISMATCH';
         if ($field === 'pointer_resolve_status') return 'REPLAY_POINTER_RESOLUTION_MISMATCH';
@@ -1283,6 +1324,152 @@ class ReplayVerificationService
             return null;
         }
         return $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
+    }
+
+    private function resolvePublicationForReplayActualState($run, array $expectedContext)
+    {
+        if ((string) ($run->terminal_status ?? '') !== 'SUCCESS' || (string) ($run->publishability_state ?? '') !== 'READABLE') {
+            return null;
+        }
+
+        if (! $this->expectsHistoricalReplayPublication($expectedContext)) {
+            return $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
+        }
+
+        $selector = [
+            'type' => 'replay_historical_actual_state',
+            'run_id' => $run->run_id,
+            'publication_id' => $this->ctx($expectedContext, 'expected_publication_context.publication_id'),
+            'trade_date' => $this->ctx($expectedContext, 'expected_run_context.trade_date_requested') ?: $run->trade_date_requested,
+        ];
+
+        try {
+            return $this->evidence->resolvePublicationForEvidenceAudit($selector);
+        } catch (\RuntimeException $e) {
+            throw new \RuntimeException($this->mapEvidenceResolutionExceptionToReplayReason($e->getMessage()).': '.$e->getMessage(), 0, $e);
+        }
+    }
+
+    private function expectsHistoricalReplayPublication(array $expectedContext)
+    {
+        $publicationId = $this->ctx($expectedContext, 'expected_publication_context.publication_id');
+        if ($publicationId === null || $publicationId === '') {
+            return false;
+        }
+
+        $currentPointerRequired = $this->ctx($expectedContext, 'expected_replay_resolution_context.current_pointer_required');
+        $historicalAllowed = $this->ctx($expectedContext, 'expected_replay_resolution_context.historical_publication_allowed');
+        $publicationIsCurrent = $this->ctx($expectedContext, 'expected_publication_context.publication_is_current');
+        $resolutionMode = strtoupper((string) $this->ctx($expectedContext, 'expected_replay_resolution_context.replay_actual_resolution_mode'));
+        $publicationScope = strtoupper((string) $this->ctx($expectedContext, 'expected_replay_resolution_context.replay_publication_scope'));
+
+        return $this->normalizeBoolean($historicalAllowed)
+            || $currentPointerRequired === false
+            || $currentPointerRequired === 0
+            || $currentPointerRequired === '0'
+            || $this->normalizeBoolean($publicationIsCurrent) === false
+            || strpos($resolutionMode, 'HISTORICAL') !== false
+            || strpos($publicationScope, 'HISTORICAL') !== false;
+    }
+
+    private function exportReplayEligibilityRows($run, $resolvedTradeDate, $publication)
+    {
+        if ($this->isHistoricalReplayPublication($publication)) {
+            return $this->evidence->exportEligibilityRowsForEvidencePublication($resolvedTradeDate, $publication->publication_id, (bool) ($publication->is_current ?? false));
+        }
+
+        return $this->evidence->exportEligibilityRows($resolvedTradeDate, $publication->publication_id);
+    }
+
+    private function isHistoricalReplayPublication($publication)
+    {
+        if (! $publication) {
+            return false;
+        }
+
+        $mode = strtoupper((string) ($publication->evidence_resolution_mode ?? ''));
+        $scope = strtoupper((string) ($publication->evidence_publication_scope ?? ''));
+
+        return (isset($publication->historical_publication_allowed) && (bool) $publication->historical_publication_allowed)
+            || strpos($mode, 'HISTORICAL') !== false
+            || strpos($scope, 'HISTORICAL') !== false
+            || (isset($publication->current_pointer_required) && (bool) $publication->current_pointer_required === false && (int) ($publication->is_current ?? 0) !== 1);
+    }
+
+    private function buildReplayActualResolutionContext($run, $publication, array $expectedContext = null, $publicationId = null, $publicationRunId = null, $publicationVersion = null, $isCurrentPublication = false, $sealState = null)
+    {
+        $hasPublication = $publicationId !== null;
+        $isHistorical = $this->isHistoricalReplayPublication($publication) || ($hasPublication && ! $isCurrentPublication && $expectedContext !== null && $this->expectsHistoricalReplayPublication($expectedContext));
+        $selectorType = $isHistorical ? 'replay_historical_actual_state' : ($hasPublication ? 'current_readable_replay_actual_state' : 'run_without_publication');
+        $artifactScope = $hasPublication ? 'publication:'.$publicationId : 'none';
+        $mirrorStatus = ! $hasPublication
+            ? 'NO_PUBLICATION'
+            : ((string) $publicationRunId === (string) ($run->run_id ?? '') ? 'MIRROR_VALID' : 'MIRROR_MISMATCH');
+
+        return [
+            'replay_actual_resolution_mode' => $isHistorical ? 'HISTORICAL_PUBLICATION_AUDIT' : ($hasPublication ? 'CURRENT_READABLE_PUBLICATION_AUDIT' : 'NO_PUBLICATION_ACTUAL_STATE'),
+            'replay_publication_scope' => $isHistorical ? 'HISTORICAL_SEALED_PUBLICATION' : ($hasPublication ? 'CURRENT_POINTER_PUBLICATION' : 'NO_PUBLICATION'),
+            'replay_selector_type' => $selectorType,
+            'replay_selector_id' => $hasPublication ? (int) $publicationId : (isset($run->run_id) ? (int) $run->run_id : null),
+            'historical_publication_allowed' => $isHistorical,
+            'current_pointer_required' => $hasPublication ? ! $isHistorical : false,
+            'current_pointer_status' => $hasPublication ? ($isHistorical ? 'NOT_CURRENT_POINTER' : 'RESOLVED_READABLE_CURRENT') : 'NOT_RESOLVED_READABLE_CURRENT',
+            'publication_id' => $hasPublication ? (int) $publicationId : null,
+            'publication_version' => $publicationVersion !== null ? (int) $publicationVersion : null,
+            'publication_run_id' => $publicationRunId !== null ? (int) $publicationRunId : null,
+            'run_id' => isset($run->run_id) ? (int) $run->run_id : null,
+            'run_publication_mirror_status' => $mirrorStatus,
+            'seal_state' => $sealState,
+            'is_current_publication' => (bool) $isCurrentPublication,
+            'artifact_scope' => $artifactScope,
+            'coverage_basis_publication_id' => $hasPublication ? (int) $publicationId : null,
+            'coverage_basis_run_id' => isset($run->run_id) ? (int) $run->run_id : null,
+            'lineage_verification_status' => $hasPublication && $mirrorStatus === 'MIRROR_VALID' ? 'LINEAGE_VERIFIED' : $mirrorStatus,
+            'replay_reason_code' => $isHistorical ? 'REPLAY_HISTORICAL_PUBLICATION_RESOLVED' : ($hasPublication ? 'REPLAY_CURRENT_PUBLICATION_RESOLVED' : 'REPLAY_NO_PUBLICATION_ACTUAL_STATE'),
+        ];
+    }
+
+    private function expectedReplayResolutionContext(array $expectedPublication, array $expectedRun, array $expectedSeal, array $expectedPointer)
+    {
+        $publicationId = $expectedPublication['publication_id'] ?? null;
+        $isCurrent = $this->normalizeBoolean($expectedPublication['publication_is_current'] ?? false);
+        $hasPublication = $publicationId !== null && $publicationId !== '';
+        $isHistorical = $hasPublication && ! $isCurrent;
+
+        return [
+            'replay_actual_resolution_mode' => $isHistorical ? 'HISTORICAL_PUBLICATION_AUDIT' : ($hasPublication ? 'CURRENT_READABLE_PUBLICATION_AUDIT' : 'NO_PUBLICATION_ACTUAL_STATE'),
+            'replay_publication_scope' => $isHistorical ? 'HISTORICAL_SEALED_PUBLICATION' : ($hasPublication ? 'CURRENT_POINTER_PUBLICATION' : 'NO_PUBLICATION'),
+            'replay_selector_type' => $isHistorical ? 'replay_historical_actual_state' : ($hasPublication ? 'current_readable_replay_actual_state' : 'run_without_publication'),
+            'replay_selector_id' => $hasPublication ? $publicationId : ($expectedRun['run_id'] ?? null),
+            'historical_publication_allowed' => $isHistorical,
+            'current_pointer_required' => $hasPublication ? ! $isHistorical : false,
+            'current_pointer_status' => $hasPublication ? ($isHistorical ? 'NOT_CURRENT_POINTER' : ($expectedPointer['pointer_resolve_status'] ?? 'RESOLVED_READABLE_CURRENT')) : ($expectedPointer['pointer_resolve_status'] ?? 'NOT_RESOLVED_READABLE_CURRENT'),
+            'publication_id' => $publicationId,
+            'publication_version' => $expectedPublication['publication_version'] ?? null,
+            'publication_run_id' => $expectedPublication['publication_run_id'] ?? null,
+            'run_id' => $expectedPublication['publication_run_id'] ?? ($expectedRun['run_id'] ?? null),
+            'run_publication_mirror_status' => $hasPublication ? 'MIRROR_VALID' : 'NO_PUBLICATION',
+            'seal_state' => $expectedSeal['seal_state'] ?? ($expectedPublication['publication_seal_state'] ?? null),
+            'is_current_publication' => $isCurrent,
+            'artifact_scope' => $hasPublication ? 'publication:'.$publicationId : 'none',
+            'coverage_basis_publication_id' => $publicationId,
+            'coverage_basis_run_id' => $expectedPublication['publication_run_id'] ?? ($expectedRun['run_id'] ?? null),
+            'lineage_verification_status' => $hasPublication ? 'LINEAGE_VERIFIED' : 'NO_PUBLICATION',
+            'replay_reason_code' => $isHistorical ? 'REPLAY_HISTORICAL_PUBLICATION_RESOLVED' : ($hasPublication ? 'REPLAY_CURRENT_PUBLICATION_RESOLVED' : 'REPLAY_NO_PUBLICATION_ACTUAL_STATE'),
+        ];
+    }
+
+    private function mapEvidenceResolutionExceptionToReplayReason($message)
+    {
+        $message = (string) $message;
+        if (strpos($message, 'EVIDENCE_SELECTOR_MISSING') !== false) return 'REPLAY_HISTORICAL_PUBLICATION_MISSING';
+        if (strpos($message, 'EVIDENCE_PUBLICATION_NOT_FOUND') !== false) return 'REPLAY_HISTORICAL_PUBLICATION_MISSING';
+        if (strpos($message, 'EVIDENCE_HISTORICAL_PUBLICATION_UNSEALED') !== false) return 'REPLAY_HISTORICAL_PUBLICATION_UNSEALED';
+        if (strpos($message, 'EVIDENCE_PUBLICATION_RUN_MISMATCH') !== false || strpos($message, 'EVIDENCE_RUN_PUBLICATION_MIRROR_MISMATCH') !== false) return 'REPLAY_PUBLICATION_RUN_MISMATCH';
+        if (strpos($message, 'EVIDENCE_PUBLICATION_TRADE_DATE_MISMATCH') !== false) return 'REPLAY_REQUESTED_DATE_MISMATCH';
+        if (strpos($message, 'EVIDENCE_COVERAGE_CONTEXT') !== false) return 'REPLAY_COVERAGE_STATE_MISMATCH';
+        if (strpos($message, 'EVIDENCE_PUBLICATION_ARTIFACT_HASH_MISSING') !== false) return 'REPLAY_HISTORICAL_ARTIFACT_SCOPE_MISMATCH';
+        return 'REPLAY_ACTUAL_PROOF_INCOMPLETE';
     }
 
     private function findCorrectionForRun($runId)

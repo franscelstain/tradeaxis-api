@@ -3,31 +3,34 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Evidence Historical Lineage Completeness
+- Replay Historical Determinism Hardening
 
-[SESSION_STATUS] DONE / LOCKED_LOCAL_PHPUNIT_PASS
+[SESSION_STATUS] COMPLETED
 
 [SESSION_SCOPE]
-- Harden evidence export so historical sealed publication proof is not blocked by the current readable pointer resolver.
+- Harden replay actual-state verification so a historical sealed run/publication can be verified after the current pointer moves to a newer publication.
+- This is not replay determinism umum; existing Replay Determinism fixture schema, deterministic comparison, reason-coded mismatch, expected/actual context persistence, and volatile-field exclusion remain preserved.
 - This is not a read-side consumer relaxation; consumer read resolver tetap current-pointer-only.
-- Evidence audit resolver is selector-scoped and lineage-validated for run/publication/correction/replay proof.
-- Container validation is static only because PHPUnit is blocked by missing PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local runtime validation is now the authority for DONE/LOCKED.
+- Evidence Historical Lineage Completeness remains the audit resolver source for selector-scoped historical publication proof, wrapped by replay-specific actual-state context.
 
 [SESSION_GOAL]
-- Evidence export can prove historical sealed publication lineage without current pointer fallback, latest/MAX shortcut, raw/staging bypass, or changing the current pointer.
+- Replay verification can prove historical sealed publication actual state by explicit selector and lineage validation, without current pointer fallback, latest/MAX shortcut, raw/staging bypass, or pointer mutation.
 
 [SESSION_NOTES]
-- Static trace found run evidence still used current-readable run publication resolution, which blocks old sealed publication proof once another publication becomes current.
-- Patch adds `EodEvidenceRepository::resolvePublicationForEvidenceAudit()` and evidence-specific publication-scoped artifact/reason-code export methods.
-- Correction and replay evidence now expose historical lineage fields so baseline/candidate/expected/actual publication proof remains clear even when not current.
+- Static trace found `ReplayVerificationService::resolvePublicationForRun()` was still current-pointer dependent for replay verify.
+- Patch adds `ReplayVerificationService::resolvePublicationForReplayActualState()` and routes historical expected context through `EodEvidenceRepository::resolvePublicationForEvidenceAudit()`.
+- Replay actual/expected context now exposes `actual_replay_resolution_context` / `expected_replay_resolution_context`, current vs historical mode, selector, current pointer requirement, artifact scope, lineage status, and replay reason code.
+- Historical replay reason-code counts and eligibility proof use publication-scoped evidence methods.
 - Consumer resolver in `EodPublicationRepository` remains unchanged and current-pointer-only.
-- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local StaticGuard and full MarketData PHPUnit proof passed and is the DONE/LOCKED authority.
+- Container PHPUnit remains blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; final DONE authority comes from operator-local PHPUnit output.
+- 2026-05-17 operator-local feedback first showed 2 guard expectation failures only; follow-up patch fixed the repository-method assertion and reason-code count drift.
+- 2026-05-17 operator-local rerun passed ReplayHistorical, Replay, StaticGuard, and full `tests/Unit/MarketData`; implementation is now DONE for this source-of-truth ZIP.
 
 [RUNTIME_ENVIRONMENT]
 - Container PHP version: PHP 8.4.16
 - Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, xmlwriter
 - Operator-local PHP version: PHP 7.4.33 expected from prior runtime baseline
-- Operator-local PHPUnit version: PHPUnit 9.6.34 expected from prior runtime baseline
+- Operator-local PHPUnit version: PHPUnit 9.6.34 from supplied local PHPUnit output
 - Required PHP extensions available locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
 - Runtime authority for DONE/LOCKED: operator-local PHPUnit output because container PHPUnit is extension-blocked.
 
@@ -50,6 +53,65 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Replay Historical Determinism Hardening -> DONE
+
+  [LAST_UPDATED] 2026-05-17
+
+  [RELATED_CONTRACT] REPLAY_HISTORICAL_DETERMINISM_HARDENING_CONTRACT
+
+  [REVIEW_STATUS] DONE_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-15 -> Static trace found replay verify actual-state publication resolution could still depend on current readable pointer through `findReadableCurrentPublicationForRun()`.
+  - 2026-05-15 -> Added replay-specific historical actual-state resolver wrapper around the evidence audit resolver.
+  - 2026-05-15 -> Added current vs historical replay resolution context, publication-scoped historical artifact proof, historical-aware replay reason codes, inventory, and static guard.
+  - 2026-05-17 -> Local PHPUnit feedback found static guard failures only; fixed the repository-method assertion and updated the reason-code synchronization expected count from 315 to 324.
+  - 2026-05-17 -> Operator-local rerun passed direct ReplayHistorical guard, ReplayHistorical filter, Replay filter, StaticGuard filter, and full MarketData suite; status promoted to DONE.
+
+  [IMPLEMENTATION]
+  - `ReplayVerificationService::resolvePublicationForReplayActualState()` chooses current pointer validation for current expected context and selector-scoped evidence audit resolution for historical expected context.
+  - `buildActualReplayState()` now emits `actual_replay_resolution_context` and publication-scoped `artifact_scope`.
+  - `buildExpectedContext()` normalizes `expected_replay_resolution_context` so deterministic comparison covers current vs historical mode.
+  - Historical replay reason code counts and eligibility proof use `dominantReasonCodesForEvidencePublication()` and `exportEligibilityRowsForEvidencePublication()`.
+  - `ReplayVerificationServiceTest` includes historical pointer-moved proof and unsealed historical fail-safe proof.
+  - `ReplayHistoricalDeterminismHardeningStaticGuardTest` guards docs, resolver separation, artifact scope, reason registry/seed, and no latest/MAX shortcut inside the historical resolver.
+  - `AuditDocsSynchronizationStaticGuardTest` reflects the current synchronized reason-code registry/seed count of 324 after replay historical reason codes were added.
+
+  [ENFORCEMENT]
+  - Historical replay actual state must be selector-scoped, lineage-validated, sealed-publication aware, and publication-scoped.
+  - Current replay context still requires the current readable publication path.
+  - Consumer read resolver tetap current-pointer-only.
+  - Unsealed/missing/mismatched historical publication proof maps to replay reason-coded failure instead of falling back to current publication.
+  - Reason-code registry and seed stay synchronized at 324 entries after the replay historical reason-code additions.
+
+  [FINAL_BEHAVIOR]
+  - Replay verify can prove a historical sealed run/publication even after current pointer moves to a newer publication, as long as the replay selector and lineage are valid.
+  - Historical replay actual-state proof is resolved through the replay-specific wrapper around the evidence audit resolver, not by mutating pointer state or by falling back to current readable publication.
+  - Current replay and consumer read behavior remain current-pointer validated.
+
+  [FINAL_CONSTRAINT]
+  - Do not make consumer read resolver historical-aware.
+  - Do not use current pointer fallback, latest/MAX shortcut, raw/staging bypass, or pointer mutation to prove historical replay actual state.
+  - Do not loosen deterministic replay comparison or fixture context validation to force a replay MATCH.
+
+  [EVIDENCE]
+  - Container static syntax: `php -l app/Application/MarketData/Services/ReplayVerificationService.php` -> No syntax errors detected.
+  - Container static syntax: `php -l tests/Unit/MarketData/ReplayVerificationServiceTest.php` -> No syntax errors detected.
+  - Container static syntax: `php -l tests/Unit/MarketData/ReplayHistoricalDeterminismHardeningStaticGuardTest.php` -> No syntax errors detected.
+  - Container static syntax: `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> No syntax errors detected.
+  - Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV because `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
+  - Operator-local PHPUnit `tests/Unit/MarketData/ReplayHistoricalDeterminismHardeningStaticGuardTest.php` -> PASS; OK (6 tests, 70 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData --filter "ReplayHistorical"` -> PASS; OK (6 tests, 70 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData --filter "Replay"` -> PASS; OK (53 tests, 819 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData --filter "StaticGuard"` -> PASS; OK (141 tests, 3029 assertions).
+  - Operator-local PHPUnit full `tests/Unit/MarketData` -> PASS; OK (411 tests, 5625 assertions).
+
+  [RECONCILIATION]
+  - Replay Determinism umum remains valid and was covered by the local `Replay` filter.
+  - Evidence Historical Lineage Completeness remains the historical audit resolver dependency and was not weakened.
+  - Read-side/current-pointer behavior remains valid because the consumer resolver was not made historical-aware and StaticGuard passed locally.
+  - Reason-code synchronization was revalidated by StaticGuard after registry/seed count moved to 324.
 
 - Evidence Historical Lineage Completeness -> DONE
 

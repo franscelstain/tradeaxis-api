@@ -162,7 +162,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(315, $registryCodes);
+        $this->assertCount(324, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

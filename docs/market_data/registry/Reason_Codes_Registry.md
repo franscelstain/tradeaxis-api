@@ -267,6 +267,15 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `REPLAY_UNEXPECTED_SUCCESS` | REPLAY | HARD | Replay produced a success-looking result when the expected proof required failure or degrade. |
 | `REPLAY_UNEXPECTED_FAILURE` | REPLAY | HARD | Replay produced failure when the expected proof required a successful deterministic match. |
 | `REPLAY_NON_DETERMINISTIC_OUTPUT` | REPLAY | HARD | Replay output contains a deterministic-field mismatch not covered by a more specific replay reason code. |
+| `REPLAY_HISTORICAL_PUBLICATION_RESOLVED` | REPLAY | INFO | Replay resolved a selector-scoped historical sealed publication for actual-state proof without current pointer fallback. |
+| `REPLAY_CURRENT_PUBLICATION_RESOLVED` | REPLAY | INFO | Replay resolved the current readable publication for current-context actual-state proof. |
+| `REPLAY_NO_PUBLICATION_ACTUAL_STATE` | REPLAY | INFO | Replay built actual state for a run that has no readable publication proof. |
+| `REPLAY_HISTORICAL_PUBLICATION_MISSING` | REPLAY | HARD | Replay historical actual-state selector did not resolve a publication. |
+| `REPLAY_HISTORICAL_PUBLICATION_UNSEALED` | REPLAY | HARD | Replay historical actual-state publication is not sealed. |
+| `REPLAY_PUBLICATION_RUN_MISMATCH` | REPLAY | HARD | Replay historical actual-state publication does not belong to the selected run or mirror context. |
+| `REPLAY_HISTORICAL_ARTIFACT_SCOPE_MISMATCH` | REPLAY | HARD | Replay historical actual-state artifact scope is not publication-scoped to the selected publication. |
+| `REPLAY_EXPECTED_HISTORICAL_ACTUAL_CURRENT_MISMATCH` | REPLAY | HARD | Replay expected a historical publication context but actual state resolved a current publication context, or the reverse. |
+| `REPLAY_CURRENT_POINTER_MOVED_HISTORICAL_VALID` | REPLAY | INFO | Replay verified a historical sealed publication while the current pointer has moved to another publication. |
 
 | `IMPORT_ONLY_ACCEPTED` | IMPORT_PROMOTE | INFO | Import-only request accepted; data may be ingested but not promoted. |
 | `IMPORT_ONLY_COMPLETED` | IMPORT_PROMOTE | INFO | Import-only ingest completed with traceable candidate/import context. |
