@@ -3,32 +3,34 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- DB Integrity FK / Implicit Integrity Decision
+- Config / ENV Governance Cleanup
 
-[SESSION_STATUS] DONE_LOCAL_PHPUNIT_PASS
+[SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Decide and lock the live artifact DB integrity policy: explicit FK, implicit guard, hybrid, no relation, or deferred with reason.
-- This is scoped live artifact relation hardening, not a claim that the whole schema sync failed.
-- Existing DB Integrity & Constraint Enforcement remains the owner baseline; this session adds the FK-vs-implicit decision matrix and guard.
+- Clean schema/config/env/docs/tests/runtime mismatch for market-data configuration.
+- Normalize `tickers.is_active` config from stale string `Yes` semantics to numeric/boolean-like value aligned with migration and locked SQL schema.
+- Prune unused config/env surfaces that create ambiguous operator interpretation.
+- Preserve source-mode, coverage, read-side pointer, publication, replay, evidence, and DB integrity contracts.
 
 [SESSION_GOAL]
-- Lock `HYBRID_REQUIRED` as the final validated policy: keep stable explicit FKs for current pointer and immutable history publication proof; keep phase-dependent live artifact/current/correction/replay/evidence relations under mandatory implicit repository/service/static guard proof.
+- Lock market-data config/env governance so active keys are typed, caller-traced, documented, and free from stale `Yes/No` semantics for numeric schema fields.
 
 [SESSION_NOTES]
-- Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local PHPUnit is the runtime authority for this session.
-- Static trace confirms `eod_current_publication_pointer` has FK to `eod_publications(publication_id)` and immutable history artifact tables have publication FKs.
-- Static trace confirms current live artifact tables carry mandatory `run_id` and `publication_id` plus publication-scoped indexes, while lifecycle relations remain implicit by policy.
-- Patch adds `DB_INTEGRITY_FK_IMPLICIT_INTEGRITY_DECISION_INVENTORY.md`, schema policy comments, and `DbIntegrityFkImplicitIntegrityDecisionStaticGuardTest.php`.
-- No physical FK/migration was added in this session because live artifact publication/run/ticker relations are phase-dependent; this decision is now validated by operator-local targeted and full PHPUnit proof.
+- Schema truth: migration uses `$table->boolean('is_active')->default(true)` and locked SQL uses `is_active TINYINT(1) NOT NULL DEFAULT 1`.
+- Patch replaces `MARKET_DATA_TICKERS_ACTIVE_YES_VALUE=Yes` / `market_data.tickers.active_yes_value` with `MARKET_DATA_TICKERS_ACTIVE_VALUE=1` / `market_data.tickers.active_value`.
+- Patch removes unused `multi_source_mode` and `allow_mixed_sources` config surfaces; multi-source row mixing remains disallowed by locked coverage/source policy.
+- Patch adds missing active env template key `MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES=60` because runtime caller already exists.
+- Patch adds `CONFIG_ENV_GOVERNANCE_CLEANUP_INVENTORY.md`, `ConfigEnvGovernanceCleanupStaticGuardTest.php`, and `TickerMasterRepositoryTest.php`.
+- Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local PHPUnit supplied final runtime authority and promoted this session to DONE.
 
 [RUNTIME_ENVIRONMENT]
 - Container PHP version: PHP 8.4.16
 - Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, and xmlwriter
-- Operator-local PHP version: PHP 7.4.33 expected from prior runtime baseline
-- Operator-local PHPUnit version: PHPUnit 9.6.34 validated by supplied local output
+- Operator-local PHP version: not supplied in final validation output
+- Operator-local PHPUnit version: PHPUnit 9.6.34
 - Required PHP extensions expected locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
-- Runtime authority for DONE/LOCKED: operator-local PHPUnit output because container PHPUnit is extension-blocked. Supplied local output passed direct guard, DbIntegrity filter, StaticGuard filter, and full MarketData suite.
+- Runtime authority for DONE/LOCKED: satisfied by operator-local targeted and full PHPUnit output on the Config / ENV Governance Cleanup session.
 
 ---
 ## OPERATIONAL STATUS
@@ -49,6 +51,80 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Config / ENV Governance Cleanup -> DONE
+
+  [LAST_UPDATED] 2026-05-18
+
+  [RELATED_CONTRACT] CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT
+
+  [REVIEW_STATUS] DONE_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-17 -> Session opened to clean config/env/schema mismatch without rewriting market-data runtime contracts.
+  - 2026-05-17 -> Static trace proved `tickers.is_active` is numeric/boolean-like in migration and locked SQL schema.
+  - 2026-05-17 -> `MARKET_DATA_TICKERS_ACTIVE_YES_VALUE` and `market_data.tickers.active_yes_value` were replaced by numeric `MARKET_DATA_TICKERS_ACTIVE_VALUE=1` and `market_data.tickers.active_value`.
+  - 2026-05-17 -> `TickerMasterRepository` was tightened to use one strict active value instead of accepting `Yes`, `1`, and `true` as interchangeable active flags.
+  - 2026-05-17 -> Unused `multi_source_mode` and `allow_mixed_sources` config surfaces were pruned; locked behavior remains no multi-source row mixing.
+  - 2026-05-17 -> Missing `MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES=60` was added to env templates because the delayed-data runtime caller already exists.
+  - 2026-05-17 -> Added inventory, static guard, and repository behavioral test for config/env governance cleanup.
+  - 2026-05-17 -> Container syntax checks passed for changed PHP files; PHPUnit remained blocked in container by missing PHP extensions.
+  - 2026-05-18 -> Operator-local runtime proof supplied and passed for direct config/env guard, ticker repository test, targeted Config/Env/Ticker/Eligibility/Coverage/StaticGuard/DbIntegrity/Publication/Pointer/Read-side filters, and full MarketData suite.
+  - 2026-05-18 -> `--filter "SourceMode"` returned `No tests executed!`; this is documented as non-blocking because full MarketData suite passed and source-mode non-regression remains covered by broader static/contract guards.
+
+  [IMPLEMENTATION]
+  - `config/market_data.php` now exposes `market_data.tickers.active_value` typed as integer from `MARKET_DATA_TICKERS_ACTIVE_VALUE` and no longer exposes `active_yes_value`.
+  - `.env.example` and `.env.testing` now use `MARKET_DATA_TICKERS_ACTIVE_VALUE=1` and include `MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES=60`.
+  - `TickerMasterRepository::getUniverseForTradeDate()` filters with strict `where($activeColumn, $activeValue)`.
+  - Market-data tests that seeded ticker activity with string `Yes` now seed numeric `1`.
+  - `Coverage_Edge_Cases_Contract_LOCKED.md` records that stale multi-source env/config keys are pruned; the behavior remains no row-level source mixing.
+  - `docs/db/02_TICKERS_MASTER.md` now describes `is_active` as BOOLEAN/TINYINT canonical `1/0`, not ambiguous `ENUM('Yes','No')`.
+  - `docs/market_data/audit/CONFIG_ENV_GOVERNANCE_CLEANUP_INVENTORY.md` records schema/config alignment, config/env inventory, pruning, caller trace, patch, and validation matrices.
+  - `tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` guards schema/config/env/doc/test cleanup policy.
+  - `tests/Unit/MarketData/TickerMasterRepositoryTest.php` proves numeric ticker activity filtering excludes stale `Yes` string rows.
+
+  [ENFORCEMENT]
+  - Active ticker universe config is numeric/boolean-like and aligned to schema truth.
+  - Stale `Yes/No` active-ticker config is removed from runtime config and env templates.
+  - Active `MARKET_DATA_*` env keys in `.env.example` and `.env.testing` must match keys declared in `config/market_data.php`.
+  - Stale multi-source config surfaces must remain pruned unless a separate locked source-combination contract is created.
+  - Source mode non-regression: import/promote separation remains owned by `IMPORT_PROMOTE_SEPARATION_CONTRACT` and was not modified.
+  - Read-side non-regression: current readable publication pointer enforcement remains owned by `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` and was not modified.
+  - DB integrity FK/implicit policy non-regression: `DB_INTEGRITY_FK_IMPLICIT_INTEGRITY_DECISION_CONTRACT` remains unchanged and locked by prior local proof.
+
+  [FINAL_BEHAVIOR]
+  - `tickers.is_active` is treated as numeric/boolean-like for market-data config and repository filtering.
+  - Config/env keys that are active must be present in both config and env templates, typed correctly, and caller/purpose traced.
+  - Unused config/env surfaces must be removed or explicitly documented as deprecated/pruned; no ambiguous active key is left behind.
+  - Coverage threshold rules, source-mode semantics, read-side pointer-only reads, publication finalization, replay, evidence, and DB integrity policy remain unchanged by this cleanup.
+  - This implementation is DONE because operator-local targeted and full MarketData PHPUnit proof passed.
+
+  [EVIDENCE]
+  - Container PHP version: PHP 8.4.16.
+  - Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV because `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
+  - Syntax: `php -l config/market_data.php` -> No syntax errors detected.
+  - Syntax: `php -l app/Infrastructure/Persistence/MarketData/TickerMasterRepository.php` -> No syntax errors detected.
+  - Syntax: `php -l tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> No syntax errors detected.
+  - Syntax: `php -l tests/Unit/MarketData/TickerMasterRepositoryTest.php` -> No syntax errors detected.
+  - Static grep proof: no active runtime/config/env usage remains for `MARKET_DATA_TICKERS_ACTIVE_YES_VALUE` or `active_yes_value`; remaining mentions are negative guard/test or historical inventory notes.
+  - Static grep proof: active env templates exactly match `MARKET_DATA_*` keys declared in `config/market_data.php`.
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> OK (10 tests, 118 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData/TickerMasterRepositoryTest.php` -> OK (1 test, 1 assertion).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Config"` -> OK (14 tests, 140 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Env"` -> OK (11 tests, 142 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Ticker"` -> OK (12 tests, 145 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Eligibility"` -> OK (9 tests, 47 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Coverage"` -> OK (57 tests, 662 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "SourceMode"` -> No tests executed; non-blocking because full suite passed and source-mode non-regression is covered by broader guards.
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (156 tests, 3601 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "DbIntegrity"` -> OK (11 tests, 880 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> OK (106 tests, 1266 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> OK (82 tests, 1161 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Readside"` -> OK (13 tests, 258 assertions).
+  - Operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (427 tests, 6198 assertions).
+
+  [NEXT_ACTION]
+  - No remaining runtime blocker for this implementation. Keep this entry DONE unless future config/env/schema/caller changes require a new scoped validation.
 
 - DB Integrity FK / Implicit Integrity Decision -> DONE
 

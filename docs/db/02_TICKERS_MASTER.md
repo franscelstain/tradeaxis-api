@@ -20,7 +20,7 @@ Nama tabel fisik bebas (mis. `tickers`), tetapi minimal harus menyediakan kontra
 ## Required columns (minimum, LOCKED)
 - `ticker_id` (BIGINT/INT, PK)
 - `ticker_code` (VARCHAR, unique, uppercase canonical)
-- `is_active` (ENUM('Yes','No') atau BOOLEAN canonical)
+- `is_active` (BOOLEAN/TINYINT canonical: `1` aktif, `0` tidak aktif)
 - `listed_date` (DATE, nullable, recommended)
 - `delisted_date` (DATE, nullable, recommended)
 - `board_code` (VARCHAR, nullable, recommended)
@@ -47,7 +47,7 @@ Nama tabel fisik bebas (mis. `tickers`), tetapi minimal harus menyediakan kontra
 
 ## Data quality rules (LOCKED)
 - `ticker_code` kosong/NULL tidak boleh lolos ke PLAN/CONFIRM output.
-- Bila `is_active = 'No'` dan `delisted_date` tersedia, tanggal tersebut harus >= `listed_date` bila `listed_date` juga tersedia.
+- Bila `is_active = 0` dan `delisted_date` tersedia, tanggal tersebut harus >= `listed_date` bila `listed_date` juga tersedia.
 - `listed_date` dan `delisted_date` tidak boleh mengandung timezone; keduanya adalah tanggal bursa lokal.
 - Ticker duplikat karena variasi spasi/case harus dinormalisasi di source layer, bukan dibiarkan ke policy.
 - Join ke tabel pasar harian tidak boleh menghasilkan dua `ticker_id` berbeda untuk satu `ticker_code` canonical pada tanggal yang sama.

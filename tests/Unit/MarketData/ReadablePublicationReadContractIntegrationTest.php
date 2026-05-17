@@ -20,8 +20,8 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
         config()->set('market_data.session_snapshot.scope_default', 'universe_only');
 
         DB::table('tickers')->insert([
-            ['ticker_id' => 1, 'ticker_code' => 'BBCA', 'is_active' => 'Yes'],
-            ['ticker_id' => 2, 'ticker_code' => 'BMRI', 'is_active' => 'Yes'],
+            ['ticker_id' => 1, 'ticker_code' => 'BBCA', 'is_active' => 1],
+            ['ticker_id' => 2, 'ticker_code' => 'BMRI', 'is_active' => 1],
         ]);
 
         DB::table('eod_runs')->insert([

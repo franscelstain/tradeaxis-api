@@ -20,8 +20,8 @@ The system must not mix rows from multiple `source_name` values inside a single 
 
 Current locked behavior:
 
-- `MARKET_DATA_MULTI_SOURCE_MODE=PRIMARY_ONLY`
-- `MARKET_DATA_ALLOW_MIXED_SOURCES=false`
+- there is no active env/config key that permits multi-source row mixing
+- `MARKET_DATA_MULTI_SOURCE_MODE` and `MARKET_DATA_ALLOW_MIXED_SOURCES` are pruned as unused/stale config surfaces
 - mixed source rows inside one ingest boundary are rejected
 - source fallback is not row-level mixing
 - any provider/source fallback must start a clean run or use a future explicitly locked source-fallback contract

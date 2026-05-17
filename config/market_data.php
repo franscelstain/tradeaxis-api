@@ -16,8 +16,6 @@ return [
     ],
     'coverage_edge_cases' => [
         'delay_window_minutes' => (int) env('MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES', 60),
-        'multi_source_mode' => env('MARKET_DATA_MULTI_SOURCE_MODE', 'PRIMARY_ONLY'),
-        'allow_mixed_sources' => (bool) env('MARKET_DATA_ALLOW_MIXED_SOURCES', false),
     ],
     'coverage_gate' => [
         'enabled' => (bool) env('MARKET_DATA_COVERAGE_GATE_ENABLED', true),
@@ -81,7 +79,7 @@ return [
         'id_column' => env('MARKET_DATA_TICKERS_ID_COLUMN', 'ticker_id'),
         'code_column' => env('MARKET_DATA_TICKERS_CODE_COLUMN', 'ticker_code'),
         'active_column' => env('MARKET_DATA_TICKERS_ACTIVE_COLUMN', 'is_active'),
-        'active_yes_value' => env('MARKET_DATA_TICKERS_ACTIVE_YES_VALUE', 'Yes'),
+        'active_value' => (int) env('MARKET_DATA_TICKERS_ACTIVE_VALUE', 1),
         'listed_date_column' => env('MARKET_DATA_TICKERS_LISTED_DATE_COLUMN', 'listed_date'),
         'delisted_date_column' => env('MARKET_DATA_TICKERS_DELISTED_DATE_COLUMN', 'delisted_date'),
     ],

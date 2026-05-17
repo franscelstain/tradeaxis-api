@@ -4778,7 +4778,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         DB::table('tickers')->insert([
             'ticker_id' => $tickerId,
             'ticker_code' => $tickerCode,
-            'is_active' => 'Yes',
+            'is_active' => 1,
             'listed_date' => '2020-01-01',
             'delisted_date' => null,
         ]);

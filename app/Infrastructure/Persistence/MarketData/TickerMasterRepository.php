@@ -42,18 +42,14 @@ class TickerMasterRepository
         $idColumn = config('market_data.tickers.id_column');
         $codeColumn = config('market_data.tickers.code_column');
         $activeColumn = config('market_data.tickers.active_column');
-        $activeYesValue = config('market_data.tickers.active_yes_value');
+        $activeValue = (int) config('market_data.tickers.active_value', 1);
         $listedDateColumn = config('market_data.tickers.listed_date_column');
         $delistedDateColumn = config('market_data.tickers.delisted_date_column');
 
         $query = DB::table($table)->select([$idColumn, $codeColumn]);
 
         if ($activeColumn) {
-            $query->where(function ($sub) use ($activeColumn, $activeYesValue) {
-                $sub->where($activeColumn, $activeYesValue)
-                    ->orWhere($activeColumn, 1)
-                    ->orWhere($activeColumn, true);
-            });
+            $query->where($activeColumn, $activeValue);
         }
 
         if ($listedDateColumn) {
