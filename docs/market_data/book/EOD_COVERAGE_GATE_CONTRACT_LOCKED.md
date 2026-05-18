@@ -40,11 +40,11 @@ Denominator tetap harus sesuai requested trade date yang sedang dievaluasi.
 ---
 
 ## Locked minimum threshold
-Minimum coverage threshold platform adalah **0.95 (95%)**.
+Minimum coverage threshold platform adalah **0.98 (98%)**.
 
 Artinya:
-- `coverage_ratio >= 0.95` dapat dinilai `PASS` bila syarat kualitas keras juga lolos
-- `coverage_ratio < 0.95` harus dinilai `FAIL`
+- `coverage_ratio >= 0.98` dapat dinilai `PASS` bila syarat kualitas keras juga lolos
+- `coverage_ratio < 0.98` harus dinilai `FAIL`
 - tidak ada threshold alternatif per command, per provider, atau per mode tanpa perubahan kontrak eksplisit
 
 Sistem ini memilih **data cukup lengkap dan boleh lebih lambat** dibanding **data lebih cepat tetapi belum cukup lengkap**.
@@ -56,12 +56,14 @@ Requested date tidak boleh dipromosikan hanya demi mengejar kecepatan bila cover
 Allowed states:
 - `PASS`
 - `FAIL`
-- `BLOCKED`
+- `NOT_EVALUABLE`
 
 Makna:
 - `PASS`: ratio dievaluasi, memenuhi threshold, dan tidak ada hard data-quality blocker
 - `FAIL`: ratio dievaluasi secara sah tetapi di bawah threshold
-- `BLOCKED`: coverage tidak dapat dievaluasi secara aman/bermakna karena prerequisite, evidence basis, atau integritas dataset rusak
+- `NOT_EVALUABLE`: coverage tidak dapat dievaluasi secara aman/bermakna karena prerequisite, evidence basis, atau integritas dataset rusak
+
+`BLOCKED` tetap valid sebagai `quality_gate_state` / readiness state untuk kegagalan hard-blocker, dan sebagai legacy persisted value yang harus dinormalisasi fail-safe. Evaluasi coverage baru tidak boleh mengeluarkan `coverage_gate_state=BLOCKED`; gunakan `coverage_gate_state=NOT_EVALUABLE` dengan `quality_gate_state=BLOCKED`.
 
 ---
 
@@ -87,7 +89,7 @@ Kondisi berikut diperlakukan sebagai **hard blocker**:
 - source date/window mismatch membuat valid-bar set tidak dapat dipastikan milik requested date
 - corruption global pada persisted bars, indicator prerequisites, atau publication prerequisites
 
-Hard blocker harus menghasilkan `BLOCKED`, bukan `PASS` dan bukan `soft success`.
+Hard blocker harus menghasilkan `coverage_gate_state=NOT_EVALUABLE` dan `quality_gate_state=BLOCKED`, bukan `PASS` dan bukan `soft success`.
 
 ---
 
@@ -100,7 +102,7 @@ Aturan resmi:
 
 Ringkasnya:
 - **partial allowed in import**
-- **partial not allowed for requested-date readability unless final canonical coverage still reaches 95% and no hard blocker exists**
+- **partial not allowed for requested-date readability unless final canonical coverage still reaches 98% and no hard blocker exists**
 
 ---
 
@@ -121,7 +123,7 @@ Coverage gate tidak boleh dipindahkan menjadi sekadar provider-health metric.
 ## Outcome matrix
 - `PASS` → promote boleh lanjut
 - `FAIL` → requested date tetap `NOT_READABLE`
-- `BLOCKED` → requested date tetap `NOT_READABLE`
+- `NOT_EVALUABLE` → requested date tetap `NOT_READABLE`
 
 Readable success tetap memerlukan stage promote lain yang lolos.
 
@@ -130,9 +132,9 @@ Readable success tetap memerlukan stage promote lain yang lolos.
 ## Deterministic decision matrix
 | Condition | Gate state | Requested-date readability |
 |---|---|---|
-| coverage ratio >= 95% dan tidak ada hard blocker | `PASS` | boleh lanjut ke promote stages berikutnya |
-| coverage ratio < 95% tetapi masih bisa dihitung sah | `FAIL` | `NOT_READABLE` |
-| coverage tidak bisa dibuktikan / basis integritas rusak | `BLOCKED` | `NOT_READABLE` |
+| coverage ratio >= 98% dan tidak ada hard blocker | `PASS` | boleh lanjut ke promote stages berikutnya |
+| coverage ratio < 98% tetapi masih bisa dihitung sah | `FAIL` | `NOT_READABLE` |
+| coverage tidak bisa dibuktikan / basis integritas rusak | `NOT_EVALUABLE` | `NOT_READABLE` |
 
 ---
 
@@ -141,9 +143,13 @@ Minimum field yang harus tampak:
 - `requested_trade_date`
 - `coverage_universe_count`
 - `coverage_available_count`
+- `expected_bar_count`
+- `available_bar_count`
+- `missing_bar_count`
 - `coverage_ratio`
 - `coverage_min_threshold`
 - `coverage_gate_state`
+- `quality_gate_state`
 - `hard_blocker_present`
 - `coverage_decision_reason`
 

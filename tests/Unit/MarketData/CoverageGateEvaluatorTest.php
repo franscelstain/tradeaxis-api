@@ -52,7 +52,7 @@ class CoverageGateEvaluatorTest extends TestCase
 
     public function test_evaluator_returns_fail_when_available_is_below_threshold()
     {
-        $this->bindCoverageGateConfig(['min_ratio' => 0.95]);
+        $this->bindCoverageGateConfig();
 
         $tickers = $this->createMock(TickerMasterRepository::class);
         $artifacts = $this->createMock(EodArtifactRepository::class);
@@ -75,7 +75,7 @@ class CoverageGateEvaluatorTest extends TestCase
         $this->assertSame(46, $result['missing_eod_count']);
         $this->assertSame('FAIL', $result['coverage_gate_status']);
         $this->assertSame('COVERAGE_BELOW_THRESHOLD', $result['reason_code']);
-        $this->assertSame(0.95, $result['coverage_threshold_value']);
+        $this->assertSame(0.98, $result['coverage_threshold_value']);
         $this->assertSame('MIN_RATIO', $result['coverage_threshold_mode']);
         $this->assertEquals(854 / 900, $result['coverage_ratio']);
         $this->assertCount(25, $result['missing_ticker_ids']);
@@ -83,7 +83,7 @@ class CoverageGateEvaluatorTest extends TestCase
         $this->assertSame('TKR0855', $result['missing_ticker_codes'][0]);
     }
 
-    public function test_evaluator_returns_blocked_when_expected_universe_is_zero()
+    public function test_evaluator_returns_not_evaluable_when_expected_universe_is_zero()
     {
         $this->bindCoverageGateConfig();
 

@@ -38,6 +38,8 @@ Kombinasi selain matrix di atas tidak valid untuk finalized run.
 ## Invariants
 
 - `READABLE` selalu berarti `terminal_status = SUCCESS`.
+- `READABLE` selalu berarti `coverage_gate_state = PASS` dengan `coverage_ratio >= coverage_min_threshold`.
+- `coverage_gate_state = FAIL` atau `NOT_EVALUABLE` selalu berarti `publishability_state = NOT_READABLE`; `NOT_EVALUABLE` juga memetakan `quality_gate_state = BLOCKED`.
 - `FAILED` selalu berarti `publishability_state = NOT_READABLE`.
 - `HELD` selalu berarti `publishability_state = NOT_READABLE`.
 - `current` selalu berarti publication `SEALED`, run `SUCCESS`, dan run `READABLE`.
@@ -59,6 +61,8 @@ Kombinasi selain matrix di atas tidak valid untuk finalized run.
 - run `sealed_at` tidak null
 - run `terminal_status = SUCCESS`
 - run `publishability_state = READABLE`
+- run `coverage_gate_state = PASS`
+- run `coverage_ratio >= coverage_min_threshold`
 - run `is_current_publication = 1`
 
 Jika salah satu syarat gagal, publication tidak boleh dianggap current/readable.

@@ -123,12 +123,13 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
 
         foreach ([$status, $tracker] as $document) {
             $this->assertStringContainsString("ACTIVE SESSION:
-- Audit Docs Synchronization", $document);
+- Coverage Policy Reconciliation", $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);
             $this->assertStringContainsString('LOCKED_LOCAL_RUNTIME_PROOF', $document);
             $this->assertStringContainsString('OK (435 tests, 6299 assertions)', $document);
             $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $document);
             $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $document);
+            $this->assertStringContainsString('COVERAGE_POLICY_RECONCILIATION_CONTRACT', $document);
             $this->assertStringNotContainsString('READY_FOR_FINAL_LOCAL_FULL_SUITE_RERUN', $document);
         }
 

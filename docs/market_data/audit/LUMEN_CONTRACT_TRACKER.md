@@ -3,32 +3,32 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Audit Docs Synchronization
+- Coverage Policy Reconciliation
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Re-open the canonical audit-docs synchronization contract after sessions 1-8 to synchronize implementation status, contract tracker, inventories, and static guards.
-- Preserve canonical contracts and previous LOCKED claims only where concrete evidence already exists.
-- Record post-session proof honestly, including carried operator-local proof and current container runtime blockers.
-- Contract is LOCKED after local/operator post-guard-scope PHPUnit proof was supplied after this patch.
+- Define the active reconciliation contract for coverage policy drift across locked docs, config, code, tests, command output, evidence export, replay verification, and audit docs.
+- Preserve existing coverage-gate enforcement history while recording the current threshold/status reconciliation without claiming full production-ready.
+- Lock this contract after current scoped tests/runtime proof passed after the patch.
 
 [SESSION_GOAL]
-- Ensure audit docs remain the source of truth after the latest hardening sequence without duplicating contracts, overwriting history, or claiming unsupported runtime proof.
+- Make coverage policy stop blocking the production-readiness roadmap by locking one active threshold/status model and its enforcement surfaces.
 
 [SESSION_NOTES]
-- Container PHP 8.4.16 is unsupported for evidence output and fails closed via `ENV_UNSUPPORTED_PHP_VERSION`.
-- Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`.
-- Existing locked contracts for sessions 1-8 retain their own local evidence and final rules.
-- `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` is the canonical owner for this synchronization pass; no duplicate contract is introduced.
-- The post-session synchronization lock condition is satisfied by the final local StaticGuard and full MarketData suite PASS after this patch.
+- Local PHP version for this patch is PHP 7.4.33.
+- Local PHPUnit version for this patch is PHPUnit 9.6.34.
+- Existing locked contracts retain their own local evidence and final rules for prior source states.
+- `COVERAGE_POLICY_RECONCILIATION_CONTRACT` is the active session contract for this threshold/status reconciliation and references the existing coverage gate enforcement contract as the runtime owner.
+- This contract is LOCKED for coverage-policy reconciliation because targeted coverage/audit/static/full MarketData validation and relevant command/evidence/replay command-surface proof passed after this patch.
 
 [RUNTIME_ENVIRONMENT]
-- Container PHP version: PHP 8.4.16.
-- Container artisan status: EXPECTED_FAIL_CLOSED with clean `ENV_UNSUPPORTED_PHP_VERSION`; not a runtime PASS.
-- Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, and xmlwriter.
+- Local PHP version: PHP 7.4.33.
+- Local PHPUnit version: PHPUnit 9.6.34.
+- Artisan command surface status: PASS for command discovery/help and expected fail-closed blocked inputs.
+- PHPUnit status: PASS for targeted and full MarketData validation after this patch.
 - Operator-local historical proof available: StaticGuard OK (164 tests, 3702 assertions) and full MarketData OK (435 tests, 6299 assertions) from Ops Environment Baseline closure.
-- Runtime authority for LOCKED post-session synchronization: operator-local post-guard-scope proof supplied on 2026-05-18.
+- Runtime authority for LOCKED coverage reconciliation: current local proof from this patch on 2026-05-18.
 
 ---
 ## OPERATIONAL STATUS
@@ -50,6 +50,79 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING CONTRACT
 
+
+- COVERAGE_POLICY_RECONCILIATION_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-18
+
+  [RELATED_IMPLEMENTATION] Coverage Policy Reconciliation
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-18 -> Contract opened to reconcile active coverage threshold/status drift in the uploaded ZIP source of truth.
+  - 2026-05-18 -> Pre-patch trace found `0.95` in active locked coverage doc and selected test fixtures while config/runtime/default evidence used `0.98`.
+  - 2026-05-18 -> Pre-patch trace found legacy active-doc wording using coverage `BLOCKED` while current evaluator/finalize tests used `NOT_EVALUABLE`.
+  - 2026-05-18 -> Patch aligned active docs/code/tests/evidence/replay/static guards around `0.98`, coverage `NOT_EVALUABLE`, quality `BLOCKED`, and no manual/correction/fallback bypass.
+
+  [DEFINED]
+  - Official coverage threshold is `MARKET_DATA_COVERAGE_MIN = 0.98`; no alternate command/source/mode threshold is active.
+  - New coverage gate states are `PASS`, `FAIL`, and `NOT_EVALUABLE`.
+  - `BLOCKED` remains valid only as `quality_gate_state`, readiness/command status, or legacy persisted coverage input that must normalize fail-safe to `NOT_EVALUABLE`.
+  - `READABLE` requires terminal success, publishability readable, coverage PASS, ratio meeting threshold, sealed publication, and valid current-pointer integrity.
+  - Manual file and correction flows cannot bypass coverage; evidence export and replay verification must expose/compare coverage status, ratio, threshold, counts, and reason code.
+
+  [IMPLEMENTED]
+  - Active coverage docs and runbooks were updated from `0.95`/coverage `BLOCKED` to the reconciled `0.98`/`NOT_EVALUABLE` model.
+  - Runtime outcome services normalize legacy `BLOCKED` coverage input to `NOT_EVALUABLE`.
+  - Evidence/replay JSON contexts expose bar-count aliases alongside persisted coverage-count fields.
+  - Coverage, finalize, command-surface, evidence, replay, static guard, and audit-doc fixtures were updated to the reconciled policy.
+
+  [ENFORCED]
+  - Coverage `FAIL` and `NOT_EVALUABLE` remain non-readable and cannot switch current pointers.
+  - Manual file import/publish paths and correction publish paths remain subject to the same coverage PASS rule.
+  - Replay mismatch classification includes coverage state, ratio/threshold, reason, and bar-count alias mismatches.
+
+  [VALIDATED]
+  - Local PHPUnit/artisan validation was executed in the current workspace after this patch.
+  - `php -v` -> PHP 7.4.33.
+  - `vendor/bin/phpunit --version` -> PHPUnit 9.6.34.
+  - `php -l` changed PHP files -> No syntax errors detected.
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/CoverageGateEvaluatorTest.php` -> OK (4 tests, 45 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Coverage"` -> OK (58 tests, 679 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "ManualFile"` -> OK (4 tests, 118 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Finalize"` -> OK (49 tests, 379 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Publishability"` -> OK (2 tests, 42 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Replay"` -> OK (53 tests, 825 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Evidence"` -> OK (52 tests, 954 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (9 tests, 286 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "AuditDocs"` -> OK (9 tests, 286 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "StaticGuard"` -> OK (164 tests, 3758 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData` -> OK (436 tests, 6365 assertions).
+  - `php artisan list market-data` -> PASS; 20 market-data commands listed.
+  - `php artisan market-data:daily --requested_date=not-a-date` -> EXPECTED_BLOCKED with `status=BLOCKED`, `reason_code=COMMAND_INVALID_DATE_FORMAT`.
+  - `php artisan market-data:evidence:export` -> EXPECTED_BLOCKED with `status=BLOCKED`, `reason_code=COMMAND_MISSING_REQUIRED_INPUT`.
+  - `php artisan market-data:replay:verify --help` -> PASS; usage/options rendered.
+
+  [FINAL_RULE]
+  - LOCKED. Coverage policy is reconciled in source and current scoped tests/runtime proof passed after this patch.
+
+  [LOCK_CONDITION]
+  - Satisfied. Targeted Coverage/ManualFile/Finalize/Publishability/Replay/Evidence/AuditDocs/StaticGuard tests, syntax checks, relevant artisan command smoke checks, and full `vendor/bin/phpunit tests/Unit/MarketData` passed in the current local runtime.
+
+  [EVIDENCE]
+  - Current evidence is recorded under `[VALIDATED]` for this contract.
+
+  [GAP]
+  - None for coverage-policy reconciliation after current scoped validation.
+
+  [REMAINING_RISK]
+  - This contract does not claim full market-data production-ready; DB schema sync, read-side runtime proof, evidence/replay runtime proof matrix, ops runtime matrix, and final audit-doc synchronization remain separate roadmap scopes if not already closed.
+
+  [NEXT_ACTION]
+  - Use this locked coverage-policy reconciliation as input to the next DB Schema / Migration Sync session.
+
+---
 
 - AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED
 

@@ -65,14 +65,14 @@ Allowed input state:
 - `PASS`
 - `FAIL`
 - `NOT_EVALUABLE`
-- `BLOCKED`
+
+Legacy persisted input `BLOCKED` must be normalized fail-safe to `NOT_EVALUABLE` before publishability can be resolved. `BLOCKED` remains a quality/readiness state, not the final coverage gate state for new evaluations.
 
 Rules:
 
 - `PASS` adalah syarat minimum agar candidate boleh menjadi `READABLE`.
 - `FAIL` tidak boleh menghasilkan `READABLE`.
 - `NOT_EVALUABLE` tidak boleh menghasilkan `READABLE`.
-- `BLOCKED` tidak boleh menghasilkan `READABLE`.
 - coverage ratio saja tidak cukup; state akhir coverage gate harus eksplisit.
 
 ---
@@ -108,6 +108,7 @@ Rules:
 - `READABLE` hanya valid bila:
   - `terminal_status=SUCCESS`
   - `coverage_gate_status=PASS`
+  - `coverage_ratio >= coverage_min_threshold`
   - sealed publication tersedia
   - pointer sync berhasil bila publish target adalah current publication
 - `NOT_READABLE` wajib untuk:
@@ -115,7 +116,6 @@ Rules:
   - `terminal_status=FAILED`
   - coverage `FAIL`
   - coverage `NOT_EVALUABLE`
-  - coverage `BLOCKED`
 - tidak ada state override seperti `READABLE_WITH_OVERRIDE`.
 - publishability tidak boleh diubah oleh read-side repository, evidence export, replay, atau command output.
 

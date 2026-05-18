@@ -99,11 +99,11 @@ Keputusan final:
 
 ## Coverage and quality decision rules (LOCKED)
 Aturan promote:
-- threshold coverage minimum = **95%**
+- threshold coverage minimum = **98%**
 - coverage ratio dihitung dari canonical valid bars / coverage universe
-- coverage `PASS` hanya bila ratio >= 95% dan tidak ada hard integrity blocker
-- coverage `FAIL` bila ratio < 95% namun masih evaluable
-- coverage `BLOCKED` bila basis evaluasi tidak aman atau tidak lengkap
+- coverage `PASS` hanya bila ratio >= 98% dan tidak ada hard integrity blocker
+- coverage `FAIL` bila ratio < 98% namun masih evaluable
+- coverage `NOT_EVALUABLE` bila basis evaluasi tidak aman atau tidak lengkap; quality/readiness state boleh `BLOCKED`
 
 Aturan penting:
 - partial import boleh terjadi
@@ -122,12 +122,12 @@ Per-ticker failure saat import:
 Global integrity failure saat import:
 - boleh menghentikan requested date sebagai candidate yang aman
 - harus menghasilkan evidence failure yang jelas
-- coverage gate dapat berakhir `BLOCKED`
+- coverage gate dapat berakhir `NOT_EVALUABLE`
 
 ---
 
 ## Promote outcome interpretation
-- bila coverage gate tidak bisa dievaluasi aman → `BLOCKED`
+- bila coverage gate tidak bisa dievaluasi aman → `NOT_EVALUABLE` dengan quality/readiness `BLOCKED`
 - bila coverage gate gagal → `FAIL`
 - bila promote gagal, requested date tidak boleh readable
 - fallback prior readable date boleh tetap melayani consumer sesuai contract readability, tetapi requested date saat ini tetap `NOT_READABLE`
@@ -175,7 +175,7 @@ Tidak boleh:
 - import success = requested-date readable success
 - promote fetch ulang source data
 - merge source A dan source B secara diam-diam dalam satu publication candidate
-- mempublish date dengan coverage di bawah 95%
+- mempublish date dengan coverage di bawah 98%
 
 ---
 

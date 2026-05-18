@@ -181,7 +181,7 @@ class FinalizeDecisionService
             return $this->enforceStateMatrix($state);
         }
 
-        if ($coverageGateStatus === 'NOT_EVALUABLE' || $coverageGateStatus === 'BLOCKED') {
+        if ($coverageGateStatus === 'NOT_EVALUABLE') {
             $state = $baseState;
             $state['quality_gate_state'] = 'BLOCKED';
             $state['terminal_status'] = $fallbackTradeDate ? 'HELD' : 'FAILED';
@@ -260,7 +260,11 @@ class FinalizeDecisionService
     private function normalizeCoverageSummary(array $coverageSummary): array
     {
         $status = strtoupper((string) ($coverageSummary['coverage_gate_status'] ?? $coverageSummary['coverage_gate_state'] ?? 'NOT_EVALUABLE'));
-        if (! in_array($status, ['PASS', 'FAIL', 'NOT_EVALUABLE', 'BLOCKED'], true)) {
+        if ($status === 'BLOCKED') {
+            $status = 'NOT_EVALUABLE';
+        }
+
+        if (! in_array($status, ['PASS', 'FAIL', 'NOT_EVALUABLE'], true)) {
             $status = 'NOT_EVALUABLE';
         }
 
@@ -283,7 +287,7 @@ class FinalizeDecisionService
             $summary['coverage_reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 
-        if (in_array($summary['coverage_gate_status'], ['NOT_EVALUABLE', 'BLOCKED'], true) && ! $summary['coverage_reason_code']) {
+        if ($summary['coverage_gate_status'] === 'NOT_EVALUABLE' && ! $summary['coverage_reason_code']) {
             $summary['coverage_reason_code'] = 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 

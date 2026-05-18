@@ -22,10 +22,17 @@ class PublicationFinalizeOutcomeService
         $unchangedCorrection = (bool) ($context['unchanged_correction'] ?? false);
         $promotionError = $context['promotion_error'] ?? null;
 
+        $coverageGateStatus = $this->normalizeCoverageGateStatus($preDecision['coverage_gate_status'] ?? ($preDecision['coverage_gate_state'] ?? null));
+        $coverageSummary = $preDecision['coverage_summary'] ?? [];
+        if (is_array($coverageSummary)) {
+            $coverageSummary['coverage_gate_status'] = $coverageGateStatus;
+            $coverageSummary['coverage_gate_state'] = $coverageGateStatus;
+        }
+
         $state = [
-            'coverage_gate_status' => $preDecision['coverage_gate_status'] ?? null,
-            'coverage_gate_state' => $preDecision['coverage_gate_state'] ?? ($preDecision['coverage_gate_status'] ?? null),
-            'coverage_summary' => $preDecision['coverage_summary'] ?? [],
+            'coverage_gate_status' => $coverageGateStatus,
+            'coverage_gate_state' => $coverageGateStatus,
+            'coverage_summary' => $coverageSummary,
             'quality_gate_state' => $preDecision['quality_gate_state'],
             'terminal_status' => $preDecision['terminal_status'],
             'publishability_state' => $preDecision['publishability_state'],
@@ -140,7 +147,7 @@ class PublicationFinalizeOutcomeService
 
     private function enforceStateMatrix(array $state): array
     {
-        $coverageGateStatus = strtoupper((string) ($state['coverage_gate_status'] ?? ($state['coverage_gate_state'] ?? 'NOT_EVALUABLE')));
+        $coverageGateStatus = $this->normalizeCoverageGateStatus($state['coverage_gate_status'] ?? ($state['coverage_gate_state'] ?? 'NOT_EVALUABLE'));
         $terminalStatus = strtoupper((string) ($state['terminal_status'] ?? ''));
         $publishabilityState = strtoupper((string) ($state['publishability_state'] ?? ''));
 
@@ -173,5 +180,18 @@ class PublicationFinalizeOutcomeService
         (new MarketDataInvariantGuard())->assertNoBypassState($state, 'PublicationFinalizeOutcomeService');
 
         return $state;
+    }
+
+    private function normalizeCoverageGateStatus($status): string
+    {
+        $status = strtoupper((string) ($status ?: 'NOT_EVALUABLE'));
+
+        if ($status === 'BLOCKED') {
+            return 'NOT_EVALUABLE';
+        }
+
+        return in_array($status, ['PASS', 'FAIL', 'NOT_EVALUABLE'], true)
+            ? $status
+            : 'NOT_EVALUABLE';
     }
 }

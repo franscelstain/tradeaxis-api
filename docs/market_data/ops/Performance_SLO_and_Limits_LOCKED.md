@@ -71,7 +71,7 @@ Pada jalur Yahoo aktif:
 
 ## Hard limits that SLO may not override
 SLO tidak boleh mengoverride aturan berikut:
-- coverage minimum = **95%**
+- coverage minimum = **98%**
 - requested date `READABLE` hanya setelah promote sukses penuh
 - satu publication candidate hanya memiliki satu source-of-truth mode
 - consumer hanya boleh membaca publication sealed/current/readable

@@ -37,5 +37,5 @@ A run is not success-eligible unless the coverage gate for the requested/effecti
 Implications:
 - `coverage_ratio >= COVERAGE_MIN` is required for requested-date readability
 - coverage `FAIL` keeps the requested date `NOT_READABLE` even if bars/indicators/eligibility/hashes already exist
-- coverage `BLOCKED` also keeps the requested date `NOT_READABLE`; finalization must treat this as blocked integrity/prerequisite state, not as silent pass
+- coverage `NOT_EVALUABLE` also keeps the requested date `NOT_READABLE`; finalization maps this to `quality_gate_state=BLOCKED` and must treat it as blocked integrity/prerequisite state, not as silent pass
 - readable fallback resolution may keep consumers operational, but it does not convert the requested date into `SUCCESS`

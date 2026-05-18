@@ -49,7 +49,7 @@ Required environment checks:
 - database migrations already applied
 - reason-code registry and seed synchronized
 
-The operator must stop when terminal output contains `status=BLOCKED`, `terminal_status=FAILED`, `terminal_status=HELD`, `publishability_state=NOT_READABLE`, coverage `FAIL`, pointer mismatch, unsealed publication, replay mismatch, or missing evidence metadata.
+The operator must stop when terminal output contains `status=BLOCKED`, `terminal_status=FAILED`, `terminal_status=HELD`, `publishability_state=NOT_READABLE`, coverage `FAIL`, coverage `NOT_EVALUABLE`, pointer mismatch, unsealed publication, replay mismatch, or missing evidence metadata.
 
 ## 2. Command coverage matrix
 

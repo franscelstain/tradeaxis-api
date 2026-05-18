@@ -533,6 +533,9 @@ class ReplayVerificationService
             'coverage_expected_count' => isset($run->coverage_universe_count) && $run->coverage_universe_count !== null ? (int) $run->coverage_universe_count : null,
             'coverage_available_count' => isset($run->coverage_available_count) && $run->coverage_available_count !== null ? (int) $run->coverage_available_count : null,
             'coverage_missing_count' => isset($run->coverage_missing_count) && $run->coverage_missing_count !== null ? (int) $run->coverage_missing_count : null,
+            'expected_bar_count' => isset($run->coverage_universe_count) && $run->coverage_universe_count !== null ? (int) $run->coverage_universe_count : null,
+            'available_bar_count' => isset($run->coverage_available_count) && $run->coverage_available_count !== null ? (int) $run->coverage_available_count : null,
+            'missing_bar_count' => isset($run->coverage_missing_count) && $run->coverage_missing_count !== null ? (int) $run->coverage_missing_count : null,
             'coverage_ratio' => isset($run->coverage_ratio) && $run->coverage_ratio !== null ? (float) $run->coverage_ratio : null,
             'coverage_min_threshold' => isset($run->coverage_min_threshold) && $run->coverage_min_threshold !== null ? (float) $run->coverage_min_threshold : null,
             'coverage_gate_state' => $run->coverage_gate_state ?? null,
@@ -665,6 +668,9 @@ class ReplayVerificationService
             'coverage_universe_count' => $coverageContext['coverage_universe_count'],
             'coverage_available_count' => $coverageContext['coverage_available_count'],
             'coverage_missing_count' => $coverageContext['coverage_missing_count'],
+            'expected_bar_count' => $coverageContext['expected_bar_count'],
+            'available_bar_count' => $coverageContext['available_bar_count'],
+            'missing_bar_count' => $coverageContext['missing_bar_count'],
             'coverage_ratio' => $coverageContext['coverage_ratio'],
             'coverage_min_threshold' => $coverageContext['coverage_min_threshold'],
             'coverage_gate_state' => $coverageContext['coverage_gate_state'],
@@ -804,7 +810,7 @@ class ReplayVerificationService
         }
         $this->appendManualFilePolicyMismatches($mismatches, $expectedContext['expected_source_context'], $actual);
 
-        foreach (['coverage_universe_count', 'coverage_expected_count', 'coverage_available_count', 'coverage_missing_count', 'coverage_gate_state', 'coverage_reason_code', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
+        foreach (['coverage_universe_count', 'coverage_expected_count', 'coverage_available_count', 'coverage_missing_count', 'expected_bar_count', 'available_bar_count', 'missing_bar_count', 'coverage_gate_state', 'coverage_reason_code', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
             $this->compareFieldAllowNull($mismatches, $field, $this->ctx($expectedContext, 'expected_coverage_context.'.$field), $actual['context']['actual_coverage_context'][$field] ?? null);
         }
         foreach (['coverage_ratio', 'coverage_min_threshold'] as $field) {
@@ -1012,6 +1018,11 @@ class ReplayVerificationService
             'coverage_universe_basis' => $r['coverage_universe_basis'] ?? null,
             'coverage_contract_version' => $r['coverage_contract_version'] ?? null,
             'coverage_missing_sample' => $r['coverage_missing_sample'] ?? [],
+        ]);
+        $expectedCoverage = $this->mergeMissing($expectedCoverage, [
+            'expected_bar_count' => $expectedCoverage['coverage_expected_count'] ?? ($expectedCoverage['coverage_universe_count'] ?? null),
+            'available_bar_count' => $expectedCoverage['coverage_available_count'] ?? null,
+            'missing_bar_count' => $expectedCoverage['coverage_missing_count'] ?? null,
         ]);
         $expectedArtifact = $this->mergeMissing($expectedArtifact, [
             'bars_rows_written' => $run['bars_rows_written'] ?? ($r['bars_rows_written'] ?? null),
@@ -1282,7 +1293,7 @@ class ReplayVerificationService
         if (strpos($field, 'source_') !== false || strpos($field, 'row_count') !== false) return 'REPLAY_SOURCE_IDENTITY_MISMATCH';
         if (strpos($field, 'rows_written') !== false || strpos($field, 'invalid_') !== false || $field === 'eligible_count' || $field === 'warning_count' || $field === 'hard_reject_count') return 'REPLAY_ARTIFACT_HASH_MISMATCH';
         if ($field === 'coverage_gate_state') return 'REPLAY_COVERAGE_STATE_MISMATCH';
-        if ($field === 'coverage_ratio' || $field === 'coverage_min_threshold') return 'REPLAY_COVERAGE_RATIO_MISMATCH';
+        if ($field === 'coverage_ratio' || $field === 'coverage_min_threshold' || in_array($field, ['expected_bar_count', 'available_bar_count', 'missing_bar_count'], true)) return 'REPLAY_COVERAGE_RATIO_MISMATCH';
         if ($field === 'coverage_reason_code') return 'REPLAY_COVERAGE_REASON_MISMATCH';
         if (strpos($field, 'coverage_') !== false) return 'REPLAY_COVERAGE_STATE_MISMATCH';
         if (strpos($field, 'batch_hash') !== false) return 'REPLAY_ARTIFACT_HASH_MISMATCH';

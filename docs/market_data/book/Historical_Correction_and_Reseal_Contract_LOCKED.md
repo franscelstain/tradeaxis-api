@@ -119,6 +119,7 @@ A correction publication for D requires:
 - new coherent consumer-visible artifact set
 - recomputed content hashes
 - new seal event
+- coverage gate `PASS` under the same locked threshold and NOT_EVALUABLE/fail rules as normal publication
 - successful validation before publication switch
 
 At minimum recompute:
@@ -153,6 +154,8 @@ If correction execution fails before safe publication:
 - candidate correction must not become readable
 - partial candidate state must remain non-current
 - evidence of failure must remain auditable
+
+Coverage `FAIL` or `NOT_EVALUABLE` is a failed-safe correction candidate for current replacement. It may leave audit evidence or a non-current repair candidate according to the finalize/publish-target contract, but it must not replace the current pointer.
 
 ## Historical replay requirement (LOCKED)
 Replay and data-quality verification must be able to prove:

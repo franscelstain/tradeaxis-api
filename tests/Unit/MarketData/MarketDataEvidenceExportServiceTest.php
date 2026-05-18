@@ -336,6 +336,9 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('FAIL', $payload['coverage_context']['coverage_gate_state']);
         $this->assertSame(901, $payload['coverage_context']['coverage_expected_count']);
         $this->assertSame(5, $payload['coverage_context']['coverage_available_count']);
+        $this->assertSame(901, $payload['coverage_context']['expected_bar_count']);
+        $this->assertSame(5, $payload['coverage_context']['available_bar_count']);
+        $this->assertSame(896, $payload['coverage_context']['missing_bar_count']);
         $this->assertSame('manual_file', $payload['source_context']['source_mode']);
         $this->assertSame('LOCAL_FILE', $payload['source_context']['source_name']);
         $this->assertSame('FILE_HASH', $payload['source_context']['source_file_hash']);

@@ -644,7 +644,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'eligibility_rows_written' => 900,
                 'blocked_rows' => 40,
                 'eligible_rows' => 860,
-                'eligibility_pass_ratio' => 0.9556,
+                'eligibility_pass_ratio' => 0.9667,
                 'storage_target' => 'eod_eligibility',
             ]);
 
@@ -653,11 +653,11 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with('2026-04-03', 15)
             ->andReturn([
                 'expected_universe_count' => 900,
-                'available_eod_count' => 870,
-                'missing_eod_count' => 30,
-                'coverage_ratio' => 0.9666667,
+                'available_eod_count' => 890,
+                'missing_eod_count' => 10,
+                'coverage_ratio' => 0.9888889,
                 'coverage_gate_status' => 'PASS',
-                'coverage_threshold_value' => 0.95,
+                'coverage_threshold_value' => 0.98,
                 'coverage_threshold_mode' => 'MIN_RATIO',
                 'coverage_calibration_version' => 'coverage_gate_v1',
                 'reason_code' => 'COVERAGE_THRESHOLD_MET',
@@ -672,11 +672,11 @@ class MarketDataPipelineServiceTest extends TestCase
                 return $telemetry['eligibility_rows_written'] === 900
                     && $telemetry['hard_reject_count'] === 40
                     && $telemetry['coverage_universe_count'] === 900
-                    && $telemetry['coverage_available_count'] === 870
-                    && $telemetry['coverage_missing_count'] === 30
-                    && abs($telemetry['coverage_ratio'] - 0.9666667) < 0.000001
+                    && $telemetry['coverage_available_count'] === 890
+                    && $telemetry['coverage_missing_count'] === 10
+                    && abs($telemetry['coverage_ratio'] - 0.9888889) < 0.000001
                     && $telemetry['coverage_gate_state'] === 'PASS'
-                    && abs($telemetry['coverage_min_threshold'] - 0.95) < 0.000001
+                    && abs($telemetry['coverage_min_threshold'] - 0.98) < 0.000001
                     && $telemetry['coverage_threshold_mode'] === 'MIN_RATIO'
                     && $telemetry['coverage_contract_version'] === 'coverage_gate_v1'
                     && $telemetry['coverage_missing_sample_json'] === ['AAA', 'BBB'];
@@ -710,7 +710,7 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->quality_gate_state = 'PASS';
         $run->coverage_gate_state = 'PASS';
         $run->coverage_ratio = 1.0;
-        $run->coverage_min_threshold = 0.95;
+        $run->coverage_min_threshold = 0.98;
         $run->coverage_universe_count = 100;
         $run->coverage_available_count = 100;
         $run->coverage_missing_count = 0;
@@ -879,7 +879,7 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->quality_gate_state = 'PASS';
         $run->coverage_gate_state = 'PASS';
         $run->coverage_ratio = 1.0;
-        $run->coverage_min_threshold = 0.95;
+        $run->coverage_min_threshold = 0.98;
         $run->coverage_universe_count = 100;
         $run->coverage_available_count = 100;
         $run->coverage_missing_count = 0;
@@ -1195,7 +1195,7 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->quality_gate_state = 'PASS';
         $run->coverage_gate_state = 'PASS';
         $run->coverage_ratio = 1.0;
-        $run->coverage_min_threshold = 0.95;
+        $run->coverage_min_threshold = 0.98;
         $run->coverage_universe_count = 100;
         $run->coverage_available_count = 100;
         $run->coverage_missing_count = 0;

@@ -8,7 +8,7 @@ class FinalizeDecisionServiceTest extends TestCase
     public function test_finalize_blocks_before_cutoff_and_keeps_fallback_effective_date()
     {
         $service = new FinalizeDecisionService();
-        $decision = $service->evaluate(false, true, 'SEALED', $this->coverage('PASS', 100, 100, 0.95), '2026-04-20');
+        $decision = $service->evaluate(false, true, 'SEALED', $this->coverage('PASS', 100, 100, 0.98), '2026-04-20');
 
         $this->assertFalse($decision['promotion_allowed']);
         $this->assertSame('HELD', $decision['terminal_status']);
@@ -20,7 +20,7 @@ class FinalizeDecisionServiceTest extends TestCase
     public function test_finalize_blocks_when_candidate_publication_not_sealed()
     {
         $service = new FinalizeDecisionService();
-        $decision = $service->evaluate(true, true, 'UNSEALED', $this->coverage('PASS', 100, 100, 0.95), null);
+        $decision = $service->evaluate(true, true, 'UNSEALED', $this->coverage('PASS', 100, 100, 0.98), null);
 
         $this->assertFalse($decision['promotion_allowed']);
         $this->assertSame('BLOCKED', $decision['quality_gate_state']);
@@ -31,7 +31,7 @@ class FinalizeDecisionServiceTest extends TestCase
     public function test_finalize_uses_coverage_pass_to_allow_readable_promotion()
     {
         $service = new FinalizeDecisionService();
-        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('PASS', 100, 98, 0.95), '2026-04-20');
+        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('PASS', 100, 98, 0.98), '2026-04-20');
 
         $this->assertTrue($decision['promotion_allowed']);
         $this->assertSame('PASS', $decision['coverage_gate_status']);
@@ -47,7 +47,7 @@ class FinalizeDecisionServiceTest extends TestCase
         $decision = $service->evaluate(true, true, 'SEALED', [
             'coverage_gate_status' => 'PASS',
             'coverage_ratio' => 1.0,
-            'coverage_threshold_value' => 0.95,
+            'coverage_threshold_value' => 0.98,
             'coverage_threshold_mode' => 'MIN_RATIO',
         ], null);
 
@@ -60,7 +60,7 @@ class FinalizeDecisionServiceTest extends TestCase
     public function test_finalize_uses_coverage_fail_with_fallback_as_held_not_readable()
     {
         $service = new FinalizeDecisionService();
-        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('FAIL', 100, 80, 0.95), '2026-04-20');
+        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('FAIL', 100, 80, 0.98), '2026-04-20');
 
         $this->assertFalse($decision['promotion_allowed']);
         $this->assertSame('FAIL', $decision['coverage_gate_status']);
@@ -74,7 +74,7 @@ class FinalizeDecisionServiceTest extends TestCase
     public function test_finalize_uses_coverage_fail_without_fallback_as_failed_not_readable()
     {
         $service = new FinalizeDecisionService();
-        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('FAIL', 100, 80, 0.95), null);
+        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('FAIL', 100, 80, 0.98), null);
 
         $this->assertFalse($decision['promotion_allowed']);
         $this->assertSame('FAILED', $decision['terminal_status']);
@@ -82,15 +82,29 @@ class FinalizeDecisionServiceTest extends TestCase
         $this->assertSame('RUN_PARTIAL_DATA', $decision['reason_code']);
     }
 
-    public function test_finalize_uses_blocked_as_non_readable_and_never_promotes()
+    public function test_finalize_uses_not_evaluable_as_non_readable_and_never_promotes()
     {
         $service = new FinalizeDecisionService();
-        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('NOT_EVALUABLE', 0, 0, 0.95), '2026-04-20');
+        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('NOT_EVALUABLE', 0, 0, 0.98), '2026-04-20');
 
         $this->assertFalse($decision['promotion_allowed']);
         $this->assertSame('NOT_EVALUABLE', $decision['coverage_gate_status']);
         $this->assertSame('BLOCKED', $decision['quality_gate_state']);
         $this->assertSame('HELD', $decision['terminal_status']);
+        $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+        $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $decision['reason_code']);
+    }
+
+    public function test_finalize_normalizes_legacy_blocked_coverage_to_not_evaluable()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('BLOCKED', 0, 0, 0.98), null);
+
+        $this->assertFalse($decision['promotion_allowed']);
+        $this->assertSame('NOT_EVALUABLE', $decision['coverage_gate_status']);
+        $this->assertSame('NOT_EVALUABLE', $decision['coverage_summary']['coverage_gate_state']);
+        $this->assertSame('BLOCKED', $decision['quality_gate_state']);
+        $this->assertSame('FAILED', $decision['terminal_status']);
         $this->assertSame('NOT_READABLE', $decision['publishability_state']);
         $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $decision['reason_code']);
     }
@@ -189,7 +203,7 @@ class FinalizeDecisionServiceTest extends TestCase
     public function test_finalize_blocks_explicit_zero_valid_data_even_when_coverage_claims_pass()
     {
         $service = new FinalizeDecisionService();
-        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('PASS', 100, 100, 0.95), null, [
+        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('PASS', 100, 100, 0.98), null, [
             'bars_rows_written' => 0,
             'source_final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
         ]);

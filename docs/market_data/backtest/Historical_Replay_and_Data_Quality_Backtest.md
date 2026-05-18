@@ -35,6 +35,7 @@ For each replayed date, record at minimum:
 - effective trade date
 - terminal status
 - row counts
+- coverage gate state, ratio, minimum threshold, expected/available/missing bar counts, and coverage reason code
 - reason-code counts compared against expected fixture distribution
 - bars/indicators/eligibility hashes
 - seal state

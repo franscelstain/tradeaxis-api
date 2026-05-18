@@ -3,36 +3,36 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Audit Docs Synchronization
+- Coverage Policy Reconciliation
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Synchronize audit docs after completion of the eight latest post-audit hardening sessions using the uploaded ZIP as source of truth.
-- Update implementation status, contract tracker, audit-docs inventory, post-session inventory, and related static guards without changing market-data runtime behavior.
-- Preserve all previous DONE/LOCKED history while correcting the active session/current working sections to the latest audit-docs synchronization session.
-- Record only proof that is actually present: operator-local proof already carried in audit docs, current container syntax/static trace, and current container runtime blockers.
-- Post-session audit-docs synchronization is now closed after operator-local StaticGuard and full MarketData PHPUnit rerun passed after the guard-scope patch.
+- Reconcile the coverage policy conflict in the uploaded ZIP source of truth.
+- Lock one active threshold/default policy across docs, config, code, tests, command output, evidence export, replay verification, and audit docs.
+- Preserve historical DONE/LOCKED audit records while recording this coverage reconciliation with current scoped PHPUnit/runtime proof.
+- Do not claim full market-data production-ready; DB schema sync, read-side runtime proof, evidence/replay runtime proof, ops runtime matrix, and final audit sync may still require later sessions.
 
 [SESSION_GOAL]
-- Make audit docs accurately reflect the final state after Production Validation, Read-Side Consumer Surface Final Sweep, Coverage Gate Candidate Scope Hardening, Evidence Historical Lineage Completeness, Replay Historical Determinism Hardening, DB Integrity FK / Implicit Integrity Decision, Config / ENV Governance Cleanup, and Ops Environment Baseline.
+- Remove coverage policy as a production-readiness blocker by making `MARKET_DATA_COVERAGE_MIN=0.98`, coverage `NOT_EVALUABLE`, quality `BLOCKED`, publishability/finalize/pointer/manual/correction/evidence/replay behavior, and audit docs agree.
 
 [SESSION_NOTES]
 - Source ZIP contains `vendor/`, `.env.testing`, `composer.lock`, market-data audit docs, inventories, ops docs, and MarketData static guards.
-- Container PHP version is PHP 8.4.16; `php artisan list` fails closed with `ENV_UNSUPPORTED_PHP_VERSION`, which is expected and is not runtime PASS.
-- Container PHPUnit is blocked because required PHPUnit extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
-- Current patch is documentation/static-guard synchronization only; no runtime market-data services, repositories, migrations, commands, or config behavior are changed.
-- Existing operator-local proof remains valid for its original sessions and is carried as historical evidence: latest Ops Environment proof includes StaticGuard OK (164 tests, 3702 assertions) and full MarketData OK (435 tests, 6299 assertions).
-- This current audit-docs synchronization is DONE/LOCKED because operator-local post-guard-scope rerun passed `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` and full `vendor/bin/phpunit tests/Unit/MarketData` after this patch.
+- Local PHP version for this patch is PHP 7.4.33.
+- Local PHPUnit version is PHPUnit 9.6.34.
+- Current patch changes coverage-policy docs, coverage normalization, evidence/replay coverage aliases, coverage fixtures, and audit/static-guard synchronization only.
+- Historical operator-local DONE/LOCKED proof remains valid for its original source states only and is not reused as current proof for this patch.
+- This session is DONE for coverage-policy reconciliation because targeted coverage/manual/finalize/publishability/replay/evidence/audit/static tests, full MarketData PHPUnit, syntax checks, and command smoke checks passed after this patch.
 
 [RUNTIME_ENVIRONMENT]
-- Container PHP version: PHP 8.4.16.
-- Container artisan status: EXPECTED_FAIL_CLOSED with clean `ENV_UNSUPPORTED_PHP_VERSION`; not a runtime PASS.
-- Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, and xmlwriter.
-- Container Composer status: not used for this docs-only patch.
-- Container validation available for this patch: file trace, static grep, and `php -l` on changed PHP static guards.
+- Local PHP version: PHP 7.4.33.
+- Local PHPUnit version: PHPUnit 9.6.34.
+- Artisan command surface status: PASS for command discovery/help and expected fail-closed blocked inputs.
+- PHPUnit status: PASS for targeted and full MarketData validation after this patch.
+- Composer status: not used for this patch.
+- Validation available for this patch: file trace, static grep, `php -l`, targeted PHPUnit, full MarketData PHPUnit, and artisan command smoke checks.
 - Operator-local proof carried from prior sessions: available where explicitly recorded in each entry/inventory; not a new container PHPUnit run.
-- Runtime authority for LOCKED post-session audit-docs sync: operator-local post-guard-scope proof supplied on 2026-05-18.
+- Runtime authority for DONE/LOCKED coverage reconciliation: current local proof from this patch on 2026-05-18.
 
 ---
 ## OPERATIONAL STATUS
@@ -54,6 +54,72 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING ENTRY
 
+
+- Coverage Policy Reconciliation -> DONE
+
+  [SESSION] Coverage Policy Reconciliation
+
+  [SESSION_STATUS] DONE
+
+  [LAST_UPDATED] 2026-05-18
+
+  [RELATED_CONTRACT] COVERAGE_POLICY_RECONCILIATION_CONTRACT
+
+  [REVIEW_STATUS] DONE_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-18 -> Session opened from uploaded ZIP source of truth to reconcile coverage threshold/status drift before production-readiness.
+  - 2026-05-18 -> Pre-patch trace found active config/runtime default `MARKET_DATA_COVERAGE_MIN=0.98`, code/test coverage state `NOT_EVALUABLE`, and conflicting locked-doc/test remnants using `0.95` and coverage `BLOCKED`.
+  - 2026-05-18 -> Patch aligned active coverage contracts, manual/finalize/pointer/publishability/correction docs, runtime normalization, evidence/replay coverage aliases, coverage tests, command fixtures, audit docs, and static guards.
+
+  [IMPLEMENTATION]
+  - Coverage threshold policy is canonicalized to `0.98` through config default and coverage contract/test fixtures.
+  - Runtime treats new non-evaluable coverage as `coverage_gate_state=NOT_EVALUABLE` while keeping `quality_gate_state=BLOCKED`.
+  - Legacy `coverage_gate_state=BLOCKED` input is normalized fail-safe to `NOT_EVALUABLE` before finalize/outcome state can become readable.
+  - Evidence export and replay actual/expected coverage contexts now expose `expected_bar_count`, `available_bar_count`, and `missing_bar_count` aliases alongside the persisted coverage count fields.
+
+  [ENFORCEMENT]
+  - `FinalizeDecisionService` and `PublicationFinalizeOutcomeService` prevent legacy `BLOCKED` from remaining the final coverage gate state.
+  - `CoverageGateNoBypassStaticGuardTest`, `EvidenceExportCompletenessStaticGuardTest`, and audit-doc synchronization guard were updated to protect the reconciled coverage policy surface.
+  - Active docs now state manual files, correction runs, finalize, pointer switch, evidence export, and replay verification cannot bypass coverage PASS.
+
+  [FINAL_BEHAVIOR]
+  - Official threshold: `MARKET_DATA_COVERAGE_MIN = 0.98`.
+  - Coverage states: `PASS`, `FAIL`, `NOT_EVALUABLE`; `BLOCKED` is quality/readiness or legacy input only.
+  - `READABLE` requires `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `coverage_ratio >= coverage_min_threshold`, sealed publication, and valid pointer integrity.
+  - Coverage `FAIL` or `NOT_EVALUABLE` must remain `NOT_READABLE`; fallback may preserve a previous readable publication but cannot make the failed candidate readable.
+
+  [EVIDENCE]
+  - `php -v` -> PHP 7.4.33.
+  - `vendor/bin/phpunit --version` -> PHPUnit 9.6.34.
+  - `php -l` changed PHP files -> No syntax errors detected.
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/CoverageGateEvaluatorTest.php` -> OK (4 tests, 45 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Coverage"` -> OK (58 tests, 679 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "ManualFile"` -> OK (4 tests, 118 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Finalize"` -> OK (49 tests, 379 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Publishability"` -> OK (2 tests, 42 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Replay"` -> OK (53 tests, 825 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Evidence"` -> OK (52 tests, 954 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (9 tests, 286 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "AuditDocs"` -> OK (9 tests, 286 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "StaticGuard"` -> OK (164 tests, 3758 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData` -> OK (436 tests, 6365 assertions).
+  - `php artisan list market-data` -> PASS; 20 market-data commands listed.
+  - `php artisan market-data:daily --requested_date=not-a-date` -> EXPECTED_BLOCKED with `status=BLOCKED`, `reason_code=COMMAND_INVALID_DATE_FORMAT`.
+  - `php artisan market-data:evidence:export` -> EXPECTED_BLOCKED with `status=BLOCKED`, `reason_code=COMMAND_MISSING_REQUIRED_INPUT`.
+  - `php artisan market-data:replay:verify --help` -> PASS; usage/options rendered.
+
+  [GAP]
+  - None for coverage-policy reconciliation after current targeted/full validation.
+  - Full market-data production-ready remains out of scope for this session.
+
+  [REMAINING_RISK]
+  - DB schema sync, read-side runtime proof, evidence/replay runtime proof matrix, ops runtime matrix, and final audit-doc synchronization may still require follow-up sessions outside this coverage-policy scope.
+
+  [NEXT_ACTION]
+  - Use this patch as input for the next DB Schema / Migration Sync session; do not claim full market-data production-ready from coverage policy closure alone.
+
+---
 
 - Audit Docs Synchronization -> DONE
 

@@ -45,6 +45,7 @@ The current-publication pointer table hardens this by making:
 4. The pointed publication must be the only normal consumer-readable publication for D.
 5. Superseded publications remain audit-only and must not be pointed to as current.
 6. Pointer update must occur transactionally with publication-state promotion.
+7. The owning run must be `SUCCESS + READABLE` with `coverage_gate_state=PASS` and complete coverage telemetry meeting the locked 0.98 threshold.
 
 ## Source-of-truth precedence hierarchy (LOCKED)
 If the current-publication pointer table is implemented, current publication resolution must follow this hierarchy:

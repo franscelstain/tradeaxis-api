@@ -51,6 +51,7 @@ class CoverageGateNoBypassStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('$expectedUniverseCount = count($universeByTickerId);', $source);
         $this->assertStringContainsString("'coverage_gate_status' => 'NOT_EVALUABLE'", $source);
+        $this->assertStringNotContainsString("'coverage_gate_status' => 'BLOCKED'", $source);
         $this->assertStringContainsString("'coverage_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE'", $source);
         $this->assertStringContainsString('\'coverage_universe_basis\' => $universeBasis', $source);
         $this->assertStringContainsString('\'coverage_contract_version\' => $contractVersion', $source);
@@ -76,6 +77,11 @@ class CoverageGateNoBypassStaticGuardTest extends TestCase
             $this->assertStringContainsString($field, $evidence);
             $this->assertStringContainsString($field, $replay);
             $this->assertStringContainsString($field, $command);
+        }
+
+        foreach (['expected_bar_count', 'available_bar_count', 'missing_bar_count'] as $field) {
+            $this->assertStringContainsString($field, $evidence);
+            $this->assertStringContainsString($field, $replay);
         }
 
         foreach ([

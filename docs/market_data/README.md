@@ -56,7 +56,7 @@ Kemampuan domain tidak boleh dibatasi oleh default query provider seperti `range
 
 ## Deterministic platform decisions now locked
 Keputusan final lintas dokumen:
-- coverage minimum untuk requested-date readability = **95%**
+- coverage minimum untuk requested-date readability = **98%**
 - partial import boleh terjadi, tetapi partial readable publication tidak boleh
 - sistem memilih **data cukup lengkap tapi boleh lebih lambat** dibanding **data cepat tapi belum cukup lengkap**
 - source order resmi = primary `api_free/yahoo_finance`, secondary controlled recovery `manual_file`

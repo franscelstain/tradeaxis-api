@@ -42,6 +42,7 @@ A conforming run evidence pack must include at minimum:
 - seal state
 - config identity
 - current publication resolution
+- coverage context: `coverage_gate_state`, `coverage_ratio`, `coverage_min_threshold`, expected/available/missing bar counts, and `coverage_reason_code`
 - minimum source context when source telemetry exists in persisted run notes (`source_name`, retry summary, failure-side `final_reason_code` when present, explicit manual `source_input_file`); if run notes are thinner than the persisted attempt telemetry, export may recover the same minimum fields from that telemetry instead of leaving operator summary blank
 - attempt-level source telemetry companion when the append-only event trail already contains retry/backoff attempt details
 - anomaly summary if status is held/failed or materially degraded
@@ -152,6 +153,7 @@ A conforming replay result evidence pack must include at minimum:
 - comparison result
 - mismatch classification
 - mismatch summary
+- expected and actual coverage context, including `coverage_gate_state`, `coverage_ratio`, `coverage_min_threshold`, expected/available/missing bar counts, and `coverage_reason_code`
 - config identity
 - artifact-changed scope
 - publication/reseal implication if relevant

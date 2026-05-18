@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Audit Docs Synchronization", $status);
+- Coverage Policy Reconciliation", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Audit Docs Synchronization", $tracker);
+- Coverage Policy Reconciliation", $tracker);
         $this->assertStringContainsString('Ops Environment Baseline', $status.$tracker, 'Latest Ops Environment history must remain present.');
         $this->assertStringContainsString('- Config / ENV Governance Cleanup -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT', $status);

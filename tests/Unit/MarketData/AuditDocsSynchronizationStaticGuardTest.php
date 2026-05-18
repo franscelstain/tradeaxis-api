@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Audit Docs Synchronization', $statusActiveSession);
+        $this->assertSame('Coverage Policy Reconciliation', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -36,8 +36,13 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('OPERATIONAL_READINESS_CONTRACT', $document);
             $this->assertStringContainsString('PRODUCTION_VALIDATION_CONTRACT', $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);
+            $this->assertStringContainsString('COVERAGE_POLICY_RECONCILIATION_CONTRACT', $document);
         }
 
+        $this->assertStringContainsString('- Coverage Policy Reconciliation -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] COVERAGE_POLICY_RECONCILIATION_CONTRACT', $status);
+        $this->assertStringContainsString('- COVERAGE_POLICY_RECONCILIATION_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Coverage Policy Reconciliation', $tracker);
         $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $status);
         $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
@@ -58,7 +63,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
-        $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('COVERAGE_POLICY_RECONCILIATION_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);

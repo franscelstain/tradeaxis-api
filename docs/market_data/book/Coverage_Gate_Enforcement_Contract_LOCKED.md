@@ -17,10 +17,15 @@ Required fields:
 - `expected_universe_count`
 - `available_eod_count`
 - `missing_eod_count`
+- `expected_bar_count` / `coverage_expected_count` evidence alias
+- `available_bar_count` / `coverage_available_count` evidence alias
+- `missing_bar_count` / `coverage_missing_count` evidence alias
 - `coverage_ratio`
 - `coverage_threshold_value`
+- `coverage_min_threshold` persisted/evidence alias
 - `coverage_threshold_mode`
 - `coverage_gate_status`
+- `coverage_gate_state` persisted/evidence alias
 - `coverage_reason_code`
 - `coverage_universe_basis`
 - `coverage_contract_version`
@@ -35,6 +40,8 @@ Required fields:
 `missing_eod_count = expected_universe_count - available_eod_count`.
 
 `coverage_ratio = available_eod_count / expected_universe_count`.
+
+The single locked platform threshold is `MARKET_DATA_COVERAGE_MIN = 0.98`. Runtime config key `market_data.coverage_gate.min_ratio` and legacy alias `market_data.platform.coverage_min` must resolve to the same 0.98 default unless a future locked policy update changes it explicitly.
 
 When `expected_universe_count = 0`, coverage MUST NOT be coerced to 0 or 1. The coverage ratio is `null` and the gate status is `NOT_EVALUABLE`.
 
@@ -100,8 +107,12 @@ Replay verification MUST compare coverage fields when present in the fixture exp
 Required replay-comparable coverage fields:
 
 - `coverage_universe_count`
+- `coverage_expected_count`
 - `coverage_available_count`
 - `coverage_missing_count`
+- `expected_bar_count`
+- `available_bar_count`
+- `missing_bar_count`
 - `coverage_ratio`
 - `coverage_min_threshold`
 - `coverage_gate_state`

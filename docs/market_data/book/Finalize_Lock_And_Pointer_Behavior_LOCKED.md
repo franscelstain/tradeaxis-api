@@ -59,7 +59,7 @@ Mapping:
 | Already completed finalize rerun | persisted status | persisted publishability | No change |
 | Promotion conflict with prior current available | `HELD` | `NOT_READABLE` | Restore prior current pointer |
 | Promotion conflict without prior current | `HELD` | `NOT_READABLE` | Clear unsafe pointer/current state |
-| Coverage FAIL/BLOCKED | `HELD` or `FAILED` according to fallback availability | `NOT_READABLE` | No candidate pointer switch |
+| Coverage FAIL/NOT_EVALUABLE | `HELD` or `FAILED` according to fallback availability | `NOT_READABLE` | No candidate pointer switch |
 | Repair candidate / non-current publish target | `SUCCESS` or `HELD` according to existing policy | `NOT_READABLE` unless existing current is preserved | Current pointer preserved |
 
 Conflict is not a successful publish. Conflict is also not automatically a system crash. It is a traceable finalize outcome that prevents unsafe publication ownership.
@@ -72,11 +72,12 @@ Pointer may switch only when all conditions are true:
 
 1. run terminal decision is eligible for promotion;
 2. coverage gate is `PASS`;
-3. candidate publication is `SEALED`;
-4. candidate has sealed metadata and publication version;
-5. current replacement does not violate correction baseline ownership;
-6. post-switch resolution from `eod_current_publication_pointer` joins back to the candidate publication;
-7. resolved pointer identity matches:
+3. coverage ratio is greater than or equal to the locked `0.98` minimum threshold;
+4. candidate publication is `SEALED`;
+5. candidate has sealed metadata and publication version;
+6. current replacement does not violate correction baseline ownership;
+7. post-switch resolution from `eod_current_publication_pointer` joins back to the candidate publication;
+8. resolved pointer identity matches:
    - `publication_id`;
    - `publication_version`;
    - `run_id`;

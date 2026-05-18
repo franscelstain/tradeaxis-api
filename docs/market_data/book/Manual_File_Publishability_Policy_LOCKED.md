@@ -26,7 +26,7 @@ Manual file remains fully subject to the coverage gate.
 
 Result:
 - coverage PASS → eligible for `READABLE`
-- coverage FAIL/BLOCKED → `NOT_READABLE`
+- coverage FAIL/NOT_EVALUABLE → `NOT_READABLE`
 
 Strength:
 - safest integrity model
@@ -56,6 +56,7 @@ Result:
 - coverage PASS → candidate may promote to current `READABLE`
 - coverage FAIL + prior readable current/fallback exists → terminal `HELD`, publishability `NOT_READABLE`, effective date remains fallback
 - coverage FAIL + no readable fallback exists → terminal `FAILED`, publishability `NOT_READABLE`
+- coverage NOT_EVALUABLE follows the same `NOT_READABLE` fallback rule, with `quality_gate_state=BLOCKED`
 
 Selected because:
 - preserves current publication integrity
@@ -84,7 +85,7 @@ Coverage gate is blocking for `current_replace` publication.
 
 ### Blocking cases
 
-Coverage `FAIL` or `BLOCKED` blocks readable promotion for:
+Coverage `FAIL` or `NOT_EVALUABLE` blocks readable promotion for:
 - `source_mode=manual_file`
 - `source_mode=api`
 - correction current publish paths
@@ -149,6 +150,9 @@ If a non-readable run accidentally owns current state, finalize integrity repair
 Evidence export and replay verification must preserve:
 - coverage gate state
 - coverage reason code
+- coverage ratio
+- coverage minimum threshold
+- expected / available / missing bar counts
 - terminal status
 - publishability state
 - final reason code
