@@ -3,34 +3,41 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Config / ENV Governance Cleanup
+- Ops Environment Baseline
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Clean schema/config/env/docs/tests/runtime mismatch for market-data configuration.
-- Normalize `tickers.is_active` config from stale string `Yes` semantics to numeric/boolean-like value aligned with migration and locked SQL schema.
-- Prune unused config/env surfaces that create ambiguous operator interpretation.
-- Preserve source-mode, coverage, read-side pointer, publication, replay, evidence, and DB integrity contracts.
+- Lock the contract that market-data command output is runtime evidence and must be produced by a supported, clean operator/CI environment.
+- Block unsupported PHP before vendor autoload so PHP 8.4+ vendor deprecations cannot contaminate evidence command output.
+- Record required PHP version, extensions, timezone, `.env.testing`, clean-output policy, and manual validation requirements.
+- Do not rewrite domain contracts for source-mode, coverage, read-side pointer, publication, replay, evidence, correction, DB integrity, or config/env governance.
 
 [SESSION_GOAL]
-- Lock market-data config/env governance so active keys are typed, caller-traced, documented, and free from stale `Yes/No` semantics for numeric schema fields.
+- Convert runtime environment mismatch from noisy evidence output into explicit fail-closed behavior, then require supported operator-local/CI proof before LOCKED.
 
 [SESSION_NOTES]
-- Schema truth: migration uses `$table->boolean('is_active')->default(true)` and locked SQL uses `is_active TINYINT(1) NOT NULL DEFAULT 1`.
-- Patch replaces `MARKET_DATA_TICKERS_ACTIVE_YES_VALUE=Yes` / `market_data.tickers.active_yes_value` with `MARKET_DATA_TICKERS_ACTIVE_VALUE=1` / `market_data.tickers.active_value`.
-- Patch removes unused `multi_source_mode` and `allow_mixed_sources` config surfaces; multi-source row mixing remains disallowed by locked coverage/source policy.
-- Patch adds missing active env template key `MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES=60` because runtime caller already exists.
-- Patch adds `CONFIG_ENV_GOVERNANCE_CLEANUP_INVENTORY.md`, `ConfigEnvGovernanceCleanupStaticGuardTest.php`, and `TickerMasterRepositoryTest.php`.
-- Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; operator-local PHPUnit supplied final runtime authority and promoted this contract to LOCKED.
+- Container PHP 8.4.16 is unsupported for evidence output because `php artisan list` emitted Lumen/vendor deprecation warnings before patch.
+- Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`.
+- `artisan` and PHPUnit bootstrap now guard unsupported PHP before project/vendor autoload.
+- Operator-local proof was supplied on PHP 7.4.33 with Composer 2.8.4, required extensions, clean artisan/help output, and targeted PHPUnit PASS.
+- Full MarketData suite before this guard-sync patch failed only because the historical Config / ENV static guard still required Config / ENV as active session.
+- This contract is LOCKED after final operator-local guard synchronization proof: Config / ENV guard PASS, StaticGuard PASS, and full MarketData suite PASS.
 
 [RUNTIME_ENVIRONMENT]
 - Container PHP version: PHP 8.4.16
-- Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, and xmlwriter
-- Operator-local PHP version: not supplied in final validation output
-- Operator-local PHPUnit version: PHPUnit 9.6.34
-- Required PHP extensions expected locally: dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter
-- Runtime authority for DONE/LOCKED: satisfied by operator-local targeted and full PHPUnit output on the Config / ENV Governance Cleanup contract.
+- Container Composer status: BLOCKED_CONTAINER_RUNTIME_ENV because Composer is not installed in the container.
+- Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, and xmlwriter.
+- Container artisan status before patch: NOISY_OUTPUT_NOT_EVIDENCE due to PHP 8.4 Lumen/vendor deprecation warnings.
+- Container artisan status after patch: EXPECTED_FAIL_CLOSED with clean `ENV_UNSUPPORTED_PHP_VERSION` before vendor autoload.
+- Operator-local PHP version: PHP 7.4.33.
+- Operator-local Composer version: Composer 2.8.4.
+- Operator-local PHPUnit version: PHPUnit 9.6.34.
+- Operator-local required extensions available: dom, json, libxml, mbstring, pdo_mysql, pdo_sqlite, tokenizer, xml, xmlreader, xmlwriter.
+- Operator-local clean command output: OPERATOR_LOCAL_CLEAN_OUTPUT_CONFIRMED.
+- Operator-local targeted PHPUnit: OPERATOR_LOCAL_TARGETED_RUNTIME_PROOF_PASS.
+- Operator-local full MarketData suite: OPERATOR_LOCAL_FULL_MARKET_DATA_SUITE_PASS.
+- Runtime authority for LOCKED: operator-local PHP 7.4.33 clean artisan/help output, targeted PHPUnit PASS, StaticGuard PASS, and full MarketData suite PASS.
 
 ---
 ## OPERATIONAL STATUS
@@ -51,6 +58,92 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+
+- OPS_ENVIRONMENT_BASELINE_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-18
+
+  [RELATED_IMPLEMENTATION] Ops Environment Baseline
+
+  [REVIEW_STATUS] LOCKED_LOCAL_RUNTIME_PROOF
+
+  [HISTORY]
+  - 2026-05-18 -> Contract opened to make clean operator/CI runtime a precondition for using market-data command output as evidence.
+  - 2026-05-18 -> Container runtime observed PHP 8.4.16; pre-patch `php artisan list` emitted Lumen/vendor PHP 8.4 deprecation warnings, so it could not be used as runtime evidence.
+  - 2026-05-18 -> Container PHPUnit remained blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; Composer command is unavailable in container.
+  - 2026-05-18 -> Unsupported PHP guard added to `artisan` before `vendor/autoload.php`.
+  - 2026-05-18 -> PHPUnit bootstrap guard added through `tests/bootstrap.php` and `phpunit.xml`.
+  - 2026-05-18 -> Environment baseline ops doc, audit inventory, runbook gate, and static guard added.
+  - 2026-05-18 -> Composer/platform lock change deferred with reason to avoid `composer.json` / `composer.lock` drift without Composer.
+  - 2026-05-18 -> Operator-local runtime proof supplied: PHP 7.4.33, Composer 2.8.4, required extensions, clean `artisan` command output, clean market-data help output, and targeted OpsEnvironment/Evidence/Replay/Command PHPUnit PASS.
+  - 2026-05-18 -> Full suite before guard synchronization failed only on stale `ConfigEnvGovernanceCleanupStaticGuardTest` active-session assertion.
+  - 2026-05-18 -> Guard synchronization patch updated Config / ENV static guard to preserve the LOCKED historical contract without requiring it to be the active session.
+  - 2026-05-18 -> Final operator-local rerun passed: Config / ENV guard OK (10 tests, 119 assertions), StaticGuard OK (164 tests, 3702 assertions), and full MarketData OK (435 tests, 6299 assertions).
+
+  [DEFINED]
+  - Market-data command output is evidence and must be clean.
+  - Clean evidence output means no PHP warnings, PHP deprecations, vendor/framework deprecations, missing-extension warnings, timezone warnings, debug noise, or stack trace caused by environment mismatch.
+  - Unsupported PHP must fail closed before vendor/project autoload rather than producing noisy output.
+  - Supported clean-output PHP range for the current dependency set is PHP `>= 7.3` and `< 8.4`; preferred operator/CI baseline is PHP 8.3.x.
+  - Required local/CI extensions are `dom`, `json`, `libxml`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `tokenizer`, `xml`, `xmlreader`, and `xmlwriter`.
+  - DONE/LOCKED requires supported operator-local or CI artisan/PHPUnit proof with version and extension context plus full MarketData suite PASS after guard synchronization; this proof is now supplied and recorded.
+
+  [IMPLEMENTED]
+  - `artisan` blocks PHP `< 7.3` and `>= 8.4` with `ENV_UNSUPPORTED_PHP_VERSION` before `vendor/autoload.php`.
+  - `tests/bootstrap.php` blocks unsupported PHP before project autoload during PHPUnit proof.
+  - `phpunit.xml` now uses `tests/bootstrap.php`.
+  - `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md` records baseline version, extension, timezone, `.env.testing`, clean-output, and manual validation requirements.
+  - `docs/market_data/audit/OPS_ENVIRONMENT_BASELINE_INVENTORY.md` records trace, matrices, container status, patch scope, Composer decision, validation, operator-local proof, stale guard finding, and final PASS closure.
+  - `docs/market_data/ops/OPERATIONAL_RUNBOOK.md` now contains an environment baseline gate.
+  - `tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` guards this policy and final DONE/LOCKED proof status.
+  - `tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` now preserves historical Config / ENV LOCKED proof without binding that historical session as active.
+
+  [ENFORCED]
+  - Unsupported PHP is blocked before vendor autoload for artisan command evidence.
+  - Unsupported PHP is blocked before project autoload for PHPUnit proof bootstrap.
+  - Audit docs may mark this contract LOCKED because supported operator-local full suite proof passed after guard synchronization.
+  - Composer/platform change remains deferred unless Composer lock can be regenerated intentionally.
+  - Existing market-data domain contracts remain unchanged and are not reopened by this environment baseline.
+
+  [VALIDATED]
+  - Container source structure check: required source files/folders exist.
+  - Container `php -v`: PHP 8.4.16 -> unsupported for evidence output.
+  - Container `composer --version`: Composer unavailable -> BLOCKED_CONTAINER_RUNTIME_ENV.
+  - Container `php -m`: missing `dom`, `mbstring`, `xml`, and `xmlwriter` -> BLOCKED_CONTAINER_RUNTIME_ENV for PHPUnit.
+  - Container pre-patch `php artisan list`: command registration visible but output contained PHP 8.4 Lumen/vendor deprecation warnings -> NOISY_OUTPUT_NOT_EVIDENCE.
+  - Container `php vendor/bin/phpunit tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php`: blocked by missing PHPUnit extensions.
+  - Container post-patch `php artisan list`: clean `ENV_UNSUPPORTED_PHP_VERSION` fail-closed before vendor autoload -> EXPECTED_FAIL_CLOSED.
+  - Syntax: `php -l artisan` -> No syntax errors detected.
+  - Syntax: `php -l tests/bootstrap.php` -> No syntax errors detected.
+  - Syntax: `php -l tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> No syntax errors detected.
+  - Operator-local: `php -v` -> PHP 7.4.33.
+  - Operator-local: `composer --version` -> Composer 2.8.4 using PHP 7.4.33.
+  - Operator-local: required extensions are present, including dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, and xmlwriter.
+  - Operator-local: `php artisan list` and market-data daily/evidence/replay/finalize/promote help output are clean.
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> OK (8 tests, 88 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "OpsEnvironment"` -> OK (8 tests, 88 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> OK (53 tests, 938 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (53 tests, 819 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Command"` -> OK (74 tests, 764 assertions).
+  - Operator-local full suite before guard-sync patch: 435 tests, 6276 assertions, 1 failure in stale Config / ENV active-session guard.
+  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> OK (10 tests, 119 assertions).
+  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (164 tests, 3702 assertions).
+  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (435 tests, 6299 assertions).
+
+  [FINAL_RULE]
+  - LOCKED. Market-data command output must never be used as evidence if it contains PHP warning/deprecation/noise.
+  - LOCKED. Unsupported PHP must fail closed before vendor/project autoload with `ENV_UNSUPPORTED_PHP_VERSION`.
+  - LOCKED. Supported operator-local proof confirms clean artisan/help output and full MarketData PHPUnit PASS after guard synchronization.
+
+  [RECONCILIATION]
+  - Previous Config / ENV Governance Cleanup contract remains valid; this session does not change active env keys, config typing, ticker active semantics, source-mode, coverage, read-side pointer, publication, replay, evidence, correction, or DB integrity behavior.
+  - Prior DONE/LOCKED contracts are not promoted or demoted by this environment baseline patch.
+  - Config / ENV static guard now preserves historical LOCKED proof without requiring Config / ENV Governance Cleanup to remain active.
+  - Structural contract status is now `LOCKED` because final local full-suite PASS has been supplied after guard synchronization.
+
+  [NEXT_ACTION]
+  - No remaining blocker for this scope. Keep this contract LOCKED unless a future PHP/runtime/CI/output-noise change reopens the contract.
 
 - CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT -> LOCKED
 

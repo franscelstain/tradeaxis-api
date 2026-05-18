@@ -174,24 +174,28 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
     }
 
-    public function test_audit_docs_set_active_session_without_overwriting_history_or_claiming_locked_without_phpunit(): void
+    public function test_audit_docs_preserve_config_env_cleanup_history_without_requiring_it_as_active_session(): void
     {
         $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
 
         foreach ([$status, $tracker] as $document) {
-            $this->assertStringContainsString("ACTIVE SESSION:\n- Config / ENV Governance Cleanup", $document);
             $this->assertStringContainsString('CONFIG_ENV_GOVERNANCE_CLEANUP_INVENTORY.md', $document);
             $this->assertStringContainsString('ConfigEnvGovernanceCleanupStaticGuardTest.php', $document);
             $this->assertStringContainsString('TickerMasterRepositoryTest.php', $document);
             $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $document);
-            $this->assertStringContainsString('READY_FOR_LOCAL_RUNTIME_VALIDATION', $document);
+            $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $document);
             $this->assertStringContainsString('DB Integrity FK / Implicit Integrity Decision', $document, 'Previous audit history must remain present.');
         }
 
-        $this->assertStringContainsString('- Config / ENV Governance Cleanup -> READY_FOR_LOCAL_RUNTIME_VALIDATION', $status);
+        $this->assertStringContainsString("ACTIVE SESSION:
+- Ops Environment Baseline", $status);
+        $this->assertStringContainsString("ACTIVE SESSION:
+- Ops Environment Baseline", $tracker);
+        $this->assertStringContainsString('- Config / ENV Governance Cleanup -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT', $status);
-        $this->assertStringContainsString('- CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT -> PARTIAL', $tracker);
+        $this->assertStringContainsString('- CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Config / ENV Governance Cleanup', $tracker);
+        $this->assertStringContainsString('Operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (427 tests, 6198 assertions).', $status.$tracker);
     }
 }

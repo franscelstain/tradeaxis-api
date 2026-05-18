@@ -6,6 +6,33 @@ Owner: market-data operational layer.
 
 This runbook is the operator source of truth. It describes how to run market-data without reading source code, how to decide whether a process may continue, how to handle HELD / FAILED / NOT_READABLE states, how to export evidence, how to verify replay, and which shortcuts are forbidden.
 
+
+## 0. Ops environment baseline gate
+
+Before any command output is used as evidence, validate the environment against `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md`.
+
+Minimum gate:
+
+- PHP must be `>= 7.3` and `< 8.4`; preferred operator/CI baseline is PHP 8.3.x.
+- Required extensions must be enabled: `dom`, `json`, `libxml`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `tokenizer`, `xml`, `xmlreader`, `xmlwriter`.
+- `.env.testing` must exist before PHPUnit/migration proof.
+- Command output used as evidence must contain no `PHP Warning`, `PHP Deprecated`, `Deprecated:`, `PHP Notice`, vendor/framework deprecation text, missing-extension warning, timezone warning, debug noise, or stack trace caused by environment mismatch.
+- Unsupported runtime must fail closed with `ENV_UNSUPPORTED_PHP_VERSION`; that is `BLOCKED_CONTAINER_RUNTIME_ENV`, not runtime PASS.
+
+Validation commands:
+
+```text
+php -v
+composer --version
+php -m
+php artisan list
+php artisan market-data:daily --help
+php artisan market-data:evidence:export --help
+php artisan market-data:replay:verify --help
+vendor/bin/phpunit --version
+vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php
+```
+
 ## 1. Scope and operator rules
 
 The operator may run documented artisan commands only. The operator must not query raw/staging/latest data as proof of consumer readability, must not manually edit pointer/publication/run tables as a normal flow, and must not promote manual/API data unless the promote path passes coverage, hash, seal, finalize, run-publication linkage, pointer validation, evidence, and replay proof.
