@@ -313,7 +313,7 @@ class MarketDataPipelineService
                 $coverageBasisPublicationId = $this->resolveCandidateCoveragePublicationId($run, $input, $priorCurrent);
                 $coverage = $this->coverageGateEvaluator->evaluate($input->requestedDate, $coverageBasisPublicationId);
 
-                $coverageGateState = strtoupper((string) ($coverage['coverage_gate_status'] ?? 'NOT_EVALUABLE'));
+                $coverageGateState = CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? 'NOT_EVALUABLE');
                 $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
                 $run = $this->runs->updateTelemetry($run, [
@@ -376,7 +376,7 @@ class MarketDataPipelineService
                     'coverage_missing_count' => $coverage['missing_eod_count'],
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
-                    'coverage_gate_state' => $coverage['coverage_gate_status'],
+                    'coverage_gate_state' => CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? null),
                     'coverage_threshold_mode' => $coverage['coverage_threshold_mode'],
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
@@ -769,7 +769,8 @@ class MarketDataPipelineService
                             $finalizeReasonCode,
                             [
                                 'cutoff_satisfied' => $cutoffSatisfied,
-                                'coverage_gate_state' => $run->coverage_gate_state,
+                                'coverage_gate_state' => CoverageGateStateNormalizer::normalize($run->coverage_gate_state),
+                                'legacy_coverage_gate_state_raw' => CoverageGateStateNormalizer::legacyRaw($run->coverage_gate_state),
                                 'coverage_reason_code' => $this->resolveCoverageReasonCode($run, [
                                     'terminal_status' => 'SUCCESS',
                                     'publishability_state' => 'READABLE',
@@ -1346,7 +1347,8 @@ class MarketDataPipelineService
                     $finalizeReasonCode,
                     [
                         'cutoff_satisfied' => $cutoffSatisfied,
-                        'coverage_gate_state' => $run->coverage_gate_state,
+                        'coverage_gate_state' => CoverageGateStateNormalizer::normalize($run->coverage_gate_state),
+                        'legacy_coverage_gate_state_raw' => CoverageGateStateNormalizer::legacyRaw($run->coverage_gate_state),
                         'coverage_reason_code' => $this->resolveCoverageReasonCode($run, $outcome),
                         'coverage_available_count' => $run->coverage_available_count,
                         'coverage_universe_count' => $run->coverage_universe_count,
@@ -1452,7 +1454,7 @@ class MarketDataPipelineService
         $state = [
             'terminal_status' => $preDecision['terminal_status'] ?? 'SUCCESS',
             'publishability_state' => $preDecision['publishability_state'] ?? 'READABLE',
-            'coverage_gate_state' => $run->coverage_gate_state,
+            'coverage_gate_state' => CoverageGateStateNormalizer::normalize($run->coverage_gate_state),
             'expected_universe_count' => $run->coverage_universe_count,
             'available_eod_count' => $run->coverage_available_count,
             'missing_eod_count' => $run->coverage_missing_count,
@@ -1520,7 +1522,7 @@ class MarketDataPipelineService
         }
 
         $state = [
-            'coverage_gate_state' => $run->coverage_gate_state,
+            'coverage_gate_state' => CoverageGateStateNormalizer::normalize($run->coverage_gate_state),
             'expected_universe_count' => $run->coverage_universe_count,
             'available_eod_count' => $run->coverage_available_count,
             'missing_eod_count' => $run->coverage_missing_count,
@@ -2115,7 +2117,7 @@ class MarketDataPipelineService
 
     private function resolveCoverageReasonCode($run, array $outcome)
     {
-        $coverageState = strtoupper((string) ($run->coverage_gate_state ?? ''));
+        $coverageState = CoverageGateStateNormalizer::normalize($run->coverage_gate_state ?? null);
         $outcomeReasonCode = $outcome['reason_code'] ?? null;
 
         if (in_array($outcomeReasonCode, ['RUN_COVERAGE_LOW', 'RUN_COVERAGE_NOT_EVALUABLE', 'RUN_PARTIAL_DATA', 'RUN_DATA_DELAYED', 'RUN_STALE_DATA'], true)) {
@@ -2130,7 +2132,7 @@ class MarketDataPipelineService
             return 'COVERAGE_BELOW_THRESHOLD';
         }
 
-        if ($coverageState === 'NOT_EVALUABLE' || $coverageState === 'BLOCKED') {
+        if ($coverageState === 'NOT_EVALUABLE') {
             return 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 
@@ -2898,7 +2900,7 @@ class MarketDataPipelineService
 
     private function resolveCoverageEdgeCaseReasonCode($run, $requestedDate)
     {
-        $coverageState = strtoupper((string) ($run->coverage_gate_state ?? ''));
+        $coverageState = CoverageGateStateNormalizer::normalize($run->coverage_gate_state ?? null);
         if ($coverageState !== 'FAIL') {
             return null;
         }

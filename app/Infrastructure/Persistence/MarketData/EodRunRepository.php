@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Application\MarketData\Services\CoverageGateStateNormalizer;
 use App\Models\EodRun;
 use App\Models\EodRunEvent;
 use Carbon\Carbon;
@@ -419,6 +420,11 @@ class EodRunRepository
 
         if (array_key_exists('coverage_gate_status', $telemetry) && ! array_key_exists('coverage_gate_state', $telemetry)) {
             $telemetry['coverage_gate_state'] = $telemetry['coverage_gate_status'];
+        }
+        unset($telemetry['coverage_gate_status']);
+
+        if (array_key_exists('coverage_gate_state', $telemetry)) {
+            $telemetry['coverage_gate_state'] = CoverageGateStateNormalizer::normalize($telemetry['coverage_gate_state']);
         }
 
         if (array_key_exists('coverage_threshold_value', $telemetry) && ! array_key_exists('coverage_min_threshold', $telemetry)) {

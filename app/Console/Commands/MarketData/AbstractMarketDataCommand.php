@@ -3,6 +3,7 @@
 namespace App\Console\Commands\MarketData;
 
 use App\Application\MarketData\DTOs\MarketDataStageInput;
+use App\Application\MarketData\Services\CoverageGateStateNormalizer;
 use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
@@ -310,6 +311,8 @@ abstract class AbstractMarketDataCommand extends Command
     protected function buildRunSummaryPayload($run, array $overrides = [], array $sourceContext = null)
     {
         $sourceContext = $sourceContext ?: $this->buildSourceContext($run);
+        $coverageGateState = CoverageGateStateNormalizer::normalize($this->runField($run, 'coverage_gate_state'));
+        $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($this->runField($run, 'coverage_gate_state'));
 
         $payload = [
             'run_id' => $this->runField($run, 'run_id'),
@@ -333,8 +336,9 @@ abstract class AbstractMarketDataCommand extends Command
             'is_current_publication' => $this->runField($run, 'is_current_publication'),
             'reason_code' => $this->runField($run, 'reason_code'),
             'notes' => $this->runField($run, 'notes'),
-            'coverage_gate_state' => $this->runField($run, 'coverage_gate_state'),
-            'coverage_reason_code' => $this->resolveCoverageReasonCode($run, $this->runField($run, 'coverage_gate_state')),
+            'coverage_gate_state' => $coverageGateState,
+            'legacy_coverage_gate_state_raw' => $legacyCoverageGateStateRaw,
+            'coverage_reason_code' => $this->resolveCoverageReasonCode($run, $coverageGateState),
             'coverage_available_count' => $this->runField($run, 'coverage_available_count'),
             'coverage_universe_count' => $this->runField($run, 'coverage_universe_count'),
             'coverage_missing_count' => $this->runField($run, 'coverage_missing_count'),
@@ -688,7 +692,9 @@ abstract class AbstractMarketDataCommand extends Command
 
     protected function renderCoverageSummary($run)
     {
-        $state = $this->runField($run, 'coverage_gate_state');
+        $rawState = $this->runField($run, 'coverage_gate_state');
+        $state = CoverageGateStateNormalizer::normalize($rawState);
+        $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($rawState);
         $ratio = $this->runField($run, 'coverage_ratio');
         $available = $this->runField($run, 'coverage_available_count');
         $universe = $this->runField($run, 'coverage_universe_count');
@@ -711,6 +717,10 @@ abstract class AbstractMarketDataCommand extends Command
 
         if ($state !== null && $state !== '') {
             $this->line('coverage_gate_state='.(string) $state);
+        }
+
+        if ($legacyCoverageGateStateRaw !== null && $legacyCoverageGateStateRaw !== '') {
+            $this->line('legacy_coverage_gate_state_raw='.(string) $legacyCoverageGateStateRaw);
         }
 
         if ($coverageReasonCode !== null && $coverageReasonCode !== '') {
@@ -789,6 +799,8 @@ abstract class AbstractMarketDataCommand extends Command
             return $reasonCode;
         }
 
+        $coverageState = CoverageGateStateNormalizer::normalize($coverageState);
+
         if ($coverageState === 'PASS') {
             return 'COVERAGE_THRESHOLD_MET';
         }
@@ -797,7 +809,7 @@ abstract class AbstractMarketDataCommand extends Command
             return 'COVERAGE_BELOW_THRESHOLD';
         }
 
-        if ($coverageState === 'NOT_EVALUABLE' || $coverageState === 'BLOCKED') {
+        if ($coverageState === 'NOT_EVALUABLE') {
             return 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 

@@ -53,7 +53,7 @@ Allowed coverage gate statuses:
 - `FAIL`: `expected_universe_count > 0` and `coverage_ratio < coverage_threshold_value`
 - `NOT_EVALUABLE`: `expected_universe_count = 0` or coverage cannot be evaluated safely
 
-`BLOCKED` is retained only as a backward-compatible quality-gate/readiness state. New coverage gate evaluation MUST emit `NOT_EVALUABLE`, not `BLOCKED`, when coverage itself cannot be evaluated.
+`BLOCKED` is retained only as a backward-compatible quality-gate/readiness state and legacy input marker. New coverage gate evaluation MUST emit `NOT_EVALUABLE`, not `BLOCKED`, when coverage itself cannot be evaluated. If evidence, replay, command, or repository boundaries read legacy `BLOCKED`, they MUST emit final `coverage_gate_state=NOT_EVALUABLE` and may expose the raw value only as explicit `legacy_coverage_gate_state_raw=BLOCKED`.
 
 ## Reason Code Mapping
 
@@ -116,6 +116,7 @@ Required replay-comparable coverage fields:
 - `coverage_ratio`
 - `coverage_min_threshold`
 - `coverage_gate_state`
+- `legacy_coverage_gate_state_raw` when legacy input was normalized
 - `coverage_reason_code`
 - `coverage_threshold_mode`
 - `coverage_universe_basis`

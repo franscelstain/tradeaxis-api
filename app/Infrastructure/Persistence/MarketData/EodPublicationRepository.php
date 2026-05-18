@@ -2,8 +2,9 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
-use App\Models\EodRun;
+use App\Application\MarketData\Services\CoverageGateStateNormalizer;
 use App\Application\MarketData\Services\MarketDataInvariantGuard;
+use App\Models\EodRun;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -152,7 +153,7 @@ class EodPublicationRepository
             $reasons[] = 'RUN_PUBLISHABILITY_NOT_READABLE';
         }
 
-        $runCoverageGateState = $row->run_coverage_gate_state ?? $row->coverage_gate_state ?? null;
+        $runCoverageGateState = CoverageGateStateNormalizer::normalize($row->run_coverage_gate_state ?? $row->coverage_gate_state ?? null);
         if ((string) $runCoverageGateState !== 'PASS') {
             $reasons[] = 'RUN_COVERAGE_GATE_NOT_PASS';
         } else {
@@ -1081,7 +1082,7 @@ class EodPublicationRepository
         $runState = [
             'terminal_status' => $row->run_terminal_status ?? $row->terminal_status ?? null,
             'publishability_state' => $row->run_publishability_state ?? $row->publishability_state ?? null,
-            'coverage_gate_state' => $row->run_coverage_gate_state ?? $row->coverage_gate_state ?? null,
+            'coverage_gate_state' => CoverageGateStateNormalizer::normalize($row->run_coverage_gate_state ?? $row->coverage_gate_state ?? null),
             'expected_universe_count' => $row->run_coverage_universe_count ?? $row->coverage_universe_count ?? null,
             'available_eod_count' => $row->run_coverage_available_count ?? $row->coverage_available_count ?? null,
             'missing_eod_count' => $row->run_coverage_missing_count ?? $row->coverage_missing_count ?? null,
@@ -1186,7 +1187,8 @@ class EodPublicationRepository
             'coverage_missing_count' => $row->coverage_missing_count,
             'coverage_ratio' => $row->coverage_ratio,
             'coverage_min_threshold' => $row->coverage_min_threshold,
-            'coverage_gate_state' => $row->coverage_gate_state,
+            'coverage_gate_state' => CoverageGateStateNormalizer::normalize($row->coverage_gate_state),
+            'legacy_coverage_gate_state_raw' => CoverageGateStateNormalizer::legacyRaw($row->coverage_gate_state),
             'coverage_threshold_mode' => $row->coverage_threshold_mode,
             'coverage_universe_basis' => $row->coverage_universe_basis,
             'coverage_contract_version' => $row->coverage_contract_version,

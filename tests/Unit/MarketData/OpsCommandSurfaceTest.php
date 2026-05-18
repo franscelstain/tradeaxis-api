@@ -1984,6 +1984,52 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('reason_code=RUN_COVERAGE_LOW', $display);
     }
 
+    public function test_finalize_command_normalizes_legacy_blocked_coverage_state_in_operator_output(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('completeFinalize')
+            ->once()
+            ->andReturn((object) [
+                'run_id' => 56,
+                'trade_date_requested' => '2026-03-25',
+                'stage' => 'FINALIZE',
+                'lifecycle_state' => 'COMPLETED',
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'promote_mode' => 'full_publish',
+                'publish_target' => 'current_replace',
+                'coverage_gate_state' => 'BLOCKED',
+                'coverage_available_count' => 0,
+                'coverage_universe_count' => 0,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => null,
+                'coverage_min_threshold' => '0.9800',
+                'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
+                'coverage_contract_version' => 'coverage_gate_v1',
+                'reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $command = new \App\Console\Commands\MarketData\FinalizeRunCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-03-25',
+            '--source_mode' => 'manual_file',
+            '--run_id' => 56,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('coverage_gate_state=NOT_EVALUABLE', $display);
+        $this->assertStringContainsString('legacy_coverage_gate_state_raw=BLOCKED', $display);
+        $this->assertStringContainsString('coverage_reason_code=RUN_COVERAGE_NOT_EVALUABLE', $display);
+        $this->assertStringNotContainsString('coverage_gate_state=BLOCKED', $display);
+    }
+
 
     public function test_promote_command_renders_readable_success_summary(): void
     {

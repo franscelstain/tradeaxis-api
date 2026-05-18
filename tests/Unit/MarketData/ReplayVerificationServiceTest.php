@@ -571,6 +571,100 @@ class ReplayVerificationServiceTest extends TestCase
         $service->verifyRunAgainstFixture(192, $fixtureDir);
     }
 
+    public function test_verify_replay_normalizes_legacy_blocked_coverage_state_and_preserves_raw_trace(): void
+    {
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $this->expectedReplayResult([
+                'comparison_result' => 'MATCH',
+                'trade_date_requested' => '2026-03-21',
+                'trade_date_effective' => '2026-03-21',
+                'terminal_status' => 'FAILED',
+                'publishability_state' => 'NOT_READABLE',
+                'final_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
+                'source_mode' => 'manual_file',
+                'source_identity' => 'mode=manual_file',
+                'publication_id' => null,
+                'publication_run_id' => null,
+                'publication_version' => null,
+                'publication_is_current' => false,
+                'coverage_universe_count' => 0,
+                'coverage_available_count' => 0,
+                'coverage_missing_count' => 0,
+                'coverage_ratio' => null,
+                'coverage_min_threshold' => '0.9800',
+                'coverage_gate_state' => 'NOT_EVALUABLE',
+                'coverage_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
+                'bars_batch_hash' => null,
+                'indicators_batch_hash' => null,
+                'eligibility_batch_hash' => null,
+                'bars_rows_written' => null,
+                'indicators_rows_written' => null,
+                'eligibility_rows_written' => null,
+                'eligible_count' => 0,
+                'invalid_bar_count' => null,
+                'invalid_indicator_count' => null,
+                'warning_count' => null,
+                'hard_reject_count' => null,
+                'seal_state' => 'UNSEALED',
+                'run_id' => 196,
+            ]),
+            'expected/expected_reason_code_counts.json' => [
+                ['reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE', 'reason_count' => 1],
+            ],
+        ], 'fixture_replay_legacy_blocked_coverage_input'));
+
+        $run = (object) [
+            'run_id' => 196,
+            'trade_date_requested' => '2026-03-21',
+            'trade_date_effective' => '2026-03-21',
+            'source' => 'manual_file',
+            'terminal_status' => 'FAILED',
+            'publishability_state' => 'NOT_READABLE',
+            'final_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
+            'coverage_universe_count' => 0,
+            'coverage_available_count' => 0,
+            'coverage_missing_count' => 0,
+            'coverage_ratio' => null,
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'BLOCKED',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
+            'sealed_at' => null,
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(196)->andReturn($run);
+        $evidence->shouldReceive('summarizeRunEvents')->once()->with(196)->andReturn([
+            'reason_code_counts' => ['RUN_COVERAGE_NOT_EVALUABLE' => 1],
+        ]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3102);
+        $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
+            $actualContext = json_decode($metric['actual_context_json'], true);
+
+            return $metric['comparison_result'] === 'MATCH'
+                && $metric['coverage_gate_state'] === 'NOT_EVALUABLE'
+                && $metric['expected_coverage_gate_state'] === 'NOT_EVALUABLE'
+                && ($actualContext['actual_coverage_context']['coverage_gate_state'] ?? null) === 'NOT_EVALUABLE'
+                && ($actualContext['actual_coverage_context']['legacy_coverage_gate_state_raw'] ?? null) === 'BLOCKED'
+                && strpos($metric['actual_context_json'], '"coverage_gate_state":"BLOCKED"') === false;
+        }));
+        $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3102, '2026-03-21', [
+            ['reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE', 'reason_count' => 1],
+        ]);
+
+        $service = new ReplayVerificationService($evidence, $publications, $replays);
+        $result = $service->verifyRunAgainstFixture(196, $fixtureDir);
+
+        $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame('NOT_EVALUABLE', $result['coverage_gate_state']);
+        $this->assertSame('BLOCKED', $result['actual_context']['actual_coverage_context']['legacy_coverage_gate_state_raw']);
+    }
+
     private function successReadableRun($runId, $tradeDate)
     {
         return [

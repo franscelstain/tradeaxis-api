@@ -12,14 +12,14 @@
 ### PRIORITY FAIL
 - overall PASS tapi priority FAIL → FAIL
 
-### BLOCKED
-- expected = 0 → BLOCKED
+### NOT_EVALUABLE
+- expected = 0 -> coverage_gate_state = NOT_EVALUABLE, quality_gate_state = BLOCKED, publishability_state = NOT_READABLE
 
 ## FINALIZE DECISION
 - FAIL + fallback → HELD + NOT_READABLE
 - FAIL tanpa fallback → FAILED + NOT_READABLE
 - PASS → SUCCESS + READABLE
-- BLOCKED tanpa fallback → FAILED + NOT_READABLE
+- NOT_EVALUABLE tanpa fallback -> FAILED + NOT_READABLE, quality_gate_state = BLOCKED
 
 ## INTEGRATION / END-TO-END PROOF
 - `MarketDataPipelineIntegrationTest::test_run_daily_full_coverage_persists_finalize_coverage_payload_and_readable_publication`
@@ -48,7 +48,7 @@
   - finalize event tetap sinkron dengan `RUN_COVERAGE_LOW`
 
 - `MarketDataPipelineIntegrationTest::test_finalize_blocked_without_universe_stays_not_readable_and_emits_blocked_coverage_reason_code`
-  - membuktikan finalize path untuk `BLOCKED`
-  - run final: `FAILED + NOT_READABLE + BLOCKED`
+  - membuktikan finalize path untuk coverage `NOT_EVALUABLE` dari zero/unsafe universe dan legacy input
+  - run final: `FAILED + NOT_READABLE + coverage_gate_state=NOT_EVALUABLE + quality_gate_state=BLOCKED`
   - pointer/current publication tidak dipromosikan
   - finalize event sinkron dengan `RUN_COVERAGE_NOT_EVALUABLE`

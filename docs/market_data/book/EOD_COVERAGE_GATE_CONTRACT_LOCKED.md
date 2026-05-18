@@ -63,7 +63,7 @@ Makna:
 - `FAIL`: ratio dievaluasi secara sah tetapi di bawah threshold
 - `NOT_EVALUABLE`: coverage tidak dapat dievaluasi secara aman/bermakna karena prerequisite, evidence basis, atau integritas dataset rusak
 
-`BLOCKED` tetap valid sebagai `quality_gate_state` / readiness state untuk kegagalan hard-blocker, dan sebagai legacy persisted value yang harus dinormalisasi fail-safe. Evaluasi coverage baru tidak boleh mengeluarkan `coverage_gate_state=BLOCKED`; gunakan `coverage_gate_state=NOT_EVALUABLE` dengan `quality_gate_state=BLOCKED`.
+`BLOCKED` tetap valid sebagai `quality_gate_state` / readiness state untuk kegagalan hard-blocker, dan sebagai legacy persisted/input value yang harus dinormalisasi fail-safe. Evaluasi coverage baru tidak boleh mengeluarkan `coverage_gate_state=BLOCKED`; gunakan `coverage_gate_state=NOT_EVALUABLE` dengan `quality_gate_state=BLOCKED`. Jika boundary evidence/replay/command menerima raw legacy `BLOCKED`, output final wajib memakai `coverage_gate_state=NOT_EVALUABLE` dan boleh menampilkan raw asal hanya pada field eksplisit `legacy_coverage_gate_state_raw=BLOCKED`.
 
 ---
 
@@ -149,6 +149,7 @@ Minimum field yang harus tampak:
 - `coverage_ratio`
 - `coverage_min_threshold`
 - `coverage_gate_state`
+- `legacy_coverage_gate_state_raw` bila input lama benar-benar membawa `BLOCKED`
 - `quality_gate_state`
 - `hard_blocker_present`
 - `coverage_decision_reason`

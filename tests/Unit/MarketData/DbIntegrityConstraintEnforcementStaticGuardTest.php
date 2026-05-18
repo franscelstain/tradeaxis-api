@@ -169,7 +169,7 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
         foreach ([
             "ENUM('SUCCESS','HELD','FAILED')",
             "ENUM('NOT_READABLE','READABLE')",
-            "ENUM('PASS','FAIL','NOT_EVALUABLE','BLOCKED')",
+            "ENUM('PASS','FAIL','NOT_EVALUABLE')",
             "ENUM('SEALED','UNSEALED')",
             "ENUM('REQUESTED','APPROVED','EXECUTING','RESEALED','REPAIR_ACTIVE','REPAIR_EXECUTED','REPAIR_CANDIDATE','CONSUMED_CURRENT','PUBLISHED','REJECTED','CANCELLED','CLOSED')",
         ] as $enum) {

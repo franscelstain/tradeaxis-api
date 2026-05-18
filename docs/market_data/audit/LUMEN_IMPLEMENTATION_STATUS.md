@@ -10,6 +10,7 @@ ACTIVE SESSION:
 [SESSION_SCOPE]
 - Reconcile the coverage policy conflict in the uploaded ZIP source of truth.
 - Lock one active threshold/default policy across docs, config, code, tests, command output, evidence export, replay verification, and audit docs.
+- Close the post-reconciliation coverage-policy gaps for active `BLOCKED` wording, legacy `coverage_gate_state=BLOCKED` normalization, persisted legacy data cleanup, evidence/replay alias proof, and command/runtime boundary output.
 - Preserve historical DONE/LOCKED audit records while recording this coverage reconciliation with current scoped PHPUnit/runtime proof.
 - Do not claim full market-data production-ready; DB schema sync, read-side runtime proof, evidence/replay runtime proof, ops runtime matrix, and final audit sync may still require later sessions.
 
@@ -21,14 +22,17 @@ ACTIVE SESSION:
 - Local PHP version for this patch is PHP 7.4.33.
 - Local PHPUnit version is PHPUnit 9.6.34.
 - Current patch changes coverage-policy docs, coverage normalization, evidence/replay coverage aliases, coverage fixtures, and audit/static-guard synchronization only.
+- Gap-closure patch adds a dedicated coverage-state normalizer, a non-destructive legacy `BLOCKED` data cleanup migration, output-boundary legacy raw tracing, and explicit evidence/replay alias guards.
 - Historical operator-local DONE/LOCKED proof remains valid for its original source states only and is not reused as current proof for this patch.
-- This session is DONE for coverage-policy reconciliation because targeted coverage/manual/finalize/publishability/replay/evidence/audit/static tests, full MarketData PHPUnit, syntax checks, and command smoke checks passed after this patch.
+- This session is DONE for coverage-policy reconciliation and gap closure because targeted coverage/manual/finalize/publishability/replay/evidence/audit/static tests, full MarketData PHPUnit, migration, syntax checks, and command smoke checks passed after this patch.
 
 [RUNTIME_ENVIRONMENT]
 - Local PHP version: PHP 7.4.33.
 - Local PHPUnit version: PHPUnit 9.6.34.
 - Artisan command surface status: PASS for command discovery/help and expected fail-closed blocked inputs.
+- Migration status: PASS for `php artisan migrate --env=testing`.
 - PHPUnit status: PASS for targeted and full MarketData validation after this patch.
+- Evidence/replay command smoke status: PASS/EXPECTED_MISMATCH; evidence export for local run 1 completed with `coverage_gate_state=NOT_EVALUABLE`, while replay verify against an intentionally non-matching committed fixture failed clearly with coverage mismatch output and generated replay artifacts containing the required aliases.
 - Composer status: not used for this patch.
 - Validation available for this patch: file trace, static grep, `php -l`, targeted PHPUnit, full MarketData PHPUnit, and artisan command smoke checks.
 - Operator-local proof carried from prior sessions: available where explicitly recorded in each entry/inventory; not a new container PHPUnit run.
@@ -71,16 +75,20 @@ ACTIVE SESSION:
   - 2026-05-18 -> Session opened from uploaded ZIP source of truth to reconcile coverage threshold/status drift before production-readiness.
   - 2026-05-18 -> Pre-patch trace found active config/runtime default `MARKET_DATA_COVERAGE_MIN=0.98`, code/test coverage state `NOT_EVALUABLE`, and conflicting locked-doc/test remnants using `0.95` and coverage `BLOCKED`.
   - 2026-05-18 -> Patch aligned active coverage contracts, manual/finalize/pointer/publishability/correction docs, runtime normalization, evidence/replay coverage aliases, coverage tests, command fixtures, audit docs, and static guards.
+  - 2026-05-18 -> Gap-closure trace found active test-matrix wording still describing coverage `BLOCKED`, runtime/evidence/replay boundaries that could echo legacy raw `coverage_gate_state=BLOCKED`, schema docs/migrations that still allowed persisted coverage `BLOCKED`, and missing dedicated proof for legacy normalization plus evidence/replay bar-count aliases.
+  - 2026-05-18 -> Gap-closure patch added `CoverageGateStateNormalizer`, normalized repository/service/command/evidence/replay/publication boundaries, preserved `legacy_coverage_gate_state_raw=BLOCKED`, added migration `2026_05_18_000001_normalize_legacy_blocked_coverage_gate_state.php`, tightened schema docs, and added behavioral/static tests for the final coverage policy.
 
   [IMPLEMENTATION]
   - Coverage threshold policy is canonicalized to `0.98` through config default and coverage contract/test fixtures.
   - Runtime treats new non-evaluable coverage as `coverage_gate_state=NOT_EVALUABLE` while keeping `quality_gate_state=BLOCKED`.
   - Legacy `coverage_gate_state=BLOCKED` input is normalized fail-safe to `NOT_EVALUABLE` before finalize/outcome state can become readable.
+  - Persisted legacy `coverage_gate_state=BLOCKED` is cleaned up for `eod_runs.coverage_gate_state`, `md_replay_daily_metrics.coverage_gate_state`, and `md_replay_daily_metrics.expected_coverage_gate_state`; `quality_gate_state=BLOCKED` is not touched.
+  - Evidence/replay/command output final coverage state is restricted to `PASS`, `FAIL`, or `NOT_EVALUABLE`; raw legacy `BLOCKED` is traceable only through `legacy_coverage_gate_state_raw`.
   - Evidence export and replay actual/expected coverage contexts now expose `expected_bar_count`, `available_bar_count`, and `missing_bar_count` aliases alongside the persisted coverage count fields.
 
   [ENFORCEMENT]
   - `FinalizeDecisionService` and `PublicationFinalizeOutcomeService` prevent legacy `BLOCKED` from remaining the final coverage gate state.
-  - `CoverageGateNoBypassStaticGuardTest`, `EvidenceExportCompletenessStaticGuardTest`, and audit-doc synchronization guard were updated to protect the reconciled coverage policy surface.
+  - `CoveragePolicyLegacyBlockedNormalizationTest`, `EvidenceCoveragePolicyOutputTest` coverage inside `MarketDataEvidenceExportServiceTest`, replay coverage-policy checks inside `ReplayVerificationServiceTest`, `CoveragePolicyDocsStaticGuardTest`, `CoverageGateNoBypassStaticGuardTest`, `EvidenceExportCompletenessStaticGuardTest`, and audit-doc synchronization guard protect the reconciled coverage policy surface.
   - Active docs now state manual files, correction runs, finalize, pointer switch, evidence export, and replay verification cannot bypass coverage PASS.
 
   [FINAL_BEHAVIOR]
@@ -108,6 +116,22 @@ ACTIVE SESSION:
   - `php artisan market-data:daily --requested_date=not-a-date` -> EXPECTED_BLOCKED with `status=BLOCKED`, `reason_code=COMMAND_INVALID_DATE_FORMAT`.
   - `php artisan market-data:evidence:export` -> EXPECTED_BLOCKED with `status=BLOCKED`, `reason_code=COMMAND_MISSING_REQUIRED_INPUT`.
   - `php artisan market-data:replay:verify --help` -> PASS; usage/options rendered.
+  - `php artisan migrate --env=testing` -> PASS; migration `2026_05_18_000001_normalize_legacy_blocked_coverage_gate_state` applied.
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/CoveragePolicyLegacyBlockedNormalizationTest.php` -> OK (2 tests, 9 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/CoveragePolicyDocsStaticGuardTest.php` -> OK (5 tests, 61 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` -> OK (5 tests, 117 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/ReplayVerificationServiceTest.php` -> OK (9 tests, 26 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> OK (45 tests, 281 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/DbIntegrityConstraintEnforcementStaticGuardTest.php` -> OK (6 tests, 446 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData/CoverageGateNoBypassStaticGuardTest.php` -> OK (5 tests, 113 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Coverage"` -> OK (68 tests, 765 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Evidence"` -> OK (54 tests, 989 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Replay"` -> OK (55 tests, 850 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "Finalize"` -> OK (50 tests, 384 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData --filter "StaticGuard"` -> OK (169 tests, 3831 assertions).
+  - `vendor/bin/phpunit --do-not-cache-result tests/Unit/MarketData` -> OK (446 tests, 6463 assertions).
+  - `php artisan market-data:evidence:export --run_id=1 --output_dir=storage/app/market_data/evidence/gap_closure_run_1` -> PASS; output has `coverage_gate_state=NOT_EVALUABLE`, `quality_gate_state=BLOCKED`, `coverage_reason_code=RUN_COVERAGE_NOT_EVALUABLE`, and generated evidence artifacts containing `expected_bar_count`, `available_bar_count`, and `missing_bar_count`.
+  - `php artisan market-data:replay:verify 1 storage/app/market_data/replay-fixtures/valid_case --output_dir=storage/app/market_data/evidence/gap_closure_replay_run_1` -> EXPECTED_MISMATCH against the non-matching committed fixture; output has actual coverage `NOT_EVALUABLE`, mismatch reason codes including coverage state/ratio/reason mismatch, and generated replay artifacts containing the required bar-count aliases.
 
   [GAP]
   - None for coverage-policy reconciliation after current targeted/full validation.

@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Application\MarketData\Services\CoverageGateStateNormalizer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -66,7 +67,7 @@ class ReplayResultRepository
             'coverage_missing_count' => $metric['coverage_missing_count'] ?? null,
             'coverage_ratio' => $metric['coverage_ratio'] ?? null,
             'coverage_min_threshold' => $metric['coverage_min_threshold'] ?? null,
-            'coverage_gate_state' => $metric['coverage_gate_state'] ?? null,
+            'coverage_gate_state' => CoverageGateStateNormalizer::normalize($metric['coverage_gate_state'] ?? null),
             'coverage_threshold_mode' => $metric['coverage_threshold_mode'] ?? null,
             'coverage_universe_basis' => $metric['coverage_universe_basis'] ?? null,
             'coverage_contract_version' => $metric['coverage_contract_version'] ?? null,
@@ -114,7 +115,7 @@ class ReplayResultRepository
             'expected_coverage_missing_count' => $metric['expected_coverage_missing_count'] ?? null,
             'expected_coverage_ratio' => $metric['expected_coverage_ratio'] ?? null,
             'expected_coverage_min_threshold' => $metric['expected_coverage_min_threshold'] ?? null,
-            'expected_coverage_gate_state' => $metric['expected_coverage_gate_state'] ?? null,
+            'expected_coverage_gate_state' => CoverageGateStateNormalizer::normalize($metric['expected_coverage_gate_state'] ?? null),
             'expected_coverage_threshold_mode' => $metric['expected_coverage_threshold_mode'] ?? null,
             'expected_coverage_universe_basis' => $metric['expected_coverage_universe_basis'] ?? null,
             'expected_coverage_contract_version' => $metric['expected_coverage_contract_version'] ?? null,

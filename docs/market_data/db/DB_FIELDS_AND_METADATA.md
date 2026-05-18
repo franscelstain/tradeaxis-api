@@ -20,7 +20,7 @@ The `eod_runs` record for a requested trade date must make these values audit-vi
 - `coverage_min_threshold` DECIMAL(8,6) NULL  
   Threshold actually used by the run.
 - `coverage_gate_state` ENUM/VARCHAR NULL  
-  Final allowed values: `PASS`, `FAIL`, `NOT_EVALUABLE`, `BLOCKED` (legacy compatibility only).
+  Final allowed values: `PASS`, `FAIL`, `NOT_EVALUABLE`. Legacy persisted/input `BLOCKED` must be normalized to `NOT_EVALUABLE` before output or final persistence, with raw legacy value exposed only as explicit legacy/raw metadata.
 - `coverage_threshold_mode` VARCHAR(32) NULL  
   Initial locked value: `MIN_RATIO`.
 - `coverage_universe_basis` VARCHAR(64) NULL  

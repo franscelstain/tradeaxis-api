@@ -147,6 +147,8 @@ class MarketDataEvidenceExportService
 
     private function buildPublicationContext($run, $publication, $manifest)
     {
+        $runCoverageGateState = CoverageGateStateNormalizer::normalize($this->field($run, 'coverage_gate_state'));
+        $runLegacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($this->field($run, 'coverage_gate_state'));
         $publicationId = $manifest ? (int) $manifest['publication_id'] : ($this->field($publication, 'publication_id') !== null ? (int) $this->field($publication, 'publication_id') : ($this->field($run, 'publication_id') !== null ? (int) $this->field($run, 'publication_id') : null));
         $publicationRunId = $manifest ? (int) $manifest['run_id'] : ($this->field($publication, 'run_id') !== null ? (int) $this->field($publication, 'run_id') : null);
         $publicationVersion = $manifest ? (int) $manifest['publication_version'] : ($this->field($publication, 'publication_version') !== null ? (int) $this->field($publication, 'publication_version') : ($this->field($run, 'publication_version') !== null ? (int) $this->field($run, 'publication_version') : null));
@@ -162,7 +164,8 @@ class MarketDataEvidenceExportService
             'trade_date_effective' => $this->field($run, 'trade_date_effective'),
             'terminal_status' => $this->field($run, 'terminal_status'),
             'publishability_state' => $this->field($run, 'publishability_state'),
-            'coverage_gate_state' => $this->field($run, 'coverage_gate_state'),
+            'coverage_gate_state' => $runCoverageGateState,
+            'legacy_coverage_gate_state_raw' => $runLegacyCoverageGateStateRaw,
             'publication_id' => $publicationId,
             'publication_version' => $publicationVersion,
             'publication_run_id' => $publicationRunId,
@@ -254,7 +257,7 @@ class MarketDataEvidenceExportService
             'pointer_resolved_run_id' => $isPointerResolvedCurrent ? (int) $this->field($publication, 'run_id') : null,
             'pointer_resolve_status' => $resolvedStatus,
             'pointer_switched' => $isPointerResolvedCurrent && $publication !== null && $manifest !== null && (bool) ($manifest['is_current'] ?? false),
-            'pointer_switch_allowed' => $this->isReadableRun($run) && (string) $this->field($run, 'coverage_gate_state') === 'PASS' && $publication !== null && $isPointerResolvedCurrent,
+            'pointer_switch_allowed' => $this->isReadableRun($run) && CoverageGateStateNormalizer::normalize($this->field($run, 'coverage_gate_state')) === 'PASS' && $publication !== null && $isPointerResolvedCurrent,
             'pointer_switch_reason_code' => $this->field($run, 'final_reason_code') ?: $this->resolveCoverageReasonCodeFromState($this->field($run, 'coverage_gate_state')),
             'pointer_previous_publication_id' => $manifest ? ($manifest['previous_publication_id'] ?? ($manifest['supersedes_publication_id'] ?? ($manifest['replaced_publication_id'] ?? null))) : null,
             'pointer_previous_run_id' => $this->field($run, 'supersedes_run_id') !== null ? (int) $this->field($run, 'supersedes_run_id') : null,
@@ -268,7 +271,8 @@ class MarketDataEvidenceExportService
                 'seal_state' => $this->field($rawPointer, 'seal_state'),
                 'terminal_status' => $this->field($rawPointer, 'terminal_status'),
                 'publishability_state' => $this->field($rawPointer, 'publishability_state'),
-                'coverage_gate_state' => $this->field($rawPointer, 'coverage_gate_state'),
+                'coverage_gate_state' => CoverageGateStateNormalizer::normalize($this->field($rawPointer, 'coverage_gate_state')),
+                'legacy_coverage_gate_state_raw' => CoverageGateStateNormalizer::legacyRaw($this->field($rawPointer, 'coverage_gate_state')),
             ] : null,
         ];
     }
@@ -297,7 +301,7 @@ class MarketDataEvidenceExportService
             'fallback_publication_sealed' => $fallbackUsed ? (($rawPointer['seal_state'] ?? null) === 'SEALED') : false,
             'fallback_publication_readable' => $fallbackUsed ? (($rawPointer['publishability_state'] ?? null) === 'READABLE') : false,
             'fallback_publication_success' => $fallbackUsed ? (($rawPointer['terminal_status'] ?? null) === 'SUCCESS') : false,
-            'fallback_coverage_pass' => $fallbackUsed ? (($rawPointer['coverage_gate_state'] ?? null) === 'PASS') : false,
+            'fallback_coverage_pass' => $fallbackUsed ? (CoverageGateStateNormalizer::normalize($rawPointer['coverage_gate_state'] ?? null) === 'PASS') : false,
             'fallback_source_mode' => $fallbackUsed ? $this->field($run, 'source') : null,
             'fallback_lineage' => $fallbackUsed ? [
                 'requested_run_id' => (int) $this->field($run, 'run_id'),
@@ -624,10 +628,12 @@ class MarketDataEvidenceExportService
                 'run_state' => [
                     'baseline_terminal_status' => $this->field($correction, 'prior_run_terminal_status'),
                     'baseline_publishability_state' => $this->field($correction, 'prior_run_publishability_state'),
-                    'baseline_coverage_gate_state' => $this->field($correction, 'prior_run_coverage_gate_state'),
+                    'baseline_coverage_gate_state' => CoverageGateStateNormalizer::normalize($this->field($correction, 'prior_run_coverage_gate_state')),
+                    'legacy_baseline_coverage_gate_state_raw' => CoverageGateStateNormalizer::legacyRaw($this->field($correction, 'prior_run_coverage_gate_state')),
                     'candidate_terminal_status' => $this->field($correction, 'new_run_terminal_status'),
                     'candidate_publishability_state' => $this->field($correction, 'new_run_publishability_state'),
-                    'candidate_coverage_gate_state' => $this->field($correction, 'new_run_coverage_gate_state'),
+                    'candidate_coverage_gate_state' => CoverageGateStateNormalizer::normalize($this->field($correction, 'new_run_coverage_gate_state')),
+                    'legacy_candidate_coverage_gate_state_raw' => CoverageGateStateNormalizer::legacyRaw($this->field($correction, 'new_run_coverage_gate_state')),
                 ],
                 'publication_state' => [
                     'baseline_seal_state' => $this->field($correction, 'prior_publication_seal_state'),
@@ -889,7 +895,8 @@ class MarketDataEvidenceExportService
     private function isReadableRun($run)
     {
         return (string) $this->field($run, 'terminal_status') === 'SUCCESS'
-            && (string) $this->field($run, 'publishability_state') === 'READABLE';
+            && (string) $this->field($run, 'publishability_state') === 'READABLE'
+            && CoverageGateStateNormalizer::normalize($this->field($run, 'coverage_gate_state')) === 'PASS';
     }
 
     private function durationMillis($startedAt, $finishedAt)
@@ -1526,7 +1533,9 @@ class MarketDataEvidenceExportService
 
     private function buildCoverageState($record)
     {
-        $reasonCode = $this->resolveCoverageReasonCodeFromState($record->coverage_gate_state ?? null);
+        $coverageGateState = CoverageGateStateNormalizer::normalize($record->coverage_gate_state ?? null);
+        $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($record->coverage_gate_state ?? null);
+        $reasonCode = $this->resolveCoverageReasonCodeFromState($coverageGateState);
         $missingSample = $this->decodeJsonArray($record->coverage_missing_sample_json ?? null);
         $notesMap = $this->parseRunNotes((string) ($this->field($record, 'notes') ?? ''));
 
@@ -1540,8 +1549,9 @@ class MarketDataEvidenceExportService
             'missing_bar_count' => isset($record->coverage_missing_count) && $record->coverage_missing_count !== null ? (int) $record->coverage_missing_count : null,
             'coverage_ratio' => isset($record->coverage_ratio) && $record->coverage_ratio !== null ? (float) $record->coverage_ratio : null,
             'coverage_min_threshold' => isset($record->coverage_min_threshold) && $record->coverage_min_threshold !== null ? (float) $record->coverage_min_threshold : null,
-            'coverage_gate_state' => $record->coverage_gate_state ?? null,
-            'coverage_passed' => (string) ($record->coverage_gate_state ?? '') === 'PASS',
+            'coverage_gate_state' => $coverageGateState,
+            'legacy_coverage_gate_state_raw' => $legacyCoverageGateStateRaw,
+            'coverage_passed' => $coverageGateState === 'PASS',
             'coverage_threshold_mode' => $record->coverage_threshold_mode ?? null,
             'coverage_universe_basis' => $record->coverage_universe_basis ?? null,
             'coverage_contract_version' => $record->coverage_contract_version ?? null,
@@ -1564,7 +1574,7 @@ class MarketDataEvidenceExportService
 
     private function resolveCoverageReasonCodeFromState($coverageGateState)
     {
-        $state = strtoupper((string) $coverageGateState);
+        $state = CoverageGateStateNormalizer::normalize($coverageGateState);
 
         if ($state === 'PASS') {
             return 'COVERAGE_THRESHOLD_MET';
@@ -1574,7 +1584,7 @@ class MarketDataEvidenceExportService
             return 'COVERAGE_BELOW_THRESHOLD';
         }
 
-        if ($state === 'NOT_EVALUABLE' || $state === 'BLOCKED') {
+        if ($state === 'NOT_EVALUABLE') {
             return 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 
@@ -1583,7 +1593,9 @@ class MarketDataEvidenceExportService
 
     private function buildExpectedCoverageState($record)
     {
-        $reasonCode = $this->resolveCoverageReasonCodeFromState($record->expected_coverage_gate_state ?? null);
+        $coverageGateState = CoverageGateStateNormalizer::normalize($record->expected_coverage_gate_state ?? null);
+        $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($record->expected_coverage_gate_state ?? null);
+        $reasonCode = $this->resolveCoverageReasonCodeFromState($coverageGateState);
         $missingSample = $this->decodeJsonArray($record->expected_coverage_missing_sample_json ?? null);
 
         return [
@@ -1596,8 +1608,9 @@ class MarketDataEvidenceExportService
             'missing_bar_count' => isset($record->expected_coverage_missing_count) && $record->expected_coverage_missing_count !== null ? (int) $record->expected_coverage_missing_count : null,
             'coverage_ratio' => isset($record->expected_coverage_ratio) && $record->expected_coverage_ratio !== null ? (float) $record->expected_coverage_ratio : null,
             'coverage_min_threshold' => isset($record->expected_coverage_min_threshold) && $record->expected_coverage_min_threshold !== null ? (float) $record->expected_coverage_min_threshold : null,
-            'coverage_gate_state' => $record->expected_coverage_gate_state ?? null,
-            'coverage_passed' => (string) ($record->expected_coverage_gate_state ?? '') === 'PASS',
+            'coverage_gate_state' => $coverageGateState,
+            'legacy_coverage_gate_state_raw' => $legacyCoverageGateStateRaw,
+            'coverage_passed' => $coverageGateState === 'PASS',
             'coverage_threshold_mode' => $record->expected_coverage_threshold_mode ?? null,
             'coverage_universe_basis' => $record->expected_coverage_universe_basis ?? null,
             'coverage_contract_version' => $record->expected_coverage_contract_version ?? null,

@@ -466,7 +466,9 @@ class ReplayVerificationService
             }
         }
 
-        $coverageReasonCode = $this->resolveCoverageReasonCodeFromState($run->coverage_gate_state ?? null);
+        $coverageGateState = CoverageGateStateNormalizer::normalize($run->coverage_gate_state ?? null);
+        $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($run->coverage_gate_state ?? null);
+        $coverageReasonCode = $this->resolveCoverageReasonCodeFromState($coverageGateState);
         $finalReasonCode = $run->final_reason_code ?? ($run->source_final_reason_code ?? $coverageReasonCode);
         $sourceIdentity = $this->buildSourceIdentity($run);
         $publicationId = $publication && isset($publication->publication_id) && $publication->publication_id !== null ? (int) $publication->publication_id : (isset($run->publication_id) && $run->publication_id !== null ? (int) $run->publication_id : null);
@@ -538,7 +540,8 @@ class ReplayVerificationService
             'missing_bar_count' => isset($run->coverage_missing_count) && $run->coverage_missing_count !== null ? (int) $run->coverage_missing_count : null,
             'coverage_ratio' => isset($run->coverage_ratio) && $run->coverage_ratio !== null ? (float) $run->coverage_ratio : null,
             'coverage_min_threshold' => isset($run->coverage_min_threshold) && $run->coverage_min_threshold !== null ? (float) $run->coverage_min_threshold : null,
-            'coverage_gate_state' => $run->coverage_gate_state ?? null,
+            'coverage_gate_state' => $coverageGateState,
+            'legacy_coverage_gate_state_raw' => $legacyCoverageGateStateRaw,
             'coverage_reason_code' => $coverageReasonCode,
             'coverage_threshold_mode' => $run->coverage_threshold_mode ?? null,
             'coverage_universe_basis' => $run->coverage_universe_basis ?? null,
@@ -1019,6 +1022,12 @@ class ReplayVerificationService
             'coverage_contract_version' => $r['coverage_contract_version'] ?? null,
             'coverage_missing_sample' => $r['coverage_missing_sample'] ?? [],
         ]);
+        $expectedCoverageLegacyRaw = CoverageGateStateNormalizer::legacyRaw($expectedCoverage['coverage_gate_state'] ?? null);
+        $expectedCoverage['coverage_gate_state'] = CoverageGateStateNormalizer::normalize($expectedCoverage['coverage_gate_state'] ?? null);
+        $expectedCoverage['legacy_coverage_gate_state_raw'] = $expectedCoverage['legacy_coverage_gate_state_raw'] ?? $expectedCoverageLegacyRaw;
+        if (($expectedCoverage['coverage_reason_code'] ?? null) === null && $expectedCoverage['coverage_gate_state'] !== null) {
+            $expectedCoverage['coverage_reason_code'] = $this->resolveCoverageReasonCodeFromState($expectedCoverage['coverage_gate_state']);
+        }
         $expectedCoverage = $this->mergeMissing($expectedCoverage, [
             'expected_bar_count' => $expectedCoverage['coverage_expected_count'] ?? ($expectedCoverage['coverage_universe_count'] ?? null),
             'available_bar_count' => $expectedCoverage['coverage_available_count'] ?? null,
@@ -1509,10 +1518,10 @@ class ReplayVerificationService
 
     private function resolveCoverageReasonCodeFromState($coverageGateState)
     {
-        $state = strtoupper((string) $coverageGateState);
+        $state = CoverageGateStateNormalizer::normalize($coverageGateState);
         if ($state === 'PASS') return 'COVERAGE_THRESHOLD_MET';
         if ($state === 'FAIL') return 'COVERAGE_BELOW_THRESHOLD';
-        if ($state === 'NOT_EVALUABLE' || $state === 'BLOCKED') return 'RUN_COVERAGE_NOT_EVALUABLE';
+        if ($state === 'NOT_EVALUABLE') return 'RUN_COVERAGE_NOT_EVALUABLE';
         return null;
     }
 

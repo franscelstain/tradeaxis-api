@@ -480,5 +480,73 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertTrue($payload['lineage']['publication_to_pointer']['historical_publication_allowed']);
     }
 
+    public function test_export_run_evidence_normalizes_legacy_blocked_coverage_state_and_preserves_raw_trace(): void
+    {
+        $run = (object) [
+            'run_id' => 8130,
+            'trade_date_requested' => '2026-04-23',
+            'trade_date_effective' => '2026-04-23',
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'FAILED',
+            'quality_gate_state' => 'BLOCKED',
+            'publishability_state' => 'NOT_READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'coverage_universe_count' => 0,
+            'coverage_available_count' => 0,
+            'coverage_missing_count' => 0,
+            'coverage_ratio' => null,
+            'coverage_min_threshold' => 0.98,
+            'coverage_gate_state' => 'BLOCKED',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
+            'final_reason_code' => null,
+            'final_outcome_note' => 'Legacy coverage state was normalized during evidence export.',
+            'started_at' => '2026-04-23T17:00:00+07:00',
+            'finished_at' => '2026-04-23T17:01:00+07:00',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(8130)->andReturn($run);
+        $evidence->shouldNotReceive('resolvePublicationForEvidenceAudit');
+        $publications->shouldNotReceive('buildManifestByPublicationId');
+        $publications->shouldReceive('findRawCurrentPublicationStateForTradeDate')->once()->with('2026-04-23')->andReturn(null);
+        $evidence->shouldReceive('summarizeRunEvents')->once()->with(8130)->andReturn([
+            'event_count' => 1,
+            'first_event_time' => '2026-04-23T17:01:00+07:00',
+            'last_event_time' => '2026-04-23T17:01:00+07:00',
+            'first_event_type' => 'RUN_FINALIZED',
+            'last_event_type' => 'RUN_FINALIZED',
+            'highest_severity' => 'WARN',
+            'stage_counts' => ['FINALIZE' => 1],
+            'reason_code_counts' => ['RUN_COVERAGE_NOT_EVALUABLE' => 1],
+        ]);
+        $evidence->shouldNotReceive('dominantReasonCodes');
+        $evidence->shouldNotReceive('exportEligibilityRows');
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8130)->andReturn([]);
+        $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-23', 8130)->andReturn([]);
+
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
+        $result = $service->exportRunEvidence(8130, $dir);
+
+        $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
+        $summary = json_decode(file_get_contents($dir.'/run_summary.json'), true);
+
+        $this->assertSame('NOT_EVALUABLE', $result['summary']['coverage_gate_state']);
+        $this->assertSame('BLOCKED', $summary['quality_gate_state']);
+        $this->assertSame('NOT_EVALUABLE', $summary['coverage']['coverage_gate_state']);
+        $this->assertSame('BLOCKED', $summary['coverage']['legacy_coverage_gate_state_raw']);
+        $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $summary['coverage']['coverage_reason_code']);
+        $this->assertSame('NOT_EVALUABLE', $payload['coverage_context']['coverage_gate_state']);
+        $this->assertSame('BLOCKED', $payload['coverage_context']['legacy_coverage_gate_state_raw']);
+        $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $payload['coverage_context']['coverage_reason_code']);
+    }
+
 
 }

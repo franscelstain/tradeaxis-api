@@ -530,6 +530,14 @@ class MarketDataBackfillService
             }
         }
 
+        if (array_key_exists('coverage_gate_state', $context)) {
+            $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($context['coverage_gate_state']);
+            $context['coverage_gate_state'] = CoverageGateStateNormalizer::normalize($context['coverage_gate_state']);
+            if ($legacyCoverageGateStateRaw !== null) {
+                $context['legacy_coverage_gate_state_raw'] = $legacyCoverageGateStateRaw;
+            }
+        }
+
         if ((! isset($context['coverage_reason_code']) || $context['coverage_reason_code'] === '') && isset($context['coverage_gate_state']) && $context['coverage_gate_state'] !== '') {
             $context['coverage_reason_code'] = $this->resolveCoverageReasonCodeFromState($context['coverage_gate_state']);
         }
@@ -613,7 +621,7 @@ class MarketDataBackfillService
 
     private function resolveCoverageReasonCodeFromState($coverageGateState)
     {
-        $state = strtoupper((string) $coverageGateState);
+        $state = CoverageGateStateNormalizer::normalize($coverageGateState);
 
         if ($state === 'PASS') {
             return 'COVERAGE_THRESHOLD_MET';
@@ -623,7 +631,7 @@ class MarketDataBackfillService
             return 'COVERAGE_BELOW_THRESHOLD';
         }
 
-        if ($state === 'NOT_EVALUABLE' || $state === 'BLOCKED') {
+        if ($state === 'NOT_EVALUABLE') {
             return 'RUN_COVERAGE_NOT_EVALUABLE';
         }
 
