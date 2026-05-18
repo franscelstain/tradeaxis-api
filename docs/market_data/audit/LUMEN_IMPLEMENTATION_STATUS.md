@@ -3,45 +3,36 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Ops Environment Baseline
+- Audit Docs Synchronization
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Lock the operator/CI/runtime environment baseline required before market-data command output can be used as evidence.
-- Prevent PHP 8.4+ Lumen/vendor deprecation noise from contaminating `artisan` command output.
-- Document required PHP version, required extensions, `.env.testing`, timezone, clean-output policy, and manual validation commands.
-- Preserve all domain contracts: source-mode, coverage, read-side pointer, publication, replay, evidence, correction, and config/env governance behavior are not rewritten by this session.
+- Synchronize audit docs after completion of the eight latest post-audit hardening sessions using the uploaded ZIP as source of truth.
+- Update implementation status, contract tracker, audit-docs inventory, post-session inventory, and related static guards without changing market-data runtime behavior.
+- Preserve all previous DONE/LOCKED history while correcting the active session/current working sections to the latest audit-docs synchronization session.
+- Record only proof that is actually present: operator-local proof already carried in audit docs, current container syntax/static trace, and current container runtime blockers.
+- Post-session audit-docs synchronization is now closed after operator-local StaticGuard and full MarketData PHPUnit rerun passed after the guard-scope patch.
 
 [SESSION_GOAL]
-- Ensure unsupported runtime fails closed with a clear environment reason and supported operator/CI runtime can produce clean command/PHPUnit evidence.
+- Make audit docs accurately reflect the final state after Production Validation, Read-Side Consumer Surface Final Sweep, Coverage Gate Candidate Scope Hardening, Evidence Historical Lineage Completeness, Replay Historical Determinism Hardening, DB Integrity FK / Implicit Integrity Decision, Config / ENV Governance Cleanup, and Ops Environment Baseline.
 
 [SESSION_NOTES]
-- Container source ZIP contains `vendor/`, `.env.testing`, `composer.lock`, and market-data command classes.
-- Container PHP version is PHP 8.4.16, which is unsupported for evidence output because Lumen/vendor code emits PHP 8.4 deprecation noise before patch.
-- Container PHPUnit remains blocked because `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
-- `artisan` now blocks PHP `< 7.3` and `>= 8.4` before `vendor/autoload.php`, so unsupported PHP fails closed with `ENV_UNSUPPORTED_PHP_VERSION` instead of noisy vendor output.
-- `phpunit.xml` now bootstraps through `tests/bootstrap.php`, which applies the same unsupported PHP guard before project autoload.
-- `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md`, `docs/market_data/audit/OPS_ENVIRONMENT_BASELINE_INVENTORY.md`, and `OpsEnvironmentBaselineStaticGuardTest.php` were added.
-- Supported operator-local proof has now been supplied: PHP 7.4.33, Composer 2.8.4, required extensions present, clean artisan/help output, and targeted OpsEnvironment/Evidence/Replay/Command PHPUnit PASS.
-- Full MarketData suite before this patch had exactly one stale static-guard failure: `ConfigEnvGovernanceCleanupStaticGuardTest` still required Config / ENV Governance Cleanup as active session even though Ops Environment Baseline is now active.
-- This patch updates the stale Config / ENV governance guard to preserve Config / ENV history without forcing it to remain the active session.
-- Final operator-local rerun after guard synchronization has now passed: Config / ENV guard PASS, StaticGuard PASS, and full MarketData suite PASS.
+- Source ZIP contains `vendor/`, `.env.testing`, `composer.lock`, market-data audit docs, inventories, ops docs, and MarketData static guards.
+- Container PHP version is PHP 8.4.16; `php artisan list` fails closed with `ENV_UNSUPPORTED_PHP_VERSION`, which is expected and is not runtime PASS.
+- Container PHPUnit is blocked because required PHPUnit extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
+- Current patch is documentation/static-guard synchronization only; no runtime market-data services, repositories, migrations, commands, or config behavior are changed.
+- Existing operator-local proof remains valid for its original sessions and is carried as historical evidence: latest Ops Environment proof includes StaticGuard OK (164 tests, 3702 assertions) and full MarketData OK (435 tests, 6299 assertions).
+- This current audit-docs synchronization is DONE/LOCKED because operator-local post-guard-scope rerun passed `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` and full `vendor/bin/phpunit tests/Unit/MarketData` after this patch.
 
 [RUNTIME_ENVIRONMENT]
-- Container PHP version: PHP 8.4.16
-- Container Composer status: BLOCKED_CONTAINER_RUNTIME_ENV because Composer is not installed in the container.
+- Container PHP version: PHP 8.4.16.
+- Container artisan status: EXPECTED_FAIL_CLOSED with clean `ENV_UNSUPPORTED_PHP_VERSION`; not a runtime PASS.
 - Container PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV due to missing dom, mbstring, xml, and xmlwriter.
-- Container artisan status before patch: NOISY_OUTPUT_NOT_EVIDENCE due to PHP 8.4 Lumen/vendor deprecation warnings.
-- Container artisan status after patch: EXPECTED_FAIL_CLOSED with clean `ENV_UNSUPPORTED_PHP_VERSION` before vendor autoload.
-- Operator-local PHP version: PHP 7.4.33.
-- Operator-local Composer version: Composer 2.8.4.
-- Operator-local PHPUnit version: PHPUnit 9.6.34.
-- Operator-local required extensions available: dom, json, libxml, mbstring, pdo_mysql, pdo_sqlite, tokenizer, xml, xmlreader, xmlwriter.
-- Operator-local artisan/help output status: OPERATOR_LOCAL_CLEAN_OUTPUT_CONFIRMED.
-- Operator-local targeted PHPUnit status: OPERATOR_LOCAL_TARGETED_RUNTIME_PROOF_PASS.
-- Operator-local full suite final status: OPERATOR_LOCAL_FULL_MARKET_DATA_SUITE_PASS after guard synchronization.
-- Runtime authority for DONE/LOCKED: operator-local PHP 7.4.33 clean artisan/help output, targeted PHPUnit PASS, StaticGuard PASS, and full MarketData suite PASS.
+- Container Composer status: not used for this docs-only patch.
+- Container validation available for this patch: file trace, static grep, and `php -l` on changed PHP static guards.
+- Operator-local proof carried from prior sessions: available where explicitly recorded in each entry/inventory; not a new container PHPUnit run.
+- Runtime authority for LOCKED post-session audit-docs sync: operator-local post-guard-scope proof supplied on 2026-05-18.
 
 ---
 ## OPERATIONAL STATUS
@@ -64,89 +55,77 @@ ACTIVE SESSION:
 ## CURRENT WORKING ENTRY
 
 
-- Ops Environment Baseline -> DONE
+- Audit Docs Synchronization -> DONE
 
   [LAST_UPDATED] 2026-05-18
 
-  [RELATED_CONTRACT] OPS_ENVIRONMENT_BASELINE_CONTRACT
+  [RELATED_CONTRACT] AUDIT_DOCS_SYNCHRONIZATION_CONTRACT
 
-  [REVIEW_STATUS] LOCKED_LOCAL_RUNTIME_PROOF
+  [REVIEW_STATUS] POST_SESSION_1_8_LOCKED_LOCAL_PHPUNIT_PASS
 
   [HISTORY]
-  - 2026-05-18 -> Session opened to harden operator/CI/runtime baseline for market-data command evidence output.
-  - 2026-05-18 -> Source ZIP structure confirmed with `artisan`, `composer.json`, `composer.lock`, `bootstrap/app.php`, `.env.testing`, market-data commands, config, migrations, tests, and audit docs.
-  - 2026-05-18 -> Container runtime observed as PHP 8.4.16; `php artisan list` emitted Lumen/vendor PHP 8.4 deprecation warnings before patch, so that output is not valid evidence.
-  - 2026-05-18 -> Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; Composer command is unavailable in container.
-  - 2026-05-18 -> Added `artisan` unsupported PHP guard before `vendor/autoload.php` to block PHP `< 7.3` and `>= 8.4` with `ENV_UNSUPPORTED_PHP_VERSION`.
-  - 2026-05-18 -> Added `tests/bootstrap.php` and changed `phpunit.xml` bootstrap to apply the same unsupported PHP guard before project autoload.
-  - 2026-05-18 -> Added `OPS_ENVIRONMENT_BASELINE.md`, `OPS_ENVIRONMENT_BASELINE_INVENTORY.md`, and `OpsEnvironmentBaselineStaticGuardTest.php`.
-  - 2026-05-18 -> Operational runbook now points to the ops environment baseline gate before any command output is used as evidence.
-  - 2026-05-18 -> Composer/platform change is deferred with reason because Composer is unavailable in container and changing `composer.json` without regenerating `composer.lock` would create lock drift.
-  - 2026-05-18 -> Operator-local environment proof supplied: PHP 7.4.33, Composer 2.8.4, required extensions available, artisan/list/help output clean, and targeted OpsEnvironment/Evidence/Replay/Command PHPUnit PASS.
-  - 2026-05-18 -> Operator-local full MarketData suite before guard sync ran 435 tests and failed only because `ConfigEnvGovernanceCleanupStaticGuardTest` still asserted Config / ENV Governance Cleanup as active session.
-  - 2026-05-18 -> Static guard synchronization patch updated `ConfigEnvGovernanceCleanupStaticGuardTest.php` so it preserves historical Config / ENV LOCKED proof without requiring that historical session to remain active.
-  - 2026-05-18 -> `OpsEnvironmentBaselineStaticGuardTest.php` updated after final operator-local proof to require DONE/LOCKED status, clean-output proof, targeted PHPUnit proof, StaticGuard PASS, and full MarketData suite PASS.
+  - 2026-05-08 -> Session opened from uploaded Audit Docs Synchronization prompt and latest source-of-truth ZIP. Static trace found the active audit docs still pointed to Fail-Safe Behavior / No Silent Failure, no canonical audit-docs synchronization contract existed, no dedicated audit-docs inventory existed, and no static guard specifically protected audit docs synchronization.
+  - 2026-05-08 -> Patch updated ACTIVE SESSION, inserted the canonical implementation entry, created `AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md`, strengthened audit governance, and added `AuditDocsSynchronizationStaticGuardTest.php` to prevent audit-docs drift.
+  - 2026-05-08 -> Container validation was limited to static trace and `php -l` because uploaded ZIP had no `vendor/`; implementation stayed IN_PROGRESS until operator-local AuditDocs/static/full MarketData PHPUnit evidence was supplied.
+  - 2026-05-08 -> Operator-local first retest reported two AuditDocs/static/full-suite failures: `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` was missed because the static guard only parsed ASCII `->` contract headings while existing historical tracker entries use unicode `→`, and `AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md` did not contain the exact phrase `not a new container PHPUnit run`.
+  - 2026-05-08 -> Follow-up patch made the audit-docs static guard tolerant of both `->` and `→` canonical contract headings and updated the inventory with the required exact evidence phrase.
+  - 2026-05-08 -> Operator-local validation after the follow-up patch passed: `AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 153 assertions); `AuditDocs` filter OK (9 tests, 153 assertions); `StaticGuard` filter OK (93 tests, 2160 assertions); `Evidence` filter OK (39 tests, 678 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (358 tests, 4711 assertions). Implementation promoted from IN_PROGRESS to DONE for that session.
+  - 2026-05-18 -> Post-session 1-8 synchronization opened after the latest hardening sequence completed through Ops Environment Baseline.
+  - 2026-05-18 -> Audit state traced across `AUDIT_UPDATE_GOVERNANCE.md`, `LUMEN_IMPLEMENTATION_STATUS.md`, `LUMEN_CONTRACT_TRACKER.md`, all session inventories, and audit-docs static guards.
+  - 2026-05-18 -> Latest eight-session sequence identified from current audit docs: Production Validation / Manual + Runtime Proof; Read-Side Consumer Surface Final Sweep; Coverage Gate Candidate Scope Hardening; Evidence Historical Lineage Completeness; Replay Historical Determinism Hardening; DB Integrity FK / Implicit Integrity Decision; Config / ENV Governance Cleanup; Ops Environment Baseline.
+  - 2026-05-18 -> Previous Audit Docs Synchronization DONE/LOCKED evidence remains preserved as historical proof, but this post-session synchronization is marked ENFORCED pending operator-local rerun after the current docs/static-guard patch.
+  - 2026-05-18 -> Created `AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md` with governance files read, session 1-8 matrix, implementation/contract/proof/runtime/static-guard/patch matrices, remaining risks, manual commands, and final status rule.
+  - 2026-05-18 -> Updated audit-docs static guard to stop requiring the historical Ops Environment session as the active session and to accept the current ENFORCED audit-docs synchronization state until fresh local proof is supplied.
+  - 2026-05-18 -> Operator-local partial rerun after the first post-session patch confirmed `php artisan list` clean output, `AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 261 assertions), and `AuditDocs` filter OK (9 tests, 261 assertions), but `StaticGuard` still failed 1 assertion in `OpsEnvironmentBaselineStaticGuardTest.php` because the historical ops proof markers were incorrectly required inside both active audit lumen docs.
+  - 2026-05-18 -> Guard-scope patch updated `OpsEnvironmentBaselineStaticGuardTest.php` so Ops Environment proof markers may be carried by the ops inventory / historical ops evidence while active audit lumen docs remain focused on the current Audit Docs Synchronization ENFORCED state.
+  - 2026-05-18 -> Operator-local final post-guard-scope validation passed: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (164 tests, 3721 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (435 tests, 6318 assertions). Post-session audit-docs synchronization promoted from ENFORCED to DONE.
 
   [IMPLEMENTATION]
-  - `artisan` checks PHP version before loading vendor code and cleanly fails closed for unsupported PHP.
-  - `tests/bootstrap.php` checks PHP version before project autoload during PHPUnit proof.
-  - `phpunit.xml` uses `tests/bootstrap.php` instead of direct `vendor/autoload.php` bootstrap.
-  - `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md` defines preferred operator/CI PHP 8.3.x, supported clean-output range `>= 7.3` and `< 8.4`, required extensions, `.env.testing`, timezone, clean-output policy, and manual validation commands.
-  - `docs/market_data/audit/OPS_ENVIRONMENT_BASELINE_INVENTORY.md` records environment matrices, command output status, patch matrix, Composer decision, validation matrix, local proof, stale guard finding, and final PASS closure.
-  - `docs/market_data/ops/OPERATIONAL_RUNBOOK.md` references the baseline gate before operator command use.
-  - `tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` guards docs, runtime entrypoint, PHPUnit bootstrap, audit sync, runbook reference, clean-output policy, local proof status, and DONE/LOCKED closure evidence.
-  - `tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` no longer pins the active audit session to historical Config / ENV Governance Cleanup.
+  - `LUMEN_IMPLEMENTATION_STATUS.md` now names Audit Docs Synchronization as the active session and places this canonical implementation entry first under `CURRENT WORKING ENTRY`.
+  - `LUMEN_CONTRACT_TRACKER.md` now names Audit Docs Synchronization as the active session and places `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` first under `CURRENT WORKING CONTRACT`.
+  - Previous session entries remain preserved with their own proof: Ops Environment Baseline, Config / ENV Governance Cleanup, DB Integrity FK / Implicit Integrity Decision, Replay Historical Determinism Hardening, Evidence Historical Lineage Completeness, Coverage Gate Candidate Scope Hardening, Read-Side Consumer Surface Final Sweep, Production Validation, Operational Readiness, and earlier locked contracts.
+  - `AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md` records the post-session synchronization state separately from the original 2026-05-08 audit-docs inventory.
+  - `AuditDocsSynchronizationStaticGuardTest.php`, `OpsEnvironmentBaselineStaticGuardTest.php`, and `ConfigEnvGovernanceCleanupStaticGuardTest.php` were synchronized so historical sessions remain guarded without pinning them as active forever.
 
   [ENFORCEMENT]
-  - Market-data evidence command output must contain no PHP warnings, PHP deprecations, vendor/framework deprecations, missing-extension warnings, timezone warnings, debug noise, or stack traces caused by environment mismatch.
-  - Unsupported PHP must fail closed with `ENV_UNSUPPORTED_PHP_VERSION`; this is `BLOCKED_CONTAINER_RUNTIME_ENV`, not runtime PASS.
-  - Operator-local targeted proof plus final Config / ENV guard, StaticGuard, and full MarketData suite PASS closes this session as DONE/LOCKED.
-  - Existing domain behavior is unchanged: source-mode, coverage, pointer, publication, replay, evidence, correction, DB integrity, and config/env governance contracts remain owned by their existing locked contracts.
+  - Active session must match between implementation status and contract tracker.
+  - Current working entry and contract must start with the active session.
+  - Canonical contract names must remain unique; `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` must not be duplicated.
+  - LOCKED contracts must keep concrete validation evidence and final rules.
+  - This post-session synchronization is closed as DONE/LOCKED because operator-local StaticGuard and full MarketData PHPUnit passed after this patch.
+  - Current container runtime blockers must be recorded as `BLOCKED_CONTAINER_RUNTIME_ENV` and never treated as PASS.
 
   [FINAL_BEHAVIOR]
-  - On PHP 8.4+, `artisan` no longer reaches Lumen vendor autoload and therefore no longer emits vendor deprecation noise; it fails closed with an explicit environment reason.
-  - On supported PHP 7.4.33 with required extensions, operator-local artisan/list/help output is clean and targeted OpsEnvironment/Evidence/Replay/Command PHPUnit proof has passed.
-  - Composer PHP constraint and lock are intentionally not changed in this patch to avoid lock drift without Composer; the operational guard and docs carry the enforceable runtime baseline for this session.
-  - Final implementation status is DONE/LOCKED because the patched ZIP passed direct Config / ENV guard, StaticGuard filter, and full MarketData suite locally.
+  - DONE. Audit docs are synchronized to the latest post-session state and the post-guard-scope local validation has passed.
+  - Existing DONE/LOCKED session claims remain valid only as far as their recorded evidence supports them; no new runtime proof is invented.
+  - `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` is LOCKED for this post-session 1-8 synchronization because final local StaticGuard and full MarketData suite proof is recorded.
 
   [EVIDENCE]
-  - Container PHP version: PHP 8.4.16.
-  - Container Composer status: `composer --version` unavailable.
-  - Container extension status: missing `dom`, `mbstring`, `xml`, and `xmlwriter`.
-  - Container pre-patch `php artisan list`: listed market-data commands but emitted PHP 8.4 Lumen/vendor deprecation warnings; result is `NOISY_OUTPUT_NOT_EVIDENCE`.
-  - Container `php vendor/bin/phpunit tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php`: blocked by missing PHPUnit extensions.
-  - Container post-patch `php artisan list`: expected clean fail-closed `ENV_UNSUPPORTED_PHP_VERSION` before vendor autoload.
-  - Syntax: `php -l artisan` -> No syntax errors detected.
-  - Syntax: `php -l tests/bootstrap.php` -> No syntax errors detected.
-  - Syntax: `php -l tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> No syntax errors detected.
-  - Operator-local: `php -v` -> PHP 7.4.33.
-  - Operator-local: `composer --version` -> Composer 2.8.4 using PHP 7.4.33.
-  - Operator-local: `php -m` -> required extensions include dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, and xmlwriter.
-  - Operator-local: `php artisan list` -> clean Lumen 8.3.4 command list with market-data commands registered.
-  - Operator-local: `php artisan market-data:daily --help` -> clean output.
-  - Operator-local: `php artisan market-data:evidence:export --help` -> clean output.
-  - Operator-local: `php artisan market-data:replay:verify --help` -> clean output.
-  - Operator-local: `php artisan market-data:run:finalize --help` -> clean output.
-  - Operator-local: `php artisan market-data:promote --help` -> clean output.
-  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> OK (8 tests, 88 assertions).
-  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "OpsEnvironment"` -> OK (8 tests, 88 assertions).
-  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> OK (53 tests, 938 assertions).
-  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (53 tests, 819 assertions).
-  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Command"` -> OK (74 tests, 764 assertions).
-  - Operator-local full suite before this guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData` -> 435 tests, 6276 assertions, 1 failure in `ConfigEnvGovernanceCleanupStaticGuardTest` caused by stale active-session expectation.
-  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> OK (10 tests, 119 assertions).
-  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (164 tests, 3702 assertions).
-  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (435 tests, 6299 assertions).
+  - Static trace completed across governance, implementation status, contract tracker, session inventories, ops baseline inventory, and audit-docs static guards.
+  - Container `php -v` -> PHP 8.4.16.
+  - Container `php artisan list` -> expected clean fail-closed `ENV_UNSUPPORTED_PHP_VERSION`; not a runtime PASS.
+  - Container `php vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> BLOCKED_CONTAINER_RUNTIME_ENV because `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
+  - Prior Fail-Safe Behavior local proof retained: full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions). This is not a new container PHPUnit run.
+  - Prior operator-local Audit Docs Synchronization proof retained: `AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 153 assertions), `AuditDocs` OK (9 tests, 153 assertions), `StaticGuard` OK (93 tests, 2160 assertions), full MarketData OK (358 tests, 4711 assertions). This is not a new container PHPUnit run.
+  - Prior Operational Readiness proof retained: full `vendor/bin/phpunit tests/Unit/MarketData` OK (368 tests, 4927 assertions). This is not a new container PHPUnit run.
+  - Latest Ops Environment Baseline operator-local proof retained: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (164 tests, 3702 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (435 tests, 6299 assertions). This is not a new container PHPUnit run.
+  - `AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md` records the session/proof/runtime/static-guard matrices for this synchronization pass.
+  - Operator-local partial post-session proof supplied after the first patch: `php artisan list` clean; `php vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (9 tests, 261 assertions); `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (9 tests, 261 assertions); `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> FAIL (164 tests, 3704 assertions, 1 failure) due stale OpsEnvironment guard expectation.
+  - Current patch fixes the stale OpsEnvironment guard expectation only; this is not a full local pass and does not promote the entry to DONE.
 
-  [RECONCILIATION]
-  - Previous Config / ENV Governance Cleanup DONE behavior reviewed.
-  - New change impact checked: environment baseline does not modify market-data config keys, source modes, coverage, pointer, publication, replay, evidence, or repository behavior.
-  - Existing DONE/LOCKED config/env contract remains valid.
-  - Config / ENV static guard now preserves historical LOCKED proof without requiring Config / ENV to stay as the active session forever.
-  - Structural implementation status is now `DONE`; the related contract is `LOCKED` because supported operator-local full suite proof passed after guard synchronization.
+  [GAPS]
+  - No open audit-docs synchronization gap remains for this scoped post-session 1-8 closure after operator-local StaticGuard and full MarketData validation passed.
+  - Container still cannot run PHPUnit because required extensions are missing, but this is an environment limitation already governed by Ops Environment Baseline and does not block this LOCKED claim because operator-local proof is available.
+  - Container still cannot provide artisan runtime proof because PHP 8.4.16 is intentionally blocked for clean evidence output; the operator-local `php artisan list` clean proof remains recorded.
+  - Previous operator-local rerun was partial and exposed a stale static-guard expectation; targeted StaticGuard and full MarketData proof must be rerun after this guard-scope patch.
+
+  [REMAINING_RISK]
+  - No remaining risk for this scoped audit-docs synchronization after final operator-local proof.
+  - Future audit-docs or static-guard changes must rerun AuditDocs/static/full MarketData validation before changing this LOCKED status.
 
   [NEXT_ACTION]
-  - No remaining blocker for this scope. Keep Ops Environment Baseline DONE/LOCKED unless a future PHP/runtime/CI/output-noise change reopens the contract.
+  - Keep this implementation DONE. Reopen only if future audit-doc, active-session, contract-tracker, inventory, or audit static-guard changes create new drift.
+  - Future changes must rerun targeted AuditDocs/static guard checks plus full `tests/Unit/MarketData` before altering DONE/LOCKED claims.
 
 - Config / ENV Governance Cleanup -> DONE
 
@@ -668,61 +647,89 @@ ACTIVE SESSION:
   [NEXT_ACTION]
   - Continue with the next market-data hardening contract from a fresh source-of-truth ZIP. Preserve Operational Readiness as DONE unless a future scoped regression provides contrary evidence.
 
-- Audit Docs Synchronization -> DONE
+- Ops Environment Baseline -> DONE
 
-  [LAST_UPDATED] 2026-05-08
+  [LAST_UPDATED] 2026-05-18
 
-  [RELATED_CONTRACT] AUDIT_DOCS_SYNCHRONIZATION_CONTRACT
+  [RELATED_CONTRACT] OPS_ENVIRONMENT_BASELINE_CONTRACT
 
-  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+  [REVIEW_STATUS] LOCKED_LOCAL_RUNTIME_PROOF
 
   [HISTORY]
-  - 2026-05-08 -> Session opened from uploaded Audit Docs Synchronization prompt and latest source-of-truth ZIP. Static trace found the active audit docs still pointed to Fail-Safe Behavior / No Silent Failure, no canonical audit-docs synchronization contract existed, no dedicated audit-docs inventory existed, and no static guard specifically protected audit docs synchronization.
-  - 2026-05-08 -> Patch updated ACTIVE SESSION, inserted the canonical implementation entry, created `AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md`, strengthened audit governance, and added `AuditDocsSynchronizationStaticGuardTest.php` to prevent audit-docs drift.
-  - 2026-05-08 -> Container validation was limited to static trace and `php -l` because uploaded ZIP has no `vendor/`; implementation stayed IN_PROGRESS until operator-local AuditDocs/static/full MarketData PHPUnit evidence was supplied.
-  - 2026-05-08 -> Operator-local first retest reported two AuditDocs/static/full-suite failures: `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` was missed because the static guard only parsed ASCII `->` contract headings while existing historical tracker entries use unicode `→`, and `AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md` did not contain the exact phrase `not a new container PHPUnit run`.
-  - 2026-05-08 -> Follow-up patch made the audit-docs static guard tolerant of both `->` and `→` canonical contract headings and updated the inventory with the required exact evidence phrase.
-  - 2026-05-08 -> Operator-local validation after the follow-up patch passed: `AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 153 assertions); `AuditDocs` filter OK (9 tests, 153 assertions); `StaticGuard` filter OK (93 tests, 2160 assertions); `Evidence` filter OK (39 tests, 678 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (358 tests, 4711 assertions). Implementation promoted from IN_PROGRESS to DONE.
+  - 2026-05-18 -> Session opened to harden operator/CI/runtime baseline for market-data command evidence output.
+  - 2026-05-18 -> Source ZIP structure confirmed with `artisan`, `composer.json`, `composer.lock`, `bootstrap/app.php`, `.env.testing`, market-data commands, config, migrations, tests, and audit docs.
+  - 2026-05-18 -> Container runtime observed as PHP 8.4.16; `php artisan list` emitted Lumen/vendor PHP 8.4 deprecation warnings before patch, so that output is not valid evidence.
+  - 2026-05-18 -> Container PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; Composer command is unavailable in container.
+  - 2026-05-18 -> Added `artisan` unsupported PHP guard before `vendor/autoload.php` to block PHP `< 7.3` and `>= 8.4` with `ENV_UNSUPPORTED_PHP_VERSION`.
+  - 2026-05-18 -> Added `tests/bootstrap.php` and changed `phpunit.xml` bootstrap to apply the same unsupported PHP guard before project autoload.
+  - 2026-05-18 -> Added `OPS_ENVIRONMENT_BASELINE.md`, `OPS_ENVIRONMENT_BASELINE_INVENTORY.md`, and `OpsEnvironmentBaselineStaticGuardTest.php`.
+  - 2026-05-18 -> Operational runbook now points to the ops environment baseline gate before any command output is used as evidence.
+  - 2026-05-18 -> Composer/platform change is deferred with reason because Composer is unavailable in container and changing `composer.json` without regenerating `composer.lock` would create lock drift.
+  - 2026-05-18 -> Operator-local environment proof supplied: PHP 7.4.33, Composer 2.8.4, required extensions available, artisan/list/help output clean, and targeted OpsEnvironment/Evidence/Replay/Command PHPUnit PASS.
+  - 2026-05-18 -> Operator-local full MarketData suite before guard sync ran 435 tests and failed only because `ConfigEnvGovernanceCleanupStaticGuardTest` still asserted Config / ENV Governance Cleanup as active session.
+  - 2026-05-18 -> Static guard synchronization patch updated `ConfigEnvGovernanceCleanupStaticGuardTest.php` so it preserves historical Config / ENV LOCKED proof without requiring that historical session to remain active.
+  - 2026-05-18 -> `OpsEnvironmentBaselineStaticGuardTest.php` updated after final operator-local proof to require DONE/LOCKED status, clean-output proof, targeted PHPUnit proof, StaticGuard PASS, and full MarketData suite PASS.
 
   [IMPLEMENTATION]
-  - `LUMEN_IMPLEMENTATION_STATUS.md` records Audit Docs Synchronization as the active implementation concern and keeps previous DONE entries as history below the current working entry.
-  - `LUMEN_CONTRACT_TRACKER.md` records `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` as the active LOCKED contract and links it to this implementation entry.
-  - `AUDIT_UPDATE_GOVERNANCE.md` explicitly requires audit docs synchronization updates, locked evidence markers, latest full-suite evidence references, inventory upkeep, and static guard coverage.
-  - `AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md` records the audited doc/code/test sync inventory, stale/duplicate/evidence findings, patches, local pass evidence, and future sync rule.
-  - `AuditDocsSynchronizationStaticGuardTest.php` guards active-session alignment, current-working positioning, canonical contract presence, locked evidence, duplicate contract prevention, implementation/tracker synchronization, governance rules, latest full-suite evidence recording, registry/seed sync, and locked audit-docs proof.
+  - `artisan` checks PHP version before loading vendor code and cleanly fails closed for unsupported PHP.
+  - `tests/bootstrap.php` checks PHP version before project autoload during PHPUnit proof.
+  - `phpunit.xml` uses `tests/bootstrap.php` instead of direct `vendor/autoload.php` bootstrap.
+  - `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md` defines preferred operator/CI PHP 8.3.x, supported clean-output range `>= 7.3` and `< 8.4`, required extensions, `.env.testing`, timezone, clean-output policy, and manual validation commands.
+  - `docs/market_data/audit/OPS_ENVIRONMENT_BASELINE_INVENTORY.md` records environment matrices, command output status, patch matrix, Composer decision, validation matrix, local proof, stale guard finding, and final PASS closure.
+  - `docs/market_data/ops/OPERATIONAL_RUNBOOK.md` references the baseline gate before operator command use.
+  - `tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` guards docs, runtime entrypoint, PHPUnit bootstrap, audit sync, runbook reference, clean-output policy, local proof status, and DONE/LOCKED closure evidence.
+  - `tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` no longer pins the active audit session to historical Config / ENV Governance Cleanup.
 
   [ENFORCEMENT]
-  - Static guard fails if implementation status and contract tracker active sessions drift, while preserving the locked Audit Docs Synchronization contract and evidence history.
-  - Static guard fails if the current working entry/contract is not first under the current working sections.
-  - Static guard fails if `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT` is missing, duplicated, or disconnected from the implementation entry.
-  - Static guard fails if locked contracts lack concrete validation markers or if reason-code registry and seed drift.
-  - Governance makes audit docs synchronization mandatory for future code/test/contract/reason-code/command/evidence changes.
+  - Market-data evidence command output must contain no PHP warnings, PHP deprecations, vendor/framework deprecations, missing-extension warnings, timezone warnings, debug noise, or stack traces caused by environment mismatch.
+  - Unsupported PHP must fail closed with `ENV_UNSUPPORTED_PHP_VERSION`; this is `BLOCKED_CONTAINER_RUNTIME_ENV`, not runtime PASS.
+  - Operator-local targeted proof plus final Config / ENV guard, StaticGuard, and full MarketData suite PASS closes this session as DONE/LOCKED.
+  - Existing domain behavior is unchanged: source-mode, coverage, pointer, publication, replay, evidence, correction, DB integrity, and config/env governance contracts remain owned by their existing locked contracts.
 
-  [CURRENT_BEHAVIOR]
-  - DONE. Audit docs synchronization is statically enforced, locally validated, and recorded as the current audit-docs source-of-truth state.
+  [FINAL_BEHAVIOR]
+  - On PHP 8.4+, `artisan` no longer reaches Lumen vendor autoload and therefore no longer emits vendor deprecation noise; it fails closed with an explicit environment reason.
+  - On supported PHP 7.4.33 with required extensions, operator-local artisan/list/help output is clean and targeted OpsEnvironment/Evidence/Replay/Command PHPUnit proof has passed.
+  - Composer PHP constraint and lock are intentionally not changed in this patch to avoid lock drift without Composer; the operational guard and docs carry the enforceable runtime baseline for this session.
+  - Final implementation status is DONE/LOCKED because the patched ZIP passed direct Config / ENV guard, StaticGuard filter, and full MarketData suite locally.
 
   [EVIDENCE]
-  - Static trace completed across audit governance, implementation status, contract tracker, audit inventory, registry/seed, and existing static guards.
-  - Reason-code registry/seed sync scan found 315 registry codes and 315 seed codes with no mismatch.
-  - Latest carried operator-local full-suite baseline remains recorded: full `vendor/bin/phpunit tests/Unit/MarketData` OK (349 tests, 4558 assertions) from the Fail-Safe Behavior / No Silent Failure session. This is not a new container PHPUnit run.
-  - Container `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` passed. PHPUnit/artisan were not run in container because uploaded ZIP has no `vendor/`.
-  - Operator-local first retest before the follow-up patch failed: `AuditDocsSynchronizationStaticGuardTest.php` had 2 failures; `AuditDocs` filter had 2 failures; `StaticGuard` filter had 2 failures; `Evidence` filter had 1 AuditDocs evidence-phrase failure; `Reason` and `Replay` filters passed; full `tests/Unit/MarketData` reached 358 tests / 4707 assertions with 2 AuditDocs failures.
-  - Operator-local final validation PASS: `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 153 assertions).
-  - Operator-local final validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` OK (9 tests, 153 assertions).
-  - Operator-local final validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` OK (93 tests, 2160 assertions).
-  - Operator-local final validation PASS: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` OK (39 tests, 678 assertions).
-  - Operator-local final validation PASS: full `vendor/bin/phpunit tests/Unit/MarketData` OK (358 tests, 4711 assertions).
+  - Container PHP version: PHP 8.4.16.
+  - Container Composer status: `composer --version` unavailable.
+  - Container extension status: missing `dom`, `mbstring`, `xml`, and `xmlwriter`.
+  - Container pre-patch `php artisan list`: listed market-data commands but emitted PHP 8.4 Lumen/vendor deprecation warnings; result is `NOISY_OUTPUT_NOT_EVIDENCE`.
+  - Container `php vendor/bin/phpunit tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php`: blocked by missing PHPUnit extensions.
+  - Container post-patch `php artisan list`: expected clean fail-closed `ENV_UNSUPPORTED_PHP_VERSION` before vendor autoload.
+  - Syntax: `php -l artisan` -> No syntax errors detected.
+  - Syntax: `php -l tests/bootstrap.php` -> No syntax errors detected.
+  - Syntax: `php -l tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> No syntax errors detected.
+  - Operator-local: `php -v` -> PHP 7.4.33.
+  - Operator-local: `composer --version` -> Composer 2.8.4 using PHP 7.4.33.
+  - Operator-local: `php -m` -> required extensions include dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, and xmlwriter.
+  - Operator-local: `php artisan list` -> clean Lumen 8.3.4 command list with market-data commands registered.
+  - Operator-local: `php artisan market-data:daily --help` -> clean output.
+  - Operator-local: `php artisan market-data:evidence:export --help` -> clean output.
+  - Operator-local: `php artisan market-data:replay:verify --help` -> clean output.
+  - Operator-local: `php artisan market-data:run:finalize --help` -> clean output.
+  - Operator-local: `php artisan market-data:promote --help` -> clean output.
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> OK (8 tests, 88 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "OpsEnvironment"` -> OK (8 tests, 88 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> OK (53 tests, 938 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (53 tests, 819 assertions).
+  - Operator-local: `vendor/bin/phpunit tests/Unit/MarketData --filter "Command"` -> OK (74 tests, 764 assertions).
+  - Operator-local full suite before this guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData` -> 435 tests, 6276 assertions, 1 failure in `ConfigEnvGovernanceCleanupStaticGuardTest` caused by stale active-session expectation.
+  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> OK (10 tests, 119 assertions).
+  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (164 tests, 3702 assertions).
+  - Operator-local after guard-sync patch: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (435 tests, 6299 assertions).
 
-  [GAPS]
-  - No open audit-docs synchronization gap after the final operator-local validation pass.
+  [RECONCILIATION]
+  - Previous Config / ENV Governance Cleanup DONE behavior reviewed.
+  - New change impact checked: environment baseline does not modify market-data config keys, source modes, coverage, pointer, publication, replay, evidence, or repository behavior.
+  - Existing DONE/LOCKED config/env contract remains valid.
+  - Config / ENV static guard now preserves historical LOCKED proof without requiring Config / ENV to stay as the active session forever.
+  - Structural implementation status is now `DONE`; the related contract is `LOCKED` because supported operator-local full suite proof passed after guard synchronization.
 
   [NEXT_ACTION]
-  - Keep audit docs synchronized append-only for future code/test/contract/reason-code/command/evidence changes. Do not create duplicate canonical contracts; extend/reconcile the existing owner entry.
-
-
-
-
-
+  - No remaining blocker for this scope. Keep Ops Environment Baseline DONE/LOCKED unless a future PHP/runtime/CI/output-noise change reopens the contract.
 
 - Fail-Safe Behavior / No Silent Failure -> DONE
 

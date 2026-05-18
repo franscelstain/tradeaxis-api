@@ -26,24 +26,26 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
+        $this->assertSame('Audit Docs Synchronization', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
         foreach ([$status, $tracker] as $document) {
             $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $document);
-            $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $document);
+            $this->assertStringContainsString('POST_SESSION_1_8_LOCKED_LOCAL_PHPUNIT_PASS', $document);
             $this->assertStringContainsString('OPERATIONAL_READINESS_CONTRACT', $document);
             $this->assertStringContainsString('PRODUCTION_VALIDATION_CONTRACT', $document);
+            $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);
         }
 
         $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $status);
         $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Audit Docs Synchronization', $tracker);
-        $this->assertStringContainsString('- Operational Readiness -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] OPERATIONAL_READINESS_CONTRACT', $status);
-        $this->assertStringContainsString('- OPERATIONAL_READINESS_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Operational Readiness', $tracker);
+        $this->assertStringContainsString('- Ops Environment Baseline -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] OPS_ENVIRONMENT_BASELINE_CONTRACT', $status);
+        $this->assertStringContainsString('- OPS_ENVIRONMENT_BASELINE_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Ops Environment Baseline', $tracker);
     }
 
     public function test_current_working_sections_start_with_active_session(): void
@@ -56,14 +58,13 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
+        $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
 
         foreach ($implementationContracts as $contractName) {
-            if (strpos($implementationEntry, $activeSession) !== false) {
-                $this->assertContains($contractName, $trackerContracts);
-            }
+            $this->assertContains($contractName, $trackerContracts, $contractName.' is referenced by implementation status but missing from contract tracker.');
         }
 
         $this->assertMatchesRegularExpression('/^- [A-Z0-9_]+_CONTRACT (?:->|→) (LOCKED|ENFORCED|PARTIAL|BLOCKED|REVIEW_REQUIRED)$/', $contractEntry);
@@ -116,6 +117,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
     {
         $governance = $this->readProjectFile('docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md');
         $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md');
+        $postSessionInventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md');
 
         foreach ([
             'AUDIT DOCS SYNCHRONIZATION HARD RULE',
@@ -129,8 +131,9 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             'RUNTIME ENVIRONMENT BASELINE HARD RULE',
             'operator-local PHP version',
             'operator-local PHPUnit version',
+            'POST_SESSION_1_8_LOCKED_LOCAL_PHPUNIT_PASS',
         ] as $needle) {
-            $this->assertStringContainsString($needle, $governance.$inventory);
+            $this->assertStringContainsString($needle, $governance.$inventory.$postSessionInventory);
         }
     }
 
@@ -138,12 +141,16 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
     {
         $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md');
+        $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md');
 
         foreach ([$status, $tracker, $inventory] as $document) {
             $this->assertStringContainsString('349 tests, 4558 assertions', $document);
             $this->assertStringContainsString('358 tests, 4711 assertions', $document);
             $this->assertStringContainsString('368 tests, 4927 assertions', $document);
+            $this->assertStringContainsString('435 tests, 6299 assertions', $document);
+            $this->assertStringContainsString('435 tests, 6318 assertions', $document);
+            $this->assertStringContainsString('164 tests, 3702 assertions', $document);
+            $this->assertStringContainsString('164 tests, 3721 assertions', $document);
             $this->assertStringContainsString('vendor/bin/phpunit tests/Unit/MarketData', $document);
             $this->assertStringContainsString('not a new container PHPUnit run', $document);
         }
@@ -166,23 +173,26 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 
-    public function test_locked_audit_docs_scope_has_local_pass_evidence_and_no_pending_claim(): void
+    public function test_post_session_audit_docs_scope_is_locked_after_final_local_proof(): void
     {
         $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md');
 
         $implementationBlock = $this->implementationBlock($status, 'Audit Docs Synchronization');
         $contractBlock = $this->contractBlock($tracker, 'AUDIT_DOCS_SYNCHRONIZATION_CONTRACT');
+        $combined = $implementationBlock.$contractBlock.$inventory;
 
         $this->assertStringContainsString('[NEXT_ACTION]', $implementationBlock);
-        $this->assertStringContainsString('[NEXT_ACTION]', $contractBlock);
-        $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $implementationBlock.$contractBlock);
-        $this->assertStringContainsString('OK (9 tests, 153 assertions)', $implementationBlock.$contractBlock);
-        $this->assertStringContainsString('OK (358 tests, 4711 assertions)', $implementationBlock.$contractBlock);
+        $this->assertStringContainsString('[LOCK_CONDITION]', $contractBlock);
+        $this->assertStringContainsString('POST_SESSION_1_8_LOCKED_LOCAL_PHPUNIT_PASS', $combined);
+        $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $combined);
+        $this->assertStringContainsString('ENV_UNSUPPORTED_PHP_VERSION', $combined);
+        $this->assertStringContainsString('164 tests, 3721 assertions', $combined);
+        $this->assertStringContainsString('435 tests, 6318 assertions', $combined);
         $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
         $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringNotContainsString('PENDING_LOCAL_PHPUNIT', $implementationBlock.$contractBlock);
-        $this->assertStringNotContainsString('ENFORCED, not LOCKED', $contractBlock);
+        $this->assertStringNotContainsString('PENDING_OPERATOR_LOCAL_PHPUNIT_RERUN', $combined);
     }
 
     private function activeSessionName(string $document): string
@@ -210,7 +220,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
     private function contractBlocksByStatus(string $tracker, string $status): array
     {
-        preg_match_all('/^- ([A-Z0-9_]+_CONTRACT) -> '.preg_quote($status, '/').'\R(?P<body>.*?)(?=^- [A-Z0-9_]+_CONTRACT ->|\z)/ms', $tracker, $matches, PREG_SET_ORDER);
+        preg_match_all('/^- ([A-Z0-9_]+_CONTRACT) -> '.preg_quote($status, '/').'\R(?P<body>.*?)(?=^- [A-Z0-9_]+_CONTRACT (?:->|→)|\z)/msu', $tracker, $matches, PREG_SET_ORDER);
 
         $blocks = [];
         foreach ($matches as $match) {
@@ -236,7 +246,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
     private function implementationBlock(string $status, string $name): string
     {
-        $pattern = '/^- '.preg_quote($name, '/').' -> [A-Z_]+\R.*?(?=^- .+ -> [A-Z_]+\R|\z)/ms';
+        $pattern = '/^- '.preg_quote($name, '/').' -> [A-Z_]+\R.*?(?=^- .+ (?:->|→) [A-Z_]+\R|\z)/msu';
         $this->assertMatchesRegularExpression($pattern, $status);
         preg_match($pattern, $status, $match);
 

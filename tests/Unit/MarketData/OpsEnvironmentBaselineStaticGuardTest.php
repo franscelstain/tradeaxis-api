@@ -119,19 +119,22 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
     {
         $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        $inventory = $this->read('docs/market_data/audit/OPS_ENVIRONMENT_BASELINE_INVENTORY.md');
 
         foreach ([$status, $tracker] as $document) {
             $this->assertStringContainsString("ACTIVE SESSION:
-- Ops Environment Baseline", $document);
+- Audit Docs Synchronization", $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);
             $this->assertStringContainsString('LOCKED_LOCAL_RUNTIME_PROOF', $document);
-            $this->assertStringContainsString('OPERATOR_LOCAL_TARGETED_RUNTIME_PROOF_PASS', $document);
-            $this->assertStringContainsString('OPERATOR_LOCAL_FULL_MARKET_DATA_SUITE_PASS', $document);
             $this->assertStringContainsString('OK (435 tests, 6299 assertions)', $document);
             $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $document);
+            $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $document);
             $this->assertStringNotContainsString('READY_FOR_FINAL_LOCAL_FULL_SUITE_RERUN', $document);
         }
 
+        $opsEvidence = $status.$tracker.$inventory;
+        $this->assertStringContainsString('OPERATOR_LOCAL_TARGETED_RUNTIME_PROOF_PASS', $opsEvidence);
+        $this->assertStringContainsString('OPERATOR_LOCAL_FULL_MARKET_DATA_SUITE_PASS', $opsEvidence);
         $this->assertStringContainsString('- Ops Environment Baseline -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] OPS_ENVIRONMENT_BASELINE_CONTRACT', $status);
         $this->assertStringContainsString('- OPS_ENVIRONMENT_BASELINE_CONTRACT -> LOCKED', $tracker);
