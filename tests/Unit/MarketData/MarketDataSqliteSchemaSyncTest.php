@@ -139,6 +139,39 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
         }
     }
 
+    public function test_coverage_decimal_precision_is_synchronized_across_schema_migration_and_sqlite_mirror(): void
+    {
+        $schema = file_get_contents(dirname(__DIR__, 3).'/docs/market_data/db/Database_Schema_MariaDB.sql');
+        $metadata = file_get_contents(dirname(__DIR__, 3).'/docs/market_data/db/DB_FIELDS_AND_METADATA.md');
+        $migration = file_get_contents(dirname(__DIR__, 3).'/database/migrations/2026_05_19_000001_widen_market_data_coverage_decimal_precision.php');
+        $sqlite = file_get_contents(dirname(__DIR__, 3).'/tests/Support/UsesMarketDataSqlite.php');
+
+        foreach ([
+            'coverage_ratio DECIMAL(12,6) NULL',
+            'coverage_min_threshold DECIMAL(12,6) NULL',
+            'expected_coverage_ratio DECIMAL(12,6) NULL',
+            'expected_coverage_min_threshold DECIMAL(12,6) NULL',
+        ] as $definition) {
+            $this->assertStringContainsString($definition, $schema);
+        }
+
+        foreach ([
+            'coverage_ratio',
+            'coverage_min_threshold',
+            'expected_coverage_ratio',
+            'expected_coverage_min_threshold',
+        ] as $column) {
+            $this->assertStringContainsString($column, $migration);
+        }
+
+        $this->assertStringContainsString('DECIMAL(12,6)', $metadata);
+        $this->assertStringNotContainsString('DECIMAL(8,6)', $schema.$metadata);
+        $this->assertStringContainsString("decimal('coverage_ratio', 12, 6)", $sqlite);
+        $this->assertStringContainsString("decimal('coverage_min_threshold', 12, 6)", $sqlite);
+        $this->assertStringContainsString("decimal('expected_coverage_ratio', 12, 6)", $sqlite);
+        $this->assertStringContainsString("decimal('expected_coverage_min_threshold', 12, 6)", $sqlite);
+    }
+
     public function test_sqlite_schema_enforces_db_integrity_keys_and_runtime_indexes(): void
     {
         foreach ([

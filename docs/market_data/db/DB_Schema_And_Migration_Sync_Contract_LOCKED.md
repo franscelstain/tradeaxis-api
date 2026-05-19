@@ -270,3 +270,69 @@ The post-migration `Column_Index.xlsx` runtime DB evidence was reviewed for the 
 The checked runtime indexes align with the locked index intent for the supplied tables. Foreign key constraints are governed by migration/schema contract review and are not expected to be represented as `SHOW INDEX` rows.
 
 Final result: **DB schema and migration sync scope is DONE for the checked market-data tables.**
+
+---
+
+## 13. 2026-05-19 DB Schema / Migration Sync Refresh
+
+Status: LOCKED + IMPLEMENTED + VALIDATED
+
+### Drift Found
+
+| Area | Finding | Decision |
+|---|---|---|
+| Coverage decimal precision | Before this refresh, `Database_Schema_MariaDB.sql` declared `eod_runs.coverage_ratio`, `eod_runs.coverage_min_threshold`, `md_replay_daily_metrics.coverage_ratio`, `md_replay_daily_metrics.coverage_min_threshold`, `md_replay_daily_metrics.expected_coverage_ratio`, and `md_replay_daily_metrics.expected_coverage_min_threshold` with 8,6 precision while migrations/SQLite/runtime usage target `DECIMAL(12,6)`. | Authoritative SQL docs and deployed runtime remediation migration must use `DECIMAL(12,6)`. |
+| Publication sidecar DDL | `EOD_Publications_Table.sql` lagged the canonical schema by missing lineage/source-file fields and runtime lookup indexes. | Sidecar DDL mirrors `Database_Schema_MariaDB.sql`; `is_current` is mirror/cache only. |
+| Pointer sidecar DDL | `EOD_Current_Publication_Pointer_Table.sql` lagged the canonical schema by missing `idx_current_publication_pointer_run_version` and by describing a weaker pointer policy. | Pointer DDL mirrors `Database_Schema_MariaDB.sql`; `eod_current_publication_pointer` is the sole authoritative current pointer. |
+| Index contract | `Indices_and_Constraints_Contract_LOCKED.md` did not list the later runtime integrity indexes added by DB-integrity hardening. | Addendum records the active index/unique contract without reopening unrelated policy. |
+
+### Final Schema Decisions
+
+- Coverage precision is `DECIMAL(12,6)` for persisted actual and expected coverage ratio/threshold fields.
+- `eod_current_publication_pointer` owns current-publication identity through `PRIMARY KEY (trade_date)` and unique `publication_id`.
+- `eod_publications.is_current` and `eod_runs.is_current_publication` remain mirror/cache flags validated against the pointer; they are not competing current mechanisms.
+- Pointer `publication_id` keeps an explicit FK to `eod_publications(publication_id)`.
+- Pointer `run_id` / `publication_version`, run/publication mirrors, correction lineage, replay/evidence linkage, and live artifact publication/run links remain governed by the existing `HYBRID_REQUIRED` implicit-integrity policy unless a future migration/data-cleanup session proves physical FK expansion safe.
+
+### Runtime Migration
+
+Added forward-only precision remediation migration:
+
+- `database/migrations/2026_05_19_000001_widen_market_data_coverage_decimal_precision.php`
+
+This migration widens existing MySQL/MariaDB deployments to `DECIMAL(12,6)` for:
+
+- `eod_runs.coverage_ratio`
+- `eod_runs.coverage_min_threshold`
+- `md_replay_daily_metrics.coverage_ratio`
+- `md_replay_daily_metrics.coverage_min_threshold`
+- `md_replay_daily_metrics.expected_coverage_ratio`
+- `md_replay_daily_metrics.expected_coverage_min_threshold`
+
+Rollback intentionally does not narrow precision because narrowing can truncate valid audit/runtime evidence.
+
+### Validation Evidence
+
+Current local validation completed after this refresh:
+
+- `php -l database/migrations/2026_05_19_000001_widen_market_data_coverage_decimal_precision.php` -> No syntax errors detected.
+- `php -l tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` -> No syntax errors detected.
+- `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> No syntax errors detected.
+- `php -l tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> No syntax errors detected.
+- `php -l tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> No syntax errors detected.
+- `vendor/bin/phpunit tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` -> OK (5 tests, 139 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (9 tests, 297 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Schema"` -> OK (15 tests, 357 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "DbIntegrity"` -> OK (11 tests, 892 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> OK (106 tests, 1269 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> OK (82 tests, 1164 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"` -> OK (68 tests, 1336 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (55 tests, 850 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> OK (54 tests, 989 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (9 tests, 297 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (169 tests, 3842 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (447 tests, 6488 assertions).
+- `php artisan migrate:fresh --env=testing` -> PASS; migration `2026_05_19_000001_widen_market_data_coverage_decimal_precision` applied.
+- Runtime `information_schema.COLUMNS` precision smoke -> PASS; the six coverage ratio/threshold fields report precision 12 and scale 6.
+
+Final result: **DB schema and migration sync scope is DONE/LOCKED for this source-of-truth ZIP.** This does not claim full market-data production-ready status; read-side runtime proof, evidence/replay runtime proof, ops runtime matrix, and roadmap-wide final audit synchronization remain separate scopes unless independently closed.

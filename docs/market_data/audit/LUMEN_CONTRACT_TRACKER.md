@@ -3,36 +3,36 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Coverage Policy Reconciliation
+- Read-Side Consumer Surface Completion
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Define the active reconciliation contract for coverage policy drift across locked docs, config, code, tests, command output, evidence export, replay verification, and audit docs.
-- Close the post-reconciliation gap-closure obligations for active wording cleanup, legacy `BLOCKED` coverage normalization, persisted data cleanup, evidence/replay aliases, command output, and runtime proof.
-- Preserve existing coverage-gate enforcement history while recording the current threshold/status reconciliation without claiming full production-ready.
-- Lock this contract after current scoped tests/migration/runtime proof passed after the patch.
+- Revalidate and lock the existing read-side pointer enforcement contract for the latest source-of-truth ZIP after schema/migration sync.
+- Record `READ_SIDE_SCOPE = INTERNAL_ONLY` because no market-data HTTP/API route/controller/resource exists in this source state.
+- Require every current consumer read path to resolve via `eod_current_publication_pointer` and reject non-readable/non-sealed/non-PASS/non-current states.
+- Require explicit no-readable fail-safe behavior with `reason_code=NO_READABLE_PUBLICATION`.
+- Do not claim full market-data production-ready from this read-side contract alone.
 
 [SESSION_GOAL]
-- Make coverage policy stop blocking the production-readiness roadmap by locking one active threshold/status model and its enforcement surfaces.
+- Remove read-side consumer surface as a production-readiness blocker for the market-data roadmap.
 
 [SESSION_NOTES]
 - Local PHP version for this patch is PHP 7.4.33.
 - Local PHPUnit version for this patch is PHPUnit 9.6.34.
 - Existing locked contracts retain their own local evidence and final rules for prior source states.
-- `COVERAGE_POLICY_RECONCILIATION_CONTRACT` is the active session contract for this threshold/status reconciliation and references the existing coverage gate enforcement contract as the runtime owner.
-- Gap-closure proof adds migration cleanup, output-boundary legacy raw tracing, and dedicated behavioral/static tests for final coverage-policy normalization.
-- This contract is LOCKED for coverage-policy reconciliation because targeted coverage/audit/static/full MarketData validation, migration, and relevant command/evidence/replay command-surface proof passed after this patch.
+- `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` remains the single canonical contract for this read-side completion; no duplicate read-side contract was created.
+- The patch adds reason-coded no-readable behavior, synchronized reason-code registry/seed entries, read-side inventory/contract clarifications, behavioral tests, static guards, and audit guard expectations.
+- This contract is LOCKED for read-side consumer surface because targeted read-side/anti-bypass/static/audit/replay/evidence/pointer/publication/correction tests, command/help smoke checks, syntax checks, and full MarketData PHPUnit passed after this patch.
 
 [RUNTIME_ENVIRONMENT]
 - Local PHP version: PHP 7.4.33.
 - Local PHPUnit version: PHPUnit 9.6.34.
-- Artisan command surface status: PASS for command discovery/help and expected fail-closed blocked inputs.
-- Migration status: PASS for `php artisan migrate --env=testing`.
+- Artisan migration status: not part of this read-side patch.
 - PHPUnit status: PASS for targeted and full MarketData validation after this patch.
-- Evidence/replay command smoke status: PASS/EXPECTED_MISMATCH; evidence export for local run 1 completed with final coverage `NOT_EVALUABLE`, while replay verify against a non-matching committed fixture failed clearly and generated replay artifacts containing the required coverage aliases.
+- Evidence/replay command smoke status: PASS for required list/help surfaces; evidence export runtime proof remains next-roadmap scope.
 - Operator-local historical proof available: StaticGuard OK (164 tests, 3702 assertions) and full MarketData OK (435 tests, 6299 assertions) from Ops Environment Baseline closure.
-- Runtime authority for LOCKED coverage reconciliation: current local proof from this patch on 2026-05-18.
+- Runtime authority for LOCKED read-side completion: current local proof from this patch on 2026-05-19.
 
 ---
 ## OPERATIONAL STATUS
@@ -54,6 +54,142 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING CONTRACT
 
+
+- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-19
+
+  [RELATED_IMPLEMENTATION] Read-Side Consumer Surface Completion / Final Sweep Revalidation
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-01 -> Canonical read-side pointer enforcement contract opened under audit governance and locked the official consumer gateway.
+  - 2026-05-12 -> Final sweep traced consumer surfaces, found no market-data HTTP/controller/resource/dashboard/report consumer, classified evidence/replay/admin/producer exceptions, and locked the same contract with operator-local proof.
+  - 2026-05-19 -> Completion session reopened the same canonical contract after DB schema/migration sync and confirmed the source-state scope is `READ_SIDE_SCOPE = INTERNAL_ONLY`.
+  - 2026-05-19 -> Patch made no-readable current publication fail-safe explicit with `NO_READABLE_PUBLICATION`, added a domain exception and command/replay case rendering, synchronized reason-code registry/seed, and updated contract/inventory/static guard proof.
+  - 2026-05-19 -> Historical 2026-05-12 tracker block is preserved below as context, not as a duplicate canonical `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` entry.
+
+  [DEFINED]
+  - Consumer current reads must resolve through `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)` or a repository query with equivalent pointer/current/readable predicates.
+  - `READ_SIDE_SCOPE = INTERNAL_ONLY`; no market-data HTTP/API route/controller/resource is in scope for this source state.
+  - Valid current readable publication requires `eod_current_publication_pointer` -> `eod_publications`, pointer trade date equality, `seal_state=SEALED`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `run.is_current_publication=1`, and run/publication/pointer mirror identity.
+  - No readable current publication must fail safe with no payload and `reason_code=NO_READABLE_PUBLICATION` at internal command/read boundaries that expose the failure.
+  - Evidence/replay historical access is allowed only through explicit selector/publication audit resolvers and must be labelled historical/audit, not current consumer data.
+
+  [IMPLEMENTED]
+  - `SessionSnapshotService::capture` resolves the current readable publication before eligibility scope reads and throws `NoReadablePublicationException` when absent.
+  - `CaptureSessionSnapshotCommand` renders `status=BLOCKED`, `reason_code=NO_READABLE_PUBLICATION`, and no data payload when session snapshot has no readable current publication.
+  - `EligibilitySnapshotScopeRepository::getScopeForTradeDate` reads `eod_eligibility` only through pointer/publication/run joins with sealed SUCCESS/READABLE/PASS/current mirror predicates.
+  - `EodEvidenceRepository` current read paths remain pointer-scoped; historical evidence paths use selector-scoped audit methods and publication-bound history/live rows as appropriate.
+  - `ReplayBackfillService` and `ReplayBackfillCommand` record `NO_READABLE_PUBLICATION` for missing current readable publication on explicit backfill dates.
+  - `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` are synchronized at 325 reason codes including `NO_READABLE_PUBLICATION`.
+
+  [ENFORCED]
+  - `ReadablePublicationReadContractIntegrationTest.php` proves pointer-scoped rows are returned and non-readable/coverage-fail/mirror-mismatch/current-pointer mismatch rows do not leak.
+  - `ReadSideAntiBypassStaticContractTest.php` guards the official gateway and known consumer files against latest/MAX/raw/staging bypass.
+  - `ReadSideConsumerSurfaceFinalSweepStaticGuardTest.php` guards internal-only scope, canonical entry point, consumer surface matrix, no-readable behavior, evidence/replay exception rule, and audit docs tracking.
+  - `AuditDocsSynchronizationStaticGuardTest.php` guards active session alignment, no duplicate canonical contract entries, registry/seed sync, and locked evidence sections.
+
+  [VALIDATED]
+  - Static trace completed across routes, HTTP controllers, application services, persistence repositories, commands, tests, and audit/book/db/api docs relevant to read-side.
+  - `php -l` changed PHP files -> No syntax errors detected.
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` -> OK (8 tests, 15 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReadSideAntiBypassStaticContractTest.php` -> OK (4 tests, 69 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReadSideConsumerSurfaceFinalSweepStaticGuardTest.php` -> OK (9 tests, 193 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "ReadSide"` -> OK (13 tests, 262 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "ReadablePublication"` -> OK (8 tests, 15 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> OK (108 tests, 1279 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> OK (82 tests, 1164 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"` -> OK (68 tests, 1336 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> OK (54 tests, 994 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (55 tests, 852 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (9 tests, 303 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (9 tests, 303 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (169 tests, 3866 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData` -> OK (449 tests, 6522 assertions).
+  - `php artisan list market-data` -> PASS; 20 market-data commands listed.
+  - `php artisan market-data:promote --help` -> PASS.
+  - `php artisan market-data:evidence:export --help` -> PASS.
+  - `php artisan market-data:replay:verify --help` -> PASS.
+
+  [FINAL_RULE]
+  - LOCKED. No market-data current consumer may read raw/staging/latest/current artifact data unless it is resolved through the current readable publication pointer and validated against sealed publication, SUCCESS/READABLE/PASS run, current mirror state, run-publication metadata, pointer trade date, and publication scope.
+  - No consumer may fallback to raw/staging/latest `MAX(date)`/latest successful run when pointer resolution fails.
+  - No-readable current publication behavior is `NO_READABLE_PUBLICATION` with no payload.
+  - Historical evidence/replay access is selector-scoped audit behavior and must not be used as a current consumer resolver.
+
+  [LOCK_CONDITION]
+  - Satisfied for this source-of-truth ZIP by current local syntax checks, targeted read-side/anti-bypass/static/audit/replay/evidence/pointer/publication/correction tests, command/help smoke checks, and full `tests/Unit/MarketData` PASS.
+  - Reopen only if a future route/controller/API/resource, repository read method, service, command, evidence/replay path, pointer resolver, reason-code behavior, or contract text changes the read-side consumer surface.
+
+- DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-19
+
+  [RELATED_IMPLEMENTATION] DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization
+
+  [REVIEW_STATUS] LOCKED_LOCAL_PHPUNIT_AND_MIGRATION_PASS
+
+  [HISTORY]
+  - 2026-05-01 -> Contract was locked for the original four-way schema sync source state with local migration/schema/repository/full MarketData evidence.
+  - 2026-05-19 -> Refresh trace found coverage decimal precision drift between authoritative SQL docs and migration/SQLite/runtime assumptions.
+  - 2026-05-19 -> Refresh trace found sidecar publication/current-pointer SQL docs and index contract lagging the canonical runtime schema and pointer policy.
+  - 2026-05-19 -> Patch aligned schema docs, added precision remediation migration, strengthened schema sync test coverage, added schema sync inventory, and updated audit guard active-session expectations.
+  - 2026-05-19 -> Current validation passed: syntax checks, schema/audit/static targeted tests, full MarketData PHPUnit, `migrate:fresh --env=testing`, and runtime `information_schema` coverage precision smoke check.
+
+  [DEFINED]
+  - Runtime schema reference: `docs/market_data/db/Database_Schema_MariaDB.sql`.
+  - Sidecar schema references: `docs/market_data/db/EOD_Publications_Table.sql` and `docs/market_data/db/EOD_Current_Publication_Pointer_Table.sql`.
+  - Migration/runtime generation reference: market-data migrations under `database/migrations/`.
+  - Test mirror reference: `tests/Support/UsesMarketDataSqlite.php`.
+  - Query validation scope: market-data repositories under `app/Infrastructure/Persistence/MarketData/` plus services that persist or resolve runs, publications, corrections, evidence, replay, and pointer state.
+
+  [IMPLEMENTED]
+  - SQL docs and metadata use `DECIMAL(12,6)` for run coverage ratio/threshold and replay actual/expected coverage ratio/threshold fields.
+  - Forward-only migration `2026_05_19_000001_widen_market_data_coverage_decimal_precision.php` widens existing MySQL/MariaDB deployments.
+  - Publication and pointer sidecar DDL now mirror canonical schema columns, indexes, and pointer-vs-`is_current` semantics.
+  - Index contract addendum records the current runtime indexes and pointer uniqueness contract.
+  - `MarketDataSqliteSchemaSyncTest` guards SQL docs, metadata, remediation migration, and SQLite mirror precision.
+  - `DB_SCHEMA_MIGRATION_SYNC_INVENTORY.md` records the drift matrix, decisions, patch matrix, validation matrix, and remaining runtime proof risk.
+
+  [ENFORCED]
+  - No coverage ratio/threshold field may remain on the old 8,6 precision in active schema/metadata docs.
+  - `eod_current_publication_pointer` remains the sole authoritative current-publication pointer; `is_current` fields are mirror/cache only.
+  - FK policy remains `HYBRID_REQUIRED`: pointer/history publication FKs stay explicit, while phase-dependent lifecycle relations stay implicit and guarded.
+
+  [VALIDATED]
+  - Local validation completed in the current workspace for this 2026-05-19 DB schema/migration sync patch.
+  - Static trace completed across SQL docs, sidecar DB docs, migrations, SQLite mirror, repository usage, pointer/correction/replay/evidence services, and audit guards.
+  - `DB_SCHEMA_MIGRATION_SYNC_INVENTORY.md` records the concrete schema/migration drift mapping for this refresh.
+  - `php -l database/migrations/2026_05_19_000001_widen_market_data_coverage_decimal_precision.php` -> No syntax errors detected.
+  - `php -l tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` -> No syntax errors detected.
+  - `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> No syntax errors detected.
+  - `php -l tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> No syntax errors detected.
+  - `php -l tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> No syntax errors detected.
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` -> OK (5 tests, 139 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (9 tests, 297 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Schema"` -> OK (15 tests, 357 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "DbIntegrity"` -> OK (11 tests, 892 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> OK (106 tests, 1269 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> OK (82 tests, 1164 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"` -> OK (68 tests, 1336 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (55 tests, 850 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> OK (54 tests, 989 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (9 tests, 297 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (169 tests, 3842 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData` -> OK (447 tests, 6488 assertions).
+  - `php artisan migrate:fresh --env=testing` -> PASS; migration `2026_05_19_000001_widen_market_data_coverage_decimal_precision` applied.
+  - Runtime precision smoke check against `information_schema.COLUMNS` -> PASS; six coverage ratio/threshold columns report `NUMERIC_PRECISION=12` and `NUMERIC_SCALE=6`.
+
+  [FINAL_RULE]
+  - LOCKED. Market-data DB schema changes must stay synchronized across authoritative SQL docs, Laravel/Lumen migrations, SQLite test schema, repository/test usage, and audit ledger.
+  - Coverage precision is `DECIMAL(12,6)` for actual and expected persisted coverage ratio/threshold fields.
+  - Current-publication identity is pointer-owned by `eod_current_publication_pointer`; mirror fields must never become competing current mechanisms.
+
+  [LOCK_CONDITION]
+  - LOCKED for this source-of-truth ZIP after current targeted schema/audit/static validation, full `tests/Unit/MarketData`, `migrate:fresh --env=testing`, and runtime precision smoke proof passed.
+  - Reopen only if future migration, SQL schema, SQLite mirror, repository query, or fixture changes introduce new drift or require a deliberate breaking change.
 
 - COVERAGE_POLICY_RECONCILIATION_CONTRACT -> LOCKED
 
@@ -470,7 +606,7 @@ ACTIVE SESSION:
   [LOCK_CONDITION]
   - Satisfied. Operator-local targeted filters passed across candidate-scope, Promote, Manual, Correction, Finalize, Publication, Pointer, Evidence, Replay, CommandSurface, StaticGuard, and Integration surfaces; full `tests/Unit/MarketData` passed with `OK (397 tests, 5461 assertions)`.
 
-- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED
+### Historical READ_SIDE_POINTER_ENFORCEMENT_CONTRACT Context (2026-05-12)
 
   [LAST_UPDATED] 2026-05-12
 
@@ -1757,7 +1893,9 @@ ACTIVE SESSION:
 
 ---
 
-- DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT → LOCKED
+## Historical 2026-05-01 DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT Validation
+
+Historical status: LOCKED for the 2026-05-01 source state; current canonical contract entry is under `## CURRENT WORKING CONTRACT`.
 
   [LAST_UPDATED] 2026-05-01
 

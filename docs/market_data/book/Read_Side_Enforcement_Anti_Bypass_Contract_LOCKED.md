@@ -21,6 +21,13 @@ Consumer read path includes every path that returns, exports, verifies, displays
 
 A path remains a consumer read path even when it is executed from CLI, tests, evidence tooling, or replay tooling.
 
+Current source-state scope decision:
+
+- `READ_SIDE_SCOPE = INTERNAL_ONLY`
+- There is no public HTTP/API market-data read route, controller, resource, or response surface in this source state.
+- Read-side production-readiness for this contract applies to internal repository/service/CLI/evidence/replay consumer surfaces only.
+- A future public HTTP/API market-data consumer must use the same current-readable publication gateway and must be added to this contract, the inventory, and behavioral route/controller tests before it can be included in scope.
+
 ## C. Pointer-Only Rule
 
 A consumer read path must resolve readable data through the official pointer gateway:
@@ -78,7 +85,7 @@ These paths must be named and scoped as write/admin/test behavior. They must not
 If no current readable publication exists:
 
 - API/read services must return a controlled empty/error result according to their response contract.
-- CLI read commands must display `NOT_READABLE` or `NO_CURRENT_READABLE_PUBLICATION`.
+- CLI read commands must display `status=BLOCKED` or equivalent non-success status with `reason_code=NO_READABLE_PUBLICATION`.
 - Evidence export and replay verification must fail-safe with a reason code or empty controlled result.
 - No consumer path may fallback to raw/staging/latest-date rows.
 
@@ -144,4 +151,3 @@ Regression reconciliation:
 
 - Consumer gateway, eligibility scope, and evidence reads remain mirror-enforced.
 - `EodPublicationRepository::findLatestReadablePublicationBefore($tradeDate)` remains internal-only fallback behavior for pipeline hold/degraded-mode/correction preservation and must not be used as a consumer latest shortcut.
-

@@ -1,6 +1,7 @@
 <?php
 
 use App\Application\MarketData\DTOs\MarketDataStageInput;
+use App\Application\MarketData\Exceptions\NoReadablePublicationException;
 use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
@@ -255,6 +256,36 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('slot_tolerance_minutes=3', $display);
         $this->assertStringContainsString('slot_miss_count=0', $display);
         $this->assertStringContainsString('output_dir=C:/tmp/session-snapshot', $display);
+    }
+
+    public function test_session_snapshot_capture_command_blocks_without_readable_publication(): void
+    {
+        $service = m::mock(SessionSnapshotService::class);
+        $service->shouldReceive('capture')
+            ->once()
+            ->with('2026-03-17', 'PREOPEN', 'manual_file', 'storage/app/manual.csv', null)
+            ->andThrow(new NoReadablePublicationException('2026-03-17', 'Session snapshot'));
+
+        $this->app->instance(SessionSnapshotService::class, $service);
+
+        $command = new CaptureSessionSnapshotCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'trade_date' => '2026-03-17',
+            'snapshot_slot' => 'PREOPEN',
+            '--source_mode' => 'manual_file',
+            '--input_file' => 'storage/app/manual.csv',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=NO_READABLE_PUBLICATION', $display);
+        $this->assertStringContainsString('trade_date=2026-03-17', $display);
+        $this->assertStringContainsString('snapshot_slot=PREOPEN', $display);
     }
 
     public function test_session_snapshot_purge_command_renders_summary(): void
@@ -1010,7 +1041,8 @@ class OpsCommandSurfaceTest extends TestCase
                         'expected_outcome' => 'MATCH',
                         'observed_outcome' => 'ERROR',
                         'passed' => false,
-                        'error_message' => 'Readable current publication not found for replay backfill trade date 2026-03-18.',
+                        'reason_code' => 'NO_READABLE_PUBLICATION',
+                        'error_message' => 'NO_READABLE_PUBLICATION: Replay backfill requires a readable current publication for trade date 2026-03-18.',
                     ],
                 ],
             ]);
@@ -1036,7 +1068,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('fixture_path=/tmp/default-fixtures/valid_case', $display);
         $this->assertStringContainsString('all_passed=0', $display);
         $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001', $display);
-        $this->assertStringContainsString('trade_date=2026-03-18 | status=ERROR | expected=MATCH | observed=ERROR | passed=0 | error=Readable current publication not found for replay backfill trade date 2026-03-18.', $display);
+        $this->assertStringContainsString('trade_date=2026-03-18 | status=ERROR | expected=MATCH | observed=ERROR | passed=0 | error=NO_READABLE_PUBLICATION: Replay backfill requires a readable current publication for trade date 2026-03-18. | reason_code=NO_READABLE_PUBLICATION', $display);
     }
 
 

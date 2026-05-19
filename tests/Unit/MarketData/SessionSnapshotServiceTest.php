@@ -2,6 +2,7 @@
 
 require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
 
+use App\Application\MarketData\Exceptions\NoReadablePublicationException;
 use App\Application\MarketData\Services\SessionSnapshotService;
 use App\Infrastructure\MarketData\Source\LocalFileSessionSnapshotAdapter;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
@@ -119,6 +120,35 @@ class SessionSnapshotServiceTest extends TestCase
         $this->assertSame(1, $summary['slot_miss_count']);
         $this->assertSame('09:10:00', $summary['slot_anchor_time']);
         $this->assertFileExists($outputDir.'/market_data_session_snapshot_summary.json');
+    }
+
+    public function test_capture_blocks_with_reason_code_when_no_readable_publication_exists()
+    {
+        $publications = m::mock(EodPublicationRepository::class);
+        $runs = m::mock(EodRunRepository::class);
+        $scope = m::mock(EligibilitySnapshotScopeRepository::class);
+        $snapshots = m::mock(SessionSnapshotRepository::class);
+        $adapter = m::mock(LocalFileSessionSnapshotAdapter::class);
+
+        $publications->shouldReceive('findCurrentPublicationForTradeDate')
+            ->once()
+            ->with('2026-03-20')
+            ->andReturn(null);
+        $runs->shouldNotReceive('findByRunId');
+        $scope->shouldNotReceive('getScopeForTradeDate');
+        $snapshots->shouldNotReceive('replaceSlotRows');
+        $adapter->shouldNotReceive('loadRows');
+
+        $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
+
+        try {
+            $service->capture('2026-03-20', 'OPEN_CHECK', 'manual_file', '/tmp/snapshot.json');
+            $this->fail('Expected no-readable publication exception.');
+        } catch (NoReadablePublicationException $e) {
+            $this->assertSame('NO_READABLE_PUBLICATION', $e->reasonCode());
+            $this->assertSame('2026-03-20', $e->tradeDate());
+            $this->assertStringContainsString('NO_READABLE_PUBLICATION:', $e->getMessage());
+        }
     }
 
     public function test_purge_apply_writes_summary()

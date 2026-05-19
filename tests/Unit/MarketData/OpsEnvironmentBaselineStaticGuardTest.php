@@ -123,7 +123,7 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
 
         foreach ([$status, $tracker] as $document) {
             $this->assertStringContainsString("ACTIVE SESSION:
-- Coverage Policy Reconciliation", $document);
+- Read-Side Consumer Surface Completion", $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);
             $this->assertStringContainsString('LOCKED_LOCAL_RUNTIME_PROOF', $document);
             $this->assertStringContainsString('OK (435 tests, 6299 assertions)', $document);
@@ -134,6 +134,7 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
         }
 
         $opsEvidence = $status.$tracker.$inventory;
+        $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $opsEvidence);
         $this->assertStringContainsString('OPERATOR_LOCAL_TARGETED_RUNTIME_PROOF_PASS', $opsEvidence);
         $this->assertStringContainsString('OPERATOR_LOCAL_FULL_MARKET_DATA_SUITE_PASS', $opsEvidence);
         $this->assertStringContainsString('- Ops Environment Baseline -> DONE', $status);

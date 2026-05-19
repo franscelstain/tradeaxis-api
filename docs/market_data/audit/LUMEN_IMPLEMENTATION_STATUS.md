@@ -3,40 +3,38 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Coverage Policy Reconciliation
+- Read-Side Consumer Surface Completion
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Reconcile the coverage policy conflict in the uploaded ZIP source of truth.
-- Lock one active threshold/default policy across docs, config, code, tests, command output, evidence export, replay verification, and audit docs.
-- Close the post-reconciliation coverage-policy gaps for active `BLOCKED` wording, legacy `coverage_gate_state=BLOCKED` normalization, persisted legacy data cleanup, evidence/replay alias proof, and command/runtime boundary output.
-- Preserve historical DONE/LOCKED audit records while recording this coverage reconciliation with current scoped PHPUnit/runtime proof.
-- Do not claim full market-data production-ready; DB schema sync, read-side runtime proof, evidence/replay runtime proof, ops runtime matrix, and final audit sync may still require later sessions.
+- Close the read-side consumer surface production-readiness blocker for the latest source-of-truth ZIP after DB schema/migration sync.
+- Decide and record `READ_SIDE_SCOPE = INTERNAL_ONLY` because no market-data HTTP/API route/controller/resource exists in this source state.
+- Keep every current consumer read path on `eod_current_publication_pointer` -> `eod_publications` -> sealed SUCCESS/READABLE/PASS artifact scope, with no raw/staging/latest/MAX(date) fallback.
+- Add explicit no-readable fail-safe behavior with `reason_code=NO_READABLE_PUBLICATION` for internal read-side command/service surfaces.
+- Preserve historical DONE/LOCKED audit records and do not claim full market-data production-ready; evidence/replay runtime proof matrix, ops runtime matrix, production proof pack, and final roadmap audit synchronization remain separate scopes if not closed by their own evidence.
 
 [SESSION_GOAL]
-- Remove coverage policy as a production-readiness blocker by making `MARKET_DATA_COVERAGE_MIN=0.98`, coverage `NOT_EVALUABLE`, quality `BLOCKED`, publishability/finalize/pointer/manual/correction/evidence/replay behavior, and audit docs agree.
+- Remove read-side consumer surface as a production-readiness blocker without overclaiming unrelated evidence/replay, ops runtime, production proof pack, or roadmap-final audit scopes.
 
 [SESSION_NOTES]
 - Source ZIP contains `vendor/`, `.env.testing`, `composer.lock`, market-data audit docs, inventories, ops docs, and MarketData static guards.
 - Local PHP version for this patch is PHP 7.4.33.
 - Local PHPUnit version is PHPUnit 9.6.34.
-- Current patch changes coverage-policy docs, coverage normalization, evidence/replay coverage aliases, coverage fixtures, and audit/static-guard synchronization only.
-- Gap-closure patch adds a dedicated coverage-state normalizer, a non-destructive legacy `BLOCKED` data cleanup migration, output-boundary legacy raw tracing, and explicit evidence/replay alias guards.
-- Historical operator-local DONE/LOCKED proof remains valid for its original source states only and is not reused as current proof for this patch.
-- This session is DONE for coverage-policy reconciliation and gap closure because targeted coverage/manual/finalize/publishability/replay/evidence/audit/static tests, full MarketData PHPUnit, migration, syntax checks, and command smoke checks passed after this patch.
+- Current patch changes read-side fail-safe code, read-side command/replay behavior, read-side tests/static guards, reason-code registry/seed, read-side contract/inventory docs, and audit ledger only.
+- Historical operator-local DONE/LOCKED proof remains preserved for its original source states and is not reused as current proof for this patch.
+- This session is DONE for read-side consumer surface because targeted read-side/anti-bypass/static/audit/replay/evidence/pointer/publication/correction tests, command/help smoke checks, syntax checks, and full MarketData PHPUnit passed after this patch.
 
 [RUNTIME_ENVIRONMENT]
 - Local PHP version: PHP 7.4.33.
 - Local PHPUnit version: PHPUnit 9.6.34.
-- Artisan command surface status: PASS for command discovery/help and expected fail-closed blocked inputs.
-- Migration status: PASS for `php artisan migrate --env=testing`.
+- Artisan migration status: not part of this read-side patch.
 - PHPUnit status: PASS for targeted and full MarketData validation after this patch.
-- Evidence/replay command smoke status: PASS/EXPECTED_MISMATCH; evidence export for local run 1 completed with `coverage_gate_state=NOT_EVALUABLE`, while replay verify against an intentionally non-matching committed fixture failed clearly with coverage mismatch output and generated replay artifacts containing the required aliases.
+- Evidence/replay command smoke status: PASS for help/list surfaces required by this read-side session; runtime evidence export proof remains next-roadmap scope.
 - Composer status: not used for this patch.
-- Validation available for this patch: file trace, static grep, `php -l`, targeted PHPUnit, full MarketData PHPUnit, and artisan command smoke checks.
+- Validation available for this patch: file trace, static grep, `php -l`, targeted PHPUnit, full MarketData PHPUnit, and artisan command help/list smoke.
 - Operator-local proof carried from prior sessions: available where explicitly recorded in each entry/inventory; not a new container PHPUnit run.
-- Runtime authority for DONE/LOCKED coverage reconciliation: current local proof from this patch on 2026-05-18.
+- Runtime authority for DONE read-side completion: current local proof from this patch on 2026-05-19.
 
 ---
 ## OPERATIONAL STATUS
@@ -58,6 +56,145 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING ENTRY
 
+
+- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE
+
+  [SESSION] Read-Side Consumer Surface Completion
+
+  [SESSION_STATUS] DONE
+
+  [LAST_UPDATED] 2026-05-19
+
+  [RELATED_CONTRACT] READ_SIDE_POINTER_ENFORCEMENT_CONTRACT
+
+  [REVIEW_STATUS] DONE_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-12 -> Final sweep previously traced the consumer surface, found no HTTP/controller/resource/dashboard/report market-data consumer, and locked the existing read-side pointer enforcement contract with operator-local proof for that source state.
+  - 2026-05-19 -> Completion session reopened the same canonical read-side scope after the DB schema/migration sync source-of-truth ZIP and re-ran the pre-check across audit governance, locked pointer/publication/coverage/correction/evidence/replay contracts, routes, HTTP controllers, application services, persistence repositories, commands, tests, and static guards.
+  - 2026-05-19 -> Scope decision recorded as `READ_SIDE_SCOPE = INTERNAL_ONLY`; no public market-data HTTP/API route/controller/resource exists in `routes/web.php` or `app/Http/**`.
+  - 2026-05-19 -> Consumer inventory confirmed the canonical gateway remains `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)`, with compatibility wrappers `findCurrentPublicationForTradeDate`, `findPointerResolvedPublicationForTradeDate`, and run-scoped `findReadableCurrentPublicationForRun`.
+  - 2026-05-19 -> Patch added `NoReadablePublicationException`, reason-coded session snapshot command blocking, reason-coded replay backfill case output, synchronized reason-code registry/seed with `NO_READABLE_PUBLICATION`, and tightened read-side/static/audit proof docs.
+  - 2026-05-19 -> Historical 2026-05-12 final-sweep block is preserved below as context, not as a duplicate canonical current implementation entry.
+
+  [IMPLEMENTATION]
+  - `SessionSnapshotService::capture` still resolves current readable publication before scope reads, and now throws `NoReadablePublicationException` when the pointer gateway returns null.
+  - `CaptureSessionSnapshotCommand` catches that exception and renders `status=BLOCKED`, `reason_code=NO_READABLE_PUBLICATION`, `trade_date`, and `snapshot_slot` without loading snapshot data.
+  - `ReplayBackfillService` still resolves each explicit date through `findCurrentPublicationForTradeDate`; missing current readable publication now records `reason_code=NO_READABLE_PUBLICATION` in the case summary.
+  - `ReplayBackfillCommand` renders case-level `reason_code` for no-readable/current failures.
+  - `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql` contain synchronized `NO_READABLE_PUBLICATION` entries.
+  - `READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md` records the final scope decision, canonical entry point, consumer matrix, no-readable behavior, and evidence/replay exception rule for this completion session.
+
+  [ENFORCEMENT]
+  - Consumer read paths must resolve through `eod_current_publication_pointer` and validate sealed publication, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, pointer trade date, and run/publication mirror identity.
+  - Session snapshot command/service, eligibility scope, evidence current reads, replay current reads, and replay backfill are guarded by behavioral tests and static no-bypass scans.
+  - Evidence/replay historical paths remain selector-scoped and audit-labelled; they do not masquerade as current consumer reads.
+  - HTTP/API scope is explicitly internal-only for this source state; any future HTTP/API consumer must add route/controller/resource tests proving the same pointer contract.
+
+  [FINAL_BEHAVIOR]
+  - `READ_SIDE_SCOPE = INTERNAL_ONLY`.
+  - Canonical read entry point: `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)`.
+  - No readable current publication behavior: no data payload and `reason_code=NO_READABLE_PUBLICATION` at internal command/read boundaries that expose the failure.
+  - Raw/staging/latest `MAX(date)` shortcuts remain forbidden for consumer paths.
+  - `HELD`, `FAILED`, `NOT_READABLE`, unsealed, non-current, pointer-mismatched, or coverage non-PASS publication states cannot be read as current consumer data.
+
+  [EVIDENCE]
+  - Static trace completed across `routes/**`, `app/Http/**`, `app/Application/MarketData/**`, `app/Infrastructure/Persistence/MarketData/**`, `app/Console/Commands/MarketData/**`, `tests/Unit/MarketData/**`, and relevant docs/audit files.
+  - `php -l` changed PHP files -> No syntax errors detected.
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` -> OK (8 tests, 15 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReadSideAntiBypassStaticContractTest.php` -> OK (4 tests, 69 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReadSideConsumerSurfaceFinalSweepStaticGuardTest.php` -> OK (9 tests, 193 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "ReadSide"` -> OK (13 tests, 262 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "ReadablePublication"` -> OK (8 tests, 15 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> OK (108 tests, 1279 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> OK (82 tests, 1164 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"` -> OK (68 tests, 1336 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> OK (54 tests, 994 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (55 tests, 852 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (9 tests, 303 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (9 tests, 303 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (169 tests, 3866 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData` -> OK (449 tests, 6522 assertions).
+  - `php artisan list market-data` -> PASS; 20 market-data commands listed.
+  - `php artisan market-data:promote --help` -> PASS.
+  - `php artisan market-data:evidence:export --help` -> PASS.
+  - `php artisan market-data:replay:verify --help` -> PASS.
+
+  [GAP]
+  - None for scoped read-side consumer surface after current local validation.
+
+  [REMAINING_RISK]
+  - This does not claim full market-data production-ready. Evidence Export Runtime Proof, broader replay runtime proof, ops runtime matrix, production proof pack, and final roadmap audit synchronization remain separate scopes.
+
+  [NEXT_ACTION]
+  - Proceed to Evidence Export Runtime Proof using this read-side-completed source ZIP as input.
+
+- DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization -> DONE
+
+  [SESSION] DB Schema & Migration Sync
+
+  [SESSION_STATUS] DONE
+
+  [LAST_UPDATED] 2026-05-19
+
+  [RELATED_CONTRACT] DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT
+
+  [REVIEW_STATUS] DONE_LOCAL_PHPUNIT_AND_MIGRATION_PASS
+
+  [HISTORY]
+  - 2026-05-01 -> Original schema sync scope reached DONE with local migration/schema/repository/full MarketData proof for that source state.
+  - 2026-05-19 -> Refresh trace found coverage decimal precision drift: authoritative SQL docs still used 8,6 precision while Laravel migrations, SQLite mirror, repository persistence, and replay/runtime assumptions target `DECIMAL(12,6)`.
+  - 2026-05-19 -> Refresh trace found sidecar `EOD_Publications_Table.sql` and `EOD_Current_Publication_Pointer_Table.sql` lagging the canonical schema for publication lineage/source fields, current-pointer run/version index, and pointer-vs-`is_current` policy wording.
+  - 2026-05-19 -> Patch aligned SQL docs/metadata/sidecar docs/index contract, added forward-only coverage precision remediation migration, strengthened schema sync test coverage, and updated audit guard expectations for this active session.
+  - 2026-05-19 -> Current validation passed: syntax checks, schema/audit/static targeted tests, full MarketData PHPUnit, `migrate:fresh --env=testing`, and runtime `information_schema` coverage precision smoke check.
+
+  [IMPLEMENTATION]
+  - `Database_Schema_MariaDB.sql` now uses `DECIMAL(12,6)` for run coverage ratio/threshold and replay actual/expected coverage ratio/threshold fields.
+  - `DB_FIELDS_AND_METADATA.md` now records coverage ratio/threshold as `DECIMAL(12,6)`.
+  - `EOD_Publications_Table.sql` mirrors canonical publication lineage, source-file identity, seal/hash, and runtime index fields.
+  - `EOD_Current_Publication_Pointer_Table.sql` mirrors canonical pointer PK/unique/FK/run-version index and states that it is the sole authoritative current pointer.
+  - `database/migrations/2026_05_19_000001_widen_market_data_coverage_decimal_precision.php` widens existing MySQL/MariaDB deployments to `DECIMAL(12,6)` without narrowing precision on rollback.
+  - `MarketDataSqliteSchemaSyncTest` now guards coverage decimal precision across SQL docs, metadata, remediation migration, and SQLite mirror.
+  - `DB_SCHEMA_MIGRATION_SYNC_INVENTORY.md` records the drift, decisions, patch matrix, validation matrix, and remaining runtime proof risk for this refresh.
+
+  [ENFORCEMENT]
+  - Schema sync tests prevent reintroducing the old 8,6 coverage precision into active SQL/metadata docs.
+  - Existing pointer/read-side guards continue to require pointer-first resolution through `eod_current_publication_pointer`.
+  - Existing DB integrity guards continue to enforce the `HYBRID_REQUIRED` FK/implicit-integrity policy.
+
+  [FINAL_BEHAVIOR]
+  - Runtime schema intent for coverage precision is `DECIMAL(12,6)`.
+  - `eod_current_publication_pointer` is the authoritative current-publication identity; `eod_publications.is_current` and `eod_runs.is_current_publication` are mirror/cache flags only.
+  - Publication/run/correction/replay/evidence lifecycle links remain explicit columns with repository/service guards unless a future FK expansion session proves physical FK safety.
+
+  [EVIDENCE]
+  - Static trace completed across SQL docs, migrations, SQLite mirror, repository query usage, pointer/correction/replay/evidence services, and audit static guards.
+  - `DB_SCHEMA_MIGRATION_SYNC_INVENTORY.md` records the table/area drift matrix and explicit FK/pointer/coverage decisions for this patch.
+  - `php -l database/migrations/2026_05_19_000001_widen_market_data_coverage_decimal_precision.php` -> No syntax errors detected.
+  - `php -l tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` -> No syntax errors detected.
+  - `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> No syntax errors detected.
+  - `php -l tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> No syntax errors detected.
+  - `php -l tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> No syntax errors detected.
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php` -> OK (5 tests, 139 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (9 tests, 297 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Schema"` -> OK (15 tests, 357 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "DbIntegrity"` -> OK (11 tests, 892 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Publication"` -> OK (106 tests, 1269 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Pointer"` -> OK (82 tests, 1164 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"` -> OK (68 tests, 1336 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (55 tests, 850 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"` -> OK (54 tests, 989 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (9 tests, 297 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (169 tests, 3842 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData` -> OK (447 tests, 6488 assertions).
+  - `php artisan migrate:fresh --env=testing` -> PASS; migration `2026_05_19_000001_widen_market_data_coverage_decimal_precision` applied.
+  - Runtime precision smoke check against `information_schema.COLUMNS` -> PASS; six coverage ratio/threshold columns report `NUMERIC_PRECISION=12` and `NUMERIC_SCALE=6`.
+
+  [GAP]
+  - None for schema/migration sync after current targeted/full validation and runtime migration proof.
+
+  [NEXT_ACTION]
+  - Use this patch as input for the next Read-Side Consumer Surface Completion session. Do not claim full market-data production-ready from schema/migration closure alone.
 
 - Coverage Policy Reconciliation -> DONE
 
@@ -530,7 +667,7 @@ ACTIVE SESSION:
   - Current implementation remains PARTIAL until full `tests/Unit/MarketData` passes locally.
 
 
-- Read-Side Consumer Surface Final Sweep -> DONE
+### Historical Read-Side Consumer Surface Final Sweep Context (2026-05-12)
 
   [LAST_UPDATED] 2026-05-12
 
@@ -1746,7 +1883,9 @@ ACTIVE SESSION:
 
 ---
 
-- DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization → DONE
+## Historical 2026-05-01 DB Schema & Migration Sync Validation
+
+Historical status: DONE for the 2026-05-01 source state; current canonical schema sync entry is under `## CURRENT WORKING ENTRY`.
 
   [LAST_UPDATED] 2026-05-01
 

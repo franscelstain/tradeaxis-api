@@ -130,6 +130,7 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('SNAP_SOURCE_RATE_LIMIT', 'INTRADAY', 'The session-snapshot source hit rate limiting.', 'WARN', 1),
 ('SNAP_PARTIAL_SCOPE', 'INTRADAY', 'The session snapshot captured only part of the planned scope.', 'WARN', 1),
 ('SNAP_SOURCE_ERROR', 'INTRADAY', 'The session-snapshot source failed for an operational reason that does not block EOD.', 'WARN', 1),
+('NO_READABLE_PUBLICATION', 'READ_SIDE', 'A read-side consumer could not resolve a current readable publication through the authoritative pointer and must return no data.', 'HARD', 1),
 ('COMMAND_MISSING_REQUIRED_INPUT', 'COMMAND', 'Operator command input is missing or empty for a required argument or option.', 'HARD', 1),
 ('COMMAND_INVALID_DATE_FORMAT', 'COMMAND', 'Operator command date input does not use the locked YYYY-MM-DD format.', 'HARD', 1),
 ('COMMAND_INVALID_SOURCE_MODE', 'COMMAND', 'Operator command source mode is outside the locked API/manual-file source modes.', 'HARD', 1),

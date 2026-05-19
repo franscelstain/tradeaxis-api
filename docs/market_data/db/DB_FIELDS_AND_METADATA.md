@@ -15,9 +15,9 @@ The `eod_runs` record for a requested trade date must make these values audit-vi
   Canonical valid-bar numerator used for coverage evaluation.
 - `coverage_missing_count` INT NULL  
   Derived missing count for the resolved universe. Expected formula: `coverage_universe_count - coverage_available_count`, never below zero.
-- `coverage_ratio` DECIMAL(8,6) NULL  
+- `coverage_ratio` DECIMAL(12,6) NULL  
   Evaluated ratio before any UI-only rounding.
-- `coverage_min_threshold` DECIMAL(8,6) NULL  
+- `coverage_min_threshold` DECIMAL(12,6) NULL  
   Threshold actually used by the run.
 - `coverage_gate_state` ENUM/VARCHAR NULL  
   Final allowed values: `PASS`, `FAIL`, `NOT_EVALUABLE`. Legacy persisted/input `BLOCKED` must be normalized to `NOT_EVALUABLE` before output or final persistence, with raw legacy value exposed only as explicit legacy/raw metadata.

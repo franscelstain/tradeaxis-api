@@ -2,6 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Application\MarketData\Exceptions\NoReadablePublicationException;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use Carbon\Carbon;
@@ -53,7 +54,7 @@ class ReplayBackfillService
             try {
                 $publication = $this->publications->findCurrentPublicationForTradeDate($tradeDate);
                 if (! $publication) {
-                    throw new \RuntimeException('Readable current publication not found for replay backfill trade date '.$tradeDate.'.');
+                    throw new NoReadablePublicationException($tradeDate, 'Replay backfill');
                 }
 
                 $result = $this->replays->verifyRunAgainstFixture((int) $publication->run_id, $fixturePath);
@@ -95,6 +96,7 @@ class ReplayBackfillService
                     'expected_outcome' => $expectedOutcome,
                     'observed_outcome' => 'ERROR',
                     'passed' => $passed,
+                    'reason_code' => $this->reasonCodeFromException($e),
                     'error_class' => get_class($e),
                     'error_message' => $e->getMessage(),
                 ];
@@ -154,5 +156,18 @@ class ReplayBackfillService
     private function normalizePathForDisplay($path)
     {
         return str_replace('\\', '/', (string) $path);
+    }
+
+    private function reasonCodeFromException(\Throwable $e)
+    {
+        if ($e instanceof NoReadablePublicationException) {
+            return $e->reasonCode();
+        }
+
+        if (preg_match('/^([A-Z0-9_]+):/', (string) $e->getMessage(), $matches)) {
+            return $matches[1];
+        }
+
+        return 'COMMAND_EXECUTION_FAILED';
     }
 }

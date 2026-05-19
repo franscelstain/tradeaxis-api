@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Coverage Policy Reconciliation', $statusActiveSession);
+        $this->assertSame('Read-Side Consumer Surface Completion', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -37,8 +37,18 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('PRODUCTION_VALIDATION_CONTRACT', $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);
             $this->assertStringContainsString('COVERAGE_POLICY_RECONCILIATION_CONTRACT', $document);
+            $this->assertStringContainsString('DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT', $document);
+            $this->assertStringContainsString('READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $document);
         }
 
+        $this->assertStringContainsString('- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $status);
+        $this->assertStringContainsString('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Read-Side Consumer Surface Completion / Final Sweep Revalidation', $tracker);
+        $this->assertStringContainsString('- DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization ->', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT', $status);
+        $this->assertStringContainsString('- DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT ->', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $tracker);
         $this->assertStringContainsString('- Coverage Policy Reconciliation -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] COVERAGE_POLICY_RECONCILIATION_CONTRACT', $status);
         $this->assertStringContainsString('- COVERAGE_POLICY_RECONCILIATION_CONTRACT -> LOCKED', $tracker);
@@ -63,7 +73,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
-        $this->assertStringContainsString('COVERAGE_POLICY_RECONCILIATION_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -174,7 +184,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(324, $registryCodes);
+        $this->assertCount(325, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

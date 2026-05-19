@@ -80,6 +80,10 @@ class ReplayBackfillCommand extends AbstractMarketDataCommand
                 $parts[] = 'error='.$case['error_message'];
             }
 
+            if (isset($case['reason_code'])) {
+                $parts[] = 'reason_code='.$case['reason_code'];
+            }
+
             $this->line(implode(' | ', $parts));
         }
 

@@ -119,3 +119,41 @@ The following indexes/constraints are now included in the DB schema sync contrac
 - `md_session_snapshots`: `PRIMARY KEY (snapshot_id)`, `UNIQUE KEY (trade_date, snapshot_slot, ticker_id)`, `KEY (trade_date, snapshot_slot)`, `KEY (captured_at)`
 
 SQLite mirror must include equivalent indexes where Laravel/SQLite supports them.
+
+---
+
+## 2026-05-19 - DB Schema / Migration Sync Addendum
+
+Status: LOCKED INDEX INTENT / MIGRATION-SYNCED
+
+The current runtime schema, migration chain, and SQLite mirror must include these additional queryability constraints:
+
+- `eod_runs`: `idx_runs_coverage_gate_state (coverage_gate_state)`
+- `eod_runs`: `idx_runs_request_mode (request_mode)`
+- `eod_runs`: `idx_runs_effective_readable_contract (trade_date_effective, terminal_status, publishability_state, coverage_gate_state, is_current_publication)`
+- `eod_runs`: `idx_runs_publication_id (publication_id)`
+- `eod_runs`: `idx_runs_correction_id (correction_id)`
+- `eod_runs`: `idx_runs_promote_mode (promote_mode)`
+- `eod_runs`: `idx_runs_publish_target (publish_target)`
+- `eod_runs`: `idx_runs_final_reason_code (final_reason_code)`
+- `eod_runs`: `idx_runs_source_name (source_name)`
+- `eod_runs`: `idx_runs_source_file_hash (source_file_hash)`
+- `eod_runs`: `idx_runs_source_identity (source, source_name, source_provider, source_file_hash)`
+- `eod_publications`: `idx_publication_readable_lookup (trade_date, is_current, seal_state, publication_version, run_id)`
+- `eod_publications`: `idx_publication_run_trade_date (run_id, trade_date, publication_id)`
+- `eod_publications`: `idx_publication_previous (previous_publication_id)`
+- `eod_publications`: `idx_publication_replaced (replaced_publication_id)`
+- `eod_publications`: `idx_publication_source_file_hash (source_file_hash)`
+- `eod_current_publication_pointer`: `PRIMARY KEY (trade_date)`
+- `eod_current_publication_pointer`: `uq_current_publication_pointer_publication (publication_id)`
+- `eod_current_publication_pointer`: `idx_current_publication_pointer_run (run_id)`
+- `eod_current_publication_pointer`: `idx_current_publication_pointer_run_version (run_id, publication_version)`
+- `eod_dataset_corrections`: `idx_corr_trade_date_status_execution (trade_date, status, execution_count)`
+- `eod_dataset_corrections`: `idx_corr_prior_new_run (prior_run_id, new_run_id)`
+- `eod_dataset_corrections`: `idx_corr_baseline_publication (baseline_publication_id)`
+- `eod_dataset_corrections`: `idx_corr_replacement_publication (replacement_publication_id)`
+- `eod_dataset_corrections`: `idx_corr_baseline_replacement_publication (baseline_publication_id, replacement_publication_id)`
+- `eod_bars`, `eod_indicators`, `eod_eligibility`: publication-scoped artifact lookup indexes `(publication_id, trade_date, ticker_id)`
+- `md_replay_daily_metrics`: replay status, publishability, publication identity, effective date, comparison, coverage gate, artifact scope, publication version, and config identity indexes
+
+Current-publication uniqueness is owned by `eod_current_publication_pointer.trade_date` plus unique `publication_id`. `eod_publications.is_current` is retained only as a mirror/cache marker and must never compete with the pointer table for authoritative current-state resolution.

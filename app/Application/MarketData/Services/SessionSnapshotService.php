@@ -2,6 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Application\MarketData\Exceptions\NoReadablePublicationException;
 use App\Infrastructure\MarketData\Source\LocalFileSessionSnapshotAdapter;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
@@ -39,7 +40,7 @@ class SessionSnapshotService
 
         $publication = $this->publications->findCurrentPublicationForTradeDate($tradeDate);
         if (! $publication) {
-            throw new \RuntimeException('Session snapshot requires a readable current publication for trade date '.$tradeDate.'.');
+            throw new NoReadablePublicationException($tradeDate, 'Session snapshot');
         }
 
         $run = $this->runs->findByRunId($publication->run_id);

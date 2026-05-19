@@ -95,5 +95,7 @@ class ReplayBackfillServiceTest extends TestCase
         $this->assertFalse($summary['all_passed']);
         $this->assertCount(1, $summary['cases']);
         $this->assertSame('ERROR', $summary['cases'][0]['status']);
+        $this->assertSame('NO_READABLE_PUBLICATION', $summary['cases'][0]['reason_code']);
+        $this->assertStringContainsString('NO_READABLE_PUBLICATION:', $summary['cases'][0]['error_message']);
     }
 }

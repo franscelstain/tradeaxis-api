@@ -24,11 +24,13 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
 
         foreach ([
             'Read-Side Consumer Surface Final Sweep',
+            'READ_SIDE_SCOPE = INTERNAL_ONLY',
             'READ_SIDE_POINTER_ENFORCEMENT_CONTRACT',
             'This inventory is a final consumer-surface sweep over the existing read-side anti-bypass contract',
             'Consumer Surface Matrix',
             'Raw/Latest Scan Matrix',
             'Consumer end-to-end trace summary',
+            'NO_READABLE_PUBLICATION',
             'NO_CONSUMER_BYPASS_FOUND',
             'DONE_LOCAL_PHPUNIT_PASS',
         ] as $needle) {
@@ -61,7 +63,7 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         $method = $this->extractMethod($service, 'capture');
 
         $this->assertStringContainsString('findCurrentPublicationForTradeDate($tradeDate)', $method);
-        $this->assertStringContainsString('Session snapshot requires a readable current publication', $method);
+        $this->assertStringContainsString('NoReadablePublicationException', $service);
         $this->assertStringContainsString('getScopeForTradeDate($tradeDate)', $method);
         $this->assertStringContainsString('trade_date_effective', $method);
 
@@ -145,6 +147,7 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
             'EVIDENCE_REPLAY_AUDIT',
             'TEST_ONLY',
             'DOCS_ONLY',
+            'INTERNAL_ONLY',
             'MarketDataPipelineService.php',
             'EodArtifactRepository.php',
             'RepairCurrentPublicationIntegrityCommand.php',
@@ -162,11 +165,12 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('ACTIVE SESSION:', $status);
         $this->assertStringContainsString('ACTIVE SESSION:', $tracker);
-        $this->assertStringContainsString('- Read-Side Consumer Surface Final Sweep -> DONE', $status);
+        $this->assertStringContainsString('- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE', $status);
         $this->assertStringContainsString('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md', $status.$tracker);
-        $this->assertStringContainsString('OK (391 tests, 5345 assertions)', $status.$tracker);
+        $this->assertStringContainsString('OK (449 tests, 6522 assertions)', $status.$tracker);
         $this->assertStringContainsString('NO_CONSUMER_BYPASS_FOUND', $status.$tracker);
+        $this->assertStringContainsString('NO_READABLE_PUBLICATION', $status.$tracker);
         $this->assertStringContainsString('HISTORICAL_CONTEXT_2026_05_01', $tracker);
         $this->assertStringContainsString('Read-Side Enforcement / Anti Bypass Total', $tracker);
         $this->assertStringContainsString('2026-05-01 → Canonical read-side pointer enforcement contract opened under audit governance.', $tracker);

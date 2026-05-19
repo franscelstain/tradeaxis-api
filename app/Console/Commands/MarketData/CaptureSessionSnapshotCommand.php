@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\MarketData;
 
+use App\Application\MarketData\Exceptions\NoReadablePublicationException;
 use App\Application\MarketData\Services\SessionSnapshotService;
 class CaptureSessionSnapshotCommand extends AbstractMarketDataCommand
 {
@@ -14,13 +15,22 @@ class CaptureSessionSnapshotCommand extends AbstractMarketDataCommand
             return 1;
         }
 
-        $summary = $service->capture(
-            $this->argument('trade_date'),
-            $this->argument('snapshot_slot'),
-            $this->option('source_mode'),
-            $this->option('input_file'),
-            $this->option('output_dir')
-        );
+        try {
+            $summary = $service->capture(
+                $this->argument('trade_date'),
+                $this->argument('snapshot_slot'),
+                $this->option('source_mode'),
+                $this->option('input_file'),
+                $this->option('output_dir')
+            );
+        } catch (NoReadablePublicationException $e) {
+            $this->renderCommandBlocked($e->reasonCode(), $e->getMessage(), [
+                'trade_date' => $e->tradeDate(),
+                'snapshot_slot' => $this->argument('snapshot_slot'),
+            ]);
+
+            return 1;
+        }
 
         $this->line('trade_date='.$summary['trade_date']);
         $this->line('snapshot_slot='.$summary['snapshot_slot']);
