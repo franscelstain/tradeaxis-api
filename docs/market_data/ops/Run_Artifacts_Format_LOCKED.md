@@ -309,6 +309,7 @@ Provide a machine-readable summary when replay comparison does not fully match e
       "trade_date_effective": "2025-12-10",
       "status": "SUCCESS",
       "comparison_result": "MISMATCH",
+      "replay_status": "FAIL",
       "comparison_note": "eligibility output diverged",
       "artifact_changed_scope": "eligibility_only",
       "config_identity": "cfg_2025_12_v2",
@@ -325,6 +326,7 @@ Provide a machine-readable summary when replay comparison does not fully match e
 
 ### Locked rules
 - replay-result fields that mirror `md_replay_daily_metrics` must use the persisted replay names from replay proof storage
+- replay-result status must be explicit: `PASS` for deterministic match/expected degrade, `FAIL` for mismatch/unexpected divergence, and `BLOCKED` only when replay cannot run because fixture/context/runtime prerequisites are missing
 - expected comparison context must remain explicit through replay-expected fields such as `expected_status`, `expected_trade_date_effective`, and `expected_seal_state`
 - mismatch summary must not replace detailed evidence, only summarize it
 

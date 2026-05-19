@@ -60,6 +60,7 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
 
         $metric = DB::table('md_replay_daily_metrics')->where('replay_id', 3001)->where('trade_date', '2026-03-20')->first();
         $this->assertSame('MATCH', $metric->comparison_result);
+        $this->assertSame('PASS', $metric->replay_status);
         $this->assertSame('READABLE', $metric->publishability_state);
         $this->assertSame(44, (int) $metric->publication_id);
         $this->assertSame(91, (int) $metric->publication_run_id);

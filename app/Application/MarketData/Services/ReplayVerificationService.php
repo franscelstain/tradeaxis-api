@@ -48,6 +48,7 @@ class ReplayVerificationService
         $correction = $this->findCorrectionForRun($run->run_id);
         $actual = $this->buildActualReplayState($run, $publication, $correction, $expectedContext);
         $comparison = $this->compareExpectedAndActual($fixture, $actual, $expectedContext);
+        $replayStatus = $this->replayStatusForComparison($comparison['comparison_result']);
         $replayId = $replayId ?: $this->replays->nextReplayId();
 
         $manifest = $fixture['manifest'];
@@ -84,6 +85,7 @@ class ReplayVerificationService
             'current_publication_id' => $actual['current_publication_id'],
             'publication_run_id' => $actual['publication_run_id'],
             'comparison_result' => $comparison['comparison_result'],
+            'replay_status' => $replayStatus,
             'comparison_note' => $comparison['comparison_note'],
             'artifact_changed_scope' => $comparison['artifact_changed_scope'],
             'config_identity' => $actual['config_identity'],
@@ -1648,6 +1650,19 @@ class ReplayVerificationService
         }
         usort($normalized, function ($left, $right) { return strcmp($left['reason_code'], $right['reason_code']); });
         return $normalized;
+    }
+
+    private function replayStatusForComparison($comparisonResult)
+    {
+        if (in_array((string) $comparisonResult, ['MATCH', 'EXPECTED_DEGRADE'], true)) {
+            return 'PASS';
+        }
+
+        if (in_array((string) $comparisonResult, ['MISMATCH', 'UNEXPECTED'], true)) {
+            return 'FAIL';
+        }
+
+        return 'BLOCKED';
     }
 
     private function parseNotes($notes)

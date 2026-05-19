@@ -1,7 +1,7 @@
 # EVIDENCE EXPORT RUNTIME PROOF INVENTORY
 
 [SESSION] Evidence Export Runtime Proof
-[STATUS] LOCKED_LOCAL_RUNTIME_PROOF_RUN_SELECTOR
+[STATUS] LOCKED_FULL_SELECTOR_RUNTIME_PROOF
 [LAST_UPDATED] 2026-05-19
 
 ## Scope
@@ -21,7 +21,7 @@ This session does not claim all market-data production-ready. Evidence export ru
 | replay evidence admission | write `evidence_admission.json` plus replay expected/actual/result/reason-code artifacts | PATCHED |
 | silent missing metadata | forbidden; admission artifact exposes missing/critical sections | ENFORCED |
 | current vs historical proof | current consumer result and historical audit evidence remain separated by evidence resolution mode and pointer context | PRESERVED |
-| runtime proof status | operator-local run-selector runtime export produced COMPLETE/ADMITTED artifacts; container remains blocked and is historical/support context only | LOCKED_LOCAL_RUNTIME_PROOF |
+| runtime proof status | operator-local run, correction, and replay runtime exports produced admitted artifacts and post-patch PHPUnit/static/full-suite proof passed | LOCKED_FULL_SELECTOR_RUNTIME_PROOF |
 
 ## Pre-check trace
 
@@ -40,8 +40,8 @@ This session does not claim all market-data production-ready. Evidence export ru
 |---|---|---|---|---|---|
 | `run_id` | required for run selector | `run_summary.json`, `evidence_pack.json`, `evidence_admission.json` | updated unit/static assertions and operator-local export | PASS_OPERATOR_LOCAL | none |
 | `publication_id` | required when readable publication exists | publication context + manifest when available | existing run/historical tests and operator-local export | PASS_OPERATOR_LOCAL | none |
-| `correction_id` | required for correction selector | `correction_evidence.json`, `evidence_admission.json` | updated correction assertions | BLOCKED_CONTAINER_RUNTIME_ENV | operator runtime export still required |
-| `replay_id` | required for replay selector | replay artifacts + `evidence_admission.json` | updated replay assertions | BLOCKED_CONTAINER_RUNTIME_ENV | operator runtime export still required |
+| `correction_id` | required for correction selector | `correction_evidence.json`, `evidence_admission.json` | updated correction assertions plus unchanged-candidate regression | PATCHED_REEXPORT_REQUIRED | operator export exists for correction_id=1 but pre-patch candidate proof was false FAILED; rerun required |
+| `replay_id` | required for replay selector | replay artifacts + `evidence_admission.json` | updated replay assertions | PASS_OPERATOR_LOCAL | replay_id=1 exported with ADMITTED_COMPLETE and MATCH |
 | `trade_date` | required for replay selector | command blocks missing `--trade_date` | existing replay selector test | PASS_TARGETED_PHPUNIT | no replay runtime fixture supplied |
 | terminal status | required | run/replay/correction context | existing tests and operator-local export | PASS_OPERATOR_LOCAL | none |
 | publishability state | required | run/publication/replay contexts | existing tests and operator-local export | PASS_OPERATOR_LOCAL | none |
@@ -133,7 +133,7 @@ Generated runtime artifacts for `run_id=2`:
 
 ## Operator-local validation closure
 
-The required run-selector operator-local validation is complete. Correction/replay runtime artifact commands remain optional unless fixtures are supplied; correction/replay selector admission behavior is covered by targeted PHPUnit.
+The required run-selector operator-local validation is complete. Correction/replay selector admission behavior is covered by targeted PHPUnit, but correction/replay runtime artifact commands are required before the full evidence export runtime proof can be marked LOCKED.
 
 - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`
 - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php`
@@ -152,6 +152,28 @@ The required run-selector operator-local validation is complete. Correction/repl
 ## Remaining risk
 
 - Container runtime artifact proof is not produced; this is historical/support context only.
-- Evidence export run-selector readable-publication runtime proof is LOCKED_LOCAL_RUNTIME_PROOF_RUN_SELECTOR based on operator-local artifacts and tests.
-- Correction/replay runtime artifact exports are not claimed because no correction/replay runtime fixtures were supplied; selector admission behavior is covered by targeted PHPUnit.
+- Evidence export full selector runtime proof is LOCKED_LOCAL_RUNTIME_PROOF_FULL_SELECTOR based on operator-local run, correction, and replay artifacts plus targeted/full PHPUnit validation.
+- Run selector evidence export is ADMITTED_COMPLETE / COMPLETE for `run_id=2`.
+- Correction selector evidence export is ADMITTED_COMPLETE for `correction_id=1`; post-patch rerun proves candidate proof `NOT_APPLICABLE / UNCHANGED_CORRECTION_CANDIDATE_DISCARDED`.
+- Replay selector evidence export is ADMITTED_COMPLETE for `replay_id=1` / `2026-02-18` with `comparison_result=MATCH` and `status=SUCCESS`.
+- Replay artifact proof supplied: `storage/app/market-data/evidence/runtime-proof-replay-1-2026-02-18/replay_result.json`, `replay_expected_state.json`, `replay_actual_state.json`, `replay_reason_code_counts.json`, `evidence_admission.json`, and `replay_evidence_pack.json`.
 - This session does not close broader replay determinism runtime proof, ops runtime matrix, production proof pack, or final roadmap audit synchronization.
+
+
+## 2026-05-19 correction/replay runtime proof follow-up
+
+- Correction runtime export was supplied for `correction_id=1` and produced `correction_evidence.json` plus `evidence_admission.json` with `ADMITTED_COMPLETE`.
+- Review found the unchanged correction path incorrectly rendered `candidate_historical_publication_proof` as `FAILED / EVIDENCE_PUBLICATION_NOT_FOUND` even though the correction outcome was `UNCHANGED`, `NOT_RESEALED_UNCHANGED`, and current publication was preserved.
+- Source patch changes unchanged/consumed-current correction candidate proof to `NOT_APPLICABLE / UNCHANGED_CORRECTION_CANDIDATE_DISCARDED` and adds a regression test in `CorrectionEvidenceExportServiceTest`.
+- Replay runtime export was supplied for `replay_id=1`, `trade_date=2026-02-18`; admission was `ADMITTED_COMPLETE`, comparison was `MATCH`, status was `SUCCESS`, and all required replay artifacts were present.
+- Full evidence export runtime proof is `LOCKED` after the patched correction evidence export was rerun locally and targeted/full MarketData PHPUnit proof was supplied.
+
+
+## 2026-05-19 final full-selector lock proof
+
+- Post-patch correction export command: `php artisan market-data:evidence:export --correction_id=1 --output_dir=storage/app/market-data/evidence/runtime-proof-correction-1-rerun`.
+- Correction export result: `evidence_admission_state=ADMITTED_COMPLETE`, `file_count=2`, files `correction_evidence.json` and `evidence_admission.json`.
+- Correction candidate proof result: `proof_status=NOT_APPLICABLE`, `evidence_reason_code=UNCHANGED_CORRECTION_CANDIDATE_DISCARDED`, `lineage_verification_status=NOT_APPLICABLE_UNCHANGED_CORRECTION`, no missing/critical admission sections.
+- Replay export result: `replay_id=1`, `trade_date=2026-02-18`, `comparison_result=MATCH`, `status=SUCCESS`, `evidence_admission_state=ADMITTED_COMPLETE`, six required replay artifacts present.
+- Final validation: `CorrectionEvidenceExportServiceTest.php` OK (2 tests, 38 assertions); `AuditDocsSynchronizationStaticGuardTest.php` OK (9 tests, 317 assertions); `tests/Unit/MarketData --filter "Evidence"` OK (55 tests, 1039 assertions); `tests/Unit/MarketData --filter "StaticGuard"` OK (169 tests, 3889 assertions); full `tests/Unit/MarketData` OK (451 tests, 6592 assertions).
+- Final scope status: `EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT -> LOCKED` for run + correction + replay selector evidence export runtime proof. This does not claim broader full MarketData production-ready.

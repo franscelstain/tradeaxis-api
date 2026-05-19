@@ -16,6 +16,7 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
         $runId = (int) $this->argument('run_id');
         if ($runId <= 0) {
             $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'run_id must be a positive integer.', [
+                'replay_status' => 'BLOCKED',
                 'run_id' => $this->argument('run_id'),
             ]);
             return 1;
@@ -29,6 +30,7 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
             );
         } catch (\Throwable $e) {
             $this->renderCommandBlocked($this->reasonCodeFromException($e), $e->getMessage(), [
+                'replay_status' => 'BLOCKED',
                 'run_id' => $runId,
                 'fixture_path' => $this->normalizePathForDisplay((string) $this->argument('fixture_path')),
             ]);
@@ -47,6 +49,7 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
         $this->line('actual_final_state='.(string) ($result['status'] ?? '').'|'.(string) ($result['publishability_state'] ?? '').'|'.(string) ($result['actual_context']['actual_final_state']['final_reason_code'] ?? $result['final_reason_code'] ?? ''));
         $this->line('final_reason_code='.(string) ($result['final_reason_code'] ?? ''));
         $this->line('comparison_result='.$result['comparison_result']);
+        $this->line('replay_status='.$result['replay_status']);
         $this->line('comparison_note='.(string) $result['comparison_note']);
         $this->line('mismatch_count='.(string) ($result['mismatch_count'] ?? count($result['mismatches'] ?? [])));
         $this->line('mismatch_reason_codes='.implode(',', $result['mismatch_reason_codes'] ?? []));
@@ -71,7 +74,7 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
             $this->line('replay_artifact_path='.$this->normalizePathForDisplay(rtrim((string) $outputDir, '/\\').'/replay_result.json'));
         }
 
-        return $result['comparison_result'] === 'UNEXPECTED' || $result['comparison_result'] === 'MISMATCH' ? 1 : 0;
+        return in_array($result['replay_status'], ['FAIL', 'BLOCKED'], true) ? 1 : 0;
     }
 
     private function reasonCodeFromException(\Throwable $e)

@@ -174,6 +174,10 @@ Required constraint/index:
 
 Replay expected-context fields are part of the DB schema contract and must stay synchronized with `ReplayResultRepository` and `ReplayVerificationService`.
 
+Replay result status is explicit and must stay synchronized across runtime persistence, command output, and replay evidence export:
+
+- `replay_status`: `PASS` for `MATCH`/`EXPECTED_DEGRADE`, `FAIL` for `MISMATCH`/`UNEXPECTED`, and `BLOCKED` only for missing fixture/context/runtime prerequisites.
+
 Correction lifecycle replay fields are part of `md_replay_daily_metrics` and must remain synchronized with `ReplayResultRepository`, `ReplayVerificationService`, and replay evidence export:
 
 - `correction_id`

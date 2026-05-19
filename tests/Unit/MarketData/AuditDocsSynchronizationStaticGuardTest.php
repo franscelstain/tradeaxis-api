@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Evidence Export Runtime Proof', $statusActiveSession);
+        $this->assertSame('Replay Determinism Runtime Proof', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -40,11 +40,27 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT', $document);
             $this->assertStringContainsString('READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $document);
             $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
+            $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $document);
         }
 
+        $this->assertStringContainsString('- Replay Determinism Runtime Proof / PASS-FAIL-BLOCKED Evidence Linkage -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status);
+        $this->assertStringContainsString('- REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Replay Determinism Runtime Proof / PASS-FAIL-BLOCKED Evidence Linkage', $tracker);
+        $this->assertStringContainsString('replay_status=PASS', $status.$tracker);
+        $this->assertStringContainsString('replay_status=FAIL', $status.$tracker);
+        $this->assertStringContainsString('replay_status=BLOCKED', $status.$tracker);
+        $this->assertStringContainsString('REPLAY_FINAL_REASON_CODE_MISMATCH', $status.$tracker);
+        $this->assertStringContainsString('storage/app/market-data/replay-determinism-runtime-proof/verify-pass/replay_result.json', $status.$tracker);
+
         $this->assertStringContainsString('- Evidence Export Runtime Proof / Admission Artifact Hardening -> DONE', $status);
+        $this->assertStringContainsString('Full evidence export runtime proof across run + correction + replay is LOCKED', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status);
         $this->assertStringContainsString('- EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('full run+correction+replay runtime artifact scope', $tracker);
+        $this->assertStringContainsString('UNCHANGED_CORRECTION_CANDIDATE_DISCARDED', $status.$tracker);
+        $this->assertStringContainsString('Operator-local post-patch correction re-export for `correction_id=1`', $status);
+        $this->assertStringContainsString('Replay runtime proof has been supplied for `replay_id=1`', $status);
         $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Evidence Export Runtime Proof / Admission Artifact Hardening', $tracker);
         $this->assertStringContainsString('- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $status);
@@ -78,7 +94,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
-        $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -133,6 +149,8 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $this->assertContains('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $trackerContracts);
         $this->assertContains('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $implementationContracts);
         $this->assertContains('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $trackerContracts);
+        $this->assertContains('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $implementationContracts);
+        $this->assertContains('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $trackerContracts);
     }
 
     public function test_audit_governance_enforces_append_only_anti_duplication_and_static_guard(): void

@@ -873,6 +873,7 @@ class OpsCommandSurfaceTest extends TestCase
                 'replay_id' => 3001,
                 'trade_date' => '2026-03-17',
                 'comparison_result' => 'MATCH',
+                'replay_status' => 'PASS',
                 'comparison_note' => 'Replay verification matched fixture expectation.',
                 'artifact_changed_scope' => 'none',
                 'fixture_family' => 'market_data_replay_minimum',
@@ -907,6 +908,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('replay_id=3001', $display);
         $this->assertStringContainsString('trade_date=2026-03-17', $display);
         $this->assertStringContainsString('comparison_result=MATCH', $display);
+        $this->assertStringContainsString('replay_status=PASS', $display);
         $this->assertStringContainsString('artifact_changed_scope=none', $display);
         $this->assertStringContainsString('fixture_family=market_data_replay_minimum', $display);
         $this->assertStringContainsString('fixture_path=storage/app/market_data/replay-fixtures/valid_case', $display);
@@ -923,6 +925,7 @@ class OpsCommandSurfaceTest extends TestCase
                 'replay_id' => 3002,
                 'trade_date' => '2026-03-17',
                 'comparison_result' => 'MISMATCH',
+                'replay_status' => 'FAIL',
                 'comparison_note' => 'Replay verification diverged from fixture expectation.',
                 'artifact_changed_scope' => 'bars_only',
                 'fixture_family' => 'market_data_replay_minimum',
@@ -948,6 +951,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('replay_id=3002', $display);
         $this->assertStringContainsString('comparison_result=MISMATCH', $display);
+        $this->assertStringContainsString('replay_status=FAIL', $display);
         $this->assertStringContainsString('comparison_note=Replay verification diverged from fixture expectation.', $display);
         $this->assertStringContainsString('artifact_changed_scope=bars_only', $display);
         $this->assertStringContainsString('fixture_path=storage/app/market_data/replay-fixtures/reason_code_mismatch_case', $display);

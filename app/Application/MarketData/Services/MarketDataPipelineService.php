@@ -2585,13 +2585,7 @@ class MarketDataPipelineService
             ];
         }
 
-        $path = (string) $inputFile;
-        if (! file_exists($path)) {
-            $basePath = base_path($path);
-            if (file_exists($basePath)) {
-                $path = $basePath;
-            }
-        }
+        $path = $this->resolveSourceIdentityFilePath((string) $inputFile);
 
         if (! is_file($path)) {
             return [
@@ -2608,6 +2602,61 @@ class MarketDataPipelineService
             'source_file_size_bytes' => filesize($path),
             'source_file_row_count' => $this->countSourceFileDataRows($path),
         ];
+    }
+
+    private function resolveSourceIdentityFilePath($path)
+    {
+        if ($path === '' || file_exists($path)) {
+            return $path;
+        }
+
+        if ($this->isAbsoluteFilesystemPath($path)) {
+            return $path;
+        }
+
+        $normalizedPath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+        $candidates = [];
+
+        try {
+            if (function_exists('app')) {
+                $application = app();
+                if (is_object($application) && method_exists($application, 'basePath')) {
+                    $candidates[] = $application->basePath($path);
+                    $candidates[] = $application->basePath($normalizedPath);
+                }
+            }
+        } catch (\Throwable $exception) {
+            // Unit tests may bind a plain Illuminate container without Lumen's basePath method.
+        }
+
+        $workingDirectory = getcwd();
+        if (is_string($workingDirectory) && $workingDirectory !== '') {
+            $candidates[] = rtrim($workingDirectory, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$normalizedPath;
+        }
+
+        foreach (array_unique(array_filter($candidates)) as $candidate) {
+            if (file_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $path;
+    }
+
+    private function isAbsoluteFilesystemPath($path)
+    {
+        if ($path === '') {
+            return false;
+        }
+
+        if ($path[0] === '/' || $path[0] === '\\') {
+            return true;
+        }
+
+        return strlen($path) >= 3
+            && ctype_alpha($path[0])
+            && $path[1] === ':'
+            && ($path[2] === '/' || $path[2] === '\\');
     }
 
     private function countSourceFileDataRows($path)

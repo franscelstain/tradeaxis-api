@@ -67,6 +67,10 @@ class ReplayBackfillCommand extends AbstractMarketDataCommand
                 $parts[] = 'replay_id='.$case['replay_id'];
             }
 
+            if (isset($case['replay_status'])) {
+                $parts[] = 'replay_status='.$case['replay_status'];
+            }
+
             $evidenceOutputDir = $case['evidence_output_dir'] ?? null;
             if (($evidenceOutputDir === null || $evidenceOutputDir === '') && $outputDir !== null && $outputDir !== '' && isset($case['trade_date']) && ($case['status'] ?? null) !== 'ERROR') {
                 $evidenceOutputDir = rtrim((string) $outputDir, '\/').'/'.$case['trade_date'];

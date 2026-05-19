@@ -99,6 +99,7 @@ class ReplayVerificationServiceTest extends TestCase
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
             return $metric['replay_id'] === 3002
                 && $metric['comparison_result'] === 'MATCH'
+                && $metric['replay_status'] === 'PASS'
                 && $metric['mismatch_count'] === 0
                 && $metric['fixture_schema_version'] === 'replay_fixture_v2'
                 && $metric['artifact_changed_scope'] === 'none'
@@ -123,6 +124,7 @@ class ReplayVerificationServiceTest extends TestCase
 
         $this->assertSame(3002, $result['replay_id']);
         $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame('PASS', $result['replay_status']);
         $this->assertSame(0, $result['mismatch_count']);
         $this->assertSame([], $result['mismatch_reason_codes']);
         $this->assertSame('fixture_replay_unchanged_input', $result['fixture_family']);
@@ -203,6 +205,7 @@ class ReplayVerificationServiceTest extends TestCase
         $replays->shouldReceive('nextReplayId')->once()->andReturn(3003);
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
             return $metric['comparison_result'] === 'EXPECTED_DEGRADE'
+                && $metric['replay_status'] === 'PASS'
                 && $metric['status'] === 'HELD'
                 && $metric['publishability_state'] === 'NOT_READABLE'
                 && $metric['mismatch_count'] === 0;
@@ -215,6 +218,7 @@ class ReplayVerificationServiceTest extends TestCase
         $result = $service->verifyRunAgainstFixture(92, $fixtureDir);
 
         $this->assertSame('EXPECTED_DEGRADE', $result['comparison_result']);
+        $this->assertSame('PASS', $result['replay_status']);
         $this->assertSame('HELD', $result['status']);
         $this->assertSame('NOT_READABLE', $result['publishability_state']);
     }
@@ -281,6 +285,7 @@ class ReplayVerificationServiceTest extends TestCase
                 && ($metric['replay_suite'] ?? null) === 'fixture_replay_reason_code_mismatch'
                 && ($metric['replay_case'] ?? null) === 'fixture_replay_reason_code_mismatch'
                 && ($metric['comparison_result'] ?? null) === 'MISMATCH'
+                && ($metric['replay_status'] ?? null) === 'FAIL'
                 && (int) ($metric['mismatch_count'] ?? 0) > 0
                 && is_array($reasonCodes)
                 && in_array('REPLAY_FINAL_REASON_CODE_MISMATCH', $reasonCodes, true)
@@ -297,6 +302,7 @@ class ReplayVerificationServiceTest extends TestCase
         $result = $service->verifyRunAgainstFixture(93, $fixtureDir);
 
         $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertSame('FAIL', $result['replay_status']);
         $this->assertContains('REPLAY_FINAL_REASON_CODE_MISMATCH', $result['mismatch_reason_codes']);
     }
 
@@ -360,6 +366,7 @@ class ReplayVerificationServiceTest extends TestCase
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
             $reasonCodes = json_decode($metric['mismatch_reason_codes_json'], true);
             return $metric['comparison_result'] === 'MISMATCH'
+                && $metric['replay_status'] === 'FAIL'
                 && in_array('REPLAY_COVERAGE_STATE_MISMATCH', $reasonCodes, true)
                 && in_array('REPLAY_COVERAGE_RATIO_MISMATCH', $reasonCodes, true)
                 && $metric['expected_coverage_gate_state'] === 'PASS';
@@ -370,6 +377,7 @@ class ReplayVerificationServiceTest extends TestCase
         $result = $service->verifyRunAgainstFixture(94, $fixtureDir);
 
         $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertSame('FAIL', $result['replay_status']);
         $this->assertContains('REPLAY_COVERAGE_STATE_MISMATCH', $result['mismatch_reason_codes']);
     }
 

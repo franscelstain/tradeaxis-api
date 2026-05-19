@@ -35,6 +35,7 @@ class ReplayEvidenceExportServiceTest extends TestCase
             'publication_run_id' => null,
             'is_current_publication' => 0,
             'comparison_result' => 'EXPECTED_DEGRADE',
+            'replay_status' => 'PASS',
             'comparison_note' => 'coverage intentionally degraded',
             'artifact_changed_scope' => 'bars_indicators_eligibility',
             'config_identity' => 'cfg_2025_12_v2',
@@ -118,6 +119,7 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $this->assertSame('replay', $result['selector']['type']);
         $this->assertSame(3001, $result['selector']['id']);
         $this->assertSame('EXPECTED_DEGRADE', $result['summary']['comparison_result']);
+        $this->assertSame('PASS', $result['summary']['replay_status']);
         $this->assertSame('HELD', $result['summary']['status']);
         $this->assertSame(6, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
@@ -131,6 +133,7 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $replayResult = json_decode(file_get_contents($dir.'/replay_result.json'), true);
         $this->assertSame(3001, $replayResult['replay_id']);
         $this->assertSame('EXPECTED_DEGRADE', $replayResult['comparison_result']);
+        $this->assertSame('PASS', $replayResult['replay_status']);
         $this->assertSame('cfg_2025_12_v2', $replayResult['config_identity']);
         $this->assertSame('FAIL', $replayResult['coverage']['coverage_gate_state']);
         $this->assertSame('FAIL', $replayResult['expected_coverage']['coverage_gate_state']);
@@ -165,6 +168,8 @@ class ReplayEvidenceExportServiceTest extends TestCase
 
         $payload = json_decode(file_get_contents($dir.'/replay_evidence_pack.json'), true);
         $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
+        $this->assertSame('PASS', $payload['summary']['replay_status']);
+        $this->assertSame('PASS', $payload['replay_result']['replay_status']);
         $this->assertSame('HELD', $payload['replay_result']['status']);
         $this->assertSame('cfg_2025_12_v2', $payload['expected_state']['config_identity']);
         $this->assertSame('manual_file', $payload['replay_result']['source_context']['source_mode']);

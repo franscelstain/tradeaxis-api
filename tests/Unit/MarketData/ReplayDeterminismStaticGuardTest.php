@@ -29,6 +29,10 @@ class ReplayDeterminismStaticGuardTest extends TestCase
             'actual_context_json',
             'mismatches_json',
             'mismatch_reason_codes_json',
+            'replay_status',
+            'PASS',
+            'FAIL',
+            'BLOCKED',
             'ignored_volatile_fields_json',
             'deterministic_fields_checked_json',
             'REPLAY_EXPECTED_PROOF_INCOMPLETE',
@@ -111,16 +115,16 @@ class ReplayDeterminismStaticGuardTest extends TestCase
         $command = $this->read('app/Console/Commands/MarketData/VerifyReplayCommand.php');
         $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
 
-        foreach (['expected_context_json', 'actual_context_json', 'mismatch_reason_codes_json', 'mismatches_json', 'final_reason_code'] as $needle) {
+        foreach (['expected_context_json', 'actual_context_json', 'mismatch_reason_codes_json', 'mismatches_json', 'final_reason_code', 'replay_status'] as $needle) {
             $this->assertStringContainsString($needle, $repository);
             $this->assertStringContainsString($needle, $schema);
         }
 
-        foreach (['mismatch_count=', 'mismatch_reason_codes=', 'source_summary=', 'coverage_summary=', 'publication_summary=', 'pointer_summary=', 'fallback_summary=', 'correction_summary=', 'replay_artifact_path='] as $needle) {
+        foreach (['replay_status=', 'mismatch_count=', 'mismatch_reason_codes=', 'source_summary=', 'coverage_summary=', 'publication_summary=', 'pointer_summary=', 'fallback_summary=', 'correction_summary=', 'replay_artifact_path='] as $needle) {
             $this->assertStringContainsString($needle, $command);
         }
 
-        foreach (['expected_context', 'actual_context', 'ignored_volatile_fields', 'deterministic_fields_checked'] as $needle) {
+        foreach (['replay_status', 'expected_context', 'actual_context', 'ignored_volatile_fields', 'deterministic_fields_checked'] as $needle) {
             $this->assertStringContainsString($needle, $evidence);
         }
     }

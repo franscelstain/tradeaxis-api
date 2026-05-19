@@ -177,6 +177,7 @@ A conforming replay result evidence pack must include at minimum:
       "trade_date_effective": "2025-12-10",
       "status": "SUCCESS",
       "comparison_result": "MISMATCH",
+      "replay_status": "FAIL",
       "comparison_note": "eligibility output diverged",
       "artifact_changed_scope": "eligibility_only",
       "config_identity": "cfg_2025_12_v2",
@@ -196,7 +197,7 @@ A conforming replay result evidence pack must include at minimum:
 1. Evidence packs must preserve enough detail to support diagnosis, not just human narrative.
 2. Evidence packs must be internally consistent with authoritative persisted run/publication data.
 3. A correction evidence pack must always preserve both old and new state.
-4. A replay result evidence pack must always preserve both expected and actual state.
+4. A replay result evidence pack must always preserve both expected and actual state plus the explicit replay result status (`PASS`, `FAIL`, or `BLOCKED`).
 5. Evidence packs must not imply readability for an unsealed or non-current publication.
 
 ## Relationship to run artifacts

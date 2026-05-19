@@ -189,9 +189,10 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Evidence Export Runtime Proof", $status);
+- Replay Determinism Runtime Proof", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Evidence Export Runtime Proof", $tracker);
+- Replay Determinism Runtime Proof", $tracker);
+        $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);
         $this->assertStringContainsString('Ops Environment Baseline', $status.$tracker, 'Latest Ops Environment history must remain present.');

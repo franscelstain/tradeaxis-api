@@ -59,9 +59,9 @@ A test suite is not complete merely because code paths execute without error.
 | `correction_unchanged_content_no_publish` | Historical correction integrity | `fixture_unchanged_rerun` | identical rows to prior publication | rerun outcome may succeed as audit rerun | hashes identical | no publication switch; version unchanged | optional |
 | `correction_requires_approval` | Historical correction integrity | `fixture_correction_request` | row-level optional | unapproved correction cannot publish | none | no new current publication | optional |
 | `correction_failed_reseal_no_switch` | Historical correction integrity | `fixture_correction_reseal_fail` | candidate rows may exist but remain non-current | correction candidate non-published | incomplete/new seal failure evidenced | prior publication remains current | optional |
-| `replay_same_input_same_output` | Replay/data-quality | `fixture_replay_unchanged_input` | same expected artifact rows | expected terminal outcome | identical expected hashes | same publication semantics | comparison_result = `MATCH` |
-| `replay_degraded_expected_hold` | Replay/data-quality | `fixture_replay_degraded_input` | degraded artifact outcomes match expectation | expected non-readable status/effective-date behavior | hashes as expected for degraded scenario when applicable | no false readable publication | comparison_result = `EXPECTED_DEGRADE` |
-| `replay_runtime_format_stability` | Replay/data-quality | `fixture_hash_payload` | same logical rows under runtime/locale variance | optional | identical hashes | none | comparison_result = `MATCH` |
+| `replay_same_input_same_output` | Replay/data-quality | `fixture_replay_unchanged_input` | same expected artifact rows | expected terminal outcome | identical expected hashes | same publication semantics | comparison_result = `MATCH`; replay_status = `PASS` |
+| `replay_degraded_expected_hold` | Replay/data-quality | `fixture_replay_degraded_input` | degraded artifact outcomes match expectation | expected non-readable status/effective-date behavior | hashes as expected for degraded scenario when applicable | no false readable publication | comparison_result = `EXPECTED_DEGRADE`; replay_status = `PASS` |
+| `replay_runtime_format_stability` | Replay/data-quality | `fixture_hash_payload` | same logical rows under runtime/locale variance | optional | identical hashes | none | comparison_result = `MATCH`; replay_status = `PASS` |
 
 ## Minimum assertion payload per implemented test (LOCKED)
 Every implemented test must explicitly identify and assert:
@@ -99,7 +99,7 @@ Examples:
 
 ### Replay assertions
 Examples:
-- comparison_result class
+- comparison_result class and explicit `replay_status` (`PASS`, `FAIL`, or `BLOCKED`)
 - mismatch summary expectation
 - expected-vs-actual output alignment
 - config-identity-sensitive reproducibility

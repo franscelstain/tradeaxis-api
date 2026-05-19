@@ -70,6 +70,7 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
             ],
             'md_replay_daily_metrics' => [
                 'publishability_state',
+                'replay_status',
                 'publication_id',
                 'publication_run_id',
                 'is_current_publication',
@@ -231,6 +232,7 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
                 'idx_replay_daily_publication_identity',
                 'idx_replay_daily_effective',
                 'idx_replay_daily_comparison',
+                'idx_replay_daily_replay_status',
                 'idx_replay_daily_coverage_gate',
             ],
             'md_replay_reason_code_counts' => ['idx_replay_reason_code'],

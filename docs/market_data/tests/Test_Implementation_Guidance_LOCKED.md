@@ -70,6 +70,7 @@ Use when the contract affects replay proof.
 
 Typical assertions:
 - comparison_result class
+- explicit replay_status (`PASS`, `FAIL`, or `BLOCKED`)
 - expected-vs-actual alignment
 - mismatch classification
 - config-identity-sensitive reproducibility

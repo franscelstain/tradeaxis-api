@@ -27,4 +27,6 @@ Expected generated-fixture proof:
 - generated `manifest.json`
 - generated `expected/expected_replay_result.json`
 - generated `expected/expected_reason_code_counts.json`
-- replay verify against the generated fixture returns `comparison_result=MATCH` and `mismatch_count=0`
+- replay verify against the generated fixture returns `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`
+- replay verify against an intentionally divergent fixture returns `comparison_result=MISMATCH`, `replay_status=FAIL`, actionable `mismatch_reason_codes`, and a non-zero exit code
+- replay verify with missing fixture/context/runtime prerequisites returns command `status=BLOCKED` plus `replay_status=BLOCKED`; this is not a PASS and must be recorded as blocked runtime proof

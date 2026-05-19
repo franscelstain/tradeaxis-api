@@ -617,6 +617,58 @@ class MarketDataEvidenceExportService
         return $reasonCode !== '' ? $reasonCode : 'EVIDENCE_HISTORICAL_PUBLICATION_RESOLUTION_FAILED';
     }
 
+    private function buildCorrectionCandidateHistoricalPublicationProof($correction, $publicationId, $runId, $changedDecision, $resealStatus)
+    {
+        if ($this->isUnchangedCorrectionCandidateDiscarded($correction, $publicationId, $runId, $changedDecision, $resealStatus)) {
+            return $this->buildUnchangedCorrectionCandidateDiscardedProof($correction, $publicationId, $runId, $resealStatus);
+        }
+
+        return $this->buildHistoricalPublicationAuditProof($publicationId, $runId, 'correction_candidate');
+    }
+
+    private function isUnchangedCorrectionCandidateDiscarded($correction, $publicationId, $runId, $changedDecision, $resealStatus)
+    {
+        $status = strtoupper((string) $this->field($correction, 'status'));
+
+        if ($changedDecision !== 'UNCHANGED') {
+            return false;
+        }
+
+        if ($status === 'CONSUMED_CURRENT' || $status === 'CANCELLED') {
+            return true;
+        }
+
+        return $resealStatus === 'NOT_RESEALED_UNCHANGED'
+            && $publicationId !== null
+            && $runId !== null
+            && $this->field($correction, 'prior_run_id') !== null
+            && (string) $runId !== (string) $this->field($correction, 'prior_run_id');
+    }
+
+    private function buildUnchangedCorrectionCandidateDiscardedProof($correction, $publicationId, $runId, $resealStatus)
+    {
+        return [
+            'scope' => 'correction_candidate',
+            'proof_status' => 'NOT_APPLICABLE',
+            'publication_id' => $publicationId !== null ? (int) $publicationId : null,
+            'run_id' => $runId !== null ? (int) $runId : null,
+            'evidence_resolution_mode' => 'UNCHANGED_CORRECTION_AUDIT',
+            'evidence_publication_scope' => 'UNCHANGED_CORRECTION_CANDIDATE_DISCARDED',
+            'current_pointer_required' => false,
+            'historical_publication_allowed' => false,
+            'lineage_verification_status' => 'NOT_APPLICABLE_UNCHANGED_CORRECTION',
+            'artifact_scope' => 'DISCARDED_CANDIDATE_ARTIFACT',
+            'coverage_basis_publication_id' => null,
+            'coverage_basis_run_id' => null,
+            'evidence_reason_code' => 'UNCHANGED_CORRECTION_CANDIDATE_DISCARDED',
+            'changed_decision' => 'UNCHANGED',
+            'reseal_status' => $resealStatus,
+            'preserved_publication_id' => $publicationId !== null ? (int) $publicationId : null,
+            'discarded_candidate_run_id' => $runId !== null ? (int) $runId : null,
+            'final_outcome_note' => $this->field($correction, 'final_outcome_note'),
+        ];
+    }
+
     public function exportCorrectionEvidence($correctionId, $outputDir = null)
     {
         $correction = $this->evidence->findCorrectionById($correctionId);
@@ -628,10 +680,16 @@ class MarketDataEvidenceExportService
         $newPublicationId = $this->field($correction, 'replacement_publication_id') !== null ? $this->field($correction, 'replacement_publication_id') : $this->field($correction, 'new_publication_id');
         $priorPublication = $priorPublicationId ? $this->evidence->findPublicationById($priorPublicationId) : null;
         $newPublication = $newPublicationId ? $this->evidence->findPublicationById($newPublicationId) : null;
-        $baselineHistoricalProof = $this->buildHistoricalPublicationAuditProof($priorPublicationId, $this->field($correction, 'prior_run_id'), 'correction_baseline');
-        $candidateHistoricalProof = $this->buildHistoricalPublicationAuditProof($newPublicationId, $this->field($correction, 'new_run_id'), 'correction_candidate');
         $changedDecision = $this->resolveCorrectionChangedDecision($correction, $priorPublication, $newPublication);
         $resealStatus = $this->resolveCorrectionResealStatus($correction, $changedDecision, $newPublication);
+        $baselineHistoricalProof = $this->buildHistoricalPublicationAuditProof($priorPublicationId, $this->field($correction, 'prior_run_id'), 'correction_baseline');
+        $candidateHistoricalProof = $this->buildCorrectionCandidateHistoricalPublicationProof(
+            $correction,
+            $newPublicationId,
+            $this->field($correction, 'new_run_id'),
+            $changedDecision,
+            $resealStatus
+        );
         $publicationSwitch = $newPublication ? (bool) $newPublication->is_current : false;
         $correctionAdmissionMissing = [];
         $this->markMissingSection($correctionAdmissionMissing, 'correction_context', $this->field($correction, 'correction_id'));
@@ -764,10 +822,12 @@ class MarketDataEvidenceExportService
         $replayResult = $this->buildReplayResult($metric);
         $expectedState = $this->buildReplayExpectedState($metric, $expectedReasonCodeCounts);
         $actualState = $this->buildReplayActualState($metric, $reasonCodes);
+        $replayStatus = $this->field($metric, 'replay_status') ?: $this->replayStatusForComparison($metric->comparison_result ?? null);
         $summary = [
             'replay_id' => (int) $metric->replay_id,
             'trade_date' => $metric->trade_date,
             'comparison_result' => $metric->comparison_result,
+            'replay_status' => $replayStatus,
             'status' => $metric->status,
             'config_identity' => $metric->config_identity,
             'reason_code_count' => count($reasonCodes),
@@ -820,6 +880,7 @@ class MarketDataEvidenceExportService
                 'replay_id' => (int) $metric->replay_id,
                 'trade_date' => $metric->trade_date,
                 'comparison_result' => $metric->comparison_result,
+                'replay_status' => $replayStatus,
                 'status' => $metric->status,
                 'evidence_admission_state' => $admission['evidence_admission_state'],
             ],
@@ -1367,6 +1428,7 @@ class MarketDataEvidenceExportService
             'terminal_status' => $metric->status,
             'publishability_state' => $this->field($metric, 'publishability_state'),
             'comparison_result' => $metric->comparison_result,
+            'replay_status' => $this->field($metric, 'replay_status') ?: $this->replayStatusForComparison($metric->comparison_result ?? null),
             'comparison_note' => $metric->comparison_note,
             'artifact_changed_scope' => $metric->artifact_changed_scope,
             'config_identity' => $metric->config_identity,
@@ -1750,6 +1812,19 @@ class MarketDataEvidenceExportService
         $decoded = json_decode($value, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private function replayStatusForComparison($comparisonResult)
+    {
+        if (in_array((string) $comparisonResult, ['MATCH', 'EXPECTED_DEGRADE'], true)) {
+            return 'PASS';
+        }
+
+        if (in_array((string) $comparisonResult, ['MISMATCH', 'UNEXPECTED'], true)) {
+            return 'FAIL';
+        }
+
+        return 'BLOCKED';
     }
 
     private function decodeExpectedReasonCodeCounts($json)

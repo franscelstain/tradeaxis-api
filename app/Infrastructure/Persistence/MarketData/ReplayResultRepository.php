@@ -43,6 +43,7 @@ class ReplayResultRepository
             'publication_id' => $metric['publication_id'] ?? null,
             'publication_run_id' => $metric['publication_run_id'] ?? null,
             'comparison_result' => $metric['comparison_result'],
+            'replay_status' => $metric['replay_status'] ?? $this->replayStatusForComparison($metric['comparison_result'] ?? null),
             'comparison_note' => $metric['comparison_note'] ?? null,
             'artifact_changed_scope' => $metric['artifact_changed_scope'] ?? null,
             'config_identity' => $metric['config_identity'] ?? null,
@@ -143,6 +144,19 @@ class ReplayResultRepository
             ],
             $payload
         );
+    }
+
+    private function replayStatusForComparison($comparisonResult)
+    {
+        if (in_array((string) $comparisonResult, ['MATCH', 'EXPECTED_DEGRADE'], true)) {
+            return 'PASS';
+        }
+
+        if (in_array((string) $comparisonResult, ['MISMATCH', 'UNEXPECTED'], true)) {
+            return 'FAIL';
+        }
+
+        return 'BLOCKED';
     }
 
     public function replaceReasonCodeCounts($replayId, $tradeDate, array $reasonCounts)

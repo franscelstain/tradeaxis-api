@@ -388,6 +388,7 @@ trait UsesMarketDataSqlite
             $table->integer('publication_id')->nullable();
             $table->integer('publication_run_id')->nullable();
             $table->string('comparison_result');
+            $table->string('replay_status')->nullable();
             $table->text('comparison_note')->nullable();
             $table->string('artifact_changed_scope')->nullable();
             $table->string('config_identity')->nullable();
@@ -493,6 +494,7 @@ trait UsesMarketDataSqlite
             $table->index(['replay_id', 'publication_id', 'publication_version'], 'idx_replay_daily_publication_identity');
             $table->index(['replay_id', 'trade_date_effective'], 'idx_replay_daily_effective');
             $table->index(['replay_id', 'comparison_result'], 'idx_replay_daily_comparison');
+            $table->index(['replay_id', 'replay_status'], 'idx_replay_daily_replay_status');
             $table->index(['replay_id', 'coverage_gate_state'], 'idx_replay_daily_coverage_gate');
             $table->index(['replay_id', 'artifact_changed_scope'], 'idx_replay_daily_artifact_scope');
             $table->index(['replay_id', 'publication_version'], 'idx_replay_daily_publication_version');

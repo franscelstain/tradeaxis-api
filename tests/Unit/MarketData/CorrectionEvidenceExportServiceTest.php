@@ -126,4 +126,90 @@ class CorrectionEvidenceExportServiceTest extends TestCase
         $this->assertSame('PUBLICATION_SCOPED', $payload['correction_lifecycle']['historical_lineage_proof']['baseline_publication_proof']['artifact_scope']);
         $this->assertStringContainsString('Historical correction published safely', $payload['final_outcome_note']);
     }
+
+    public function test_unchanged_correction_marks_candidate_publication_proof_not_applicable_when_candidate_is_discarded()
+    {
+        $correction = (object) [
+            'correction_id' => 9002,
+            'trade_date' => '2026-02-18',
+            'approved_by' => 'operator',
+            'approved_at' => '2026-05-19 16:40:12',
+            'baseline_publication_id' => 2,
+            'prior_publication_id' => 2,
+            'prior_run_id' => 2,
+            'replacement_publication_id' => 2,
+            'new_publication_id' => 2,
+            'new_run_id' => 4,
+            'status' => 'CONSUMED_CURRENT',
+            'correction_reason_code' => 'CORRECTION_ARTIFACT_CHANGED',
+            'correction_reason_note' => 'runtime correction evidence proof',
+            'final_outcome_note' => 'Correction rerun produced unchanged content; current publication preserved without version switch.',
+        ];
+        $currentPublication = (object) [
+            'publication_id' => 2,
+            'run_id' => 2,
+            'publication_version' => 2,
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'bars_batch_hash' => 'H2B',
+            'indicators_batch_hash' => 'H2I',
+            'eligibility_batch_hash' => 'H2E',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+
+        $evidence->shouldReceive('findCorrectionById')->once()->with(9002)->andReturn($correction);
+        $evidence->shouldReceive('findPublicationById')->twice()->with(2)->andReturn($currentPublication);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with([
+            'type' => 'publication_id',
+            'publication_id' => 2,
+            'run_id' => 2,
+        ])->andReturn((object) [
+            'publication_id' => 2,
+            'run_id' => 2,
+            'publication_version' => 2,
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'evidence_resolution_mode' => 'CURRENT_READABLE_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'CURRENT_POINTER_PUBLICATION',
+            'current_pointer_required' => true,
+            'current_pointer_status' => 'RESOLVED_READABLE_CURRENT',
+            'historical_publication_allowed' => false,
+            'lineage_verification_status' => 'LINEAGE_VERIFIED',
+            'artifact_scope' => 'PUBLICATION_SCOPED',
+            'coverage_basis_publication_id' => 2,
+            'coverage_basis_run_id' => 2,
+            'evidence_reason_code' => 'CURRENT_READABLE_PUBLICATION_RESOLVED',
+        ]);
+
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $dir = sys_get_temp_dir().'/market_data_evidence_correction_unchanged_'.uniqid();
+        $result = $service->exportCorrectionEvidence(9002, $dir);
+
+        $this->assertSame('correction', $result['selector']['type']);
+        $this->assertSame(9002, $result['selector']['id']);
+        $this->assertSame('CONSUMED_CURRENT', $result['summary']['status']);
+        $this->assertSame('UNCHANGED', $result['summary']['changed_decision']);
+        $this->assertSame('NOT_RESEALED_UNCHANGED', $result['summary']['reseal_status']);
+        $this->assertFileExists($dir.'/correction_evidence.json');
+        $this->assertFileExists($dir.'/evidence_admission.json');
+
+        $payload = json_decode(file_get_contents($dir.'/correction_evidence.json'), true);
+        $candidateProof = $payload['candidate_historical_publication_proof'];
+
+        $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
+        $this->assertSame('NOT_APPLICABLE', $candidateProof['proof_status']);
+        $this->assertSame('UNCHANGED_CORRECTION_AUDIT', $candidateProof['evidence_resolution_mode']);
+        $this->assertSame('UNCHANGED_CORRECTION_CANDIDATE_DISCARDED', $candidateProof['evidence_publication_scope']);
+        $this->assertSame('UNCHANGED_CORRECTION_CANDIDATE_DISCARDED', $candidateProof['evidence_reason_code']);
+        $this->assertSame('NOT_APPLICABLE_UNCHANGED_CORRECTION', $candidateProof['lineage_verification_status']);
+        $this->assertSame('DISCARDED_CANDIDATE_ARTIFACT', $candidateProof['artifact_scope']);
+        $this->assertSame(4, $candidateProof['discarded_candidate_run_id']);
+        $this->assertSame(2, $candidateProof['preserved_publication_id']);
+        $this->assertArrayNotHasKey('failure_message', $candidateProof);
+        $this->assertSame($candidateProof, $payload['correction_lifecycle']['historical_lineage_proof']['candidate_publication_proof']);
+    }
+
 }

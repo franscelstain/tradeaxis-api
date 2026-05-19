@@ -78,6 +78,10 @@ class ReplaySmokeSuiteCommand extends AbstractMarketDataCommand
                 $parts[] = 'replay_id='.$case['replay_id'];
             }
 
+            if (isset($case['replay_status'])) {
+                $parts[] = 'replay_status='.$case['replay_status'];
+            }
+
             if (isset($case['evidence_output_dir'])) {
                 $parts[] = 'evidence_output_dir='.$this->normalizePathForDisplay($case['evidence_output_dir']);
             }

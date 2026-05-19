@@ -72,6 +72,7 @@ class ReplaySmokeSuiteService
             try {
                 $result = $this->replays->verifyRunAgainstFixture($runId, $fixturePath);
                 $record['observed_outcome'] = $result['comparison_result'];
+                $record['replay_status'] = $result['replay_status'] ?? null;
                 $record['replay_id'] = $result['replay_id'];
                 $record['trade_date'] = $result['trade_date'];
                 $record['fixture_family'] = $result['fixture_family'];
@@ -85,6 +86,7 @@ class ReplaySmokeSuiteService
                 }
             } catch (\Throwable $e) {
                 $record['observed_outcome'] = 'ERROR';
+                $record['replay_status'] = 'BLOCKED';
                 $record['error'] = $e->getMessage();
                 $record['passed'] = $expectedOutcome === 'ERROR';
             }
