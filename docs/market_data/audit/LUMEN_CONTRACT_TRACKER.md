@@ -3,36 +3,32 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Read-Side Consumer Surface Completion
+- Evidence Export Runtime Proof
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Revalidate and lock the existing read-side pointer enforcement contract for the latest source-of-truth ZIP after schema/migration sync.
-- Record `READ_SIDE_SCOPE = INTERNAL_ONLY` because no market-data HTTP/API route/controller/resource exists in this source state.
-- Require every current consumer read path to resolve via `eod_current_publication_pointer` and reject non-readable/non-sealed/non-PASS/non-current states.
-- Require explicit no-readable fail-safe behavior with `reason_code=NO_READABLE_PUBLICATION`.
-- Do not claim full market-data production-ready from this read-side contract alone.
+- Lock the evidence export selector and proof-pack admission rules for run/correction/replay surfaces.
+- Require explicit `evidence_admission.json` artifacts so evidence packs expose completeness/admission status without external DB lookup.
+- Preserve historical evidence audit resolution without weakening current consumer read-pointer contracts.
+- Lock the contract because supported operator-local run-selector runtime export and targeted/full PHPUnit proof have been supplied.
+- Do not claim full market-data production-ready from this evidence export hardening alone.
 
 [SESSION_GOAL]
-- Remove read-side consumer surface as a production-readiness blocker for the market-data roadmap.
+- Make evidence export packs audit-ready at the artifact contract level and lock the run-selector readable-publication runtime proof with operator-local evidence.
 
 [SESSION_NOTES]
-- Local PHP version for this patch is PHP 7.4.33.
-- Local PHPUnit version for this patch is PHPUnit 9.6.34.
+- Container PHP version for this patch is PHP 8.4.16.
+- Artisan evidence commands fail closed with `ENV_UNSUPPORTED_PHP_VERSION` before runtime execution.
+- PHPUnit is blocked by missing `dom`, `mbstring`, `xml`, and `xmlwriter` extensions.
+- `EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT` is LOCKED for the run/readable-publication runtime proof scope after operator-local artifact export and full MarketData PHPUnit proof were supplied.
 - Existing locked contracts retain their own local evidence and final rules for prior source states.
-- `READ_SIDE_POINTER_ENFORCEMENT_CONTRACT` remains the single canonical contract for this read-side completion; no duplicate read-side contract was created.
-- The patch adds reason-coded no-readable behavior, synchronized reason-code registry/seed entries, read-side inventory/contract clarifications, behavioral tests, static guards, and audit guard expectations.
-- This contract is LOCKED for read-side consumer surface because targeted read-side/anti-bypass/static/audit/replay/evidence/pointer/publication/correction tests, command/help smoke checks, syntax checks, and full MarketData PHPUnit passed after this patch.
 
 [RUNTIME_ENVIRONMENT]
-- Local PHP version: PHP 7.4.33.
-- Local PHPUnit version: PHPUnit 9.6.34.
-- Artisan migration status: not part of this read-side patch.
-- PHPUnit status: PASS for targeted and full MarketData validation after this patch.
-- Evidence/replay command smoke status: PASS for required list/help surfaces; evidence export runtime proof remains next-roadmap scope.
-- Operator-local historical proof available: StaticGuard OK (164 tests, 3702 assertions) and full MarketData OK (435 tests, 6299 assertions) from Ops Environment Baseline closure.
-- Runtime authority for LOCKED read-side completion: current local proof from this patch on 2026-05-19.
+- Container PHP version: PHP 8.4.16.
+- PHPUnit status: BLOCKED_CONTAINER_RUNTIME_ENV because `dom`, `mbstring`, `xml`, and `xmlwriter` are unavailable.
+- Artisan status: BLOCKED_CONTAINER_RUNTIME_ENV / fail-closed due `ENV_UNSUPPORTED_PHP_VERSION`.
+- Runtime authority supplied for LOCKED evidence-export closure: operator-local proof in the documented Lumen-compatible environment.
 
 ---
 ## OPERATIONAL STATUS
@@ -53,6 +49,101 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+
+- EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-19
+
+  [RELATED_IMPLEMENTATION] Evidence Export Runtime Proof / Admission Artifact Hardening
+
+  [REVIEW_STATUS] LOCKED_LOCAL_RUNTIME_PROOF_RUN_SELECTOR
+
+  [HISTORY]
+  - 2026-05-19 -> Contract opened as the current evidence-export runtime proof gate after read-side consumer surface completion.
+  - 2026-05-19 -> Static trace confirmed existing selector behavior: exactly one of `--run_id`, `--correction_id`, or `--replay_id` is required, and replay evidence requires explicit `--trade_date`.
+  - 2026-05-19 -> Contract gap found: evidence packs exposed completeness details but not a uniform selector-scoped admission artifact for all selectors.
+  - 2026-05-19 -> Patch added `evidence_admission.json` for run/correction/replay exports and updated evidence tests/static guard expectations.
+  - 2026-05-19 -> Container runtime proof is blocked by unsupported PHP 8.4.16 for artisan and missing PHPUnit extensions; prior to operator-local proof this contract stayed ENFORCED, not LOCKED.
+  - 2026-05-19 -> Operator-local runtime proof exposed a finalize precision regression: candidate coverage PASS (`901/913`, stored as `0.986857`, threshold `0.980000`) was incorrectly downgraded to `RUN_COVERAGE_NOT_EVALUABLE`; patch now permits six-decimal storage rounding tolerance while preserving mandatory coverage telemetry checks.
+  - 2026-05-19 -> Operator-local test proof passed: targeted evidence/correction/replay/completeness/historical-lineage tests passed, `tests/Unit/MarketData --filter "Evidence"` passed with OK (54 tests, 1021 assertions), `tests/Unit/MarketData --filter "StaticGuard"` passed with OK (169 tests, 3885 assertions), and full `tests/Unit/MarketData` passed with OK (449 tests, 6562 assertions).
+  - 2026-05-19 -> Operator-local runtime proof passed for `run_id=2`: daily import accepted 901 rows, promote returned `SUCCESS + READABLE + PROMOTED`, pointer switched to current publication `2`, coverage PASS, publication SEALED, and evidence export produced 10 artifacts with `evidence_admission_state=ADMITTED_COMPLETE` and `evidence_completeness_state=COMPLETE`.
+
+  [DEFINED]
+  - Evidence export must accept exactly one selector: `--run_id`, `--correction_id`, or `--replay_id`.
+  - Replay evidence export must require explicit `--trade_date`; latest-row resolution is forbidden.
+  - Evidence packs must include selector-scoped admission proof that identifies required sections, missing sections, critical missing sections, deterministic export status, and whether post-export DB lookup is required.
+  - Missing critical metadata must not be silent.
+  - Current consumer reads and historical audit evidence must remain separate: historical evidence may be selector-scoped audit proof, not consumer current-readable output.
+
+  [IMPLEMENTED]
+  - `ExportEvidenceCommand` blocks missing/conflicting selectors with reason-coded command output and warns on incomplete evidence using both admission and completeness artifact names.
+  - `MarketDataEvidenceExportService::exportRunEvidence()` writes `evidence_admission.json`, `evidence_completeness.json`, and full run/source/coverage/artifact/publication/pointer/fallback/correction/lineage evidence.
+  - `MarketDataEvidenceExportService::exportCorrectionEvidence()` writes `correction_evidence.json` and `evidence_admission.json`.
+  - `MarketDataEvidenceExportService::exportReplayEvidence()` writes replay result/expected/actual/reason-code/evidence-pack artifacts plus `evidence_admission.json`.
+  - Evidence service/unit/static tests were updated for the new admission artifact and final artifact lists.
+  - Finalize/readable invariant coverage-ratio validation now uses `0.000001` storage tolerance so persisted `DECIMAL(12,6)` coverage ratios do not fail otherwise valid PASS coverage.
+  - `EVIDENCE_EXPORT_RUNTIME_PROOF_INVENTORY.md` records artifact lists, validation blockers, and operator-local lock commands.
+
+  [ENFORCED]
+  - Admission artifact fields: `selector_type`, `selector_id`, `evidence_admission_state`, `evidence_admission_reason_code`, `required_sections`, `missing_sections`, `critical_missing_sections`, `evidence_created_at`, `database_lookup_required_after_export`, `deterministic_export`, and `silent_missing_metadata_allowed=false`.
+  - Existing historical-lineage guards continue to require evidence audit resolver separation from current consumer resolver.
+  - Current status is LOCKED for run/readable-publication runtime proof because operator-local runtime artifacts and targeted/full PHPUnit proof were supplied; container blocker remains historical/support context.
+  - Valid PASS coverage must not be downgraded to `RUN_COVERAGE_NOT_EVALUABLE` solely because the persisted ratio is rounded to six decimal places.
+
+  [VALIDATED]
+  - Static syntax validation passed: `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php`.
+  - Static syntax validation passed: `php -l app/Console/Commands/MarketData/ExportEvidenceCommand.php`.
+  - Static syntax validation passed: `php -l tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php`.
+  - Static syntax validation passed: `php -l tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php`.
+  - Static syntax validation passed: `php -l tests/Unit/MarketData/ReplayEvidenceExportServiceTest.php`.
+  - Static syntax validation passed: `php -l tests/Unit/MarketData/EvidenceExportCompletenessStaticGuardTest.php`.
+  - Static syntax validation passed: `php -l app/Application/MarketData/Services/FinalizeDecisionService.php`.
+  - Static syntax validation passed: `php -l app/Application/MarketData/Services/MarketDataInvariantGuard.php`.
+  - Static syntax validation passed: `php -l tests/Unit/MarketData/FinalizeDecisionServiceTest.php`.
+  - Container manual PHP regression check passed for `901/913` stored as `0.986857`: finalize decision returns `SUCCESS + READABLE + PASS` with `promotion_allowed=true`.
+  - Operator-local PHPUnit `tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php` -> OK (5 tests, 129 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php` -> OK (1 test, 20 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData/ReplayEvidenceExportServiceTest.php` -> OK (1 test, 47 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData/EvidenceExportCompletenessStaticGuardTest.php` -> OK (5 tests, 142 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData/EvidenceHistoricalLineageCompletenessStaticGuardTest.php` -> OK (5 tests, 51 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData --filter "Evidence"` -> OK (54 tests, 1021 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData --filter "StaticGuard"` -> OK (169 tests, 3885 assertions).
+  - Operator-local PHPUnit `tests/Unit/MarketData` -> OK (449 tests, 6562 assertions).
+  - Operator-local daily import for `2026-02-18` -> PASS, `run_id=2`, `accepted_row_count=901`, `rejected_row_count=0`, `invalid_row_count=0`, `source_file_row_count=901`.
+  - Operator-local promote for `run_id=2` -> PASS, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `promote_status=PROMOTED`, `promoted=true`, `pointer_switched=true`, `current_publication_id=2`, `coverage_gate_state=PASS`, `coverage_reason_code=COVERAGE_THRESHOLD_MET`, `seal_state=SEALED`.
+  - Operator-local evidence export for `run_id=2` -> PASS, `evidence_admission_state=ADMITTED_COMPLETE`, `evidence_completeness_state=COMPLETE`, `pointer_resolve_status=RESOLVED_READABLE_CURRENT`, `file_count=10`.
+  - Container PHPUnit runtime validation blocked: `php vendor/bin/phpunit tests/Unit/MarketData/EvidenceExportCompletenessStaticGuardTest.php` requires missing `dom`, `mbstring`, `xml`, and `xmlwriter` extensions.
+  - Artisan runtime validation blocked/fail-closed: `php artisan market-data:evidence:export --help` returns `ENV_UNSUPPORTED_PHP_VERSION` on PHP 8.4.16.
+
+  [RUNTIME_PROOF]
+  - Operator-local run-selector runtime proof produced real artifacts for `run_id=2`, including `evidence_admission.json`, `evidence_completeness.json`, `run_summary.json`, and `publication_manifest.json`.
+  - Correction/replay selector admission behavior is covered by targeted PHPUnit; no correction/replay runtime fixtures were supplied, so no correction/replay artifact proof is claimed.
+
+  [ARTIFACTS]
+  - Run selector: `run_summary.json`, optional `publication_manifest.json`, `run_event_summary.json`, optional `source_attempt_telemetry.json`, `eligibility_export.csv`, `invalid_bars_export.csv`, `anomaly_report.md`, `lineage.json`, `evidence_admission.json`, `evidence_completeness.json`, `evidence_pack.json`.
+  - Correction selector: `correction_evidence.json`, `evidence_admission.json`.
+  - Replay selector: `replay_result.json`, `replay_expected_state.json`, `replay_actual_state.json`, `replay_reason_code_counts.json`, `evidence_admission.json`, `replay_evidence_pack.json`.
+
+  [FINAL_RULE]
+  - LOCKED. Evidence export run-selector readable-publication runtime proof is locked because operator-local PHPUnit/artisan validation produced a SUCCESS + READABLE + SEALED current publication and a COMPLETE/ADMITTED evidence pack with concrete artifacts.
+
+  [LOCK_CONDITION]
+  - SATISFIED for run/readable-publication evidence export: operator-local `market-data:evidence:export --run_id=2` generated real artifacts including `evidence_admission.json`; targeted Evidence/StaticGuard tests and full `tests/Unit/MarketData` PASS were supplied.
+
+  [EVIDENCE]
+  - Current operator-local proof is recorded under `[VALIDATED]` and in `EVIDENCE_EXPORT_RUNTIME_PROOF_INVENTORY.md`.
+
+  [GAP]
+  - Container runtime artifact proof unavailable; retained as support context only.
+  - Existing operator-local `run_id=1` was finalized by pre-patch code as `FAILED / NOT_READABLE` and must not be reused as successful proof.
+
+  [REMAINING_RISK]
+  - Correction/replay runtime artifact exports are not claimed because no correction/replay runtime fixtures were supplied; selector admission behavior is covered by targeted PHPUnit.
+  - This contract does not close replay determinism runtime proof, ops runtime matrix, production proof pack, or final roadmap audit synchronization.
+
+  [NEXT_ACTION]
+  - Proceed to Replay Determinism Runtime Proof as the next production-readiness blocker.
 
 
 - READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED

@@ -119,12 +119,13 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $this->assertSame(3001, $result['selector']['id']);
         $this->assertSame('EXPECTED_DEGRADE', $result['summary']['comparison_result']);
         $this->assertSame('HELD', $result['summary']['status']);
-        $this->assertSame(5, $result['file_count']);
+        $this->assertSame(6, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/replay_result.json');
         $this->assertFileExists($dir.'/replay_expected_state.json');
         $this->assertFileExists($dir.'/replay_actual_state.json');
         $this->assertFileExists($dir.'/replay_reason_code_counts.json');
+        $this->assertFileExists($dir.'/evidence_admission.json');
         $this->assertFileExists($dir.'/replay_evidence_pack.json');
 
         $replayResult = json_decode(file_get_contents($dir.'/replay_result.json'), true);
@@ -157,7 +158,13 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $this->assertCount(2, $actualState['reason_code_counts']);
         $this->assertSame(['BBCA', 'TLKM'], $actualState['coverage']['coverage_missing_sample']);
 
+        $admission = json_decode(file_get_contents($dir.'/evidence_admission.json'), true);
+        $this->assertSame('replay', $admission['selector_type']);
+        $this->assertSame(3001, $admission['selector_id']);
+        $this->assertSame('ADMITTED_COMPLETE', $admission['evidence_admission_state']);
+
         $payload = json_decode(file_get_contents($dir.'/replay_evidence_pack.json'), true);
+        $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
         $this->assertSame('HELD', $payload['replay_result']['status']);
         $this->assertSame('cfg_2025_12_v2', $payload['expected_state']['config_identity']);
         $this->assertSame('manual_file', $payload['replay_result']['source_context']['source_mode']);

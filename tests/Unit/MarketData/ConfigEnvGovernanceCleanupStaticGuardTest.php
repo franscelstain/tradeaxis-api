@@ -189,9 +189,10 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Read-Side Consumer Surface Completion", $status);
+- Evidence Export Runtime Proof", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Read-Side Consumer Surface Completion", $tracker);
+- Evidence Export Runtime Proof", $tracker);
+        $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);
         $this->assertStringContainsString('Ops Environment Baseline', $status.$tracker, 'Latest Ops Environment history must remain present.');
         $this->assertStringContainsString('- Config / ENV Governance Cleanup -> DONE', $status);

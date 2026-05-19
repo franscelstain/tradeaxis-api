@@ -14,6 +14,10 @@ class EvidenceExportCompletenessStaticGuardTest extends TestCase
         $service = file_get_contents($this->projectPath('app/Application/MarketData/Services/MarketDataEvidenceExportService.php'));
 
         foreach ([
+            'evidence_admission',
+            'evidence_admission_state',
+            'evidence_admission_reason_code',
+            'silent_missing_metadata_allowed',
             'evidence_completeness',
             'evidence_completeness_state',
             'evidence_completeness_reason_code',
@@ -30,6 +34,7 @@ class EvidenceExportCompletenessStaticGuardTest extends TestCase
             'correction_context',
             'lineage',
             'lineage.json',
+            'evidence_admission.json',
             'evidence_completeness.json',
         ] as $needle) {
             $this->assertStringContainsString($needle, $service, 'Evidence export must keep section '.$needle);
@@ -187,6 +192,7 @@ class EvidenceExportCompletenessStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('evidence_completeness_state', $command);
         $this->assertStringContainsString('evidence_warning=EVIDENCE_INCOMPLETE', $command);
+        $this->assertStringContainsString('evidence_admission.json', $command);
         $this->assertStringContainsString('evidence_completeness.json', $command);
     }
 }

@@ -63,11 +63,25 @@ class MarketDataEvidenceExportService
         $correctionContext = $this->buildRunCorrectionContext($run);
         $lineage = $this->buildLineageContext($runSummary, $artifactContext, $publicationContext, $pointerContext, $fallbackContext, $correctionContext);
         $completeness = $this->buildEvidenceCompleteness($runSummary, $publicationContext, $pointerContext, $fallbackContext, $artifactContext, $lineage, $correctionContext);
+        $admission = $this->buildEvidenceAdmission('run', (int) $this->field($run, 'run_id'), [
+            'run_summary',
+            'run_event_summary',
+            'source_context',
+            'coverage_context',
+            'artifact_context',
+            'publication_context',
+            'pointer_context',
+            'fallback_context',
+            'correction_context',
+            'lineage',
+        ], $completeness['missing_sections'], $runSummary['evidence_export_created_at'] ?? null);
         $runSummary['evidence_completeness_state'] = $completeness['evidence_completeness_state'];
+        $runSummary['evidence_admission_state'] = $admission['evidence_admission_state'];
         $runSummary['evidence_missing_sections'] = $completeness['missing_sections'];
         $anomalyReport = $this->buildAnomalyReport($runSummary, $dominantReasonCodes, $manifest, $completeness);
 
         $payload = [
+            'evidence_admission' => $admission,
             'evidence_completeness' => $completeness,
             'run_summary' => $runSummary,
             'source_context' => $runSummary['source_context'],
@@ -101,6 +115,7 @@ class MarketDataEvidenceExportService
         $this->writeCsv($dir.'/invalid_bars_export.csv', ['trade_date', 'ticker_id', 'source', 'source_row_ref', 'invalid_reason_code'], $invalidBarsRows);
         file_put_contents($dir.'/anomaly_report.md', $anomalyReport);
         $this->writeJson($dir.'/lineage.json', $lineage);
+        $this->writeJson($dir.'/evidence_admission.json', $admission);
         $this->writeJson($dir.'/evidence_completeness.json', $completeness);
         $this->writeJson($dir.'/evidence_pack.json', $payload);
 
@@ -113,6 +128,7 @@ class MarketDataEvidenceExportService
             'invalid_bars_export.csv',
             'anomaly_report.md',
             'lineage.json',
+            'evidence_admission.json',
             'evidence_completeness.json',
             'evidence_pack.json',
         ]));
@@ -128,6 +144,7 @@ class MarketDataEvidenceExportService
                 'coverage_gate_state' => $runSummary['coverage']['coverage_gate_state'] ?? null,
                 'final_reason_code' => $runSummary['final_reason_code'] ?? null,
                 'evidence_completeness_state' => $completeness['evidence_completeness_state'],
+                'evidence_admission_state' => $admission['evidence_admission_state'],
                 'publication_id' => $publicationContext['publication_id'] ?? null,
                 'pointer_resolve_status' => $pointerContext['pointer_resolve_status'] ?? null,
                 'fallback_used' => $fallbackContext['fallback_used'] ?? false,
@@ -480,6 +497,28 @@ class MarketDataEvidenceExportService
         ];
     }
 
+    private function buildEvidenceAdmission($selectorType, $selectorId, array $requiredSections, array $missingSections, $evidenceCreatedAt = null)
+    {
+        $missingSections = array_values(array_unique(array_filter($missingSections, function ($section) {
+            return $section !== null && $section !== '';
+        })));
+
+        return [
+            'selector_type' => $selectorType,
+            'selector_id' => $selectorId !== null ? (int) $selectorId : null,
+            'evidence_admission_state' => $missingSections === [] ? 'ADMITTED_COMPLETE' : 'ADMITTED_INCOMPLETE',
+            'evidence_admission_reason_code' => $missingSections === [] ? 'EVIDENCE_ADMISSION_COMPLETE' : 'EVIDENCE_ADMISSION_INCOMPLETE',
+            'required_sections' => array_values($requiredSections),
+            'missing_sections' => $missingSections,
+            'critical_missing_sections' => $missingSections,
+            'evidence_created_at' => $evidenceCreatedAt,
+            'evidence_timestamp_source' => $evidenceCreatedAt !== null ? 'source_record_timestamp' : 'not_available',
+            'database_lookup_required_after_export' => false,
+            'deterministic_export' => true,
+            'silent_missing_metadata_allowed' => false,
+        ];
+    }
+
     private function markMissingSection(array &$missing, $section, $value)
     {
         if ($value === null || $value === '' || $value === false) {
@@ -594,8 +633,21 @@ class MarketDataEvidenceExportService
         $changedDecision = $this->resolveCorrectionChangedDecision($correction, $priorPublication, $newPublication);
         $resealStatus = $this->resolveCorrectionResealStatus($correction, $changedDecision, $newPublication);
         $publicationSwitch = $newPublication ? (bool) $newPublication->is_current : false;
+        $correctionAdmissionMissing = [];
+        $this->markMissingSection($correctionAdmissionMissing, 'correction_context', $this->field($correction, 'correction_id'));
+        $this->markMissingSection($correctionAdmissionMissing, 'correction_status', $this->field($correction, 'status'));
+        $this->markMissingSection($correctionAdmissionMissing, 'correction_trade_date', $this->field($correction, 'trade_date'));
+        $admission = $this->buildEvidenceAdmission('correction', (int) $this->field($correction, 'correction_id'), [
+            'correction_context',
+            'correction_lifecycle',
+            'baseline_historical_publication_proof',
+            'candidate_historical_publication_proof',
+            'publication_switch',
+            'comparison_summary',
+        ], $correctionAdmissionMissing, $this->evidenceCreatedAtFromRecord($correction));
 
         $payload = [
+            'evidence_admission' => $admission,
             'correction_id' => (int) $this->field($correction, 'correction_id'),
             'trade_date' => $this->field($correction, 'trade_date'),
             'approval' => [
@@ -675,8 +727,9 @@ class MarketDataEvidenceExportService
         $dir = $outputDir ?: $this->defaultCorrectionOutputDir($this->field($correction, 'correction_id'));
         $this->ensureDirectory($dir);
         $this->writeJson($dir.'/correction_evidence.json', $payload);
+        $this->writeJson($dir.'/evidence_admission.json', $admission);
 
-        $files = ['correction_evidence.json'];
+        $files = ['correction_evidence.json', 'evidence_admission.json'];
 
         return [
             'selector' => ['type' => 'correction', 'id' => (int) $this->field($correction, 'correction_id')],
@@ -684,6 +737,7 @@ class MarketDataEvidenceExportService
                 'correction_id' => (int) $this->field($correction, 'correction_id'),
                 'trade_date' => $this->field($correction, 'trade_date'),
                 'status' => $this->field($correction, 'status'),
+                'evidence_admission_state' => $admission['evidence_admission_state'],
                 'changed_decision' => $changedDecision,
                 'reseal_status' => $resealStatus,
                 'publication_switch' => $payload['publication_switch'],
@@ -718,7 +772,23 @@ class MarketDataEvidenceExportService
             'config_identity' => $metric->config_identity,
             'reason_code_count' => count($reasonCodes),
         ];
+        $replayAdmissionMissing = [];
+        $this->markMissingSection($replayAdmissionMissing, 'replay_result', $metric->replay_id ?? null);
+        $this->markMissingSection($replayAdmissionMissing, 'expected_state', $expectedState['status'] ?? ($expectedState['publication_context']['publication_state'] ?? null));
+        $this->markMissingSection($replayAdmissionMissing, 'actual_state', $actualState['status'] ?? ($actualState['publication_context']['publication_state'] ?? null));
+        $admission = $this->buildEvidenceAdmission('replay', (int) $metric->replay_id, [
+            'replay_result',
+            'expected_state',
+            'actual_state',
+            'reason_code_counts',
+            'publication_context',
+            'pointer_context',
+            'coverage_comparison',
+            'hash_seal_comparison',
+        ], $replayAdmissionMissing, $this->evidenceCreatedAtFromRecord($metric));
+        $summary['evidence_admission_state'] = $admission['evidence_admission_state'];
         $payload = [
+            'evidence_admission' => $admission,
             'replay_result' => $replayResult,
             'expected_state' => $expectedState,
             'actual_state' => $actualState,
@@ -732,6 +802,7 @@ class MarketDataEvidenceExportService
         $this->writeJson($dir.'/replay_expected_state.json', $expectedState);
         $this->writeJson($dir.'/replay_actual_state.json', $actualState);
         $this->writeJson($dir.'/replay_reason_code_counts.json', $reasonCodes);
+        $this->writeJson($dir.'/evidence_admission.json', $admission);
         $this->writeJson($dir.'/replay_evidence_pack.json', $payload);
 
         $files = [
@@ -739,6 +810,7 @@ class MarketDataEvidenceExportService
             'replay_expected_state.json',
             'replay_actual_state.json',
             'replay_reason_code_counts.json',
+            'evidence_admission.json',
             'replay_evidence_pack.json',
         ];
 
@@ -749,6 +821,7 @@ class MarketDataEvidenceExportService
                 'trade_date' => $metric->trade_date,
                 'comparison_result' => $metric->comparison_result,
                 'status' => $metric->status,
+                'evidence_admission_state' => $admission['evidence_admission_state'],
             ],
             'output_dir' => $dir,
             'file_count' => count($files),
@@ -861,9 +934,35 @@ class MarketDataEvidenceExportService
             'duration_ms' => $this->durationMillis($this->field($run, 'started_at'), $this->field($run, 'finished_at') ?: $this->field($run, 'completed_at')),
             'created_at' => $this->field($run, 'created_at'),
             'updated_at' => $this->field($run, 'updated_at'),
+            'evidence_export_created_at' => $this->evidenceCreatedAtFromRecord($run),
+            'evidence_export_timestamp_source' => $this->evidenceTimestampSourceFromRecord($run),
         ];
     }
 
+
+    private function evidenceCreatedAtFromRecord($record)
+    {
+        foreach (['finished_at', 'completed_at', 'updated_at', 'created_at'] as $field) {
+            $value = $this->field($record, $field);
+            if ($value !== null && $value !== '') {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function evidenceTimestampSourceFromRecord($record)
+    {
+        foreach (['finished_at', 'completed_at', 'updated_at', 'created_at'] as $field) {
+            $value = $this->field($record, $field);
+            if ($value !== null && $value !== '') {
+                return $field;
+            }
+        }
+
+        return 'not_available';
+    }
 
     private function deriveImportStatus($run, $requestMode)
     {

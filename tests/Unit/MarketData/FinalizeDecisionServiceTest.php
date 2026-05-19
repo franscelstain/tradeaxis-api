@@ -41,6 +41,29 @@ class FinalizeDecisionServiceTest extends TestCase
         $this->assertNull($decision['reason_code']);
     }
 
+    public function test_finalize_accepts_six_decimal_persisted_coverage_ratio_when_candidate_scope_passes()
+    {
+        $service = new FinalizeDecisionService();
+        $decision = $service->evaluate(true, true, 'SEALED', $this->coverage('PASS', 913, 901, 0.98, [
+            'coverage_ratio' => 0.986857,
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'coverage_universe_basis' => 'ACTIVE_LISTED_EQUITY_AS_OF_DATE',
+        ]), null, [
+            'source_mode' => 'manual_file',
+            'promote_mode' => 'full_publish',
+            'publish_target' => 'current_replace',
+        ]);
+
+        $this->assertTrue($decision['promotion_allowed']);
+        $this->assertSame('PASS', $decision['coverage_gate_status']);
+        $this->assertSame('PASS', $decision['quality_gate_state']);
+        $this->assertSame('SUCCESS', $decision['terminal_status']);
+        $this->assertSame('READABLE', $decision['publishability_state']);
+        $this->assertNull($decision['reason_code']);
+        $this->assertSame(0.986857, $decision['coverage_summary']['coverage_ratio']);
+        $this->assertSame('COVERAGE_GATE_STRICT_HYBRID', $decision['manual_file_policy']);
+    }
+
     public function test_finalize_downgrades_incomplete_pass_to_not_evaluable()
     {
         $service = new FinalizeDecisionService();

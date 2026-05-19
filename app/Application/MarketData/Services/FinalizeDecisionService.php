@@ -4,6 +4,8 @@ namespace App\Application\MarketData\Services;
 
 class FinalizeDecisionService
 {
+    private const COVERAGE_RATIO_STORAGE_TOLERANCE = 0.000001;
+
     public function evaluate($cutoffSatisfied, $runSealed, $candidateSealState, array $coverageSummary, $fallbackTradeDate, array $promoteContext = [])
     {
         $coverageSummary = $this->normalizeCoverageSummary($coverageSummary);
@@ -322,11 +324,11 @@ class FinalizeDecisionService
             return false;
         }
 
-        if ($ratio === null || abs((float) $ratio - ((float) $available / (float) $expected)) > 0.0000001) {
+        if ($ratio === null || abs((float) $ratio - ((float) $available / (float) $expected)) > self::COVERAGE_RATIO_STORAGE_TOLERANCE) {
             return false;
         }
 
-        if ($threshold === null || $threshold < 0 || $threshold > 1 || (float) $ratio + 0.0000001 < (float) $threshold) {
+        if ($threshold === null || $threshold < 0 || $threshold > 1 || (float) $ratio + self::COVERAGE_RATIO_STORAGE_TOLERANCE < (float) $threshold) {
             return false;
         }
 

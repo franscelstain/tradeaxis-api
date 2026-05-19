@@ -123,7 +123,8 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
 
         foreach ([$status, $tracker] as $document) {
             $this->assertStringContainsString("ACTIVE SESSION:
-- Read-Side Consumer Surface Completion", $document);
+- Evidence Export Runtime Proof", $document);
+            $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);
             $this->assertStringContainsString('LOCKED_LOCAL_RUNTIME_PROOF', $document);
             $this->assertStringContainsString('OK (435 tests, 6299 assertions)', $document);

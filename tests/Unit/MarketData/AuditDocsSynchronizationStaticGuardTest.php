@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Read-Side Consumer Surface Completion', $statusActiveSession);
+        $this->assertSame('Evidence Export Runtime Proof', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -39,8 +39,13 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('COVERAGE_POLICY_RECONCILIATION_CONTRACT', $document);
             $this->assertStringContainsString('DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT', $document);
             $this->assertStringContainsString('READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $document);
+            $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
         }
 
+        $this->assertStringContainsString('- Evidence Export Runtime Proof / Admission Artifact Hardening -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status);
+        $this->assertStringContainsString('- EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Evidence Export Runtime Proof / Admission Artifact Hardening', $tracker);
         $this->assertStringContainsString('- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $status);
         $this->assertStringContainsString('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $tracker);
@@ -73,7 +78,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
-        $this->assertStringContainsString('READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -126,6 +131,8 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         $this->assertContains('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $implementationContracts);
         $this->assertContains('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $trackerContracts);
+        $this->assertContains('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $implementationContracts);
+        $this->assertContains('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $trackerContracts);
     }
 
     public function test_audit_governance_enforces_append_only_anti_duplication_and_static_guard(): void

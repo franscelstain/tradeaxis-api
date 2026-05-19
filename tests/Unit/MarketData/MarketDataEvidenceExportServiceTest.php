@@ -167,7 +167,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(8124, $result['selector']['id']);
         $this->assertSame('SUCCESS', $result['summary']['terminal_status']);
         $this->assertSame('READABLE', $result['summary']['publishability_state']);
-        $this->assertSame(10, $result['file_count']);
+        $this->assertSame(11, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/run_summary.json');
         $this->assertFileExists($dir.'/publication_manifest.json');
@@ -177,6 +177,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertFileExists($dir.'/invalid_bars_export.csv');
         $this->assertFileExists($dir.'/anomaly_report.md');
         $this->assertFileExists($dir.'/lineage.json');
+        $this->assertFileExists($dir.'/evidence_admission.json');
         $this->assertFileExists($dir.'/evidence_completeness.json');
         $this->assertFileExists($dir.'/evidence_pack.json');
 
@@ -184,6 +185,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(8124, $summary['run_id']);
         $this->assertSame('SUCCESS', $summary['terminal_status']);
         $this->assertTrue($summary['is_current_publication']);
+        $this->assertSame('ADMITTED_COMPLETE', $summary['evidence_admission_state']);
         $this->assertSame('PASS', $summary['coverage']['coverage_gate_state']);
         $this->assertSame('COVERAGE_THRESHOLD_MET', $summary['coverage']['coverage_reason_code']);
         $this->assertTrue($summary['coverage']['coverage_passed']);
@@ -203,7 +205,15 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertTrue($attemptTelemetry['attempts'][0]['will_retry']);
         $this->assertFalse($attemptTelemetry['attempts'][1]['will_retry']);
 
+        $admission = json_decode(file_get_contents($dir.'/evidence_admission.json'), true);
+        $this->assertSame('run', $admission['selector_type']);
+        $this->assertSame(8124, $admission['selector_id']);
+        $this->assertSame('ADMITTED_COMPLETE', $admission['evidence_admission_state']);
+        $this->assertFalse($admission['database_lookup_required_after_export']);
+        $this->assertFalse($admission['silent_missing_metadata_allowed']);
+
         $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
+        $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
         $this->assertSame('coverage_gate_v1', $payload['run_summary']['coverage']['coverage_contract_version']);
         $this->assertSame('active_equity_universe_asof_trade_date', $payload['run_summary']['coverage']['coverage_universe_basis']);
         $this->assertSame('API_FREE', $payload['run_summary']['source_context']['source_name']);
@@ -327,10 +337,16 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertTrue($result['summary']['fallback_used']);
         $this->assertFileExists($dir.'/evidence_pack.json');
         $this->assertFileExists($dir.'/lineage.json');
+        $this->assertFileExists($dir.'/evidence_admission.json');
         $this->assertFileExists($dir.'/evidence_completeness.json');
         $this->assertFileDoesNotExist($dir.'/publication_manifest.json');
 
+        $admission = json_decode(file_get_contents($dir.'/evidence_admission.json'), true);
+        $this->assertSame('ADMITTED_INCOMPLETE', $admission['evidence_admission_state']);
+        $this->assertContains('artifact_hash_context', $admission['critical_missing_sections']);
+
         $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
+        $this->assertSame('ADMITTED_INCOMPLETE', $payload['evidence_admission']['evidence_admission_state']);
         $this->assertSame('INCOMPLETE', $payload['evidence_completeness']['evidence_completeness_state']);
         $this->assertContains('artifact_hash_context', $payload['evidence_completeness']['missing_sections']);
         $this->assertSame('FAIL', $payload['coverage_context']['coverage_gate_state']);

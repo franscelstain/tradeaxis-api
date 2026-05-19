@@ -4,6 +4,8 @@ namespace App\Application\MarketData\Services;
 
 class MarketDataInvariantGuard
 {
+    private const COVERAGE_RATIO_STORAGE_TOLERANCE = 0.000001;
+
     public function assertReadableRequiresCoveragePass($state, $context = 'state'): void
     {
         $terminalStatus = $this->value($state, 'terminal_status');
@@ -182,7 +184,7 @@ class MarketDataInvariantGuard
         }
 
         $expectedRatio = $available / $expected;
-        if (abs((float) $ratio - (float) $expectedRatio) > 0.0000001) {
+        if (abs((float) $ratio - (float) $expectedRatio) > self::COVERAGE_RATIO_STORAGE_TOLERANCE) {
             throw new \LogicException($context.': READABLE requires coverage_ratio = available_eod_count / expected_universe_count.');
         }
 
@@ -190,7 +192,7 @@ class MarketDataInvariantGuard
             throw new \LogicException($context.': READABLE requires valid coverage_threshold_value.');
         }
 
-        if ((float) $ratio + 0.0000001 < (float) $threshold) {
+        if ((float) $ratio + self::COVERAGE_RATIO_STORAGE_TOLERANCE < (float) $threshold) {
             throw new \LogicException($context.': READABLE requires coverage_ratio >= coverage_threshold_value.');
         }
 

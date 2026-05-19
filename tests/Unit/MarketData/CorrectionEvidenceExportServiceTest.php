@@ -105,11 +105,17 @@ class CorrectionEvidenceExportServiceTest extends TestCase
         $this->assertSame(9001, $result['selector']['id']);
         $this->assertSame('PUBLISHED', $result['summary']['status']);
         $this->assertTrue($result['summary']['publication_switch']);
-        $this->assertSame(1, $result['file_count']);
+        $this->assertSame(2, $result['file_count']);
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/correction_evidence.json');
+        $this->assertFileExists($dir.'/evidence_admission.json');
+
+        $admission = json_decode(file_get_contents($dir.'/evidence_admission.json'), true);
+        $this->assertSame('correction', $admission['selector_type']);
+        $this->assertSame('ADMITTED_COMPLETE', $admission['evidence_admission_state']);
 
         $payload = json_decode(file_get_contents($dir.'/correction_evidence.json'), true);
+        $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
         $this->assertSame(9001, $payload['correction_id']);
         $this->assertSame('H1B', $payload['old_hashes']['bars_batch_hash']);
         $this->assertSame('H2B', $payload['new_hashes']['bars_batch_hash']);
