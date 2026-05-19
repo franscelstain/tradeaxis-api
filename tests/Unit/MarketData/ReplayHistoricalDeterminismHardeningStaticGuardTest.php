@@ -44,9 +44,11 @@ class ReplayHistoricalDeterminismHardeningStaticGuardTest extends TestCase
 
         foreach ([
             'resolvePublicationForReplayActualState',
+            'resolveExplicitFixturePublication',
             'expectsHistoricalReplayPublication',
             'resolvePublicationForEvidenceAudit',
             'replay_historical_actual_state',
+            'replay_fixture_explicit_publication',
             'expected_replay_resolution_context',
             'actual_replay_resolution_context',
             'HISTORICAL_PUBLICATION_AUDIT',
@@ -65,6 +67,7 @@ class ReplayHistoricalDeterminismHardeningStaticGuardTest extends TestCase
     {
         $service = file_get_contents($this->projectPath('app/Application/MarketData/Services/ReplayVerificationService.php'));
         $evidenceRepository = file_get_contents($this->projectPath('app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php'));
+        $fixtureCommand = file_get_contents($this->projectPath('app/Console/Commands/MarketData/GenerateReplayFixtureCommand.php'));
 
         foreach ([
             'dominantReasonCodesForEvidencePublication',
@@ -78,6 +81,9 @@ class ReplayHistoricalDeterminismHardeningStaticGuardTest extends TestCase
         ] as $needle) {
             $this->assertStringContainsString($needle, $service.$evidenceRepository, 'Historical replay artifact proof must keep '.$needle);
         }
+
+        $this->assertStringContainsString('{--publication_id=}', $fixtureCommand, 'Fixture generation must expose explicit publication context for historical runtime proof.');
+        $this->assertStringContainsString('generateFixtureFromRun(', $fixtureCommand);
     }
 
     public function test_historical_replay_does_not_weaken_consumer_current_pointer_resolver(): void

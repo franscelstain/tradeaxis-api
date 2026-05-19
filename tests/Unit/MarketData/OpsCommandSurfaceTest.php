@@ -818,7 +818,7 @@ class OpsCommandSurfaceTest extends TestCase
         $verification = m::mock(ReplayVerificationService::class);
         $verification->shouldReceive('generateFixtureFromRun')
             ->once()
-            ->with(41, 'C:\\tmp\\generated-valid-run-41', 'valid_case')
+            ->with(41, 'C:\\tmp\\generated-valid-run-41', 'valid_case', null)
             ->andReturn([
                 'run_id' => 41,
                 'fixture_id' => 'valid_case',
@@ -861,6 +861,57 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('expected_result=MATCH', $display);
         $this->assertStringContainsString('fixture_path=C:/tmp/generated-valid-run-41', $display);
         $this->assertStringContainsString('next_command=php artisan market-data:replay:verify 41 C:/tmp/generated-valid-run-41 --output_dir=storage/app/market-data/replay', $display);
+    }
+
+    public function test_replay_fixture_generate_command_accepts_explicit_publication_id_for_historical_fixture(): void
+    {
+        $verification = m::mock(ReplayVerificationService::class);
+        $verification->shouldReceive('generateFixtureFromRun')
+            ->once()
+            ->with(41, 'C:\\tmp\\historical-run-41-pub-4', 'historical_case', 4)
+            ->andReturn([
+                'run_id' => 41,
+                'fixture_id' => 'historical_case',
+                'fixture_family' => 'runtime_generated_valid_case',
+                'expected_result' => 'MATCH',
+                'trade_date' => '2026-03-17',
+                'trade_date_effective' => '2026-03-17',
+                'source_mode' => 'manual_file',
+                'coverage_gate_state' => 'PASS',
+                'coverage_ratio' => 1,
+                'publication_id' => 4,
+                'publication_run_id' => 41,
+                'pointer_publication_id' => 5,
+                'pointer_run_id' => 42,
+                'bars_batch_hash' => 'bars-hash',
+                'indicators_batch_hash' => 'indicators-hash',
+                'eligibility_batch_hash' => 'eligibility-hash',
+                'fixture_path' => 'C:\\tmp\\historical-run-41-pub-4',
+                'manifest_path' => 'C:\\tmp\\historical-run-41-pub-4\\manifest.json',
+                'expected_replay_result_path' => 'C:\\tmp\\historical-run-41-pub-4\\expected\\expected_replay_result.json',
+                'expected_reason_code_counts_path' => 'C:\\tmp\\historical-run-41-pub-4\\expected\\expected_reason_code_counts.json',
+            ]);
+
+        $this->app->instance(ReplayVerificationService::class, $verification);
+
+        $command = new GenerateReplayFixtureCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'run_id' => 41,
+            '--case' => 'historical_case',
+            '--output_dir' => 'C:\\tmp\\historical-run-41-pub-4',
+            '--publication_id' => '4',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('fixture_generated=1', $display);
+        $this->assertStringContainsString('publication_id=4', $display);
+        $this->assertStringContainsString('explicit_publication_id=4', $display);
+        $this->assertStringContainsString('pointer_publication_id=5', $display);
     }
 
     public function test_replay_verify_command_renders_result_and_exports_evidence_when_output_dir_requested(): void

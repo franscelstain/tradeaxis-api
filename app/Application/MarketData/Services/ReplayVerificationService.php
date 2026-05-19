@@ -196,14 +196,16 @@ class ReplayVerificationService
         ];
     }
 
-    public function generateFixtureFromRun($runId, $fixturePath, $caseName = 'valid_case')
+    public function generateFixtureFromRun($runId, $fixturePath, $caseName = 'valid_case', $publicationId = null)
     {
         $run = $this->evidence->findRunById($runId);
         if (! $run) {
             throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Run not found for replay fixture generation.');
         }
 
-        $publication = $this->resolvePublicationForRun($run);
+        $publication = $publicationId !== null
+            ? $this->resolveExplicitFixturePublication($run, (int) $publicationId)
+            : $this->resolvePublicationForRun($run);
         $correction = $this->findCorrectionForRun($run->run_id);
         $actual = $this->buildActualReplayState($run, $publication, $correction, null);
         $fixturePath = rtrim((string) $fixturePath, '/\\');
@@ -222,7 +224,7 @@ class ReplayVerificationService
             'fixture_version' => 'generated-v1',
             'fixture_schema_version' => 'replay_fixture_v2',
             'fixture_created_at' => date(DATE_ATOM),
-            'fixture_source' => 'generated_from_run_'.$runId,
+            'fixture_source' => $publicationId !== null ? 'generated_from_run_'.$runId.'_publication_'.$publicationId : 'generated_from_run_'.$runId,
             'version' => 'generated-v1',
             'contract_areas' => [
                 'replay_verification',
@@ -1346,6 +1348,30 @@ class ReplayVerificationService
             return null;
         }
         return $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
+    }
+
+    private function resolveExplicitFixturePublication($run, $publicationId)
+    {
+        if ($publicationId <= 0) {
+            throw new \RuntimeException('COMMAND_MISSING_REQUIRED_INPUT: publication_id must be a positive integer when provided.');
+        }
+
+        if ((string) ($run->terminal_status ?? '') !== 'SUCCESS' || (string) ($run->publishability_state ?? '') !== 'READABLE') {
+            throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Explicit publication fixture generation requires a successful readable run.');
+        }
+
+        $selector = [
+            'type' => 'replay_fixture_explicit_publication',
+            'run_id' => $run->run_id,
+            'publication_id' => $publicationId,
+            'trade_date' => $run->trade_date_requested,
+        ];
+
+        try {
+            return $this->evidence->resolvePublicationForEvidenceAudit($selector);
+        } catch (\RuntimeException $e) {
+            throw new \RuntimeException($this->mapEvidenceResolutionExceptionToReplayReason($e->getMessage()).': '.$e->getMessage(), 0, $e);
+        }
     }
 
     private function resolvePublicationForReplayActualState($run, array $expectedContext)

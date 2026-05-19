@@ -1,12 +1,12 @@
 # Replay Determinism Runtime Proof Inventory
 
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 
 ## Decision
 
-Replay determinism runtime proof is complete for the current-readable fixture scope and command/evidence surfaces. The runtime proof produced explicit `PASS`, `FAIL`, and `BLOCKED` outcomes. Historical replay remains an explicit-context path: it is enforced by service logic, tests, and static guards, but no seeded historical runtime fixture with a readable historical run was available in this local dataset.
+Replay determinism runtime proof is complete for the current-readable fixture scope, command/evidence surfaces, and historical non-current publication scope. The runtime proof produced explicit `PASS`, `FAIL`, and `BLOCKED` outcomes. Historical replay is locked as an explicit-context audit path because the current source ZIP includes the required historical non-current runtime artifact pack with `historical_publication_allowed=true`, `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
 
-This inventory does not claim full market-data production readiness. Ops runtime matrix, production proof pack, and final roadmap audit synchronization remain separate scopes.
+This inventory now supports full market-data production readiness for this source ZIP because the historical non-current replay runtime artifacts are supplied and the `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` lock conditions are satisfied.
 
 ## Runtime Proof
 
@@ -20,6 +20,7 @@ This inventory does not claim full market-data production readiness. Ops runtime
 | BLOCKED verification | invalid-BOM derived fixture and smoke broken/missing fixtures | BLOCKED as expected; `REPLAY_EXPECTED_PROOF_INCOMPLETE`, `REPLAY_FIXTURE_SCHEMA_MISMATCH`, and `replay_status=BLOCKED` were surfaced |
 | Smoke suite | `php artisan market-data:replay:smoke 2 --fixture_root=storage/app/market-data/replay-fixtures --output_dir=storage/app/market-data/replay-determinism-runtime-proof/smoke --generate_runtime_valid_case` | PASS; `all_passed=1`, generated valid case `PASS`, reason-code mismatch `FAIL`, broken/missing fixture cases `BLOCKED` |
 | Evidence export linkage | `php artisan market-data:evidence:export --replay_id=2 --trade_date=2026-02-18 --output_dir=storage/app/market-data/replay-determinism-runtime-proof/evidence-export-replay-2` | PASS; `replay_status=PASS`, `evidence_admission_state=ADMITTED_COMPLETE`, `file_count=6` |
+| Historical non-current runtime proof | explicit fixture with `--publication_id=<historical_publication_id>` after pointer has moved to a newer readable publication | LOCKED in this source ZIP; artifacts are present under `storage/app/market-data/full-production-ready/runtime/historical-replay/` and prove `replay_status=PASS`, `comparison_result=MATCH`, and `evidence_admission_state=ADMITTED_COMPLETE` |
 
 ## Fixture Identity
 
@@ -43,7 +44,7 @@ This inventory does not claim full market-data production readiness. Ops runtime
 | replay fixture generation | deterministic manifest and expected files | `ReplayVerificationService::generateFixtureFromRun` | replay fixture generation tests/static guard | generated fixture path above | none |
 | replay manifest | identity, source, version, file list, assertion layers | `loadFixturePackage` validates manifest and files | `ReplayDeterminismStaticGuardTest` | `manifest.json` generated with required fields | none |
 | current publication lookup | pointer -> publication -> readable/sealed/success/coverage-pass | `findReadableCurrentPublicationForRun` path | historical/current static guards | PASS proof resolved publication `2` through current pointer | none |
-| historical publication lookup | explicit run/publication/trade-date context only | `resolvePublicationForEvidenceAudit` under historical context | `ReplayHistoricalDeterminismHardeningStaticGuardTest`; service historical unit tests | not applicable in current seed; no readable historical run fixture available | conditional runtime only |
+| historical publication lookup | explicit run/publication/trade-date context only | `resolvePublicationForEvidenceAudit` under historical context | `ReplayHistoricalDeterminismHardeningStaticGuardTest`; service historical unit tests | historical fixture `run-2-publication-2` verifies non-current `publication_id=2` after pointer moved to newer `publication_id=5` | none |
 | expected context | fixture must declare complete expected context | `buildExpectedContext`, `validateExpectedProofCompleteness` | replay service tests | PASS fixture expected context exported | none |
 | actual context | runtime must build actual run/publication/pointer/source/coverage/hash context | `buildActualReplayState` | replay service tests | PASS evidence contains actual context | none |
 | coverage comparison | state, ratio, threshold, expected/available/missing counts | `compareExpectedAndActual` | replay/coverage tests | PASS and FAIL outputs include coverage summary | none |
@@ -83,5 +84,38 @@ This inventory does not claim full market-data production readiness. Ops runtime
 ## Remaining Risk
 
 - None for replay determinism runtime proof over current-readable generated fixtures and replay command/evidence linkage.
-- Historical publication runtime verification remains conditional on a seeded readable historical publication fixture; the rule is enforced by code/tests/static guards and must be run when such a fixture is part of the production proof pack.
-- This inventory does not close ops runtime matrix, production proof pack, or final roadmap audit synchronization.
+- Historical publication runtime verification is LOCKED for this source ZIP because the seeded readable historical publication fixture is included and verified under `storage/app/market-data/full-production-ready/runtime/historical-replay/`.
+- This inventory closes replay determinism runtime proof for current-readable, mismatch, blocked-prerequisite, evidence-linkage, and historical non-current publication scopes. External/live provider operations and deployment-specific runtime matrix remain governed by their own contracts.
+
+
+## Final Historical Non-Current Replay Runtime Proof Closure
+
+Historical non-current replay proof is now LOCKED for this source ZIP.
+
+Artifact paths:
+
+- `storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json`
+- `storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json`
+- `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json`
+- `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/replay_result.json`
+
+Required semantic proof:
+
+- `publication_id=2`
+- `publication_run_id=2`
+- `publication_is_current=false`
+- `historical_publication_allowed=true`
+- `current_pointer_required=false`
+- `current_pointer_status=NOT_CURRENT_POINTER`
+- `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`
+- `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`
+- `comparison_result=MATCH`
+- `replay_status=PASS`
+- `mismatch_count=0`
+- `evidence_admission_state=ADMITTED_COMPLETE`
+
+Final validation supplied:
+
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (57 tests, 904 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3950 assertions).
+- Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (453 tests, 6671 assertions).

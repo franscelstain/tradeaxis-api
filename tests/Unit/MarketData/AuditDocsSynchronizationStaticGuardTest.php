@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Replay Determinism Runtime Proof', $statusActiveSession);
+        $this->assertSame('Full Market-Data Production Readiness Proof Pack', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -94,7 +94,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
-        $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -194,6 +194,39 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('vendor/bin/phpunit tests/Unit/MarketData', $document);
             $this->assertStringContainsString('not a new container PHPUnit run', $document);
         }
+    }
+
+    public function test_full_market_data_production_ready_claim_is_locked_after_full_runtime_artifacts_exist(): void
+    {
+        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        $inventory = $this->readProjectFile('docs/market_data/audit/FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md');
+        $replayInventory = $this->readProjectFile('docs/market_data/audit/REPLAY_DETERMINISM_RUNTIME_PROOF_INVENTORY.md');
+
+        foreach ([
+            '- Full Market-Data Production Readiness Proof Pack -> DONE',
+            '[RELATED_CONTRACT] FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT',
+            '- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED',
+            '[RELATED_IMPLEMENTATION] Full Market-Data Production Readiness Proof Pack',
+            'Historical non-current replay runtime proof: `LOCKED`',
+            'Full market-data production-ready: `CLAIMED_FOR_THIS_SOURCE_ZIP`',
+            '`FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `LOCKED`',
+            'Full market-data runtime proof pack: `DONE / LOCKED`',
+            'replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT',
+            'replay_publication_scope=HISTORICAL_SEALED_PUBLICATION',
+            'historical_publication_allowed=true',
+            'current_pointer_required=false',
+            'current_pointer_status=NOT_CURRENT_POINTER',
+            'storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json',
+            'storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json',
+            'storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json',
+            '453 tests, 6671 assertions',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $status.$tracker.$inventory.$replayInventory);
+        }
+
+        $this->assertStringNotContainsString('Full market-data runtime proof pack: `NOT_LOCKED`', $inventory);
+        $this->assertStringNotContainsString('`FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `REVIEW_REQUIRED`', $inventory);
     }
 
     public function test_reason_code_registry_and_seed_are_synchronized(): void

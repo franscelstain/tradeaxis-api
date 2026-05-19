@@ -3,18 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Replay Determinism Runtime Proof
+- Full Market-Data Production Readiness Proof Pack
 
-[SESSION_STATUS] LOCKED
+[SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Lock replay determinism runtime proof after command, fixture, current pointer resolution, comparison, persistence, smoke, blocked-prerequisite, and evidence export linkage proof.
-- Require explicit `replay_status=PASS|FAIL|BLOCKED` across replay persistence, command output, smoke/backfill summaries, and replay evidence export.
-- Preserve current-vs-historical separation: current replay uses the readable current pointer path; historical replay requires explicit publication context.
-- Do not claim full market-data production-ready from this replay proof alone.
+- Close the full market-data production-ready claim-control contract after historical non-current replay runtime proof was supplied.
+- Validate that replay/evidence export are locked and all other canonical market-data contracts remain LOCKED.
 
 [SESSION_GOAL]
-- Lock the replay runtime proof contract with concrete PASS, FAIL, and BLOCKED executions plus targeted/full validation evidence.
+- Lock full market-data production-ready only when artifact-backed proof and canonical contract lock coverage are present in this source ZIP.
 
 [SESSION_NOTES]
 - Local PHP version for this patch is PHP 7.4.33.
@@ -48,6 +46,63 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+
+- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-19
+
+  [RELATED_IMPLEMENTATION] Full Market-Data Production Readiness Proof Pack
+
+  [REVIEW_STATUS] LOCKED_FULL_RUNTIME_PROOF_ALL_CANONICAL_CONTRACTS
+
+  [HISTORY]
+  - 2026-05-19 -> Contract opened as a claim-control guard after source-state audit found full production-ready wording without the referenced historical non-current runtime artifact pack in the prior uploaded ZIP.
+  - 2026-05-19 -> Contract held at REVIEW_REQUIRED until historical replay artifacts were supplied.
+  - 2026-05-19 -> Latest source ZIP supplied historical non-current replay fixture, verify, and evidence export artifacts for `replay_id=8`; all required historical fields are present and final operator-local AuditDocs/Replay/StaticGuard/full MarketData validation passed.
+  - 2026-05-19 -> Cross-inventory audit confirmed every canonical market-data contract other than this claim-control contract was already LOCKED; this contract is now LOCKED as the aggregate production-ready proof pack.
+
+  [DEFINED]
+  - Full market-data production-ready requires a complete runtime proof pack, not just current-readable replay proof, static guards, or audit documentation.
+  - Required proof includes locked implementation/contracts for publishability, finalize/pointer, correction lifecycle, source/provider resilience, replay determinism, evidence export, DB/schema integrity, hash/seal integrity, import/promote separation, fail-safe behavior, ops/command surface, production validation, read-side consumer enforcement, audit-doc synchronization, and config/env governance.
+  - Required historical replay proof must prove a non-current sealed readable publication through explicit publication context.
+
+  [IMPLEMENTED]
+  - `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` records the complete artifact and contract lock matrix.
+  - `REPLAY_DETERMINISM_RUNTIME_PROOF_INVENTORY.md` records both current-readable replay runtime proof and historical non-current replay runtime proof.
+  - Source ZIP includes historical replay fixture, verify output, and evidence export artifacts under `storage/app/market-data/full-production-ready/runtime/historical-replay/**`.
+
+  [ENFORCED]
+  - Full production-ready remains blocked unless all canonical market-data contracts are LOCKED and the runtime artifact pack proves current-readable and historical replay/evidence behavior.
+  - Historical replay artifacts must include `historical_publication_allowed=true`, `current_pointer_required=false`, `current_pointer_status=NOT_CURRENT_POINTER`, `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
+  - The static audit guard now requires this full production-ready contract to stay LOCKED only when the inventory records the required artifact paths and final local validation evidence.
+
+  [VALIDATED]
+  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json`.
+  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json`.
+  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json`.
+  - Historical replay `replay_result.json` records `replay_id=8`, `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`, `publication_id=2`, `publication_run_id=2`, `publication_is_current=false`, and `HISTORICAL_SEALED_PUBLICATION` resolution.
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 363 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (10 tests, 363 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (57 tests, 904 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3950 assertions).
+  - Operator-local final validation supplied: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (453 tests, 6671 assertions).
+
+  [FINAL_RULE]
+  - LOCKED. Full market-data production-ready may be claimed for this source ZIP because all canonical market-data contracts are locked, current-readable and historical replay runtime proof exists, evidence export has admitted run/correction/replay selector artifacts, and final targeted/full MarketData validation passed.
+  - Future changes to code, schema, config/env, provider behavior, schedule/SLO, command surface, replay/evidence format, correction lifecycle, coverage/finalize/pointer behavior, or runtime environment must reopen the relevant contract and repeat targeted/full validation before carrying this production-ready claim forward.
+
+  [LOCK_CONDITION]
+  - SATISFIED. Historical non-current replay artifact pack is present; evidence export admitted the replay pack; every canonical market-data contract in this tracker is LOCKED; final operator-local AuditDocs/Replay/StaticGuard/full MarketData validation passed.
+
+  [GAP]
+  - None for this source ZIP production-ready proof pack.
+
+  [REMAINING_RISK]
+  - External/live provider operations, credentials, production scheduler/SLO, deployment infrastructure, and future data-vendor changes require environment-specific rollout validation; they do not reopen this source-level proof pack unless code/config/runtime contracts change.
+
+  [NEXT_ACTION]
+  - None for this source ZIP. Maintain lock discipline and rerun proof pack when any market-data contract changes.
 
 
 - REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT -> LOCKED
@@ -2185,7 +2240,8 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 
 ## COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING — COVERAGE_GATE_ENFORCEMENT_CONTRACT
 
-- Status: PARTIAL / STATIC_GUARDED / WAITING_OPERATOR_LOCAL_PHPUNIT.
+- Status: SUPERSEDED_BY_LOCKED_CANONICAL_CONTRACT / HISTORICAL_TRANSITION_ONLY.
+- Current authority: canonical `COVERAGE_GATE_ENFORCEMENT_CONTRACT -> LOCKED` entry above, `COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING_INVENTORY.md`, and `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED`.
 - Related implementation: Coverage Gate Candidate Scope Hardening.
 - Existing owner: `COVERAGE_GATE_ENFORCEMENT_CONTRACT`; this is not coverage gate enforcement ulang and does not replace prior coverage gate enforcement history.
 - Enforcement hardening: promote, manual promote, and correction coverage evaluation must use candidate publication / candidate artifact scope as coverage basis.
@@ -2195,8 +2251,9 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - Runtime patch: `EodArtifactRepository` resolves candidate coverage ticker ids from `eod_bars_history` and `eod_bars` using explicit `publication_id`; no current pointer/latest/MAX-date fallback is used.
 - Proof surface: command output, evidence export, and replay actual context expose `coverage_basis`, `coverage_basis_publication_id`, `coverage_basis_artifact_scope`, `candidate_publication_id`, and `baseline_publication_id`.
 - Static guard: `CoverageGateCandidateScopeHardeningStaticGuardTest.php`.
-- Inventory: `COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING_INVENTORY.md`.
-- Lock condition: promote/manual promote/correction targeted filters and full `vendor/bin/phpunit tests/Unit/MarketData` must PASS in operator-local environment before this hardening can be marked LOCKED.
+- Inventory: `COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING_INVENTORY.md` records `DONE_LOCAL_PHPUNIT_PASS / LOCKED_LOCAL_PHPUNIT_PASS` with full `tests/Unit/MarketData` OK (397 tests, 5461 assertions).
+- Historical lock condition: SATISFIED by later operator-local targeted/full PHPUnit proof and the canonical locked coverage contract. Do not read this historical transition section as a current blocker.
 
 
 ---
+

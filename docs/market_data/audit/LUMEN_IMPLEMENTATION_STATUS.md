@@ -3,18 +3,17 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Replay Determinism Runtime Proof
+- Full Market-Data Production Readiness Proof Pack
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Close the replay determinism runtime proof blocker after evidence export runtime proof.
-- Prove replay command surface, generated fixture/manifest, current-readable publication resolution, PASS/FAIL/BLOCKED result classes, mismatch reasons, persistence, and replay evidence export linkage.
-- Keep current replay resolution tied to `eod_current_publication_pointer` and keep historical replay explicit-context only.
-- This session locks replay determinism runtime proof only; it does not claim full market-data production-ready.
+- Close the full market-data production-ready claim-control session after historical non-current replay runtime proof was supplied.
+- Verify that all canonical market-data contracts are LOCKED before promoting the full production-ready contract.
+- Preserve evidence export and replay runtime proof as supporting locked scopes, not as the only proof.
 
 [SESSION_GOAL]
-- Produce runtime proof that replay verification is deterministic, audit-ready, synchronized with evidence export, and able to distinguish `PASS`, `FAIL`, and `BLOCKED` outcomes.
+- Promote full market-data production-ready only if the uploaded ZIP contains run/correction/replay evidence, historical non-current replay artifacts, locked canonical contracts, and targeted/full MarketData validation proof.
 
 [SESSION_NOTES]
 - Source ZIP contains `vendor/`, `.env.testing`, `composer.lock`, market-data audit docs, ops docs, runtime storage artifacts, and MarketData static guards.
@@ -22,7 +21,7 @@ ACTIVE SESSION:
 - Patch is scoped to replay verification/result persistence/evidence linkage, replay docs, DB mirror docs, tests/static guards, and audit ledger entries.
 - Historical DONE/LOCKED proof remains preserved for its original source states and is not reused as current runtime proof; this session records fresh runtime replay proof.
 - Historical Evidence Export ledger remains preserved: Replay runtime proof has been supplied for `replay_id=1`.
-- Full market-data production-ready remains outside this session.
+- Supersedes earlier replay-session wording that limited scope to replay-only proof; the current active session is the Full Market-Data Production Readiness Proof Pack and is locked for this source ZIP after historical non-current replay artifacts and full validation evidence were supplied.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI: PHP 7.4.33.
@@ -49,6 +48,54 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+
+- Full Market-Data Production Readiness Proof Pack -> DONE
+
+  [LAST_UPDATED] 2026-05-19
+
+  [RELATED_CONTRACT] FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT
+
+  [REVIEW_STATUS] LOCKED_FULL_RUNTIME_PROOF_ALL_CANONICAL_CONTRACTS
+
+  [HISTORY]
+  - 2026-05-19 -> Source-state audit initially downgraded the full production-ready claim to REVIEW_REQUIRED because historical non-current replay artifacts were missing from the prior uploaded ZIP.
+  - 2026-05-19 -> Latest source-of-truth ZIP supplied the missing historical non-current replay runtime artifact pack under `storage/app/market-data/full-production-ready/runtime/historical-replay/**`.
+  - 2026-05-19 -> Historical replay `replay_id=8` proves explicit historical publication audit resolution for `publication_id=2` after the current pointer moved to newer `publication_id=5`; replay result is `MATCH` with `replay_status=PASS`, `mismatch_count=0`, and evidence admission `ADMITTED_COMPLETE`.
+  - 2026-05-19 -> Cross-inventory/contract audit confirmed all canonical market-data contracts in `LUMEN_CONTRACT_TRACKER.md` are LOCKED after replay/evidence export historical proof; no non-full production contract remains REVIEW_REQUIRED/IN_PROGRESS/ENFORCED.
+  - 2026-05-19 -> Operator-local validation supplied for this final state: AuditDocs OK (10 tests, 363 assertions), Replay OK (57 tests, 904 assertions), StaticGuard OK (170 tests, 3950 assertions), and full `tests/Unit/MarketData` OK (453 tests, 6671 assertions).
+
+  [IMPLEMENTATION]
+  - `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` now records a complete proof matrix covering run evidence, correction evidence, replay current-readable evidence, replay historical non-current evidence, production validation, read-side enforcement, schema/migration sync, coverage/candidate scope, DB integrity, config/env governance, ops environment baseline, operational readiness, fail-safe behavior, import/promote separation, hash/seal integrity, source/provider resilience, correction lifecycle, finalize/pointer determinism, publishability integrity, and audit-doc synchronization.
+  - `REPLAY_DETERMINISM_RUNTIME_PROOF_INVENTORY.md` is reconciled from current-readable-only lock to full replay determinism runtime proof including historical non-current replay artifact proof.
+  - `LUMEN_CONTRACT_TRACKER.md` promotes `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT` from REVIEW_REQUIRED to LOCKED because the missing historical proof and all canonical lock prerequisites are now present.
+
+  [ENFORCEMENT]
+  - Full production-ready cannot rely on docs/static guards alone; it is locked only because runtime artifacts exist in this ZIP and canonical contracts are locked.
+  - Historical non-current replay must prove `historical_publication_allowed=true`, `current_pointer_required=false`, `current_pointer_status=NOT_CURRENT_POINTER`, `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
+  - Current-readable replay/evidence export lock is retained, but the full production claim additionally requires historical replay and cross-inventory contract lock coverage.
+  - Full production-ready does not waive future revalidation for live-provider credential changes, schedule/SLO changes, CI/runtime changes, vendor changes, or future code changes.
+
+  [FINAL_BEHAVIOR]
+  - DONE. Full market-data production-ready is locked for the current source ZIP and validated proof pack.
+  - The lock is scoped to the supplied manual-file runtime proof pack, deterministic replay/evidence proof, locked code contracts, and operator-local PHPUnit/artisan validation evidence recorded in audit docs.
+  - Any future change to market-data publication, replay, evidence, correction, coverage, pointer, source/provider, ops environment, DB schema, or config/env governance must reopen the relevant contract and rerun targeted/full validation before inheriting this production-ready status.
+
+  [EVIDENCE]
+  - Historical switch proof: `market-data:daily` created `run_id=6` / `publication_id=5`, and `market-data:promote --force_replace=true` made `publication_id=5` current/readable/SEALED with `pointer_switched=true`.
+  - Historical replay fixture proof: `storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json` is present.
+  - Historical replay verify proof: `storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json` is present and records `replay_id=8`, `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
+  - Historical replay evidence proof: `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json` is present and records `ADMITTED_COMPLETE`, empty `missing_sections`, and empty `critical_missing_sections`.
+  - Historical replay semantic proof: `replay_result.json`, `replay_expected_state.json`, and `replay_actual_state.json` record `publication_id=2`, `publication_run_id=2`, `publication_is_current=false`, `historical_publication_allowed=true`, `current_pointer_required=false`, `current_pointer_status=NOT_CURRENT_POINTER`, `evidence_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `evidence_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
+  - Evidence export full selector proof remains locked: run selector `run_id=2`, correction selector `correction_id=1`, replay selector `replay_id=1`, plus historical replay evidence `replay_id=8`.
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 363 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (10 tests, 363 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (57 tests, 904 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3950 assertions).
+  - Operator-local final validation supplied: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (453 tests, 6671 assertions).
+
+  [NEXT_ACTION]
+  - None for this source ZIP. Reopen only if code/config/schema/artifact contracts change or if a real deployment environment requires separate live-provider/CI/SLO validation.
 
 
 - Replay Determinism Runtime Proof / PASS-FAIL-BLOCKED Evidence Linkage -> DONE
@@ -2187,3 +2234,4 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 
 
 ---
+

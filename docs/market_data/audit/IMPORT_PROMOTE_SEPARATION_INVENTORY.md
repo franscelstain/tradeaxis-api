@@ -1,6 +1,6 @@
 # Import vs Promote Separation Inventory
 
-Status: ENFORCED by static/runtime guards; local PHPUnit validation pending before DONE/LOCKED.
+Status: DONE / LOCKED_LOCAL_PHPUNIT_PASS.
 
 | Area | Import Path | Promote Path | Gate | Pointer Side Effect | Status | Gap | Patch | Test Result |
 |---|---|---|---|---|---|---|---|---|
@@ -30,3 +30,8 @@ Status: ENFORCED by static/runtime guards; local PHPUnit validation pending befo
 | read-side consumer | import artifacts not readable | pointer-resolved publication only | read contract | no import shortcut | EXISTING | local PHPUnit pending | no direct change | not run |
 | command output | prints import/promote statuses | prints gate/readiness status | operator-visible | prints pointer_switched | ENFORCED | local PHPUnit pending | abstract summary extended | php -l only |
 | static guard | asserts boundary files/strings | asserts promote gate strings | static proof | detects import side effects | ENFORCED | local PHPUnit pending | new static guard | php -l only |
+
+
+## Production-Ready Reconciliation Addendum
+
+Current canonical status for this scope is LOCKED in `LUMEN_CONTRACT_TRACKER.md`. Historical pending/local-validation wording above is retained as session history only. The full production-ready proof pack records final operator-local validation: AuditDocs OK (10 tests, 363 assertions), Replay OK (57 tests, 904 assertions), StaticGuard OK (170 tests, 3950 assertions), and full `tests/Unit/MarketData` OK (453 tests, 6671 assertions).

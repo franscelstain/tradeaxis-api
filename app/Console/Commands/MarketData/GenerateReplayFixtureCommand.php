@@ -6,7 +6,7 @@ use App\Application\MarketData\Services\ReplayVerificationService;
 
 class GenerateReplayFixtureCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:replay:fixture:generate {run_id} {--case=valid_case} {--output_dir=}';
+    protected $signature = 'market-data:replay:fixture:generate {run_id} {--case=valid_case} {--output_dir=} {--publication_id=}';
 
     protected $description = 'Generate a deterministic replay fixture package from one executed run for runtime MATCH proof.';
 
@@ -29,18 +29,32 @@ class GenerateReplayFixtureCommand extends AbstractMarketDataCommand
         }
 
         $outputDir = $this->option('output_dir') ?: storage_path('app/market_data/replay-fixtures/generated-run-'.$runId.'/'.$caseName);
+        $publicationId = $this->option('publication_id') !== null && $this->option('publication_id') !== ''
+            ? (int) $this->option('publication_id')
+            : null;
+
+        if ($publicationId !== null && $publicationId <= 0) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'publication_id must be a positive integer when provided.', [
+                'run_id' => $runId,
+                'publication_id' => $this->option('publication_id'),
+            ]);
+
+            return 1;
+        }
 
         try {
             $result = app(ReplayVerificationService::class)->generateFixtureFromRun(
                 $runId,
                 $outputDir,
-                $caseName
+                $caseName,
+                $publicationId
             );
         } catch (\Throwable $e) {
             $this->renderCommandBlocked($this->reasonCodeFromException($e), $e->getMessage(), [
                 'run_id' => $runId,
                 'case' => $caseName,
                 'output_dir' => $this->normalizePathForDisplay((string) $outputDir),
+                'publication_id' => $publicationId,
             ]);
 
             return 1;
@@ -58,6 +72,7 @@ class GenerateReplayFixtureCommand extends AbstractMarketDataCommand
         $this->line('coverage_ratio='.(string) $result['coverage_ratio']);
         $this->line('publication_id='.(string) $result['publication_id']);
         $this->line('publication_run_id='.(string) $result['publication_run_id']);
+        $this->line('explicit_publication_id='.(string) ($publicationId ?? ''));
         $this->line('pointer_publication_id='.(string) $result['pointer_publication_id']);
         $this->line('pointer_run_id='.(string) $result['pointer_run_id']);
         $this->line('bars_batch_hash='.(string) $result['bars_batch_hash']);
