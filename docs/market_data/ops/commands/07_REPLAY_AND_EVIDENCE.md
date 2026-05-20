@@ -12,6 +12,8 @@
 
 Use `market-data:replay:fixture:generate <run_id> --case=valid_case --output_dir=<fixture_path>` to generate a deterministic replay fixture from the actual run/publication/pointer/evidence context. This is required for runtime MATCH proof when committed smoke fixtures are intentionally static or stale against the current local run.
 
+`market-data:replay:verify` still requires both `run_id` and `fixture_path` at the operator contract layer. `market-data:replay:smoke` and `market-data:replay:fixture:generate` still require a positive `run_id`, and `market-data:replay:backfill` still requires a start/end date range. Parser-level optional arguments are allowed only so these commands can render `status=BLOCKED`, `reason_code=COMMAND_MISSING_REQUIRED_INPUT`, and `replay_status=BLOCKED` where applicable instead of raw framework argument errors.
+
 Example:
 
 ```text

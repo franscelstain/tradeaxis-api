@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Correction Lifecycle Hardening', $statusActiveSession);
+        $this->assertSame('Ops Command Surface Runtime Matrix', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -42,7 +42,20 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('CORRECTION_LIFECYCLE_SAFETY_CONTRACT', $document);
+            $this->assertStringContainsString('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $document);
         }
+
+        $this->assertStringContainsString('- Ops Command Surface Runtime Matrix -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $status);
+        $this->assertStringContainsString('- OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Ops Command Surface Runtime Matrix', $tracker);
+        $this->assertStringContainsString('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_INVENTORY.md', $status.$tracker);
+        $this->assertStringContainsString('LOCKED_LOCAL_RUNTIME_PROOF', $status.$tracker);
+        $this->assertStringContainsString('run_id=33', $status.$tracker);
+        $this->assertStringContainsString('replay_id=15', $status.$tracker);
+        $this->assertStringContainsString('COMMAND_DESTRUCTIVE_GUARD_REQUIRED', $status.$tracker);
+        $this->assertStringContainsString('RUN_LOCK_CONFLICT', $status.$tracker);
+        $this->assertStringContainsString('RUN_SOURCE_MANUAL_FILE_EMPTY', $status.$tracker);
 
         $this->assertStringContainsString('- Correction Lifecycle Hardening / Correction Lifecycle Safety -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] CORRECTION_LIFECYCLE_SAFETY_CONTRACT', $status);
@@ -107,7 +120,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
-        $this->assertStringContainsString('CORRECTION_LIFECYCLE_SAFETY_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -164,6 +177,8 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $this->assertContains('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $trackerContracts);
         $this->assertContains('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $implementationContracts);
         $this->assertContains('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $trackerContracts);
+        $this->assertContains('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $implementationContracts);
+        $this->assertContains('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $trackerContracts);
     }
 
     public function test_audit_governance_enforces_append_only_anti_duplication_and_static_guard(): void

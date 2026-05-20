@@ -20,3 +20,18 @@ Command ini tidak boleh:
 - hash
 - seal
 - finalize
+
+## Runtime request mode
+
+Default `market-data:eod-bars:ingest` remains `request_mode=import_only`. For the documented stage-by-stage publish runtime proof, operators must opt in explicitly:
+
+```text
+php artisan market-data:eod-bars:ingest --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --request_mode=full_publish
+```
+
+Invalid request modes fail closed with:
+
+```text
+status=BLOCKED
+reason_code=COMMAND_INVALID_REQUEST_MODE
+```

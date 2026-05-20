@@ -6,11 +6,20 @@ use App\Application\MarketData\Exceptions\NoReadablePublicationException;
 use App\Application\MarketData\Services\SessionSnapshotService;
 class CaptureSessionSnapshotCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:session-snapshot {trade_date} {snapshot_slot} {--source_mode=manual_file} {--input_file=} {--output_dir=}';
+    protected $signature = 'market-data:session-snapshot {trade_date?} {snapshot_slot?} {--source_mode=manual_file} {--input_file=} {--output_dir=}';
     protected $description = 'Capture optional supplemental session snapshot aligned to readable effective trade date.';
 
     public function handle(SessionSnapshotService $service)
     {
+        if (! $this->argument('trade_date') || ! $this->argument('snapshot_slot')) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'trade_date and snapshot_slot are required.', [
+                'trade_date' => $this->argument('trade_date'),
+                'snapshot_slot' => $this->argument('snapshot_slot'),
+            ]);
+
+            return 1;
+        }
+
         if (! $this->validateDateString($this->argument('trade_date'), 'trade_date') || ! $this->validateSourceModeString($this->option('source_mode'))) {
             return 1;
         }

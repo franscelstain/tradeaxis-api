@@ -6,7 +6,7 @@ use App\Application\MarketData\Services\ReplayVerificationService;
 
 class GenerateReplayFixtureCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:replay:fixture:generate {run_id} {--case=valid_case} {--output_dir=} {--publication_id=}';
+    protected $signature = 'market-data:replay:fixture:generate {run_id?} {--case=valid_case} {--output_dir=} {--publication_id=}';
 
     protected $description = 'Generate a deterministic replay fixture package from one executed run for runtime MATCH proof.';
 

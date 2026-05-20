@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Correction Lifecycle Hardening", $status);
+- Ops Command Surface Runtime Matrix", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Correction Lifecycle Hardening", $tracker);
+- Ops Command Surface Runtime Matrix", $tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);

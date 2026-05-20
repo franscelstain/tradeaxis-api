@@ -9,6 +9,8 @@
 
 `market-data:session-snapshot` is state-changing because it replaces rows for a specific `(trade_date, snapshot_slot)` scope. It is allowed without a separate `--apply` flag because the mutation is slot-scoped, deterministic, and still guarded by the readable-current-publication contract inside `SessionSnapshotService`. The command must render `trade_date`, `trade_date_effective`, `publication_id`, `run_id`, capture counts, skipped counts, slot tolerance, and output artifact path.
 
+`trade_date` and `snapshot_slot` are required by the operator contract. Parser-level optional arguments are allowed only so missing input returns `status=BLOCKED` with `reason_code=COMMAND_MISSING_REQUIRED_INPUT`; a missing slot must not fall through to a framework missing-argument error.
+
 ## Purge policy
 
 `market-data:session-snapshot:purge` is destructive because it deletes historical snapshot rows. It must be non-mutating by default.

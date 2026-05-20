@@ -6,25 +6,46 @@ use App\Application\MarketData\Services\ReplaySmokeSuiteService;
 
 class ReplaySmokeSuiteCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:replay:smoke {run_id} {--fixture_root=} {--output_dir=} {--generate_runtime_valid_case}';
+    protected $signature = 'market-data:replay:smoke {run_id?} {--fixture_root=} {--output_dir=} {--generate_runtime_valid_case}';
 
     protected $description = 'Execute the built-in replay smoke suite against one completed run and write a suite summary artifact.';
 
     public function handle()
     {
+        $runId = (int) $this->argument('run_id');
+        if ($runId <= 0) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'run_id must be a positive integer.', [
+                'replay_status' => 'BLOCKED',
+                'run_id' => $this->argument('run_id'),
+            ]);
+
+            return 1;
+        }
+
         $service = app(ReplaySmokeSuiteService::class);
-        if ((bool) $this->option('generate_runtime_valid_case')) {
-            $summary = $service->executeWithGeneratedValidCase(
-                (int) $this->argument('run_id'),
-                $this->option('fixture_root') ?: null,
-                $this->option('output_dir') ?: null
-            );
-        } else {
-            $summary = $service->execute(
-                (int) $this->argument('run_id'),
-                $this->option('fixture_root') ?: null,
-                $this->option('output_dir') ?: null
-            );
+        try {
+            if ((bool) $this->option('generate_runtime_valid_case')) {
+                $summary = $service->executeWithGeneratedValidCase(
+                    $runId,
+                    $this->option('fixture_root') ?: null,
+                    $this->option('output_dir') ?: null
+                );
+            } else {
+                $summary = $service->execute(
+                    $runId,
+                    $this->option('fixture_root') ?: null,
+                    $this->option('output_dir') ?: null
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->renderCommandBlocked($this->reasonCodeFromException($e), $e->getMessage(), [
+                'replay_status' => 'BLOCKED',
+                'run_id' => $runId,
+                'fixture_root' => $this->normalizeOptionalPathForDisplay($this->option('fixture_root') ?: ''),
+                'output_dir' => $this->normalizeOptionalPathForDisplay($this->option('output_dir') ?: ''),
+            ]);
+
+            return 1;
         }
 
         $fixtureRoot = $summary['fixture_root'] ?? ($this->option('fixture_root') ?: null);
@@ -94,5 +115,14 @@ class ReplaySmokeSuiteCommand extends AbstractMarketDataCommand
         }
 
         return empty($summary['all_passed']) ? 1 : 0;
+    }
+
+    private function reasonCodeFromException(\Throwable $e)
+    {
+        if (preg_match('/^([A-Z0-9_]+):/', (string) $e->getMessage(), $matches)) {
+            return $matches[1];
+        }
+
+        return 'COMMAND_EXECUTION_FAILED';
     }
 }

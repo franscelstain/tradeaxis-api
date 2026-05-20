@@ -3,30 +3,30 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Correction Lifecycle Hardening
+- Ops Command Surface Runtime Matrix
 
 [SESSION_STATUS] LOCKED
 
 [SESSION_SCOPE]
-- Harden the correction lifecycle safety contract for request baseline proof, approval/execution eligibility, unchanged pointer preservation, repair apply reason, evidence export, replay linkage, and audit synchronization.
-- Preserve prior full production-ready proof pack as historical evidence and do not use this session to make a new whole-market production-ready claim.
+- Define and enforce the runtime contract for the public market-data ops command surface: registry sync, help output, command-owned invalid input, clear operator status/reason/action output, repeated execution safety, repair/purge guards, and evidence/replay command behavior.
+- Preserve prior correction lifecycle and production validation proof as historical evidence and do not use this session to make a new whole-market production-ready claim.
 
 [SESSION_GOAL]
-- Keep correction lifecycle safe from request through candidate publication and evidence/replay surfaces, while relocking only the correction lifecycle scope after runtime replay and failed-correction gaps are closed.
+- Lock the ops command runtime matrix with concrete command output and artifact proof, including isolated fixture coverage for fresh success/held/failed/conflict/repair/snapshot/evidence/replay paths.
 
 [SESSION_NOTES]
-- Operator-local runtime proof has been supplied on the supported PHP baseline; current final-lock patch is locked for the correction lifecycle scope.
-- Artisan correction/evidence/replay/repair commands and PHPUnit are available in this source ZIP.
-- `CORRECTION_LIFECYCLE_SAFETY_CONTRACT` is LOCKED for the current final-lock source state after supported local correction/evidence/replay proof and stale-ledger status correction.
+- Operator-local/runtime proof was executed on the supported PHP 7.4.33 baseline with `vendor/`, `.env.testing`, and the local market-data runtime database available through the artisan proof commands.
+- `OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT` is LOCKED for the current source state after command registry/help, invalid-input, seeded evidence/replay/finalize/repair/purge, isolated success/held/failed/conflict/repair/snapshot runtime proof, and operator output proof.
+- DONE/LOCKED is scoped to the ops command surface matrix only. The aggregate full market-data production-ready claim remains separate.
+- Historical `CORRECTION_LIFECYCLE_SAFETY_CONTRACT` and `EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT` remain preserved for their scoped proof.
 - Historical `EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT` remains preserved for the full run+correction+replay runtime artifact scope.
-- Existing locked contracts retain their own historical evidence and final rules for prior source states. The aggregate `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT` is REVIEW_REQUIRED for this patched source state until its proof pack is rerun.
+- Existing locked contracts retain their own historical evidence and final rules. The aggregate full market-data production-ready claim remains separate from this ops command surface session.
 
 [RUNTIME_ENVIRONMENT]
-- Previous PHP CLI proof: PHP 7.4.33.
-- Current container PHP CLI: PHP 8.4.16; artisan is blocked by the project environment guard because clean output requires PHP >=7.3 and <8.4.
-- Current container PHPUnit status: BLOCKED because extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
-- Operator-local artisan/PHPUnit proof for the final-lock patch is now the current correction lifecycle authority; container runtime remains blocked by PHP 8.4 and missing PHPUnit extensions.
-- Runtime authority: correction `3`, run `8`, replay `10`, failed correction `4`, failed candidate run `11`, baseline publication `5` / run `6`, correction artifacts under `storage/app/market-data/correction-lifecycle-hardening/**`.
+- PHP CLI proof: PHP 7.4.33.
+- PHPUnit proof: PHPUnit 9.6.34.
+- Required extensions available: `dom`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `xml`, `xmlreader`, `xmlwriter`.
+- Runtime authority for this session: command outputs and artifacts under `storage/app/market-data/ops-command-surface-runtime-matrix/**` and `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`, seeded run `6`, production-ready fixture runs `30` through `37`, publications `26` and `27`, replay ids `15` through `18`, and historical correction ids `3` and `4`.
 
 ---
 ## OPERATIONAL STATUS
@@ -48,6 +48,111 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING CONTRACT
 
+
+- OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-20
+
+  [RELATED_IMPLEMENTATION] Ops Command Surface Runtime Matrix
+
+  [REVIEW_STATUS] LOCKED_LOCAL_RUNTIME_PROOF
+
+  [HISTORY]
+  - 2026-05-20 -> Contract opened for the public market-data command surface runtime matrix after correction lifecycle hardening.
+  - 2026-05-20 -> Gap found: parser-required arguments on several commands could produce raw framework missing-argument errors instead of command-owned blocked output.
+  - 2026-05-20 -> Gap found: replay smoke default fixture failure and correction approval not-found path could surface unhandled exceptions.
+  - 2026-05-20 -> Patch added command-owned missing-input handling, replay smoke failure rendering, correction approval not-found rendering, tests, ops docs, runtime matrix inventory, and static guard coverage.
+  - 2026-05-20 -> Runtime registry/help/invalid-input matrix and seeded evidence/replay/finalize/repair/purge command matrix were executed.
+  - 2026-05-20 -> Production-ready fixture pack closed the prior fixture-limited command paths: fresh daily/backfill/promote/stage success, real lock conflict, held/not-readable, failed empty-source, repair apply invalid pointer, successful session snapshot, evidence export, and replay verify/smoke/backfill.
+  - 2026-05-20 -> Runtime found and fixed `market-data:audit:hash` command reachability by making `MarketDataPipelineService::completeHash()` public.
+
+  [DEFINED]
+  - Every documented public market-data command must be registered in the artisan command surface and listed by `php artisan --env=testing list market-data`.
+  - Every command must render help output with usage/options and no fatal error.
+  - Missing/invalid operator input must fail closed with `status=BLOCKED` or equivalent safe failure and a clear `COMMAND_*` or domain reason code.
+  - State-changing commands must render enough operator context to identify run, publication, correction, replay, trade date, terminal status, publishability, coverage gate, seal state, and next action where applicable.
+  - Repeated execution must be idempotent, semi-idempotent, or conflict-explicit according to command contract.
+  - Repair must be dry-run/no-op by default and require explicit apply intent plus reason for mutation.
+  - Purge/destructive commands must be guarded and summarize candidate/deleted rows.
+  - Evidence/replay commands must render selector ids, replay status/comparison state, artifact paths, and blocked/fail reason codes.
+  - Stage-by-stage publish command runs must be able to start ingest with an explicit full-publish request context without weakening default import-only ingest safety.
+
+  [IMPLEMENTED]
+  - Command-owned missing-input validation was added for backfill, replay verify, replay smoke, replay backfill, replay fixture generation, correction approve/run, and session snapshot capture.
+  - Replay smoke failure rendering now maps fixture/service errors to `status=BLOCKED`, actionable `reason_code`, and `replay_status=BLOCKED`.
+  - Correction approval missing/non-executable paths now map to `COMMAND_CORRECTION_NOT_FOUND` or `COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE`.
+  - `market-data:eod-bars:ingest` accepts explicit `--request_mode` and blocks invalid values with `COMMAND_INVALID_REQUEST_MODE`.
+  - `MarketDataPipelineService::completeHash()` is public so `market-data:audit:hash` can execute the documented hash stage.
+  - `tests/Support/MarketData/SeedOpsCommandRuntimeMatrixFixture.php` provides the isolated runtime fixture pack for production-ready command proof.
+  - Ops command docs explain the parser-optional/operator-required convention used only for reason-coded missing input.
+  - `OPS_COMMAND_SURFACE_RUNTIME_MATRIX_INVENTORY.md` records the registry/help, invalid-input, runtime, blocked-fixture, and validation matrices.
+
+  [ENFORCED]
+  - Registry/help output was proven for all 20 public commands.
+  - Invalid/missing input was proven command-owned and reason-coded for the key public command surface.
+  - Finalize re-run on seeded `run_id=6` proved repeated execution safety for the seeded readable publication path.
+  - Evidence export was proven for run, replay, and correction selectors.
+  - Replay fixture generation, verify, smoke, and backfill were proven with `PASS`, expected `FAIL`, and `BLOCKED` case output.
+  - Repair and purge guards were proven with dry-run/apply guard output.
+  - Force promote guard was proven with `COMMAND_DESTRUCTIVE_GUARD_REQUIRED`.
+  - Fresh daily/backfill/promote/stage success, lock conflict, held/not-readable, failed empty-source, repair apply, repair after-apply no-op, session snapshot success, evidence export, replay fixture generation, replay verify, replay smoke, and replay backfill were proven under `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`.
+
+  [VALIDATED]
+  - Operator-local validation: the runtime matrix, targeted PHPUnit commands, static guards, and full `tests/Unit/MarketData` suite were executed on the supported local PHP/PHPUnit baseline.
+  - `php -l` passed for changed command and test PHP files.
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` -> OK (57 tests, 341 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionCommandsTest.php` -> OK (11 tests, 60 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/CommandSurfaceSafetyStaticGuardTest.php` -> OK (5 tests, 89 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/OperationalReadinessStaticGuardTest.php` -> OK (10 tests, 204 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> OK (8 tests, 107 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php` -> OK (13 tests, 220 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceRuntimeMatrixStaticGuardTest.php` -> OK (6 tests, 114 assertions).
+  - Filter validation passed: Command OK (97 tests, 1009 assertions), Ops OK (74 tests, 616 assertions), Operational OK (11 tests, 211 assertions), RuntimeProof OK (13 tests, 220 assertions), AuditDocs OK (10 tests, 404 assertions), StaticGuard OK (176 tests, 4124 assertions).
+  - Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (475 tests, 6942 assertions).
+  - Command registry/help/invalid-input and seeded runtime matrix were executed with concrete command output recorded in `OPS_COMMAND_SURFACE_RUNTIME_MATRIX_INVENTORY.md`.
+
+  [RUNTIME_PROOF]
+  - Registry: `php artisan --env=testing list market-data` returned all 20 expected commands.
+  - Help: all 20 command help invocations returned exit 0 and rendered usage/options.
+  - Invalid input: daily/backfill/promote/evidence/replay/correction/repair/snapshot/purge blocked with command-owned reason codes.
+  - Success/repeated: `market-data:run:finalize --requested_date=2026-02-18 --source_mode=manual_file --run_id=6` returned `SUCCESS`, `READABLE`, `PASS`, `SEALED`, `publication_id=5`, and `current_publication_id=5`; re-run returned the same identity.
+  - Evidence/replay: run evidence, replay evidence, correction evidence, replay fixture generation, replay verify `replay_id=11`, replay smoke `all_passed=1`, and replay backfill `replay_id=14` passed.
+  - Repair/purge: repair dry-run no-op, repair apply guard block, purge dry-run no-delete, and purge apply-zero no-op passed.
+  - Blocked flows: session snapshot no-readable, failed correction rerun, correction request missing baseline, and promote force guard returned explicit blocked output.
+  - Production-ready fixture setup: `php tests/Support/MarketData/SeedOpsCommandRuntimeMatrixFixture.php` -> `status=FIXTURE_READY`, `ticker_count=913`, target dates `2026-05-11` through `2026-05-18`.
+  - Fresh success: daily `run_id=30`, backfill `all_passed=1`, stage-chain `run_id=32` -> `SUCCESS/READABLE/current_publication_id=26`, promote `run_id=33` -> `SUCCESS/READABLE/current_publication_id=27`.
+  - Conflict/held/failed: second promote for `2026-05-15` -> `RUN_LOCK_CONFLICT` and no pointer switch; partial promote for `2026-05-16` -> `RUN_PARTIAL_DATA`; empty daily for `2026-05-17` -> `RUN_SOURCE_MANUAL_FILE_EMPTY`.
+  - Repair/snapshot/evidence/replay: invalid pointer repair apply cleared state and rerun no-op; session snapshot captured `913/913`; run evidence for `run_id=33` wrote 10 files; replay verify produced `replay_id=15` `PASS`; smoke `all_passed=1`; backfill `replay_id=18` `PASS`.
+
+  [COMMAND_MATRIX]
+  - PASS: registry/help all 20 commands.
+  - PASS: invalid/missing input blocked output for the public command surface.
+  - PASS: seeded finalize/evidence/replay/repair/purge/correction-block/force-guard matrix.
+  - PASS: production-ready fixture matrix for fresh daily/backfill/promote/stage success, real lock conflict, held/not-readable, failed source, repair apply invalid pointer, successful session snapshot, evidence export, and replay verify/smoke/backfill.
+
+  [FINAL_RULE]
+  - LOCKED. The command surface has a concrete runtime matrix for registry, help, invalid input, success/held/failed flows, repeated/idempotent behavior, lock conflict, repair/purge guards, evidence/replay commands, and operator output.
+  - Ops command surface runtime matrix may be treated as production-ready for this scoped market-data area.
+  - This contract does not claim full market-data production-ready status.
+
+  [LOCK_CONDITION]
+  - SATISFIED for the ops command surface scope by the production-ready fixture matrix and targeted/static/full validation.
+
+  [EVIDENCE]
+  - `docs/market_data/audit/OPS_COMMAND_SURFACE_RUNTIME_MATRIX_INVENTORY.md`.
+  - `storage/app/market-data/ops-command-surface-runtime-matrix/**`.
+  - `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`.
+
+  [GAP]
+  - None for the ops command surface runtime matrix scope.
+
+  [REMAINING_RISK]
+  - A later aggregate production proof pack must consume this locked scope before making a whole-market production-ready final claim.
+
+  [NEXT_ACTION]
+  - Feed this locked ops command surface proof into the next aggregate Full Market-Data Validation / Production Proof Pack.
+
+---
 
 - CORRECTION_LIFECYCLE_SAFETY_CONTRACT -> LOCKED
 

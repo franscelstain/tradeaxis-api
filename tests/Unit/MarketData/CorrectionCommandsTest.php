@@ -129,6 +129,33 @@ class CorrectionCommandsTest extends TestCase
         $this->assertStringContainsString('status=APPROVED', $display);
     }
 
+    public function test_approve_correction_command_blocks_missing_record_with_reason_code(): void
+    {
+        $repo = m::mock(EodCorrectionRepository::class);
+        $repo->shouldReceive('approve')
+            ->once()
+            ->with(999999, 'system')
+            ->andThrow(new RuntimeException('No query results for model [App\Models\EodDatasetCorrection].'));
+
+        $this->app->instance(EodCorrectionRepository::class, $repo);
+
+        $command = new ApproveCorrectionCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'correction_id' => 999999,
+            '--approved_by' => 'system',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_CORRECTION_NOT_FOUND', $display);
+        $this->assertStringContainsString('correction_id=999999', $display);
+    }
+
     public function test_run_correction_command_executes_pipeline_for_approved_request_and_renders_final_status(): void
     {
         $repo = m::mock(EodCorrectionRepository::class);

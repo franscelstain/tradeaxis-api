@@ -5,7 +5,7 @@ namespace App\Console\Commands\MarketData;
 use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
 class ApproveCorrectionCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:correction:approve {correction_id} {--approved_by=system}';
+    protected $signature = 'market-data:correction:approve {correction_id?} {--approved_by=system}';
 
     protected $description = 'Approve a historical correction request before execution.';
 
@@ -19,15 +19,38 @@ class ApproveCorrectionCommand extends AbstractMarketDataCommand
             return 1;
         }
 
-        $correction = app(EodCorrectionRepository::class)->approve(
-            $correctionId,
-            $this->option('approved_by') ?: 'system'
-        );
+        try {
+            $correction = app(EodCorrectionRepository::class)->approve(
+                $correctionId,
+                $this->option('approved_by') ?: 'system'
+            );
+        } catch (\Throwable $e) {
+            $this->renderCommandBlocked($this->reasonCodeFromException($e), $e->getMessage(), [
+                'correction_id' => $correctionId,
+            ]);
+
+            return 1;
+        }
 
         $this->info('correction_id='.$correction->correction_id);
         $this->line('trade_date='.$correction->trade_date);
         $this->line('status='.$correction->status);
 
         return 0;
+    }
+
+    private function reasonCodeFromException(\Throwable $e)
+    {
+        $message = (string) $e->getMessage();
+
+        if (stripos($message, 'not found') !== false || stripos($message, 'No query results') !== false) {
+            return 'COMMAND_CORRECTION_NOT_FOUND';
+        }
+
+        if (stripos($message, 'already consumed') !== false || stripos($message, 'cannot be approved') !== false) {
+            return 'COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE';
+        }
+
+        return 'COMMAND_EXECUTION_FAILED';
     }
 }

@@ -209,6 +209,25 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('source_input_file=C:/ops/manual-2026-04-14.csv', $display);
     }
 
+    public function test_backfill_command_blocks_missing_required_dates_with_reason_code(): void
+    {
+        $service = m::mock(MarketDataBackfillService::class);
+        $service->shouldNotReceive('execute');
+        $this->app->instance(MarketDataBackfillService::class, $service);
+
+        $command = new BackfillMarketDataCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([]);
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_MISSING_REQUIRED_INPUT', $display);
+        $this->assertStringContainsString('start_date and end_date are required.', $display);
+    }
+
     public function test_session_snapshot_capture_command_renders_summary(): void
     {
         $service = m::mock(SessionSnapshotService::class);
@@ -288,6 +307,29 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('reason_code=NO_READABLE_PUBLICATION', $display);
         $this->assertStringContainsString('trade_date=2026-03-17', $display);
         $this->assertStringContainsString('snapshot_slot=PREOPEN', $display);
+    }
+
+    public function test_session_snapshot_capture_command_blocks_missing_slot_before_service(): void
+    {
+        $service = m::mock(SessionSnapshotService::class);
+        $service->shouldNotReceive('capture');
+
+        $this->app->instance(SessionSnapshotService::class, $service);
+
+        $command = new CaptureSessionSnapshotCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'trade_date' => '2026-03-17',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_MISSING_REQUIRED_INPUT', $display);
+        $this->assertStringContainsString('trade_date=2026-03-17', $display);
     }
 
     public function test_session_snapshot_purge_command_renders_summary(): void
@@ -596,6 +638,58 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('fixture_root=/tmp/default-fixtures', $display);
         $this->assertStringContainsString('all_passed=0', $display);
         $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MISMATCH | passed=0 | trade_date=2026-03-17 | replay_id=3001', $display);
+    }
+
+    public function test_replay_smoke_command_blocks_invalid_run_id_before_service(): void
+    {
+        $service = m::mock(ReplaySmokeSuiteService::class);
+        $service->shouldNotReceive('execute');
+        $service->shouldNotReceive('executeWithGeneratedValidCase');
+
+        $this->app->instance(ReplaySmokeSuiteService::class, $service);
+
+        $command = new ReplaySmokeSuiteCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'run_id' => '0',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_MISSING_REQUIRED_INPUT', $display);
+        $this->assertStringContainsString('replay_status=BLOCKED', $display);
+        $this->assertStringContainsString('run_id=0', $display);
+    }
+
+    public function test_replay_smoke_command_catches_service_failure_as_blocked(): void
+    {
+        $service = m::mock(ReplaySmokeSuiteService::class);
+        $service->shouldReceive('execute')
+            ->once()
+            ->with(41, null, null)
+            ->andThrow(new RuntimeException('Replay smoke fixture root not found: /tmp/missing-fixtures'));
+
+        $this->app->instance(ReplaySmokeSuiteService::class, $service);
+
+        $command = new ReplaySmokeSuiteCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'run_id' => 41,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_EXECUTION_FAILED', $display);
+        $this->assertStringContainsString('replay_status=BLOCKED', $display);
+        $this->assertStringContainsString('run_id=41', $display);
     }
 
 
@@ -1088,6 +1182,31 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('fixture_path=storage/app/market_data/replay-fixtures/reason_code_mismatch_case', $display);
     }
 
+    public function test_replay_verify_command_blocks_missing_fixture_path_with_reason_code(): void
+    {
+        $verification = m::mock(ReplayVerificationService::class);
+        $verification->shouldNotReceive('verifyRunAgainstFixture');
+
+        $this->app->instance(ReplayVerificationService::class, $verification);
+
+        $command = new VerifyReplayCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'run_id' => 41,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_MISSING_REQUIRED_INPUT', $display);
+        $this->assertStringContainsString('fixture_path is required.', $display);
+        $this->assertStringContainsString('replay_status=BLOCKED', $display);
+        $this->assertStringContainsString('run_id=41', $display);
+    }
+
     public function test_replay_backfill_command_propagates_operator_options_and_renders_run_and_replay_ids(): void
     {
         $service = m::mock(ReplayBackfillService::class);
@@ -1204,6 +1323,25 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('all_passed=0', $display);
         $this->assertStringContainsString('trade_date=2026-03-17 | status=SUCCESS | expected=MATCH | observed=MATCH | passed=1 | run_id=41 | replay_id=3001', $display);
         $this->assertStringContainsString('trade_date=2026-03-18 | status=ERROR | expected=MATCH | observed=ERROR | passed=0 | error=NO_READABLE_PUBLICATION: Replay backfill requires a readable current publication for trade date 2026-03-18. | reason_code=NO_READABLE_PUBLICATION', $display);
+    }
+
+    public function test_replay_backfill_command_blocks_missing_required_dates_with_reason_code(): void
+    {
+        $service = m::mock(ReplayBackfillService::class);
+        $service->shouldNotReceive('execute');
+        $this->app->instance(ReplayBackfillService::class, $service);
+
+        $command = new ReplayBackfillCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([]);
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_MISSING_REQUIRED_INPUT', $display);
+        $this->assertStringContainsString('start_date and end_date are required.', $display);
     }
 
 
@@ -2474,6 +2612,80 @@ class OpsCommandSurfaceTest extends TestCase
 
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('force_replace=true', $display);
+    }
+
+    public function test_ingest_stage_command_accepts_explicit_full_publish_request_mode(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldReceive('completeIngest')
+            ->once()
+            ->with(m::on(function ($input) {
+                return $input instanceof MarketDataStageInput
+                    && $input->requestedDate === '2026-05-13'
+                    && $input->sourceMode === 'manual_file'
+                    && $input->runId === null
+                    && $input->stage === 'INGEST_BARS'
+                    && $input->correctionId === null
+                    && $input->requestMode === 'full_publish';
+            }))
+            ->andReturn((object) [
+                'run_id' => 901,
+                'trade_date_requested' => '2026-05-13',
+                'stage' => 'INGEST_BARS',
+                'lifecycle_state' => 'RUNNING',
+                'terminal_status' => null,
+                'publishability_state' => null,
+                'request_mode' => 'full_publish',
+                'bars_rows_written' => 913,
+                'invalid_bar_count' => 0,
+                'publication_id' => 77,
+                'publication_version' => 1,
+                'notes' => 'request_mode=full_publish; source_name=LOCAL_FILE',
+            ]);
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $command = new \App\Console\Commands\MarketData\IngestEodBarsCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-05-13',
+            '--source_mode' => 'manual_file',
+            '--request_mode' => 'full_publish',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('request_mode=full_publish', $display);
+        $this->assertStringContainsString('run_id=901', $display);
+        $this->assertStringContainsString('publication_id=77', $display);
+    }
+
+    public function test_ingest_stage_command_blocks_invalid_request_mode_before_pipeline(): void
+    {
+        $service = m::mock(MarketDataPipelineService::class);
+        $service->shouldNotReceive('completeIngest');
+
+        $this->app->instance(MarketDataPipelineService::class, $service);
+
+        $command = new \App\Console\Commands\MarketData\IngestEodBarsCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--requested_date' => '2026-05-13',
+            '--source_mode' => 'manual_file',
+            '--request_mode' => 'teleport',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_INVALID_REQUEST_MODE', $display);
+        $this->assertStringContainsString('request_mode=teleport', $display);
     }
 
 }

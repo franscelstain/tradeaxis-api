@@ -67,6 +67,25 @@ abstract class AbstractMarketDataCommand extends Command
         return true;
     }
 
+    protected function validateStageRequestModeString($value)
+    {
+        if ($value === null || $value === '') {
+            return true;
+        }
+
+        if (! in_array((string) $value, ['import_only', 'promote', 'full_publish', 'correction', 'repair_candidate'], true)) {
+            $this->renderCommandBlocked(
+                'COMMAND_INVALID_REQUEST_MODE',
+                'request_mode must be import_only, promote, full_publish, correction, or repair_candidate.',
+                ['request_mode' => $value]
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
     protected function requestedDate()
     {
         if ($this->option('requested_date')) {
@@ -85,14 +104,17 @@ abstract class AbstractMarketDataCommand extends Command
         return $this->option('source_mode') ?: config('market_data.pipeline.default_source_mode');
     }
 
-    protected function makeStageInput($stage)
+    protected function makeStageInput($stage, $requestMode = null)
     {
         return new MarketDataStageInput(
             $this->requestedDate(),
             $this->sourceMode(),
             $this->option('run_id') ?: null,
             $stage,
-            $this->option('correction_id') ?: null
+            $this->option('correction_id') ?: null,
+            false,
+            null,
+            $requestMode
         );
     }
 

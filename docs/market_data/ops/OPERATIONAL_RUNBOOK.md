@@ -56,7 +56,7 @@ The operator must stop when terminal output contains `status=BLOCKED`, `terminal
 | Command | Purpose | Required input | Safe default | Key output | Reason code / next action | Docs / proof |
 |---|---|---|---|---|---|---|
 | `market-data:daily` | Import-only daily sequence | `--requested_date` or `--latest`, `--source_mode`, optional `--input_file`, `--output_dir` | Import-only; no readable publish claim | `run_id`, `request_mode=import_only`, `import_status`, `promote_status=NOT_PROMOTED`, source summary | If no valid source, stop and export evidence; next action is fix source or rerun import | command surface, import/promote, fail-safe |
-| `market-data:eod-bars:ingest` | Acquire/canonicalize EOD bars | requested date/source/run context | stage-only | row counts, source context, invalid count | If zero valid rows, stop; next action is source fix | fail-safe, source resilience |
+| `market-data:eod-bars:ingest` | Acquire/canonicalize EOD bars | requested date/source/run context; optional explicit `--request_mode=full_publish` for stage-chain publish proof | stage-only | row counts, source context, invalid count, request mode | If zero valid rows, stop; next action is source fix | fail-safe, source resilience |
 | `market-data:eod-indicators:compute` | Compute deterministic indicators | requested date/source/run context | stage-only | stage status, hash context | If input artifact missing, stop and inspect run evidence | hash/seal |
 | `market-data:eod-eligibility:build` | Build eligibility and coverage context | requested date/source/run context | stage-only | coverage available/universe/missing/ratio | If coverage below threshold, stop before promote | coverage gate |
 | `market-data:audit:hash` | Compute deterministic hashes | requested date/source/run context | stage-only | bars/indicator/eligibility hashes | If hash changes without data change, stop and investigate determinism | hash/seal |
@@ -227,7 +227,7 @@ Provider retry must be bounded. Infinite retry is forbidden.
 When running stages separately, use this sequence only:
 
 ```text
-php artisan market-data:eod-bars:ingest --requested_date=YYYY-MM-DD --source_mode=<api|manual_file>
+php artisan market-data:eod-bars:ingest --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --request_mode=full_publish
 php artisan market-data:eod-indicators:compute --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --run_id=<run_id>
 php artisan market-data:eod-eligibility:build --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --run_id=<run_id>
 php artisan market-data:audit:hash --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --run_id=<run_id>

@@ -6,12 +6,21 @@ use App\Application\MarketData\Services\MarketDataBackfillService;
 
 class BackfillMarketDataCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:backfill {start_date} {end_date} {--source_mode=} {--input_file=} {--output_dir=} {--continue_on_error}';
+    protected $signature = 'market-data:backfill {start_date?} {end_date?} {--source_mode=} {--input_file=} {--output_dir=} {--continue_on_error}';
 
     protected $description = 'Historical import-only backfill per trading-date range.';
 
     public function handle()
     {
+        if (! $this->argument('start_date') || ! $this->argument('end_date')) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'start_date and end_date are required.', [
+                'start_date' => $this->argument('start_date'),
+                'end_date' => $this->argument('end_date'),
+            ]);
+
+            return 1;
+        }
+
         if (! $this->validateDateString($this->argument('start_date'), 'start_date')
             || ! $this->validateDateString($this->argument('end_date'), 'end_date')
             || ! $this->validateSourceModeString($this->option('source_mode'))) {

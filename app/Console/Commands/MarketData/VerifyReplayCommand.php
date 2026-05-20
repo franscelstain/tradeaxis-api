@@ -7,7 +7,7 @@ use App\Application\MarketData\Services\ReplayVerificationService;
 
 class VerifyReplayCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:replay:verify {run_id} {fixture_path} {--replay_id=} {--output_dir=}';
+    protected $signature = 'market-data:replay:verify {run_id?} {fixture_path?} {--replay_id=} {--output_dir=}';
 
     protected $description = 'Verify one executed market-data run against a replay fixture package and persist replay proof rows.';
 
@@ -19,6 +19,15 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
                 'replay_status' => 'BLOCKED',
                 'run_id' => $this->argument('run_id'),
             ]);
+            return 1;
+        }
+
+        if (! $this->argument('fixture_path')) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'fixture_path is required.', [
+                'replay_status' => 'BLOCKED',
+                'run_id' => $runId,
+            ]);
+
             return 1;
         }
 

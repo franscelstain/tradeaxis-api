@@ -402,7 +402,7 @@ class MarketDataPipelineService
         }
     }
     
-    protected function completeHash(MarketDataStageInput $input)
+    public function completeHash(MarketDataStageInput $input)
     {
         [$run] = $this->startStage($input);
 

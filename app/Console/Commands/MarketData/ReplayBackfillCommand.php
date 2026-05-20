@@ -6,12 +6,21 @@ use App\Application\MarketData\Services\ReplayBackfillService;
 
 class ReplayBackfillCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:replay:backfill {start_date} {end_date} {--fixture_case=valid_case} {--fixture_root=} {--output_dir=} {--continue_on_error}';
+    protected $signature = 'market-data:replay:backfill {start_date?} {end_date?} {--fixture_case=valid_case} {--fixture_root=} {--output_dir=} {--continue_on_error}';
 
     protected $description = 'Execute replay verification across a trading-date range and write a deterministic replay backfill summary artifact.';
 
     public function handle()
     {
+        if (! $this->argument('start_date') || ! $this->argument('end_date')) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'start_date and end_date are required.', [
+                'start_date' => $this->argument('start_date'),
+                'end_date' => $this->argument('end_date'),
+            ]);
+
+            return 1;
+        }
+
         if (! $this->validateDateString($this->argument('start_date'), 'start_date')
             || ! $this->validateDateString($this->argument('end_date'), 'end_date')) {
             return 1;

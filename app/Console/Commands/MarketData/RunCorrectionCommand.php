@@ -7,7 +7,7 @@ use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 
 class RunCorrectionCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:correction:run {correction_id} {--requested_date=} {--source_mode=} {--latest}';
+    protected $signature = 'market-data:correction:run {correction_id?} {--requested_date=} {--source_mode=} {--latest}';
 
     protected $description = 'Execute the market-data daily pipeline for an approved correction request.';
 
