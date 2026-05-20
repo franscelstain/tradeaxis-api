@@ -3,31 +3,33 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Full Market-Data Production Readiness Proof Pack
+- Correction Lifecycle Hardening
 
 [SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Close the full market-data production-ready claim-control session after historical non-current replay runtime proof was supplied.
-- Verify that all canonical market-data contracts are LOCKED before promoting the full production-ready contract.
-- Preserve evidence export and replay runtime proof as supporting locked scopes, not as the only proof.
+- Harden correction request, approval, execution eligibility, baseline proof, unchanged behavior, failed/preserved-pointer behavior, repair guard, evidence export, replay linkage, and audit ledger synchronization.
+- Keep the prior full production-ready proof pack as historical evidence; do not use this session to claim whole-market production-ready final status.
+- Relock only the correction lifecycle scope after closing the unchanged replay and failed-correction runtime gaps; keep aggregate market-data production-ready as a separate proof-pack decision.
 
 [SESSION_GOAL]
-- Promote full market-data production-ready only if the uploaded ZIP contains run/correction/replay evidence, historical non-current replay artifacts, locked canonical contracts, and targeted/full MarketData validation proof.
+- Ensure correction requests cannot be created from the operator command without a valid current sealed readable coverage-PASS baseline, unchanged corrections cannot render a candidate pointer switch, failed corrections cannot replace the current pointer, repair apply cannot mutate without reason, and correction evidence/replay surfaces expose the resulting lifecycle state.
 
 [SESSION_NOTES]
 - Source ZIP contains `vendor/`, `.env.testing`, `composer.lock`, market-data audit docs, ops docs, runtime storage artifacts, and MarketData static guards.
-- Local runtime for this proof is PHP 7.4.33 with Lumen 8.3.4 command surface available.
-- Patch is scoped to replay verification/result persistence/evidence linkage, replay docs, DB mirror docs, tests/static guards, and audit ledger entries.
-- Historical DONE/LOCKED proof remains preserved for its original source states and is not reused as current runtime proof; this session records fresh runtime replay proof.
+- Operator-local runtime proof has been supplied on the supported PHP/Lumen baseline; current final-lock patch is locked for the correction lifecycle scope.
+- Patch is scoped to correction lifecycle command/repository/evidence/replay semantics, correction/ops/test docs, static guards, runtime evidence artifacts, and audit ledger entries.
+- Runtime correction request/approve/run proof was executed for `correction_id=3` and `run_id=8`; unchanged pointer preservation was proved with pointer before/after publication `5`.
+- Runtime replay verification for the unchanged correction fixture now passes with `replay_id=10`, `comparison_result=MATCH`, `replay_status=PASS`, and `UNCHANGED_CORRECTION_BASELINE_PRESERVED` lineage semantics.
+- Failed-correction artisan runtime proof was executed for `correction_id=4` / candidate `run_id=11`; the command marks the correction `FAILED`, records `RUN_SOURCE_MANUAL_FILE_NOT_FOUND`, exports admitted evidence, and preserves baseline pointer publication `5`.
 - Historical Evidence Export ledger remains preserved: Replay runtime proof has been supplied for `replay_id=1`.
-- Supersedes earlier replay-session wording that limited scope to replay-only proof; the current active session is the Full Market-Data Production Readiness Proof Pack and is locked for this source ZIP after historical non-current replay artifacts and full validation evidence were supplied.
 
 [RUNTIME_ENVIRONMENT]
-- PHP CLI: PHP 7.4.33.
-- Artisan status: AVAILABLE; replay fixture generation, replay verification, smoke suite, and replay evidence export were executed.
-- PHPUnit status: AVAILABLE; targeted replay tests, audit docs guard, static guard aggregate, and full MarketData suite passed.
-- Testing DB migration status: `2026_05_19_000002_add_replay_status_to_replay_daily_metrics` migrated under `--env=testing`.
+- Previous PHP CLI proof: PHP 7.4.33.
+- Current container PHP CLI: PHP 8.4.16; artisan is blocked by the project environment guard because clean output requires PHP >=7.3 and <8.4.
+- Current container PHPUnit status: BLOCKED because extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
+- Operator-local artisan/PHPUnit proof for the final-lock patch is now the current correction lifecycle authority; container runtime remains blocked by PHP 8.4 and missing PHPUnit extensions.
+- Testing DB status: AVAILABLE through `--env=testing`; correction runtime proof reused seeded baseline publication `5` / run `6` for trade date `2026-02-18`.
 
 ---
 ## OPERATIONAL STATUS
@@ -50,13 +52,117 @@ ACTIVE SESSION:
 ## CURRENT WORKING ENTRY
 
 
-- Full Market-Data Production Readiness Proof Pack -> DONE
+- Correction Lifecycle Hardening / Correction Lifecycle Safety -> DONE
 
-  [LAST_UPDATED] 2026-05-19
+  [SESSION] Correction Lifecycle Hardening
+
+  [SESSION_STATUS] DONE
+
+  [LAST_UPDATED] 2026-05-20
+
+  [RELATED_CONTRACT] CORRECTION_LIFECYCLE_SAFETY_CONTRACT
+
+  [REVIEW_STATUS] LOCKED_LOCAL_RUNTIME_PROOF
+
+  [HISTORY]
+  - 2026-05-20 -> Session opened from the uploaded source-of-truth ZIP to harden correction lifecycle request, approval, execution, baseline, unchanged, failed/preserved-pointer, repair, evidence, replay, and audit surfaces.
+  - 2026-05-20 -> Gap found: `market-data:correction:request` created correction rows without proving a valid current sealed readable coverage-PASS baseline at command time.
+  - 2026-05-20 -> Gap found: unchanged correction command/evidence could render candidate/publication switch as true because the preserved baseline publication was still current.
+  - 2026-05-20 -> Gap found: `market-data:current-publication:repair --apply` required apply intent but not an auditable reason.
+  - 2026-05-20 -> Patch added command-level baseline lookup/blocking, optional baseline persistence on correction request creation, unchanged switch false semantics in command/evidence/replay actual context, repair apply reason guard, operator output for pointer before/after, tests, runtime evidence artifacts, and this audit inventory.
+  - 2026-05-20 -> Gap closure patch added unchanged-correction replay preserved-baseline semantics so correction run `8` can replay against baseline publication `5` owned by run `6` while candidate publication `7` remains discarded.
+  - 2026-05-20 -> Gap closure patch added failed-correction command handling and repository persistence so pipeline exceptions mark correction `FAILED`, retain reason code, and preserve the current pointer.
+  - 2026-05-20 -> Schema/migration docs were synced so `eod_dataset_corrections.status` includes `FAILED`.
+
+  [IMPLEMENTATION]
+  - `RequestCorrectionCommand` now resolves `EodPublicationRepository::findCorrectionBaselinePublicationForTradeDate()` and blocks with `CORRECTION_BASELINE_LINK_MISSING` before creating a correction when no valid baseline exists.
+  - `EodCorrectionRepository::createRequest()` accepts optional `baseline_publication_id` and `prior_run_id`, allowing command-created requests to record the baseline context while preserving legacy/internal callers.
+  - `RunCorrectionCommand` renders `candidate_publication_switch=false` and leaves correction candidate id empty for unchanged consumed-current outcomes instead of implying a replacement pointer switch.
+  - `MarketDataEvidenceExportService` writes unchanged correction `publication_switch=false` and `candidate_is_current=false` while retaining `UNCHANGED_CORRECTION_CANDIDATE_DISCARDED` proof.
+  - `ReplayVerificationService` maps unchanged correction publication switch to false in actual correction context.
+  - `ReplayVerificationService` now resolves unchanged correction replay actual state through the preserved baseline publication and records `UNCHANGED_CORRECTION_BASELINE_PRESERVED` instead of blocking on a missing historical publication selector.
+  - `RunCorrectionCommand` now catches correction pipeline failures, marks the correction `FAILED`, emits operator-grade failure output, and leaves `candidate_publication_switch=false`.
+  - `EodCorrectionRepository::markFailed()` records failed correction status, new/prior run context, baseline publication context, and final failure note without consuming or publishing a replacement.
+  - `RepairCurrentPublicationIntegrityCommand` requires `--reason` or `--force_reason` with `--apply`, blocks missing reasons with `COMMAND_DESTRUCTIVE_GUARD_REQUIRED`, and prints pointer before/after fields.
+  - `CORRECTION_LIFECYCLE_HARDENING_INVENTORY.md`, correction contract/test docs, ops command docs, runbook, and command safety inventory record the current session proof and gaps.
+
+  [ENFORCEMENT]
+  - Operator-created correction requests cannot be registered without a pointer-resolved baseline satisfying current + sealed + SUCCESS + READABLE + coverage PASS.
+  - Unapproved correction execution remains blocked before the pipeline.
+  - Coverage, finalize, seal, artifact diff, and pointer replacement remain enforced by the pipeline/publication repositories; unchanged and failed corrections preserve the baseline pointer.
+  - Failed correction command execution cannot publish a candidate after a source/pipeline failure; the command records `FAILED`, a failure reason code, and no replacement publication.
+  - Unchanged correction replay now compares deterministic expected/actual lineage for preserved baseline publication `5` / owner run `6` under correction run `8`.
+  - Repair apply is destructive and requires explicit operator reason.
+  - Static guards now cover request baseline lookup, repair reason guard, and unchanged switch false output.
+
+  [FINAL_BEHAVIOR]
+  - DONE for correction lifecycle scope. Correction request/approve/run, unchanged pointer preservation, failed correction pointer preservation, evidence export, replay linkage, and repair reason guard are hardened in code and validated by targeted tests plus runtime command proof.
+  - This does not claim whole market-data production-ready final status; aggregate production-ready remains a separate proof-pack scope.
+
+  [EVIDENCE]
+  - Syntax checks passed for changed PHP files including `RequestCorrectionCommand.php`, `RunCorrectionCommand.php`, `RepairCurrentPublicationIntegrityCommand.php`, `EodCorrectionRepository.php`, `MarketDataEvidenceExportService.php`, and `ReplayVerificationService.php`.
+  - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php` -> OK (5 tests, 70 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionCommandsTest.php` -> OK (10 tests, 56 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php` -> OK (2 tests, 42 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReplayVerificationServiceTest.php` -> OK (10 tests, 34 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/ReplayEvidenceExportServiceTest.php` -> OK (2 tests, 55 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/CorrectionLifecycleSafetyStaticGuardTest.php` -> OK (5 tests, 74 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/DbIntegrityConstraintEnforcementStaticGuardTest.php` -> OK (6 tests, 452 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/CommandSurfaceSafetyStaticGuardTest.php` -> OK (5 tests, 89 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter "current_publication_repair"` -> OK (2 tests, 12 assertions).
+  - `vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php` -> OK (55 tests, 1227 assertions).
+  - Filter validation: Correction OK (75 tests, 1425 assertions), Publication OK (114 tests, 1338 assertions), Pointer OK (85 tests, 1184 assertions), Finalize OK (51 tests, 392 assertions), Coverage OK (70 tests, 788 assertions), Evidence OK (56 tests, 1063 assertions), Replay OK (58 tests, 894 assertions).
+  - Final-lock alias-fix operator-local rerun supplied after unchanged-correction evidence consistency patch: `CorrectionEvidenceExportServiceTest.php` -> OK (2 tests, 51 assertions); `CorrectionLifecycleSafetyStaticGuardTest.php` -> OK (5 tests, 78 assertions); `tests/Unit/MarketData --filter "Correction"` -> OK (75 tests, 1438 assertions); `tests/Unit/MarketData --filter "Evidence"` -> OK (56 tests, 1071 assertions); `tests/Unit/MarketData --filter "Replay"` -> OK (58 tests, 894 assertions).
+  - Final-lock audit-ledger mismatch found by StaticGuard/AuditDocs was limited to stale `SOURCE_PATCHED_WAITING_OPERATOR_LOCAL_RUNTIME_PROOF` status text after local proof had been supplied; this patch promotes the canonical correction lifecycle entry to `DONE` and the tracker contract to `LOCKED`.
+  - Command help/list proof passed for `market-data` command list, correction request/approve/run, current-publication repair, and promote.
+  - Final ledger validation after audit synchronization: `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 382 assertions).
+  - Final ledger validation after audit synchronization: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (10 tests, 382 assertions).
+  - Final static guard validation after audit synchronization: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3982 assertions).
+  - Final full MarketData validation after audit synchronization: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (460 tests, 6751 assertions).
+
+  [RUNTIME_PROOF]
+  - Correction request: `correction_id=3`, `trade_date=2026-02-18`, `baseline_publication_id=5`, `baseline_run_id=6`.
+  - Correction approval: `correction_id=3`, status `APPROVED`.
+  - Correction run: `run_id=8`, `SUCCESS`, `READABLE`, `coverage_gate_state=PASS`, candidate artifact publication `7`, `correction_outcome=UNCHANGED`, `correction_reseal_status=NOT_RESEALED_UNCHANGED`, `candidate_publication_switch=false`.
+  - Pointer safety: before/after pointer remained `publication_id=5`, `run_id=6`, `publication_version=4`; correction `3` persisted `prior_run_id=6`, `new_run_id=8`, `baseline_publication_id=5`, `replacement_publication_id=null`.
+  - Evidence export: `storage/app/market-data/correction-lifecycle-hardening/correction-3/correction_evidence.json` and `evidence_admission.json`; `ADMITTED_COMPLETE`, `UNCHANGED`, `NOT_RESEALED_UNCHANGED`, `publication_switch=false`.
+  - Replay linkage: fixture generated under `storage/app/market-data/correction-lifecycle-hardening/fixtures/run-8-correction-unchanged`; post-gap verification now resolves the preserved baseline publication and passes.
+  - Replay proof after gap closure: `php artisan market-data:replay:verify 8 storage/app/market-data/correction-lifecycle-hardening/fixtures/run-8-correction-unchanged --output_dir=storage/app/market-data/correction-lifecycle-hardening/replay-run-8 --env=testing` -> `replay_id=10`, `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`, `UNCHANGED_CORRECTION_BASELINE_PRESERVED`.
+  - Failed correction proof: `correction_id=4`, candidate `run_id=11`, status `FAILED`, failure reason `RUN_SOURCE_MANUAL_FILE_NOT_FOUND`, baseline publication `5`, baseline run `6`, candidate publication `null`, `candidate_publication_switch=false`.
+  - Failed correction evidence export: `storage/app/market-data/correction-lifecycle-hardening/failed-correction-4/correction_evidence.json` and `evidence_admission.json`; `ADMITTED_COMPLETE`, `FAILED`, `NOT_RESEALED`, `publication_switch=false`.
+  - Failed run evidence export: `storage/app/market-data/correction-lifecycle-hardening/failed-correction-4-run-11/**`; candidate run `11`, `terminal_status=FAILED`, `publishability_state=NOT_READABLE`, `final_reason_code=RUN_SOURCE_MANUAL_FILE_NOT_FOUND`.
+  - Repair guard: `market-data:current-publication:repair --apply` without reason blocked with `COMMAND_DESTRUCTIVE_GUARD_REQUIRED`; repair dry-run for `2026-02-18` returned no invalid current pointer state.
+
+  [CORRECTION_CASES]
+  - Request baseline valid: runtime PASS.
+  - Request baseline missing: unit command test PASS.
+  - Unapproved execution: command/pipeline tests PASS.
+  - Unchanged correction: runtime PASS, pointer preserved.
+  - Failed correction: runtime PASS for `correction_id=4` / `run_id=11`; command marked `FAILED`, exported admitted evidence, and preserved baseline pointer.
+  - Repair apply reason guard: command test and runtime blocked proof PASS.
+
+  [POINTER_SAFETY]
+  - Baseline pointer before runtime correction: publication `5`, run `6`, version `4`.
+  - Pointer after unchanged correction run `8`: publication `5`, run `6`, version `4`.
+  - Candidate artifact publication `7` was discarded and did not become current.
+  - Pointer after failed correction run `11`: publication `5`, run `6`, version `4`; repair dry-run reported no invalid current pointer state.
+
+  [REMAINING_RISK]
+  - No remaining correction lifecycle blocker is recorded for this scoped session after unchanged replay MATCH and failed-correction artisan proof.
+  - Whole market-data production-ready remains `REVIEW_REQUIRED` for the patched source state until the aggregate proof pack is rerun after these code/schema/replay changes.
+
+  [NEXT_ACTION]
+  - Use this correction-locked source state as input for the next Ops Command Surface Runtime Matrix / aggregate production proof-pack rerun.
+
+---
+
+- Full Market-Data Production Readiness Proof Pack -> REVIEW_REQUIRED
+
+  [LAST_UPDATED] 2026-05-20
 
   [RELATED_CONTRACT] FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT
 
-  [REVIEW_STATUS] LOCKED_FULL_RUNTIME_PROOF_ALL_CANONICAL_CONTRACTS
+  [REVIEW_STATUS] HISTORICAL_PREVIOUS_SOURCE_STATE_ONLY_CURRENT_SOURCE_REQUIRES_REVALIDATION
 
   [HISTORY]
   - 2026-05-19 -> Source-state audit initially downgraded the full production-ready claim to REVIEW_REQUIRED because historical non-current replay artifacts were missing from the prior uploaded ZIP.
@@ -64,22 +170,23 @@ ACTIVE SESSION:
   - 2026-05-19 -> Historical replay `replay_id=8` proves explicit historical publication audit resolution for `publication_id=2` after the current pointer moved to newer `publication_id=5`; replay result is `MATCH` with `replay_status=PASS`, `mismatch_count=0`, and evidence admission `ADMITTED_COMPLETE`.
   - 2026-05-19 -> Cross-inventory/contract audit confirmed all canonical market-data contracts in `LUMEN_CONTRACT_TRACKER.md` are LOCKED after replay/evidence export historical proof; no non-full production contract remains REVIEW_REQUIRED/IN_PROGRESS/ENFORCED.
   - 2026-05-19 -> Operator-local validation supplied for this final state: AuditDocs OK (10 tests, 363 assertions), Replay OK (57 tests, 904 assertions), StaticGuard OK (170 tests, 3950 assertions), and full `tests/Unit/MarketData` OK (453 tests, 6671 assertions).
+  - 2026-05-20 -> Current correction lifecycle hardening changed correction command/repository/replay/evidence/schema behavior. The 2026-05-19 full production-ready proof remains historical evidence, but it is not a current aggregate claim for this patched source state until the full proof pack is rerun.
 
   [IMPLEMENTATION]
   - `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` now records a complete proof matrix covering run evidence, correction evidence, replay current-readable evidence, replay historical non-current evidence, production validation, read-side enforcement, schema/migration sync, coverage/candidate scope, DB integrity, config/env governance, ops environment baseline, operational readiness, fail-safe behavior, import/promote separation, hash/seal integrity, source/provider resilience, correction lifecycle, finalize/pointer determinism, publishability integrity, and audit-doc synchronization.
   - `REPLAY_DETERMINISM_RUNTIME_PROOF_INVENTORY.md` is reconciled from current-readable-only lock to full replay determinism runtime proof including historical non-current replay artifact proof.
-  - `LUMEN_CONTRACT_TRACKER.md` promotes `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT` from REVIEW_REQUIRED to LOCKED because the missing historical proof and all canonical lock prerequisites are now present.
+  - `LUMEN_CONTRACT_TRACKER.md` now records `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT` as REVIEW_REQUIRED for the patched source state while preserving the 2026-05-19 proof pack as historical evidence.
 
   [ENFORCEMENT]
-  - Full production-ready cannot rely on docs/static guards alone; it is locked only because runtime artifacts exist in this ZIP and canonical contracts are locked.
+  - Full production-ready cannot rely on docs/static guards alone; it may be relocked only after a fresh aggregate proof pack covers this patched correction/replay/schema source state.
   - Historical non-current replay must prove `historical_publication_allowed=true`, `current_pointer_required=false`, `current_pointer_status=NOT_CURRENT_POINTER`, `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
   - Current-readable replay/evidence export lock is retained, but the full production claim additionally requires historical replay and cross-inventory contract lock coverage.
   - Full production-ready does not waive future revalidation for live-provider credential changes, schedule/SLO changes, CI/runtime changes, vendor changes, or future code changes.
 
   [FINAL_BEHAVIOR]
-  - DONE. Full market-data production-ready is locked for the current source ZIP and validated proof pack.
-  - The lock is scoped to the supplied manual-file runtime proof pack, deterministic replay/evidence proof, locked code contracts, and operator-local PHPUnit/artisan validation evidence recorded in audit docs.
-  - Any future change to market-data publication, replay, evidence, correction, coverage, pointer, source/provider, ops environment, DB schema, or config/env governance must reopen the relevant contract and rerun targeted/full validation before inheriting this production-ready status.
+  - REVIEW_REQUIRED. The 2026-05-19 full production-ready lock is preserved as historical previous-source-state evidence only.
+  - The current patched source state has a relocked correction lifecycle, but aggregate full market-data production-ready must be revalidated separately before being claimed again.
+  - Any future aggregate relock must include the correction replay MATCH proof, failed-correction runtime proof, schema migration proof, and full targeted/full MarketData validation for this patched source state.
 
   [EVIDENCE]
   - Historical switch proof: `market-data:daily` created `run_id=6` / `publication_id=5`, and `market-data:promote --force_replace=true` made `publication_id=5` current/readable/SEALED with `pointer_switched=true`.
@@ -93,9 +200,10 @@ ACTIVE SESSION:
   - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (57 tests, 904 assertions).
   - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3950 assertions).
   - Operator-local final validation supplied: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (453 tests, 6671 assertions).
+  - Current correction-lifecycle patch validation is recorded in the active correction entry; it does not automatically relock the aggregate proof pack.
 
   [NEXT_ACTION]
-  - None for this source ZIP. Reopen only if code/config/schema/artifact contracts change or if a real deployment environment requires separate live-provider/CI/SLO validation.
+  - Rerun the full production proof pack after this correction lifecycle hardening ZIP is accepted, including ops runtime matrix and aggregate artifact validation.
 
 
 - Replay Determinism Runtime Proof / PASS-FAIL-BLOCKED Evidence Linkage -> DONE
@@ -1780,7 +1888,7 @@ ACTIVE SESSION:
 
 ---
 
-- Correction Lifecycle Safety -> DONE
+- Historical 2026-05-03 Correction Lifecycle Safety -> DONE
 
   [LAST_UPDATED] 2026-05-03
 
@@ -2235,3 +2343,37 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 
 ---
 
+
+## 2026-05-20 Final Lock Patch — Unchanged Correction Evidence Consistency
+
+- Status: LOCKED_LOCAL_RUNTIME_PROOF.
+- Source ZIP/session: `tradeaxis-api-correction-lifecycle-hardening-202605200904.zip`.
+- Governance note: prior correction lifecycle DONE/LOCKED wording in this file is retained as historical proof for the pre-final-lock source state. The current final-lock source state is not promoted to DONE/LOCKED until operator reruns artisan evidence export and PHPUnit on the supported PHP/Lumen baseline.
+- Gap fixed in source: unchanged correction evidence no longer aliases preserved baseline publication as candidate/new publication.
+- Code patch:
+  - `EodEvidenceRepository::findCorrectionById()` and `findCorrectionByRunId()` now expose `new_run.notes as new_run_notes` so evidence export can read discarded candidate lineage from runtime notes.
+  - `MarketDataEvidenceExportService` resolves unchanged discarded candidate publication from `discarded_candidate_publication_id` / `candidate_publication_id` notes and rejects fallback to preserved baseline as candidate.
+  - Unchanged correction evidence now emits explicit `preserved_publication_id`, `discarded_candidate_publication_id`, `replacement_publication_id=null`, and `publication_switch=false` semantics.
+  - `new_publication` and `new_hashes` are null for unchanged correction because no replacement publication exists.
+- Artifact patch:
+  - `storage/app/market-data/correction-lifecycle-hardening/correction-3/correction_evidence.json` now records baseline/preserved publication `5`, discarded candidate publication `7`, replacement publication `null`, and candidate proof `DISCARDED_CANDIDATE_RECORDED`.
+  - `storage/app/market-data/correction-lifecycle-hardening/correction-3/evidence_admission.json` remains `ADMITTED_COMPLETE` with `critical_missing_sections=[]`.
+  - `storage/app/market-data/correction-lifecycle-hardening/replay-run-8/replay_result.json` remains the runtime replay proof reference for candidate publication `7` and preserved baseline publication `5`.
+- Tests updated:
+  - `CorrectionEvidenceExportServiceTest` now prevents unchanged correction evidence from treating baseline/current publication as candidate/new publication.
+  - `CorrectionLifecycleSafetyStaticGuardTest` now guards the `new_run.notes` evidence source and discarded/replacement publication fields.
+- Validation performed in this container:
+  - `php -l app/Application/MarketData/Services/MarketDataEvidenceExportService.php` -> PASS.
+  - `php -l app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php` -> PASS.
+  - `php -l tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php` -> PASS.
+  - `php -l tests/Unit/MarketData/CorrectionLifecycleSafetyStaticGuardTest.php` -> PASS.
+  - `php artisan list market-data` -> BLOCKED by environment guard: PHP `8.4.16` is outside the documented Lumen clean-output baseline `<8.4`.
+  - `php vendor/bin/phpunit tests/Unit/MarketData/CorrectionEvidenceExportServiceTest.php` -> BLOCKED because PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing.
+- Required operator rerun before LOCKED:
+  - `php artisan market-data:evidence:export --correction_id=3 --output_dir=storage/app/market-data/correction-lifecycle-hardening/correction-3 --env=testing`.
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"`.
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"`.
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"`.
+  - `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"`.
+  - `vendor/bin/phpunit tests/Unit/MarketData`.
+- Final implementation status for this patched ZIP: `Correction Lifecycle Hardening / Correction Lifecycle Safety -> DONE`; `CORRECTION_LIFECYCLE_SAFETY_CONTRACT -> LOCKED`.

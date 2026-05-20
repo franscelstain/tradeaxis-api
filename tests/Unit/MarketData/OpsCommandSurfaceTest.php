@@ -17,11 +17,13 @@ use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
 use App\Console\Commands\MarketData\ReplayBackfillCommand;
 use App\Console\Commands\MarketData\ReplaySmokeSuiteCommand;
+use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
 use App\Console\Commands\MarketData\VerifyReplayCommand;
 use App\Console\Commands\MarketData\GenerateReplayFixtureCommand;
 use Mockery as m;
 use Symfony\Component\Console\Tester\CommandTester;
 use Illuminate\Support\Facades\File;
+use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 
 class OpsCommandSurfaceTest extends TestCase
 {
@@ -371,6 +373,84 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('deleted_rows=0', $display);
         $this->assertStringContainsString('next_action=Re-run with --apply after reviewing candidate_rows and cutoff context.', $display);
         $this->assertStringContainsString('output_dir=/tmp/session-purge-default', $display);
+    }
+
+    public function test_current_publication_repair_apply_requires_operator_reason_before_mutation(): void
+    {
+        $repo = m::mock(EodPublicationRepository::class);
+        $repo->shouldNotReceive('findInvalidCurrentPublicationStates');
+        $repo->shouldNotReceive('clearCurrentPublicationState');
+
+        $this->app->instance(EodPublicationRepository::class, $repo);
+
+        $command = new RepairCurrentPublicationIntegrityCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--trade_date' => '2026-03-17',
+            '--apply' => true,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_DESTRUCTIVE_GUARD_REQUIRED', $display);
+        $this->assertStringContainsString('apply=true', $display);
+    }
+
+    public function test_current_publication_repair_apply_records_reason_and_pointer_before_after(): void
+    {
+        $repo = m::mock(EodPublicationRepository::class);
+        $repo->shouldReceive('findInvalidCurrentPublicationStates')
+            ->once()
+            ->with('2026-03-17')
+            ->andReturn(collect([
+                (object) [
+                    'pointer_trade_date' => '2026-03-17',
+                    'trade_date' => '2026-03-17',
+                    'publication_id' => 2501,
+                    'run_id' => 25,
+                    'pointer_run_id' => 25,
+                    'publication_version' => 2,
+                    'pointer_publication_version' => 2,
+                    'terminal_status' => 'SUCCESS',
+                    'publishability_state' => 'READABLE',
+                    'is_current' => 0,
+                    'is_current_publication' => 1,
+                    'seal_state' => 'SEALED',
+                    'pointer_sealed_at' => '2026-03-17 18:00:00',
+                    'sealed_at' => '2026-03-17 18:00:00',
+                    'run_sealed_at' => '2026-03-17 18:00:00',
+                ],
+            ]));
+        $repo->shouldReceive('clearCurrentPublicationState')
+            ->once()
+            ->with('2026-03-17');
+
+        $this->app->instance(EodPublicationRepository::class, $repo);
+
+        $command = new RepairCurrentPublicationIntegrityCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            '--trade_date' => '2026-03-17',
+            '--apply' => true,
+            '--reason' => 'operator reviewed invalid mirror and approved clear',
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('operation_mode=APPLIED', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_APPLY_CONFIRMED', $display);
+        $this->assertStringContainsString('repair_reason=operator reviewed invalid mirror and approved clear', $display);
+        $this->assertStringContainsString('pointer_before_publication_id=2501', $display);
+        $this->assertStringContainsString('pointer_before_run_id=25', $display);
+        $this->assertStringContainsString('repair_action=CLEARED_INVALID_CURRENT_STATE', $display);
+        $this->assertStringContainsString('pointer_after_state=CLEARED', $display);
     }
 
     public function test_replay_smoke_command_propagates_operator_options_and_renders_case_identifiers(): void

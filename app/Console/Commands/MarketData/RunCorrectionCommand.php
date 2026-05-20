@@ -43,19 +43,47 @@ class RunCorrectionCommand extends AbstractMarketDataCommand
         }
 
         $requestedDate = $this->option('requested_date') ?: (string) $correction->trade_date;
-        $run = $this->pipeline()->runDaily($requestedDate, $this->sourceMode(), $correctionId);
+        try {
+            $run = $this->pipeline()->runDaily($requestedDate, $this->sourceMode(), $correctionId);
+        } catch (\Throwable $e) {
+            $failed = $this->markCorrectionFailed($correctionId, $correction, $e);
+            $reasonCode = $this->reasonCodeFromThrowable($e);
+            $this->renderCommandBlocked('CORRECTION_FAILED', 'Correction execution failed before safe publication; baseline current pointer preserved.', [
+                'correction_id' => $correctionId,
+                'correction_status' => $this->optionalScalar($failed, 'status'),
+                'failure_reason_code' => $reasonCode,
+                'baseline_publication_id' => $this->optionalScalar($failed, 'baseline_publication_id') ?: $this->optionalScalar($failed, 'prior_publication_id'),
+                'candidate_publication_switch' => false,
+                'exception_class' => get_class($e),
+            ]);
+            $this->line('correction_id='.$correctionId);
+            $this->line('correction_status='.$this->optionalScalar($failed, 'status'));
+            $this->line('correction_outcome=FAILED');
+            $this->line('correction_reseal_status=NOT_RESEALED');
+            $this->line('baseline_publication_id='.($this->optionalScalar($failed, 'baseline_publication_id') ?: $this->optionalScalar($failed, 'prior_publication_id')));
+            $this->line('candidate_publication_id=');
+            $this->line('candidate_publication_switch=false');
+            $this->line('failure_reason_code='.$reasonCode);
+            $this->line('final_outcome_note='.$this->optionalScalar($failed, 'final_outcome_note'));
+
+            return 1;
+        }
 
         $this->renderRunSummary($run);
         $correctionLifecycle = $this->loadCorrectionLifecycle($correctionId);
+        $correctionOutcome = $this->resolveCorrectionOutcome($correctionLifecycle);
         $this->line('correction_id='.$correctionId);
         $this->line('correction_status='.(string) optional($correctionLifecycle)->status);
-        $this->line('correction_outcome='.$this->resolveCorrectionOutcome($correctionLifecycle));
+        $this->line('correction_outcome='.$correctionOutcome);
         $this->line('correction_reseal_status='.$this->resolveResealStatus($correctionLifecycle));
         $baselinePublicationId = $this->optionalScalar($correctionLifecycle, 'baseline_publication_id') ?: $this->optionalScalar($correctionLifecycle, 'prior_publication_id');
-        $candidatePublicationId = $this->optionalScalar($correctionLifecycle, 'replacement_publication_id') ?: $this->optionalScalar($correctionLifecycle, 'new_publication_id');
+        $candidatePublicationId = $this->optionalScalar($correctionLifecycle, 'replacement_publication_id');
+        if ($candidatePublicationId === '' && $correctionOutcome !== 'UNCHANGED') {
+            $candidatePublicationId = $this->optionalScalar($correctionLifecycle, 'new_publication_id');
+        }
         $this->line('baseline_publication_id='.$baselinePublicationId);
         $this->line('candidate_publication_id='.$candidatePublicationId);
-        $this->line('candidate_publication_switch='.$this->optionalBoolString($correctionLifecycle, 'new_publication_is_current'));
+        $this->line('candidate_publication_switch='.$this->resolveCandidatePublicationSwitch($correctionLifecycle));
         $this->line('final_outcome_note='.$this->optionalScalar($correctionLifecycle, 'final_outcome_note'));
 
         return 0;
@@ -112,22 +140,71 @@ class RunCorrectionCommand extends AbstractMarketDataCommand
             return 'RESEALED';
         }
 
+        if ($status === 'FAILED') {
+            return 'NOT_RESEALED';
+        }
+
         return '';
+    }
+
+    private function markCorrectionFailed($correctionId, $originalCorrection, \Throwable $e)
+    {
+        $repo = app(EodCorrectionRepository::class);
+        $current = $repo->findById($correctionId) ?: $originalCorrection;
+        $reasonCode = $this->reasonCodeFromThrowable($e);
+        $note = 'Correction execution failed before safe publication; baseline current pointer preserved. failure_reason_code='.$reasonCode;
+
+        return $repo->markFailed(
+            $correctionId,
+            $this->optionalInt($current, 'new_run_id'),
+            $this->optionalInt($current, 'prior_run_id'),
+            $note,
+            $this->optionalInt($current, 'baseline_publication_id') ?: $this->optionalInt($originalCorrection, 'baseline_publication_id'),
+            null
+        );
+    }
+
+    private function reasonCodeFromThrowable(\Throwable $e)
+    {
+        if (method_exists($e, 'reasonCode')) {
+            $reasonCode = $e->reasonCode();
+            if ($reasonCode !== null && $reasonCode !== '') {
+                return (string) $reasonCode;
+            }
+        }
+
+        return 'CORRECTION_FAILED';
     }
 
     private function optionalScalar($record, $field)
     {
-        return is_object($record) && property_exists($record, $field) && $record->{$field} !== null
+        return is_object($record) && isset($record->{$field}) && $record->{$field} !== null
             ? (string) $record->{$field}
             : '';
     }
 
+    private function optionalInt($record, $field)
+    {
+        return is_object($record) && isset($record->{$field}) && $record->{$field} !== ''
+            ? (int) $record->{$field}
+            : null;
+    }
+
     private function optionalBoolString($record, $field)
     {
-        if (! is_object($record) || ! property_exists($record, $field) || $record->{$field} === null) {
+        if (! is_object($record) || ! isset($record->{$field}) || $record->{$field} === null) {
             return '';
         }
 
         return $record->{$field} ? 'true' : 'false';
+    }
+
+    private function resolveCandidatePublicationSwitch($correction)
+    {
+        if ($this->resolveCorrectionOutcome($correction) === 'UNCHANGED') {
+            return 'false';
+        }
+
+        return $this->optionalBoolString($correction, 'new_publication_is_current');
     }
 }

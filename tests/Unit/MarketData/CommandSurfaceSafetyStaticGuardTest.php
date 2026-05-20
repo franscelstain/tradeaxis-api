@@ -82,9 +82,15 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $command = file_get_contents($this->commandDir.'/RepairCurrentPublicationIntegrityCommand.php');
 
         $this->assertStringContainsString('{--apply}', $command);
+        $this->assertStringContainsString('{--reason=}', $command);
+        $this->assertStringContainsString('{--force_reason=}', $command);
+        $this->assertStringContainsString('COMMAND_DESTRUCTIVE_GUARD_REQUIRED', $command);
         $this->assertStringContainsString('operation_mode=', $command);
         $this->assertStringContainsString('COMMAND_DRY_RUN_ONLY', $command);
-        $this->assertStringContainsString('next_action=Re-run with --apply', $command);
+        $this->assertStringContainsString('repair_reason=', $command);
+        $this->assertStringContainsString('pointer_before_publication_id=', $command);
+        $this->assertStringContainsString('pointer_after_state=CLEARED', $command);
+        $this->assertStringContainsString('next_action=Re-run with --apply --reason=', $command);
     }
 
     private function expectedCommands(): array

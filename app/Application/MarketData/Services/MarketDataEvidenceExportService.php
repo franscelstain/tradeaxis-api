@@ -617,10 +617,10 @@ class MarketDataEvidenceExportService
         return $reasonCode !== '' ? $reasonCode : 'EVIDENCE_HISTORICAL_PUBLICATION_RESOLUTION_FAILED';
     }
 
-    private function buildCorrectionCandidateHistoricalPublicationProof($correction, $publicationId, $runId, $changedDecision, $resealStatus)
+    private function buildCorrectionCandidateHistoricalPublicationProof($correction, $publicationId, $runId, $changedDecision, $resealStatus, $discardedCandidatePublicationId = null)
     {
         if ($this->isUnchangedCorrectionCandidateDiscarded($correction, $publicationId, $runId, $changedDecision, $resealStatus)) {
-            return $this->buildUnchangedCorrectionCandidateDiscardedProof($correction, $publicationId, $runId, $resealStatus);
+            return $this->buildUnchangedCorrectionCandidateDiscardedProof($correction, $discardedCandidatePublicationId, $runId, $resealStatus);
         }
 
         return $this->buildHistoricalPublicationAuditProof($publicationId, $runId, 'correction_candidate');
@@ -645,28 +645,66 @@ class MarketDataEvidenceExportService
             && (string) $runId !== (string) $this->field($correction, 'prior_run_id');
     }
 
-    private function buildUnchangedCorrectionCandidateDiscardedProof($correction, $publicationId, $runId, $resealStatus)
+    private function buildUnchangedCorrectionCandidateDiscardedProof($correction, $discardedCandidatePublicationId, $runId, $resealStatus)
     {
+        $baselinePublicationId = $this->field($correction, 'baseline_publication_id') !== null
+            ? $this->field($correction, 'baseline_publication_id')
+            : $this->field($correction, 'prior_publication_id');
+        $discardedCandidatePublicationId = $discardedCandidatePublicationId !== null
+            ? (int) $discardedCandidatePublicationId
+            : null;
+
         return [
             'scope' => 'correction_candidate',
-            'proof_status' => 'NOT_APPLICABLE',
-            'publication_id' => $publicationId !== null ? (int) $publicationId : null,
+            'proof_status' => $discardedCandidatePublicationId !== null ? 'DISCARDED_CANDIDATE_RECORDED' : 'MISSING',
+            'publication_id' => $discardedCandidatePublicationId,
             'run_id' => $runId !== null ? (int) $runId : null,
             'evidence_resolution_mode' => 'UNCHANGED_CORRECTION_AUDIT',
-            'evidence_publication_scope' => 'UNCHANGED_CORRECTION_CANDIDATE_DISCARDED',
+            'evidence_publication_scope' => 'UNCHANGED_CORRECTION_DISCARDED_CANDIDATE',
             'current_pointer_required' => false,
             'historical_publication_allowed' => false,
-            'lineage_verification_status' => 'NOT_APPLICABLE_UNCHANGED_CORRECTION',
+            'lineage_verification_status' => $discardedCandidatePublicationId !== null ? 'UNCHANGED_CORRECTION_CANDIDATE_DISCARDED' : 'CORRECTION_DISCARDED_CANDIDATE_PUBLICATION_MISSING',
             'artifact_scope' => 'DISCARDED_CANDIDATE_ARTIFACT',
             'coverage_basis_publication_id' => null,
             'coverage_basis_run_id' => null,
-            'evidence_reason_code' => 'UNCHANGED_CORRECTION_CANDIDATE_DISCARDED',
+            'evidence_reason_code' => $discardedCandidatePublicationId !== null ? 'UNCHANGED_CORRECTION_CANDIDATE_DISCARDED' : 'CORRECTION_DISCARDED_CANDIDATE_PUBLICATION_MISSING',
             'changed_decision' => 'UNCHANGED',
             'reseal_status' => $resealStatus,
-            'preserved_publication_id' => $publicationId !== null ? (int) $publicationId : null,
+            'preserved_publication_id' => $baselinePublicationId !== null ? (int) $baselinePublicationId : null,
+            'discarded_candidate_publication_id' => $discardedCandidatePublicationId,
             'discarded_candidate_run_id' => $runId !== null ? (int) $runId : null,
             'final_outcome_note' => $this->field($correction, 'final_outcome_note'),
         ];
+    }
+
+    private function resolveDiscardedCandidatePublicationId($correction, $linkedCandidatePublicationId, $changedDecision, $resealStatus)
+    {
+        if (! $this->isUnchangedCorrectionCandidateDiscarded($correction, $linkedCandidatePublicationId, $this->field($correction, 'new_run_id'), $changedDecision, $resealStatus)) {
+            return null;
+        }
+
+        $baselinePublicationId = $this->field($correction, 'baseline_publication_id') !== null
+            ? $this->field($correction, 'baseline_publication_id')
+            : $this->field($correction, 'prior_publication_id');
+        $notesMap = $this->parseRunNotes((string) ($this->field($correction, 'new_run_notes') ?? ''));
+
+        foreach (['discarded_candidate_publication_id', 'candidate_publication_id'] as $key) {
+            if (! isset($notesMap[$key]) || $notesMap[$key] === '') {
+                continue;
+            }
+
+            $candidateId = (int) $notesMap[$key];
+            if ($candidateId > 0 && ($baselinePublicationId === null || $candidateId !== (int) $baselinePublicationId)) {
+                return $candidateId;
+            }
+        }
+
+        if ($linkedCandidatePublicationId !== null
+            && ($baselinePublicationId === null || (int) $linkedCandidatePublicationId !== (int) $baselinePublicationId)) {
+            return (int) $linkedCandidatePublicationId;
+        }
+
+        return null;
     }
 
     public function exportCorrectionEvidence($correctionId, $outputDir = null)
@@ -677,20 +715,25 @@ class MarketDataEvidenceExportService
         }
 
         $priorPublicationId = $this->field($correction, 'baseline_publication_id') !== null ? $this->field($correction, 'baseline_publication_id') : $this->field($correction, 'prior_publication_id');
-        $newPublicationId = $this->field($correction, 'replacement_publication_id') !== null ? $this->field($correction, 'replacement_publication_id') : $this->field($correction, 'new_publication_id');
+        $linkedNewPublicationId = $this->field($correction, 'replacement_publication_id') !== null ? $this->field($correction, 'replacement_publication_id') : $this->field($correction, 'new_publication_id');
         $priorPublication = $priorPublicationId ? $this->evidence->findPublicationById($priorPublicationId) : null;
-        $newPublication = $newPublicationId ? $this->evidence->findPublicationById($newPublicationId) : null;
-        $changedDecision = $this->resolveCorrectionChangedDecision($correction, $priorPublication, $newPublication);
-        $resealStatus = $this->resolveCorrectionResealStatus($correction, $changedDecision, $newPublication);
+        $linkedNewPublication = $linkedNewPublicationId ? $this->evidence->findPublicationById($linkedNewPublicationId) : null;
+        $changedDecision = $this->resolveCorrectionChangedDecision($correction, $priorPublication, $linkedNewPublication);
+        $resealStatus = $this->resolveCorrectionResealStatus($correction, $changedDecision, $linkedNewPublication);
+        $discardedCandidatePublicationId = $this->resolveDiscardedCandidatePublicationId($correction, $linkedNewPublicationId, $changedDecision, $resealStatus);
+        $replacementPublicationId = $changedDecision === 'UNCHANGED' ? null : $linkedNewPublicationId;
+        $candidatePublicationId = $changedDecision === 'UNCHANGED' ? $discardedCandidatePublicationId : $replacementPublicationId;
+        $newPublication = $replacementPublicationId !== null ? $linkedNewPublication : null;
         $baselineHistoricalProof = $this->buildHistoricalPublicationAuditProof($priorPublicationId, $this->field($correction, 'prior_run_id'), 'correction_baseline');
         $candidateHistoricalProof = $this->buildCorrectionCandidateHistoricalPublicationProof(
             $correction,
-            $newPublicationId,
+            $candidatePublicationId,
             $this->field($correction, 'new_run_id'),
             $changedDecision,
-            $resealStatus
+            $resealStatus,
+            $discardedCandidatePublicationId
         );
-        $publicationSwitch = $newPublication ? (bool) $newPublication->is_current : false;
+        $publicationSwitch = $changedDecision !== 'UNCHANGED' && $newPublication ? (bool) $newPublication->is_current : false;
         $correctionAdmissionMissing = [];
         $this->markMissingSection($correctionAdmissionMissing, 'correction_context', $this->field($correction, 'correction_id'));
         $this->markMissingSection($correctionAdmissionMissing, 'correction_status', $this->field($correction, 'status'));
@@ -722,8 +765,11 @@ class MarketDataEvidenceExportService
                 'baseline_publication_id' => $priorPublicationId !== null ? (int) $priorPublicationId : null,
                 'baseline_publication_version' => $this->field($correction, 'prior_publication_version') !== null ? (int) $this->field($correction, 'prior_publication_version') : null,
                 'candidate_run_id' => $this->field($correction, 'new_run_id') !== null ? (int) $this->field($correction, 'new_run_id') : null,
-                'candidate_publication_id' => $newPublicationId !== null ? (int) $newPublicationId : null,
-                'candidate_publication_version' => $this->field($correction, 'new_publication_version') !== null ? (int) $this->field($correction, 'new_publication_version') : null,
+                'candidate_publication_id' => $candidatePublicationId !== null ? (int) $candidatePublicationId : null,
+                'candidate_publication_version' => $replacementPublicationId !== null && $this->field($correction, 'new_publication_version') !== null ? (int) $this->field($correction, 'new_publication_version') : null,
+                'preserved_publication_id' => $changedDecision === 'UNCHANGED' && $priorPublicationId !== null ? (int) $priorPublicationId : null,
+                'discarded_candidate_publication_id' => $discardedCandidatePublicationId !== null ? (int) $discardedCandidatePublicationId : null,
+                'replacement_publication_id' => $replacementPublicationId !== null ? (int) $replacementPublicationId : null,
                 'changed_decision' => $changedDecision,
                 'reseal_status' => $resealStatus,
                 'publication_switch' => $publicationSwitch,
@@ -733,7 +779,7 @@ class MarketDataEvidenceExportService
                 ],
                 'pointer_current_state' => [
                     'baseline_was_current' => $this->field($correction, 'prior_publication_is_current') !== null ? (bool) $this->field($correction, 'prior_publication_is_current') : null,
-                    'candidate_is_current' => $this->field($correction, 'new_publication_is_current') !== null ? (bool) $this->field($correction, 'new_publication_is_current') : null,
+                    'candidate_is_current' => $changedDecision === 'UNCHANGED' ? false : ($this->field($correction, 'new_publication_is_current') !== null ? (bool) $this->field($correction, 'new_publication_is_current') : null),
                 ],
                 'run_state' => [
                     'baseline_terminal_status' => $this->field($correction, 'prior_run_terminal_status'),
@@ -747,7 +793,7 @@ class MarketDataEvidenceExportService
                 ],
                 'publication_state' => [
                     'baseline_seal_state' => $this->field($correction, 'prior_publication_seal_state'),
-                    'candidate_seal_state' => $this->field($correction, 'new_publication_seal_state'),
+                    'candidate_seal_state' => $changedDecision === 'UNCHANGED' ? null : $this->field($correction, 'new_publication_seal_state'),
                 ],
             ],
             'prior_publication' => $priorPublication ? [
@@ -779,7 +825,7 @@ class MarketDataEvidenceExportService
             'final_outcome_note' => $this->field($correction, 'final_outcome_note'),
             'changed_decision' => $changedDecision,
             'reseal_status' => $resealStatus,
-            'comparison_summary' => $this->buildCorrectionComparisonSummary($priorPublication, $newPublication),
+            'comparison_summary' => $this->buildCorrectionComparisonSummary($priorPublication, $newPublication, $changedDecision),
         ];
 
         $dir = $outputDir ?: $this->defaultCorrectionOutputDir($this->field($correction, 'correction_id'));
@@ -1637,23 +1683,29 @@ class MarketDataEvidenceExportService
 
     private function buildReplayActualPointerContext($metric)
     {
+        $actualContext = $this->decodeJsonObject($this->field($metric, 'actual_context_json'));
+        $actualPointer = is_array($actualContext['actual_pointer_context'] ?? null) ? $actualContext['actual_pointer_context'] : [];
+
         return [
             'pointer_publication_id' => $this->field($metric, 'publication_id') !== null ? (int) $this->field($metric, 'publication_id') : null,
             'pointer_run_id' => $this->field($metric, 'publication_run_id') !== null ? (int) $this->field($metric, 'publication_run_id') : null,
             'pointer_publication_version' => $this->field($metric, 'publication_version') !== null ? (int) $this->field($metric, 'publication_version') : null,
-            'pointer_resolve_status' => ($this->field($metric, 'publishability_state') === 'READABLE' && $this->field($metric, 'is_current_publication') !== null && (bool) $this->field($metric, 'is_current_publication')) ? 'RESOLVED_READABLE_CURRENT' : 'NOT_RESOLVED_READABLE_CURRENT',
-            'pointer_switched' => $this->field($metric, 'is_current_publication') !== null ? (bool) $this->field($metric, 'is_current_publication') : null,
+            'pointer_resolve_status' => $actualPointer['pointer_resolve_status'] ?? (($this->field($metric, 'publishability_state') === 'READABLE' && $this->field($metric, 'is_current_publication') !== null && (bool) $this->field($metric, 'is_current_publication')) ? 'RESOLVED_READABLE_CURRENT' : 'NOT_RESOLVED_READABLE_CURRENT'),
+            'pointer_switched' => array_key_exists('pointer_switched', $actualPointer) ? (bool) $actualPointer['pointer_switched'] : ($this->field($metric, 'is_current_publication') !== null ? (bool) $this->field($metric, 'is_current_publication') : null),
         ];
     }
 
     private function buildReplayExpectedPointerContext($metric)
     {
+        $expectedContext = $this->decodeJsonObject($this->field($metric, 'expected_context_json'));
+        $expectedPointer = is_array($expectedContext['expected_pointer_context'] ?? null) ? $expectedContext['expected_pointer_context'] : [];
+
         return [
             'pointer_publication_id' => $this->field($metric, 'expected_publication_id') !== null ? (int) $this->field($metric, 'expected_publication_id') : null,
             'pointer_run_id' => $this->field($metric, 'expected_publication_run_id') !== null ? (int) $this->field($metric, 'expected_publication_run_id') : null,
             'pointer_publication_version' => $this->field($metric, 'expected_publication_version') !== null ? (int) $this->field($metric, 'expected_publication_version') : null,
-            'pointer_resolve_status' => ($this->field($metric, 'expected_publishability_state') === 'READABLE' && $this->field($metric, 'expected_is_current_publication') !== null && (bool) $this->field($metric, 'expected_is_current_publication')) ? 'RESOLVED_READABLE_CURRENT' : 'NOT_RESOLVED_READABLE_CURRENT',
-            'pointer_switched' => $this->field($metric, 'expected_is_current_publication') !== null ? (bool) $this->field($metric, 'expected_is_current_publication') : null,
+            'pointer_resolve_status' => $expectedPointer['pointer_resolve_status'] ?? (($this->field($metric, 'expected_publishability_state') === 'READABLE' && $this->field($metric, 'expected_is_current_publication') !== null && (bool) $this->field($metric, 'expected_is_current_publication')) ? 'RESOLVED_READABLE_CURRENT' : 'NOT_RESOLVED_READABLE_CURRENT'),
+            'pointer_switched' => array_key_exists('pointer_switched', $expectedPointer) ? (bool) $expectedPointer['pointer_switched'] : ($this->field($metric, 'expected_is_current_publication') !== null ? (bool) $this->field($metric, 'expected_is_current_publication') : null),
         ];
     }
 
@@ -1893,8 +1945,12 @@ class MarketDataEvidenceExportService
         return 'NOT_RESEALED';
     }
 
-    private function buildCorrectionComparisonSummary($priorPublication, $newPublication)
+    private function buildCorrectionComparisonSummary($priorPublication, $newPublication, $changedDecision = null)
     {
+        if ($changedDecision === 'UNCHANGED') {
+            return 'No consumer-visible hash change detected.';
+        }
+
         if (! $priorPublication && ! $newPublication) {
             return 'No prior or new publication found.';
         }

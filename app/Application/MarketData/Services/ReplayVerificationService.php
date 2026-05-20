@@ -43,9 +43,9 @@ class ReplayVerificationService
             throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Run not found for replay verification.');
         }
 
-        $expectedContext = $this->buildExpectedContext($fixture);
-        $publication = $this->resolvePublicationForReplayActualState($run, $expectedContext);
         $correction = $this->findCorrectionForRun($run->run_id);
+        $expectedContext = $this->buildExpectedContext($fixture);
+        $publication = $this->resolvePublicationForReplayActualState($run, $expectedContext, $correction);
         $actual = $this->buildActualReplayState($run, $publication, $correction, $expectedContext);
         $comparison = $this->compareExpectedAndActual($fixture, $actual, $expectedContext);
         $replayStatus = $this->replayStatusForComparison($comparison['comparison_result']);
@@ -203,10 +203,10 @@ class ReplayVerificationService
             throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Run not found for replay fixture generation.');
         }
 
+        $correction = $this->findCorrectionForRun($run->run_id);
         $publication = $publicationId !== null
             ? $this->resolveExplicitFixturePublication($run, (int) $publicationId)
-            : $this->resolvePublicationForRun($run);
-        $correction = $this->findCorrectionForRun($run->run_id);
+            : $this->resolvePublicationForRun($run, $correction);
         $actual = $this->buildActualReplayState($run, $publication, $correction, null);
         $fixturePath = rtrim((string) $fixturePath, '/\\');
         if ($fixturePath === '') {
@@ -460,7 +460,9 @@ class ReplayVerificationService
     {
         $notes = $this->parseNotes((string) ($run->notes ?? ''));
         $resolvedTradeDate = $run->trade_date_effective ?: $run->trade_date_requested;
-        $reasonCodeCounts = $this->actualReasonCodeCounts($run, $resolvedTradeDate, $publication);
+        $correctionOutcome = $this->resolveCorrectionOutcome($correction);
+        $isUnchangedCorrection = $correctionOutcome === 'UNCHANGED';
+        $reasonCodeCounts = $this->actualReasonCodeCounts($run, $resolvedTradeDate, $publication, $correction);
         $eligibleCount = 0;
         if ($publication) {
             foreach ($this->exportReplayEligibilityRows($run, $resolvedTradeDate, $publication) as $row) {
@@ -481,9 +483,13 @@ class ReplayVerificationService
         $isCurrentPublication = $publication && isset($publication->is_current) ? (bool) $publication->is_current : (isset($run->is_current_publication) ? (bool) $run->is_current_publication : false);
         $sealState = $publication && isset($publication->seal_state) && $publication->seal_state ? $publication->seal_state : ($run->sealed_at ? 'SEALED' : 'UNSEALED');
         $requestMode = $run->request_mode ?? ($notes['request_mode'] ?? null);
+        $coverageBasisPublicationId = isset($notes['coverage_basis_publication_id']) && $notes['coverage_basis_publication_id'] !== '' ? (int) $notes['coverage_basis_publication_id'] : null;
+        $coverageBasisRunId = isset($notes['coverage_basis_run_id']) && $notes['coverage_basis_run_id'] !== '' ? (int) $notes['coverage_basis_run_id'] : (isset($run->run_id) ? (int) $run->run_id : null);
+        $pointerSwitched = $isUnchangedCorrection ? false : $isCurrentPublication;
         $promoted = (string) ($run->terminal_status ?? '') === 'SUCCESS'
             && (string) ($run->publishability_state ?? '') === 'READABLE'
-            && $isCurrentPublication;
+            && $isCurrentPublication
+            && ! $isUnchangedCorrection;
         $importStatus = (string) $requestMode === 'import_only'
             ? (isset($run->bars_rows_written) && $run->bars_rows_written !== null ? 'COMPLETED' : 'PENDING')
             : (isset($run->bars_rows_written) && $run->bars_rows_written !== null ? 'COMPLETED' : 'NOT_APPLICABLE');
@@ -495,7 +501,7 @@ class ReplayVerificationService
         $sourceMode = $run->source ?? ($notes['source_mode'] ?? null);
         $sourceName = $run->source_name ?? ($notes['source_name'] ?? null);
         $sourceProvider = $run->source_provider ?? ($notes['source_provider'] ?? null);
-        $replayResolutionContext = $this->buildReplayActualResolutionContext($run, $publication, $expectedContext, $publicationId, $publicationRunId, $publicationVersion, $isCurrentPublication, $sealState);
+        $replayResolutionContext = $this->buildReplayActualResolutionContext($run, $publication, $expectedContext, $publicationId, $publicationRunId, $publicationVersion, $isCurrentPublication, $sealState, $isUnchangedCorrection, $coverageBasisPublicationId, $coverageBasisRunId);
 
         $runContext = [
             'run_id' => isset($run->run_id) ? (int) $run->run_id : null,
@@ -505,7 +511,7 @@ class ReplayVerificationService
             'import_status' => $importStatus,
             'promote_status' => $promoteStatus,
             'promoted' => $promoted,
-            'pointer_switched' => $isCurrentPublication,
+            'pointer_switched' => $pointerSwitched,
             'promote_mode' => $run->promote_mode ?? ($notes['promote_mode'] ?? null),
             'publish_target' => $run->publish_target ?? ($notes['publish_target'] ?? null),
             'terminal_status' => $run->terminal_status ?? null,
@@ -552,7 +558,7 @@ class ReplayVerificationService
             'coverage_contract_version' => $run->coverage_contract_version ?? null,
             'coverage_missing_sample' => $this->decodeJsonArray($run->coverage_missing_sample_json ?? null),
             'coverage_basis' => $notes['coverage_basis'] ?? null,
-            'coverage_basis_publication_id' => isset($notes['coverage_basis_publication_id']) && $notes['coverage_basis_publication_id'] !== '' ? (int) $notes['coverage_basis_publication_id'] : null,
+            'coverage_basis_publication_id' => $coverageBasisPublicationId,
             'coverage_basis_artifact_scope' => $notes['coverage_basis_artifact_scope'] ?? null,
             'candidate_publication_id' => isset($notes['candidate_publication_id']) && $notes['candidate_publication_id'] !== '' ? (int) $notes['candidate_publication_id'] : null,
             'baseline_publication_id' => isset($notes['baseline_publication_id']) && $notes['baseline_publication_id'] !== '' ? (int) $notes['baseline_publication_id'] : null,
@@ -598,7 +604,7 @@ class ReplayVerificationService
             'pointer_run_id' => $publicationRunId,
             'pointer_publication_version' => $publicationVersion,
             'pointer_resolve_status' => $replayResolutionContext['current_pointer_status'],
-            'pointer_switched' => $isCurrentPublication,
+            'pointer_switched' => $pointerSwitched,
             'current_pointer_required' => $replayResolutionContext['current_pointer_required'],
             'historical_publication_allowed' => $replayResolutionContext['historical_publication_allowed'],
         ];
@@ -610,11 +616,11 @@ class ReplayVerificationService
         $correctionContext = [
             'correction_id' => $correction && isset($correction->correction_id) ? (int) $correction->correction_id : (isset($run->correction_id) && $run->correction_id !== null ? (int) $run->correction_id : null),
             'correction_status' => $correction && isset($correction->status) ? $correction->status : null,
-            'correction_outcome' => $this->resolveCorrectionOutcome($correction),
+            'correction_outcome' => $correctionOutcome,
             'correction_reseal_status' => $this->resolveCorrectionResealStatus($correction),
-            'correction_publication_switch' => $correction && isset($correction->new_publication_is_current) && $correction->new_publication_is_current !== null ? (bool) $correction->new_publication_is_current : null,
+            'correction_publication_switch' => $correctionOutcome === 'UNCHANGED' ? false : ($correction && isset($correction->new_publication_is_current) && $correction->new_publication_is_current !== null ? (bool) $correction->new_publication_is_current : null),
             'baseline_publication_id' => $correction && isset($correction->baseline_publication_id) && $correction->baseline_publication_id !== null ? (int) $correction->baseline_publication_id : ($correction && isset($correction->prior_publication_id) && $correction->prior_publication_id !== null ? (int) $correction->prior_publication_id : null),
-            'candidate_publication_id' => $correction && isset($correction->replacement_publication_id) && $correction->replacement_publication_id !== null ? (int) $correction->replacement_publication_id : ($correction && isset($correction->new_publication_id) && $correction->new_publication_id !== null ? (int) $correction->new_publication_id : null),
+            'candidate_publication_id' => $correctionOutcome === 'UNCHANGED' && isset($notes['candidate_publication_id']) && $notes['candidate_publication_id'] !== '' ? (int) $notes['candidate_publication_id'] : ($correction && isset($correction->replacement_publication_id) && $correction->replacement_publication_id !== null ? (int) $correction->replacement_publication_id : ($correction && isset($correction->new_publication_id) && $correction->new_publication_id !== null ? (int) $correction->new_publication_id : null)),
         ];
         $lineage = [
             'run_id' => $runContext['run_id'],
@@ -715,7 +721,7 @@ class ReplayVerificationService
                 'import_status' => $importStatus,
                 'promote_status' => $promoteStatus,
                 'promoted' => $promoted,
-                'pointer_switched' => $isCurrentPublication,
+                'pointer_switched' => $pointerSwitched,
                 'current_publication_id' => $isCurrentPublication ? $publicationId : null,
             ],
             'actual_source_context' => $sourceContext,
@@ -737,9 +743,13 @@ class ReplayVerificationService
         return $actual;
     }
 
-    private function actualReasonCodeCounts($run, $resolvedTradeDate, $publication)
+    private function actualReasonCodeCounts($run, $resolvedTradeDate, $publication, $correction = null)
     {
         $reasonCodeCounts = [];
+        if ($this->isUnchangedCorrection($correction)) {
+            return $this->runEventReasonCodeCounts($run);
+        }
+
         if ($publication) {
             $rows = $this->isHistoricalReplayPublication($publication)
                 ? $this->evidence->dominantReasonCodesForEvidencePublication($run->run_id, $resolvedTradeDate, $publication->publication_id, (bool) ($publication->is_current ?? false))
@@ -754,6 +764,12 @@ class ReplayVerificationService
             return $reasonCodeCounts;
         }
 
+        return $this->runEventReasonCodeCounts($run);
+    }
+
+    private function runEventReasonCodeCounts($run)
+    {
+        $reasonCodeCounts = [];
         try {
             $eventSummary = $this->evidence->summarizeRunEvents($run->run_id);
             foreach (($eventSummary['reason_code_counts'] ?? []) as $reasonCode => $count) {
@@ -1342,11 +1358,15 @@ class ReplayVerificationService
         return 'multi_artifact';
     }
 
-    private function resolvePublicationForRun($run)
+    private function resolvePublicationForRun($run, $correction = null)
     {
         if ((string) ($run->terminal_status ?? '') !== 'SUCCESS' || (string) ($run->publishability_state ?? '') !== 'READABLE') {
             return null;
         }
+        if ($this->isUnchangedCorrection($correction)) {
+            return $this->resolveUnchangedCorrectionBaselinePublication($run, $correction, 'replay_unchanged_correction_fixture_baseline');
+        }
+
         return $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
     }
 
@@ -1374,21 +1394,53 @@ class ReplayVerificationService
         }
     }
 
-    private function resolvePublicationForReplayActualState($run, array $expectedContext)
+    private function resolvePublicationForReplayActualState($run, array $expectedContext, $correction = null)
     {
         if ((string) ($run->terminal_status ?? '') !== 'SUCCESS' || (string) ($run->publishability_state ?? '') !== 'READABLE') {
             return null;
+        }
+
+        if ($this->isUnchangedCorrection($correction)) {
+            return $this->resolveUnchangedCorrectionBaselinePublication($run, $correction, 'replay_unchanged_correction_actual_state');
         }
 
         if (! $this->expectsHistoricalReplayPublication($expectedContext)) {
             return $this->publications->findReadableCurrentPublicationForRun($run->run_id, $run->trade_date_requested);
         }
 
+        $expectedPublicationRunId = $this->ctx($expectedContext, 'expected_publication_context.publication_run_id');
         $selector = [
             'type' => 'replay_historical_actual_state',
-            'run_id' => $run->run_id,
+            'run_id' => $expectedPublicationRunId !== null && $expectedPublicationRunId !== '' ? (int) $expectedPublicationRunId : $run->run_id,
             'publication_id' => $this->ctx($expectedContext, 'expected_publication_context.publication_id'),
             'trade_date' => $this->ctx($expectedContext, 'expected_run_context.trade_date_requested') ?: $run->trade_date_requested,
+        ];
+
+        try {
+            return $this->evidence->resolvePublicationForEvidenceAudit($selector);
+        } catch (\RuntimeException $e) {
+            throw new \RuntimeException($this->mapEvidenceResolutionExceptionToReplayReason($e->getMessage()).': '.$e->getMessage(), 0, $e);
+        }
+    }
+
+    private function resolveUnchangedCorrectionBaselinePublication($run, $correction, $selectorType)
+    {
+        $baselinePublicationId = $correction && isset($correction->baseline_publication_id) && $correction->baseline_publication_id !== null
+            ? (int) $correction->baseline_publication_id
+            : ($correction && isset($correction->prior_publication_id) && $correction->prior_publication_id !== null ? (int) $correction->prior_publication_id : null);
+        $baselineRunId = $correction && isset($correction->prior_run_id) && $correction->prior_run_id !== null
+            ? (int) $correction->prior_run_id
+            : null;
+
+        if ($baselinePublicationId === null) {
+            return null;
+        }
+
+        $selector = [
+            'type' => $selectorType,
+            'run_id' => $baselineRunId,
+            'publication_id' => $baselinePublicationId,
+            'trade_date' => $run->trade_date_requested,
         ];
 
         try {
@@ -1444,9 +1496,33 @@ class ReplayVerificationService
             || (isset($publication->current_pointer_required) && (bool) $publication->current_pointer_required === false && (int) ($publication->is_current ?? 0) !== 1);
     }
 
-    private function buildReplayActualResolutionContext($run, $publication, array $expectedContext = null, $publicationId = null, $publicationRunId = null, $publicationVersion = null, $isCurrentPublication = false, $sealState = null)
+    private function buildReplayActualResolutionContext($run, $publication, array $expectedContext = null, $publicationId = null, $publicationRunId = null, $publicationVersion = null, $isCurrentPublication = false, $sealState = null, $isUnchangedCorrection = false, $coverageBasisPublicationId = null, $coverageBasisRunId = null)
     {
         $hasPublication = $publicationId !== null;
+        if ($hasPublication && $isUnchangedCorrection) {
+            return [
+                'replay_actual_resolution_mode' => 'UNCHANGED_CORRECTION_BASELINE_PRESERVED_AUDIT',
+                'replay_publication_scope' => 'UNCHANGED_CORRECTION_PRESERVED_CURRENT_POINTER',
+                'replay_selector_type' => 'replay_unchanged_correction_actual_state',
+                'replay_selector_id' => (int) $publicationId,
+                'historical_publication_allowed' => false,
+                'current_pointer_required' => true,
+                'current_pointer_status' => 'RESOLVED_READABLE_CURRENT',
+                'publication_id' => (int) $publicationId,
+                'publication_version' => $publicationVersion !== null ? (int) $publicationVersion : null,
+                'publication_run_id' => $publicationRunId !== null ? (int) $publicationRunId : null,
+                'run_id' => isset($run->run_id) ? (int) $run->run_id : null,
+                'run_publication_mirror_status' => 'UNCHANGED_CORRECTION_BASELINE_PRESERVED',
+                'seal_state' => $sealState,
+                'is_current_publication' => (bool) $isCurrentPublication,
+                'artifact_scope' => 'unchanged_correction_candidate_artifact:'.($coverageBasisPublicationId !== null ? (int) $coverageBasisPublicationId : (int) $publicationId),
+                'coverage_basis_publication_id' => $coverageBasisPublicationId !== null ? (int) $coverageBasisPublicationId : (int) $publicationId,
+                'coverage_basis_run_id' => $coverageBasisRunId !== null ? (int) $coverageBasisRunId : (isset($run->run_id) ? (int) $run->run_id : null),
+                'lineage_verification_status' => 'UNCHANGED_CORRECTION_BASELINE_PRESERVED',
+                'replay_reason_code' => 'CORRECTION_BASELINE_POINTER_PRESERVED',
+            ];
+        }
+
         $isHistorical = $this->isHistoricalReplayPublication($publication) || ($hasPublication && ! $isCurrentPublication && $expectedContext !== null && $this->expectsHistoricalReplayPublication($expectedContext));
         $selectorType = $isHistorical ? 'replay_historical_actual_state' : ($hasPublication ? 'current_readable_replay_actual_state' : 'run_without_publication');
         $artifactScope = $hasPublication ? 'publication:'.$publicationId : 'none';
@@ -1523,6 +1599,11 @@ class ReplayVerificationService
     private function findCorrectionForRun($runId)
     {
         try { return $this->evidence->findCorrectionByRunId($runId); } catch (\Throwable $e) { return null; }
+    }
+
+    private function isUnchangedCorrection($correction)
+    {
+        return $this->resolveCorrectionOutcome($correction) === 'UNCHANGED';
     }
 
     private function resolveCorrectionOutcome($correction)

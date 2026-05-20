@@ -178,4 +178,156 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $this->assertSame('NOT_RESOLVED_READABLE_CURRENT', $payload['replay_result']['expected_pointer_context']['pointer_resolve_status']);
         $this->assertCount(2, $payload['reason_code_counts']);
     }
+
+    public function test_export_replay_evidence_preserves_context_pointer_switch_flag_for_unchanged_correction()
+    {
+        $actualContext = [
+            'actual_pointer_context' => [
+                'pointer_publication_id' => 5,
+                'pointer_run_id' => 6,
+                'pointer_publication_version' => 4,
+                'pointer_resolve_status' => 'RESOLVED_READABLE_CURRENT',
+                'pointer_switched' => false,
+            ],
+        ];
+        $expectedContext = [
+            'expected_pointer_context' => [
+                'pointer_publication_id' => 5,
+                'pointer_run_id' => 6,
+                'pointer_publication_version' => 4,
+                'pointer_resolve_status' => 'RESOLVED_READABLE_CURRENT',
+                'pointer_switched' => false,
+            ],
+        ];
+        $metric = (object) [
+            'replay_id' => 3002,
+            'replay_suite' => 'runtime_generated_valid_case',
+            'replay_case' => 'correction-unchanged-run-8',
+            'fixture_id' => 'correction-unchanged-run-8',
+            'fixture_version' => 'generated-v1',
+            'fixture_schema_version' => 'replay_fixture_v2',
+            'fixture_source' => 'unit_test',
+            'fixture_created_at' => '2026-05-20T00:00:00+07:00',
+            'trade_date' => '2026-02-18',
+            'trade_date_effective' => '2026-02-18',
+            'source' => 'manual_file',
+            'source_mode' => 'manual_file',
+            'source_name' => 'LOCAL_FILE',
+            'source_provider' => null,
+            'source_input_file' => '2026-02-18.csv',
+            'source_file_hash' => 'FILE_HASH',
+            'source_file_hash_algorithm' => 'SHA-256',
+            'source_file_size_bytes' => 1234,
+            'source_file_row_count' => 901,
+            'status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'publication_id' => 5,
+            'publication_run_id' => 6,
+            'publication_version' => 4,
+            'is_current_publication' => 1,
+            'comparison_result' => 'MATCH',
+            'replay_status' => 'PASS',
+            'comparison_note' => 'unchanged correction preserved baseline',
+            'artifact_changed_scope' => 'none',
+            'config_identity' => 'v1',
+            'coverage_universe_count' => 913,
+            'coverage_available_count' => 901,
+            'coverage_missing_count' => 12,
+            'coverage_ratio' => '0.986857',
+            'coverage_min_threshold' => '0.9800',
+            'coverage_gate_state' => 'PASS',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'ACTIVE_LISTED_EQUITY_AS_OF_DATE',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
+            'bars_rows_written' => 901,
+            'indicators_rows_written' => 901,
+            'eligibility_rows_written' => 913,
+            'eligible_count' => 0,
+            'invalid_bar_count' => 0,
+            'invalid_indicator_count' => 901,
+            'warning_count' => null,
+            'hard_reject_count' => 913,
+            'bars_batch_hash' => 'A1',
+            'indicators_batch_hash' => 'B1',
+            'eligibility_batch_hash' => 'C1',
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-05-20 00:00:00',
+            'expected_status' => 'SUCCESS',
+            'expected_terminal_status' => 'SUCCESS',
+            'expected_publishability_state' => 'READABLE',
+            'expected_source_mode' => 'manual_file',
+            'expected_source_name' => 'LOCAL_FILE',
+            'expected_source_provider' => null,
+            'expected_source_input_file' => '2026-02-18.csv',
+            'expected_source_file_hash' => 'FILE_HASH',
+            'expected_source_file_hash_algorithm' => 'SHA-256',
+            'expected_source_file_size_bytes' => 1234,
+            'expected_source_file_row_count' => 901,
+            'expected_publication_id' => 5,
+            'expected_publication_run_id' => 6,
+            'expected_publication_version' => 4,
+            'expected_is_current_publication' => 1,
+            'expected_trade_date_effective' => '2026-02-18',
+            'expected_seal_state' => 'SEALED',
+            'expected_config_identity' => 'v1',
+            'expected_coverage_universe_count' => 913,
+            'expected_coverage_available_count' => 901,
+            'expected_coverage_missing_count' => 12,
+            'expected_coverage_ratio' => '0.986857',
+            'expected_coverage_min_threshold' => '0.9800',
+            'expected_coverage_gate_state' => 'PASS',
+            'expected_coverage_threshold_mode' => 'MIN_RATIO',
+            'expected_coverage_universe_basis' => 'ACTIVE_LISTED_EQUITY_AS_OF_DATE',
+            'expected_coverage_contract_version' => 'coverage_gate_v1',
+            'expected_coverage_missing_sample_json' => json_encode([]),
+            'expected_bars_batch_hash' => 'A1',
+            'expected_indicators_batch_hash' => 'B1',
+            'expected_eligibility_batch_hash' => 'C1',
+            'correction_id' => 3,
+            'correction_status' => 'CONSUMED_CURRENT',
+            'correction_outcome' => 'UNCHANGED',
+            'correction_reseal_status' => 'NOT_RESEALED_UNCHANGED',
+            'correction_publication_switch' => 0,
+            'baseline_publication_id' => 5,
+            'candidate_publication_id' => 7,
+            'expected_correction_id' => 3,
+            'expected_correction_status' => 'CONSUMED_CURRENT',
+            'expected_correction_outcome' => 'UNCHANGED',
+            'expected_correction_reseal_status' => 'NOT_RESEALED_UNCHANGED',
+            'expected_correction_publication_switch' => 0,
+            'expected_baseline_publication_id' => 5,
+            'expected_candidate_publication_id' => 7,
+            'mismatch_summary' => null,
+            'mismatch_count' => 0,
+            'mismatch_reason_codes_json' => json_encode([]),
+            'mismatches_json' => json_encode([]),
+            'actual_context_json' => json_encode($actualContext),
+            'expected_context_json' => json_encode($expectedContext),
+            'ignored_volatile_fields_json' => json_encode([]),
+            'deterministic_fields_checked_json' => json_encode(['pointer_switched']),
+            'final_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'created_at' => '2026-05-20T00:00:00+07:00',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+
+        $evidence->shouldReceive('findReplayMetric')->once()->with(3002, '2026-02-18')->andReturn($metric);
+        $evidence->shouldReceive('replayReasonCodeCounts')->once()->with(3002, '2026-02-18')->andReturn([]);
+
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $dir = sys_get_temp_dir().'/market_data_evidence_replay_pointer_'.uniqid();
+        $service->exportReplayEvidence(3002, '2026-02-18', $dir);
+
+        $replayResult = json_decode(file_get_contents($dir.'/replay_result.json'), true);
+        $actualState = json_decode(file_get_contents($dir.'/replay_actual_state.json'), true);
+        $expectedState = json_decode(file_get_contents($dir.'/replay_expected_state.json'), true);
+
+        $this->assertFalse($replayResult['pointer_context']['pointer_switched']);
+        $this->assertFalse($replayResult['expected_pointer_context']['pointer_switched']);
+        $this->assertFalse($actualState['pointer_context']['pointer_switched']);
+        $this->assertFalse($expectedState['pointer_context']['pointer_switched']);
+    }
 }

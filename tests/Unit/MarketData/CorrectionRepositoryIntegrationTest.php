@@ -77,6 +77,38 @@ class CorrectionRepositoryIntegrationTest extends TestCase
         $this->assertSame(30, (int) $cancelled->new_run_id);
     }
 
+    public function test_correction_repository_marks_failed_without_consuming_current_pointer(): void
+    {
+        $repo = new EodCorrectionRepository();
+        $created = $repo->createRequest('2026-03-20', 'READABILITY_FIX', 'Source failure', 'system', 2501, 25);
+        $approved = $repo->approve($created->correction_id, 'reviewer');
+        $repo->markExecuting($approved->correction_id, 25, 47, 'correction_current', 2501, null);
+
+        $failed = $repo->markFailed(
+            $approved->correction_id,
+            47,
+            25,
+            'Correction execution failed before safe publication; baseline current pointer preserved. failure_reason_code=RUN_SOURCE_MANUAL_FILE_NOT_FOUND',
+            2501,
+            null
+        );
+
+        $this->assertSame('FAILED', $failed->status);
+        $this->assertSame(25, (int) $failed->prior_run_id);
+        $this->assertSame(47, (int) $failed->new_run_id);
+        $this->assertSame(2501, (int) $failed->baseline_publication_id);
+        $this->assertNull($failed->replacement_publication_id);
+        $this->assertNull($failed->current_consumed_at);
+        $this->assertStringContainsString('RUN_SOURCE_MANUAL_FILE_NOT_FOUND', $failed->final_outcome_note);
+
+        try {
+            $repo->canExecuteCorrection($approved->correction_id, '2026-03-20', 'correction_current');
+            $this->fail('Expected failed correction_current request to require a new approval/request before execution.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Correction request must be APPROVED before execution.', $e->getMessage());
+        }
+    }
+
 
     public function test_correction_repository_allows_repair_candidate_rerun_increments_metadata_and_preserves_non_current_state_until_current_publish(): void
     {

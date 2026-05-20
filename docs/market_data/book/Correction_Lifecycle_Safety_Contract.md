@@ -1,22 +1,28 @@
 # Correction Lifecycle Safety Contract
 
-Status: ENFORCED — pending operator-local targeted and full PHPUnit evidence before LOCKED.
+Status: LOCKED for the 2026-05-20 correction lifecycle hardening scope. Request baseline proof, unchanged publication-switch semantics, failed-correction pointer preservation, evidence linkage, replay MATCH linkage, and repair reason guards are enforced and validated by runtime proof.
 
 ## Scope
 
-This contract owns market-data correction lifecycle safety across baseline resolution, unchanged artifact handling, changed artifact reseal, correction-run-publication-artifact linkage, pointer switch, fallback preservation, evidence export, replay verification, command output, repository persistence, and static regression guards.
+This contract owns market-data correction lifecycle safety across baseline resolution, request/approval/execution eligibility, unchanged artifact handling, changed artifact reseal, correction-run-publication-artifact linkage, pointer switch, fallback preservation, evidence export, replay verification, command output, repository persistence, and static regression guards.
 
 ## Final Rule
 
 A correction may only publish a replacement when the baseline is resolved from the current readable pointer contract, the baseline publication is `SUCCESS + READABLE + SEALED + coverage PASS`, candidate artifacts are complete and deterministically different from the baseline, reseal is valid, candidate publication linkage is valid, and the post-switch pointer resolver returns the same candidate publication/run/version. If any check fails, the correction must not switch pointer and must preserve the previous current readable publication.
 
-## Baseline Rule
+## Request And Baseline Rule
 
 Correction baseline resolution must use `EodPublicationRepository::findCorrectionBaselinePublicationForTradeDate()` and must not use `MAX(trade_date)`, `latest('trade_date')`, `orderByDesc('trade_date')`, raw/staging shortcuts, sealed-only fallback, or latest successful run fallback. The baseline row must be pointer-resolved through `eod_current_publication_pointer`, joined to `eod_publications` and `eod_runs`, and must satisfy `SUCCESS + READABLE + SEALED + coverage PASS` plus run-publication mirror checks.
 
+Correction request commands must resolve this same baseline before creating a request. If no baseline exists for the target trade date, the request command must stop with `CORRECTION_BASELINE_LINK_MISSING` and must not create a correction row. Repository-level callers may pass explicit baseline context for tests or controlled internal flows, but operator-created correction requests are baseline-gated.
+
+## Approval And Execution Rule
+
+A correction request is not executable until it is approved. Execution must reject missing, mismatched, terminal, consumed, unapproved, or mode-ineligible correction rows. Pipeline execution must re-resolve the baseline at runtime before creating or using a candidate publication.
+
 ## Unchanged Artifact Rule
 
-Artifact comparison is mandatory before correction pointer switch. If baseline and candidate batch hashes are identical across bars, indicators, and eligibility, the correction outcome is unchanged: discard the candidate publication, preserve the existing current pointer, do not reseal, do not create a new current version, mark the correction consumed/current-preserved, and expose the unchanged context in events, evidence, replay, and command output.
+Artifact comparison is mandatory before correction pointer switch. If baseline and candidate batch hashes are identical across bars, indicators, and eligibility, the correction outcome is unchanged: discard the candidate publication, preserve the existing current pointer, do not reseal, do not create a new current version, mark the correction consumed/current-preserved, render `candidate_publication_switch=false`, and expose the unchanged context in events, evidence, replay, and command output.
 
 ## Changed / Reseal Rule
 
@@ -28,8 +34,17 @@ Correction lifecycle state must preserve these links: correction id to prior/new
 
 ## Replay / Evidence Rule
 
-Evidence and replay must carry correction lifecycle fields: correction id/status/outcome/reseal status, baseline publication id/version/run id, candidate publication id/version/run id, publication switch state, final outcome note, changed/unchanged decision, publication seal/current context, run terminal/publishability/coverage context, and mismatch comparison. Replay must fail when expected correction lifecycle state differs from actual state.
+Evidence and replay must carry correction lifecycle fields: correction id/status/outcome/reseal status, baseline publication id/version/run id, candidate publication id/version/run id when applicable, publication switch state, final outcome note, changed/unchanged decision, publication seal/current context, run terminal/publishability/coverage context, and mismatch comparison. Unchanged correction replay must resolve the preserved baseline publication even when the correction run does not own that publication, and must record preserved-baseline lineage rather than treating the discarded candidate as current. Replay must fail or block with a registered reason when expected correction lifecycle state cannot be compared to actual state.
+
+## Repair / Force Guard Rule
+
+Force replacement and current-publication repair are operator-intent paths. `market-data:promote --force_replace=true` must include `--force_replace_reason` or `--force_reason`; `market-data:current-publication:repair --apply` must include `--reason` or `--force_reason`. Repair output must show the reason, pointer before, pointer after, operation mode, and registered command reason code.
 
 ## Fail-safe Rule
 
 Invalid correction lifecycle state must fail safe: no pointer switch, no candidate current, no fake success, no readable run without pointer/linkage proof, previous current readable publication preserved where available, candidate remains non-current, explicit reason/final outcome note recorded, and command/evidence/replay show the conflict.
+
+## Locked Runtime Proof
+
+- Unchanged correction proof: `correction_id=3`, run `8`, baseline publication `5` / run `6`, discarded candidate publication `7`, `candidate_publication_switch=false`, replay `10` `MATCH` / `PASS`.
+- Failed correction proof: `correction_id=4`, candidate run `11`, status `FAILED`, failure reason `RUN_SOURCE_MANUAL_FILE_NOT_FOUND`, no replacement publication, baseline pointer publication `5` preserved.

@@ -3,9 +3,10 @@
 namespace App\Console\Commands\MarketData;
 
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+
 class RepairCurrentPublicationIntegrityCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:current-publication:repair {--trade_date=} {--apply}';
+    protected $signature = 'market-data:current-publication:repair {--trade_date=} {--apply} {--reason=} {--force_reason=}';
 
     protected $description = 'Detect and optionally clear invalid current publication pointer/current mirror states.';
 
@@ -19,6 +20,15 @@ class RepairCurrentPublicationIntegrityCommand extends AbstractMarketDataCommand
 
         $tradeDate = $this->option('trade_date') ?: null;
         $apply = (bool) $this->option('apply');
+        $repairReason = trim((string) ($this->option('reason') ?: $this->option('force_reason') ?: ''));
+
+        if ($apply && $repairReason === '') {
+            $this->renderCommandBlocked('COMMAND_DESTRUCTIVE_GUARD_REQUIRED', '--apply requires --reason or --force_reason for audit trail.', [
+                'trade_date' => $tradeDate,
+                'apply' => 'true',
+            ]);
+            return 1;
+        }
 
         $invalidRows = $repo->findInvalidCurrentPublicationStates($tradeDate);
 
@@ -79,6 +89,8 @@ class RepairCurrentPublicationIntegrityCommand extends AbstractMarketDataCommand
             $this->line('trade_date='.$row->pointer_trade_date);
             $this->line('publication_id='.$row->publication_id);
             $this->line('run_id='.(string) ($row->run_id ?? ''));
+            $this->line('pointer_before_publication_id='.(string) ($row->publication_id ?? ''));
+            $this->line('pointer_before_run_id='.(string) ($row->pointer_run_id ?? ''));
             $this->line('terminal_status='.(string) ($row->terminal_status ?? ''));
             $this->line('publishability_state='.(string) ($row->publishability_state ?? ''));
             $this->line('is_current='.(string) ($row->is_current ?? ''));
@@ -87,12 +99,18 @@ class RepairCurrentPublicationIntegrityCommand extends AbstractMarketDataCommand
 
             $this->line('operation_mode='.($apply ? 'APPLIED' : 'DRY_RUN'));
             $this->line('reason_code='.($apply ? 'COMMAND_APPLY_CONFIRMED' : 'COMMAND_DRY_RUN_ONLY'));
+            if ($apply) {
+                $this->line('repair_reason='.$repairReason);
+            }
 
             if ($apply) {
                 $repo->clearCurrentPublicationState($row->pointer_trade_date);
                 $this->info('repair_action=CLEARED_INVALID_CURRENT_STATE');
+                $this->line('pointer_after_state=CLEARED');
+                $this->line('pointer_after_publication_id=');
+                $this->line('pointer_after_run_id=');
             } else {
-                $this->line('next_action=Re-run with --apply after reviewing integrity_reasons.');
+                $this->line('next_action=Re-run with --apply --reason="<operator reason>" after reviewing integrity_reasons.');
             }
         }
 

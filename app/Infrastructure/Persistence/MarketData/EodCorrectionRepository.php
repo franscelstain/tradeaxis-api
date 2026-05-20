@@ -8,15 +8,15 @@ use Illuminate\Support\Facades\DB;
 
 class EodCorrectionRepository
 {
-    public function createRequest($tradeDate, $reasonCode, $reasonNote, $requestedBy)
+    public function createRequest($tradeDate, $reasonCode, $reasonNote, $requestedBy, $baselinePublicationId = null, $priorRunId = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         return EodDatasetCorrection::query()->create([
             'trade_date' => $tradeDate,
-            'prior_run_id' => null,
+            'prior_run_id' => $priorRunId,
             'new_run_id' => null,
-            'baseline_publication_id' => null,
+            'baseline_publication_id' => $baselinePublicationId,
             'replacement_publication_id' => null,
             'correction_reason_code' => $reasonCode,
             'correction_reason_note' => $reasonNote,
@@ -204,6 +204,30 @@ class EodCorrectionRepository
             'replacement_publication_id' => $replacementPublicationId,
             'final_outcome_note' => $finalOutcomeNote,
             'current_consumed_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        if ($priorRunId !== null) {
+            $payload['prior_run_id'] = $priorRunId;
+        }
+
+        EodDatasetCorrection::query()
+            ->where('correction_id', $correctionId)
+            ->update($payload);
+
+        return $this->findById($correctionId);
+    }
+
+    public function markFailed($correctionId, $newRunId = null, $priorRunId = null, $finalOutcomeNote = null, $baselinePublicationId = null, $replacementPublicationId = null)
+    {
+        $now = Carbon::now(config('market_data.platform.timezone'));
+
+        $payload = [
+            'status' => 'FAILED',
+            'new_run_id' => $newRunId,
+            'baseline_publication_id' => $baselinePublicationId,
+            'replacement_publication_id' => $replacementPublicationId,
+            'final_outcome_note' => $finalOutcomeNote,
             'updated_at' => $now,
         ];
 

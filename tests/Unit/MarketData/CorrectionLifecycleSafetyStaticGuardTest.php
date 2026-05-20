@@ -56,6 +56,10 @@ class CorrectionLifecycleSafetyStaticGuardTest extends TestCase
         $this->assertStringContainsString("'reseal_status'", $evidence);
         $this->assertStringContainsString("'baseline_publication_id'", $evidence);
         $this->assertStringContainsString("'candidate_publication_id'", $evidence);
+        $this->assertStringContainsString('resolveDiscardedCandidatePublicationId', $evidence);
+        $this->assertStringContainsString("'discarded_candidate_publication_id'", $evidence);
+        $this->assertStringContainsString("'replacement_publication_id'", $evidence);
+        $this->assertStringContainsString('CORRECTION_DISCARDED_CANDIDATE_PUBLICATION_MISSING', $evidence);
     }
 
     public function test_replay_persists_and_compares_correction_lifecycle_context()
@@ -81,11 +85,19 @@ class CorrectionLifecycleSafetyStaticGuardTest extends TestCase
 
     public function test_correction_command_surfaces_lifecycle_state()
     {
-        $command = $this->readProjectFile('app/Console/Commands/MarketData/RunCorrectionCommand.php');
+        $requestCommand = $this->readProjectFile('app/Console/Commands/MarketData/RequestCorrectionCommand.php');
+        $runCommand = $this->readProjectFile('app/Console/Commands/MarketData/RunCorrectionCommand.php');
+
+        $this->assertStringContainsString('findCorrectionBaselinePublicationForTradeDate', $requestCommand);
+        $this->assertStringContainsString('CORRECTION_BASELINE_LINK_MISSING', $requestCommand);
+        $this->assertStringContainsString('baseline_publication_id=', $requestCommand);
+        $this->assertStringContainsString('baseline_run_id=', $requestCommand);
 
         foreach (['correction_outcome=', 'correction_reseal_status=', 'baseline_publication_id=', 'candidate_publication_id=', 'candidate_publication_switch=', 'final_outcome_note='] as $needle) {
-            $this->assertStringContainsString($needle, $command);
+            $this->assertStringContainsString($needle, $runCommand);
         }
+        $this->assertStringContainsString('resolveCandidatePublicationSwitch', $runCommand);
+        $this->assertStringContainsString("=== 'UNCHANGED'", $runCommand);
     }
 
     private function readProjectFile($relativePath)

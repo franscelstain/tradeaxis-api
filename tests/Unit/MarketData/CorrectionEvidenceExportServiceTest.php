@@ -140,6 +140,7 @@ class CorrectionEvidenceExportServiceTest extends TestCase
             'replacement_publication_id' => 2,
             'new_publication_id' => 2,
             'new_run_id' => 4,
+            'new_run_notes' => 'correction_unchanged=true; preserved_publication_id=2; discarded_candidate_publication_id=7; candidate_publication_id=7',
             'status' => 'CONSUMED_CURRENT',
             'correction_reason_code' => 'CORRECTION_ARTIFACT_CHANGED',
             'correction_reason_note' => 'runtime correction evidence proof',
@@ -193,6 +194,7 @@ class CorrectionEvidenceExportServiceTest extends TestCase
         $this->assertSame('CONSUMED_CURRENT', $result['summary']['status']);
         $this->assertSame('UNCHANGED', $result['summary']['changed_decision']);
         $this->assertSame('NOT_RESEALED_UNCHANGED', $result['summary']['reseal_status']);
+        $this->assertFalse($result['summary']['publication_switch']);
         $this->assertFileExists($dir.'/correction_evidence.json');
         $this->assertFileExists($dir.'/evidence_admission.json');
 
@@ -200,12 +202,24 @@ class CorrectionEvidenceExportServiceTest extends TestCase
         $candidateProof = $payload['candidate_historical_publication_proof'];
 
         $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
-        $this->assertSame('NOT_APPLICABLE', $candidateProof['proof_status']);
+        $this->assertFalse($payload['publication_switch']);
+        $this->assertFalse($payload['correction_lifecycle']['publication_switch']);
+        $this->assertFalse($payload['correction_lifecycle']['pointer_current_state']['candidate_is_current']);
+        $this->assertSame(7, $payload['correction_lifecycle']['candidate_publication_id']);
+        $this->assertSame(7, $payload['correction_lifecycle']['discarded_candidate_publication_id']);
+        $this->assertSame(2, $payload['correction_lifecycle']['preserved_publication_id']);
+        $this->assertNull($payload['correction_lifecycle']['replacement_publication_id']);
+        $this->assertNull($payload['correction_lifecycle']['publication_state']['candidate_seal_state']);
+        $this->assertNull($payload['new_publication']);
+        $this->assertNull($payload['new_hashes']);
+        $this->assertSame('DISCARDED_CANDIDATE_RECORDED', $candidateProof['proof_status']);
+        $this->assertSame(7, $candidateProof['publication_id']);
         $this->assertSame('UNCHANGED_CORRECTION_AUDIT', $candidateProof['evidence_resolution_mode']);
-        $this->assertSame('UNCHANGED_CORRECTION_CANDIDATE_DISCARDED', $candidateProof['evidence_publication_scope']);
+        $this->assertSame('UNCHANGED_CORRECTION_DISCARDED_CANDIDATE', $candidateProof['evidence_publication_scope']);
         $this->assertSame('UNCHANGED_CORRECTION_CANDIDATE_DISCARDED', $candidateProof['evidence_reason_code']);
-        $this->assertSame('NOT_APPLICABLE_UNCHANGED_CORRECTION', $candidateProof['lineage_verification_status']);
+        $this->assertSame('UNCHANGED_CORRECTION_CANDIDATE_DISCARDED', $candidateProof['lineage_verification_status']);
         $this->assertSame('DISCARDED_CANDIDATE_ARTIFACT', $candidateProof['artifact_scope']);
+        $this->assertSame(7, $candidateProof['discarded_candidate_publication_id']);
         $this->assertSame(4, $candidateProof['discarded_candidate_run_id']);
         $this->assertSame(2, $candidateProof['preserved_publication_id']);
         $this->assertArrayNotHasKey('failure_message', $candidateProof);

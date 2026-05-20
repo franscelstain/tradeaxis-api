@@ -71,10 +71,10 @@ The operator must stop when terminal output contains `status=BLOCKED`, `terminal
 | `market-data:replay:fixture:generate` | Generate runtime MATCH replay fixture from one executed run | `run_id`, `--case`, `--output_dir` | artifact generation only | fixture path, manifest path, expected proof files, next verify command | Use when committed `valid_case` is stale against local run; then verify generated fixture must MATCH | replay/fixture |
 | `market-data:session-snapshot` | Capture supplemental session snapshot | trade date, slot, source file | pointer-resolved only | publication/run/scope/captured counts | If no readable current publication, stop with `reason_code=NO_READABLE_PUBLICATION`; do not query raw/latest | session snapshot |
 | `market-data:session-snapshot:purge` | Retention purge | optional `--before_date`, `--dry-run` or `--apply` | dry-run | candidate count, operation mode | Apply only after reviewed dry-run; next action re-run with `--apply` | command safety |
-| `market-data:correction:request` | Register correction request | `--trade_date`, `--reason_code`, `--reason_note` | request only | correction id/status | If missing reason, blocked; next action supply registered reason | correction |
+| `market-data:correction:request` | Register correction request | `--trade_date`, `--reason_code`, `--reason_note` | request only after baseline proof | correction id/status/baseline publication | If missing reason or baseline, blocked; next action supply reason or create readable PASS baseline | correction |
 | `market-data:correction:approve` | Approve correction | `correction_id`, optional approved_by | approval only | correction status | If not found/not executable, stop | correction |
 | `market-data:correction:run` | Execute approved correction | `correction_id`, requested date/source | baseline-preserving guarded run | correction/run/publication/pointer lineage | If baseline invalid or unchanged/failed, previous current must stay preserved | correction |
-| `market-data:current-publication:repair` | Detect/clear invalid current pointer mirror state | `--trade_date`, optional `--apply` | dry-run unless apply | operation mode, affected state | Apply only for documented integrity repair; export evidence after | manual DB/action policy |
+| `market-data:current-publication:repair` | Detect/clear invalid current pointer mirror state | `--trade_date`, optional `--apply`, apply reason | dry-run unless apply + reason | operation mode, affected state, pointer before/after | Apply only for documented integrity repair with reason; export evidence after | manual DB/action policy |
 
 Operator discovery command:
 
@@ -384,6 +384,8 @@ Request:
 php artisan market-data:correction:request --trade_date=YYYY-MM-DD --reason_code=<REGISTERED_REASON> --reason_note="operator note" --requested_by=<operator>
 ```
 
+Request is baseline-gated. The command must print `baseline_publication_id` and `baseline_run_id`; if no current sealed readable coverage-PASS baseline exists, it must stop with `CORRECTION_BASELINE_LINK_MISSING` and no correction row.
+
 Approve:
 
 ```text
@@ -412,7 +414,7 @@ Correction states:
 | `CANCELLED` | not executable | Stop |
 | `RESEALED` | changed artifact resealed | Continue finalize/publish only if gates pass |
 
-Reject or stop correction when baseline is not current/readable/SEALED/SUCCESS, artifact is unchanged under unchanged policy, source fails, coverage fails, seal fails, pointer mismatch occurs, or correction already published.
+Reject or stop correction when baseline is not current/readable/SEALED/SUCCESS/PASS, artifact is unchanged under unchanged policy, source fails, coverage fails, seal fails, pointer mismatch occurs, or correction already published. Unchanged correction is a successful preserved-current outcome, not a pointer replacement: it must show `candidate_publication_switch=false`.
 
 ## 13. Backfill flow
 
@@ -480,8 +482,10 @@ Preferred repair command:
 
 ```text
 php artisan market-data:current-publication:repair --trade_date=YYYY-MM-DD
-php artisan market-data:current-publication:repair --trade_date=YYYY-MM-DD --apply
+php artisan market-data:current-publication:repair --trade_date=YYYY-MM-DD --apply --reason="operator reviewed invalid pointer mirror and approved clear"
 ```
+
+Repair apply without `--reason` or `--force_reason` must stop with `COMMAND_DESTRUCTIVE_GUARD_REQUIRED`.
 
 Forbidden manual DB actions:
 

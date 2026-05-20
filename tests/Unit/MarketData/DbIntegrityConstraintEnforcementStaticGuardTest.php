@@ -171,7 +171,7 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
             "ENUM('NOT_READABLE','READABLE')",
             "ENUM('PASS','FAIL','NOT_EVALUABLE')",
             "ENUM('SEALED','UNSEALED')",
-            "ENUM('REQUESTED','APPROVED','EXECUTING','RESEALED','REPAIR_ACTIVE','REPAIR_EXECUTED','REPAIR_CANDIDATE','CONSUMED_CURRENT','PUBLISHED','REJECTED','CANCELLED','CLOSED')",
+            "ENUM('REQUESTED','APPROVED','EXECUTING','RESEALED','REPAIR_ACTIVE','REPAIR_EXECUTED','REPAIR_CANDIDATE','CONSUMED_CURRENT','PUBLISHED','FAILED','REJECTED','CANCELLED','CLOSED')",
         ] as $enum) {
             $this->assertStringContainsString($enum, $schema, 'SQL schema missing enum-like value set: '.$enum);
         }

@@ -550,6 +550,156 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertTrue($result['actual_context']['actual_replay_resolution_context']['historical_publication_allowed']);
     }
 
+    public function test_verify_replay_matches_unchanged_correction_preserved_baseline_publication()
+    {
+        $expected = $this->expectedReplayResult([
+            'trade_date_requested' => '2026-02-18',
+            'trade_date_effective' => '2026-02-18',
+            'run_id' => 408,
+            'request_mode' => 'correction',
+            'publication_id' => 305,
+            'publication_run_id' => 306,
+            'publication_version' => 4,
+            'publication_is_current' => true,
+            'correction_id' => 55,
+            'correction_status' => 'CONSUMED_CURRENT',
+            'correction_outcome' => 'UNCHANGED',
+            'correction_reseal_status' => 'NOT_RESEALED_UNCHANGED',
+            'correction_publication_switch' => false,
+            'baseline_publication_id' => 305,
+            'candidate_publication_id' => 307,
+            'eligible_count' => 7,
+        ]);
+        $expected['expected_run_context']['import_status'] = 'COMPLETED';
+        $expected['expected_run_context']['promote_status'] = 'NOT_PROMOTED';
+        $expected['expected_run_context']['promoted'] = false;
+        $expected['expected_run_context']['pointer_switched'] = false;
+        $expected['expected_coverage_context']['coverage_basis'] = 'CandidatePublication';
+        $expected['expected_coverage_context']['coverage_basis_publication_id'] = 307;
+        $expected['expected_coverage_context']['coverage_basis_artifact_scope'] = 'candidate_publication_artifact';
+        $expected['expected_coverage_context']['candidate_publication_id'] = 307;
+        $expected['expected_coverage_context']['baseline_publication_id'] = 305;
+        $expected['expected_artifact_context']['artifact_scope'] = 'unchanged_correction_candidate_artifact:307';
+        $expected['expected_pointer_context'] = [
+            'pointer_publication_id' => 305,
+            'pointer_run_id' => 306,
+            'pointer_publication_version' => 4,
+            'pointer_resolve_status' => 'RESOLVED_READABLE_CURRENT',
+            'pointer_switched' => false,
+            'current_pointer_required' => true,
+            'historical_publication_allowed' => false,
+        ];
+        $expected['expected_replay_resolution_context'] = [
+            'replay_actual_resolution_mode' => 'UNCHANGED_CORRECTION_BASELINE_PRESERVED_AUDIT',
+            'replay_publication_scope' => 'UNCHANGED_CORRECTION_PRESERVED_CURRENT_POINTER',
+            'replay_selector_type' => 'replay_unchanged_correction_actual_state',
+            'replay_selector_id' => 305,
+            'historical_publication_allowed' => false,
+            'current_pointer_required' => true,
+            'current_pointer_status' => 'RESOLVED_READABLE_CURRENT',
+            'publication_id' => 305,
+            'publication_version' => 4,
+            'publication_run_id' => 306,
+            'run_id' => 408,
+            'run_publication_mirror_status' => 'UNCHANGED_CORRECTION_BASELINE_PRESERVED',
+            'seal_state' => 'SEALED',
+            'is_current_publication' => true,
+            'artifact_scope' => 'unchanged_correction_candidate_artifact:307',
+            'coverage_basis_publication_id' => 307,
+            'coverage_basis_run_id' => 408,
+            'lineage_verification_status' => 'UNCHANGED_CORRECTION_BASELINE_PRESERVED',
+            'replay_reason_code' => 'CORRECTION_BASELINE_POINTER_PRESERVED',
+        ];
+        $expected['expected_lineage']['run_id'] = 408;
+        $expected['expected_lineage']['publication_id'] = 305;
+        $expected['expected_lineage']['current_publication_id'] = 305;
+        $expected['expected_lineage']['publication_run_id'] = 306;
+        $expected['expected_lineage']['correction_id'] = 55;
+
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $expected,
+            'expected/expected_reason_code_counts.json' => [
+                ['reason_code' => 'CORRECTION_ARTIFACT_UNCHANGED', 'reason_count' => 2],
+                ['reason_code' => 'CORRECTION_PROMOTE_REQUIRED', 'reason_count' => 1],
+            ],
+        ], 'fixture_replay_unchanged_correction_preserved_baseline'));
+
+        $run = (object) array_merge($this->successReadableRun(408, '2026-02-18'), [
+            'request_mode' => 'correction',
+            'notes' => 'request_mode=correction; coverage_basis=CandidatePublication; coverage_basis_publication_id=307; candidate_publication_id=307; baseline_publication_id=305; coverage_basis_artifact_scope=candidate_publication_artifact',
+        ]);
+        $baselinePublication = (object) [
+            'publication_id' => 305,
+            'run_id' => 306,
+            'publication_version' => 4,
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-02-18 17:30:00',
+            'evidence_resolution_mode' => 'CURRENT_READABLE_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'CURRENT_POINTER_PUBLICATION',
+            'historical_publication_allowed' => false,
+            'current_pointer_required' => true,
+        ];
+        $correction = (object) [
+            'correction_id' => 55,
+            'status' => 'CONSUMED_CURRENT',
+            'baseline_publication_id' => 305,
+            'prior_publication_id' => 305,
+            'prior_run_id' => 306,
+            'replacement_publication_id' => null,
+            'new_publication_id' => 305,
+            'new_publication_is_current' => 0,
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(408)->andReturn($run);
+        $evidence->shouldReceive('findCorrectionByRunId')->once()->with(408)->andReturn($correction);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
+            return $selector['type'] === 'replay_unchanged_correction_actual_state'
+                && $selector['run_id'] === 306
+                && $selector['publication_id'] === 305
+                && $selector['trade_date'] === '2026-02-18';
+        }))->andReturn($baselinePublication);
+        $evidence->shouldReceive('summarizeRunEvents')->once()->with(408)->andReturn([
+            'reason_code_counts' => [
+                'CORRECTION_ARTIFACT_UNCHANGED' => 2,
+                'CORRECTION_PROMOTE_REQUIRED' => 1,
+            ],
+        ]);
+        $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-02-18', 305)->andReturn([
+            ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 1], ['eligible' => 0], ['eligible' => 0], ['eligible' => 0],
+        ]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3201);
+        $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
+            $actualContext = json_decode($metric['actual_context_json'], true);
+
+            return $metric['comparison_result'] === 'MATCH'
+                && $metric['replay_status'] === 'PASS'
+                && $metric['publication_id'] === 305
+                && $metric['publication_run_id'] === 306
+                && $metric['correction_publication_switch'] === false
+                && $metric['candidate_publication_id'] === 307
+                && ($actualContext['actual_replay_resolution_context']['run_publication_mirror_status'] ?? null) === 'UNCHANGED_CORRECTION_BASELINE_PRESERVED'
+                && ($actualContext['actual_replay_resolution_context']['coverage_basis_publication_id'] ?? null) === 307
+                && ($actualContext['actual_pointer_context']['pointer_switched'] ?? null) === false;
+        }));
+        $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3201, '2026-02-18', [
+            ['reason_code' => 'CORRECTION_ARTIFACT_UNCHANGED', 'reason_count' => 2],
+            ['reason_code' => 'CORRECTION_PROMOTE_REQUIRED', 'reason_count' => 1],
+        ]);
+
+        $service = new ReplayVerificationService($evidence, $publications, $replays);
+        $result = $service->verifyRunAgainstFixture(408, $fixtureDir);
+
+        $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame('PASS', $result['replay_status']);
+        $this->assertSame('UNCHANGED_CORRECTION_BASELINE_PRESERVED', $result['actual_context']['actual_replay_resolution_context']['run_publication_mirror_status']);
+        $this->assertFalse($result['actual_context']['actual_pointer_context']['pointer_switched']);
+    }
+
     public function test_verify_replay_maps_unsealed_historical_publication_to_reason_coded_failure()
     {
         $expected = $this->expectedReplayResult([

@@ -1,33 +1,35 @@
 # Full Market-Data Production Ready Inventory
 
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 
 ## Decision
 
-Full market-data production readiness is **LOCKED for this source ZIP**.
+Full market-data production readiness is **REVIEW_REQUIRED for the patched correction lifecycle source state**.
 
-This lock is based on artifact-backed runtime proof, not docs-only claims:
+The 2026-05-19 production-ready lock remains historical previous-source-state evidence. It is not a current aggregate claim after the 2026-05-20 correction lifecycle hardening changed correction command/repository/replay/evidence/schema behavior.
+
+The historical lock was based on artifact-backed runtime proof, not docs-only claims:
 
 - current-readable run evidence exists and is admitted complete;
 - correction evidence exists and is admitted complete;
 - replay current-readable evidence exists and is admitted complete;
 - historical non-current replay fixture/verify/evidence artifacts exist and prove explicit historical publication audit resolution;
-- all canonical market-data contracts in `LUMEN_CONTRACT_TRACKER.md` are LOCKED;
+- all canonical market-data contracts in `LUMEN_CONTRACT_TRACKER.md` were LOCKED for that previous source state;
 - final operator-local targeted/full MarketData validation passed.
 
-This is a source-level production-ready proof pack. It does not remove the need for environment-specific live-provider, credentials, scheduler/SLO, deployment, and CI validation if those operational contexts differ.
+The current patched source state must rerun the aggregate proof pack before full production-ready can be claimed again. It also does not remove the need for environment-specific live-provider, credentials, scheduler/SLO, deployment, and CI validation if those operational contexts differ.
 
 ## Source-State Artifact Audit
 
 | Required proof area | Expected artifact path | Source ZIP result | Status |
 |---|---|---|---|
-| Current-readable run evidence | `storage/app/market-data/evidence/runtime-proof-run-2/evidence_admission.json` | PRESENT | LOCKED |
-| Correction evidence | `storage/app/market-data/evidence/runtime-proof-correction-1-rerun/evidence_admission.json` | PRESENT | LOCKED |
-| Replay evidence current-readable | `storage/app/market-data/evidence/runtime-proof-replay-1-2026-02-18/evidence_admission.json` | PRESENT | LOCKED |
-| Historical replay fixture manifest | `storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json` | PRESENT | LOCKED |
-| Historical replay verify result | `storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json` | PRESENT | LOCKED |
-| Historical replay evidence admission | `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json` | PRESENT | LOCKED |
-| Historical replay evidence result | `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/replay_result.json` | PRESENT | LOCKED |
+| Current-readable run evidence | `storage/app/market-data/evidence/runtime-proof-run-2/evidence_admission.json` | PRESENT | HISTORICAL_LOCKED |
+| Correction evidence | `storage/app/market-data/evidence/runtime-proof-correction-1-rerun/evidence_admission.json` | PRESENT | HISTORICAL_LOCKED |
+| Replay evidence current-readable | `storage/app/market-data/evidence/runtime-proof-replay-1-2026-02-18/evidence_admission.json` | PRESENT | HISTORICAL_LOCKED |
+| Historical replay fixture manifest | `storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json` | PRESENT | HISTORICAL_LOCKED |
+| Historical replay verify result | `storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json` | PRESENT | HISTORICAL_LOCKED |
+| Historical replay evidence admission | `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json` | PRESENT | HISTORICAL_LOCKED |
+| Historical replay evidence result | `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/replay_result.json` | PRESENT | HISTORICAL_LOCKED |
 
 ## Historical Non-Current Replay Proof
 
@@ -96,15 +98,17 @@ previous historical publication_run_id = 2
 | Correction lifecycle safety | `CORRECTION_LIFECYCLE_SAFETY_CONTRACT` | LOCKED |
 | Finalize/lock/pointer determinism | `FINALIZE_LOCK_POINTER_DETERMINISM_CONTRACT` | LOCKED |
 | Publishability state integrity | `PUBLISHABILITY_STATE_INTEGRITY_CONTRACT` | LOCKED |
-| Full production-ready proof pack | `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT` | LOCKED |
+| Full production-ready proof pack | `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT` | REVIEW_REQUIRED |
 
 ## Inventory Reconciliation
 
 The source ZIP contains older inventory notes that preserve historical transition states such as `ENFORCED_PENDING_LOCAL_PHPUNIT` or `PENDING_RUNTIME_EVIDENCE`. Those are retained as history, but the current canonical status is the lock matrix above plus the current `LUMEN_IMPLEMENTATION_STATUS.md` / `LUMEN_CONTRACT_TRACKER.md` entries.
 
-The production-ready decision uses the canonical tracker as the lock authority and this inventory as the aggregate proof pack. Historical transition text inside old inventories must not be read as current status when the matching canonical contract is LOCKED with later operator-local evidence.
+The production-ready decision uses the canonical tracker as the lock authority and this inventory as the aggregate proof pack. Historical transition text inside old inventories must not be read as current status when the matching canonical contract is REVIEW_REQUIRED for the patched source state.
 
 ## Final Validation Evidence
+
+Historical 2026-05-19 aggregate validation evidence:
 
 - `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 363 assertions).
 - `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (10 tests, 363 assertions).
@@ -112,18 +116,21 @@ The production-ready decision uses the canonical tracker as the lock authority a
 - `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3950 assertions).
 - Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (453 tests, 6671 assertions).
 
+Current 2026-05-20 correction lifecycle validation is recorded in `CORRECTION_LIFECYCLE_HARDENING_INVENTORY.md`; it relocks correction lifecycle only and does not relock this aggregate proof pack.
+
 ## Final Status
 
-- `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `LOCKED`.
-- Full market-data runtime proof pack: `DONE / LOCKED`.
+- `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `REVIEW_REQUIRED`.
+- Historical previous source-state proof pack: `DONE / LOCKED`.
+- Full market-data runtime proof pack for patched source: `NOT_LOCKED / REVIEW_REQUIRED`.
 - Replay current-readable runtime proof: `LOCKED`.
 - Historical non-current replay runtime proof: `LOCKED`.
 - Replay historical non-current runtime artifact proof: `LOCKED`.
 - Evidence export run/correction/replay selector proof: `LOCKED`.
-- All canonical market-data contracts: `LOCKED`.
-- Full market-data production-ready: `CLAIMED_FOR_THIS_SOURCE_ZIP`.
+- All canonical market-data contracts except the aggregate proof-pack claim are locked or historical according to `LUMEN_CONTRACT_TRACKER.md`.
+- Full market-data production-ready: `NOT_CLAIMED_FOR_PATCHED_SOURCE_ZIP`.
 
 ## Remaining Risk
 
 - External/live provider credentials, real scheduler/SLO, deployment infrastructure, CI/runtime parity, and future vendor behavior still require environment-specific rollout validation.
-- Any future code/config/schema/artifact-contract change must reopen the relevant contract and rerun targeted/full validation before carrying this production-ready status forward.
+- Current correction lifecycle code/schema/artifact-contract changes reopened the aggregate production-ready proof pack. Rerun targeted/full validation and production proof artifacts before carrying production-ready status forward.
