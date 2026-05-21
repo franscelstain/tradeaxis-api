@@ -4,7 +4,7 @@ Last updated: 2026-05-20
 
 ## Decision
 
-Full market-data production readiness is **REVIEW_REQUIRED for the patched correction lifecycle source state**.
+Full market-data production readiness is **MARKET_DATA_PRODUCTION_READY_LOCKED for the current source state**.
 
 The 2026-05-19 production-ready lock remains historical previous-source-state evidence. It is not a current aggregate claim after the 2026-05-20 correction lifecycle hardening changed correction command/repository/replay/evidence/schema behavior.
 
@@ -17,7 +17,7 @@ The historical lock was based on artifact-backed runtime proof, not docs-only cl
 - all canonical market-data contracts in `LUMEN_CONTRACT_TRACKER.md` were LOCKED for that previous source state;
 - final operator-local targeted/full MarketData validation passed.
 
-The current patched source state must rerun the aggregate proof pack before full production-ready can be claimed again. It also does not remove the need for environment-specific live-provider, credentials, scheduler/SLO, deployment, and CI validation if those operational contexts differ.
+The current source state has now consumed the relocked correction lifecycle proof plus the Ops Command Surface Runtime Matrix proof. Final Audit Docs Synchronization consumed the candidate proof pack and locked the current source state. This lock does not remove the need for environment-specific live-provider, credentials, scheduler/SLO, deployment, and CI validation if those operational contexts differ.
 
 ## Source-State Artifact Audit
 
@@ -98,13 +98,13 @@ previous historical publication_run_id = 2
 | Correction lifecycle safety | `CORRECTION_LIFECYCLE_SAFETY_CONTRACT` | LOCKED |
 | Finalize/lock/pointer determinism | `FINALIZE_LOCK_POINTER_DETERMINISM_CONTRACT` | LOCKED |
 | Publishability state integrity | `PUBLISHABILITY_STATE_INTEGRITY_CONTRACT` | LOCKED |
-| Full production-ready proof pack | `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT` | REVIEW_REQUIRED |
+| Full production-ready proof pack | `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT` | LOCKED |
 
 ## Inventory Reconciliation
 
 The source ZIP contains older inventory notes that preserve historical transition states such as `ENFORCED_PENDING_LOCAL_PHPUNIT` or `PENDING_RUNTIME_EVIDENCE`. Those are retained as history, but the current canonical status is the lock matrix above plus the current `LUMEN_IMPLEMENTATION_STATUS.md` / `LUMEN_CONTRACT_TRACKER.md` entries.
 
-The production-ready decision uses the canonical tracker as the lock authority and this inventory as the aggregate proof pack. Historical transition text inside old inventories must not be read as current status when the matching canonical contract is REVIEW_REQUIRED for the patched source state.
+The production-ready decision uses the canonical tracker as the lock authority and this inventory as the aggregate proof pack. Historical transition text inside old inventories must not be read as current status when superseded by the current `MARKET_DATA_PRODUCTION_READY_LOCKED` source-state lock.
 
 ## Final Validation Evidence
 
@@ -116,21 +116,44 @@ Historical 2026-05-19 aggregate validation evidence:
 - `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3950 assertions).
 - Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (453 tests, 6671 assertions).
 
-Current 2026-05-20 correction lifecycle validation is recorded in `CORRECTION_LIFECYCLE_HARDENING_INVENTORY.md`; it relocks correction lifecycle only and does not relock this aggregate proof pack.
+Current 2026-05-20 correction lifecycle validation is recorded in `CORRECTION_LIFECYCLE_HARDENING_INVENTORY.md`; the later Ops Command Surface Runtime Matrix consumed that source state and supplied the missing aggregate runtime command matrix. `MARKET_DATA_PRODUCTION_PROOF_PACK.md` now records the candidate aggregate proof pack for this source state.
 
 ## Final Status
 
-- `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `REVIEW_REQUIRED`.
+- `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `LOCKED`.
 - Historical previous source-state proof pack: `DONE / LOCKED`.
-- Full market-data runtime proof pack for patched source: `NOT_LOCKED / REVIEW_REQUIRED`.
+- Full market-data runtime proof pack for current source: `MARKET_DATA_PRODUCTION_READY_LOCKED / LOCKED`.
 - Replay current-readable runtime proof: `LOCKED`.
 - Historical non-current replay runtime proof: `LOCKED`.
 - Replay historical non-current runtime artifact proof: `LOCKED`.
 - Evidence export run/correction/replay selector proof: `LOCKED`.
 - All canonical market-data contracts except the aggregate proof-pack claim are locked or historical according to `LUMEN_CONTRACT_TRACKER.md`.
-- Full market-data production-ready: `NOT_CLAIMED_FOR_PATCHED_SOURCE_ZIP`.
+- Full market-data production-ready: `MARKET_DATA_PRODUCTION_READY_LOCKED`.
 
 ## Remaining Risk
 
 - External/live provider credentials, real scheduler/SLO, deployment infrastructure, CI/runtime parity, and future vendor behavior still require environment-specific rollout validation.
-- Current correction lifecycle code/schema/artifact-contract changes reopened the aggregate production-ready proof pack. Rerun targeted/full validation and production proof artifacts before carrying production-ready status forward.
+- Final audit docs synchronization is complete for this source-state lock.
+
+
+## 2026-05-20 Current Source-State Final Lock Update
+
+`MARKET_DATA_PRODUCTION_PROOF_PACK.md` is now the aggregate proof pack for the current uploaded source state.
+
+Consumed current-source proof:
+
+- `OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT -> LOCKED` with 20-command registry/help proof.
+- Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (475 tests, 6942 assertions).
+- Ops runtime artifacts under `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`.
+- Fresh success proof: daily `run_id=30`, stage-chain `run_id=32`, promote `run_id=33`, `publication_id=27`, `current_publication_id=27`.
+- Coverage PASS proof: `coverage_gate_state=PASS`, `coverage_ratio=1`, `coverage_min_threshold=0.98`.
+- Held/failed proof: `RUN_PARTIAL_DATA`, `COVERAGE_BELOW_THRESHOLD`, `RUN_SOURCE_MANUAL_FILE_EMPTY`.
+- Replay proof: `replay_id=15`, `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`; smoke `all_passed=1`; backfill `replay_id=18` PASS.
+- Evidence proof: `run_id=33` evidence admission `ADMITTED_COMPLETE`; correction `3` admission `ADMITTED_COMPLETE`.
+- Historical non-current replay proof remains locked for `replay_id=8`.
+
+Final lock decision:
+
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` is allowed for this source state.
+- `LOCKED` is now used because Final Audit Docs Synchronization consumed the proof pack and no P0/P1 blocker remains.
+- Required next remediation session: none for this source-state lock; revalidate only for new code/config/vendor/provider/deployment changes.

@@ -149,3 +149,62 @@ This session is DONE and the related contract is LOCKED with operator-local runt
 The patch closes the highest-risk failure mode in the uploaded ZIP: PHP 8.4 no longer reaches Lumen vendor autoload through `artisan`, so evidence commands fail closed with a clear environment reason instead of producing noisy output.
 
 Operator-local targeted proof has been supplied and passed. The only full-suite blocker was a stale Config / ENV active-session assertion; that guard is patched in this ZIP. Final LOCKED status is supported by the patched direct guard, StaticGuard filter, and full `tests/Unit/MarketData` passing locally.
+
+
+## 2026-05-21 Production Rollout Runtime Parity Environment Check
+
+Scope: `PRODUCTION_ROLLOUT_VALIDATION_RUNTIME_PARITY_PROOF`.
+
+Status: `[OPS_RUNTIME_PARITY] BLOCKED_BY_ENVIRONMENT`.
+
+Baseline results:
+
+- PHP CLI: 7.4.33, supported by policy `>= 7.3` and `< 8.4`.
+- Required extensions: present for `dom`, `mbstring`, `xml`, `xmlwriter`, `json`, `PDO`, `pdo_mysql`, `pdo_pgsql`, `pdo_sqlite`, `openssl`, `curl`, `fileinfo`, and `tokenizer`.
+- Composer: 2.8.4, `composer validate` valid.
+- Artisan boot: clean Lumen 8.3.4 output, no PHP warning/deprecation/noise.
+- PHPUnit: targeted and full MarketData suites passed in this runtime.
+- Storage: `storage`, `storage/logs`, `storage/app`, `storage/app/market-data`, `storage/app/market_data`, and the runtime parity evidence root are writable.
+
+Runtime parity blockers:
+
+- `BLOCKED_TESTING_DATABASE_ENV`: `php artisan migrate:fresh --env=testing` did not target `.env.testing` database `tradeaxis_testing`; table checks showed the command affected `.env` database `tradeaxis`. Explicit environment override was required to run the same migration chain against `tradeaxis_testing`.
+- `OPS_DEPLOYMENT_TASK_REQUIRED`: scheduler/cron production readiness is not complete in this workspace. `schedule:list` is unavailable; `schedule:run` exits cleanly with no ready commands because daily scheduling is disabled; production cron/logging/no-silent-failure proof remains pending.
+- `PROVIDER_SMOKE_DEFERRED_NO_SAFE_DRY_RUN_LIMIT`: live provider smoke remains pending because no safe dry-run or ticker-limit command was available.
+
+Decision:
+
+- Runtime baseline itself is PASS.
+- Full ops runtime parity is BLOCKED_BY_ENVIRONMENT until testing DB targeting, scheduler deployment, and safe provider smoke are validated.
+
+Post-doc validation:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 421 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php` -> OK (13 tests, 220 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> OK (8 tests, 107 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (176 tests, 4141 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (475 tests, 6959 assertions).
+
+
+## 2026-05-21 Testing DB Isolation Follow-Up
+
+Scope: `TESTING_DATABASE_ISOLATION_SAFE_MIGRATION_CONTRACT`.
+
+Status: `DONE` for the testing DB isolation blocker discovered by runtime parity validation.
+
+Updated baseline result:
+
+- `--env=testing` now selects `.env.testing` before Lumen config boot.
+- Config probe resolves `APP_ENV=testing`, `DB_CONNECTION=mysql`, and `DB_DATABASE=tradeaxis_testing`.
+- `php artisan migrate:fresh --env=testing --database=nonexistent` exits 3 with `BLOCKED_TESTING_DATABASE_ENV`.
+- `php artisan migrate:fresh --env=testing` exits 0 and runs all 29 migrations against `tradeaxis_testing`.
+- Required market-data tables are present in `tradeaxis_testing`.
+- New command-output evidence is UTF-8 plain text.
+- `TestingDatabaseIsolationStaticGuardTest.php` -> OK (4 tests, 41 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (180 tests, 4191 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (479 tests, 7009 assertions), Time 00:18.274, Memory 40.00 MB.
+
+Remaining ops rollout blockers:
+
+- `OPS_DEPLOYMENT_TASK_REQUIRED`: scheduler/cron production proof remains pending.
+- `PROVIDER_SMOKE_DEFERRED_NO_SAFE_DRY_RUN_LIMIT`: safe live provider smoke remains pending.

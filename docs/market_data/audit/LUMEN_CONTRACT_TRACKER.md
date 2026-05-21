@@ -3,30 +3,31 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Ops Command Surface Runtime Matrix
+- Testing DB Isolation / Safe Migration Guard
 
-[SESSION_STATUS] LOCKED
+[SESSION_STATUS] DONE
 
 [SESSION_SCOPE]
-- Define and enforce the runtime contract for the public market-data ops command surface: registry sync, help output, command-owned invalid input, clear operator status/reason/action output, repeated execution safety, repair/purge guards, and evidence/replay command behavior.
-- Preserve prior correction lifecycle and production validation proof as historical evidence and do not use this session to make a new whole-market production-ready claim.
+- Close the testing/staging migration safety gap found by Production Rollout Validation Runtime Parity Proof.
+- Require CLI `--env=testing` to load `.env.testing` before database config is resolved.
+- Require destructive testing migration commands to fail closed unless the resolved database is exactly `tradeaxis_testing`.
+- Preserve `MARKET_DATA_PRODUCTION_READY_LOCKED` while keeping scheduler/cron and safe live provider smoke as remaining rollout blockers.
 
 [SESSION_GOAL]
-- Lock the ops command runtime matrix with concrete command output and artifact proof, including isolated fixture coverage for fresh success/held/failed/conflict/repair/snapshot/evidence/replay paths.
+- Convert `BLOCKED_TESTING_DATABASE_ENV` from an open operational blocker into an enforced runtime safety contract with command evidence and static guard coverage.
 
 [SESSION_NOTES]
-- Operator-local/runtime proof was executed on the supported PHP 7.4.33 baseline with `vendor/`, `.env.testing`, and the local market-data runtime database available through the artisan proof commands.
-- `OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT` is LOCKED for the current source state after command registry/help, invalid-input, seeded evidence/replay/finalize/repair/purge, isolated success/held/failed/conflict/repair/snapshot runtime proof, and operator output proof.
-- DONE/LOCKED is scoped to the ops command surface matrix only. The aggregate full market-data production-ready claim remains separate.
-- Historical `CORRECTION_LIFECYCLE_SAFETY_CONTRACT` and `EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT` remain preserved for their scoped proof.
-- Historical `EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT` remains preserved for the full run+correction+replay runtime artifact scope.
-- Existing locked contracts retain their own historical evidence and final rules. The aggregate full market-data production-ready claim remains separate from this ops command surface session.
+- This contract is an ops/runtime safety contract, not a reopening of provider/replay/correction/finalize/pointer source logic.
+- `bootstrap/app.php` now selects `.env.<environment>` from CLI/system environment before Lumen config boot.
+- `artisan` now guards destructive testing migrations before command execution.
+- Existing locked production-ready source-state contracts remain locked.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI proof: PHP 7.4.33.
-- PHPUnit proof: PHPUnit 9.6.34.
-- Required extensions available: `dom`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `xml`, `xmlreader`, `xmlwriter`.
-- Runtime authority for this session: command outputs and artifacts under `storage/app/market-data/ops-command-surface-runtime-matrix/**` and `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`, seeded run `6`, production-ready fixture runs `30` through `37`, publications `26` and `27`, replay ids `15` through `18`, and historical correction ids `3` and `4`.
+- Required DB driver proof: `pdo_mysql` available.
+- Testing DB target proof: `--env=testing` resolves `APP_ENV=testing`, `DB_CONNECTION=mysql`, and `DB_DATABASE=tradeaxis_testing`.
+- Migration proof: `php artisan migrate:fresh --env=testing` exits 0 after targeting `tradeaxis_testing`.
+- Runtime authority for this session: `storage/app/market-data/testing-database-isolation-safe-migration/**`.
 
 ---
 ## OPERATIONAL STATUS
@@ -47,6 +48,148 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- TESTING_DATABASE_ISOLATION_SAFE_MIGRATION_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-21
+
+  [RELATED_IMPLEMENTATION] Testing DB Isolation / Safe Migration Guard
+
+  [REVIEW_STATUS] TESTING_DB_ISOLATION_GUARD_PASSED
+
+  [HISTORY]
+  - 2026-05-21 -> Production Rollout Validation Runtime Parity Proof found `BLOCKED_TESTING_DATABASE_ENV`: plain `php artisan migrate:fresh --env=testing` used `.env` database `tradeaxis` instead of `.env.testing` database `tradeaxis_testing`.
+  - 2026-05-21 -> Environment-specific file loading was added to `bootstrap/app.php` before Lumen config boot.
+  - 2026-05-21 -> A fail-closed testing migration guard was added to `artisan` before `$kernel->handle(...)`.
+  - 2026-05-21 -> `TestingDatabaseIsolationStaticGuardTest.php` was added to lock env-file selection, guard command coverage, `.env.testing` isolation, and audit-doc recording.
+
+  [DEFINED]
+  - CLI `--env=testing` must select `.env.testing` when that file exists.
+  - Destructive migration commands in testing must not be allowed to run unless the resolved database is exactly `tradeaxis_testing`.
+  - Testing migration safety must be proven by command output, not inferred from docs.
+
+  [IMPLEMENTED]
+  - `bootstrap/app.php` parses CLI `--env testing` and `--env=testing`, validates the environment name, and passes `.env.<environment>` to Lumen's `LoadEnvironmentVariables`.
+  - `artisan` guards `migrate:fresh`, `migrate:refresh`, `migrate:reset`, and `db:wipe` in testing.
+  - The guard writes reason-coded `BLOCKED_TESTING_DATABASE_ENV` output and exits 3 before destructive command handling when the DB target is unsafe.
+
+  [ENFORCED]
+  - `tradeaxis_testing` is the only accepted destructive testing migration database.
+  - Help output and non-destructive commands remain available.
+  - This contract does not modify market-data application services, repositories, provider adapters, replay/correction/finalize/pointer behavior, or migration schema.
+
+  [VALIDATED]
+  - Operator-local PHP/artisan validation was supplied on PHP 7.4.33 with the local `tradeaxis_testing` database available.
+  - `php -r <bootstrap config probe for --env=testing>` -> PASS; `APP_ENV=testing`, `DB_CONNECTION=mysql`, `DB_DATABASE=tradeaxis_testing`.
+  - `php artisan migrate:fresh --env=testing --database=nonexistent` -> PASS as a negative guard proof; exit 3 with `BLOCKED_TESTING_DATABASE_ENV`.
+  - `php artisan migrate:status --env=testing` -> PASS; exit 0.
+  - `php artisan migrate:fresh --env=testing` -> PASS; exit 0, all 29 migrations ran against `tradeaxis_testing`.
+  - Required table check -> PASS; required market-data tables exist in `tradeaxis_testing`.
+  - Static guard scope: `vendor/bin/phpunit tests/Unit/MarketData/TestingDatabaseIsolationStaticGuardTest.php` -> OK (4 tests, 41 assertions).
+  - Audit/governance scope: `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 430 assertions).
+  - Production/ops targeted scope: ProductionValidation OK (13 tests, 220 assertions), OperationalReadiness OK (10 tests, 204 assertions), OpsEnvironment OK (8 tests, 107 assertions), ConfigEnvGovernance OK (10 tests, 123 assertions).
+  - StaticGuard filter: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (180 tests, 4191 assertions).
+  - Full regression scope: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (479 tests, 7009 assertions), Time 00:18.274, Memory 40.00 MB.
+
+  [FINAL_RULE]
+  - LOCKED for testing DB isolation and safe migration guard. The previously open `BLOCKED_TESTING_DATABASE_ENV` rollout blocker is closed for this patched source state because `--env=testing` now selects `.env.testing` and destructive testing migrations fail closed on unsafe DB targets.
+  - This contract does not mark full production rollout parity as passed; scheduler/cron deployment proof and safe live provider smoke remain required.
+
+  [GAP]
+  - None for testing DB isolation after this patch.
+  - Remaining rollout gaps are tracked under `PRODUCTION_ROLLOUT_RUNTIME_PARITY_PROOF_CONTRACT`: scheduler/cron production proof and safe live provider smoke.
+
+  [NEXT_ACTION]
+  - Validate production scheduler/cron in staging/production-like environment.
+  - Add or execute safe live provider smoke before final production rollout parity.
+
+
+
+- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-20
+
+  [RELATED_IMPLEMENTATION] Full Market-Data Production Readiness Proof Pack
+
+  [REVIEW_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED
+
+  [HISTORY]
+  - 2026-05-19 -> Contract opened as a claim-control guard after source-state audit found full production-ready wording without the referenced historical non-current runtime artifact pack in the prior uploaded ZIP.
+  - 2026-05-19 -> Contract held at REVIEW_REQUIRED until historical replay artifacts were supplied.
+  - 2026-05-19 -> Latest source ZIP supplied historical non-current replay fixture, verify, and evidence export artifacts for `replay_id=8`; all required historical fields are present and final operator-local AuditDocs/Replay/StaticGuard/full MarketData validation passed.
+  - 2026-05-19 -> Cross-inventory audit confirmed every canonical market-data contract other than this claim-control contract was already LOCKED; this contract is now LOCKED as the aggregate production-ready proof pack.
+  - 2026-05-20 -> Current correction lifecycle hardening changed correction command/repository/replay/evidence/schema behavior. The 2026-05-19 aggregate lock is preserved as historical previous-source-state evidence, but the current patched source state requires a fresh aggregate proof-pack rerun before full production-ready can be claimed again.
+  - 2026-05-20 -> Ops Command Surface Runtime Matrix supplied the missing current-source runtime proof, including fresh success/held/failed/conflict/repair/snapshot/evidence/replay artifacts and full MarketData PHPUnit OK (475 tests, 6942 assertions).
+  - 2026-05-20 -> `MARKET_DATA_PRODUCTION_PROOF_PACK.md` created; aggregate contract promoted from `REVIEW_REQUIRED` to `ENFORCED` as `PRODUCTION_READY_CANDIDATE_PENDING_FINAL_AUDIT_DOCS_SYNCHRONIZATION`.
+  - 2026-05-20 -> Final Audit Docs Synchronization consumed the proof pack, reconciled production validation and full production-ready inventories, synchronized active/current working docs, and promoted this aggregate contract to final `LOCKED` as `MARKET_DATA_PRODUCTION_READY_LOCKED`.
+
+  [DEFINED]
+  - Full market-data production-ready requires a complete runtime proof pack, not just current-readable replay proof, static guards, or audit documentation.
+  - Required proof includes locked implementation/contracts for publishability, finalize/pointer, correction lifecycle, source/provider resilience, replay determinism, evidence export, DB/schema integrity, hash/seal integrity, import/promote separation, fail-safe behavior, ops/command surface, production validation, read-side consumer enforcement, audit-doc synchronization, and config/env governance.
+  - Required historical replay proof must prove a non-current sealed readable publication through explicit publication context.
+
+  [IMPLEMENTED]
+  - `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` records the complete artifact and contract lock matrix.
+  - `REPLAY_DETERMINISM_RUNTIME_PROOF_INVENTORY.md` records both current-readable replay runtime proof and historical non-current replay runtime proof.
+  - Source ZIP includes historical replay fixture, verify output, and evidence export artifacts under `storage/app/market-data/full-production-ready/runtime/historical-replay/**`.
+
+  [ENFORCED]
+  - Full production-ready remains blocked unless all canonical market-data contracts are LOCKED for the current source state and the runtime artifact pack proves current-readable, historical replay/evidence, correction replay, failed-correction, ops, schema, and command behavior after the latest changes.
+  - Historical replay artifacts must include `historical_publication_allowed=true`, `current_pointer_required=false`, `current_pointer_status=NOT_CURRENT_POINTER`, `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
+  - The static audit guard now requires this full production-ready contract to stay `LOCKED` only when the final proof pack, implementation ledger, contract tracker, and inventories remain synchronized.
+
+  [VALIDATED]
+  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json`.
+  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json`.
+  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json`.
+  - Historical replay `replay_result.json` records `replay_id=8`, `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`, `publication_id=2`, `publication_run_id=2`, `publication_is_current=false`, and `HISTORICAL_SEALED_PUBLICATION` resolution.
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 363 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (10 tests, 363 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (57 tests, 904 assertions).
+  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3950 assertions).
+  - Operator-local final validation supplied: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (453 tests, 6671 assertions).
+  - Current correction-lifecycle hardening proof is recorded under `CORRECTION_LIFECYCLE_SAFETY_CONTRACT` and consumed by `MARKET_DATA_PRODUCTION_PROOF_PACK.md`.
+  - Current ops runtime proof is recorded under `OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT` and consumed by `MARKET_DATA_PRODUCTION_PROOF_PACK.md`: `run_id=33`, `publication_id=27`, `replay_id=15`, replay smoke `all_passed=1`, replay backfill `replay_id=18`, held `RUN_PARTIAL_DATA`, failed `RUN_SOURCE_MANUAL_FILE_EMPTY`, lock conflict `RUN_LOCK_CONFLICT`, and full MarketData OK (475 tests, 6942 assertions).
+
+  [RUNTIME_PROOF]
+  - `docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md`.
+  - `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`.
+  - `storage/app/market-data/correction-lifecycle-hardening/**`.
+  - `storage/app/market-data/full-production-ready/runtime/historical-replay/**`.
+
+  [PRODUCTION_PROOF_PACK]
+  - Decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`.
+  - Final lock status: `LOCKED`.
+  - Review status: `FINAL_AUDIT_DOCS_SYNCHRONIZED`.
+
+  [FINAL_RULE]
+  - LOCKED. Full market-data production-ready is locked for the current source state because the aggregate proof pack consumes correction lifecycle, ops command surface, evidence, replay, schema, coverage, read-side, hash/seal, config/env, operational readiness, audit-doc synchronization, and targeted/full MarketData validation proof.
+  - The lock is source-state specific and does not waive future revalidation for live-provider, deployment, CI/runtime, vendor, scheduler/SLO, or future code changes.
+
+  [LOCK_CONDITION]
+  - SATISFIED. Technical source-state proof is complete and Final Audit Docs Synchronization has reconciled the proof pack, implementation ledger, contract tracker, production validation inventory, full production-ready inventory, and static audit guard expectations.
+
+  [EVIDENCE]
+  - Aggregate proof pack path: `docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md`.
+  - Operator-local full MarketData proof consumed: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (475 tests, 6942 assertions).
+  - Command surface proof consumed: `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`, including all 20 registered commands, success/held/failed/conflict/repair/snapshot/evidence/replay proof, and source-state runtime artifacts.
+  - Historical proof consumed: `storage/app/market-data/full-production-ready/runtime/historical-replay/**`, including `replay_id=8`, `HISTORICAL_PUBLICATION_AUDIT`, `HISTORICAL_SEALED_PUBLICATION`, and admitted evidence export.
+  - Correction proof consumed: `storage/app/market-data/correction-lifecycle-hardening/**`, including correction evidence/replay linkage and pointer-safety proof.
+
+  [GAP]
+  - None for current source-state market-data production readiness lock.
+
+  [REMAINING_RISK]
+  - No P0/P1 market-data production blocker remains in the source-state proof pack.
+  - External/live provider operations, credentials, production scheduler/SLO, deployment infrastructure, CI/runtime parity, and future data-vendor changes require environment-specific rollout validation.
+
+  [NEXT_ACTION]
+  - No remediation session is required for this source-state lock. Revalidate only for new code/config/vendor/provider/deployment changes.
+
+
+
+---
+
 
 
 - OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT -> LOCKED
@@ -150,7 +293,7 @@ ACTIVE SESSION:
   - A later aggregate production proof pack must consume this locked scope before making a whole-market production-ready final claim.
 
   [NEXT_ACTION]
-  - Feed this locked ops command surface proof into the next aggregate Full Market-Data Validation / Production Proof Pack.
+  - This locked ops command surface proof has been consumed by `MARKET_DATA_PRODUCTION_PROOF_PACK.md` and the Final Audit Docs Synchronization lock.
 
 ---
 
@@ -241,73 +384,12 @@ ACTIVE SESSION:
 
   [REMAINING_RISK]
   - No correction lifecycle blocker remains after this scoped lock.
-  - Whole-market production-ready remains REVIEW_REQUIRED for the patched source state until the aggregate proof pack is rerun.
+  - Whole-market production-ready is now handled by `MARKET_DATA_PRODUCTION_PROOF_PACK.md` as a final source-state lock after Final Audit Docs Synchronization.
 
   [NEXT_ACTION]
   - Use this correction-locked source state as input to the Ops Command Surface Runtime Matrix / full production proof-pack rerun.
 
 ---
-
-- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> REVIEW_REQUIRED
-
-  [LAST_UPDATED] 2026-05-20
-
-  [RELATED_IMPLEMENTATION] Full Market-Data Production Readiness Proof Pack
-
-  [REVIEW_STATUS] HISTORICAL_PREVIOUS_SOURCE_STATE_ONLY_CURRENT_SOURCE_REQUIRES_REVALIDATION
-
-  [HISTORY]
-  - 2026-05-19 -> Contract opened as a claim-control guard after source-state audit found full production-ready wording without the referenced historical non-current runtime artifact pack in the prior uploaded ZIP.
-  - 2026-05-19 -> Contract held at REVIEW_REQUIRED until historical replay artifacts were supplied.
-  - 2026-05-19 -> Latest source ZIP supplied historical non-current replay fixture, verify, and evidence export artifacts for `replay_id=8`; all required historical fields are present and final operator-local AuditDocs/Replay/StaticGuard/full MarketData validation passed.
-  - 2026-05-19 -> Cross-inventory audit confirmed every canonical market-data contract other than this claim-control contract was already LOCKED; this contract is now LOCKED as the aggregate production-ready proof pack.
-  - 2026-05-20 -> Current correction lifecycle hardening changed correction command/repository/replay/evidence/schema behavior. The 2026-05-19 aggregate lock is preserved as historical previous-source-state evidence, but the current patched source state requires a fresh aggregate proof-pack rerun before full production-ready can be claimed again.
-
-  [DEFINED]
-  - Full market-data production-ready requires a complete runtime proof pack, not just current-readable replay proof, static guards, or audit documentation.
-  - Required proof includes locked implementation/contracts for publishability, finalize/pointer, correction lifecycle, source/provider resilience, replay determinism, evidence export, DB/schema integrity, hash/seal integrity, import/promote separation, fail-safe behavior, ops/command surface, production validation, read-side consumer enforcement, audit-doc synchronization, and config/env governance.
-  - Required historical replay proof must prove a non-current sealed readable publication through explicit publication context.
-
-  [IMPLEMENTED]
-  - `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` records the complete artifact and contract lock matrix.
-  - `REPLAY_DETERMINISM_RUNTIME_PROOF_INVENTORY.md` records both current-readable replay runtime proof and historical non-current replay runtime proof.
-  - Source ZIP includes historical replay fixture, verify output, and evidence export artifacts under `storage/app/market-data/full-production-ready/runtime/historical-replay/**`.
-
-  [ENFORCED]
-  - Full production-ready remains blocked unless all canonical market-data contracts are LOCKED for the current source state and the runtime artifact pack proves current-readable, historical replay/evidence, correction replay, failed-correction, ops, schema, and command behavior after the latest changes.
-  - Historical replay artifacts must include `historical_publication_allowed=true`, `current_pointer_required=false`, `current_pointer_status=NOT_CURRENT_POINTER`, `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
-  - The static audit guard now requires this full production-ready contract to stay REVIEW_REQUIRED after correction lifecycle changes until the updated aggregate proof pack is recorded.
-
-  [VALIDATED]
-  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json`.
-  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json`.
-  - Artifact inspection passed for `storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json`.
-  - Historical replay `replay_result.json` records `replay_id=8`, `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`, `publication_id=2`, `publication_run_id=2`, `publication_is_current=false`, and `HISTORICAL_SEALED_PUBLICATION` resolution.
-  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 363 assertions).
-  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (10 tests, 363 assertions).
-  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"` -> OK (57 tests, 904 assertions).
-  - Operator-local final validation supplied: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (170 tests, 3950 assertions).
-  - Operator-local final validation supplied: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (453 tests, 6671 assertions).
-  - Current correction-lifecycle hardening proof is recorded under `CORRECTION_LIFECYCLE_SAFETY_CONTRACT`; it does not automatically refresh the aggregate 2026-05-19 production-ready proof pack.
-
-  [FINAL_RULE]
-  - REVIEW_REQUIRED. Full market-data production-ready may not be claimed for this patched source state until the aggregate proof pack is rerun after correction lifecycle hardening.
-  - The 2026-05-19 artifact pack remains valid historical evidence for its previous source state only.
-  - Future relock must include correction lifecycle replay `MATCH`, failed-correction runtime proof, schema migration proof, ops runtime matrix, and targeted/full MarketData validation for the patched source state.
-
-  [LOCK_CONDITION]
-  - NOT SATISFIED for the patched source state. Historical non-current replay artifact pack remains present, but correction/replay/schema code changed after the 2026-05-19 aggregate lock and the full production proof pack has not been rerun for this source state.
-
-  [GAP]
-  - `PENDING_AGGREGATE_PRODUCTION_PROOF_PACK_RERUN_AFTER_CORRECTION_LIFECYCLE_HARDENING`.
-
-  [REMAINING_RISK]
-  - External/live provider operations, credentials, production scheduler/SLO, deployment infrastructure, and future data-vendor changes require environment-specific rollout validation.
-  - Current correction lifecycle source changes require aggregate proof-pack rerun before the full production-ready claim is restored.
-
-  [NEXT_ACTION]
-  - Run the Ops Command Surface Runtime Matrix and full production proof pack against this correction-locked source state.
-
 
 - REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT -> LOCKED
 
@@ -487,6 +569,7 @@ ACTIVE SESSION:
   - Operator-local run-selector runtime proof produced real artifacts for `run_id=2`, including `evidence_admission.json`, `evidence_completeness.json`, `run_summary.json`, and `publication_manifest.json`.
   - Correction runtime artifact proof is supplied and re-exported post-patch with ADMITTED_COMPLETE and candidate proof `NOT_APPLICABLE / UNCHANGED_CORRECTION_CANDIDATE_DISCARDED`.
   - Replay runtime artifact proof is supplied and ADMITTED_COMPLETE with `comparison_result=MATCH`, `status=SUCCESS`, and all required replay artifacts present.
+  - Static guard wording alignment: this locked contract covers the full run+correction+replay runtime artifact scope.
 
   [ARTIFACTS]
   - Run selector: `run_summary.json`, optional `publication_manifest.json`, `run_event_summary.json`, optional `source_attempt_telemetry.json`, `eligibility_export.csv`, `invalid_bars_export.csv`, `anomaly_report.md`, `lineage.json`, `evidence_admission.json`, `evidence_completeness.json`, `evidence_pack.json`.
@@ -2479,3 +2562,65 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - Current blocker to relock:
   - Artisan/PHPUnit cannot be executed in this container because PHP `8.4.16` is outside the clean-output baseline and required PHPUnit extensions are missing.
   - Relock requires supported local proof with targeted Correction/Evidence/Replay/StaticGuard/AuditDocs filters and full `tests/Unit/MarketData` PASS.
+
+
+---
+
+
+## 2026-05-21 Production Rollout Validation Runtime Parity Proof
+
+- PRODUCTION_ROLLOUT_RUNTIME_PARITY_PROOF_CONTRACT -> BLOCKED
+
+  [LAST_UPDATED] 2026-05-21
+
+  [RELATED_IMPLEMENTATION] Production Rollout Validation / Ops Runtime Parity Proof
+
+  [REVIEW_STATUS] [OPS_RUNTIME_PARITY] BLOCKED_BY_ENVIRONMENT
+
+  [HISTORY]
+  - 2026-05-21 -> Contract opened to validate the locked source state against the real operator/CI/staging-like runtime, without reopening market-data feature logic.
+  - 2026-05-21 -> PHP/extension/Composer baseline passed on PHP 7.4.33 and Composer 2.8.4.
+  - 2026-05-21 -> Artisan boot, command registry, requested help surface, targeted static guards, filtered guards, and full `tests/Unit/MarketData` passed after audit-doc wording alignment.
+  - 2026-05-21 -> Safe manual-file runtime, promote, evidence export, current replay, historical replay, and correction lifecycle commands passed in the pre-reset runtime DB state.
+  - 2026-05-21 -> Migration source chain passed, but plain `php artisan migrate:fresh --env=testing` targeted `.env` database `tradeaxis` instead of `.env.testing` database `tradeaxis_testing`; explicit environment override was required to migrate `tradeaxis_testing`.
+  - 2026-05-21 -> Scheduler and provider smoke remain environment/deployment tasks: `schedule:list` is unavailable in this Lumen build, current env keeps daily scheduling disabled, and provider smoke lacks a safe dry-run/ticker-limit command.
+  - 2026-05-21 -> Post-doc validation passed: AuditDocs OK (10 tests, 421 assertions), ProductionValidation OK (13 tests, 220 assertions), OpsEnvironment OK (8 tests, 107 assertions), StaticGuard OK (176 tests, 4141 assertions), and full `tests/Unit/MarketData` OK (475 tests, 6959 assertions).
+
+  [DEFINED]
+  - Ops runtime parity requires clean PHP/extension/Composer baseline, clean artisan boot, market-data command registry/help availability, targeted and full PHPUnit proof, testing/staging migration proof, evidence/replay/correction command runtime proof, scheduler/cron readiness, writable storage paths, and safe provider smoke.
+  - Ops runtime parity must not downgrade `MARKET_DATA_PRODUCTION_READY_LOCKED` unless a source-code blocker is proven.
+
+  [IMPLEMENTED]
+  - Runtime evidence was captured under `storage/app/market-data/production-rollout-validation-runtime-parity/**`.
+  - The source-state lock remains implemented by `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED`.
+  - This rollout contract records environment/deployment parity blockers separately from source-code production readiness.
+
+  [ENFORCED]
+  - No runtime PASS is recorded without command output.
+  - Environment blockers are classified separately from source-code blockers.
+  - Provider smoke is deferred when no safe narrow command surface exists.
+
+  [VALIDATED]
+  - `php -v` -> PHP 7.4.33, exit 0.
+  - `php -m` -> required extensions present, including `dom`, `mbstring`, `xml`, `xmlwriter`, `json`, `PDO`, `pdo_mysql`, `pdo_pgsql`, `pdo_sqlite`, `openssl`, `curl`, `fileinfo`, and `tokenizer`.
+  - `composer --version` -> Composer 2.8.4, exit 0; `composer validate` -> valid.
+  - `php artisan list` and `php artisan --version` -> exit 0, Lumen 8.3.4, no warning/deprecation/noise, 20 market-data commands.
+  - Requested market-data help commands -> exit 0, no stderr/noise.
+  - Final targeted guard proof -> AuditDocs OK (10 tests, 419 assertions), ProductionValidation OK (13 tests, 220 assertions), OperationalReadiness OK (10 tests, 204 assertions), OpsEnvironment OK (8 tests, 107 assertions), ConfigEnvGovernance OK (10 tests, 123 assertions).
+  - Final filtered proof -> AuditDocs OK (10 tests, 419 assertions), StaticGuard OK (176 tests, 4139 assertions), Production OK (14 tests, 253 assertions), Operational OK (11 tests, 211 assertions), OpsEnvironment OK (8 tests, 107 assertions).
+  - Full `tests/Unit/MarketData` -> OK (475 tests, 6957 assertions), Time 00:10.716, Memory 38.00 MB.
+  - Runtime smoke -> manual-file import/promote, evidence export `run_id=30`, replay verify `replay_id=19` current-readable, replay verify `replay_id=20` historical non-current, correction `correction_id=5`, and correction rerun guard all behaved as expected.
+  - Migration proof -> all 29 migrations ran cleanly; table existence in `tradeaxis_testing` was proven only after explicit env override.
+
+  [FINAL_RULE]
+  - BLOCKED_BY_ENVIRONMENT. Source-state `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid, but full ops runtime parity cannot be marked PASSED until testing DB targeting, scheduler/cron deployment, and safe provider smoke are validated in the intended environment.
+
+  [GAP]
+  - `BLOCKED_TESTING_DATABASE_ENV`: plain `--env=testing` did not select `.env.testing` DB.
+  - `OPS_DEPLOYMENT_TASK_REQUIRED`: production scheduler enablement, cron entry, timezone/logging, and silent-failure controls need deployment proof.
+  - `PROVIDER_SMOKE_DEFERRED_NO_SAFE_DRY_RUN_LIMIT`: no safe narrow live-provider command was available.
+
+  [NEXT_ACTION]
+  - Resolve testing/staging environment loading or require explicit DB env injection for destructive migration commands.
+  - Configure scheduler/cron and rerun scheduler proof.
+  - Add or execute a safe provider smoke path before production rollout.

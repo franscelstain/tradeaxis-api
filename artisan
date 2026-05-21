@@ -15,8 +15,53 @@ $app = require_once __DIR__.'/bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 
+function tradeaxis_enforce_testing_database_isolation($app, Symfony\Component\Console\Input\ArgvInput $input)
+{
+    if ($input->hasParameterOption(['--help', '-h'], true)) {
+        return;
+    }
+
+    $command = (string) $input->getFirstArgument();
+    $guardedCommands = ['migrate:fresh', 'migrate:refresh', 'migrate:reset', 'db:wipe'];
+
+    if (! in_array($command, $guardedCommands, true)) {
+        return;
+    }
+
+    $requestedEnvironment = $input->getParameterOption('--env', null, true);
+    $isTestingEnvironment = (string) $requestedEnvironment === 'testing' || $app->environment('testing');
+
+    if (! $isTestingEnvironment) {
+        return;
+    }
+
+    $connection = $input->getParameterOption('--database', null, true);
+    $connection = $connection !== null && $connection !== false && $connection !== ''
+        ? (string) $connection
+        : (string) $app['config']->get('database.default', 'mysql');
+
+    $database = (string) $app['config']->get('database.connections.'.$connection.'.database', '');
+    $expectedDatabase = 'tradeaxis_testing';
+
+    if ($database !== $expectedDatabase) {
+        fwrite(STDERR, sprintf(
+            "BLOCKED_TESTING_DATABASE_ENV: Refusing %s in testing environment because database connection '%s' resolves to '%s'; expected '%s'. Fix .env.testing or provide explicit DB_DATABASE=%s before running destructive testing migrations.\n",
+            $command,
+            $connection,
+            $database !== '' ? $database : '[empty]',
+            $expectedDatabase,
+            $expectedDatabase
+        ));
+        exit(3);
+    }
+}
+
+$input = new Symfony\Component\Console\Input\ArgvInput;
+
+tradeaxis_enforce_testing_database_isolation($app, $input);
+
 $status = $kernel->handle(
-    $input = new Symfony\Component\Console\Input\ArgvInput,
+    $input,
     new Symfony\Component\Console\Output\ConsoleOutput
 );
 

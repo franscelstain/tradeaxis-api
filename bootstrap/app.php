@@ -2,8 +2,48 @@
 
 require_once __DIR__.'/../vendor/autoload.php';
 
+if (! function_exists('tradeaxis_runtime_environment_name')) {
+    function tradeaxis_runtime_environment_name(array $argv = null)
+    {
+        $argv = $argv ?: ($_SERVER['argv'] ?? []);
+
+        foreach ($argv as $index => $argument) {
+            if ($argument === '--env' && isset($argv[$index + 1]) && strpos((string) $argv[$index + 1], '-') !== 0) {
+                return (string) $argv[$index + 1];
+            }
+
+            if (strpos((string) $argument, '--env=') === 0) {
+                return substr((string) $argument, 6);
+            }
+        }
+
+        return getenv('APP_ENV') ?: ($_ENV['APP_ENV'] ?? ($_SERVER['APP_ENV'] ?? null));
+    }
+}
+
+if (! function_exists('tradeaxis_runtime_environment_file')) {
+    function tradeaxis_runtime_environment_file($basePath)
+    {
+        $environment = tradeaxis_runtime_environment_name();
+
+        if (! is_string($environment) || $environment === '' || ! preg_match('/^[A-Za-z0-9_.-]+$/', $environment)) {
+            return null;
+        }
+
+        $candidate = '.env.'.$environment;
+
+        return is_file(rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$candidate)
+            ? $candidate
+            : null;
+    }
+}
+
+$basePath = dirname(__DIR__);
+$environmentFile = tradeaxis_runtime_environment_file($basePath);
+
 (new Laravel\Lumen\Bootstrap\LoadEnvironmentVariables(
-    dirname(__DIR__)
+    $basePath,
+    $environmentFile
 ))->bootstrap();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'UTC'));

@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Ops Command Surface Runtime Matrix", $status);
+- Testing DB Isolation / Safe Migration Guard", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Ops Command Surface Runtime Matrix", $tracker);
+- Testing DB Isolation / Safe Migration Guard", $tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);

@@ -361,7 +361,7 @@ Runtime proof added:
 - Runtime bug fixed: `market-data:audit:hash` is now callable at runtime because `MarketDataPipelineService::completeHash()` is public.
 - Post-lock validation PASS: `OpsCommandSurfaceTest.php` OK (57 tests, 341 assertions), `CommandSurfaceSafetyStaticGuardTest.php` OK (5 tests, 89 assertions), `OperationalReadinessStaticGuardTest.php` OK (10 tests, 204 assertions), `OpsEnvironmentBaselineStaticGuardTest.php` OK (8 tests, 107 assertions), `ProductionValidationRuntimeProofStaticGuardTest.php` OK (13 tests, 220 assertions), `OpsCommandSurfaceRuntimeMatrixStaticGuardTest.php` OK (6 tests, 114 assertions), `AuditDocsSynchronizationStaticGuardTest.php` OK (10 tests, 404 assertions), `Command` filter OK (97 tests, 1009 assertions), `Ops` filter OK (74 tests, 616 assertions), `Operational` filter OK (11 tests, 211 assertions), `RuntimeProof` filter OK (13 tests, 220 assertions), `AuditDocs` filter OK (10 tests, 404 assertions), `StaticGuard` filter OK (176 tests, 4124 assertions), and full `tests/Unit/MarketData` OK (475 tests, 6942 assertions).
 
-Production validation impact: ops command surface is no longer a production-readiness blocker for the next aggregate proof pack. Full market-data production-ready final status still requires the separate aggregate validation/proof-pack synchronization step.
+Production validation impact: ops command surface is no longer a production-readiness blocker. The separate aggregate validation/proof-pack synchronization step has now consumed this proof and locked the current source state.
 
 
 ## Replay fixture generation fix checklist
@@ -392,3 +392,125 @@ Pass/fail criteria:
 
 - PASS only if generated runtime fixture returns MATCH for the same run used to generate it, and mismatch/error cases still remain reason-coded.
 - FAIL if generated fixture still returns MISMATCH, if smoke requires stale committed `valid_case` for local runtime MATCH proof, or if fixture generation reads raw/staging/latest/MAX(date) instead of the actual run/publication/pointer evidence context.
+
+
+## 2026-05-20 Final Audit Docs Synchronization Lock Update
+
+This append-only update closes the governance-only production validation gap left after the Ops Command Surface Runtime Matrix Lock Update.
+
+Current synchronized status:
+
+- Aggregate production proof pack: `MARKET_DATA_PRODUCTION_READY_LOCKED / LOCKED`.
+- `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `LOCKED`.
+- `LUMEN_IMPLEMENTATION_STATUS.md`: current working implementation `Full Market-Data Production Readiness Proof Pack -> DONE` with `[REVIEW_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED`.
+- `LUMEN_CONTRACT_TRACKER.md`: current working contract `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED`.
+- Earlier `PENDING_RUNTIME_EVIDENCE`, `PARTIAL_RUNTIME_PROOF`, and `BLOCKED_RUNTIME_FIXTURE_UNAVAILABLE` rows in this inventory are retained as historical transition records only; they are superseded for the current source state by the ops matrix production-ready artifact root and final production proof pack.
+
+Final validation basis consumed:
+
+- `docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md`.
+- `docs/market_data/audit/FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md`.
+- `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`.
+- `storage/app/market-data/full-production-ready/runtime/historical-replay/**`.
+- `storage/app/market-data/correction-lifecycle-hardening/**`.
+- Operator-local `vendor/bin/phpunit tests/Unit/MarketData` -> OK (475 tests, 6942 assertions).
+- Operator-local `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (176 tests, 4124 assertions).
+- Operator-local `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` -> OK (10 tests, 404 assertions).
+
+Remaining risk classification:
+
+- No P0/P1 source-code production validation blocker remains for the current market-data source state.
+- Sandbox runtime remains `BLOCKED_CONTAINER_RUNTIME_ENV` because PHP 8.4.16 is intentionally rejected and required PHPUnit extensions are missing; this is not counted as PASS and is not a source-code blocker.
+- External/live provider credentials, production scheduler/SLO, deployment infrastructure, CI/runtime parity, future vendor changes, and future code/config changes still require environment-specific revalidation.
+
+
+## 2026-05-21 Production Rollout Validation Runtime Parity Proof
+
+Scope: `PRODUCTION_ROLLOUT_VALIDATION_RUNTIME_PARITY_PROOF`.
+
+Status: `BLOCKED_BY_ENVIRONMENT` for full rollout parity. Source-state `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.
+
+Evidence root: `storage/app/market-data/production-rollout-validation-runtime-parity/**`.
+
+| Validation area | Result | Evidence summary | Status |
+|---|---|---|---|
+| PHP/runtime baseline | PHP 7.4.33, required extensions present | `php -v`, `php -m` | PASS |
+| Composer | Composer 2.8.4; `composer validate` valid | `composer --version`, `composer validate` | PASS |
+| Artisan boot | Lumen 8.3.4, no warning/deprecation/noise | `php artisan list`, `php artisan --version` | PASS |
+| Command registry/help | 20 market-data commands registered; requested help commands exit 0 | help outputs under command-output root | PASS |
+| Targeted static guards | AuditDocs OK (10/419), ProductionValidation OK (13/220), OperationalReadiness OK (10/204), OpsEnvironment OK (8/107), ConfigEnvGovernance OK (10/123) | final rerun outputs | PASS |
+| Filtered suites | AuditDocs OK (10/419), StaticGuard OK (176/4139), Production OK (14/253), Operational OK (11/211), OpsEnvironment OK (8/107) | final rerun outputs | PASS |
+| Full MarketData suite | OK (475 tests, 6957 assertions), Time 00:10.716, Memory 38.00 MB | `vendor/bin/phpunit tests/Unit/MarketData` | PASS |
+| Manual-file import/promote | Import-only stayed not promoted and no pointer switch; promote returned SUCCESS/READABLE/PASS/SEALED | `run_id=30`, `publication_id=24` | PASS |
+| Evidence export | Run evidence admitted and complete | `market-data:evidence:export --run_id=30`, 10 files | PASS |
+| Replay verify current | Runtime fixture MATCH/PASS | `replay_id=19`, `run_id=33`, `mismatch_count=0` | PASS |
+| Replay verify historical | Historical non-current publication MATCH/PASS | `replay_id=20`, `publication_id=2`, `NOT_CURRENT_POINTER`, `HISTORICAL_PUBLICATION_AUDIT` | PASS |
+| Correction lifecycle | Request/approve/run/evidence/rerun guard validated | `correction_id=5`, `CONSUMED_CURRENT`, `ADMITTED_COMPLETE`, rerun blocked | PASS |
+| Migration chain | All 29 migrations run cleanly; tables present under explicit `DB_DATABASE=tradeaxis_testing` override | plain `--env=testing` did not select `.env.testing` DB | PASS_WITH_ENVIRONMENT_BLOCKER |
+| Scheduler/cron | `schedule:run` cleanly exits with no ready commands; code registers daily only when enabled | `schedule:list` unavailable; `MARKET_DATA_DAILY_ENABLED` not enabled | BLOCKED_DEPLOYMENT_PROOF |
+| Storage/log/evidence path | Required paths exist and writable | write probes under storage paths | PASS |
+| Live provider smoke | Not executed | no dry-run/ticker-limit command surface; broad provider fetch avoided | BLOCKED_SAFE_PROVIDER_SMOKE |
+
+Blocker classification:
+
+- Source-code P0/P1 blocker: none found.
+- `BLOCKED_TESTING_DATABASE_ENV`: plain `php artisan migrate:fresh --env=testing` operated against `.env` database `tradeaxis`, not `.env.testing` database `tradeaxis_testing`; explicit env override was required for the intended testing DB.
+- `OPS_DEPLOYMENT_TASK_REQUIRED`: production scheduler/cron enablement, log routing, and no-silent-failure proof still need deployment environment validation.
+- `PROVIDER_SMOKE_DEFERRED_NO_SAFE_DRY_RUN_LIMIT`: live provider smoke requires a safe dry-run/limited ticker path or an isolated staging DB/provider plan.
+
+Final rollout decision for this session:
+
+- `OPS_RUNTIME_PARITY_BLOCKED_BY_ENVIRONMENT`.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid for the locked source state.
+
+Post-doc validation:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 421 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php` -> OK (13 tests, 220 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> OK (8 tests, 107 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (176 tests, 4141 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (475 tests, 6959 assertions).
+
+
+## 2026-05-21 Testing DB Isolation / Safe Migration Guard
+
+Scope: `TESTING_DATABASE_ISOLATION_SAFE_MIGRATION_CONTRACT`.
+
+Status: `DONE` for testing DB isolation. Overall rollout status remains `OPS_RUNTIME_PARITY_BLOCKED_BY_ENVIRONMENT` until scheduler/cron deployment proof and safe live provider smoke are completed.
+
+Evidence root: `storage/app/market-data/testing-database-isolation-safe-migration/**`.
+
+| Validation area | Result | Evidence summary | Status |
+|---|---|---|---|
+| Environment file loading | `--env=testing` resolves `.env.testing` before config boot | `APP_ENV=testing`, `DB_CONNECTION=mysql`, `DB_DATABASE=tradeaxis_testing` | PASS |
+| Negative destructive guard | Unsafe testing DB target blocked before migration handling | `php artisan migrate:fresh --env=testing --database=nonexistent` -> exit 3, `BLOCKED_TESTING_DATABASE_ENV` | PASS |
+| Migration status | Testing migration status command boots cleanly | `php artisan migrate:status --env=testing` -> exit 0 | PASS |
+| Testing migrate fresh | Destructive migration targets testing DB and succeeds | `php artisan migrate:fresh --env=testing` -> exit 0, 29 migrations | PASS |
+| Required table proof | Required market-data tables exist in `tradeaxis_testing` | `tickers`, `market_calendar`, `eod_runs`, `eod_publications`, `eod_current_publication_pointer`, `md_replay_daily_metrics`, `eod_dataset_corrections`, `md_session_snapshots` | PASS |
+| Static guard | Regression guard added | `tests/Unit/MarketData/TestingDatabaseIsolationStaticGuardTest.php` -> OK (4 tests, 41 assertions) | PASS |
+| Filtered static guard | New guard included in aggregate static sweep | `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (180 tests, 4191 assertions) | PASS |
+| Full MarketData suite | Regression proof remains clean after env/guard patch | `vendor/bin/phpunit tests/Unit/MarketData` -> OK (479 tests, 7009 assertions), Time 00:18.274, Memory 40.00 MB | PASS |
+| Evidence encoding | New command outputs are UTF-8 without null-byte/UTF-16 evidence noise | command-output files under evidence root | PASS |
+
+Implementation summary:
+
+- `bootstrap/app.php` now detects CLI `--env testing`, CLI `--env=testing`, or system `APP_ENV` before Lumen environment loading and selects `.env.<environment>` when the file exists.
+- `artisan` now guards `migrate:fresh`, `migrate:refresh`, `migrate:reset`, and `db:wipe` in testing before `$kernel->handle(...)`.
+- The guard accepts only `tradeaxis_testing` as the destructive testing migration database and emits `BLOCKED_TESTING_DATABASE_ENV` with exit code 3 otherwise.
+
+Final decision for this blocker:
+
+- `BLOCKED_TESTING_DATABASE_ENV` is closed for this patched source state.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.
+- Full production rollout parity remains blocked by `OPS_DEPLOYMENT_TASK_REQUIRED` and `PROVIDER_SMOKE_DEFERRED_NO_SAFE_DRY_RUN_LIMIT`.
+
+Post-patch validation:
+
+- `vendor/bin/phpunit tests/Unit/MarketData/TestingDatabaseIsolationStaticGuardTest.php` -> OK (4 tests, 41 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> OK (10 tests, 430 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php` -> OK (13 tests, 220 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/OperationalReadinessStaticGuardTest.php` -> OK (10 tests, 204 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php` -> OK (8 tests, 107 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php` -> OK (10 tests, 123 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (180 tests, 4191 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (479 tests, 7009 assertions), Time 00:18.274, Memory 40.00 MB.
