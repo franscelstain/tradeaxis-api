@@ -41,6 +41,9 @@ Required environment checks:
 
 - `MARKET_DATA_PLATFORM_TIMEZONE=Asia/Jakarta`
 - `MARKET_DATA_DEFAULT_SOURCE_MODE=manual_file` or `api`
+- `MARKET_DATA_DAILY_ENABLED=true` only in staging/production-like environments where daily cron is intentionally enabled
+- `MARKET_DATA_SCHEDULER_OUTPUT_PATH` points to a writable log path
+- `MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES` is configured for the deployment's maximum acceptable daily job runtime
 - `MARKET_DATA_COVERAGE_MIN` configured and reviewed
 - market calendar loaded for requested trading dates
 - source credentials/config available when using provider/API source
@@ -50,6 +53,28 @@ Required environment checks:
 - reason-code registry and seed synchronized
 
 The operator must stop when terminal output contains `status=BLOCKED`, `terminal_status=FAILED`, `terminal_status=HELD`, `publishability_state=NOT_READABLE`, coverage `FAIL`, coverage `NOT_EVALUABLE`, pointer mismatch, unsealed publication, replay mismatch, or missing evidence metadata.
+
+## 1.1 Scheduler / cron deployment flow
+
+Production cron should invoke the framework scheduler every minute from the deployed release path:
+
+```text
+* * * * * cd /path/to/tradeaxis-api && php artisan schedule:run >> storage/logs/cron-schedule-run.log 2>&1
+```
+
+Application scheduler requirements:
+
+- enable daily scheduling with `MARKET_DATA_DAILY_ENABLED=true`
+- keep `MARKET_DATA_PLATFORM_TIMEZONE=Asia/Jakarta`
+- set `MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME=HH:MM:SS` to the approved daily cutoff
+- set `MARKET_DATA_SCHEDULER_OUTPUT_PATH=storage/logs/market-data-scheduler.log` or another writable deployed path
+- keep `MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES` above the expected maximum daily job runtime
+- verify `php artisan schedule:run --env=testing` or staging equivalent prints `Running scheduled command: ... market-data:daily --latest` when the cutoff is due
+- inspect the scheduler output log for `scheduler_status=SUCCESS` or `scheduler_status=FAILURE`
+
+Safe staging proof may use `MARKET_DATA_DEFAULT_SOURCE_MODE=manual_file` to avoid touching live provider/API. A missing manual file is acceptable as a scheduler failure proof only when the log is reason-coded, remains `publishability_state=NOT_READABLE`, and records `pointer_switched=false`.
+
+Scheduler proof is not live provider proof. Do not claim provider/API readiness from a scheduler run unless the source path is separately validated through a safe provider smoke plan.
 
 ## 2. Command coverage matrix
 

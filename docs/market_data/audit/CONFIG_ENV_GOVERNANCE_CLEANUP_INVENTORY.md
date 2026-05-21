@@ -52,6 +52,8 @@ This inventory records the config/env cleanup for market-data. It is intentional
 | `MARKET_DATA_LOT_SIZE` | `.env.example`, `.env.testing`, `config/market_data.php` | `100` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_DAILY_ENABLED` | `.env.example`, `.env.testing`, `config/market_data.php` | `false` | bool | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_DEFAULT_SOURCE_MODE` | `.env.example`, `.env.testing`, `config/market_data.php` | `api` | string | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
+| `MARKET_DATA_SCHEDULER_OUTPUT_PATH` | `.env.example`, `.env.testing`, `config/market_data.php` | `storage/logs/market-data-scheduler.log` | string | yes | yes | yes | ACTIVE_USED | Keep; scheduler output/no-silent-failure proof |
+| `MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES` | `.env.example`, `.env.testing`, `config/market_data.php` | `120` | int | yes | yes | yes | ACTIVE_USED | Keep; scheduler overlap guard proof |
 | `MARKET_DATA_INDICATOR_SET_VERSION` | `.env.example`, `.env.testing`, `config/market_data.php` | `v1` | string | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_DV_WINDOW_DAYS` | `.env.example`, `.env.testing`, `config/market_data.php` | `20` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_ATR_WINDOW_DAYS` | `.env.example`, `.env.testing`, `config/market_data.php` | `14` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |

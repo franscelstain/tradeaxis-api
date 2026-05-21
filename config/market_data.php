@@ -14,6 +14,10 @@ return [
         'daily_enabled' => (bool) env('MARKET_DATA_DAILY_ENABLED', false),
         'default_source_mode' => env('MARKET_DATA_DEFAULT_SOURCE_MODE', 'api'),
     ],
+    'scheduler' => [
+        'output_path' => env('MARKET_DATA_SCHEDULER_OUTPUT_PATH', 'storage/logs/market-data-scheduler.log'),
+        'without_overlapping_minutes' => (int) env('MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES', 120),
+    ],
     'coverage_edge_cases' => [
         'delay_window_minutes' => (int) env('MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES', 60),
     ],

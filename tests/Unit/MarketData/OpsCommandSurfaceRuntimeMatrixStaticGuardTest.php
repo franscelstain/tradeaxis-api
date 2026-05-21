@@ -67,12 +67,13 @@ class OpsCommandSurfaceRuntimeMatrixStaticGuardTest extends TestCase
             'market-data:current-publication:repair',
             'market-data:session-snapshot',
             'market-data:session-snapshot:purge',
+            'market-data:provider:smoke',
         ] as $command) {
             $this->assertStringContainsString('`'.$command.'`', $inventory, $command.' must be listed in the ops runtime matrix inventory.');
         }
 
         $this->assertStringContainsString('php artisan --env=testing list market-data', $inventory);
-        $this->assertStringContainsString('all expected public market-data commands registered', $inventory);
+        $this->assertStringContainsString('21 public market-data commands registered', $inventory);
     }
 
     public function test_inventory_records_help_invalid_and_seeded_runtime_proof(): void
@@ -109,6 +110,11 @@ class OpsCommandSurfaceRuntimeMatrixStaticGuardTest extends TestCase
             'mismatch_count=0',
             'storage/app/market-data/ops-command-surface-runtime-matrix/**',
             'storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**',
+            'Provider-Smoke Safe-Mode Overlay',
+            'provider_smoke_status=BLOCKED',
+            'reason_code=PROVIDER_RATE_LIMITED',
+            'publication_created=false',
+            'pointer_switched=false',
         ] as $needle) {
             $this->assertStringContainsString($needle, $inventory);
         }

@@ -299,6 +299,14 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `SOURCE_PROVIDER_RATE_LIMITED` | SOURCE | WARN | Source provider rate limited the request. |
 | `SOURCE_PROVIDER_TIMEOUT` | SOURCE | WARN | Source provider timed out. |
 | `SOURCE_PROVIDER_UNAVAILABLE` | SOURCE | WARN | Source provider unavailable. |
+| `PROVIDER_SMOKE_OK` | PROVIDER_SMOKE | INFO | Safe single-ticker provider smoke returned valid data without publication, seal, finalize, full-universe fetch, or pointer switch. |
+| `PROVIDER_RATE_LIMITED` | PROVIDER_SMOKE | WARN | Safe provider smoke was rate limited by the upstream provider and must not be counted as PASS. |
+| `PROVIDER_TIMEOUT` | PROVIDER_SMOKE | WARN | Safe provider smoke timed out before a valid single-ticker response was proven. |
+| `PROVIDER_NETWORK_ERROR` | PROVIDER_SMOKE | WARN | Safe provider smoke hit a network or upstream transport failure before valid data was proven. |
+| `PROVIDER_EMPTY_OR_INVALID_RESPONSE` | PROVIDER_SMOKE | HARD | Safe provider smoke returned no usable rows or an invalid provider payload. |
+| `PROVIDER_SMOKE_TICKER_REQUIRED` | PROVIDER_SMOKE | HARD | Safe provider smoke was blocked because no ticker was provided. |
+| `PROVIDER_SMOKE_INVALID_TICKER` | PROVIDER_SMOKE | HARD | Safe provider smoke was blocked because the ticker format was invalid. |
+| `PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED` | PROVIDER_SMOKE | HARD | Safe provider smoke blocked multi-ticker or full-universe execution. |
 | `IMPORT_SIDE_EFFECT_BLOCKED` | IMPORT_PROMOTE | HARD | Import-only side effect was blocked. |
 | `IMPORT_POINTER_WRITE_BLOCKED` | IMPORT_PROMOTE | HARD | Import-only attempted to update current pointer. |
 | `IMPORT_READABLE_STATE_BLOCKED` | IMPORT_PROMOTE | HARD | Import-only attempted to mark a run readable. |

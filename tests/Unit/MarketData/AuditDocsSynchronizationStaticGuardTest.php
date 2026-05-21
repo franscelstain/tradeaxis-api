@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Testing DB Isolation / Safe Migration Guard', $statusActiveSession);
+        $this->assertSame('Final Proof Pack / Ops Runtime Parity Reconciliation', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -44,7 +44,17 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('CORRECTION_LIFECYCLE_SAFETY_CONTRACT', $document);
             $this->assertStringContainsString('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $document);
             $this->assertStringContainsString('TESTING_DATABASE_ISOLATION_SAFE_MIGRATION_CONTRACT', $document);
+            $this->assertStringContainsString('PRODUCTION_SCHEDULER_CRON_DEPLOYMENT_PROOF_CONTRACT', $document);
+            $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $document);
         }
+
+        $this->assertStringContainsString('- Final Proof Pack / Ops Runtime Parity Reconciliation -> REVIEW_REQUIRED', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $status);
+        $this->assertStringContainsString('- FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT -> REVIEW_REQUIRED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Final Proof Pack / Ops Runtime Parity Reconciliation', $tracker);
+        $this->assertStringContainsString('MARKET_DATA_SOURCE_READY_BUT_OPS_PARITY_REVIEW_REQUIRED', $status.$tracker);
+        $this->assertStringContainsString('21 registered market-data commands', $status.$tracker);
+        $this->assertStringContainsString('PROVIDER_RATE_LIMITED', $status.$tracker);
 
         $this->assertStringContainsString('- Ops Command Surface Runtime Matrix -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $status);
@@ -120,9 +130,9 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
         $activeSession = $this->activeSessionName($status);
-        $this->assertStringContainsString('Testing DB Isolation / Safe Migration Guard', $implementationEntry);
+        $this->assertStringContainsString('Final Proof Pack / Ops Runtime Parity Reconciliation', $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('TESTING_DATABASE_ISOLATION_SAFE_MIGRATION_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -262,8 +272,9 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         }
 
         $proofPack = $this->readProjectFile('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
-        $this->assertStringContainsString('Decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`', $proofPack);
-        $this->assertStringContainsString('Final lock status: `LOCKED`', $proofPack);
+        $this->assertStringContainsString('Decision: `MARKET_DATA_SOURCE_READY_BUT_OPS_PARITY_REVIEW_REQUIRED`', $proofPack);
+        $this->assertStringContainsString('Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`', $proofPack);
+        $this->assertStringContainsString('Final source-state lock status: `LOCKED`', $proofPack);
         $this->assertStringContainsString('FINAL_AUDIT_DOCS_SYNCHRONIZED', $tracker.$proofPack);
         $this->assertStringContainsString('- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED', $tracker);
         $this->assertStringNotContainsString('Full market-data production-ready: `CLAIMED_FOR_THIS_SOURCE_ZIP`', $inventory.$proofPack);
@@ -282,7 +293,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(325, $registryCodes);
+        $this->assertCount(333, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

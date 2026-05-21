@@ -10,6 +10,7 @@ use App\Console\Commands\MarketData\BackfillMarketDataCommand;
 use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PromoteMarketDataCommand;
+use App\Console\Commands\MarketData\ProviderSmokeCommand;
 use App\Console\Commands\MarketData\FinalizeRunCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
@@ -44,6 +45,7 @@ class Kernel extends ConsoleKernel
         CaptureSessionSnapshotCommand::class,
         PurgeSessionSnapshotCommand::class,
         PromoteMarketDataCommand::class,
+        ProviderSmokeCommand::class,
         RequestCorrectionCommand::class,
         RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,
@@ -56,6 +58,54 @@ class Kernel extends ConsoleKernel
             return;
         }
 
-        $schedule->command('market-data:daily --latest')->dailyAt(substr(config('market_data.platform.cutoff_time'), 0, 5));
+        $timezone = (string) config('market_data.platform.timezone', 'Asia/Jakarta');
+        $outputPath = $this->scheduleOutputPath();
+
+        $event = $schedule->command('market-data:daily --latest')
+            ->dailyAt(substr(config('market_data.platform.cutoff_time'), 0, 5))
+            ->timezone($timezone)
+            ->withoutOverlapping((int) config('market_data.scheduler.without_overlapping_minutes', 120));
+
+        if ($outputPath !== '') {
+            $event->appendOutputTo($outputPath)
+                ->onSuccess(function () use ($outputPath, $timezone) {
+                    $this->appendSchedulerStatusLine($outputPath, $timezone, 'SUCCESS');
+                })
+                ->onFailure(function () use ($outputPath, $timezone) {
+                    $this->appendSchedulerStatusLine($outputPath, $timezone, 'FAILURE');
+                });
+        }
+    }
+
+    private function scheduleOutputPath()
+    {
+        $path = (string) config('market_data.scheduler.output_path', '');
+
+        if ($path === '') {
+            return '';
+        }
+
+        if (! preg_match('/^(?:[A-Za-z]:[\/\\\\]|\/|\\\\\\\\)/', $path)) {
+            $path = base_path($path);
+        }
+
+        $directory = dirname($path);
+
+        if (! is_dir($directory)) {
+            mkdir($directory, 0775, true);
+        }
+
+        return $path;
+    }
+
+    private function appendSchedulerStatusLine($outputPath, $timezone, $status)
+    {
+        $timestamp = (new \DateTimeImmutable('now', new \DateTimeZone($timezone)))->format('Y-m-d H:i:s T');
+
+        file_put_contents(
+            $outputPath,
+            sprintf("[%s] scheduler_status=%s command=\"market-data:daily --latest\"\n", $timestamp, $status),
+            FILE_APPEND
+        );
     }
 }

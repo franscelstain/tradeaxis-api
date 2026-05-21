@@ -71,4 +71,19 @@ class TestingDatabaseIsolationStaticGuardTest extends TestCase
             $this->assertStringContainsString('TestingDatabaseIsolationStaticGuardTest.php', $document);
         }
     }
+
+    public function test_artisan_blocks_explicit_unsafe_testing_db_before_unsupported_php_guard()
+    {
+        $artisan = $this->read('artisan');
+
+        $this->assertStringContainsString('tradeaxis_early_enforce_testing_database_env_override', $artisan);
+        $this->assertStringContainsString('tradeaxis_early_runtime_env', $artisan);
+        $this->assertStringContainsString("getenv('DB_DATABASE')", $artisan);
+        $this->assertStringContainsString('BLOCKED_TESTING_DATABASE_ENV', $artisan);
+        $this->assertLessThan(
+            strpos($artisan, 'ENV_UNSUPPORTED_PHP_VERSION'),
+            strpos($artisan, 'tradeaxis_early_enforce_testing_database_env_override($_SERVER'),
+            'Explicit unsafe DB_DATABASE override must be blocked before unsupported PHP exits so negative DB proof remains available.'
+        );
+    }
 }

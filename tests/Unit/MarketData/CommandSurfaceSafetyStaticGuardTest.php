@@ -116,6 +116,7 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
             ['class' => 'ApproveCorrectionCommand', 'signature' => 'market-data:correction:approve'],
             ['class' => 'RunCorrectionCommand', 'signature' => 'market-data:correction:run'],
             ['class' => 'RepairCurrentPublicationIntegrityCommand', 'signature' => 'market-data:current-publication:repair'],
+            ['class' => 'ProviderSmokeCommand', 'signature' => 'market-data:provider:smoke'],
         ];
     }
 }

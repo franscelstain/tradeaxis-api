@@ -107,6 +107,7 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             'php artisan market-data:session-snapshot --help',
             'php artisan market-data:session-snapshot:purge --help',
             'php artisan market-data:current-publication:repair --help',
+            'php artisan market-data:provider:smoke --help',
         ] as $needle) {
             $this->assertStringContainsString($needle, $inventory, $needle.' must be listed as a required artisan validation command.');
         }
@@ -130,7 +131,7 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('- Production Validation / Manual + Runtime Proof -> DONE', $status);
         $this->assertStringContainsString('- PRODUCTION_VALIDATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('20-command command list/full help', $status.$tracker.$inventory);
+        $this->assertStringContainsString('21-command command list/full help', $status.$tracker.$inventory);
         $this->assertStringContainsString('all_passed=1', $status.$tracker.$inventory);
         $this->assertStringContainsString('mismatch_count=0', $status.$tracker.$inventory);
     }
@@ -213,7 +214,7 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             $this->assertStringContainsString('not run in container', $block);
             $this->assertStringContainsString('Operator-local', $block);
             $this->assertStringContainsString('full MarketData', $block);
-            $this->assertStringContainsString('20 registered market-data commands', $block);
+            $this->assertStringContainsString('21 registered market-data commands', $block);
             $this->assertStringContainsString('all_passed=1', $block);
             $this->assertStringContainsString('correction_evidence.json', $block);
         }
@@ -298,8 +299,9 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             'file_count=5',
             'replay_evidence_pack.json',
             'replay_reason_code_counts.json',
-            '20 registered market-data commands',
+            '21 registered market-data commands',
             'market-data:replay:fixture:generate',
+            'market-data:provider:smoke',
             '--generate_runtime_valid_case',
         ] as $needle) {
             $this->assertStringContainsString($needle, $inventory.$status.$tracker, $needle.' must be recorded as generated replay runtime proof.');
@@ -339,6 +341,42 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             'correction_evidence.json',
         ] as $needle) {
             $this->assertStringContainsString($needle, $inventory.$status.$tracker, $needle.' must be recorded as failure/correction runtime proof.');
+        }
+    }
+
+
+
+    public function test_runtime_parity_command_output_artifacts_are_utf8_without_null_bytes(): void
+    {
+        $reportPath = 'storage/app/market-data/production-rollout-validation-runtime-parity/command-output/encoding-normalization-report.txt';
+        $report = $this->readProjectFile($reportPath);
+        $this->assertStringContainsString('ENCODING: UTF-8', $report);
+        $this->assertStringContainsString('NORMALIZED_FILE_COUNT: 20', $report);
+
+        $globalReport = $this->readProjectFile('storage/app/market-data/evidence-encoding-normalization-report.txt');
+        $this->assertStringContainsString('ENCODING: UTF-8', $globalReport);
+        $this->assertStringContainsString('SCOPE: storage/app/market-data/**/*.txt', $globalReport);
+
+        $directory = $this->projectPath('storage/app/market-data/production-rollout-validation-runtime-parity/command-output');
+        $this->assertDirectoryExists($directory);
+
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
+        foreach ($iterator as $file) {
+            if (!$file->isFile() || $file->getExtension() !== 'txt') {
+                continue;
+            }
+            $contents = file_get_contents($file->getPathname());
+            $this->assertStringNotContainsString("\0", $contents, $file->getPathname().' must be normalized to UTF-8/plain text without null-byte evidence noise.');
+        }
+
+        $globalDirectory = $this->projectPath('storage/app/market-data');
+        $globalIterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($globalDirectory));
+        foreach ($globalIterator as $file) {
+            if (!$file->isFile() || $file->getExtension() !== 'txt') {
+                continue;
+            }
+            $contents = file_get_contents($file->getPathname());
+            $this->assertStringNotContainsString("\0", $contents, $file->getPathname().' must be normalized to UTF-8/plain text without null-byte evidence noise.');
         }
     }
 

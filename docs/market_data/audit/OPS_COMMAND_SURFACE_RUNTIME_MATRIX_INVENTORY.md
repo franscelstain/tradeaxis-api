@@ -33,7 +33,7 @@ This inventory records the operator-runtime proof for the public market-data com
 ## Command Registry Proof
 
 Command: `php artisan --env=testing list market-data`.
-Result: exit 0, all expected public market-data commands registered.
+Result: exit 0, current source reports 21 public market-data commands registered. The 2026-05-20 matrix remains the historical 20-command runtime fixture proof; the 2026-05-21 provider-smoke overlay adds the safe live-provider command surface without claiming provider PASS.
 
 | Command | Registered | Help Proof | Signature/Docs Sync | Guard Decision |
 |---|---:|---:|---|---|
@@ -57,6 +57,31 @@ Result: exit 0, all expected public market-data commands registered.
 | `market-data:current-publication:repair` | PASS | PASS | dry-run default, `--apply` guarded by reason | `COMMAND_DESTRUCTIVE_GUARD_REQUIRED` |
 | `market-data:session-snapshot` | PASS | PASS | parser args optional only for command-owned missing-input output | `COMMAND_MISSING_REQUIRED_INPUT`, readable publication guard |
 | `market-data:session-snapshot:purge` | PASS | PASS | dry-run default, `--apply` explicit | `COMMAND_DRY_RUN_ONLY`, `COMMAND_APPLY_CONFIRMED` |
+| `market-data:provider:smoke` | PASS | PASS | safe single-ticker dry-run provider smoke; `--json` emits JSON stdout; `--provider` overrides API provider config | `PROVIDER_SMOKE_TICKER_REQUIRED`, `PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED`, live proof blocked by `PROVIDER_RATE_LIMITED` |
+
+## Provider-Smoke Safe-Mode Overlay
+
+`market-data:provider:smoke` is part of the current public command surface, bringing the current command count to 21. This overlay is intentionally separated from the 2026-05-20 seeded fixture matrix because live provider behavior is environment/upstream dependent.
+
+Current proof from this reconciliation:
+
+```text
+php artisan list market-data -> 21 public market-data commands registered
+php artisan market-data:provider:smoke --help -> exit 0
+php artisan market-data:provider:smoke -> exit 1, provider_smoke_status=BLOCKED, reason_code=PROVIDER_SMOKE_TICKER_REQUIRED
+php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-21 --dry-run -> exit 1, provider_smoke_status=BLOCKED, reason_code=PROVIDER_RATE_LIMITED
+```
+
+Provider smoke safe-mode invariants:
+
+- `publication_created=false`
+- `seal_executed=false`
+- `finalize_executed=false`
+- `pointer_switched=false`
+- `readable_publication_created=false`
+- `full_universe_fetch=false`
+
+Decision: command surface coverage is current at 21 commands, but provider runtime readiness is not PASS. `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT`, and `PROVIDER_NETWORK_ERROR` remain BLOCKED outcomes for ops rollout parity.
 
 ## Help Proof Matrix
 
@@ -83,6 +108,7 @@ php artisan --env=testing market-data:correction:run --help
 php artisan --env=testing market-data:current-publication:repair --help
 php artisan --env=testing market-data:session-snapshot --help
 php artisan --env=testing market-data:session-snapshot:purge --help
+php artisan market-data:provider:smoke --help
 ```
 
 ## Invalid Input Runtime Matrix
@@ -192,7 +218,7 @@ The prior enforced matrix kept these cases blocked because no isolated fixture p
 | Validation | Result |
 |---|---|
 | `php -l` changed command/test PHP files | PASS |
-| Final registry/help loop | PASS: `php artisan --env=testing list market-data` exit 0; all 20 help commands exit 0 |
+| Final registry/help loop | PASS for current surface: `php artisan list market-data` exit 0; 21 public market-data commands registered; provider-smoke help exits 0. Historical 2026-05-20 fixture loop remains 20-command proof before provider-smoke was added. |
 | Final invalid-input loop | PASS: daily/promote/backfill/evidence/replay/correction/snapshot/repair/purge/force-guard invalid cases exit 1 with `status=BLOCKED` and reason codes |
 | `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` | PASS: OK (57 tests, 341 assertions) |
 | `vendor/bin/phpunit tests/Unit/MarketData/CorrectionCommandsTest.php` | PASS: OK (11 tests, 60 assertions) |
@@ -214,7 +240,7 @@ The prior enforced matrix kept these cases blocked because no isolated fixture p
 
 `OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT` is LOCKED for the ops command surface scope because:
 
-- all 20 public commands remain registered and help-renderable;
+- all 21 public commands remain registered and help-renderable, with provider-smoke tracked as a safe-mode live-provider overlay;
 - invalid/missing input proof remains command-owned and reason-coded;
 - targeted command/static/audit tests pass after ledger changes;
 - full `tests/Unit/MarketData` passes in the supported runtime;

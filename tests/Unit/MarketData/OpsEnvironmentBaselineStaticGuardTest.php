@@ -123,7 +123,7 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
 
         foreach ([$status, $tracker] as $document) {
             $this->assertStringContainsString("ACTIVE SESSION:
-- Testing DB Isolation / Safe Migration Guard", $document);
+- Final Proof Pack / Ops Runtime Parity Reconciliation", $document);
             $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);

@@ -1,6 +1,58 @@
 #!/usr/bin/env php
 <?php
 
+if (! function_exists('tradeaxis_early_runtime_env')) {
+    function tradeaxis_early_runtime_env(array $argv)
+    {
+        foreach ($argv as $index => $argument) {
+            if ($argument === '--env' && isset($argv[$index + 1]) && strpos((string) $argv[$index + 1], '-') !== 0) {
+                return (string) $argv[$index + 1];
+            }
+
+            if (strpos((string) $argument, '--env=') === 0) {
+                return substr((string) $argument, 6);
+            }
+        }
+
+        return getenv('APP_ENV') ?: ($_ENV['APP_ENV'] ?? ($_SERVER['APP_ENV'] ?? null));
+    }
+}
+
+if (! function_exists('tradeaxis_early_enforce_testing_database_env_override')) {
+    function tradeaxis_early_enforce_testing_database_env_override(array $argv)
+    {
+        $command = isset($argv[1]) ? (string) $argv[1] : '';
+        $guardedCommands = ['migrate:fresh', 'migrate:refresh', 'migrate:reset', 'db:wipe'];
+
+        if (! in_array($command, $guardedCommands, true)) {
+            return;
+        }
+
+        if ((string) tradeaxis_early_runtime_env($argv) !== 'testing') {
+            return;
+        }
+
+        $database = getenv('DB_DATABASE') ?: ($_ENV['DB_DATABASE'] ?? ($_SERVER['DB_DATABASE'] ?? null));
+        if ($database === null || $database === '') {
+            return;
+        }
+
+        $expectedDatabase = 'tradeaxis_testing';
+        if ((string) $database !== $expectedDatabase) {
+            fwrite(STDERR, sprintf(
+                "BLOCKED_TESTING_DATABASE_ENV: Refusing %s in testing environment because DB_DATABASE resolves to '%s'; expected '%s'. Fix .env.testing or provide explicit DB_DATABASE=%s before running destructive testing migrations.\n",
+                $command,
+                (string) $database,
+                $expectedDatabase,
+                $expectedDatabase
+            ));
+            exit(3);
+        }
+    }
+}
+
+tradeaxis_early_enforce_testing_database_env_override($_SERVER['argv'] ?? []);
+
 if (PHP_VERSION_ID < 70300 || PHP_VERSION_ID >= 80400) {
     fwrite(STDERR, sprintf(
         "ENV_UNSUPPORTED_PHP_VERSION: TradeAxis market-data evidence commands require PHP >= 7.3 and < 8.4 for Lumen 8.3.4 clean output. Current PHP: %s. Use the documented operator/CI baseline before running artisan evidence commands.\n",
