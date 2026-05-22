@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Final Proof Pack / Ops Runtime Parity Reconciliation', $statusActiveSession);
+        $this->assertSame('Yahoo Provider Smoke Request Context Hardening', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -48,13 +48,14 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $document);
         }
 
-        $this->assertStringContainsString('- Final Proof Pack / Ops Runtime Parity Reconciliation -> REVIEW_REQUIRED', $status);
+        $this->assertStringContainsString('- Yahoo Provider Smoke Request Context Hardening -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $status);
-        $this->assertStringContainsString('- FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT -> REVIEW_REQUIRED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Final Proof Pack / Ops Runtime Parity Reconciliation', $tracker);
-        $this->assertStringContainsString('MARKET_DATA_SOURCE_READY_BUT_OPS_PARITY_REVIEW_REQUIRED', $status.$tracker);
+        $this->assertStringContainsString('- FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Yahoo Provider Smoke Request Context Hardening', $tracker);
+        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
+        $this->assertStringContainsString('ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH', $status.$tracker);
         $this->assertStringContainsString('21 registered market-data commands', $status.$tracker);
-        $this->assertStringContainsString('PROVIDER_RATE_LIMITED', $status.$tracker);
+        $this->assertStringContainsString('PROVIDER_SMOKE_OK', $status.$tracker);
 
         $this->assertStringContainsString('- Ops Command Surface Runtime Matrix -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $status);
@@ -130,7 +131,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
         $activeSession = $this->activeSessionName($status);
-        $this->assertStringContainsString('Final Proof Pack / Ops Runtime Parity Reconciliation', $implementationEntry);
+        $this->assertStringContainsString('Yahoo Provider Smoke Request Context Hardening', $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
         $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $contractEntry);
 
@@ -272,7 +273,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         }
 
         $proofPack = $this->readProjectFile('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
-        $this->assertStringContainsString('Decision: `MARKET_DATA_SOURCE_READY_BUT_OPS_PARITY_REVIEW_REQUIRED`', $proofPack);
+        $this->assertStringContainsString('Decision: `OPS_RUNTIME_PARITY_PASSED`', $proofPack);
         $this->assertStringContainsString('Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`', $proofPack);
         $this->assertStringContainsString('Final source-state lock status: `LOCKED`', $proofPack);
         $this->assertStringContainsString('FINAL_AUDIT_DOCS_SYNCHRONIZED', $tracker.$proofPack);
@@ -293,7 +294,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(333, $registryCodes);
+        $this->assertCount(336, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

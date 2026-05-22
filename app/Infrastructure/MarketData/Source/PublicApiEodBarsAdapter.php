@@ -99,21 +99,29 @@ class PublicApiEodBarsAdapter
                 'requested_ticker_count' => count($tickerCodes),
                 'unique_ticker_count' => count($uniqueTickerCodes),
             ];
+            $lastTickerRequestTelemetry = [];
 
             try {
                 $response = $this->requestWithRetry($url, $requestContext);
                 $telemetry = $this->consumeLastAcquisitionTelemetry();
+                $lastTickerRequestTelemetry = $telemetry;
                 $requestTelemetry[] = $this->withTickerTelemetry($telemetry, $tickerCode);
 
                 $row = $this->parseYahooFinancePayload($response['body'], $tradeDate, $tickerCode, $response['captured_at'], $apiConfig);
                 if ($row === null) {
+                    $failureTelemetry[] = $this->withTickerTelemetry(array_merge($lastTickerRequestTelemetry, [
+                        'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
+                        'source_final_status' => 'FAILED',
+                        'trade_date_not_found_in_response' => true,
+                    ]), $tickerCode);
                     continue;
                 }
 
                 $index++;
                 $rows[] = $this->normalizeRow($row, $tradeDate, $index, $response['captured_at'], $apiConfig);
             } catch (SourceAcquisitionException $e) {
-                $telemetry = $this->withTickerTelemetry($e->context(), $tickerCode);
+                $exceptionTelemetry = $e->context();
+                $telemetry = $this->withTickerTelemetry($exceptionTelemetry ?: $lastTickerRequestTelemetry, $tickerCode);
                 if (empty($telemetry)) {
                     $telemetry = $this->withTickerTelemetry([
                         'trade_date' => $tradeDate,
@@ -125,11 +133,13 @@ class PublicApiEodBarsAdapter
                     ], $tickerCode);
                 }
 
-                $requestTelemetry[] = $telemetry;
-                $failureTelemetry[] = $telemetry + [
+                if (! empty($exceptionTelemetry) || empty($lastTickerRequestTelemetry)) {
+                    $requestTelemetry[] = $telemetry;
+                }
+                $failureTelemetry[] = array_merge($telemetry, [
                     'final_reason_code' => $e->reasonCode(),
                     'source_final_status' => 'FAILED',
-                ];
+                ]);
 
                 if (! $this->isYahooPartialTolerantFailure($e->reasonCode())) {
                     $aggregate = $this->buildYahooAggregateTelemetry(
@@ -198,7 +208,7 @@ class PublicApiEodBarsAdapter
             'provider' => $this->providerName($apiConfig),
             'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
             'timeout_seconds' => $this->timeoutSeconds(),
-            'retry_max' => min(3, max(0, (int) config('market_data.provider.api_retry_max'))),
+            'retry_max' => $this->retryMax(),
             'final_reason_code' => null,
             'source_final_status' => 'SUCCESS',
             'trade_date' => $tradeDate,
@@ -217,7 +227,7 @@ class PublicApiEodBarsAdapter
             'provider' => $this->providerName($apiConfig),
             'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
             'timeout_seconds' => $this->timeoutSeconds(),
-            'retry_max' => min(3, max(0, (int) config('market_data.provider.api_retry_max'))),
+            'retry_max' => $this->retryMax(),
             'attempt_count' => null,
             'attempts' => [],
             'success_after_retry' => false,
@@ -243,7 +253,7 @@ class PublicApiEodBarsAdapter
             'provider' => $this->providerName($apiConfig),
             'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
             'timeout_seconds' => $this->timeoutSeconds(),
-            'retry_max' => min(3, max(0, (int) config('market_data.provider.api_retry_max'))),
+            'retry_max' => $this->retryMax(),
             'final_reason_code' => $reasonCode,
             'source_final_status' => 'FAILED',
             'trade_date' => $tradeDate,
@@ -308,6 +318,8 @@ class PublicApiEodBarsAdapter
         $successAfterRetry = false;
         $retryExhausted = false;
         $lastHttpStatus = null;
+        $lastUrl = null;
+        $lastResponseBodySample = null;
 
         foreach ($requestTelemetry as $telemetry) {
             $attemptCount += (int) ($telemetry['attempt_count'] ?? 0);
@@ -315,6 +327,12 @@ class PublicApiEodBarsAdapter
             $retryExhausted = $retryExhausted || (bool) ($telemetry['retry_exhausted'] ?? false);
             if (array_key_exists('final_http_status', $telemetry) && $telemetry['final_http_status'] !== null) {
                 $lastHttpStatus = $telemetry['final_http_status'];
+            }
+            if (array_key_exists('url', $telemetry) && $telemetry['url'] !== null && $telemetry['url'] !== '') {
+                $lastUrl = $telemetry['url'];
+            }
+            if (array_key_exists('response_body_sample', $telemetry) && $telemetry['response_body_sample'] !== null && $telemetry['response_body_sample'] !== '') {
+                $lastResponseBodySample = $telemetry['response_body_sample'];
             }
             if (isset($telemetry['attempts']) && is_array($telemetry['attempts'])) {
                 $attempts = array_merge($attempts, $telemetry['attempts']);
@@ -327,6 +345,7 @@ class PublicApiEodBarsAdapter
 
         $missingTickerCodes = array_values(array_diff($uniqueTickerCodes, $returnedTickerCodes));
         $failureReasonSummary = $this->summarizeYahooFailureReasons($failureTelemetry);
+        $tradeDateNotFound = $this->hasYahooFailureFlag($failureTelemetry, 'trade_date_not_found_in_response');
         $isPartial = count($rows) > 0 && (count($failureTelemetry) > 0 || count($missingTickerCodes) > 0);
         $isFailed = count($rows) === 0 && count($failureTelemetry) > 0;
         $finalReasonCode = null;
@@ -341,13 +360,15 @@ class PublicApiEodBarsAdapter
             'provider' => $this->providerName($apiConfig),
             'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
             'timeout_seconds' => $this->timeoutSeconds(),
-            'retry_max' => min(3, max(0, (int) config('market_data.provider.api_retry_max'))),
+            'retry_max' => $this->retryMax(),
             'attempt_count' => $attemptCount,
             'attempts' => $attempts,
             'success_after_retry' => $successAfterRetry,
             'retry_exhausted' => $retryExhausted,
             'final_reason_code' => $finalReasonCode,
-            'final_http_status' => $finalReasonCode === null ? $lastHttpStatus : null,
+            'final_http_status' => $lastHttpStatus,
+            'url' => $lastUrl,
+            'response_body_sample' => $lastResponseBodySample,
             'source_final_status' => $isFailed ? 'FAILED' : ($isPartial ? 'PARTIAL' : 'SUCCESS'),
             'trade_date' => $tradeDate,
             'ticker_code' => count($uniqueTickerCodes) > 0 ? (string) $uniqueTickerCodes[count($uniqueTickerCodes) - 1] : null,
@@ -362,9 +383,21 @@ class PublicApiEodBarsAdapter
                 return isset($telemetry['ticker_code']) ? (string) $telemetry['ticker_code'] : null;
             }, $failureTelemetry))),
             'failure_reason_summary' => $failureReasonSummary,
+            'trade_date_not_found_in_response' => $tradeDateNotFound,
         ];
     }
 
+    private function hasYahooFailureFlag(array $failureTelemetry, $flag)
+    {
+        foreach ($failureTelemetry as $telemetry) {
+            if (! empty($telemetry[$flag])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
     private function dominantYahooFailureReasonCode(array $failureTelemetry)
     {
         $summary = $this->summarizeYahooFailureReasons($failureTelemetry);
@@ -396,14 +429,26 @@ class PublicApiEodBarsAdapter
         $symbolSuffix = (string) data_get($apiConfig, 'yahoo.symbol_suffix', '');
         $range = (string) data_get($apiConfig, 'yahoo.range', '10d');
         $interval = (string) data_get($apiConfig, 'yahoo.interval', '1d');
+        $periodBounds = $this->yahooPeriodBounds($tradeDate);
 
         return str_replace(
-            ['{date}', '{symbol}', '{symbols}', '{symbol_suffix}', '{range}', '{interval}'],
-            [$tradeDate, $tickerCode, $tickerCode, $symbolSuffix, $range, $interval],
+            ['{date}', '{symbol}', '{symbols}', '{symbol_suffix}', '{range}', '{interval}', '{period1}', '{period2}'],
+            [$tradeDate, $tickerCode, $tickerCode, $symbolSuffix, $range, $interval, $periodBounds['period1'], $periodBounds['period2']],
             $urlTemplate
         );
     }
 
+    private function yahooPeriodBounds($tradeDate)
+    {
+        $timezone = config('market_data.platform.timezone', 'Asia/Jakarta');
+        $targetDate = Carbon::parse($tradeDate, $timezone)->startOfDay();
+
+        return [
+            'period1' => (string) $targetDate->copy()->subDay()->timestamp,
+            'period2' => (string) $targetDate->copy()->addDay()->timestamp,
+        ];
+    }
+    
     private function parseYahooFinancePayload($body, $tradeDate, $tickerCode, $capturedAt, array $apiConfig)
     {
         $decoded = json_decode($body, true);
@@ -477,7 +522,7 @@ class PublicApiEodBarsAdapter
 
     private function requestWithRetry($url, array $requestContext = [])
     {
-        $retryMax = min(3, max(0, (int) config('market_data.provider.api_retry_max')));
+        $retryMax = $this->retryMax();
         $baseBackoffMs = max(0, (int) config('market_data.provider.api_backoff_ms'));
         $capturedAt = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $provider = (string) $this->providerName(config('market_data.source.api'));
@@ -493,21 +538,34 @@ class PublicApiEodBarsAdapter
             try {
                 $response = $this->performHttpRequest($url);
                 $status = (int) $response['status'];
+                $responseBodySample = $this->responseBodySample($response['body']);
 
                 if (in_array($status, [401, 403], true)) {
-                    throw new SourceAcquisitionException('Source API authentication/config failed with HTTP '.$status.'.', 'RUN_SOURCE_AUTH_ERROR');
+                    throw new SourceAcquisitionException('Source API authentication/config failed with HTTP '.$status.'.', 'RUN_SOURCE_AUTH_ERROR', 0, null, [
+                        'final_http_status' => $status,
+                        'response_body_sample' => $responseBodySample,
+                    ]);
                 }
 
                 if ($status === 429) {
-                    throw new SourceAcquisitionException('Source API rate limited the request.', 'RUN_SOURCE_RATE_LIMIT');
+                    throw new SourceAcquisitionException('Source API rate limited the request.', 'RUN_SOURCE_RATE_LIMIT', 0, null, [
+                        'final_http_status' => $status,
+                        'response_body_sample' => $responseBodySample,
+                    ]);
                 }
 
                 if ($status === 408 || $status >= 500 || $status === 0) {
-                    throw new SourceAcquisitionException('Source API request timed out or returned transient server error.', 'RUN_SOURCE_TIMEOUT');
+                    throw new SourceAcquisitionException('Source API request timed out or returned transient server error.', 'RUN_SOURCE_TIMEOUT', 0, null, [
+                        'final_http_status' => $status,
+                        'response_body_sample' => $responseBodySample,
+                    ]);
                 }
 
                 if ($status < 200 || $status >= 300) {
-                    throw new SourceAcquisitionException('Source API returned unexpected HTTP status '.$status.'.', 'RUN_SOURCE_MALFORMED_PAYLOAD');
+                    throw new SourceAcquisitionException('Source API returned unexpected HTTP status '.$status.'.', 'RUN_SOURCE_MALFORMED_PAYLOAD', 0, null, [
+                        'final_http_status' => $status,
+                        'response_body_sample' => $responseBodySample,
+                    ]);
                 }
 
                 $attemptCount = count($attemptLog) + 1;
@@ -522,6 +580,7 @@ class PublicApiEodBarsAdapter
                 ];
 
                 $this->rememberAcquisitionTelemetry($requestContext + [
+                    'url' => $url,
                     'provider' => $provider,
                     'source_name' => $sourceName,
                     'timeout_seconds' => $timeoutSeconds,
@@ -532,6 +591,7 @@ class PublicApiEodBarsAdapter
                     'retry_exhausted' => false,
                     'final_reason_code' => null,
                     'final_http_status' => $status,
+                    'response_body_sample' => $responseBodySample,
                     'captured_at' => $capturedAt,
                 ]);
 
@@ -543,10 +603,14 @@ class PublicApiEodBarsAdapter
                 $willRetry = $this->shouldRetry($e->reasonCode(), $attempt, $retryMax);
                 $backoffDelayMs = $willRetry ? $this->backoff($attempt, $baseBackoffMs) : 0;
 
+                $exceptionContext = $e->context();
+                $httpStatus = $exceptionContext['final_http_status'] ?? $this->extractStatusFromExceptionContext($e);
+                $responseBodySample = $exceptionContext['response_body_sample'] ?? null;
+
                 $attemptLog[] = [
                     'attempt_number' => $attemptNumber,
                     'reason_code' => $e->reasonCode(),
-                    'http_status' => $this->extractStatusFromExceptionContext($e),
+                    'http_status' => $httpStatus,
                     'throttle_delay_ms' => $throttleDelayMs,
                     'backoff_delay_ms' => $backoffDelayMs,
                     'will_retry' => $willRetry,
@@ -563,6 +627,8 @@ class PublicApiEodBarsAdapter
                     'success_after_retry' => false,
                     'retry_exhausted' => ! $willRetry && in_array($e->reasonCode(), ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT'], true),
                     'final_reason_code' => $e->reasonCode(),
+                    'final_http_status' => $httpStatus,
+                    'response_body_sample' => $responseBodySample,
                     'captured_at' => $capturedAt,
                 ];
 
@@ -670,7 +736,33 @@ class PublicApiEodBarsAdapter
 
     private function buildHeaders()
     {
-        $headers = ['Accept: application/json'];
+         $userAgent = (string) config('market_data.source.api.user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36');
+        $headers = [
+            'User-Agent: '.$userAgent,
+            'Accept: application/json,text/plain,*/*',
+            'Accept-Language: en-US,en;q=0.9,id;q=0.8',
+            'Connection: close',
+        ];
+        $configuredHeaders = config('market_data.source.api.headers', []);
+
+        if (is_array($configuredHeaders)) {
+            foreach ($configuredHeaders as $headerName => $headerValue) {
+                if (is_int($headerName)) {
+                    $header = trim((string) $headerValue);
+                    if ($header !== '') {
+                        $headers[] = $header;
+                    }
+                    continue;
+                }
+
+                $headerName = trim((string) $headerName);
+                $headerValue = trim((string) $headerValue);
+                if ($headerName !== '' && $headerValue !== '') {
+                    $headers[] = $headerName.': '.$headerValue;
+                }
+            }
+        }
+
         $headerName = trim((string) config('market_data.source.api.auth_header_name'));
         $token = trim((string) config('market_data.source.api.auth_token'));
 
@@ -681,6 +773,18 @@ class PublicApiEodBarsAdapter
         return $headers;
     }
 
+    private function retryMax()
+    {
+        return min(3, max(0, (int) config('market_data.provider.api_retry_max')));
+    }
+
+    private function responseBodySample($body)
+    {
+        $sample = substr((string) $body, 0, 1000);
+
+        return str_replace(["\r", "\n", "\0"], [' ', ' ', ''], $sample);
+    }
+    
     private function timeoutSeconds()
     {
         return max(1, (int) config('market_data.source.api.timeout_seconds'));

@@ -346,6 +346,36 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
 
 
 
+    public function test_runtime_parity_provider_statuses_are_reason_coded_and_no_false_pass_is_allowed(): void
+    {
+        $artifact = $this->readProjectFile('storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt');
+        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        $proofPack = $this->readProjectFile('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
+        $inventory = $this->readProjectFile('docs/market_data/audit/PRODUCTION_VALIDATION_INVENTORY.md');
+
+        $combined = $status.$tracker.$proofPack.$inventory;
+
+        foreach ([
+            'OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED',
+            'OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_REQUEST_CONTEXT_BLOCKED',
+            'OPS_RUNTIME_PARITY_PASSED',
+        ] as $statusCode) {
+            $this->assertStringContainsString($statusCode, $combined, $statusCode.' must be a documented runtime parity status.');
+        }
+
+        $claimsPassed = preg_match('/(\[SESSION_STATUS\] OPS_RUNTIME_PARITY_PASSED|Ops rollout\/runtime parity: `OPS_RUNTIME_PARITY_PASSED`|Current rollout status is `OPS_RUNTIME_PARITY_PASSED`)/', $combined) === 1;
+        if ($claimsPassed) {
+            $this->assertStringContainsString('provider_smoke_status=PASS', $artifact);
+            $this->assertStringContainsString('reason_code=PROVIDER_SMOKE_OK', $artifact);
+            $this->assertStringContainsString('http_status=200', $artifact);
+            return;
+        }
+
+        $this->assertStringNotContainsString('[FINAL_DECISION] OPS_RUNTIME_PARITY_PASSED', $combined);
+    }
+    
+    
     public function test_runtime_parity_command_output_artifacts_are_utf8_without_null_bytes(): void
     {
         $reportPath = 'storage/app/market-data/production-rollout-validation-runtime-parity/command-output/encoding-normalization-report.txt';

@@ -302,8 +302,11 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `PROVIDER_SMOKE_OK` | PROVIDER_SMOKE | INFO | Safe single-ticker provider smoke returned valid data without publication, seal, finalize, full-universe fetch, or pointer switch. |
 | `PROVIDER_RATE_LIMITED` | PROVIDER_SMOKE | WARN | Safe provider smoke was rate limited by the upstream provider and must not be counted as PASS. |
 | `PROVIDER_TIMEOUT` | PROVIDER_SMOKE | WARN | Safe provider smoke timed out before a valid single-ticker response was proven. |
+| `PROVIDER_REQUEST_HEADER_CONTEXT_MISMATCH` | PROVIDER_SMOKE | WARN | Safe provider smoke proved the provider endpoint works with browser-like headers while a minimal PHP request context is blocked. |
 | `PROVIDER_NETWORK_ERROR` | PROVIDER_SMOKE | WARN | Safe provider smoke hit a network or upstream transport failure before valid data was proven. |
+| `PROVIDER_RESPONSE_PARSE_FAILED` | PROVIDER_SMOKE | HARD | Safe provider smoke received an HTTP-success provider response but could not parse the payload safely. |
 | `PROVIDER_EMPTY_OR_INVALID_RESPONSE` | PROVIDER_SMOKE | HARD | Safe provider smoke returned no usable rows or an invalid provider payload. |
+| `PROVIDER_TRADE_DATE_NOT_FOUND_IN_RESPONSE` | PROVIDER_SMOKE | HARD | Safe provider smoke received provider data but the selected trade date was not present in returned timestamps. |
 | `PROVIDER_SMOKE_TICKER_REQUIRED` | PROVIDER_SMOKE | HARD | Safe provider smoke was blocked because no ticker was provided. |
 | `PROVIDER_SMOKE_INVALID_TICKER` | PROVIDER_SMOKE | HARD | Safe provider smoke was blocked because the ticker format was invalid. |
 | `PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED` | PROVIDER_SMOKE | HARD | Safe provider smoke blocked multi-ticker or full-universe execution. |

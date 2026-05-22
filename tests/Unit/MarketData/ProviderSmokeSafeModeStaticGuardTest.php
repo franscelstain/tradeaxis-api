@@ -28,10 +28,13 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
         $this->assertStringContainsString('{--trade_date=}', $command);
         $this->assertStringContainsString('{--dry-run}', $command);
         $this->assertStringContainsString('{--max-tickers=1}', $command);
+        $this->assertStringContainsString('{--timeout=10}', $command);
         $this->assertStringContainsString('{--provider=yahoo}', $command);
+        $this->assertStringContainsString('{--retry-max=0}', $command);
         $this->assertStringContainsString('{--json}', $command);
         $this->assertStringContainsString('applyProviderOption', $command);
         $this->assertStringContainsString("config(['market_data.source.api.provider' => \$provider])", $command);
+        $this->assertStringContainsString("'market_data.provider.api_retry_max' => \$retryMax", $command);
         $this->assertStringContainsString('json_encode($this->jsonPayload($result), JSON_UNESCAPED_SLASHES)', $command);
         $this->assertStringContainsString('fetchOrLoadEodBars($tradeDate, \'api\', [$ticker])', $command);
     }
@@ -80,13 +83,21 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
         foreach ([
             'PROVIDER_SMOKE_OK',
             'PROVIDER_RATE_LIMITED',
+            'PROVIDER_REQUEST_HEADER_CONTEXT_MISMATCH',
             'PROVIDER_TIMEOUT',
             'PROVIDER_NETWORK_ERROR',
+            'PROVIDER_RESPONSE_PARSE_FAILED',
             'PROVIDER_EMPTY_OR_INVALID_RESPONSE',
+            'PROVIDER_TRADE_DATE_NOT_FOUND_IN_RESPONSE',
             'PROVIDER_SMOKE_TICKER_REQUIRED',
             'PROVIDER_SMOKE_INVALID_TICKER',
             'provider_smoke_status',
             'reason_code',
+            'request_url',
+            'http_status',
+            'response_body_sample',
+            'adapter_reason_code',
+            'retry_max',
             'BLOCKED',
             'FAILED',
             'PASS',
@@ -97,9 +108,12 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
         foreach ([
             'PROVIDER_SMOKE_OK',
             'PROVIDER_RATE_LIMITED',
+            'PROVIDER_REQUEST_HEADER_CONTEXT_MISMATCH',
             'PROVIDER_TIMEOUT',
             'PROVIDER_NETWORK_ERROR',
+            'PROVIDER_RESPONSE_PARSE_FAILED',
             'PROVIDER_EMPTY_OR_INVALID_RESPONSE',
+            'PROVIDER_TRADE_DATE_NOT_FOUND_IN_RESPONSE',
             'PROVIDER_SMOKE_TICKER_REQUIRED',
             'PROVIDER_SMOKE_INVALID_TICKER',
             'PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED',
@@ -122,7 +136,23 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
             $this->assertStringContainsString('provider_smoke_status=', $document);
             $this->assertStringContainsString('reason_code=', $document);
             $this->assertStringContainsString('publication_created=false', $document);
+            $this->assertStringContainsString('seal_executed=false', $document);
+            $this->assertStringContainsString('finalize_executed=false', $document);
             $this->assertStringContainsString('pointer_switched=false', $document);
+            $this->assertStringContainsString('readable_publication_created=false', $document);
+            $this->assertStringContainsString('full_universe_fetch=false', $document);
+        }
+
+        foreach ([
+            'request_url=',
+            'http_status=',
+            'response_body_sample=',
+            'adapter_reason_code=',
+            'retry_max=',
+            'attempt_count=',
+            'timeout_seconds=',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $artifact);
         }
 
         $combinedDocs = $status.$tracker.$proofPack.$inventory.$ops;
@@ -130,9 +160,35 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
         $this->assertStringContainsString('PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED', $combinedDocs);
         $this->assertStringContainsString('PROVIDER_RATE_LIMITED', $combinedDocs);
         $this->assertStringContainsString('BLOCKED_PROVIDER_RATE_LIMITED', $combinedDocs);
-        $this->assertStringContainsString('OPS_RUNTIME_PARITY_BLOCKED_BY_ENVIRONMENT', $combinedDocs);
-        $this->assertStringNotContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $combinedDocs);
-        $this->assertStringNotContainsString('[FINAL_DECISION] OPS_RUNTIME_PARITY_PASSED', $combinedDocs);
-        $this->assertStringNotContainsString('[PROVIDER_SMOKE_STATUS] PROVIDER_SMOKE_PROOF_PASSED', $combinedDocs);
+        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED', $combinedDocs);
+        
+        if (preg_match('/(\[SESSION_STATUS\] OPS_RUNTIME_PARITY_PASSED|Ops rollout\/runtime parity: `OPS_RUNTIME_PARITY_PASSED`|Current rollout status is `OPS_RUNTIME_PARITY_PASSED`)/', $combinedDocs)) {
+            $this->assertStringContainsString('provider_smoke_status=PASS', $artifact);
+            $this->assertStringContainsString('reason_code=PROVIDER_SMOKE_OK', $artifact);
+        } else {
+            $this->assertStringNotContainsString('[PROVIDER_SMOKE_STATUS] PROVIDER_SMOKE_PROOF_PASSED', $combinedDocs);
+        }
+    }
+
+    public function test_public_api_adapter_uses_browser_like_header_context(): void
+    {
+        $adapter = $this->read('app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php');
+        $config = $this->read('config/market_data.php');
+        $envExample = $this->read('.env.example');
+        $envTesting = $this->read('.env.testing');
+
+        foreach ([
+            'MARKET_DATA_SOURCE_API_USER_AGENT',
+            'market_data.source.api.user_agent',
+            'User-Agent: ',
+            'Accept: application/json,text/plain,*/*',
+            'Accept-Language: en-US,en;q=0.9,id;q=0.8',
+            'Connection: close',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $adapter.$config.$envExample.$envTesting);
+        }
+
+        $this->assertStringContainsString('{period1}', $adapter);
+        $this->assertStringContainsString('{period2}', $adapter);
     }
 }

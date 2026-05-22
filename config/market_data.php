@@ -56,6 +56,7 @@ return [
             'response_format' => env('MARKET_DATA_SOURCE_API_RESPONSE_FORMAT', 'json'),
             'response_rows_path' => env('MARKET_DATA_SOURCE_API_ROWS_PATH', ''),
             'timeout_seconds' => (int) env('MARKET_DATA_SOURCE_API_TIMEOUT_SECONDS', 20),
+            'user_agent' => env('MARKET_DATA_SOURCE_API_USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'),
             'auth_header_name' => env('MARKET_DATA_SOURCE_API_AUTH_HEADER_NAME', ''),
             'auth_token' => env('MARKET_DATA_SOURCE_API_AUTH_TOKEN', ''),
             'source_name' => env('MARKET_DATA_SOURCE_API_NAME', 'YAHOO_FINANCE'),

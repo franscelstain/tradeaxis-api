@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Final Proof Pack / Ops Runtime Parity Reconciliation", $status);
+- Yahoo Provider Smoke Request Context Hardening", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Final Proof Pack / Ops Runtime Parity Reconciliation", $tracker);
+- Yahoo Provider Smoke Request Context Hardening", $tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);

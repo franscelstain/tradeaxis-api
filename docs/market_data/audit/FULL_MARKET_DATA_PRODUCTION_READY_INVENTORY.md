@@ -209,7 +209,7 @@ Final lock decision:
 - `storage/app/market-data/production-scheduler-cron-deployment-proof/command-output/phase4-scheduler-output-log.txt`.
 - `storage/app/market-data/production-scheduler-cron-deployment-proof/command-output/phase5-schedule-run-disabled-control.txt`.
 - `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
-- `storage/app/market-data/evidence-encoding-normalization-report.txt` reports `checked_files=163`, `normalized_files=0`, `null_byte_remaining=0`, `status=PASS`.
+- `storage/app/market-data/evidence-encoding-normalization-report.txt` reports `checked_files=165`, `normalized_files=0`, `null_byte_remaining=0`, `status=PASS`.
 
 [VALIDATION]
 - `php -l artisan` -> PASS.
@@ -232,8 +232,8 @@ Final lock decision:
 ## 2026-05-21 Final Proof Pack / Ops Runtime Parity Reconciliation
 
 [SOURCE_ZIP]
-- Path: `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`.
-- SHA-256: `AD3B9073488D8F430648A184C2A5FA9CE252C7E65B713F99D6ABDDAB4F0BB448`.
+- Path: `D:\Laravel\tradeaxis-api\tradeaxis-api-provider.zip`.
+- SHA-256: `aea589eabb634eca4da6051c3e62dfb732e4b9fa563744d7c54246e215f6c333`.
 
 [DECISION]
 - Source-state core readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.
@@ -256,6 +256,75 @@ Final lock decision:
 - Provider smoke runtime is not PASS.
 
 [SCHEDULER]
-- Scheduler proof remains `SCHEDULER_RUNTIME_ARTIFACTS_MISSING_FROM_SOURCE_ZIP / REVIEW_REQUIRED`.
+- Scheduler due-run runtime proof is present; stale auxiliary phase0/phase5 artifacts still need refresh if a completely clean scheduler proof pack is required.
 - Existing scheduler command-output files are blocked container/runtime artifacts and must not be counted as PASS.
 - Full market-data PHPUnit suite must still pass locally after this patch before final ops parity can be promoted.
+
+
+## 2026-05-21 — PROVIDER RATE-LIMIT + SCHEDULER DUE-RUN PROOF RECONCILIATION
+
+[SESSION] PROVIDER_RATE_LIMIT_SCHEDULER_DUE_RUN_RECONCILIATION
+
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
+
+[REVIEW_STATUS] MARKET_DATA_SOURCE_READY_BUT_PROVIDER_RATE_LIMITED
+
+[INPUT_SOURCE_ZIP]
+- Source ZIP: `tradeaxis-api-provider.zip`
+- Source ZIP SHA-256: `aea589eabb634eca4da6051c3e62dfb732e4b9fa563744d7c54246e215f6c333`
+
+[WHAT_CHANGED_FROM_PREVIOUS_AUDIT]
+- Scheduler proof is no longer `SCHEDULER_RUNTIME_ARTIFACTS_MISSING_FROM_SOURCE_ZIP`: the source ZIP now contains `storage/app/market-data/production-scheduler-cron-deployment-proof/runtime/market-data-scheduler-proof.log`.
+- `phase4-scheduler-output-log.txt` records `RESULT=SCHEDULER_RUNTIME_LOG_PRODUCED` and `EXIT_CODE:0`.
+- `phase3-schedule-run-enabled-due.txt` records that `php artisan schedule:run` executed `market-data:daily --latest` at the configured cutoff minute and exited `0`.
+- Scheduler runtime log records `scheduler_status=FAILURE command="market-data:daily --latest"` with visible reason-coded daily failure (`reason_code=RUN_SOURCE_RESPONSE_CHANGED`, `terminal_status=FAILED`, `publishability_state=NOT_READABLE`, `pointer_switched=false`). This is accepted as scheduler due-run proof because the scheduler executed, wrote output, and did not fail silently.
+- Provider smoke safe mode remains implemented and non-destructive, but the live BBCA dry-run is blocked by Yahoo/PublicApi rate limiting: `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `source_reason_code=RUN_SOURCE_RATE_LIMIT`, `retry_exhausted=true`.
+- Evidence encoding report is current and clean: `ENCODING: UTF-8`, `SCOPE: storage/app/market-data/**/*.txt`, `checked_files=165`, `null_byte_remaining=0`, `status=PASS`.
+- Reconciliation summary artifact: `storage/app/market-data/provider-rate-limit-scheduler-due-run-reconciliation/audit-summary.txt`.
+- Full MarketData PHPUnit proof after encoding/report correction passed: `OK (490 tests, 7506 assertions)`, Time `00:15.508`, Memory `40.00 MB`.
+
+[FINAL_DECISION]
+- Core source-code readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.
+- Overall ops runtime parity is **not** `OPS_RUNTIME_PARITY_PASSED` because live provider smoke is still provider-blocked.
+- Current rollout status is `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`.
+
+[CURRENT_BLOCKERS]
+- `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED`: external Yahoo/PublicApi rate limiting prevents provider smoke PASS.
+
+[NON_BLOCKING_EVIDENCE_REFRESH]
+- `phase0-migrate-fresh-testing-precondition.txt` and `phase5-schedule-run-disabled-control.txt` still contain old container-blocked output from PHP `8.4.16`; these are stale auxiliary artifacts and should be refreshed in the operator PHP `7.4.33` environment if a fully clean scheduler deployment proof pack is required.
+- These stale auxiliary artifacts do not invalidate the newly present scheduler due-run runtime log, the source-state lock, or the full MarketData PHPUnit PASS.
+
+[DO_NOT_CLAIM]
+- Do not claim `OPS_RUNTIME_PARITY_PASSED` until provider smoke returns `provider_smoke_status=PASS` / `reason_code=PROVIDER_SMOKE_OK` or the release decision explicitly accepts provider rate-limit as an external deployment blocker.
+- Do not count `PROVIDER_RATE_LIMITED` as provider PASS.
+
+---
+
+## 2026-05-22 — YAHOO_PROVIDER_SMOKE_REQUEST_CONTEXT_HARDENING
+
+[SESSION] YAHOO_PROVIDER_SMOKE_REQUEST_CONTEXT_HARDENING
+
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+
+[DECISION]
+- Source-state core readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.
+- Provider smoke safe mode is `PROVIDER_SMOKE_SAFE_MODE_PASSED`.
+- Live provider smoke is `LIVE_PROVIDER_SMOKE_PASSED`.
+- Ops runtime parity is `OPS_RUNTIME_PARITY_PASSED`.
+- `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`.
+- `FINAL_PROVIDER_SMOKE=PASS`.
+
+[PROVIDER_SMOKE]
+- Phase 1 minimal PHP header proof: HTTP 429 for the Yahoo range=10d URL.
+- Phase 1 browser-like PHP header proof: HTTP 200 for the same URL.
+- Final command: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0`.
+- Runtime proof: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, `request_url=https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com`.
+- Safety proof: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+
+[VALIDATION]
+- Syntax checks passed for `ProviderSmokeCommand.php`, `PublicApiEodBarsAdapter.php`, `config/market_data.php`, `ProviderSmokeSafeModeStaticGuardTest.php`, and `ProductionValidationRuntimeProofStaticGuardTest.php`.
+- `vendor/bin/phpunit tests/Unit/MarketData/ProviderSmokeSafeModeStaticGuardTest.php` -> OK (5 tests, 163 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php --filter "runtime_parity"` -> OK (2 tests, 259 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "ProviderSmoke"` -> OK (5 tests, 163 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (492 tests, 7588 assertions), Time 00:17.316, Memory 40.00 MB.
