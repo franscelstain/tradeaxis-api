@@ -4,12 +4,12 @@ Last updated: 2026-05-22
 Source ZIP: `tradeaxis-api.zip`
 Source ZIP path: `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`
 Input source ZIP SHA-256: `28a7ea2dd9d88209edb1b670140f252a0762ec724393b60ed5b8860b9287e56e`
-Decision: `OPS_RUNTIME_PARITY_PASSED`
+Decision: `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`
 Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`
-Review status: `YAHOO_PROVIDER_SMOKE_REQUEST_CONTEXT_HARDENING / OPS_RUNTIME_PARITY_PASSED`
+Review status: `YAHOO_PROVIDER_SMOKE_REQUEST_CONTEXT_HARDENING / OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`
 Final source-state lock status: `LOCKED`
 
-This proof pack is the aggregate validation record for the current uploaded source state. It consumes the already-recorded operator-local runtime proof embedded in this source ZIP, the scheduler due-run runtime proof, and the 2026-05-22 Yahoo provider smoke request-context hardening proof. Final Audit Docs Synchronization has consumed this proof pack and locked the current source state as `MARKET_DATA_PRODUCTION_READY_LOCKED`. The 2026-05-22 rollout overlay records `PROVIDER_SMOKE_SAFE_MODE_PASSED`, `LIVE_PROVIDER_SMOKE_PASSED`, `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`, `FINAL_PROVIDER_SMOKE=PASS`, and `OPS_RUNTIME_PARITY_PASSED`.
+This proof pack is the aggregate validation record for the current uploaded source state. It consumes the already-recorded operator-local runtime proof embedded in this source ZIP, the scheduler due-run runtime proof, and the Yahoo provider smoke request-context hardening proof. Final Audit Docs Synchronization remains valid for core source-state readiness, but the embedded provider smoke artifact is BLOCKED by provider rate limit. The current rollout overlay records `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`, `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED`, `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`, `FINAL_PROVIDER_SMOKE=BLOCKED_PROVIDER_RATE_LIMITED`, and `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`.
 
 ## 1. Environment Baseline
 
@@ -24,7 +24,7 @@ This proof pack is the aggregate validation record for the current uploaded sour
 | Required supported extensions | `dom`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `xml`, `xmlreader`, `xmlwriter` |
 | Lumen context | Lumen 8.3.4 according to runtime command output |
 | Source artifact root | `storage/app/market-data/**` |
-| Runtime limitation | Yahoo/PublicApi remains upstream-dependent, but current safe live provider smoke passes with HTTP 200 and all non-destructive flags false. |
+| Runtime limitation | Yahoo/PublicApi remains upstream-dependent; current embedded safe provider smoke is BLOCKED with HTTP 429 / `PROVIDER_RATE_LIMITED` while all non-destructive flags remain false. |
 
 ## 2. Production Validation Matrix
 
@@ -523,15 +523,15 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 [SESSION] YAHOO_PROVIDER_SMOKE_REQUEST_CONTEXT_HARDENING
 
-[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
 [FINAL_DECISION]
 - Core source-code readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.
-- Provider smoke safe mode: `PROVIDER_SMOKE_SAFE_MODE_PASSED`.
-- Live provider smoke: `LIVE_PROVIDER_SMOKE_PASSED`.
-- Ops rollout/runtime parity: `OPS_RUNTIME_PARITY_PASSED`.
+- Provider smoke safe mode: `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`.
+- Live provider smoke: `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED`.
+- Ops rollout/runtime parity: `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`.
 - `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`.
-- `FINAL_PROVIDER_SMOKE=PASS`.
+- `FINAL_PROVIDER_SMOKE=BLOCKED_PROVIDER_RATE_LIMITED`.
 
 [PHASE_1_REQUEST_CONTEXT_PROOF]
 - Request URL: `https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com`.
@@ -542,7 +542,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [PROVIDER_SMOKE_RUNTIME]
 - Command: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0`.
 - Artifact: `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
-- Result: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, `attempt_count=1`, `retry_max=0`, `retry_exhausted=false`, `timeout_seconds=10`.
+- Result: `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`, `attempt_count=4`, `retry_max=3`, `retry_exhausted=true`, `timeout_seconds=10`.
 - Safety: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
 
 [IMPLEMENTATION]
@@ -559,3 +559,29 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 [REMAINING_RISK]
 - Yahoo/PublicApi can still legitimately return 429, timeout, network, parse, empty-response, or missing-date outcomes in future runs; those outcomes must remain reason-coded and must not be silently counted as provider PASS.
+
+---
+
+## 2026-05-22 — AUDIT_DOCS_STATIC_GUARD_RATE_LIMIT_RECONCILIATION
+
+[SESSION] AUDIT_DOCS_STATIC_GUARD_RATE_LIMIT_RECONCILIATION
+
+[SESSION_STATUS] PATCHED_STATIC_GUARD_EXPECTATION_RERUN_REQUIRED
+
+[FINAL_DECISION]
+- `Decision: OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED` remains the only valid proof-pack decision while the embedded provider smoke artifact is `provider_smoke_status=BLOCKED` / `reason_code=PROVIDER_RATE_LIMITED`.
+- A passed ops-runtime-parity decision must not be required by `AuditDocsSynchronizationStaticGuardTest` unless provider smoke returns `provider_smoke_status=PASS` / `reason_code=PROVIDER_SMOKE_OK`.
+- Source-state decision remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.
+
+[PATCH]
+- Updated `AuditDocsSynchronizationStaticGuardTest` to assert the current partial provider-rate-limited decision and explicitly reject a false proof-pack PASS decision.
+- Reconciled active audit-doc wording that still said provider smoke was HTTP 200 / PASS even though the authoritative artifact is HTTP 429 / `PROVIDER_RATE_LIMITED`.
+
+[LOCAL_OPERATOR_EVIDENCE]
+- The operator rerun showed targeted guards already PASS: `ProductionSchedulerCronStaticGuardTest`, `ProductionValidationRuntimeProofStaticGuardTest`, and `ProviderSmokeSafeModeStaticGuardTest`.
+- The only remaining full-suite failure was the stale audit-docs expectation at `AuditDocsSynchronizationStaticGuardTest.php:276`, which expected a proof-pack PASS decision inside `MARKET_DATA_PRODUCTION_PROOF_PACK.md`.
+
+[REQUIRED_RERUN]
+- `vendor\bin\phpunit tests/Unit/MarketData --filter "AuditDocsSynchronizationStaticGuardTest"`.
+- `vendor\bin\phpunit tests/Unit/MarketData`.
+

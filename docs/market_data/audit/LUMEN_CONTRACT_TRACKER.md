@@ -5,12 +5,12 @@
 ACTIVE SESSION:
 - Yahoo Provider Smoke Request Context Hardening
 
-[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
 [SESSION_SCOPE]
 - Harden Yahoo/PublicApi provider smoke request context and telemetry.
 - Preserve 21-command provider-smoke safe mode while proving the live provider without publication/seal/finalize/pointer/full-universe side effects.
-- Close the provider runtime gap only when final command output is PASS.
+- Keep the provider runtime gap open until final command output is PASS; current source is partial because the embedded provider smoke artifact is rate-limited.
 
 [SESSION_GOAL]
 - Lock the final proof-pack ops runtime parity contract after Phase 1 request-context proof and final safe provider smoke PASS.
@@ -18,10 +18,10 @@ ACTIVE SESSION:
 [SESSION_NOTES]
 - Source ZIP input for this session is `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`.
 - `market-data:provider:smoke` is public and brings the command surface to 21 commands.
-- Provider smoke command surface is safe-mode enforced; current provider runtime is `PROVIDER_SMOKE_OK`, HTTP 200, and PASS.
+- Provider smoke command surface is safe-mode enforced; current embedded provider runtime is `PROVIDER_RATE_LIMITED`, HTTP 429, and BLOCKED, not PASS.
 - `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`.
-- `FINAL_PROVIDER_SMOKE=PASS`.
-- Scheduler due-run proof is present; provider smoke now passes, so ops runtime parity is `OPS_RUNTIME_PARITY_PASSED`.
+- `FINAL_PROVIDER_SMOKE=BLOCKED_PROVIDER_RATE_LIMITED`.
+- Scheduler due-run proof is present; provider smoke remains provider-rate-limited, so ops runtime parity is `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI proof: PHP 7.4.33.
@@ -29,7 +29,7 @@ ACTIVE SESSION:
 - Artisan proof: Lumen 8.3.4.
 - Required DB driver proof: `pdo_mysql` available.
 - Testing DB target proof remains `DB_DATABASE=tradeaxis_testing`.
-- Provider smoke proof: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`.
+- Provider smoke proof: `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`. The safe-mode non-destructive flags remain false.
 - Scheduler proof authority remains `storage/app/market-data/production-scheduler-cron-deployment-proof/**`; due-run runtime proof is present.
 
 ---
@@ -58,7 +58,7 @@ ACTIVE SESSION:
 
   [RELATED_IMPLEMENTATION] Yahoo Provider Smoke Request Context Hardening
 
-  [REVIEW_STATUS] OPS_RUNTIME_PARITY_PASSED
+  [REVIEW_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
   [HISTORY]
   - 2026-05-21 -> Latest source ZIP identity recorded: `tradeaxis-api-provider.zip`, SHA-256 `aea589eabb634eca4da6051c3e62dfb732e4b9fa563744d7c54246e215f6c333`.
@@ -67,7 +67,7 @@ ACTIVE SESSION:
   - 2026-05-21 -> Scheduler proof remains REVIEW_REQUIRED; blocked scheduler artifacts are not accepted as PASS.
   - 2026-05-22 -> Phase 1 request-context artifacts proved minimal PHP header HTTP 429 and browser-like header HTTP 200 for the same Yahoo range=10d URL.
   - 2026-05-22 -> Adapter request headers, smoke retry control, telemetry output, optional period placeholders, reason-code registry/seed, and static guards were hardened.
-  - 2026-05-22 -> Final safe provider smoke returned PASS: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, `attempt_count=1`, `retry_max=0`.
+  - 2026-05-22 -> Final embedded provider smoke artifact records BLOCKED: `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`, `attempt_count=4`, `retry_max=3`.
 
 
   [DEFINED]
@@ -85,7 +85,7 @@ ACTIVE SESSION:
   - Command surface: `php artisan list market-data` -> 21 public market-data commands.
   - Phase 1 minimal-header artifact: `storage/app/market-data/provider-smoke-request-context/command-output/php-request-minimal-header.txt` -> HTTP 429.
   - Phase 1 browser-like-header artifact: `storage/app/market-data/provider-smoke-request-context/command-output/php-request-browser-like-header.txt` -> HTTP 200.
-  - Provider smoke: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0` -> exit 0, `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+  - Provider smoke artifact: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run` -> `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`, `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
   - Syntax checks passed for `ProviderSmokeCommand.php`, `PublicApiEodBarsAdapter.php`, `config/market_data.php`, `ProviderSmokeSafeModeStaticGuardTest.php`, and `ProductionValidationRuntimeProofStaticGuardTest.php`.
   - Operator-local targeted guard: `vendor/bin/phpunit tests/Unit/MarketData/ProviderSmokeSafeModeStaticGuardTest.php` -> OK (5 tests, 163 assertions).
   - Operator-local runtime parity filter: `vendor/bin/phpunit tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php --filter "runtime_parity"` -> OK (2 tests, 259 assertions).
@@ -93,7 +93,7 @@ ACTIVE SESSION:
   - Operator-local full `tests/Unit/MarketData` -> OK (492 tests, 7588 assertions), Time 00:17.316, Memory 40.00 MB.
 
   [FINAL_RULE]
-  - `OPS_RUNTIME_PARITY_PASSED` is valid for this patched source because scheduler due-run proof exists and final live provider smoke returned PASS.
+  - `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED` is valid for this patched source because scheduler due-run proof exists but the embedded live provider smoke artifact remains BLOCKED by provider rate limit.
   - Source-state core readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED` with current full MarketData suite PASS and no P0/P1 source-code blocker.
   - Provider rate-limited/timeout/network/request-context failures must remain reason-coded and must never be counted as provider PASS.
   - Provider smoke PASS requires `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, and all safety flags false.

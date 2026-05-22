@@ -402,14 +402,14 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 [SESSION] YAHOO_PROVIDER_SMOKE_REQUEST_CONTEXT_HARDENING
 
-[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
 [OPS_RUNTIME_PARITY]
 - Runtime baseline remains PHP 7.4.33, PHPUnit 9.6.34, Lumen 8.3.4.
 - Scheduler due-run runtime proof is present and remains visible through `storage/app/market-data/production-scheduler-cron-deployment-proof/**`.
-- Provider smoke runtime result is now `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`.
-- Provider smoke status: `LIVE_PROVIDER_SMOKE_PASSED`; this supersedes the current-source provider-rate-limit blocker.
-- Overall ops parity is `OPS_RUNTIME_PARITY_PASSED`.
+- Provider smoke runtime result remains `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`.
+- Provider smoke status: `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED`; this does not supersede the current-source provider-rate-limit blocker.
+- Overall ops parity is `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`.
 
 [REQUEST_CONTEXT_PROOF]
 - Minimal PHP header status: HTTP 429.

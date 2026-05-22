@@ -5,7 +5,7 @@
 ACTIVE SESSION:
 - Yahoo Provider Smoke Request Context Hardening
 
-[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
 [SESSION_SCOPE]
 - Harden Yahoo/PublicApi request context for safe live provider smoke without reopening core market-data source readiness.
@@ -14,15 +14,15 @@ ACTIVE SESSION:
 - Record Phase 1 PHP request-context proof that minimal PHP headers receive HTTP 429 while browser-like headers receive HTTP 200 for the same Yahoo range=10d URL.
 
 [SESSION_GOAL]
-- Close `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED` when the root cause is PHP adapter header context mismatch, not general Yahoo endpoint unavailability.
-- Promote ops runtime parity only because the final safe provider smoke command returns `provider_smoke_status=PASS` / `reason_code=PROVIDER_SMOKE_OK`.
+- Harden `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED` with request-context proof and reason-coded telemetry.
+- Do not promote ops runtime parity while the final safe provider smoke command returns `provider_smoke_status=BLOCKED` / `reason_code=PROVIDER_RATE_LIMITED` in the embedded artifact.
 
 [SESSION_NOTES]
 - Source ZIP input for this session is `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`.
 - `market-data:provider:smoke` remains a public command; current market-data command count is 21.
-- `PROVIDER_SMOKE_SAFE_MODE_PASSED`, `LIVE_PROVIDER_SMOKE_PASSED`, and `OPS_RUNTIME_PARITY_PASSED` are valid for this patched source because the final BBCA dry-run returned PASS with HTTP 200.
+- `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`, `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED`, and `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED` are the current valid statuses for this source because the embedded BBCA dry-run artifact is BLOCKED by provider rate limit, not PASS.
 - `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`.
-- `FINAL_PROVIDER_SMOKE=PASS`.
+- `FINAL_PROVIDER_SMOKE=BLOCKED_PROVIDER_RATE_LIMITED`.
 - Scheduler due-run artifact is already present and records `SCHEDULER_RUNTIME_LOG_PRODUCED`; this session closes the remaining live provider smoke blocker.
 - The source-state `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid and is not reopened by this request-context hardening.
 
@@ -32,7 +32,7 @@ ACTIVE SESSION:
 - Artisan proof: Lumen 8.3.4.
 - Required DB driver proof: `pdo_mysql` available.
 - Testing DB target proof remains `DB_DATABASE=tradeaxis_testing`.
-- Provider smoke attempt: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0` -> `PROVIDER_SMOKE_OK`, HTTP 200, `attempt_count=1`..
+- Provider smoke attempt: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0` -> `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, HTTP 429, `attempt_count=4`, `retry_max=3`.
 - Scheduler artifact root remains `storage/app/market-data/production-scheduler-cron-deployment-proof/**`; current due-run proof includes `runtime/market-data-scheduler-proof.log` and `phase4-scheduler-output-log.txt` with `SCHEDULER_RUNTIME_LOG_PRODUCED`.
 
 ---
@@ -59,13 +59,13 @@ ACTIVE SESSION:
 
   [SESSION] Yahoo Provider Smoke Request Context Hardening
 
-  [SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+  [SESSION_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
   [LAST_UPDATED] 2026-05-22
 
   [RELATED_CONTRACT] FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT
 
-  [REVIEW_STATUS] OPS_RUNTIME_PARITY_PASSED
+  [REVIEW_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
   [HISTORY]
   - 2026-05-21 -> Latest uploaded source-of-truth ZIP recorded as `tradeaxis-api-provider.zip` with SHA-256 `aea589eabb634eca4da6051c3e62dfb732e4b9fa563744d7c54246e215f6c333`.
@@ -76,7 +76,7 @@ ACTIVE SESSION:
   - 2026-05-22 -> Phase 1 request-context reproduction proved the same Yahoo range=10d URL returned HTTP 429 with minimal PHP header and HTTP 200 with browser-like headers.
   - 2026-05-22 -> `PublicApiEodBarsAdapter` now sends User-Agent, broader Accept, Accept-Language, and `Connection: close` while preserving configured auth/additional headers.
   - 2026-05-22 -> `market-data:provider:smoke` now supports `--retry-max=0`, emits request URL, HTTP status, body sample, adapter/source reason codes, attempt count, retry max, retry exhaustion, and timeout.
-  - 2026-05-22 -> Final safe BBCA smoke command returned `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, `attempt_count=1`, and `retry_max=0`.
+  - 2026-05-22 -> Final embedded BBCA smoke artifact records `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`, `attempt_count=4`, and `retry_max=3`.
 
   [IMPLEMENTATION]
   - No core market-data pipeline, repository, finalize, correction, replay, publication pointer, hash/seal, scheduler, or migration behavior is changed by this request-context hardening.
@@ -93,7 +93,7 @@ ACTIVE SESSION:
   - `php artisan list market-data` -> 21 public market-data commands.
   - Phase 1 minimal-header artifact: `storage/app/market-data/provider-smoke-request-context/command-output/php-request-minimal-header.txt` -> HTTP 429.
   - Phase 1 browser-like-header artifact: `storage/app/market-data/provider-smoke-request-context/command-output/php-request-browser-like-header.txt` -> HTTP 200.
-  - Final provider smoke: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0` -> exit 0, `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, `request_url=https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com`, `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+  - Final embedded provider smoke artifact: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run` -> `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`, `request_url=https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com`, `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
   - Syntax checks passed for `ProviderSmokeCommand.php`, `PublicApiEodBarsAdapter.php`, `config/market_data.php`, `ProviderSmokeSafeModeStaticGuardTest.php`, and `ProductionValidationRuntimeProofStaticGuardTest.php`.
   - Targeted guard: `vendor/bin/phpunit tests/Unit/MarketData/ProviderSmokeSafeModeStaticGuardTest.php` -> OK (5 tests, 163 assertions).
   - Targeted runtime parity filter: `vendor/bin/phpunit tests/Unit/MarketData/ProductionValidationRuntimeProofStaticGuardTest.php --filter "runtime_parity"` -> OK (2 tests, 259 assertions).
@@ -102,10 +102,10 @@ ACTIVE SESSION:
 
   [FINAL_BEHAVIOR]
   - Source-state core readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED` because no P0/P1 source-code blocker is found and current full MarketData PHPUnit validation passed.
-  - Overall decision for this session is `OPS_RUNTIME_PARITY_PASSED`.
-  - Ops runtime parity is `OPS_RUNTIME_PARITY_PASSED` because scheduler due-run proof already exists and final safe provider smoke now passes.
+  - Overall decision for this session is `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`.
+  - Ops runtime parity is `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED` because scheduler due-run proof exists but the embedded safe provider smoke remains provider-rate-limited.
   - Scheduler due-run proof is present (`SCHEDULER_RUNTIME_LOG_PRODUCED`, `scheduler_status=FAILURE` with reason-coded daily failure); stale auxiliary phase0/phase5 container-blocked artifacts remain evidence-refresh items, not source blockers.
-  - Provider smoke runtime is PASS: `PROVIDER_SMOKE_SAFE_MODE_PASSED`, `LIVE_PROVIDER_SMOKE_PASSED`, `FINAL_PROVIDER_SMOKE=PASS`.
+  - Provider smoke runtime is BLOCKED: `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`, `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED`, `FINAL_PROVIDER_SMOKE=BLOCKED_PROVIDER_RATE_LIMITED`.
   - `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`.
 
   [EVIDENCE]

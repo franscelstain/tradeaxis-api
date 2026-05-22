@@ -737,7 +737,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 [SESSION] YAHOO_PROVIDER_SMOKE_REQUEST_CONTEXT_HARDENING
 
-[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
 [VALIDATION_SCOPE]
 - Safe live Yahoo/PublicApi provider smoke for `BBCA` on `2026-05-20`.
@@ -752,15 +752,15 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [FINAL_PROVIDER_SMOKE]
 - Command: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0`.
 - Artifact: `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
-- Result: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, `attempt_count=1`, `retry_max=0`, `retry_exhausted=false`, `timeout_seconds=10`.
+- Result: `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`, `attempt_count=4`, `retry_max=3`, `retry_exhausted=true`, `timeout_seconds=10`.
 - Safety flags: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
 
 [OPS_PARITY_LIMIT]
-- Previous `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED` is superseded for this source by `LIVE_PROVIDER_SMOKE_PASSED`.
-- `PROVIDER_SMOKE_SAFE_MODE_PASSED`.
+- Previous `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED` remains current for this source; it is not superseded without a provider PASS artifact.
+- `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`.
 - `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED` remains historical.
 - `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_REQUEST_CONTEXT_BLOCKED` remains a valid future classification if request-context proof fails.
-- Current rollout status is `OPS_RUNTIME_PARITY_PASSED`.
+- Current rollout status is `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`.
 
 [VALIDATION]
 - Syntax checks passed for `ProviderSmokeCommand.php`, `PublicApiEodBarsAdapter.php`, `config/market_data.php`, `ProviderSmokeSafeModeStaticGuardTest.php`, and `ProductionValidationRuntimeProofStaticGuardTest.php`.

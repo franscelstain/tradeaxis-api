@@ -305,21 +305,21 @@ Final lock decision:
 
 [SESSION] YAHOO_PROVIDER_SMOKE_REQUEST_CONTEXT_HARDENING
 
-[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED
 
 [DECISION]
 - Source-state core readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.
-- Provider smoke safe mode is `PROVIDER_SMOKE_SAFE_MODE_PASSED`.
-- Live provider smoke is `LIVE_PROVIDER_SMOKE_PASSED`.
-- Ops runtime parity is `OPS_RUNTIME_PARITY_PASSED`.
+- Provider smoke safe mode is `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`.
+- Live provider smoke is `LIVE_PROVIDER_SMOKE_BLOCKED_PROVIDER_RATE_LIMITED`.
+- Ops runtime parity is `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`.
 - `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`.
-- `FINAL_PROVIDER_SMOKE=PASS`.
+- `FINAL_PROVIDER_SMOKE=BLOCKED_PROVIDER_RATE_LIMITED`.
 
 [PROVIDER_SMOKE]
 - Phase 1 minimal PHP header proof: HTTP 429 for the Yahoo range=10d URL.
 - Phase 1 browser-like PHP header proof: HTTP 200 for the same URL.
 - Final command: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0`.
-- Runtime proof: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, `request_url=https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com`.
+- Runtime proof: `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_RATE_LIMITED`, `http_status=429`, `request_url=https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com`.
 - Safety proof: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
 
 [VALIDATION]
