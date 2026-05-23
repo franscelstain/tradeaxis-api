@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Yahoo Provider Smoke Request Context Hardening', $statusActiveSession);
+        $this->assertSame('Final Provider Smoke Passed / Ops Runtime Parity Lock', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -48,13 +48,13 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $document);
         }
 
-        $this->assertStringContainsString('- Yahoo Provider Smoke Request Context Hardening -> DONE', $status);
+        $this->assertStringContainsString('- Final Provider Smoke Passed / Ops Runtime Parity Lock -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $status);
         $this->assertStringContainsString('- FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Yahoo Provider Smoke Request Context Hardening', $tracker);
-        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED', $status.$tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Final Provider Smoke Passed / Ops Runtime Parity Lock', $tracker);
+        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
         $this->assertStringContainsString('`OPS_RUNTIME_PARITY_PASSED` requires scheduler due-run proof plus provider smoke PASS', $status.$tracker);
-        $this->assertStringNotContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
+        $this->assertStringContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
         $this->assertStringContainsString('ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH', $status.$tracker);
         $this->assertStringContainsString('21 registered market-data commands', $status.$tracker);
         $this->assertStringContainsString('PROVIDER_SMOKE_OK', $status.$tracker);
@@ -133,7 +133,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
         $activeSession = $this->activeSessionName($status);
-        $this->assertStringContainsString('Yahoo Provider Smoke Request Context Hardening', $implementationEntry);
+        $this->assertStringContainsString('Final Provider Smoke Passed / Ops Runtime Parity Lock', $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
         $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $contractEntry);
 
@@ -275,9 +275,9 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         }
 
         $proofPack = $this->readProjectFile('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
-        $this->assertStringContainsString('Decision: `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`', $proofPack);
-        $this->assertStringNotContainsString('Decision: `OPS_RUNTIME_PARITY_PASSED`', $proofPack);
-        $this->assertStringContainsString('FINAL_PROVIDER_SMOKE=BLOCKED_PROVIDER_RATE_LIMITED', $proofPack);
+        $this->assertStringContainsString('Decision: `OPS_RUNTIME_PARITY_PASSED`', $proofPack);
+        $this->assertStringNotContainsString('Decision: `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`', $proofPack);
+        $this->assertStringContainsString('FINAL_PROVIDER_SMOKE=PASSED', $proofPack);
         $this->assertStringContainsString('Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`', $proofPack);
         $this->assertStringContainsString('Final source-state lock status: `LOCKED`', $proofPack);
         $this->assertStringContainsString('FINAL_AUDIT_DOCS_SYNCHRONIZED', $tracker.$proofPack);

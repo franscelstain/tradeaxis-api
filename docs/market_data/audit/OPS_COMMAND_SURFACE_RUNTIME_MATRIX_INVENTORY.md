@@ -33,7 +33,7 @@ This inventory records the operator-runtime proof for the public market-data com
 ## Command Registry Proof
 
 Command: `php artisan --env=testing list market-data`.
-Result: exit 0, current source reports 21 public market-data commands registered. The 2026-05-20 matrix remains the historical 20-command runtime fixture proof; the 2026-05-21 provider-smoke overlay adds the safe live-provider command surface without claiming provider PASS.
+Result: exit 0, current source reports 21 public market-data commands registered. The 2026-05-20 matrix remains the historical 20-command runtime fixture proof; the current provider-smoke overlay adds the safe live-provider command surface and final provider PASS proof.
 
 | Command | Registered | Help Proof | Signature/Docs Sync | Guard Decision |
 |---|---:|---:|---|---|
@@ -57,7 +57,7 @@ Result: exit 0, current source reports 21 public market-data commands registered
 | `market-data:current-publication:repair` | PASS | PASS | dry-run default, `--apply` guarded by reason | `COMMAND_DESTRUCTIVE_GUARD_REQUIRED` |
 | `market-data:session-snapshot` | PASS | PASS | parser args optional only for command-owned missing-input output | `COMMAND_MISSING_REQUIRED_INPUT`, readable publication guard |
 | `market-data:session-snapshot:purge` | PASS | PASS | dry-run default, `--apply` explicit | `COMMAND_DRY_RUN_ONLY`, `COMMAND_APPLY_CONFIRMED` |
-| `market-data:provider:smoke` | PASS | PASS | safe single-ticker dry-run provider smoke; `--json` emits JSON stdout; `--provider` overrides API provider config | `PROVIDER_SMOKE_TICKER_REQUIRED`, `PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED`, live proof blocked by `PROVIDER_RATE_LIMITED` |
+| `market-data:provider:smoke` | PASS | PASS | safe single-ticker dry-run provider smoke; `--json` emits JSON stdout; `--provider` overrides API provider config | `PROVIDER_SMOKE_TICKER_REQUIRED`, `PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED`, final live proof `provider_smoke_status=PASS` / `reason_code=PROVIDER_SMOKE_OK` / `http_status=200` |
 
 ## Provider-Smoke Safe-Mode Overlay
 
@@ -69,11 +69,21 @@ Current proof from this reconciliation:
 php artisan list market-data -> 21 public market-data commands registered
 php artisan market-data:provider:smoke --help -> exit 0
 php artisan market-data:provider:smoke -> exit 1, provider_smoke_status=BLOCKED, reason_code=PROVIDER_SMOKE_TICKER_REQUIRED
-php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-21 --dry-run -> exit 1, provider_smoke_status=BLOCKED, reason_code=PROVIDER_RATE_LIMITED
+php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0 -> exit 0, provider_smoke_status=PASS, reason_code=PROVIDER_SMOKE_OK, http_status=200, returned_row_count=1, retry_exhausted=false
 ```
 
-Provider smoke safe-mode invariants:
+Provider smoke safe-mode invariants and final proof:
 
+- `provider_smoke_status=PASS`
+- `reason_code=PROVIDER_SMOKE_OK`
+- `source_reason_code=none`
+- `http_status=200`
+- `returned_row_count=1`
+- `attempt_count=1`
+- `retry_max=0`
+- `retry_exhausted=false`
+- `adapter_reason_code=PROVIDER_SMOKE_OK`
+- `request_url=https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com`
 - `publication_created=false`
 - `seal_executed=false`
 - `finalize_executed=false`
@@ -81,7 +91,7 @@ Provider smoke safe-mode invariants:
 - `readable_publication_created=false`
 - `full_universe_fetch=false`
 
-Decision: command surface coverage is current at 21 commands, but provider runtime readiness is not PASS. `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT`, and `PROVIDER_NETWORK_ERROR` remain BLOCKED outcomes for ops rollout parity.
+Decision: command surface coverage is current at 21 commands and final provider smoke runtime proof is PASS. `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT`, and `PROVIDER_NETWORK_ERROR` remain BLOCKED outcomes for future runs, but the current final artifact records `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, and `http_status=200`.
 
 ## Help Proof Matrix
 
@@ -218,7 +228,7 @@ The prior enforced matrix kept these cases blocked because no isolated fixture p
 | Validation | Result |
 |---|---|
 | `php -l` changed command/test PHP files | PASS |
-| Final registry/help loop | PASS for current surface: `php artisan list market-data` exit 0; 21 public market-data commands registered; provider-smoke help exits 0. Historical 2026-05-20 fixture loop remains 20-command proof before provider-smoke was added. |
+| Final registry/help/provider-smoke loop | PASS for current surface: `php artisan list market-data` exit 0; 21 public market-data commands registered; provider-smoke help exits 0; final provider smoke artifact records `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, and all non-destructive safety flags false. Historical 2026-05-20 fixture loop remains 20-command proof before provider-smoke was added. |
 | Final invalid-input loop | PASS: daily/promote/backfill/evidence/replay/correction/snapshot/repair/purge/force-guard invalid cases exit 1 with `status=BLOCKED` and reason codes |
 | `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` | PASS: OK (57 tests, 341 assertions) |
 | `vendor/bin/phpunit tests/Unit/MarketData/CorrectionCommandsTest.php` | PASS: OK (11 tests, 60 assertions) |
@@ -240,7 +250,7 @@ The prior enforced matrix kept these cases blocked because no isolated fixture p
 
 `OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT` is LOCKED for the ops command surface scope because:
 
-- all 21 public commands remain registered and help-renderable, with provider-smoke tracked as a safe-mode live-provider overlay;
+- all 21 public commands remain registered and help-renderable, with provider-smoke tracked as a safe-mode live-provider overlay and final PASS artifact;
 - invalid/missing input proof remains command-owned and reason-coded;
 - targeted command/static/audit tests pass after ledger changes;
 - full `tests/Unit/MarketData` passes in the supported runtime;
@@ -252,3 +262,55 @@ This LOCKED decision is scoped to the ops command surface runtime matrix. It doe
 
 - Use this locked ops command surface matrix as an input to the next aggregate Full Market-Data Validation / Production Proof Pack.
 - Reopen this scope only if command signatures, operator output, repair/purge guards, evidence/replay behavior, or publication pointer semantics change.
+
+
+## 2026-05-22 Provider Smoke PASS Reconciliation
+
+Status: DONE.
+
+This reconciliation updates the ops command surface runtime matrix after the final provider-smoke proof was rerun successfully.
+
+Final provider-smoke evidence:
+
+```text
+php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0
+provider_smoke_status=PASS
+reason_code=PROVIDER_SMOKE_OK
+source_reason_code=none
+http_status=200
+returned_row_count=1
+attempt_count=1
+retry_max=0
+retry_exhausted=false
+publication_created=false
+seal_executed=false
+finalize_executed=false
+pointer_switched=false
+readable_publication_created=false
+full_universe_fetch=false
+```
+
+Artifact: `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
+
+Decision: the prior provider-smoke overlay text that described the live proof as `BLOCKED` / `PROVIDER_RATE_LIMITED` is superseded by the final `PASS` / `PROVIDER_SMOKE_OK` artifact. Future provider rate-limit, timeout, network, parse, empty-response, or missing-date outcomes remain valid BLOCKED outcomes, but they are not the current final proof state.
+
+## 2026-05-23 — Final Provider Smoke / Full PHPUnit PASS Document Reconciliation
+
+[SESSION] FINAL_PROVIDER_SMOKE_FULL_PHPUNIT_DOC_SYNC
+
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+
+[FINAL_DECISION]
+- Current source ZIP is documented as `OPS_RUNTIME_PARITY_PASSED`.
+- Final provider smoke is `FINAL_PROVIDER_SMOKE=PASSED` and `LIVE_PROVIDER_SMOKE_PASSED`.
+- Authoritative provider-smoke artifact: `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
+- Provider smoke proof: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `source_reason_code=none`, `http_status=200`, `returned_row_count=1`, `attempt_count=1`, `retry_max=0`, `retry_exhausted=false`.
+- Safety proof: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+- Scheduler due-run runtime proof remains present and no silent scheduler failure is claimed.
+- Final targeted validation passed: `OpsCommandSurfaceRuntimeMatrixStaticGuardTest` -> OK (6 tests, 120 assertions).
+- Final full validation passed: `vendor\bin\phpunit tests/Unit/MarketData` -> OK (492 tests, 7590 assertions), Time 00:36.861, Memory 40.00 MB.
+
+[RECONCILIATION]
+- Earlier wording that described provider smoke as provider-rate-limited, provider-blocked, or waiting for full MarketData PHPUnit is superseded for the current source ZIP.
+- Future Yahoo/PublicApi rate limit, timeout, network, parse, empty-response, or missing-date outcomes remain valid reason-coded BLOCKED outcomes, but they are not the current final proof state.
+

@@ -62,7 +62,7 @@ class ProductionSchedulerCronStaticGuardTest extends TestCase
             $this->assertStringContainsString('PRODUCTION_SCHEDULER_CRON_DEPLOYMENT_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('SCHEDULER_RUNTIME_LOG_PRODUCED', $document);
             $this->assertStringContainsString('scheduler_status=FAILURE', $document);
-            $this->assertStringContainsString('OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED', $document);
+            $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $document);
             $this->assertStringContainsString('artifact-presence-audit.txt', $document);
             $this->assertStringContainsString('negative-db-override-proof-gap.txt', $document);
             $this->assertStringContainsString('provider-smoke-gap.txt', $document);
@@ -78,7 +78,7 @@ class ProductionSchedulerCronStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('PROVIDER_RATE_LIMIT_SCHEDULER_DUE_RUN_RECONCILIATION', $status.$tracker.$proofPack);
         $this->assertStringContainsString('SCHEDULER_RUNTIME_LOG_PRODUCED', $status.$tracker.$proofPack);
-        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED', $status.$tracker.$proofPack);
+        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $status.$tracker.$proofPack);
         if (strpos($status.$tracker.$proofPack, '[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED') !== false) {
             $providerArtifact = $this->read('storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt');
             $this->assertStringContainsString('provider_smoke_status=PASS', $providerArtifact);
@@ -91,7 +91,7 @@ class ProductionSchedulerCronStaticGuardTest extends TestCase
             'storage/app/market-data/production-scheduler-cron-deployment-proof/runtime/market-data-scheduler-proof.log' => 'scheduler_status=FAILURE',
             'storage/app/market-data/production-scheduler-cron-deployment-proof/reconciliation/artifact-presence-audit.txt' => 'status=PASS_WITH_AUXILIARY_REFRESH_RECOMMENDED',
             'storage/app/market-data/production-scheduler-cron-deployment-proof/reconciliation/negative-db-override-proof-gap.txt' => 'status=PASS',
-            'storage/app/market-data/production-scheduler-cron-deployment-proof/reconciliation/provider-smoke-gap.txt' => 'status=BLOCKED_PROVIDER_RATE_LIMITED',
+            'storage/app/market-data/production-scheduler-cron-deployment-proof/reconciliation/provider-smoke-gap.txt' => 'status=PASS',
         ] as $path => $needle) {
             $contents = $this->read($path);
             $this->assertStringContainsString($needle, $contents);

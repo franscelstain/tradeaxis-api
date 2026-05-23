@@ -43,5 +43,26 @@ Commands with logically required arguments may expose those arguments as optiona
 - 2026-05-07 operator-local PASS: full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (312 tests, 3899 assertions).
 - 2026-05-20 local PASS: `CommandSurfaceSafetyStaticGuardTest.php` -> OK (5 tests, 89 assertions); `OpsCommandSurfaceTest.php --filter "current_publication_repair"` -> OK (2 tests, 12 assertions); repair apply without reason blocked with `COMMAND_DESTRUCTIVE_GUARD_REQUIRED`.
 - 2026-05-20 ops runtime matrix LOCKED: all 20 historical public market-data commands were registered and help-rendered with exit 0; invalid/missing input proof was command-owned and reason-coded; seeded runtime proof passed for finalize re-run, run/replay/correction evidence export, replay fixture generation, replay verify/smoke/backfill, repair dry-run/apply guard, purge dry-run/apply-zero, no-readable snapshot block, correction lifecycle blocks, and promote force guard; production-ready fixture proof passed for fresh daily/backfill/promote/stage success, real lock conflict, held/not-readable, failed source, repair apply invalid pointer, session snapshot success, evidence export, and replay verify/smoke/backfill. Full matrix is recorded in `docs/market_data/audit/OPS_COMMAND_SURFACE_RUNTIME_MATRIX_INVENTORY.md`.
-- 2026-05-21 final reconciliation: current public market-data command surface is 21 commands after `market-data:provider:smoke`; provider-smoke safe-mode surface is enforced, `--json` emits JSON stdout, `--provider` overrides `market_data.source.api.provider`, and live provider runtime proof is `provider_smoke_status=BLOCKED` / `reason_code=PROVIDER_RATE_LIMITED`, not PASS.
+- 2026-05-23 final reconciliation: current public market-data command surface is 21 commands after `market-data:provider:smoke`; provider-smoke safe-mode surface is enforced, `--json` emits JSON stdout, `--provider` overrides `market_data.source.api.provider`, and the final embedded live provider runtime proof is `provider_smoke_status=PASS` / `reason_code=PROVIDER_SMOKE_OK` / `http_status=200` with all non-destructive safety flags false.
 - 2026-05-20 post-ledger validation PASS: `OpsCommandSurfaceTest.php` OK (57 tests, 341 assertions), `CommandSurfaceSafetyStaticGuardTest.php` OK (5 tests, 89 assertions), `OpsCommandSurfaceRuntimeMatrixStaticGuardTest.php` OK (6 tests, 114 assertions), `Command` filter OK (97 tests, 1009 assertions), `Ops` filter OK (74 tests, 616 assertions), `StaticGuard` filter OK (176 tests, 4124 assertions), and full `tests/Unit/MarketData` OK (475 tests, 6942 assertions).
+
+## 2026-05-23 — Final Provider Smoke / Full PHPUnit PASS Document Reconciliation
+
+[SESSION] FINAL_PROVIDER_SMOKE_FULL_PHPUNIT_DOC_SYNC
+
+[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+
+[FINAL_DECISION]
+- Current source ZIP is documented as `OPS_RUNTIME_PARITY_PASSED`.
+- Final provider smoke is `FINAL_PROVIDER_SMOKE=PASSED` and `LIVE_PROVIDER_SMOKE_PASSED`.
+- Authoritative provider-smoke artifact: `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
+- Provider smoke proof: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `source_reason_code=none`, `http_status=200`, `returned_row_count=1`, `attempt_count=1`, `retry_max=0`, `retry_exhausted=false`.
+- Safety proof: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+- Scheduler due-run runtime proof remains present and no silent scheduler failure is claimed.
+- Final targeted validation passed: `OpsCommandSurfaceRuntimeMatrixStaticGuardTest` -> OK (6 tests, 120 assertions).
+- Final full validation passed: `vendor\bin\phpunit tests/Unit/MarketData` -> OK (492 tests, 7590 assertions), Time 00:36.861, Memory 40.00 MB.
+
+[RECONCILIATION]
+- Earlier wording that described provider smoke as provider-rate-limited, provider-blocked, or waiting for full MarketData PHPUnit is superseded for the current source ZIP.
+- Future Yahoo/PublicApi rate limit, timeout, network, parse, empty-response, or missing-date outcomes remain valid reason-coded BLOCKED outcomes, but they are not the current final proof state.
+

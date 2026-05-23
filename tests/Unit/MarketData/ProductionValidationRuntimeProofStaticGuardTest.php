@@ -357,7 +357,7 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
         $combined = $status.$tracker.$proofPack.$inventory;
 
         foreach ([
-            'OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED',
+            'OPS_RUNTIME_PARITY_PASSED',
             'OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_REQUEST_CONTEXT_BLOCKED',
             'OPS_RUNTIME_PARITY_PASSED',
         ] as $statusCode) {

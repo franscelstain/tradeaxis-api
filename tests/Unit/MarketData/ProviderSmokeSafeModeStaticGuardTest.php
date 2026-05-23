@@ -158,9 +158,9 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
         $combinedDocs = $status.$tracker.$proofPack.$inventory.$ops;
         $this->assertStringContainsString('OPS_RUNTIME_PARITY_COMPLETION_SCHEDULER_PROVIDER_SMOKE', $combinedDocs);
         $this->assertStringContainsString('PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED', $combinedDocs);
-        $this->assertStringContainsString('PROVIDER_RATE_LIMITED', $combinedDocs);
-        $this->assertStringContainsString('BLOCKED_PROVIDER_RATE_LIMITED', $combinedDocs);
-        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED', $combinedDocs);
+        $this->assertStringContainsString('PROVIDER_SMOKE_OK', $combinedDocs);
+        $this->assertStringContainsString('FINAL_PROVIDER_SMOKE=PASSED', $combinedDocs);
+        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $combinedDocs);
         
         if (preg_match('/(\[SESSION_STATUS\] OPS_RUNTIME_PARITY_PASSED|Ops rollout\/runtime parity: `OPS_RUNTIME_PARITY_PASSED`|Current rollout status is `OPS_RUNTIME_PARITY_PASSED`)/', $combinedDocs)) {
             $this->assertStringContainsString('provider_smoke_status=PASS', $artifact);

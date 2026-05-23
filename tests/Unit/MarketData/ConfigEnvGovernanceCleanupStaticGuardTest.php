@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Yahoo Provider Smoke Request Context Hardening", $status);
+- Final Provider Smoke Passed / Ops Runtime Parity Lock", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Yahoo Provider Smoke Request Context Hardening", $tracker);
+- Final Provider Smoke Passed / Ops Runtime Parity Lock", $tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);

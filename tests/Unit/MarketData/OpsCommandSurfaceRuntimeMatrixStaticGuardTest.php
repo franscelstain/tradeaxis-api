@@ -111,8 +111,8 @@ class OpsCommandSurfaceRuntimeMatrixStaticGuardTest extends TestCase
             'storage/app/market-data/ops-command-surface-runtime-matrix/**',
             'storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**',
             'Provider-Smoke Safe-Mode Overlay',
-            'provider_smoke_status=BLOCKED',
-            'reason_code=PROVIDER_RATE_LIMITED',
+            'provider_smoke_status=PASS',
+            'reason_code=PROVIDER_SMOKE_OK',
             'publication_created=false',
             'pointer_switched=false',
         ] as $needle) {
