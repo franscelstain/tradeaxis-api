@@ -123,6 +123,20 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
         }
     }
 
+
+    public function test_provider_empty_or_invalid_response_is_blocked_not_failed(): void
+    {
+        $command = $this->read('app/Console/Commands/MarketData/ProviderSmokeCommand.php');
+
+        $this->assertStringContainsString("'provider_smoke_status' => 'BLOCKED',
+                    'reason_code' => 'PROVIDER_EMPTY_OR_INVALID_RESPONSE'", $command);
+        $this->assertStringNotContainsString("'provider_smoke_status' => 'FAILED',
+                    'reason_code' => 'PROVIDER_EMPTY_OR_INVALID_RESPONSE'", $command);
+        $this->assertMatchesRegularExpression("/PROVIDER_RESPONSE_PARSE_FAILED'.*PROVIDER_EMPTY_OR_INVALID_RESPONSE'.*PROVIDER_TRADE_DATE_NOT_FOUND_IN_RESPONSE/s", $command);
+        $this->assertStringContainsString("'reason_code' => 'PROVIDER_SMOKE_OK'", $command);
+        $this->assertStringContainsString("'returned_row_count' => (string) count(\$rows)", $command);
+    }
+
     public function test_provider_smoke_artifact_and_docs_are_tracked_without_false_pass(): void
     {
         $artifact = $this->read('storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt');

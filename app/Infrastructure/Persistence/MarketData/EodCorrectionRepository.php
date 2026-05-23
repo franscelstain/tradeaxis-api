@@ -41,8 +41,8 @@ class EodCorrectionRepository
     {
         $correction = EodDatasetCorrection::query()->where('correction_id', $correctionId)->firstOrFail();
 
-        if ($correction->current_consumed_at !== null || in_array($correction->status, ['PUBLISHED', 'CONSUMED_CURRENT', 'CLOSED'], true)) {
-            throw new \RuntimeException('Correction request is already consumed for correction_current execution and cannot be approved again.');
+        if ((string) $correction->status !== 'REQUESTED') {
+            throw new \RuntimeException('Correction request status is not approvable. Current status='.(string) $correction->status.'; reason_code=COMMAND_CORRECTION_STATUS_NOT_APPROVABLE');
         }
 
         $now = Carbon::now(config('market_data.platform.timezone'));

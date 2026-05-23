@@ -145,6 +145,53 @@ class CoverageGateEvaluatorTest extends TestCase
         $this->assertEquals(1.0, $result['candidate_coverage_ratio']);
     }
 
+
+    public function test_evaluator_blocks_when_coverage_gate_is_disabled(): void
+    {
+        $this->bindCoverageGateConfig([
+            'enabled' => false,
+        ]);
+
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+
+        $tickers->expects($this->never())
+            ->method('getUniverseForTradeDate');
+        $artifacts->expects($this->never())
+            ->method('loadCanonicalBarTickerIdsForTradeDate');
+
+        $service = new CoverageGateEvaluator($tickers, $artifacts);
+        $result = $service->evaluate('2026-04-03');
+
+        $this->assertSame('NOT_EVALUABLE', $result['coverage_gate_status']);
+        $this->assertSame('COVERAGE_GATE_DISABLED', $result['reason_code']);
+        $this->assertSame(['COVERAGE_GATE_DISABLED', 'RUN_COVERAGE_NOT_EVALUABLE'], $result['reason_codes']);
+        $this->assertFalse($result['coverage_gate_enabled']);
+    }
+
+    public function test_evaluator_blocks_when_canonical_bar_evidence_is_disabled(): void
+    {
+        $this->bindCoverageGateConfig([
+            'require_canonical_bar_evidence' => false,
+        ]);
+
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+
+        $tickers->expects($this->never())
+            ->method('getUniverseForTradeDate');
+        $artifacts->expects($this->never())
+            ->method('loadCanonicalBarTickerIdsForTradeDate');
+
+        $service = new CoverageGateEvaluator($tickers, $artifacts);
+        $result = $service->evaluate('2026-04-03');
+
+        $this->assertSame('NOT_EVALUABLE', $result['coverage_gate_status']);
+        $this->assertSame('COVERAGE_CANONICAL_BAR_EVIDENCE_DISABLED', $result['reason_code']);
+        $this->assertSame(['COVERAGE_CANONICAL_BAR_EVIDENCE_DISABLED', 'RUN_COVERAGE_NOT_EVALUABLE'], $result['reason_codes']);
+        $this->assertFalse($result['canonical_bar_evidence_required']);
+    }
+
     protected function bindCoverageGateConfig(array $coverageOverrides = []): void
     {
         $this->bindMarketDataConfig([
@@ -153,8 +200,11 @@ class CoverageGateEvaluatorTest extends TestCase
                     'coverage_min' => 0.98,
                 ],
                 'coverage_gate' => array_merge([
+                    'enabled' => true,
                     'min_ratio' => 0.98,
                     'threshold_mode' => 'MIN_RATIO',
+                    'blocked_on_zero_universe' => true,
+                    'require_canonical_bar_evidence' => true,
                     'contract_version' => 'coverage_gate_v1',
                     'missing_sample_limit' => 25,
                 ], $coverageOverrides),

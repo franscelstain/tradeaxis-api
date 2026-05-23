@@ -24,6 +24,8 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `COVERAGE_THRESHOLD_MET` | COVERAGE | INFO | Coverage evaluation passed because available canonical EOD bars met or exceeded the locked minimum threshold. |
 | `COVERAGE_BELOW_THRESHOLD` | COVERAGE | HARD | Coverage evaluation failed because available canonical EOD bars stayed below the locked minimum threshold. |
 | `COVERAGE_UNIVERSE_EMPTY` | COVERAGE | HARD | Coverage could not be evaluated because the resolved coverage universe for the requested date was empty. |
+| `COVERAGE_GATE_DISABLED` | COVERAGE | HARD | Coverage gate runtime switch was disabled; coverage must remain not evaluable and cannot create readable publication. |
+| `COVERAGE_CANONICAL_BAR_EVIDENCE_DISABLED` | COVERAGE | HARD | Canonical bar evidence requirement was disabled; coverage must remain not evaluable because readable coverage requires canonical bar proof. |
 | `RUN_INDICATORS_MISSING` | RUN | HARD | Required indicator artifact or required indicator row set for the requested date is not available. |
 | `RUN_ELIGIBILITY_MISSING` | RUN | HARD | Eligibility snapshot for the requested date is not available. |
 | `RUN_HASH_MISSING` | RUN | HARD | One or more mandatory content hashes are missing at finalization time. |
@@ -155,6 +157,7 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `COMMAND_APPLY_CONFIRMED` | COMMAND | INFO | Operator command mutation was executed only after explicit apply confirmation. |
 | `COMMAND_EXECUTION_FAILED` | COMMAND | HARD | Operator command execution failed and surfaced a reason-coded blocking outcome. |
 | `COMMAND_CORRECTION_NOT_FOUND` | COMMAND | HARD | Operator command referenced a correction id that does not exist. |
+| `COMMAND_CORRECTION_STATUS_NOT_APPROVABLE` | COMMAND | HARD | Correction approve command was blocked because only REQUESTED corrections are approvable. |
 | `COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE` | COMMAND | HARD | Operator command attempted to execute a correction whose lifecycle status is not executable. |
 | `RUN_PARTIAL_DATA` | RUN | HARD | Coverage failed because only part of the requested-date universe had canonical valid EOD data. |
 | `RUN_DATA_DELAYED` | RUN | WARN | Coverage failed while requested-date data was still inside the controlled delayed-data window. |

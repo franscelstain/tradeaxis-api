@@ -260,7 +260,7 @@ Evidence artifact:
 
 - `storage/app/market-data/production-rollout-validation-runtime-parity/command-output/encoding-normalization-report.txt`.
 
-This cleanup does not change market-data runtime behavior or convert missing scheduler proof into a PASS. Scheduler proof remains `REVIEW_REQUIRED` until the missing scheduler artifacts are supplied or regenerated.
+This cleanup does not change market-data runtime behavior or convert missing scheduler proof into a PASS. The previous scheduler `REVIEW_REQUIRED` wording is `SUPERSEDED_BY_SCHEDULER_DUE_RUN_AND_NON_SILENT_FAILURE_PROOF`; only successful scheduled daily production run proof remains not claimed.
 
 Global evidence encoding cleanup artifact:
 
@@ -279,7 +279,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [FINAL_DECISION]
 - `OPS_RUNTIME_PARITY_PASSED` remains the only valid overall ops runtime parity status for this source ZIP.
 - `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid for core market-data source logic.
-- This update closes the missing safe provider-smoke command surface at source level, but does not claim live provider PASS because local artisan execution is blocked by the documented unsupported PHP 8.4.16 runtime.
+- Historical provider-smoke surface update is superseded by the later live provider smoke PASS artifact; current docs retain the container runtime limitation only as historical context.
 
 [IMPLEMENTATION]
 - Added `app/Console/Commands/MarketData/ProviderSmokeCommand.php` with command surface `market-data:provider:smoke --ticker=BBCA --trade_date=YYYY-MM-DD --dry-run`.
@@ -297,7 +297,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [SCHEDULER_ARTIFACT_STATUS]
 - Scheduler config surface artifact was written, but the actual `schedule:run` enabled/disabled commands are `BLOCKED_CONTAINER_RUNTIME_ENV` because PHP 8.4.16 is intentionally rejected before Laravel boot.
 - `phase4-scheduler-output-log.txt` records `SCHEDULER_RUNTIME_LOG_NOT_PRODUCED` with `REASON_CODE=BLOCKED_CONTAINER_RUNTIME_ENV`.
-- Scheduler proof remains `REVIEW_REQUIRED`; do not mark `SCHEDULER_CRON_DEPLOYMENT_PROOF_PASSED`.
+- `SUPERSEDED_BY_SCHEDULER_DUE_RUN_AND_NON_SILENT_FAILURE_PROOF`: previous scheduler proof review requirement is closed for due-run/non-silent-failure proof; do not claim `SCHEDULER_SUCCESSFUL_DAILY_RUN_PROOF_PASSED`.
 
 [NEGATIVE_DB_OVERRIDE_PROOF]
 - `APP_ENV=testing DB_DATABASE=tradeaxis php artisan migrate:fresh --env=testing` was executed in this container.
@@ -331,7 +331,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [BLOCKERS]
 - Source-code blocker: none found in scoped patch.
 - Environment blocker: PHP 8.4.16 unsupported by project evidence guard; Composer unavailable in container.
-- Provider blocker: live provider smoke could not execute because artisan is blocked before command boot; this is not a provider network PASS or provider network BLOCKED proof.
+- Historical provider blocker is superseded by the later live provider smoke PASS artifact; current status is `FINAL_PROVIDER_SMOKE=PASSED`.
 
 [REMAINING_RISK]
 - Provider smoke and scheduler/runtime proof have been reconciled on the documented operator baseline; `OPS_RUNTIME_PARITY_PASSED` is the current source-ZIP decision.
@@ -345,8 +345,10 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - PHP: PHP 7.4.33.
 - PHPUnit: PHPUnit 9.6.34.
 - Artisan: Lumen 8.3.4.
-- Current source ZIP: `D:\Laravel\tradeaxis-api\tradeaxis-api-provider.zip`.
-- Current source ZIP SHA-256: `aea589eabb634eca4da6051c3e62dfb732e4b9fa563744d7c54246e215f6c333`.
+- Historical source ZIP (`SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS`): `D:\Laravel\tradeaxis-api\tradeaxis-api-provider.zip`.
+- Current source ZIP: `tradeaxis-api.zip`.
+- Historical source ZIP SHA-256 (`SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS`): `aea589eabb634eca4da6051c3e62dfb732e4b9fa563744d7c54246e215f6c333`.
+- Current source ZIP SHA-256: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`.
 
 [OPS_RUNTIME_PARITY]
 - Current command surface count: 21 public market-data commands.
@@ -367,8 +369,8 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [REVIEW_STATUS] OPS_RUNTIME_PARITY_PASSED_PROVIDER_SMOKE_OK
 
 [INPUT_SOURCE_ZIP]
-- Source ZIP: `tradeaxis-api-provider.zip`
-- Source ZIP SHA-256: `aea589eabb634eca4da6051c3e62dfb732e4b9fa563744d7c54246e215f6c333`
+- Historical source ZIP (`SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS`): `tradeaxis-api-provider.zip`
+- Historical source ZIP SHA-256 (`SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS`): `aea589eabb634eca4da6051c3e62dfb732e4b9fa563744d7c54246e215f6c333`
 
 [WHAT_CHANGED_FROM_PREVIOUS_AUDIT]
 - Scheduler proof is no longer `SCHEDULER_RUNTIME_LOG_PRODUCED`: the source ZIP now contains `storage/app/market-data/production-scheduler-cron-deployment-proof/runtime/market-data-scheduler-proof.log`.
@@ -511,3 +513,55 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - Earlier wording that described provider smoke as provider-rate-limited, provider-blocked, or waiting for full MarketData PHPUnit is superseded for the current source ZIP.
 - Future Yahoo/PublicApi rate limit, timeout, network, parse, empty-response, or missing-date outcomes remain valid reason-coded BLOCKED outcomes, but they are not the current final proof state.
 
+
+
+---
+
+## 2026-05-23 — SOURCE READY → FULL PRODUCTION READY GAP CLOSURE
+
+[SESSION] SOURCE_READY_FULL_PRODUCTION_READY_GAP_CLOSURE
+
+[SESSION_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED
+
+[INPUT_SOURCE_ZIP]
+- Source ZIP: `tradeaxis-api.zip`
+- Source ZIP SHA-256: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`
+
+[FINAL_DECISION]
+- `FULLY_PRODUCTION_READY`
+- `MARKET_DATA_PRODUCTION_READY_LOCKED`
+- `OPS_RUNTIME_PARITY_PASSED`
+- `FINAL_PROVIDER_SMOKE=PASSED`
+- `LIVE_PROVIDER_SMOKE_PASSED`
+- `FULL_MARKET_DATA_PHPUNIT=PASSED` remains the latest operator-local proof recorded in this source.
+
+[DOC_RECONCILIATION]
+- Previous provider-rate-limit/provider-blocked/provider-smoke-review-required wording is `SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS` for the current source state.
+- Previous scheduler missing-artifact wording is `SUPERSEDED_BY_SCHEDULER_DUE_RUN_AND_NON_SILENT_FAILURE_PROOF` for the current source state.
+- Scheduler proof is not overclaimed: current artifacts prove due-run execution and non-silent reason-coded failure visibility, not a successful scheduled daily production run.
+
+[SCHEDULER_PROOF]
+- `SCHEDULER_DUE_RUN_PROOF_PASSED`
+- `SCHEDULER_NON_SILENT_FAILURE_PROOF_PASSED`
+- `SCHEDULER_SUCCESSFUL_DAILY_RUN_PROOF_NOT_CLAIMED`
+- Scheduler metadata refreshed in `storage/app/market-data/production-scheduler-cron-deployment-proof/reconciliation/artifact-presence-audit.txt` to the uploaded source ZIP identity.
+
+[CODE_PATCHES]
+- Provider empty/invalid response now returns `provider_smoke_status=BLOCKED` with `reason_code=PROVIDER_EMPTY_OR_INVALID_RESPONSE`; parse-failed and missing selected trade date outcomes are also BLOCKED.
+- Coverage gate flags are runtime-enforced fail-closed: `enabled=false` and `require_canonical_bar_evidence=false` return `NOT_EVALUABLE`; zero-universe behavior records `coverage_zero_universe_blocked`.
+- Finalize predecision now uses persisted candidate `seal_state` and run `sealed_at` proof instead of hardcoded `true` / `SEALED`.
+- Correction approve transition is strict: only `REQUESTED` can become `APPROVED`; other states are blocked with `COMMAND_CORRECTION_STATUS_NOT_APPROVABLE`.
+
+[VALIDATION]
+- Sandbox syntax validation passed for changed PHP source and test files with `php -l`.
+- Sandbox PHPUnit could not run because this PHP CLI lacks required PHPUnit extensions: `dom`, `mbstring`, `xml`, and `xmlwriter`.
+- Required operator-local validation remains: targeted ProviderSmoke/Coverage/Finalize/Correction/StaticGuard plus full `vendor/bin/phpunit tests/Unit/MarketData`.
+
+[NEXT_ACTION]
+- None for Final Provider Smoke Passed / Ops Runtime Parity Lock. Current source state is DONE / LOCKED / PASSED.
+- Future changes to provider headers, endpoint template, scheduler proof, audit docs, command surface, or market-data runtime artifacts must rerun targeted guards and full `vendor/bin/phpunit tests/Unit/MarketData`.
+- Recommended next independent hardening scope: CI / Regression Guard to enforce this validation automatically.
+
+[SUPERSEDES]
+- Previous provider-smoke / provider-rate-limit / ops-parity review-required next actions are superseded by the final provider smoke PASS and full MarketData PHPUnit PASS.
+- Previous active-looking scheduler missing-artifact wording is superseded by current due-run/non-silent-failure artifacts; successful scheduled daily production run proof remains not claimed.

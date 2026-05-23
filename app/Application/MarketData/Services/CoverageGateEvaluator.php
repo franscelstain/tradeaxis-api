@@ -27,13 +27,52 @@ class CoverageGateEvaluator
             ? (int) $requestedPublicationId
             : null;
 
-        $universe = $this->tickerMasterRepository->getUniverseForTradeDate($tradeDate);
-
         $thresholdValue = (float) config('market_data.coverage_gate.min_ratio', config('market_data.platform.coverage_min', 0.98));
         $thresholdMode = (string) config('market_data.coverage_gate.threshold_mode', 'MIN_RATIO');
         $contractVersion = (string) config('market_data.coverage_gate.contract_version', 'coverage_gate_v1');
         $universeBasis = (string) config('market_data.coverage_gate.universe_basis', 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE');
         $missingSampleLimit = (int) config('market_data.coverage_gate.missing_sample_limit', 25);
+        $coverageGateEnabled = (bool) config('market_data.coverage_gate.enabled', true);
+        $blockedOnZeroUniverse = (bool) config('market_data.coverage_gate.blocked_on_zero_universe', true);
+        $requireCanonicalBarEvidence = (bool) config('market_data.coverage_gate.require_canonical_bar_evidence', true);
+
+        if (! $coverageGateEnabled) {
+            return $this->notEvaluableResult(
+                $thresholdValue,
+                $thresholdMode,
+                $universeBasis,
+                $contractVersion,
+                $coverageBasis,
+                $coverageBasisPublicationId,
+                'COVERAGE_GATE_DISABLED',
+                ['COVERAGE_GATE_DISABLED', 'RUN_COVERAGE_NOT_EVALUABLE'],
+                [
+                    'coverage_gate_enabled' => false,
+                    'coverage_zero_universe_blocked' => $blockedOnZeroUniverse,
+                    'canonical_bar_evidence_required' => $requireCanonicalBarEvidence,
+                ]
+            );
+        }
+
+        if (! $requireCanonicalBarEvidence) {
+            return $this->notEvaluableResult(
+                $thresholdValue,
+                $thresholdMode,
+                $universeBasis,
+                $contractVersion,
+                $coverageBasis,
+                $coverageBasisPublicationId,
+                'COVERAGE_CANONICAL_BAR_EVIDENCE_DISABLED',
+                ['COVERAGE_CANONICAL_BAR_EVIDENCE_DISABLED', 'RUN_COVERAGE_NOT_EVALUABLE'],
+                [
+                    'coverage_gate_enabled' => true,
+                    'coverage_zero_universe_blocked' => $blockedOnZeroUniverse,
+                    'canonical_bar_evidence_required' => false,
+                ]
+            );
+        }
+
+        $universe = $this->tickerMasterRepository->getUniverseForTradeDate($tradeDate);
 
         $universeByTickerId = [];
         foreach ($universe as $row) {
@@ -51,31 +90,21 @@ class CoverageGateEvaluator
         $expectedUniverseCount = count($universeByTickerId);
 
         if ($expectedUniverseCount === 0) {
-            return [
-                'expected_universe_count' => 0,
-                'available_eod_count' => 0,
-                'missing_eod_count' => 0,
-                'coverage_ratio' => null,
-                'coverage_gate_status' => 'NOT_EVALUABLE',
-                'coverage_gate_state' => 'NOT_EVALUABLE',
-                'coverage_threshold_value' => $thresholdValue,
-                'coverage_threshold_mode' => $thresholdMode,
-                'coverage_universe_basis' => $universeBasis,
-                'coverage_contract_version' => $contractVersion,
-                'coverage_calibration_version' => $contractVersion,
-                'coverage_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
-                'coverage_basis' => $coverageBasis,
-                'coverage_basis_publication_id' => $coverageBasisPublicationId,
-                'candidate_publication_id' => $coverageBasisPublicationId,
-                'coverage_basis_artifact_scope' => $coverageBasisPublicationId !== null ? 'candidate_publication_artifact' : 'trade_date_artifact',
-                'candidate_available_count' => 0,
-                'candidate_missing_count' => 0,
-                'candidate_coverage_ratio' => null,
-                'reason_code' => 'COVERAGE_UNIVERSE_EMPTY',
-                'reason_codes' => ['COVERAGE_UNIVERSE_EMPTY', 'RUN_COVERAGE_NOT_EVALUABLE'],
-                'missing_ticker_ids' => [],
-                'missing_ticker_codes' => [],
-            ];
+            return $this->notEvaluableResult(
+                $thresholdValue,
+                $thresholdMode,
+                $universeBasis,
+                $contractVersion,
+                $coverageBasis,
+                $coverageBasisPublicationId,
+                'COVERAGE_UNIVERSE_EMPTY',
+                ['COVERAGE_UNIVERSE_EMPTY', 'RUN_COVERAGE_NOT_EVALUABLE'],
+                [
+                    'coverage_gate_enabled' => true,
+                    'coverage_zero_universe_blocked' => $blockedOnZeroUniverse,
+                    'canonical_bar_evidence_required' => true,
+                ]
+            );
         }
 
         $availableTickerIds = $this->eodArtifactRepository->loadCanonicalBarTickerIdsForTradeDate($tradeDate, $requestedPublicationId);
@@ -138,9 +167,50 @@ class CoverageGateEvaluator
             'missing_ticker_ids' => array_values(array_map(function ($row) {
                 return (int) $row['ticker_id'];
             }, $sampleRows)),
+            'coverage_gate_enabled' => true,
+            'coverage_zero_universe_blocked' => $blockedOnZeroUniverse,
+            'canonical_bar_evidence_required' => true,
             'missing_ticker_codes' => array_values(array_filter(array_map(function ($row) {
                 return $row['ticker_code'];
             }, $sampleRows))),
+        ];
+    }
+
+    private function notEvaluableResult(
+        $thresholdValue,
+        $thresholdMode,
+        $universeBasis,
+        $contractVersion,
+        $coverageBasis,
+        $coverageBasisPublicationId,
+        $reasonCode,
+        array $reasonCodes,
+        array $policy = []
+    ) {
+        return $policy + [
+            'expected_universe_count' => 0,
+            'available_eod_count' => 0,
+            'missing_eod_count' => 0,
+            'coverage_ratio' => null,
+            'coverage_gate_status' => 'NOT_EVALUABLE',
+            'coverage_gate_state' => 'NOT_EVALUABLE',
+            'coverage_threshold_value' => $thresholdValue,
+            'coverage_threshold_mode' => $thresholdMode,
+            'coverage_universe_basis' => $universeBasis,
+            'coverage_contract_version' => $contractVersion,
+            'coverage_calibration_version' => $contractVersion,
+            'coverage_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
+            'coverage_basis' => $coverageBasis,
+            'coverage_basis_publication_id' => $coverageBasisPublicationId,
+            'candidate_publication_id' => $coverageBasisPublicationId,
+            'coverage_basis_artifact_scope' => $coverageBasisPublicationId !== null ? 'candidate_publication_artifact' : 'trade_date_artifact',
+            'candidate_available_count' => 0,
+            'candidate_missing_count' => 0,
+            'candidate_coverage_ratio' => null,
+            'reason_code' => $reasonCode,
+            'reason_codes' => $reasonCodes,
+            'missing_ticker_ids' => [],
+            'missing_ticker_codes' => [],
         ];
     }
 }

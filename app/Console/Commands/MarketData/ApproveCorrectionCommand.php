@@ -47,6 +47,10 @@ class ApproveCorrectionCommand extends AbstractMarketDataCommand
             return 'COMMAND_CORRECTION_NOT_FOUND';
         }
 
+        if (stripos($message, 'not approvable') !== false || stripos($message, 'COMMAND_CORRECTION_STATUS_NOT_APPROVABLE') !== false) {
+            return 'COMMAND_CORRECTION_STATUS_NOT_APPROVABLE';
+        }
+
         if (stripos($message, 'already consumed') !== false || stripos($message, 'cannot be approved') !== false) {
             return 'COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE';
         }

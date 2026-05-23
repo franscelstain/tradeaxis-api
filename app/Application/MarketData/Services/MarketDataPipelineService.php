@@ -637,11 +637,13 @@ class MarketDataPipelineService
                 $manifest = null;
                 $artifactComparison = null;
                 $preSwitchCurrent = null;
+                $candidateSealState = strtoupper((string) ($candidatePublication->seal_state ?? 'UNSEALED'));
+                $runSealed = ! empty($run->sealed_at) && $candidateSealState === 'SEALED';
 
                 $preDecision = $this->finalizeDecisions->evaluate(
                     $cutoffSatisfied,
-                    true,
-                    'SEALED',
+                    $runSealed,
+                    $candidateSealState,
                     [
                         'coverage_gate_status' => $run->coverage_gate_state,
                         'coverage_ratio' => $run->coverage_ratio,

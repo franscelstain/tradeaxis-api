@@ -156,20 +156,12 @@ class CorrectionRepositoryIntegrationTest extends TestCase
         $this->assertSame(2, (int) $persistedAfterRepair->execution_count);
         $this->assertNull($persistedAfterRepair->current_consumed_at);
 
-        $reapproved = $repo->approve($approved->correction_id, 'reviewer-2');
-        $this->assertSame('APPROVED', $reapproved->status);
-
-        $repo->markExecuting($approved->correction_id, 29, 30, 'correction_current');
-        $published = $repo->markPublished($approved->correction_id, 30, 29, 'current replaced');
-        $this->assertSame('PUBLISHED', $published->status);
-        $this->assertSame(3, (int) $published->execution_count);
-        $this->assertNotNull($published->current_consumed_at);
-
         try {
-            $repo->canExecuteCorrection($approved->correction_id, '2026-03-20', 'repair_candidate');
-            $this->fail('Expected consumed correction to block repair rerun.');
+            $repo->approve($approved->correction_id, 'reviewer-2');
+            $this->fail('Expected strict approve policy to block re-approval after repair execution.');
         } catch (\RuntimeException $e) {
-            $this->assertSame('Correction request is already consumed for correction_current execution and cannot be executed again.', $e->getMessage());
+            $this->assertStringContainsString('Correction request status is not approvable. Current status=REPAIR_EXECUTED', $e->getMessage());
+            $this->assertStringContainsString('reason_code=COMMAND_CORRECTION_STATUS_NOT_APPROVABLE', $e->getMessage());
         }
     }
 
@@ -205,7 +197,8 @@ class CorrectionRepositoryIntegrationTest extends TestCase
             $repo->approve($approved->correction_id, 'reviewer-2');
             $this->fail('Expected consumed correction_current request to block re-approval.');
         } catch (\RuntimeException $e) {
-            $this->assertSame('Correction request is already consumed for correction_current execution and cannot be approved again.', $e->getMessage());
+            $this->assertStringContainsString('Correction request status is not approvable. Current status=CONSUMED_CURRENT', $e->getMessage());
+            $this->assertStringContainsString('reason_code=COMMAND_CORRECTION_STATUS_NOT_APPROVABLE', $e->getMessage());
         }
     }
 

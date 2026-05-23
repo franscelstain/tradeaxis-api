@@ -56,6 +56,7 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
             'COMMAND_APPLY_CONFIRMED',
             'COMMAND_EXECUTION_FAILED',
             'COMMAND_CORRECTION_NOT_FOUND',
+            'COMMAND_CORRECTION_STATUS_NOT_APPROVABLE',
             'COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE',
         ] as $reasonCode) {
             $this->assertStringContainsString($reasonCode, $registry, $reasonCode.' must exist in registry.');

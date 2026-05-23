@@ -81,10 +81,10 @@ class ProviderSmokeCommand extends AbstractMarketDataCommand
                 $telemetryLines['source_reason_code'] = $telemetryLines['source_reason_code'] ?? 'RUN_SOURCE_NO_VALID_DATA';
 
                 return $this->renderProviderSmokeResult($this->baseResult($ticker, $tradeDate, $dryRun, [
-                    'provider_smoke_status' => 'FAILED',
+                    'provider_smoke_status' => 'BLOCKED',
                     'reason_code' => 'PROVIDER_EMPTY_OR_INVALID_RESPONSE',
                     'returned_row_count' => '0',
-                ] + $telemetryLines), 1);
+                ] + $telemetryLines), 2);
             }
 
             $telemetryLines = $this->telemetryLines($telemetry);
@@ -99,7 +99,15 @@ class ProviderSmokeCommand extends AbstractMarketDataCommand
         } catch (SourceAcquisitionException $e) {
             $telemetry = $e->context();
             $reasonCode = $this->mapProviderSmokeReasonCode($e->reasonCode(), $e->getMessage(), $telemetry);
-            $status = in_array($reasonCode, ['PROVIDER_RATE_LIMITED', 'PROVIDER_REQUEST_HEADER_CONTEXT_MISMATCH', 'PROVIDER_TIMEOUT', 'PROVIDER_NETWORK_ERROR'], true)
+            $status = in_array($reasonCode, [
+                'PROVIDER_RATE_LIMITED',
+                'PROVIDER_REQUEST_HEADER_CONTEXT_MISMATCH',
+                'PROVIDER_TIMEOUT',
+                'PROVIDER_NETWORK_ERROR',
+                'PROVIDER_RESPONSE_PARSE_FAILED',
+                'PROVIDER_EMPTY_OR_INVALID_RESPONSE',
+                'PROVIDER_TRADE_DATE_NOT_FOUND_IN_RESPONSE',
+            ], true)
                 ? 'BLOCKED'
                 : 'FAILED';
             $telemetryLines = $this->telemetryLines($telemetry);
