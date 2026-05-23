@@ -123,7 +123,7 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
 
         foreach ([$status, $tracker] as $document) {
             $this->assertStringContainsString("ACTIVE SESSION:
-- Final Provider Smoke Passed / Ops Runtime Parity Lock", $document);
+- API Daily Runtime Proof / Final Production Ready Validation", $document);
             $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);

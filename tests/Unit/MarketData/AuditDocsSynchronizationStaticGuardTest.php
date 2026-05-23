@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Final Provider Smoke Passed / Ops Runtime Parity Lock', $statusActiveSession);
+        $this->assertSame('API Daily Runtime Proof / Final Production Ready Validation', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -48,10 +48,10 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $document);
         }
 
-        $this->assertStringContainsString('- Final Provider Smoke Passed / Ops Runtime Parity Lock -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $status);
-        $this->assertStringContainsString('- FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Final Provider Smoke Passed / Ops Runtime Parity Lock', $tracker);
+        $this->assertStringContainsString('- API Daily Runtime Proof / Final Production Ready Validation -> DONE', $status);
+        $this->assertStringContainsString('[RELATED_CONTRACT] API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT', $status);
+        $this->assertStringContainsString('- API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT -> LOCKED', $tracker);
+        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] API Daily Runtime Proof / Final Production Ready Validation', $tracker);
         $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
         $this->assertStringContainsString('`OPS_RUNTIME_PARITY_PASSED` requires scheduler due-run proof plus provider smoke PASS', $status.$tracker);
         $this->assertStringContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
@@ -133,9 +133,9 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
         $activeSession = $this->activeSessionName($status);
-        $this->assertStringContainsString('Final Provider Smoke Passed / Ops Runtime Parity Lock', $implementationEntry);
+        $this->assertStringContainsString('API Daily Runtime Proof / Final Production Ready Validation', $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);

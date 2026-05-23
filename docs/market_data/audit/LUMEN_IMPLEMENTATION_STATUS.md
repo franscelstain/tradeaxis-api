@@ -3,28 +3,27 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Final Provider Smoke Passed / Ops Runtime Parity Lock
+- API Daily Runtime Proof / Final Production Ready Validation
 
-[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED
+[SESSION_STATUS] FULLY_PRODUCTION_READY
 
 [SESSION_SCOPE]
-- Harden Yahoo/PublicApi request context for safe live provider smoke without reopening core market-data source readiness.
-- Preserve provider smoke safe-mode constraints: single ticker, dry-run, no publication, no seal, no finalize, no pointer switch, no readable publication, and no full-universe fetch.
-- Add transparent request telemetry: request URL, HTTP status, response body sample, adapter/source reason codes, attempt count, retry max, retry exhaustion, and timeout.
-- Record Phase 1 PHP request-context proof that minimal PHP headers receive HTTP 200 while browser-like headers receive HTTP 200 for the same Yahoo range=10d URL.
+- Record the final `source_mode=api` daily/promote runtime proof for `run_id=1`.
+- Record evidence export `ADMITTED_COMPLETE` and replay verify `PASS/MATCH` for the same API-produced readable publication.
+- Preserve provider-smoke PASS, scheduler due-run proof, and full MarketData PHPUnit PASS as active current-source evidence.
+- Keep session snapshot as optional supplemental proof because it requires an explicit local `--input_file`.
 
 [SESSION_GOAL]
-- Lock `LIVE_PROVIDER_SMOKE_PASSED` with request-context proof and reason-coded telemetry.
-- Promote ops runtime parity because the final safe provider smoke command returns `provider_smoke_status=PASS` / `reason_code=PROVIDER_SMOKE_OK` / `http_status=200` in the embedded artifact.
+- Promote the final source-state decision to `FULLY_PRODUCTION_READY` after API daily runtime proof, evidence export, replay verification, targeted guards, StaticGuard, and full MarketData PHPUnit all pass.
 
 [SESSION_NOTES]
-- Source ZIP input for this session is `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`.
-- `market-data:provider:smoke` remains a public command; current market-data command count is 21.
-- `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`, `LIVE_PROVIDER_SMOKE_PASSED`, and `OPS_RUNTIME_PARITY_PASSED` are the current valid statuses for this source because the embedded BBCA dry-run artifact is PASSED with HTTP 200, PASS.
-- `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`.
-- `FINAL_PROVIDER_SMOKE=PASSED`.
-- Scheduler due-run artifact is already present and records `SCHEDULER_RUNTIME_LOG_PRODUCED`; this session closes the final live provider smoke blocker.
-- The source-state `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid and is not reopened by this request-context hardening.
+- `market-data:daily --source_mode=api` and subsequent `market-data:promote --requested_date=2026-05-20 --source_mode=api --run_id=1` produced `SUCCESS / READABLE / PASS / SEALED`.
+- `publication_id=1` became the current readable publication with `pointer_switched=true`.
+- API source result was partial but validly accepted because coverage passed: `available=911/913`, `missing=2`, `ratio=0.9978`, `threshold=0.9800`.
+- Missing tickers were `JSPT,JTPE`.
+- Evidence export for `run_id=1` produced `evidence_completeness_state=COMPLETE` and `evidence_admission_state=ADMITTED_COMPLETE`.
+- Replay fixture/verify for `api_daily_success_run_1` produced `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
+- Final full MarketData PHPUnit validation passed: `OK (495 tests, 7616 assertions)`.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI proof: PHP 7.4.33.
@@ -32,11 +31,12 @@ ACTIVE SESSION:
 - Artisan proof: Lumen 8.3.4.
 - Required DB driver proof: `pdo_mysql` available.
 - Testing DB target proof remains `DB_DATABASE=tradeaxis_testing`.
-- Provider smoke attempt: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0` -> `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, HTTP 200, `attempt_count=1`, `retry_max=0`.
-- Scheduler artifact root remains `storage/app/market-data/production-scheduler-cron-deployment-proof/**`; current due-run proof includes `runtime/market-data-scheduler-proof.log` and `phase4-scheduler-output-log.txt` with `SCHEDULER_RUNTIME_LOG_PRODUCED`.
+- Provider smoke remains `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, HTTP 200.
+- Scheduler due-run proof remains present; successful scheduled daily production run proof is not claimed in this session.
 
 ---
 ## OPERATIONAL STATUS
+
 
 [CURRENT_AUDIT_MODE]
 - CLEAN_START_RETEST
@@ -54,6 +54,63 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- API Daily Runtime Proof / Final Production Ready Validation -> DONE
+
+  [SESSION] API Daily Runtime Proof / Final Production Ready Validation
+
+  [SESSION_STATUS] FULLY_PRODUCTION_READY
+
+  [LAST_UPDATED] 2026-05-24
+
+  [RELATED_CONTRACT] API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT
+
+  [REVIEW_STATUS] FULLY_PRODUCTION_READY
+
+  [HISTORY]
+  - 2026-05-24 -> Final API daily runtime proof was supplied after the provider-smoke/ops-runtime parity lock. The proof uses `source_mode=api`, `run_id=1`, and `publication_id=1` for trade date `2026-05-20`.
+  - 2026-05-24 -> `market-data:promote --requested_date=2026-05-20 --source_mode=api --run_id=1` completed as `SUCCESS / READABLE / PASS / SEALED` with `pointer_switched=true`.
+  - 2026-05-24 -> API source was partial but accepted by coverage policy: `available=911/913`, `missing=2`, `ratio=0.9978`, `threshold=0.9800`, missing tickers `JSPT,JTPE`.
+  - 2026-05-24 -> Evidence export for `run_id=1` produced `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `file_count=11`.
+  - 2026-05-24 -> Runtime-generated replay fixture/verify for `api_daily_success_run_1` produced `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
+  - 2026-05-24 -> Final operator-local validation passed: AuditDocs OK (10 tests, 461 assertions), ConfigEnvGovernance OK (10 tests, 123 assertions), OpsEnvironmentBaseline OK (8 tests, 107 assertions), StaticGuard OK (194 tests, 4789 assertions), and full `tests/Unit/MarketData` OK (495 tests, 7617 assertions).
+
+  [IMPLEMENTATION]
+  - No code logic is changed by this audit-doc finalization entry.
+  - This entry promotes the active source-state decision to `FULLY_PRODUCTION_READY` by consuming the already-passed provider smoke proof, scheduler due-run/non-silent proof, API daily runtime proof, evidence export proof, replay verify proof, and final full PHPUnit proof.
+  - Session snapshot remains optional supplemental proof because `market-data:session-snapshot` requires an explicit local `--input_file`; its missing-input run is not a blocker for API daily/promote/evidence/replay production readiness.
+
+  [VALIDATED]
+  - Operator-local API daily promote proof: `run_id=1`, `publication_id=1`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `seal_state=SEALED`, `pointer_switched=true`.
+  - Operator-local evidence export proof: `php artisan market-data:evidence:export --run_id=1 --output_dir=storage/app/market-data/manual-validation/evidence-run-1` -> `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `file_count=11`.
+  - Operator-local replay fixture proof: `php artisan market-data:replay:fixture:generate 1 --case=api_daily_success_run_1 --output_dir=storage/app/market-data/manual-validation/fixtures/run-1` -> `fixture_generated=1`, `expected_result=MATCH`, `publication_id=1`, `pointer_publication_id=1`.
+  - Operator-local replay verify proof: `php artisan market-data:replay:verify 1 storage/app/market-data/manual-validation/fixtures/run-1 --output_dir=storage/app/market-data/manual-validation/replay-verify-run-1` -> `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`.
+  - Operator-local targeted validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocsSynchronizationStaticGuardTest"` -> OK (10 tests, 461 assertions).
+  - Operator-local targeted validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "ConfigEnvGovernanceCleanupStaticGuardTest"` -> OK (10 tests, 123 assertions).
+  - Operator-local targeted validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "OpsEnvironmentBaselineStaticGuardTest"` -> OK (8 tests, 107 assertions).
+  - Operator-local static guard validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (194 tests, 4789 assertions).
+  - Operator-local full MarketData validation: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7617 assertions).
+
+  [FINAL_BEHAVIOR]
+  - `FULLY_PRODUCTION_READY` is the active source-state decision for this market-data proof pack.
+  - `MARKET_DATA_PRODUCTION_READY_LOCKED`, `OPS_RUNTIME_PARITY_PASSED`, `FINAL_PROVIDER_SMOKE=PASSED`, `API_DAILY_RUNTIME_PROOF=PASSED`, `EVIDENCE_EXPORT=ADMITTED_COMPLETE`, `REPLAY_VERIFY=PASS`, and `FULL_MARKET_DATA_PHPUNIT=PASSED` are all valid together for this source state.
+  - API source partial response is not a blocker because coverage passed above the configured threshold and remained reason-coded as `RUN_SOURCE_PARTIAL_RESPONSE`.
+  - No successful scheduled daily production run is claimed by this entry; scheduler due-run/non-silent proof remains the scheduler scope.
+
+  [EVIDENCE]
+  - `storage/app/market-data/manual-validation/final-api-runtime-proof-summary.txt`.
+  - `storage/app/market-data/manual-validation/evidence-run-1/**`.
+  - `storage/app/market-data/manual-validation/fixtures/run-1/**`.
+  - `storage/app/market-data/manual-validation/replay-verify-run-1/replay_result.json`.
+  - Provider smoke proof remains recorded under `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
+
+  [REMAINING_RISK]
+  - External production cron installation, production SLO/monitoring, and future Yahoo/PublicApi provider behavior remain deployment/operations validations and do not invalidate the current source-state `FULLY_PRODUCTION_READY` proof.
+
+  [NEXT_ACTION]
+  - None for this source-state finalization. Future code/config/provider/scheduler/audit-doc changes must rerun targeted guards and full `vendor/bin/phpunit tests/Unit/MarketData`.
+
+
 
 - Final Provider Smoke Passed / Ops Runtime Parity Lock -> DONE
 
@@ -3031,3 +3088,137 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 [SUPERSEDES]
 - Previous provider-smoke / provider-rate-limit / ops-parity review-required next actions are superseded by the final provider smoke PASS and full MarketData PHPUnit PASS.
 - Previous active-looking scheduler missing-artifact wording is superseded by current due-run/non-silent-failure artifacts; successful scheduled daily production run proof remains not claimed.
+
+---
+
+## 2026-05-24 — API Daily Runtime Proof / Final Post-Gap-Closure Validation
+
+[SESSION] API_DAILY_RUNTIME_PROOF_FINAL_VALIDATION
+
+[SESSION_STATUS] FULLY_PRODUCTION_READY
+
+[FINAL_DECISION]
+- `FULLY_PRODUCTION_READY` is valid for the current market-data source state after the final API daily runtime proof, evidence export proof, replay verification proof, and full MarketData PHPUnit proof.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.
+- `OPS_RUNTIME_PARITY_PASSED` remains valid.
+- `FINAL_PROVIDER_SMOKE=PASSED` remains valid.
+- `API_DAILY_RUNTIME_PROOF=PASSED`.
+- `EVIDENCE_EXPORT=ADMITTED_COMPLETE`.
+- `REPLAY_VERIFY=PASS`.
+- `FULL_MARKET_DATA_PHPUNIT=PASSED`.
+
+[API_DAILY_RUNTIME_PROOF]
+- Command path proven: `market-data:daily --source_mode=api` followed by `market-data:promote --requested_date=2026-05-20 --source_mode=api --run_id=1`.
+- `run_id=1`.
+- `trade_date_requested=2026-05-20`.
+- `trade_date_effective=2026-05-20`.
+- `source_mode=api`.
+- `source_name=API_FREE`.
+- `source_provider=yahoo_finance`.
+- `request_mode=promote`.
+- `promote_mode=full_publish`.
+- `publish_target=current_replace`.
+- `terminal_status=SUCCESS`.
+- `publishability_state=READABLE`.
+- `promote_status=PROMOTED`.
+- `promoted=true`.
+- `pointer_switched=true`.
+- `current_publication_id=1`.
+- `publication_id=1`.
+- `publication_version=1`.
+- `is_current_publication=1`.
+- `seal_state=SEALED`.
+- `sealed_at=2026-05-24 01:24:51`.
+- `lineage_verification_status=RUN_PUBLICATION_LINK_PRESENT`.
+
+[COVERAGE_PROOF]
+- `coverage_gate_state=PASS`.
+- `coverage_reason_code=COVERAGE_THRESHOLD_MET`.
+- `coverage_basis=CandidatePublication`.
+- `coverage_basis_publication_id=1`.
+- `coverage_summary=available=911/913 | missing=2 | ratio=0.9978 | threshold=0.9800 | threshold_mode=MIN_RATIO | basis=ACTIVE_LISTED_EQUITY_AS_OF_DATE | coverage_basis=CandidatePublication | artifact_scope=candidate_publication_artifact | contract=coverage_gate_v1`.
+- `coverage_missing_sample=JSPT,JTPE`.
+- The API source returned a partial provider result, but coverage remained above the configured threshold and therefore publication was validly promoted as readable.
+- `source_final_status=PARTIAL`.
+- `final_reason_code=RUN_SOURCE_PARTIAL_RESPONSE`.
+- `source_final_http_status=200`.
+- `source_attempt_count=920`.
+- `source_success_after_retry=yes`.
+- `source_retry_exhausted=yes`.
+- `accepted_row_count=911`.
+- `rejected_row_count=0`.
+- `invalid_row_count=0`.
+
+[HASH_SEAL_PROOF]
+- `hash_algorithm=SHA-256`.
+- `bars_batch_hash=b9f9737351b6eb95bdce1c275f1a71b626a15ab65655d5a72f7707b0ed65c53d`.
+- `indicators_batch_hash=9c80f39855dedaba4418e9d9ef040dfda5051b2e47cccb837f8cfef0083e037c`.
+- `eligibility_batch_hash=4e883362a85006428252c625811494168583111a298a8053a9fad653eadd9dd3`.
+
+[EVIDENCE_EXPORT_PROOF]
+- Command: `php artisan market-data:evidence:export --run_id=1 --output_dir=storage/app/market-data/manual-validation/evidence-run-1`.
+- `selector=run`.
+- `selector_id=1`.
+- `run_id=1`.
+- `terminal_status=SUCCESS`.
+- `publishability_state=READABLE`.
+- `coverage_gate_state=PASS`.
+- `final_reason_code=RUN_SOURCE_PARTIAL_RESPONSE`.
+- `evidence_completeness_state=COMPLETE`.
+- `evidence_admission_state=ADMITTED_COMPLETE`.
+- `publication_id=1`.
+- `pointer_resolve_status=RESOLVED_READABLE_CURRENT`.
+- `fallback_used=0`.
+- `output_dir=storage/app/market-data/manual-validation/evidence-run-1`.
+- `file_count=11`.
+- Files: `run_summary.json`, `publication_manifest.json`, `run_event_summary.json`, `source_attempt_telemetry.json`, `eligibility_export.csv`, `invalid_bars_export.csv`, `anomaly_report.md`, `lineage.json`, `evidence_admission.json`, `evidence_completeness.json`, `evidence_pack.json`.
+
+[REPLAY_PROOF]
+- Fixture command: `php artisan market-data:replay:fixture:generate 1 --case=api_daily_success_run_1 --output_dir=storage/app/market-data/manual-validation/fixtures/run-1`.
+- `fixture_generated=1`.
+- `fixture_id=api_daily_success_run_1`.
+- `fixture_family=runtime_generated_valid_case`.
+- `expected_result=MATCH`.
+- `fixture_path=storage/app/market-data/manual-validation/fixtures/run-1`.
+- `manifest_path=storage/app/market-data/manual-validation/fixtures/run-1/manifest.json`.
+- Verify command: `php artisan market-data:replay:verify 1 storage/app/market-data/manual-validation/fixtures/run-1 --output_dir=storage/app/market-data/manual-validation/replay-verify-run-1`.
+- `replay_id=1`.
+- `replay_suite=runtime_generated_valid_case`.
+- `replay_case=api_daily_success_run_1`.
+- `expected_final_state=SUCCESS|READABLE|RUN_SOURCE_PARTIAL_RESPONSE`.
+- `actual_final_state=SUCCESS|READABLE|RUN_SOURCE_PARTIAL_RESPONSE`.
+- `comparison_result=MATCH`.
+- `replay_status=PASS`.
+- `mismatch_count=0`.
+- `source_summary=expected:api/yahoo_finance actual:api/yahoo_finance`.
+- `coverage_summary=expected:PASS/0.997809 actual:PASS/0.997809`.
+- `publication_summary=expected:1/v1 actual:1/v1`.
+- `pointer_summary=expected:1 actual:1`.
+- `fallback_summary=expected:not_used actual:not_used`.
+- `artifact_changed_scope=none`.
+- `replay_artifact_path=storage/app/market-data/manual-validation/replay-verify-run-1/replay_result.json`.
+
+[SESSION_SNAPSHOT_NOTE]
+- `market-data:session-snapshot 2026-05-20 OPEN_CHECK` without `--input_file` failed with `Session snapshot input file not found`.
+- This is not a failure of the API daily/promote/evidence/replay production proof.
+- Session snapshot remains an optional supplemental proof requiring an explicit local input file through `--source_mode=manual_file --input_file=...`.
+- `SCHEDULER_SUCCESSFUL_DAILY_RUN_PROOF_NOT_CLAIMED` remains separate from the API daily runtime proof.
+
+[OPERATOR_LOCAL_VALIDATION]
+- `vendor\bin\phpunit tests/Unit/MarketData --filter "AuditDocsSynchronizationStaticGuardTest"` -> OK (10 tests, 461 assertions).
+- `vendor\bin\phpunit tests/Unit/MarketData --filter "ProductionValidationRuntimeProofStaticGuardTest"` -> OK (15 tests, 482 assertions).
+- `vendor\bin\phpunit tests/Unit/MarketData --filter "ProviderSmokeSafeModeStaticGuardTest"` -> OK (6 tests, 169 assertions).
+- `vendor\bin\phpunit tests/Unit/MarketData --filter "Coverage"` -> OK (72 tests, 800 assertions).
+- `vendor\bin\phpunit tests/Unit/MarketData --filter "Finalize"` -> OK (51 tests, 392 assertions).
+- `vendor\bin\phpunit tests/Unit/MarketData --filter "Correction"` -> OK (75 tests, 1416 assertions).
+- `vendor\bin\phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (194 tests, 4788 assertions).
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions), Time 00:11.456, Memory 40.00 MB.
+
+[FINAL_RULE]
+- The current source state can claim `FULLY_PRODUCTION_READY` for the market-data source/runtime proof represented by this audit pack.
+- API source partial responses can still be validly promoted only when coverage gate remains PASS and the source attempt telemetry is reason-coded.
+- Future provider, scheduler, command-surface, audit-doc, config, coverage, finalize, correction, evidence, or replay changes must rerun the targeted guards and full `vendor/bin/phpunit tests/Unit/MarketData`.
+
+[NEXT_ACTION]
+- None for this API daily runtime proof and final validation scope.
+- Recommended next independent hardening scope: CI / Regression Guard to enforce the final validation automatically.

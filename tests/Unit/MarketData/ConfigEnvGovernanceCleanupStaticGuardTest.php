@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Final Provider Smoke Passed / Ops Runtime Parity Lock", $status);
+- API Daily Runtime Proof / Final Production Ready Validation", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Final Provider Smoke Passed / Ops Runtime Parity Lock", $tracker);
+- API Daily Runtime Proof / Final Production Ready Validation", $tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);
