@@ -2946,13 +2946,19 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - Source ZIP: `tradeaxis-api.zip`
 - Source ZIP SHA-256: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`
 
+[ZIP_HASH_NOTE]
+- Locked source-state ZIP hash refers to the operator-local source ZIP used for validation: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`.
+- Uploaded/distribution ZIP hash for this handoff is `6f87f611937f04dac905bd9ea726df8d6579a165860edfb9d914c70c3b2c770c`; it may differ because of packaging/repackaging during handoff.
+- This does not change the validated source-state decision as long as the extracted source tree, audit docs, runtime artifacts, and validation outputs match the locked source state.
+
+
 [FINAL_DECISION]
 - `FULLY_PRODUCTION_READY`
 - `MARKET_DATA_PRODUCTION_READY_LOCKED`
 - `OPS_RUNTIME_PARITY_PASSED`
 - `FINAL_PROVIDER_SMOKE=PASSED`
 - `LIVE_PROVIDER_SMOKE_PASSED`
-- `FULL_MARKET_DATA_PHPUNIT=PASSED` remains the latest operator-local proof recorded in this source.
+- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions).
 
 [DOC_RECONCILIATION]
 - Previous provider-rate-limit/provider-blocked/provider-smoke-review-required wording is `SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS` for the current source state.
@@ -2974,7 +2980,7 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 [VALIDATION]
 - Sandbox syntax validation passed for changed PHP source and test files with `php -l`.
 - Sandbox PHPUnit could not run because this PHP CLI lacks required PHPUnit extensions: `dom`, `mbstring`, `xml`, and `xmlwriter`.
-- Required operator-local validation remains: targeted ProviderSmoke/Coverage/Finalize/Correction/StaticGuard plus full `vendor/bin/phpunit tests/Unit/MarketData`.
+- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (495 tests, 7616 assertions).
 
 [NEXT_ACTION]
 - None for Final Provider Smoke Passed / Ops Runtime Parity Lock. Current source state is DONE / LOCKED / PASSED.

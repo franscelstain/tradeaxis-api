@@ -1,9 +1,9 @@
 # Market-Data Production Proof Pack
 
-Last updated: 2026-05-22
+Last updated: 2026-05-23
 Source ZIP: `tradeaxis-api.zip`
 Source ZIP path: `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`
-Input source ZIP SHA-256: `28a7ea2dd9d88209edb1b670140f252a0762ec724393b60ed5b8860b9287e56e`
+Locked source-state ZIP SHA-256: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`
 Decision: `OPS_RUNTIME_PARITY_PASSED`
 Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`
 Review status: `FINAL_PROVIDER_SMOKE_PASSED_OPS_RUNTIME_PARITY_LOCK / OPS_RUNTIME_PARITY_PASSED`
@@ -36,7 +36,7 @@ This proof pack is the aggregate validation record for the current uploaded sour
 | evidence export | LOCKED | Run/correction/replay selectors implemented | Evidence filters recorded | `run_id=33`, `correction_id=3`, replay proof admitted | Synced | PASS | no |
 | replay | LOCKED | Current + historical audit resolution implemented | Replay filters recorded | `replay_id=15`, smoke/backfill PASS, historical replay `replay_id=8` | Synced | PASS | no |
 | correction | LOCKED | Request/approve/run/failed/unchanged lifecycle guarded | Correction filters recorded | correction `3`, failed correction `4`, correction replay MATCH | Synced | PASS | no |
-| ops commands | LOCKED + provider-smoke overlay | 21 public commands registered/help-renderable | Command/Ops/StaticGuard proof recorded | Fresh success/held/failed/conflict/repair/snapshot/evidence/replay matrix plus provider-smoke safe-mode blocked proof | Synced | PASS for command surface; provider runtime BLOCKED | no source-code blocker |
+| ops commands | LOCKED + provider-smoke overlay | 21 public commands registered/help-renderable | Command/Ops/StaticGuard proof recorded | Fresh success/held/failed/conflict/repair/snapshot/evidence/replay matrix plus provider-smoke safe-mode PASS proof | Synced | PASS | no |
 | hash/seal | LOCKED | SHA-256 hashes + seal state enforced | Hash/seal static proof recorded | Stage chain and promote proof include hashes + SEALED state | Synced | PASS | no |
 | audit docs | LOCKED for final sync | Governance guarded | AuditDocs proof recorded and static guard expectations synchronized | Current proof pack consumed by final lock | Synced | PASS | no |
 
@@ -684,7 +684,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - `OPS_RUNTIME_PARITY_PASSED`
 - `FINAL_PROVIDER_SMOKE=PASSED`
 - `LIVE_PROVIDER_SMOKE_PASSED`
-- `FULL_MARKET_DATA_PHPUNIT=PASSED` remains the latest operator-local proof recorded in this source.
+- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions).
 
 [DOC_RECONCILIATION]
 - Previous provider-rate-limit/provider-blocked/provider-smoke-review-required wording is `SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS` for the current source state.
@@ -706,7 +706,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [VALIDATION]
 - Sandbox syntax validation passed for changed PHP source and test files with `php -l`.
 - Sandbox PHPUnit could not run because this PHP CLI lacks required PHPUnit extensions: `dom`, `mbstring`, `xml`, and `xmlwriter`.
-- Required operator-local validation remains: targeted ProviderSmoke/Coverage/Finalize/Correction/StaticGuard plus full `vendor/bin/phpunit tests/Unit/MarketData`.
+- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (495 tests, 7616 assertions).
 
 [NEXT_ACTION]
 - None for Final Provider Smoke Passed / Ops Runtime Parity Lock. Current source state is DONE / LOCKED / PASSED.
@@ -716,3 +716,40 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [SUPERSEDES]
 - Previous provider-smoke / provider-rate-limit / ops-parity review-required next actions are superseded by the final provider smoke PASS and full MarketData PHPUnit PASS.
 - Previous active-looking scheduler missing-artifact wording is superseded by current due-run/non-silent-failure artifacts; successful scheduled daily production run proof remains not claimed.
+
+---
+
+## 2026-05-23 — Final Provider Runtime PASS Wording Reconciliation
+
+Status: `DONE`.
+
+This reconciliation removes stale active wording that described provider-smoke runtime as BLOCKED. The current provider-smoke proof is final PASS for the current source state:
+
+- `provider_smoke_status=PASS`
+- `reason_code=PROVIDER_SMOKE_OK`
+- `http_status=200`
+- `returned_row_count=1`
+- `retry_exhausted=false`
+- `publication_created=false`
+- `seal_executed=false`
+- `finalize_executed=false`
+- `pointer_switched=false`
+- `readable_publication_created=false`
+- `full_universe_fetch=false`
+
+The previous provider-blocked wording is historical only and is superseded by the final provider smoke PASS and full MarketData PHPUnit PASS.
+
+[ZIP_HASH_NOTE]
+- Locked source-state ZIP hash refers to the operator-local source ZIP used for validation: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`.
+- Uploaded/distribution ZIP hash for this handoff is `6f87f611937f04dac905bd9ea726df8d6579a165860edfb9d914c70c3b2c770c`; it may differ because of packaging/repackaging during handoff.
+- This does not change the validated source-state decision as long as the extracted source tree, audit docs, runtime artifacts, and validation outputs match the locked source state.
+
+Final operator-local validation:
+
+- ProviderSmokeSafeModeStaticGuardTest -> OK (6 tests, 169 assertions)
+- Coverage -> OK (72 tests, 800 assertions)
+- Finalize -> OK (51 tests, 392 assertions)
+- Correction -> OK (75 tests, 1416 assertions)
+- StaticGuard -> OK (194 tests, 4785 assertions)
+- Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions)
+
