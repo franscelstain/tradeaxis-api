@@ -11,12 +11,14 @@ class EodIndicatorsComputeService
     private $artifacts;
     private $publications;
     private $vectors;
+    private $benchmarkIndicators;
 
-    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors)
+    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null)
     {
         $this->artifacts = $artifacts;
         $this->publications = $publications;
         $this->vectors = $vectors;
+        $this->benchmarkIndicators = $benchmarkIndicators;
     }
 
     public function compute($run, $requestedDate, $correctionMode = false)
@@ -36,12 +38,24 @@ class EodIndicatorsComputeService
             );
         }
 
+        $benchmarkResult = [
+            'benchmark_indicators_rows_written' => 0,
+            'invalid_benchmark_indicator_count' => 0,
+        ];
+        $benchmarkRoc20 = null;
+
+        if ($this->benchmarkIndicators !== null) {
+            $benchmarkResult = $this->benchmarkIndicators->compute($requestedDate);
+            $benchmarkRoc20 = $this->benchmarkIndicators->roc20('IHSG', $requestedDate);
+        }
+
         $windowDays = max(
             (int) config('market_data.indicators.dv_window_days'),
             (int) config('market_data.indicators.vol_ratio_lookback_days') + 1,
             (int) config('market_data.indicators.roc_lookback_days') + 1,
             (int) config('market_data.indicators.hh_window_days'),
-            (int) config('market_data.indicators.atr_window_days') + 1
+            (int) config('market_data.indicators.atr_window_days') + 1,
+            55
         );
 
         $barsByTicker = $this->artifacts->loadBarsWindow($requestedDate, $windowDays + 5, $useHistory ? $candidatePublication->publication_id : null);
@@ -50,7 +64,7 @@ class EodIndicatorsComputeService
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
         foreach ($barsByTicker as $tickerId => $bars) {
-            $row = $this->vectors->buildRow((int) $tickerId, $bars, $requestedDate, $candidatePublication->publication_id, $run->run_id, $now, $this->vectorConfig());
+            $row = $this->vectors->buildRow((int) $tickerId, $bars, $requestedDate, $candidatePublication->publication_id, $run->run_id, $now, $this->vectorConfig($benchmarkRoc20));
             if (! $row) {
                 continue;
             }
@@ -70,10 +84,10 @@ class EodIndicatorsComputeService
             'indicators_rows_written' => count($rows),
             'invalid_indicator_count' => $invalidCount,
             'storage_target' => $useHistory ? 'eod_indicators_history' : 'eod_indicators',
-        ];
+        ] + $benchmarkResult;
     }
 
-    private function vectorConfig()
+    private function vectorConfig($benchmarkRoc20 = null)
     {
         return [
             'set_version' => config('market_data.indicators.set_version'),
@@ -84,6 +98,7 @@ class EodIndicatorsComputeService
             'vol_ratio_lookback_days' => (int) config('market_data.indicators.vol_ratio_lookback_days'),
             'roc_lookback_days' => (int) config('market_data.indicators.roc_lookback_days'),
             'hh_window_days' => (int) config('market_data.indicators.hh_window_days'),
+            'benchmark_roc20_pct' => $benchmarkRoc20,
         ];
     }
 }

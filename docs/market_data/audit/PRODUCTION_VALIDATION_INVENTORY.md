@@ -6,7 +6,7 @@ Active implementation: Production Validation / Manual + Runtime Proof.
 Latest local runtime update: flow/run-evidence runtime PASS, replay persistence fix PASS, stale committed valid_case MISMATCH proof, generated runtime fixture MATCH proof, smoke `--generate_runtime_valid_case` all_passed=1, replay evidence export for `replay_id=5` PASS, failed/held coverage proof for `run_id=2` PASS_WITH_WARNING, correction request/approve/run proof PASS, correction evidence export for `correction_id=1` PASS, fresh historical 20-command command list/full help proof after adding `market-data:replay:fixture:generate`, and current 21-command command list/full help proof after adding `market-data:provider:smoke` were supplied and recorded through final reconciliation.
 Runtime policy: static proof is support only. DONE requires runtime evidence. LOCKED requires targeted and full suite PASS plus artisan command, evidence output, and replay verification proof.
 
-Latest final API runtime proof: `market-data:promote --requested_date=2026-05-20 --source_mode=api --run_id=1` produced `SUCCESS / READABLE / PASS / SEALED`, pointer switched to `publication_id=1`; evidence export returned `COMPLETE / ADMITTED_COMPLETE`; replay verify returned `MATCH / PASS / mismatch_count=0`; final full `vendor/bin/phpunit tests/Unit/MarketData` passed with OK (495 tests, 7616 assertions).
+Latest final API runtime proof: `market-data:promote --requested_date=2026-05-20 --source_mode=api --run_id=1` produced `SUCCESS / READABLE / PASS / SEALED`, pointer switched to `publication_id=1`; evidence export returned `COMPLETE / ADMITTED_COMPLETE`; replay verify returned `MATCH / PASS / mismatch_count=0`; final full `vendor/bin/phpunit tests/Unit/MarketData` passed with OK (511 tests, 7871 assertions).
 
 This inventory is the production validation control surface for market-data. It separates container/static proof, operator-local runtime proof, and missing runtime proof. The uploaded ZIP has no `vendor/`, so container validation can only prove file presence, docs/test cross-checks, static scans, and `php -l` for changed PHP files. Operator-local PHPUnit and artisan proof can be recorded only when actual output is supplied. Flow execution and evidence export runtime proof have now been supplied and recorded. Replay verification was executed after the persistence and fixture-generation fixes. SQLSTATE[22001] is resolved, mismatch/error cases persist cleanly, generated runtime fixture verification returns MATCH with `mismatch_count=0`, replay smoke with `--generate_runtime_valid_case` returns `all_passed=1`, and replay evidence export for `replay_id=5` returns `status=SUCCESS`, `comparison_result=MATCH`, and 5 replay evidence files. Production Validation is now DONE and `PRODUCTION_VALIDATION_CONTRACT` is LOCKED because targeted PHPUnit, full MarketData PHPUnit, artisan command discovery/help, success flow, held/failure flow, run/replay/correction evidence, replay generated MATCH proof, replay smoke `all_passed=1`, and correction lifecycle are all proven by operator-local runtime output.
 
@@ -876,7 +876,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - `OPS_RUNTIME_PARITY_PASSED`
 - `FINAL_PROVIDER_SMOKE=PASSED`
 - `LIVE_PROVIDER_SMOKE_PASSED`
-- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions).
+- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
 
 [DOC_RECONCILIATION]
 - Previous provider-rate-limit/provider-blocked/provider-smoke-review-required wording is `SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS` for the current source state.
@@ -898,7 +898,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [VALIDATION]
 - Sandbox syntax validation passed for changed PHP source and test files with `php -l`.
 - Sandbox PHPUnit could not run because this PHP CLI lacks required PHPUnit extensions: `dom`, `mbstring`, `xml`, and `xmlwriter`.
-- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (495 tests, 7616 assertions).
+- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (511 tests, 7871 assertions).
 
 [NEXT_ACTION]
 - None for Final Provider Smoke Passed / Ops Runtime Parity Lock. Current source state is DONE / LOCKED / PASSED.
@@ -1032,7 +1032,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "Finalize"` -> OK (51 tests, 392 assertions).
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "Correction"` -> OK (75 tests, 1416 assertions).
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (194 tests, 4788 assertions).
-- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions), Time 00:11.456, Memory 40.00 MB.
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions), Time 00:11.456, Memory 40.00 MB.
 
 [FINAL_RULE]
 - The current source state can claim `FULLY_PRODUCTION_READY` for the market-data source/runtime proof represented by this audit pack.
@@ -1042,3 +1042,22 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [NEXT_ACTION]
 - None for this API daily runtime proof and final validation scope.
 - Recommended next independent hardening scope: CI / Regression Guard to enforce the final validation automatically.
+
+## 2026-05-24 — Market Benchmark + Indicator Extension Runtime Proof Re-Lock
+
+Status: `PASS`.
+
+This append-only reconciliation records the latest current source-state proof after the market benchmark + indicator extension.
+
+- `MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS`
+- `MARKET_DATA_PRODUCTION_READY_LOCKED=YES`
+- `FULL_MARKET_DATA_PHPUNIT=PASSED`
+- Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
+- Targeted proof: Benchmark OK (14 tests, 84 assertions); Indicator OK (18 tests, 104 assertions); MarketBenchmarkIndicatorExtensionStaticGuardTest OK (5 tests, 46 assertions); AuditDocsSynchronizationStaticGuardTest OK (10 tests, 468 assertions); StaticGuard OK (199 tests, 4930 assertions).
+- Runtime proof: daily import `run_id=3` for `2026-05-19` completed with `accepted_row_count=913`, `source_final_status=SUCCESS`, `benchmark_import_status=COMPLETED`, and `benchmark_rows_written=1`.
+- Promote proof: `publication_id=2`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `coverage_ratio=1.0000`, `seal_state=SEALED`, and `pointer_switched=true`.
+- Evidence proof: `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `pointer_resolve_status=RESOLVED_READABLE_CURRENT`, and `file_count=11`.
+- Replay proof: `replay_id=2`, `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
+- Benchmark proof: `IHSG` is stored as benchmark/index with provider symbol `^JKSE`; `^JKSE.JK` and `IHSG.JK` remain forbidden; benchmark `IND_INSUFFICIENT_HISTORY` is expected until enough historical IHSG bars exist.
+
+Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.

@@ -9,10 +9,14 @@ class PublicApiEodBarsAdapter
 {
     private $fetcher;
     private $lastAcquisitionTelemetry = [];
+    private $equityProviderSymbols;
+    private $benchmarkProviderSymbols;
 
-    public function __construct(callable $fetcher = null)
+    public function __construct(callable $fetcher = null, EquityProviderSymbolResolver $equityProviderSymbols = null, BenchmarkProviderSymbolResolver $benchmarkProviderSymbols = null)
     {
         $this->fetcher = $fetcher;
+        $this->equityProviderSymbols = $equityProviderSymbols ?: new EquityProviderSymbolResolver();
+        $this->benchmarkProviderSymbols = $benchmarkProviderSymbols ?: new BenchmarkProviderSymbolResolver();
     }
 
     public function fetchOrLoadEodBars($tradeDate, $sourceMode, array $tickerCodes = [])
@@ -73,6 +77,102 @@ class PublicApiEodBarsAdapter
         $this->rememberAcquisitionTelemetry($this->buildGenericSuccessTelemetry($tradeDate, $tickerCodes, $normalizedRows, $apiConfig, $requestTelemetry));
 
         return $normalizedRows;
+    }
+
+    public function fetchOrLoadBenchmarkBars($tradeDate, $sourceMode, array $benchmarks = [])
+    {
+        $this->lastAcquisitionTelemetry = [];
+        if ($sourceMode !== 'api') {
+            throw new \RuntimeException('Source mode '.$sourceMode.' tidak didukung oleh PublicApiEodBarsAdapter.');
+        }
+
+        $apiConfig = config('market_data.source.api');
+        if ($this->providerName($apiConfig) !== 'yahoo_finance') {
+            throw new SourceAcquisitionException('Benchmark API source currently supports yahoo_finance only.', 'RUN_SOURCE_RESPONSE_CHANGED');
+        }
+
+        if (empty($benchmarks)) {
+            throw new SourceAcquisitionException('Benchmark source membutuhkan benchmark master aktif.', 'RUN_SOURCE_RESPONSE_CHANGED');
+        }
+
+        $rows = [];
+        $requestTelemetry = [];
+        $failureTelemetry = [];
+
+        foreach ($benchmarks as $benchmark) {
+            $benchmark = (array) $benchmark;
+            $benchmarkCode = $this->normalizeTickerCode($benchmark['benchmark_code'] ?? null);
+            $providerSymbol = $this->benchmarkProviderSymbols->resolve(
+                $benchmarkCode,
+                $benchmark['provider_symbol'] ?? null,
+                $benchmark['instrument_type'] ?? null
+            );
+
+            $url = $this->buildYahooFinanceUrl($tradeDate, $benchmarkCode, $apiConfig, $providerSymbol);
+            $requestContext = [
+                'trade_date' => $tradeDate,
+                'benchmark_code' => $benchmarkCode,
+                'provider_symbol' => $providerSymbol,
+                'requested_benchmark_count' => count($benchmarks),
+            ];
+            $lastBenchmarkRequestTelemetry = [];
+
+            try {
+                $response = $this->requestWithRetry($url, $requestContext);
+                $telemetry = $this->consumeLastAcquisitionTelemetry();
+                $lastBenchmarkRequestTelemetry = $telemetry;
+                $requestTelemetry[] = $telemetry + [
+                    'benchmark_code' => $benchmarkCode,
+                    'provider_symbol' => $providerSymbol,
+                ];
+
+                $row = $this->parseYahooFinancePayloadForCode(
+                    $response['body'],
+                    $tradeDate,
+                    $benchmarkCode,
+                    $response['captured_at'],
+                    $apiConfig,
+                    'benchmark'
+                );
+
+                if ($row === null) {
+                    $failureTelemetry[] = $lastBenchmarkRequestTelemetry + [
+                        'benchmark_code' => $benchmarkCode,
+                        'provider_symbol' => $providerSymbol,
+                        'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
+                        'source_final_status' => 'FAILED',
+                        'trade_date_not_found_in_response' => true,
+                    ];
+                    continue;
+                }
+
+                $rows[] = $this->normalizeBenchmarkRow($row, $benchmark, $providerSymbol, $response['captured_at'], $apiConfig);
+            } catch (SourceAcquisitionException $e) {
+                $failureTelemetry[] = ($e->context() ?: $lastBenchmarkRequestTelemetry) + [
+                    'benchmark_code' => $benchmarkCode,
+                    'provider_symbol' => $providerSymbol,
+                    'final_reason_code' => $e->reasonCode(),
+                    'source_final_status' => 'FAILED',
+                ];
+
+                throw $e->withContext($this->buildYahooBenchmarkAggregateTelemetry($tradeDate, $benchmarks, $rows, $requestTelemetry, $failureTelemetry, $apiConfig));
+            }
+        }
+
+        $aggregate = $this->buildYahooBenchmarkAggregateTelemetry($tradeDate, $benchmarks, $rows, $requestTelemetry, $failureTelemetry, $apiConfig);
+        $this->rememberAcquisitionTelemetry($aggregate);
+
+        if (empty($rows)) {
+            throw new SourceAcquisitionException(
+                'Yahoo Finance source returned no valid benchmark bars for requested trade_date.',
+                'RUN_SOURCE_NO_VALID_DATA',
+                0,
+                null,
+                $aggregate
+            );
+        }
+
+        return $rows;
     }
 
 
@@ -423,17 +523,20 @@ class PublicApiEodBarsAdapter
         return $summary;
     }
 
-    private function buildYahooFinanceUrl($tradeDate, $tickerCode, array $apiConfig)
+    private function buildYahooFinanceUrl($tradeDate, $tickerCode, array $apiConfig, $providerSymbol = null)
     {
         $urlTemplate = isset($apiConfig['endpoint_template']) ? trim((string) $apiConfig['endpoint_template']) : '';
-        $symbolSuffix = (string) data_get($apiConfig, 'yahoo.symbol_suffix', '');
+        $symbol = $providerSymbol !== null
+            ? (string) $providerSymbol
+            : $this->equityProviderSymbols->resolve($tickerCode, $apiConfig);
+        $symbolSuffix = '';
         $range = (string) data_get($apiConfig, 'yahoo.range', '10d');
         $interval = (string) data_get($apiConfig, 'yahoo.interval', '1d');
         $periodBounds = $this->yahooPeriodBounds($tradeDate);
 
         return str_replace(
             ['{date}', '{symbol}', '{symbols}', '{symbol_suffix}', '{range}', '{interval}', '{period1}', '{period2}'],
-            [$tradeDate, $tickerCode, $tickerCode, $symbolSuffix, $range, $interval, $periodBounds['period1'], $periodBounds['period2']],
+            [$tradeDate, $symbol, $symbol, $symbolSuffix, $range, $interval, $periodBounds['period1'], $periodBounds['period2']],
             $urlTemplate
         );
     }
@@ -450,6 +553,11 @@ class PublicApiEodBarsAdapter
     }
     
     private function parseYahooFinancePayload($body, $tradeDate, $tickerCode, $capturedAt, array $apiConfig)
+    {
+        return $this->parseYahooFinancePayloadForCode($body, $tradeDate, $tickerCode, $capturedAt, $apiConfig, 'yahoo');
+    }
+
+    private function parseYahooFinancePayloadForCode($body, $tradeDate, $code, $capturedAt, array $apiConfig, $sourceRowRefPrefix)
     {
         $decoded = json_decode($body, true);
         if (! is_array($decoded)) {
@@ -485,7 +593,7 @@ class PublicApiEodBarsAdapter
             }
 
             return [
-                'ticker_code' => $tickerCode,
+                'ticker_code' => $code,
                 'trade_date' => $tradeDate,
                 'open' => $quote['open'][$position] ?? null,
                 'high' => $quote['high'][$position] ?? null,
@@ -494,12 +602,87 @@ class PublicApiEodBarsAdapter
                 'volume' => $quote['volume'][$position] ?? null,
                 'adj_close' => $adjclose[$position] ?? ($quote['close'][$position] ?? null),
                 'source_name' => isset($apiConfig['source_name']) ? $apiConfig['source_name'] : 'YAHOO_FINANCE',
-                'source_row_ref' => 'yahoo:'.$tickerCode.':'.$tradeDate,
+                'source_row_ref' => $sourceRowRefPrefix.':'.$code.':'.$tradeDate,
                 'captured_at' => $capturedAt,
             ];
         }
 
         return null;
+    }
+
+    private function normalizeBenchmarkRow(array $row, array $benchmark, $providerSymbol, $capturedAt, array $apiConfig)
+    {
+        return [
+            'benchmark_code' => $this->normalizeTickerCode($benchmark['benchmark_code'] ?? $row['ticker_code']),
+            'trade_date' => $row['trade_date'],
+            'open' => $row['open'],
+            'high' => $row['high'],
+            'low' => $row['low'],
+            'close' => $row['close'],
+            'volume' => $row['volume'],
+            'adj_close' => $row['adj_close'],
+            'provider' => $this->providerName($apiConfig),
+            'provider_symbol' => $providerSymbol,
+            'source_name' => isset($apiConfig['source_name']) ? $apiConfig['source_name'] : 'YAHOO_FINANCE',
+            'source_row_ref' => 'benchmark:'.$providerSymbol.':'.$row['trade_date'],
+            'captured_at' => $capturedAt,
+        ];
+    }
+
+    private function buildYahooBenchmarkAggregateTelemetry($tradeDate, array $benchmarks, array $rows, array $requestTelemetry, array $failureTelemetry, array $apiConfig)
+    {
+        $attempts = [];
+        $attemptCount = 0;
+        $lastHttpStatus = null;
+        $lastUrl = null;
+        $lastResponseBodySample = null;
+
+        foreach ($requestTelemetry as $telemetry) {
+            $attemptCount += (int) ($telemetry['attempt_count'] ?? 0);
+            if (array_key_exists('final_http_status', $telemetry) && $telemetry['final_http_status'] !== null) {
+                $lastHttpStatus = $telemetry['final_http_status'];
+            }
+            if (array_key_exists('url', $telemetry) && $telemetry['url'] !== null && $telemetry['url'] !== '') {
+                $lastUrl = $telemetry['url'];
+            }
+            if (array_key_exists('response_body_sample', $telemetry) && $telemetry['response_body_sample'] !== null && $telemetry['response_body_sample'] !== '') {
+                $lastResponseBodySample = $telemetry['response_body_sample'];
+            }
+            if (isset($telemetry['attempts']) && is_array($telemetry['attempts'])) {
+                $attempts = array_merge($attempts, $telemetry['attempts']);
+            }
+        }
+
+        $returnedCodes = array_values(array_filter(array_unique(array_map(function ($row) {
+            return isset($row['benchmark_code']) ? (string) $row['benchmark_code'] : '';
+        }, $rows))));
+        $requestedCodes = array_values(array_filter(array_unique(array_map(function ($benchmark) {
+            $benchmark = (array) $benchmark;
+            return isset($benchmark['benchmark_code']) ? (string) $benchmark['benchmark_code'] : null;
+        }, $benchmarks))));
+        $missingCodes = array_values(array_diff($requestedCodes, $returnedCodes));
+
+        return [
+            'source_mode' => 'api',
+            'provider' => $this->providerName($apiConfig),
+            'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
+            'timeout_seconds' => $this->timeoutSeconds(),
+            'retry_max' => $this->retryMax(),
+            'attempt_count' => $attemptCount,
+            'attempts' => $attempts,
+            'final_reason_code' => empty($rows) ? 'RUN_SOURCE_NO_VALID_DATA' : (empty($failureTelemetry) ? null : 'RUN_SOURCE_PARTIAL_RESPONSE'),
+            'final_http_status' => $lastHttpStatus,
+            'url' => $lastUrl,
+            'response_body_sample' => $lastResponseBodySample,
+            'source_final_status' => empty($rows) ? 'FAILED' : (empty($failureTelemetry) ? 'SUCCESS' : 'PARTIAL'),
+            'trade_date' => $tradeDate,
+            'requested_benchmark_count' => count($benchmarks),
+            'returned_benchmark_count' => count($returnedCodes),
+            'missing_benchmark_count' => count($missingCodes),
+            'missing_benchmark_codes' => $missingCodes,
+            'failed_benchmark_count' => count($failureTelemetry),
+            'failure_reason_summary' => $this->summarizeYahooFailureReasons($failureTelemetry),
+        ];
     }
 
     private function providerName(array $apiConfig)

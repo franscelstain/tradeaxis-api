@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- API Daily Runtime Proof / Final Production Ready Validation", $status);
+- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- API Daily Runtime Proof / Final Production Ready Validation", $tracker);
+- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock", $tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);

@@ -59,7 +59,7 @@ Current source-state operator-local proof recorded in `LUMEN_IMPLEMENTATION_STAT
 | `vendor/bin/phpunit tests/Unit/MarketData --filter "RuntimeProof"` | OK (13 tests, 220 assertions) |
 | `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocs"` | OK (10 tests, 404 assertions) |
 | `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` | OK (176 tests, 4124 assertions) |
-| `vendor/bin/phpunit tests/Unit/MarketData` | OK (495 tests, 7616 assertions) |
+| `vendor/bin/phpunit tests/Unit/MarketData` | OK (511 tests, 7871 assertions) |
 
 Sandbox validation result for this audit: `BLOCKED_CONTAINER_RUNTIME_ENV`, not counted as runtime PASS.
 
@@ -684,7 +684,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - `OPS_RUNTIME_PARITY_PASSED`
 - `FINAL_PROVIDER_SMOKE=PASSED`
 - `LIVE_PROVIDER_SMOKE_PASSED`
-- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions).
+- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
 
 [DOC_RECONCILIATION]
 - Previous provider-rate-limit/provider-blocked/provider-smoke-review-required wording is `SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS` for the current source state.
@@ -706,7 +706,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 [VALIDATION]
 - Sandbox syntax validation passed for changed PHP source and test files with `php -l`.
 - Sandbox PHPUnit could not run because this PHP CLI lacks required PHPUnit extensions: `dom`, `mbstring`, `xml`, and `xmlwriter`.
-- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (495 tests, 7616 assertions).
+- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (511 tests, 7871 assertions).
 
 [NEXT_ACTION]
 - None for Final Provider Smoke Passed / Ops Runtime Parity Lock. Current source state is DONE / LOCKED / PASSED.
@@ -751,7 +751,7 @@ Final operator-local validation:
 - Finalize -> OK (51 tests, 392 assertions)
 - Correction -> OK (75 tests, 1416 assertions)
 - StaticGuard -> OK (194 tests, 4785 assertions)
-- Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions)
+- Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions)
 
 ---
 
@@ -876,7 +876,7 @@ Final operator-local validation:
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "Finalize"` -> OK (51 tests, 392 assertions).
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "Correction"` -> OK (75 tests, 1416 assertions).
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (194 tests, 4788 assertions).
-- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions), Time 00:11.456, Memory 40.00 MB.
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions), Time 00:11.456, Memory 40.00 MB.
 
 [FINAL_RULE]
 - The current source state can claim `FULLY_PRODUCTION_READY` for the market-data source/runtime proof represented by this audit pack.
@@ -886,3 +886,22 @@ Final operator-local validation:
 [NEXT_ACTION]
 - None for this API daily runtime proof and final validation scope.
 - Recommended next independent hardening scope: CI / Regression Guard to enforce the final validation automatically.
+
+## 2026-05-24 — Market Benchmark + Indicator Extension Final Production Ready Re-Lock
+
+Status: `PASS`.
+
+This append-only reconciliation records the latest current source-state proof after the market benchmark + indicator extension.
+
+- `MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS`
+- `MARKET_DATA_PRODUCTION_READY_LOCKED=YES`
+- `FULL_MARKET_DATA_PHPUNIT=PASSED`
+- Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
+- Targeted proof: Benchmark OK (14 tests, 84 assertions); Indicator OK (18 tests, 104 assertions); MarketBenchmarkIndicatorExtensionStaticGuardTest OK (5 tests, 46 assertions); AuditDocsSynchronizationStaticGuardTest OK (10 tests, 468 assertions); StaticGuard OK (199 tests, 4930 assertions).
+- Runtime proof: daily import `run_id=3` for `2026-05-19` completed with `accepted_row_count=913`, `source_final_status=SUCCESS`, `benchmark_import_status=COMPLETED`, and `benchmark_rows_written=1`.
+- Promote proof: `publication_id=2`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `coverage_ratio=1.0000`, `seal_state=SEALED`, and `pointer_switched=true`.
+- Evidence proof: `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `pointer_resolve_status=RESOLVED_READABLE_CURRENT`, and `file_count=11`.
+- Replay proof: `replay_id=2`, `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
+- Benchmark proof: `IHSG` is stored as benchmark/index with provider symbol `^JKSE`; `^JKSE.JK` and `IHSG.JK` remain forbidden; benchmark `IND_INSUFFICIENT_HISTORY` is expected until enough historical IHSG bars exist.
+
+Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.

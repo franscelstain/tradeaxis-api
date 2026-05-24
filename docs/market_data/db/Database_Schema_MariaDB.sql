@@ -41,6 +41,75 @@ CREATE TABLE IF NOT EXISTS market_calendar (
   KEY market_calendar_trading_idx (is_trading_day, cal_date)
 ) ENGINE=InnoDB;
 
+-- =========================================================
+-- Market benchmark/index master and bars
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS market_benchmarks (
+  benchmark_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  benchmark_code VARCHAR(32) NOT NULL,
+  benchmark_name VARCHAR(120) NOT NULL,
+  provider VARCHAR(64) NOT NULL,
+  provider_symbol VARCHAR(64) NOT NULL,
+  instrument_type VARCHAR(32) NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NULL,
+  PRIMARY KEY (benchmark_id),
+  UNIQUE KEY uq_market_benchmarks_code (benchmark_code),
+  KEY idx_market_benchmarks_provider_symbol (provider, provider_symbol),
+  KEY idx_market_benchmarks_active_code (is_active, benchmark_code)
+) ENGINE=InnoDB;
+
+INSERT INTO market_benchmarks
+  (benchmark_code, benchmark_name, provider, provider_symbol, instrument_type, is_active, created_at, updated_at)
+VALUES
+  ('IHSG', 'Jakarta Composite Index', 'yahoo_finance', '^JKSE', 'INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  benchmark_name = VALUES(benchmark_name),
+  provider = VALUES(provider),
+  provider_symbol = VALUES(provider_symbol),
+  instrument_type = VALUES(instrument_type),
+  is_active = VALUES(is_active),
+  updated_at = VALUES(updated_at);
+
+CREATE TABLE IF NOT EXISTS market_benchmark_bars (
+  benchmark_bar_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  benchmark_code VARCHAR(32) NOT NULL,
+  trade_date DATE NOT NULL,
+  open_price DECIMAL(20,4) NOT NULL,
+  high_price DECIMAL(20,4) NOT NULL,
+  low_price DECIMAL(20,4) NOT NULL,
+  close_price DECIMAL(20,4) NOT NULL,
+  adjusted_close DECIMAL(20,4) NULL,
+  volume BIGINT NULL,
+  provider VARCHAR(64) NOT NULL,
+  provider_symbol VARCHAR(64) NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NULL,
+  PRIMARY KEY (benchmark_bar_id),
+  UNIQUE KEY uq_market_benchmark_bars_code_date (benchmark_code, trade_date),
+  KEY idx_market_benchmark_bars_code_date (benchmark_code, trade_date),
+  KEY idx_market_benchmark_bars_provider_symbol (provider, provider_symbol)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS market_benchmark_indicators (
+  benchmark_indicator_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  benchmark_code VARCHAR(32) NOT NULL,
+  trade_date DATE NOT NULL,
+  roc_20 DECIMAL(20,10) NULL,
+  ma20 DECIMAL(20,4) NULL,
+  ma50 DECIMAL(20,4) NULL,
+  is_valid TINYINT(1) NOT NULL DEFAULT 0,
+  invalid_reason_code VARCHAR(64) NULL,
+  indicator_set_version VARCHAR(64) NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NULL,
+  PRIMARY KEY (benchmark_indicator_id),
+  UNIQUE KEY uq_market_benchmark_indicators_code_date_version (benchmark_code, trade_date, indicator_set_version),
+  KEY idx_market_benchmark_indicators_code_date (benchmark_code, trade_date)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS eod_reason_codes (
   code VARCHAR(64) NOT NULL,
   category VARCHAR(32) NOT NULL,
@@ -130,6 +199,13 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   vol_ratio DECIMAL(20,10) NULL,
   roc20 DECIMAL(20,10) NULL,
   hh20 DECIMAL(20,4) NULL,
+  ma20 DECIMAL(20,4) NULL,
+  ma50 DECIMAL(20,4) NULL,
+  close_to_hh20_pct DECIMAL(20,10) NULL,
+  close_vs_ma20_pct DECIMAL(20,10) NULL,
+  close_vs_ma50_pct DECIMAL(20,10) NULL,
+  ma20_slope_pct DECIMAL(20,10) NULL,
+  rs_20_vs_ihsg DECIMAL(20,10) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   publication_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL,
@@ -465,6 +541,13 @@ CREATE TABLE IF NOT EXISTS eod_indicators_history (
   vol_ratio DECIMAL(20,10) NULL,
   roc20 DECIMAL(20,10) NULL,
   hh20 DECIMAL(20,4) NULL,
+  ma20 DECIMAL(20,4) NULL,
+  ma50 DECIMAL(20,4) NULL,
+  close_to_hh20_pct DECIMAL(20,10) NULL,
+  close_vs_ma20_pct DECIMAL(20,10) NULL,
+  close_vs_ma50_pct DECIMAL(20,10) NULL,
+  ma20_slope_pct DECIMAL(20,10) NULL,
+  rs_20_vs_ihsg DECIMAL(20,10) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (publication_id, trade_date, ticker_id),

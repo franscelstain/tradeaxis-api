@@ -192,3 +192,22 @@ Current status:
 - `OpsEnvironmentBaselineStaticGuardTest.php` was corrected to avoid requiring historical ops proof markers directly inside both active audit lumen documents.
 - Final operator-local rerun after the guard-scope patch passed StaticGuard and full MarketData suite; no post-session audit-docs sync blocker remains.
 
+
+## 2026-05-24 — Market Benchmark + Indicator Extension Audit Docs Reconciliation
+
+Status: `PASS`.
+
+This append-only reconciliation records the latest current source-state proof after the market benchmark + indicator extension.
+
+- `MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS`
+- `MARKET_DATA_PRODUCTION_READY_LOCKED=YES`
+- `FULL_MARKET_DATA_PHPUNIT=PASSED`
+- Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
+- Targeted proof: Benchmark OK (14 tests, 84 assertions); Indicator OK (18 tests, 104 assertions); MarketBenchmarkIndicatorExtensionStaticGuardTest OK (5 tests, 46 assertions); AuditDocsSynchronizationStaticGuardTest OK (10 tests, 468 assertions); StaticGuard OK (199 tests, 4930 assertions).
+- Runtime proof: daily import `run_id=3` for `2026-05-19` completed with `accepted_row_count=913`, `source_final_status=SUCCESS`, `benchmark_import_status=COMPLETED`, and `benchmark_rows_written=1`.
+- Promote proof: `publication_id=2`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `coverage_ratio=1.0000`, `seal_state=SEALED`, and `pointer_switched=true`.
+- Evidence proof: `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `pointer_resolve_status=RESOLVED_READABLE_CURRENT`, and `file_count=11`.
+- Replay proof: `replay_id=2`, `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
+- Benchmark proof: `IHSG` is stored as benchmark/index with provider symbol `^JKSE`; `^JKSE.JK` and `IHSG.JK` remain forbidden; benchmark `IND_INSUFFICIENT_HISTORY` is expected until enough historical IHSG bars exist.
+
+Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.

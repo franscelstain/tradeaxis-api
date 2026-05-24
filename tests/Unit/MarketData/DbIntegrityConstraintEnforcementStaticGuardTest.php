@@ -40,6 +40,9 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
         foreach ([
             'tickers' => 'PRIMARY KEY (ticker_id)',
             'market_calendar' => 'PRIMARY KEY (cal_date)',
+            'market_benchmarks' => 'PRIMARY KEY (benchmark_id)',
+            'market_benchmark_bars' => 'PRIMARY KEY (benchmark_bar_id)',
+            'market_benchmark_indicators' => 'PRIMARY KEY (benchmark_indicator_id)',
             'eod_reason_codes' => 'PRIMARY KEY (code)',
             'eod_bars' => 'PRIMARY KEY (trade_date, ticker_id)',
             'eod_invalid_bars' => 'PRIMARY KEY (invalid_bar_id)',
@@ -65,10 +68,14 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
     {
         $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
         $sqlite = $this->read('tests/Support/UsesMarketDataSqlite.php');
-        $migration = $this->read('database/migrations/2026_05_07_000002_enforce_market_data_db_integrity_indexes.php');
+        $migration = $this->read('database/migrations/2026_05_07_000002_enforce_market_data_db_integrity_indexes.php')
+            .$this->read('database/migrations/2026_05_24_000001_add_market_benchmark_indicator_extension.php');
 
         foreach ([
             'UNIQUE KEY ticker_code (ticker_code)',
+            'UNIQUE KEY uq_market_benchmarks_code (benchmark_code)',
+            'UNIQUE KEY uq_market_benchmark_bars_code_date (benchmark_code, trade_date)',
+            'UNIQUE KEY uq_market_benchmark_indicators_code_date_version (benchmark_code, trade_date, indicator_set_version)',
             'UNIQUE KEY uq_publication_trade_date_version (trade_date, publication_version)',
             'UNIQUE KEY uq_current_publication_pointer_publication (publication_id)',
             'UNIQUE KEY md_session_snapshots_trade_date_snapshot_slot_ticker_id_unique (trade_date, snapshot_slot, ticker_id)',
@@ -77,6 +84,8 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
             'KEY idx_publication_readable_lookup (trade_date, is_current, seal_state, publication_version, run_id)',
             'KEY idx_publication_run_trade_date (run_id, trade_date, publication_id)',
             'KEY idx_current_publication_pointer_run_version (run_id, publication_version)',
+            'KEY idx_market_benchmark_bars_code_date (benchmark_code, trade_date)',
+            'KEY idx_market_benchmark_indicators_code_date (benchmark_code, trade_date)',
             'KEY idx_eod_bars_publication_date_ticker (publication_id, trade_date, ticker_id)',
             'KEY idx_eod_indicators_publication_date_ticker (publication_id, trade_date, ticker_id)',
             'KEY idx_eod_eligibility_publication_date_ticker (publication_id, trade_date, ticker_id)',
@@ -93,11 +102,16 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
 
         foreach ([
             "unique(['trade_date', 'publication_version'], 'uq_publication_trade_date_version')",
+            "unique('benchmark_code', 'uq_market_benchmarks_code')",
+            "unique(['benchmark_code', 'trade_date'], 'uq_market_benchmark_bars_code_date')",
+            "unique(['benchmark_code', 'trade_date', 'indicator_set_version'], 'uq_market_benchmark_indicators_code_date_version')",
             "unique(['publication_id'], 'uq_current_publication_pointer_publication')",
             "index(['trade_date_effective', 'terminal_status', 'publishability_state', 'coverage_gate_state', 'is_current_publication'], 'idx_runs_effective_readable_contract')",
             "index(['source', 'source_name', 'source_provider', 'source_file_hash'], 'idx_runs_source_identity')",
             "index(['trade_date', 'is_current', 'seal_state', 'publication_version', 'run_id'], 'idx_publication_readable_lookup')",
             "index(['run_id', 'trade_date', 'publication_id'], 'idx_publication_run_trade_date')",
+            "index(['benchmark_code', 'trade_date'], 'idx_market_benchmark_bars_code_date')",
+            "index(['benchmark_code', 'trade_date'], 'idx_market_benchmark_indicators_code_date')",
             "index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_bars_publication_date_ticker')",
             "index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_indicators_publication_date_ticker')",
             "index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_eligibility_publication_date_ticker')",
@@ -115,6 +129,8 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
             'idx_publication_readable_lookup',
             'idx_publication_run_trade_date',
             'idx_current_publication_pointer_run_version',
+            'idx_market_benchmark_bars_code_date',
+            'idx_market_benchmark_indicators_code_date',
             'idx_eod_bars_publication_date_ticker',
             'idx_eod_indicators_publication_date_ticker',
             'idx_eod_eligibility_publication_date_ticker',

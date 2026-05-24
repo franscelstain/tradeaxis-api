@@ -16,6 +16,7 @@ class IndicatorVectorServiceTest extends TestCase
             'vol_ratio_lookback_days' => 20,
             'roc_lookback_days' => 20,
             'hh_window_days' => 20,
+            'benchmark_roc20_pct' => 5.0,
         ];
     }
 
@@ -23,10 +24,10 @@ class IndicatorVectorServiceTest extends TestCase
     {
         $rows = [];
         for ($i = 1; $i <= $days; $i++) {
-            $day = str_pad((string) $i, 2, '0', STR_PAD_LEFT);
+            $date = date('Y-m-d', strtotime('2026-04-01 +'.($i - 1).' days'));
             $close = 100 + $i;
             $rows[] = [
-                'trade_date' => '2026-04-'.$day,
+                'trade_date' => $date,
                 'open' => $close - 1,
                 'high' => $close + 1,
                 'low' => $close - 2,
@@ -41,7 +42,7 @@ class IndicatorVectorServiceTest extends TestCase
     public function test_build_row_returns_valid_indicator_vector_for_sufficient_history()
     {
         $service = new IndicatorVectorService();
-        $row = $service->buildRow(101, $this->bars(), '2026-04-21', 55, 9001, '2026-04-21 18:00:00', $this->config());
+        $row = $service->buildRow(101, $this->bars(55), '2026-05-25', 55, 9001, '2026-05-25 18:00:00', $this->config());
 
         $this->assertSame(101, $row['ticker_id']);
         $this->assertSame(1, $row['is_valid']);
@@ -51,6 +52,59 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertIsFloat($row['vol_ratio']);
         $this->assertIsFloat($row['roc20']);
         $this->assertIsFloat($row['hh20']);
+        $this->assertIsFloat($row['ma20']);
+        $this->assertIsFloat($row['ma50']);
+        $this->assertIsFloat($row['close_to_hh20_pct']);
+        $this->assertIsFloat($row['close_vs_ma20_pct']);
+        $this->assertIsFloat($row['close_vs_ma50_pct']);
+        $this->assertIsFloat($row['ma20_slope_pct']);
+        $this->assertIsFloat($row['rs_20_vs_ihsg']);
+    }
+
+    public function test_equity_indicator_extension_formulas_are_deterministic()
+    {
+        $service = new IndicatorVectorService();
+        $row = $service->buildRow(101, $this->bars(55), '2026-05-25', 55, 9001, '2026-05-25 18:00:00', $this->config());
+
+        $this->assertSame(145.5, $row['ma20']);
+        $this->assertSame(130.5, $row['ma50']);
+        $this->assertEqualsWithDelta(-0.641025641, $row['close_to_hh20_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(6.529209622, $row['close_vs_ma20_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(18.77394636, $row['close_vs_ma50_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(3.5587188612, $row['ma20_slope_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(9.81481481, $row['rs_20_vs_ihsg'], 0.000000001);
+    }
+
+    public function test_extension_indicators_remain_null_when_optional_lookback_or_benchmark_dependency_is_missing()
+    {
+        $service = new IndicatorVectorService();
+        $config = $this->config();
+        $config['benchmark_roc20_pct'] = null;
+
+        $row = $service->buildRow(101, $this->bars(), '2026-04-21', 55, 9001, '2026-04-21 18:00:00', $config);
+
+        $this->assertSame(1, $row['is_valid']);
+        $this->assertSame(111.5, $row['ma20']);
+        $this->assertNull($row['ma50']);
+        $this->assertNull($row['close_vs_ma50_pct']);
+        $this->assertNull($row['ma20_slope_pct']);
+        $this->assertNull($row['rs_20_vs_ihsg']);
+    }
+
+    public function test_zero_denominator_extension_calculations_return_null_without_error()
+    {
+        $service = new IndicatorVectorService();
+        $bars = $this->bars(55);
+        for ($i = 35; $i < 55; $i++) {
+            $bars[$i]['close'] = 0;
+            $bars[$i]['adj_close'] = 0;
+        }
+
+        $row = $service->buildRow(101, $bars, '2026-05-25', 55, 9001, '2026-05-25 18:00:00', $this->config());
+
+        $this->assertNull($row['ma20']);
+        $this->assertNull($row['close_vs_ma20_pct']);
+        $this->assertNull($row['ma20_slope_pct']);
     }
 
     public function test_build_row_marks_insufficient_history_when_requested_date_has_short_window()

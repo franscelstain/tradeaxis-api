@@ -29,6 +29,13 @@ class IndicatorVectorService
             'vol_ratio' => null,
             'roc20' => null,
             'hh20' => null,
+            'ma20' => null,
+            'ma50' => null,
+            'close_to_hh20_pct' => null,
+            'close_vs_ma20_pct' => null,
+            'close_vs_ma50_pct' => null,
+            'ma20_slope_pct' => null,
+            'rs_20_vs_ihsg' => null,
         ];
 
         if (! $invalidReason) {
@@ -46,6 +53,13 @@ class IndicatorVectorService
             'vol_ratio' => $values['vol_ratio'],
             'roc20' => $values['roc20'],
             'hh20' => $values['hh20'],
+            'ma20' => $values['ma20'],
+            'ma50' => $values['ma50'],
+            'close_to_hh20_pct' => $values['close_to_hh20_pct'],
+            'close_vs_ma20_pct' => $values['close_vs_ma20_pct'],
+            'close_vs_ma50_pct' => $values['close_vs_ma50_pct'],
+            'ma20_slope_pct' => $values['ma20_slope_pct'],
+            'rs_20_vs_ihsg' => $values['rs_20_vs_ihsg'],
             'run_id' => $runId,
             'publication_id' => $publicationId,
             'created_at' => $createdAt,
@@ -127,16 +141,60 @@ class IndicatorVectorService
 
         $rocBaseBar = $bars[$index - $rocLookback];
         $hhBars = array_slice($bars, $index - $hhWindow + 1, $hhWindow);
+        $hh20 = round(max(array_map(function ($bar) {
+            return (float) $bar['high'];
+        }, $hhBars)), 4);
+        $ma20 = $this->movingAverage($bars, $index, 20, $config);
+        $ma50 = $this->movingAverage($bars, $index, 50, $config);
+        $ma20Past = $index >= 5 ? $this->movingAverage($bars, $index - 5, 20, $config) : null;
+        $roc20 = $this->priceBasis($rocBaseBar, $config) > 0 ? round(($priceBasisCurrent / $this->priceBasis($rocBaseBar, $config)) - 1, 10) : null;
+        $benchmarkRoc20Pct = array_key_exists('benchmark_roc20_pct', $config) && $config['benchmark_roc20_pct'] !== null
+            ? (float) $config['benchmark_roc20_pct']
+            : null;
 
         return [
             'dv20_idr' => round(array_sum($turnovers) / $dvWindow, 2),
             'atr14_pct' => $atr !== null && $priceBasisCurrent > 0 ? round($atr / $priceBasisCurrent, 10) : null,
             'vol_ratio' => $priorVolAverage > 0 ? round(((float) $currentBar['volume']) / $priorVolAverage, 10) : null,
-            'roc20' => $this->priceBasis($rocBaseBar, $config) > 0 ? round(($priceBasisCurrent / $this->priceBasis($rocBaseBar, $config)) - 1, 10) : null,
-            'hh20' => round(max(array_map(function ($bar) {
-                return (float) $bar['high'];
-            }, $hhBars)), 4),
+            'roc20' => $roc20,
+            'hh20' => $hh20,
+            'ma20' => $ma20,
+            'ma50' => $ma50,
+            'close_to_hh20_pct' => $this->pctDifference($priceBasisCurrent, $hh20),
+            'close_vs_ma20_pct' => $this->pctDifference($priceBasisCurrent, $ma20),
+            'close_vs_ma50_pct' => $this->pctDifference($priceBasisCurrent, $ma50),
+            'ma20_slope_pct' => $ma20 !== null && $ma20Past !== null ? $this->pctDifference($ma20, $ma20Past) : null,
+            'rs_20_vs_ihsg' => $roc20 !== null && $benchmarkRoc20Pct !== null ? round(($roc20 * 100) - $benchmarkRoc20Pct, 10) : null,
         ];
+    }
+
+    private function movingAverage(array $bars, $index, $window, array $config)
+    {
+        if (($index + 1) < $window) {
+            return null;
+        }
+
+        $slice = array_slice($bars, $index - $window + 1, $window);
+        $values = [];
+
+        foreach ($slice as $bar) {
+            $price = $this->priceBasis($bar, $config);
+            if ($price <= 0) {
+                return null;
+            }
+            $values[] = $price;
+        }
+
+        return round(array_sum($values) / $window, 4);
+    }
+
+    private function pctDifference($current, $base)
+    {
+        if ($current === null || $base === null || (float) $base <= 0) {
+            return null;
+        }
+
+        return round((((float) $current - (float) $base) / (float) $base) * 100, 10);
     }
 
     private function priceBasis(array $bar, array $config)

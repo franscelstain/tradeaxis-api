@@ -83,6 +83,59 @@ trait UsesMarketDataSqlite
             $table->index(['is_trading_day', 'cal_date'], 'market_calendar_trading_idx');
         });
 
+        $schema->create('market_benchmarks', function (Blueprint $table) {
+            $table->bigIncrements('benchmark_id');
+            $table->string('benchmark_code', 32);
+            $table->string('benchmark_name', 120);
+            $table->string('provider', 64);
+            $table->string('provider_symbol', 64);
+            $table->string('instrument_type', 32);
+            $table->integer('is_active')->default(1);
+            $table->dateTime('created_at');
+            $table->dateTime('updated_at')->nullable();
+
+            $table->unique('benchmark_code', 'uq_market_benchmarks_code');
+            $table->index(['provider', 'provider_symbol'], 'idx_market_benchmarks_provider_symbol');
+            $table->index(['is_active', 'benchmark_code'], 'idx_market_benchmarks_active_code');
+        });
+
+        $schema->create('market_benchmark_bars', function (Blueprint $table) {
+            $table->bigIncrements('benchmark_bar_id');
+            $table->string('benchmark_code', 32);
+            $table->date('trade_date');
+            $table->decimal('open_price', 20, 4);
+            $table->decimal('high_price', 20, 4);
+            $table->decimal('low_price', 20, 4);
+            $table->decimal('close_price', 20, 4);
+            $table->decimal('adjusted_close', 20, 4)->nullable();
+            $table->bigInteger('volume')->nullable();
+            $table->string('provider', 64);
+            $table->string('provider_symbol', 64);
+            $table->dateTime('created_at');
+            $table->dateTime('updated_at')->nullable();
+
+            $table->unique(['benchmark_code', 'trade_date'], 'uq_market_benchmark_bars_code_date');
+            $table->index(['benchmark_code', 'trade_date'], 'idx_market_benchmark_bars_code_date');
+            $table->index(['provider', 'provider_symbol'], 'idx_market_benchmark_bars_provider_symbol');
+        });
+
+        $schema->create('market_benchmark_indicators', function (Blueprint $table) {
+            $table->bigIncrements('benchmark_indicator_id');
+            $table->string('benchmark_code', 32);
+            $table->date('trade_date');
+            $table->decimal('roc_20', 20, 10)->nullable();
+            $table->decimal('ma20', 20, 4)->nullable();
+            $table->decimal('ma50', 20, 4)->nullable();
+            $table->integer('is_valid')->default(0);
+            $table->string('invalid_reason_code')->nullable();
+            $table->string('indicator_set_version', 64);
+            $table->dateTime('created_at');
+            $table->dateTime('updated_at')->nullable();
+
+            $table->unique(['benchmark_code', 'trade_date', 'indicator_set_version'], 'uq_market_benchmark_indicators_code_date_version');
+            $table->index(['benchmark_code', 'trade_date'], 'idx_market_benchmark_indicators_code_date');
+        });
+
 
         $schema->create('eod_reason_codes', function (Blueprint $table) {
             $table->string('code', 64)->primary();
@@ -338,6 +391,13 @@ trait UsesMarketDataSqlite
             $table->decimal('vol_ratio', 20, 10)->nullable();
             $table->decimal('roc20', 20, 10)->nullable();
             $table->decimal('hh20', 20, 4)->nullable();
+            $table->decimal('ma20', 20, 4)->nullable();
+            $table->decimal('ma50', 20, 4)->nullable();
+            $table->decimal('close_to_hh20_pct', 20, 10)->nullable();
+            $table->decimal('close_vs_ma20_pct', 20, 10)->nullable();
+            $table->decimal('close_vs_ma50_pct', 20, 10)->nullable();
+            $table->decimal('ma20_slope_pct', 20, 10)->nullable();
+            $table->decimal('rs_20_vs_ihsg', 20, 10)->nullable();
             $table->integer('run_id');
             $table->integer('publication_id');
             $table->dateTime('created_at');
@@ -568,6 +628,13 @@ trait UsesMarketDataSqlite
             $table->decimal('vol_ratio', 20, 10)->nullable();
             $table->decimal('roc20', 20, 10)->nullable();
             $table->decimal('hh20', 20, 4)->nullable();
+            $table->decimal('ma20', 20, 4)->nullable();
+            $table->decimal('ma50', 20, 4)->nullable();
+            $table->decimal('close_to_hh20_pct', 20, 10)->nullable();
+            $table->decimal('close_vs_ma20_pct', 20, 10)->nullable();
+            $table->decimal('close_vs_ma50_pct', 20, 10)->nullable();
+            $table->decimal('ma20_slope_pct', 20, 10)->nullable();
+            $table->decimal('rs_20_vs_ihsg', 20, 10)->nullable();
             $table->integer('run_id')->nullable();
             $table->dateTime('created_at');
 

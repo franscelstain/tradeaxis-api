@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('API Daily Runtime Proof / Final Production Ready Validation', $statusActiveSession);
+        $this->assertSame('Market Benchmark + Indicator Extension / Final Production Ready Re-Lock', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -46,6 +46,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('TESTING_DATABASE_ISOLATION_SAFE_MIGRATION_CONTRACT', $document);
             $this->assertStringContainsString('PRODUCTION_SCHEDULER_CRON_DEPLOYMENT_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $document);
+            $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT', $document);
         }
 
         $this->assertStringContainsString('- API Daily Runtime Proof / Final Production Ready Validation -> DONE', $status);
@@ -57,7 +58,19 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $this->assertStringContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
         $this->assertStringContainsString('ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH', $status.$tracker);
         $this->assertStringContainsString('21 registered market-data commands', $status.$tracker);
-        $this->assertStringContainsString('PROVIDER_SMOKE_OK', $status.$tracker);
+$this->assertStringContainsString('PROVIDER_SMOKE_OK', $status.$tracker);
+
+$this->assertStringContainsString('- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock -> DONE', $status);
+$this->assertStringContainsString('[RELATED_CONTRACT] MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT', $status);
+$this->assertStringContainsString('- MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT -> LOCKED', $tracker);
+$this->assertStringContainsString('[RELATED_IMPLEMENTATION] Market Benchmark + Indicator Extension / Final Production Ready Re-Lock', $tracker);
+$this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS', $status.$tracker);
+$this->assertStringContainsString('FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)', $status.$tracker);
+$this->assertStringContainsString('benchmark_import_status=COMPLETED', $status.$tracker);
+$this->assertStringContainsString('benchmark_rows_written=1', $status.$tracker);
+$this->assertStringContainsString('IHSG/^JKSE/INDEX/is_active=1', $status.$tracker);
+$this->assertStringContainsString('IND_INSUFFICIENT_HISTORY', $status.$tracker);
+$this->assertStringContainsString('replay_id=2', $status.$tracker);
 
         $this->assertStringContainsString('- Ops Command Surface Runtime Matrix -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $status);
@@ -133,9 +146,9 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
 
         $activeSession = $this->activeSessionName($status);
-        $this->assertStringContainsString('API Daily Runtime Proof / Final Production Ready Validation', $implementationEntry);
+        $this->assertStringContainsString($activeSession, $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -234,6 +247,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('435 tests, 6318 assertions', $document);
             $this->assertStringContainsString('164 tests, 3702 assertions', $document);
             $this->assertStringContainsString('164 tests, 3721 assertions', $document);
+            $this->assertStringContainsString('511 tests, 7871 assertions', $document);
             $this->assertStringContainsString('vendor/bin/phpunit tests/Unit/MarketData', $document);
             $this->assertStringContainsString('not a new container PHPUnit run', $document);
         }
@@ -284,6 +298,33 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $this->assertStringContainsString('- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED', $tracker);
         $this->assertStringNotContainsString('Full market-data production-ready: `CLAIMED_FOR_THIS_SOURCE_ZIP`', $inventory.$proofPack);
     }
+
+public function test_market_benchmark_indicator_extension_final_lock_is_recorded(): void
+{
+    $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+    $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+    $inventory = $this->readProjectFile('docs/market_data/audit/MARKET_BENCHMARK_INDICATOR_EXTENSION_INVENTORY.md');
+    $proofPack = $this->readProjectFile('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
+
+    foreach ([$status, $tracker, $inventory, $proofPack] as $document) {
+        $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS', $document);
+        $this->assertStringContainsString('PASS', $document);
+        $this->assertStringContainsString('OK (511 tests, 7871 assertions)', $document);
+        $this->assertStringContainsString('run_id=3', $document);
+        $this->assertStringContainsString('publication_id=2', $document);
+        $this->assertStringContainsString('benchmark_import_status=COMPLETED', $document);
+        $this->assertStringContainsString('benchmark_rows_written=1', $document);
+        $this->assertStringContainsString('comparison_result=MATCH', $document);
+        $this->assertStringContainsString('replay_status=PASS', $document);
+        $this->assertStringContainsString('mismatch_count=0', $document);
+        $this->assertStringContainsString('FULL_MARKET_DATA_PRODUCTION_READY', $document);
+    }
+
+    $this->assertStringContainsString('IHSG -> ^JKSE', $inventory);
+    $this->assertStringContainsString('^JKSE.JK', $inventory);
+    $this->assertStringContainsString('IND_INSUFFICIENT_HISTORY', $inventory);
+    $this->assertStringContainsString('REMAINING_BLOCKERS: none', $inventory);
+}
 
     public function test_reason_code_registry_and_seed_are_synchronized(): void
     {

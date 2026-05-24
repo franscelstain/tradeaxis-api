@@ -26,6 +26,7 @@ class MarketDataPipelineService
     private $publicationDiffs;
     private $publicationFinalizeOutcomes;
     private $coverageGateEvaluator;
+    private $benchmarkBarsIngest;
 
     public function __construct(
         EodRunRepository $runs,
@@ -39,7 +40,8 @@ class MarketDataPipelineService
         FinalizeDecisionService $finalizeDecisions,
         PublicationDiffService $publicationDiffs,
         PublicationFinalizeOutcomeService $publicationFinalizeOutcomes,
-        CoverageGateEvaluator $coverageGateEvaluator
+        CoverageGateEvaluator $coverageGateEvaluator,
+        BenchmarkBarsIngestService $benchmarkBarsIngest = null
     ) {
         $this->runs = $runs;
         $this->barsIngest = $barsIngest;
@@ -53,6 +55,7 @@ class MarketDataPipelineService
         $this->publicationDiffs = $publicationDiffs;
         $this->publicationFinalizeOutcomes = $publicationFinalizeOutcomes;
         $this->coverageGateEvaluator = $coverageGateEvaluator;
+        $this->benchmarkBarsIngest = $benchmarkBarsIngest;
     }
 
     public function startStage(MarketDataStageInput $input)
@@ -200,6 +203,13 @@ class MarketDataPipelineService
         try {
             return DB::transaction(function () use ($run, $input, $priorCurrent) {
                 $result = $this->barsIngest->ingest($run, $input->requestedDate, $input->sourceMode, $priorCurrent);
+                $benchmarkResult = $this->benchmarkBarsIngest !== null
+                    ? $this->benchmarkBarsIngest->ingest($input->requestedDate, $input->sourceMode)
+                    : [
+                        'benchmark_import_status' => 'SKIPPED',
+                        'benchmark_skip_reason_code' => 'BENCHMARK_SERVICE_NOT_BOUND',
+                        'benchmark_rows_written' => 0,
+                    ];
 
                 $sourceAcquisition = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
@@ -215,6 +225,8 @@ class MarketDataPipelineService
                         'request_mode='.(string) $input->requestMode,
                         'candidate_publication_id='.$result['publication_id'],
                         'source_name='.(string) $result['source_name'],
+                        'benchmark_import_status='.(string) ($benchmarkResult['benchmark_import_status'] ?? 'UNKNOWN'),
+                        'benchmark_rows_written='.(int) ($benchmarkResult['benchmark_rows_written'] ?? 0),
                     ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisition))),
                 ], $this->sourceTelemetryColumns($input->sourceMode, $result['source_name'], $sourceAcquisition)));
 
@@ -232,6 +244,7 @@ class MarketDataPipelineService
                         'promoted' => false,
                         'pointer_switched' => false,
                         'source_acquisition' => $sourceAcquisition,
+                        'benchmark_import' => $benchmarkResult,
                     ]
                 );
 
@@ -456,6 +469,13 @@ class MarketDataPipelineService
                         'vol_ratio',
                         'roc20',
                         'hh20',
+                        'ma20',
+                        'ma50',
+                        'close_to_hh20_pct',
+                        'close_vs_ma20_pct',
+                        'close_vs_ma50_pct',
+                        'ma20_slope_pct',
+                        'rs_20_vs_ihsg',
                     ],
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),

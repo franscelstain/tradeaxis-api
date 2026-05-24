@@ -3,25 +3,38 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- API Daily Runtime Proof / Final Production Ready Validation
+- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock
 
 [SESSION_STATUS] FULLY_PRODUCTION_READY
 
+[CURRENT_SOURCE_LOCK]
+- MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS
+- MARKET_DATA_PRODUCTION_READY_LOCKED=YES
+- FULL_MARKET_DATA_PHPUNIT=PASSED
+- FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
+- RUNTIME_VALIDATION=PASS
+- EVIDENCE_EXPORT=PASS
+- REPLAY_VERIFY=PASS
+- REMAINING_BLOCKERS=none
+- FULL_MARKET_DATA_PRODUCTION_READY=YES
+
 [SESSION_SCOPE]
-- Lock the final API daily runtime proof after `source_mode=api` promote produced a readable sealed current publication.
-- Confirm evidence export admission and replay determinism for `run_id=1`.
-- Preserve `OPS_RUNTIME_PARITY_PASSED`, `FINAL_PROVIDER_SMOKE=PASSED`, and full MarketData PHPUnit PASS as active contract evidence.
+- Lock the market benchmark + indicator extension after migration, targeted tests, StaticGuard, full MarketData PHPUnit, daily/promote runtime proof, evidence export, and replay verify all passed.
+- Preserve equity/benchmark separation: `tickers` remains the equity universe, while `market_benchmarks` owns IHSG/index instruments.
+- Preserve provider symbol contract: equity symbols use `.JK`, benchmark provider symbol `^JKSE` is used as-is.
+- Preserve read-side/publication contract: new indicator fields are production-valid only through sealed/readable/current publication proof.
 
 [SESSION_GOAL]
-- Mark the current source-state proof as `FULLY_PRODUCTION_READY` with explicit runtime evidence for API daily, coverage, hash/seal, pointer switch, evidence export, replay verify, and full regression tests.
+- Mark the current source-state proof as `FULLY_PRODUCTION_READY` with explicit runtime evidence for benchmark import, indicator extension, coverage PASS, hash/seal, pointer switch, evidence export, replay verify, and full regression tests.
 
 [SESSION_NOTES]
-- `run_id=1` / `publication_id=1` is the API runtime proof for `2026-05-20`.
+- `run_id=3` / `publication_id=2` is the benchmark-extension API runtime proof for `2026-05-19`.
 - `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `seal_state=SEALED`, and `pointer_switched=true`.
-- Coverage was partial but above threshold: `available=911/913`, `missing=2`, `ratio=0.9978`, `threshold=0.9800`.
+- Coverage is complete: `available=913/913`, `missing=0`, `ratio=1.0000`, `threshold=0.9800`.
+- Benchmark ingest proof is complete: `benchmark_import_status=COMPLETED`, `benchmark_rows_written=1`, `IHSG -> ^JKSE`.
 - Evidence export is `COMPLETE / ADMITTED_COMPLETE`.
 - Replay verify is `MATCH / PASS / mismatch_count=0`.
-- Full MarketData PHPUnit validation passed: `OK (495 tests, 7616 assertions)`.
+- Full MarketData PHPUnit validation passed: `OK (511 tests, 7871 assertions)`.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI proof: PHP 7.4.33.
@@ -51,6 +64,56 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING CONTRACT
 
+- MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-24
+
+  [RELATED_IMPLEMENTATION] Market Benchmark + Indicator Extension / Final Production Ready Re-Lock
+
+  [REVIEW_STATUS] FULLY_PRODUCTION_READY
+
+  [HISTORY]
+  - 2026-05-24 -> Contract added after the benchmark/indicator extension produced passing migration, targeted PHPUnit, StaticGuard, full MarketData PHPUnit, daily/promote runtime proof, evidence export, replay verify, and manual benchmark DB query evidence.
+  - 2026-05-24 -> This contract re-locks current source-state production readiness after adding IHSG benchmark support and equity indicator extension.
+
+  [DEFINED]
+  - Benchmark/index instruments are owned outside the equity ticker universe. `tickers` remains the equity universe; `market_benchmarks` owns `IHSG`.
+  - `IHSG` uses provider symbol `^JKSE` as-is. The `.JK` suffix applies only to equity provider symbols.
+  - Benchmark bars are deterministic by `(benchmark_code, trade_date)` and benchmark indicators are deterministic by `(benchmark_code, trade_date, indicator_set_version)`.
+  - Equity indicator extension must compute `ma20`, `ma50`, `close_to_hh20_pct`, `close_vs_ma20_pct`, `close_vs_ma50_pct`, `ma20_slope_pct`, and `rs_20_vs_ihsg` without raw/staging/latest/MAX(date) shortcuts.
+  - `rs_20_vs_ihsg` must use IHSG benchmark `roc_20`; insufficient benchmark history must return nullable output/reason-coded invalid state rather than fake values.
+
+  [IMPLEMENTED]
+  - Migration `2026_05_24_000001_add_market_benchmark_indicator_extension` creates benchmark tables, seeds `IHSG/^JKSE`, and adds equity indicator extension columns.
+  - `BenchmarkProviderSymbolResolver` preserves `^JKSE`; `EquityProviderSymbolResolver` handles equity `.JK` suffixing.
+  - `BenchmarkBarsIngestService`, `BenchmarkIndicatorComputeService`, `BenchmarkIndicatorVectorService`, and `MarketBenchmarkRepository` own benchmark ingest/computation/storage.
+  - `IndicatorVectorService` and `EodIndicatorsComputeService` own the equity indicator extension and benchmark ROC dependency.
+  - Evidence/replay artifacts include the new indicator hash state through the existing publication artifact hashing flow.
+
+  [VALIDATED]
+  - Operator-local migration proof: `php artisan migrate` -> migrated successfully.
+  - Operator-local full PHPUnit proof: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
+  - Operator-local benchmark proof: OK (14 tests, 84 assertions).
+  - Operator-local indicator proof: OK (18 tests, 104 assertions).
+  - Operator-local MarketBenchmarkIndicatorExtensionStaticGuardTest proof: OK (5 tests, 46 assertions).
+  - Operator-local AuditDocsSynchronizationStaticGuardTest proof: OK (10 tests, 468 assertions).
+  - Operator-local StaticGuard proof: OK (199 tests, 4930 assertions).
+  - Operator-local daily proof: `run_id=3`, `accepted_row_count=913`, `source_missing_ticker_count=0`, `benchmark_import_status=COMPLETED`, `benchmark_rows_written=1`.
+  - Operator-local promote proof: `SUCCESS / READABLE / PASS / SEALED`, `coverage_ratio=1.0000`, `pointer_switched=true`, `publication_id=2`.
+  - Operator-local evidence proof: `COMPLETE / ADMITTED_COMPLETE`, `pointer_resolve_status=RESOLVED_READABLE_CURRENT`, `file_count=11`.
+  - Operator-local replay proof: `replay_id=2`, `MATCH / PASS / mismatch_count=0`.
+  - Operator-local manual DB proof: `market_benchmarks` contains `IHSG/^JKSE/INDEX/is_active=1`; `market_benchmark_bars` contains IHSG `2026-05-19`; `market_benchmark_indicators` contains `IND_INSUFFICIENT_HISTORY`, which is expected for one benchmark bar.
+
+  [FINAL_RULE]
+  - LOCKED. The current source state can claim `FULLY_PRODUCTION_READY` after the market benchmark + indicator extension because migration, test, runtime, evidence, replay, benchmark DB proof, docs, and static guards are synchronized.
+  - `^JKSE.JK`, `IHSG.JK`, hardcoded IHSG ROC, fake benchmark indicator values, and raw/staging/latest/MAX(date) indicator reads remain forbidden.
+  - `IND_INSUFFICIENT_HISTORY` is a valid non-blocking benchmark indicator state until enough historical IHSG bars exist.
+  - Future benchmark/indicator/provider/schema/config changes must rerun targeted benchmark/indicator guards, AuditDocs guard, StaticGuard, full `tests/Unit/MarketData`, and daily/promote/evidence/replay proof before preserving this claim.
+
+  [NEXT_ACTION]
+  - None for this contract in the current source state.
+
+
 - API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT -> LOCKED
 
   [LAST_UPDATED] 2026-05-24
@@ -79,7 +142,7 @@ ACTIVE SESSION:
   - Operator-local Config/ENV proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "ConfigEnvGovernanceCleanupStaticGuardTest"` -> OK (10 tests, 123 assertions).
   - Operator-local OpsEnvironment proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "OpsEnvironmentBaselineStaticGuardTest"` -> OK (8 tests, 107 assertions).
   - Operator-local StaticGuard proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (194 tests, 4789 assertions).
-  - Operator-local full MarketData proof: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7617 assertions).
+  - Operator-local full MarketData proof: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
 
   [FINAL_RULE]
   - LOCKED. The current market-data source state can claim `FULLY_PRODUCTION_READY` because API daily/promote, coverage, seal/current pointer, evidence admission, replay determinism, provider smoke, scheduler due-run proof, audit docs, static guards, and full MarketData PHPUnit all passed for the current source state.
@@ -2997,7 +3060,7 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - `OPS_RUNTIME_PARITY_PASSED`
 - `FINAL_PROVIDER_SMOKE=PASSED`
 - `LIVE_PROVIDER_SMOKE_PASSED`
-- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions).
+- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
 
 [DOC_RECONCILIATION]
 - Previous provider-rate-limit/provider-blocked/provider-smoke-review-required wording is `SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS` for the current source state.
@@ -3019,7 +3082,7 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 [VALIDATION]
 - Sandbox syntax validation passed for changed PHP source and test files with `php -l`.
 - Sandbox PHPUnit could not run because this PHP CLI lacks required PHPUnit extensions: `dom`, `mbstring`, `xml`, and `xmlwriter`.
-- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (495 tests, 7616 assertions).
+- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (511 tests, 7871 assertions).
 
 [NEXT_ACTION]
 - None for Final Provider Smoke Passed / Ops Runtime Parity Lock. Current source state is DONE / LOCKED / PASSED.
@@ -3153,7 +3216,7 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "Finalize"` -> OK (51 tests, 392 assertions).
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "Correction"` -> OK (75 tests, 1416 assertions).
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (194 tests, 4788 assertions).
-- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions), Time 00:11.456, Memory 40.00 MB.
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions), Time 00:11.456, Memory 40.00 MB.
 
 [FINAL_RULE]
 - The current source state can claim `FULLY_PRODUCTION_READY` for the market-data source/runtime proof represented by this audit pack.

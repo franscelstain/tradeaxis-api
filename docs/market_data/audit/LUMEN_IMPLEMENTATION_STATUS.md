@@ -3,27 +3,40 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- API Daily Runtime Proof / Final Production Ready Validation
+- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock
 
 [SESSION_STATUS] FULLY_PRODUCTION_READY
 
+[CURRENT_SOURCE_LOCK]
+- MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS
+- MARKET_DATA_PRODUCTION_READY_LOCKED=YES
+- FULL_MARKET_DATA_PHPUNIT=PASSED
+- FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
+- RUNTIME_VALIDATION=PASS
+- EVIDENCE_EXPORT=PASS
+- REPLAY_VERIFY=PASS
+- REMAINING_BLOCKERS=none
+- FULL_MARKET_DATA_PRODUCTION_READY=YES
+
 [SESSION_SCOPE]
-- Record the final `source_mode=api` daily/promote runtime proof for `run_id=1`.
-- Record evidence export `ADMITTED_COMPLETE` and replay verify `PASS/MATCH` for the same API-produced readable publication.
-- Preserve provider-smoke PASS, scheduler due-run proof, and full MarketData PHPUnit PASS as active current-source evidence.
-- Keep session snapshot as optional supplemental proof because it requires an explicit local `--input_file`.
+- Reconcile the completed market benchmark + indicator extension runtime proof for `run_id=3` and `publication_id=2`.
+- Lock the IHSG benchmark implementation (`IHSG -> ^JKSE`) as market-data scope, not equity ticker scope.
+- Record full MarketData PHPUnit PASS after benchmark/indicator extension: `OK (511 tests, 7871 assertions)`.
+- Record daily/promote/evidence/replay runtime proof for `2026-05-19` after benchmark import and indicator extension.
+- Preserve current-readable publication, evidence admission, replay determinism, and no raw/staging/latest/MAX(date) read contracts.
 
 [SESSION_GOAL]
-- Promote the final source-state decision to `FULLY_PRODUCTION_READY` after API daily runtime proof, evidence export, replay verification, targeted guards, StaticGuard, and full MarketData PHPUnit all pass.
+- Promote the current source-state decision back to `FULLY_PRODUCTION_READY` after benchmark schema, IHSG ingest, benchmark indicators, equity indicator extension, static guards, runtime proof, evidence export, replay verify, and full PHPUnit all pass.
 
 [SESSION_NOTES]
-- `market-data:daily --source_mode=api` and subsequent `market-data:promote --requested_date=2026-05-20 --source_mode=api --run_id=1` produced `SUCCESS / READABLE / PASS / SEALED`.
-- `publication_id=1` became the current readable publication with `pointer_switched=true`.
-- API source result was partial but validly accepted because coverage passed: `available=911/913`, `missing=2`, `ratio=0.9978`, `threshold=0.9800`.
-- Missing tickers were `JSPT,JTPE`.
-- Evidence export for `run_id=1` produced `evidence_completeness_state=COMPLETE` and `evidence_admission_state=ADMITTED_COMPLETE`.
-- Replay fixture/verify for `api_daily_success_run_1` produced `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
-- Final full MarketData PHPUnit validation passed: `OK (495 tests, 7616 assertions)`.
+- Migration `2026_05_24_000001_add_market_benchmark_indicator_extension` migrated successfully.
+- Full `vendor/bin/phpunit tests/Unit/MarketData` passed: `OK (511 tests, 7871 assertions)`.
+- Targeted benchmark/indicator/static/audit guards passed: Benchmark OK (14 tests, 84 assertions), Indicator OK (18 tests, 104 assertions), MarketBenchmarkIndicatorExtensionStaticGuardTest OK (5 tests, 46 assertions), AuditDocsSynchronizationStaticGuardTest OK (10 tests, 468 assertions), StaticGuard OK (199 tests, 4930 assertions).
+- `market-data:daily --requested_date=2026-05-19 --source_mode=api --output_dir=storage/app/market_data/daily/2026-05-19` completed import with `accepted_row_count=913`, `source_final_status=SUCCESS`, `benchmark_import_status=COMPLETED`, and `benchmark_rows_written=1`.
+- `market-data:promote --requested_date=2026-05-19 --source_mode=api --run_id=3 --output_dir=storage/app/market_data/promote/2026-05-19` completed as `SUCCESS / READABLE / PASS / SEALED`, `publication_id=2`, `pointer_switched=true`, and `coverage_ratio=1.0000`.
+- Evidence export for `run_id=3` produced `evidence_completeness_state=COMPLETE` and `evidence_admission_state=ADMITTED_COMPLETE`.
+- Runtime-generated replay verify for `run_id=3` produced `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
+- Manual benchmark query proof records `market_benchmarks.IHSG/^JKSE`, one IHSG bar for `2026-05-19`, and benchmark indicator row with `IND_INSUFFICIENT_HISTORY`, which is expected for a single imported benchmark bar.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI proof: PHP 7.4.33.
@@ -55,6 +68,73 @@ ACTIVE SESSION:
 
 ## CURRENT WORKING ENTRY
 
+- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock -> DONE
+
+  [SESSION] Market Benchmark + Indicator Extension / Final Production Ready Re-Lock
+
+  [SESSION_STATUS] FULLY_PRODUCTION_READY
+
+  [LAST_UPDATED] 2026-05-24
+
+  [RELATED_CONTRACT] MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT
+
+  [REVIEW_STATUS] FULLY_PRODUCTION_READY
+
+  [HISTORY]
+  - 2026-05-24 -> Market benchmark + indicator extension was runtime-validated after implementation. Migration `2026_05_24_000001_add_market_benchmark_indicator_extension` migrated successfully.
+  - 2026-05-24 -> Full MarketData PHPUnit passed after the extension: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
+  - 2026-05-24 -> Targeted validations passed: Benchmark OK (14 tests, 84 assertions), Indicator OK (18 tests, 104 assertions), MarketBenchmarkIndicatorExtensionStaticGuardTest OK (5 tests, 46 assertions), AuditDocsSynchronizationStaticGuardTest OK (10 tests, 468 assertions), StaticGuard OK (199 tests, 4930 assertions).
+  - 2026-05-24 -> API daily import for `2026-05-19` completed with `run_id=3`, `publication_id=2`, `accepted_row_count=913`, `source_final_status=SUCCESS`, `benchmark_import_status=COMPLETED`, and `benchmark_rows_written=1`.
+  - 2026-05-24 -> Promote for `run_id=3` completed as `SUCCESS / READABLE / PASS / SEALED`, `coverage_ratio=1.0000`, `pointer_switched=true`, and `is_current_publication=1`.
+  - 2026-05-24 -> Evidence export for `run_id=3` returned `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, and `file_count=11`.
+  - 2026-05-24 -> Replay fixture and verify for `run_id=3` returned `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0` with `replay_id=2`.
+  - 2026-05-24 -> Manual DB proof confirms `market_benchmarks` contains `IHSG/^JKSE/INDEX/is_active=1`, `market_benchmark_bars` contains IHSG bar for `2026-05-19`, and `market_benchmark_indicators` correctly records `IND_INSUFFICIENT_HISTORY` for single-bar benchmark history.
+
+  [IMPLEMENTATION]
+  - Benchmark/index data is owned by `market_benchmarks`, `market_benchmark_bars`, and `market_benchmark_indicators`; IHSG is not inserted into the equity `tickers` universe.
+  - Yahoo benchmark provider symbol is resolved as `IHSG -> ^JKSE` and is never suffixed as `^JKSE.JK`.
+  - Equity indicator extension fields are present in `eod_indicators` and `eod_indicators_history`: `ma20`, `ma50`, `close_to_hh20_pct`, `close_vs_ma20_pct`, `close_vs_ma50_pct`, `ma20_slope_pct`, and `rs_20_vs_ihsg`.
+  - `rs_20_vs_ihsg` uses IHSG benchmark ROC (`roc20('IHSG', requestedDate)`) and remains nullable when benchmark history is insufficient; no hardcoded benchmark return is allowed.
+  - The extension preserves current-readable publication, hash/seal, coverage, evidence export, and replay determinism contracts.
+
+  [VALIDATED]
+  - Migration proof: `php artisan migrate` -> `Migrated: 2026_05_24_000001_add_market_benchmark_indicator_extension (190.31ms)`.
+  - Full PHPUnit proof: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
+  - Benchmark proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "Benchmark"` -> OK (14 tests, 84 assertions).
+  - Indicator proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "Indicator"` -> OK (18 tests, 104 assertions).
+  - Benchmark extension static guard proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "MarketBenchmarkIndicatorExtensionStaticGuardTest"` -> OK (5 tests, 46 assertions).
+  - Audit docs proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocsSynchronizationStaticGuardTest"` -> OK (10 tests, 468 assertions).
+  - StaticGuard proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (199 tests, 4930 assertions).
+  - Daily proof: `run_id=3`, `import_status=COMPLETED`, `source_final_status=SUCCESS`, `accepted_row_count=913`, `source_missing_ticker_count=0`, `benchmark_import_status=COMPLETED`, `benchmark_rows_written=1`.
+  - Promote proof: `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `seal_state=SEALED`, `pointer_switched=true`, `current_publication_id=2`, `publication_id=2`.
+  - Evidence proof: `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `pointer_resolve_status=RESOLVED_READABLE_CURRENT`, `file_count=11`.
+  - Replay proof: `replay_id=2`, `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`, `pointer_summary=expected:2 actual:2`.
+
+  [FINAL_BEHAVIOR]
+  - `FULLY_PRODUCTION_READY` is restored as the active source-state decision after the benchmark/indicator extension.
+  - `MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS`, `FULL_MARKET_DATA_PHPUNIT=PASSED`, `RUNTIME_VALIDATION=PASS`, `EVIDENCE_EXPORT=PASS`, `REPLAY_VERIFY=PASS`, and `FULL_MARKET_DATA_PRODUCTION_READY=YES` are valid together for this current source state.
+  - `IND_INSUFFICIENT_HISTORY` for IHSG benchmark indicators is expected when only one benchmark bar is present; this is not a blocker and must not be replaced by fake values.
+  - No successful scheduled daily production run is claimed by this entry; scheduler due-run/non-silent proof remains the scheduler scope.
+
+  [EVIDENCE]
+  - `storage/app/market_data/daily/2026-05-19/market_data_daily_summary.json`.
+  - `storage/app/market_data/promote/2026-05-19/market_data_promote_summary.json`.
+  - `storage/app/market_data/evidence/2026-05-19/run/**`.
+  - `storage/app/market_data/replay-fixtures/2026-05-19/valid_case/**`.
+  - `storage/app/market_data/evidence/2026-05-19/replay/replay_result.json`.
+  - `storage/app/market_data/evidence/2026-05-19/benchmark-extension/market_benchmarks.csv`.
+  - `storage/app/market_data/evidence/2026-05-19/benchmark-extension/market_benchmark_bars.csv`.
+  - `storage/app/market_data/evidence/2026-05-19/benchmark-extension/market_benchmark_indicators.csv`.
+  - `storage/app/market_data/evidence/2026-05-19/benchmark-extension/operator_command_proof.txt`.
+
+  [REMAINING_RISK]
+  - External Yahoo/PublicApi availability remains an operations concern. It does not invalidate this source-state proof because runtime validation passed for the scoped date and all fail-safe contracts remain intact.
+  - Historical IHSG lookback must be imported before benchmark `roc_20`, `ma20`, `ma50`, and downstream `rs_20_vs_ihsg` can become non-null for all trade dates; null with `IND_INSUFFICIENT_HISTORY` is the correct deterministic state until then.
+
+  [NEXT_ACTION]
+  - None for this source-state finalization. Future code/config/provider/scheduler/audit-doc changes must rerun targeted guards and full `vendor/bin/phpunit tests/Unit/MarketData` before preserving this claim.
+
+
 - API Daily Runtime Proof / Final Production Ready Validation -> DONE
 
   [SESSION] API Daily Runtime Proof / Final Production Ready Validation
@@ -73,7 +153,7 @@ ACTIVE SESSION:
   - 2026-05-24 -> API source was partial but accepted by coverage policy: `available=911/913`, `missing=2`, `ratio=0.9978`, `threshold=0.9800`, missing tickers `JSPT,JTPE`.
   - 2026-05-24 -> Evidence export for `run_id=1` produced `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `file_count=11`.
   - 2026-05-24 -> Runtime-generated replay fixture/verify for `api_daily_success_run_1` produced `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
-  - 2026-05-24 -> Final operator-local validation passed: AuditDocs OK (10 tests, 461 assertions), ConfigEnvGovernance OK (10 tests, 123 assertions), OpsEnvironmentBaseline OK (8 tests, 107 assertions), StaticGuard OK (194 tests, 4789 assertions), and full `tests/Unit/MarketData` OK (495 tests, 7617 assertions).
+  - 2026-05-24 -> Final operator-local validation passed: AuditDocs OK (10 tests, 461 assertions), ConfigEnvGovernance OK (10 tests, 123 assertions), OpsEnvironmentBaseline OK (8 tests, 107 assertions), StaticGuard OK (194 tests, 4789 assertions), and full `tests/Unit/MarketData` OK (511 tests, 7871 assertions).
 
   [IMPLEMENTATION]
   - No code logic is changed by this audit-doc finalization entry.
@@ -89,7 +169,7 @@ ACTIVE SESSION:
   - Operator-local targeted validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "ConfigEnvGovernanceCleanupStaticGuardTest"` -> OK (10 tests, 123 assertions).
   - Operator-local targeted validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "OpsEnvironmentBaselineStaticGuardTest"` -> OK (8 tests, 107 assertions).
   - Operator-local static guard validation: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (194 tests, 4789 assertions).
-  - Operator-local full MarketData validation: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7617 assertions).
+  - Operator-local full MarketData validation: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
 
   [FINAL_BEHAVIOR]
   - `FULLY_PRODUCTION_READY` is the active source-state decision for this market-data proof pack.
@@ -3056,7 +3136,7 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 - `OPS_RUNTIME_PARITY_PASSED`
 - `FINAL_PROVIDER_SMOKE=PASSED`
 - `LIVE_PROVIDER_SMOKE_PASSED`
-- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions).
+- `FULL_MARKET_DATA_PHPUNIT=PASSED` is backed by the latest operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
 
 [DOC_RECONCILIATION]
 - Previous provider-rate-limit/provider-blocked/provider-smoke-review-required wording is `SUPERSEDED_BY_FINAL_PROVIDER_SMOKE_PASS_AND_FULL_MARKETDATA_PHPUNIT_PASS` for the current source state.
@@ -3078,7 +3158,7 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 [VALIDATION]
 - Sandbox syntax validation passed for changed PHP source and test files with `php -l`.
 - Sandbox PHPUnit could not run because this PHP CLI lacks required PHPUnit extensions: `dom`, `mbstring`, `xml`, and `xmlwriter`.
-- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (495 tests, 7616 assertions).
+- Operator-local validation completed after gap-closure patch: ProviderSmokeSafeModeStaticGuardTest OK (6 tests, 169 assertions); Coverage OK (72 tests, 800 assertions); Finalize OK (51 tests, 392 assertions); Correction OK (75 tests, 1416 assertions); StaticGuard OK (194 tests, 4785 assertions); Full MarketData suite: OK (511 tests, 7871 assertions).
 
 [NEXT_ACTION]
 - None for Final Provider Smoke Passed / Ops Runtime Parity Lock. Current source state is DONE / LOCKED / PASSED.
@@ -3212,7 +3292,7 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "Finalize"` -> OK (51 tests, 392 assertions).
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "Correction"` -> OK (75 tests, 1416 assertions).
 - `vendor\bin\phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (194 tests, 4788 assertions).
-- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (495 tests, 7616 assertions), Time 00:11.456, Memory 40.00 MB.
+- `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions), Time 00:11.456, Memory 40.00 MB.
 
 [FINAL_RULE]
 - The current source state can claim `FULLY_PRODUCTION_READY` for the market-data source/runtime proof represented by this audit pack.
