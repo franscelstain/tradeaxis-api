@@ -123,7 +123,7 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
 
         foreach ([$status, $tracker] as $document) {
             $this->assertStringContainsString("ACTIVE SESSION:
-- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock", $document);
+- Market Data Consumer Read Model", $document);
             $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);

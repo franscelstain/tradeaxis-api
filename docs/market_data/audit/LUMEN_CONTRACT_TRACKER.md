@@ -3,15 +3,17 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock
+- Market Data Consumer Read Model
 
-[SESSION_STATUS] FULLY_PRODUCTION_READY
+[SESSION_STATUS] LOCKED
 
 [CURRENT_SOURCE_LOCK]
 - MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS
 - MARKET_DATA_PRODUCTION_READY_LOCKED=YES
 - FULL_MARKET_DATA_PHPUNIT=PASSED
+- BASELINE_FULL_MARKET_DATA_SUITE=OK (513 tests, 7980 assertions)
 - FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
+- CONSUMER_READ_MODEL_FULL_MARKET_DATA_SUITE=OK (534 tests, 8287 assertions)
 - RUNTIME_VALIDATION=PASS
 - EVIDENCE_EXPORT=PASS
 - REPLAY_VERIFY=PASS
@@ -19,22 +21,17 @@ ACTIVE SESSION:
 - FULL_MARKET_DATA_PRODUCTION_READY=YES
 
 [SESSION_SCOPE]
-- Lock the market benchmark + indicator extension after migration, targeted tests, StaticGuard, full MarketData PHPUnit, daily/promote runtime proof, evidence export, and replay verify all passed.
-- Preserve equity/benchmark separation: `tickers` remains the equity universe, while `market_benchmarks` owns IHSG/index instruments.
-- Preserve provider symbol contract: equity symbols use `.JK`, benchmark provider symbol `^JKSE` is used as-is.
-- Preserve read-side/publication contract: new indicator fields are production-valid only through sealed/readable/current publication proof.
+- Lock the consumer read model contract for watchlist market-data, portfolio official prices, benchmark context, and readiness status.
+- Preserve read-side/publication contract: official consumer rows are current-readable-publication only.
+- Preserve boundary: market-data supplies official prices/indicators/benchmark/readiness, while watchlist/portfolio/signal modules own ranking, valuation, P/L, and decision logic.
 
 [SESSION_GOAL]
-- Mark the current source-state proof as `FULLY_PRODUCTION_READY` with explicit runtime evidence for benchmark import, indicator extension, coverage PASS, hash/seal, pointer switch, evidence export, replay verify, and full regression tests.
+- Add and validate `MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT` without weakening existing production-ready market-data baseline.
 
 [SESSION_NOTES]
-- `run_id=3` / `publication_id=2` is the benchmark-extension API runtime proof for `2026-05-19`.
-- `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `seal_state=SEALED`, and `pointer_switched=true`.
-- Coverage is complete: `available=913/913`, `missing=0`, `ratio=1.0000`, `threshold=0.9800`.
-- Benchmark ingest proof is complete: `benchmark_import_status=COMPLETED`, `benchmark_rows_written=1`, `IHSG -> ^JKSE`.
-- Evidence export is `COMPLETE / ADMITTED_COMPLETE`.
-- Replay verify is `MATCH / PASS / mismatch_count=0`.
-- Full MarketData PHPUnit validation passed: `OK (511 tests, 7871 assertions)`.
+- `run_id=3` / `publication_id=2` remains the runtime proof target for `2026-05-19`.
+- Watchlist and portfolio read services are read-only and do not mutate publication, evidence, replay, correction, or pipeline state.
+- Benchmark read service reads IHSG from `market_benchmarks / market_benchmark_bars / market_benchmark_indicators`, not from equity `tickers`.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI proof: PHP 7.4.33.
@@ -63,6 +60,53 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-05-24
+
+  [RELATED_IMPLEMENTATION] Market Data Consumer Read Model
+
+  [REVIEW_STATUS] CONSUMER_READ_MODEL_LOCKED_LOCAL_PHPUNIT_PASS
+
+  [HISTORY]
+  - 2026-05-24 -> Contract added for official consumer read surfaces over the already production-ready market-data publication state.
+  - 2026-05-24 -> Runtime code and static guard enforcement added.
+  - 2026-05-24 -> Targeted read-model tests, StaticGuard, AuditDocs guard, and full MarketData PHPUnit passed: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (534 tests, 8287 assertions).
+
+  [DEFINED]
+  - Watchlist/portfolio consumer read model only reads current readable publication state.
+  - Official price/indicator reads must be pointer-resolved through `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)`.
+  - Publication must be current, SEALED, owned by a SUCCESS run, publishability READABLE, and coverage PASS.
+  - No raw/staging/latest/MAX(date) shortcut and no silent fallback to another requested date.
+  - Benchmark read surface keeps IHSG outside equity ticker universe.
+  - Market-data read surface does not produce buy/sell, ranking, target price, stop loss, take profit, portfolio P/L, or recommendation decisions.
+
+  [IMPLEMENTED]
+  - Implemented by `MarketDataReadinessService`, `MarketDataWatchlistReadService`, `MarketDataPortfolioPriceService`, `MarketBenchmarkReadService`, and their read repositories.
+  - `READABLE_PUBLICATION_RESOLVED` added to `Reason_Codes_Registry.md` and `Reason_Codes_Seed.sql`.
+
+  [ENFORCED]
+  - Static guard checks the new read model classes for forbidden latest/raw/staging/evidence-audit/internal-fallback patterns.
+  - Contract tests cover readable success, blocked no-pointer/unsealed/non-readable/coverage-fail states, missing portfolio tickers, no fallback to another requested date, and IHSG benchmark insufficient-history behavior.
+
+  [VALIDATED]
+  - Operator-local watchlist read model proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "WatchlistRead"` -> OK (3 tests, 22 assertions).
+  - Operator-local portfolio price read model proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "PortfolioPrice"` -> OK (4 tests, 21 assertions).
+  - Operator-local benchmark read model proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "BenchmarkRead"` -> OK (3 tests, 17 assertions).
+  - Operator-local readiness proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "Readiness"` -> OK (22 tests, 289 assertions).
+  - Operator-local consumer read model static guard proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "ConsumerReadModel"` -> OK (5 tests, 110 assertions).
+  - Operator-local AuditDocs proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocsSynchronizationStaticGuardTest"` -> OK (11 tests, 572 assertions).
+  - Operator-local StaticGuard proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (206 tests, 5262 assertions).
+  - Operator-local full MarketData proof: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (534 tests, 8287 assertions).
+  - Operator-local runtime artifact proof: `storage/app/market_data/promote/2026-05-19/market_data_promote_summary.json` records `run_id=3`, `publication_id=2`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `seal_state=SEALED`, `pointer_switched=true`.
+
+  [FINAL_RULE]
+  - LOCKED. Official consumer read model is pointer-resolved current readable publication only; no consumer raw/staging/latest/MAX(date) bypass, candidate publication fallback, unsealed/non-current read, silent fallback to another date, or market-data strategy/ranking/P&L decision is allowed.
+
+  [NEXT_ACTION]
+  - None for market-data consumer read model scope.
+
 
 - MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT -> LOCKED
 

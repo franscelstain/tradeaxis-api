@@ -146,6 +146,7 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `SNAP_SOURCE_RATE_LIMIT` | INTRADAY | WARN | The session-snapshot source hit rate limiting. |
 | `SNAP_PARTIAL_SCOPE` | INTRADAY | WARN | The session snapshot captured only part of the planned scope. |
 | `SNAP_SOURCE_ERROR` | INTRADAY | WARN | The session-snapshot source failed for an operational reason that does not block EOD. |
+| `READABLE_PUBLICATION_RESOLVED` | READ_SIDE | INFO | A read-side consumer resolved a current sealed readable publication through the authoritative pointer. |
 | `NO_READABLE_PUBLICATION` | READ_SIDE | HARD | A read-side consumer could not resolve a current readable publication through the authoritative pointer and must return no data. |
 | `COMMAND_MISSING_REQUIRED_INPUT` | COMMAND | HARD | Operator command input is missing or empty for a required argument or option. |
 | `COMMAND_INVALID_DATE_FORMAT` | COMMAND | HARD | Operator command date input does not use the locked `YYYY-MM-DD` format. |

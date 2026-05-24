@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Market Benchmark + Indicator Extension / Final Production Ready Re-Lock', $statusActiveSession);
+        $this->assertSame('Market Data Consumer Read Model', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -47,7 +47,21 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('PRODUCTION_SCHEDULER_CRON_DEPLOYMENT_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $document);
             $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT', $document);
+            $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $document);
         }
+
+$this->assertStringContainsString('- Market Data Consumer Read Model -> DONE', $status);
+$this->assertStringContainsString('[RELATED_CONTRACT] MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $status);
+$this->assertStringContainsString('- MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT -> LOCKED', $tracker);
+$this->assertStringContainsString('[RELATED_IMPLEMENTATION] Market Data Consumer Read Model', $tracker);
+$this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_STATUS', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
+$this->assertStringContainsString('WATCHLIST_READ_SURFACE', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
+$this->assertStringContainsString('PORTFOLIO_PRICE_SURFACE', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
+$this->assertStringContainsString('BENCHMARK_READ_SURFACE', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
+$this->assertStringContainsString('READINESS_SURFACE', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
+$this->assertStringContainsString('READABLE_PUBLICATION_RESOLVED', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
+$this->assertStringContainsString('current readable publication only; no raw/staging/latest/MAX(date)', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
+$this->assertStringContainsString('OK (534 tests, 8287 assertions)', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
 
         $this->assertStringContainsString('- API Daily Runtime Proof / Final Production Ready Validation -> DONE', $status);
         $this->assertStringContainsString('[RELATED_CONTRACT] API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT', $status);
@@ -148,7 +162,7 @@ $this->assertStringContainsString('replay_id=2', $status.$tracker);
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -339,7 +353,7 @@ public function test_market_benchmark_indicator_extension_final_lock_is_recorded
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(339, $registryCodes);
+        $this->assertCount(340, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

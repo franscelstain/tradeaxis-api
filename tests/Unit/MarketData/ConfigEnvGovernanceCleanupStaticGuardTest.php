@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock", $status);
+- Market Data Consumer Read Model", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock", $tracker);
+- Market Data Consumer Read Model", $tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);
