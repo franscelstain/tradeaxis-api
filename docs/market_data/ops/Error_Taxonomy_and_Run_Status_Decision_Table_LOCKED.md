@@ -76,6 +76,9 @@ This table exists so implementations do not guess when a requested date T may be
 - `RUN_SOURCE_RATE_LIMIT`
 - `RUN_SOURCE_AUTH_ERROR`
 - `RUN_SOURCE_RESPONSE_CHANGED`
+- `RUN_SOURCE_BAD_REQUEST`
+- `RUN_SOURCE_INVALID_SYMBOL`
+- `RUN_SOURCE_PROVIDER_REJECTED_RANGE`
 - `RUN_SOURCE_PARTIAL_COVERAGE`
 - `RUN_SOURCE_MALFORMED_PAYLOAD`
 
@@ -131,3 +134,17 @@ Consumers rely on:
 - eligibility snapshot for D
 
 Error taxonomy exists to guarantee those fields were produced by deterministic operational rules, not ad-hoc operator judgment.
+
+---
+
+## Source acquisition retry state addendum
+Source acquisition state is separate from run terminal status and publishability.
+
+Resume-only-failed source retry states:
+- `RETRY_SUCCESS`: eligible failed source checkpoints retried successfully.
+- `PARTIAL_RETRY_SUCCESS`: at least one eligible failed checkpoint retried successfully and at least one still failed.
+- `FAILED_RETRY_BLOCKED`: ticker/window retry remains blocked; requested-date publication must not be made readable from this retry alone.
+- `NO_FAILED_CHECKPOINT`: no failed source acquisition checkpoint exists in the resume scope.
+- `SYSTEMIC_FAILED`: only for true global/provider/config acquisition failure.
+
+Ticker-scoped provider HTTP 400 during resume-only-failed must use `FAILED_RETRY_BLOCKED` with source reason code such as `RUN_SOURCE_BAD_REQUEST`, not `SYSTEMIC_FAILED`.

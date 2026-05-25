@@ -50,6 +50,10 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `RUN_SOURCE_RATE_LIMIT` | RUN | WARN | The source hit rate limiting and affected data acquisition. |
 | `RUN_SOURCE_AUTH_ERROR` | RUN | HARD | Source authentication failure or credential/config error blocked data acquisition. |
 | `RUN_SOURCE_RESPONSE_CHANGED` | RUN | HARD | A source schema or response-contract change was detected. |
+| `RUN_SOURCE_BAD_REQUEST` | RUN | HARD | Source provider returned HTTP 400 or equivalent bad request during acquisition; diagnostic context must identify ticker/window/systemic scope. |
+| `RUN_SOURCE_INVALID_SYMBOL` | RUN | WARN | Source provider rejected an individual ticker/symbol; partial acquisition may continue and coverage gate decides publishability. |
+| `RUN_SOURCE_PROVIDER_REJECTED_RANGE` | RUN | HARD | Source provider rejected the requested acquisition range/window or global request parameters. |
+| `NO_FAILED_SOURCE_ACQUISITION_CHECKPOINT` | RUN | WARN | Resume with only-failed found no failed source acquisition checkpoint to retry. |
 | `RUN_SOURCE_PARTIAL_COVERAGE` | RUN | WARN | The source returned incomplete symbol coverage for the requested date. |
 | `RUN_SOURCE_PARTIAL_RESPONSE` | RUN | WARN | The source adapter returned only part of the requested provider response and coverage gate must decide publishability. |
 | `RUN_SOURCE_NO_VALID_DATA` | RUN | HARD | Source acquisition produced zero valid canonical EOD bars; empty source output must remain non-readable and must not publish. |

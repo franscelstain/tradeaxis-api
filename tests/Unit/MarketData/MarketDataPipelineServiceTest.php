@@ -246,7 +246,10 @@ class MarketDataPipelineServiceTest extends TestCase
                 && strpos($notes, 'source_input_file=manual-2026-03-24.csv') !== false;
         }))->andReturn($run);
 
-        $bars->shouldReceive('ingest')->once()->andReturn([
+        $sourceRows = [['ticker_code' => 'BBCA', 'trade_date' => '2026-03-24']];
+        $bars->shouldReceive('acquireSourceRows')->once()->with('2026-03-24', 'manual_file')->andReturn($sourceRows);
+        $bars->shouldReceive('consumeSourceAcquisitionTelemetry')->once()->with('manual_file')->andReturn([]);
+        $bars->shouldReceive('ingestAcquiredRows')->once()->with($run, '2026-03-24', 'manual_file', $sourceRows, [], null)->andReturn([
             'publication_id' => 44,
             'publication_version' => 1,
             'bars_rows_written' => 10,
@@ -323,7 +326,7 @@ class MarketDataPipelineServiceTest extends TestCase
             })
         );
 
-        $bars->shouldReceive('ingest')->once()->andThrow(new RuntimeException('Explicit local input file not found: storage/app/market_data/operator/manual-2026-04-14.csv'));
+        $bars->shouldReceive('acquireSourceRows')->once()->with('2026-04-14', 'manual_file')->andThrow(new RuntimeException('Explicit local input file not found: storage/app/market_data/operator/manual-2026-04-14.csv'));
 
         $service = new MarketDataPipelineService($runs, $bars, $indicators, $eligibility, $publications, $corrections, $artifacts, $hashes, $finalize, $diffs, $outcomes, $coverageGate);
 
@@ -359,9 +362,28 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with($input)
             ->andReturn([$run, null, null]);
 
-        $barsIngest->shouldReceive('ingest')
+        $sourceRows = [['ticker_code' => 'BBCA', 'trade_date' => '2026-04-05']];
+        $sourceAcquisition = [
+            'provider' => 'generic',
+            'source_name' => 'API_FREE',
+            'timeout_seconds' => 15,
+            'retry_max' => 3,
+            'attempt_count' => 2,
+            'success_after_retry' => true,
+            'final_http_status' => 200,
+        ];
+
+        $barsIngest->shouldReceive('acquireSourceRows')
             ->once()
-            ->with($run, '2026-04-05', 'api', null)
+            ->with('2026-04-05', 'api')
+            ->andReturn($sourceRows);
+        $barsIngest->shouldReceive('consumeSourceAcquisitionTelemetry')
+            ->once()
+            ->with('api')
+            ->andReturn($sourceAcquisition);
+        $barsIngest->shouldReceive('ingestAcquiredRows')
+            ->once()
+            ->with($run, '2026-04-05', 'api', $sourceRows, $sourceAcquisition, null)
             ->andReturn([
                 'publication_id' => 44,
                 'publication_version' => 6,
@@ -369,15 +391,7 @@ class MarketDataPipelineServiceTest extends TestCase
                 'invalid_bar_count' => 3,
                 'source_name' => 'API_FREE',
                 'storage_target' => 'eod_bars',
-                'source_acquisition' => [
-                    'provider' => 'generic',
-                    'source_name' => 'API_FREE',
-                    'timeout_seconds' => 15,
-                    'retry_max' => 3,
-                    'attempt_count' => 2,
-                    'success_after_retry' => true,
-                    'final_http_status' => 200,
-                ],
+                'source_acquisition' => $sourceAcquisition,
             ]);
 
         $runs->shouldReceive('updateTelemetry')
@@ -470,9 +484,9 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with($input)
             ->andReturn([$run, null, null]);
 
-        $barsIngest->shouldReceive('ingest')
+        $barsIngest->shouldReceive('acquireSourceRows')
             ->once()
-            ->with($run, '2026-03-17', 'api', null)
+            ->with('2026-03-17', 'api')
             ->andThrow(new \App\Infrastructure\MarketData\Source\SourceAcquisitionException(
                 'Source API rate limited the request.',
                 'RUN_SOURCE_RATE_LIMIT',
@@ -555,9 +569,9 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with($input)
             ->andReturn([$run, null, null]);
 
-        $barsIngest->shouldReceive('ingest')
+        $barsIngest->shouldReceive('acquireSourceRows')
             ->once()
-            ->with($run, '2026-03-17', 'api', null)
+            ->with('2026-03-17', 'api')
             ->andThrow(new \App\Infrastructure\MarketData\Source\SourceAcquisitionException(
                 'Source API rate limited the request.',
                 'RUN_SOURCE_RATE_LIMIT',

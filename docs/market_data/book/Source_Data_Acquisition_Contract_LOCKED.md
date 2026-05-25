@@ -160,3 +160,54 @@ Harus sinkron dengan:
 - `Run_Status_and_Quality_Gates_LOCKED.md`
 - `CONSUMER_READ_CONTRACT_LOCKED.md`
 - `../ops/Commands_and_Runbook_LOCKED.md`
+
+---
+
+## API range-window acquisition addendum
+Untuk `source_mode=api` range backfill, provider acquisition boleh mengambil banyak tanggal dalam satu request window per ticker.
+
+Contract yang tetap wajib:
+- acquisition window tidak mengubah pipeline date-scope
+- requested `trade_date` tetap diproses chronological
+- satu requested `trade_date` tetap memiliki run pipeline sendiri
+- publication/readability/evidence/replay tetap per requested date
+- warmup data boleh di-acquire/import sebagai support history, tetapi tidak otomatis dipromote sebagai requested publication target
+
+Minimum telemetry tambahan:
+- `source_acquisition_mode=range_window`
+- `source_acquisition_batch_id`
+- `source_window_start`
+- `source_window_end`
+- `warmup_start`
+- `requested_start`
+- `requested_end`
+- `source_acquisition_state`
+- `expected_ticker_count`
+- `success_ticker_count`
+- `failed_ticker_count`
+
+Yahoo Finance chart API harus menggunakan precise `period1` / `period2` boundaries for range-window acquisition. Provider `range=10d` style defaults are not sufficient for arbitrary historical backfill windows.
+
+---
+
+## API range-window checkpoint/resume addendum
+API range-window acquisition must persist checkpoint rows at window/ticker granularity.
+
+Checkpoint identity:
+- `window_start`
+- `window_end`
+- `ticker_code`
+
+Failure telemetry isolation:
+- failed checkpoint `reason_code`, `http_status`, `error_sample`, `provider_error_sample`, `sanitized_url`, `failure_scope`, `attempt_count`, and `rows_count` must come from the same checkpoint identity
+- timeout/non-HTTP failure must not inherit HTTP status or provider body from a different ticker
+- successful checkpoint rows must not carry stale failure sample fields
+
+Resume-only-failed state vocabulary:
+- `RETRY_SUCCESS`
+- `PARTIAL_RETRY_SUCCESS`
+- `FAILED_RETRY_BLOCKED`
+- `NO_FAILED_CHECKPOINT`
+- `SYSTEMIC_FAILED` only for true global/provider/config acquisition failure
+
+Resume-only-failed diagnostics must include failed checkpoint total/eligible/retried/skipped counts, retry success/failure counts, skipped reasons, and a failure sample consistent with `source_acquisition_checkpoint.json`.

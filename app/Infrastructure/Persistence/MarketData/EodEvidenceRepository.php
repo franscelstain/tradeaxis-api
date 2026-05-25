@@ -494,6 +494,19 @@ class EodEvidenceRepository
             'final_http_status' => isset($selected['final_http_status']) && $selected['final_http_status'] !== null ? (int) $selected['final_http_status'] : null,
             'final_reason_code' => isset($selected['final_reason_code']) && $selected['final_reason_code'] !== '' ? (string) $selected['final_reason_code'] : null,
             'captured_at' => isset($selected['captured_at']) && $selected['captured_at'] !== '' ? (string) $selected['captured_at'] : (string) $selected['event_time'],
+            'source_acquisition_state' => isset($selected['source_acquisition_state']) && $selected['source_acquisition_state'] !== '' ? (string) $selected['source_acquisition_state'] : null,
+            'source_acquisition_mode' => isset($selected['source_acquisition_mode']) && $selected['source_acquisition_mode'] !== '' ? (string) $selected['source_acquisition_mode'] : null,
+            'source_acquisition_batch_id' => isset($selected['source_acquisition_batch_id']) && $selected['source_acquisition_batch_id'] !== '' ? (string) $selected['source_acquisition_batch_id'] : null,
+            'source_window_start' => isset($selected['source_window_start']) && $selected['source_window_start'] !== '' ? (string) $selected['source_window_start'] : null,
+            'source_window_end' => isset($selected['source_window_end']) && $selected['source_window_end'] !== '' ? (string) $selected['source_window_end'] : null,
+            'warmup_start' => isset($selected['warmup_start']) && $selected['warmup_start'] !== '' ? (string) $selected['warmup_start'] : null,
+            'requested_start' => isset($selected['requested_start']) && $selected['requested_start'] !== '' ? (string) $selected['requested_start'] : null,
+            'requested_end' => isset($selected['requested_end']) && $selected['requested_end'] !== '' ? (string) $selected['requested_end'] : null,
+            'expected_ticker_count' => isset($selected['expected_ticker_count']) && $selected['expected_ticker_count'] !== null ? (int) $selected['expected_ticker_count'] : null,
+            'success_ticker_count' => isset($selected['success_ticker_count']) && $selected['success_ticker_count'] !== null ? (int) $selected['success_ticker_count'] : null,
+            'failed_ticker_count' => isset($selected['failed_ticker_count']) && $selected['failed_ticker_count'] !== null ? (int) $selected['failed_ticker_count'] : null,
+            'max_failed_allowed_for_coverage' => isset($selected['max_failed_allowed_for_coverage']) && $selected['max_failed_allowed_for_coverage'] !== null ? (int) $selected['max_failed_allowed_for_coverage'] : null,
+            'coverage_impossible' => isset($selected['coverage_impossible']) ? (bool) $selected['coverage_impossible'] : null,
             'attempts' => array_values(array_map(function ($attempt) {
                 $attempt = is_array($attempt) ? $attempt : [];
 

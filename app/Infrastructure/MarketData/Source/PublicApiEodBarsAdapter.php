@@ -79,6 +79,26 @@ class PublicApiEodBarsAdapter
         return $normalizedRows;
     }
 
+    public function fetchOrLoadEodBarsRange($startDate, $endDate, $sourceMode, array $tickerCodes, array $tradingDates, array $context = [])
+    {
+        $this->lastAcquisitionTelemetry = [];
+        if ($sourceMode !== 'api') {
+            throw new \RuntimeException('Source mode '.$sourceMode.' tidak didukung oleh PublicApiEodBarsAdapter range acquisition.');
+        }
+
+        $apiConfig = config('market_data.source.api');
+        $urlTemplate = isset($apiConfig['endpoint_template']) ? trim((string) $apiConfig['endpoint_template']) : '';
+        if ($urlTemplate === '') {
+            throw new SourceAcquisitionException('Source API endpoint template belum dikonfigurasi.', 'RUN_SOURCE_AUTH_ERROR');
+        }
+
+        if ($this->providerName($apiConfig) !== 'yahoo_finance') {
+            throw new SourceAcquisitionException('API range-window acquisition currently supports yahoo_finance only.', 'SOURCE_SCHEMA_INVALID');
+        }
+
+        return $this->fetchYahooFinanceBarsRange($startDate, $endDate, $tickerCodes, $tradingDates, $apiConfig, $context);
+    }
+
     public function fetchOrLoadBenchmarkBars($tradeDate, $sourceMode, array $benchmarks = [])
     {
         $this->lastAcquisitionTelemetry = [];
@@ -301,6 +321,300 @@ class PublicApiEodBarsAdapter
         return $rows;
     }
 
+    private function fetchYahooFinanceBarsRange($startDate, $endDate, array $tickerCodes, array $tradingDates, array $apiConfig, array $context = [])
+    {
+        if (empty($tickerCodes)) {
+            throw new SourceAcquisitionException('Yahoo Finance range source membutuhkan ticker universe yang tidak kosong.', 'RUN_SOURCE_RESPONSE_CHANGED');
+        }
+
+        $tradingDates = array_values(array_unique(array_filter(array_map('strval', $tradingDates))));
+        sort($tradingDates);
+        if (empty($tradingDates)) {
+            throw new SourceAcquisitionException('Yahoo Finance range source membutuhkan trading date filter yang tidak kosong.', 'CONFIG_INVALID');
+        }
+
+        $rowsByDate = array_fill_keys($tradingDates, []);
+        $rows = [];
+        $requestTelemetry = [];
+        $failureTelemetry = [];
+        $invalidOhlcvSkipped = 0;
+
+        $uniqueTickerCodes = array_values(array_unique(array_filter(array_map(function ($tickerCode) {
+            return $this->normalizeTickerCode($tickerCode);
+        }, $tickerCodes))));
+
+        foreach ($uniqueTickerCodes as $tickerCode) {
+            $url = $this->buildYahooFinanceRangeUrl($startDate, $endDate, $tickerCode, $apiConfig);
+            $requestContext = array_merge($context, [
+                'source_acquisition_mode' => 'range_window',
+                'source_window_start' => $startDate,
+                'source_window_end' => $endDate,
+                'ticker_code' => $tickerCode,
+                'requested_ticker_count' => count($tickerCodes),
+                'unique_ticker_count' => count($uniqueTickerCodes),
+                'requested_trade_date_count' => count($tradingDates),
+            ]);
+            $lastTickerRequestTelemetry = [];
+
+            try {
+                $response = $this->requestWithRetry($url, $requestContext);
+                $telemetry = $this->consumeLastAcquisitionTelemetry();
+                $lastTickerRequestTelemetry = $telemetry;
+                $requestTelemetry[] = $this->withTickerTelemetry($telemetry, $tickerCode);
+
+                $parsed = $this->parseYahooFinancePayloadRowsForCode(
+                    $response['body'],
+                    array_fill_keys($tradingDates, true),
+                    $tickerCode,
+                    $response['captured_at'],
+                    $apiConfig,
+                    'yahoo'
+                );
+
+                if (empty($parsed['rows'])) {
+                    $failureTelemetry[] = $this->withTickerTelemetry(array_merge($lastTickerRequestTelemetry, [
+                        'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
+                        'source_final_status' => 'FAILED',
+                        'trade_date_not_found_in_response' => true,
+                    ]), $tickerCode);
+                    $invalidOhlcvSkipped += (int) ($parsed['invalid_ohlcv_skipped'] ?? 0);
+                    continue;
+                }
+
+                foreach ($parsed['rows'] as $row) {
+                    $rowDate = (string) $row['trade_date'];
+                    $rowsByDate[$rowDate][] = $row;
+                    $rows[] = $row;
+                }
+                $invalidOhlcvSkipped += (int) ($parsed['invalid_ohlcv_skipped'] ?? 0);
+            } catch (SourceAcquisitionException $e) {
+                $exceptionTelemetry = $e->context();
+                $telemetry = $this->withTickerTelemetry($exceptionTelemetry ?: $lastTickerRequestTelemetry, $tickerCode);
+                if (empty($telemetry)) {
+                    $telemetry = $this->withTickerTelemetry(array_merge($context, [
+                        'source_acquisition_mode' => 'range_window',
+                        'source_window_start' => $startDate,
+                        'source_window_end' => $endDate,
+                        'ticker_code' => $tickerCode,
+                        'provider' => $this->providerName($apiConfig),
+                        'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
+                        'final_reason_code' => $e->reasonCode(),
+                        'source_final_status' => 'FAILED',
+                    ]), $tickerCode);
+                }
+
+                if (! empty($exceptionTelemetry) || empty($lastTickerRequestTelemetry)) {
+                    $requestTelemetry[] = $telemetry;
+                }
+                $failureTelemetry[] = array_merge($telemetry, [
+                    'final_reason_code' => $e->reasonCode(),
+                    'source_final_status' => 'FAILED',
+                ]);
+
+                if (! $this->isYahooPartialTolerantFailure($e->reasonCode())) {
+                    $aggregate = $this->buildYahooRangeAggregateTelemetry(
+                        $startDate,
+                        $endDate,
+                        $tradingDates,
+                        $tickerCodes,
+                        $uniqueTickerCodes,
+                        $rows,
+                        $rowsByDate,
+                        $requestTelemetry,
+                        $failureTelemetry,
+                        $apiConfig,
+                        $context,
+                        $invalidOhlcvSkipped
+                    );
+
+                    $aggregate['source_acquisition_state'] = 'SYSTEMIC_FAILED';
+                    $aggregate['source_final_status'] = 'SYSTEMIC_FAILED';
+                    $aggregate['final_reason_code'] = $e->reasonCode();
+                    $this->rememberAcquisitionTelemetry($aggregate);
+                    throw $e->withContext($aggregate);
+                }
+            }
+        }
+
+        $aggregate = $this->buildYahooRangeAggregateTelemetry(
+            $startDate,
+            $endDate,
+            $tradingDates,
+            $tickerCodes,
+            $uniqueTickerCodes,
+            $rows,
+            $rowsByDate,
+            $requestTelemetry,
+            $failureTelemetry,
+            $apiConfig,
+            $context,
+            $invalidOhlcvSkipped
+        );
+
+        $this->rememberAcquisitionTelemetry($aggregate);
+
+        if (empty($rows) && ! empty($failureTelemetry)) {
+            throw new SourceAcquisitionException(
+                'Yahoo Finance range acquisition failed for all requested tickers.',
+                $this->dominantYahooFailureReasonCode($failureTelemetry),
+                0,
+                null,
+                $aggregate
+            );
+        }
+
+        if (empty($rows)) {
+            $aggregate['source_acquisition_state'] = 'FAILED';
+            $aggregate['source_final_status'] = 'FAILED';
+            $aggregate['final_reason_code'] = 'RUN_SOURCE_NO_VALID_DATA';
+            $aggregate['no_valid_data'] = true;
+            $aggregate['empty_response_blocked'] = true;
+            $aggregate['failure_reason_summary'] = ['RUN_SOURCE_NO_VALID_DATA' => 1];
+
+            $this->rememberAcquisitionTelemetry($aggregate);
+
+            throw new SourceAcquisitionException(
+                'Yahoo Finance range source returned no valid EOD bars for requested trade_date set.',
+                'RUN_SOURCE_NO_VALID_DATA',
+                0,
+                null,
+                $aggregate
+            );
+        }
+
+        return $rowsByDate;
+    }
+
+    private function buildYahooRangeAggregateTelemetry($startDate, $endDate, array $tradingDates, array $requestedTickerCodes, array $uniqueTickerCodes, array $rows, array $rowsByDate, array $requestTelemetry, array $failureTelemetry, array $apiConfig, array $context = [], $invalidOhlcvSkipped = 0)
+    {
+        $attempts = [];
+        $attemptCount = 0;
+        $successAfterRetry = false;
+        $retryExhausted = false;
+        $lastHttpStatus = null;
+        $lastUrl = null;
+        $lastResponseBodySample = null;
+
+        foreach ($requestTelemetry as $telemetry) {
+            $attemptCount += (int) ($telemetry['attempt_count'] ?? 0);
+            $successAfterRetry = $successAfterRetry || (bool) ($telemetry['success_after_retry'] ?? false);
+            $retryExhausted = $retryExhausted || (bool) ($telemetry['retry_exhausted'] ?? false);
+            if (array_key_exists('final_http_status', $telemetry) && $telemetry['final_http_status'] !== null) {
+                $lastHttpStatus = $telemetry['final_http_status'];
+            }
+            if (array_key_exists('url', $telemetry) && $telemetry['url'] !== null && $telemetry['url'] !== '') {
+                $lastUrl = $telemetry['url'];
+            }
+            if (array_key_exists('response_body_sample', $telemetry) && $telemetry['response_body_sample'] !== null && $telemetry['response_body_sample'] !== '') {
+                $lastResponseBodySample = $telemetry['response_body_sample'];
+            }
+            if (isset($telemetry['attempts']) && is_array($telemetry['attempts'])) {
+                $attempts = array_merge($attempts, $telemetry['attempts']);
+            }
+        }
+
+        $returnedTickerCodes = array_values(array_filter(array_unique(array_map(function ($row) {
+            return isset($row['ticker_code']) ? (string) $row['ticker_code'] : '';
+        }, $rows))));
+
+        $missingTickerCodes = array_values(array_diff($uniqueTickerCodes, $returnedTickerCodes));
+        $failureReasonSummary = $this->summarizeYahooFailureReasons($failureTelemetry);
+        $returnedRowsByDate = [];
+        foreach ($rowsByDate as $date => $dateRows) {
+            $returnedRowsByDate[$date] = count($dateRows);
+        }
+
+        $state = empty($rows)
+            ? (! empty($failureTelemetry) ? 'SYSTEMIC_FAILED' : 'FAILED')
+            : (empty($failureTelemetry) && empty($missingTickerCodes) ? 'SUCCESS' : 'PARTIAL_SUCCESS');
+        $failedTickerContexts = $this->failureContextsByTicker($failureTelemetry);
+        $firstFailureContext = ! empty($failedTickerContexts) ? reset($failedTickerContexts) : [];
+        $firstFailureHttpStatus = array_key_exists('http_status', $firstFailureContext)
+            ? $firstFailureContext['http_status']
+            : $lastHttpStatus;
+        $firstFailureProviderSample = array_key_exists('provider_error_sample', $firstFailureContext)
+            ? $firstFailureContext['provider_error_sample']
+            : $lastResponseBodySample;
+        $firstFailureSanitizedUrl = array_key_exists('sanitized_url', $firstFailureContext)
+            ? $firstFailureContext['sanitized_url']
+            : $lastUrl;
+
+        return array_merge($context, [
+            'source_mode' => 'api',
+            'provider' => $this->providerName($apiConfig),
+            'source_name' => strtoupper((string) data_get($apiConfig, 'source_name', config('market_data.source.default_source_name', 'API_FREE'))),
+            'timeout_seconds' => $this->timeoutSeconds(),
+            'retry_max' => $this->retryMax(),
+            'attempt_count' => $attemptCount,
+            'attempts' => $attempts,
+            'success_after_retry' => $successAfterRetry,
+            'retry_exhausted' => $retryExhausted,
+            'final_reason_code' => $state === 'SUCCESS' ? null : (empty($failureReasonSummary) ? 'RUN_SOURCE_PARTIAL_RESPONSE' : $this->dominantYahooFailureReasonCode($failureTelemetry)),
+            'final_http_status' => $lastHttpStatus,
+            'http_status' => $firstFailureHttpStatus,
+            'url' => $lastUrl,
+            'sanitized_url' => $firstFailureSanitizedUrl,
+            'response_body_sample' => $lastResponseBodySample,
+            'provider_error_sample' => $firstFailureProviderSample,
+            'failure_scope' => $firstFailureContext['failure_scope'] ?? null,
+            'source_final_status' => $state === 'PARTIAL_SUCCESS' ? 'PARTIAL' : $state,
+            'source_acquisition_state' => $state,
+            'source_acquisition_mode' => 'range_window',
+            'source_window_start' => $startDate,
+            'source_window_end' => $endDate,
+            'requested_ticker_count' => count($requestedTickerCodes),
+            'unique_ticker_count' => count($uniqueTickerCodes),
+            'expected_ticker_count' => count($uniqueTickerCodes),
+            'success_ticker_count' => count($returnedTickerCodes),
+            'failed_ticker_count' => count($missingTickerCodes),
+            'missing_ticker_count' => count($missingTickerCodes),
+            'failed_ticker_codes' => $missingTickerCodes,
+            'missing_ticker_codes' => $missingTickerCodes,
+            'failed_ticker_contexts' => $failedTickerContexts,
+            'failures_sample' => array_slice(array_values($failedTickerContexts), 0, 10),
+            'requested_trade_date_count' => count($tradingDates),
+            'returned_trade_date_count' => count(array_filter($returnedRowsByDate)),
+            'returned_rows_by_date' => $returnedRowsByDate,
+            'returned_row_count' => count($rows),
+            'accepted_row_count' => count($rows),
+            'rejected_row_count' => (int) $invalidOhlcvSkipped,
+            'invalid_row_count' => (int) $invalidOhlcvSkipped,
+            'failure_reason_summary' => $failureReasonSummary,
+        ]);
+    }
+
+
+    private function failureContextsByTicker(array $failureTelemetry)
+    {
+        $contexts = [];
+
+        foreach ($failureTelemetry as $telemetry) {
+            $tickerCode = strtoupper(trim((string) ($telemetry['ticker_code'] ?? '')));
+            if ($tickerCode === '') {
+                continue;
+            }
+
+            $contexts[$tickerCode] = [
+                'ticker_code' => $tickerCode,
+                'source_window_start' => $telemetry['source_window_start'] ?? null,
+                'source_window_end' => $telemetry['source_window_end'] ?? null,
+                'final_reason_code' => $telemetry['final_reason_code'] ?? null,
+                'source_final_status' => $telemetry['source_final_status'] ?? 'FAILED',
+                'final_http_status' => array_key_exists('final_http_status', $telemetry) ? $telemetry['final_http_status'] : ($telemetry['http_status'] ?? null),
+                'http_status' => array_key_exists('http_status', $telemetry) ? $telemetry['http_status'] : ($telemetry['final_http_status'] ?? null),
+                'error_sample' => $telemetry['error_sample'] ?? ($telemetry['provider_error_sample'] ?? ($telemetry['response_body_sample'] ?? null)),
+                'provider_error_sample' => array_key_exists('provider_error_sample', $telemetry) ? $telemetry['provider_error_sample'] : ($telemetry['response_body_sample'] ?? null),
+                'response_body_sample' => array_key_exists('response_body_sample', $telemetry) ? $telemetry['response_body_sample'] : ($telemetry['provider_error_sample'] ?? null),
+                'sanitized_url' => $telemetry['sanitized_url'] ?? ($telemetry['url'] ?? null),
+                'url' => $telemetry['url'] ?? ($telemetry['sanitized_url'] ?? null),
+                'failure_scope' => $telemetry['failure_scope'] ?? 'ticker',
+                'attempt_count' => $telemetry['attempt_count'] ?? null,
+            ];
+        }
+
+        return $contexts;
+    }
+
     private function buildGenericSuccessTelemetry($tradeDate, array $tickerCodes, array $rows, array $apiConfig, array $requestTelemetry = [])
     {
         return $this->mergeGenericTelemetry($requestTelemetry, [
@@ -408,7 +722,7 @@ class PublicApiEodBarsAdapter
 
     private function isYahooPartialTolerantFailure($reasonCode)
     {
-        return in_array($reasonCode, ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT'], true);
+        return in_array($reasonCode, ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT', 'RUN_SOURCE_BAD_REQUEST', 'RUN_SOURCE_INVALID_SYMBOL', 'RUN_SOURCE_NO_VALID_DATA'], true);
     }
 
     private function buildYahooAggregateTelemetry($tradeDate, array $requestedTickerCodes, array $uniqueTickerCodes, array $rows, array $requestTelemetry, array $failureTelemetry, array $apiConfig)
@@ -534,11 +848,45 @@ class PublicApiEodBarsAdapter
         $interval = (string) data_get($apiConfig, 'yahoo.interval', '1d');
         $periodBounds = $this->yahooPeriodBounds($tradeDate);
 
+        if (strpos($urlTemplate, '{period1}') === false || strpos($urlTemplate, '{period2}') === false) {
+            return $this->canonicalYahooChartUrl($symbol, $periodBounds['period1'], $periodBounds['period2'], $interval);
+        }
+
         return str_replace(
             ['{date}', '{symbol}', '{symbols}', '{symbol_suffix}', '{range}', '{interval}', '{period1}', '{period2}'],
             [$tradeDate, $symbol, $symbol, $symbolSuffix, $range, $interval, $periodBounds['period1'], $periodBounds['period2']],
             $urlTemplate
         );
+    }
+
+    private function buildYahooFinanceRangeUrl($startDate, $endDate, $tickerCode, array $apiConfig)
+    {
+        $urlTemplate = isset($apiConfig['endpoint_template']) ? trim((string) $apiConfig['endpoint_template']) : '';
+        $symbol = $this->equityProviderSymbols->resolve($tickerCode, $apiConfig);
+        $symbolSuffix = '';
+        $range = (string) data_get($apiConfig, 'yahoo.range', '10d');
+        $interval = (string) data_get($apiConfig, 'yahoo.interval', '1d');
+        $periodBounds = $this->yahooRangePeriodBounds($startDate, $endDate);
+
+        if (strpos($urlTemplate, '{period1}') === false || strpos($urlTemplate, '{period2}') === false) {
+            return $this->canonicalYahooChartUrl($symbol, $periodBounds['period1'], $periodBounds['period2'], $interval);
+        }
+
+        return str_replace(
+            ['{date}', '{symbol}', '{symbols}', '{symbol_suffix}', '{range}', '{interval}', '{period1}', '{period2}'],
+            [$startDate, $symbol, $symbol, $symbolSuffix, $range, $interval, $periodBounds['period1'], $periodBounds['period2']],
+            $urlTemplate
+        );
+    }
+
+    private function canonicalYahooChartUrl($symbol, $period1, $period2, $interval)
+    {
+        return 'https://query1.finance.yahoo.com/v8/finance/chart/'
+            .(string) $symbol
+            .'?period1='.(string) $period1
+            .'&period2='.(string) $period2
+            .'&interval='.(string) $interval
+            .'&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com';
     }
 
     private function yahooPeriodBounds($tradeDate)
@@ -551,6 +899,18 @@ class PublicApiEodBarsAdapter
             'period2' => (string) $targetDate->copy()->addDay()->timestamp,
         ];
     }
+
+    private function yahooRangePeriodBounds($startDate, $endDate)
+    {
+        $timezone = config('market_data.platform.timezone', 'Asia/Jakarta');
+        $start = Carbon::parse($startDate, $timezone)->startOfDay();
+        $endExclusive = Carbon::parse($endDate, $timezone)->addDay()->startOfDay();
+
+        return [
+            'period1' => (string) $start->timestamp,
+            'period2' => (string) $endExclusive->timestamp,
+        ];
+    }
     
     private function parseYahooFinancePayload($body, $tradeDate, $tickerCode, $capturedAt, array $apiConfig)
     {
@@ -558,6 +918,20 @@ class PublicApiEodBarsAdapter
     }
 
     private function parseYahooFinancePayloadForCode($body, $tradeDate, $code, $capturedAt, array $apiConfig, $sourceRowRefPrefix)
+    {
+        $parsed = $this->parseYahooFinancePayloadRowsForCode(
+            $body,
+            [(string) $tradeDate => true],
+            $code,
+            $capturedAt,
+            $apiConfig,
+            $sourceRowRefPrefix
+        );
+
+        return $parsed['rows'][0] ?? null;
+    }
+
+    private function parseYahooFinancePayloadRowsForCode($body, array $tradeDateSet, $code, $capturedAt, array $apiConfig, $sourceRowRefPrefix)
     {
         $decoded = json_decode($body, true);
         if (! is_array($decoded)) {
@@ -578,6 +952,8 @@ class PublicApiEodBarsAdapter
         $adjclose = data_get($result, 'indicators.adjclose.0.adjclose', []);
         $meta = is_array(data_get($result, 'meta')) ? data_get($result, 'meta') : [];
         $exchangeTimezone = isset($meta['exchangeTimezoneName']) ? (string) $meta['exchangeTimezoneName'] : config('market_data.platform.timezone');
+        $rows = [];
+        $invalidOhlcvSkipped = 0;
 
         foreach (array_values($timestamps) as $position => $timestamp) {
             if (! is_numeric($timestamp)) {
@@ -588,13 +964,13 @@ class PublicApiEodBarsAdapter
                 ->setTimezone($exchangeTimezone)
                 ->toDateString();
 
-            if ($rowTradeDate !== $tradeDate) {
+            if (! isset($tradeDateSet[$rowTradeDate])) {
                 continue;
             }
 
-            return [
+            $row = [
                 'ticker_code' => $code,
-                'trade_date' => $tradeDate,
+                'trade_date' => $rowTradeDate,
                 'open' => $quote['open'][$position] ?? null,
                 'high' => $quote['high'][$position] ?? null,
                 'low' => $quote['low'][$position] ?? null,
@@ -602,12 +978,33 @@ class PublicApiEodBarsAdapter
                 'volume' => $quote['volume'][$position] ?? null,
                 'adj_close' => $adjclose[$position] ?? ($quote['close'][$position] ?? null),
                 'source_name' => isset($apiConfig['source_name']) ? $apiConfig['source_name'] : 'YAHOO_FINANCE',
-                'source_row_ref' => $sourceRowRefPrefix.':'.$code.':'.$tradeDate,
+                'source_row_ref' => $sourceRowRefPrefix.':'.$code.':'.$rowTradeDate,
                 'captured_at' => $capturedAt,
             ];
+
+            if (! $this->isValidYahooOhlcvRow($row)) {
+                $invalidOhlcvSkipped++;
+                continue;
+            }
+
+            $rows[] = $row;
         }
 
-        return null;
+        return [
+            'rows' => $rows,
+            'invalid_ohlcv_skipped' => $invalidOhlcvSkipped,
+        ];
+    }
+
+    private function isValidYahooOhlcvRow(array $row)
+    {
+        foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
+            if (! array_key_exists($field, $row) || $row[$field] === null || $row[$field] === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function normalizeBenchmarkRow(array $row, array $benchmark, $providerSymbol, $capturedAt, array $apiConfig)
@@ -727,6 +1124,7 @@ class PublicApiEodBarsAdapter
                     throw new SourceAcquisitionException('Source API authentication/config failed with HTTP '.$status.'.', 'RUN_SOURCE_AUTH_ERROR', 0, null, [
                         'final_http_status' => $status,
                         'response_body_sample' => $responseBodySample,
+                    'provider_error_sample' => $responseBodySample,
                     ]);
                 }
 
@@ -745,9 +1143,12 @@ class PublicApiEodBarsAdapter
                 }
 
                 if ($status < 200 || $status >= 300) {
-                    throw new SourceAcquisitionException('Source API returned unexpected HTTP status '.$status.'.', 'RUN_SOURCE_MALFORMED_PAYLOAD', 0, null, [
+                    $reasonCode = $this->classifyHttpFailure($status, $responseBodySample, $requestContext);
+                    throw new SourceAcquisitionException($this->httpFailureMessage($status, $reasonCode), $reasonCode, 0, null, [
                         'final_http_status' => $status,
+                        'http_status' => $status,
                         'response_body_sample' => $responseBodySample,
+                        'provider_error_sample' => $responseBodySample,
                     ]);
                 }
 
@@ -763,7 +1164,8 @@ class PublicApiEodBarsAdapter
                 ];
 
                 $this->rememberAcquisitionTelemetry($requestContext + [
-                    'url' => $url,
+                    'url' => $this->sanitizeUrl($url),
+                    'sanitized_url' => $this->sanitizeUrl($url),
                     'provider' => $provider,
                     'source_name' => $sourceName,
                     'timeout_seconds' => $timeoutSeconds,
@@ -774,7 +1176,10 @@ class PublicApiEodBarsAdapter
                     'retry_exhausted' => false,
                     'final_reason_code' => null,
                     'final_http_status' => $status,
+                    'http_status' => $status,
                     'response_body_sample' => $responseBodySample,
+                    'provider_error_sample' => $responseBodySample,
+                    'failure_scope' => null,
                     'captured_at' => $capturedAt,
                 ]);
 
@@ -788,7 +1193,14 @@ class PublicApiEodBarsAdapter
 
                 $exceptionContext = $e->context();
                 $httpStatus = $exceptionContext['final_http_status'] ?? $this->extractStatusFromExceptionContext($e);
+                if ($httpStatus === 0) {
+                    $httpStatus = null;
+                }
                 $responseBodySample = $exceptionContext['response_body_sample'] ?? null;
+                $errorSample = $this->sanitizeErrorSample($exceptionContext['error_sample'] ?? ($responseBodySample ?? $e->getMessage()));
+                $providerErrorSample = array_key_exists('provider_error_sample', $exceptionContext)
+                    ? $exceptionContext['provider_error_sample']
+                    : $responseBodySample;
 
                 $attemptLog[] = [
                     'attempt_number' => $attemptNumber,
@@ -800,7 +1212,8 @@ class PublicApiEodBarsAdapter
                 ];
 
                 $failureContext = $requestContext + [
-                    'url' => $url,
+                    'url' => $this->sanitizeUrl($url),
+                    'sanitized_url' => $this->sanitizeUrl($url),
                     'provider' => $provider,
                     'source_name' => $sourceName,
                     'timeout_seconds' => $timeoutSeconds,
@@ -811,7 +1224,11 @@ class PublicApiEodBarsAdapter
                     'retry_exhausted' => ! $willRetry && in_array($e->reasonCode(), ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT'], true),
                     'final_reason_code' => $e->reasonCode(),
                     'final_http_status' => $httpStatus,
+                    'http_status' => $httpStatus,
                     'response_body_sample' => $responseBodySample,
+                    'provider_error_sample' => $providerErrorSample,
+                    'error_sample' => $errorSample,
+                    'failure_scope' => $this->failureScopeForContext($requestContext, $e->reasonCode()),
                     'captured_at' => $capturedAt,
                 ];
 
@@ -822,10 +1239,130 @@ class PublicApiEodBarsAdapter
                 if (! $willRetry) {
                     throw $lastException;
                 }
+            } catch (\Throwable $e) {
+                $reasonCode = 'RUN_SOURCE_TIMEOUT';
+                $willRetry = $this->shouldRetry($reasonCode, $attempt, $retryMax);
+                $backoffDelayMs = $willRetry ? $this->backoff($attempt, $baseBackoffMs) : 0;
+                $errorSample = $this->sanitizeErrorSample($e->getMessage() !== '' ? $e->getMessage() : get_class($e));
+
+                $attemptLog[] = [
+                    'attempt_number' => $attemptNumber,
+                    'reason_code' => $reasonCode,
+                    'http_status' => null,
+                    'throttle_delay_ms' => $throttleDelayMs,
+                    'backoff_delay_ms' => $backoffDelayMs,
+                    'will_retry' => $willRetry,
+                ];
+
+                $failureContext = $requestContext + [
+                    'url' => $this->sanitizeUrl($url),
+                    'sanitized_url' => $this->sanitizeUrl($url),
+                    'provider' => $provider,
+                    'source_name' => $sourceName,
+                    'timeout_seconds' => $timeoutSeconds,
+                    'retry_max' => $retryMax,
+                    'attempt_count' => count($attemptLog),
+                    'attempts' => $attemptLog,
+                    'success_after_retry' => false,
+                    'retry_exhausted' => ! $willRetry,
+                    'final_reason_code' => $reasonCode,
+                    'final_http_status' => null,
+                    'http_status' => null,
+                    'response_body_sample' => null,
+                    'provider_error_sample' => null,
+                    'error_sample' => $errorSample,
+                    'failure_scope' => $this->failureScopeForContext($requestContext, $reasonCode),
+                    'captured_at' => $capturedAt,
+                ];
+
+                $this->rememberAcquisitionTelemetry($failureContext);
+
+                $lastException = new SourceAcquisitionException(
+                    'Source API request failed before an HTTP response: '.$errorSample,
+                    $reasonCode,
+                    0,
+                    $e,
+                    $failureContext
+                );
+
+                if (! $willRetry) {
+                    throw $lastException;
+                }
             }
         }
 
         throw $lastException ?: new SourceAcquisitionException('Unknown source API acquisition failure.', 'RUN_SOURCE_TIMEOUT');
+    }
+
+
+    private function classifyHttpFailure($status, $responseBodySample, array $requestContext = [])
+    {
+        $status = (int) $status;
+        $body = strtolower((string) $responseBodySample);
+
+        if ($status === 400) {
+            if (strpos($body, 'invalid symbol') !== false || strpos($body, 'not found') !== false) {
+                return 'RUN_SOURCE_INVALID_SYMBOL';
+            }
+
+            if (strpos($body, 'period') !== false || strpos($body, 'range') !== false || strpos($body, 'parameter') !== false) {
+                return 'RUN_SOURCE_PROVIDER_REJECTED_RANGE';
+            }
+
+            return 'RUN_SOURCE_BAD_REQUEST';
+        }
+
+        if ($status === 404) {
+            return 'RUN_SOURCE_INVALID_SYMBOL';
+        }
+
+        if (in_array($status, [409, 422], true)) {
+            return 'RUN_SOURCE_PROVIDER_REJECTED_RANGE';
+        }
+
+        return 'RUN_SOURCE_MALFORMED_PAYLOAD';
+    }
+
+    private function httpFailureMessage($status, $reasonCode)
+    {
+        if ($reasonCode === 'RUN_SOURCE_BAD_REQUEST') {
+            return 'Source API returned bad request HTTP '.$status.'.';
+        }
+
+        if ($reasonCode === 'RUN_SOURCE_INVALID_SYMBOL') {
+            return 'Source API rejected ticker/symbol with HTTP '.$status.'.';
+        }
+
+        if ($reasonCode === 'RUN_SOURCE_PROVIDER_REJECTED_RANGE') {
+            return 'Source API rejected requested range with HTTP '.$status.'.';
+        }
+
+        return 'Source API returned unexpected HTTP status '.$status.'.';
+    }
+
+    private function failureScopeForContext(array $requestContext, $reasonCode)
+    {
+        if (isset($requestContext['ticker_code']) && (string) $requestContext['ticker_code'] !== '') {
+            return 'ticker';
+        }
+
+        if (isset($requestContext['source_window_start']) || isset($requestContext['source_window_end'])) {
+            return 'window';
+        }
+
+        return in_array($reasonCode, ['RUN_SOURCE_RESPONSE_CHANGED', 'RUN_SOURCE_MALFORMED_PAYLOAD', 'RUN_SOURCE_PROVIDER_REJECTED_RANGE'], true)
+            ? 'systemic'
+            : 'request';
+    }
+
+    private function sanitizeUrl($url)
+    {
+        $url = (string) $url;
+        if ($url === '') {
+            return $url;
+        }
+
+        return preg_replace('/([?&](?:token|apikey|api_key|auth|authorization|signature|sig)=)[^&]+/i', '$1[redacted]', $url);
     }
 
     private function shouldRetry($reasonCode, $attempt, $retryMax)
@@ -863,6 +1400,14 @@ class PublicApiEodBarsAdapter
 
     private function extractStatusFromExceptionContext(SourceAcquisitionException $e)
     {
+        $context = $e->context();
+        if (isset($context['final_http_status'])) {
+            return (int) $context['final_http_status'];
+        }
+        if (isset($context['http_status'])) {
+            return (int) $context['http_status'];
+        }
+
         if (preg_match('/HTTP\s+(\d{3})/i', $e->getMessage(), $matches)) {
             return (int) $matches[1];
         }
@@ -966,6 +1511,14 @@ class PublicApiEodBarsAdapter
         $sample = substr((string) $body, 0, 1000);
 
         return str_replace(["\r", "\n", "\0"], [' ', ' ', ''], $sample);
+    }
+
+    private function sanitizeErrorSample($message)
+    {
+        $sample = $this->sanitizeUrl(str_replace(["\r", "\n", "\0"], [' ', ' ', ''], (string) $message));
+        $sample = preg_replace('/\b(token|apikey|api_key|auth|authorization|signature|sig)=\S+/i', '$1=[redacted]', $sample);
+
+        return substr($sample, 0, 1000);
     }
     
     private function timeoutSeconds()

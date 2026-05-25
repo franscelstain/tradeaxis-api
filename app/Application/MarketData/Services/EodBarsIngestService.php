@@ -34,6 +34,19 @@ class EodBarsIngestService
 
     public function ingest($run, $requestedDate, $sourceMode, $priorCurrentPublication = null)
     {
+        $sourceRows = $this->acquireSourceRows($requestedDate, $sourceMode);
+        $sourceAcquisition = $this->consumeSourceAcquisitionTelemetry($sourceMode);
+
+        return $this->ingestAcquiredRows($run, $requestedDate, $sourceMode, $sourceRows, $sourceAcquisition, $priorCurrentPublication);
+    }
+
+    public function acquireSourceRows($requestedDate, $sourceMode, array $tickerCodes = null)
+    {
+        return $this->fetchSourceRows($requestedDate, $sourceMode, $tickerCodes);
+    }
+
+    public function ingestAcquiredRows($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null)
+    {
         if ($priorCurrentPublication && (int) $priorCurrentPublication->publication_id === (int) ($run->publication_id ?? 0)) {
             throw new \RuntimeException('Correction candidate publication cannot equal prior current publication.');
         }
@@ -42,7 +55,6 @@ class EodBarsIngestService
             throw new \RuntimeException('Trade date '.$requestedDate.' sudah punya current publication. Correction/reseal wajib dipakai.');
         }
 
-        $sourceRows = $this->fetchSourceRows($requestedDate, $sourceMode);
         if ($sourceRows === []) {
             throw new SourceAcquisitionException(
                 'Source returned zero rows for requested trade_date; empty source output is not a valid ingest artifact.',
@@ -132,7 +144,9 @@ class EodBarsIngestService
             );
         }
 
-        $sourceAcquisition = $this->consumeSourceAcquisitionTelemetry($sourceMode);
+        $sourceAcquisition = $sourceAcquisition !== null
+            ? $sourceAcquisition
+            : $this->consumeSourceAcquisitionTelemetry($sourceMode);
 
         if (count($validRows) === 0) {
             $context = array_merge($sourceAcquisition, [
@@ -218,7 +232,7 @@ class EodBarsIngestService
         ]);
     }
 
-    private function consumeSourceAcquisitionTelemetry($sourceMode)
+    public function consumeSourceAcquisitionTelemetry($sourceMode)
     {
         if ($sourceMode === 'api') {
             $telemetry = $this->apiSourceAdapter->consumeLastAcquisitionTelemetry();
@@ -237,13 +251,15 @@ class EodBarsIngestService
     }
 
 
-    private function fetchSourceRows($requestedDate, $sourceMode)
+    private function fetchSourceRows($requestedDate, $sourceMode, array $tickerCodes = null)
     {
         if ($sourceMode === 'api') {
-            $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
-            $tickerCodes = array_values(array_unique(array_filter(array_map(function ($row) {
-                return isset($row['ticker_code']) ? $row['ticker_code'] : null;
-            }, $universe))));
+            if ($tickerCodes === null) {
+                $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
+                $tickerCodes = array_values(array_unique(array_filter(array_map(function ($row) {
+                    return isset($row['ticker_code']) ? $row['ticker_code'] : null;
+                }, $universe))));
+            }
 
             return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes);
         }

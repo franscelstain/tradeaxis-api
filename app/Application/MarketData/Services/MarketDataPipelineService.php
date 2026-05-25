@@ -201,15 +201,25 @@ class MarketDataPipelineService
         }
 
         try {
-            return DB::transaction(function () use ($run, $input, $priorCurrent) {
-                $result = $this->barsIngest->ingest($run, $input->requestedDate, $input->sourceMode, $priorCurrent);
-                $benchmarkResult = $this->benchmarkBarsIngest !== null
-                    ? $this->benchmarkBarsIngest->ingest($input->requestedDate, $input->sourceMode)
-                    : [
-                        'benchmark_import_status' => 'SKIPPED',
-                        'benchmark_skip_reason_code' => 'BENCHMARK_SERVICE_NOT_BOUND',
-                        'benchmark_rows_written' => 0,
-                    ];
+            $sourceRows = $this->barsIngest->acquireSourceRows($input->requestedDate, $input->sourceMode);
+            $sourceAcquisitionTelemetry = $this->barsIngest->consumeSourceAcquisitionTelemetry($input->sourceMode);
+            $benchmarkResult = $this->benchmarkBarsIngest !== null
+                ? $this->benchmarkBarsIngest->ingest($input->requestedDate, $input->sourceMode)
+                : [
+                    'benchmark_import_status' => 'SKIPPED',
+                    'benchmark_skip_reason_code' => 'BENCHMARK_SERVICE_NOT_BOUND',
+                    'benchmark_rows_written' => 0,
+                ];
+
+            return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisitionTelemetry, $benchmarkResult) {
+                $result = $this->barsIngest->ingestAcquiredRows(
+                    $run,
+                    $input->requestedDate,
+                    $input->sourceMode,
+                    $sourceRows,
+                    $sourceAcquisitionTelemetry,
+                    $priorCurrent
+                );
 
                 $sourceAcquisition = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
@@ -244,6 +254,134 @@ class MarketDataPipelineService
                         'promoted' => false,
                         'pointer_switched' => false,
                         'source_acquisition' => $sourceAcquisition,
+                        'benchmark_import' => $benchmarkResult,
+                    ]
+                );
+
+                if ($input->requestMode === 'import_only') {
+                    $this->assertImportOnlyDidNotPromote($run, $input, $result);
+                    $this->runs->appendEvent(
+                        $run,
+                        $input->stage,
+                        'IMPORT_ONLY_NOT_PROMOTED',
+                        'INFO',
+                        'Import-only completed without readable publication or current pointer switch.',
+                        'IMPORT_ONLY_NOT_PROMOTED',
+                        [
+                            'run_id' => (int) $run->run_id,
+                            'requested_date' => $input->requestedDate,
+                            'source_mode' => $input->sourceMode,
+                            'request_mode' => $input->requestMode,
+                            'publication_id' => (int) $result['publication_id'],
+                            'publication_version' => (int) $result['publication_version'],
+                            'import_status' => 'COMPLETED',
+                            'promote_status' => 'NOT_PROMOTED',
+                            'promoted' => false,
+                            'pointer_switched' => false,
+                        ]
+                    );
+                }
+
+                return $run;
+            });
+        } catch (\Throwable $e) {
+            if ($e instanceof SourceAcquisitionException) {
+                $reasonCode = $e->reasonCode();
+            } else {
+                $reasonCode = strpos($e->getMessage(), 'current publication') !== false
+                    ? 'RUN_LOCK_CONFLICT'
+                    : 'RUN_SOURCE_MALFORMED_PAYLOAD';
+            }
+
+            if ($e instanceof SourceAcquisitionException) {
+                $heldRun = $this->handleRecoverableSourceFailure($run, $input->requestedDate, $input->stage, $reasonCode, $e);
+                if ($heldRun !== null) {
+                    return $heldRun;
+                }
+            }
+
+            $this->handleStageFailure($run, $input->stage, $reasonCode, $e);
+            throw $e;
+        }
+    }
+
+    public function importDailyFromAcquiredRows($requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = [], $correctionId = null)
+    {
+        return $this->completeIngestWithAcquiredRows(new MarketDataStageInput(
+            $requestedDate,
+            $sourceMode ?: config('market_data.pipeline.default_source_mode'),
+            null,
+            'INGEST_BARS',
+            $correctionId,
+            false,
+            null,
+            'import_only'
+        ), $sourceRows, $sourceAcquisition);
+    }
+
+    public function completeIngestWithAcquiredRows(MarketDataStageInput $input, array $sourceRows, array $sourceAcquisition = [])
+    {
+        [$run, $correction, $priorCurrent] = $this->startStage($input);
+
+        if ($priorCurrent === null) {
+            $baselineCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
+
+            if ($baselineCurrent) {
+                $priorCurrent = $baselineCurrent;
+            }
+        }
+
+        try {
+            $benchmarkResult = $this->benchmarkBarsIngest !== null
+                ? $this->benchmarkBarsIngest->ingest($input->requestedDate, $input->sourceMode)
+                : [
+                    'benchmark_import_status' => 'SKIPPED',
+                    'benchmark_skip_reason_code' => 'BENCHMARK_SERVICE_NOT_BOUND',
+                    'benchmark_rows_written' => 0,
+                ];
+
+            return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisition, $benchmarkResult) {
+                $result = $this->barsIngest->ingestAcquiredRows(
+                    $run,
+                    $input->requestedDate,
+                    $input->sourceMode,
+                    $sourceRows,
+                    $sourceAcquisition,
+                    $priorCurrent
+                );
+                $sourceAcquisitionResult = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
+                    ? $result['source_acquisition']
+                    : [];
+
+                $run = $this->safeUpdateTelemetry($run, array_merge([
+                    'request_mode' => $input->requestMode,
+                    'bars_rows_written' => $result['bars_rows_written'],
+                    'invalid_bar_count' => $result['invalid_bar_count'],
+                    'publication_id' => $result['publication_id'],
+                    'publication_version' => $result['publication_version'],
+                    'notes' => $this->appendRunNotes($run->notes, array_merge([
+                        'request_mode='.(string) $input->requestMode,
+                        'candidate_publication_id='.$result['publication_id'],
+                        'source_name='.(string) $result['source_name'],
+                        'benchmark_import_status='.(string) ($benchmarkResult['benchmark_import_status'] ?? 'UNKNOWN'),
+                        'benchmark_rows_written='.(int) ($benchmarkResult['benchmark_rows_written'] ?? 0),
+                    ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisitionResult))),
+                ], $this->sourceTelemetryColumns($input->sourceMode, $result['source_name'], $sourceAcquisitionResult)));
+
+                $this->runs->appendEvent(
+                    $run,
+                    $input->stage,
+                    'STAGE_COMPLETED',
+                    'INFO',
+                    'Bars ingest stage completed with canonical artifact writes.',
+                    $input->requestMode === 'import_only' ? 'IMPORT_ONLY_COMPLETED' : null,
+                    $result + $this->sourceTelemetryPayload($input->sourceMode, $result['source_name']) + [
+                        'request_mode' => $input->requestMode,
+                        'import_status' => 'COMPLETED',
+                        'promote_status' => 'NOT_PROMOTED',
+                        'promoted' => false,
+                        'pointer_switched' => false,
+                        'source_acquisition' => $sourceAcquisitionResult,
                         'benchmark_import' => $benchmarkResult,
                     ]
                 );
@@ -2795,6 +2933,19 @@ class MarketDataPipelineService
             'rejected_row_count' => 'rejected_row_count',
             'invalid_row_count' => 'invalid_row_count',
             'source_final_status' => 'source_final_status',
+            'source_acquisition_state' => 'source_acquisition_state',
+            'source_acquisition_mode' => 'source_acquisition_mode',
+            'source_acquisition_batch_id' => 'source_acquisition_batch_id',
+            'source_window_start' => 'source_window_start',
+            'source_window_end' => 'source_window_end',
+            'warmup_start' => 'warmup_start',
+            'requested_start' => 'requested_start',
+            'requested_end' => 'requested_end',
+            'expected_ticker_count' => 'expected_ticker_count',
+            'success_ticker_count' => 'success_ticker_count',
+            'failed_ticker_count' => 'failed_ticker_count',
+            'max_failed_allowed_for_coverage' => 'max_failed_allowed_for_coverage',
+            'coverage_impossible' => 'coverage_impossible',
         ] as $field => $label) {
             if (array_key_exists($field, $sourceAcquisition) && $sourceAcquisition[$field] !== null && $sourceAcquisition[$field] !== '') {
                 $segments[] = $label.'='.(string) $sourceAcquisition[$field];

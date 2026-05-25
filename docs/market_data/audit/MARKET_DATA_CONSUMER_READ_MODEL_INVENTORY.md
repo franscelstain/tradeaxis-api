@@ -171,6 +171,9 @@ Required validation commands:
 - `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (206 tests, 5262 assertions)
 - `vendor/bin/phpunit tests/Unit/MarketData` -> OK (534 tests, 8287 assertions)
 
+Raw operator proof artifact:
+- `storage/app/market_data/evidence/consumer-read-model/operator_command_proof.txt`
+
 ## RUNTIME VALIDATION COMMANDS
 
 If local DB already contains `2026-05-19`, `run_id=3`, and `publication_id=2`, validate via read-model tests or read-only preview commands if added.
@@ -298,7 +301,7 @@ BENCHMARK_READ_SURFACE: PASS
 READINESS_SURFACE: PASS
 READ_SIDE_CONTRACT_STATUS: current readable publication only; no raw/staging/latest/MAX(date)
 STATIC_GUARD_STATUS: PASS
-TEST_RESULT: PASS; vendor/bin/phpunit tests/Unit/MarketData -> OK (534 tests, 8287 assertions)
+TEST_RESULT: PASS; vendor/bin/phpunit tests/Unit/MarketData -> OK (534 tests, 8287 assertions); raw proof artifact stored at storage/app/market_data/evidence/consumer-read-model/operator_command_proof.txt
 RUNTIME_VALIDATION: PASS; seeded current-readable-publication contract tests passed and 2026-05-19 runtime promote artifact records run_id=3/publication_id=2 as SUCCESS/READABLE/PASS/SEALED/current
 DOCS_UPDATED: YES
 REMAINING_BLOCKERS: none

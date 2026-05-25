@@ -72,7 +72,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config([
             'provider' => 'yahoo_finance',
-            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
             'source_name' => 'YAHOO_FINANCE',
             'yahoo' => [
                 'symbol_suffix' => '.JK',
@@ -119,7 +119,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame('2026-03-18', $rows[0]['trade_date']);
         $this->assertSame('YAHOO_FINANCE', $rows[0]['source_name']);
         $this->assertSame('yahoo:BBCA:2026-03-18', $rows[0]['source_row_ref']);
-        $this->assertSame('https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d', $requestedUrls[0]);
+        $this->assertSame('https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?period1=1773680400&period2=1773853200&interval=1d', $requestedUrls[0]);
     }
 
 
@@ -127,7 +127,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config([
             'provider' => 'yahoo_finance',
-            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
             'source_name' => 'YAHOO_FINANCE',
             'yahoo' => [
                 'symbol_suffix' => '.JK',
@@ -174,9 +174,9 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
         $this->assertCount(3, $rows);
         $this->assertSame([
-            'https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d',
-            'https://query1.finance.yahoo.com/v8/finance/chart/BBRI.JK?interval=1d&range=10d',
-            'https://query1.finance.yahoo.com/v8/finance/chart/TLKM.JK?interval=1d&range=10d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?period1=1773680400&period2=1773853200&interval=1d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBRI.JK?period1=1773680400&period2=1773853200&interval=1d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/TLKM.JK?period1=1773680400&period2=1773853200&interval=1d',
         ], $requestedUrls);
         $this->assertSame($requestedUrls, array_values(array_unique($requestedUrls)));
     }
@@ -185,7 +185,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config([
             'provider' => 'yahoo_finance',
-            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
             'source_name' => 'YAHOO_FINANCE',
             'yahoo' => [
                 'symbol_suffix' => '.JK',
@@ -251,7 +251,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config([
             'provider' => 'yahoo_finance',
-            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
             'source_name' => 'YAHOO_FINANCE',
             'yahoo' => [
                 'symbol_suffix' => '.JK',
@@ -296,14 +296,88 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
         $this->assertCount(2, $rows);
         $this->assertSame([
-            'https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?interval=1d&range=10d',
-            'https://query1.finance.yahoo.com/v8/finance/chart/BBRI.JK?interval=1d&range=10d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?period1=1773680400&period2=1773853200&interval=1d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBRI.JK?period1=1773680400&period2=1773853200&interval=1d',
         ], $requestedUrls);
         $this->assertSame(3, $telemetry['requested_ticker_count']);
         $this->assertSame(2, $telemetry['unique_ticker_count']);
         $this->assertSame(2, $telemetry['returned_row_count']);
         $this->assertSame(0, $telemetry['missing_ticker_count']);
         $this->assertSame('BBRI', $telemetry['ticker_code']);
+    }
+
+    public function test_yahoo_finance_range_adapter_groups_multi_date_rows_without_date_fanout()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 0, 0));
+
+        $requestedUrls = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+            $requestedUrls[] = $url;
+            preg_match('#/chart/([^?]+)#', $url, $matches);
+            $ticker = str_replace('.JK', '', $matches[1] ?? 'UNKNOWN.JK');
+
+            return [
+                'status' => 200,
+                'body' => json_encode([
+                    'chart' => [
+                        'result' => [[
+                            'meta' => [
+                                'exchangeTimezoneName' => 'Asia/Jakarta',
+                            ],
+                            'timestamp' => [1777568400, 1777827600],
+                            'indicators' => [
+                                'quote' => [[
+                                    'open' => [100, 101],
+                                    'high' => [110, 111],
+                                    'low' => [99, 100],
+                                    'close' => [108, 109],
+                                    'volume' => [100000, 100001],
+                                ]],
+                                'adjclose' => [[
+                                    'adjclose' => [108, 109],
+                                ]],
+                            ],
+                        ]],
+                    ],
+                ]),
+            ];
+        });
+
+        $rowsByDate = $adapter->fetchOrLoadEodBarsRange(
+            '2026-05-01',
+            '2026-05-31',
+            'api',
+            ['bbca', 'bbri'],
+            ['2026-05-01', '2026-05-04'],
+            ['source_acquisition_batch_id' => 'API_20260501_20260531_001']
+        );
+        $telemetry = $adapter->consumeLastAcquisitionTelemetry();
+
+        $this->assertCount(2, $requestedUrls);
+        $this->assertSame([
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBCA.JK?period1=1777568400&period2=1780246800&interval=1d',
+            'https://query1.finance.yahoo.com/v8/finance/chart/BBRI.JK?period1=1777568400&period2=1780246800&interval=1d',
+        ], $requestedUrls);
+        $this->assertCount(2, $rowsByDate['2026-05-01']);
+        $this->assertCount(2, $rowsByDate['2026-05-04']);
+        $this->assertSame('BBCA', $rowsByDate['2026-05-01'][0]['ticker_code']);
+        $this->assertSame('yahoo:BBCA:2026-05-01', $rowsByDate['2026-05-01'][0]['source_row_ref']);
+        $this->assertSame('range_window', $telemetry['source_acquisition_mode']);
+        $this->assertSame('API_20260501_20260531_001', $telemetry['source_acquisition_batch_id']);
+        $this->assertSame('SUCCESS', $telemetry['source_acquisition_state']);
+        $this->assertSame(2, $telemetry['expected_ticker_count']);
+        $this->assertSame(2, $telemetry['success_ticker_count']);
+        $this->assertSame(0, $telemetry['failed_ticker_count']);
+        $this->assertSame(4, $telemetry['returned_row_count']);
     }
 
     public function test_api_adapter_caps_rate_limit_retry_budget_to_locked_maximum()
@@ -589,6 +663,114 @@ class PublicApiEodBarsAdapterTest extends TestCase
             $this->assertSame(0, $context['accepted_row_count']);
             $this->assertTrue($context['empty_response_blocked']);
         }
+    }
+
+
+
+    public function test_http_400_is_classified_as_source_bad_request_with_diagnostic_context()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}&token=SECRET',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 0, 0));
+
+        $adapter = new PublicApiEodBarsAdapter(function () {
+            return [
+                'status' => 400,
+                'body' => '{"chart":{"error":{"code":"Bad Request","description":"Invalid request"}}}',
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBarsRange(
+                '2026-05-01',
+                '2026-05-07',
+                'api',
+                ['BBCA'],
+                ['2026-05-01'],
+                ['source_acquisition_batch_id' => 'API_20260501_20260507_001']
+            );
+            $this->fail('Expected HTTP 400 to be classified as source bad request.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+
+            $this->assertSame('RUN_SOURCE_BAD_REQUEST', $e->reasonCode());
+            $this->assertSame('SYSTEMIC_FAILED', $context['source_acquisition_state']);
+            $this->assertSame(400, $context['final_http_status']);
+            $this->assertSame(400, $context['http_status']);
+            $this->assertSame('ticker', $context['failure_scope']);
+            $this->assertStringContainsString('Bad Request', $context['provider_error_sample']);
+            $this->assertStringContainsString('token=[redacted]', $context['sanitized_url']);
+            $this->assertStringNotContainsString('SECRET', $context['sanitized_url']);
+        }
+    }
+
+    public function test_range_http_400_for_one_ticker_is_partial_failure_not_command_blocking_when_other_ticker_succeeds()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 0, 0));
+
+        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+            if (strpos($url, 'BAD.JK') !== false) {
+                return [
+                    'status' => 400,
+                    'body' => '{"chart":{"error":{"code":"Bad Request"}}}',
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => json_encode([
+                    'chart' => [
+                        'result' => [[
+                            'meta' => ['exchangeTimezoneName' => 'Asia/Jakarta'],
+                            'timestamp' => [1777568400],
+                            'indicators' => [
+                                'quote' => [[
+                                    'open' => [100],
+                                    'high' => [110],
+                                    'low' => [99],
+                                    'close' => [108],
+                                    'volume' => [100000],
+                                ]],
+                                'adjclose' => [['adjclose' => [108]]],
+                            ],
+                        ]],
+                    ],
+                ]),
+            ];
+        });
+
+        $rowsByDate = $adapter->fetchOrLoadEodBarsRange(
+            '2026-05-01',
+            '2026-05-07',
+            'api',
+            ['BBCA', 'BAD'],
+            ['2026-05-01'],
+            ['source_acquisition_batch_id' => 'API_20260501_20260507_001']
+        );
+        $telemetry = $adapter->consumeLastAcquisitionTelemetry();
+
+        $this->assertCount(1, $rowsByDate['2026-05-01']);
+        $this->assertSame('PARTIAL_SUCCESS', $telemetry['source_acquisition_state']);
+        $this->assertSame('RUN_SOURCE_BAD_REQUEST', $telemetry['final_reason_code']);
+        $this->assertSame(1, $telemetry['failed_ticker_count']);
+        $this->assertContains('BAD', $telemetry['failed_ticker_codes']);
+        $this->assertSame(400, $telemetry['final_http_status']);
     }
 
     private function config(array $apiSource = [], $retryMax = 3, $backoffMs = 0)

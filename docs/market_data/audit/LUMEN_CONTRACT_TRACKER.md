@@ -11,9 +11,9 @@ ACTIVE SESSION:
 - MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS
 - MARKET_DATA_PRODUCTION_READY_LOCKED=YES
 - FULL_MARKET_DATA_PHPUNIT=PASSED
-- BASELINE_FULL_MARKET_DATA_SUITE=OK (513 tests, 7980 assertions)
-- FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
-- CONSUMER_READ_MODEL_FULL_MARKET_DATA_SUITE=OK (534 tests, 8287 assertions)
+- BASELINE_PRE_CONSUMER_READ_MODEL_FULL_MARKET_DATA_SUITE=OK (513 tests, 7980 assertions)
+- BASELINE_BENCHMARK_EXTENSION_FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
+- FULL_MARKET_DATA_SUITE=OK (534 tests, 8287 assertions)
 - RUNTIME_VALIDATION=PASS
 - EVIDENCE_EXPORT=PASS
 - REPLAY_VERIFY=PASS
@@ -99,6 +99,7 @@ ACTIVE SESSION:
   - Operator-local AuditDocs proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocsSynchronizationStaticGuardTest"` -> OK (11 tests, 572 assertions).
   - Operator-local StaticGuard proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (206 tests, 5262 assertions).
   - Operator-local full MarketData proof: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (534 tests, 8287 assertions).
+  - Operator-local raw command proof: `storage/app/market_data/evidence/consumer-read-model/operator_command_proof.txt`.
   - Operator-local runtime artifact proof: `storage/app/market_data/promote/2026-05-19/market_data_promote_summary.json` records `run_id=3`, `publication_id=2`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `seal_state=SEALED`, `pointer_switched=true`.
 
   [FINAL_RULE]
@@ -3270,3 +3271,113 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 [NEXT_ACTION]
 - None for this API daily runtime proof and final validation scope.
 - Recommended next independent hardening scope: CI / Regression Guard to enforce the final validation automatically.
+
+---
+
+## 2026-05-25 - API BACKFILL RANGE LIFECYCLE CONTRACT UPDATE
+
+[CONTRACT_STATUS]
+- `PARTIAL` until runtime lifecycle command proof is captured.
+
+[NEW CONTRACT]
+- `source_mode=api` range backfill may acquire multiple trading dates in one provider window, but pipeline ownership remains date-scoped.
+- `source_acquisition_mode=range_window` is acquisition context only; it must not collapse multiple requested dates into one `run_id`.
+- Lifecycle publication proof remains per requested `trade_date`: import, promote/coverage, indicators, eligibility, hash, seal, finalize, evidence, fixture, replay.
+
+[COMMAND SURFACE]
+- Existing `market-data:backfill` remains import-only.
+- New `market-data:backfill:lifecycle` owns full lifecycle range orchestration.
+- Supported options include `--plan`, `--resume`, `--only-failed`, `--continue-on-error`, `--stop-on-error`, `--collect-all-errors`, `--max-dates-per-run`, `--with-evidence`, `--with-replay`, and `--no-replay`.
+
+[FAILURE_POLICY]
+- Ticker-level API failures are represented as `PARTIAL_SUCCESS` / `RUN_SOURCE_PARTIAL_RESPONSE` and are left for coverage gate to decide readability.
+- Systemic range acquisition failures are reason-coded and must stop strict lifecycle execution.
+- Replay is eligible only after `SUCCESS` + `READABLE` + coverage `PASS` + sealed run + evidence `EXPORTED`.
+- Evidence export is allowed for held/failed dates to preserve failure context; replay fixture/verify is skipped for non-readable dates.
+
+[RUN_MUTABILITY]
+- Active runs before downstream stages may still be completed through the same run path.
+- Terminal/import recovery remains a new run or promote-derived run through existing repository lifecycle.
+- Sealed/readable mutation remains correction lifecycle only; this session does not add direct mutation paths to sealed/readable publications.
+
+[SOURCE ACQUISITION BATCH CONTEXT]
+- Required context now includes `source_acquisition_batch_id`, `source_acquisition_mode`, `source_window_start`, `source_window_end`, `warmup_start`, `requested_start`, `requested_end`, expected/success/failed ticker counts, and acquisition state.
+- These fields are carried in run notes/event payload/evidence source context rather than changing core run/publication identity.
+
+[GUARDS]
+- New static guards assert lifecycle command separation, range-window source path, replay eligibility gate, and no `MAX(trade_date)` / raw/latest fallback reintroduction in the new code path.
+
+---
+
+## 2026-05-25 - API BACKFILL SOURCE ACQUISITION FAILURE CLASSIFICATION + DIAGNOSTIC OUTPUT CONTRACT UPDATE
+
+[CONTRACT_STATUS]
+- `PATCHED_PENDING_OPERATOR_RUNTIME_VALIDATION`.
+
+[CONTRACT_UPDATE]
+- API backfill lifecycle source acquisition failures must preserve domain source reason codes from adapter/service/orchestrator to command output.
+- `COMMAND_EXECUTION_FAILED` is valid only when no domain reason code is available and the failure is truly command infrastructure related.
+- HTTP 400 must be classified as source-domain failure (`RUN_SOURCE_BAD_REQUEST`, `RUN_SOURCE_INVALID_SYMBOL`, or `RUN_SOURCE_PROVIDER_REJECTED_RANGE`) with diagnostic context.
+- Blocked source acquisition must return `stage=SOURCE_ACQUISITION`, source acquisition state, domain reason code, failed ticker/window sample, HTTP status, and diagnostic artifact path.
+- Ticker-scoped provider failures may be partial acquisition failures; coverage gate remains the owner of final READABLE/NOT_READABLE decision.
+- Systemic failures remain hard-blocking and must not create fake readable publication or replay fixture.
+
+[CHECKPOINT_RESUME_CONTRACT]
+- API range acquisition must emit window/ticker checkpoints with `source_acquisition_batch_id`, source mode, window start/end, ticker code, state, attempt count, reason code, HTTP status, error sample, rows count, and timestamps.
+- `--resume` may skip SUCCESS window/ticker checkpoints.
+- `--resume --only-failed` must retry only FAILED/RETRYING source acquisition checkpoints.
+- If `--only-failed` has no failed source acquisition checkpoint, command must output `NO_FAILED_SOURCE_ACQUISITION_CHECKPOINT` rather than silently processing all requests.
+- Resume must not intentionally refetch window/ticker checkpoints already marked SUCCESS.
+
+[DIAGNOSTIC_ARTIFACT_CONTRACT]
+- `source_acquisition_diagnostics.json` is the audit artifact for source acquisition success/partial/blocked state.
+- Diagnostic output must include source mode, acquisition mode, requested/warmup range, window/ticker counts, estimated request count, acquisition state, failed ticker/window counts, failure sample, reason code, and timestamp.
+- Diagnostic URL fields must be sanitized; token-like query parameters must be redacted.
+
+[REASON_CODE_SYNC]
+- Added and synchronized reason-code registry/seed entries: `RUN_SOURCE_BAD_REQUEST`, `RUN_SOURCE_INVALID_SYMBOL`, `RUN_SOURCE_PROVIDER_REJECTED_RANGE`, and `NO_FAILED_SOURCE_ACQUISITION_CHECKPOINT`.
+
+[GUARDS]
+- Behavioral tests cover HTTP 400 classification, partial ticker continuation, checkpoint creation, and resume-only-failed ticker selection.
+- Static guards cover diagnostic/checkpoint artifacts, source-domain reason preservation, and no fallback reintroduction.
+
+[VALIDATION_REQUIRED]
+- Local operator must rerun targeted MarketData PHPUnit filters, full `tests/Unit/MarketData`, lifecycle plan, lifecycle full run, resume-only-failed, and optional diagnose-source command before marking this contract DONE.
+
+---
+
+## 2026-05-25 - API BACKFILL CHECKPOINT + RESUME TELEMETRY CLEANUP CONTRACT UPDATE
+
+[CONTRACT_STATUS]
+- `DONE`.
+
+[CHECKPOINT_TELEMETRY_CONTRACT]
+- Failed API source acquisition checkpoint context is keyed by `window_start|window_end|ticker_code`.
+- Checkpoint fields `reason_code`, `http_status`, `error_sample`, `provider_error_sample`, `sanitized_url`, `failure_scope`, `attempt_count`, and `rows_count` must come from the same ticker/window key.
+- Timeout/non-HTTP failures must use `http_status=null`, sanitized timeout/error message in `error_sample`, `provider_error_sample=null`, and ticker-specific sanitized URL when available.
+- Successful checkpoint rows must not inherit stale error samples from prior failed ticker requests.
+
+[RESUME_ONLY_FAILED_CONTRACT]
+- `--resume --only-failed` must expose `failed_checkpoint_total`, `failed_checkpoint_eligible`, `failed_checkpoint_retried`, `retry_success_count`, `retry_failed_count`, `failed_checkpoint_skipped`, and `skipped_failed_checkpoint_reasons`.
+- Eligible failed checkpoints must all be retried; any skipped failed checkpoint must have an explicit reason such as `WINDOW_OUT_OF_SCOPE`, `TICKER_NOT_IN_CURRENT_UNIVERSE`, or `CHECKPOINT_CORRUPTED`.
+- Source retry state mapping:
+  - all retry success -> `RETRY_SUCCESS`
+  - mixed retry success/failure -> `PARTIAL_RETRY_SUCCESS`
+  - ticker-scoped retry failure -> `FAILED_RETRY_BLOCKED`
+  - no failed checkpoint -> `NO_FAILED_CHECKPOINT`
+  - true systemic/provider/config failure may still use `SYSTEMIC_FAILED`
+- `FAILED_RETRY_BLOCKED` is not publishable/readable and must not generate replay fixtures.
+
+[DIAGNOSTIC_CONSISTENCY_CONTRACT]
+- `source_acquisition_diagnostics.json` must include retry accounting when resume-only-failed is used.
+- Diagnostic failure samples must match failed checkpoint ticker/window context.
+- Diagnostic and checkpoint URLs must be sanitized and must not leak token-like query parameters.
+
+[VALIDATION_PROOF]
+- Targeted PHPUnit filters after patch:
+  - `PublicApi` -> OK (16 tests, 102 assertions)
+  - `ApiBackfill` -> OK (20 tests, 134 assertions)
+  - `Backfill` -> OK (39 tests, 273 assertions)
+  - `StaticGuard` -> OK (214 tests, 5367 assertions)
+- Full MarketData unit proof: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (557 tests, 8484 assertions).
+- Runtime resume-only-failed proof: `source_acquisition_state=FAILED_RETRY_BLOCKED`, `reason_code=RUN_SOURCE_BAD_REQUEST`, failed checkpoint/retry counts all 1, failed ticker/window `WBSA` / `2026-01-01` to `2026-03-31`.

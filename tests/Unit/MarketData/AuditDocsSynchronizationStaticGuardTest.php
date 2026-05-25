@@ -79,7 +79,7 @@ $this->assertStringContainsString('[RELATED_CONTRACT] MARKET_BENCHMARK_INDICATOR
 $this->assertStringContainsString('- MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT -> LOCKED', $tracker);
 $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Market Benchmark + Indicator Extension / Final Production Ready Re-Lock', $tracker);
 $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS', $status.$tracker);
-$this->assertStringContainsString('FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)', $status.$tracker);
+$this->assertStringContainsString('BASELINE_BENCHMARK_EXTENSION_FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)', $status.$tracker);
 $this->assertStringContainsString('benchmark_import_status=COMPLETED', $status.$tracker);
 $this->assertStringContainsString('benchmark_rows_written=1', $status.$tracker);
 $this->assertStringContainsString('IHSG/^JKSE/INDEX/is_active=1', $status.$tracker);
@@ -353,7 +353,7 @@ public function test_market_benchmark_indicator_extension_final_lock_is_recorded
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(340, $registryCodes);
+        $this->assertCount(344, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

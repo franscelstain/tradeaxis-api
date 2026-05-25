@@ -5,16 +5,15 @@
 ACTIVE SESSION:
 - Market Data Consumer Read Model
 
-[SESSION_STATUS] IN_PROGRESS
-[SESSION_FINAL_STATUS] DONE
+[SESSION_STATUS] DONE
 
 [CURRENT_SOURCE_LOCK]
 - MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS
 - MARKET_DATA_PRODUCTION_READY_LOCKED=YES
 - FULL_MARKET_DATA_PHPUNIT=PASSED
-- BASELINE_FULL_MARKET_DATA_SUITE=OK (513 tests, 7980 assertions)
-- FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
-- CONSUMER_READ_MODEL_FULL_MARKET_DATA_SUITE=OK (534 tests, 8287 assertions)
+- BASELINE_PRE_CONSUMER_READ_MODEL_FULL_MARKET_DATA_SUITE=OK (513 tests, 7980 assertions)
+- BASELINE_BENCHMARK_EXTENSION_FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
+- FULL_MARKET_DATA_SUITE=OK (534 tests, 8287 assertions)
 - RUNTIME_VALIDATION=PASS
 - EVIDENCE_EXPORT=PASS
 - REPLAY_VERIFY=PASS
@@ -106,6 +105,7 @@ ACTIVE SESSION:
   - AuditDocs proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "AuditDocsSynchronizationStaticGuardTest"` -> OK (11 tests, 572 assertions).
   - StaticGuard proof: `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"` -> OK (206 tests, 5262 assertions).
   - Full MarketData proof: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (534 tests, 8287 assertions).
+  - Raw operator command proof: `storage/app/market_data/evidence/consumer-read-model/operator_command_proof.txt`.
   - Runtime artifact proof: `storage/app/market_data/promote/2026-05-19/market_data_promote_summary.json` records `run_id=3`, `publication_id=2`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `seal_state=SEALED`, `pointer_switched=true`.
 
   [NEXT_ACTION]
@@ -3346,3 +3346,159 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 [NEXT_ACTION]
 - None for this API daily runtime proof and final validation scope.
 - Recommended next independent hardening scope: CI / Regression Guard to enforce the final validation automatically.
+
+---
+
+## 2026-05-25 - API BACKFILL RANGE FULL LIFECYCLE ORCHESTRATION
+
+[STATUS]
+- `PARTIAL` / `BLOCKED_RUNTIME_VALIDATION` for production runtime claim until the new lifecycle command is executed against an operator-approved testing database/provider fixture.
+- Static/unit proof has been added for range-window acquisition, command surface separation, replay gating, and forbidden fallback patterns.
+
+[ROOT_CAUSE_CONFIRMED]
+- Existing `market-data:backfill` is import-only and loops each trading date through `MarketDataBackfillService`.
+- Existing Yahoo API source acquisition fanned out per ticker for a single requested date and its parser returned the first row matching that one `trade_date`.
+- Existing `MarketDataPipelineService::completeIngest()` called bars ingest inside `DB::transaction`; because `EodBarsIngestService::ingest()` performed source fetch internally, HTTP acquisition could be held inside the DB transaction.
+
+[IMPLEMENTED_CHANGE]
+- Added `PublicApiEodBarsAdapter::fetchOrLoadEodBarsRange()` for Yahoo Finance range-window acquisition.
+- Yahoo URLs now support `period1` / `period2` precision for arbitrary date windows.
+- Yahoo chart parser now reads all timestamp/quote rows, converts timestamps using the exchange/platform timezone, filters requested trading dates, skips invalid null OHLCV rows, and groups output by `trade_date`.
+- Added `ApiBackfillRangeAcquisitionService` to split configurable windows and produce `source_acquisition_batch_id`, `source_acquisition_mode=range_window`, warmup/requested/window context, estimated request count, rows grouped by date, and date-level acquisition telemetry.
+- Added `BackfillLifecycleOrchestrator` and command `market-data:backfill:lifecycle` for date-chronological import -> promote -> evidence -> fixture -> replay verification orchestration.
+- Added `EodBarsIngestService::acquireSourceRows()` and `ingestAcquiredRows()`; `MarketDataPipelineService::completeIngest()` now performs source acquisition before the short DB persistence transaction.
+- Added `MarketDataPipelineService::importDailyFromAcquiredRows()` for range acquisition reuse without per-date Yahoo refetch.
+
+[CONTRACT_NOT_CHANGED]
+- Existing `market-data:backfill` remains import-only.
+- `manual_file` single-date and range behavior remains per-date/per-file.
+- Existing `market-data:daily` remains single-date import semantics.
+- Each requested `trade_date` still receives its own run context; range acquisition does not create a single run for the whole range.
+
+[NEW_CONFIG]
+- `MARKET_DATA_API_BACKFILL_WINDOW_DAYS=90`
+- `MARKET_DATA_API_BACKFILL_WARMUP_DAYS=120`
+- `MARKET_DATA_API_BACKFILL_CONCURRENCY=5`
+- `MARKET_DATA_API_BACKFILL_MAX_DATES_PER_RUN=20`
+- `MARKET_DATA_API_BACKFILL_COLLECT_ALL_ERRORS=false`
+- `MARKET_DATA_API_BACKFILL_DEFAULT_ERROR_POLICY=stop_on_error`
+
+[VALIDATION_ADDED]
+- `tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` covers Yahoo multi-date grouping and no date fanout.
+- `tests/Unit/MarketData/ApiBackfillRangeAcquisitionServiceTest.php` covers one-window plans, split windows, and window-by-ticker request scaling.
+- `tests/Unit/MarketData/ApiBackfillLifecycleStaticGuardTest.php` covers lifecycle command registration, import-only backfill separation, range-window service usage, replay gating, and no `MAX(trade_date)` fallback in new range lifecycle code.
+- Command surface proof: `php artisan list market-data` shows `market-data:backfill:lifecycle`.
+- Plan proof: `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --plan` returned `source_acquisition_mode=range_window`, `warmup_start=2026-01-01`, `window_count=2`, `estimated_http_requests=1826`, `ticker_count=913`, `trading_dates=4`, `status=PLAN_ONLY`.
+- Migration proof: `php artisan migrate --env=testing --force` -> `Nothing to migrate.`
+- Full unit proof: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (542 tests, 8371 assertions), Time 00:19.424, Memory 42.00 MB.
+
+[REMAINING_RISK]
+- Warmup rows are imported as import-only support rows when present so indicator history can resolve from persisted bars; they are not promoted/evidence/replayed as requested targets by the lifecycle command.
+- Runtime provider/network behavior, DB migration compatibility, and full lifecycle command execution still require operator runtime validation before this scope can be marked `DONE`.
+
+---
+
+## 2026-05-25 - API BACKFILL SOURCE ACQUISITION FAILURE CLASSIFICATION + DIAGNOSTICS
+
+[STATUS]
+- `PATCHED_PENDING_OPERATOR_RUNTIME_VALIDATION`.
+- This session fixes the runtime gap where API backfill lifecycle source acquisition errors could surface as generic command failure and where resume did not have explicit window/ticker acquisition checkpoints.
+- Full production-ready claim still requires local operator validation because this audit sandbox cannot run PHPUnit: PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are unavailable.
+
+[ROOT_CAUSE_CONFIRMED]
+- `BackfillLifecycleCommand` previously mapped thrown acquisition failures through command-level fallback when the orchestrator did not return a source-stage summary.
+- API HTTP 400 was classified through generic unexpected HTTP status handling instead of a domain source acquisition reason code.
+- Resume cache was date/run oriented and did not expose retryable window/ticker acquisition state.
+- No dedicated `source_acquisition_diagnostics.json` artifact existed for blocked source acquisition before date lifecycle processing.
+
+[IMPLEMENTED_CHANGE]
+- `PublicApiEodBarsAdapter` now classifies HTTP failures into source-domain codes including `RUN_SOURCE_BAD_REQUEST`, `RUN_SOURCE_INVALID_SYMBOL`, and `RUN_SOURCE_PROVIDER_REJECTED_RANGE`.
+- Adapter telemetry now carries `http_status`, `provider_error_sample`, `failure_scope`, and `sanitized_url` without leaking token-like query parameters.
+- Range acquisition now treats ticker-scoped bad request/invalid symbol/no-data failures as partial-tolerant while still escalating all-failed/systemic acquisition to blocked source failure.
+- `ApiBackfillRangeAcquisitionService` now emits `source_acquisition_checkpoints` keyed by `window_start|window_end|ticker_code` with SUCCESS/FAILED state, reason code, HTTP status, attempts, and row count.
+- `BackfillLifecycleOrchestrator` now writes `source_acquisition_checkpoint.json` and `source_acquisition_diagnostics.json`, returns stage-aware `status=BLOCKED` at `stage=SOURCE_ACQUISITION`, and preserves domain reason code instead of collapsing to `COMMAND_EXECUTION_FAILED`.
+- `--resume --only-failed` now uses window/ticker checkpoint state and returns `NO_FAILED_SOURCE_ACQUISITION_CHECKPOINT` instead of silently processing all when no failed acquisition checkpoint exists.
+- `--diagnose-source` was added to lifecycle command for safe source acquisition diagnosis without promote/evidence/replay mutation.
+- Reason-code registry/seed and logging/taxonomy docs were synchronized for the new source acquisition reason codes.
+
+[VALIDATION_ADDED]
+- `PublicApiEodBarsAdapterTest` now covers HTTP 400 domain classification, diagnostic context, URL sanitization, and partial range continuation when one ticker fails but another succeeds.
+- `ApiBackfillRangeAcquisitionServiceTest` now covers window/ticker checkpoint output and resume-only-failed requesting only failed tickers.
+- `ApiBackfillLifecycleStaticGuardTest` now covers source acquisition diagnostic artifact, checkpoint artifact, domain reason preservation, new command option, and checkpoint-aware resume guard.
+
+[STATIC_VALIDATION_THIS_SESSION]
+- `php -l app/Console/Commands/MarketData/BackfillLifecycleCommand.php` -> PASS.
+- `php -l app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php` -> PASS.
+- `php -l app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php` -> PASS.
+- `php -l app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php` -> PASS.
+- `php -l tests/Unit/MarketData/ApiBackfillLifecycleStaticGuardTest.php` -> PASS.
+- `php -l tests/Unit/MarketData/ApiBackfillRangeAcquisitionServiceTest.php` -> PASS.
+- `php -l tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php` -> PASS.
+
+[OPERATOR_RUNTIME_VALIDATION_REQUIRED]
+- `php artisan migrate --env=testing`.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Backfill"`.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "ApiBackfill"`.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "PublicApi"`.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Lifecycle"`.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"`.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"`.
+- `vendor/bin/phpunit tests/Unit/MarketData --filter "StaticGuard"`.
+- `vendor/bin/phpunit tests/Unit/MarketData`.
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --plan`.
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --with-evidence --with-replay -vvv`.
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --resume --only-failed -vvv`.
+- Optional safe diagnostic: `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --diagnose-source -vvv`.
+
+[EXPECTED_RUNTIME_BEHAVIOR]
+- HTTP 400 source acquisition should output `stage=SOURCE_ACQUISITION`, `reason_code=RUN_SOURCE_BAD_REQUEST`, `source_acquisition_state=SYSTEMIC_FAILED` or `PARTIAL_SUCCESS`, `http_status=400`, failure scope, window/ticker context, and `diagnostic_path`.
+- Partial ticker/window failure should proceed to date lifecycle only when acquisition is not systemic; coverage gate remains the owner of READABLE / NOT_READABLE decision.
+- Replay fixture/verify remains skipped for failed/held/not-readable dates.
+- No fake READABLE, no raw/latest/MAX(date) fallback, and no direct mutation of sealed/readable run/publication was added.
+
+[REMAINING_RISK]
+- External Yahoo/API provider can still block runtime with real HTTP 400/429/5xx; this is now expected to be diagnosable and reason-coded, not hidden as command infrastructure failure.
+- Operator runtime proof is still required before changing this status to DONE / production-ready.
+
+---
+
+## 2026-05-25 - API BACKFILL CHECKPOINT + RESUME TELEMETRY CLEANUP
+
+[STATUS]
+- `DONE`.
+- This cleanup locks checkpoint/diagnostic telemetry isolation for API range-window backfill retry flows.
+- Full lifecycle API backfill success path was revalidated after the cleanup: requested dates still promote, export evidence, generate fixtures, replay verify, and become readable when coverage passes.
+
+[ROOT_CAUSE_CONFIRMED]
+- Failed checkpoint rows could fall back to aggregate window telemetry when ticker-specific failure context was missing, which risked stale HTTP status or response samples from another ticker.
+- Resume-only-failed source retry used the same all-failed aggregate state path as initial acquisition, causing ticker-scoped HTTP 400 retry failure to appear as `SYSTEMIC_FAILED`.
+- Resume-only-failed output did not expose enough accounting to prove every eligible failed checkpoint was retried or skipped with a reason.
+
+[IMPLEMENTED_CHANGE]
+- `PublicApiEodBarsAdapter` now records timeout/non-HTTP request failures with ticker/window URL context, `http_status=null`, sanitized `error_sample`, and no provider response sample when no HTTP response exists.
+- `ApiBackfillRangeAcquisitionService` now keys failure context by `window_start|window_end|ticker_code` before writing checkpoint rows.
+- Failed checkpoint rows now use only their own ticker/window context for `reason_code`, `http_status`, `error_sample`, `provider_error_sample`, `sanitized_url`, `failure_scope`, `attempt_count`, and `rows_count`.
+- Resume-only-failed now reports `failed_checkpoint_total`, `failed_checkpoint_eligible`, `failed_checkpoint_retried`, retry success/failure counts, skipped failed checkpoint count, and skipped reason counts.
+- Resume-only-failed state mapping now uses `RETRY_SUCCESS`, `PARTIAL_RETRY_SUCCESS`, `FAILED_RETRY_BLOCKED`, or `NO_FAILED_CHECKPOINT`; ticker-scoped retry failure is no longer reported as `SYSTEMIC_FAILED`.
+- `source_acquisition_diagnostics.json` now includes retry accounting and failure samples derived from checkpoint rows so diagnostic JSON and checkpoint JSON stay consistent.
+
+[VALIDATION_ADDED]
+- `ApiBackfillRangeAcquisitionServiceTest` covers timeout context isolation, no stale success/error sample leakage, HTTP 400 ticker/window context, retry accounting, skipped failed checkpoint reasons, and retry state mapping.
+- `ApiBackfillLifecycleStaticGuardTest` covers retry accounting command output fields and per-window/ticker failure context mapping guards.
+
+[RUNTIME_PROOF_THIS_SESSION]
+- `php artisan migrate --env=testing --force` -> `Nothing to migrate.`
+- `vendor\bin\phpunit tests\Unit\MarketData --filter PublicApi` -> OK (16 tests, 102 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter ApiBackfill` -> OK (20 tests, 134 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter Backfill` -> OK (39 tests, 273 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter StaticGuard` -> OK (214 tests, 5367 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData` -> OK (557 tests, 8484 assertions).
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --plan` -> `source_acquisition_mode=range_window`, `window_count=2`, `estimated_http_requests=1826`, `ticker_count=913`, `trading_dates=4`, `status=PLAN_ONLY`.
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --diagnose-source -vvv` -> `source_acquisition_state=PARTIAL_SUCCESS`, `failed_ticker_count=1`, `failed_window_count=1`, `status=SOURCE_DIAGNOSTIC_PARTIAL`.
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --with-evidence --with-replay -vvv` -> 4/4 requested dates `readable=YES`, evidence `EXPORTED`, fixture `GENERATED`, replay `VERIFIED`.
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --resume --only-failed -vvv` -> `status=BLOCKED`, `source_acquisition_state=FAILED_RETRY_BLOCKED`, `reason_code=RUN_SOURCE_BAD_REQUEST`, `failed_checkpoint_total=1`, `failed_checkpoint_retried=1`, `retry_failed_count=1`.
+- Artifact check confirmed diagnostic sample and checkpoint row both point to `2026-01-01|2026-03-31|WBSA`, reason `RUN_SOURCE_BAD_REQUEST`, HTTP 400, failure scope `ticker`, sanitized Yahoo URL.
+
+[REMAINING_RISK]
+- WBSA remains blocked by Yahoo HTTP 400 for the warmup window; this is an external provider/data availability condition, not a checkpoint telemetry defect.
+- Provider runtime can still vary by network/rate limit, but source retry diagnostics are now reason-coded and checkpoint-consistent.

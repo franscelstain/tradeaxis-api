@@ -52,7 +52,7 @@ return [
         'default_source_name' => env('MARKET_DATA_SOURCE_DEFAULT_NAME', 'YAHOO_FINANCE'),
         'api' => [
             'provider' => env('MARKET_DATA_SOURCE_API_PROVIDER', 'yahoo_finance'),
-            'endpoint_template' => env('MARKET_DATA_SOURCE_API_ENDPOINT_TEMPLATE', 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval=1d&range=10d&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com'),
+            'endpoint_template' => env('MARKET_DATA_SOURCE_API_ENDPOINT_TEMPLATE', 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com'),
             'response_format' => env('MARKET_DATA_SOURCE_API_RESPONSE_FORMAT', 'json'),
             'response_rows_path' => env('MARKET_DATA_SOURCE_API_ROWS_PATH', ''),
             'timeout_seconds' => (int) env('MARKET_DATA_SOURCE_API_TIMEOUT_SECONDS', 20),
@@ -77,6 +77,14 @@ return [
                 'source_row_ref' => env('MARKET_DATA_SOURCE_API_FIELD_SOURCE_ROW_REF', 'source_row_ref'),
                 'captured_at' => env('MARKET_DATA_SOURCE_API_FIELD_CAPTURED_AT', 'captured_at'),
             ],
+        ],
+        'api_backfill' => [
+            'window_days' => (int) env('MARKET_DATA_API_BACKFILL_WINDOW_DAYS', 90),
+            'warmup_days' => (int) env('MARKET_DATA_API_BACKFILL_WARMUP_DAYS', 120),
+            'concurrency' => (int) env('MARKET_DATA_API_BACKFILL_CONCURRENCY', 5),
+            'max_dates_per_run' => (int) env('MARKET_DATA_API_BACKFILL_MAX_DATES_PER_RUN', 20),
+            'collect_all_errors' => (bool) env('MARKET_DATA_API_BACKFILL_COLLECT_ALL_ERRORS', false),
+            'default_error_policy' => env('MARKET_DATA_API_BACKFILL_DEFAULT_ERROR_POLICY', 'stop_on_error'),
         ],
     ],
     'tickers' => [

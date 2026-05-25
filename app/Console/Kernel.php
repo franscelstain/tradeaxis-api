@@ -7,6 +7,7 @@ use App\Console\Commands\MarketData\BuildEligibilityCommand;
 use App\Console\Commands\MarketData\ComputeIndicatorsCommand;
 use App\Console\Commands\MarketData\DailyPipelineCommand;
 use App\Console\Commands\MarketData\BackfillMarketDataCommand;
+use App\Console\Commands\MarketData\BackfillLifecycleCommand;
 use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PromoteMarketDataCommand;
@@ -42,6 +43,7 @@ class Kernel extends ConsoleKernel
         ExportEvidenceCommand::class,
         DailyPipelineCommand::class,
         BackfillMarketDataCommand::class,
+        BackfillLifecycleCommand::class,
         CaptureSessionSnapshotCommand::class,
         PurgeSessionSnapshotCommand::class,
         PromoteMarketDataCommand::class,

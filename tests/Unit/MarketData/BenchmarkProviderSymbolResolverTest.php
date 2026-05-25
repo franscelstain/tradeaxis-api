@@ -48,7 +48,7 @@ class BenchmarkProviderSymbolResolverTest extends TestCase
                     'default_source_name' => 'YAHOO_FINANCE',
                     'api' => [
                         'provider' => 'yahoo_finance',
-                        'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?interval={interval}&range={range}',
+                        'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
                         'response_format' => 'json',
                         'response_rows_path' => '',
                         'timeout_seconds' => 3,
@@ -102,7 +102,7 @@ class BenchmarkProviderSymbolResolverTest extends TestCase
         $this->assertCount(1, $rows);
         $this->assertSame('IHSG', $rows[0]['benchmark_code']);
         $this->assertSame('^JKSE', $rows[0]['provider_symbol']);
-        $this->assertSame('https://query1.finance.yahoo.com/v8/finance/chart/^JKSE?interval=1d&range=10d', $requestedUrls[0]);
+        $this->assertSame('https://query1.finance.yahoo.com/v8/finance/chart/^JKSE?period1=1773680400&period2=1773853200&interval=1d', $requestedUrls[0]);
         $this->assertStringNotContainsString('^JKSE.JK', $requestedUrls[0]);
     }
 }
