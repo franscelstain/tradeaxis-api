@@ -3555,3 +3555,26 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 [REMAINING_RISK]
 - WBSA remains an external Yahoo HTTP 400/data-availability failure for the warmup window.
 - Slim cache intentionally does not support row replay by itself; `--resume --only-failed` remains supported through the dedicated source acquisition checkpoint artifact.
+
+---
+
+## 2026-05-26 - API BACKFILL CHECKPOINT + RESUME MINOR NOTES FINAL FULL-SUITE LOCK
+
+[STATUS]
+- `FULL_PRODUCTION_READY`.
+- `FULL_LOCKED` for the API backfill checkpoint/resume minor-notes cleanup scope.
+
+[FINAL_PROOF]
+- Final full MarketData unit suite was rerun after the diagnostic reason-code cleanup, slim cache cleanup, runtime resume-only-failed artifact rewrite, and append-only docs update.
+- Command: `vendor\bin\phpunit tests\Unit\MarketData`.
+- Result: OK (562 tests, 8503 assertions).
+- Runtime: Time 00:20.909, Memory 42.00 MB.
+
+[LOCKED_ASSERTION]
+- Diagnostic top-level `reason_code` is now non-null when failed retry/checkpoint reason exists.
+- `source_acquisition_cache.json` is slimmed to `source_acquisition_resume_v2_slim`.
+- Resume-only-failed remains `FAILED_RETRY_BLOCKED` for ticker-scoped provider retry failure.
+- No coverage gate, publishability, evidence, replay, raw/latest/MAX(date), or fake-readable contract was changed.
+
+[REMAINING_NOTE]
+- WBSA provider HTTP 400 remains an external provider/data availability condition and is correctly represented by source-domain diagnostics.

@@ -3417,3 +3417,20 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
   - `Backfill` -> OK (44 tests, 292 assertions)
   - `StaticGuard` -> OK (219 tests, 5386 assertions)
 - Runtime resume-only-failed proof rewrote diagnostic/cache artifacts with top-level `reason_code=RUN_SOURCE_BAD_REQUEST` and `cache_format=source_acquisition_resume_v2_slim`.
+
+---
+
+## 2026-05-26 - API BACKFILL CHECKPOINT + RESUME FINAL FULL-SUITE CONTRACT LOCK
+
+[CONTRACT_STATUS]
+- `FULL_LOCKED`.
+- `FULL_PRODUCTION_READY` for the checkpoint/resume diagnostic and slim-cache contract.
+
+[FINAL_VALIDATION_PROOF]
+- Command: `vendor\bin\phpunit tests\Unit\MarketData`.
+- Result: OK (562 tests, 8503 assertions).
+- Runtime: Time 00:20.909, Memory 42.00 MB.
+
+[FINAL_RULE]
+- Diagnostic top-level reason-code resolution, slim source acquisition cache, checkpoint telemetry isolation, resume-only-failed accounting, and `FAILED_RETRY_BLOCKED` retry semantics are locked for this scope.
+- Future changes touching API backfill checkpoint/resume diagnostics, source acquisition cache, or failed checkpoint retry state must rerun targeted `ApiBackfill`, `Backfill`, `StaticGuard`, and full `tests\Unit\MarketData`.
