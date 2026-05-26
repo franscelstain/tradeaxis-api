@@ -546,12 +546,16 @@ class BackfillLifecycleOrchestrator
 
         $decoded = json_decode((string) file_get_contents($path), true);
 
-        return is_array($decoded) ? $decoded : null;
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        return isset($decoded['rows_by_trade_date']) && is_array($decoded['rows_by_trade_date']) ? $decoded : null;
     }
 
     private function writeAcquisitionCache($outputDir, array $acquired)
     {
-        file_put_contents($this->acquisitionCachePath($outputDir), json_encode($acquired, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+        file_put_contents($this->acquisitionCachePath($outputDir), json_encode($this->slimAcquisitionCache($acquired), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
     }
 
     private function writeSummary($outputDir, array $summary)
@@ -684,8 +688,8 @@ class BackfillLifecycleOrchestrator
                         'reason_code' => $entry['final_reason_code'] ?? null,
                         'http_status' => $entry['final_http_status'] ?? ($entry['http_status'] ?? null),
                         'failure_scope' => $entry['failure_scope'] ?? 'ticker',
-                        'provider_error_sample' => $entry['provider_error_sample'] ?? ($entry['response_body_sample'] ?? null),
-                        'sanitized_url' => $entry['sanitized_url'] ?? ($entry['url'] ?? null),
+                        'provider_error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($entry['provider_error_sample'] ?? ($entry['response_body_sample'] ?? null))),
+                        'sanitized_url' => $this->redactDiagnosticString($entry['sanitized_url'] ?? ($entry['url'] ?? null)),
                     ];
                     if (count($failures) >= 25) {
                         break 2;
@@ -693,6 +697,7 @@ class BackfillLifecycleOrchestrator
                 }
             }
         }
+        $reasonCode = $this->diagnosticReasonCode($summary, $failures, $acquired['source_acquisition_checkpoints'] ?? []);
 
         return [
             'source_mode' => $summary['source_mode'] ?? 'api',
@@ -720,7 +725,7 @@ class BackfillLifecycleOrchestrator
             'skipped_failed_checkpoint_count' => (int) ($summary['skipped_failed_checkpoint_count'] ?? $acquired['skipped_failed_checkpoint_count'] ?? 0),
             'skipped_failed_checkpoint_reasons' => $summary['skipped_failed_checkpoint_reasons'] ?? ($acquired['skipped_failed_checkpoint_reasons'] ?? []),
             'failures_sample' => $failures,
-            'reason_code' => $summary['reason_code'] ?? null,
+            'reason_code' => $reasonCode,
             'created_at' => Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
         ];
     }
@@ -740,9 +745,9 @@ class BackfillLifecycleOrchestrator
                 'reason_code' => $row['reason_code'] ?? null,
                 'http_status' => $row['http_status'] ?? null,
                 'failure_scope' => $row['failure_scope'] ?? 'ticker',
-                'error_sample' => $row['error_sample'] ?? null,
-                'provider_error_sample' => $row['provider_error_sample'] ?? null,
-                'sanitized_url' => $row['sanitized_url'] ?? null,
+                'error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($row['error_sample'] ?? null)),
+                'provider_error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($row['provider_error_sample'] ?? null)),
+                'sanitized_url' => $this->redactDiagnosticString($row['sanitized_url'] ?? null),
             ];
         }
 
@@ -758,9 +763,11 @@ class BackfillLifecycleOrchestrator
             'reason_code' => $context['reason_code'] ?? ($context['final_reason_code'] ?? ($summary['reason_code'] ?? null)),
             'http_status' => $context['final_http_status'] ?? ($context['http_status'] ?? ($summary['http_status'] ?? null)),
             'failure_scope' => $context['failure_scope'] ?? ($summary['failure_scope'] ?? null),
-            'provider_error_sample' => $context['provider_error_sample'] ?? ($context['response_body_sample'] ?? ($summary['provider_error_sample'] ?? null)),
-            'sanitized_url' => $context['sanitized_url'] ?? ($context['url'] ?? ($summary['sanitized_url'] ?? null)),
+            'provider_error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($context['provider_error_sample'] ?? ($context['response_body_sample'] ?? ($summary['provider_error_sample'] ?? null)))),
+            'sanitized_url' => $this->redactDiagnosticString($context['sanitized_url'] ?? ($context['url'] ?? ($summary['sanitized_url'] ?? null))),
         ];
+        $failures = array_filter($failure, function ($value) { return $value !== null && $value !== ''; }) === [] ? [] : [$failure];
+        $reasonCode = $this->diagnosticReasonCode($summary, $failures, []);
 
         return [
             'source_mode' => $summary['source_mode'] ?? 'api',
@@ -786,10 +793,98 @@ class BackfillLifecycleOrchestrator
             'failed_checkpoint_skipped' => (int) ($summary['failed_checkpoint_skipped'] ?? $context['failed_checkpoint_skipped'] ?? 0),
             'skipped_failed_checkpoint_count' => (int) ($summary['skipped_failed_checkpoint_count'] ?? $context['skipped_failed_checkpoint_count'] ?? 0),
             'skipped_failed_checkpoint_reasons' => $summary['skipped_failed_checkpoint_reasons'] ?? ($context['skipped_failed_checkpoint_reasons'] ?? []),
-            'failures_sample' => array_filter($failure, function ($value) { return $value !== null && $value !== ''; }) === [] ? [] : [$failure],
-            'reason_code' => $summary['reason_code'] ?? ($context['reason_code'] ?? $context['final_reason_code'] ?? null),
+            'failures_sample' => $failures,
+            'reason_code' => $reasonCode,
             'created_at' => Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
         ];
+    }
+
+    private function diagnosticReasonCode(array $summary, array $failures, array $checkpointRows)
+    {
+        foreach ([$summary['reason_code'] ?? null, $summary['final_reason_code'] ?? null] as $reasonCode) {
+            $reasonCode = trim((string) $reasonCode);
+            if ($reasonCode !== '') {
+                return $reasonCode;
+            }
+        }
+
+        $candidates = [];
+        foreach ($checkpointRows as $row) {
+            if (! is_array($row) || ! in_array(($row['state'] ?? null), ['FAILED', 'RETRYING'], true)) {
+                continue;
+            }
+
+            $reasonCode = trim((string) ($row['reason_code'] ?? ''));
+            if ($reasonCode === '') {
+                continue;
+            }
+
+            $candidates[] = [
+                'window_start' => (string) ($row['window_start'] ?? ''),
+                'window_end' => (string) ($row['window_end'] ?? ''),
+                'ticker_code' => strtoupper((string) ($row['ticker_code'] ?? '')),
+                'reason_code' => $reasonCode,
+            ];
+        }
+
+        if ($candidates === []) {
+            foreach ($failures as $failure) {
+                if (! is_array($failure)) {
+                    continue;
+                }
+
+                $reasonCode = trim((string) ($failure['reason_code'] ?? ''));
+                if ($reasonCode === '') {
+                    continue;
+                }
+
+                $candidates[] = [
+                    'window_start' => (string) ($failure['window_start'] ?? ''),
+                    'window_end' => (string) ($failure['window_end'] ?? ''),
+                    'ticker_code' => strtoupper((string) ($failure['ticker_code'] ?? '')),
+                    'reason_code' => $reasonCode,
+                ];
+            }
+        }
+
+        if ($candidates === []) {
+            return null;
+        }
+
+        usort($candidates, function ($left, $right) {
+            foreach (['window_start', 'window_end', 'ticker_code', 'reason_code'] as $field) {
+                $comparison = strcmp((string) $left[$field], (string) $right[$field]);
+                if ($comparison !== 0) {
+                    return $comparison;
+                }
+            }
+
+            return 0;
+        });
+
+        $counts = [];
+        $firstOrder = [];
+        foreach ($candidates as $order => $candidate) {
+            $reasonCode = $candidate['reason_code'];
+            $counts[$reasonCode] = ($counts[$reasonCode] ?? 0) + 1;
+            if (! array_key_exists($reasonCode, $firstOrder)) {
+                $firstOrder[$reasonCode] = $order;
+            }
+        }
+
+        $selectedReason = null;
+        $selectedCount = -1;
+        $selectedOrder = PHP_INT_MAX;
+        foreach ($counts as $reasonCode => $count) {
+            $order = $firstOrder[$reasonCode];
+            if ($count > $selectedCount || ($count === $selectedCount && $order < $selectedOrder)) {
+                $selectedReason = $reasonCode;
+                $selectedCount = $count;
+                $selectedOrder = $order;
+            }
+        }
+
+        return $selectedReason;
     }
 
     private function writeSourceAcquisitionDiagnostics($outputDir, array $diagnostics)
@@ -869,6 +964,203 @@ class BackfillLifecycleOrchestrator
         }
 
         return count($windows);
+    }
+
+    private function slimAcquisitionCache(array $acquired)
+    {
+        $checkpoints = $this->slimFailedCheckpoints($acquired['source_acquisition_checkpoints'] ?? []);
+
+        return [
+            'cache_format' => 'source_acquisition_resume_v2_slim',
+            'cache_supports_row_resume' => false,
+            'source_acquisition_batch_id' => $acquired['source_acquisition_batch_id'] ?? null,
+            'source_acquisition_mode' => $acquired['source_acquisition_mode'] ?? 'range_window',
+            'source_acquisition_state' => $acquired['source_acquisition_state'] ?? $this->aggregateAcquisitionState($acquired['window_telemetry'] ?? []),
+            'source_final_status' => $acquired['source_final_status'] ?? null,
+            'warmup_start' => $acquired['warmup_start'] ?? null,
+            'requested_start' => $acquired['requested_start'] ?? null,
+            'requested_end' => $acquired['requested_end'] ?? null,
+            'windows' => $acquired['windows'] ?? [],
+            'window_count' => (int) ($acquired['window_count'] ?? 0),
+            'ticker_count' => (int) ($acquired['ticker_count'] ?? 0),
+            'configured_concurrency' => (int) ($acquired['configured_concurrency'] ?? 0),
+            'trading_date_count' => count((array) ($acquired['trading_dates'] ?? [])),
+            'estimated_http_requests' => (int) ($acquired['estimated_http_requests'] ?? 0),
+            'rows_by_trade_date_counts' => $this->rowCountsByTradeDate($acquired['rows_by_trade_date'] ?? []),
+            'date_telemetry_summary' => $this->slimDateTelemetry($acquired['date_telemetry'] ?? []),
+            'window_telemetry_summary' => $this->slimWindowTelemetry($acquired['window_telemetry'] ?? []),
+            'failed_source_acquisition_checkpoints' => $checkpoints,
+            'source_acquisition_checkpoint_summary' => [
+                'total' => count((array) ($acquired['source_acquisition_checkpoints'] ?? [])),
+                'failed' => count($checkpoints),
+                'success' => $this->countCheckpointState($acquired['source_acquisition_checkpoints'] ?? [], 'SUCCESS'),
+            ],
+            'failed_checkpoint_total' => (int) ($acquired['failed_checkpoint_total'] ?? 0),
+            'failed_checkpoint_eligible' => (int) ($acquired['failed_checkpoint_eligible'] ?? 0),
+            'failed_checkpoint_retried' => (int) ($acquired['failed_checkpoint_retried'] ?? 0),
+            'failed_checkpoint_retry_success' => (int) ($acquired['failed_checkpoint_retry_success'] ?? 0),
+            'failed_checkpoint_retry_failed' => (int) ($acquired['failed_checkpoint_retry_failed'] ?? 0),
+            'retry_success_count' => (int) ($acquired['retry_success_count'] ?? 0),
+            'retry_failed_count' => (int) ($acquired['retry_failed_count'] ?? 0),
+            'failed_checkpoint_skipped' => (int) ($acquired['failed_checkpoint_skipped'] ?? 0),
+            'skipped_failed_checkpoint_count' => (int) ($acquired['skipped_failed_checkpoint_count'] ?? 0),
+            'skipped_failed_checkpoint_reasons' => $acquired['skipped_failed_checkpoint_reasons'] ?? [],
+            'skipped_checkpoint_count' => (int) ($acquired['skipped_checkpoint_count'] ?? 0),
+            'created_at' => Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
+        ];
+    }
+
+    private function rowCountsByTradeDate(array $rowsByTradeDate)
+    {
+        $counts = [];
+        foreach ($rowsByTradeDate as $tradeDate => $rows) {
+            $counts[(string) $tradeDate] = count((array) $rows);
+        }
+
+        ksort($counts);
+
+        return $counts;
+    }
+
+    private function slimDateTelemetry(array $dateTelemetry)
+    {
+        $summary = [];
+        foreach ($dateTelemetry as $tradeDate => $telemetry) {
+            if (! is_array($telemetry)) {
+                continue;
+            }
+
+            $summary[(string) $tradeDate] = array_intersect_key($telemetry, array_flip([
+                'source_acquisition_state',
+                'source_final_status',
+                'source_window_start',
+                'source_window_end',
+                'expected_ticker_count',
+                'success_ticker_count',
+                'failed_ticker_count',
+                'returned_row_count',
+                'final_reason_code',
+                'coverage_impossible',
+            ]));
+        }
+
+        ksort($summary);
+
+        return $summary;
+    }
+
+    private function slimWindowTelemetry(array $windowTelemetry)
+    {
+        $summary = [];
+        foreach ($windowTelemetry as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $summary[] = [
+                'window_start' => $entry['source_window_start'] ?? null,
+                'window_end' => $entry['source_window_end'] ?? null,
+                'source_acquisition_state' => $entry['source_acquisition_state'] ?? null,
+                'source_final_status' => $entry['source_final_status'] ?? null,
+                'final_reason_code' => $entry['final_reason_code'] ?? null,
+                'final_http_status' => $entry['final_http_status'] ?? null,
+                'failed_ticker_count' => (int) ($entry['failed_ticker_count'] ?? 0),
+                'success_ticker_count' => (int) ($entry['success_ticker_count'] ?? 0),
+                'returned_row_count' => (int) ($entry['returned_row_count'] ?? 0),
+                'failures_sample' => array_slice($this->failureSamplesFromCheckpoints($this->checkpointRowsFromFailureContexts($entry)), 0, 10),
+            ];
+        }
+
+        return $summary;
+    }
+
+    private function checkpointRowsFromFailureContexts(array $telemetry)
+    {
+        $rows = [];
+        foreach ((array) ($telemetry['failed_ticker_contexts'] ?? []) as $tickerCode => $context) {
+            if (! is_array($context)) {
+                continue;
+            }
+
+            $rows[] = [
+                'state' => 'FAILED',
+                'ticker_code' => $context['ticker_code'] ?? $tickerCode,
+                'window_start' => $context['source_window_start'] ?? null,
+                'window_end' => $context['source_window_end'] ?? null,
+                'reason_code' => $context['final_reason_code'] ?? null,
+                'http_status' => $context['http_status'] ?? ($context['final_http_status'] ?? null),
+                'failure_scope' => $context['failure_scope'] ?? 'ticker',
+                'error_sample' => $context['error_sample'] ?? null,
+                'provider_error_sample' => $context['provider_error_sample'] ?? null,
+                'sanitized_url' => $context['sanitized_url'] ?? ($context['url'] ?? null),
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function slimFailedCheckpoints(array $checkpointRows)
+    {
+        $slim = [];
+        foreach ($checkpointRows as $key => $row) {
+            if (! is_array($row) || ($row['state'] ?? null) !== 'FAILED') {
+                continue;
+            }
+
+            $slim[(string) $key] = [
+                'window_start' => $row['window_start'] ?? null,
+                'window_end' => $row['window_end'] ?? null,
+                'ticker_code' => $row['ticker_code'] ?? null,
+                'state' => $row['state'] ?? null,
+                'reason_code' => $row['reason_code'] ?? null,
+                'http_status' => $row['http_status'] ?? null,
+                'failure_scope' => $row['failure_scope'] ?? null,
+                'attempt_count' => (int) ($row['attempt_count'] ?? 0),
+                'rows_count' => (int) ($row['rows_count'] ?? 0),
+                'sanitized_url' => $this->redactDiagnosticString($row['sanitized_url'] ?? null),
+                'error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($row['error_sample'] ?? null)),
+                'provider_error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($row['provider_error_sample'] ?? null)),
+                'created_at' => $row['created_at'] ?? null,
+                'updated_at' => $row['updated_at'] ?? null,
+            ];
+        }
+
+        ksort($slim);
+
+        return $slim;
+    }
+
+    private function countCheckpointState(array $checkpointRows, $state)
+    {
+        return count(array_filter($checkpointRows, function ($row) use ($state) {
+            return is_array($row) && ($row['state'] ?? null) === $state;
+        }));
+    }
+
+    private function truncateDiagnosticString($value, $maxLength = 500)
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = (string) $value;
+        $maxLength = max(16, (int) $maxLength);
+        if (strlen($value) <= $maxLength) {
+            return $value;
+        }
+
+        $suffix = '...[truncated]';
+
+        return substr($value, 0, $maxLength - strlen($suffix)).$suffix;
+    }
+
+    private function redactDiagnosticString($value)
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return preg_replace('/(^|[?&\s])((?:token|apikey|api_key|auth|authorization|signature|sig)=)[^&\s]+/i', '$1$2[redacted]', (string) $value);
     }
 
     private function finalizeOnlyFailedSourceRetrySummary(array $summary, array $acquired)

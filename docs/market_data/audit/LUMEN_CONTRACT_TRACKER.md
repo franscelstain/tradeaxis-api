@@ -3381,3 +3381,39 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
   - `StaticGuard` -> OK (214 tests, 5367 assertions)
 - Full MarketData unit proof: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (557 tests, 8484 assertions).
 - Runtime resume-only-failed proof: `source_acquisition_state=FAILED_RETRY_BLOCKED`, `reason_code=RUN_SOURCE_BAD_REQUEST`, failed checkpoint/retry counts all 1, failed ticker/window `WBSA` / `2026-01-01` to `2026-03-31`.
+
+---
+
+## 2026-05-25 - API BACKFILL CHECKPOINT + RESUME MINOR NOTES CONTRACT UPDATE
+
+[CONTRACT_STATUS]
+- `DONE`.
+
+[DIAGNOSTIC_REASON_CONTRACT]
+- `source_acquisition_diagnostics.json.reason_code` must not be `null` when a failed retry/checkpoint has a valid source failure reason.
+- Resolution order is deterministic:
+  1. explicit summary/source reason,
+  2. dominant failed checkpoint reason by count,
+  3. tie-break by `window_start ASC`, `window_end ASC`, `ticker_code ASC`, `reason_code ASC`,
+  4. `null` only when no failed reason exists.
+- No-op resume may use `NO_FAILED_SOURCE_ACQUISITION_CHECKPOINT` according to the existing no-failed-checkpoint contract.
+
+[CACHE_SLIMMING_CONTRACT]
+- `source_acquisition_cache.json` is now a slim operational cache, not a full acquisition payload.
+- Required cache safety:
+  - valid JSON,
+  - no raw provider payloads,
+  - no full `rows_by_trade_date`,
+  - no full `source_acquisition_checkpoints`,
+  - no duplicated nested diagnostic/checkpoint context,
+  - no token/auth/signature leaks,
+  - `error_sample` and `provider_error_sample` capped at 500 chars.
+- `source_acquisition_checkpoint.json` remains authoritative for full failed window/ticker retry identity.
+- Slim cache is sufficient for `--resume --only-failed` in combination with checkpoint JSON; it intentionally does not claim full row-resume capability.
+
+[VALIDATION_PROOF]
+- Targeted filters after cleanup:
+  - `ApiBackfill` -> OK (25 tests, 153 assertions)
+  - `Backfill` -> OK (44 tests, 292 assertions)
+  - `StaticGuard` -> OK (219 tests, 5386 assertions)
+- Runtime resume-only-failed proof rewrote diagnostic/cache artifacts with top-level `reason_code=RUN_SOURCE_BAD_REQUEST` and `cache_format=source_acquisition_resume_v2_slim`.

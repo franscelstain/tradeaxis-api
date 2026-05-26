@@ -121,3 +121,16 @@ Latest runtime proof for `2026-05-01` to `2026-05-07`:
 - Diagnose-source: `PARTIAL_SUCCESS`, `failed_ticker_count=1`, `failed_window_count=1`.
 - Full lifecycle: 4/4 requested dates readable with evidence exported, fixture generated, and replay verified.
 - Resume-only-failed: `FAILED_RETRY_BLOCKED` for `WBSA` HTTP 400 in window `2026-01-01` to `2026-03-31`, with failed checkpoint/retry counts reported explicitly.
+
+## Source cache format
+`source_acquisition_cache.json` uses `cache_format=source_acquisition_resume_v2_slim`.
+
+This cache is intentionally slim:
+- stores row counts and telemetry summaries
+- stores failed checkpoint retry accounting
+- stores bounded/sanitized failure samples
+- does not store full `rows_by_trade_date`
+- does not store full `source_acquisition_checkpoints`
+- does not store raw provider payloads
+
+`source_acquisition_checkpoint.json` remains the full retry identity artifact. `source_acquisition_diagnostics.json.reason_code` must match the explicit summary reason or the deterministic failed-checkpoint reason chosen from the retry scope.

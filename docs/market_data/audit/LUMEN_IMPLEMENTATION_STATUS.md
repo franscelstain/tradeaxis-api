@@ -3502,3 +3502,56 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 [REMAINING_RISK]
 - WBSA remains blocked by Yahoo HTTP 400 for the warmup window; this is an external provider/data availability condition, not a checkpoint telemetry defect.
 - Provider runtime can still vary by network/rate limit, but source retry diagnostics are now reason-coded and checkpoint-consistent.
+
+---
+
+## 2026-05-25 - API BACKFILL CHECKPOINT + RESUME MINOR NOTES CLEANUP
+
+[STATUS]
+- `DONE`.
+- This final cleanup addresses the remaining minor notes from checkpoint/resume telemetry hardening without changing coverage, publishability, evidence, replay, or date-scoped lifecycle behavior.
+
+[ROOT_CAUSE_CONFIRMED]
+- `source_acquisition_diagnostics.json` was written before resume-only-failed summary finalization, so top-level `reason_code` could remain `null` even when failed checkpoint samples already carried a valid source reason.
+- `source_acquisition_cache.json` still wrote full acquisition payloads, including canonical rows and large nested telemetry context, which made retry artifacts unnecessarily large.
+
+[IMPLEMENTED_CHANGE]
+- Diagnostic writer now resolves top-level `reason_code` deterministically:
+  1. explicit summary/source reason wins,
+  2. otherwise failed checkpoint reasons are counted,
+  3. dominant reason wins,
+  4. ties are resolved by `window_start`, `window_end`, `ticker_code`, then `reason_code`.
+- Diagnostic/cache sample strings are redacted and capped at 500 characters with `...[truncated]` suffix when truncated.
+- Acquisition cache writer now emits `cache_format=source_acquisition_resume_v2_slim`.
+- Slim cache omits `rows_by_trade_date`, full `source_acquisition_checkpoints`, full provider payloads, and nested large failure contexts.
+- Slim cache keeps operational proof fields: row counts by date, date/window telemetry summaries, failed checkpoint summary, failed checkpoint retry accounting, sanitized URL, reason/http/scope, and bounded samples.
+- Existing checkpoint file remains the authoritative source for full per-window/ticker retry identity.
+
+[VALIDATION_ADDED]
+- `ApiBackfillLifecycleStaticGuardTest` now covers:
+  - diagnostic top-level reason from failed checkpoint,
+  - explicit summary reason precedence,
+  - dominant reason selection,
+  - no-op reason contract,
+  - slim cache JSON validity,
+  - cache omission of full rows/full checkpoints/nested failure contexts,
+  - sample truncation and credential redaction.
+
+[RUNTIME_PROOF_THIS_SESSION]
+- `php artisan migrate --env=testing --force` -> `Nothing to migrate.`
+- `vendor\bin\phpunit tests\Unit\MarketData --filter ApiBackfill` -> OK (25 tests, 153 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter Backfill` -> OK (44 tests, 292 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter StaticGuard` -> OK (219 tests, 5386 assertions).
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --resume --only-failed -vvv` -> expected `status=BLOCKED`, `source_acquisition_state=FAILED_RETRY_BLOCKED`, `reason_code=RUN_SOURCE_BAD_REQUEST`, failed checkpoint/retry counts all consistent for `WBSA`.
+- Artifact check:
+  - diagnostic top-level `reason_code=RUN_SOURCE_BAD_REQUEST`,
+  - summary `reason_code=RUN_SOURCE_BAD_REQUEST`,
+  - checkpoint key `2026-01-01|2026-03-31|WBSA` reason `RUN_SOURCE_BAD_REQUEST`,
+  - cache format `source_acquisition_resume_v2_slim`,
+  - cache size observed `48236` bytes after rewrite,
+  - cache has no `rows_by_trade_date` and no full `source_acquisition_checkpoints`,
+  - no `SECRET`/token leak found in cache.
+
+[REMAINING_RISK]
+- WBSA remains an external Yahoo HTTP 400/data-availability failure for the warmup window.
+- Slim cache intentionally does not support row replay by itself; `--resume --only-failed` remains supported through the dedicated source acquisition checkpoint artifact.
