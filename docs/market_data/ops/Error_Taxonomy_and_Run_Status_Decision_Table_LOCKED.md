@@ -148,3 +148,32 @@ Resume-only-failed source retry states:
 - `SYSTEMIC_FAILED`: only for true global/provider/config acquisition failure.
 
 Ticker-scoped provider HTTP 400 during resume-only-failed must use `FAILED_RETRY_BLOCKED` with source reason code such as `RUN_SOURCE_BAD_REQUEST`, not `SYSTEMIC_FAILED`.
+
+## Out-of-order import impact addendum
+`AFFECTED_PUBLICATION_REQUIRES_CORRECTION` is a correction-domain hard reason used when a changed historical EOD bar may affect an already readable downstream publication.
+
+## Amendment 2026-05-27 - Publication Reprocess Decision States
+
+- `PENDING_PROMOTE` means indicator/eligibility reprocess finished for affected non-readable dates and hash/seal/finalize still need the normal promote flow.
+- `REPUBLISHED` means affected non-readable dates were promoted through coverage, hash, seal, and finalize using the existing publication guard.
+- `BLOCKED_REQUIRES_CORRECTION` remains mandatory for affected dates that are already current/readable.
+- `REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE` is informational and prevents the primary requested date from being misreported as pending after normal primary promote has already handled it.
+- `PUBLICATION_REPROCESS_FAILED`, `PUBLICATION_REPROCESS_NOT_READABLE`, and `PUBLICATION_REPROCESS_REPLAY_FAILED` are hard publication-reprocess outcomes and must not produce fake readable state.
+
+Decision rule:
+- do not silently mutate readable live artifacts
+- do not mark the impacted publication as refreshed without correction proof
+- expose `publication_impact_state=REQUIRES_REPUBLICATION`
+- require correction/reseal/republication before any consumer-visible replacement
+
+## Impact execution addendum
+Recovered row apply and out-of-order impact execution introduce execution states that do not by themselves finalize a run:
+- `recovered_row_apply_state=APPLIED|UNCHANGED|FAILED|NOOP`
+- `indicator_reprocess_execution_state=EXECUTED|NOOP|BLOCKED|FAILED`
+- `eligibility_reprocess_execution_state=EXECUTED|NOOP|BLOCKED|FAILED`
+- `publication_reprocess_state=NOOP|BLOCKED_REQUIRES_CORRECTION|FAILED`
+
+Decision rule:
+- `EXECUTED` for indicator/eligibility means derived artifacts were recomputed for non-readable affected dates.
+- `BLOCKED_REQUIRES_CORRECTION` means current pointer and readable publication remain unchanged.
+- None of these states can bypass coverage, hash, seal, finalize, or publishability gates.

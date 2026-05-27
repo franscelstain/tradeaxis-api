@@ -9,6 +9,7 @@ use App\Application\MarketData\Services\EodBarsIngestService;
 use App\Application\MarketData\Services\EodEligibilityBuildService;
 use App\Application\MarketData\Services\EodIndicatorsComputeService;
 use App\Application\MarketData\Services\FinalizeDecisionService;
+use App\Application\MarketData\Services\MarketDataImpactReprocessExecutor;
 use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Application\MarketData\Services\PublicationDiffService;
 use App\Application\MarketData\Services\PublicationFinalizeOutcomeService;
@@ -1432,6 +1433,147 @@ class MarketDataPipelineServiceTest extends TestCase
         $this->assertSame($finalizedRun, $result);
     }
 
+    public function test_recovered_rows_partial_apply_runs_impact_reprocess_execution(): void
+    {
+        $runs = m::mock(EodRunRepository::class);
+        $bars = m::mock(EodBarsIngestService::class);
+        $indicators = m::mock(EodIndicatorsComputeService::class);
+        $eligibility = m::mock(EodEligibilityBuildService::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+        $artifacts = m::mock(EodArtifactRepository::class);
+        $hashes = m::mock(DeterministicHashService::class);
+        $finalize = m::mock(FinalizeDecisionService::class);
+        $diffs = m::mock(PublicationDiffService::class);
+        $outcomes = new PublicationFinalizeOutcomeService();
+        $coverageGate = m::mock(CoverageGateEvaluator::class);
+        $impactExecutor = m::mock(MarketDataImpactReprocessExecutor::class);
+
+        $run = $this->makeRun(122, '1.0000', null);
+        $run->trade_date_requested = '2026-05-01';
+        $run->stage = 'INGEST_BARS';
+        $run->source = 'api';
+        $run->notes = null;
+        $run->supersedes_run_id = null;
+        $run->terminal_status = null;
+        $run->publishability_state = 'NOT_READABLE';
+
+        $rows = [[
+            'ticker_code' => 'WBSA',
+            'trade_date' => '2026-05-01',
+            'open' => 100,
+            'high' => 110,
+            'low' => 90,
+            'close' => 105,
+            'volume' => 1000,
+            'source_name' => 'YAHOO_FINANCE',
+        ]];
+
+        $runs->shouldReceive('getOrCreateOwningRun')->once()->andReturn($run);
+        $runs->shouldReceive('touchStage')->once()->andReturn($run);
+        $runs->shouldReceive('appendEvent')->twice();
+        $runs->shouldReceive('updateTelemetry')
+            ->once()
+            ->with($run, m::on(function ($telemetry) {
+                $notes = (string) ($telemetry['notes'] ?? '');
+
+                return strpos($notes, 'recovered_row_apply_state=APPLIED') !== false
+                    && strpos($notes, 'indicator_reprocess_execution_state=EXECUTED') !== false
+                    && strpos($notes, 'eligibility_reprocess_execution_state=EXECUTED') !== false;
+            }))
+            ->andReturnUsing(function ($run, $telemetry) {
+                foreach ($telemetry as $key => $value) {
+                    $run->{$key} = $value;
+                }
+
+                return $run;
+            });
+
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-05-01')
+            ->andReturn(null);
+        $publications->shouldReceive('findReadableCurrentPublicationForRun')
+            ->once()
+            ->with(122, '2026-05-01')
+            ->andReturn(null);
+
+        $bars->shouldReceive('ingestRecoveredRowsPartial')
+            ->once()
+            ->with($run, '2026-05-01', 'api', $rows, ['retry_success_count' => 1], null)
+            ->andReturn([
+                'publication_id' => 900,
+                'publication_version' => 1,
+                'bars_rows_written' => 1,
+                'invalid_bar_count' => 0,
+                'source_name' => 'YAHOO_FINANCE',
+                'storage_target' => 'eod_bars',
+                'source_acquisition' => ['retry_success_count' => 1],
+                'bar_mutation_summary' => [
+                    'changed_bar_count' => 1,
+                    'inserted_bar_count' => 1,
+                    'updated_bar_count' => 0,
+                    'unchanged_bar_count' => 0,
+                    'removed_bar_count' => 0,
+                ],
+                'indicator_impact_summary' => [
+                    'affected_trade_dates' => ['2026-05-01', '2026-05-08'],
+                    'affected_trade_date_count' => 2,
+                    'affected_ticker_count' => 1,
+                    'indicator_reprocess_state' => 'REPROCESS_REQUIRED_WITH_DOWNSTREAM_IMPACT',
+                ],
+                'publication_impact_summary' => ['publication_impact_state' => 'NOOP'],
+                'recovered_row_count' => 1,
+                'recovered_row_apply_state' => 'APPLIED',
+                'resume_recovered_apply_summary' => [
+                    'recovered_row_count' => 1,
+                    'changed_bar_count' => 1,
+                    'apply_state' => 'APPLIED',
+                ],
+            ]);
+
+        $impactExecutor->shouldReceive('execute')
+            ->once()
+            ->with($run, 'api', m::type('array'), m::type('array'), m::type('array'), m::type('array'))
+            ->andReturn([
+                'indicator_reprocess_execution_summary' => [
+                    'execution_state' => 'EXECUTED',
+                    'reprocessed_trade_date_count' => 2,
+                    'reprocess_scope' => 'FULL_DATE',
+                ],
+                'eligibility_reprocess_execution_summary' => [
+                    'execution_state' => 'EXECUTED',
+                    'reprocessed_trade_date_count' => 2,
+                ],
+                'publication_reprocess_summary' => [
+                    'execution_state' => 'NOOP',
+                    'republished_trade_date_count' => 0,
+                ],
+            ]);
+
+        $service = new MarketDataPipelineService(
+            $runs,
+            $bars,
+            $indicators,
+            $eligibility,
+            $publications,
+            $corrections,
+            $artifacts,
+            $hashes,
+            $finalize,
+            $diffs,
+            $outcomes,
+            $coverageGate,
+            null,
+            $impactExecutor
+        );
+
+        $result = $service->applyRecoveredRowsPartial('2026-05-01', 'api', $rows, ['retry_success_count' => 1]);
+
+        $this->assertSame($run, $result);
+        $this->assertStringContainsString('indicator_reprocess_execution_state=EXECUTED', (string) $run->notes);
+    }
+
     public function test_promote_single_day_runs_post_coverage_sequence_when_gate_passes(): void
     {
         [$service, $runs] = $this->makeService();
@@ -1488,6 +1630,72 @@ class MarketDataPipelineServiceTest extends TestCase
         $result = $service->promoteSingleDay('2026-03-24', 'manual_file', 55, 7, 'incremental');
 
         $this->assertSame($finalizedRun, $result);
+    }
+
+    public function test_run_daily_promotes_non_readable_downstream_impact_dates_after_primary_finalize(): void
+    {
+        [$service, $runs] = $this->makeService();
+
+        $originRun = $this->makeRun(801);
+        $originRun->trade_date_requested = '2026-05-01';
+        $originRun->source = 'api';
+        $originRun->terminal_status = 'SUCCESS';
+        $originRun->publishability_state = 'READABLE';
+        $originRun->notes = implode('; ', [
+            'publication_reprocess_state=PENDING_PROMOTE',
+            'publication_reprocess_candidate_trade_dates=2026-05-01,2026-05-08',
+            'indicator_reprocessed_trade_dates=2026-05-01,2026-05-08',
+        ]);
+
+        $seedRun = $this->makeRun(802, '1.0000', null);
+        $seedRun->trade_date_requested = '2026-05-08';
+        $seedRun->source = 'api';
+        $seedRun->terminal_status = null;
+        $seedRun->publishability_state = 'NOT_READABLE';
+
+        $promotedRun = $this->makeRun(803);
+        $promotedRun->trade_date_requested = '2026-05-08';
+        $promotedRun->source = 'api';
+        $promotedRun->terminal_status = 'SUCCESS';
+        $promotedRun->publishability_state = 'READABLE';
+        $promotedRun->publication_id = 9003;
+        $promotedRun->publication_version = 1;
+
+        $service->shouldReceive('completeIngest')->once()->andReturn($originRun);
+        $service->shouldReceive('completeIndicators')->once()->andReturn($originRun);
+        $service->shouldReceive('completeEligibility')->once()->andReturn($originRun);
+        $service->shouldReceive('completeHash')->once()->andReturn($originRun);
+        $service->shouldReceive('completeSeal')->once()->andReturn($originRun);
+        $service->shouldReceive('completeFinalize')->once()->andReturn($originRun);
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-08', 'api')
+            ->andReturn($seedRun);
+        $service->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-05-08', 'api', 802, null, 'full_publish')
+            ->andReturn($promotedRun);
+        $runs->shouldReceive('updateTelemetry')
+            ->once()
+            ->with($originRun, m::on(function ($telemetry) {
+                $notes = (string) ($telemetry['notes'] ?? '');
+
+                return strpos($notes, 'publication_reprocess_state=REPUBLISHED') !== false
+                    && strpos($notes, 'publication_reprocess_republished_trade_dates=2026-05-08') !== false;
+            }))
+            ->andReturnUsing(function ($run, $telemetry) {
+                foreach ($telemetry as $key => $value) {
+                    $run->{$key} = $value;
+                }
+
+                return $run;
+            });
+        $runs->shouldReceive('appendEvent')->once();
+
+        $result = $service->runDaily('2026-05-01', 'api');
+
+        $this->assertSame($originRun, $result);
+        $this->assertStringContainsString('publication_reprocess_state=REPUBLISHED', (string) $result->notes);
     }
 
     private function makeService(): array

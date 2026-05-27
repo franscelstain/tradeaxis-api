@@ -108,3 +108,17 @@ then current-publication integrity is overstated.
 Any procedure, query, or helper that switches current state through `eod_publications.is_current` without treating the pointer table as the primary owner must be treated as legacy-compatibility material only.
 
 Such material may exist to help migration or local rollout, but it must not be presented to builders as the main publication-resolution path.
+
+---
+
+## Amendment 2026-05-27 - Impact reprocess pointer safety
+
+Out-of-order import impact execution must never switch the current pointer as a side effect of recovered-row apply or derived reprocess.
+
+If affected non-readable dates are recomputed, pointer state remains unchanged until the normal promote/finalize lifecycle runs. If affected dates are already readable, the system must report `BLOCKED_REQUIRES_CORRECTION` and preserve the existing pointer until a correction/republication lifecycle produces a valid sealed readable replacement.
+
+## Amendment 2026-05-27 - Impact-triggered promote pointer rule
+
+When out-of-order impact execution promotes an affected date that is not already readable/current, pointer changes are allowed only through the existing `promoteDaily()` coverage/hash/seal/finalize path. The impact executor itself does not write pointer state.
+
+If the affected date is already readable/current, impact execution must not call ordinary promote as a shortcut. It must preserve the existing pointer and require correction/republication.

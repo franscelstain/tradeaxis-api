@@ -374,3 +374,29 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 - `RUN_COVERAGE_NOT_EVALUABLE` is the run-level blocked/not-readable reason used when finalize consumes a non-meaningful coverage evaluation outcome.
 - Session snapshot reason codes must never be used to justify fallback of sealed EOD datasets.
 - Replay reason codes are proof/comparison outcomes. They do not create readable publications; they explain why fixture vs actual proof matched, mismatched, or failed safe.
+
+---
+
+## Amendment 2026-05-26 - Out-of-order import impact reason
+
+| Code | Domain | Severity | Meaning |
+|---|---|---:|---|
+| `AFFECTED_PUBLICATION_REQUIRES_CORRECTION` | CORRECTION | HARD | A changed historical EOD bar can affect at least one already readable downstream publication; silent mutation is blocked and correction/reseal/republication is required. |
+
+## Amendment 2026-05-27 - Impact execution states
+
+Impact execution states are artifact states, not canonical reason codes and not terminal run statuses. They are documented in `Error_Taxonomy_and_Run_Status_Decision_Table_LOCKED.md` and artifact/runbook docs. Do not add them to the reason-code seed unless they become persisted `reason_code` values.
+
+## Amendment 2026-05-27 - Publication reprocess reason-like codes
+
+The following codes may appear in publication reprocess summaries or run events:
+
+| Code | Domain | Severity | Meaning |
+|---|---|---:|---|
+| `REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE` | PUBLICATION_REPROCESS | INFO | The requested date was already handled by the primary promote/hash/seal/finalize flow, so downstream publication reprocess has no extra work for that date. |
+| `AFFECTED_DATE_RUN_NOT_FOUND` | PUBLICATION_REPROCESS | HARD | A non-readable affected date could not be promoted because no persisted run exists for that date/source mode. |
+| `PUBLICATION_REPROCESS_NOT_READABLE` | PUBLICATION_REPROCESS | HARD | The affected-date promote flow completed without producing a readable publication. |
+| `PUBLICATION_REPROCESS_FAILED` | PUBLICATION_REPROCESS | HARD | Publication reprocess failed before completing promote/hash/seal/finalize. |
+| `PUBLICATION_REPROCESS_REPLAY_FAILED` | PUBLICATION_REPROCESS | HARD | Publication reprocess produced a readable run, but requested replay verification did not pass. |
+
+These codes do not permit silent mutation of already-readable dates. `AFFECTED_PUBLICATION_REQUIRES_CORRECTION` remains the required reason for readable/current affected dates.

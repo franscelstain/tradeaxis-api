@@ -27,6 +27,7 @@ class MarketDataPipelineService
     private $publicationFinalizeOutcomes;
     private $coverageGateEvaluator;
     private $benchmarkBarsIngest;
+    private $impactReprocess;
 
     public function __construct(
         EodRunRepository $runs,
@@ -41,7 +42,8 @@ class MarketDataPipelineService
         PublicationDiffService $publicationDiffs,
         PublicationFinalizeOutcomeService $publicationFinalizeOutcomes,
         CoverageGateEvaluator $coverageGateEvaluator,
-        BenchmarkBarsIngestService $benchmarkBarsIngest = null
+        BenchmarkBarsIngestService $benchmarkBarsIngest = null,
+        MarketDataImpactReprocessExecutor $impactReprocess = null
     ) {
         $this->runs = $runs;
         $this->barsIngest = $barsIngest;
@@ -56,6 +58,7 @@ class MarketDataPipelineService
         $this->publicationFinalizeOutcomes = $publicationFinalizeOutcomes;
         $this->coverageGateEvaluator = $coverageGateEvaluator;
         $this->benchmarkBarsIngest = $benchmarkBarsIngest;
+        $this->impactReprocess = $impactReprocess;
     }
 
     public function startStage(MarketDataStageInput $input)
@@ -220,6 +223,7 @@ class MarketDataPipelineService
                     $sourceAcquisitionTelemetry,
                     $priorCurrent
                 );
+                $result = $this->withImpactReprocessExecution($run, $input, $result);
 
                 $sourceAcquisition = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
@@ -237,7 +241,7 @@ class MarketDataPipelineService
                         'source_name='.(string) $result['source_name'],
                         'benchmark_import_status='.(string) ($benchmarkResult['benchmark_import_status'] ?? 'UNKNOWN'),
                         'benchmark_rows_written='.(int) ($benchmarkResult['benchmark_rows_written'] ?? 0),
-                    ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisition))),
+                    ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisition), $this->mutationImpactNoteSegments($result))),
                 ], $this->sourceTelemetryColumns($input->sourceMode, $result['source_name'], $sourceAcquisition)));
 
                 $this->runs->appendEvent(
@@ -319,6 +323,98 @@ class MarketDataPipelineService
         ), $sourceRows, $sourceAcquisition);
     }
 
+    public function applyRecoveredRowsPartial($requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = [], $correctionId = null)
+    {
+        return $this->completeRecoveredRowsPartial(new MarketDataStageInput(
+            $requestedDate,
+            $sourceMode ?: config('market_data.pipeline.default_source_mode'),
+            null,
+            'INGEST_BARS',
+            $correctionId,
+            false,
+            null,
+            'import_only'
+        ), $sourceRows, $sourceAcquisition);
+    }
+
+    public function completeRecoveredRowsPartial(MarketDataStageInput $input, array $sourceRows, array $sourceAcquisition = [])
+    {
+        [$run, $correction, $priorCurrent] = $this->startStage($input);
+
+        if ($priorCurrent === null) {
+            $baselineCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
+
+            if ($baselineCurrent) {
+                $priorCurrent = $baselineCurrent;
+            }
+        }
+
+        try {
+            return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisition) {
+                $result = $this->barsIngest->ingestRecoveredRowsPartial(
+                    $run,
+                    $input->requestedDate,
+                    $input->sourceMode,
+                    $sourceRows,
+                    $sourceAcquisition,
+                    $priorCurrent
+                );
+                $result = $this->withImpactReprocessExecution($run, $input, $result);
+                $sourceAcquisitionResult = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
+                    ? $result['source_acquisition']
+                    : [];
+
+                $run = $this->safeUpdateTelemetry($run, array_merge([
+                    'request_mode' => $input->requestMode,
+                    'bars_rows_written' => $result['bars_rows_written'],
+                    'invalid_bar_count' => $result['invalid_bar_count'],
+                    'publication_id' => $result['publication_id'],
+                    'publication_version' => $result['publication_version'],
+                    'notes' => $this->appendRunNotes($run->notes, array_merge([
+                        'request_mode='.(string) $input->requestMode,
+                        'candidate_publication_id='.$result['publication_id'],
+                        'source_name='.(string) $result['source_name'],
+                    ], $this->sourceAcquisitionNoteSegments($sourceAcquisitionResult), $this->mutationImpactNoteSegments($result))),
+                ], $this->sourceTelemetryColumns($input->sourceMode, $result['source_name'], $sourceAcquisitionResult)));
+
+                $this->runs->appendEvent(
+                    $run,
+                    $input->stage,
+                    'RECOVERED_ROWS_PARTIAL_APPLY_COMPLETED',
+                    'INFO',
+                    'Recovered source rows were applied with partial ticker/date upsert; unrelated tickers were preserved.',
+                    ($result['recovered_row_apply_state'] ?? null) === 'UNCHANGED' ? 'NOOP_UNCHANGED_BARS' : 'RECOVERED_ROWS_APPLIED',
+                    $result + $this->sourceTelemetryPayload($input->sourceMode, $result['source_name']) + [
+                        'request_mode' => $input->requestMode,
+                        'import_status' => 'COMPLETED',
+                        'promote_status' => 'NOT_PROMOTED',
+                        'promoted' => false,
+                        'pointer_switched' => false,
+                        'source_acquisition' => $sourceAcquisitionResult,
+                    ]
+                );
+
+                $this->assertImportOnlyDidNotPromote($run, $input, $result);
+
+                return $run;
+            });
+        } catch (\Throwable $e) {
+            $reasonCode = $e instanceof SourceAcquisitionException
+                ? $e->reasonCode()
+                : (preg_match('/^([A-Z0-9_]+):/', (string) $e->getMessage(), $matches) ? $matches[1] : 'RUN_SOURCE_MALFORMED_PAYLOAD');
+
+            if ($e instanceof SourceAcquisitionException) {
+                $heldRun = $this->handleRecoverableSourceFailure($run, $input->requestedDate, $input->stage, $reasonCode, $e);
+                if ($heldRun !== null) {
+                    return $heldRun;
+                }
+            }
+
+            $this->handleStageFailure($run, $input->stage, $reasonCode, $e);
+            throw $e;
+        }
+    }
+
     public function completeIngestWithAcquiredRows(MarketDataStageInput $input, array $sourceRows, array $sourceAcquisition = [])
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
@@ -349,6 +445,7 @@ class MarketDataPipelineService
                     $sourceAcquisition,
                     $priorCurrent
                 );
+                $result = $this->withImpactReprocessExecution($run, $input, $result);
                 $sourceAcquisitionResult = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
                     : [];
@@ -365,7 +462,7 @@ class MarketDataPipelineService
                         'source_name='.(string) $result['source_name'],
                         'benchmark_import_status='.(string) ($benchmarkResult['benchmark_import_status'] ?? 'UNKNOWN'),
                         'benchmark_rows_written='.(int) ($benchmarkResult['benchmark_rows_written'] ?? 0),
-                    ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisitionResult))),
+                    ], $this->manualSourceInputNoteSegments($input->sourceMode), $this->sourceAcquisitionNoteSegments($sourceAcquisitionResult), $this->mutationImpactNoteSegments($result))),
                 ], $this->sourceTelemetryColumns($input->sourceMode, $result['source_name'], $sourceAcquisitionResult)));
 
                 $this->runs->appendEvent(
@@ -1919,6 +2016,10 @@ class MarketDataPipelineService
             }
         }
 
+        if ($run && $requestMode !== 'import_only') {
+            $run = $this->executeImpactPublicationReprocessIfNeeded($run, $sourceMode, $requestMode);
+        }
+
         return $run;
     }
 
@@ -2390,6 +2491,311 @@ class MarketDataPipelineService
                 throw new \RuntimeException('IMPORT_PUBLICATION_CURRENT_BLOCKED: import_only candidate cannot become current.');
             }
         }
+    }
+
+    private function withImpactReprocessExecution($run, MarketDataStageInput $input, array $result)
+    {
+        if (! $this->impactReprocess) {
+            return $result;
+        }
+
+        $bar = isset($result['bar_mutation_summary']) && is_array($result['bar_mutation_summary'])
+            ? $result['bar_mutation_summary']
+            : [];
+        $indicator = isset($result['indicator_impact_summary']) && is_array($result['indicator_impact_summary'])
+            ? $result['indicator_impact_summary']
+            : [];
+        $publication = isset($result['publication_impact_summary']) && is_array($result['publication_impact_summary'])
+            ? $result['publication_impact_summary']
+            : [];
+
+        if ($bar === [] && $indicator === [] && $publication === []) {
+            return $result;
+        }
+
+        return array_merge($result, $this->impactReprocess->execute(
+            $run,
+            $input->sourceMode,
+            $bar,
+            $indicator,
+            $publication,
+            [
+                'source_mode' => $input->sourceMode,
+                'requested_date' => $input->requestedDate,
+                'request_mode' => $input->requestMode,
+                'stage' => $input->stage,
+            ]
+        ));
+    }
+
+    private function mutationImpactNoteSegments(array $result)
+    {
+        $bar = isset($result['bar_mutation_summary']) && is_array($result['bar_mutation_summary'])
+            ? $result['bar_mutation_summary']
+            : [];
+        $indicator = isset($result['indicator_impact_summary']) && is_array($result['indicator_impact_summary'])
+            ? $result['indicator_impact_summary']
+            : [];
+        $publication = isset($result['publication_impact_summary']) && is_array($result['publication_impact_summary'])
+            ? $result['publication_impact_summary']
+            : [];
+        $indicatorExecution = isset($result['indicator_reprocess_execution_summary']) && is_array($result['indicator_reprocess_execution_summary'])
+            ? $result['indicator_reprocess_execution_summary']
+            : [];
+        $eligibilityExecution = isset($result['eligibility_reprocess_execution_summary']) && is_array($result['eligibility_reprocess_execution_summary'])
+            ? $result['eligibility_reprocess_execution_summary']
+            : [];
+        $publicationReprocess = isset($result['publication_reprocess_summary']) && is_array($result['publication_reprocess_summary'])
+            ? $result['publication_reprocess_summary']
+            : [];
+        $recovered = isset($result['resume_recovered_apply_summary']) && is_array($result['resume_recovered_apply_summary'])
+            ? $result['resume_recovered_apply_summary']
+            : [];
+
+        if ($bar === [] && $indicator === [] && $publication === [] && $indicatorExecution === [] && $eligibilityExecution === [] && $publicationReprocess === [] && $recovered === []) {
+            return [];
+        }
+
+        return array_filter([
+            'bar_mutation_changed_count='.(int) ($bar['changed_bar_count'] ?? 0),
+            'bar_mutation_inserted_count='.(int) ($bar['inserted_bar_count'] ?? 0),
+            'bar_mutation_updated_count='.(int) ($bar['updated_bar_count'] ?? 0),
+            'bar_mutation_unchanged_count='.(int) ($bar['unchanged_bar_count'] ?? 0),
+            'bar_mutation_removed_count='.(int) ($bar['removed_bar_count'] ?? 0),
+            'affected_ticker_count='.(int) ($indicator['affected_ticker_count'] ?? 0),
+            'affected_trade_date_count='.(int) ($indicator['affected_trade_date_count'] ?? 0),
+            ! empty($indicator['affected_trade_dates']) ? 'affected_trade_dates='.$this->compactNoteList((array) $indicator['affected_trade_dates']) : null,
+            'affected_start_date='.(string) ($indicator['affected_start_date'] ?? ''),
+            'affected_end_date='.(string) ($indicator['affected_end_date'] ?? ''),
+            'max_indicator_dependency_trading_days='.(int) ($indicator['max_dependency_trading_days'] ?? 0),
+            'indicator_reprocess_state='.(string) ($indicator['indicator_reprocess_state'] ?? ''),
+            'publication_impact_state='.(string) ($publication['publication_impact_state'] ?? 'NOOP'),
+            ! empty($publication['readable_publication_impacted']) ? 'readable_publication_impacted=true' : 'readable_publication_impacted=false',
+            ! empty($publication['republication_required']) ? 'republication_required=true' : 'republication_required=false',
+            ! empty($publication['reason_code']) ? 'publication_impact_reason_code='.(string) $publication['reason_code'] : null,
+            ! empty($indicatorExecution) ? 'indicator_reprocess_execution_state='.(string) ($indicatorExecution['execution_state'] ?? 'NOOP') : null,
+            ! empty($indicatorExecution) ? 'indicator_reprocessed_trade_date_count='.(int) ($indicatorExecution['reprocessed_trade_date_count'] ?? 0) : null,
+            ! empty($indicatorExecution['reprocessed_trade_dates']) ? 'indicator_reprocessed_trade_dates='.$this->compactNoteList((array) $indicatorExecution['reprocessed_trade_dates']) : null,
+            ! empty($indicatorExecution['reprocess_scope']) ? 'indicator_reprocess_scope='.(string) $indicatorExecution['reprocess_scope'] : null,
+            ! empty($indicatorExecution['blocked_reason_code']) ? 'indicator_reprocess_blocked_reason_code='.(string) $indicatorExecution['blocked_reason_code'] : null,
+            ! empty($indicatorExecution['failure_reason_code']) ? 'indicator_reprocess_failure_reason_code='.(string) $indicatorExecution['failure_reason_code'] : null,
+            ! empty($eligibilityExecution) ? 'eligibility_reprocess_execution_state='.(string) ($eligibilityExecution['execution_state'] ?? 'NOOP') : null,
+            ! empty($eligibilityExecution) ? 'eligibility_reprocessed_trade_date_count='.(int) ($eligibilityExecution['reprocessed_trade_date_count'] ?? 0) : null,
+            ! empty($eligibilityExecution['reprocessed_trade_dates']) ? 'eligibility_reprocessed_trade_dates='.$this->compactNoteList((array) $eligibilityExecution['reprocessed_trade_dates']) : null,
+            ! empty($eligibilityExecution['blocked_reason_code']) ? 'eligibility_reprocess_blocked_reason_code='.(string) $eligibilityExecution['blocked_reason_code'] : null,
+            ! empty($eligibilityExecution['failure_reason_code']) ? 'eligibility_reprocess_failure_reason_code='.(string) $eligibilityExecution['failure_reason_code'] : null,
+            ! empty($publicationReprocess) ? 'publication_reprocess_state='.(string) ($publicationReprocess['execution_state'] ?? 'NOOP') : null,
+            ! empty($publicationReprocess) ? 'publication_reprocess_republished_trade_date_count='.(int) ($publicationReprocess['republished_trade_date_count'] ?? 0) : null,
+            ! empty($publicationReprocess['republished_trade_dates']) ? 'publication_reprocess_republished_trade_dates='.$this->compactNoteList((array) $publicationReprocess['republished_trade_dates']) : null,
+            ! empty($publicationReprocess['candidate_trade_dates']) ? 'publication_reprocess_candidate_trade_dates='.$this->compactNoteList((array) $publicationReprocess['candidate_trade_dates']) : null,
+            ! empty($publicationReprocess['blocked_trade_dates']) ? 'publication_reprocess_blocked_trade_dates='.$this->compactNoteList((array) $publicationReprocess['blocked_trade_dates']) : null,
+            ! empty($publicationReprocess['failed_trade_dates']) ? 'publication_reprocess_failed_trade_dates='.$this->compactNoteList((array) $publicationReprocess['failed_trade_dates']) : null,
+            ! empty($publicationReprocess['blocked_reason_code']) ? 'publication_reprocess_blocked_reason_code='.(string) $publicationReprocess['blocked_reason_code'] : null,
+            ! empty($publicationReprocess['failure_reason_code']) ? 'publication_reprocess_failure_reason_code='.(string) $publicationReprocess['failure_reason_code'] : null,
+            ! empty($result['recovered_row_apply_state']) ? 'recovered_row_apply_state='.(string) $result['recovered_row_apply_state'] : null,
+            isset($result['recovered_row_count']) ? 'recovered_row_count='.(int) $result['recovered_row_count'] : null,
+            ! empty($recovered) ? 'resume_recovered_apply_state='.(string) ($recovered['apply_state'] ?? 'NOOP') : null,
+            ! empty($recovered) ? 'resume_recovered_row_count='.(int) ($recovered['recovered_row_count'] ?? 0) : null,
+        ], function ($segment) {
+            return $segment !== null && $segment !== '';
+        });
+    }
+
+    private function compactNoteList(array $values)
+    {
+        $values = array_values(array_unique(array_filter(array_map(function ($value) {
+            $value = trim((string) $value);
+
+            return str_replace([';', '|'], '', $value);
+        }, $values), function ($value) {
+            return $value !== '';
+        })));
+
+        sort($values);
+
+        return implode(',', $values);
+    }
+
+    private function executeImpactPublicationReprocessIfNeeded($originRun, $sourceMode, $requestMode)
+    {
+        $notes = $this->parseRunNotes((string) ($originRun->notes ?? ''));
+        if (($notes['publication_reprocess_state'] ?? null) !== 'PENDING_PROMOTE') {
+            return $originRun;
+        }
+
+        $candidateDates = $this->parseCsvList($notes['publication_reprocess_candidate_trade_dates'] ?? '');
+        if ($candidateDates === []) {
+            $candidateDates = $this->parseCsvList($notes['indicator_reprocessed_trade_dates'] ?? '');
+        }
+
+        $requestedDate = (string) ($originRun->trade_date_requested ?? '');
+        $candidateDates = array_values(array_filter($candidateDates, function ($date) use ($requestedDate) {
+            return (string) $date !== $requestedDate;
+        }));
+
+        if ($candidateDates === []) {
+            return $this->safeUpdateTelemetry($originRun, [
+                'notes' => $this->appendRunNotes($originRun->notes ?? null, [
+                    'publication_reprocess_state=NOOP',
+                    'publication_reprocess_blocked_reason_code=REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE',
+                ]),
+            ]);
+        }
+
+        $republishedDates = [];
+        $blockedDates = $this->parseCsvList($notes['publication_reprocess_blocked_trade_dates'] ?? '');
+        $failedDates = [];
+        $blockedReason = $notes['publication_reprocess_blocked_reason_code'] ?? null;
+        $failureReason = null;
+
+        foreach ($candidateDates as $tradeDate) {
+            if (in_array($tradeDate, $blockedDates, true)) {
+                $blockedReason = $blockedReason ?: 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
+                continue;
+            }
+
+            try {
+                $seedRun = $this->runs->findLatestForRequestedDate($tradeDate, $sourceMode);
+                if (! $seedRun) {
+                    $blockedDates[] = $tradeDate;
+                    $blockedReason = $blockedReason ?: 'AFFECTED_DATE_RUN_NOT_FOUND';
+                    continue;
+                }
+
+                if ($this->runLooksReadable($seedRun)) {
+                    $blockedDates[] = $tradeDate;
+                    $blockedReason = $blockedReason ?: 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
+                    continue;
+                }
+
+                $promotedRun = $this->promoteDaily($tradeDate, $sourceMode, (int) $seedRun->run_id, null, 'full_publish');
+                if ($this->runLooksReadable($promotedRun)) {
+                    $republishedDates[] = $tradeDate;
+                    continue;
+                }
+
+                $blockedDates[] = $tradeDate;
+                $blockedReason = $blockedReason ?: ($promotedRun->final_reason_code ?? 'PUBLICATION_REPROCESS_NOT_READABLE');
+            } catch (\Throwable $e) {
+                $failedDates[] = $tradeDate;
+                $failureReason = $this->reasonCodeFromThrowable($e, 'PUBLICATION_REPROCESS_FAILED');
+            }
+        }
+
+        $republishedDates = $this->sortedUniqueList($republishedDates);
+        $blockedDates = $this->sortedUniqueList($blockedDates);
+        $failedDates = $this->sortedUniqueList($failedDates);
+
+        $state = 'NOOP';
+        if ($failedDates !== []) {
+            $state = 'FAILED';
+        } elseif ($blockedDates !== []) {
+            $state = 'BLOCKED_REQUIRES_CORRECTION';
+        } elseif ($republishedDates !== []) {
+            $state = 'REPUBLISHED';
+        }
+
+        $originRun = $this->safeUpdateTelemetry($originRun, [
+            'notes' => $this->appendRunNotes($originRun->notes ?? null, [
+                'publication_reprocess_state='.$state,
+                'publication_reprocess_republished_trade_date_count='.count($republishedDates),
+                $republishedDates !== [] ? 'publication_reprocess_republished_trade_dates='.$this->compactNoteList($republishedDates) : null,
+                $blockedDates !== [] ? 'publication_reprocess_blocked_trade_dates='.$this->compactNoteList($blockedDates) : null,
+                $failedDates !== [] ? 'publication_reprocess_failed_trade_dates='.$this->compactNoteList($failedDates) : null,
+                $blockedReason ? 'publication_reprocess_blocked_reason_code='.$blockedReason : null,
+                $failureReason ? 'publication_reprocess_failure_reason_code='.$failureReason : null,
+            ]),
+        ]);
+
+        $this->runs->appendEvent(
+            $originRun,
+            'FINALIZE',
+            'IMPACT_PUBLICATION_REPROCESS_COMPLETED',
+            $state === 'REPUBLISHED' || $state === 'NOOP' ? 'INFO' : 'WARN',
+            'Affected non-readable downstream dates were promoted through coverage, hash, seal, and finalize where eligible.',
+            $failureReason ?: $blockedReason,
+            [
+                'origin_run_id' => (int) ($originRun->run_id ?? 0),
+                'request_mode' => $requestMode,
+                'source_mode' => $sourceMode,
+                'publication_reprocess_state' => $state,
+                'candidate_trade_dates' => $candidateDates,
+                'republished_trade_dates' => $republishedDates,
+                'blocked_trade_dates' => $blockedDates,
+                'failed_trade_dates' => $failedDates,
+            ]
+        );
+
+        return $originRun;
+    }
+
+    private function parseRunNotes($notes)
+    {
+        if ($notes === '') {
+            return [];
+        }
+
+        $segments = preg_split('/\s*;\s*/', $notes);
+        if (! is_array($segments)) {
+            return [];
+        }
+
+        $parsed = [];
+        foreach ($segments as $segment) {
+            $segment = trim((string) $segment);
+            if ($segment === '' || strpos($segment, '=') === false) {
+                continue;
+            }
+
+            [$key, $value] = array_pad(explode('=', $segment, 2), 2, null);
+            $key = trim((string) $key);
+            $value = trim((string) $value);
+            if ($key !== '') {
+                $parsed[$key] = $value;
+            }
+        }
+
+        return $parsed;
+    }
+
+    private function parseCsvList($value)
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return [];
+        }
+
+        return $this->sortedUniqueList(array_filter(array_map(function ($item) {
+            return trim((string) $item);
+        }, explode(',', (string) $value)), function ($item) {
+            return $item !== '';
+        }));
+    }
+
+    private function sortedUniqueList(array $values)
+    {
+        $values = array_values(array_unique(array_filter(array_map('strval', $values), function ($value) {
+            return trim($value) !== '';
+        })));
+        sort($values);
+
+        return $values;
+    }
+
+    private function runLooksReadable($run)
+    {
+        return (string) ($run->terminal_status ?? '') === 'SUCCESS'
+            && (string) ($run->publishability_state ?? '') === 'READABLE'
+            && CoverageGateStateNormalizer::normalize($run->coverage_gate_state ?? null) === 'PASS'
+            && ! empty($run->sealed_at);
+    }
+
+    private function reasonCodeFromThrowable(\Throwable $e, $fallback)
+    {
+        if (preg_match('/^([A-Z0-9_]+):/', (string) $e->getMessage(), $matches)) {
+            return $matches[1];
+        }
+
+        return $fallback;
     }
 
 

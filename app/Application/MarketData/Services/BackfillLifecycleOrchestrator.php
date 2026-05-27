@@ -187,7 +187,7 @@ class BackfillLifecycleOrchestrator
             }
 
             if ($resume && $onlyFailed) {
-                $summary = $this->finalizeOnlyFailedSourceRetrySummary($summary, $acquired);
+                $summary = $this->applyOnlyFailedRecoveredRows($summary, $acquired, $sourceMode, $outputDir, $withEvidence, $withReplay);
                 $this->writeSummary($outputDir, $summary);
                 return $summary;
             }
@@ -303,10 +303,12 @@ class BackfillLifecycleOrchestrator
             $case['tickers_failed'] = isset($sourceAcquisition['failed_ticker_count']) ? (int) $sourceAcquisition['failed_ticker_count'] : null;
             $case['source_acquisition_state'] = $sourceAcquisition['source_acquisition_state'] ?? null;
             $case['import_status'] = $this->runFailedOrHeld($run) ? (string) $run->terminal_status : 'SUCCESS';
+            $case = array_merge($case, $this->mutationImpactCaseFields($run));
         } catch (\Throwable $e) {
             $run = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode);
             if ($run) {
                 $case['run_id'] = (int) $run->run_id;
+                $case = array_merge($case, $this->mutationImpactCaseFields($run));
             }
             $case['import_status'] = 'FAILED';
             $case['reason_code'] = $this->reasonCodeFromThrowable($e, 'IMPORT_FAILED');
@@ -324,6 +326,7 @@ class BackfillLifecycleOrchestrator
                 $case['reason_code'] = $run->final_reason_code ?? ($case['reason_code'] ?? null);
                 $case['promote_status'] = $this->isReadableRun($run) ? 'SUCCESS' : ((string) ($run->terminal_status ?? '') === 'HELD' ? 'HELD' : 'FAILED');
                 $case['readable'] = $this->isReadableRun($run);
+                $case = array_merge($case, $this->mutationImpactCaseFields($run));
             } catch (\Throwable $e) {
                 $run = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode) ?: $run;
                 $case['promote_status'] = 'FAILED';
@@ -331,6 +334,8 @@ class BackfillLifecycleOrchestrator
                 $case['error_message'] = $e->getMessage();
             }
         }
+
+        $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, true);
 
         if ($withEvidence && $run) {
             try {
@@ -383,6 +388,494 @@ class BackfillLifecycleOrchestrator
         return $case;
     }
 
+    private function applyOnlyFailedRecoveredRows(array $summary, array $acquired, $sourceMode, $outputDir, $withEvidence, $withReplay)
+    {
+        $summary = $this->finalizeOnlyFailedSourceRetrySummary($summary, $acquired);
+        $rowsByDate = $acquired['rows_by_trade_date'] ?? [];
+        $dateTelemetry = $acquired['date_telemetry'] ?? [];
+        $retrySuccessCount = (int) ($summary['retry_success_count'] ?? $summary['failed_checkpoint_retry_success'] ?? 0);
+        $retryFailedCount = (int) ($summary['retry_failed_count'] ?? $summary['failed_checkpoint_retry_failed'] ?? 0);
+
+        $summary['cases'] = [];
+        $summary['resume_recovered_apply_summary'] = [
+            'retried_failed_checkpoint_count' => (int) ($summary['failed_checkpoint_retried'] ?? 0),
+            'retry_success_count' => $retrySuccessCount,
+            'recovered_row_count' => 0,
+            'changed_bar_count' => 0,
+            'apply_state' => $retrySuccessCount > 0 ? 'PENDING' : 'NOOP',
+        ];
+
+        if ($retrySuccessCount <= 0 || $rowsByDate === []) {
+            $summary['recovered_row_apply_state'] = 'NOOP';
+            $summary['recovered_row_count'] = 0;
+            $summary['bar_mutation_changed_count'] = 0;
+            $summary['indicator_reprocess_execution_state'] = 'NOOP';
+            $summary['eligibility_reprocess_execution_state'] = 'NOOP';
+            $summary['publication_reprocess_state'] = 'NOOP';
+            $summary['all_passed'] = $retryFailedCount === 0;
+            $summary['status'] = $retryFailedCount > 0 ? 'BLOCKED' : ($summary['status'] ?? 'NOOP');
+
+            return $summary;
+        }
+
+        $recoveredRowCount = 0;
+        $changedBarCount = 0;
+        $applyFailures = 0;
+        $blockedCount = 0;
+        $appliedCount = 0;
+        $unchangedCount = 0;
+
+        foreach ($rowsByDate as $tradeDate => $rows) {
+            $rows = array_values((array) $rows);
+            if ($rows === []) {
+                continue;
+            }
+
+            $case = [
+                'requested_date' => (string) $tradeDate,
+                'import_status' => 'PENDING',
+                'promote_status' => 'SKIPPED_RECOVERED_ROW_APPLY',
+                'evidence_status' => 'SKIPPED_RECOVERED_ROW_APPLY',
+                'fixture_status' => 'SKIPPED_RECOVERED_ROW_APPLY',
+                'replay_status' => 'SKIPPED_RECOVERED_ROW_APPLY',
+                'readable' => false,
+                'recovered_row_count' => count($rows),
+            ];
+
+            try {
+                $telemetry = array_merge($dateTelemetry[$tradeDate] ?? [], [
+                    'failed_checkpoint_retried' => (int) ($summary['failed_checkpoint_retried'] ?? 0),
+                    'retry_success_count' => $retrySuccessCount,
+                    'retry_failed_count' => $retryFailedCount,
+                ]);
+                $run = $this->pipeline->applyRecoveredRowsPartial($tradeDate, $sourceMode, $rows, $telemetry);
+                $case['run_id'] = (int) $run->run_id;
+                $case['import_status'] = $this->runFailedOrHeld($run) ? (string) $run->terminal_status : 'SUCCESS';
+                $case = array_merge($case, $this->mutationImpactCaseFields($run));
+                $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, false);
+
+                $recoveredRowCount += count($rows);
+                $changedBarCount += (int) ($case['bar_mutation_changed_count'] ?? 0);
+                $state = (string) ($case['recovered_row_apply_state'] ?? $case['resume_recovered_apply_state'] ?? '');
+                if ($state === 'UNCHANGED') {
+                    $unchangedCount++;
+                } else {
+                    $appliedCount++;
+                }
+
+                if (in_array((string) ($case['indicator_reprocess_execution_state'] ?? ''), ['BLOCKED', 'FAILED'], true)
+                    || in_array((string) ($case['publication_reprocess_state'] ?? ''), ['BLOCKED_REQUIRES_CORRECTION', 'PENDING_PROMOTE', 'FAILED'], true)) {
+                    $blockedCount++;
+                    $case['status'] = 'HELD';
+                    $case['reason_code'] = $case['publication_reprocess_blocked_reason_code']
+                        ?? $case['indicator_reprocess_blocked_reason_code']
+                        ?? $case['indicator_reprocess_failure_reason_code']
+                        ?? 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
+                } else {
+                    $case['status'] = 'SUCCESS';
+                }
+            } catch (\Throwable $e) {
+                $applyFailures++;
+                $case['import_status'] = 'FAILED';
+                $case['status'] = 'FAILED';
+                $case['reason_code'] = $this->reasonCodeFromThrowable($e, 'RECOVERED_ROW_APPLY_FAILED');
+                $case['error_message'] = $e->getMessage();
+                $case['recovered_row_apply_state'] = 'FAILED';
+            }
+
+            $summary['cases'][] = $case;
+        }
+
+        $summary['resume_recovered_apply_summary'] = [
+            'retried_failed_checkpoint_count' => (int) ($summary['failed_checkpoint_retried'] ?? 0),
+            'retry_success_count' => $retrySuccessCount,
+            'recovered_row_count' => $recoveredRowCount,
+            'changed_bar_count' => $changedBarCount,
+            'apply_state' => $applyFailures > 0 ? 'FAILED' : ($changedBarCount > 0 ? 'APPLIED' : 'UNCHANGED'),
+        ];
+        $summary['recovered_row_apply_state'] = $summary['resume_recovered_apply_summary']['apply_state'];
+        $summary['recovered_row_count'] = $recoveredRowCount;
+        $summary['bar_mutation_changed_count'] = $changedBarCount;
+        $summary['recovered_row_apply_success_count'] = $appliedCount;
+        $summary['recovered_row_apply_unchanged_count'] = $unchangedCount;
+        $summary['recovered_row_apply_failed_count'] = $applyFailures;
+        $summary['indicator_reprocess_execution_state'] = $this->aggregateCaseState($summary['cases'], 'indicator_reprocess_execution_state', 'NOOP');
+        $summary['eligibility_reprocess_execution_state'] = $this->aggregateCaseState($summary['cases'], 'eligibility_reprocess_execution_state', 'NOOP');
+        $summary['publication_reprocess_state'] = $this->aggregateCaseState($summary['cases'], 'publication_reprocess_state', 'NOOP');
+        $summary['publication_reprocess_republished_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0);
+        }, $summary['cases']));
+        $summary['publication_reprocess_evidence_exported_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_evidence_exported_count'] ?? 0);
+        }, $summary['cases']));
+        $summary['publication_reprocess_fixtures_generated_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_fixtures_generated_count'] ?? 0);
+        }, $summary['cases']));
+        $summary['publication_reprocess_replay_verified_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_replay_verified_count'] ?? 0);
+        }, $summary['cases']));
+        $summary['dates_total'] = count($summary['cases']);
+        $summary['dates_success'] = count(array_filter($summary['cases'], function ($case) {
+            return ($case['status'] ?? null) === 'SUCCESS';
+        }));
+        $summary['dates_held'] = count(array_filter($summary['cases'], function ($case) {
+            return ($case['status'] ?? null) === 'HELD';
+        }));
+        $summary['dates_failed'] = count(array_filter($summary['cases'], function ($case) {
+            return ($case['status'] ?? null) === 'FAILED';
+        }));
+        $summary['all_passed'] = $summary['dates_failed'] === 0 && $summary['dates_held'] === 0 && $retryFailedCount === 0;
+        $summary['status'] = $summary['all_passed'] ? 'SOURCE_RETRY_APPLIED' : ($retryFailedCount > 0 || $blockedCount > 0 ? 'BLOCKED' : 'PARTIAL');
+
+        return $summary;
+    }
+
+    private function executePublicationReprocessForCase(array $case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate)
+    {
+        $candidateDates = $this->publicationReprocessCandidateDates($case);
+        if ($skipRequestedDate) {
+            $requestedDate = (string) ($case['requested_date'] ?? '');
+            $candidateDates = array_values(array_filter($candidateDates, function ($date) use ($requestedDate) {
+                return (string) $date !== $requestedDate;
+            }));
+        }
+
+        if ($candidateDates === []) {
+            if ($skipRequestedDate && ($case['publication_reprocess_state'] ?? null) === 'PENDING_PROMOTE') {
+                $case['publication_reprocess_state'] = 'NOOP';
+                $case['publication_reprocess_republished_trade_date_count'] = (int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0);
+                $case['publication_reprocess_summary'] = array_merge(
+                    $case['publication_reprocess_summary'] ?? [],
+                    [
+                        'execution_state' => 'NOOP',
+                        'republished_trade_date_count' => (int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0),
+                        'blocked_reason_code' => 'REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE',
+                        'republication_mode' => 'PRIMARY_DATE_PROMOTE_HANDLED',
+                    ]
+                );
+            }
+
+            return $case;
+        }
+
+        $blockedDates = $this->parseCsvList($case['publication_reprocess_blocked_trade_dates'] ?? '');
+        $failedDates = [];
+        $republishedDates = [];
+        $reprocessRuns = [];
+        $evidenceExported = 0;
+        $fixturesGenerated = 0;
+        $replayVerified = 0;
+        $blockedReason = $case['publication_reprocess_blocked_reason_code'] ?? null;
+        $failureReason = null;
+
+        foreach ($candidateDates as $tradeDate) {
+            $tradeDate = (string) $tradeDate;
+            if (in_array($tradeDate, $blockedDates, true)) {
+                $blockedReason = $blockedReason ?: 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
+                continue;
+            }
+
+            try {
+                $seedRun = $this->runs->findLatestForRequestedDate($tradeDate, $sourceMode);
+                if (! $seedRun) {
+                    $blockedDates[] = $tradeDate;
+                    $blockedReason = $blockedReason ?: 'AFFECTED_DATE_RUN_NOT_FOUND';
+                    continue;
+                }
+
+                if ($this->isReadableRun($seedRun)) {
+                    $blockedDates[] = $tradeDate;
+                    $blockedReason = $blockedReason ?: 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
+                    continue;
+                }
+
+                $promotedRun = $this->pipeline->promoteDaily($tradeDate, $sourceMode, (int) $seedRun->run_id, null, 'full_publish');
+                $reprocessRuns[] = [
+                    'trade_date' => $tradeDate,
+                    'seed_run_id' => (int) ($seedRun->run_id ?? 0),
+                    'run_id' => (int) ($promotedRun->run_id ?? 0),
+                    'terminal_status' => $promotedRun->terminal_status ?? null,
+                    'publishability_state' => $promotedRun->publishability_state ?? null,
+                    'coverage_gate_state' => $promotedRun->coverage_gate_state ?? null,
+                    'publication_id' => isset($promotedRun->publication_id) ? (int) $promotedRun->publication_id : null,
+                    'publication_version' => isset($promotedRun->publication_version) ? (int) $promotedRun->publication_version : null,
+                    'sealed_at' => $promotedRun->sealed_at ?? null,
+                ];
+
+                if (! $this->isReadableRun($promotedRun)) {
+                    $blockedDates[] = $tradeDate;
+                    $blockedReason = $blockedReason ?: ($promotedRun->final_reason_code ?? 'PUBLICATION_REPROCESS_NOT_READABLE');
+                    continue;
+                }
+
+                $republishedDates[] = $tradeDate;
+
+                if (! empty($case['requested_date']) && (string) $case['requested_date'] === $tradeDate) {
+                    $case['promote_status'] = 'SUCCESS';
+                    $case['readable'] = true;
+                    $case['coverage_gate_state'] = $promotedRun->coverage_gate_state ?? ($case['coverage_gate_state'] ?? null);
+                    $case['coverage_ratio'] = $promotedRun->coverage_ratio ?? ($case['coverage_ratio'] ?? null);
+                    $case['publishability_state'] = $promotedRun->publishability_state ?? ($case['publishability_state'] ?? null);
+                    $case['terminal_status'] = $promotedRun->terminal_status ?? ($case['terminal_status'] ?? null);
+                }
+
+                if ($withEvidence) {
+                    $evidenceOutputDir = rtrim($outputDir, '/\\').'/publication_reprocess/dates/'.$tradeDate.'/run_'.$promotedRun->run_id.'/evidence';
+                    $this->evidence->exportRunEvidence($promotedRun->run_id, $evidenceOutputDir);
+                    $evidenceExported++;
+                }
+
+                if ($withReplay) {
+                    $fixtureDir = rtrim($outputDir, '/\\').'/publication_reprocess/dates/'.$tradeDate.'/run_'.$promotedRun->run_id.'/fixture';
+                    $fixture = $this->replay->generateFixtureFromRun($promotedRun->run_id, $fixtureDir, 'valid_case', null);
+                    $fixturesGenerated++;
+                    $replay = $this->replay->verifyRunAgainstFixture($promotedRun->run_id, $fixture['fixture_path']);
+                    if (($replay['replay_status'] ?? null) === 'PASS') {
+                        $replayVerified++;
+                    } else {
+                        $failedDates[] = $tradeDate;
+                        $failureReason = $failureReason ?: 'PUBLICATION_REPROCESS_REPLAY_FAILED';
+                    }
+                }
+            } catch (\Throwable $e) {
+                $failedDates[] = $tradeDate;
+                $failureReason = $this->reasonCodeFromThrowable($e, 'PUBLICATION_REPROCESS_FAILED');
+                $case['error_message'] = $e->getMessage();
+            }
+        }
+
+        $blockedDates = array_values(array_unique($blockedDates));
+        sort($blockedDates);
+        $failedDates = array_values(array_unique($failedDates));
+        sort($failedDates);
+        $republishedDates = array_values(array_unique($republishedDates));
+        sort($republishedDates);
+
+        $state = 'NOOP';
+        if ($failedDates !== []) {
+            $state = 'FAILED';
+        } elseif ($blockedDates !== []) {
+            $state = 'BLOCKED_REQUIRES_CORRECTION';
+        } elseif ($republishedDates !== []) {
+            $state = 'REPUBLISHED';
+        }
+
+        $case['publication_reprocess_state'] = $state;
+        $case['publication_reprocess_republished_trade_date_count'] = count($republishedDates);
+        $case['publication_reprocess_republished_trade_dates'] = $republishedDates;
+        $case['publication_reprocess_candidate_trade_dates'] = $candidateDates;
+        $case['publication_reprocess_blocked_trade_dates'] = $blockedDates;
+        $case['publication_reprocess_failed_trade_dates'] = $failedDates;
+        $case['publication_reprocess_blocked_reason_code'] = $blockedReason;
+        $case['publication_reprocess_failure_reason_code'] = $failureReason;
+        $case['publication_reprocess_evidence_exported_count'] = $evidenceExported;
+        $case['publication_reprocess_fixtures_generated_count'] = $fixturesGenerated;
+        $case['publication_reprocess_replay_verified_count'] = $replayVerified;
+        $case['publication_reprocess_runs'] = $reprocessRuns;
+        $case['publication_reprocess_summary'] = [
+            'execution_state' => $state,
+            'republished_trade_date_count' => count($republishedDates),
+            'republished_trade_dates' => $republishedDates,
+            'candidate_trade_dates' => $candidateDates,
+            'blocked_trade_dates' => $blockedDates,
+            'failed_trade_dates' => $failedDates,
+            'blocked_reason_code' => $blockedReason,
+            'failure_reason_code' => $failureReason,
+            'evidence_exported_count' => $evidenceExported,
+            'fixtures_generated_count' => $fixturesGenerated,
+            'replay_verified_count' => $replayVerified,
+            'republication_mode' => $state === 'REPUBLISHED' ? 'AUTOMATED_NON_READABLE_DATES' : ($state === 'NOOP' ? 'NOT_REQUIRED' : 'MANUAL_CORRECTION_REQUIRED'),
+        ];
+
+        if ($state === 'BLOCKED_REQUIRES_CORRECTION') {
+            $case['reason_code'] = $blockedReason ?: ($case['reason_code'] ?? 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION');
+        } elseif ($state === 'FAILED') {
+            $case['reason_code'] = $failureReason ?: ($case['reason_code'] ?? 'PUBLICATION_REPROCESS_FAILED');
+        }
+
+        $this->syncPublicationReprocessNotes($case);
+
+        return $case;
+    }
+
+    private function syncPublicationReprocessNotes(array $case): void
+    {
+        if (empty($case['run_id'])) {
+            return;
+        }
+
+        try {
+            $run = $this->runs->findByRunId((int) $case['run_id']);
+            if (! $run) {
+                return;
+            }
+
+            $this->runs->updateTelemetry($run, [
+                'notes' => $this->appendRunNotes($run->notes ?? null, [
+                    'publication_reprocess_state='.(string) ($case['publication_reprocess_state'] ?? 'NOOP'),
+                    'publication_reprocess_republished_trade_date_count='.(int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0),
+                    ! empty($case['publication_reprocess_republished_trade_dates']) ? 'publication_reprocess_republished_trade_dates='.$this->compactList((array) $case['publication_reprocess_republished_trade_dates']) : null,
+                    ! empty($case['publication_reprocess_candidate_trade_dates']) ? 'publication_reprocess_candidate_trade_dates='.$this->compactList((array) $case['publication_reprocess_candidate_trade_dates']) : null,
+                    ! empty($case['publication_reprocess_blocked_trade_dates']) ? 'publication_reprocess_blocked_trade_dates='.$this->compactList((array) $case['publication_reprocess_blocked_trade_dates']) : null,
+                    ! empty($case['publication_reprocess_failed_trade_dates']) ? 'publication_reprocess_failed_trade_dates='.$this->compactList((array) $case['publication_reprocess_failed_trade_dates']) : null,
+                    ! empty($case['publication_reprocess_blocked_reason_code']) ? 'publication_reprocess_blocked_reason_code='.(string) $case['publication_reprocess_blocked_reason_code'] : null,
+                    ! empty($case['publication_reprocess_failure_reason_code']) ? 'publication_reprocess_failure_reason_code='.(string) $case['publication_reprocess_failure_reason_code'] : null,
+                ]),
+            ]);
+        } catch (\Throwable $e) {
+            // Summary already carries the publication reprocess result; lightweight
+            // repository fakes must not turn a successful reprocess into command failure.
+        }
+    }
+
+    private function publicationReprocessCandidateDates(array $case)
+    {
+        $dates = [];
+        if (! empty($case['publication_reprocess_summary']['candidate_trade_dates']) && is_array($case['publication_reprocess_summary']['candidate_trade_dates'])) {
+            $dates = $case['publication_reprocess_summary']['candidate_trade_dates'];
+        }
+
+        if ($dates === []) {
+            $dates = $this->parseCsvList($case['publication_reprocess_candidate_trade_dates'] ?? '');
+        }
+
+        if ($dates === [] && ! empty($case['indicator_reprocess_execution_summary']['reprocessed_trade_dates']) && is_array($case['indicator_reprocess_execution_summary']['reprocessed_trade_dates'])) {
+            $dates = $case['indicator_reprocess_execution_summary']['reprocessed_trade_dates'];
+        }
+
+        if ($dates === []) {
+            $dates = $this->parseCsvList($case['indicator_reprocessed_trade_dates'] ?? '');
+        }
+
+        if (($case['publication_reprocess_state'] ?? null) !== 'PENDING_PROMOTE') {
+            return [];
+        }
+
+        $dates = array_values(array_unique(array_filter(array_map('strval', $dates))));
+        sort($dates);
+
+        return $dates;
+    }
+
+    private function aggregateCaseState(array $cases, $field, $default)
+    {
+        $states = array_values(array_filter(array_map(function ($case) use ($field) {
+            return isset($case[$field]) ? (string) $case[$field] : null;
+        }, $cases)));
+
+        foreach (['FAILED', 'BLOCKED', 'BLOCKED_REQUIRES_CORRECTION', 'PENDING_PROMOTE', 'REPUBLISHED', 'EXECUTED', 'NOOP'] as $priority) {
+            if (in_array($priority, $states, true)) {
+                return $priority;
+            }
+        }
+
+        return $default;
+    }
+
+    private function mutationImpactCaseFields($run)
+    {
+        $notes = $this->parseRunNotes((string) ($run->notes ?? ''));
+        $fields = [];
+
+        foreach ([
+            'bar_mutation_changed_count',
+            'bar_mutation_inserted_count',
+            'bar_mutation_updated_count',
+            'bar_mutation_unchanged_count',
+            'bar_mutation_removed_count',
+            'affected_ticker_count',
+            'affected_trade_date_count',
+            'affected_trade_dates',
+            'affected_start_date',
+            'affected_end_date',
+            'max_indicator_dependency_trading_days',
+            'indicator_reprocess_state',
+            'publication_impact_state',
+            'readable_publication_impacted',
+            'republication_required',
+            'publication_impact_reason_code',
+            'indicator_reprocess_execution_state',
+            'indicator_reprocessed_trade_date_count',
+            'indicator_reprocessed_trade_dates',
+            'indicator_reprocess_scope',
+            'indicator_reprocess_blocked_reason_code',
+            'indicator_reprocess_failure_reason_code',
+            'eligibility_reprocess_execution_state',
+            'eligibility_reprocessed_trade_date_count',
+            'eligibility_reprocessed_trade_dates',
+            'eligibility_reprocess_blocked_reason_code',
+            'eligibility_reprocess_failure_reason_code',
+            'publication_reprocess_state',
+            'publication_reprocess_republished_trade_date_count',
+            'publication_reprocess_republished_trade_dates',
+            'publication_reprocess_candidate_trade_dates',
+            'publication_reprocess_blocked_trade_dates',
+            'publication_reprocess_failed_trade_dates',
+            'publication_reprocess_blocked_reason_code',
+            'publication_reprocess_failure_reason_code',
+            'recovered_row_apply_state',
+            'recovered_row_count',
+            'resume_recovered_apply_state',
+            'resume_recovered_row_count',
+        ] as $field) {
+            if (array_key_exists($field, $notes) && $notes[$field] !== '') {
+                $fields[$field] = $notes[$field];
+            }
+        }
+
+        if (isset($fields['bar_mutation_changed_count'])) {
+            $fields['bar_mutation_summary'] = [
+                'changed_bar_count' => (int) ($fields['bar_mutation_changed_count'] ?? 0),
+                'inserted_bar_count' => (int) ($fields['bar_mutation_inserted_count'] ?? 0),
+                'updated_bar_count' => (int) ($fields['bar_mutation_updated_count'] ?? 0),
+                'unchanged_bar_count' => (int) ($fields['bar_mutation_unchanged_count'] ?? 0),
+                'removed_bar_count' => (int) ($fields['bar_mutation_removed_count'] ?? 0),
+            ];
+            $fields['indicator_impact_summary'] = [
+                'affected_ticker_count' => (int) ($fields['affected_ticker_count'] ?? 0),
+                'affected_trade_date_count' => (int) ($fields['affected_trade_date_count'] ?? 0),
+                'affected_trade_dates' => $this->parseCsvList($fields['affected_trade_dates'] ?? ''),
+                'affected_start_date' => $fields['affected_start_date'] ?? null,
+                'affected_end_date' => $fields['affected_end_date'] ?? null,
+                'max_dependency_trading_days' => (int) ($fields['max_indicator_dependency_trading_days'] ?? 0),
+                'indicator_reprocess_state' => $fields['indicator_reprocess_state'] ?? null,
+            ];
+            $fields['publication_impact_summary'] = [
+                'readable_publication_impacted' => ($fields['readable_publication_impacted'] ?? 'false') === 'true',
+                'republication_required' => ($fields['republication_required'] ?? 'false') === 'true',
+                'publication_impact_state' => $fields['publication_impact_state'] ?? 'NOOP',
+                'reason_code' => $fields['publication_impact_reason_code'] ?? null,
+            ];
+            $fields['indicator_reprocess_execution_summary'] = [
+                'execution_state' => $fields['indicator_reprocess_execution_state'] ?? 'NOOP',
+                'reprocessed_trade_date_count' => (int) ($fields['indicator_reprocessed_trade_date_count'] ?? 0),
+                'reprocessed_trade_dates' => $this->parseCsvList($fields['indicator_reprocessed_trade_dates'] ?? ''),
+                'reprocess_scope' => $fields['indicator_reprocess_scope'] ?? 'NONE',
+                'blocked_reason_code' => $fields['indicator_reprocess_blocked_reason_code'] ?? null,
+                'failure_reason_code' => $fields['indicator_reprocess_failure_reason_code'] ?? null,
+            ];
+            $fields['eligibility_reprocess_execution_summary'] = [
+                'execution_state' => $fields['eligibility_reprocess_execution_state'] ?? 'NOOP',
+                'reprocessed_trade_date_count' => (int) ($fields['eligibility_reprocessed_trade_date_count'] ?? 0),
+                'reprocessed_trade_dates' => $this->parseCsvList($fields['eligibility_reprocessed_trade_dates'] ?? ''),
+                'blocked_reason_code' => $fields['eligibility_reprocess_blocked_reason_code'] ?? null,
+                'failure_reason_code' => $fields['eligibility_reprocess_failure_reason_code'] ?? null,
+            ];
+            $fields['publication_reprocess_summary'] = [
+                'execution_state' => $fields['publication_reprocess_state'] ?? 'NOOP',
+                'republished_trade_date_count' => (int) ($fields['publication_reprocess_republished_trade_date_count'] ?? 0),
+                'republished_trade_dates' => $this->parseCsvList($fields['publication_reprocess_republished_trade_dates'] ?? ''),
+                'candidate_trade_dates' => $this->parseCsvList($fields['publication_reprocess_candidate_trade_dates'] ?? ''),
+                'blocked_trade_dates' => $this->parseCsvList($fields['publication_reprocess_blocked_trade_dates'] ?? ''),
+                'failed_trade_dates' => $this->parseCsvList($fields['publication_reprocess_failed_trade_dates'] ?? ''),
+                'blocked_reason_code' => $fields['publication_reprocess_blocked_reason_code'] ?? null,
+                'failure_reason_code' => $fields['publication_reprocess_failure_reason_code'] ?? null,
+            ];
+        }
+
+        return $fields;
+    }
+
     private function isReplayEligible($run, array $case)
     {
         return $this->isReadableRun($run)
@@ -402,8 +895,94 @@ class BackfillLifecycleOrchestrator
         return in_array((string) ($run->terminal_status ?? ''), ['HELD', 'FAILED'], true);
     }
 
+    private function parseRunNotes($notes)
+    {
+        if ($notes === '') {
+            return [];
+        }
+
+        $segments = preg_split('/\s*;\s*/', $notes);
+        if (! is_array($segments)) {
+            return [];
+        }
+
+        $parsed = [];
+        foreach ($segments as $segment) {
+            $segment = trim((string) $segment);
+            if ($segment === '' || strpos($segment, '=') === false) {
+                continue;
+            }
+
+            [$key, $value] = array_pad(explode('=', $segment, 2), 2, null);
+            $key = trim((string) $key);
+            $value = trim((string) $value);
+
+            if ($key !== '') {
+                $parsed[$key] = $value;
+            }
+        }
+
+        return $parsed;
+    }
+
+    private function parseCsvList($value)
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return [];
+        }
+
+        $items = array_values(array_unique(array_filter(array_map(function ($item) {
+            return trim((string) $item);
+        }, explode(',', (string) $value)), function ($item) {
+            return $item !== '';
+        })));
+
+        sort($items);
+
+        return $items;
+    }
+
+    private function appendRunNotes($existingNotes, array $segments)
+    {
+        $parts = [];
+        if ($existingNotes !== null && trim((string) $existingNotes) !== '') {
+            $parts[] = trim((string) $existingNotes);
+        }
+
+        foreach ($segments as $segment) {
+            if ($segment !== null && trim((string) $segment) !== '') {
+                $parts[] = trim((string) $segment);
+            }
+        }
+
+        return implode('; ', $parts);
+    }
+
+    private function compactList(array $values)
+    {
+        $values = array_values(array_unique(array_filter(array_map(function ($value) {
+            $value = trim((string) $value);
+
+            return str_replace([';', '|'], '', $value);
+        }, $values), function ($value) {
+            return $value !== '';
+        })));
+
+        sort($values);
+
+        return implode(',', $values);
+    }
+
     private function caseStatus(array $case)
     {
+        if (($case['publication_reprocess_state'] ?? null) === 'FAILED') {
+            return 'FAILED';
+        }
+
+        if (in_array(($case['publication_reprocess_state'] ?? null), ['BLOCKED', 'BLOCKED_REQUIRES_CORRECTION', 'PENDING_PROMOTE'], true)) {
+            return 'HELD';
+        }
+
         if (($case['replay_status'] ?? null) === 'VERIFIED' || (! empty($case['readable']) && ($case['fixture_status'] ?? null) === 'SKIPPED')) {
             return 'SUCCESS';
         }
@@ -456,6 +1035,31 @@ class BackfillLifecycleOrchestrator
         $summary['replay_verified'] = count(array_filter($cases, function ($case) {
             return ($case['replay_status'] ?? null) === 'VERIFIED';
         }));
+        $summary['bar_mutation_changed_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['bar_mutation_changed_count'] ?? 0);
+        }, $cases));
+        $summary['affected_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['affected_trade_date_count'] ?? 0);
+        }, $cases));
+        $summary['indicator_reprocessed_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['indicator_reprocessed_trade_date_count'] ?? 0);
+        }, $cases));
+        $summary['eligibility_reprocessed_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['eligibility_reprocessed_trade_date_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_state'] = $this->aggregateCaseState($cases, 'publication_reprocess_state', 'NOOP');
+        $summary['publication_reprocess_republished_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_evidence_exported_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_evidence_exported_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_fixtures_generated_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_fixtures_generated_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_replay_verified_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_replay_verified_count'] ?? 0);
+        }, $cases));
         $summary['all_passed'] = $summary['dates_failed'] === 0 && $summary['dates_held'] === 0;
         $summary['status'] = $summary['all_passed'] ? 'SUCCESS' : 'PARTIAL';
 

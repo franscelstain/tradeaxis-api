@@ -54,3 +54,26 @@ See:
 - `../ops/Run_Execution_Evidence_Pack_Contract_LOCKED.md`
 - `../tests/Executed_Proof_Admission_Criteria_LOCKED.md`
 - `../examples/ARCHIVED_EVIDENCE_FOLDER_STRUCTURE_LOCKED.md`
+
+## Amendment 2026-05-26 - Mutation impact evidence
+When a run evidence bundle includes EOD bar import output, the run summary may carry:
+- `bar_mutation_summary`
+- `indicator_impact_summary`
+- `publication_impact_summary`
+
+These fields are operational proof fields. They must remain bounded summaries and must not include raw provider payloads, credentials, or large duplicated checkpoint bodies.
+
+## Amendment 2026-05-27 - Reprocess execution evidence
+Evidence bundles may include execution summaries proving whether affected derived artifacts were actually recomputed:
+- `indicator_reprocess_execution_summary`
+- `eligibility_reprocess_execution_summary`
+- `publication_reprocess_summary`
+- `resume_recovered_apply_summary`
+
+If already-readable affected dates are blocked, evidence should carry `BLOCKED_REQUIRES_CORRECTION` and `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`. This is not replay proof for a replacement publication; replay remains valid only after a sealed readable replacement exists.
+
+## 2026-05-27 - Publication Reprocess Evidence
+
+For affected non-readable downstream dates, lifecycle/full-publish reprocess may call the normal promote flow and then export evidence/replay proof for the republished downstream run. Evidence may report `publication_reprocess_summary.execution_state=REPUBLISHED` plus `republished_trade_dates`, `evidence_exported_count`, `fixtures_generated_count`, and `replay_verified_count`.
+
+For already-readable affected dates, evidence must still report `BLOCKED_REQUIRES_CORRECTION`; it must not imply that a replacement publication was replay-verified unless the correction/republication lifecycle has actually produced a sealed readable replacement.

@@ -1189,3 +1189,19 @@ A dedicated static guard must protect these rules. For this codebase the canonic
 The canonical audit-docs synchronization contract is:
 
 - `AUDIT_DOCS_SYNCHRONIZATION_CONTRACT`
+
+---
+
+# 30. OUT-OF-ORDER IMPORT EXECUTION GOVERNANCE AMENDMENT - 2026-05-27
+
+Any patch that changes out-of-order import behavior must document both layers separately:
+
+- detection layer: bar mutation summary, affected trading-date resolution, readable-publication impact detection
+- execution layer: recovered-row apply, indicator recompute execution, eligibility rebuild execution, publication/correction outcome
+
+Governance requirements:
+
+- Do not mark execution as DONE if indicators/eligibility were only reported as required.
+- Do not claim auto republication unless a correction/reseal/finalize path was actually executed and tested.
+- Safe block for already-readable affected dates is acceptable only when it emits `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`, preserves current pointer state, and documents manual correction follow-up.
+- `--resume --only-failed` retry success must document whether recovered rows were applied, unchanged, failed, or blocked.

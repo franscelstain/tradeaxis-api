@@ -391,3 +391,102 @@ If two artifacts for the same requested date tell conflicting stories about stat
 - `Failure_Playbook_LOCKED.md`
 - `Historical_Correction_Runbook_LOCKED.md`
 - `../backtest/Historical_Replay_and_Data_Quality_Backtest.md`
+
+---
+
+## Amendment 2026-05-26 - Import mutation and impact fields
+
+Run summary, lifecycle summary, and evidence run-summary artifacts may include these impact blocks:
+
+```json
+{
+  "bar_mutation_summary": {
+    "changed_bar_count": 0,
+    "inserted_bar_count": 0,
+    "updated_bar_count": 0,
+    "unchanged_bar_count": 0,
+    "removed_bar_count": 0
+  },
+  "indicator_impact_summary": {
+    "affected_ticker_count": 0,
+    "affected_trade_date_count": 0,
+    "affected_start_date": null,
+    "affected_end_date": null,
+    "max_dependency_trading_days": 50,
+    "indicator_reprocess_state": "NOOP_UNCHANGED_BARS"
+  },
+  "publication_impact_summary": {
+    "readable_publication_impacted": false,
+    "republication_required": false,
+    "publication_impact_state": "NOOP",
+    "reason_code": null
+  }
+}
+```
+
+Artifacts must not store raw provider payloads to support these summaries. If `publication_impact_state=REQUIRES_REPUBLICATION`, replay verification for a replacement publication is only valid after the correction/republication lifecycle produces a sealed readable replacement.
+
+---
+
+## Amendment 2026-05-27 - Impact execution artifact fields
+
+Run summary, lifecycle summary, and evidence artifacts may include:
+
+```json
+{
+  "indicator_reprocess_execution_summary": {
+    "execution_state": "NOOP",
+    "reprocessed_trade_date_count": 0,
+    "reprocessed_trade_dates": [],
+    "reprocess_scope": "NONE",
+    "blocked_reason_code": null,
+    "failure_reason_code": null
+  },
+  "eligibility_reprocess_execution_summary": {
+    "execution_state": "NOOP",
+    "reprocessed_trade_date_count": 0,
+    "reprocessed_trade_dates": [],
+    "blocked_reason_code": null,
+    "failure_reason_code": null
+  },
+  "publication_reprocess_summary": {
+    "execution_state": "NOOP",
+    "republished_trade_date_count": 0,
+    "blocked_trade_dates": [],
+    "blocked_reason_code": null
+  },
+  "resume_recovered_apply_summary": {
+    "recovered_row_count": 0,
+    "apply_state": "NOOP"
+  }
+}
+```
+
+These are bounded summaries. They must not include raw provider payloads, credentials, or full checkpoint bodies.
+
+---
+
+## Amendment 2026-05-27 - Publication reprocess execution fields
+
+When affected non-readable downstream dates are promoted through the lifecycle/full-publish reprocess path, artifacts may include:
+
+```json
+{
+  "publication_reprocess_summary": {
+    "execution_state": "REPUBLISHED",
+    "republished_trade_date_count": 1,
+    "republished_trade_dates": ["2026-05-08"],
+    "candidate_trade_dates": ["2026-05-08"],
+    "blocked_trade_dates": [],
+    "failed_trade_dates": [],
+    "blocked_reason_code": null,
+    "failure_reason_code": null,
+    "evidence_exported_count": 1,
+    "fixtures_generated_count": 1,
+    "replay_verified_count": 1,
+    "republication_mode": "AUTOMATED_NON_READABLE_DATES"
+  }
+}
+```
+
+`REPUBLISHED` here is only valid for affected dates that were not already current/readable and that passed the existing promote flow. Already-readable affected dates must use `BLOCKED_REQUIRES_CORRECTION` with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION` until a correction lifecycle produces a replacement publication.

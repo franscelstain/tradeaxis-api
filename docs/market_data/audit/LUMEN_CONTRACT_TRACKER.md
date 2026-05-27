@@ -3434,3 +3434,155 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 [FINAL_RULE]
 - Diagnostic top-level reason-code resolution, slim source acquisition cache, checkpoint telemetry isolation, resume-only-failed accounting, and `FAILED_RETRY_BLOCKED` retry semantics are locked for this scope.
 - Future changes touching API backfill checkpoint/resume diagnostics, source acquisition cache, or failed checkpoint retry state must rerun targeted `ApiBackfill`, `Backfill`, `StaticGuard`, and full `tests\Unit\MarketData`.
+
+---
+
+## 2026-05-26 - OUT-OF-ORDER IMPORT MUTATION IMPACT CONTRACT UPDATE
+
+[CONTRACT_STATUS]
+- `DONE` for global mutation summary and impact telemetry.
+- `REVIEW_REQUIRED` for automatic downstream correction/republication execution.
+
+[MUTATIO N_CONTRACT]
+- Every normal EOD bar replacement through `EodArtifactRepository::replaceBars()` must return `bar_mutation_summary`.
+- The summary must distinguish inserted, updated, unchanged, and removed canonical bar rows.
+- Idempotent re-imports with identical canonical OHLCV/source values must produce `changed_bar_count=0` and `indicator_reprocess_state=NOOP_UNCHANGED_BARS`.
+- Historical changed bars must expose changed ticker ids and changed trade dates for downstream dependency resolution.
+
+[INDICATOR_IMPACT_CONTRACT]
+- Affected indicator dates are resolved in market-calendar trading days, not calendar days.
+- The max dependency horizon is derived from active indicator config and must include `dv20_idr`, `atr14_pct`, `vol_ratio`, `roc20`, `hh20`, `ma20`, and `ma50`.
+- The current implementation uses the configured windows plus an MA50 floor, producing `max_indicator_dependency_trading_days=50` for the baseline registry.
+- Command/evidence summaries must report `affected_ticker_count`, `affected_trade_date_count`, `affected_start_date`, `affected_end_date`, `max_indicator_dependency_trading_days`, and `indicator_reprocess_state`.
+
+[PUBLICATION_IMPACT_CONTRACT]
+- If affected dates include a current readable publication, the system must report `publication_impact_state=REQUIRES_REPUBLICATION` and reason `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`.
+- A readable publication must not be mutated silently. Correction/reseal/republication must remain the safe path.
+- A failed or blocked source retry must not create fake readable state or replay verification.
+
+[VALIDATION_PROOF]
+- `EodBarsMutationImpactResolver` -> OK (3 tests, 13 assertions).
+- `OutOfOrderImportImpact` static guard -> OK (3 tests, 32 assertions).
+- `Backfill` -> OK (44 tests, 292 assertions).
+- `ApiBackfill` -> OK (25 tests, 153 assertions).
+- `StaticGuard` -> OK (222 tests, 5430 assertions).
+- Full suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (568 tests, 8560 assertions).
+
+---
+
+## 2026-05-27 - OUT-OF-ORDER IMPORT IMPACT EXECUTION CONTRACT UPDATE
+
+[CONTRACT_STATUS]
+- `DONE` for recovered row partial apply and non-readable affected-date derived reprocess execution.
+- `REVIEW_REQUIRED` for automated readable-publication republication. Readable affected dates must remain blocked with correction reason until correction lifecycle is explicitly run.
+
+[RECOVERED_ROW_APPLY_CONTRACT]
+- Resume-only-failed retry success must not return after source acquisition if recovered rows exist.
+- Recovered rows must be applied by partial ticker/date upsert.
+- Full-date `replaceBars()` is forbidden for recovered single-ticker/window rows because it can remove unrelated tickers for the same trade date.
+- Partial apply must report `recovered_row_apply_state`, `recovered_row_count`, and `bar_mutation_summary`.
+- Idempotent recovered rows with identical canonical OHLCV/source values must produce `changed_bar_count=0` and no unnecessary derived reprocess.
+
+[EXECUTION_CONTRACT]
+- Changed bars with affected non-readable dates must execute indicator recompute and eligibility rebuild, not merely report that reprocess is required.
+- Execution summaries are mandatory:
+  - `indicator_reprocess_execution_summary`
+  - `eligibility_reprocess_execution_summary`
+  - `publication_reprocess_summary`
+- If execution is blocked or failed, command/evidence output must show the blocked/failure reason.
+
+[READABLE_PUBLICATION_CONTRACT]
+- Already-readable affected dates must not be silently updated.
+- Current behavior is safe block:
+  - `publication_reprocess_summary.execution_state=BLOCKED_REQUIRES_CORRECTION`
+  - `blocked_reason_code=AFFECTED_PUBLICATION_REQUIRES_CORRECTION`
+  - no pointer switch
+  - no fake readable
+  - no replay verification for an unresealed replacement
+
+[VALIDATION_PROOF]
+- `MarketDataImpactReprocessExecutor` -> OK (3 tests, 11 assertions).
+- `EodArtifactRepositoryPartialUpsert` -> OK (2 tests, 14 assertions).
+- `OutOfOrderImportImpact` -> OK (5 tests, 57 assertions).
+- `Recovered` -> OK (7 tests, 56 assertions).
+- `Resume` -> OK (8 tests, 61 assertions).
+- `StaticGuard` -> OK (224 tests, 5467 assertions).
+- Full suite proof is pending rerun after docs update.
+
+---
+
+## 2026-05-27 - OUT-OF-ORDER IMPORT IMPACT EXECUTION FINAL VALIDATION
+
+[CONTRACT_STATUS]
+- `DONE` for execution-layer contract where affected dates are not already readable.
+- `DONE` for safe blocking of readable affected dates.
+- `REVIEW_REQUIRED` for future auto correction/republication of readable affected dates.
+
+[FINAL_VALIDATION_PROOF]
+- Command: `vendor\bin\phpunit tests\Unit\MarketData`.
+- Result: OK (576 tests, 8624 assertions).
+- Runtime: Time 00:20.787, Memory 42.00 MB.
+- Post-doc rerun: OK (576 tests, 8624 assertions), Time 00:19.910, Memory 42.00 MB.
+
+[FINAL_RULE]
+- Any future patch that changes recovered row apply, impact reprocess execution, or readable-publication blocking must rerun `Recovered`, `Resume`, `OutOfOrderImportImpact`, `Indicator`, `Eligibility`, `Backfill`, `ApiBackfill`, `Daily`, `Correction`, `StaticGuard`, and the full MarketData suite.
+
+---
+
+## 2026-05-27 - OUT-OF-ORDER IMPORT PUBLICATION LIFECYCLE CONTRACT BOUNDARY
+
+[CONTRACT_STATUS]
+- `PARTIAL / REVIEW_REQUIRED` for the aggregate out-of-order import publication lifecycle.
+- `DONE` only for recovered apply plus indicator/eligibility execution on affected non-readable dates.
+
+[BOUNDARY]
+- Current executor performs:
+  - recovered row partial upsert,
+  - bar mutation summary,
+  - affected-date reprocess detection,
+  - indicator recompute,
+  - eligibility rebuild,
+  - readable publication safe block.
+- Current executor does not perform:
+  - downstream hash recompute,
+  - seal/finalize,
+  - automatic correction/republication,
+  - evidence/replay for a replacement publication.
+
+[CONTRACT_RULE]
+- `publication_reprocess_summary.execution_state=NOOP` or `BLOCKED_REQUIRES_CORRECTION` must not be interpreted as republished.
+- `indicator_reprocess_execution_state=EXECUTED` and `eligibility_reprocess_execution_state=EXECUTED` must not be interpreted as hash/seal/finalize execution.
+- Full lock requires a future patch that executes or explicitly orchestrates hash/seal/finalize/republication and proves it with E2E runtime tests.
+
+---
+
+## 2026-05-27 - OUT-OF-ORDER IMPORT HASH/SEAL/PUBLICATION REPROCESS CONTRACT
+
+[CONTRACT_STATUS]
+- `DONE` for affected non-readable downstream date publication reprocess in lifecycle/full-publish paths.
+- `REVIEW_REQUIRED` for automated correction/republication of already-readable affected dates.
+
+[PUBLICATION_REPROCESS_CONTRACT]
+- After changed EOD bars execute indicator and eligibility reprocess for affected non-readable dates, the impact state must become `PENDING_PROMOTE` until publication stages run.
+- A lifecycle/full-publish path may consume `PENDING_PROMOTE` by calling the existing `promoteDaily()` flow for each affected non-readable date.
+- `promoteDaily()` remains the only automatic path used here because it already enforces coverage, recomputes indicators/eligibility, computes hashes, seals, finalizes, and validates publication readability.
+- If the affected date is already current/readable, automatic reprocess must not call normal promote. It must block with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`.
+- The primary requested date must not remain `PENDING_PROMOTE` after its normal primary promote already handled hash/seal/finalize; report `NOOP` with `REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE`.
+
+[ARTIFACT_CONTRACT]
+- Publication reprocess summaries may include:
+  - `execution_state=PENDING_PROMOTE|REPUBLISHED|BLOCKED_REQUIRES_CORRECTION|FAILED|NOOP`
+  - `candidate_trade_dates`
+  - `republished_trade_dates`
+  - `blocked_trade_dates`
+  - `failed_trade_dates`
+  - `evidence_exported_count`
+  - `fixtures_generated_count`
+  - `replay_verified_count`
+- A `REPUBLISHED` state for this session means affected non-readable dates were promoted through existing hash/seal/finalize gates. It does not imply automatic correction of already-readable dates.
+
+[VALIDATION_PROOF]
+- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 11 assertions).
+- `MarketDataPipelineService` -> OK (16 tests, 21 assertions).
+- `OutOfOrderImportImpactStaticGuard` -> OK (6 tests, 73 assertions).
+- Full suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (581 tests, 8654 assertions).

@@ -127,3 +127,24 @@ The following are forbidden:
 - non-`NULL` output produced through guessed or missing dependencies
 - downstream read logic inferring validity from field non-nullness alone while ignoring `is_valid` and `invalid_reason_code`
 - live readable indicator rows with `publication_id IS NULL`
+
+---
+
+## Amendment 2026-05-27 - Affected-date reprocess execution
+
+When EOD bar mutation impact resolution finds affected non-readable dates, the system must actually recompute indicators for those dates. Reporting `REPROCESS_REQUIRED_*` is detection only; execution proof requires `indicator_reprocess_execution_summary`.
+
+Execution contract:
+- `execution_state=EXECUTED` only after indicator recompute runs for the affected date set.
+- `reprocess_scope=FULL_DATE` is acceptable when the current compute service is date-scoped.
+- `execution_state=NOOP` is valid only for unchanged bars or no affected dates.
+- `execution_state=BLOCKED` is required when an affected date is already readable and must go through correction.
+- `execution_state=FAILED` must include `failure_reason_code`.
+
+Consumer read must not treat stale pre-mutation indicator rows as current proof after a changed historical bar is accepted.
+
+## Amendment 2026-05-27 - Publication-stage follow-through
+
+For affected dates that are not already readable/current, successful indicator and eligibility reprocess may be followed by the normal promote flow. That follow-through recomputes hash/seal/finalize artifacts through the existing publication pipeline.
+
+For affected dates that are already readable/current, indicator rows must not be silently overwritten as a live replacement. The correction/republication lifecycle remains required.

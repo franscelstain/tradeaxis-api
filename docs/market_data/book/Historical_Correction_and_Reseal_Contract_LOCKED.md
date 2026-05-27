@@ -184,3 +184,22 @@ If a later readable state for D differs from a prior sealed publication without 
 - `Downstream_Consumer_Read_Model_Contract_LOCKED.md`
 - `../ops/Historical_Correction_Runbook_LOCKED.md`
 - `../ops/Audit_Evidence_Pack_Contract_LOCKED.md`
+
+---
+
+## Amendment 2026-05-27 - Out-of-order import impact execution
+
+Historical import can arrive after later dates were already processed. When changed historical bars affect downstream dates:
+
+- non-readable affected dates may be reprocessed in place for indicators and eligibility;
+- readable affected dates must not be reprocessed in live current tables outside correction;
+- readable affected dates must be reported as requiring correction/reseal/republication;
+- hash/seal/pointer changes remain governed by the correction lifecycle.
+
+The current implementation chooses safe block for already-readable affected dates rather than automated republication. Operators must use the correction runbook to create and approve a replacement lifecycle when a readable date is impacted.
+
+## Amendment 2026-05-27 - Non-readable impact publication reprocess
+
+Affected downstream dates that are not already readable/current may be promoted automatically through the normal promote flow after historical changed bars are applied and derived artifacts are recomputed. This is not a correction of a current readable publication; it is ordinary publication of a non-readable affected date using existing coverage/hash/seal/finalize guards.
+
+Already-readable affected dates still require explicit correction/republication. The automatic non-readable path must not be reused to bypass correction approval or current-pointer supersession lineage.

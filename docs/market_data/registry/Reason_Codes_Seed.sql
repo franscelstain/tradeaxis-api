@@ -2,6 +2,7 @@
 -- Safe to rerun: uses ON DUPLICATE KEY UPDATE for description/severity/category/is_active.
 
 INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is_active`) VALUES
+('AFFECTED_PUBLICATION_REQUIRES_CORRECTION', 'CORRECTION', 'A changed historical EOD bar can affect at least one already readable downstream publication; silent mutation is blocked and correction/reseal/republication is required.', 'HARD', 1),
 ('RUN_COVERAGE_LOW', 'RUN', 'Coverage ratio for the requested date is below the locked minimum threshold.', 'HARD', 1),
 ('RUN_COVERAGE_NOT_EVALUABLE', 'RUN', 'Coverage could not be evaluated meaningfully for the requested date, so requested-date publication must remain not readable.', 'HARD', 1),
 ('COVERAGE_THRESHOLD_MET', 'COVERAGE', 'Coverage evaluation passed because available canonical EOD bars met or exceeded the locked minimum threshold.', 'INFO', 1),
@@ -345,7 +346,12 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('REPLAY_IMPORT_PROMOTE_MISMATCH', 'REPLAY', 'Replay import/promote context mismatch.', 'HARD', 1),
 ('REPLAY_IMPORT_STATUS_MISMATCH', 'REPLAY', 'Replay import status mismatch.', 'HARD', 1),
 ('REPLAY_PROMOTE_STATUS_MISMATCH', 'REPLAY', 'Replay promote status mismatch.', 'HARD', 1),
-('REPLAY_UNEXPECTED_PUBLICATION_PROMOTION', 'REPLAY', 'Replay detected unexpected publication promotion or pointer switch.', 'HARD', 1)
+('REPLAY_UNEXPECTED_PUBLICATION_PROMOTION', 'REPLAY', 'Replay detected unexpected publication promotion or pointer switch.', 'HARD', 1),
+('REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE', 'PUBLICATION_REPROCESS', 'Requested date was already handled by primary promote/hash/seal/finalize.', 'INFO', 1),
+('AFFECTED_DATE_RUN_NOT_FOUND', 'PUBLICATION_REPROCESS', 'Affected non-readable date could not be promoted because no persisted run exists.', 'HARD', 1),
+('PUBLICATION_REPROCESS_NOT_READABLE', 'PUBLICATION_REPROCESS', 'Affected-date promote flow completed without producing a readable publication.', 'HARD', 1),
+('PUBLICATION_REPROCESS_FAILED', 'PUBLICATION_REPROCESS', 'Publication reprocess failed before completing promote/hash/seal/finalize.', 'HARD', 1),
+('PUBLICATION_REPROCESS_REPLAY_FAILED', 'PUBLICATION_REPROCESS', 'Publication reprocess produced a readable run but requested replay verification failed.', 'HARD', 1)
 ON DUPLICATE KEY UPDATE
   `category` = VALUES(`category`),
   `description` = VALUES(`description`),

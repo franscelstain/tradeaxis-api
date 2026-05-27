@@ -109,7 +109,8 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
             return 0;
         }
 
-        if (in_array(($summary['status'] ?? null), ['BLOCKED', 'NOOP', 'SOURCE_RETRY_SUCCESS', 'SOURCE_DIAGNOSTIC_SUCCESS', 'SOURCE_DIAGNOSTIC_PARTIAL'], true)) {
+        if (in_array(($summary['status'] ?? null), ['BLOCKED', 'NOOP', 'SOURCE_RETRY_SUCCESS', 'SOURCE_DIAGNOSTIC_SUCCESS', 'SOURCE_DIAGNOSTIC_PARTIAL'], true)
+            && empty($summary['cases'])) {
             $this->line('status='.(string) $summary['status']);
             return ! empty($summary['all_passed']) ? 0 : 1;
         }
@@ -126,12 +127,25 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
                 .' | fixture='.(string) ($case['fixture_status'] ?? '')
                 .' | replay='.(string) ($case['replay_status'] ?? '')
                 .' | readable='.(! empty($case['readable']) ? 'YES' : 'NO')
+                .(isset($case['bar_mutation_changed_count']) ? ' | bar_mutation_changed_count='.(string) $case['bar_mutation_changed_count'] : '')
+                .(isset($case['affected_trade_date_count']) ? ' | affected_trade_date_count='.(string) $case['affected_trade_date_count'] : '')
+                .(isset($case['affected_start_date']) ? ' | affected_start_date='.(string) $case['affected_start_date'] : '')
+                .(isset($case['affected_end_date']) ? ' | affected_end_date='.(string) $case['affected_end_date'] : '')
+                .(isset($case['indicator_reprocess_state']) ? ' | indicator_reprocess_state='.(string) $case['indicator_reprocess_state'] : '')
+                .(isset($case['indicator_reprocess_execution_state']) ? ' | indicator_reprocess_execution_state='.(string) $case['indicator_reprocess_execution_state'] : '')
+                .(isset($case['indicator_reprocessed_trade_date_count']) ? ' | indicator_reprocessed_trade_date_count='.(string) $case['indicator_reprocessed_trade_date_count'] : '')
+                .(isset($case['eligibility_reprocess_execution_state']) ? ' | eligibility_reprocess_execution_state='.(string) $case['eligibility_reprocess_execution_state'] : '')
+                .(isset($case['publication_impact_state']) ? ' | publication_impact_state='.(string) $case['publication_impact_state'] : '')
+                .(isset($case['publication_reprocess_state']) ? ' | publication_reprocess_state='.(string) $case['publication_reprocess_state'] : '')
+                .(isset($case['publication_reprocess_republished_trade_date_count']) ? ' | publication_reprocess_republished_trade_date_count='.(string) $case['publication_reprocess_republished_trade_date_count'] : '')
+                .(isset($case['recovered_row_apply_state']) ? ' | recovered_row_apply_state='.(string) $case['recovered_row_apply_state'] : '')
+                .(isset($case['recovered_row_count']) ? ' | recovered_row_count='.(string) $case['recovered_row_count'] : '')
                 .(isset($case['reason_code']) && $case['reason_code'] !== null && $case['reason_code'] !== '' ? ' | reason='.(string) $case['reason_code'] : '')
             );
         }
 
         $this->line('summary:');
-        foreach (['dates_total', 'dates_success', 'dates_held', 'dates_failed', 'ticker_failures', 'evidence_exported', 'fixtures_generated', 'replay_verified'] as $field) {
+        foreach (['dates_total', 'dates_success', 'dates_held', 'dates_failed', 'ticker_failures', 'evidence_exported', 'fixtures_generated', 'replay_verified', 'bar_mutation_changed_count', 'affected_trade_date_count', 'indicator_reprocessed_trade_date_count', 'eligibility_reprocessed_trade_date_count', 'publication_reprocess_republished_trade_date_count', 'publication_reprocess_evidence_exported_count', 'publication_reprocess_fixtures_generated_count', 'publication_reprocess_replay_verified_count', 'recovered_row_count'] as $field) {
             $this->line($field.'='.(string) ($summary[$field] ?? 0));
         }
 

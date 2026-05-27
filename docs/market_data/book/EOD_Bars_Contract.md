@@ -76,3 +76,37 @@ A bar is canonical and publishable to `eod_bars` only if all conditions pass:
 - `publication_id` must never be NULL in `eod_bars`.
 - Missing provider fields are handled as invalid rows, not as partially-null canonical rows.
 - Consumers must treat `eod_bars` as already validated canonical current-state output and must not apply a second, incompatible validity policy.
+
+---
+
+## Amendment 2026-05-26 - Out-of-order mutation impact
+
+EOD bar imports must not assume chronological operator execution.
+
+Every canonical EOD bar insert/update/delete-by-replacement path must emit a changed bar summary before downstream derived artifacts are trusted:
+- `changed_bar_count`
+- `inserted_bar_count`
+- `updated_bar_count`
+- `unchanged_bar_count`
+- `removed_bar_count`
+- changed ticker ids
+- changed trade dates
+
+An idempotent upsert/replacement with identical canonical OHLCV/source values is not a changed bar.
+
+A changed historical bar can affect rolling indicators and downstream eligibility/hash/seal/publication state for later trading dates. If affected dates include an already readable publication, the live readable publication must not be mutated silently; the safe path is correction/reseal/republication or an explicit blocked/review state.
+
+---
+
+## Amendment 2026-05-27 - Recovered row partial apply execution
+
+Recovered rows from failed API checkpoint retry are not a full-date source file. They must be applied as partial ticker/date upserts.
+
+Rules:
+- Do not use full-date replacement for recovered single-ticker/window rows.
+- Preserve existing EOD bars for unrelated tickers on the same `trade_date`.
+- Write only inserted or canonical-value-updated rows.
+- Do not rewrite metadata for unchanged canonical rows.
+- Emit `recovered_row_apply_state`, `recovered_row_count`, and `bar_mutation_summary`.
+
+Recovered row apply is idempotent. A retry that returns the same canonical OHLCV/source values must remain `UNCHANGED`/`NOOP_UNCHANGED_BARS` and must not trigger derived reprocess.

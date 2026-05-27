@@ -17,19 +17,22 @@ class EodBarsIngestService
     private $tickers;
     private $artifacts;
     private $publications;
+    private $impactResolver;
 
     public function __construct(
         LocalFileEodBarsAdapter $localSourceAdapter,
         PublicApiEodBarsAdapter $apiSourceAdapter,
         TickerMasterRepository $tickers,
         EodArtifactRepository $artifacts,
-        EodPublicationRepository $publications
+        EodPublicationRepository $publications,
+        EodBarsMutationImpactResolver $impactResolver = null
     ) {
         $this->localSourceAdapter = $localSourceAdapter;
         $this->apiSourceAdapter = $apiSourceAdapter;
         $this->tickers = $tickers;
         $this->artifacts = $artifacts;
         $this->publications = $publications;
+        $this->impactResolver = $impactResolver;
     }
 
     public function ingest($run, $requestedDate, $sourceMode, $priorCurrentPublication = null)
@@ -182,7 +185,14 @@ class EodBarsIngestService
             return $row;
         }, $validRows);
 
-        $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
+        $barMutationSummary = $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
+        if (! is_array($barMutationSummary)) {
+            $barMutationSummary = $this->defaultBarMutationSummary($requestedDate, $candidatePublication->publication_id, $validRows, $useHistory);
+        }
+
+        $impact = $this->impactResolver
+            ? $this->impactResolver->resolve($barMutationSummary, $requestedDate)
+            : $this->defaultImpactSummary($barMutationSummary);
 
         $sourceAcquisition = array_merge($sourceAcquisition, [
             'source_mode' => $sourceMode,
@@ -203,6 +213,243 @@ class EodBarsIngestService
             'source_name' => strtoupper((string) ($sourceRows[0]['source_name'] ?? config('market_data.source.default_source_name'))),
             'storage_target' => $useHistory ? 'eod_bars_history' : 'eod_bars',
             'source_acquisition' => $sourceAcquisition,
+            'bar_mutation_summary' => $impact['bar_mutation_summary'],
+            'indicator_impact_summary' => $impact['indicator_impact_summary'],
+            'publication_impact_summary' => $impact['publication_impact_summary'],
+        ];
+    }
+
+    public function ingestRecoveredRowsPartial($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null)
+    {
+        if ($priorCurrentPublication && (int) $priorCurrentPublication->publication_id === (int) ($run->publication_id ?? 0)) {
+            throw new \RuntimeException('Correction candidate publication cannot equal prior current publication.');
+        }
+
+        if (! $priorCurrentPublication && $this->publications->findCurrentPublicationForTradeDate($requestedDate)) {
+            throw new \RuntimeException('AFFECTED_PUBLICATION_REQUIRES_CORRECTION: Trade date '.$requestedDate.' already has a current publication. Use correction/reseal before recovered row apply.');
+        }
+
+        if ($sourceRows === []) {
+            throw new SourceAcquisitionException(
+                'Recovered checkpoint retry returned zero rows; partial recovered apply cannot proceed.',
+                $this->noValidSourceDataReasonCode($sourceMode),
+                0,
+                null,
+                $this->emptySourceAcquisitionContext($requestedDate, $sourceMode)
+            );
+        }
+
+        $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
+        $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
+
+        $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
+        $deduped = [];
+        $duplicateLosers = [];
+        $invalidRows = [];
+        foreach ($sourceRows as $row) {
+            $tickerCode = (string) ($row['ticker_code'] ?? '');
+            $tickerId = isset($tickerMap[$tickerCode]) ? $tickerMap[$tickerCode] : null;
+            $row['ticker_id'] = $tickerId;
+
+            if ($tickerId === null) {
+                $invalidRows[] = $this->makeInvalidRow(
+                    $run->run_id,
+                    $row,
+                    'BAR_TICKER_MAPPING_MISSING',
+                    'ticker_code not found in ticker master: '.$tickerCode,
+                    $now
+                );
+                continue;
+            }
+
+            $key = $row['trade_date'].'|'.$tickerId;
+
+            if (! isset($deduped[$key])) {
+                $deduped[$key] = $row;
+                continue;
+            }
+
+            $winner = $this->choosePreferredRow($deduped[$key], $row);
+            $loser = $winner === $row ? $deduped[$key] : $row;
+            $deduped[$key] = $winner;
+            $duplicateLosers[] = $loser + [
+                'invalid_reason_code' => 'BAR_DUPLICATE_SOURCE_ROW',
+                'invalid_note' => 'Deterministic duplicate loser during recovered row apply.',
+                'loser_of_trade_date' => $row['trade_date'],
+                'loser_of_ticker_id' => $tickerId,
+            ];
+        }
+
+        $validRows = [];
+        $useHistory = $priorCurrentPublication !== null;
+
+        foreach (array_values($deduped) as $row) {
+            $validation = $this->validateCanonicalRow($row, $requestedDate);
+
+            if ($validation['valid']) {
+                $validRows[] = [
+                    'trade_date' => $requestedDate,
+                    'ticker_id' => $row['ticker_id'],
+                    'open' => $row['open'],
+                    'high' => $row['high'],
+                    'low' => $row['low'],
+                    'close' => $row['close'],
+                    'volume' => $row['volume'],
+                    'adj_close' => $row['adj_close'],
+                    'source' => strtoupper($row['source_name']),
+                    'run_id' => $run->run_id,
+                    'created_at' => $now,
+                ];
+                continue;
+            }
+
+            $invalidRows[] = $this->makeInvalidRow($run->run_id, $row, $validation['reason_code'], $validation['note'], $now);
+        }
+
+        foreach ($duplicateLosers as $loser) {
+            $invalidRows[] = $this->makeInvalidRow(
+                $run->run_id,
+                $loser,
+                $loser['invalid_reason_code'],
+                $loser['invalid_note'],
+                $now,
+                $loser['loser_of_trade_date'],
+                $loser['loser_of_ticker_id']
+            );
+        }
+
+        $sourceAcquisition = $sourceAcquisition !== null
+            ? $sourceAcquisition
+            : $this->consumeSourceAcquisitionTelemetry($sourceMode);
+
+        if (count($validRows) === 0) {
+            $context = array_merge($sourceAcquisition, [
+                'source_mode' => $sourceMode,
+                'trade_date' => $requestedDate,
+                'returned_row_count' => count($sourceRows),
+                'accepted_row_count' => 0,
+                'rejected_row_count' => count($invalidRows),
+                'invalid_row_count' => count($invalidRows),
+                'source_final_status' => 'FAILED',
+                'final_reason_code' => $this->noValidSourceDataReasonCode($sourceMode),
+                'no_valid_data' => true,
+                'empty_artifact_blocked' => true,
+            ]);
+
+            throw new SourceAcquisitionException(
+                'Recovered rows produced zero valid canonical bars; partial recovered apply is blocked.',
+                $this->noValidSourceDataReasonCode($sourceMode),
+                0,
+                null,
+                $context
+            );
+        }
+
+        $candidatePublication = $this->publications->getOrCreateCandidatePublication(
+            $run,
+            $priorCurrentPublication ? $priorCurrentPublication->publication_id : null
+        );
+
+        $validRows = array_map(function (array $row) use ($candidatePublication) {
+            $row['publication_id'] = $candidatePublication->publication_id;
+
+            return $row;
+        }, $validRows);
+
+        $barMutationSummary = $this->artifacts->upsertBarsPartial($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
+        if (! is_array($barMutationSummary)) {
+            $barMutationSummary = $this->defaultBarMutationSummary($requestedDate, $candidatePublication->publication_id, $validRows, $useHistory);
+        }
+
+        $impact = $this->impactResolver
+            ? $this->impactResolver->resolve($barMutationSummary, $requestedDate)
+            : $this->defaultImpactSummary($barMutationSummary);
+
+        $applyState = (int) ($impact['bar_mutation_summary']['changed_bar_count'] ?? 0) > 0 ? 'APPLIED' : 'UNCHANGED';
+        $sourceAcquisition = array_merge($sourceAcquisition, [
+            'source_mode' => $sourceMode,
+            'accepted_row_count' => count($validRows),
+            'rejected_row_count' => count($invalidRows),
+            'invalid_row_count' => count($invalidRows),
+            'returned_row_count' => count($sourceRows),
+            'recovered_row_count' => count($validRows),
+            'recovered_row_apply_state' => $applyState,
+        ]);
+
+        return [
+            'publication_id' => (int) $candidatePublication->publication_id,
+            'publication_version' => (int) $candidatePublication->publication_version,
+            'bars_rows_written' => count($validRows),
+            'invalid_bar_count' => count($invalidRows),
+            'accepted_row_count' => count($validRows),
+            'rejected_row_count' => count($invalidRows),
+            'invalid_row_count' => count($invalidRows),
+            'source_name' => strtoupper((string) ($sourceRows[0]['source_name'] ?? config('market_data.source.default_source_name'))),
+            'storage_target' => $useHistory ? 'eod_bars_history' : 'eod_bars',
+            'source_acquisition' => $sourceAcquisition,
+            'bar_mutation_summary' => $impact['bar_mutation_summary'],
+            'indicator_impact_summary' => $impact['indicator_impact_summary'],
+            'publication_impact_summary' => $impact['publication_impact_summary'],
+            'recovered_row_count' => count($validRows),
+            'recovered_row_apply_state' => $applyState,
+            'resume_recovered_apply_summary' => [
+                'retried_failed_checkpoint_count' => (int) ($sourceAcquisition['failed_checkpoint_retried'] ?? $sourceAcquisition['retried_failed_checkpoint_count'] ?? 0),
+                'retry_success_count' => (int) ($sourceAcquisition['retry_success_count'] ?? 0),
+                'recovered_row_count' => count($validRows),
+                'changed_bar_count' => (int) ($impact['bar_mutation_summary']['changed_bar_count'] ?? 0),
+                'apply_state' => $applyState,
+            ],
+        ];
+    }
+
+    private function defaultBarMutationSummary($requestedDate, $publicationId, array $validRows, $useHistory)
+    {
+        $tickerIds = array_values(array_unique(array_map(function ($row) {
+            return (int) ($row['ticker_id'] ?? 0);
+        }, $validRows)));
+        $tickerIds = array_values(array_filter($tickerIds));
+        sort($tickerIds);
+
+        return [
+            'changed_bar_count' => count($tickerIds),
+            'inserted_bar_count' => count($tickerIds),
+            'updated_bar_count' => 0,
+            'unchanged_bar_count' => 0,
+            'removed_bar_count' => 0,
+            'changed_ticker_count' => count($tickerIds),
+            'changed_trade_date_count' => count($tickerIds) > 0 ? 1 : 0,
+            'changed_ticker_ids' => $tickerIds,
+            'changed_trade_dates' => count($tickerIds) > 0 ? [(string) $requestedDate] : [],
+            'storage_target' => $useHistory ? 'eod_bars_history' : 'eod_bars',
+            'trade_date' => (string) $requestedDate,
+            'publication_id' => $publicationId !== null ? (int) $publicationId : null,
+            'mutation_detection_version' => 'eod_bar_mutation_v1_default',
+        ];
+    }
+
+    private function defaultImpactSummary(array $barMutationSummary)
+    {
+        $changedCount = (int) ($barMutationSummary['changed_bar_count'] ?? 0);
+
+        return [
+            'bar_mutation_summary' => $barMutationSummary,
+            'indicator_impact_summary' => [
+                'affected_ticker_count' => (int) ($barMutationSummary['changed_ticker_count'] ?? 0),
+                'affected_trade_date_count' => (int) ($barMutationSummary['changed_trade_date_count'] ?? 0),
+                'affected_start_date' => ($barMutationSummary['changed_trade_dates'][0] ?? null),
+                'affected_end_date' => ($barMutationSummary['changed_trade_dates'][0] ?? null),
+                'affected_trade_dates' => $barMutationSummary['changed_trade_dates'] ?? [],
+                'affected_ticker_ids' => $barMutationSummary['changed_ticker_ids'] ?? [],
+                'max_dependency_trading_days' => 0,
+                'impact_reason' => $changedCount > 0 ? 'IMPACT_RESOLVER_NOT_BOUND' : 'UNCHANGED_BARS',
+                'indicator_reprocess_state' => $changedCount > 0 ? 'PENDING_IMPACT_RESOLVER' : 'NOOP_UNCHANGED_BARS',
+            ],
+            'publication_impact_summary' => [
+                'readable_publication_impacted' => false,
+                'impacted_readable_trade_dates' => [],
+                'republication_required' => false,
+                'publication_impact_state' => 'NOOP',
+            ],
         ];
     }
 

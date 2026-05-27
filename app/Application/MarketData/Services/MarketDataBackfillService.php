@@ -460,6 +460,7 @@ class MarketDataBackfillService
 
     private function buildImportContext($run)
     {
+        $notesMap = $this->parseRunNotes((string) ($run->notes ?? ''));
         $context = [
             'import_status' => $this->resolveImportStatus($run),
         ];
@@ -474,6 +475,28 @@ class MarketDataBackfillService
 
         if (isset($run->stage) && $run->stage !== null && $run->stage !== '') {
             $context['import_stage_reached'] = (string) $run->stage;
+        }
+
+        foreach ([
+            'bar_mutation_changed_count',
+            'bar_mutation_inserted_count',
+            'bar_mutation_updated_count',
+            'bar_mutation_unchanged_count',
+            'bar_mutation_removed_count',
+            'affected_ticker_count',
+            'affected_trade_date_count',
+            'affected_start_date',
+            'affected_end_date',
+            'max_indicator_dependency_trading_days',
+            'indicator_reprocess_state',
+            'publication_impact_state',
+            'readable_publication_impacted',
+            'republication_required',
+            'publication_impact_reason_code',
+        ] as $field) {
+            if (array_key_exists($field, $notesMap) && $notesMap[$field] !== '') {
+                $context[$field] = $notesMap[$field];
+            }
         }
 
         return $context;

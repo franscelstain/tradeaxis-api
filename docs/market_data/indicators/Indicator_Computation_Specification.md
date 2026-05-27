@@ -80,3 +80,37 @@ This is based on real highs, not adjusted price basis.
 ## Rounding/storage (LOCKED)
 Store using output column precision defined in schema.
 Hash serialization formatting is governed separately by `../book/Hash_Number_Formatting_LOCKED.md`.
+
+---
+
+## Amendment 2026-05-26 - Mutation dependency horizon
+
+Indicator recomputation impact must be resolved in market-calendar trading days.
+
+The baseline dependency horizon must include all active baseline dependencies:
+- `dv20_idr`: 20 trading days inclusive
+- `atr14_pct`: 14 Wilder TR values plus prior close dependency
+- `vol_ratio`: current date plus 20 prior trading days
+- `roc20`: current date plus D[-20]
+- `hh20`: 20 trading days inclusive
+- `ma20`: 20 trading days inclusive
+- `ma50`: 50 trading days inclusive
+
+The runtime resolver must use a single horizon source derived from indicator config plus the MA50 floor. For the current baseline registry this resolves to `max_indicator_dependency_trading_days=50`.
+
+If a changed bar occurs on trading date T, affected indicator dates are T through the later downstream trading dates up to the dependency horizon, capped by the last available canonical bar date. If affected downstream dates include a readable publication, downstream derived artifacts require correction/republication handling rather than silent mutation.
+
+---
+
+## Amendment 2026-05-27 - Execution proof for impact reprocess
+
+Affected-date detection is not enough. After a changed historical bar is accepted, non-readable affected dates must run indicator recompute. The current execution scope is full affected date, because the indicator compute service writes deterministic date-scoped artifacts.
+
+Execution proof fields:
+- `indicator_reprocess_execution_summary.execution_state`
+- `indicator_reprocess_execution_summary.reprocessed_trade_date_count`
+- `indicator_reprocess_execution_summary.reprocess_scope`
+- `indicator_reprocess_execution_summary.blocked_reason_code`
+- `indicator_reprocess_execution_summary.failure_reason_code`
+
+`EXECUTED` is valid only when compute ran. `NOOP` is valid for unchanged bars/no affected dates. `BLOCKED` is valid for readable affected dates that require correction.

@@ -3578,3 +3578,177 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 
 [REMAINING_NOTE]
 - WBSA provider HTTP 400 remains an external provider/data availability condition and is correctly represented by source-domain diagnostics.
+
+---
+
+## 2026-05-26 - OUT-OF-ORDER IMPORT INDICATOR DEPENDENCY IMPACT PATCH
+
+[STATUS]
+- `DONE` for mutation detection, affected trading-date resolution, operator/artifact telemetry, and readable-publication impact blocking.
+- `REVIEW_REQUIRED` remains for fully automated correction/republication execution of already-readable affected downstream dates. The patch deliberately detects and reports `REQUIRES_REPUBLICATION` instead of mutating readable publications silently.
+
+[ROOT_CAUSE_CONFIRMED]
+- Normal EOD bar ingest used `EodArtifactRepository::replaceBars()` as a full-date artifact replacement and did not previously return a changed/unchanged bar set to the pipeline.
+- Indicator computation is date-scoped, so out-of-order historical imports needed explicit impact telemetry to show when downstream rolling indicators may be affected.
+- The existing sealed/current/readable mutation guard already prevents direct silent mutation of readable live artifacts, but the import output did not expose downstream impact in a structured way.
+
+[IMPLEMENTED_CHANGE]
+- `EodArtifactRepository::replaceBars()` now compares incoming canonical bars with existing rows before replacement and returns `bar_mutation_summary`.
+- Mutation summary distinguishes `inserted_bar_count`, `updated_bar_count`, `unchanged_bar_count`, `removed_bar_count`, `changed_bar_count`, changed ticker ids, and changed trade dates.
+- New `EodBarsMutationImpactResolver` resolves affected dates with `market_calendar` trading days and a max dependency horizon derived from active indicator config plus MA50 floor.
+- Impact summary reports `affected_ticker_count`, `affected_trade_date_count`, `affected_start_date`, `affected_end_date`, `max_dependency_trading_days`, and `indicator_reprocess_state`.
+- If any affected date already has a current readable publication, the publication impact is reported as `REQUIRES_REPUBLICATION` with reason `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`; no silent live update is performed.
+- Daily, import-only backfill, lifecycle backfill case output, run summary artifacts, and evidence run summaries now carry mutation/indicator/publication impact fields.
+
+[VALIDATION_ADDED]
+- Added `EodBarsMutationImpactResolverTest` covering unchanged NOOP, historical downstream impact over trading days, and readable-publication impact requiring republication/correction.
+- Existing `EodBarsIngestService`, `MarketDataPipelineService`, backfill, API backfill, daily, correction, indicator, eligibility, and static guard tests were rerun.
+
+[RUNTIME_PROOF_THIS_SESSION]
+- `php artisan migrate --env=testing` -> `Nothing to migrate.`
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "EodBarsMutationImpactResolver"` -> OK (3 tests, 13 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "EodBarsIngestService"` -> OK (4 tests, 31 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataPipelineServiceTest"` -> OK (14 tests, 17 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"` -> OK (44 tests, 292 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "ApiBackfill"` -> OK (25 tests, 153 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "OutOfOrderImportImpact"` -> OK (3 tests, 32 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "StaticGuard"` -> OK (222 tests, 5430 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Indicator"` -> OK (23 tests, 215 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Eligibility"` -> OK (9 tests, 47 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Daily"` -> OK (62 tests, 1234 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Correction"` -> OK (75 tests, 1416 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData` -> OK (568 tests, 8560 assertions).
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --plan` -> `PLAN_ONLY`, `source_acquisition_mode=range_window`, `window_count=2`, `estimated_http_requests=1826`, `ticker_count=913`, `trading_dates=4`.
+
+[REMAINING_RISK]
+- Resume-only-failed source retry success still needs a dedicated partial-row recovery apply path before it can safely import recovered ticker rows without replacing an entire date artifact. This patch does not fake that behavior.
+- Already-readable affected downstream dates are detected and marked as requiring correction/republication; automated correction request creation/execution remains a separate operator-controlled lifecycle.
+- No DB schema or ENV/config key was added.
+
+---
+
+## 2026-05-27 - OUT-OF-ORDER IMPORT IMPACT EXECUTION + RECOVERED ROW APPLY
+
+[STATUS]
+- `DONE` for recovered checkpoint partial-row apply, actual affected indicator recompute execution, actual affected eligibility rebuild execution, command/evidence execution summaries, and safe blocking of already-readable affected publications.
+- `REVIEW_REQUIRED` remains only for fully automated readable-publication correction/republication execution. This session intentionally does not auto-switch current pointers for affected readable dates.
+
+[GAP_CLOSED]
+- `market-data:backfill:lifecycle --resume --only-failed` no longer stops at source acquisition when retry succeeds and recovered rows are available.
+- Recovered rows are applied through partial ticker/date upsert, not full-date `replaceBars()`, so unrelated ticker rows on the same trade date are preserved.
+- Changed recovered/historical bars now flow into affected-date execution: indicators are recomputed and eligibility is rebuilt for affected non-readable dates.
+- Execution output now distinguishes detection (`indicator_impact_summary`) from execution (`indicator_reprocess_execution_summary`, `eligibility_reprocess_execution_summary`, `publication_reprocess_summary`).
+
+[IMPLEMENTED_CHANGE]
+- Added `EodArtifactRepository::upsertBarsPartial()` for idempotent recovered row apply. It writes only inserted/updated ticker rows and leaves unchanged rows plus unrelated tickers untouched.
+- Added `EodBarsIngestService::ingestRecoveredRowsPartial()` and `MarketDataPipelineService::applyRecoveredRowsPartial()`.
+- Added `MarketDataImpactReprocessExecutor` to execute full-date indicator recompute and eligibility rebuild for affected non-readable dates.
+- Already-readable affected dates produce `publication_reprocess_summary.execution_state=BLOCKED_REQUIRES_CORRECTION` with reason `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`; no silent indicator/eligibility/hash/pointer mutation is allowed.
+- Backfill lifecycle resume-only-failed summary now includes recovered row apply counts, changed bar counts, and reprocess execution states.
+
+[VALIDATION_THIS_SESSION]
+- `php artisan migrate --env=testing` -> `Nothing to migrate.`
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataImpactReprocessExecutor"` -> OK (3 tests, 11 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "EodArtifactRepositoryPartialUpsert"` -> OK (2 tests, 14 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "OutOfOrderImportImpact"` -> OK (5 tests, 57 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Recovered"` -> OK (7 tests, 56 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Resume"` -> OK (8 tests, 61 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataPipelineService"` -> OK (15 tests, 19 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Indicator"` -> OK (26 tests, 229 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Eligibility"` -> OK (12 tests, 61 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"` -> OK (44 tests, 292 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "ApiBackfill"` -> OK (25 tests, 153 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Daily"` -> OK (62 tests, 1234 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Correction"` -> OK (75 tests, 1416 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "StaticGuard"` -> OK (224 tests, 5467 assertions).
+- Full MarketData suite must be rerun after this docs update before changing status to full locked.
+
+[REMAINING_RISK]
+- Automated correction/republication for already-readable affected downstream dates remains operator-controlled/manual. The system blocks and reports the correction requirement instead of silently mutating readable artifacts.
+- No DB schema change and no ENV/config key was added.
+
+---
+
+## 2026-05-27 - OUT-OF-ORDER IMPORT IMPACT EXECUTION FINAL FULL-SUITE PROOF
+
+[STATUS]
+- `DONE` for recovered row apply plus actual non-readable affected-date indicator/eligibility reprocess execution.
+- `DONE` for safe blocking of already-readable affected publications.
+- `REVIEW_REQUIRED` remains for future automated readable-publication republication, because this patch deliberately implements safe block/manual correction instead of auto republish.
+
+[FINAL_PROOF]
+- Command: `vendor\bin\phpunit tests\Unit\MarketData`.
+- Result: OK (576 tests, 8624 assertions).
+- Runtime: Time 00:20.787, Memory 42.00 MB.
+- Post-doc rerun: OK (576 tests, 8624 assertions), Time 00:19.910, Memory 42.00 MB.
+
+[LOCKED_ASSERTION]
+- Resume-only-failed retry success can apply recovered rows through partial upsert and does not delete unrelated same-date tickers.
+- Changed recovered/historical bars execute indicator recompute and eligibility rebuild for affected non-readable dates.
+- Already-readable affected dates remain blocked with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`; no fake readable, pointer switch, replay verification, or silent live mutation is claimed.
+
+---
+
+## 2026-05-27 - OUT-OF-ORDER IMPORT IMPACT PUBLICATION LIFECYCLE AUDIT CORRECTION
+
+[AGGREGATE_STATUS]
+- `PARTIAL / REVIEW_REQUIRED` for the full out-of-order import publication lifecycle.
+- `DONE` remains valid only for:
+  - recovered row partial apply,
+  - mutation summary,
+  - affected trading-date resolution,
+  - actual indicator recompute execution for affected non-readable dates,
+  - actual eligibility rebuild execution for affected non-readable dates,
+  - safe block for already-readable affected dates,
+  - command/evidence execution summary.
+
+[NOT_FULLY_IMPLEMENTED]
+- Downstream hash recompute is not automatically executed by the impact reprocess executor.
+- Downstream seal/finalize is not automatically executed by the impact reprocess executor.
+- Already-readable affected-date correction/republication is not automatic; it is blocked with manual correction requirement.
+
+[CLAIM_BOUNDARY]
+- Do not claim `FULL_LOCKED`, `FULL_PRODUCTION_READY`, or complete publication lifecycle automation for out-of-order imports from the current implementation.
+- Safe claim: `OUT_OF_ORDER_IMPORT_IMPACT_EXECUTION_DONE_FOR_RECOVERED_APPLY_AND_INDICATOR_ELIGIBILITY_REPROCESS`.
+- Next implementation scope: `MARKET DATA - OUT-OF-ORDER IMPORT HASH SEAL REPUBLICATION EXECUTION`.
+
+---
+
+## 2026-05-27 - OUT-OF-ORDER IMPORT HASH SEAL REPUBLICATION EXECUTION
+
+[STATUS]
+- `DONE` for automatic hash/seal/finalize execution on affected downstream dates that are not already readable/current.
+- `DONE` for `backfill:lifecycle` and `runDaily`/full-publish paths using existing `promoteDaily()` guard flow instead of duplicating hash/seal/finalize logic.
+- `DONE` for lifecycle evidence/replay export of automatically republished non-readable affected dates when `--with-evidence` / `--with-replay` is requested.
+- `REVIEW_REQUIRED` remains for automatic correction/republication of dates that are already readable/current. Those dates still safe-block with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`.
+
+[IMPLEMENTED_CHANGE]
+- `MarketDataImpactReprocessExecutor` now reports `publication_reprocess_summary.execution_state=PENDING_PROMOTE` after indicator/eligibility execution succeeds for affected non-readable dates.
+- `BackfillLifecycleOrchestrator` consumes `PENDING_PROMOTE` candidate dates and calls `MarketDataPipelineService::promoteDaily()` for affected non-readable dates, which executes coverage, indicators, eligibility, hash, seal, and finalize through the existing publication guard.
+- `MarketDataPipelineService::runDaily()`/full-publish now performs the same downstream non-readable publication reprocess after the primary requested date finalizes.
+- The primary requested date is not left in a misleading pending state; if it was already handled by the primary promote flow, publication reprocess is reported as `NOOP` with `REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE`.
+- Already-readable affected dates are still blocked; no current pointer is switched without an explicit correction/republication lifecycle.
+
+[VALIDATION_THIS_SESSION]
+- `php artisan migrate --env=testing` -> `Nothing to migrate.`
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "BackfillLifecyclePublicationReprocess"` -> OK (3 tests, 11 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataPipelineService"` -> OK (16 tests, 21 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataImpactReprocessExecutor"` -> OK (3 tests, 12 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Recovered"` -> OK (7 tests, 56 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Resume"` -> OK (8 tests, 61 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"` -> OK (47 tests, 303 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "ApiBackfill"` -> OK (25 tests, 153 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Indicator"` -> OK (26 tests, 231 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Eligibility"` -> OK (12 tests, 63 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Daily"` -> OK (63 tests, 1236 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Correction"` -> OK (75 tests, 1416 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "StaticGuard"` -> OK (225 tests, 5483 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData` -> OK (581 tests, 8654 assertions), Time 00:12.483, Memory 44.00 MB.
+- Final post-doc/code rerun: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (581 tests, 8654 assertions), Time 00:12.737, Memory 44.00 MB.
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --plan` -> `PLAN_ONLY`, `source_acquisition_mode=range_window`, `window_count=2`, `estimated_http_requests=1826`, `ticker_count=913`, `trading_dates=4`.
+- `php artisan market-data:backfill:lifecycle 2026-05-01 2026-05-07 --source_mode=api --resume --only-failed -vvv` -> expected external provider block for `WBSA`, `source_acquisition_state=FAILED_RETRY_BLOCKED`, `reason_code=RUN_SOURCE_BAD_REQUEST`; no recovered rows were applied because retry did not return rows.
+
+[CLAIM_BOUNDARY]
+- Safe claim: affected non-readable downstream dates can now be promoted through hash/seal/finalize automatically in lifecycle/full-publish paths.
+- Safe claim: affected readable/current dates are still blocked and require correction/republication; this remains intentional until an automated correction workflow is explicitly implemented and proven.
+- No DB schema change and no ENV/config key was added.

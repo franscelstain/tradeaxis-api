@@ -123,3 +123,21 @@ Contoh reason code valid:
 - Tidak ada current publication tanpa sealed publication dan sealed run.
 - Fallback selalu deterministic dan hanya ke previous readable publication.
 - Consumer read path tetap pointer-first dan fail-safe.
+
+---
+
+## Amendment 2026-05-27 - Reprocess does not imply readability
+
+Indicator/eligibility reprocess execution after historical bar mutation is not sufficient to make a date `READABLE`.
+
+Rules:
+- `indicator_reprocess_execution_state=EXECUTED` means derived artifacts were recomputed, not that publication is readable.
+- `publication_reprocess_state=NOOP` means no pointer/republication action occurred.
+- `publication_reprocess_state=BLOCKED_REQUIRES_CORRECTION` must remain `NOT_READABLE` for any replacement candidate until correction/reseal/finalize succeeds.
+- Coverage and publishability gates remain mandatory before any readable publication can be created or switched current.
+
+## Amendment 2026-05-27 - REPUBLISHED state boundary
+
+`publication_reprocess_state=REPUBLISHED` is valid only when the affected date was not already readable/current and the normal promote flow produced `SUCCESS + READABLE + SEALED + coverage PASS`.
+
+If the affected date was already readable/current before the historical change, `REPUBLISHED` must not be set by the impact path. The state must remain blocked for correction/republication.

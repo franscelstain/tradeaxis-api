@@ -15,6 +15,8 @@ class EodArtifactRepository
                 $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_bars');
             }
 
+            $mutationSummary = $this->buildBarsMutationSummary($tradeDate, $publicationId, $validRows, $useHistory);
+
             if ($useHistory) {
                 DB::table('eod_bars_history')
                     ->where('trade_date', $tradeDate)
@@ -38,7 +40,83 @@ class EodArtifactRepository
             if (! empty($invalidRows)) {
                 DB::table('eod_invalid_bars')->insert($invalidRows);
             }
+
+            return $mutationSummary;
         });
+    }
+
+    public function upsertBarsPartial($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows = [], $useHistory = false)
+    {
+        return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory) {
+            if (! $useHistory) {
+                $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_bars');
+            }
+
+            $mutationSummary = $this->buildBarsMutationSummary($tradeDate, $publicationId, $validRows, $useHistory, false);
+            $table = $useHistory ? 'eod_bars_history' : 'eod_bars';
+            $writeTickerIds = array_fill_keys(array_merge(
+                (array) ($mutationSummary['inserted_ticker_ids'] ?? []),
+                (array) ($mutationSummary['updated_ticker_ids'] ?? [])
+            ), true);
+
+            foreach ($validRows as $row) {
+                if (! isset($row['ticker_id'])) {
+                    continue;
+                }
+
+                if (! isset($writeTickerIds[(int) $row['ticker_id']])) {
+                    continue;
+                }
+
+                $keys = [
+                    'trade_date' => $tradeDate,
+                    'ticker_id' => (int) $row['ticker_id'],
+                ];
+
+                if ($useHistory) {
+                    $keys['publication_id'] = $publicationId;
+                }
+
+                DB::table($table)->updateOrInsert($keys, [
+                    'publication_id' => $publicationId,
+                    'open' => $row['open'],
+                    'high' => $row['high'],
+                    'low' => $row['low'],
+                    'close' => $row['close'],
+                    'volume' => $row['volume'],
+                    'adj_close' => $row['adj_close'],
+                    'source' => $row['source'],
+                    'run_id' => $runId,
+                    'created_at' => $row['created_at'],
+                ]);
+            }
+
+            DB::table('eod_invalid_bars')
+                ->where('trade_date', $tradeDate)
+                ->where('run_id', $runId)
+                ->delete();
+
+            if (! empty($invalidRows)) {
+                DB::table('eod_invalid_bars')->insert($invalidRows);
+            }
+
+            return $mutationSummary;
+        });
+    }
+
+    public function loadAvailableBarTradeDatesOnOrAfter($startDate)
+    {
+        return DB::table('eod_bars')
+            ->select('trade_date')
+            ->where('trade_date', '>=', $startDate)
+            ->distinct()
+            ->orderBy('trade_date')
+            ->pluck('trade_date')
+            ->map(function ($value) {
+                return (string) $value;
+            })
+            ->values()
+            ->all();
     }
 
 
@@ -472,5 +550,101 @@ class EodArtifactRepository
         return $query
             ->orderBy('trade_date')
             ->orderBy('ticker_id');
+    }
+
+    private function buildBarsMutationSummary($tradeDate, $publicationId, array $validRows, $useHistory, $includeRemoved = true)
+    {
+        $table = $useHistory ? 'eod_bars_history' : 'eod_bars';
+        $query = DB::table($table)->where('trade_date', $tradeDate);
+
+        if ($useHistory) {
+            $query->where('publication_id', $publicationId);
+        }
+
+        $existing = [];
+        foreach ($this->applyStableArtifactOrder($query)->get() as $row) {
+            $row = (array) $row;
+            $existing[(int) $row['ticker_id']] = $row;
+        }
+
+        $incoming = [];
+        foreach ($validRows as $row) {
+            if (! isset($row['ticker_id'])) {
+                continue;
+            }
+
+            $incoming[(int) $row['ticker_id']] = $row;
+        }
+
+        $inserted = [];
+        $updated = [];
+        $unchanged = [];
+
+        foreach ($incoming as $tickerId => $row) {
+            if (! isset($existing[$tickerId])) {
+                $inserted[] = $tickerId;
+                continue;
+            }
+
+            if ($this->canonicalBarHash($existing[$tickerId]) !== $this->canonicalBarHash($row)) {
+                $updated[] = $tickerId;
+                continue;
+            }
+
+            $unchanged[] = $tickerId;
+        }
+
+        $removed = $includeRemoved ? array_values(array_diff(array_keys($existing), array_keys($incoming))) : [];
+        $changedTickerIds = array_values(array_unique(array_merge($inserted, $updated, $removed)));
+        sort($changedTickerIds);
+        sort($inserted);
+        sort($updated);
+        sort($unchanged);
+        sort($removed);
+
+        $changedTradeDates = $changedTickerIds === [] ? [] : [(string) $tradeDate];
+
+        return [
+            'changed_bar_count' => count($changedTickerIds),
+            'inserted_bar_count' => count($inserted),
+            'updated_bar_count' => count($updated),
+            'unchanged_bar_count' => count($unchanged),
+            'removed_bar_count' => count($removed),
+            'changed_ticker_count' => count($changedTickerIds),
+            'changed_trade_date_count' => count($changedTradeDates),
+            'changed_ticker_ids' => $changedTickerIds,
+            'inserted_ticker_ids' => $inserted,
+            'updated_ticker_ids' => $updated,
+            'removed_ticker_ids' => $removed,
+            'changed_trade_dates' => $changedTradeDates,
+            'storage_target' => $table,
+            'trade_date' => (string) $tradeDate,
+            'publication_id' => $publicationId !== null ? (int) $publicationId : null,
+            'mutation_detection_version' => 'eod_bar_mutation_v1',
+        ];
+    }
+
+    private function canonicalBarHash(array $row)
+    {
+        return hash('sha256', json_encode([
+            'open' => $this->normalizeBarNumber($row['open'] ?? null),
+            'high' => $this->normalizeBarNumber($row['high'] ?? null),
+            'low' => $this->normalizeBarNumber($row['low'] ?? null),
+            'close' => $this->normalizeBarNumber($row['close'] ?? null),
+            'volume' => $this->normalizeBarNumber($row['volume'] ?? null),
+            'adj_close' => $this->normalizeBarNumber($row['adj_close'] ?? null),
+            'source' => strtoupper((string) ($row['source'] ?? '')),
+        ]));
+    }
+
+    private function normalizeBarNumber($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $normalized = rtrim(rtrim(number_format((float) $value, 10, '.', ''), '0'), '.');
+
+        return $normalized === '-0' ? '0' : $normalized;
     }
 }

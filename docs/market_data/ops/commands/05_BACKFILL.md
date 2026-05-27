@@ -134,3 +134,46 @@ This cache is intentionally slim:
 - does not store raw provider payloads
 
 `source_acquisition_checkpoint.json` remains the full retry identity artifact. `source_acquisition_diagnostics.json.reason_code` must match the explicit summary reason or the deterministic failed-checkpoint reason chosen from the retry scope.
+
+## Out-of-order import impact output
+Backfill and lifecycle commands may import dates that are older than already available or already readable dates.
+
+When EOD bars are written, command output and summary artifacts must expose:
+- `bar_mutation_changed_count`
+- `bar_mutation_inserted_count`
+- `bar_mutation_updated_count`
+- `bar_mutation_unchanged_count`
+- `affected_ticker_count`
+- `affected_trade_date_count`
+- `affected_start_date`
+- `affected_end_date`
+- `max_indicator_dependency_trading_days`
+- `indicator_reprocess_state`
+- `publication_impact_state`
+
+Important states:
+- `NOOP_UNCHANGED_BARS`: source rows were applied idempotently and did not change canonical bars.
+- `REPROCESS_REQUIRED_REQUESTED_DATES_ONLY`: changed bars affect only the imported/requested date set currently visible to the resolver.
+- `REPROCESS_REQUIRED_WITH_DOWNSTREAM_IMPACT`: changed historical bars may affect later indicator dates and downstream derived artifacts must be handled before they are trusted.
+- `REQUIRES_REPUBLICATION`: at least one affected date is already readable and must go through correction/reseal/republication before consumer-visible replacement.
+
+`--resume --only-failed` must not fake apply recovered ticker rows by replacing an entire date artifact with a partial retry result. A successful recovered-checkpoint apply requires a dedicated partial-row recovery/correction path before derived artifacts are recomputed.
+
+## Amendment 2026-05-27 - Recovered apply and execution summary
+`--resume --only-failed` retry success now proceeds beyond source acquisition when recovered rows are present.
+
+Expected recovery output includes:
+- `recovered_row_apply_state`
+- `recovered_row_count`
+- `bar_mutation_changed_count`
+- `indicator_reprocess_execution_state`
+- `indicator_reprocessed_trade_date_count`
+- `eligibility_reprocess_execution_state`
+- `publication_reprocess_state`
+
+Recovered rows are partial-upserted by ticker/date. Existing ticker rows on the same date must remain present. If the recovered rows are unchanged, the command reports `UNCHANGED`/`NOOP_UNCHANGED_BARS` and does not recompute unnecessarily. If affected dates are already readable, the command reports `BLOCKED_REQUIRES_CORRECTION` instead of silently mutating current publications.
+
+## Amendment 2026-05-27 - Hash/seal/finalize for affected non-readable dates
+For `market-data:backfill:lifecycle`, changed historical bars that affect downstream non-readable dates may now continue from `PENDING_PROMOTE` into the existing promote flow. The promote flow recomputes coverage/indicators/eligibility as needed, then hashes, seals, finalizes, and validates readability.
+
+When `--with-evidence` or `--with-replay` is enabled, lifecycle publication reprocess may export evidence and replay proof for affected non-readable dates that were republished. Already-readable affected dates remain correction-blocked and are not silently republished.

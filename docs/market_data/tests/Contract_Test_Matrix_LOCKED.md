@@ -120,3 +120,17 @@ Any implementation claiming coverage-gate compliance must prove at minimum:
 - threshold is explicit and audit-visible
 - zero-universe path does not auto-pass
 - requested date never becomes readable when coverage gate = `FAIL` or `NOT_EVALUABLE`
+
+---
+
+## Out-of-order import execution proof minimums (LOCKED)
+
+Any implementation claiming out-of-order import safety must prove at minimum:
+- recovered checkpoint retry success applies rows by partial ticker/date upsert, not full-date replacement
+- unrelated tickers on the same trade date remain present after recovered apply
+- unchanged recovered rows are NOOP and do not recompute derived artifacts
+- changed historical rows resolve downstream affected dates in trading days
+- affected non-readable dates execute indicator recompute
+- affected non-readable dates execute eligibility rebuild
+- affected readable dates block or run correction/republication; silent live mutation is forbidden
+- command/evidence output contains execution summaries, not only detection summaries

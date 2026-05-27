@@ -1043,7 +1043,117 @@ class MarketDataEvidenceExportService
             'updated_at' => $this->field($run, 'updated_at'),
             'evidence_export_created_at' => $this->evidenceCreatedAtFromRecord($run),
             'evidence_export_timestamp_source' => $this->evidenceTimestampSourceFromRecord($run),
+        ] + $this->mutationImpactPayloadFromNotes($notesMap);
+    }
+
+    private function mutationImpactPayloadFromNotes(array $notesMap)
+    {
+        $fields = [
+            'bar_mutation_changed_count',
+            'bar_mutation_inserted_count',
+            'bar_mutation_updated_count',
+            'bar_mutation_unchanged_count',
+            'bar_mutation_removed_count',
+            'affected_ticker_count',
+            'affected_trade_date_count',
+            'affected_trade_dates',
+            'affected_start_date',
+            'affected_end_date',
+            'max_indicator_dependency_trading_days',
+            'indicator_reprocess_state',
+            'publication_impact_state',
+            'readable_publication_impacted',
+            'republication_required',
+            'publication_impact_reason_code',
+            'indicator_reprocess_execution_state',
+            'indicator_reprocessed_trade_date_count',
+            'indicator_reprocessed_trade_dates',
+            'indicator_reprocess_scope',
+            'indicator_reprocess_blocked_reason_code',
+            'indicator_reprocess_failure_reason_code',
+            'eligibility_reprocess_execution_state',
+            'eligibility_reprocessed_trade_date_count',
+            'eligibility_reprocessed_trade_dates',
+            'eligibility_reprocess_blocked_reason_code',
+            'eligibility_reprocess_failure_reason_code',
+            'publication_reprocess_state',
+            'publication_reprocess_republished_trade_date_count',
+            'publication_reprocess_republished_trade_dates',
+            'publication_reprocess_candidate_trade_dates',
+            'publication_reprocess_blocked_trade_dates',
+            'publication_reprocess_failed_trade_dates',
+            'publication_reprocess_blocked_reason_code',
+            'publication_reprocess_failure_reason_code',
+            'recovered_row_apply_state',
+            'recovered_row_count',
+            'resume_recovered_apply_state',
+            'resume_recovered_row_count',
         ];
+
+        $payload = [];
+        foreach ($fields as $field) {
+            if (array_key_exists($field, $notesMap) && $notesMap[$field] !== '') {
+                $payload[$field] = $notesMap[$field];
+            }
+        }
+
+        if ($payload === []) {
+            return [];
+        }
+
+        $payload['bar_mutation_summary'] = [
+            'changed_bar_count' => (int) ($payload['bar_mutation_changed_count'] ?? 0),
+            'inserted_bar_count' => (int) ($payload['bar_mutation_inserted_count'] ?? 0),
+            'updated_bar_count' => (int) ($payload['bar_mutation_updated_count'] ?? 0),
+            'unchanged_bar_count' => (int) ($payload['bar_mutation_unchanged_count'] ?? 0),
+            'removed_bar_count' => (int) ($payload['bar_mutation_removed_count'] ?? 0),
+        ];
+        $payload['indicator_impact_summary'] = [
+            'affected_ticker_count' => (int) ($payload['affected_ticker_count'] ?? 0),
+            'affected_trade_date_count' => (int) ($payload['affected_trade_date_count'] ?? 0),
+            'affected_trade_dates' => $this->parseCsvList($payload['affected_trade_dates'] ?? ''),
+            'affected_start_date' => $payload['affected_start_date'] ?? null,
+            'affected_end_date' => $payload['affected_end_date'] ?? null,
+            'max_dependency_trading_days' => (int) ($payload['max_indicator_dependency_trading_days'] ?? 0),
+            'indicator_reprocess_state' => $payload['indicator_reprocess_state'] ?? null,
+        ];
+        $payload['publication_impact_summary'] = [
+            'readable_publication_impacted' => ($payload['readable_publication_impacted'] ?? 'false') === 'true',
+            'republication_required' => ($payload['republication_required'] ?? 'false') === 'true',
+            'publication_impact_state' => $payload['publication_impact_state'] ?? 'NOOP',
+            'reason_code' => $payload['publication_impact_reason_code'] ?? null,
+        ];
+        $payload['indicator_reprocess_execution_summary'] = [
+            'execution_state' => $payload['indicator_reprocess_execution_state'] ?? 'NOOP',
+            'reprocessed_trade_date_count' => (int) ($payload['indicator_reprocessed_trade_date_count'] ?? 0),
+            'reprocessed_trade_dates' => $this->parseCsvList($payload['indicator_reprocessed_trade_dates'] ?? ''),
+            'reprocess_scope' => $payload['indicator_reprocess_scope'] ?? 'NONE',
+            'blocked_reason_code' => $payload['indicator_reprocess_blocked_reason_code'] ?? null,
+            'failure_reason_code' => $payload['indicator_reprocess_failure_reason_code'] ?? null,
+        ];
+        $payload['eligibility_reprocess_execution_summary'] = [
+            'execution_state' => $payload['eligibility_reprocess_execution_state'] ?? 'NOOP',
+            'reprocessed_trade_date_count' => (int) ($payload['eligibility_reprocessed_trade_date_count'] ?? 0),
+            'reprocessed_trade_dates' => $this->parseCsvList($payload['eligibility_reprocessed_trade_dates'] ?? ''),
+            'blocked_reason_code' => $payload['eligibility_reprocess_blocked_reason_code'] ?? null,
+            'failure_reason_code' => $payload['eligibility_reprocess_failure_reason_code'] ?? null,
+        ];
+        $payload['publication_reprocess_summary'] = [
+            'execution_state' => $payload['publication_reprocess_state'] ?? 'NOOP',
+            'republished_trade_date_count' => (int) ($payload['publication_reprocess_republished_trade_date_count'] ?? 0),
+            'republished_trade_dates' => $this->parseCsvList($payload['publication_reprocess_republished_trade_dates'] ?? ''),
+            'candidate_trade_dates' => $this->parseCsvList($payload['publication_reprocess_candidate_trade_dates'] ?? ''),
+            'blocked_trade_dates' => $this->parseCsvList($payload['publication_reprocess_blocked_trade_dates'] ?? ''),
+            'failed_trade_dates' => $this->parseCsvList($payload['publication_reprocess_failed_trade_dates'] ?? ''),
+            'blocked_reason_code' => $payload['publication_reprocess_blocked_reason_code'] ?? null,
+            'failure_reason_code' => $payload['publication_reprocess_failure_reason_code'] ?? null,
+        ];
+        $payload['resume_recovered_apply_summary'] = [
+            'recovered_row_count' => (int) ($payload['resume_recovered_row_count'] ?? $payload['recovered_row_count'] ?? 0),
+            'apply_state' => $payload['resume_recovered_apply_state'] ?? $payload['recovered_row_apply_state'] ?? 'NOOP',
+        ];
+
+        return $payload;
     }
 
 
@@ -1474,6 +1584,23 @@ class MarketDataEvidenceExportService
         }
 
         return $parsed;
+    }
+
+    private function parseCsvList($value)
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return [];
+        }
+
+        $items = array_values(array_unique(array_filter(array_map(function ($item) {
+            return trim((string) $item);
+        }, explode(',', (string) $value)), function ($item) {
+            return $item !== '';
+        })));
+
+        sort($items);
+
+        return $items;
     }
 
     private function buildReplayResult($metric)

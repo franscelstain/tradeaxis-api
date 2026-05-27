@@ -16,3 +16,28 @@ If any mandatory baseline indicator is NULL because required history is unavaila
 - `invalid_reason_code=IND_INSUFFICIENT_HISTORY`
 - `eod_eligibility.eligible=0`
 - `reason_code=ELIG_INSUFFICIENT_HISTORY`
+
+---
+
+## Amendment 2026-05-26 - Dependency horizon registry
+
+The out-of-order import impact resolver must account for the active baseline indicator horizon in trading days.
+
+Baseline dependency requirements:
+- `dv20_idr`: 20
+- `atr14_pct`: 15 conservative dependency days because TR needs prior close
+- `vol_ratio`: 21 because it uses current day volume and the prior 20 trading days
+- `roc20`: 21 because it uses D and D[-20]
+- `hh20`: 20
+- `ma20`: 20
+- `ma50`: 50
+
+The current maximum dependency horizon is `50` trading days. This is the source-of-truth floor used by the resolver unless a future registry version introduces a longer indicator dependency.
+
+---
+
+## Amendment 2026-05-27 - Reprocess executor registry note
+
+The impact reprocess executor uses the same baseline dependency horizon resolved from this registry/config contract. It may recompute full affected dates even when only a subset of tickers changed. This is an intentional conservative execution scope until a per-ticker indicator writer is introduced.
+
+The executor must not mark readable affected dates as recomputed in live current artifacts; those dates remain correction/republication cases.

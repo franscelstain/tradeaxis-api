@@ -48,3 +48,25 @@ Invalid correction lifecycle state must fail safe: no pointer switch, no candida
 
 - Unchanged correction proof: `correction_id=3`, run `8`, baseline publication `5` / run `6`, discarded candidate publication `7`, `candidate_publication_switch=false`, replay `10` `MATCH` / `PASS`.
 - Failed correction proof: `correction_id=4`, candidate run `11`, status `FAILED`, failure reason `RUN_SOURCE_MANUAL_FILE_NOT_FOUND`, no replacement publication, baseline pointer publication `5` preserved.
+
+---
+
+## Amendment 2026-05-26 - Affected readable publication impact
+
+Historical EOD bar mutations can affect later rolling indicators, eligibility, hashes, seals, and publication proof.
+
+If mutation impact resolution finds that an affected downstream date already has a current readable publication, the system must not update that publication's live artifacts silently. It must expose the impact as `publication_impact_state=REQUIRES_REPUBLICATION` with reason `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`, then require the correction/reseal/republication lifecycle before any pointer switch or consumer-visible replacement.
+
+If recomputed derived artifacts are unchanged, the correction lifecycle may preserve the current publication according to the unchanged-artifact rule. If they changed, the changed/reseal rule applies.
+
+---
+
+## Amendment 2026-05-27 - Safe block during impact execution
+
+Affected-date execution may recompute indicators and eligibility only for dates that are not already current readable publications. If an affected date is readable, execution must stop for that date and emit:
+
+- `publication_reprocess_summary.execution_state=BLOCKED_REQUIRES_CORRECTION`
+- `blocked_reason_code=AFFECTED_PUBLICATION_REQUIRES_CORRECTION`
+- affected blocked trade dates
+
+This blocked state is a valid safety outcome, not a publication success. It must not switch pointers, mutate readable live artifacts, export replacement replay proof, or claim automatic republication.
