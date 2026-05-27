@@ -97,6 +97,8 @@ class OutOfOrderImportImpactStaticGuardTest extends TestCase
         $this->assertStringContainsString('$this->eligibility->build', $executor);
         $this->assertStringContainsString('IMPACT_REPROCESS_EXECUTED', $executor);
         $this->assertStringContainsString('PENDING_PROMOTE', $executor);
+        $this->assertStringContainsString('PENDING_READABLE_CORRECTION', $executor);
+        $this->assertStringContainsString('readable_correction_candidate_trade_dates', $executor);
         $this->assertStringContainsString('BLOCKED_REQUIRES_CORRECTION', $executor);
         $this->assertStringContainsString('AFFECTED_PUBLICATION_REQUIRES_CORRECTION', $executor);
         $this->assertStringContainsString("\$reprocessedDates === [] ? 'NONE' : 'FULL_DATE'", $executor);
@@ -117,6 +119,9 @@ class OutOfOrderImportImpactStaticGuardTest extends TestCase
         $this->assertStringContainsString('PENDING_PROMOTE', $publicationReprocess);
         $this->assertStringContainsString('executeReadablePublicationAutoCorrection', $orchestrator);
         $this->assertStringContainsString('correction_current', $publicationReprocess);
+        $this->assertStringContainsString('AUTOMATED_READABLE_CORRECTION', $publicationReprocess);
+        $this->assertStringContainsString('publication_reprocess_correction_ids', $orchestrator);
+        $this->assertStringContainsString('publication_reprocess_republication_mode', $orchestrator);
         $this->assertStringContainsString('AFFECTED_PUBLICATION_REQUIRES_CORRECTION', $publicationReprocess);
         $this->assertStringContainsString('completeHash', $promoteSingleDay);
         $this->assertStringContainsString('completeSeal', $promoteSingleDay);
@@ -138,6 +143,9 @@ class OutOfOrderImportImpactStaticGuardTest extends TestCase
             'publication_reprocess_republished_trade_date_count',
             'publication_reprocess_candidate_trade_dates',
             'publication_reprocess_blocked_reason_code',
+            'publication_reprocess_republication_mode',
+            'publication_reprocess_correction_ids',
+            'publication_reprocess_correction_id',
             'recovered_row_apply_state',
             'recovered_row_count',
         ] as $needle) {

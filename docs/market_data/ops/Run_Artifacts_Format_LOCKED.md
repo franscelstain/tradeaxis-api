@@ -484,12 +484,14 @@ When affected non-readable downstream dates are promoted through the lifecycle/f
     "evidence_exported_count": 1,
     "fixtures_generated_count": 1,
     "replay_verified_count": 1,
-    "republication_mode": "AUTOMATED_NON_READABLE_DATES"
+    "republication_mode": "AUTOMATED_NON_READABLE_DATES",
+    "correction_ids": [],
+    "correction_id": null
   }
 }
 ```
 
-`REPUBLISHED` here is only valid for affected dates that were not already current/readable and that passed the existing promote flow. Already-readable affected dates must use `BLOCKED_REQUIRES_CORRECTION` with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION` until a correction lifecycle produces a replacement publication.
+`REPUBLISHED` here is valid only after the existing promote flow or correction-current flow produces sealed/readable replacement publications. Already-readable affected dates must carry `AUTOMATED_READABLE_CORRECTION` or `AUTOMATED_MIXED_IMPACT_REPUBLICATION` plus correction id fields; otherwise they remain blocked/failed without pointer mutation.
 
 
 ## Amendment 2026-05-27 - Final publication reprocess execution proof fields
@@ -500,4 +502,4 @@ Publication reprocess artifacts may now represent automated correction-current r
 - `AUTOMATED_READABLE_CORRECTION` for already-readable affected dates promoted through correction-current mode;
 - `BLOCKED_REQUIRES_CORRECTION` when the correction-current path cannot complete safely.
 
-Final runtime proof: `BackfillLifecyclePublicationReprocess` OK (3 tests, 12 assertions), `OutOfOrderImportImpact` OK (7 tests, 96 assertions), `Backfill` OK (48 tests, 326 assertions), and full MarketData suite OK (582 tests, 8678 assertions).
+Final runtime proof: `BackfillLifecyclePublicationReprocess` OK (4 tests, 19 assertions), `OutOfOrderImportImpact` OK (7 tests, 107 assertions), `Backfill` OK (49 tests, 339 assertions), and full MarketData suite OK (585 tests, 8713 assertions).

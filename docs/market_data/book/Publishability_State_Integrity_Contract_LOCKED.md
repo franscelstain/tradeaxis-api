@@ -133,11 +133,11 @@ Indicator/eligibility reprocess execution after historical bar mutation is not s
 Rules:
 - `indicator_reprocess_execution_state=EXECUTED` means derived artifacts were recomputed, not that publication is readable.
 - `publication_reprocess_state=NOOP` means no pointer/republication action occurred.
-- `publication_reprocess_state=BLOCKED_REQUIRES_CORRECTION` must remain `NOT_READABLE` for any replacement candidate until correction/reseal/finalize succeeds.
+- `publication_reprocess_state=BLOCKED_REQUIRES_CORRECTION` or failed correction-current promotion must remain `NOT_READABLE` for any replacement candidate until correction/reseal/finalize succeeds.
 - Coverage and publishability gates remain mandatory before any readable publication can be created or switched current.
 
 ## Amendment 2026-05-27 - REPUBLISHED state boundary
 
-`publication_reprocess_state=REPUBLISHED` is valid only when the affected date was not already readable/current and the normal promote flow produced `SUCCESS + READABLE + SEALED + coverage PASS`.
+`publication_reprocess_state=REPUBLISHED` is valid only when the affected date produced `SUCCESS + READABLE + SEALED + coverage PASS` through the correct publication path.
 
-If the affected date was already readable/current before the historical change, `REPUBLISHED` must not be set by the impact path. The state must remain blocked for correction/republication.
+If the affected date was already readable/current before the historical change, `REPUBLISHED` requires correction-current mode and correction id lineage. Without that proof, the state must remain blocked/failed and the current pointer must remain unchanged.

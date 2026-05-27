@@ -1698,6 +1698,111 @@ class MarketDataPipelineServiceTest extends TestCase
         $this->assertStringContainsString('publication_reprocess_state=REPUBLISHED', (string) $result->notes);
     }
 
+    public function test_run_daily_auto_corrects_readable_and_promotes_non_readable_downstream_impact_dates_after_primary_finalize(): void
+    {
+        [$service, $runs, $publications, $corrections] = $this->makeService();
+
+        $originRun = $this->makeRun(811);
+        $originRun->trade_date_requested = '2026-05-01';
+        $originRun->source = 'api';
+        $originRun->terminal_status = 'SUCCESS';
+        $originRun->publishability_state = 'READABLE';
+        $originRun->notes = implode('; ', [
+            'publication_reprocess_state=PENDING_PROMOTE',
+            'publication_reprocess_candidate_trade_dates=2026-05-01,2026-05-08,2026-05-09',
+            'publication_reprocess_republication_mode=PENDING_MIXED_IMPACT_REPUBLICATION',
+            'indicator_reprocessed_trade_dates=2026-05-08',
+        ]);
+
+        $nonReadableSeed = $this->makeRun(812, '1.0000', null);
+        $nonReadableSeed->trade_date_requested = '2026-05-08';
+        $nonReadableSeed->source = 'api';
+        $nonReadableSeed->terminal_status = null;
+        $nonReadableSeed->publishability_state = 'NOT_READABLE';
+
+        $readableSeed = $this->makeRun(813);
+        $readableSeed->trade_date_requested = '2026-05-09';
+        $readableSeed->source = 'api';
+        $readableSeed->terminal_status = 'SUCCESS';
+        $readableSeed->publishability_state = 'READABLE';
+
+        $promotedNonReadable = $this->makeRun(814);
+        $promotedNonReadable->trade_date_requested = '2026-05-08';
+        $promotedNonReadable->source = 'api';
+        $promotedNonReadable->terminal_status = 'SUCCESS';
+        $promotedNonReadable->publishability_state = 'READABLE';
+        $promotedNonReadable->publication_id = 9014;
+        $promotedNonReadable->publication_version = 1;
+
+        $correctedReadable = $this->makeRun(815);
+        $correctedReadable->trade_date_requested = '2026-05-09';
+        $correctedReadable->source = 'api';
+        $correctedReadable->terminal_status = 'SUCCESS';
+        $correctedReadable->publishability_state = 'READABLE';
+        $correctedReadable->publication_id = 9015;
+        $correctedReadable->publication_version = 2;
+
+        $service->shouldReceive('completeIngest')->once()->andReturn($originRun);
+        $service->shouldReceive('completeIndicators')->once()->andReturn($originRun);
+        $service->shouldReceive('completeEligibility')->once()->andReturn($originRun);
+        $service->shouldReceive('completeHash')->once()->andReturn($originRun);
+        $service->shouldReceive('completeSeal')->once()->andReturn($originRun);
+        $service->shouldReceive('completeFinalize')->once()->andReturn($originRun);
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-08', 'api')
+            ->andReturn($nonReadableSeed);
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-09', 'api')
+            ->andReturn($readableSeed);
+        $service->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-05-08', 'api', 812, null, 'full_publish')
+            ->andReturn($promotedNonReadable);
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-05-09')
+            ->andReturn((object) ['publication_id' => 9013, 'run_id' => 813]);
+        $corrections->shouldReceive('createRequest')
+            ->once()
+            ->with('2026-05-09', 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION', m::type('string'), 'system', 9013, 813)
+            ->andReturn((object) ['correction_id' => 61]);
+        $corrections->shouldReceive('approve')
+            ->once()
+            ->with(61, 'system')
+            ->andReturn((object) ['correction_id' => 61, 'status' => 'APPROVED']);
+        $service->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-05-09', 'api', 813, 61, 'correction_current')
+            ->andReturn($correctedReadable);
+        $runs->shouldReceive('updateTelemetry')
+            ->once()
+            ->with($originRun, m::on(function ($telemetry) {
+                $notes = (string) ($telemetry['notes'] ?? '');
+
+                return strpos($notes, 'publication_reprocess_state=REPUBLISHED') !== false
+                    && strpos($notes, 'publication_reprocess_republished_trade_dates=2026-05-08,2026-05-09') !== false
+                    && strpos($notes, 'publication_reprocess_republication_mode=AUTOMATED_MIXED_IMPACT_REPUBLICATION') !== false
+                    && strpos($notes, 'publication_reprocess_correction_ids=61') !== false
+                    && strpos($notes, 'publication_reprocess_correction_id=61') !== false;
+            }))
+            ->andReturnUsing(function ($run, $telemetry) {
+                foreach ($telemetry as $key => $value) {
+                    $run->{$key} = $value;
+                }
+
+                return $run;
+            });
+        $runs->shouldReceive('appendEvent')->once();
+
+        $result = $service->runDaily('2026-05-01', 'api');
+
+        $this->assertSame($originRun, $result);
+        $this->assertStringContainsString('publication_reprocess_republication_mode=AUTOMATED_MIXED_IMPACT_REPUBLICATION', (string) $result->notes);
+        $this->assertStringContainsString('publication_reprocess_correction_id=61', (string) $result->notes);
+    }
+
     private function makeService(): array
     {
         $runs = m::mock(EodRunRepository::class);

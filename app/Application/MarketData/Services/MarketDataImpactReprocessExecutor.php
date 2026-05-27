@@ -39,9 +39,12 @@ class MarketDataImpactReprocessExecutor
 
         $readableDates = array_fill_keys(array_map('strval', (array) ($publicationImpactSummary['impacted_readable_trade_dates'] ?? [])), true);
         $reprocessedDates = [];
-        $blockedDates = [];
+        $readableCorrectionCandidateDates = [];
+        $indicatorBlockedDates = [];
+        $publicationBlockedDates = [];
         $failedDates = [];
-        $blockedReason = null;
+        $indicatorBlockedReason = null;
+        $publicationBlockedReason = null;
         $failureReason = null;
 
         foreach ($affectedDates as $tradeDate) {
@@ -52,8 +55,9 @@ class MarketDataImpactReprocessExecutor
                 : $this->publications->findCurrentPublicationForTradeDate($tradeDate);
 
             if ($currentPublication) {
-                $blockedDates[] = $tradeDate;
-                $blockedReason = 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
+                $readableCorrectionCandidateDates[] = $tradeDate;
+                $indicatorBlockedDates[] = $tradeDate;
+                $indicatorBlockedReason = 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
                 continue;
             }
 
@@ -62,8 +66,10 @@ class MarketDataImpactReprocessExecutor
                 : $this->runs->findLatestForRequestedDate($tradeDate, $sourceMode);
 
             if (! $run) {
-                $blockedDates[] = $tradeDate;
-                $blockedReason = $blockedReason ?: 'AFFECTED_DATE_RUN_NOT_FOUND';
+                $indicatorBlockedDates[] = $tradeDate;
+                $publicationBlockedDates[] = $tradeDate;
+                $indicatorBlockedReason = $indicatorBlockedReason ?: 'AFFECTED_DATE_RUN_NOT_FOUND';
+                $publicationBlockedReason = $publicationBlockedReason ?: 'AFFECTED_DATE_RUN_NOT_FOUND';
                 continue;
             }
 
@@ -77,19 +83,20 @@ class MarketDataImpactReprocessExecutor
             }
         }
 
-        $indicatorState = $this->executionState($reprocessedDates, $blockedDates, $failedDates);
+        $indicatorState = $this->executionState($reprocessedDates, $indicatorBlockedDates, $failedDates);
         $eligibilityState = $indicatorState;
+        $publicationCandidateDates = $this->sortedUniqueList(array_merge($reprocessedDates, $readableCorrectionCandidateDates));
         $publicationState = 'NOOP';
         $republicationMode = 'NOT_REQUIRED';
         if ($failedDates !== []) {
             $publicationState = 'FAILED';
             $republicationMode = 'FAILED_BEFORE_PROMOTE';
-        } elseif ($blockedDates !== []) {
+        } elseif ($publicationCandidateDates !== []) {
+            $publicationState = 'PENDING_PROMOTE';
+            $republicationMode = $this->pendingRepublicationMode($reprocessedDates, $readableCorrectionCandidateDates);
+        } elseif ($publicationBlockedDates !== []) {
             $publicationState = 'BLOCKED_REQUIRES_CORRECTION';
             $republicationMode = 'MANUAL_CORRECTION_REQUIRED';
-        } elseif ($reprocessedDates !== []) {
-            $publicationState = 'PENDING_PROMOTE';
-            $republicationMode = 'PENDING_LIFECYCLE_PROMOTE';
         }
 
         $summary = [
@@ -98,30 +105,33 @@ class MarketDataImpactReprocessExecutor
                 'reprocessed_trade_date_count' => count($reprocessedDates),
                 'reprocessed_trade_dates' => $reprocessedDates,
                 'reprocess_scope' => $reprocessedDates === [] ? 'NONE' : 'FULL_DATE',
-                'blocked_trade_dates' => $blockedDates,
+                'blocked_trade_dates' => $this->sortedUniqueList($indicatorBlockedDates),
                 'failed_trade_dates' => $failedDates,
-                'blocked_reason_code' => $blockedReason,
+                'blocked_reason_code' => $indicatorBlockedReason,
                 'failure_reason_code' => $failureReason,
             ],
             'eligibility_reprocess_execution_summary' => [
                 'execution_state' => $eligibilityState,
                 'reprocessed_trade_date_count' => count($reprocessedDates),
                 'reprocessed_trade_dates' => $reprocessedDates,
-                'blocked_trade_dates' => $blockedDates,
+                'blocked_trade_dates' => $this->sortedUniqueList($indicatorBlockedDates),
                 'failed_trade_dates' => $failedDates,
-                'blocked_reason_code' => $blockedReason,
+                'blocked_reason_code' => $indicatorBlockedReason,
                 'failure_reason_code' => $failureReason,
             ],
             'publication_reprocess_summary' => [
                 'execution_state' => $publicationState,
                 'republished_trade_date_count' => 0,
                 'republished_trade_dates' => [],
-                'candidate_trade_dates' => $reprocessedDates,
-                'blocked_trade_dates' => $blockedDates,
+                'candidate_trade_dates' => $publicationCandidateDates,
+                'readable_correction_candidate_trade_dates' => $this->sortedUniqueList($readableCorrectionCandidateDates),
+                'blocked_trade_dates' => $this->sortedUniqueList($publicationBlockedDates),
                 'failed_trade_dates' => $failedDates,
-                'blocked_reason_code' => $blockedReason,
+                'blocked_reason_code' => $publicationBlockedReason,
                 'failure_reason_code' => $failureReason,
                 'republication_mode' => $republicationMode,
+                'correction_ids' => [],
+                'correction_id' => null,
             ],
         ];
 
@@ -192,6 +202,29 @@ class MarketDataImpactReprocessExecutor
         }
 
         return $reprocessedDates === [] ? 'NOOP' : 'EXECUTED';
+    }
+
+    private function pendingRepublicationMode(array $nonReadableDates, array $readableCorrectionDates)
+    {
+        if ($nonReadableDates !== [] && $readableCorrectionDates !== []) {
+            return 'PENDING_MIXED_IMPACT_REPUBLICATION';
+        }
+
+        if ($readableCorrectionDates !== []) {
+            return 'PENDING_READABLE_CORRECTION';
+        }
+
+        return 'PENDING_LIFECYCLE_PROMOTE';
+    }
+
+    private function sortedUniqueList(array $values)
+    {
+        $values = array_values(array_unique(array_filter(array_map('strval', $values), function ($value) {
+            return trim($value) !== '';
+        })));
+        sort($values);
+
+        return $values;
     }
 
     private function appendExecutionEvent($originRun, array $summary, array $context)

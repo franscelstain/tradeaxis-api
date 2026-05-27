@@ -61,15 +61,15 @@ If recomputed derived artifacts are unchanged, the correction lifecycle may pres
 
 ---
 
-## Amendment 2026-05-27 - Safe block during impact execution
+## Amendment 2026-05-27 - Correction-safe impact execution
 
-Affected-date execution may recompute indicators and eligibility only for dates that are not already current readable publications. If an affected date is readable, execution must stop for that date and emit:
+Affected-date execution may recompute indicators and eligibility directly only for dates that are not already current readable publications. If an affected date is readable, execution must emit it as a correction-current publication reprocess candidate and avoid silent live mutation. If correction-current orchestration cannot complete safely, the blocked outcome must include:
 
 - `publication_reprocess_summary.execution_state=BLOCKED_REQUIRES_CORRECTION`
 - `blocked_reason_code=AFFECTED_PUBLICATION_REQUIRES_CORRECTION`
 - affected blocked trade dates
 
-This blocked state is a valid safety outcome, not a publication success. It must not switch pointers, mutate readable live artifacts, export replacement replay proof, or claim automatic republication.
+This blocked state is a valid safety outcome, not a publication success. It must not switch pointers, mutate readable live artifacts, export replacement replay proof, or claim republication. Successful readable republication must carry `republication_mode=AUTOMATED_READABLE_CORRECTION` or `AUTOMATED_MIXED_IMPACT_REPUBLICATION` plus correction id lineage.
 
 ---
 
@@ -86,7 +86,7 @@ Required rules:
 - Preserve baseline lineage and apply all existing coverage, hash, seal, finalize, pointer, evidence, and replay guards.
 - If baseline resolution, correction approval, promotion, or pointer validation fails, report the failure and do not fake readable/current state.
 
-This amendment upgrades the previous safe-block-only impact behavior into an automated correction orchestration path while preserving all correction lifecycle safety requirements.
+This amendment upgrades the previous detect-only impact behavior into an automated correction orchestration path while preserving all correction lifecycle safety requirements.
 
 
 ---
@@ -95,9 +95,9 @@ This amendment upgrades the previous safe-block-only impact behavior into an aut
 
 The automated impact correction path for already-readable affected dates is now validated by targeted and full MarketData PHPUnit proof:
 
-- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 12 assertions).
-- `OutOfOrderImportImpact` -> OK (7 tests, 96 assertions).
-- Full MarketData suite -> OK (582 tests, 8678 assertions).
+- `BackfillLifecyclePublicationReprocess` -> OK (4 tests, 19 assertions).
+- `OutOfOrderImportImpact` -> OK (7 tests, 107 assertions).
+- Full MarketData suite -> OK (585 tests, 8713 assertions).
 
 This confirms that out-of-order import publication reprocess may automate correction only by creating/approving a correction request and promoting through correction-current mode. The existing correction lifecycle remains the authority for baseline resolution, candidate validation, seal/finalize, current-pointer switching, evidence, and replay proof.
 

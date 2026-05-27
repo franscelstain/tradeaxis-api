@@ -94,7 +94,7 @@ class MarketDataImpactReprocessExecutorTest extends TestCase
         $this->assertSame('NOOP', $summary['eligibility_reprocess_execution_summary']['execution_state']);
     }
 
-    public function test_readable_affected_date_blocks_instead_of_silent_recompute(): void
+    public function test_readable_affected_date_becomes_correction_publication_candidate_without_silent_recompute(): void
     {
         $runs = m::mock(EodRunRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
@@ -120,9 +120,57 @@ class MarketDataImpactReprocessExecutorTest extends TestCase
         );
 
         $this->assertSame('BLOCKED', $summary['indicator_reprocess_execution_summary']['execution_state']);
-        $this->assertSame('BLOCKED_REQUIRES_CORRECTION', $summary['publication_reprocess_summary']['execution_state']);
-        $this->assertSame('AFFECTED_PUBLICATION_REQUIRES_CORRECTION', $summary['publication_reprocess_summary']['blocked_reason_code']);
-        $this->assertSame(['2026-05-08'], $summary['publication_reprocess_summary']['blocked_trade_dates']);
+        $this->assertSame(['2026-05-08'], $summary['indicator_reprocess_execution_summary']['blocked_trade_dates']);
+        $this->assertSame('PENDING_PROMOTE', $summary['publication_reprocess_summary']['execution_state']);
+        $this->assertSame(['2026-05-08'], $summary['publication_reprocess_summary']['candidate_trade_dates']);
+        $this->assertSame(['2026-05-08'], $summary['publication_reprocess_summary']['readable_correction_candidate_trade_dates']);
+        $this->assertSame([], $summary['publication_reprocess_summary']['blocked_trade_dates']);
+        $this->assertSame('PENDING_READABLE_CORRECTION', $summary['publication_reprocess_summary']['republication_mode']);
+    }
+
+    public function test_mixed_readable_and_non_readable_affected_dates_remain_publication_candidates(): void
+    {
+        $runs = m::mock(EodRunRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $indicators = m::mock(EodIndicatorsComputeService::class);
+        $eligibility = m::mock(EodEligibilityBuildService::class);
+        $originRun = $this->makeRunModel(11, '2026-05-01');
+        $downstreamRun = $this->makeRunModel(12, '2026-05-08');
+
+        $publications->shouldReceive('findCurrentPublicationForTradeDate')
+            ->once()
+            ->with('2026-05-08')
+            ->andReturn(null);
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-08', 'api')
+            ->andReturn($downstreamRun);
+        $runs->shouldReceive('appendEvent')->once();
+        $indicators->shouldReceive('compute')
+            ->once()
+            ->with($downstreamRun, '2026-05-08', false);
+        $eligibility->shouldReceive('build')
+            ->once()
+            ->with($downstreamRun, '2026-05-08', false);
+
+        $summary = (new MarketDataImpactReprocessExecutor($runs, $publications, $indicators, $eligibility))->execute(
+            $originRun,
+            'api',
+            ['changed_bar_count' => 1],
+            ['affected_trade_dates' => ['2026-05-08', '2026-05-09']],
+            [
+                'publication_impact_state' => 'REQUIRES_REPUBLICATION',
+                'impacted_readable_trade_dates' => ['2026-05-09'],
+            ]
+        );
+
+        $this->assertSame('BLOCKED', $summary['indicator_reprocess_execution_summary']['execution_state']);
+        $this->assertSame(['2026-05-08'], $summary['indicator_reprocess_execution_summary']['reprocessed_trade_dates']);
+        $this->assertSame(['2026-05-09'], $summary['indicator_reprocess_execution_summary']['blocked_trade_dates']);
+        $this->assertSame('PENDING_PROMOTE', $summary['publication_reprocess_summary']['execution_state']);
+        $this->assertSame(['2026-05-08', '2026-05-09'], $summary['publication_reprocess_summary']['candidate_trade_dates']);
+        $this->assertSame(['2026-05-09'], $summary['publication_reprocess_summary']['readable_correction_candidate_trade_dates']);
+        $this->assertSame('PENDING_MIXED_IMPACT_REPUBLICATION', $summary['publication_reprocess_summary']['republication_mode']);
     }
 
     private function makeRunModel(int $runId, string $date): EodRun

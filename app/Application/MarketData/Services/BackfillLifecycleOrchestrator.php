@@ -570,6 +570,8 @@ class BackfillLifecycleOrchestrator
         $failedDates = [];
         $republishedDates = [];
         $reprocessRuns = [];
+        $republicationModes = [];
+        $correctionIds = [];
         $evidenceExported = 0;
         $fixturesGenerated = 0;
         $replayVerified = 0;
@@ -618,6 +620,12 @@ class BackfillLifecycleOrchestrator
                     'correction_id' => isset($autoCorrectionId) && $autoCorrectionId !== null ? (int) $autoCorrectionId : null,
                     'republication_mode' => isset($autoCorrectionId) && $autoCorrectionId !== null ? 'AUTOMATED_READABLE_CORRECTION' : 'AUTOMATED_NON_READABLE_DATES',
                 ];
+                if (isset($autoCorrectionId) && $autoCorrectionId !== null) {
+                    $correctionIds[] = (int) $autoCorrectionId;
+                    $republicationModes[] = 'AUTOMATED_READABLE_CORRECTION';
+                } else {
+                    $republicationModes[] = 'AUTOMATED_NON_READABLE_DATES';
+                }
 
                 if (! $this->isReadableRun($promotedRun)) {
                     $blockedDates[] = $tradeDate;
@@ -667,6 +675,8 @@ class BackfillLifecycleOrchestrator
         sort($failedDates);
         $republishedDates = array_values(array_unique($republishedDates));
         sort($republishedDates);
+        $correctionIds = array_values(array_unique(array_map('intval', $correctionIds)));
+        sort($correctionIds);
 
         $state = 'NOOP';
         if ($failedDates !== []) {
@@ -685,6 +695,9 @@ class BackfillLifecycleOrchestrator
         $case['publication_reprocess_failed_trade_dates'] = $failedDates;
         $case['publication_reprocess_blocked_reason_code'] = $blockedReason;
         $case['publication_reprocess_failure_reason_code'] = $failureReason;
+        $case['publication_reprocess_republication_mode'] = $this->resolvedRepublicationMode($state, $republicationModes);
+        $case['publication_reprocess_correction_ids'] = $correctionIds;
+        $case['publication_reprocess_correction_id'] = count($correctionIds) === 1 ? $correctionIds[0] : null;
         $case['publication_reprocess_evidence_exported_count'] = $evidenceExported;
         $case['publication_reprocess_fixtures_generated_count'] = $fixturesGenerated;
         $case['publication_reprocess_replay_verified_count'] = $replayVerified;
@@ -701,7 +714,9 @@ class BackfillLifecycleOrchestrator
             'evidence_exported_count' => $evidenceExported,
             'fixtures_generated_count' => $fixturesGenerated,
             'replay_verified_count' => $replayVerified,
-            'republication_mode' => $state === 'REPUBLISHED' ? 'AUTOMATED_IMPACT_REPUBLICATION' : ($state === 'NOOP' ? 'NOT_REQUIRED' : 'MANUAL_CORRECTION_REQUIRED'),
+            'republication_mode' => $case['publication_reprocess_republication_mode'],
+            'correction_ids' => $correctionIds,
+            'correction_id' => $case['publication_reprocess_correction_id'],
         ];
 
         if ($state === 'BLOCKED_REQUIRES_CORRECTION') {
@@ -713,6 +728,32 @@ class BackfillLifecycleOrchestrator
         $this->syncPublicationReprocessNotes($case);
 
         return $case;
+    }
+
+    private function resolvedRepublicationMode($state, array $modes)
+    {
+        if ($state === 'NOOP') {
+            return 'NOT_REQUIRED';
+        }
+
+        if ($state === 'FAILED') {
+            return 'FAILED_IMPACT_REPUBLICATION';
+        }
+
+        if ($state === 'BLOCKED_REQUIRES_CORRECTION') {
+            return 'MANUAL_CORRECTION_REQUIRED';
+        }
+
+        $modes = array_values(array_unique(array_filter(array_map('strval', $modes), function ($mode) {
+            return $mode !== '' && $mode !== 'NOT_REQUIRED';
+        })));
+        sort($modes);
+
+        if (count($modes) > 1) {
+            return 'AUTOMATED_MIXED_IMPACT_REPUBLICATION';
+        }
+
+        return $modes[0] ?? 'AUTOMATED_IMPACT_REPUBLICATION';
     }
 
 
@@ -774,6 +815,9 @@ class BackfillLifecycleOrchestrator
                     ! empty($case['publication_reprocess_failed_trade_dates']) ? 'publication_reprocess_failed_trade_dates='.$this->compactList((array) $case['publication_reprocess_failed_trade_dates']) : null,
                     ! empty($case['publication_reprocess_blocked_reason_code']) ? 'publication_reprocess_blocked_reason_code='.(string) $case['publication_reprocess_blocked_reason_code'] : null,
                     ! empty($case['publication_reprocess_failure_reason_code']) ? 'publication_reprocess_failure_reason_code='.(string) $case['publication_reprocess_failure_reason_code'] : null,
+                    ! empty($case['publication_reprocess_republication_mode']) ? 'publication_reprocess_republication_mode='.(string) $case['publication_reprocess_republication_mode'] : null,
+                    ! empty($case['publication_reprocess_correction_ids']) ? 'publication_reprocess_correction_ids='.$this->compactList((array) $case['publication_reprocess_correction_ids']) : null,
+                    ! empty($case['publication_reprocess_correction_id']) ? 'publication_reprocess_correction_id='.(int) $case['publication_reprocess_correction_id'] : null,
                 ]),
             ]);
         } catch (\Throwable $e) {
@@ -867,6 +911,9 @@ class BackfillLifecycleOrchestrator
             'publication_reprocess_failed_trade_dates',
             'publication_reprocess_blocked_reason_code',
             'publication_reprocess_failure_reason_code',
+            'publication_reprocess_republication_mode',
+            'publication_reprocess_correction_ids',
+            'publication_reprocess_correction_id',
             'recovered_row_apply_state',
             'recovered_row_count',
             'resume_recovered_apply_state',
@@ -924,6 +971,9 @@ class BackfillLifecycleOrchestrator
                 'failed_trade_dates' => $this->parseCsvList($fields['publication_reprocess_failed_trade_dates'] ?? ''),
                 'blocked_reason_code' => $fields['publication_reprocess_blocked_reason_code'] ?? null,
                 'failure_reason_code' => $fields['publication_reprocess_failure_reason_code'] ?? null,
+                'republication_mode' => $fields['publication_reprocess_republication_mode'] ?? 'NOT_REQUIRED',
+                'correction_ids' => $this->parseCsvList($fields['publication_reprocess_correction_ids'] ?? ''),
+                'correction_id' => isset($fields['publication_reprocess_correction_id']) ? (int) $fields['publication_reprocess_correction_id'] : null,
             ];
         }
 
@@ -1027,6 +1077,19 @@ class BackfillLifecycleOrchestrator
         return implode(',', $values);
     }
 
+    private function sortedUniqueList(array $values)
+    {
+        $values = array_values(array_unique(array_filter(array_map(function ($value) {
+            return trim((string) $value);
+        }, $values), function ($value) {
+            return $value !== '';
+        })));
+
+        sort($values);
+
+        return $values;
+    }
+
     private function caseStatus(array $case)
     {
         if (($case['publication_reprocess_state'] ?? null) === 'FAILED') {
@@ -1114,6 +1177,15 @@ class BackfillLifecycleOrchestrator
         $summary['publication_reprocess_replay_verified_count'] = array_sum(array_map(function ($case) {
             return (int) ($case['publication_reprocess_replay_verified_count'] ?? 0);
         }, $cases));
+        $summary['publication_reprocess_correction_ids'] = $this->sortedUniqueList(array_reduce($cases, function ($carry, $case) {
+            return array_merge($carry, (array) ($case['publication_reprocess_correction_ids'] ?? []));
+        }, []));
+        $summary['publication_reprocess_republication_mode'] = $this->resolvedRepublicationMode(
+            $summary['publication_reprocess_state'],
+            array_values(array_filter(array_map(function ($case) {
+                return $case['publication_reprocess_republication_mode'] ?? null;
+            }, $cases)))
+        );
         $summary['all_passed'] = $summary['dates_failed'] === 0 && $summary['dates_held'] === 0;
         $summary['status'] = $summary['all_passed'] ? 'SUCCESS' : 'PARTIAL';
 

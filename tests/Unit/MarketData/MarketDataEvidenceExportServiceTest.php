@@ -58,7 +58,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'supersedes_run_id' => null,
             'started_at' => '2026-04-21T17:00:00+07:00',
             'finished_at' => '2026-04-21T17:21:00+07:00',
-            'notes' => 'candidate_publication_id=1201; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT',
+            'notes' => 'candidate_publication_id=1201; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT; publication_reprocess_state=REPUBLISHED; publication_reprocess_republished_trade_date_count=1; publication_reprocess_republished_trade_dates=2026-05-09; publication_reprocess_candidate_trade_dates=2026-05-09; publication_reprocess_republication_mode=AUTOMATED_READABLE_CORRECTION; publication_reprocess_correction_ids=51; publication_reprocess_correction_id=51',
         ];
         $publication = (object) [
             'publication_id' => 1201,
@@ -216,6 +216,10 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
         $this->assertSame('coverage_gate_v1', $payload['run_summary']['coverage']['coverage_contract_version']);
         $this->assertSame('active_equity_universe_asof_trade_date', $payload['run_summary']['coverage']['coverage_universe_basis']);
+        $this->assertSame('REPUBLISHED', $payload['run_summary']['publication_reprocess_summary']['execution_state']);
+        $this->assertSame('AUTOMATED_READABLE_CORRECTION', $payload['run_summary']['publication_reprocess_summary']['republication_mode']);
+        $this->assertSame([51], $payload['run_summary']['publication_reprocess_summary']['correction_ids']);
+        $this->assertSame(51, $payload['run_summary']['publication_reprocess_summary']['correction_id']);
         $this->assertSame('API_FREE', $payload['run_summary']['source_context']['source_name']);
         $this->assertSame('RUN_SOURCE_TIMEOUT', $payload['run_summary']['source_context']['final_reason_code']);
         $this->assertSame('STAGE_COMPLETED', $payload['source_attempt_telemetry']['event_type']);

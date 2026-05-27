@@ -138,6 +138,9 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
                 .(isset($case['publication_impact_state']) ? ' | publication_impact_state='.(string) $case['publication_impact_state'] : '')
                 .(isset($case['publication_reprocess_state']) ? ' | publication_reprocess_state='.(string) $case['publication_reprocess_state'] : '')
                 .(isset($case['publication_reprocess_republished_trade_date_count']) ? ' | publication_reprocess_republished_trade_date_count='.(string) $case['publication_reprocess_republished_trade_date_count'] : '')
+                .(isset($case['publication_reprocess_republication_mode']) ? ' | publication_reprocess_republication_mode='.(string) $case['publication_reprocess_republication_mode'] : '')
+                .(isset($case['publication_reprocess_correction_ids']) ? ' | publication_reprocess_correction_ids='.(is_array($case['publication_reprocess_correction_ids']) ? implode(',', $case['publication_reprocess_correction_ids']) : (string) $case['publication_reprocess_correction_ids']) : '')
+                .(isset($case['publication_reprocess_correction_id']) ? ' | publication_reprocess_correction_id='.(string) $case['publication_reprocess_correction_id'] : '')
                 .(isset($case['recovered_row_apply_state']) ? ' | recovered_row_apply_state='.(string) $case['recovered_row_apply_state'] : '')
                 .(isset($case['recovered_row_count']) ? ' | recovered_row_count='.(string) $case['recovered_row_count'] : '')
                 .(isset($case['reason_code']) && $case['reason_code'] !== null && $case['reason_code'] !== '' ? ' | reason='.(string) $case['reason_code'] : '')
@@ -147,6 +150,13 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
         $this->line('summary:');
         foreach (['dates_total', 'dates_success', 'dates_held', 'dates_failed', 'ticker_failures', 'evidence_exported', 'fixtures_generated', 'replay_verified', 'bar_mutation_changed_count', 'affected_trade_date_count', 'indicator_reprocessed_trade_date_count', 'eligibility_reprocessed_trade_date_count', 'publication_reprocess_republished_trade_date_count', 'publication_reprocess_evidence_exported_count', 'publication_reprocess_fixtures_generated_count', 'publication_reprocess_replay_verified_count', 'recovered_row_count'] as $field) {
             $this->line($field.'='.(string) ($summary[$field] ?? 0));
+        }
+        if (isset($summary['publication_reprocess_republication_mode'])) {
+            $this->line('publication_reprocess_republication_mode='.(string) $summary['publication_reprocess_republication_mode']);
+        }
+        if (! empty($summary['publication_reprocess_correction_ids'])) {
+            $ids = is_array($summary['publication_reprocess_correction_ids']) ? implode(',', $summary['publication_reprocess_correction_ids']) : (string) $summary['publication_reprocess_correction_ids'];
+            $this->line('publication_reprocess_correction_ids='.$ids);
         }
 
         return ! empty($summary['all_passed']) ? 0 : 1;

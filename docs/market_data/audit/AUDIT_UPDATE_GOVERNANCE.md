@@ -1203,5 +1203,5 @@ Governance requirements:
 
 - Do not mark execution as DONE if indicators/eligibility were only reported as required.
 - Do not claim auto republication unless a correction/reseal/finalize path was actually executed and tested.
-- Safe block for already-readable affected dates is acceptable only when it emits `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`, preserves current pointer state, and documents manual correction follow-up.
+- Already-readable affected dates must either complete the correction-current republication path with explicit correction lineage or remain blocked with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`; both outcomes must preserve current pointer safety.
 - `--resume --only-failed` retry success must document whether recovered rows were applied, unchanged, failed, or blocked.

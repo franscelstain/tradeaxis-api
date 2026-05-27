@@ -56,7 +56,7 @@ Additional output fields may appear:
 - `eligibility_reprocessed_trade_date_count`
 - `publication_reprocess_state`
 
-`indicator_reprocess_execution_state=EXECUTED` means indicators and eligibility were recomputed; it does not mean the date became readable. If `publication_reprocess_state=BLOCKED_REQUIRES_CORRECTION`, run the historical correction flow before any readable replacement.
+`indicator_reprocess_execution_state=EXECUTED` means indicators and eligibility were recomputed; it does not mean the date became readable. If `publication_reprocess_state=REPUBLISHED`, check `publication_reprocess_republication_mode`: already-readable affected dates must show correction-current lineage through `AUTOMATED_READABLE_CORRECTION` or `AUTOMATED_MIXED_IMPACT_REPUBLICATION` plus correction id fields. If the correction path is blocked or failed, the current pointer remains unchanged.
 
 ## Amendment 2026-05-27 - Full-publish downstream publication reprocess
 The import-only command contract above remains unchanged. Import-only daily execution must not promote or switch pointers.

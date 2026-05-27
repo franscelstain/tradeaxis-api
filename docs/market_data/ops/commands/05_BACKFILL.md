@@ -171,7 +171,7 @@ Expected recovery output includes:
 - `eligibility_reprocess_execution_state`
 - `publication_reprocess_state`
 
-Recovered rows are partial-upserted by ticker/date. Existing ticker rows on the same date must remain present. If the recovered rows are unchanged, the command reports `UNCHANGED`/`NOOP_UNCHANGED_BARS` and does not recompute unnecessarily. If affected dates are already readable, the command reports `BLOCKED_REQUIRES_CORRECTION` instead of silently mutating current publications.
+Recovered rows are partial-upserted by ticker/date. Existing ticker rows on the same date must remain present. If the recovered rows are unchanged, the command reports `UNCHANGED`/`NOOP_UNCHANGED_BARS` and does not recompute unnecessarily. If affected dates are already readable, lifecycle/full-publish reprocess must use correction-current republication with explicit correction lineage, or report a blocked/failed correction reason without mutating the current pointer silently.
 
 ## Amendment 2026-05-27 - Hash/seal/finalize for affected non-readable dates
 For `market-data:backfill:lifecycle`, changed historical bars that affect downstream non-readable dates may now continue from `PENDING_PROMOTE` into the existing promote flow. The promote flow recomputes coverage/indicators/eligibility as needed, then hashes, seals, finalizes, and validates readability.
@@ -207,10 +207,10 @@ For lifecycle/full-publish publication reprocess, an already-readable affected d
 
 Final local validation confirms both backfill-related cleanup targets are locked:
 
-- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 12 assertions).
-- `OutOfOrderImportImpact` -> OK (7 tests, 96 assertions).
-- `Backfill` -> OK (48 tests, 326 assertions).
-- Full MarketData suite -> OK (582 tests, 8678 assertions).
+- `BackfillLifecyclePublicationReprocess` -> OK (4 tests, 19 assertions).
+- `OutOfOrderImportImpact` -> OK (7 tests, 107 assertions).
+- `Backfill` -> OK (49 tests, 339 assertions).
+- Full MarketData suite -> OK (585 tests, 8713 assertions).
 
 Operational rule after this lock:
 

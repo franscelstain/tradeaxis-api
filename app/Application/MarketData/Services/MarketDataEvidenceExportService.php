@@ -1084,6 +1084,9 @@ class MarketDataEvidenceExportService
             'publication_reprocess_failed_trade_dates',
             'publication_reprocess_blocked_reason_code',
             'publication_reprocess_failure_reason_code',
+            'publication_reprocess_republication_mode',
+            'publication_reprocess_correction_ids',
+            'publication_reprocess_correction_id',
             'recovered_row_apply_state',
             'recovered_row_count',
             'resume_recovered_apply_state',
@@ -1138,6 +1141,11 @@ class MarketDataEvidenceExportService
             'blocked_reason_code' => $payload['eligibility_reprocess_blocked_reason_code'] ?? null,
             'failure_reason_code' => $payload['eligibility_reprocess_failure_reason_code'] ?? null,
         ];
+        $publicationReprocessCorrectionIds = $this->intList($this->parseCsvList($payload['publication_reprocess_correction_ids'] ?? ''));
+        $publicationReprocessCorrectionId = isset($payload['publication_reprocess_correction_id'])
+            ? (int) $payload['publication_reprocess_correction_id']
+            : (count($publicationReprocessCorrectionIds) === 1 ? $publicationReprocessCorrectionIds[0] : null);
+
         $payload['publication_reprocess_summary'] = [
             'execution_state' => $payload['publication_reprocess_state'] ?? 'NOOP',
             'republished_trade_date_count' => (int) ($payload['publication_reprocess_republished_trade_date_count'] ?? 0),
@@ -1147,6 +1155,9 @@ class MarketDataEvidenceExportService
             'failed_trade_dates' => $this->parseCsvList($payload['publication_reprocess_failed_trade_dates'] ?? ''),
             'blocked_reason_code' => $payload['publication_reprocess_blocked_reason_code'] ?? null,
             'failure_reason_code' => $payload['publication_reprocess_failure_reason_code'] ?? null,
+            'republication_mode' => $payload['publication_reprocess_republication_mode'] ?? 'NOT_REQUIRED',
+            'correction_ids' => $publicationReprocessCorrectionIds,
+            'correction_id' => $publicationReprocessCorrectionId,
         ];
         $payload['resume_recovered_apply_summary'] = [
             'recovered_row_count' => (int) ($payload['resume_recovered_row_count'] ?? $payload['recovered_row_count'] ?? 0),
@@ -1601,6 +1612,16 @@ class MarketDataEvidenceExportService
         sort($items);
 
         return $items;
+    }
+
+    private function intList(array $values)
+    {
+        $values = array_values(array_unique(array_filter(array_map('intval', $values), function ($value) {
+            return $value > 0;
+        })));
+        sort($values);
+
+        return $values;
     }
 
     private function buildReplayResult($metric)

@@ -115,7 +115,7 @@ Such material may exist to help migration or local rollout, but it must not be p
 
 Out-of-order import impact execution must never switch the current pointer as a side effect of recovered-row apply or derived reprocess.
 
-If affected non-readable dates are recomputed, pointer state remains unchanged until the normal promote/finalize lifecycle runs. If affected dates are already readable, the system must report `BLOCKED_REQUIRES_CORRECTION` and preserve the existing pointer until a correction/republication lifecycle produces a valid sealed readable replacement.
+If affected non-readable dates are recomputed, pointer state remains unchanged until the normal promote/finalize lifecycle runs. If affected dates are already readable, the system must route them through correction-current republication with correction id lineage, or preserve the existing pointer with an explicit blocked/failed correction reason.
 
 ## Amendment 2026-05-27 - Impact-triggered promote pointer rule
 

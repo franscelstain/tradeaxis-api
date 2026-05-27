@@ -2,7 +2,10 @@
 
 use App\Application\MarketData\Services\ApiBackfillRangeAcquisitionService;
 use App\Application\MarketData\Services\BackfillLifecycleOrchestrator;
+use App\Application\MarketData\Services\EodEligibilityBuildService;
+use App\Application\MarketData\Services\EodIndicatorsComputeService;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
+use App\Application\MarketData\Services\MarketDataImpactReprocessExecutor;
 use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Application\MarketData\Services\ReplayVerificationService;
 use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
@@ -186,6 +189,131 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
 
         $this->assertSame('NOOP', $result['publication_reprocess_state']);
         $this->assertSame('REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE', $result['publication_reprocess_summary']['blocked_reason_code']);
+    }
+
+    public function test_lifecycle_consumes_actual_executor_output_for_mixed_readable_and_non_readable_candidates(): void
+    {
+        [$orchestrator, $runs, $pipeline, $evidence, $replay, $corrections, $publications] = $this->makeOrchestrator();
+
+        $executorRuns = m::mock(EodRunRepository::class);
+        $executorPublications = m::mock(EodPublicationRepository::class);
+        $indicators = m::mock(EodIndicatorsComputeService::class);
+        $eligibility = m::mock(EodEligibilityBuildService::class);
+        $originRun = (object) ['run_id' => 100, 'trade_date_requested' => '2026-05-01'];
+        $nonReadableSeed = (object) [
+            'run_id' => 201,
+            'trade_date_requested' => '2026-05-08',
+            'terminal_status' => null,
+            'publishability_state' => 'NOT_READABLE',
+            'coverage_gate_state' => null,
+            'sealed_at' => null,
+        ];
+        $readableSeed = (object) [
+            'run_id' => 301,
+            'trade_date_requested' => '2026-05-09',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
+            'sealed_at' => '2026-05-27 10:00:00',
+        ];
+        $promotedNonReadable = (object) [
+            'run_id' => 202,
+            'trade_date_requested' => '2026-05-08',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
+            'coverage_ratio' => '1.0000',
+            'publication_id' => 3002,
+            'publication_version' => 1,
+            'sealed_at' => '2026-05-27 10:00:00',
+        ];
+        $baseline = (object) [
+            'publication_id' => 4001,
+            'run_id' => 301,
+        ];
+        $requestedCorrection = (object) ['correction_id' => 51];
+        $approvedCorrection = (object) ['correction_id' => 51, 'status' => 'APPROVED'];
+        $correctedReadable = (object) [
+            'run_id' => 302,
+            'trade_date_requested' => '2026-05-09',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
+            'coverage_ratio' => '1.0000',
+            'publication_id' => 4002,
+            'publication_version' => 2,
+            'sealed_at' => '2026-05-27 10:00:00',
+        ];
+
+        $executorPublications->shouldReceive('findCurrentPublicationForTradeDate')
+            ->once()
+            ->with('2026-05-08')
+            ->andReturn(null);
+        $executorRuns->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-08', 'api')
+            ->andReturn($nonReadableSeed);
+        $indicators->shouldReceive('compute')->once()->with($nonReadableSeed, '2026-05-08', false);
+        $eligibility->shouldReceive('build')->once()->with($nonReadableSeed, '2026-05-08', false);
+
+        $executorSummary = (new MarketDataImpactReprocessExecutor($executorRuns, $executorPublications, $indicators, $eligibility))->execute(
+            $originRun,
+            'api',
+            ['changed_bar_count' => 1],
+            ['affected_trade_dates' => ['2026-05-08', '2026-05-09']],
+            [
+                'publication_impact_state' => 'REQUIRES_REPUBLICATION',
+                'impacted_readable_trade_dates' => ['2026-05-09'],
+            ]
+        );
+
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-08', 'api')
+            ->andReturn($nonReadableSeed);
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-09', 'api')
+            ->andReturn($readableSeed);
+        $pipeline->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-05-08', 'api', 201, null, 'full_publish')
+            ->andReturn($promotedNonReadable);
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-05-09')
+            ->andReturn($baseline);
+        $corrections->shouldReceive('createRequest')
+            ->once()
+            ->with('2026-05-09', 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION', m::type('string'), 'system', 4001, 301)
+            ->andReturn($requestedCorrection);
+        $corrections->shouldReceive('approve')
+            ->once()
+            ->with(51, 'system')
+            ->andReturn($approvedCorrection);
+        $pipeline->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-05-09', 'api', 301, 51, 'correction_current')
+            ->andReturn($correctedReadable);
+        $evidence->shouldNotReceive('exportRunEvidence');
+        $replay->shouldNotReceive('generateFixtureFromRun');
+        $replay->shouldNotReceive('verifyRunAgainstFixture');
+
+        $result = $this->invokePublicationReprocess($orchestrator, [
+            'requested_date' => '2026-05-01',
+            'publication_reprocess_state' => $executorSummary['publication_reprocess_summary']['execution_state'],
+            'publication_reprocess_summary' => $executorSummary['publication_reprocess_summary'],
+            'indicator_reprocess_execution_summary' => $executorSummary['indicator_reprocess_execution_summary'],
+            'eligibility_reprocess_execution_summary' => $executorSummary['eligibility_reprocess_execution_summary'],
+        ], true, false, false);
+
+        $this->assertSame('REPUBLISHED', $result['publication_reprocess_state']);
+        $this->assertSame(['2026-05-08', '2026-05-09'], $result['publication_reprocess_republished_trade_dates']);
+        $this->assertSame('AUTOMATED_MIXED_IMPACT_REPUBLICATION', $result['publication_reprocess_republication_mode']);
+        $this->assertSame([51], $result['publication_reprocess_correction_ids']);
+        $this->assertSame(51, $result['publication_reprocess_correction_id']);
+        $this->assertSame('AUTOMATED_NON_READABLE_DATES', $result['publication_reprocess_runs'][0]['republication_mode']);
+        $this->assertSame('AUTOMATED_READABLE_CORRECTION', $result['publication_reprocess_runs'][1]['republication_mode']);
     }
 
     private function makeOrchestrator(): array

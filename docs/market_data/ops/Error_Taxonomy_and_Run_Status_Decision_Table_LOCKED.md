@@ -156,7 +156,7 @@ Ticker-scoped provider HTTP 400 during resume-only-failed must use `FAILED_RETRY
 
 - `PENDING_PROMOTE` means indicator/eligibility reprocess finished for affected non-readable dates and hash/seal/finalize still need the normal promote flow.
 - `REPUBLISHED` means affected non-readable dates were promoted through coverage, hash, seal, and finalize using the existing publication guard.
-- `BLOCKED_REQUIRES_CORRECTION` remains mandatory for affected dates that are already current/readable.
+- Affected dates that are already current/readable must either complete correction-current republication with correction lineage or report `BLOCKED_REQUIRES_CORRECTION`/failure without pointer mutation.
 - `REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE` is informational and prevents the primary requested date from being misreported as pending after normal primary promote has already handled it.
 - `PUBLICATION_REPROCESS_FAILED`, `PUBLICATION_REPROCESS_NOT_READABLE`, and `PUBLICATION_REPROCESS_REPLAY_FAILED` are hard publication-reprocess outcomes and must not produce fake readable state.
 
@@ -171,9 +171,9 @@ Recovered row apply and out-of-order impact execution introduce execution states
 - `recovered_row_apply_state=APPLIED|UNCHANGED|FAILED|NOOP`
 - `indicator_reprocess_execution_state=EXECUTED|NOOP|BLOCKED|FAILED`
 - `eligibility_reprocess_execution_state=EXECUTED|NOOP|BLOCKED|FAILED`
-- `publication_reprocess_state=NOOP|BLOCKED_REQUIRES_CORRECTION|FAILED`
+- `publication_reprocess_state=NOOP|PENDING_PROMOTE|REPUBLISHED|BLOCKED_REQUIRES_CORRECTION|FAILED`
 
 Decision rule:
 - `EXECUTED` for indicator/eligibility means derived artifacts were recomputed for non-readable affected dates.
-- `BLOCKED_REQUIRES_CORRECTION` means current pointer and readable publication remain unchanged.
+- `REPUBLISHED` for already-readable affected dates requires correction-current mode plus correction id lineage; `BLOCKED_REQUIRES_CORRECTION` means current pointer and readable publication remain unchanged.
 - None of these states can bypass coverage, hash, seal, finalize, or publishability gates.

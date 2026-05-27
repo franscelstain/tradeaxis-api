@@ -101,49 +101,48 @@ Latest targeted validation:
 - Post-doc rerun full suite: OK (576 tests, 8624 assertions), Time 00:19.910, Memory 42.00 MB.
 
 Publication lifecycle proof boundary:
-- Current tests prove recovered apply, mutation detection, affected-date detection, indicator recompute execution, eligibility rebuild execution, and readable-publication safe block.
-- Current tests do not prove automatic downstream hash recompute, seal/finalize execution, or automatic correction/republication for already-readable affected dates.
-- Full out-of-order publication lifecycle lock requires an additional E2E test scope for hash/seal/republication execution.
+- Current tests prove recovered apply, mutation detection, affected-date detection, indicator recompute execution, eligibility rebuild execution, non-readable downstream promotion, and readable-publication correction-current republication.
+- Mixed impacted dates are locked: non-readable dates remain normal publication reprocess candidates, while already-readable dates become correction-current candidates with explicit `republication_mode` and `correction_id` evidence.
+- Full out-of-order publication lifecycle lock requires these E2E executor-to-orchestrator/pipeline tests to remain green with the full MarketData suite.
 
 ## OUT-OF-ORDER IMPORT HASH/SEAL/PUBLICATION REPROCESS
 
 - `BackfillLifecyclePublicationReprocessTest`
-  - proves lifecycle publication reprocess consumes `PENDING_PROMOTE` and calls `promoteDaily()` for affected non-readable downstream dates.
+  - proves lifecycle publication reprocess consumes actual executor output and calls `promoteDaily()` for affected non-readable downstream dates.
+  - proves already-readable affected dates are promoted through correction-current mode with explicit correction id lineage.
+  - proves mixed readable/non-readable affected dates resolve to `AUTOMATED_MIXED_IMPACT_REPUBLICATION`.
   - proves evidence export and replay verification are triggered for automatically republished downstream dates when requested.
-  - proves already-readable affected dates block with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`.
   - proves the primary requested date is not left `PENDING_PROMOTE` after primary promote already handled it.
 
-- `MarketDataPipelineServiceTest::test_run_daily_promotes_non_readable_downstream_impact_dates_after_primary_finalize`
-  - proves the full-publish daily pipeline can promote affected downstream non-readable dates after the primary requested date finalizes.
+- `MarketDataPipelineServiceTest::test_run_daily_auto_corrects_readable_and_promotes_non_readable_downstream_impact_dates_after_primary_finalize`
+  - proves the full-publish daily pipeline promotes affected downstream non-readable dates and auto-corrects already-readable affected dates after the primary requested date finalizes.
 
 - `OutOfOrderImportImpactStaticGuardTest`
   - guards that lifecycle publication reprocess calls `promoteDaily()`.
   - guards that `promoteDaily()` still includes `completeHash`, `completeSeal`, and `completeFinalize`.
 
 Latest validation:
-- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 11 assertions).
-- `MarketDataPipelineService` -> OK (16 tests, 21 assertions).
-- `MarketDataImpactReprocessExecutor` -> OK (3 tests, 12 assertions).
-- `OutOfOrderImportImpactStaticGuard` -> OK (6 tests, 73 assertions).
+- `BackfillLifecyclePublicationReprocess` -> OK (4 tests, 19 assertions).
+- `MarketDataPipelineService` -> OK (17 tests, 24 assertions).
+- `MarketDataImpactReprocessExecutor` -> OK (4 tests, 22 assertions).
+- `OutOfOrderImportImpactStaticGuard` -> OK (7 tests, 107 assertions).
 - `Daily` -> OK (63 tests, 1236 assertions).
 - `Backfill` -> OK (47 tests, 303 assertions).
-- `StaticGuard` -> OK (225 tests, 5483 assertions).
-- Full suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (581 tests, 8654 assertions), Time 00:12.483, Memory 44.00 MB.
-- Final post-doc/code full-suite rerun: OK (581 tests, 8654 assertions), Time 00:12.737, Memory 44.00 MB.
+- `StaticGuard` -> OK (226 tests, 5517 assertions).
 
 Remaining proof boundary:
-- Tests prove automatic publication reprocess for affected non-readable dates.
-- Automatic correction/republication for already-readable affected dates remains intentionally blocked/manual and is not claimed as locked.
+- Tests prove automatic publication reprocess for affected non-readable dates and correction-current republication for already-readable affected dates.
+- Full-suite proof must be refreshed after every patch touching executor, lifecycle orchestrator, pipeline, evidence, or static guards.
 
 
 ## FINAL VALIDATION - IMPORT-ONLY BACKFILL OUTPUT + READABLE AUTO-CORRECTION
 
 Final local validation after the correction-current static guard fix:
 
-- `vendor\bin\phpunit tests\Unit\MarketData --filter "BackfillLifecyclePublicationReprocess"` -> OK (3 tests, 12 assertions).
-- `vendor\bin\phpunit tests\Unit\MarketData --filter "OutOfOrderImportImpact"` -> OK (7 tests, 96 assertions).
-- `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"` -> OK (48 tests, 326 assertions).
-- `php vendor/bin/phpunit tests/Unit/MarketData` -> OK (582 tests, 8678 assertions), Time 00:19.091, Memory 42.00 MB.
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "BackfillLifecyclePublicationReprocess"` -> OK (4 tests, 19 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "OutOfOrderImportImpact"` -> OK (7 tests, 107 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"` -> OK (49 tests, 339 assertions).
+- `php vendor/bin/phpunit tests/Unit/MarketData` -> OK (585 tests, 8713 assertions), Time 00:20.142, Memory 44.00 MB.
 
 Locked assertions:
 

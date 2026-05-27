@@ -196,7 +196,7 @@ Historical import can arrive after later dates were already processed. When chan
 - readable affected dates must be reported as requiring correction/reseal/republication;
 - hash/seal/pointer changes remain governed by the correction lifecycle.
 
-The current implementation chooses safe block for already-readable affected dates rather than automated republication. Operators must use the correction runbook to create and approve a replacement lifecycle when a readable date is impacted.
+Already-readable affected dates may be automatically republished only through the correction-current lifecycle. The system must create/approve a correction, preserve baseline lineage, run the guarded replacement lifecycle, and leave the current pointer unchanged if any correction, reseal, finalize, replay, or pointer validation step fails.
 
 ## Amendment 2026-05-27 - Non-readable impact publication reprocess
 

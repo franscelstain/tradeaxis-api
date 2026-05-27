@@ -3441,7 +3441,7 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 
 [CONTRACT_STATUS]
 - `DONE` for global mutation summary and impact telemetry.
-- `REVIEW_REQUIRED` for automatic downstream correction/republication execution.
+- Superseded by later publication reprocess contracts: automatic downstream non-readable promotion and readable correction-current republication are now part of the locked impact flow when validation proof is current.
 
 [MUTATIO N_CONTRACT]
 - Every normal EOD bar replacement through `EodArtifactRepository::replaceBars()` must return `bar_mutation_summary`.
@@ -3474,7 +3474,7 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 
 [CONTRACT_STATUS]
 - `DONE` for recovered row partial apply and non-readable affected-date derived reprocess execution.
-- `REVIEW_REQUIRED` for automated readable-publication republication. Readable affected dates must remain blocked with correction reason until correction lifecycle is explicitly run.
+- Superseded by later correction-current contract: readable affected dates become publication reprocess candidates and must use correction-current mode, not normal full-publish.
 
 [RECOVERED_ROW_APPLY_CONTRACT]
 - Resume-only-failed retry success must not return after source acquisition if recovered rows exist.
@@ -3493,12 +3493,12 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 
 [READABLE_PUBLICATION_CONTRACT]
 - Already-readable affected dates must not be silently updated.
-- Current behavior is safe block:
-  - `publication_reprocess_summary.execution_state=BLOCKED_REQUIRES_CORRECTION`
-  - `blocked_reason_code=AFFECTED_PUBLICATION_REQUIRES_CORRECTION`
-  - no pointer switch
-  - no fake readable
-  - no replay verification for an unresealed replacement
+- Current behavior is correction-current candidate handling:
+  - `publication_reprocess_summary.execution_state=PENDING_PROMOTE`
+  - `readable_correction_candidate_trade_dates` includes the impacted readable dates
+  - correction id lineage is emitted after automated correction-current promotion
+  - no pointer switch without correction lineage, seal/finalize, and pointer validation
+  - no fake readable or replay verification for an unresealed replacement
 
 [VALIDATION_PROOF]
 - `MarketDataImpactReprocessExecutor` -> OK (3 tests, 11 assertions).
@@ -3515,8 +3515,8 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 
 [CONTRACT_STATUS]
 - `DONE` for execution-layer contract where affected dates are not already readable.
-- `DONE` for safe blocking of readable affected dates.
-- `REVIEW_REQUIRED` for future auto correction/republication of readable affected dates.
+- `DONE` for correction-current candidate handling of readable affected dates.
+- Superseded by the final readable auto-correction contract below.
 
 [FINAL_VALIDATION_PROOF]
 - Command: `vendor\bin\phpunit tests\Unit\MarketData`.
@@ -3532,8 +3532,7 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 ## 2026-05-27 - OUT-OF-ORDER IMPORT PUBLICATION LIFECYCLE CONTRACT BOUNDARY
 
 [CONTRACT_STATUS]
-- `PARTIAL / REVIEW_REQUIRED` for the aggregate out-of-order import publication lifecycle.
-- `DONE` only for recovered apply plus indicator/eligibility execution on affected non-readable dates.
+- Superseded by the final readable auto-correction contract below. The aggregate out-of-order import publication lifecycle now includes recovered apply, indicator/eligibility execution, non-readable promotion, and readable correction-current republication.
 
 [BOUNDARY]
 - Current executor performs:
@@ -3542,17 +3541,15 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
   - affected-date reprocess detection,
   - indicator recompute,
   - eligibility rebuild,
-  - readable publication safe block.
+  - readable publication correction-current candidate emission.
 - Current executor does not perform:
-  - downstream hash recompute,
-  - seal/finalize,
-  - automatic correction/republication,
-  - evidence/replay for a replacement publication.
+  - downstream hash/seal/finalize directly; lifecycle/full-publish paths consume candidates and run guarded promote flows,
+  - evidence/replay for a replacement publication unless the promotion path actually produces one.
 
 [CONTRACT_RULE]
-- `publication_reprocess_summary.execution_state=NOOP` or `BLOCKED_REQUIRES_CORRECTION` must not be interpreted as republished.
+- `publication_reprocess_summary.execution_state=NOOP`, `PENDING_PROMOTE`, or `BLOCKED_REQUIRES_CORRECTION` must not be interpreted as republished.
 - `indicator_reprocess_execution_state=EXECUTED` and `eligibility_reprocess_execution_state=EXECUTED` must not be interpreted as hash/seal/finalize execution.
-- Full lock requires a future patch that executes or explicitly orchestrates hash/seal/finalize/republication and proves it with E2E runtime tests.
+- Full lock requires lifecycle/full-publish orchestration proof that candidates are promoted or corrected through existing hash/seal/finalize/republication guards.
 
 ---
 
@@ -3560,13 +3557,13 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 
 [CONTRACT_STATUS]
 - `DONE` for affected non-readable downstream date publication reprocess in lifecycle/full-publish paths.
-- `REVIEW_REQUIRED` for automated correction/republication of already-readable affected dates.
+- `DONE` for automated correction/republication of already-readable affected dates through correction-current mode.
 
 [PUBLICATION_REPROCESS_CONTRACT]
 - After changed EOD bars execute indicator and eligibility reprocess for affected non-readable dates, the impact state must become `PENDING_PROMOTE` until publication stages run.
 - A lifecycle/full-publish path may consume `PENDING_PROMOTE` by calling the existing `promoteDaily()` flow for each affected non-readable date.
 - `promoteDaily()` remains the only automatic path used here because it already enforces coverage, recomputes indicators/eligibility, computes hashes, seals, finalizes, and validates publication readability.
-- If the affected date is already current/readable, automatic reprocess must not call normal promote. It must block with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`.
+- If the affected date is already current/readable, automatic reprocess must not call normal full-publish. It must emit a correction-current candidate and promote only through the correction lifecycle.
 - The primary requested date must not remain `PENDING_PROMOTE` after its normal primary promote already handled hash/seal/finalize; report `NOOP` with `REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE`.
 
 [ARTIFACT_CONTRACT]
@@ -3579,13 +3576,16 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
   - `evidence_exported_count`
   - `fixtures_generated_count`
   - `replay_verified_count`
-- A `REPUBLISHED` state for this session means affected non-readable dates were promoted through existing hash/seal/finalize gates. It does not imply automatic correction of already-readable dates.
+  - `republication_mode`
+  - `correction_ids`
+  - `correction_id`
+- A `REPUBLISHED` state means affected dates were promoted through existing hash/seal/finalize gates; already-readable dates must additionally carry correction-current mode and correction id lineage.
 
 [VALIDATION_PROOF]
-- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 11 assertions).
+- `BackfillLifecyclePublicationReprocess` -> OK (4 tests, 19 assertions).
 - `MarketDataPipelineService` -> OK (16 tests, 21 assertions).
 - `OutOfOrderImportImpactStaticGuard` -> OK (6 tests, 73 assertions).
-- Full suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (581 tests, 8654 assertions).
+- Full suite proof is refreshed in the final readable auto-correction validation entry.
 
 ---
 
@@ -3618,6 +3618,9 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
   - `publication_reprocess_failed_trade_dates`
   - `publication_reprocess_blocked_reason_code`
   - `publication_reprocess_failure_reason_code`
+  - `publication_reprocess_republication_mode`
+  - `publication_reprocess_correction_ids`
+  - `publication_reprocess_correction_id`
   - `recovered_row_apply_state`
   - `recovered_row_count`
 
@@ -3636,10 +3639,10 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - `LOCKED` for the static guard requiring the correction-current path to remain visible in lifecycle publication reprocess.
 
 [FINAL_RUNTIME_PROOF]
-- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 12 assertions).
-- `OutOfOrderImportImpact` -> OK (7 tests, 96 assertions).
-- `Backfill` -> OK (48 tests, 326 assertions).
-- Full MarketData suite: `php vendor/bin/phpunit tests/Unit/MarketData` -> OK (582 tests, 8678 assertions), Time 00:19.091, Memory 42.00 MB.
+- `BackfillLifecyclePublicationReprocess` -> OK (4 tests, 19 assertions).
+- `OutOfOrderImportImpact` -> OK (7 tests, 107 assertions).
+- `Backfill` -> OK (49 tests, 339 assertions).
+- Full MarketData suite: `php vendor/bin/phpunit tests/Unit/MarketData` -> OK (585 tests, 8713 assertions), Time 00:20.142, Memory 44.00 MB.
 
 [CONTRACT_CONFIRMATION]
 - Already-readable affected-date auto-correction must use correction-current mode and must not fall back to normal full-publish replacement.

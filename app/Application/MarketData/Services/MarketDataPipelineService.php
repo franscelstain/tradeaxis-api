@@ -2592,6 +2592,9 @@ class MarketDataPipelineService
             ! empty($publicationReprocess['failed_trade_dates']) ? 'publication_reprocess_failed_trade_dates='.$this->compactNoteList((array) $publicationReprocess['failed_trade_dates']) : null,
             ! empty($publicationReprocess['blocked_reason_code']) ? 'publication_reprocess_blocked_reason_code='.(string) $publicationReprocess['blocked_reason_code'] : null,
             ! empty($publicationReprocess['failure_reason_code']) ? 'publication_reprocess_failure_reason_code='.(string) $publicationReprocess['failure_reason_code'] : null,
+            ! empty($publicationReprocess['republication_mode']) ? 'publication_reprocess_republication_mode='.(string) $publicationReprocess['republication_mode'] : null,
+            ! empty($publicationReprocess['correction_ids']) ? 'publication_reprocess_correction_ids='.$this->compactNoteList((array) $publicationReprocess['correction_ids']) : null,
+            ! empty($publicationReprocess['correction_id']) ? 'publication_reprocess_correction_id='.(int) $publicationReprocess['correction_id'] : null,
             ! empty($result['recovered_row_apply_state']) ? 'recovered_row_apply_state='.(string) $result['recovered_row_apply_state'] : null,
             isset($result['recovered_row_count']) ? 'recovered_row_count='.(int) $result['recovered_row_count'] : null,
             ! empty($recovered) ? 'resume_recovered_apply_state='.(string) ($recovered['apply_state'] ?? 'NOOP') : null,
@@ -2645,6 +2648,8 @@ class MarketDataPipelineService
         $republishedDates = [];
         $blockedDates = $this->parseCsvList($notes['publication_reprocess_blocked_trade_dates'] ?? '');
         $failedDates = [];
+        $republicationModes = [];
+        $correctionIds = [];
         $blockedReason = $notes['publication_reprocess_blocked_reason_code'] ?? null;
         $failureReason = null;
 
@@ -2665,8 +2670,13 @@ class MarketDataPipelineService
                 if ($this->runLooksReadable($seedRun)) {
                     $autoCorrection = $this->executeReadablePublicationAutoCorrectionForImpact($tradeDate, $sourceMode, $seedRun);
                     $promotedRun = $autoCorrection['run'];
+                    if (isset($autoCorrection['correction_id'])) {
+                        $correctionIds[] = (int) $autoCorrection['correction_id'];
+                    }
+                    $republicationModes[] = 'AUTOMATED_READABLE_CORRECTION';
                 } else {
                     $promotedRun = $this->promoteDaily($tradeDate, $sourceMode, (int) $seedRun->run_id, null, 'full_publish');
+                    $republicationModes[] = 'AUTOMATED_NON_READABLE_DATES';
                 }
                 if ($this->runLooksReadable($promotedRun)) {
                     $republishedDates[] = $tradeDate;
@@ -2684,6 +2694,8 @@ class MarketDataPipelineService
         $republishedDates = $this->sortedUniqueList($republishedDates);
         $blockedDates = $this->sortedUniqueList($blockedDates);
         $failedDates = $this->sortedUniqueList($failedDates);
+        $correctionIds = array_values(array_unique(array_map('intval', $correctionIds)));
+        sort($correctionIds);
 
         $state = 'NOOP';
         if ($failedDates !== []) {
@@ -2693,6 +2705,7 @@ class MarketDataPipelineService
         } elseif ($republishedDates !== []) {
             $state = 'REPUBLISHED';
         }
+        $republicationMode = $this->resolvedImpactRepublicationMode($state, $republicationModes);
 
         $originRun = $this->safeUpdateTelemetry($originRun, [
             'notes' => $this->appendRunNotes($originRun->notes ?? null, [
@@ -2703,6 +2716,9 @@ class MarketDataPipelineService
                 $failedDates !== [] ? 'publication_reprocess_failed_trade_dates='.$this->compactNoteList($failedDates) : null,
                 $blockedReason ? 'publication_reprocess_blocked_reason_code='.$blockedReason : null,
                 $failureReason ? 'publication_reprocess_failure_reason_code='.$failureReason : null,
+                'publication_reprocess_republication_mode='.$republicationMode,
+                $correctionIds !== [] ? 'publication_reprocess_correction_ids='.$this->compactNoteList($correctionIds) : null,
+                count($correctionIds) === 1 ? 'publication_reprocess_correction_id='.(int) $correctionIds[0] : null,
             ]),
         ]);
 
@@ -2718,6 +2734,9 @@ class MarketDataPipelineService
                 'request_mode' => $requestMode,
                 'source_mode' => $sourceMode,
                 'publication_reprocess_state' => $state,
+                'republication_mode' => $republicationMode,
+                'correction_ids' => $correctionIds,
+                'correction_id' => count($correctionIds) === 1 ? (int) $correctionIds[0] : null,
                 'candidate_trade_dates' => $candidateDates,
                 'republished_trade_dates' => $republishedDates,
                 'blocked_trade_dates' => $blockedDates,
@@ -2760,6 +2779,32 @@ class MarketDataPipelineService
                 'correction_current'
             ),
         ];
+    }
+
+    private function resolvedImpactRepublicationMode($state, array $modes)
+    {
+        if ($state === 'NOOP') {
+            return 'NOT_REQUIRED';
+        }
+
+        if ($state === 'FAILED') {
+            return 'FAILED_IMPACT_REPUBLICATION';
+        }
+
+        if ($state === 'BLOCKED_REQUIRES_CORRECTION') {
+            return 'MANUAL_CORRECTION_REQUIRED';
+        }
+
+        $modes = array_values(array_unique(array_filter(array_map('strval', $modes), function ($mode) {
+            return $mode !== '' && $mode !== 'NOT_REQUIRED';
+        })));
+        sort($modes);
+
+        if (count($modes) > 1) {
+            return 'AUTOMATED_MIXED_IMPACT_REPUBLICATION';
+        }
+
+        return $modes[0] ?? 'AUTOMATED_IMPACT_REPUBLICATION';
     }
 
     private function parseRunNotes($notes)
