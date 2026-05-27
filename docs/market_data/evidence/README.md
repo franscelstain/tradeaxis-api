@@ -77,3 +77,19 @@ If already-readable affected dates are blocked, evidence should carry `BLOCKED_R
 For affected non-readable downstream dates, lifecycle/full-publish reprocess may call the normal promote flow and then export evidence/replay proof for the republished downstream run. Evidence may report `publication_reprocess_summary.execution_state=REPUBLISHED` plus `republished_trade_dates`, `evidence_exported_count`, `fixtures_generated_count`, and `replay_verified_count`.
 
 For already-readable affected dates, evidence must still report `BLOCKED_REQUIRES_CORRECTION`; it must not imply that a replacement publication was replay-verified unless the correction/republication lifecycle has actually produced a sealed readable replacement.
+
+
+## Amendment 2026-05-27 - Final readable auto-correction evidence rule
+
+After final validation, already-readable affected dates are no longer limited to safe-block-only behavior when the lifecycle can run automated correction. Evidence may report an automated readable correction only when the system has actually created/approved a correction request and promoted through correction-current mode.
+
+Valid evidence states are:
+
+- `REPUBLISHED` with `republication_mode=AUTOMATED_IMPACT_REPUBLICATION` only after a replacement run is sealed/readable and, when requested, evidence/replay proof is generated.
+- `BLOCKED_REQUIRES_CORRECTION` when baseline resolution, correction approval, correction-current promotion, pointer validation, evidence, or replay cannot complete safely.
+
+Final local proof for this evidence contract:
+
+- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 12 assertions).
+- `OutOfOrderImportImpact` -> OK (7 tests, 96 assertions).
+- Full MarketData suite -> OK (582 tests, 8678 assertions).

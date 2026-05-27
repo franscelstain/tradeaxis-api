@@ -490,3 +490,14 @@ When affected non-readable downstream dates are promoted through the lifecycle/f
 ```
 
 `REPUBLISHED` here is only valid for affected dates that were not already current/readable and that passed the existing promote flow. Already-readable affected dates must use `BLOCKED_REQUIRES_CORRECTION` with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION` until a correction lifecycle produces a replacement publication.
+
+
+## Amendment 2026-05-27 - Final publication reprocess execution proof fields
+
+Publication reprocess artifacts may now represent automated correction-current republication for already-readable affected dates when the correction lifecycle completes successfully. The artifact must keep the distinction between:
+
+- `AUTOMATED_NON_READABLE_DATES` for affected downstream dates promoted through normal lifecycle because they were not already readable/current;
+- `AUTOMATED_READABLE_CORRECTION` for already-readable affected dates promoted through correction-current mode;
+- `BLOCKED_REQUIRES_CORRECTION` when the correction-current path cannot complete safely.
+
+Final runtime proof: `BackfillLifecyclePublicationReprocess` OK (3 tests, 12 assertions), `OutOfOrderImportImpact` OK (7 tests, 96 assertions), `Backfill` OK (48 tests, 326 assertions), and full MarketData suite OK (582 tests, 8678 assertions).

@@ -177,3 +177,44 @@ Recovered rows are partial-upserted by ticker/date. Existing ticker rows on the 
 For `market-data:backfill:lifecycle`, changed historical bars that affect downstream non-readable dates may now continue from `PENDING_PROMOTE` into the existing promote flow. The promote flow recomputes coverage/indicators/eligibility as needed, then hashes, seals, finalizes, and validates readability.
 
 When `--with-evidence` or `--with-replay` is enabled, lifecycle publication reprocess may export evidence and replay proof for affected non-readable dates that were republished. Already-readable affected dates remain correction-blocked and are not silently republished.
+
+## Amendment 2026-05-27 - Import-only execution output and readable auto-correction
+Plain `market-data:backfill` remains import-only and must not switch current pointers by itself. However, when import-only writes EOD bars and impact execution has populated run notes, the command output and `market_data_backfill_summary.json` must expose the execution-layer surface, including:
+
+- `indicator_reprocess_execution_state`
+- `indicator_reprocessed_trade_date_count`
+- `indicator_reprocessed_trade_dates`
+- `eligibility_reprocess_execution_state`
+- `eligibility_reprocessed_trade_date_count`
+- `eligibility_reprocessed_trade_dates`
+- `publication_reprocess_state`
+- `publication_reprocess_republished_trade_date_count`
+- `publication_reprocess_republished_trade_dates`
+- `publication_reprocess_candidate_trade_dates`
+- `publication_reprocess_blocked_trade_dates`
+- `publication_reprocess_failed_trade_dates`
+- `publication_reprocess_blocked_reason_code`
+- `publication_reprocess_failure_reason_code`
+- `recovered_row_apply_state`
+- `recovered_row_count`
+
+For lifecycle/full-publish publication reprocess, an already-readable affected date may now be auto-corrected only through the existing correction-current lifecycle. The system must create and approve a correction request with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`, use the pointer-resolved baseline publication, and run correction-current promote. It must not use normal full-publish to replace an already-readable date.
+
+
+---
+
+## Amendment 2026-05-27 - Final validation lock for import-only output and readable auto-correction
+
+Final local validation confirms both backfill-related cleanup targets are locked:
+
+- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 12 assertions).
+- `OutOfOrderImportImpact` -> OK (7 tests, 96 assertions).
+- `Backfill` -> OK (48 tests, 326 assertions).
+- Full MarketData suite -> OK (582 tests, 8678 assertions).
+
+Operational rule after this lock:
+
+- Plain `market-data:backfill` remains import-only, but it must expose execution-layer reprocess fields in command output and summary when run notes include them.
+- Lifecycle/full-publish publication reprocess may auto-correct an already-readable affected downstream date only through the correction-current lifecycle.
+- The correction-current path must preserve baseline lineage and must not bypass coverage, hash, seal, finalize, pointer, evidence, or replay guards.
+- Normal full-publish must not replace an already-readable affected date directly.

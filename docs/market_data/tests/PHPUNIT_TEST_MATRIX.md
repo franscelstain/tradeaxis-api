@@ -134,3 +134,19 @@ Latest validation:
 Remaining proof boundary:
 - Tests prove automatic publication reprocess for affected non-readable dates.
 - Automatic correction/republication for already-readable affected dates remains intentionally blocked/manual and is not claimed as locked.
+
+
+## FINAL VALIDATION - IMPORT-ONLY BACKFILL OUTPUT + READABLE AUTO-CORRECTION
+
+Final local validation after the correction-current static guard fix:
+
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "BackfillLifecyclePublicationReprocess"` -> OK (3 tests, 12 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "OutOfOrderImportImpact"` -> OK (7 tests, 96 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"` -> OK (48 tests, 326 assertions).
+- `php vendor/bin/phpunit tests/Unit/MarketData` -> OK (582 tests, 8678 assertions), Time 00:19.091, Memory 42.00 MB.
+
+Locked assertions:
+
+- Publication reprocess keeps `correction_current` visible and enforced for already-readable affected-date auto-correction.
+- Import-only backfill exposes execution-layer output fields.
+- Full MarketData suite passes after the patch.

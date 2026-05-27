@@ -70,3 +70,39 @@ Affected-date execution may recompute indicators and eligibility only for dates 
 - affected blocked trade dates
 
 This blocked state is a valid safety outcome, not a publication success. It must not switch pointers, mutate readable live artifacts, export replacement replay proof, or claim automatic republication.
+
+---
+
+## Amendment 2026-05-27 - Automated impact correction for already-readable affected dates
+
+Out-of-order import impact reprocess may automatically orchestrate correction for an affected downstream date that is already current/readable, but only through the existing correction-current lifecycle.
+
+Required rules:
+
+- Resolve the baseline via `findCorrectionBaselinePublicationForTradeDate()`.
+- Create a correction request with reason `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`.
+- Approve the correction before execution.
+- Promote through correction-current mode, not normal full-publish.
+- Preserve baseline lineage and apply all existing coverage, hash, seal, finalize, pointer, evidence, and replay guards.
+- If baseline resolution, correction approval, promotion, or pointer validation fails, report the failure and do not fake readable/current state.
+
+This amendment upgrades the previous safe-block-only impact behavior into an automated correction orchestration path while preserving all correction lifecycle safety requirements.
+
+
+---
+
+## Amendment 2026-05-27 - Final lock for automated impact correction
+
+The automated impact correction path for already-readable affected dates is now validated by targeted and full MarketData PHPUnit proof:
+
+- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 12 assertions).
+- `OutOfOrderImportImpact` -> OK (7 tests, 96 assertions).
+- Full MarketData suite -> OK (582 tests, 8678 assertions).
+
+This confirms that out-of-order import publication reprocess may automate correction only by creating/approving a correction request and promoting through correction-current mode. The existing correction lifecycle remains the authority for baseline resolution, candidate validation, seal/finalize, current-pointer switching, evidence, and replay proof.
+
+The following remains forbidden:
+
+- replacing an already-readable affected date through normal full-publish;
+- switching current pointer without correction lineage;
+- claiming readable/current state when correction-current promotion or pointer validation fails.

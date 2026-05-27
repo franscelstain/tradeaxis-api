@@ -115,11 +115,35 @@ class OutOfOrderImportImpactStaticGuardTest extends TestCase
         $this->assertStringContainsString('executeImpactPublicationReprocessIfNeeded', $pipeline);
         $this->assertStringContainsString('$this->promoteDaily', $this->extractMethod($pipeline, 'executeImpactPublicationReprocessIfNeeded'));
         $this->assertStringContainsString('PENDING_PROMOTE', $publicationReprocess);
-        $this->assertStringContainsString('BLOCKED_REQUIRES_CORRECTION', $publicationReprocess);
+        $this->assertStringContainsString('executeReadablePublicationAutoCorrection', $orchestrator);
+        $this->assertStringContainsString('correction_current', $publicationReprocess);
         $this->assertStringContainsString('AFFECTED_PUBLICATION_REQUIRES_CORRECTION', $publicationReprocess);
         $this->assertStringContainsString('completeHash', $promoteSingleDay);
         $this->assertStringContainsString('completeSeal', $promoteSingleDay);
         $this->assertStringContainsString('completeFinalize', $promoteSingleDay);
+    }
+
+
+    public function test_import_only_backfill_outputs_reprocess_execution_surface(): void
+    {
+        $service = $this->read('app/Application/MarketData/Services/MarketDataBackfillService.php');
+        $command = $this->read('app/Console/Commands/MarketData/BackfillMarketDataCommand.php');
+
+        foreach ([
+            'indicator_reprocess_execution_state',
+            'indicator_reprocessed_trade_date_count',
+            'eligibility_reprocess_execution_state',
+            'eligibility_reprocessed_trade_date_count',
+            'publication_reprocess_state',
+            'publication_reprocess_republished_trade_date_count',
+            'publication_reprocess_candidate_trade_dates',
+            'publication_reprocess_blocked_reason_code',
+            'recovered_row_apply_state',
+            'recovered_row_count',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $service);
+            $this->assertStringContainsString($needle, $command);
+        }
     }
 
     private function extractMethod(string $source, string $methodName): string

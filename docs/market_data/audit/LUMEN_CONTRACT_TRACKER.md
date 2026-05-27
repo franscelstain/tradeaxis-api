@@ -3586,3 +3586,62 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - `MarketDataPipelineService` -> OK (16 tests, 21 assertions).
 - `OutOfOrderImportImpactStaticGuard` -> OK (6 tests, 73 assertions).
 - Full suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (581 tests, 8654 assertions).
+
+---
+
+## 2026-05-27 - IMPORT-ONLY BACKFILL REPROCESS OUTPUT + READABLE AUTO-CORRECTION CONTRACT
+
+[CONTRACT_STATUS]
+- `DONE` for import-only backfill command/summary output surfacing execution-layer impact fields.
+- `DONE` for already-readable affected-date automated correction orchestration in lifecycle/full-publish publication reprocess.
+
+[READABLE_AUTO_CORRECTION_CONTRACT]
+- If an affected downstream date is already current/readable, publication reprocess must not run normal full-publish over the current pointer.
+- It must create an explicit correction request with reason `AFFECTED_PUBLICATION_REQUIRES_CORRECTION` using the current sealed readable coverage-PASS baseline publication.
+- It must approve that correction and call the existing correction-current promote path.
+- Replacement publication is valid only if existing correction guards pass coverage, hash, seal, finalize, and pointer validation.
+- If baseline/correction execution fails, the system must report the failure reason and must not fake readable/current state.
+
+[IMPORT_ONLY_OUTPUT_CONTRACT]
+- Plain `market-data:backfill` import-only output and `market_data_backfill_summary.json` must include execution-layer fields when present in run notes:
+  - `indicator_reprocess_execution_state`
+  - `indicator_reprocessed_trade_date_count`
+  - `indicator_reprocessed_trade_dates`
+  - `eligibility_reprocess_execution_state`
+  - `eligibility_reprocessed_trade_date_count`
+  - `eligibility_reprocessed_trade_dates`
+  - `publication_reprocess_state`
+  - `publication_reprocess_republished_trade_date_count`
+  - `publication_reprocess_republished_trade_dates`
+  - `publication_reprocess_candidate_trade_dates`
+  - `publication_reprocess_blocked_trade_dates`
+  - `publication_reprocess_failed_trade_dates`
+  - `publication_reprocess_blocked_reason_code`
+  - `publication_reprocess_failure_reason_code`
+  - `recovered_row_apply_state`
+  - `recovered_row_count`
+
+[VALIDATION_STATUS]
+- Syntax validation passed for all touched PHP files in the sandbox.
+- PHPUnit execution in the sandbox is blocked by missing PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter`; local project environment must rerun targeted and full MarketData suites before changing status to final `LOCKED`.
+
+
+---
+
+## 2026-05-27 - FINAL LOCK: IMPORT-ONLY BACKFILL OUTPUT + READABLE AUTO-CORRECTION
+
+[CONTRACT_STATUS]
+- `LOCKED` for `READABLE_AUTO_CORRECTION_CONTRACT`.
+- `LOCKED` for `IMPORT_ONLY_OUTPUT_CONTRACT`.
+- `LOCKED` for the static guard requiring the correction-current path to remain visible in lifecycle publication reprocess.
+
+[FINAL_RUNTIME_PROOF]
+- `BackfillLifecyclePublicationReprocess` -> OK (3 tests, 12 assertions).
+- `OutOfOrderImportImpact` -> OK (7 tests, 96 assertions).
+- `Backfill` -> OK (48 tests, 326 assertions).
+- Full MarketData suite: `php vendor/bin/phpunit tests/Unit/MarketData` -> OK (582 tests, 8678 assertions), Time 00:19.091, Memory 42.00 MB.
+
+[CONTRACT_CONFIRMATION]
+- Already-readable affected-date auto-correction must use correction-current mode and must not fall back to normal full-publish replacement.
+- Plain import-only backfill output and summary must surface execution-layer fields when run notes carry them.
+- Future changes must keep these tests passing before claiming the import/backfill publication-impact surface is LOCKED.

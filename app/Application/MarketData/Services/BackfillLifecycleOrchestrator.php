@@ -3,6 +3,8 @@
 namespace App\Application\MarketData\Services;
 
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
+use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
+use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
@@ -17,6 +19,8 @@ class BackfillLifecycleOrchestrator
     private $evidence;
     private $replay;
     private $runs;
+    private $corrections;
+    private $publications;
 
     public function __construct(
         MarketCalendarRepository $calendar,
@@ -25,7 +29,9 @@ class BackfillLifecycleOrchestrator
         MarketDataPipelineService $pipeline,
         MarketDataEvidenceExportService $evidence,
         ReplayVerificationService $replay,
-        EodRunRepository $runs
+        EodRunRepository $runs,
+        EodCorrectionRepository $corrections = null,
+        EodPublicationRepository $publications = null
     ) {
         $this->calendar = $calendar;
         $this->tickers = $tickers;
@@ -34,6 +40,8 @@ class BackfillLifecycleOrchestrator
         $this->evidence = $evidence;
         $this->replay = $replay;
         $this->runs = $runs;
+        $this->corrections = $corrections;
+        $this->publications = $publications;
     }
 
     public function execute($startDate, $endDate, $sourceMode = 'api', array $options = [])
@@ -584,12 +592,19 @@ class BackfillLifecycleOrchestrator
                 }
 
                 if ($this->isReadableRun($seedRun)) {
-                    $blockedDates[] = $tradeDate;
-                    $blockedReason = $blockedReason ?: 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
-                    continue;
+                    $readableCorrectionPromoteMode = 'correction_current';
+                    $autoCorrection = $this->executeReadablePublicationAutoCorrection(
+                        $tradeDate,
+                        $sourceMode,
+                        $seedRun,
+                        $readableCorrectionPromoteMode
+                    );
+                    $promotedRun = $autoCorrection['run'];
+                    $autoCorrectionId = $autoCorrection['correction_id'];
+                } else {
+                    $promotedRun = $this->pipeline->promoteDaily($tradeDate, $sourceMode, (int) $seedRun->run_id, null, 'full_publish');
+                    $autoCorrectionId = null;
                 }
-
-                $promotedRun = $this->pipeline->promoteDaily($tradeDate, $sourceMode, (int) $seedRun->run_id, null, 'full_publish');
                 $reprocessRuns[] = [
                     'trade_date' => $tradeDate,
                     'seed_run_id' => (int) ($seedRun->run_id ?? 0),
@@ -600,6 +615,8 @@ class BackfillLifecycleOrchestrator
                     'publication_id' => isset($promotedRun->publication_id) ? (int) $promotedRun->publication_id : null,
                     'publication_version' => isset($promotedRun->publication_version) ? (int) $promotedRun->publication_version : null,
                     'sealed_at' => $promotedRun->sealed_at ?? null,
+                    'correction_id' => isset($autoCorrectionId) && $autoCorrectionId !== null ? (int) $autoCorrectionId : null,
+                    'republication_mode' => isset($autoCorrectionId) && $autoCorrectionId !== null ? 'AUTOMATED_READABLE_CORRECTION' : 'AUTOMATED_NON_READABLE_DATES',
                 ];
 
                 if (! $this->isReadableRun($promotedRun)) {
@@ -684,7 +701,7 @@ class BackfillLifecycleOrchestrator
             'evidence_exported_count' => $evidenceExported,
             'fixtures_generated_count' => $fixturesGenerated,
             'replay_verified_count' => $replayVerified,
-            'republication_mode' => $state === 'REPUBLISHED' ? 'AUTOMATED_NON_READABLE_DATES' : ($state === 'NOOP' ? 'NOT_REQUIRED' : 'MANUAL_CORRECTION_REQUIRED'),
+            'republication_mode' => $state === 'REPUBLISHED' ? 'AUTOMATED_IMPACT_REPUBLICATION' : ($state === 'NOOP' ? 'NOT_REQUIRED' : 'MANUAL_CORRECTION_REQUIRED'),
         ];
 
         if ($state === 'BLOCKED_REQUIRES_CORRECTION') {
@@ -696,6 +713,43 @@ class BackfillLifecycleOrchestrator
         $this->syncPublicationReprocessNotes($case);
 
         return $case;
+    }
+
+
+    private function executeReadablePublicationAutoCorrection($tradeDate, $sourceMode, $seedRun, $promoteMode)
+    {
+        if ($this->corrections === null || $this->publications === null) {
+            throw new \RuntimeException('AFFECTED_PUBLICATION_AUTO_CORRECTION_UNAVAILABLE: readable affected publication requires correction repository and publication repository bindings.');
+        }
+
+        $baseline = $this->publications->findCorrectionBaselinePublicationForTradeDate($tradeDate);
+        if (! $baseline) {
+            throw new \RuntimeException('CORRECTION_BASELINE_LINK_MISSING: readable affected publication correction requires a current sealed readable coverage-PASS baseline publication.');
+        }
+
+        $correction = $this->corrections->createRequest(
+            $tradeDate,
+            'AFFECTED_PUBLICATION_REQUIRES_CORRECTION',
+            'Automated correction generated by out-of-order import impact republication.',
+            'system',
+            (int) $baseline->publication_id,
+            (int) $baseline->run_id
+        );
+
+        $correction = $this->corrections->approve((int) $correction->correction_id, 'system');
+
+        $run = $this->pipeline->promoteDaily(
+            $tradeDate,
+            $sourceMode,
+            (int) ($seedRun->run_id ?? $baseline->run_id),
+            (int) $correction->correction_id,
+            $promoteMode
+        );
+
+        return [
+            'correction_id' => (int) $correction->correction_id,
+            'run' => $run,
+        ];
     }
 
     private function syncPublicationReprocessNotes(array $case): void

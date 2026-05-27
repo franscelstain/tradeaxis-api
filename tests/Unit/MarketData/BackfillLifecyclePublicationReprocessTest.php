@@ -5,6 +5,8 @@ use App\Application\MarketData\Services\BackfillLifecycleOrchestrator;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Application\MarketData\Services\ReplayVerificationService;
+use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
+use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
@@ -84,9 +86,9 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
         $this->assertSame(202, $result['publication_reprocess_runs'][0]['run_id']);
     }
 
-    public function test_lifecycle_publication_reprocess_blocks_readable_affected_dates(): void
+    public function test_lifecycle_publication_reprocess_auto_corrects_readable_affected_dates(): void
     {
-        [$orchestrator, $runs, $pipeline, $evidence, $replay] = $this->makeOrchestrator();
+        [$orchestrator, $runs, $pipeline, $evidence, $replay, $corrections, $publications] = $this->makeOrchestrator();
 
         $readableRun = (object) [
             'run_id' => 301,
@@ -96,15 +98,60 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
             'coverage_gate_state' => 'PASS',
             'sealed_at' => '2026-05-27 10:00:00',
         ];
+        $baseline = (object) [
+            'publication_id' => 4001,
+            'run_id' => 301,
+        ];
+        $requestedCorrection = (object) [
+            'correction_id' => 51,
+        ];
+        $approvedCorrection = (object) [
+            'correction_id' => 51,
+            'status' => 'APPROVED',
+        ];
+        $correctedRun = (object) [
+            'run_id' => 302,
+            'trade_date_requested' => '2026-05-08',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
+            'coverage_ratio' => '1.0000',
+            'publication_id' => 4002,
+            'publication_version' => 2,
+            'sealed_at' => '2026-05-27 10:00:00',
+        ];
 
         $runs->shouldReceive('findLatestForRequestedDate')
             ->once()
             ->with('2026-05-08', 'api')
             ->andReturn($readableRun);
-        $pipeline->shouldNotReceive('promoteDaily');
-        $evidence->shouldNotReceive('exportRunEvidence');
-        $replay->shouldNotReceive('generateFixtureFromRun');
-        $replay->shouldNotReceive('verifyRunAgainstFixture');
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-05-08')
+            ->andReturn($baseline);
+        $corrections->shouldReceive('createRequest')
+            ->once()
+            ->with('2026-05-08', 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION', m::type('string'), 'system', 4001, 301)
+            ->andReturn($requestedCorrection);
+        $corrections->shouldReceive('approve')
+            ->once()
+            ->with(51, 'system')
+            ->andReturn($approvedCorrection);
+        $pipeline->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-05-08', 'api', 301, 51, 'correction_current')
+            ->andReturn($correctedRun);
+        $evidence->shouldReceive('exportRunEvidence')
+            ->once()
+            ->with(302, m::type('string'));
+        $replay->shouldReceive('generateFixtureFromRun')
+            ->once()
+            ->with(302, m::type('string'), 'valid_case', null)
+            ->andReturn(['fixture_path' => 'fixture.json']);
+        $replay->shouldReceive('verifyRunAgainstFixture')
+            ->once()
+            ->with(302, 'fixture.json')
+            ->andReturn(['replay_status' => 'PASS']);
 
         $result = $this->invokePublicationReprocess($orchestrator, [
             'requested_date' => '2026-05-01',
@@ -115,9 +162,10 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
             ],
         ], true, true, true);
 
-        $this->assertSame('BLOCKED_REQUIRES_CORRECTION', $result['publication_reprocess_state']);
-        $this->assertSame('AFFECTED_PUBLICATION_REQUIRES_CORRECTION', $result['publication_reprocess_blocked_reason_code']);
-        $this->assertSame(['2026-05-08'], $result['publication_reprocess_blocked_trade_dates']);
+        $this->assertSame('REPUBLISHED', $result['publication_reprocess_state']);
+        $this->assertSame(['2026-05-08'], $result['publication_reprocess_republished_trade_dates']);
+        $this->assertSame(51, $result['publication_reprocess_runs'][0]['correction_id']);
+        $this->assertSame('AUTOMATED_READABLE_CORRECTION', $result['publication_reprocess_runs'][0]['republication_mode']);
     }
 
     public function test_primary_requested_date_candidate_is_not_left_pending_after_primary_promote(): void
@@ -149,13 +197,17 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
         $evidence = m::mock(MarketDataEvidenceExportService::class);
         $replay = m::mock(ReplayVerificationService::class);
         $runs = m::mock(EodRunRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
 
         return [
-            new BackfillLifecycleOrchestrator($calendar, $tickers, $acquisition, $pipeline, $evidence, $replay, $runs),
+            new BackfillLifecycleOrchestrator($calendar, $tickers, $acquisition, $pipeline, $evidence, $replay, $runs, $corrections, $publications),
             $runs,
             $pipeline,
             $evidence,
             $replay,
+            $corrections,
+            $publications,
         ];
     }
 

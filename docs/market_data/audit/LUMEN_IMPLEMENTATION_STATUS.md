@@ -3752,3 +3752,76 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 - Safe claim: affected non-readable downstream dates can now be promoted through hash/seal/finalize automatically in lifecycle/full-publish paths.
 - Safe claim: affected readable/current dates are still blocked and require correction/republication; this remains intentional until an automated correction workflow is explicitly implemented and proven.
 - No DB schema change and no ENV/config key was added.
+
+---
+
+## 2026-05-27 - IMPORT-ONLY BACKFILL REPROCESS OUTPUT SURFACE CLEANUP + READABLE AUTO-CORRECTION
+
+[STATUS]
+- `DONE` for plain `market-data:backfill` import-only output surface exposing reprocess execution fields already written to run notes.
+- `DONE` for lifecycle/full-publish already-readable affected-date auto-correction orchestration using the existing correction-current publication guard.
+- This session upgrades the prior minor notes:
+  - already-readable affected publication auto-correction is no longer only safe-blocked in lifecycle publication reprocess;
+  - import-only backfill command output no longer hides execution-layer fields.
+
+[IMPLEMENTED_CHANGE]
+- `BackfillLifecycleOrchestrator` now accepts correction/publication repositories and creates an approved correction request for already-readable affected publication dates during publication reprocess.
+- Already-readable affected dates are promoted through `MarketDataPipelineService::promoteDaily(..., correction_id, correction_current)` rather than normal full-publish, preserving baseline lineage and correction guard behavior.
+- `MarketDataPipelineService::executeImpactPublicationReprocessIfNeeded()` mirrors the same auto-correction path for full-publish pipeline-triggered impact publication reprocess.
+- `MarketDataBackfillService::buildImportContext()` now exports execution-layer run-note fields for import-only backfill summaries.
+- `BackfillMarketDataCommand` now prints indicator/eligibility execution state, publication reprocess state, republished/candidate/blocked/failed date lists, recovered-row state, and related reason fields.
+
+[CLAIM_BOUNDARY]
+- Auto-correction means the system creates and approves a correction request and runs the existing correction-current promotion path for already-readable affected dates.
+- It does not bypass coverage, hash, seal, finalize, current pointer, or correction lifecycle guards.
+- If correction baseline resolution or correction publication fails, the run must surface a failure/block reason and must not fake readable state.
+
+[VALIDATION_THIS_SESSION]
+- `php -l app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php` -> PASS.
+- `php -l app/Application/MarketData/Services/MarketDataPipelineService.php` -> PASS.
+- `php -l app/Application/MarketData/Services/MarketDataBackfillService.php` -> PASS.
+- `php -l app/Console/Commands/MarketData/BackfillMarketDataCommand.php` -> PASS.
+- `php -l tests/Unit/MarketData/BackfillLifecyclePublicationReprocessTest.php` -> PASS.
+- `php -l tests/Unit/MarketData/OutOfOrderImportImpactStaticGuardTest.php` -> PASS.
+- Attempted: `php vendor/bin/phpunit tests/Unit/MarketData/BackfillLifecyclePublicationReprocessTest.php tests/Unit/MarketData/OutOfOrderImportImpactStaticGuardTest.php`.
+- Local sandbox result: BLOCKED by missing PHP extensions `dom`, `mbstring`, `xml`, `xmlwriter` even though `vendor/` exists in the ZIP.
+
+[MANUAL_VALIDATION_REQUIRED]
+- Run in the project Windows/local environment where prior full suite passed:
+  - `vendor\bin\phpunit tests\Unit\MarketData --filter "BackfillLifecyclePublicationReprocess"`
+  - `vendor\bin\phpunit tests\Unit\MarketData --filter "OutOfOrderImportImpact"`
+  - `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"`
+  - `vendor\bin\phpunit tests\Unit\MarketData --filter "StaticGuard"`
+  - `vendor\bin\phpunit tests\Unit\MarketData`
+
+[SAFE_CLAIM]
+- After local PHPUnit/manual validation passes, both previously noted gaps can be marked `PASS`:
+  - already-readable auto-correction/republication through correction-current guard;
+  - plain import-only backfill reprocess execution output surface.
+
+
+---
+
+## 2026-05-27 - FINAL LOCAL VALIDATION LOCK: IMPORT-ONLY BACKFILL OUTPUT + READABLE AUTO-CORRECTION
+
+[STATUS]
+- `LOCKED` for plain `market-data:backfill` import-only execution output surface.
+- `LOCKED` for already-readable affected-date auto-correction through correction-current publication guard.
+- `LOCKED` for out-of-order import impact execution + recovered row apply regression coverage after the post-patch local PHPUnit rerun.
+
+[FINAL_VALIDATION]
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "BackfillLifecyclePublicationReprocess"` -> OK (3 tests, 12 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "OutOfOrderImportImpact"` -> OK (7 tests, 96 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"` -> OK (48 tests, 326 assertions).
+- `php vendor/bin/phpunit tests/Unit/MarketData` -> OK (582 tests, 8678 assertions), Time 00:19.091, Memory 42.00 MB.
+
+[LOCKED_CLAIM]
+- Already-readable affected publication auto-correction is now covered by targeted and full-suite runtime proof.
+- The static guard failure around the missing literal `correction_current` in `executePublicationReprocessForCase()` has been fixed and validated by `OutOfOrderImportImpact` passing with 7 tests / 96 assertions.
+- Plain import-only backfill execution output surface is validated by `Backfill` passing with 48 tests / 326 assertions.
+- Full MarketData regression is validated by 582 tests / 8678 assertions.
+
+[CLAIM_BOUNDARY]
+- Auto-correction uses the existing correction-current lifecycle and must continue to preserve baseline lineage, coverage, hash, seal, finalize, pointer, evidence, and replay guards.
+- No fake readable/current state is allowed if baseline resolution, correction approval, promotion, or pointer validation fails.
+- No DB schema change and no ENV/config key was added in this final validation lock.
