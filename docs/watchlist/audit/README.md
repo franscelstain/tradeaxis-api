@@ -27,6 +27,9 @@ Source of truth untuk membangun sistem tetap berada di:
 - `WATCHLIST_AUDIT_SHORT.md`
 - `WATCHLIST_AUDIT_PROMPT_STANDARD.md`
 - `WATCHLIST_CHANGE_IMPACT_MATRIX.md`
+- `AUDIT_UPDATE_GOVERNANCE.md`
+- `LUMEN_IMPLEMENTATION_STATUS.md`
+- `LUMEN_CONTRACT_TRACKER.md`
 
 ## Cara Pakai
 
@@ -52,3 +55,13 @@ Layer C hanya aktif bila ada bukti code/app/runtime nyata yang cukup. Examples, 
 ## Layer Activation Reference
 
 Gunakan [`LAYER_ACTIVATION_RULE.md`](../LAYER_ACTIVATION_RULE.md) untuk menentukan apakah paket harus dibaca sebagai Layer A, B, atau C.
+
+## Lumen Tracker Foundation
+
+The following tracker files record implementation progress and contract status for the Lumen watchlist implementation:
+
+- `AUDIT_UPDATE_GOVERNANCE.md` — update rules, evidence rules, status taxonomy, and anti-overclaim guardrails.
+- `LUMEN_IMPLEMENTATION_STATUS.md` — current Lumen implementation progress and validation evidence.
+- `LUMEN_CONTRACT_TRACKER.md` — baseline watchlist contracts and lock status.
+
+These files are audit/status trackers only. They do not replace `docs/watchlist/system/policy.md` or the normative Weekly Swing policy docs.
