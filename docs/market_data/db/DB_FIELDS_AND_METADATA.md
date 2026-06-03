@@ -140,6 +140,75 @@ Required constraint/index:
 - primary key `cal_date`
 - index `market_calendar_trading_idx (is_trading_day, cal_date)`
 
+### `market_data_sectors`
+
+Runtime owner: source-backed sector taxonomy for upstream market-data context.
+Repository: `SectorClassificationRepository`.
+
+Required fields:
+- `sector_code`
+- `sector_name`
+- `sector_index_code`
+- `classification_system`
+- `effective_from`
+- `effective_to`
+- `is_active`
+- `source_name`
+- `source_ref`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `sector_code`
+- index `(classification_system, is_active, sector_code)`
+- index `(sector_index_code)`
+
+### Sector index benchmark source
+
+Runtime owner: sector-index benchmark master and bars used to populate nullable sector-rotation fields.
+Tables:
+- `market_benchmarks`
+- `market_benchmark_bars`
+- `market_benchmark_indicators`
+
+Required sector benchmark codes:
+- `IDXENERGY`
+- `IDXBASIC`
+- `IDXINDUST`
+- `IDXNONCYC`
+- `IDXCYCLIC`
+- `IDXHEALTH`
+- `IDXFINANCE`
+- `IDXPROPERT`
+- `IDXTECHNO`
+- `IDXINFRA`
+- `IDXTRANS`
+
+Sector benchmark rows use provider `manual_sector_index_csv` unless a future audited provider is added. They must not be fetched through the Yahoo equity/benchmark API unless a verified provider symbol exists.
+
+### `ticker_sector_memberships`
+
+Runtime owner: historical ticker-to-sector membership used to populate nullable `eod_indicators.sector_code`, then resolve sector-index benchmark context for nullable `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg`.
+Repository: `SectorClassificationRepository`.
+
+Required fields:
+- `membership_id`
+- `ticker_id`
+- `sector_code`
+- `classification_system`
+- `effective_from`
+- `effective_to`
+- `source_name`
+- `source_ref`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `membership_id`
+- unique key `(ticker_id, classification_system, effective_from)`
+- index `(ticker_id, classification_system, effective_from, effective_to)`
+- index `(sector_code, classification_system, effective_from)`
+
 ### `md_session_snapshots`
 
 Runtime owner: intraday/session snapshot persistence.  

@@ -96,6 +96,17 @@ return [
         'listed_date_column' => env('MARKET_DATA_TICKERS_LISTED_DATE_COLUMN', 'listed_date'),
         'delisted_date_column' => env('MARKET_DATA_TICKERS_DELISTED_DATE_COLUMN', 'delisted_date'),
     ],
+    'sectors' => [
+        'table' => env('MARKET_DATA_SECTORS_TABLE', 'market_data_sectors'),
+        'membership_table' => env('MARKET_DATA_SECTOR_MEMBERSHIP_TABLE', 'ticker_sector_memberships'),
+        'classification_system' => env('MARKET_DATA_SECTOR_CLASSIFICATION_SYSTEM', 'IDX-IC'),
+        'index_provider' => env('MARKET_DATA_SECTOR_INDEX_PROVIDER', 'manual_sector_index_csv'),
+        'index_api' => [
+            'provider' => env('MARKET_DATA_SECTOR_INDEX_API_PROVIDER', 'yahoo_finance'),
+            'symbol_suffix' => env('MARKET_DATA_SECTOR_INDEX_API_SYMBOL_SUFFIX', '.JK'),
+            'provider_symbols' => json_decode(env('MARKET_DATA_SECTOR_INDEX_API_PROVIDER_SYMBOLS_JSON', '{}'), true) ?: [],
+        ],
+    ],
     'evidence' => [
         'output_directory' => env('MARKET_DATA_EVIDENCE_OUTPUT_DIRECTORY', 'storage/app/market_data/evidence'),
         'invalid_bars_export_sample_limit' => (int) env('MARKET_DATA_INVALID_BARS_EXPORT_SAMPLE_LIMIT', 1000),

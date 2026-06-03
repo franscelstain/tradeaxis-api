@@ -89,7 +89,12 @@ Scheduler proof is not live provider proof. Do not claim provider/API readiness 
 | `market-data:run:finalize` | Resolve terminal state and pointer eligibility | requested date/source/run context | guarded by service | terminal status, publishability state, publication/pointer fields | If HELD/FAILED/NOT_READABLE, pointer must remain preserved; export evidence | finalize/pointer |
 | `market-data:promote` | Explicit publish path | requested date/source, optional `--run_id`, optional force reason | `--force_replace=false` | coverage, seal, finalize, pointer, publication summary | Coverage/seal/pointer failure blocks readable output; next action follows reason code | import/promote, coverage |
 | `market-data:backfill` | Historical import-only range | `start_date`, `end_date`, source options | import-only range; no publish | case lines per date | Failed case does not imply readable; fix case then promote explicitly | backfill |
+| `market-data:backfill:lifecycle` | Historical full lifecycle range | `start_date`, `end_date`, `--source_mode`; optional `--plan`, `--with-evidence`, `--with-replay`, resume flags | `--plan` for non-mutating planning; normal execution is explicit | source acquisition, promote, evidence, replay, checkpoint summary | Source/provider failures are reason-coded; resume only failed checkpoints after review | backfill/lifecycle |
 | `market-data:evidence:export` | Export proof bundle | exactly one selector: run/correction/replay/date | no DB state mutation except artifact write | output path, run/publication/pointer/source/reason metadata | If metadata incomplete, treat proof as failed and rerun/export issue | evidence |
+| `market-data:evidence-replay:full-range-current` | Proof-only evidence/replay over current readable publications | optional start/end date; omitted range uses current publication pointer min/max | no API fetch, no import, no promote/finalize, no pointer switch | per-date run evidence, fixture path, replay MATCH/PASS, replay evidence, summary artifact | Missing current readable publication or replay mismatch blocks proof; use `--continue_on_error` only to collect all failures | evidence/replay/full-range |
+| `market-data:sector-indexes:ingest-api` | Fetch source-backed sector index OHLC bars from API | `start_date`, optional `end_date`, `--provider`, optional `--symbol_suffix` / `--symbol_map_json` | dry-run unless `--apply` | provider symbols, per-date fetched/upserted counts, missing benchmark codes, source reason codes | Fix provider symbols/source availability before apply; recompute/promote affected dates after apply | sector rotation |
+| `market-data:sector-indexes:import-bars` | Import source-backed sector index OHLC bars | CSV with `sector_index_code`, `trade_date`, `open`, `high`, `low`, `close`; optional `adj_close`, `volume` | dry-run unless `--apply` | row counts, valid rows, upsert count, benchmark codes, validation errors | Fix unknown sector index codes/OHLC ranges before apply; recompute/promote affected dates after apply | sector rotation |
+| `market-data:sectors:import-memberships` | Import source-backed ticker-sector membership | CSV with `ticker_code`, `sector_code`, `effective_from`; optional `effective_to`, `source_name`, `source_ref` | dry-run unless `--apply` | row counts, valid rows, upsert count, validation errors | Fix unknown tickers/sector codes/date ranges before apply; recompute/promote affected dates after apply | sector context |
 | `market-data:replay:verify` | Verify executed run against fixture package | `run_id`, `fixture_path` | deterministic proof | replay id/status/mismatch reason | Mismatch blocks acceptance; next action is compare fixture/output and fix root cause | replay |
 | `market-data:replay:smoke` | Run built-in replay cases | `run_id` | deterministic smoke suite | valid/broken/missing/reason mismatch cases | Any failed case blocks readiness claim | replay |
 | `market-data:replay:backfill` | Replay verification over date range | start/end date, fixture case/root | deterministic range proof | case summaries | Failed case must be reason-coded and investigated | replay/backfill |
@@ -112,7 +117,12 @@ Help commands that must remain aligned with this runbook:
 ```text
 php artisan market-data:daily --help
 php artisan market-data:promote --help
+php artisan market-data:backfill:lifecycle --help
 php artisan market-data:evidence:export --help
+php artisan market-data:evidence-replay:full-range-current --help
+php artisan market-data:sector-indexes:ingest-api --help
+php artisan market-data:sector-indexes:import-bars --help
+php artisan market-data:sectors:import-memberships --help
 php artisan market-data:replay:verify --help
 php artisan market-data:replay:fixture:generate --help
 php artisan market-data:correction:request --help
@@ -378,6 +388,14 @@ php artisan market-data:replay:smoke <run_id> --generate_runtime_valid_case --ou
 ```
 
 Generated fixture acceptance requires `comparison_result=MATCH`, `mismatch_count=0`, generated `manifest.json`, generated `expected/expected_replay_result.json`, and generated `expected/expected_reason_code_counts.json`.
+
+Full-range current publication evidence/replay proof without importing or promoting OHLC:
+
+```text
+php artisan market-data:evidence-replay:full-range-current YYYY-MM-DD YYYY-MM-DD --fixture_case=valid_case --output_dir=storage/app/market_data/evidence/full_range_current_evidence_replay/YYYY-MM-DD_to_YYYY-MM-DD
+```
+
+The command must resolve each trading date through current readable publication pointers, export run evidence, generate one runtime fixture per current run/publication, verify replay with `comparison_result=MATCH`, export replay evidence with explicit trade date, and write `market_data_full_range_current_evidence_replay_summary.json`.
 
 Replay backfill:
 

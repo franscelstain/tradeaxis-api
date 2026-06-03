@@ -1178,7 +1178,7 @@ class EodPublicationRepository
         ];
         $manifest['component_column_contract'] = [
             'bars' => ['trade_date', 'ticker_id', 'open', 'high', 'low', 'close', 'volume', 'adj_close', 'source'],
-            'indicators' => ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc20', 'hh20'],
+            'indicators' => ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'sector_code', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc20', 'hh20', 'sector_roc20', 'rs_20_vs_sector', 'sector_rs_20_vs_ihsg'],
             'eligibility' => ['trade_date', 'ticker_id', 'eligible', 'reason_code'],
         ];
         $manifest['coverage_context'] = [

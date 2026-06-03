@@ -4,6 +4,7 @@ namespace App\Application\MarketData\Services;
 
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Infrastructure\Persistence\MarketData\SectorClassificationRepository;
 use Carbon\Carbon;
 
 class EodIndicatorsComputeService
@@ -12,13 +13,15 @@ class EodIndicatorsComputeService
     private $publications;
     private $vectors;
     private $benchmarkIndicators;
+    private $sectors;
 
-    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null)
+    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null)
     {
         $this->artifacts = $artifacts;
         $this->publications = $publications;
         $this->vectors = $vectors;
         $this->benchmarkIndicators = $benchmarkIndicators;
+        $this->sectors = $sectors;
     }
 
     public function compute($run, $requestedDate, $correctionMode = false)
@@ -59,12 +62,39 @@ class EodIndicatorsComputeService
         );
 
         $barsByTicker = $this->artifacts->loadBarsWindow($requestedDate, $windowDays + 5, $useHistory ? $candidatePublication->publication_id : null);
+        $sectorContextsByTicker = $this->sectors !== null
+            ? $this->sectors->resolveSectorContextForTickerIds(array_keys($barsByTicker), $requestedDate)
+            : [];
+        $sectorBenchmarkRoc20s = [];
+
+        if ($this->benchmarkIndicators !== null && ! empty($sectorContextsByTicker)) {
+            $sectorIndexCodes = array_values(array_unique(array_filter(array_map(function ($context) {
+                return $context['sector_index_code'] ?? null;
+            }, $sectorContextsByTicker))));
+
+            $sectorBenchmarkRoc20s = $this->benchmarkIndicators->roc20s($sectorIndexCodes, $requestedDate);
+        }
+
         $rows = [];
         $invalidCount = 0;
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
         foreach ($barsByTicker as $tickerId => $bars) {
-            $row = $this->vectors->buildRow((int) $tickerId, $bars, $requestedDate, $candidatePublication->publication_id, $run->run_id, $now, $this->vectorConfig($benchmarkRoc20));
+            $sectorContext = $sectorContextsByTicker[(int) $tickerId] ?? null;
+            $sectorIndexCode = $sectorContext['sector_index_code'] ?? null;
+            $sectorRoc20 = $sectorIndexCode && array_key_exists($sectorIndexCode, $sectorBenchmarkRoc20s)
+                ? $sectorBenchmarkRoc20s[$sectorIndexCode]
+                : null;
+
+            $row = $this->vectors->buildRow(
+                (int) $tickerId,
+                $bars,
+                $requestedDate,
+                $candidatePublication->publication_id,
+                $run->run_id,
+                $now,
+                $this->vectorConfig($benchmarkRoc20, $sectorContext, $sectorRoc20)
+            );
             if (! $row) {
                 continue;
             }
@@ -87,10 +117,12 @@ class EodIndicatorsComputeService
         ] + $benchmarkResult;
     }
 
-    private function vectorConfig($benchmarkRoc20 = null)
+    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null)
     {
         return [
             'set_version' => config('market_data.indicators.set_version'),
+            'sector_code' => $sectorContext['sector_code'] ?? null,
+            'sector_index_code' => $sectorContext['sector_index_code'] ?? null,
             'lot_size' => (int) config('market_data.platform.lot_size'),
             'price_basis_default' => config('market_data.platform.price_basis_default'),
             'dv_window_days' => (int) config('market_data.indicators.dv_window_days'),
@@ -99,6 +131,7 @@ class EodIndicatorsComputeService
             'roc_lookback_days' => (int) config('market_data.indicators.roc_lookback_days'),
             'hh_window_days' => (int) config('market_data.indicators.hh_window_days'),
             'benchmark_roc20_pct' => $benchmarkRoc20,
+            'sector_roc20_pct' => $sectorRoc20,
         ];
     }
 }

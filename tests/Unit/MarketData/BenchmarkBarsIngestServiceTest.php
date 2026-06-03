@@ -37,7 +37,8 @@ class BenchmarkBarsIngestServiceTest extends TestCase
         ]];
 
         $repository->expects($this->once())
-            ->method('activeBenchmarks')
+            ->method('activeBenchmarksForProvider')
+            ->with('yahoo_finance')
             ->willReturn($benchmarks);
 
         $adapter->expects($this->once())
@@ -79,7 +80,7 @@ class BenchmarkBarsIngestServiceTest extends TestCase
         $adapter = $this->createMock(PublicApiEodBarsAdapter::class);
         $repository = $this->createMock(MarketBenchmarkRepository::class);
 
-        $repository->expects($this->never())->method('activeBenchmarks');
+        $repository->expects($this->never())->method('activeBenchmarksForProvider');
         $adapter->expects($this->never())->method('fetchOrLoadBenchmarkBars');
         $repository->expects($this->never())->method('replaceBars');
 

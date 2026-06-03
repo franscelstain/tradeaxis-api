@@ -29,7 +29,12 @@ The command-specific docs below remain supporting material. They must not contra
 - `market-data:dataset:seal`
 - `market-data:run:finalize`
 - `market-data:promote`
+- `market-data:backfill:lifecycle`
 - `market-data:evidence:export`
+- `market-data:evidence-replay:full-range-current`
+- `market-data:sector-indexes:ingest-api`
+- `market-data:sector-indexes:import-bars`
+- `market-data:sectors:import-memberships`
 - `market-data:replay:verify`
 - `market-data:replay:smoke`
 - `market-data:replay:backfill`
@@ -41,6 +46,7 @@ The command-specific docs below remain supporting material. They must not contra
 - `market-data:correction:approve`
 - `market-data:correction:run`
 - `market-data:current-publication:repair`
+- `market-data:provider:smoke`
 
 ## Notes
 

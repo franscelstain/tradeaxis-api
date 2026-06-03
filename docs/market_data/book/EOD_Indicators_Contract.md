@@ -35,6 +35,7 @@ Required minimum fields:
 - `is_valid`
 - `invalid_reason_code`
 - `indicator_set_version`
+- `sector_code`
 - `dv20_idr`
 - `atr14_pct`
 - `vol_ratio`
@@ -47,6 +48,9 @@ Required minimum fields:
 - `close_to_ll20_pct`
 - `range_20_pct`
 - `range_position_20_pct`
+- `sector_roc20`
+- `rs_20_vs_sector`
+- `sector_rs_20_vs_ihsg`
 - `run_id`
 
 Equivalent naming is allowed only if semantics remain identical.
@@ -93,6 +97,10 @@ Duplicate live indicator rows for the same key are forbidden.
 | `ll20` | `low(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required dependency unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `range_20_pct` | `hh20`, `ll20` | trading-day | 20 valid bars including D | `NULL` if `ll20 <= 0`; otherwise may be `0` for flat range | same as `hh20`/`ll20` |
 | `range_position_20_pct` | `basis_close(D)`, `hh20`, `ll20` | trading-day | 20 valid bars including D | `NULL` if `hh20 - ll20 <= 0` | same as `hh20`/`ll20` |
+| `sector_code` | `ticker_sector_memberships` effective on D | trade-date membership lookup | source-backed membership exists | `NULL` if no membership source exists for D | non-blocking; must not be fabricated |
+| `sector_roc20` | `market_benchmark_indicators.roc_20` for the active `sector_index_code` on D | benchmark indicator lookup | sector index bars and benchmark indicator exist | `NULL` if no sector index history/indicator exists for D | non-blocking; must not be fabricated |
+| `rs_20_vs_sector` | `roc20`, `sector_roc20` | same trade date | valid equity `roc20` and sector `roc_20` exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
+| `sector_rs_20_vs_ihsg` | sector benchmark `roc_20`, IHSG benchmark `roc_20` | same trade date | both benchmark indicators exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
 
 ## Price basis rule (LOCKED)
 Where closing-price basis is required, use per-date fallback:

@@ -14,7 +14,11 @@ use App\Console\Commands\MarketData\PromoteMarketDataCommand;
 use App\Console\Commands\MarketData\ProviderSmokeCommand;
 use App\Console\Commands\MarketData\FinalizeRunCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
+use App\Console\Commands\MarketData\FullRangeCurrentEvidenceReplayCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
+use App\Console\Commands\MarketData\IngestSectorIndexBarsApiCommand;
+use App\Console\Commands\MarketData\ImportSectorIndexBarsCommand;
+use App\Console\Commands\MarketData\ImportSectorMembershipCommand;
 use App\Console\Commands\MarketData\SealDatasetCommand;
 use App\Console\Commands\MarketData\VerifyReplayCommand;
 use App\Console\Commands\MarketData\ReplaySmokeSuiteCommand;
@@ -41,6 +45,10 @@ class Kernel extends ConsoleKernel
         GenerateReplayFixtureCommand::class,
         FinalizeRunCommand::class,
         ExportEvidenceCommand::class,
+        FullRangeCurrentEvidenceReplayCommand::class,
+        IngestSectorIndexBarsApiCommand::class,
+        ImportSectorIndexBarsCommand::class,
+        ImportSectorMembershipCommand::class,
         DailyPipelineCommand::class,
         BackfillMarketDataCommand::class,
         BackfillLifecycleCommand::class,

@@ -23,10 +23,12 @@ class IndicatorVectorService
         }
 
         $invalidReason = $this->resolveInvalidReason($bars, $index, $config);
+        $sectorCode = $this->normalizeSectorCode($config['sector_code'] ?? null);
         $values = [
             'dv20_idr' => null,
             'atr14_pct' => null,
             'vol_ratio' => null,
+            'sector_code' => $sectorCode,
             'roc5' => null,
             'roc10' => null,
             'roc20' => null,
@@ -42,6 +44,9 @@ class IndicatorVectorService
             'close_vs_ma50_pct' => null,
             'ma20_slope_pct' => null,
             'rs_20_vs_ihsg' => null,
+            'sector_roc20' => null,
+            'rs_20_vs_sector' => null,
+            'sector_rs_20_vs_ihsg' => null,
         ];
 
         if (! $invalidReason) {
@@ -54,6 +59,7 @@ class IndicatorVectorService
             'is_valid' => $invalidReason ? 0 : 1,
             'invalid_reason_code' => $invalidReason,
             'indicator_set_version' => $config['set_version'],
+            'sector_code' => $values['sector_code'],
             'dv20_idr' => $values['dv20_idr'],
             'atr14_pct' => $values['atr14_pct'],
             'vol_ratio' => $values['vol_ratio'],
@@ -72,6 +78,9 @@ class IndicatorVectorService
             'close_vs_ma50_pct' => $values['close_vs_ma50_pct'],
             'ma20_slope_pct' => $values['ma20_slope_pct'],
             'rs_20_vs_ihsg' => $values['rs_20_vs_ihsg'],
+            'sector_roc20' => $values['sector_roc20'],
+            'rs_20_vs_sector' => $values['rs_20_vs_sector'],
+            'sector_rs_20_vs_ihsg' => $values['sector_rs_20_vs_ihsg'],
             'run_id' => $runId,
             'publication_id' => $publicationId,
             'created_at' => $createdAt,
@@ -166,11 +175,16 @@ class IndicatorVectorService
         $benchmarkRoc20Pct = array_key_exists('benchmark_roc20_pct', $config) && $config['benchmark_roc20_pct'] !== null
             ? (float) $config['benchmark_roc20_pct']
             : null;
+        $sectorRoc20Pct = array_key_exists('sector_roc20_pct', $config) && $config['sector_roc20_pct'] !== null
+            ? (float) $config['sector_roc20_pct']
+            : null;
+        $equityRoc20Pct = $roc20 !== null ? $roc20 * 100 : null;
 
         return [
             'dv20_idr' => round(array_sum($turnovers) / $dvWindow, 2),
             'atr14_pct' => $atr !== null && $priceBasisCurrent > 0 ? round($atr / $priceBasisCurrent, 10) : null,
             'vol_ratio' => $priorVolAverage > 0 ? round(((float) $currentBar['volume']) / $priorVolAverage, 10) : null,
+            'sector_code' => $this->normalizeSectorCode($config['sector_code'] ?? null),
             'roc5' => $this->roc($bars, $index, 5, $config),
             'roc10' => $this->roc($bars, $index, 10, $config),
             'roc20' => $roc20,
@@ -185,7 +199,10 @@ class IndicatorVectorService
             'close_vs_ma20_pct' => $this->pctDifference($priceBasisCurrent, $ma20),
             'close_vs_ma50_pct' => $this->pctDifference($priceBasisCurrent, $ma50),
             'ma20_slope_pct' => $ma20 !== null && $ma20Past !== null ? $this->pctDifference($ma20, $ma20Past) : null,
-            'rs_20_vs_ihsg' => $roc20 !== null && $benchmarkRoc20Pct !== null ? round(($roc20 * 100) - $benchmarkRoc20Pct, 10) : null,
+            'rs_20_vs_ihsg' => $equityRoc20Pct !== null && $benchmarkRoc20Pct !== null ? round($equityRoc20Pct - $benchmarkRoc20Pct, 10) : null,
+            'sector_roc20' => $sectorRoc20Pct,
+            'rs_20_vs_sector' => $equityRoc20Pct !== null && $sectorRoc20Pct !== null ? round($equityRoc20Pct - $sectorRoc20Pct, 10) : null,
+            'sector_rs_20_vs_ihsg' => $sectorRoc20Pct !== null && $benchmarkRoc20Pct !== null ? round($sectorRoc20Pct - $benchmarkRoc20Pct, 10) : null,
         ];
     }
 
@@ -257,5 +274,12 @@ class IndicatorVectorService
         }
 
         return (float) $bar['close'];
+    }
+
+    private function normalizeSectorCode($sectorCode)
+    {
+        $sectorCode = strtoupper(trim((string) $sectorCode));
+
+        return $sectorCode === '' ? null : $sectorCode;
     }
 }

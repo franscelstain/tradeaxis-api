@@ -699,6 +699,7 @@ class MarketDataPipelineService
                         'is_valid',
                         'invalid_reason_code',
                         'indicator_set_version',
+                        'sector_code',
                         'dv20_idr',
                         'atr14_pct',
                         'vol_ratio',
@@ -717,6 +718,9 @@ class MarketDataPipelineService
                         'close_vs_ma50_pct',
                         'ma20_slope_pct',
                         'rs_20_vs_ihsg',
+                        'sector_roc20',
+                        'rs_20_vs_sector',
+                        'sector_rs_20_vs_ihsg',
                     ],
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),

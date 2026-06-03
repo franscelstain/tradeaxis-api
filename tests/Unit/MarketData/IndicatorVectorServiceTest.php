@@ -17,6 +17,8 @@ class IndicatorVectorServiceTest extends TestCase
             'roc_lookback_days' => 20,
             'hh_window_days' => 20,
             'benchmark_roc20_pct' => 5.0,
+            'sector_roc20_pct' => 2.5,
+            'sector_code' => 'G',
         ];
     }
 
@@ -47,6 +49,7 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertSame(101, $row['ticker_id']);
         $this->assertSame(1, $row['is_valid']);
         $this->assertNull($row['invalid_reason_code']);
+        $this->assertSame('G', $row['sector_code']);
         $this->assertIsFloat($row['dv20_idr']);
         $this->assertIsFloat($row['atr14_pct']);
         $this->assertIsFloat($row['vol_ratio']);
@@ -65,6 +68,9 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertIsFloat($row['close_vs_ma50_pct']);
         $this->assertIsFloat($row['ma20_slope_pct']);
         $this->assertIsFloat($row['rs_20_vs_ihsg']);
+        $this->assertIsFloat($row['sector_roc20']);
+        $this->assertIsFloat($row['rs_20_vs_sector']);
+        $this->assertIsFloat($row['sector_rs_20_vs_ihsg']);
     }
 
     public function test_equity_indicator_extension_formulas_are_deterministic()
@@ -85,6 +91,9 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertEqualsWithDelta(18.77394636, $row['close_vs_ma50_pct'], 0.000000001);
         $this->assertEqualsWithDelta(3.5587188612, $row['ma20_slope_pct'], 0.000000001);
         $this->assertEqualsWithDelta(9.81481481, $row['rs_20_vs_ihsg'], 0.000000001);
+        $this->assertEqualsWithDelta(2.5, $row['sector_roc20'], 0.000000001);
+        $this->assertEqualsWithDelta(12.31481481, $row['rs_20_vs_sector'], 0.000000001);
+        $this->assertEqualsWithDelta(-2.5, $row['sector_rs_20_vs_ihsg'], 0.000000001);
     }
 
     public function test_extension_indicators_remain_null_when_optional_lookback_or_benchmark_dependency_is_missing()
@@ -92,6 +101,7 @@ class IndicatorVectorServiceTest extends TestCase
         $service = new IndicatorVectorService();
         $config = $this->config();
         $config['benchmark_roc20_pct'] = null;
+        $config['sector_roc20_pct'] = null;
 
         $row = $service->buildRow(101, $this->bars(), '2026-04-21', 55, 9001, '2026-04-21 18:00:00', $config);
 
@@ -101,6 +111,9 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertNull($row['close_vs_ma50_pct']);
         $this->assertNull($row['ma20_slope_pct']);
         $this->assertNull($row['rs_20_vs_ihsg']);
+        $this->assertNull($row['sector_roc20']);
+        $this->assertNull($row['rs_20_vs_sector']);
+        $this->assertNull($row['sector_rs_20_vs_ihsg']);
     }
 
     public function test_zero_denominator_extension_calculations_return_null_without_error()

@@ -72,7 +72,7 @@ $this->assertStringContainsString('OK (534 tests, 8287 assertions)', $status.$tr
         $this->assertStringContainsString('`OPS_RUNTIME_PARITY_PASSED` requires scheduler due-run proof plus provider smoke PASS', $status.$tracker);
         $this->assertStringContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
         $this->assertStringContainsString('ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH', $status.$tracker);
-        $this->assertStringContainsString('21 registered market-data commands', $status.$tracker);
+        $this->assertStringContainsString('26 registered market-data commands', $status.$tracker);
 $this->assertStringContainsString('PROVIDER_SMOKE_OK', $status.$tracker);
 
 $this->assertStringContainsString('- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock -> DONE', $status);

@@ -83,6 +83,40 @@ trait UsesMarketDataSqlite
             $table->index(['is_trading_day', 'cal_date'], 'market_calendar_trading_idx');
         });
 
+        $schema->create('market_data_sectors', function (Blueprint $table) {
+            $table->string('sector_code', 8)->primary();
+            $table->string('sector_name', 120);
+            $table->string('sector_index_code', 32)->nullable();
+            $table->string('classification_system', 32)->default('IDX-IC');
+            $table->date('effective_from')->default('2021-01-25');
+            $table->date('effective_to')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->string('source_name', 64)->default('idx');
+            $table->string('source_ref', 255)->nullable();
+            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+
+            $table->index(['classification_system', 'is_active', 'sector_code'], 'idx_market_data_sectors_system_active_code');
+            $table->index(['sector_index_code'], 'idx_market_data_sectors_index_code');
+        });
+
+        $schema->create('ticker_sector_memberships', function (Blueprint $table) {
+            $table->bigIncrements('membership_id');
+            $table->unsignedBigInteger('ticker_id');
+            $table->string('sector_code', 8);
+            $table->string('classification_system', 32)->default('IDX-IC');
+            $table->date('effective_from');
+            $table->date('effective_to')->nullable();
+            $table->string('source_name', 64)->nullable();
+            $table->string('source_ref', 255)->nullable();
+            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+
+            $table->unique(['ticker_id', 'classification_system', 'effective_from'], 'uq_ticker_sector_membership_effective_from');
+            $table->index(['ticker_id', 'classification_system', 'effective_from', 'effective_to'], 'idx_ticker_sector_membership_ticker_date');
+            $table->index(['sector_code', 'classification_system', 'effective_from'], 'idx_ticker_sector_membership_sector_date');
+        });
+
         $schema->create('market_benchmarks', function (Blueprint $table) {
             $table->bigIncrements('benchmark_id');
             $table->string('benchmark_code', 32);
@@ -389,6 +423,7 @@ trait UsesMarketDataSqlite
             $table->integer('is_valid');
             $table->string('invalid_reason_code')->nullable();
             $table->string('indicator_set_version');
+            $table->string('sector_code', 8)->nullable();
             $table->decimal('dv20_idr', 24, 2)->nullable();
             $table->decimal('atr14_pct', 20, 10)->nullable();
             $table->decimal('vol_ratio', 20, 10)->nullable();
@@ -407,6 +442,9 @@ trait UsesMarketDataSqlite
             $table->decimal('close_vs_ma50_pct', 20, 10)->nullable();
             $table->decimal('ma20_slope_pct', 20, 10)->nullable();
             $table->decimal('rs_20_vs_ihsg', 20, 10)->nullable();
+            $table->decimal('sector_roc20', 20, 10)->nullable();
+            $table->decimal('rs_20_vs_sector', 20, 10)->nullable();
+            $table->decimal('sector_rs_20_vs_ihsg', 20, 10)->nullable();
             $table->integer('run_id');
             $table->integer('publication_id');
             $table->dateTime('created_at');
@@ -417,6 +455,7 @@ trait UsesMarketDataSqlite
             $table->index(['invalid_reason_code'], 'idx_eod_indicators_invalid_reason');
             $table->index(['publication_id'], 'idx_eod_indicators_publication');
             $table->index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_indicators_publication_date_ticker');
+            $table->index(['sector_code', 'trade_date'], 'idx_eod_indicators_sector_date');
         });
 
         $schema->create('eod_eligibility', function (Blueprint $table) {
@@ -632,6 +671,7 @@ trait UsesMarketDataSqlite
             $table->integer('is_valid')->nullable();
             $table->string('invalid_reason_code')->nullable();
             $table->string('indicator_set_version')->nullable();
+            $table->string('sector_code', 8)->nullable();
             $table->decimal('dv20_idr', 24, 2)->nullable();
             $table->decimal('atr14_pct', 20, 10)->nullable();
             $table->decimal('vol_ratio', 20, 10)->nullable();
@@ -650,6 +690,9 @@ trait UsesMarketDataSqlite
             $table->decimal('close_vs_ma50_pct', 20, 10)->nullable();
             $table->decimal('ma20_slope_pct', 20, 10)->nullable();
             $table->decimal('rs_20_vs_ihsg', 20, 10)->nullable();
+            $table->decimal('sector_roc20', 20, 10)->nullable();
+            $table->decimal('rs_20_vs_sector', 20, 10)->nullable();
+            $table->decimal('sector_rs_20_vs_ihsg', 20, 10)->nullable();
             $table->integer('run_id')->nullable();
             $table->dateTime('created_at');
 
@@ -657,6 +700,7 @@ trait UsesMarketDataSqlite
             $table->index(['trade_date'], 'idx_indicators_history_trade_date');
             $table->index(['ticker_id', 'trade_date'], 'idx_indicators_history_ticker_date');
             $table->index(['run_id'], 'idx_indicators_history_run');
+            $table->index(['sector_code', 'trade_date'], 'idx_eod_indicators_history_sector_date');
         });
 
         $schema->create('eod_eligibility_history', function (Blueprint $table) {
@@ -673,5 +717,51 @@ trait UsesMarketDataSqlite
             $table->index(['ticker_id', 'trade_date'], 'idx_eligibility_history_ticker_date');
             $table->index(['run_id'], 'idx_eligibility_history_run');
         });
+
+        $this->seedMarketDataSectorTaxonomy();
+    }
+
+    protected function seedMarketDataSectorTaxonomy(): void
+    {
+        $now = date('Y-m-d H:i:s');
+
+        foreach ([
+            ['sector_code' => 'A', 'sector_name' => 'Energy', 'sector_index_code' => 'IDXENERGY'],
+            ['sector_code' => 'B', 'sector_name' => 'Basic Materials', 'sector_index_code' => 'IDXBASIC'],
+            ['sector_code' => 'C', 'sector_name' => 'Industrials', 'sector_index_code' => 'IDXINDUST'],
+            ['sector_code' => 'D', 'sector_name' => 'Consumer Non-Cyclicals', 'sector_index_code' => 'IDXNONCYC'],
+            ['sector_code' => 'E', 'sector_name' => 'Consumer Cyclicals', 'sector_index_code' => 'IDXCYCLIC'],
+            ['sector_code' => 'F', 'sector_name' => 'Healthcare', 'sector_index_code' => 'IDXHEALTH'],
+            ['sector_code' => 'G', 'sector_name' => 'Financials', 'sector_index_code' => 'IDXFINANCE'],
+            ['sector_code' => 'H', 'sector_name' => 'Properties & Real Estate', 'sector_index_code' => 'IDXPROPERT'],
+            ['sector_code' => 'I', 'sector_name' => 'Technology', 'sector_index_code' => 'IDXTECHNO'],
+            ['sector_code' => 'J', 'sector_name' => 'Infrastructures', 'sector_index_code' => 'IDXINFRA'],
+            ['sector_code' => 'K', 'sector_name' => 'Transportation & Logistic', 'sector_index_code' => 'IDXTRANS'],
+            ['sector_code' => 'Z', 'sector_name' => 'Listed Investment Product', 'sector_index_code' => null],
+        ] as $sector) {
+            DB::table('market_data_sectors')->insert($sector + [
+                'classification_system' => 'IDX-IC',
+                'effective_from' => '2021-01-25',
+                'effective_to' => null,
+                'is_active' => 1,
+                'source_name' => 'idx',
+                'source_ref' => 'https://www.idx.id/en/products/stocks/',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            if ($sector['sector_index_code'] !== null) {
+                DB::table('market_benchmarks')->insert([
+                    'benchmark_code' => $sector['sector_index_code'],
+                    'benchmark_name' => 'IDX Sector '.$sector['sector_name'],
+                    'provider' => 'manual_sector_index_csv',
+                    'provider_symbol' => $sector['sector_index_code'],
+                    'instrument_type' => 'SECTOR_INDEX',
+                    'is_active' => 1,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
     }
 }

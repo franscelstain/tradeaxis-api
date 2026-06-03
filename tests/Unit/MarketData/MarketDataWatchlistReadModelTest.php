@@ -50,6 +50,9 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->assertSame(9000.0, $row['close_price']);
         $this->assertSame(123456, $row['volume']);
         $this->assertSame(123456789000.0, $row['dv20idr']);
+        $this->assertSame('G', $row['sector_code']);
+        $this->assertSame('Financials', $row['sector_name']);
+        $this->assertSame('IDXFINANCE', $row['sector_index_code']);
         $this->assertSame(0.018, $row['roc_5']);
         $this->assertSame(0.031, $row['roc_10']);
         $this->assertSame(5.2, $row['roc_20']);
@@ -60,6 +63,9 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->assertSame(8750.0, $row['ma20']);
         $this->assertSame(8600.0, $row['ma50']);
         $this->assertSame(3.4, $row['rs_20_vs_ihsg']);
+        $this->assertSame(2.7, $row['sector_roc20']);
+        $this->assertSame(2.5, $row['rs_20_vs_sector']);
+        $this->assertSame(-0.9, $row['sector_rs_20_vs_ihsg']);
         $this->assertSame('v1', $row['indicator_set_version']);
         $this->assertSame('API_FREE', $row['source_name']);
     }

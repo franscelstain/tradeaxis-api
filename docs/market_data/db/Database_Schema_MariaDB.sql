@@ -42,6 +42,70 @@ CREATE TABLE IF NOT EXISTS market_calendar (
 ) ENGINE=InnoDB;
 
 -- =========================================================
+-- Sector taxonomy and ticker membership
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS market_data_sectors (
+  sector_code VARCHAR(8) NOT NULL,
+  sector_name VARCHAR(120) NOT NULL,
+  sector_index_code VARCHAR(32) NULL,
+  classification_system VARCHAR(32) NOT NULL DEFAULT 'IDX-IC',
+  effective_from DATE NOT NULL DEFAULT '2021-01-25',
+  effective_to DATE NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  source_name VARCHAR(64) NOT NULL DEFAULT 'idx',
+  source_ref VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (sector_code),
+  KEY idx_market_data_sectors_system_active_code (classification_system, is_active, sector_code),
+  KEY idx_market_data_sectors_index_code (sector_index_code)
+) ENGINE=InnoDB;
+
+INSERT INTO market_data_sectors
+  (sector_code, sector_name, sector_index_code, classification_system, effective_from, effective_to, is_active, source_name, source_ref, created_at, updated_at)
+VALUES
+  ('A', 'Energy', 'IDXENERGY', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('B', 'Basic Materials', 'IDXBASIC', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('C', 'Industrials', 'IDXINDUST', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('D', 'Consumer Non-Cyclicals', 'IDXNONCYC', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('E', 'Consumer Cyclicals', 'IDXCYCLIC', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('F', 'Healthcare', 'IDXHEALTH', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('G', 'Financials', 'IDXFINANCE', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('H', 'Properties & Real Estate', 'IDXPROPERT', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('I', 'Technology', 'IDXTECHNO', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('J', 'Infrastructures', 'IDXINFRA', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('K', 'Transportation & Logistic', 'IDXTRANS', 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('Z', 'Listed Investment Product', NULL, 'IDX-IC', '2021-01-25', NULL, 1, 'idx', 'https://www.idx.id/en/products/stocks/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  sector_name = VALUES(sector_name),
+  sector_index_code = VALUES(sector_index_code),
+  classification_system = VALUES(classification_system),
+  effective_from = VALUES(effective_from),
+  effective_to = VALUES(effective_to),
+  is_active = VALUES(is_active),
+  source_name = VALUES(source_name),
+  source_ref = VALUES(source_ref),
+  updated_at = VALUES(updated_at);
+
+CREATE TABLE IF NOT EXISTS ticker_sector_memberships (
+  membership_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ticker_id BIGINT UNSIGNED NOT NULL,
+  sector_code VARCHAR(8) NOT NULL,
+  classification_system VARCHAR(32) NOT NULL DEFAULT 'IDX-IC',
+  effective_from DATE NOT NULL,
+  effective_to DATE NULL,
+  source_name VARCHAR(64) NULL,
+  source_ref VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (membership_id),
+  UNIQUE KEY uq_ticker_sector_membership_effective_from (ticker_id, classification_system, effective_from),
+  KEY idx_ticker_sector_membership_ticker_date (ticker_id, classification_system, effective_from, effective_to),
+  KEY idx_ticker_sector_membership_sector_date (sector_code, classification_system, effective_from)
+) ENGINE=InnoDB;
+
+-- =========================================================
 -- Market benchmark/index master and bars
 -- =========================================================
 
@@ -64,7 +128,18 @@ CREATE TABLE IF NOT EXISTS market_benchmarks (
 INSERT INTO market_benchmarks
   (benchmark_code, benchmark_name, provider, provider_symbol, instrument_type, is_active, created_at, updated_at)
 VALUES
-  ('IHSG', 'Jakarta Composite Index', 'yahoo_finance', '^JKSE', 'INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  ('IHSG', 'Jakarta Composite Index', 'yahoo_finance', '^JKSE', 'INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXENERGY', 'IDX Sector Energy', 'manual_sector_index_csv', 'IDXENERGY', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXBASIC', 'IDX Sector Basic Materials', 'manual_sector_index_csv', 'IDXBASIC', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXINDUST', 'IDX Sector Industrials', 'manual_sector_index_csv', 'IDXINDUST', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXNONCYC', 'IDX Sector Consumer Non-Cyclicals', 'manual_sector_index_csv', 'IDXNONCYC', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXCYCLIC', 'IDX Sector Consumer Cyclicals', 'manual_sector_index_csv', 'IDXCYCLIC', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXHEALTH', 'IDX Sector Healthcare', 'manual_sector_index_csv', 'IDXHEALTH', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXFINANCE', 'IDX Sector Financials', 'manual_sector_index_csv', 'IDXFINANCE', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXPROPERT', 'IDX Sector Properties & Real Estate', 'manual_sector_index_csv', 'IDXPROPERT', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXTECHNO', 'IDX Sector Technology', 'manual_sector_index_csv', 'IDXTECHNO', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXINFRA', 'IDX Sector Infrastructures', 'manual_sector_index_csv', 'IDXINFRA', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('IDXTRANS', 'IDX Sector Transportation & Logistic', 'manual_sector_index_csv', 'IDXTRANS', 'SECTOR_INDEX', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON DUPLICATE KEY UPDATE
   benchmark_name = VALUES(benchmark_name),
   provider = VALUES(provider),
@@ -197,6 +272,7 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   is_valid TINYINT(1) NOT NULL,
   invalid_reason_code VARCHAR(64) NULL,
   indicator_set_version VARCHAR(64) NOT NULL,
+  sector_code VARCHAR(8) NULL,
   dv20_idr DECIMAL(24,2) NULL,
   atr14_pct DECIMAL(20,10) NULL,
   vol_ratio DECIMAL(20,10) NULL,
@@ -215,6 +291,9 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   close_vs_ma50_pct DECIMAL(20,10) NULL,
   ma20_slope_pct DECIMAL(20,10) NULL,
   rs_20_vs_ihsg DECIMAL(20,10) NULL,
+  sector_roc20 DECIMAL(20,10) NULL,
+  rs_20_vs_sector DECIMAL(20,10) NULL,
+  sector_rs_20_vs_ihsg DECIMAL(20,10) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   publication_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL,
@@ -223,7 +302,8 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   KEY idx_eod_indicators_run (run_id),
   KEY idx_eod_indicators_invalid_reason (invalid_reason_code),
   KEY idx_eod_indicators_publication (publication_id),
-  KEY idx_eod_indicators_publication_date_ticker (publication_id, trade_date, ticker_id)
+  KEY idx_eod_indicators_publication_date_ticker (publication_id, trade_date, ticker_id),
+  KEY idx_eod_indicators_sector_date (sector_code, trade_date)
 ) ENGINE=InnoDB;
 
 -- LOCKED NOTE
@@ -545,6 +625,7 @@ CREATE TABLE IF NOT EXISTS eod_indicators_history (
   is_valid TINYINT(1) NOT NULL,
   invalid_reason_code VARCHAR(64) NULL,
   indicator_set_version VARCHAR(64) NOT NULL,
+  sector_code VARCHAR(8) NULL,
   dv20_idr DECIMAL(24,2) NULL,
   atr14_pct DECIMAL(20,10) NULL,
   vol_ratio DECIMAL(20,10) NULL,
@@ -563,12 +644,16 @@ CREATE TABLE IF NOT EXISTS eod_indicators_history (
   close_vs_ma50_pct DECIMAL(20,10) NULL,
   ma20_slope_pct DECIMAL(20,10) NULL,
   rs_20_vs_ihsg DECIMAL(20,10) NULL,
+  sector_roc20 DECIMAL(20,10) NULL,
+  rs_20_vs_sector DECIMAL(20,10) NULL,
+  sector_rs_20_vs_ihsg DECIMAL(20,10) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (publication_id, trade_date, ticker_id),
   KEY idx_indicators_history_trade_date (trade_date),
   KEY idx_indicators_history_ticker_date (ticker_id, trade_date),
   KEY idx_indicators_history_run (run_id),
+  KEY idx_eod_indicators_history_sector_date (sector_code, trade_date),
   CONSTRAINT fk_indicators_history_publication
     FOREIGN KEY (publication_id) REFERENCES eod_publications(publication_id)
 ) ENGINE=InnoDB;

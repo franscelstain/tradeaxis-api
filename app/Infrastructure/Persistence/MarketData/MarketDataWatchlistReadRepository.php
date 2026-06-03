@@ -11,6 +11,7 @@ class MarketDataWatchlistReadRepository
         $tickersTable = config('market_data.tickers.table', 'tickers');
         $tickerIdColumn = config('market_data.tickers.id_column', 'ticker_id');
         $tickerCodeColumn = config('market_data.tickers.code_column', 'ticker_code');
+        $sectorsTable = config('market_data.sectors.table', 'market_data_sectors');
 
         return DB::table('eod_eligibility as elig')
             ->join('eod_bars as bar', function ($join) {
@@ -22,6 +23,11 @@ class MarketDataWatchlistReadRepository
                 $join->on('ind.trade_date', '=', 'elig.trade_date')
                     ->on('ind.ticker_id', '=', 'elig.ticker_id')
                     ->on('ind.publication_id', '=', 'elig.publication_id');
+            })
+            ->leftJoin($sectorsTable.' as sector', function ($join) {
+                $join->on('sector.sector_code', '=', 'ind.sector_code')
+                    ->where('sector.classification_system', '=', config('market_data.sectors.classification_system', 'IDX-IC'))
+                    ->where('sector.is_active', '=', 1);
             })
             ->join($tickersTable.' as tick', 'tick.'.$tickerIdColumn, '=', 'elig.ticker_id')
             ->where('elig.trade_date', $publication->trade_date)
@@ -37,6 +43,9 @@ class MarketDataWatchlistReadRepository
                 'ind.dv20_idr',
                 'ind.atr14_pct',
                 'ind.vol_ratio',
+                'ind.sector_code',
+                'sector.sector_name',
+                'sector.sector_index_code',
                 'ind.roc5',
                 'ind.roc10',
                 'ind.roc20',
@@ -52,6 +61,9 @@ class MarketDataWatchlistReadRepository
                 'ind.close_vs_ma50_pct',
                 'ind.ma20_slope_pct',
                 'ind.rs_20_vs_ihsg',
+                'ind.sector_roc20',
+                'ind.rs_20_vs_sector',
+                'ind.sector_rs_20_vs_ihsg',
                 'ind.indicator_set_version'
             )
             ->orderBy('tick.'.$tickerCodeColumn)
@@ -66,6 +78,9 @@ class MarketDataWatchlistReadRepository
                     'dv20idr' => $this->decimalOrNull($row->dv20_idr),
                     'atr14_pct' => $this->decimalOrNull($row->atr14_pct),
                     'vol_ratio' => $this->decimalOrNull($row->vol_ratio),
+                    'sector_code' => $row->sector_code !== null ? strtoupper(trim((string) $row->sector_code)) : null,
+                    'sector_name' => $row->sector_name,
+                    'sector_index_code' => $row->sector_index_code,
                     'roc_5' => $this->decimalOrNull($row->roc5),
                     'roc_10' => $this->decimalOrNull($row->roc10),
                     'roc_20' => $this->decimalOrNull($row->roc20),
@@ -81,6 +96,9 @@ class MarketDataWatchlistReadRepository
                     'close_vs_ma50_pct' => $this->decimalOrNull($row->close_vs_ma50_pct),
                     'ma20_slope_pct' => $this->decimalOrNull($row->ma20_slope_pct),
                     'rs_20_vs_ihsg' => $this->decimalOrNull($row->rs_20_vs_ihsg),
+                    'sector_roc20' => $this->decimalOrNull($row->sector_roc20),
+                    'rs_20_vs_sector' => $this->decimalOrNull($row->rs_20_vs_sector),
+                    'sector_rs_20_vs_ihsg' => $this->decimalOrNull($row->sector_rs_20_vs_ihsg),
                     'indicator_set_version' => $row->indicator_set_version,
                     'source_name' => $row->source,
                 ];

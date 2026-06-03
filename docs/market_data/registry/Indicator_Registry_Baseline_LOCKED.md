@@ -13,6 +13,8 @@ It does **not** define downstream screening, scoring, grouping, ranking, or port
 - `hh20` using real high over the last 20 trading days inclusive of D
 - `ll20` using real low over the last 20 trading days inclusive of D
 - `close_to_hh20_pct`, `close_to_ll20_pct`, `range_20_pct`, and `range_position_20_pct` as 20-day range structure context
+- `sector_code` as nullable source-backed IDX-IC sector membership context, not a technical formula
+- `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` as nullable source-backed sector-index context
 
 ## Validity rule
 If any mandatory baseline indicator is NULL because required history is unavailable, then:
@@ -20,6 +22,10 @@ If any mandatory baseline indicator is NULL because required history is unavaila
 - `invalid_reason_code=IND_INSUFFICIENT_HISTORY`
 - `eod_eligibility.eligible=0`
 - `reason_code=ELIG_INSUFFICIENT_HISTORY`
+
+`sector_code` is nullable and does not by itself invalidate the row. Missing sector membership means no source-backed sector classification exists for the ticker/date yet; implementations must not fabricate a placeholder sector.
+
+`sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` are nullable and do not by themselves invalidate the row. Missing sector-index history means no source-backed sector rotation value exists for that date yet; implementations must not fabricate or forward-fill sector values.
 
 ---
 

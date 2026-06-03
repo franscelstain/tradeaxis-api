@@ -9,6 +9,8 @@ This file may clarify computation order, warmup handling, and storage-facing imp
 ## Input source
 Input comes only from canonical `eod_bars` for valid trading days.
 Rows from `eod_invalid_bars` must never participate in indicator computation.
+Nullable `sector_code` context comes only from `ticker_sector_memberships` joined to active `market_data_sectors` for the requested trade date; missing membership must remain NULL and must not be forward-filled or faked.
+Nullable sector-rotation context comes only from `market_benchmark_indicators` for the active sector index code on D; missing sector-index bars/benchmark indicators must leave `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` NULL.
 
 ## Trading-day ordering (LOCKED)
 For each ticker, bars are ordered by market-calendar trading day ascending.
@@ -80,6 +82,13 @@ These are based on real highs/lows, not adjusted price basis.
 `range_position_20_pct(D) = ((P(D) - ll20(D)) / (hh20(D) - ll20(D))) * 100`
 
 If `ll20 <= 0`, percentage fields that divide by `ll20` are NULL. If `hh20 - ll20 <= 0`, `range_position_20_pct` is NULL.
+
+### 10) Sector rotation context
+`sector_roc20(D)` is the active sector-index benchmark `roc_20` for the ticker's source-backed `sector_code` on D.
+`rs_20_vs_sector(D) = (roc20(D) * 100) - sector_roc20(D)`.
+`sector_rs_20_vs_ihsg(D) = sector_roc20(D) - IHSG_roc_20(D)`.
+
+`roc20` on the equity row remains a ratio. `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` are percentage/percentage-point fields aligned with benchmark `roc_20`.
 
 ## Null policy (LOCKED)
 - No forward-fill.
