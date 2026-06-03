@@ -50,7 +50,13 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->assertSame(9000.0, $row['close_price']);
         $this->assertSame(123456, $row['volume']);
         $this->assertSame(123456789000.0, $row['dv20idr']);
+        $this->assertSame(0.018, $row['roc_5']);
+        $this->assertSame(0.031, $row['roc_10']);
         $this->assertSame(5.2, $row['roc_20']);
+        $this->assertSame(8200.0, $row['ll20']);
+        $this->assertSame(9.756097561, $row['close_to_ll20_pct']);
+        $this->assertSame(10.9756097561, $row['range_20_pct']);
+        $this->assertSame(88.8888888889, $row['range_position_20_pct']);
         $this->assertSame(8750.0, $row['ma20']);
         $this->assertSame(8600.0, $row['ma50']);
         $this->assertSame(3.4, $row['rs_20_vs_ihsg']);

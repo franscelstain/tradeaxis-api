@@ -26,11 +26,12 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Market Data Consumer Read Model', $statusActiveSession);
+        $this->assertSame('Weekly Swing Priority 1 Indicator Extension', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
         foreach ([$status, $tracker] as $document) {
+            $this->assertStringContainsString('WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_CONTRACT', $document);
             $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $document);
             $this->assertStringContainsString('POST_SESSION_1_8_LOCKED_LOCAL_PHPUNIT_PASS', $document);
             $this->assertStringContainsString('OPERATIONAL_READINESS_CONTRACT', $document);
@@ -162,7 +163,7 @@ $this->assertStringContainsString('replay_id=2', $status.$tracker);
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);

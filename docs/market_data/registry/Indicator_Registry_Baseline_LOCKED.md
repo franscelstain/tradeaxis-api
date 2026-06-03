@@ -7,8 +7,12 @@ It does **not** define downstream screening, scoring, grouping, ranking, or port
 - `dv20_idr` using 20-day inclusive turnover average
 - `atr14_pct` using 14-day Wilder ATR on real OHLC
 - `vol_ratio` using current-day volume divided by average of prior 20 trading-day volumes
+- `roc5` using `P(D)` versus `P(D[-5])`
+- `roc10` using `P(D)` versus `P(D[-10])`
 - `roc20` using `P(D)` versus `P(D[-20])`
 - `hh20` using real high over the last 20 trading days inclusive of D
+- `ll20` using real low over the last 20 trading days inclusive of D
+- `close_to_hh20_pct`, `close_to_ll20_pct`, `range_20_pct`, and `range_position_20_pct` as 20-day range structure context
 
 ## Validity rule
 If any mandatory baseline indicator is NULL because required history is unavailable, then:
@@ -27,8 +31,11 @@ Baseline dependency requirements:
 - `dv20_idr`: 20
 - `atr14_pct`: 15 conservative dependency days because TR needs prior close
 - `vol_ratio`: 21 because it uses current day volume and the prior 20 trading days
+- `roc5`: 6 because it uses D and D[-5]
+- `roc10`: 11 because it uses D and D[-10]
 - `roc20`: 21 because it uses D and D[-20]
 - `hh20`: 20
+- `ll20`: 20
 - `ma20`: 20
 - `ma50`: 50
 

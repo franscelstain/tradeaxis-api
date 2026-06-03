@@ -38,8 +38,15 @@ Required minimum fields:
 - `dv20_idr`
 - `atr14_pct`
 - `vol_ratio`
+- `roc5`
+- `roc10`
 - `roc20`
 - `hh20`
+- `ll20`
+- `close_to_hh20_pct`
+- `close_to_ll20_pct`
+- `range_20_pct`
+- `range_position_20_pct`
 - `run_id`
 
 Equivalent naming is allowed only if semantics remain identical.
@@ -79,8 +86,13 @@ Duplicate live indicator rows for the same key are forbidden.
 | `dv20_idr` | `basis_close(X)`, `volume(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required history missing | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `atr14_pct` | `high(X)`, `low(X)`, `basis_close(prev(X))`, `basis_close(D)` | trading-day | 15 bars for first ATR14 output | `NULL` if seed or dependency chain invalid | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `vol_ratio` | `volume(D)` and `volume(D[-20] ... D[-1])` | trading-day | 21 bars total | `NULL` if prior-20 unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
+| `roc5` | `basis_close(D)`, `basis_close(D[-5])` | trading-day | 6 bars total | `NULL` if `D[-5]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
+| `roc10` | `basis_close(D)`, `basis_close(D[-10])` | trading-day | 11 bars total | `NULL` if `D[-10]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `roc20` | `basis_close(D)`, `basis_close(D[-20])` | trading-day | 21 bars total | `NULL` if `D[-20]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `hh20` | `high(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required dependency unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
+| `ll20` | `low(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required dependency unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
+| `range_20_pct` | `hh20`, `ll20` | trading-day | 20 valid bars including D | `NULL` if `ll20 <= 0`; otherwise may be `0` for flat range | same as `hh20`/`ll20` |
+| `range_position_20_pct` | `basis_close(D)`, `hh20`, `ll20` | trading-day | 20 valid bars including D | `NULL` if `hh20 - ll20 <= 0` | same as `hh20`/`ll20` |
 
 ## Price basis rule (LOCKED)
 Where closing-price basis is required, use per-date fallback:

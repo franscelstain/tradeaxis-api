@@ -61,14 +61,25 @@ If `close(D) <= 0` the source bar is invalid and the indicator must not be compu
 This uses the current day volume divided by the average volume of the **20 prior trading days excluding D**.
 Requires 21 canonical bars total: D plus D[-1]..D[-20].
 
-### 7) `roc20`
+### 7) `roc5`, `roc10`, `roc20`
+`roc5(D) = (P(D) / P(D[-5])) - 1`
+`roc10(D) = (P(D) / P(D[-10])) - 1`
 `roc20(D) = (P(D) / P(D[-20])) - 1`
-Requires both `P(D)` and `P(D[-20])`.
-This is a pure ratio, not a percentage-multiplied-by-100 field.
+Requires both current price basis and the requested lookback price basis.
+These are pure ratios, not percentage-multiplied-by-100 fields.
 
-### 8) `hh20`
+### 8) `hh20` and `ll20`
 `hh20(D) = MAX(high(x))` over `window(D, 20)`.
-This is based on real highs, not adjusted price basis.
+`ll20(D) = MIN(low(x))` over `window(D, 20)`.
+These are based on real highs/lows, not adjusted price basis.
+
+### 9) Range structure
+`close_to_hh20_pct(D) = ((P(D) - hh20(D)) / hh20(D)) * 100`
+`close_to_ll20_pct(D) = ((P(D) - ll20(D)) / ll20(D)) * 100`
+`range_20_pct(D) = ((hh20(D) - ll20(D)) / ll20(D)) * 100`
+`range_position_20_pct(D) = ((P(D) - ll20(D)) / (hh20(D) - ll20(D))) * 100`
+
+If `ll20 <= 0`, percentage fields that divide by `ll20` are NULL. If `hh20 - ll20 <= 0`, `range_position_20_pct` is NULL.
 
 ## Null policy (LOCKED)
 - No forward-fill.
@@ -91,8 +102,11 @@ The baseline dependency horizon must include all active baseline dependencies:
 - `dv20_idr`: 20 trading days inclusive
 - `atr14_pct`: 14 Wilder TR values plus prior close dependency
 - `vol_ratio`: current date plus 20 prior trading days
+- `roc5`: current date plus D[-5]
+- `roc10`: current date plus D[-10]
 - `roc20`: current date plus D[-20]
 - `hh20`: 20 trading days inclusive
+- `ll20`: 20 trading days inclusive
 - `ma20`: 20 trading days inclusive
 - `ma50`: 50 trading days inclusive
 

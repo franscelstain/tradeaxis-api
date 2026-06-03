@@ -3,37 +3,38 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Market Data Consumer Read Model
+- Weekly Swing Priority 1 Indicator Extension
 
-[SESSION_STATUS] DONE
+[SESSION_STATUS] COMPLETED
 
 [CURRENT_SOURCE_LOCK]
-- MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS
-- MARKET_DATA_PRODUCTION_READY_LOCKED=YES
-- FULL_MARKET_DATA_PHPUNIT=PASSED
-- BASELINE_PRE_CONSUMER_READ_MODEL_FULL_MARKET_DATA_SUITE=OK (513 tests, 7980 assertions)
+- WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_STATUS=DONE_CURRENT_RANGE_PROMOTE_PASS_SAMPLE_EVIDENCE_REPLAY_PASS
 - BASELINE_BENCHMARK_EXTENSION_FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
-- FULL_MARKET_DATA_SUITE=OK (534 tests, 8287 assertions)
-- RUNTIME_VALIDATION=PASS
-- EVIDENCE_EXPORT=PASS
-- REPLAY_VERIFY=PASS
-- REMAINING_BLOCKERS=none
-- FULL_MARKET_DATA_PRODUCTION_READY=YES
+- FULL_MARKET_DATA_PHPUNIT_AFTER_EXTENSION=PASSED (586 tests, 8771 assertions)
+- FULL_MARKET_DATA_RELOCKED_AFTER_EXTENSION=YES_FOR_PRIORITY1_INDICATOR_EXTENSION_CURRENT_RANGE
+- RUNTIME_VALIDATION_AFTER_EXTENSION=PROMOTE_FORCE_REPUBLISH_PASS (672 current readable publications, run_id 1323-1994)
+- DATE_COMPLETION_RULE=CURRENT_READABLE_PUBLICATION_PASS_IS_AUTHORITATIVE
+- NON_CURRENT_UNFINISHED_DUPLICATE_ROWS=NON_BLOCKING_WHEN_SAME_TRADE_DATE_HAS_CURRENT_READABLE_PASS
+- EVIDENCE_EXPORT_AFTER_EXTENSION=SAMPLE_RUN_1994_ADMITTED_COMPLETE
+- REPLAY_VERIFY_AFTER_EXTENSION=SAMPLE_REPLAY_673_PASS
+- REMAINING_BLOCKERS=none_for_priority1_indicator_extension_current_range
+- OPTIONAL_NEXT_VALIDATION=full-range evidence/replay proof if exhaustive per-date proof pack is required
+- NON_SCOPE_SOURCE_GAPS=sector/corporate-action source data
 
 [SESSION_SCOPE]
-- Add official market-data read surfaces for watchlist, portfolio official prices, benchmark context, and readiness status.
-- Keep consumer reads pointer-resolved through current readable publication only.
-- Preserve baseline production-ready market-data ingest/promote/finalize/evidence/replay behavior.
+- Add the first safe weekly-swing indicator tranche to market-data core.
+- Preserve publication-only consumer reads and existing watchlist/strategy boundary.
+- Do not add sector-strength placeholders without sector/index source data.
 - Do not add watchlist ranking, buy/sell decisions, strategy output, target price, stop loss, take profit, or portfolio P/L computation.
 
 [SESSION_GOAL]
-- Lock `MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT` after code, tests, static guard, audit docs, and runtime/static validation prove no raw/staging/latest/MAX(date) bypass.
+- Enforce `WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_CONTRACT` with formulas, schema/read-model plumbing, docs, and targeted tests.
 
 [SESSION_NOTES]
-- New read surfaces are scoped to market-data official data only: watchlist market-data rows, portfolio official price rows, benchmark IHSG context, and readiness status.
-- Consumer read surfaces resolve `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)` directly or through `MarketDataReadinessService` before returning rows.
-- Missing current readable publication returns empty/blocked reason-coded payloads and does not fallback to raw/staging/latest rows.
-- Manual runtime validation remains tied to `2026-05-19`, `run_id=3`, `publication_id=2`.
+- DOCS_BASELINE_GAP: the previous ACTIVE SESSION / CURRENT_SOURCE_LOCK header still referenced the 2026-05-24 consumer-read-model proof while later appended entries record 2026-05-27 full-suite proof counts. This session updates the active header and records new evidence without claiming a fresh LOCKED/production-ready state.
+- Market-data now exposes additional upstream indicators only; scoring/ranking/recommendation remains downstream.
+- Sector rotation and event-risk flags remain data-source gaps because this repo has no sector master/index, UMA/suspend, or corporate-action source surface.
+- Date completion is determined by the authoritative current readable publication for that trade date. Non-current duplicate candidate/import rows are audit history only when the same trade date has a current `SUCCESS / READABLE / PASS` publication.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI proof: PHP 7.4.33.
@@ -41,8 +42,10 @@ ACTIVE SESSION:
 - Artisan proof: Lumen 8.3.4.
 - Required DB driver proof: `pdo_mysql` available.
 - Testing DB target proof remains `DB_DATABASE=tradeaxis_testing`.
-- Provider smoke remains `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, HTTP 200.
-- Scheduler due-run proof remains present; successful scheduled daily production run proof is not claimed in this session.
+- Targeted PHPUnit proof ran in the Operator-local Windows environment.
+- Full MarketData suite passed before runtime republish.
+- Runtime promote republish proof ran on existing current bars for 2023-01-02 through 2025-10-31; API/OHLC import was not repeated.
+- Evidence/replay proof after republish is sample-scoped to current run `1994`; full-range evidence/replay is optional exhaustive proof, not a blocker for the Priority 1 indicator extension current range.
 
 ---
 ## OPERATIONAL STATUS
@@ -64,6 +67,82 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING ENTRY
+
+- Weekly Swing Priority 1 Indicator Extension -> DONE
+
+  [SESSION] Weekly Swing Priority 1 Indicator Extension
+
+  [SESSION_STATUS] DONE
+
+  [LAST_UPDATED] 2026-06-02
+
+  [RELATED_CONTRACT] WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_CONTRACT
+
+  [REVIEW_STATUS] LOCAL_FULL_MARKETDATA_PHPUNIT_PASS_CURRENT_RANGE_PROMOTE_PASS_SAMPLE_EVIDENCE_REPLAY_PASS
+
+  [HISTORY]
+  - 2026-06-02 -> Added Priority 1 weekly-swing equity indicators and richer IHSG context with local full MarketData PHPUnit proof; runtime publication proof remains pending.
+  - 2026-06-02 -> Operator supplied `eod_runs` and `eod_publications` CSV snapshots; local DB matched the 1,321-row run/publication shape and the extension was force-republished from existing current bars across 672 current readable publications.
+  - 2026-06-02 -> Date completion interpretation corrected: unfinished duplicate rows for the same trade date are not remaining work when a current readable `SUCCESS / READABLE / PASS` publication exists for that date.
+
+  [IMPLEMENTATION]
+  - Added migration `2026_06_02_000001_add_weekly_swing_priority1_indicators` for nullable equity fields `roc5`, `roc10`, `ll20`, `close_to_ll20_pct`, `range_20_pct`, and `range_position_20_pct` on `eod_indicators` and `eod_indicators_history`.
+  - Added nullable benchmark/IHSG fields `ma20_slope_pct`, `close_to_ma20_pct`, and `close_to_ma50_pct` on `market_benchmark_indicators`.
+  - `IndicatorVectorService` computes short-term ROC and 20-day range structure with null-safe denominators and flat-range handling.
+  - `BenchmarkIndicatorVectorService`, `MarketBenchmarkReadRepository`, and `MarketBenchmarkReadModelTest` expose richer IHSG context without moving IHSG into the equity ticker universe.
+  - `EodArtifactRepository`, `MarketDataPipelineService`, `MarketDataWatchlistReadRepository`, SQLite schema support, schema docs, and indicator docs were synchronized so history copy, promote, hash/seal input, and watchlist reads keep the new fields.
+
+  [ENFORCEMENT]
+  - New indicators are upstream market-data fields only; market-data still does not rank, score, recommend, or decide entries/exits.
+  - Insufficient history remains fail-safe/null. Non-positive denominator or flat range returns NULL where a ratio/position would be unsafe.
+  - Consumer reads remain publication-scoped through the existing current-readable pointer/readiness path.
+  - Completion/readiness is pointer-authoritative: the current readable publication is the official source of truth for a trade date; non-current unfinished candidates must not be counted as incomplete current data when a same-date current readable publication exists.
+  - Sector strength and event-risk flags were not faked because required source surfaces are absent.
+
+  [GAP]
+  - DOCS_BASELINE_GAP: prior audit header was stale relative to later 2026-05-27 appended proof entries; this session records the gap and avoids LOCKED/full-production-ready claims.
+  - Sector rotation indicators (`sector_code`, `sector_roc20`, `rs_20_vs_sector`, `sector_rs_20_vs_ihsg`) remain source-data gaps.
+  - Corporate-action/UMA/suspend event flags remain source-data gaps.
+  - Full-range evidence/replay proof across all 672 republished dates is optional exhaustive validation, not a blocker for this scoped indicator-extension completion.
+  - Daily/API import rerun was intentionally not performed because the operator-confirmed OHLC bars were already present and the safe runtime action was promote/reseal/republication from existing current bars.
+  - Non-current unfinished duplicate rows are not a remaining indicator-update gap when the same trade date has current readable `SUCCESS / READABLE / PASS` proof.
+
+  [FINAL_BEHAVIOR]
+  - Market-data core is more useful for weekly-swing watchlist consumers through short-term momentum, 20-day range/support context, and IHSG regime context.
+  - The extension is DONE for the current readable historical range with full MarketData PHPUnit proof, 672/672 runtime promote republish proof, and sample evidence/replay proof.
+  - Full-range evidence/replay remains an optional exhaustive proof pack, not a remaining blocker for the scoped Priority 1 indicator extension.
+
+  [EVIDENCE]
+  - Syntax proof: `php -l` passed for `IndicatorVectorService.php`, `BenchmarkIndicatorVectorService.php`, `MarketDataWatchlistReadRepository.php`, `MarketBenchmarkReadRepository.php`, and migration `2026_06_02_000001_add_weekly_swing_priority1_indicators.php`.
+  - Testing migration proof: `php artisan migrate --env=testing` -> migrated `2026_06_02_000001_add_weekly_swing_priority1_indicators` (174.51ms).
+  - Formula/read-model/schema proof: `vendor\bin\phpunit tests\Unit\MarketData --filter IndicatorVectorServiceTest` -> OK (10 tests, 76 assertions).
+  - Benchmark formula proof: `vendor\bin\phpunit tests\Unit\MarketData --filter BenchmarkIndicatorVectorServiceTest` -> OK (3 tests, 21 assertions).
+  - Benchmark read proof: `vendor\bin\phpunit tests\Unit\MarketData --filter MarketBenchmarkReadModel` -> OK (3 tests, 23 assertions).
+  - Watchlist read proof: `vendor\bin\phpunit tests\Unit\MarketData --filter MarketDataWatchlistReadModel` -> OK (3 tests, 28 assertions).
+  - SQLite schema sync proof: `vendor\bin\phpunit tests\Unit\MarketData --filter MarketDataSqliteSchemaSync` -> OK (5 tests, 214 assertions).
+  - Audit docs guard proof: `vendor\bin\phpunit tests\Unit\MarketData --filter AuditDocsSynchronizationStaticGuardTest` -> OK (11 tests, 576 assertions).
+  - StaticGuard proof: `vendor\bin\phpunit tests\Unit\MarketData --filter StaticGuard` -> OK (226 tests, 5527 assertions).
+  - Full MarketData proof: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (586 tests, 8771 assertions).
+  - CSV/DB trace: uploaded `eod_runs.csv` and `eod_publications.csv` each contained 1,321 rows; local DB matched 672 `FINALIZE/COMPLETED/SUCCESS/READABLE/PASS` current publications and 649 non-current candidate publications before republish.
+  - Migration state proof: `php artisan migrate:status` showed `2026_06_02_000001_add_weekly_swing_priority1_indicators` as `Ran=Yes`.
+  - Pre-republish indicator proof: `eod_indicators` had 591,187 rows in range 2023-01-01 to 2025-10-31 and all new fields were NULL before runtime republish.
+  - Candidate probe proof: `php artisan market-data:promote --requested_date=2023-01-02 --source_mode=api --run_id=22 --mode=full_publish ...` correctly held with `RUN_LOCK_CONFLICT` because that candidate had changed bars impacting already-readable downstream dates.
+  - Controlled replacement proof: `php artisan market-data:promote --requested_date=2023-05-15 --source_mode=api --run_id=162 --mode=full_publish --force_replace=true --force_replace_reason="weekly_swing_priority1_indicator_extension_republish_from_existing_current_bars" ...` -> `SUCCESS`, `READABLE`, `coverage_gate_state=PASS`, `promoted=true`, `pointer_switched=true`, `current_publication_id=1323`.
+  - Range republish proof: existing current bars were republished with the same force reason for all current readable trade dates 2023-01-02 through 2025-10-31; final DB proof recorded `current_readable_pass=672`, `current_new_run_gt_1321=672`, `current_old_run_le_1321=0`, `current_min_run=1323`, `current_max_run=1994`.
+  - Duplicate-row interpretation proof: post-republish DB proof recorded `all_runs=1994`, `current_runs=672`, `current_readable_pass=672`, `non_current_not_completed=650`, `non_current_problem_distinct_dates=649`, and `problem_dates_without_current_readable=0`; therefore same-date non-current unfinished rows are audit/candidate history, not unfinished current indicator work.
+  - Runtime summary artifact: `storage/app/market_data/evidence/weekly_swing_priority1_runtime/promote_force_final_summary.json` records `runtime_status=PASS`, range 2023-01-02 to 2025-10-31, and the force replacement reason.
+  - Post-republish indicator proof: in range 2023-01-01 to 2025-10-31, `rows_total=591187`, `valid_rows=573007`, `valid_roc5_null=0`, `valid_roc10_null=0`, `valid_ll20_null=0`, and `valid_range20_null=0`; `valid_rangepos_null=62475` is allowed for flat 20-day ranges.
+  - Evidence sample proof: `php artisan market-data:evidence:export --run_id=1994 --output_dir=storage/app/market_data/evidence/weekly_swing_priority1_runtime/2025-10-31/run-1994-evidence -vvv` -> `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `file_count=10`.
+  - Replay fixture proof: `php artisan market-data:replay:fixture:generate 1994 --case=valid_case --output_dir=storage/app/market_data/evidence/weekly_swing_priority1_runtime/2025-10-31/run-1994-fixture -vvv` -> `fixture_generated=1`, `expected_result=MATCH`, `publication_id=1994`.
+  - Replay verify proof: `php artisan market-data:replay:verify 1994 storage/app/market_data/evidence/weekly_swing_priority1_runtime/2025-10-31/run-1994-fixture --output_dir=storage/app/market_data/evidence/weekly_swing_priority1_runtime/2025-10-31/run-1994-replay-verify -vvv` -> `replay_id=673`, `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`.
+  - Replay evidence guard proof: `php artisan market-data:evidence:export --replay_id=673 ...` without explicit trade date returned `COMMAND_MISSING_REQUIRED_INPUT`; rerun with `--trade_date=2025-10-31` passed with `evidence_admission_state=ADMITTED_COMPLETE`, `file_count=6`.
+  - Current audit-docs guard rerun after runtime doc update: `vendor\bin\phpunit tests\Unit\MarketData\AuditDocsSynchronizationStaticGuardTest.php` -> OK (11 tests, 576 assertions).
+  - Current StaticGuard rerun after `.env.testing` was restored: `vendor\bin\phpunit tests\Unit\MarketData --filter StaticGuard` -> OK (226 tests, 5527 assertions).
+
+  [NEXT_ACTION]
+  - Optional: run full-range evidence/replay proof only if an exhaustive per-date proof pack is required.
+  - Add sector rotation and event-risk surfaces only after reliable sector/index and corporate-action/trading-status sources exist; these are non-scope source gaps, not blockers for Priority 1.
+
 
 - Market Data Consumer Read Model -> DONE
 

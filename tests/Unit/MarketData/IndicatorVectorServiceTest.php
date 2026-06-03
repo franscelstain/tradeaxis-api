@@ -50,11 +50,17 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertIsFloat($row['dv20_idr']);
         $this->assertIsFloat($row['atr14_pct']);
         $this->assertIsFloat($row['vol_ratio']);
+        $this->assertIsFloat($row['roc5']);
+        $this->assertIsFloat($row['roc10']);
         $this->assertIsFloat($row['roc20']);
         $this->assertIsFloat($row['hh20']);
+        $this->assertIsFloat($row['ll20']);
         $this->assertIsFloat($row['ma20']);
         $this->assertIsFloat($row['ma50']);
         $this->assertIsFloat($row['close_to_hh20_pct']);
+        $this->assertIsFloat($row['close_to_ll20_pct']);
+        $this->assertIsFloat($row['range_20_pct']);
+        $this->assertIsFloat($row['range_position_20_pct']);
         $this->assertIsFloat($row['close_vs_ma20_pct']);
         $this->assertIsFloat($row['close_vs_ma50_pct']);
         $this->assertIsFloat($row['ma20_slope_pct']);
@@ -66,9 +72,15 @@ class IndicatorVectorServiceTest extends TestCase
         $service = new IndicatorVectorService();
         $row = $service->buildRow(101, $this->bars(55), '2026-05-25', 55, 9001, '2026-05-25 18:00:00', $this->config());
 
+        $this->assertEqualsWithDelta(0.0333333333, $row['roc5'], 0.000000001);
+        $this->assertEqualsWithDelta(0.0689655172, $row['roc10'], 0.000000001);
         $this->assertSame(145.5, $row['ma20']);
         $this->assertSame(130.5, $row['ma50']);
+        $this->assertSame(134.0, $row['ll20']);
         $this->assertEqualsWithDelta(-0.641025641, $row['close_to_hh20_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(15.671641791, $row['close_to_ll20_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(16.4179104478, $row['range_20_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(95.4545454545, $row['range_position_20_pct'], 0.000000001);
         $this->assertEqualsWithDelta(6.529209622, $row['close_vs_ma20_pct'], 0.000000001);
         $this->assertEqualsWithDelta(18.77394636, $row['close_vs_ma50_pct'], 0.000000001);
         $this->assertEqualsWithDelta(3.5587188612, $row['ma20_slope_pct'], 0.000000001);
@@ -115,6 +127,10 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertSame(0, $row['is_valid']);
         $this->assertSame('IND_INSUFFICIENT_HISTORY', $row['invalid_reason_code']);
         $this->assertNull($row['dv20_idr']);
+        $this->assertNull($row['roc5']);
+        $this->assertNull($row['roc10']);
+        $this->assertNull($row['ll20']);
+        $this->assertNull($row['range_position_20_pct']);
     }
 
     public function test_build_row_marks_missing_dependency_when_bar_field_is_null_inside_required_window()
@@ -126,5 +142,25 @@ class IndicatorVectorServiceTest extends TestCase
 
         $this->assertSame(0, $row['is_valid']);
         $this->assertSame('IND_MISSING_DEPENDENCY_BAR', $row['invalid_reason_code']);
+    }
+
+    public function test_flat_twenty_day_range_keeps_range_position_null_without_error()
+    {
+        $service = new IndicatorVectorService();
+        $bars = $this->bars(55);
+
+        for ($i = 35; $i < 55; $i++) {
+            $bars[$i]['open'] = 100;
+            $bars[$i]['high'] = 100;
+            $bars[$i]['low'] = 100;
+            $bars[$i]['close'] = 100;
+            $bars[$i]['adj_close'] = 100;
+        }
+
+        $row = $service->buildRow(101, $bars, '2026-05-25', 55, 9001, '2026-05-25 18:00:00', $this->config());
+
+        $this->assertSame(100.0, $row['ll20']);
+        $this->assertSame(0.0, $row['range_20_pct']);
+        $this->assertNull($row['range_position_20_pct']);
     }
 }

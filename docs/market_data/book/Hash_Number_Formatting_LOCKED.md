@@ -5,9 +5,9 @@ These rules apply only to hash serialization, not necessarily to storage precisi
 These rules are part of the locked reproducibility contract and must stay aligned with schema precision and the indicator oracle/test vectors.
 
 ## Fixed formats
-- prices (`open`, `high`, `low`, `close`, `adj_close`, `hh20`): 4 decimal places
+- prices (`open`, `high`, `low`, `close`, `adj_close`, `hh20`, `ll20`): 4 decimal places
 - `dv20_idr`: 2 decimal places
-- `atr14_pct`, `vol_ratio`, `roc20`: 10 decimal places
+- `atr14_pct`, `vol_ratio`, `roc5`, `roc10`, `roc20`, range/MA distance percentages, and relative-strength fields: 10 decimal places
 - `coverage_ratio`: 4 decimal places
 - integer counts and `volume`: base-10 integer with no separators
 - booleans / flags: `0` or `1`

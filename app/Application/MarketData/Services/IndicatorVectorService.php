@@ -27,11 +27,17 @@ class IndicatorVectorService
             'dv20_idr' => null,
             'atr14_pct' => null,
             'vol_ratio' => null,
+            'roc5' => null,
+            'roc10' => null,
             'roc20' => null,
             'hh20' => null,
+            'll20' => null,
             'ma20' => null,
             'ma50' => null,
             'close_to_hh20_pct' => null,
+            'close_to_ll20_pct' => null,
+            'range_20_pct' => null,
+            'range_position_20_pct' => null,
             'close_vs_ma20_pct' => null,
             'close_vs_ma50_pct' => null,
             'ma20_slope_pct' => null,
@@ -51,11 +57,17 @@ class IndicatorVectorService
             'dv20_idr' => $values['dv20_idr'],
             'atr14_pct' => $values['atr14_pct'],
             'vol_ratio' => $values['vol_ratio'],
+            'roc5' => $values['roc5'],
+            'roc10' => $values['roc10'],
             'roc20' => $values['roc20'],
             'hh20' => $values['hh20'],
+            'll20' => $values['ll20'],
             'ma20' => $values['ma20'],
             'ma50' => $values['ma50'],
             'close_to_hh20_pct' => $values['close_to_hh20_pct'],
+            'close_to_ll20_pct' => $values['close_to_ll20_pct'],
+            'range_20_pct' => $values['range_20_pct'],
+            'range_position_20_pct' => $values['range_position_20_pct'],
             'close_vs_ma20_pct' => $values['close_vs_ma20_pct'],
             'close_vs_ma50_pct' => $values['close_vs_ma50_pct'],
             'ma20_slope_pct' => $values['ma20_slope_pct'],
@@ -144,6 +156,9 @@ class IndicatorVectorService
         $hh20 = round(max(array_map(function ($bar) {
             return (float) $bar['high'];
         }, $hhBars)), 4);
+        $ll20 = round(min(array_map(function ($bar) {
+            return (float) $bar['low'];
+        }, $hhBars)), 4);
         $ma20 = $this->movingAverage($bars, $index, 20, $config);
         $ma50 = $this->movingAverage($bars, $index, 50, $config);
         $ma20Past = $index >= 5 ? $this->movingAverage($bars, $index - 5, 20, $config) : null;
@@ -156,11 +171,17 @@ class IndicatorVectorService
             'dv20_idr' => round(array_sum($turnovers) / $dvWindow, 2),
             'atr14_pct' => $atr !== null && $priceBasisCurrent > 0 ? round($atr / $priceBasisCurrent, 10) : null,
             'vol_ratio' => $priorVolAverage > 0 ? round(((float) $currentBar['volume']) / $priorVolAverage, 10) : null,
+            'roc5' => $this->roc($bars, $index, 5, $config),
+            'roc10' => $this->roc($bars, $index, 10, $config),
             'roc20' => $roc20,
             'hh20' => $hh20,
+            'll20' => $ll20,
             'ma20' => $ma20,
             'ma50' => $ma50,
             'close_to_hh20_pct' => $this->pctDifference($priceBasisCurrent, $hh20),
+            'close_to_ll20_pct' => $this->pctDifference($priceBasisCurrent, $ll20),
+            'range_20_pct' => $this->pctDifference($hh20, $ll20),
+            'range_position_20_pct' => $this->rangePositionPct($priceBasisCurrent, $ll20, $hh20),
             'close_vs_ma20_pct' => $this->pctDifference($priceBasisCurrent, $ma20),
             'close_vs_ma50_pct' => $this->pctDifference($priceBasisCurrent, $ma50),
             'ma20_slope_pct' => $ma20 !== null && $ma20Past !== null ? $this->pctDifference($ma20, $ma20Past) : null,
@@ -188,6 +209,22 @@ class IndicatorVectorService
         return round(array_sum($values) / $window, 4);
     }
 
+    private function roc(array $bars, $index, $lookback, array $config)
+    {
+        if ($index < $lookback || ! isset($bars[$index - $lookback])) {
+            return null;
+        }
+
+        $current = $this->priceBasis($bars[$index], $config);
+        $base = $this->priceBasis($bars[$index - $lookback], $config);
+
+        if ($base <= 0) {
+            return null;
+        }
+
+        return round(($current / $base) - 1, 10);
+    }
+
     private function pctDifference($current, $base)
     {
         if ($current === null || $base === null || (float) $base <= 0) {
@@ -195,6 +232,20 @@ class IndicatorVectorService
         }
 
         return round((((float) $current - (float) $base) / (float) $base) * 100, 10);
+    }
+
+    private function rangePositionPct($current, $low, $high)
+    {
+        if ($current === null || $low === null || $high === null) {
+            return null;
+        }
+
+        $range = (float) $high - (float) $low;
+        if ($range <= 0) {
+            return null;
+        }
+
+        return round((((float) $current - (float) $low) / $range) * 100, 10);
     }
 
     private function priceBasis(array $bar, array $config)
