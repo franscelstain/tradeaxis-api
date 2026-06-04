@@ -35,6 +35,8 @@ The command-specific docs below remain supporting material. They must not contra
 - `market-data:sector-indexes:ingest-api`
 - `market-data:sector-indexes:import-bars`
 - `market-data:sectors:import-memberships`
+- `market-data:events:import-corporate-actions`
+- `market-data:events:import-trading-status`
 - `market-data:replay:verify`
 - `market-data:replay:smoke`
 - `market-data:replay:backfill`

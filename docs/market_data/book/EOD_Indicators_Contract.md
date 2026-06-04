@@ -51,6 +51,13 @@ Required minimum fields:
 - `sector_roc20`
 - `rs_20_vs_sector`
 - `sector_rs_20_vs_ihsg`
+- `corporate_action_flag`
+- `corporate_action_types`
+- `trading_status_code`
+- `is_suspended`
+- `is_uma`
+- `event_risk_flag`
+- `event_risk_reasons`
 - `run_id`
 
 Equivalent naming is allowed only if semantics remain identical.
@@ -101,6 +108,13 @@ Duplicate live indicator rows for the same key are forbidden.
 | `sector_roc20` | `market_benchmark_indicators.roc_20` for the active `sector_index_code` on D | benchmark indicator lookup | sector index bars and benchmark indicator exist | `NULL` if no sector index history/indicator exists for D | non-blocking; must not be fabricated |
 | `rs_20_vs_sector` | `roc20`, `sector_roc20` | same trade date | valid equity `roc20` and sector `roc_20` exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
 | `sector_rs_20_vs_ihsg` | sector benchmark `roc_20`, IHSG benchmark `roc_20` | same trade date | both benchmark indicators exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
+| `corporate_action_flag` | `market_data_corporate_actions` for ticker/date | exact trade-date source lookup | source row exists | `NULL` if no corporate-action source row exists | non-blocking; must not be fabricated |
+| `corporate_action_types` | `market_data_corporate_actions.action_type` | exact trade-date source lookup | source row exists | `NULL` if no corporate-action source row exists | non-blocking; deterministic comma list |
+| `trading_status_code` | `market_data_trading_status_events.status_code` | exact trade-date source lookup | source row exists | `NULL` if no trading-status source row exists | non-blocking; deterministic comma list |
+| `is_suspended` | `market_data_trading_status_events.is_suspended` / status inference | exact trade-date source lookup | source row exists or explicit status implies suspend | `NULL` if no source row exists | non-blocking; source-backed only |
+| `is_uma` | `market_data_trading_status_events.is_uma` / status inference | exact trade-date source lookup | source row exists or explicit status implies UMA | `NULL` if no source row exists | non-blocking; source-backed only |
+| `event_risk_flag` | corporate action/trading status context | exact trade-date source lookup | source row exists | `NULL` if no source row exists; `0` only for source-backed non-risk status | non-blocking; must not infer no risk from absence |
+| `event_risk_reasons` | source-backed event context | exact trade-date source lookup | source-backed risk exists | `NULL` if no risk reason exists | non-blocking; deterministic comma list |
 
 ## Price basis rule (LOCKED)
 Where closing-price basis is required, use per-date fallback:

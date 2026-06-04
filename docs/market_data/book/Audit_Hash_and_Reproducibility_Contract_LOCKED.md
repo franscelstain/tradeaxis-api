@@ -92,6 +92,13 @@ If a future artifact adds a wider natural key, ordering must use all key columns
 25. `sector_roc20`
 26. `rs_20_vs_sector`
 27. `sector_rs_20_vs_ihsg`
+28. `corporate_action_flag`
+29. `corporate_action_types`
+30. `trading_status_code`
+31. `is_suspended`
+32. `is_uma`
+33. `event_risk_flag`
+34. `event_risk_reasons`
 
 ### Eligibility payload field order
 1. `trade_date`

@@ -1178,7 +1178,7 @@ class EodPublicationRepository
         ];
         $manifest['component_column_contract'] = [
             'bars' => ['trade_date', 'ticker_id', 'open', 'high', 'low', 'close', 'volume', 'adj_close', 'source'],
-            'indicators' => ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'sector_code', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc20', 'hh20', 'sector_roc20', 'rs_20_vs_sector', 'sector_rs_20_vs_ihsg'],
+            'indicators' => ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'sector_code', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc5', 'roc10', 'roc20', 'hh20', 'll20', 'ma20', 'ma50', 'close_to_hh20_pct', 'close_to_ll20_pct', 'range_20_pct', 'range_position_20_pct', 'close_vs_ma20_pct', 'close_vs_ma50_pct', 'ma20_slope_pct', 'rs_20_vs_ihsg', 'sector_roc20', 'rs_20_vs_sector', 'sector_rs_20_vs_ihsg', 'corporate_action_flag', 'corporate_action_types', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'],
             'eligibility' => ['trade_date', 'ticker_id', 'eligible', 'reason_code'],
         ];
         $manifest['coverage_context'] = [

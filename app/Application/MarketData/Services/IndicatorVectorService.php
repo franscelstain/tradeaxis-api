@@ -47,7 +47,7 @@ class IndicatorVectorService
             'sector_roc20' => null,
             'rs_20_vs_sector' => null,
             'sector_rs_20_vs_ihsg' => null,
-        ];
+        ] + $this->eventRiskValues($config);
 
         if (! $invalidReason) {
             $values = $this->calculateIndicators($bars, $index, $config);
@@ -81,6 +81,13 @@ class IndicatorVectorService
             'sector_roc20' => $values['sector_roc20'],
             'rs_20_vs_sector' => $values['rs_20_vs_sector'],
             'sector_rs_20_vs_ihsg' => $values['sector_rs_20_vs_ihsg'],
+            'corporate_action_flag' => $values['corporate_action_flag'],
+            'corporate_action_types' => $values['corporate_action_types'],
+            'trading_status_code' => $values['trading_status_code'],
+            'is_suspended' => $values['is_suspended'],
+            'is_uma' => $values['is_uma'],
+            'event_risk_flag' => $values['event_risk_flag'],
+            'event_risk_reasons' => $values['event_risk_reasons'],
             'run_id' => $runId,
             'publication_id' => $publicationId,
             'created_at' => $createdAt,
@@ -203,7 +210,7 @@ class IndicatorVectorService
             'sector_roc20' => $sectorRoc20Pct,
             'rs_20_vs_sector' => $equityRoc20Pct !== null && $sectorRoc20Pct !== null ? round($equityRoc20Pct - $sectorRoc20Pct, 10) : null,
             'sector_rs_20_vs_ihsg' => $sectorRoc20Pct !== null && $benchmarkRoc20Pct !== null ? round($sectorRoc20Pct - $benchmarkRoc20Pct, 10) : null,
-        ];
+        ] + $this->eventRiskValues($config);
     }
 
     private function movingAverage(array $bars, $index, $window, array $config)
@@ -281,5 +288,39 @@ class IndicatorVectorService
         $sectorCode = strtoupper(trim((string) $sectorCode));
 
         return $sectorCode === '' ? null : $sectorCode;
+    }
+
+    private function eventRiskValues(array $config)
+    {
+        $context = $config['event_risk_context'] ?? [];
+        if (! is_array($context)) {
+            $context = [];
+        }
+
+        return [
+            'corporate_action_flag' => $this->nullableFlag($context['corporate_action_flag'] ?? null),
+            'corporate_action_types' => $this->nullableContextString($context['corporate_action_types'] ?? null),
+            'trading_status_code' => $this->nullableContextString($context['trading_status_code'] ?? null),
+            'is_suspended' => $this->nullableFlag($context['is_suspended'] ?? null),
+            'is_uma' => $this->nullableFlag($context['is_uma'] ?? null),
+            'event_risk_flag' => $this->nullableFlag($context['event_risk_flag'] ?? null),
+            'event_risk_reasons' => $this->nullableContextString($context['event_risk_reasons'] ?? null),
+        ];
+    }
+
+    private function nullableFlag($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value === 1 ? 1 : 0;
+    }
+
+    private function nullableContextString($value)
+    {
+        $value = strtoupper(trim((string) $value));
+
+        return $value === '' ? null : substr($value, 0, 255);
     }
 }

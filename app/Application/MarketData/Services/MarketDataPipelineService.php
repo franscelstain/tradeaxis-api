@@ -721,6 +721,13 @@ class MarketDataPipelineService
                         'sector_roc20',
                         'rs_20_vs_sector',
                         'sector_rs_20_vs_ihsg',
+                        'corporate_action_flag',
+                        'corporate_action_types',
+                        'trading_status_code',
+                        'is_suspended',
+                        'is_uma',
+                        'event_risk_flag',
+                        'event_risk_reasons',
                     ],
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),

@@ -64,6 +64,13 @@ class MarketDataWatchlistReadRepository
                 'ind.sector_roc20',
                 'ind.rs_20_vs_sector',
                 'ind.sector_rs_20_vs_ihsg',
+                'ind.corporate_action_flag',
+                'ind.corporate_action_types',
+                'ind.trading_status_code',
+                'ind.is_suspended',
+                'ind.is_uma',
+                'ind.event_risk_flag',
+                'ind.event_risk_reasons',
                 'ind.indicator_set_version'
             )
             ->orderBy('tick.'.$tickerCodeColumn)
@@ -99,6 +106,13 @@ class MarketDataWatchlistReadRepository
                     'sector_roc20' => $this->decimalOrNull($row->sector_roc20),
                     'rs_20_vs_sector' => $this->decimalOrNull($row->rs_20_vs_sector),
                     'sector_rs_20_vs_ihsg' => $this->decimalOrNull($row->sector_rs_20_vs_ihsg),
+                    'corporate_action_flag' => $this->flagOrNull($row->corporate_action_flag),
+                    'corporate_action_types' => $row->corporate_action_types,
+                    'trading_status_code' => $row->trading_status_code,
+                    'is_suspended' => $this->flagOrNull($row->is_suspended),
+                    'is_uma' => $this->flagOrNull($row->is_uma),
+                    'event_risk_flag' => $this->flagOrNull($row->event_risk_flag),
+                    'event_risk_reasons' => $row->event_risk_reasons,
                     'indicator_set_version' => $row->indicator_set_version,
                     'source_name' => $row->source,
                 ];
@@ -109,5 +123,10 @@ class MarketDataWatchlistReadRepository
     private function decimalOrNull($value): ?float
     {
         return $value === null ? null : (float) $value;
+    }
+
+    private function flagOrNull($value): ?int
+    {
+        return $value === null ? null : ((int) $value === 1 ? 1 : 0);
     }
 }

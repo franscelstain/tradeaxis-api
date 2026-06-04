@@ -71,6 +71,7 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertIsFloat($row['sector_roc20']);
         $this->assertIsFloat($row['rs_20_vs_sector']);
         $this->assertIsFloat($row['sector_rs_20_vs_ihsg']);
+        $this->assertNull($row['event_risk_flag']);
     }
 
     public function test_equity_indicator_extension_formulas_are_deterministic()
@@ -144,6 +145,53 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertNull($row['roc10']);
         $this->assertNull($row['ll20']);
         $this->assertNull($row['range_position_20_pct']);
+    }
+
+    public function test_event_risk_context_is_source_backed_and_stamped_into_valid_rows()
+    {
+        $service = new IndicatorVectorService();
+        $config = $this->config();
+        $config['event_risk_context'] = [
+            'corporate_action_flag' => 1,
+            'corporate_action_types' => 'DIVIDEND,STOCK_SPLIT',
+            'trading_status_code' => 'UMA',
+            'is_suspended' => 0,
+            'is_uma' => 1,
+            'event_risk_flag' => 1,
+            'event_risk_reasons' => 'CORPORATE_ACTION:DIVIDEND,UMA',
+        ];
+
+        $row = $service->buildRow(101, $this->bars(55), '2026-05-25', 55, 9001, '2026-05-25 18:00:00', $config);
+
+        $this->assertSame(1, $row['corporate_action_flag']);
+        $this->assertSame('DIVIDEND,STOCK_SPLIT', $row['corporate_action_types']);
+        $this->assertSame('UMA', $row['trading_status_code']);
+        $this->assertSame(0, $row['is_suspended']);
+        $this->assertSame(1, $row['is_uma']);
+        $this->assertSame(1, $row['event_risk_flag']);
+        $this->assertSame('CORPORATE_ACTION:DIVIDEND,UMA', $row['event_risk_reasons']);
+    }
+
+    public function test_event_risk_context_survives_invalid_indicator_rows_without_faking_absence()
+    {
+        $service = new IndicatorVectorService();
+        $config = $this->config();
+        $config['event_risk_context'] = [
+            'trading_status_code' => 'ACTIVE',
+            'is_suspended' => 0,
+            'is_uma' => 0,
+            'event_risk_flag' => 0,
+        ];
+
+        $row = $service->buildRow(101, array_slice($this->bars(), 0, 10), '2026-04-10', 55, 9001, '2026-04-10 18:00:00', $config);
+
+        $this->assertSame(0, $row['is_valid']);
+        $this->assertSame('IND_INSUFFICIENT_HISTORY', $row['invalid_reason_code']);
+        $this->assertSame('ACTIVE', $row['trading_status_code']);
+        $this->assertSame(0, $row['is_suspended']);
+        $this->assertSame(0, $row['is_uma']);
+        $this->assertSame(0, $row['event_risk_flag']);
+        $this->assertNull($row['corporate_action_flag']);
     }
 
     public function test_build_row_marks_missing_dependency_when_bar_field_is_null_inside_required_window()

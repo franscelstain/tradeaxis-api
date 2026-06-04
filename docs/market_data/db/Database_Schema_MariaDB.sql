@@ -105,6 +105,42 @@ CREATE TABLE IF NOT EXISTS ticker_sector_memberships (
   KEY idx_ticker_sector_membership_sector_date (sector_code, classification_system, effective_from)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS market_data_corporate_actions (
+  corporate_action_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ticker_id BIGINT UNSIGNED NOT NULL,
+  ticker_code VARCHAR(16) NOT NULL,
+  action_date DATE NOT NULL,
+  action_type VARCHAR(64) NOT NULL,
+  source_name VARCHAR(64) NOT NULL DEFAULT 'manual_corporate_action_csv',
+  source_ref VARCHAR(255) NULL,
+  notes VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (corporate_action_id),
+  UNIQUE KEY uq_md_corp_action_ticker_date_type_source (ticker_id, action_date, action_type, source_name),
+  KEY idx_md_corp_action_date_ticker (action_date, ticker_id),
+  KEY idx_md_corp_action_type_date (action_type, action_date)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS market_data_trading_status_events (
+  trading_status_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ticker_id BIGINT UNSIGNED NOT NULL,
+  ticker_code VARCHAR(16) NOT NULL,
+  trade_date DATE NOT NULL,
+  status_code VARCHAR(64) NOT NULL,
+  is_suspended TINYINT(1) NULL,
+  is_uma TINYINT(1) NULL,
+  source_name VARCHAR(64) NOT NULL DEFAULT 'manual_trading_status_csv',
+  source_ref VARCHAR(255) NULL,
+  notes VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (trading_status_id),
+  UNIQUE KEY uq_md_trading_status_ticker_date_code_source (ticker_id, trade_date, status_code, source_name),
+  KEY idx_md_trading_status_date_ticker (trade_date, ticker_id),
+  KEY idx_md_trading_status_code_date (status_code, trade_date)
+) ENGINE=InnoDB;
+
 -- =========================================================
 -- Market benchmark/index master and bars
 -- =========================================================
@@ -294,6 +330,13 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   sector_roc20 DECIMAL(20,10) NULL,
   rs_20_vs_sector DECIMAL(20,10) NULL,
   sector_rs_20_vs_ihsg DECIMAL(20,10) NULL,
+  corporate_action_flag TINYINT(1) NULL,
+  corporate_action_types VARCHAR(255) NULL,
+  trading_status_code VARCHAR(64) NULL,
+  is_suspended TINYINT(1) NULL,
+  is_uma TINYINT(1) NULL,
+  event_risk_flag TINYINT(1) NULL,
+  event_risk_reasons VARCHAR(255) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   publication_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL,
@@ -303,7 +346,8 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   KEY idx_eod_indicators_invalid_reason (invalid_reason_code),
   KEY idx_eod_indicators_publication (publication_id),
   KEY idx_eod_indicators_publication_date_ticker (publication_id, trade_date, ticker_id),
-  KEY idx_eod_indicators_sector_date (sector_code, trade_date)
+  KEY idx_eod_indicators_sector_date (sector_code, trade_date),
+  KEY idx_eod_indicators_event_risk_date (event_risk_flag, trade_date)
 ) ENGINE=InnoDB;
 
 -- LOCKED NOTE
@@ -647,6 +691,13 @@ CREATE TABLE IF NOT EXISTS eod_indicators_history (
   sector_roc20 DECIMAL(20,10) NULL,
   rs_20_vs_sector DECIMAL(20,10) NULL,
   sector_rs_20_vs_ihsg DECIMAL(20,10) NULL,
+  corporate_action_flag TINYINT(1) NULL,
+  corporate_action_types VARCHAR(255) NULL,
+  trading_status_code VARCHAR(64) NULL,
+  is_suspended TINYINT(1) NULL,
+  is_uma TINYINT(1) NULL,
+  event_risk_flag TINYINT(1) NULL,
+  event_risk_reasons VARCHAR(255) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (publication_id, trade_date, ticker_id),
@@ -654,6 +705,7 @@ CREATE TABLE IF NOT EXISTS eod_indicators_history (
   KEY idx_indicators_history_ticker_date (ticker_id, trade_date),
   KEY idx_indicators_history_run (run_id),
   KEY idx_eod_indicators_history_sector_date (sector_code, trade_date),
+  KEY idx_eod_indicators_history_event_risk_date (event_risk_flag, trade_date),
   CONSTRAINT fk_indicators_history_publication
     FOREIGN KEY (publication_id) REFERENCES eod_publications(publication_id)
 ) ENGINE=InnoDB;

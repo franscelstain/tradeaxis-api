@@ -4,6 +4,7 @@ namespace App\Application\MarketData\Services;
 
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
 use App\Infrastructure\Persistence\MarketData\SectorClassificationRepository;
 use Carbon\Carbon;
 
@@ -14,14 +15,16 @@ class EodIndicatorsComputeService
     private $vectors;
     private $benchmarkIndicators;
     private $sectors;
+    private $eventRisks;
 
-    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null)
+    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null, EventRiskSourceRepository $eventRisks = null)
     {
         $this->artifacts = $artifacts;
         $this->publications = $publications;
         $this->vectors = $vectors;
         $this->benchmarkIndicators = $benchmarkIndicators;
         $this->sectors = $sectors;
+        $this->eventRisks = $eventRisks;
     }
 
     public function compute($run, $requestedDate, $correctionMode = false)
@@ -65,6 +68,9 @@ class EodIndicatorsComputeService
         $sectorContextsByTicker = $this->sectors !== null
             ? $this->sectors->resolveSectorContextForTickerIds(array_keys($barsByTicker), $requestedDate)
             : [];
+        $eventRiskContextsByTicker = $this->eventRisks !== null
+            ? $this->eventRisks->resolveEventRiskContextForTickerIds(array_keys($barsByTicker), $requestedDate)
+            : [];
         $sectorBenchmarkRoc20s = [];
 
         if ($this->benchmarkIndicators !== null && ! empty($sectorContextsByTicker)) {
@@ -85,6 +91,7 @@ class EodIndicatorsComputeService
             $sectorRoc20 = $sectorIndexCode && array_key_exists($sectorIndexCode, $sectorBenchmarkRoc20s)
                 ? $sectorBenchmarkRoc20s[$sectorIndexCode]
                 : null;
+            $eventRiskContext = $eventRiskContextsByTicker[(int) $tickerId] ?? null;
 
             $row = $this->vectors->buildRow(
                 (int) $tickerId,
@@ -93,7 +100,7 @@ class EodIndicatorsComputeService
                 $candidatePublication->publication_id,
                 $run->run_id,
                 $now,
-                $this->vectorConfig($benchmarkRoc20, $sectorContext, $sectorRoc20)
+                $this->vectorConfig($benchmarkRoc20, $sectorContext, $sectorRoc20, $eventRiskContext)
             );
             if (! $row) {
                 continue;
@@ -117,12 +124,13 @@ class EodIndicatorsComputeService
         ] + $benchmarkResult;
     }
 
-    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null)
+    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null)
     {
         return [
             'set_version' => config('market_data.indicators.set_version'),
             'sector_code' => $sectorContext['sector_code'] ?? null,
             'sector_index_code' => $sectorContext['sector_index_code'] ?? null,
+            'event_risk_context' => $eventRiskContext ?: [],
             'lot_size' => (int) config('market_data.platform.lot_size'),
             'price_basis_default' => config('market_data.platform.price_basis_default'),
             'dv_window_days' => (int) config('market_data.indicators.dv_window_days'),

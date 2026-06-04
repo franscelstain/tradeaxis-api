@@ -209,6 +209,56 @@ Required constraint/index:
 - index `(ticker_id, classification_system, effective_from, effective_to)`
 - index `(sector_code, classification_system, effective_from)`
 
+### `market_data_corporate_actions`
+
+Runtime owner: source-backed corporate action context used to populate nullable `eod_indicators.corporate_action_flag`, `corporate_action_types`, `event_risk_flag`, and `event_risk_reasons`.
+Repository: `EventRiskSourceRepository`.
+Import command: `market-data:events:import-corporate-actions`.
+
+Required fields:
+- `corporate_action_id`
+- `ticker_id`
+- `ticker_code`
+- `action_date`
+- `action_type`
+- `source_name`
+- `source_ref`
+- `notes`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `corporate_action_id`
+- unique key `(ticker_id, action_date, action_type, source_name)`
+- index `(action_date, ticker_id)`
+- index `(action_type, action_date)`
+
+### `market_data_trading_status_events`
+
+Runtime owner: source-backed trading status, UMA, and suspend context used to populate nullable `eod_indicators.trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`.
+Repository: `EventRiskSourceRepository`.
+Import command: `market-data:events:import-trading-status`.
+
+Required fields:
+- `trading_status_id`
+- `ticker_id`
+- `ticker_code`
+- `trade_date`
+- `status_code`
+- `is_suspended`
+- `is_uma`
+- `source_name`
+- `source_ref`
+- `notes`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `trading_status_id`
+- unique key `(ticker_id, trade_date, status_code, source_name)`
+- index `(trade_date, ticker_id)`
+- index `(status_code, trade_date)`
+
 ### `md_session_snapshots`
 
 Runtime owner: intraday/session snapshot persistence.  

@@ -95,6 +95,8 @@ Scheduler proof is not live provider proof. Do not claim provider/API readiness 
 | `market-data:sector-indexes:ingest-api` | Fetch source-backed sector index OHLC bars from API | `start_date`, optional `end_date`, `--provider`, optional `--symbol_suffix` / `--symbol_map_json` | dry-run unless `--apply` | provider symbols, per-date fetched/upserted counts, missing benchmark codes, source reason codes | Fix provider symbols/source availability before apply; recompute/promote affected dates after apply | sector rotation |
 | `market-data:sector-indexes:import-bars` | Import source-backed sector index OHLC bars | CSV with `sector_index_code`, `trade_date`, `open`, `high`, `low`, `close`; optional `adj_close`, `volume` | dry-run unless `--apply` | row counts, valid rows, upsert count, benchmark codes, validation errors | Fix unknown sector index codes/OHLC ranges before apply; recompute/promote affected dates after apply | sector rotation |
 | `market-data:sectors:import-memberships` | Import source-backed ticker-sector membership | CSV with `ticker_code`, `sector_code`, `effective_from`; optional `effective_to`, `source_name`, `source_ref` | dry-run unless `--apply` | row counts, valid rows, upsert count, validation errors | Fix unknown tickers/sector codes/date ranges before apply; recompute/promote affected dates after apply | sector context |
+| `market-data:events:import-corporate-actions` | Import source-backed corporate action context | CSV with `ticker_code`, `action_date`, `action_type`; optional `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, action types, validation errors | Fix unknown tickers/date/type errors before apply; recompute/promote affected dates after apply | event-risk context |
+| `market-data:events:import-trading-status` | Import source-backed trading status, UMA, and suspension context | CSV with `ticker_code`, `trade_date`, `status_code`; optional `is_suspended`, `is_uma`, `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, status codes, validation errors | Fix unknown tickers/date/status errors before apply; recompute/promote affected dates after apply | event-risk context |
 | `market-data:replay:verify` | Verify executed run against fixture package | `run_id`, `fixture_path` | deterministic proof | replay id/status/mismatch reason | Mismatch blocks acceptance; next action is compare fixture/output and fix root cause | replay |
 | `market-data:replay:smoke` | Run built-in replay cases | `run_id` | deterministic smoke suite | valid/broken/missing/reason mismatch cases | Any failed case blocks readiness claim | replay |
 | `market-data:replay:backfill` | Replay verification over date range | start/end date, fixture case/root | deterministic range proof | case summaries | Failed case must be reason-coded and investigated | replay/backfill |
@@ -123,6 +125,8 @@ php artisan market-data:evidence-replay:full-range-current --help
 php artisan market-data:sector-indexes:ingest-api --help
 php artisan market-data:sector-indexes:import-bars --help
 php artisan market-data:sectors:import-memberships --help
+php artisan market-data:events:import-corporate-actions --help
+php artisan market-data:events:import-trading-status --help
 php artisan market-data:replay:verify --help
 php artisan market-data:replay:fixture:generate --help
 php artisan market-data:correction:request --help

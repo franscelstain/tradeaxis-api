@@ -19,6 +19,8 @@ Minimum required schema support must exist for concepts equivalent to:
 - `eod_eligibility`
 - `market_data_sectors`
 - `ticker_sector_memberships`
+- `market_data_corporate_actions`
+- `market_data_trading_status_events`
 - `market_benchmarks`
 - `market_benchmark_bars`
 - `market_benchmark_indicators`
@@ -79,6 +81,16 @@ Must support:
 - manual/source-backed sector-index OHLC bars in `market_benchmark_bars`
 - benchmark indicators with `roc_20` used by nullable sector-rotation fields
 - no fabricated `sector_roc20`, `rs_20_vs_sector`, or `sector_rs_20_vs_ihsg` values when sector-index history is missing
+
+### 5c. Corporate action and trading status source context
+Must support:
+- source-backed corporate action rows by `(ticker_id, action_date, action_type, source_name)`
+- source-backed trading status rows by `(ticker_id, trade_date, status_code, source_name)`
+- explicit source name/reference fields for operator CSV or future audited providers
+- nullable `eod_indicators.corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`
+- `NULL` event-risk indicator fields when no source row exists for the ticker/date
+- source-backed `event_risk_flag=0` only when an explicit source row says the status is non-risk such as `ACTIVE` or `NORMAL`
+- no fabricated no-risk values from absence of corporate-action/trading-status source data
 
 ### 6. Runs
 Must support, at minimum:

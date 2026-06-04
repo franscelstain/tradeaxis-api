@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Weekly Swing Priority 1 Indicator Extension', $statusActiveSession);
+        $this->assertSame('Market Data Event-Risk Source Context', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -49,6 +49,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $document);
             $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT', $document);
             $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $document);
+            $this->assertStringContainsString('MARKET_DATA_EVENT_RISK_SOURCE_CONTEXT_CONTRACT', $document);
         }
 
 $this->assertStringContainsString('- Market Data Consumer Read Model -> DONE', $status);
@@ -72,7 +73,7 @@ $this->assertStringContainsString('OK (534 tests, 8287 assertions)', $status.$tr
         $this->assertStringContainsString('`OPS_RUNTIME_PARITY_PASSED` requires scheduler due-run proof plus provider smoke PASS', $status.$tracker);
         $this->assertStringContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
         $this->assertStringContainsString('ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH', $status.$tracker);
-        $this->assertStringContainsString('26 registered market-data commands', $status.$tracker);
+        $this->assertStringContainsString('28 registered market-data commands', $status.$tracker);
 $this->assertStringContainsString('PROVIDER_SMOKE_OK', $status.$tracker);
 
 $this->assertStringContainsString('- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock -> DONE', $status);
@@ -163,7 +164,7 @@ $this->assertStringContainsString('replay_id=2', $status.$tracker);
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('MARKET_DATA_EVENT_RISK_SOURCE_CONTEXT_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);

@@ -117,6 +117,42 @@ trait UsesMarketDataSqlite
             $table->index(['sector_code', 'classification_system', 'effective_from'], 'idx_ticker_sector_membership_sector_date');
         });
 
+        $schema->create('market_data_corporate_actions', function (Blueprint $table) {
+            $table->bigIncrements('corporate_action_id');
+            $table->unsignedBigInteger('ticker_id');
+            $table->string('ticker_code', 16);
+            $table->date('action_date');
+            $table->string('action_type', 64);
+            $table->string('source_name', 64)->default('manual_corporate_action_csv');
+            $table->string('source_ref', 255)->nullable();
+            $table->string('notes', 255)->nullable();
+            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+
+            $table->unique(['ticker_id', 'action_date', 'action_type', 'source_name'], 'uq_md_corp_action_ticker_date_type_source');
+            $table->index(['action_date', 'ticker_id'], 'idx_md_corp_action_date_ticker');
+            $table->index(['action_type', 'action_date'], 'idx_md_corp_action_type_date');
+        });
+
+        $schema->create('market_data_trading_status_events', function (Blueprint $table) {
+            $table->bigIncrements('trading_status_id');
+            $table->unsignedBigInteger('ticker_id');
+            $table->string('ticker_code', 16);
+            $table->date('trade_date');
+            $table->string('status_code', 64);
+            $table->boolean('is_suspended')->nullable();
+            $table->boolean('is_uma')->nullable();
+            $table->string('source_name', 64)->default('manual_trading_status_csv');
+            $table->string('source_ref', 255)->nullable();
+            $table->string('notes', 255)->nullable();
+            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+
+            $table->unique(['ticker_id', 'trade_date', 'status_code', 'source_name'], 'uq_md_trading_status_ticker_date_code_source');
+            $table->index(['trade_date', 'ticker_id'], 'idx_md_trading_status_date_ticker');
+            $table->index(['status_code', 'trade_date'], 'idx_md_trading_status_code_date');
+        });
+
         $schema->create('market_benchmarks', function (Blueprint $table) {
             $table->bigIncrements('benchmark_id');
             $table->string('benchmark_code', 32);
@@ -445,6 +481,13 @@ trait UsesMarketDataSqlite
             $table->decimal('sector_roc20', 20, 10)->nullable();
             $table->decimal('rs_20_vs_sector', 20, 10)->nullable();
             $table->decimal('sector_rs_20_vs_ihsg', 20, 10)->nullable();
+            $table->integer('corporate_action_flag')->nullable();
+            $table->string('corporate_action_types', 255)->nullable();
+            $table->string('trading_status_code', 64)->nullable();
+            $table->integer('is_suspended')->nullable();
+            $table->integer('is_uma')->nullable();
+            $table->integer('event_risk_flag')->nullable();
+            $table->string('event_risk_reasons', 255)->nullable();
             $table->integer('run_id');
             $table->integer('publication_id');
             $table->dateTime('created_at');
@@ -456,6 +499,7 @@ trait UsesMarketDataSqlite
             $table->index(['publication_id'], 'idx_eod_indicators_publication');
             $table->index(['publication_id', 'trade_date', 'ticker_id'], 'idx_eod_indicators_publication_date_ticker');
             $table->index(['sector_code', 'trade_date'], 'idx_eod_indicators_sector_date');
+            $table->index(['event_risk_flag', 'trade_date'], 'idx_eod_indicators_event_risk_date');
         });
 
         $schema->create('eod_eligibility', function (Blueprint $table) {
@@ -693,6 +737,13 @@ trait UsesMarketDataSqlite
             $table->decimal('sector_roc20', 20, 10)->nullable();
             $table->decimal('rs_20_vs_sector', 20, 10)->nullable();
             $table->decimal('sector_rs_20_vs_ihsg', 20, 10)->nullable();
+            $table->integer('corporate_action_flag')->nullable();
+            $table->string('corporate_action_types', 255)->nullable();
+            $table->string('trading_status_code', 64)->nullable();
+            $table->integer('is_suspended')->nullable();
+            $table->integer('is_uma')->nullable();
+            $table->integer('event_risk_flag')->nullable();
+            $table->string('event_risk_reasons', 255)->nullable();
             $table->integer('run_id')->nullable();
             $table->dateTime('created_at');
 
@@ -701,6 +752,7 @@ trait UsesMarketDataSqlite
             $table->index(['ticker_id', 'trade_date'], 'idx_indicators_history_ticker_date');
             $table->index(['run_id'], 'idx_indicators_history_run');
             $table->index(['sector_code', 'trade_date'], 'idx_eod_indicators_history_sector_date');
+            $table->index(['event_risk_flag', 'trade_date'], 'idx_eod_indicators_history_event_risk_date');
         });
 
         $schema->create('eod_eligibility_history', function (Blueprint $table) {
