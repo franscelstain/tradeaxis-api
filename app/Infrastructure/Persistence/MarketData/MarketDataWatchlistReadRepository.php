@@ -34,12 +34,14 @@ class MarketDataWatchlistReadRepository
             ->join('eod_bars as bar', function ($join) {
                 $join->on('bar.trade_date', '=', 'elig.trade_date')
                     ->on('bar.ticker_id', '=', 'elig.ticker_id')
-                    ->on('bar.publication_id', '=', 'elig.publication_id');
+                    ->on('bar.publication_id', '=', 'elig.publication_id')
+                    ->on('bar.run_id', '=', 'elig.run_id');
             })
             ->join('eod_indicators as ind', function ($join) {
                 $join->on('ind.trade_date', '=', 'elig.trade_date')
                     ->on('ind.ticker_id', '=', 'elig.ticker_id')
-                    ->on('ind.publication_id', '=', 'elig.publication_id');
+                    ->on('ind.publication_id', '=', 'elig.publication_id')
+                    ->on('ind.run_id', '=', 'elig.run_id');
             })
             ->leftJoin($sectorsTable.' as sector', function ($join) {
                 $join->on('sector.sector_code', '=', 'ind.sector_code')
@@ -49,8 +51,8 @@ class MarketDataWatchlistReadRepository
             ->join($tickersTable.' as tick', 'tick.'.$tickerIdColumn, '=', 'elig.ticker_id')
             ->where('elig.trade_date', $publication->trade_date)
             ->where('elig.publication_id', $publication->publication_id)
-            ->where('elig.eligible', 1)
             ->where('elig.run_id', $publication->run_id)
+            ->where('elig.eligible', 1)
             ->where('bar.publication_id', $publication->publication_id)
             ->where('bar.run_id', $publication->run_id)
             ->where('ind.publication_id', $publication->publication_id)
@@ -60,7 +62,7 @@ class MarketDataWatchlistReadRepository
             ->where('tick.'.$tickerActiveColumn, $tickerActiveValue)
             ->whereNotNull('ind.indicator_set_version')
             ->whereNotNull('bar.close')
-            ->whereNotNull('bar.volume');;
+            ->whereNotNull('bar.volume');
 
         foreach (self::REQUIRED_WATCHLIST_INDICATOR_COLUMNS as $column) {
             $query->whereNotNull('ind.'.$column);

@@ -1,12 +1,24 @@
 # Full Market-Data Production Ready Inventory
 
-Last updated: 2026-05-24
+Last updated: 2026-06-05
 
 ## Decision
 
 Full market-data production readiness is **FULLY_PRODUCTION_READY / MARKET_DATA_PRODUCTION_READY_LOCKED for the current source state**.
 
-The 2026-05-19 production-ready lock is now superseded by the final passed provider-smoke proof previous-source-state evidence. It is not a current aggregate claim after the 2026-05-20 correction lifecycle hardening changed correction command/repository/replay/evidence/schema behavior.
+The active 2026-06-05 checkpoint adds the full-global market-data evidence lock. The `2023-01-02` through `2025-10-31` range is the archived current-readable full-range proof window used by the Lumen audit evidence, not the last date the application is production-ready.
+
+Latest operator run/current operation is recorded through `2026-06-04`. Dates after the proof window continue through normal daily lifecycle/backfill operation.
+
+Current active proof:
+- `FULL_GLOBAL_MARKET_DATA_LOCK_STATUS=LOCKED_UNFILTERED_MISSING_TICKER_PLAN_ZERO_FULL_RANGE_CURRENT_EVIDENCE_REPLAY_PASS`
+- unfiltered missing-ticker plan: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`
+- full-range current evidence/replay: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`
+- full MarketData PHPUnit: `OK (635 tests, 9474 assertions)`
+- refreshed provider smoke proof: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`
+- `REMAINING_BLOCKERS: none` for the archived full-range proof window and current source-state closure
+
+The 2026-05-19 production-ready lock is retained as historical provenance and was superseded by later correction lifecycle, ops runtime parity, provider smoke, benchmark/indicator, event-risk, missing-ticker, and manual-file lifecycle locks. It is not a competing current aggregate claim.
 
 The historical lock was based on artifact-backed runtime proof, not docs-only claims:
 
@@ -17,7 +29,7 @@ The historical lock was based on artifact-backed runtime proof, not docs-only cl
 - all canonical market-data contracts in `LUMEN_CONTRACT_TRACKER.md` were LOCKED for that previous source state;
 - final operator-local targeted/full MarketData validation passed.
 
-The current source state has now consumed the relocked correction lifecycle proof plus the Ops Command Surface Runtime Matrix proof. Final Audit Docs Synchronization consumed the candidate proof pack and locked the current source state. This lock does not remove the need for environment-specific live-provider, credentials, scheduler/SLO, deployment, and CI validation if those operational contexts differ.
+The current source state has now consumed the relocked correction lifecycle proof, Ops Command Surface Runtime Matrix proof, provider-smoke refresh, full global missing-ticker closure, and full-range current evidence/replay proof. This lock does not remove the need for environment-specific live-provider, credentials, scheduler/SLO, deployment, and CI validation if those operational contexts differ.
 
 ## Source-State Artifact Audit
 
@@ -123,6 +135,11 @@ Current 2026-05-20 correction lifecycle validation is recorded in `CORRECTION_LI
 - `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `LOCKED`.
 - Historical previous source-state proof pack: `DONE / LOCKED`.
 - Full market-data runtime proof pack for current source: `MARKET_DATA_PRODUCTION_READY_LOCKED / LOCKED`.
+- Archived full global current-readable proof window: `LOCKED` for `2023-01-02` through `2025-10-31`.
+- Latest operator run/current operation: through `2026-06-04`; ongoing dates remain normal daily lifecycle/backfill work.
+- Full global missing-ticker plan: `0` missing bars, `0` missing trade dates, `0` remaining tickers, `672` trading dates.
+- Full global current evidence/replay: `672/672` passed, `failed_count=0`, `all_passed=1`.
+- Latest full MarketData PHPUnit proof: `OK (635 tests, 9474 assertions)`.
 - Replay current-readable runtime proof: `LOCKED`.
 - Historical non-current replay runtime proof: `LOCKED`.
 - Replay historical non-current runtime artifact proof: `LOCKED`.
@@ -134,6 +151,23 @@ Current 2026-05-20 correction lifecycle validation is recorded in `CORRECTION_LI
 
 - External/live provider credentials, real scheduler/SLO, deployment infrastructure, CI/runtime parity, and future vendor behavior still require environment-specific rollout validation.
 - Final audit docs synchronization is complete for this source-state lock.
+- Future trading dates remain normal data ops through daily/backfill lifecycle. They do not reopen the archived `2023-01-02` through `2025-10-31` proof window, and they also are not excluded from production-ready operation.
+
+## 2026-06-05 Current Source-State Full Global Lock Update
+
+This update reconciles the aggregate inventory with the active Lumen checkpoints.
+
+Consumed current-source proof:
+- `LUMEN_IMPLEMENTATION_STATUS.md` records `FULL_GLOBAL_MARKET_DATA_LOCK_STATUS=LOCKED_UNFILTERED_MISSING_TICKER_PLAN_ZERO_FULL_RANGE_CURRENT_EVIDENCE_REPLAY_PASS`.
+- `LUMEN_CONTRACT_TRACKER.md` locks the missing-ticker filtered candidate preservation contract after full global close.
+- `MARKET_DATA_PRODUCTION_PROOF_PACK.md` records refreshed provider smoke PASS and full MarketData PHPUnit proof.
+- Final missing plan proof reports `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, and `trading_dates=672`.
+- Final full-range current evidence/replay proof reports `processed_count=672`, `success_count=672`, `failed_count=0`, and `all_passed=1`.
+
+Final lock decision:
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains the current aggregate production-ready status.
+- `FULL_GLOBAL_MARKET_DATA_LOCK_STATUS` is locked for the archived current-readable proof window; production-ready status is source-state and lifecycle readiness, not a terminal date range.
+- Older `PARTIAL`, `BLOCKED`, or source-blocker notes in this inventory or in Lumen histories are historical when followed by the 2026-06-05 closure entries above.
 
 
 ## 2026-05-20 Current Source-State Final Lock Update

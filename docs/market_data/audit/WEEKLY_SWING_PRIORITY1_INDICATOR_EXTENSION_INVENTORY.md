@@ -6,6 +6,8 @@
 
 This inventory records the 2026-06-02 market-data extension for the first weekly-swing indicator tranche. Full MarketData PHPUnit passed, the 2023-01-02 through 2025-10-31 current readable publications were republished from existing current bars, sector membership was stamped into current indicators after operator import, 11 supplied sector index histories including `IDXPROPERT` were imported from `idxic_sector_index_bars.csv`, sector rotation values were recomputed into current publications where source-backed history and lookback exist, and full-range evidence/replay proof passed for all 672 current publications.
 
+The `2023-01-02` through `2025-10-31` dates in this inventory are the indicator-extension proof window, not the end date of global market-data production readiness.
+
 ## Scope
 
 - Add short-term equity momentum: `roc5`, `roc10`.
@@ -105,7 +107,7 @@ This inventory records the 2026-06-02 market-data extension for the first weekly
 - Full-range evidence/replay proof after `IDXPROPERT` republish: `market-data:evidence-replay:full-range-current 2023-01-02 2025-10-31 --continue_on_error -vvv` -> exit 0, `trading_date_count=672`, `processed_count=672`, `success_count=672`, `failed_count=0`, `error_count=0`, `all_passed=1`, replay id range `3362-4033`.
 - Full-range summary/DB proof after `IDXPROPERT` republish: run/publication id range `3339-4010`, unique run/publication ids `672`, `match_count=672`, `replay_pass_count=672`, `run_admitted_count=672`, `replay_admitted_count=672`, and `zero_mismatch_count=672`; output root `storage/app/market_data/evidence/full_range_current_evidence_replay/full_range_current_2023-01-02_to_2025-10-31_20260604_042854` contains per-date run evidence, generated fixture, replay evidence, and summary artifacts for all 672 current publications.
 
-## Remaining Gaps
+## Scope Notes (Non-Blocking)
 
 - Daily/API import was not repeated because OHLC bars were already operator-confirmed and present; the runtime action was promote/reseal/republication from existing current bars.
 - Classification `Z` is intentionally excluded from sector-rotation benchmark matching because it is a listed-investment-product bucket, not one of the 11 equity sector indexes.
@@ -114,4 +116,4 @@ This inventory records the 2026-06-02 market-data extension for the first weekly
 
 ## Verdict
 
-The first weekly-swing indicator tranche is done, full-suite tested, runtime-republished, sector-code populated, sector rotation populated for all 11 supplied equity sector indexes with sufficient lookback, and full-range evidence/replay proven across the operator-provided historical current-readable range. It improves market-data readiness for weekly-swing watchlist consumers and has no remaining blocker for the Priority 1 current-range scope.
+The first weekly-swing indicator tranche is done, full-suite tested, runtime-republished, sector-code populated, sector rotation populated for all 11 supplied equity sector indexes with sufficient lookback, and full-range evidence/replay proven across the operator-provided historical proof window. It improves market-data readiness for weekly-swing watchlist consumers and has no remaining blocker for the Priority 1 proof-window scope.

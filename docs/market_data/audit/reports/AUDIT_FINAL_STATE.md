@@ -28,9 +28,14 @@ Dokumen ini **tidak boleh** memakai penamaan berbasis putaran revisi (`R1`, `R2`
 | evidence admission hygiene | PASS | mandatory posture present |
 | README clarity | PASS | fourth-anchor wording clarified |
 | audit-report state model | PASS | canonical report is current-state only and non-versioned |
+| production-ready lock alignment | PASS | Lumen checkpoints, proof pack, and README point to the same locked source state without date-capping production readiness |
 
 ## Final verdict
-**PASS — strong, tight, and canonically reportable as a market-data docs package.**
+**PASS - full global market-data production-ready for the locked source state and ongoing daily market-data lifecycle.**
+
+The `2023-01-02` through `2025-10-31` range is the archived full-range proof window used by the active audit evidence, not the final date of production readiness. Latest operator run/current operation is recorded through `2026-06-04`, and future dates remain part of normal daily lifecycle/backfill work.
+
+The active package state is not dependent on older history files. Older `PARTIAL` / `FAIL` / `BLOCKED` notes remain historical when a later checkpoint explicitly closes them.
 
 ## State rule
 Audit reports di paket aktif harus mengikuti aturan ini:

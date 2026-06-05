@@ -62,10 +62,13 @@ ACTIVE SESSION:
 - SECTOR_CODE_SOURCE_SURFACE_STATUS=IMPLEMENTED_SCHEMA_IMPORT_COMPUTE_READ_MODEL_REPUBLISHED_CURRENT_RANGE_PASS
 - SECTOR_ROTATION_INDICATOR_SURFACE_STATUS=CSV_IMPORTED_11_SECTORS_REPUBLISHED_CURRENT_RANGE_PASS
 - FULL_RANGE_EVIDENCE_REPLAY_AFTER_MISSING_TICKER_GLOBAL_CLOSE=PASSED (672/672, summary: storage/app/market_data/evidence/full_range_current/2023-01-02_to_2025-10-31_after_missing_ticker_global_close/market_data_full_range_current_evidence_replay_summary.json)
-- REMAINING_BLOCKERS=none_for_2023_01_02_to_2025_10_31_current_readable_market_data_lock; future dates and optional event-source imports remain normal data ops
+- FULL_RANGE_PROOF_WINDOW=2023_01_02_TO_2025_10_31_ARCHIVED_EVIDENCE_REPLAY_WINDOW_NOT_PRODUCTION_READY_END_DATE
+- PRODUCTION_READY_SCOPE_RULE=SOURCE_STATE_AND_DAILY_LIFECYCLE_READY_NOT_DATE_CAPPED
+- LATEST_OPERATOR_RUN_THROUGH=2026_06_04_REPORTED_CURRENT_DAILY_OPERATION
+- REMAINING_BLOCKERS=none_for_archived_2023_01_02_to_2025_10_31_current_readable_proof_window; future dates and optional event-source imports remain normal data ops
 - OPTIONAL_NEXT_VALIDATION=import_official_event_source_csv_and_republish_affected_dates_when_available
 - SECTOR_Z_CLASSIFICATION=listed-investment-product bucket, not one of the 11 equity sector indexes and not a sector-rotation gap
-- NON_SCOPE_SOURCE_GAPS=none_for_locked_2023_01_02_to_2025_10_31_market_data_current_readable_range
+- NON_SCOPE_SOURCE_GAPS=none_for_archived_2023_01_02_to_2025_10_31_market_data_current_readable_proof_window
 
 [SESSION_SCOPE]
 - Extend `market-data:backfill:lifecycle` manual-file operation with a single explicit multi-date input file.
@@ -78,7 +81,8 @@ ACTIVE SESSION:
 [SESSION_NOTES]
 - `market-data:backfill:lifecycle --source_mode=manual_file --input_file=<file>` is full lifecycle range orchestration, not import-only staging.
 - The local manual source adapter indexes explicit CSV/JSON rows by `trade_date`, returns only rows for the requested date, and records total/filtered source file telemetry.
-- Existing current-readable market-data lock for 2023-01-02 through 2025-10-31 is unchanged.
+- Existing production-ready lock remains valid for the current source state and daily lifecycle. The `2023-01-02` through `2025-10-31` span is the archived proof window, not a production-ready end date.
+- Latest operator run/current operation is recorded through 2026-06-04.
 
 [RUNTIME_ENVIRONMENT]
 - PHP CLI proof: PHP 7.4.33.
@@ -92,14 +96,14 @@ ACTIVE SESSION:
 - Full MarketData suite passed after missing-ticker correction-scoped impact hardening.
 - Full MarketData suite passed after manual-file multi-date lifecycle input update.
 - Targeted, static guard, and full MarketData carry-forward state proof passed.
-- Runtime promote republish proof ran on existing current bars for 2023-01-02 through 2025-10-31; API/OHLC import was not repeated.
+- Runtime promote republish proof ran on existing current bars for the archived proof window 2023-01-02 through 2025-10-31; API/OHLC import was not repeated.
 - Evidence/replay proof after sector-rotation republish is full-range across 672/672 current readable publications; replay id range `3362-4033` all MATCH/PASS.
 - Event-risk source migration ran in both `.env` and `.env.testing`; command surface proof previously showed 28 registered market-data commands including the two guarded event source import commands.
 - Missing-ticker command surface proof shows 29 registered market-data commands including `market-data:backfill:missing-tickers`.
 - Missing-ticker correction-candidate lineage runtime proof: `market-data:backfill:missing-tickers 2023-01-02 2023-01-31 ...` improved from `bar_mutation_changed_count=818` to `13`; focused runtime for 2023-01-03 reached `promote=SUCCESS` / `readable=YES`; follow-up runtime for 2023-01-04 through 2023-01-31 promoted all 19 remaining January primary dates; Jan 2-Jan 31 `--plan` now reports `missing_bar_count=0`.
-- Missing-ticker downstream data-completeness proof: Feb 1 2023-Oct 31 2025 `--plan --max-dates-per-run=1000` reports `missing_bar_count=21361`, `missing_trade_date_count=651`, `ticker_count=53`; current `PARTIAL` is therefore source data still missing outside the January range, not a code-level January promote failure.
-- Full global source blocker proof: unfiltered `market-data:backfill:missing-tickers 2023-01-02 2023-01-31 --source_mode=api --with-evidence --with-replay --continue-on-error` stopped with `status=BLOCKED`, `stage=SOURCE_ACQUISITION`, `failed_ticker_codes=["FREN","MASA","MFIN","RMBA","TURI"]`, and diagnostic path `storage/app/market_data/evidence/backfill_missing_tickers/api_2023-01-02_to_2023-01-31_global_missing/source_acquisition_diagnostics.json`.
-- Local DB source blocker proof: `FREN`, `MASA`, `MFIN`, `RMBA`, and `TURI` have zero `eod_bars` and zero `eod_bars_history` rows for Jan 2023; Yahoo chart URLs for those symbols return 404 "No data found, symbol may be delisted".
+- Superseded missing-ticker downstream proof: the earlier Feb 2023-Oct 2025 plan reported `missing_bar_count=21361`, `missing_trade_date_count=651`, and `ticker_count=53`. That was an interim source-data gap, not a candidate-preservation bug, and it is closed by the later 2026-06-05 final unfiltered plan with zero missing bars.
+- Superseded full-global source blocker proof: the earlier unfiltered Jan 2023 run stopped at `stage=SOURCE_ACQUISITION` for `FREN`, `MASA`, `MFIN`, `RMBA`, and `TURI`. That blocker is retained as root-cause history only; it is closed for the archived proof window by source-backed overlay/backfill proof, final missing plan zero, and full-range current evidence/replay PASS.
+- Superseded local DB source blocker proof: the earlier zero-row observation for `FREN`, `MASA`, `MFIN`, `RMBA`, and `TURI` explains why the provider path blocked before remediation. It is not an active blocker for the archived 2023-01-02 through 2025-10-31 proof window or current source-state closure.
 
 ---
 ## OPERATIONAL STATUS
@@ -179,18 +183,18 @@ ACTIVE SESSION:
   [REVIEW_STATUS] LOCAL_SYNTAX_TARGETED_REPROCESS_RUNTIME_FULL_RANGE_EVIDENCE_REPLAY_PASS
 
   [HISTORY]
-  - 2026-06-05 -> Full global missing-ticker source gap closed for the current locked range. Source-backed overlay rows were added for IDX Stock Summary corrections where Yahoo/API returned valid HTTP responses but invalid OHLC order (`close > high`) for Feb/Mar 2023 rows, and missing-ticker API/manual overlay now can replace successful-but-invalid API rows.
+  - 2026-06-05 -> Full global missing-ticker source gap closed for the archived proof window. Source-backed overlay rows were added for IDX Stock Summary corrections where Yahoo/API returned valid HTTP responses but invalid OHLC order (`close > high`) for Feb/Mar 2023 rows, and missing-ticker API/manual overlay now can replace successful-but-invalid API rows.
   - 2026-06-05 -> Runtime stale-run guard hardened missing-ticker import exception handling so an old readable `SUCCESS` run cannot be reused after a new import failure; owning-run lookup now matches source/request mode to avoid request-mode immutable conflicts.
   - 2026-06-05 -> Added `--skip-publication-reprocess` as requested-date-only lock mode: the requested trade date is still corrected via `correction_current` when needed, while non-requested affected-date reprocess is deferred instead of repeatedly replayed in every monthly chunk.
   - 2026-06-05 -> Unfiltered monthly chunks through Dec 2023 completed current/readable missing-ticker closure: Feb plan 0, Mar plan 0, Apr plan 0, May 273 bars closed, Jun 221, Jul 260, Aug 269, Sep 227, Oct 225, Nov 276, Dec 262. Full unfiltered 2023-01-02 to 2025-10-31 plan now reports `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`.
   - 2026-06-05 -> Full-range current evidence/replay proof passed after global close: `market-data:evidence-replay:full-range-current 2023-01-02 2025-10-31 --continue_on_error` processed 672/672 dates, `success_count=672`, `failed_count=0`, `all_passed=1`, all replay comparisons MATCH/PASS.
-  - 2026-06-05 -> Full global lock attempt moved from filtered ticker-list proof to unfiltered universe proof. Unfiltered Jan 2023 still has 109 missing bars and blocks before mutation because Yahoo returns 404 for `FREN`, `MASA`, `MFIN`, `RMBA`, and `TURI`; unfiltered Feb 2023-Oct 2025 still has 23,488 missing bars across 67 tickers. Full global lock remains blocked pending source-backed OHLC for those five delisted/legacy tickers.
-  - 2026-06-04 -> Runtime proof extended through 2023-01-31: 2023-01-04 through 2023-01-31 primary missing-ticker dates reached `coverage=PASS`, `promote=SUCCESS`, and `readable=YES`; Jan 2-Jan 31 plan now reports zero missing bars. Downstream/full-range plan still reports 21,361 missing bars from Feb 2023-Oct 2025 for the supplied ticker list, so global completion still requires additional range backfill.
+  - 2026-06-05 -> Intermediate full global universe proof exposed the remaining blocker: unfiltered Jan 2023 still had 109 missing bars and blocked before mutation because Yahoo returned 404 for `FREN`, `MASA`, `MFIN`, `RMBA`, and `TURI`; unfiltered Feb 2023-Oct 2025 still had 23,488 missing bars across 67 tickers. Later 2026-06-05 source-backed overlay/backfill remediation closed this blocker, and the final unfiltered 2023-01-02 to 2025-10-31 plan reports zero missing bars.
+  - 2026-06-04 -> Runtime proof extended through 2023-01-31: 2023-01-04 through 2023-01-31 primary missing-ticker dates reached `coverage=PASS`, `promote=SUCCESS`, and `readable=YES`; Jan 2-Jan 31 plan reported zero missing bars. The downstream/full-range gap still existed at that time, then was closed by the 2026-06-05 full global unfiltered plan zero.
   - 2026-06-04 -> Correction-current candidate lineage was hardened so the correction run owns the target candidate publication, copies bars from a trusted missing-ticker source candidate or current baseline, and finalize can reuse the just-sealed candidate; full MarketData PHPUnit passed at 622 tests / 9398 assertions.
-  - 2026-06-04 -> Runtime proof: 2023-01-02 and 2023-01-03 missing-ticker primary dates reached `promote=SUCCESS` and `readable=YES`; direct current-bar verification showed missing count 0 for the selected ticker list on both dates. January range remains PARTIAL until remaining requested/downstream dates are rerun after this patch.
+  - 2026-06-04 -> Runtime proof: 2023-01-02 and 2023-01-03 missing-ticker primary dates reached `promote=SUCCESS` and `readable=YES`; direct current-bar verification showed missing count 0 for the selected ticker list on both dates. The January range was still PARTIAL at that moment, then closed by the 2026-06-05 global-close entries above.
   - 2026-06-04 -> Follow-up runtime output showed `candidate_source_row_count=818` and `coverage=PASS`, but `bar_mutation_changed_count=818`, promote `HELD`, and publication reprocess blocked because history-candidate mutation comparison used empty candidate history instead of the superseded current baseline.
   - 2026-06-04 -> History mutation comparison, canonical source preservation, readable-correction telemetry, and requested-date correction-current orchestration were hardened; full MarketData PHPUnit passed at 621 tests / 9391 assertions.
-  - 2026-06-04 -> Operator reran missing-ticker backfill with failed Yahoo symbols removed and source acquisition passed, but promote still failed as `RUN_PARTIAL_DATA`.
+  - 2026-06-04 -> Intermediate rerun: operator removed failed Yahoo symbols and source acquisition passed, but promote still failed as `RUN_PARTIAL_DATA`. This failure mode is closed by the later candidate-preservation, mutation-baseline, and correction-current fixes.
   - 2026-06-04 -> Runtime output showed `candidate_source_row_count=13` for 13 selected missing rows, proving existing current bars were not preserved in the candidate payload under `--ticker_codes`.
   - 2026-06-04 -> Candidate universe handling was corrected so `--ticker_codes` filters missing-gap targets only, while current-bar preservation uses the full ticker-master universe for the trade date.
 
@@ -224,9 +228,9 @@ ACTIVE SESSION:
   - The prior `candidate_source_row_count=13` / `RUN_PARTIAL_DATA` failure mode is fixed for filtered runs where current readable bars already exist for the rest of the date.
   - The follow-up `candidate_source_row_count=818` / `bar_mutation_changed_count=818` failure mode is fixed: unchanged preserved current rows are counted as unchanged, while selected missing rows remain the actual inserted/changed impact.
   - If the requested trade date already has a current readable publication and the missing-ticker candidate affects it, the command can route that requested date through automated correction-current with correction id lineage instead of treating it as a normal primary promote.
-  - Runtime proof shows the full unfiltered current-readable range 2023-01-02 through 2025-10-31 now has zero missing ticker bars and full-range current evidence/replay pass.
-  - The prior hard blocker for `FREN`, `MASA`, `MFIN`, `RMBA`, and `TURI` is superseded for this locked range by source-backed overlay/backfill runtime proof and the final unfiltered missing-ticker plan of zero.
-  - Full global lock for the audited range is production-ready for current market-data OHLC/current publication/evidence/replay scope. Future trading dates remain normal data completeness work through the daily lifecycle/backfill path.
+  - Runtime proof shows the archived full-range current-readable proof window 2023-01-02 through 2025-10-31 now has zero missing ticker bars and full-range current evidence/replay pass.
+  - The prior hard blocker for `FREN`, `MASA`, `MFIN`, `RMBA`, and `TURI` is superseded for this proof window by source-backed overlay/backfill runtime proof and the final unfiltered missing-ticker plan of zero.
+  - Full global lock is production-ready for current market-data OHLC/current publication/evidence/replay scope and ongoing daily lifecycle/backfill operation. The audited range is a proof window, while future trading dates remain normal data completeness work through the same daily lifecycle/backfill path.
   - Existing partial-source guard remains in force: if any selected provider ticker fails acquisition, mutation is blocked before import.
 
   [EVIDENCE]
@@ -249,10 +253,10 @@ ACTIVE SESSION:
   - Runtime proof: `php artisan market-data:backfill:missing-tickers 2023-01-03 2023-01-03 --source_mode=api --ticker_codes=... --with-evidence --with-replay -vvv` -> `source_acquisition_state=SUCCESS`, `candidate_source_row_count=820`, `bar_mutation_changed_count=13`, `coverage=PASS`, `promote=SUCCESS`, `readable=YES`, `publication_reprocess_republished_trade_date_count=1`, and replay verified for the republished correction path.
   - Runtime proof: `php artisan market-data:backfill:missing-tickers 2023-01-04 2023-01-31 --source_mode=api --ticker_codes=... --with-evidence --with-replay --continue-on-error -vvv` -> source acquisition `SUCCESS`, 19/19 primary dates `coverage=PASS`, `promote=SUCCESS`, `readable=YES`, `bar_mutation_changed_count=247`, `publication_reprocess_republished_trade_date_count=19`, and evidence/fixture/replay verified count 19 for publication reprocess.
   - Runtime proof: `php artisan market-data:backfill:missing-tickers 2023-01-02 2023-01-31 --source_mode=api --ticker_codes=... --plan -vvv` -> `missing_bar_count=0`, `missing_trade_date_count=0`.
-  - Runtime gap proof: `php artisan market-data:backfill:missing-tickers 2023-02-01 2025-10-31 --source_mode=api --ticker_codes=... --plan --max-dates-per-run=1000 -vvv` -> `missing_bar_count=21361`, `missing_trade_date_count=651`, `ticker_count=53`.
-  - Runtime global gap proof: `php artisan market-data:backfill:missing-tickers 2023-01-02 2023-01-31 --source_mode=api --plan -vvv` -> `missing_bar_count=109`, `missing_trade_date_count=21`, `ticker_count=9`.
-  - Runtime global gap proof: `php artisan market-data:backfill:missing-tickers 2023-02-01 2025-10-31 --source_mode=api --plan --max-dates-per-run=1000 -vvv` -> `missing_bar_count=23488`, `missing_trade_date_count=651`, `ticker_count=67`.
-  - Runtime global source blocker proof: unfiltered Jan 2023 execution stopped as `status=BLOCKED`, `mutation_guard=MISSING_TICKER_SOURCE_ACQUISITION_BLOCKED_BEFORE_IMPORT`, `failed_ticker_codes=["FREN","MASA","MFIN","RMBA","TURI"]`, `failed_ticker_count=5`, `candidate_source_row_count=0`, `bar_mutation_changed_count=0`.
+  - Superseded runtime gap proof: `php artisan market-data:backfill:missing-tickers 2023-02-01 2025-10-31 --source_mode=api --ticker_codes=... --plan --max-dates-per-run=1000 -vvv` -> `missing_bar_count=21361`, `missing_trade_date_count=651`, `ticker_count=53`; closed by final unfiltered plan zero.
+  - Superseded runtime global gap proof: `php artisan market-data:backfill:missing-tickers 2023-01-02 2023-01-31 --source_mode=api --plan -vvv` -> `missing_bar_count=109`, `missing_trade_date_count=21`, `ticker_count=9`; closed by final unfiltered plan zero.
+  - Superseded runtime global gap proof: `php artisan market-data:backfill:missing-tickers 2023-02-01 2025-10-31 --source_mode=api --plan --max-dates-per-run=1000 -vvv` -> `missing_bar_count=23488`, `missing_trade_date_count=651`, `ticker_count=67`; closed by final unfiltered plan zero.
+  - Superseded runtime global source blocker proof: unfiltered Jan 2023 execution stopped as `status=BLOCKED`, `mutation_guard=MISSING_TICKER_SOURCE_ACQUISITION_BLOCKED_BEFORE_IMPORT`, `failed_ticker_codes=["FREN","MASA","MFIN","RMBA","TURI"]`, `failed_ticker_count=5`, `candidate_source_row_count=0`, `bar_mutation_changed_count=0`; retained as pre-remediation evidence only.
   - Source-backed overlay proof: IDX Stock Summary rows were added to `storage/app/market_data/source_backfill/investing_idx_legacy_ohlc_2023-02-01_to_2025-10-31.csv` for invalid Yahoo OHLC rows such as `DMND`, `IBST`, `INCI`, `BAYU`, `BRNA`, `JSPT`, and `PGJO` in Feb/Mar 2023.
   - Runtime chunk proof: `market-data:backfill:missing-tickers` unfiltered chunks through Jan-Dec 2023 closed the remaining current bar gaps; Jun-Dec used `--skip-publication-reprocess` requested-date-only correction mode and each monthly command completed with `status=SUCCESS`.
   - Final missing plan proof: `php artisan market-data:backfill:missing-tickers 2023-01-02 2025-10-31 --source_mode=api --plan --max-dates-per-run=1000` -> `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`.
@@ -978,7 +982,7 @@ ACTIVE SESSION:
   - 2026-05-19 -> Historical replay `replay_id=8` proves explicit historical publication audit resolution for `publication_id=2` after the current pointer moved to newer `publication_id=5`; replay result is `MATCH` with `replay_status=PASS`, `mismatch_count=0`, and evidence admission `ADMITTED_COMPLETE`.
   - 2026-05-19 -> Cross-inventory/contract audit confirmed all canonical market-data contracts in `LUMEN_CONTRACT_TRACKER.md` are LOCKED after replay/evidence export historical proof; no non-full production contract remains active `REVIEW_REQUIRED` / `IN_PROGRESS` / incomplete.
   - 2026-05-19 -> Operator-local validation supplied for this final state: AuditDocs OK (10 tests, 363 assertions), Replay OK (57 tests, 904 assertions), StaticGuard OK (170 tests, 3950 assertions), and full `tests/Unit/MarketData` OK (453 tests, 6671 assertions).
-  - 2026-05-20 -> Current correction lifecycle hardening changed correction command/repository/replay/evidence/schema behavior. The 2026-05-19 full production-ready proof is now superseded by the final passed provider-smoke proof evidence, but it is not a current aggregate claim for this patched source state until the full proof pack is rerun.
+  - 2026-05-20 -> Current correction lifecycle hardening changed correction command/repository/replay/evidence/schema behavior. At that point, the 2026-05-19 full production-ready proof became historical until a fresh proof pack was rerun; the later 2026-05-20 final audit sync and 2026-06-05 full global lock entries closed that aggregate-proof gap.
   - 2026-05-20 -> Ops Command Surface Runtime Matrix supplied the missing current-source runtime matrix: 20 command registry/help proof, invalid-input proof, fresh success/held/failed/conflict/repair/snapshot/evidence/replay artifacts, and full MarketData PHPUnit OK (475 tests, 6942 assertions).
   - 2026-05-20 -> `MARKET_DATA_PRODUCTION_PROOF_PACK.md` created and this canonical implementation promoted to `DONE` as `PRODUCTION_READY_CANDIDATE_PENDING_FINAL_AUDIT_DOCS_SYNCHRONIZATION`; final `LOCKED` remained reserved for Final Audit Docs Synchronization.
   - 2026-05-20 -> Final Audit Docs Synchronization consumed the production proof pack, reconciled implementation status, contract tracker, production validation inventory, and full production-ready inventory, and promoted this canonical implementation to `MARKET_DATA_PRODUCTION_READY_LOCKED`.
@@ -2062,9 +2066,9 @@ ACTIVE SESSION:
   - Candidate-scope hardening is DONE because Promote, Finalize, StaticGuard, Integration, and full MarketData suite all passed locally.
 
 
-  [GAP]
-  - Runtime proof is pending operator-local PHPUnit rerun after fix4.
-  - Current implementation remains PARTIAL until full `tests/Unit/MarketData` passes locally.
+  [HISTORICAL_GAP_CLOSED]
+  - Runtime proof was pending operator-local PHPUnit rerun after fix4.
+  - This interim PARTIAL state is closed by `[FINAL_CLOSURE_2026_05_13]`, where full `vendor/bin/phpunit tests/Unit/MarketData` returned `OK (397 tests, 5461 assertions)`.
 
 
 ### Historical Read-Side Consumer Surface Final Sweep Context (2026-05-12)
@@ -3867,8 +3871,9 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 ## 2026-05-25 - API BACKFILL RANGE FULL LIFECYCLE ORCHESTRATION
 
 [STATUS]
-- `PARTIAL` / `BLOCKED_RUNTIME_VALIDATION` for production runtime claim until the new lifecycle command is executed against an operator-approved testing database/provider fixture.
-- Static/unit proof has been added for range-window acquisition, command surface separation, replay gating, and forbidden fallback patterns.
+- Historical interim status was not accepted as production runtime proof before lifecycle runtime evidence was captured.
+- Later lifecycle command proof, command-surface proof, and full global lock entries supersede this interim production-runtime claim.
+- Static/unit proof had been added for range-window acquisition, command surface separation, replay gating, and forbidden fallback patterns.
 
 [ROOT_CAUSE_CONFIRMED]
 - Existing `market-data:backfill` is import-only and loops each trading date through `MarketDataBackfillService`.
