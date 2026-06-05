@@ -10,6 +10,7 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
         {start_date?}
         {end_date?}
         {--source_mode=api}
+        {--input_file=}
         {--output_dir=}
         {--plan}
         {--resume}
@@ -42,12 +43,21 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
             return 1;
         }
 
+        $previousInputFile = config('market_data.source.local_input_file');
+        $configuredOverride = false;
+
+        if (($this->option('source_mode') ?: 'api') === 'manual_file' && $this->option('input_file')) {
+            config()->set('market_data.source.local_input_file', $this->option('input_file'));
+            $configuredOverride = true;
+        }
+
         try {
             $summary = app(BackfillLifecycleOrchestrator::class)->execute(
                 $this->argument('start_date'),
                 $this->argument('end_date'),
                 $this->option('source_mode') ?: 'api',
                 [
+                    'input_file' => $this->option('input_file') ?: null,
                     'output_dir' => $this->option('output_dir') ?: null,
                     'plan' => (bool) $this->option('plan'),
                     'resume' => (bool) $this->option('resume'),
@@ -68,6 +78,10 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
             $this->renderCommandBlocked($this->reasonCodeFromException($e), $e->getMessage());
 
             return 1;
+        } finally {
+            if ($configuredOverride) {
+                config()->set('market_data.source.local_input_file', $previousInputFile);
+            }
         }
 
         $this->line('source_mode='.(string) $summary['source_mode']);
@@ -87,6 +101,9 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
         $this->line('with_evidence='.(empty($summary['with_evidence']) ? 'false' : 'true'));
         $this->line('with_replay='.(empty($summary['with_replay']) ? 'false' : 'true'));
         $this->line('output_dir='.$this->normalizePathForDisplay((string) $summary['output_dir']));
+        if (! empty($summary['input_file'])) {
+            $this->line('input_file='.$this->normalizeOptionalPathForDisplay((string) $summary['input_file']));
+        }
 
         foreach (['stage', 'source_acquisition_state', 'source_final_status', 'publishability_state', 'reason_code', 'failure_scope', 'failed_ticker', 'failed_window_start', 'failed_window_end', 'http_status', 'failed_checkpoint_total', 'failed_checkpoint_eligible', 'failed_checkpoint_retried', 'failed_checkpoint_retry_success', 'failed_checkpoint_retry_failed', 'retry_success_count', 'retry_failed_count', 'failed_checkpoint_skipped', 'skipped_failed_checkpoint_count', 'skipped_failed_checkpoint_reasons', 'failed_ticker_count', 'failed_window_count', 'skipped_checkpoint_count', 'diagnostic_path'] as $field) {
             if (array_key_exists($field, $summary) && $summary[$field] !== null && $summary[$field] !== '') {

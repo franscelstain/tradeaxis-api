@@ -13,9 +13,9 @@ Audit market-data menilai:
 - konsistensi lintas folder utama
 
 ## Layers
-- **Layer A — System Docs**: source-of-truth docs, contract docs, owner docs, dan DB/schema support docs.
-- **Layer B — Implementation Guidance**: module mapping, runtime flow translation, API/persistence/testing guidance, runbook, dan delivery checklist.
-- **Layer C — Real Implementation / App Runtime**: bukti nyata aplikasi, runtime payload, schema runtime, executed test, log, atau archived execution evidence yang bisa ditelusuri.
+- **Layer A - System Docs**: source-of-truth docs, contract docs, owner docs, dan DB/schema support docs.
+- **Layer B - Implementation Guidance**: module mapping, runtime flow translation, API/persistence/testing guidance, runbook, dan delivery checklist.
+- **Layer C - Real Implementation / App Runtime**: bukti nyata aplikasi, runtime payload, schema runtime, executed test, log, atau archived execution evidence yang bisa ditelusuri.
 
 ## Expected output of every audit
 Setiap audit minimal harus menghasilkan:
@@ -70,6 +70,18 @@ Dua file berikut adalah checkpoint aktif utama untuk build dan closure implement
 - `LUMEN_CONTRACT_TRACKER.md`
 
 Keduanya wajib sinkron dengan owner docs dan tidak boleh dipakai untuk membuat kontrak paralel.
+
+## Current checkpoint summary
+Checkpoint aktif menyatakan market-data **production-ready locked** untuk source state saat ini dan daily market-data lifecycle yang terus berjalan.
+
+Range `2023-01-02` sampai `2025-10-31` adalah archived full-range proof window yang dipakai sebagai bukti audit Lumen, bukan tanggal akhir production-ready. Latest operator run/current operation sudah dilaporkan berjalan sampai `2026-06-04`, dan tanggal setelah proof window tetap masuk jalur daily lifecycle/backfill normal.
+
+Bukti penutup aktif berada di dua file Lumen:
+- full unfiltered missing-ticker plan: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`
+- full-range current evidence/replay: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`
+- full MarketData PHPUnit: `OK (635 tests, 9474 assertions)`
+
+Catatan `PARTIAL` atau `BLOCKED` bertanggal lebih lama di checkpoint Lumen adalah histori penyebab/perbaikan jika sudah diikuti oleh entry 2026-06-05 yang menutupnya.
 
 ## Runtime-state separation
 Audit market-data wajib memisahkan:

@@ -101,9 +101,6 @@ Urutan authority yang wajib dipakai saat terjadi konflik:
 - `docs/watchlist/audit/WATCHLIST_AUDIT_SHORT.md`
 - `docs/watchlist/audit/WATCHLIST_AUDIT_PROMPT_STANDARD.md`
 - `docs/watchlist/audit/WATCHLIST_CHANGE_IMPACT_MATRIX.md`
-- `docs/watchlist/audit/AUDIT_UPDATE_GOVERNANCE.md`
-- `docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md`
-- `docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md`
 
 ## Support Areas to Cross-Check
 
@@ -140,13 +137,3 @@ Aktif bila ZIP berisi implementation guidance / translation docs.
 - bukti implementasi app nyata.
 
 Jika ZIP hanya berisi dokumen/support artifacts, audit **tidak boleh** melebar ke lapisan C.
-
-## Lumen Tracker Foundation Addendum
-
-The Lumen tracker foundation files are part of the audit guardrail set:
-
-- `docs/watchlist/audit/AUDIT_UPDATE_GOVERNANCE.md`
-- `docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md`
-- `docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md`
-
-They track governance, implementation progress, and contract status. They do not become business-rule owners and must defer to `docs/watchlist/system/policy.md` plus the relevant normative Weekly Swing owner docs.

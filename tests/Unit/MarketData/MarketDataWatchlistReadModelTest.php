@@ -29,7 +29,15 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->seedTicker(2, 'BBRI', 'Bank Rakyat Indonesia');
         $this->seedReadablePublication('2026-05-19', 3, 2);
         $this->seedBar('2026-05-19', 1, 3, 2, 9000, 123456, 9000);
-        $this->seedIndicator('2026-05-19', 1, 3, 2);
+        $this->seedIndicator('2026-05-19', 1, 3, 2, [
+            'corporate_action_flag' => 1,
+            'corporate_action_types' => 'DIVIDEND',
+            'trading_status_code' => 'UMA',
+            'is_suspended' => 0,
+            'is_uma' => 1,
+            'event_risk_flag' => 1,
+            'event_risk_reasons' => 'CORPORATE_ACTION:DIVIDEND,UMA',
+        ]);
         $this->seedEligibility('2026-05-19', 1, 3, 2, 1);
 
         $this->seedBar('2026-05-19', 2, 99, 999, 4000);
@@ -50,10 +58,29 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->assertSame(9000.0, $row['close_price']);
         $this->assertSame(123456, $row['volume']);
         $this->assertSame(123456789000.0, $row['dv20idr']);
+        $this->assertSame('G', $row['sector_code']);
+        $this->assertSame('Financials', $row['sector_name']);
+        $this->assertSame('IDXFINANCE', $row['sector_index_code']);
+        $this->assertSame(0.018, $row['roc_5']);
+        $this->assertSame(0.031, $row['roc_10']);
         $this->assertSame(5.2, $row['roc_20']);
+        $this->assertSame(8200.0, $row['ll20']);
+        $this->assertSame(9.756097561, $row['close_to_ll20_pct']);
+        $this->assertSame(10.9756097561, $row['range_20_pct']);
+        $this->assertSame(88.8888888889, $row['range_position_20_pct']);
         $this->assertSame(8750.0, $row['ma20']);
         $this->assertSame(8600.0, $row['ma50']);
         $this->assertSame(3.4, $row['rs_20_vs_ihsg']);
+        $this->assertSame(2.7, $row['sector_roc20']);
+        $this->assertSame(2.5, $row['rs_20_vs_sector']);
+        $this->assertSame(-0.9, $row['sector_rs_20_vs_ihsg']);
+        $this->assertSame(1, $row['corporate_action_flag']);
+        $this->assertSame('DIVIDEND', $row['corporate_action_types']);
+        $this->assertSame('UMA', $row['trading_status_code']);
+        $this->assertSame(0, $row['is_suspended']);
+        $this->assertSame(1, $row['is_uma']);
+        $this->assertSame(1, $row['event_risk_flag']);
+        $this->assertSame('CORPORATE_ACTION:DIVIDEND,UMA', $row['event_risk_reasons']);
         $this->assertSame('v1', $row['indicator_set_version']);
         $this->assertSame('API_FREE', $row['source_name']);
     }

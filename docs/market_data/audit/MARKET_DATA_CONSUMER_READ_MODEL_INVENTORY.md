@@ -229,15 +229,25 @@ Indicator proof:
 SELECT
   ticker_code,
   trade_date,
+  roc5,
+  roc10,
   roc20,
   hh20,
+  ll20,
   ma20,
   ma50,
   close_to_hh20_pct,
+  close_to_ll20_pct,
+  range_20_pct,
+  range_position_20_pct,
   close_vs_ma20_pct,
   close_vs_ma50_pct,
   ma20_slope_pct,
-  rs_20_vs_ihsg
+  rs_20_vs_ihsg,
+  sector_code,
+  sector_roc20,
+  rs_20_vs_sector,
+  sector_rs_20_vs_ihsg
 FROM eod_indicators
 WHERE trade_date = '2026-05-19'
 ORDER BY ticker_code
@@ -263,6 +273,19 @@ WHERE benchmark_code = 'IHSG'
 ORDER BY trade_date DESC
 LIMIT 10;
 ```
+
+2026-06-02 weekly-swing extension note:
+- Watchlist read output now exposes `roc_5`, `roc_10`, `ll20`, `close_to_ll20_pct`, `range_20_pct`, and `range_position_20_pct` from the same pointer-scoped `eod_indicators` join.
+- Benchmark read output now exposes IHSG `ma20_slope_pct`, `close_to_ma20_pct`, and `close_to_ma50_pct` from `market_benchmark_indicators`.
+- The read model remains current-readable-publication only and does not add scoring/ranking/entry decisions.
+
+2026-06-03 sector-code source surface note:
+- Watchlist read output now exposes nullable `sector_code`, `sector_name`, and `sector_index_code` from the pointer-scoped indicator row and active sector taxonomy.
+- Missing membership remains NULL; read-side code does not infer sector from raw/latest ticker metadata.
+
+2026-06-03 sector-rotation source surface note:
+- Watchlist read output now exposes nullable `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` from the pointer-scoped indicator row.
+- Missing sector index history remains NULL; read-side code does not infer, forward-fill, or fabricate sector rotation values.
 
 ## EVIDENCE / REPLAY IMPACT
 

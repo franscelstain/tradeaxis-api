@@ -191,6 +191,149 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
         $this->assertSame('REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE', $result['publication_reprocess_summary']['blocked_reason_code']);
     }
 
+    public function test_requested_date_readable_correction_candidate_uses_correction_current_even_when_seed_run_is_not_readable(): void
+    {
+        [$orchestrator, $runs, $pipeline, $evidence, $replay, $corrections, $publications] = $this->makeOrchestrator();
+
+        $seedRun = (object) [
+            'run_id' => 401,
+            'trade_date_requested' => '2026-05-01',
+            'terminal_status' => 'HELD',
+            'publishability_state' => 'NOT_READABLE',
+            'coverage_gate_state' => 'PASS',
+            'sealed_at' => null,
+        ];
+        $baseline = (object) [
+            'publication_id' => 5001,
+            'run_id' => 301,
+        ];
+        $requestedCorrection = (object) ['correction_id' => 61];
+        $approvedCorrection = (object) ['correction_id' => 61, 'status' => 'APPROVED'];
+        $correctedRun = (object) [
+            'run_id' => 402,
+            'trade_date_requested' => '2026-05-01',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
+            'coverage_ratio' => '1.0000',
+            'publication_id' => 5002,
+            'publication_version' => 2,
+            'sealed_at' => '2026-05-27 10:00:00',
+        ];
+
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-01', 'api')
+            ->andReturn($seedRun);
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-05-01')
+            ->andReturn($baseline);
+        $corrections->shouldReceive('createRequest')
+            ->once()
+            ->with('2026-05-01', 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION', m::type('string'), 'system', 5001, 301)
+            ->andReturn($requestedCorrection);
+        $corrections->shouldReceive('approve')
+            ->once()
+            ->with(61, 'system')
+            ->andReturn($approvedCorrection);
+        $pipeline->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-05-01', 'api', 401, 61, 'correction_current')
+            ->andReturn($correctedRun);
+        $evidence->shouldNotReceive('exportRunEvidence');
+        $replay->shouldNotReceive('generateFixtureFromRun');
+        $replay->shouldNotReceive('verifyRunAgainstFixture');
+
+        $result = $this->invokePublicationReprocess($orchestrator, [
+            'requested_date' => '2026-05-01',
+            'publication_reprocess_state' => 'PENDING_PROMOTE',
+            'publication_reprocess_summary' => [
+                'execution_state' => 'PENDING_PROMOTE',
+                'candidate_trade_dates' => ['2026-05-01'],
+                'readable_correction_candidate_trade_dates' => ['2026-05-01'],
+            ],
+        ], false, false, false);
+
+        $this->assertSame('REPUBLISHED', $result['publication_reprocess_state']);
+        $this->assertSame(['2026-05-01'], $result['publication_reprocess_republished_trade_dates']);
+        $this->assertSame([61], $result['publication_reprocess_correction_ids']);
+        $this->assertSame('AUTOMATED_READABLE_CORRECTION', $result['publication_reprocess_republication_mode']);
+    }
+
+    public function test_readable_correction_candidate_clears_stale_blocked_date_after_successful_republication(): void
+    {
+        [$orchestrator, $runs, $pipeline, $evidence, $replay, $corrections, $publications] = $this->makeOrchestrator();
+
+        $seedRun = (object) [
+            'run_id' => 401,
+            'trade_date_requested' => '2026-05-01',
+            'terminal_status' => 'HELD',
+            'publishability_state' => 'NOT_READABLE',
+            'coverage_gate_state' => 'PASS',
+            'sealed_at' => null,
+        ];
+        $baseline = (object) [
+            'publication_id' => 5001,
+            'run_id' => 301,
+        ];
+        $correctedRun = (object) [
+            'run_id' => 402,
+            'trade_date_requested' => '2026-05-01',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
+            'coverage_ratio' => '1.0000',
+            'publication_id' => 5002,
+            'publication_version' => 2,
+            'sealed_at' => '2026-05-27 10:00:00',
+        ];
+
+        $runs->shouldReceive('findLatestForRequestedDate')
+            ->once()
+            ->with('2026-05-01', 'api')
+            ->andReturn($seedRun);
+        $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
+            ->once()
+            ->with('2026-05-01')
+            ->andReturn($baseline);
+        $corrections->shouldReceive('createRequest')
+            ->once()
+            ->with('2026-05-01', 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION', m::type('string'), 'system', 5001, 301)
+            ->andReturn((object) ['correction_id' => 62]);
+        $corrections->shouldReceive('approve')
+            ->once()
+            ->with(62, 'system')
+            ->andReturn((object) ['correction_id' => 62, 'status' => 'APPROVED']);
+        $pipeline->shouldReceive('promoteDaily')
+            ->once()
+            ->with('2026-05-01', 'api', 401, 62, 'correction_current')
+            ->andReturn($correctedRun);
+        $evidence->shouldNotReceive('exportRunEvidence');
+        $replay->shouldNotReceive('generateFixtureFromRun');
+        $replay->shouldNotReceive('verifyRunAgainstFixture');
+
+        $result = $this->invokePublicationReprocess($orchestrator, [
+            'requested_date' => '2026-05-01',
+            'publication_reprocess_state' => 'PENDING_PROMOTE',
+            'publication_reprocess_blocked_trade_dates' => '2026-05-01',
+            'publication_reprocess_blocked_reason_code' => 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION',
+            'publication_reprocess_summary' => [
+                'execution_state' => 'PENDING_PROMOTE',
+                'candidate_trade_dates' => ['2026-05-01'],
+                'readable_correction_candidate_trade_dates' => ['2026-05-01'],
+                'blocked_trade_dates' => ['2026-05-01'],
+                'blocked_reason_code' => 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION',
+            ],
+        ], false, false, false);
+
+        $this->assertSame('REPUBLISHED', $result['publication_reprocess_state']);
+        $this->assertSame(['2026-05-01'], $result['publication_reprocess_republished_trade_dates']);
+        $this->assertSame([], $result['publication_reprocess_blocked_trade_dates']);
+        $this->assertNull($result['publication_reprocess_blocked_reason_code']);
+        $this->assertSame([62], $result['publication_reprocess_correction_ids']);
+    }
+
     public function test_lifecycle_consumes_actual_executor_output_for_mixed_readable_and_non_readable_candidates(): void
     {
         [$orchestrator, $runs, $pipeline, $evidence, $replay, $corrections, $publications] = $this->makeOrchestrator();

@@ -29,6 +29,9 @@ class MarketBenchmarkReadModelTest extends TestCase
             'roc_20' => '1.5000000000',
             'ma20' => '7100.0000',
             'ma50' => '7000.0000',
+            'ma20_slope_pct' => '0.8000000000',
+            'close_to_ma20_pct' => '2.1126760563',
+            'close_to_ma50_pct' => '3.5714285714',
             'is_valid' => 1,
             'invalid_reason_code' => null,
         ]);
@@ -41,6 +44,9 @@ class MarketBenchmarkReadModelTest extends TestCase
         $this->assertSame('^JKSE', $result['benchmark']['provider_symbol']);
         $this->assertSame(7250.0, $result['benchmark']['close_price']);
         $this->assertSame(1.5, $result['benchmark']['roc_20']);
+        $this->assertSame(0.8, $result['benchmark']['ma20_slope_pct']);
+        $this->assertSame(2.1126760563, $result['benchmark']['close_to_ma20_pct']);
+        $this->assertSame(3.5714285714, $result['benchmark']['close_to_ma50_pct']);
         $this->assertTrue($result['benchmark']['is_valid']);
         $this->assertSame(0, $this->db()->table('tickers')->where('ticker_code', 'IHSG')->count());
     }
@@ -57,6 +63,9 @@ class MarketBenchmarkReadModelTest extends TestCase
         $this->assertNull($result['benchmark']['roc_20']);
         $this->assertNull($result['benchmark']['ma20']);
         $this->assertNull($result['benchmark']['ma50']);
+        $this->assertNull($result['benchmark']['ma20_slope_pct']);
+        $this->assertNull($result['benchmark']['close_to_ma20_pct']);
+        $this->assertNull($result['benchmark']['close_to_ma50_pct']);
         $this->assertSame('IND_INSUFFICIENT_HISTORY', $result['benchmark']['invalid_reason_code']);
     }
 

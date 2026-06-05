@@ -44,4 +44,17 @@ class TickerMasterRepositoryTest extends TestCase
             ['ticker_id' => 1, 'ticker_code' => 'BBCA'],
         ], $universe);
     }
+
+    public function test_delisted_date_is_exclusive_from_tradeable_universe(): void
+    {
+        DB::table('tickers')->insert([
+            ['ticker_id' => 10, 'ticker_code' => 'FREN', 'company_name' => 'FREN', 'is_active' => 1, 'listed_date' => '2006-11-29', 'delisted_date' => '2025-04-17'],
+        ]);
+
+        $this->assertSame([
+            ['ticker_id' => 10, 'ticker_code' => 'FREN'],
+        ], (new TickerMasterRepository())->getUniverseForTradeDate('2025-04-16'));
+
+        $this->assertSame([], (new TickerMasterRepository())->getUniverseForTradeDate('2025-04-17'));
+    }
 }

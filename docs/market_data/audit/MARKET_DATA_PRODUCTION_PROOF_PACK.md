@@ -1,15 +1,27 @@
 # Market-Data Production Proof Pack
 
-Last updated: 2026-05-24
+Last updated: 2026-06-05
 Source ZIP: `tradeaxis-api.zip`
 Source ZIP path: `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`
 Locked source-state ZIP SHA-256: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`
-Decision: `FULLY_PRODUCTION_READY`
+Decision: `FULLY_PRODUCTION_READY / FULL_GLOBAL_MARKET_DATA_LOCKED`
 Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`
 Review status: `API_DAILY_RUNTIME_PROOF_PASSED / FULLY_PRODUCTION_READY`
 Final source-state lock status: `LOCKED`
 
-This proof pack is the aggregate validation record for the current uploaded source state. It consumes the already-recorded operator-local runtime proof embedded in this source ZIP, the scheduler due-run runtime proof, and the Yahoo provider smoke request-context hardening proof. Final Audit Docs Synchronization remains valid for core source-state readiness, and the embedded provider smoke artifact is PASSED with HTTP 200. The current rollout overlay records `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`, `LIVE_PROVIDER_SMOKE_PASSED`, `ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH`, `FINAL_PROVIDER_SMOKE=PASSED`, and `OPS_RUNTIME_PARITY_PASSED`.
+This proof pack is the aggregate validation record for the current source state. It consumes the already-recorded operator-local runtime proof, scheduler due-run runtime proof, Yahoo provider smoke request-context hardening proof, refreshed provider-smoke PASS artifact, full global missing-ticker closure, and full-range current evidence/replay proof. Final Audit Docs Synchronization remains valid for core source-state readiness, and the active Lumen checkpoint records `FULL_GLOBAL_MARKET_DATA_LOCK_STATUS=LOCKED_UNFILTERED_MISSING_TICKER_PLAN_ZERO_FULL_RANGE_CURRENT_EVIDENCE_REPLAY_PASS`, `FINAL_PROVIDER_SMOKE=PASSED`, and `OPS_RUNTIME_PARITY_PASSED`.
+
+Current 2026-06-05 lock overlay:
+- archived full-range proof window: `2023-01-02` through `2025-10-31`
+- latest operator run/current operation: through `2026-06-04`
+- final missing plan: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`
+- full-range current evidence/replay: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`
+- latest full MarketData suite: `OK (635 tests, 9474 assertions)`
+- remaining blockers for the archived proof window and current source-state closure: none
+
+The proof window above is the audited evidence boundary, not the final date of production readiness. The market-data application remains production-ready for the current source state and ongoing daily lifecycle/backfill operation.
+
+Older command counts, provider-smoke attempts, or partial-source notes below remain historical if a later dated section supersedes them.
 
 ## 1. Environment Baseline
 
@@ -562,7 +574,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 ---
 
-## 2026-05-22 — AUDIT_DOCS_STATIC_GUARD_RATE_LIMIT_RECONCILIATION
+## 2026-05-22 - Audit Docs Static Guard Rate-Limit Reconciliation
 
 [SESSION] AUDIT_DOCS_STATIC_GUARD_RATE_LIMIT_RECONCILIATION
 
@@ -574,7 +586,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - Source-state decision remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.
 
 [PATCH]
-- Updated `AuditDocsSynchronizationStaticGuardTest` to assert the current partial provider-passed decision and explicitly reject a false proof-pack PASS decision.
+- Updated `AuditDocsSynchronizationStaticGuardTest` to preserve the then-current provider-passed decision and explicitly reject a false proof-pack PASS decision; this historical static-guard patch is superseded by the later final provider-smoke PASS and 2026-06-05 full global lock.
 - Reconciled active audit-doc wording so the authoritative artifact is consistently recorded as HTTP 200 / `PROVIDER_SMOKE_OK` / PASS.
 
 [LOCAL_OPERATOR_EVIDENCE]
@@ -587,7 +599,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 ---
 
-## 2026-05-22 — FINAL PROVIDER SMOKE PASSED / OPS RUNTIME PARITY LOCK
+## 2026-05-22 - Final Provider Smoke Passed / Ops Runtime Parity Lock
 
 [SESSION] FINAL_PROVIDER_SMOKE_PASSED_OPS_RUNTIME_PARITY_LOCK
 
@@ -905,3 +917,41 @@ This append-only reconciliation records the latest current source-state proof af
 - Benchmark proof: `IHSG` is stored as benchmark/index with provider symbol `^JKSE`; `^JKSE.JK` and `IHSG.JK` remain forbidden; benchmark `IND_INSUFFICIENT_HISTORY` is expected until enough historical IHSG bars exist.
 
 Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.
+
+---
+
+## 2026-06-05 - Provider Smoke Artifact Refresh and Full MarketData Suite Proof
+
+Status: `PASS`.
+
+This append-only reconciliation refreshes the authoritative provider-smoke proof after a stale invalid-date smoke artifact was detected by static guards.
+
+- Previous stale artifact state: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2025-11-30 --dry-run --retry-max=0` returned `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_EMPTY_OR_INVALID_RESPONSE`, `source_reason_code=RUN_SOURCE_RESPONSE_CHANGED`, and `http_status=200`.
+- That blocked result was fail-closed and must not be counted as provider PASS.
+- Refreshed command: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0`.
+- Refreshed artifact: `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
+- Refreshed result: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `source_reason_code=none`, `http_status=200`, `returned_row_count=1`, `attempt_count=1`, `retry_max=0`, `retry_exhausted=false`, `timeout_seconds=10`.
+- Safety flags remained false: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+- Targeted static guards:
+  - `vendor\bin\phpunit tests\Unit\MarketData\ProviderSmokeSafeModeStaticGuardTest.php` -> OK (6 tests, 169 assertions).
+  - `vendor\bin\phpunit tests\Unit\MarketData\ProductionValidationRuntimeProofStaticGuardTest.php` -> OK (15 tests, 491 assertions).
+  - `vendor\bin\phpunit tests\Unit\MarketData\ProductionSchedulerCronStaticGuardTest.php` -> OK (5 tests, 107 assertions).
+- Full MarketData suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (635 tests, 9474 assertions), Time 00:35.061, Memory 48.00 MB.
+
+Final current-source decision remains `OPS_RUNTIME_PARITY_PASSED`, backed by a refreshed real provider PASS artifact and full MarketData PHPUnit proof.
+
+## 2026-06-05 - Full Global Current-Readable Market-Data Lock
+
+Status: `LOCKED`.
+
+This reconciliation closes the prior missing-ticker/source-gap history for the archived current-readable proof window.
+
+- Lock status: `FULL_GLOBAL_MARKET_DATA_LOCK_STATUS=LOCKED_UNFILTERED_MISSING_TICKER_PLAN_ZERO_FULL_RANGE_CURRENT_EVIDENCE_REPLAY_PASS`.
+- Archived full-range proof window: `2023-01-02` through `2025-10-31`.
+- Latest operator run/current operation: through `2026-06-04`.
+- Final missing plan proof: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`.
+- Final full-range current evidence/replay proof: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`.
+- Full MarketData proof after manual-file multi-date lifecycle input: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (635 tests, 9474 assertions).
+- Current source blockers for this proof window and source-state closure: none.
+
+Earlier `PARTIAL`, `BLOCKED`, or source-provider blocker entries in this proof pack are retained as remediation history only when followed by this 2026-06-05 lock entry. Future and latest dates remain normal daily/backfill lifecycle work; production readiness is the platform/source-state lifecycle contract, not a terminal date.

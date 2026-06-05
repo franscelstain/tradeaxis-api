@@ -189,9 +189,10 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Market Data Consumer Read Model", $status);
+- Market Data Manual File Multi-Date Lifecycle Input", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Market Data Consumer Read Model", $tracker);
+- Market Data Manual File Multi-Date Lifecycle Input", $tracker);
+        $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);

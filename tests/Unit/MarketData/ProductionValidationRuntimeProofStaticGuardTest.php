@@ -90,6 +90,12 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             'php artisan market-data:daily --help',
             'php artisan market-data:promote --help',
             'php artisan market-data:evidence:export --help',
+            'php artisan market-data:evidence-replay:full-range-current --help',
+            'php artisan market-data:sector-indexes:ingest-api --help',
+            'php artisan market-data:sector-indexes:import-bars --help',
+            'php artisan market-data:sectors:import-memberships --help',
+            'php artisan market-data:events:import-corporate-actions --help',
+            'php artisan market-data:events:import-trading-status --help',
             'php artisan market-data:replay:verify --help',
             'php artisan market-data:replay:fixture:generate --help',
             'php artisan market-data:correction:request --help',
@@ -104,6 +110,8 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             'php artisan market-data:replay:smoke --help',
             'php artisan market-data:replay:backfill --help',
             'php artisan market-data:backfill --help',
+            'php artisan market-data:backfill:lifecycle --help',
+            'php artisan market-data:backfill:missing-tickers --help',
             'php artisan market-data:session-snapshot --help',
             'php artisan market-data:session-snapshot:purge --help',
             'php artisan market-data:current-publication:repair --help',
@@ -131,7 +139,7 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('- Production Validation / Manual + Runtime Proof -> DONE', $status);
         $this->assertStringContainsString('- PRODUCTION_VALIDATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('21-command command list/full help', $status.$tracker.$inventory);
+        $this->assertStringContainsString('29-command command list/full help', $status.$tracker.$inventory);
         $this->assertStringContainsString('all_passed=1', $status.$tracker.$inventory);
         $this->assertStringContainsString('mismatch_count=0', $status.$tracker.$inventory);
     }
@@ -214,7 +222,7 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             $this->assertStringContainsString('not run in container', $block);
             $this->assertStringContainsString('Operator-local', $block);
             $this->assertStringContainsString('full MarketData', $block);
-            $this->assertStringContainsString('21 registered market-data commands', $block);
+            $this->assertStringContainsString('29 registered market-data commands', $block);
             $this->assertStringContainsString('all_passed=1', $block);
             $this->assertStringContainsString('correction_evidence.json', $block);
         }
@@ -299,7 +307,7 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             'file_count=5',
             'replay_evidence_pack.json',
             'replay_reason_code_counts.json',
-            '21 registered market-data commands',
+            '29 registered market-data commands',
             'market-data:replay:fixture:generate',
             'market-data:provider:smoke',
             '--generate_runtime_valid_case',

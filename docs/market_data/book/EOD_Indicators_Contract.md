@@ -35,11 +35,29 @@ Required minimum fields:
 - `is_valid`
 - `invalid_reason_code`
 - `indicator_set_version`
+- `sector_code`
 - `dv20_idr`
 - `atr14_pct`
 - `vol_ratio`
+- `roc5`
+- `roc10`
 - `roc20`
 - `hh20`
+- `ll20`
+- `close_to_hh20_pct`
+- `close_to_ll20_pct`
+- `range_20_pct`
+- `range_position_20_pct`
+- `sector_roc20`
+- `rs_20_vs_sector`
+- `sector_rs_20_vs_ihsg`
+- `corporate_action_flag`
+- `corporate_action_types`
+- `trading_status_code`
+- `is_suspended`
+- `is_uma`
+- `event_risk_flag`
+- `event_risk_reasons`
 - `run_id`
 
 Equivalent naming is allowed only if semantics remain identical.
@@ -79,8 +97,24 @@ Duplicate live indicator rows for the same key are forbidden.
 | `dv20_idr` | `basis_close(X)`, `volume(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required history missing | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `atr14_pct` | `high(X)`, `low(X)`, `basis_close(prev(X))`, `basis_close(D)` | trading-day | 15 bars for first ATR14 output | `NULL` if seed or dependency chain invalid | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `vol_ratio` | `volume(D)` and `volume(D[-20] ... D[-1])` | trading-day | 21 bars total | `NULL` if prior-20 unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
+| `roc5` | `basis_close(D)`, `basis_close(D[-5])` | trading-day | 6 bars total | `NULL` if `D[-5]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
+| `roc10` | `basis_close(D)`, `basis_close(D[-10])` | trading-day | 11 bars total | `NULL` if `D[-10]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `roc20` | `basis_close(D)`, `basis_close(D[-20])` | trading-day | 21 bars total | `NULL` if `D[-20]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
 | `hh20` | `high(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required dependency unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
+| `ll20` | `low(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required dependency unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
+| `range_20_pct` | `hh20`, `ll20` | trading-day | 20 valid bars including D | `NULL` if `ll20 <= 0`; otherwise may be `0` for flat range | same as `hh20`/`ll20` |
+| `range_position_20_pct` | `basis_close(D)`, `hh20`, `ll20` | trading-day | 20 valid bars including D | `NULL` if `hh20 - ll20 <= 0` | same as `hh20`/`ll20` |
+| `sector_code` | `ticker_sector_memberships` effective on D | trade-date membership lookup | source-backed membership exists | `NULL` if no membership source exists for D | non-blocking; must not be fabricated |
+| `sector_roc20` | `market_benchmark_indicators.roc_20` for the active `sector_index_code` on D | benchmark indicator lookup | sector index bars and benchmark indicator exist | `NULL` if no sector index history/indicator exists for D | non-blocking; must not be fabricated |
+| `rs_20_vs_sector` | `roc20`, `sector_roc20` | same trade date | valid equity `roc20` and sector `roc_20` exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
+| `sector_rs_20_vs_ihsg` | sector benchmark `roc_20`, IHSG benchmark `roc_20` | same trade date | both benchmark indicators exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
+| `corporate_action_flag` | `market_data_corporate_actions` for ticker/date | exact trade-date source lookup | source row exists | `NULL` if no corporate-action source row exists | non-blocking; must not be fabricated |
+| `corporate_action_types` | `market_data_corporate_actions.action_type` | exact trade-date source lookup | source row exists | `NULL` if no corporate-action source row exists | non-blocking; deterministic comma list |
+| `trading_status_code` | `market_data_trading_status_events.status_code` | exact trade-date rows plus stateful carry-forward lookup | source row/state exists | `NULL` if no trading-status source row/state exists | non-blocking; deterministic comma list |
+| `is_suspended` | `market_data_trading_status_events.is_suspended` / status inference | exact trade-date rows plus suspension carry-forward lookup | source row/state exists or explicit status implies suspend | `NULL` if no source row/state exists | non-blocking; source-backed only |
+| `is_uma` | `market_data_trading_status_events.is_uma` / status inference | exact trade-date lookup | source row exists or explicit status implies UMA | `NULL` if no source row exists | non-blocking; source-backed only |
+| `event_risk_flag` | corporate action/trading status context | exact trade-date rows plus independent stateful carry-forward lookup | source row/state exists | `NULL` if no source row/state exists; `0` only for source-backed non-risk status/state and no active independent risk state | non-blocking; must not infer no risk from absence |
+| `event_risk_reasons` | source-backed event context | exact trade-date rows plus stateful carry-forward lookup | source-backed risk exists | `NULL` if no risk reason exists | non-blocking; deterministic comma list |
 
 ## Price basis rule (LOCKED)
 Where closing-price basis is required, use per-date fallback:

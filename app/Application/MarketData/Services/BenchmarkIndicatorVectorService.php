@@ -25,6 +25,8 @@ class BenchmarkIndicatorVectorService
         $roc20 = $this->roc($bars, $index, 20);
         $ma20 = $this->movingAverage($bars, $index, 20);
         $ma50 = $this->movingAverage($bars, $index, 50);
+        $ma20Past = $index >= 5 ? $this->movingAverage($bars, $index - 5, 20) : null;
+        $close = $this->close($bars[$index]);
         $invalidReason = null;
         if ($this->hasInvalidCloseInput($bars, $index, 50)) {
             $invalidReason = 'IND_INVALID_BAR_INPUT';
@@ -38,6 +40,9 @@ class BenchmarkIndicatorVectorService
             'roc_20' => $roc20,
             'ma20' => $ma20,
             'ma50' => $ma50,
+            'ma20_slope_pct' => $ma20 !== null && $ma20Past !== null ? $this->pctDifference($ma20, $ma20Past) : null,
+            'close_to_ma20_pct' => $this->pctDifference($close, $ma20),
+            'close_to_ma50_pct' => $this->pctDifference($close, $ma50),
             'is_valid' => $invalidReason ? 0 : 1,
             'invalid_reason_code' => $invalidReason,
             'indicator_set_version' => $config['set_version'],
@@ -72,13 +77,22 @@ class BenchmarkIndicatorVectorService
         $values = [];
         foreach ($slice as $bar) {
             $close = $this->close($bar);
-            if ($close === null) {
+            if ($close === null || $close <= 0) {
                 return null;
             }
             $values[] = $close;
         }
 
         return round(array_sum($values) / $window, 4);
+    }
+
+    private function pctDifference($current, $base)
+    {
+        if ($current === null || $base === null || (float) $base <= 0) {
+            return null;
+        }
+
+        return round((((float) $current - (float) $base) / (float) $base) * 100, 10);
     }
 
     private function close(array $bar)

@@ -3,9 +3,11 @@
 namespace App\Application\MarketData\Services;
 
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
+use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
+use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 use Carbon\Carbon;
@@ -21,6 +23,8 @@ class BackfillLifecycleOrchestrator
     private $runs;
     private $corrections;
     private $publications;
+    private $artifacts;
+    private $eventRiskSources;
 
     public function __construct(
         MarketCalendarRepository $calendar,
@@ -31,7 +35,9 @@ class BackfillLifecycleOrchestrator
         ReplayVerificationService $replay,
         EodRunRepository $runs,
         EodCorrectionRepository $corrections = null,
-        EodPublicationRepository $publications = null
+        EodPublicationRepository $publications = null,
+        EodArtifactRepository $artifacts = null,
+        EventRiskSourceRepository $eventRiskSources = null
     ) {
         $this->calendar = $calendar;
         $this->tickers = $tickers;
@@ -42,6 +48,8 @@ class BackfillLifecycleOrchestrator
         $this->runs = $runs;
         $this->corrections = $corrections;
         $this->publications = $publications;
+        $this->artifacts = $artifacts;
+        $this->eventRiskSources = $eventRiskSources;
     }
 
     public function execute($startDate, $endDate, $sourceMode = 'api', array $options = [])
@@ -68,6 +76,7 @@ class BackfillLifecycleOrchestrator
         $mode = $this->resolveErrorPolicy($options);
         $withEvidence = ! empty($options['with_evidence']) || ! empty($options['with_replay']);
         $withReplay = ! empty($options['with_replay']) && empty($options['no_replay']);
+        $skipPublicationReprocess = ! empty($options['skip_publication_reprocess']);
         $resume = ! empty($options['resume']);
         $onlyFailed = ! empty($options['only_failed']);
         $diagnoseSource = ! empty($options['diagnose_source']);
@@ -79,7 +88,7 @@ class BackfillLifecycleOrchestrator
         $plan = $this->sourceModeIsApi($sourceMode)
             ? $this->acquisition->plan($warmupStart, $startDate, $endDate, $acquisitionDates, $tickerCodes)
             : [
-                'source_acquisition_mode' => 'per_date_file',
+                'source_acquisition_mode' => ! empty($options['input_file']) ? 'single_input_file_filtered_by_date' : 'per_date_file',
                 'warmup_start' => $warmupStart,
                 'requested_start' => $startDate,
                 'requested_end' => $endDate,
@@ -106,9 +115,11 @@ class BackfillLifecycleOrchestrator
             'mode' => $mode,
             'with_evidence' => $withEvidence,
             'with_replay' => $withReplay,
+            'skip_publication_reprocess' => $skipPublicationReprocess,
             'resume' => $resume,
             'only_failed' => $onlyFailed,
             'diagnose_source' => $diagnoseSource,
+            'input_file' => $this->sourceModeIsManualFile($sourceMode) ? ($options['input_file'] ?? null) : null,
             'output_dir' => $outputDir,
             'cases' => [],
             'warmup_cases' => [],
@@ -231,6 +242,222 @@ class BackfillLifecycleOrchestrator
         return $summary;
     }
 
+    public function executeMissingTickers($startDate, $endDate, $sourceMode = 'api', array $options = [])
+    {
+        $this->guardDateRange($startDate, $endDate);
+
+        $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode', 'api');
+        if (! $this->sourceModeIsApi($sourceMode) && ! $this->sourceModeIsManualFile($sourceMode)) {
+            throw new \RuntimeException('MISSING_TICKER_BACKFILL_SOURCE_MODE_UNSUPPORTED: missing-ticker lifecycle backfill requires source_mode=api or source_mode=manual_file.');
+        }
+
+        $requestedDates = $this->calendar->tradingDatesBetween($startDate, $endDate);
+        if ($requestedDates === []) {
+            throw new \RuntimeException('Missing-ticker lifecycle backfill requires at least one requested trading date.');
+        }
+
+        $maxDates = (int) ($options['max_dates_per_run'] ?? config('market_data.source.api_backfill.max_dates_per_run', 20));
+        if ($maxDates > 0 && count($requestedDates) > $maxDates) {
+            throw new \RuntimeException('CONFIG_INVALID: requested trading date count exceeds max_dates_per_run='.$maxDates.'.');
+        }
+
+        $tickerFilter = $this->normalizeTickerCodeFilter($options['ticker_codes'] ?? null);
+        $outputDir = $this->resolveMissingTickerOutputDir($startDate, $endDate, $sourceMode, $options);
+        $this->ensureDirectory($outputDir);
+        $checkpoint = $this->readCheckpoint($outputDir);
+        $missingPlan = $this->resolveMissingTickerPlan($requestedDates, $tickerFilter);
+        $tickerCodes = $missingPlan['ticker_codes'];
+        $mode = $this->resolveErrorPolicy($options);
+        $withEvidence = ! empty($options['with_evidence']) || ! empty($options['with_replay']);
+        $withReplay = ! empty($options['with_replay']) && empty($options['no_replay']);
+        $skipPublicationReprocess = ! empty($options['skip_publication_reprocess']);
+        $resume = ! empty($options['resume']);
+
+        $plan = $tickerCodes !== [] && $this->sourceModeIsApi($sourceMode)
+            ? $this->acquisition->plan($startDate, $startDate, $endDate, $requestedDates, $tickerCodes)
+            : [
+                'source_acquisition_mode' => 'range_window',
+                'warmup_start' => $startDate,
+                'requested_start' => $startDate,
+                'requested_end' => $endDate,
+                'window_count' => $tickerCodes !== [] && $this->sourceModeIsManualFile($sourceMode) ? 1 : 0,
+                'ticker_count' => count($tickerCodes),
+                'trading_date_count' => count($requestedDates),
+                'estimated_http_requests' => 0,
+                'configured_concurrency' => (int) config('market_data.source.api_backfill.concurrency', 5),
+            ];
+
+        if ($this->sourceModeIsManualFile($sourceMode)) {
+            $plan['source_acquisition_mode'] = 'manual_file';
+            $plan['configured_concurrency'] = 1;
+        }
+
+        $summary = [
+            'suite' => 'market_data_missing_ticker_backfill_lifecycle',
+            'source_mode' => $sourceMode,
+            'source_acquisition_mode' => $plan['source_acquisition_mode'],
+            'source_acquisition_batch_id' => null,
+            'requested_start' => $startDate,
+            'requested_end' => $endDate,
+            'warmup_start' => $startDate,
+            'window_count' => (int) ($plan['window_count'] ?? 0),
+            'estimated_http_requests' => (int) ($plan['estimated_http_requests'] ?? 0),
+            'configured_concurrency' => (int) ($plan['configured_concurrency'] ?? config('market_data.source.api_backfill.concurrency', 5)),
+            'ticker_count' => count($tickerCodes),
+            'target_ticker_filter_count' => count($tickerFilter),
+            'missing_ticker_count' => count($tickerCodes),
+            'missing_bar_count' => (int) $missingPlan['missing_bar_count'],
+            'trading_dates' => $requestedDates,
+            'trading_date_count' => count($requestedDates),
+            'missing_trade_date_count' => (int) $missingPlan['missing_trade_date_count'],
+            'mode' => $mode,
+            'with_evidence' => $withEvidence,
+            'with_replay' => $withReplay,
+            'skip_publication_reprocess' => $skipPublicationReprocess,
+            'resume' => $resume,
+            'input_file' => $this->sourceModeIsManualFile($sourceMode) ? ($options['input_file'] ?? null) : null,
+            'output_dir' => $outputDir,
+            'cases' => [],
+            'warmup_cases' => [],
+            'plan' => $plan + [
+                'missing_ticker_codes_by_date' => $missingPlan['missing_ticker_codes_by_date'],
+                'missing_bar_count' => (int) $missingPlan['missing_bar_count'],
+                'missing_trade_date_count' => (int) $missingPlan['missing_trade_date_count'],
+            ],
+        ];
+
+        if (! empty($options['plan'])) {
+            $summary['status'] = 'PLAN_ONLY';
+            $summary['all_passed'] = true;
+            $this->writeSummary($outputDir, $summary);
+            return $summary;
+        }
+
+        if ($tickerCodes === []) {
+            foreach ($requestedDates as $requestedDate) {
+                $summary['cases'][] = $this->missingTickerNoopCase($requestedDate, 'NO_MISSING_TICKERS');
+            }
+            $summary = $this->finalizeMissingTickerSummary($summary);
+            $summary['status'] = 'NOOP';
+            $this->writeSummary($outputDir, $summary);
+
+            return $summary;
+        }
+
+        $acquired = $this->sourceModeIsApi($sourceMode) && $resume ? $this->readAcquisitionCache($outputDir) : null;
+        if (! is_array($acquired)) {
+            if ($this->sourceModeIsApi($sourceMode)) {
+                try {
+                    $acquired = $this->acquisition->acquire($startDate, $startDate, $endDate, $requestedDates, $tickerCodes, [
+                        'resume' => $resume,
+                        'source_acquisition_context' => 'missing_ticker_backfill',
+                    ]);
+                    $acquired = $this->applyManualFileOverlayToApiAcquisition(
+                        $acquired,
+                        $options['input_file'] ?? null,
+                        $startDate,
+                        $endDate,
+                        $requestedDates,
+                        $tickerCodes,
+                        $missingPlan
+                    );
+                } catch (SourceAcquisitionException $e) {
+                    if (empty($options['input_file'])) {
+                        return $this->blockedSourceAcquisitionSummary($summary, $outputDir, $e, $plan);
+                    }
+
+                    $acquired = $this->acquireMissingTickerManualFile(
+                        $options['input_file'],
+                        $startDate,
+                        $endDate,
+                        $requestedDates,
+                        $tickerCodes,
+                        $missingPlan
+                    );
+                    $acquired = $this->recomputeApiManualOverlayAcquisitionTelemetry(
+                        $acquired,
+                        $requestedDates,
+                        $tickerCodes,
+                        'API_EXCEPTION_MANUAL_FILE_FALLBACK',
+                        $missingPlan
+                    );
+                }
+            } else {
+                $acquired = $this->acquireMissingTickerManualFile(
+                    $options['input_file'] ?? null,
+                    $startDate,
+                    $endDate,
+                    $requestedDates,
+                    $tickerCodes,
+                    $missingPlan
+                );
+            }
+            $this->writeAcquisitionCache($outputDir, $acquired);
+            $this->writeAcquisitionCheckpoint($outputDir, $this->mergeAcquisitionCheckpoint($this->readAcquisitionCheckpoint($outputDir), $acquired['source_acquisition_checkpoints'] ?? []));
+        }
+
+        $summary['source_acquisition_batch_id'] = $acquired['source_acquisition_batch_id'] ?? null;
+        $summary['source_acquisition_mode'] = $acquired['source_acquisition_mode'] ?? $summary['source_acquisition_mode'];
+        $summary['window_count'] = (int) ($acquired['window_count'] ?? $summary['window_count']);
+        $summary['estimated_http_requests'] = (int) ($acquired['estimated_http_requests'] ?? $summary['estimated_http_requests']);
+        $summary['source_acquisition_cache'] = $this->normalizePathForDisplay($this->acquisitionCachePath($outputDir));
+        $summary['skipped_checkpoint_count'] = (int) ($acquired['skipped_checkpoint_count'] ?? 0);
+        $summary['source_acquisition_state'] = $acquired['source_acquisition_state'] ?? $this->aggregateAcquisitionState($acquired['window_telemetry'] ?? []);
+        $summary['source_final_status'] = $acquired['source_final_status'] ?? $summary['source_acquisition_state'];
+        $summary['failed_ticker_count'] = $this->sumTelemetryField($acquired['window_telemetry'] ?? [], 'failed_ticker_count');
+        $summary['failed_window_count'] = $this->countFailedTelemetryWindows($acquired['window_telemetry'] ?? []);
+        $diagnostic = $this->buildSourceDiagnosticFromAcquired($summary, $acquired);
+        $summary['diagnostic_path'] = $this->normalizePathForDisplay($this->writeSourceAcquisitionDiagnostics($outputDir, $diagnostic));
+
+        if ($this->missingTickerSourceAcquisitionShouldBlock($summary, $acquired)) {
+            $summary = $this->blockedMissingTickerSourceAcquisitionSummary($summary, $acquired, $missingPlan, $diagnostic);
+            $this->writeSummary($outputDir, $summary);
+
+            return $summary;
+        }
+
+        foreach ($requestedDates as $requestedDate) {
+            $missingCodes = $missingPlan['missing_ticker_codes_by_date'][$requestedDate] ?? [];
+            if ($missingCodes === []) {
+                $case = $this->missingTickerNoopCase($requestedDate, 'NO_MISSING_TICKERS');
+                $summary['cases'][] = $case;
+                continue;
+            }
+
+            if ($resume && $this->checkpointCaseIsComplete($requestedDate, $checkpoint, $withReplay)) {
+                $case = $checkpoint['cases'][$requestedDate];
+                $case['status'] = 'SKIPPED_VERIFIED';
+                $case['resume_skip'] = true;
+                $summary['cases'][] = $case;
+                continue;
+            }
+
+            $case = $this->processMissingTickerDate(
+                $requestedDate,
+                $sourceMode,
+                $acquired,
+                $missingCodes,
+                $missingPlan['universe_by_date'][$requestedDate] ?? [],
+                $withEvidence,
+                $withReplay,
+                $outputDir,
+                $skipPublicationReprocess
+            );
+            $summary['cases'][] = $case;
+            $checkpoint = $this->mergeCheckpoint($checkpoint, $requestedDate, $case);
+            $this->writeCheckpoint($outputDir, $checkpoint);
+
+            if ($this->caseShouldStop($case) && $mode === 'stop_on_error') {
+                break;
+            }
+        }
+
+        $summary = $this->finalizeMissingTickerSummary($summary);
+        $this->writeSummary($outputDir, $summary);
+
+        return $summary;
+    }
+
     private function importWarmupRows(array $acquired, array $requestedDates, $sourceMode, array $checkpoint, $resume)
     {
         $requestedSet = array_fill_keys($requestedDates, true);
@@ -313,10 +540,13 @@ class BackfillLifecycleOrchestrator
             $case['import_status'] = $this->runFailedOrHeld($run) ? (string) $run->terminal_status : 'SUCCESS';
             $case = array_merge($case, $this->mutationImpactCaseFields($run));
         } catch (\Throwable $e) {
-            $run = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode);
-            if ($run) {
+            $latestRun = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode);
+            if ($latestRun && $this->runFailedOrHeld($latestRun)) {
+                $run = $latestRun;
                 $case['run_id'] = (int) $run->run_id;
                 $case = array_merge($case, $this->mutationImpactCaseFields($run));
+            } else {
+                $run = null;
             }
             $case['import_status'] = 'FAILED';
             $case['reason_code'] = $this->reasonCodeFromThrowable($e, 'IMPORT_FAILED');
@@ -343,7 +573,8 @@ class BackfillLifecycleOrchestrator
             }
         }
 
-        $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, true);
+        $skipRequestedDate = ($case['promote_status'] ?? null) === 'SUCCESS' && ! empty($case['readable']);
+        $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate);
 
         if ($withEvidence && $run) {
             try {
@@ -380,6 +611,140 @@ class BackfillLifecycleOrchestrator
                     $case['replay_status'] = 'FAILED';
                 }
                 $case['reason_code'] = $this->reasonCodeFromThrowable($e, 'REPLAY_FAILED');
+                $case['error_message'] = $e->getMessage();
+            }
+        } elseif ($withReplay) {
+            if ($case['fixture_status'] === 'PENDING') {
+                $case['fixture_status'] = 'SKIPPED';
+            }
+            if ($case['replay_status'] === 'PENDING') {
+                $case['replay_status'] = 'SKIPPED';
+            }
+        }
+
+        $case['status'] = $this->caseStatus($case);
+
+        return $case;
+    }
+
+    private function processMissingTickerDate($requestedDate, $sourceMode, array $acquired, array $missingCodes, array $universeRows, $withEvidence, $withReplay, $outputDir, $skipPublicationReprocess = false)
+    {
+        $case = [
+            'requested_date' => $requestedDate,
+            'missing_ticker_count' => count($missingCodes),
+            'missing_ticker_codes' => $missingCodes,
+            'import_status' => 'PENDING',
+            'promote_status' => 'SKIPPED',
+            'evidence_status' => $withEvidence ? 'PENDING' : 'SKIPPED',
+            'fixture_status' => $withReplay ? 'PENDING' : 'SKIPPED',
+            'replay_status' => $withReplay ? 'PENDING' : 'SKIPPED',
+            'readable' => false,
+        ];
+        $run = null;
+
+        try {
+            $providerRows = $this->filterSourceRowsForTickerCodes($acquired['rows_by_trade_date'][$requestedDate] ?? [], $missingCodes);
+            $sourceAcquisition = $this->missingTickerDateTelemetry(
+                $requestedDate,
+                $sourceMode,
+                $acquired['date_telemetry'][$requestedDate] ?? [],
+                $missingCodes,
+                $providerRows
+            );
+            $candidateRows = $this->buildMissingTickerCandidateRows($requestedDate, $providerRows, $missingCodes, $universeRows);
+
+            $case['tickers_expected'] = count($missingCodes);
+            $case['tickers_success'] = (int) ($sourceAcquisition['success_ticker_count'] ?? 0);
+            $case['tickers_failed'] = (int) ($sourceAcquisition['failed_ticker_count'] ?? 0);
+            $case['candidate_source_row_count'] = count($candidateRows);
+            $case['source_acquisition_state'] = $sourceAcquisition['source_acquisition_state'] ?? null;
+            $case['missing_source_row_count'] = count($providerRows);
+
+            $run = $this->pipeline->importDailyFromAcquiredRows($requestedDate, $sourceMode, $candidateRows, $sourceAcquisition);
+            $case['run_id'] = (int) $run->run_id;
+            $case['import_status'] = $this->runFailedOrHeld($run) ? (string) $run->terminal_status : 'SUCCESS';
+            $case = array_merge($case, $this->mutationImpactCaseFields($run));
+        } catch (\Throwable $e) {
+            $latestRun = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode);
+            if ($latestRun && $this->runFailedOrHeld($latestRun)) {
+                $run = $latestRun;
+                $case['run_id'] = (int) $run->run_id;
+                $case = array_merge($case, $this->mutationImpactCaseFields($run));
+            } else {
+                $run = null;
+            }
+            $case['import_status'] = 'FAILED';
+            $case['reason_code'] = $this->reasonCodeFromThrowable($e, 'MISSING_TICKER_IMPORT_FAILED');
+            $case['error_message'] = $e->getMessage();
+        }
+
+        if ($run && ! $this->runFailedOrHeld($run) && $case['import_status'] === 'SUCCESS') {
+            try {
+                $run = $this->pipeline->promoteDaily($requestedDate, $sourceMode, $run->run_id, null);
+                $case['run_id'] = (int) $run->run_id;
+                $case['coverage_gate_state'] = $run->coverage_gate_state ?? null;
+                $case['coverage_ratio'] = $run->coverage_ratio ?? null;
+                $case['publishability_state'] = $run->publishability_state ?? null;
+                $case['terminal_status'] = $run->terminal_status ?? null;
+                $case['reason_code'] = $run->final_reason_code ?? ($case['reason_code'] ?? null);
+                $case['promote_status'] = $this->isReadableRun($run) ? 'SUCCESS' : ((string) ($run->terminal_status ?? '') === 'HELD' ? 'HELD' : 'FAILED');
+                $case['readable'] = $this->isReadableRun($run);
+                $case = array_merge($case, $this->mutationImpactCaseFields($run));
+            } catch (\Throwable $e) {
+                $run = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode) ?: $run;
+                $case['promote_status'] = 'FAILED';
+                $case['reason_code'] = $this->reasonCodeFromThrowable($e, 'MISSING_TICKER_PROMOTE_FAILED');
+                $case['error_message'] = $e->getMessage();
+            }
+        }
+
+        $skipRequestedDate = ($case['promote_status'] ?? null) === 'SUCCESS' && ! empty($case['readable']);
+        if ($skipPublicationReprocess) {
+            if (! $skipRequestedDate && $this->publicationReprocessIncludesRequestedDate($case)) {
+                $case = $this->keepOnlyRequestedDatePublicationReprocess($case);
+                $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, false);
+            } else {
+                $case = $this->skipPublicationReprocessForCase($case, 'SKIPPED_BY_OPTION');
+            }
+        } else {
+            $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate);
+        }
+
+        if ($withEvidence && $run) {
+            try {
+                $evidenceOutputDir = rtrim($outputDir, '/\\').'/dates/'.$requestedDate.'/run_'.$run->run_id.'/evidence';
+                $this->evidence->exportRunEvidence($run->run_id, $evidenceOutputDir);
+                $case['evidence_status'] = $case['readable'] ? 'EXPORTED' : 'EXPORTED_FAILURE';
+                $case['evidence_output_dir'] = $this->normalizePathForDisplay($evidenceOutputDir);
+            } catch (\Throwable $e) {
+                $case['evidence_status'] = 'FAILED';
+                $case['fixture_status'] = 'SKIPPED';
+                $case['replay_status'] = 'SKIPPED';
+                $case['reason_code'] = $this->reasonCodeFromThrowable($e, 'MISSING_TICKER_EVIDENCE_EXPORT_FAILED');
+                $case['error_message'] = $e->getMessage();
+            }
+        } elseif ($withEvidence) {
+            $case['evidence_status'] = 'SKIPPED_NO_RUN';
+        }
+
+        if ($withReplay && $run && $this->isReplayEligible($run, $case)) {
+            try {
+                $fixtureDir = rtrim($outputDir, '/\\').'/dates/'.$requestedDate.'/run_'.$run->run_id.'/fixture';
+                $fixture = $this->replay->generateFixtureFromRun($run->run_id, $fixtureDir, 'valid_case', null);
+                $case['fixture_status'] = 'GENERATED';
+                $case['fixture_path'] = $this->normalizePathForDisplay($fixture['fixture_path']);
+
+                $replay = $this->replay->verifyRunAgainstFixture($run->run_id, $fixture['fixture_path']);
+                $case['replay_status'] = ($replay['replay_status'] ?? null) === 'PASS' ? 'VERIFIED' : 'FAILED';
+                $case['replay_id'] = $replay['replay_id'] ?? null;
+            } catch (\Throwable $e) {
+                if ($case['fixture_status'] !== 'GENERATED') {
+                    $case['fixture_status'] = 'FAILED';
+                    $case['replay_status'] = 'SKIPPED';
+                } else {
+                    $case['replay_status'] = 'FAILED';
+                }
+                $case['reason_code'] = $this->reasonCodeFromThrowable($e, 'MISSING_TICKER_REPLAY_FAILED');
                 $case['error_message'] = $e->getMessage();
             }
         } elseif ($withReplay) {
@@ -540,10 +905,18 @@ class BackfillLifecycleOrchestrator
 
     private function executePublicationReprocessForCase(array $case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate)
     {
+        if (($case['import_status'] ?? null) === 'FAILED') {
+            return $this->skipPublicationReprocessForCase($case, 'PRIMARY_IMPORT_FAILED', 'PRIMARY_IMPORT_REQUIRED');
+        }
+
         $candidateDates = $this->publicationReprocessCandidateDates($case);
+        $readableCorrectionDates = $this->publicationReprocessReadableCorrectionCandidateDates($case);
         if ($skipRequestedDate) {
             $requestedDate = (string) ($case['requested_date'] ?? '');
             $candidateDates = array_values(array_filter($candidateDates, function ($date) use ($requestedDate) {
+                return (string) $date !== $requestedDate;
+            }));
+            $readableCorrectionDates = array_values(array_filter($readableCorrectionDates, function ($date) use ($requestedDate) {
                 return (string) $date !== $requestedDate;
             }));
         }
@@ -567,6 +940,7 @@ class BackfillLifecycleOrchestrator
         }
 
         $blockedDates = $this->parseCsvList($case['publication_reprocess_blocked_trade_dates'] ?? '');
+        $readableCorrectionSet = array_fill_keys($readableCorrectionDates, true);
         $failedDates = [];
         $republishedDates = [];
         $reprocessRuns = [];
@@ -580,7 +954,7 @@ class BackfillLifecycleOrchestrator
 
         foreach ($candidateDates as $tradeDate) {
             $tradeDate = (string) $tradeDate;
-            if (in_array($tradeDate, $blockedDates, true)) {
+            if (in_array($tradeDate, $blockedDates, true) && ! isset($readableCorrectionSet[$tradeDate])) {
                 $blockedReason = $blockedReason ?: 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
                 continue;
             }
@@ -593,7 +967,7 @@ class BackfillLifecycleOrchestrator
                     continue;
                 }
 
-                if ($this->isReadableRun($seedRun)) {
+                if (isset($readableCorrectionSet[$tradeDate]) || $this->isReadableRun($seedRun)) {
                     $readableCorrectionPromoteMode = 'correction_current';
                     $autoCorrection = $this->executeReadablePublicationAutoCorrection(
                         $tradeDate,
@@ -633,6 +1007,8 @@ class BackfillLifecycleOrchestrator
                     continue;
                 }
 
+                $blockedDates = $this->removeDateFromList($blockedDates, $tradeDate);
+                $failedDates = $this->removeDateFromList($failedDates, $tradeDate);
                 $republishedDates[] = $tradeDate;
 
                 if (! empty($case['requested_date']) && (string) $case['requested_date'] === $tradeDate) {
@@ -677,6 +1053,12 @@ class BackfillLifecycleOrchestrator
         sort($republishedDates);
         $correctionIds = array_values(array_unique(array_map('intval', $correctionIds)));
         sort($correctionIds);
+        if ($blockedDates === []) {
+            $blockedReason = null;
+        }
+        if ($failedDates === []) {
+            $failureReason = null;
+        }
 
         $state = 'NOOP';
         if ($failedDates !== []) {
@@ -691,6 +1073,7 @@ class BackfillLifecycleOrchestrator
         $case['publication_reprocess_republished_trade_date_count'] = count($republishedDates);
         $case['publication_reprocess_republished_trade_dates'] = $republishedDates;
         $case['publication_reprocess_candidate_trade_dates'] = $candidateDates;
+        $case['publication_reprocess_readable_correction_candidate_trade_dates'] = $readableCorrectionDates;
         $case['publication_reprocess_blocked_trade_dates'] = $blockedDates;
         $case['publication_reprocess_failed_trade_dates'] = $failedDates;
         $case['publication_reprocess_blocked_reason_code'] = $blockedReason;
@@ -707,6 +1090,7 @@ class BackfillLifecycleOrchestrator
             'republished_trade_date_count' => count($republishedDates),
             'republished_trade_dates' => $republishedDates,
             'candidate_trade_dates' => $candidateDates,
+            'readable_correction_candidate_trade_dates' => $readableCorrectionDates,
             'blocked_trade_dates' => $blockedDates,
             'failed_trade_dates' => $failedDates,
             'blocked_reason_code' => $blockedReason,
@@ -726,6 +1110,67 @@ class BackfillLifecycleOrchestrator
         }
 
         $this->syncPublicationReprocessNotes($case);
+
+        return $case;
+    }
+
+    private function publicationReprocessIncludesRequestedDate(array $case)
+    {
+        $requestedDate = (string) ($case['requested_date'] ?? '');
+        if ($requestedDate === '') {
+            return false;
+        }
+
+        return in_array($requestedDate, $this->publicationReprocessCandidateDates($case), true)
+            || in_array($requestedDate, $this->publicationReprocessReadableCorrectionCandidateDates($case), true);
+    }
+
+    private function keepOnlyRequestedDatePublicationReprocess(array $case)
+    {
+        $requestedDate = (string) ($case['requested_date'] ?? '');
+        $candidateDates = $this->publicationReprocessCandidateDates($case);
+        $readableCorrectionDates = $this->publicationReprocessReadableCorrectionCandidateDates($case);
+        $blockedDates = $this->parseCsvList($case['publication_reprocess_blocked_trade_dates'] ?? '');
+
+        $case['publication_reprocess_deferred_by_option'] = true;
+        $case['publication_reprocess_deferred_trade_dates'] = $this->removeDateFromList($candidateDates, $requestedDate);
+        $case['publication_reprocess_deferred_readable_correction_trade_dates'] = $this->removeDateFromList($readableCorrectionDates, $requestedDate);
+        $case['publication_reprocess_candidate_trade_dates'] = $requestedDate !== '' && in_array($requestedDate, $candidateDates, true)
+            ? [$requestedDate]
+            : [];
+        $case['publication_reprocess_readable_correction_candidate_trade_dates'] = $requestedDate !== '' && in_array($requestedDate, $readableCorrectionDates, true)
+            ? [$requestedDate]
+            : [];
+        $case['publication_reprocess_blocked_trade_dates'] = $requestedDate !== '' && in_array($requestedDate, $blockedDates, true)
+            ? [$requestedDate]
+            : [];
+        $case['publication_reprocess_summary'] = array_merge(
+            $case['publication_reprocess_summary'] ?? [],
+            [
+                'candidate_trade_dates' => $case['publication_reprocess_candidate_trade_dates'],
+                'readable_correction_candidate_trade_dates' => $case['publication_reprocess_readable_correction_candidate_trade_dates'],
+                'blocked_trade_dates' => $case['publication_reprocess_blocked_trade_dates'],
+                'deferred_by_option' => true,
+                'deferred_trade_dates' => $case['publication_reprocess_deferred_trade_dates'],
+            ]
+        );
+
+        return $case;
+    }
+
+    private function skipPublicationReprocessForCase(array $case, $reasonCode, $republicationMode = 'DEFERRED_BY_OPERATOR')
+    {
+        $case['publication_reprocess_state'] = 'NOOP';
+        $case['publication_reprocess_republished_trade_date_count'] = (int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0);
+        $case['publication_reprocess_summary'] = array_merge(
+            $case['publication_reprocess_summary'] ?? [],
+            [
+                'execution_state' => 'NOOP',
+                'republished_trade_date_count' => (int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0),
+                'blocked_reason_code' => $reasonCode,
+                'republication_mode' => $republicationMode,
+            ]
+        );
 
         return $case;
     }
@@ -793,6 +1238,13 @@ class BackfillLifecycleOrchestrator
         ];
     }
 
+    private function removeDateFromList(array $dates, $tradeDate)
+    {
+        return array_values(array_filter($dates, function ($date) use ($tradeDate) {
+            return (string) $date !== (string) $tradeDate;
+        }));
+    }
+
     private function syncPublicationReprocessNotes(array $case): void
     {
         if (empty($case['run_id'])) {
@@ -811,6 +1263,7 @@ class BackfillLifecycleOrchestrator
                     'publication_reprocess_republished_trade_date_count='.(int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0),
                     ! empty($case['publication_reprocess_republished_trade_dates']) ? 'publication_reprocess_republished_trade_dates='.$this->compactList((array) $case['publication_reprocess_republished_trade_dates']) : null,
                     ! empty($case['publication_reprocess_candidate_trade_dates']) ? 'publication_reprocess_candidate_trade_dates='.$this->compactList((array) $case['publication_reprocess_candidate_trade_dates']) : null,
+                    ! empty($case['publication_reprocess_readable_correction_candidate_trade_dates']) ? 'publication_reprocess_readable_correction_candidate_trade_dates='.$this->compactList((array) $case['publication_reprocess_readable_correction_candidate_trade_dates']) : null,
                     ! empty($case['publication_reprocess_blocked_trade_dates']) ? 'publication_reprocess_blocked_trade_dates='.$this->compactList((array) $case['publication_reprocess_blocked_trade_dates']) : null,
                     ! empty($case['publication_reprocess_failed_trade_dates']) ? 'publication_reprocess_failed_trade_dates='.$this->compactList((array) $case['publication_reprocess_failed_trade_dates']) : null,
                     ! empty($case['publication_reprocess_blocked_reason_code']) ? 'publication_reprocess_blocked_reason_code='.(string) $case['publication_reprocess_blocked_reason_code'] : null,
@@ -847,6 +1300,23 @@ class BackfillLifecycleOrchestrator
 
         if (($case['publication_reprocess_state'] ?? null) !== 'PENDING_PROMOTE') {
             return [];
+        }
+
+        $dates = array_values(array_unique(array_filter(array_map('strval', $dates))));
+        sort($dates);
+
+        return $dates;
+    }
+
+    private function publicationReprocessReadableCorrectionCandidateDates(array $case)
+    {
+        $dates = [];
+        if (! empty($case['publication_reprocess_summary']['readable_correction_candidate_trade_dates']) && is_array($case['publication_reprocess_summary']['readable_correction_candidate_trade_dates'])) {
+            $dates = $case['publication_reprocess_summary']['readable_correction_candidate_trade_dates'];
+        }
+
+        if ($dates === []) {
+            $dates = $this->parseCsvList($case['publication_reprocess_readable_correction_candidate_trade_dates'] ?? '');
         }
 
         $dates = array_values(array_unique(array_filter(array_map('strval', $dates))));
@@ -907,6 +1377,7 @@ class BackfillLifecycleOrchestrator
             'publication_reprocess_republished_trade_date_count',
             'publication_reprocess_republished_trade_dates',
             'publication_reprocess_candidate_trade_dates',
+            'publication_reprocess_readable_correction_candidate_trade_dates',
             'publication_reprocess_blocked_trade_dates',
             'publication_reprocess_failed_trade_dates',
             'publication_reprocess_blocked_reason_code',
@@ -967,6 +1438,7 @@ class BackfillLifecycleOrchestrator
                 'republished_trade_date_count' => (int) ($fields['publication_reprocess_republished_trade_date_count'] ?? 0),
                 'republished_trade_dates' => $this->parseCsvList($fields['publication_reprocess_republished_trade_dates'] ?? ''),
                 'candidate_trade_dates' => $this->parseCsvList($fields['publication_reprocess_candidate_trade_dates'] ?? ''),
+                'readable_correction_candidate_trade_dates' => $this->parseCsvList($fields['publication_reprocess_readable_correction_candidate_trade_dates'] ?? ''),
                 'blocked_trade_dates' => $this->parseCsvList($fields['publication_reprocess_blocked_trade_dates'] ?? ''),
                 'failed_trade_dates' => $this->parseCsvList($fields['publication_reprocess_failed_trade_dates'] ?? ''),
                 'blocked_reason_code' => $fields['publication_reprocess_blocked_reason_code'] ?? null,
@@ -1031,6 +1503,18 @@ class BackfillLifecycleOrchestrator
 
     private function parseCsvList($value)
     {
+        if (is_array($value)) {
+            $items = array_values(array_unique(array_filter(array_map(function ($item) {
+                return trim((string) $item);
+            }, $value), function ($item) {
+                return $item !== '';
+            })));
+
+            sort($items);
+
+            return $items;
+        }
+
         if ($value === null || trim((string) $value) === '') {
             return [];
         }
@@ -1137,6 +1621,9 @@ class BackfillLifecycleOrchestrator
         $summary['dates_held'] = count(array_filter($cases, function ($case) {
             return ($case['status'] ?? null) === 'HELD';
         }));
+        $summary['dates_blocked'] = count(array_filter($cases, function ($case) {
+            return in_array(($case['status'] ?? null), ['BLOCKED', 'SOURCE_ACQUISITION_BLOCKED'], true);
+        }));
         $summary['dates_failed'] = count(array_filter($cases, function ($case) {
             return ($case['status'] ?? null) === 'FAILED';
         }));
@@ -1196,7 +1683,7 @@ class BackfillLifecycleOrchestrator
     {
         $codes = [];
         foreach ($requestedDates as $date) {
-            foreach ($this->tickers->getUniverseForTradeDate($date) as $row) {
+            foreach ($this->filterSuspendedUniverseRows($this->tickers->getUniverseForTradeDate($date), $date) as $row) {
                 if (isset($row['ticker_code']) && trim((string) $row['ticker_code']) !== '') {
                     $codes[strtoupper(trim((string) $row['ticker_code']))] = true;
                 }
@@ -1207,6 +1694,1251 @@ class BackfillLifecycleOrchestrator
         sort($codes);
 
         return $codes;
+    }
+
+    private function resolveMissingTickerPlan(array $requestedDates, array $tickerFilter)
+    {
+        $artifacts = $this->artifactRepository();
+        $filterSet = array_fill_keys($tickerFilter, true);
+        $tickerCodes = [];
+        $missingByDate = [];
+        $universeByDate = [];
+        $missingBarCount = 0;
+        $missingTradeDateCount = 0;
+
+        foreach ($requestedDates as $date) {
+            $fullUniverseRows = [];
+            $universeRows = [];
+            foreach ($this->filterSuspendedUniverseRows($this->tickers->getUniverseForTradeDate($date), $date) as $row) {
+                $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+                $tickerId = (int) ($row['ticker_id'] ?? 0);
+                if ($code === '' || $tickerId <= 0) {
+                    continue;
+                }
+
+                $universeRow = [
+                    'ticker_id' => $tickerId,
+                    'ticker_code' => $code,
+                ];
+                $fullUniverseRows[] = $universeRow;
+
+                if ($filterSet !== [] && ! isset($filterSet[$code])) {
+                    continue;
+                }
+
+                $universeRows[] = $universeRow;
+            }
+
+            $existingIds = array_fill_keys($artifacts->loadCanonicalBarTickerIdsForTradeDate($date, null), true);
+            $missingCodes = [];
+            foreach ($universeRows as $row) {
+                if (! isset($existingIds[(int) $row['ticker_id']])) {
+                    $missingCodes[] = $row['ticker_code'];
+                    $tickerCodes[$row['ticker_code']] = true;
+                }
+            }
+
+            $missingCodes = $this->sortedUniqueList($missingCodes);
+            $missingByDate[$date] = $missingCodes;
+            $universeByDate[$date] = $fullUniverseRows;
+            $missingBarCount += count($missingCodes);
+            if ($missingCodes !== []) {
+                $missingTradeDateCount++;
+            }
+        }
+
+        $tickerCodes = array_keys($tickerCodes);
+        sort($tickerCodes);
+
+        return [
+            'ticker_codes' => $tickerCodes,
+            'missing_ticker_codes_by_date' => $missingByDate,
+            'universe_by_date' => $universeByDate,
+            'missing_bar_count' => $missingBarCount,
+            'missing_trade_date_count' => $missingTradeDateCount,
+        ];
+    }
+
+    private function filterSuspendedUniverseRows(array $universeRows, $tradeDate)
+    {
+        if (! $this->eventRiskSources instanceof EventRiskSourceRepository || $universeRows === []) {
+            return $universeRows;
+        }
+
+        $tickerIds = array_values(array_filter(array_map(function ($row) {
+            return (int) ($row['ticker_id'] ?? 0);
+        }, $universeRows)));
+
+        if ($tickerIds === []) {
+            return $universeRows;
+        }
+
+        $suspendedIds = array_fill_keys($this->eventRiskSources->suspendedTickerIdsAsOf($tickerIds, $tradeDate), true);
+        if ($suspendedIds === []) {
+            return $universeRows;
+        }
+
+        return array_values(array_filter($universeRows, function ($row) use ($suspendedIds) {
+            $tickerId = (int) ($row['ticker_id'] ?? 0);
+
+            return $tickerId > 0 && ! isset($suspendedIds[$tickerId]);
+        }));
+    }
+
+    private function buildMissingTickerCandidateRows($requestedDate, array $providerRows, array $missingCodes, array $universeRows)
+    {
+        if ($providerRows === []) {
+            throw new SourceAcquisitionException(
+                'Missing-ticker source acquisition returned zero rows for requested missing tickers.',
+                'RUN_SOURCE_NO_VALID_DATA',
+                0,
+                null,
+                [
+                    'trade_date' => $requestedDate,
+                    'missing_ticker_codes' => $missingCodes,
+                    'source_acquisition_context' => 'missing_ticker_backfill',
+                ]
+            );
+        }
+
+        $sourceName = $this->sourceNameForCandidateRows($providerRows);
+        $missingSet = array_fill_keys($missingCodes, true);
+        $universeCodeById = [];
+        foreach ($universeRows as $row) {
+            $tickerId = (int) ($row['ticker_id'] ?? 0);
+            $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+            if ($tickerId > 0 && $code !== '') {
+                $universeCodeById[$tickerId] = $code;
+            }
+        }
+
+        $rowsByCode = [];
+        foreach ($this->artifactRepository()->loadBarsForTradeDate($requestedDate, null) as $tickerId => $row) {
+            $tickerId = (int) $tickerId;
+            if (! isset($universeCodeById[$tickerId])) {
+                continue;
+            }
+
+            $code = $universeCodeById[$tickerId];
+            if (isset($missingSet[$code])) {
+                continue;
+            }
+
+            $rowsByCode[$code] = $this->currentBarToSourceRow((array) $row, $code, $sourceName);
+        }
+
+        foreach ($providerRows as $row) {
+            $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+            if ($code === '' || ! isset($missingSet[$code])) {
+                continue;
+            }
+
+            $row['ticker_code'] = $code;
+            $row['trade_date'] = $requestedDate;
+            $row['source_name'] = $sourceName;
+            $rowsByCode[$code] = $row;
+        }
+
+        ksort($rowsByCode);
+
+        return array_values($rowsByCode);
+    }
+
+    private function currentBarToSourceRow(array $row, $tickerCode, $sourceName)
+    {
+        return [
+            'ticker_code' => strtoupper((string) $tickerCode),
+            'trade_date' => (string) $row['trade_date'],
+            'open' => $row['open'],
+            'high' => $row['high'],
+            'low' => $row['low'],
+            'close' => $row['close'],
+            'volume' => $row['volume'],
+            'adj_close' => $row['adj_close'],
+            'source_name' => $sourceName,
+            'canonical_source' => $this->canonicalSourceNameFromCurrentBar($row, $sourceName),
+            'captured_at' => $row['created_at'] ?? Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
+            'source_row_ref' => 'current:'.$row['trade_date'].':'.strtoupper((string) $tickerCode),
+        ];
+    }
+
+    private function canonicalSourceNameFromCurrentBar(array $row, $fallbackSourceName)
+    {
+        $sourceName = strtoupper(trim((string) ($row['source'] ?? '')));
+
+        return $sourceName !== '' ? $sourceName : strtoupper((string) $fallbackSourceName);
+    }
+
+    private function sourceNameForCandidateRows(array $rows)
+    {
+        foreach ($rows as $row) {
+            $sourceName = strtoupper(trim((string) ($row['source_name'] ?? '')));
+            if ($sourceName !== '') {
+                return $sourceName;
+            }
+        }
+
+        return strtoupper((string) config('market_data.source.default_source_name', 'YAHOO'));
+    }
+
+    private function filterSourceRowsForTickerCodes(array $rows, array $tickerCodes)
+    {
+        $set = array_fill_keys($tickerCodes, true);
+
+        return array_values(array_filter($rows, function ($row) use ($set) {
+            $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+
+            return $code !== '' && isset($set[$code]);
+        }));
+    }
+
+    private function applyManualFileOverlayToApiAcquisition(array $acquired, $inputFile, $startDate, $endDate, array $requestedDates, array $tickerCodes, array $missingPlan)
+    {
+        if ($inputFile === null || trim((string) $inputFile) === '') {
+            return $acquired;
+        }
+
+        $overlayCandidateCodes = $this->expectedMissingTickerCodesForDates($missingPlan, $requestedDates, $tickerCodes);
+        if ($overlayCandidateCodes === []) {
+            $overlayCandidateCodes = $this->failedTickerCodesFromAcquired($acquired);
+        }
+
+        if ($overlayCandidateCodes === []) {
+            return $acquired;
+        }
+
+        $overlayPlan = $this->overlayMissingTickerPlanForTickerCodes($missingPlan, $overlayCandidateCodes);
+        $overlayTickerCodes = $overlayPlan['ticker_codes'];
+        if ($overlayTickerCodes === []) {
+            return $acquired;
+        }
+
+        $overlay = $this->acquireMissingTickerManualFile(
+            $inputFile,
+            $startDate,
+            $endDate,
+            $requestedDates,
+            $overlayTickerCodes,
+            $overlayPlan
+        );
+
+        $overlayRowCount = array_sum(array_map('count', (array) ($overlay['rows_by_trade_date'] ?? [])));
+        if ($overlayRowCount <= 0) {
+            return $acquired;
+        }
+
+        foreach (($overlay['rows_by_trade_date'] ?? []) as $date => $rows) {
+            if (! isset($acquired['rows_by_trade_date'][$date])) {
+                $acquired['rows_by_trade_date'][$date] = [];
+            }
+
+            $acquired['rows_by_trade_date'][$date] = $this->deduplicateRowsByTickerDate(array_merge(
+                (array) $acquired['rows_by_trade_date'][$date],
+                (array) $rows
+            ));
+        }
+
+        $acquired['manual_overlay'] = [
+            'input_file' => $overlay['source_input_file'] ?? $inputFile,
+            'ticker_codes' => $overlayTickerCodes,
+            'row_count' => $overlayRowCount,
+            'source_file_hash' => $overlay['source_file_hash'] ?? null,
+            'source_file_hash_algorithm' => $overlay['source_file_hash_algorithm'] ?? null,
+            'source_file_size_bytes' => $overlay['source_file_size_bytes'] ?? null,
+            'source_file_row_count' => $overlay['source_file_row_count'] ?? null,
+        ];
+
+        return $this->recomputeApiManualOverlayAcquisitionTelemetry(
+            $acquired,
+            $requestedDates,
+            $tickerCodes,
+            'API_MANUAL_FILE_OVERLAY',
+            $missingPlan
+        );
+    }
+
+    private function overlayMissingTickerPlanForTickerCodes(array $missingPlan, array $tickerCodes)
+    {
+        $tickerSet = array_fill_keys($tickerCodes, true);
+        $missingByDate = [];
+        $includedTickers = [];
+        $missingBarCount = 0;
+        $missingTradeDateCount = 0;
+
+        foreach ((array) ($missingPlan['missing_ticker_codes_by_date'] ?? []) as $date => $codes) {
+            $selectedCodes = [];
+            foreach ((array) $codes as $code) {
+                $code = strtoupper(trim((string) $code));
+                if ($code === '' || ! isset($tickerSet[$code])) {
+                    continue;
+                }
+
+                $selectedCodes[] = $code;
+                $includedTickers[$code] = true;
+            }
+
+            $selectedCodes = $this->sortedUniqueList($selectedCodes);
+            $missingByDate[$date] = $selectedCodes;
+            $missingBarCount += count($selectedCodes);
+            if ($selectedCodes !== []) {
+                $missingTradeDateCount++;
+            }
+        }
+
+        $includedTickers = array_keys($includedTickers);
+        sort($includedTickers);
+
+        return [
+            'ticker_codes' => $includedTickers,
+            'missing_ticker_codes_by_date' => $missingByDate,
+            'universe_by_date' => $missingPlan['universe_by_date'] ?? [],
+            'missing_bar_count' => $missingBarCount,
+            'missing_trade_date_count' => $missingTradeDateCount,
+        ];
+    }
+
+    private function recomputeApiManualOverlayAcquisitionTelemetry(array $acquired, array $requestedDates, array $tickerCodes, $overlayMode, array $missingPlan = [])
+    {
+        $tickerCodes = $this->sortedUniqueList($tickerCodes);
+        $windows = $this->normalizeAcquisitionWindows($acquired, $requestedDates);
+        $rowsByDate = (array) ($acquired['rows_by_trade_date'] ?? []);
+        $dateTelemetry = [];
+
+        foreach ($requestedDates as $date) {
+            $expectedCodes = $this->expectedMissingTickerCodesForDate($missingPlan, $date, $tickerCodes);
+            $dateRows = (array) ($rowsByDate[$date] ?? []);
+            $returnedCodes = $this->filterTickerCodesToExpected($this->tickerCodesFromRows($dateRows), $expectedCodes);
+            $failedCodes = array_values(array_diff($expectedCodes, $returnedCodes));
+            sort($failedCodes);
+
+            $dateTelemetry[$date] = [
+                'source_mode' => 'api',
+                'source_acquisition_context' => 'missing_ticker_backfill',
+                'source_acquisition_mode' => 'api_manual_file_overlay',
+                'trade_date' => $date,
+                'expected_ticker_count' => count($expectedCodes),
+                'success_ticker_count' => count($returnedCodes),
+                'failed_ticker_count' => count($failedCodes),
+                'missing_ticker_codes' => $failedCodes,
+                'returned_row_count' => count($dateRows),
+                'accepted_row_count' => count($dateRows),
+                'rejected_row_count' => 0,
+                'invalid_row_count' => 0,
+                'source_acquisition_state' => count($returnedCodes) === 0 && count($expectedCodes) > 0
+                    ? 'FAILED'
+                    : (count($failedCodes) === 0 ? 'SUCCESS' : 'PARTIAL_SUCCESS'),
+                'source_final_status' => count($returnedCodes) === 0 && count($expectedCodes) > 0
+                    ? 'FAILED'
+                    : (count($failedCodes) === 0 ? 'SUCCESS' : 'PARTIAL'),
+                'final_reason_code' => count($returnedCodes) === 0 && count($expectedCodes) > 0
+                    ? 'RUN_SOURCE_NO_VALID_DATA'
+                    : (count($failedCodes) > 0 ? 'RUN_SOURCE_PARTIAL_RESPONSE' : null),
+                'manual_overlay_mode' => $overlayMode,
+            ];
+        }
+
+        $windowTelemetry = [];
+        $checkpoints = [];
+        $totalFailed = 0;
+        $totalReturnedRows = 0;
+        $batchId = $acquired['source_acquisition_batch_id'] ?? ('API_MANUAL_FILE_OVERLAY_'.str_replace('-', '', (string) reset($requestedDates)).'_'.str_replace('-', '', (string) end($requestedDates)).'_001');
+        $now = Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString();
+
+        foreach ($windows as $window) {
+            $windowStart = (string) ($window['start'] ?? $window['window_start'] ?? reset($requestedDates));
+            $windowEnd = (string) ($window['end'] ?? $window['window_end'] ?? end($requestedDates));
+            $windowRows = [];
+            $windowDates = [];
+            foreach ($requestedDates as $date) {
+                if (strcmp($date, $windowStart) < 0 || strcmp($date, $windowEnd) > 0) {
+                    continue;
+                }
+
+                $windowDates[] = $date;
+                $windowRows = array_merge($windowRows, (array) ($rowsByDate[$date] ?? []));
+            }
+
+            if ($windowDates === []) {
+                continue;
+            }
+
+            $expectedCodes = $this->expectedMissingTickerCodesForDates($missingPlan, $windowDates, $tickerCodes);
+            $returnedCodes = $this->filterTickerCodesToExpected($this->tickerCodesFromRows($windowRows), $expectedCodes);
+            $rowCounts = $this->rowCountsByTickerCode($windowRows);
+            $failedCodes = array_values(array_diff($expectedCodes, $returnedCodes));
+            sort($failedCodes);
+            $totalFailed += count($failedCodes);
+            $totalReturnedRows += count($windowRows);
+
+            $state = count($returnedCodes) === 0 && count($expectedCodes) > 0
+                ? 'FAILED'
+                : (count($failedCodes) === 0 ? 'SUCCESS' : 'PARTIAL_SUCCESS');
+            $finalStatus = $state === 'PARTIAL_SUCCESS' ? 'PARTIAL' : $state;
+
+            $windowTelemetry[] = [
+                'source_acquisition_batch_id' => $batchId,
+                'source_mode' => 'api',
+                'source_acquisition_mode' => 'api_manual_file_overlay',
+                'source_window_start' => $windowStart,
+                'source_window_end' => $windowEnd,
+                'source_acquisition_state' => $state,
+                'source_final_status' => $finalStatus,
+                'expected_ticker_count' => count($expectedCodes),
+                'success_ticker_count' => count($returnedCodes),
+                'failed_ticker_count' => count($failedCodes),
+                'failed_ticker_codes' => $failedCodes,
+                'missing_ticker_codes' => $failedCodes,
+                'returned_row_count' => count($windowRows),
+                'accepted_row_count' => count($windowRows),
+                'rejected_row_count' => 0,
+                'invalid_row_count' => 0,
+                'final_reason_code' => count($failedCodes) > 0 ? 'RUN_SOURCE_PARTIAL_RESPONSE' : null,
+                'manual_overlay_mode' => $overlayMode,
+            ];
+
+            foreach ($expectedCodes as $tickerCode) {
+                $stateForTicker = isset($rowCounts[$tickerCode]) ? 'SUCCESS' : 'FAILED';
+                $checkpoints[$windowStart.'|'.$windowEnd.'|'.$tickerCode] = [
+                    'source_acquisition_batch_id' => $batchId,
+                    'source_mode' => 'api',
+                    'source_acquisition_mode' => 'api_manual_file_overlay',
+                    'requested_start' => $acquired['requested_start'] ?? null,
+                    'requested_end' => $acquired['requested_end'] ?? null,
+                    'warmup_start' => $acquired['warmup_start'] ?? null,
+                    'window_start' => $windowStart,
+                    'window_end' => $windowEnd,
+                    'ticker_code' => $tickerCode,
+                    'state' => $stateForTicker,
+                    'attempt_count' => 0,
+                    'reason_code' => $stateForTicker === 'FAILED' ? 'RUN_SOURCE_NO_VALID_DATA' : null,
+                    'http_status' => null,
+                    'error_sample' => null,
+                    'provider_error_sample' => null,
+                    'sanitized_url' => null,
+                    'failure_scope' => $stateForTicker === 'FAILED' ? 'ticker' : null,
+                    'rows_count' => (int) ($rowCounts[$tickerCode] ?? 0),
+                    'manual_overlay_mode' => $overlayMode,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        $acquired['source_acquisition_mode'] = 'api_manual_file_overlay';
+        $acquired['configured_concurrency'] = $acquired['configured_concurrency'] ?? 1;
+        $acquired['date_telemetry'] = $dateTelemetry;
+        $acquired['window_telemetry'] = $windowTelemetry;
+        $acquired['source_acquisition_checkpoints'] = $checkpoints;
+        $acquired['source_acquisition_state'] = $totalFailed === 0 ? 'SUCCESS' : ($totalReturnedRows > 0 ? 'PARTIAL_SUCCESS' : 'FAILED');
+        $acquired['source_final_status'] = $totalFailed === 0 ? 'SUCCESS' : ($totalReturnedRows > 0 ? 'PARTIAL' : 'FAILED');
+        $acquired['manual_overlay_mode'] = $overlayMode;
+
+        return $acquired;
+    }
+
+    private function normalizeAcquisitionWindows(array $acquired, array $requestedDates)
+    {
+        $windows = [];
+        foreach ((array) ($acquired['windows'] ?? []) as $window) {
+            if (! is_array($window)) {
+                continue;
+            }
+
+            $start = $window['start'] ?? $window['window_start'] ?? null;
+            $end = $window['end'] ?? $window['window_end'] ?? null;
+            if ($start !== null && $end !== null) {
+                $windows[] = [
+                    'start' => (string) $start,
+                    'end' => (string) $end,
+                ];
+            }
+        }
+
+        if ($windows !== []) {
+            return $windows;
+        }
+
+        return [[
+            'start' => (string) reset($requestedDates),
+            'end' => (string) end($requestedDates),
+        ]];
+    }
+
+    private function expectedMissingTickerCodesForDate(array $missingPlan, $date, array $fallbackTickerCodes)
+    {
+        if (! isset($missingPlan['missing_ticker_codes_by_date']) || ! is_array($missingPlan['missing_ticker_codes_by_date'])) {
+            return $this->sortedUniqueList($fallbackTickerCodes);
+        }
+
+        return $this->sortedUniqueList((array) ($missingPlan['missing_ticker_codes_by_date'][$date] ?? []));
+    }
+
+    private function expectedMissingTickerCodesForDates(array $missingPlan, array $dates, array $fallbackTickerCodes)
+    {
+        if (! isset($missingPlan['missing_ticker_codes_by_date']) || ! is_array($missingPlan['missing_ticker_codes_by_date'])) {
+            return $this->sortedUniqueList($fallbackTickerCodes);
+        }
+
+        $codes = [];
+        foreach ($dates as $date) {
+            foreach ((array) ($missingPlan['missing_ticker_codes_by_date'][$date] ?? []) as $code) {
+                $code = strtoupper(trim((string) $code));
+                if ($code !== '') {
+                    $codes[$code] = true;
+                }
+            }
+        }
+
+        $codes = array_keys($codes);
+        sort($codes);
+
+        return $codes;
+    }
+
+    private function filterTickerCodesToExpected(array $tickerCodes, array $expectedTickerCodes)
+    {
+        if ($expectedTickerCodes === []) {
+            return [];
+        }
+
+        $expected = array_fill_keys($expectedTickerCodes, true);
+        $codes = [];
+        foreach ($tickerCodes as $code) {
+            $code = strtoupper(trim((string) $code));
+            if ($code !== '' && isset($expected[$code])) {
+                $codes[$code] = true;
+            }
+        }
+
+        $codes = array_keys($codes);
+        sort($codes);
+
+        return $codes;
+    }
+
+    private function tickerCodesFromRows(array $rows)
+    {
+        $codes = [];
+        foreach ($rows as $row) {
+            $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+            if ($code !== '') {
+                $codes[$code] = true;
+            }
+        }
+
+        $codes = array_keys($codes);
+        sort($codes);
+
+        return $codes;
+    }
+
+    private function rowCountsByTickerCode(array $rows)
+    {
+        $counts = [];
+        foreach ($rows as $row) {
+            $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+            if ($code === '') {
+                continue;
+            }
+
+            $counts[$code] = ($counts[$code] ?? 0) + 1;
+        }
+
+        return $counts;
+    }
+
+    private function acquireMissingTickerManualFile($inputFile, $startDate, $endDate, array $requestedDates, array $tickerCodes, array $missingPlan)
+    {
+        $path = $this->resolveManualMissingTickerInputFile($inputFile);
+        $parsed = $this->parseMissingTickerManualCsv($path);
+        $requestedSet = array_fill_keys($requestedDates, true);
+        $tickerSet = array_fill_keys($tickerCodes, true);
+        $rowsByDate = [];
+        $rowByDateCode = [];
+
+        foreach ($requestedDates as $date) {
+            $rowsByDate[$date] = [];
+        }
+
+        foreach ($parsed['rows'] as $row) {
+            $date = (string) $row['trade_date'];
+            $code = strtoupper(trim((string) $row['ticker_code']));
+
+            if (! isset($requestedSet[$date]) || ! isset($tickerSet[$code])) {
+                continue;
+            }
+
+            $key = $date.'|'.$code;
+            if (isset($rowByDateCode[$key])) {
+                throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_DUPLICATE_ROW: duplicate ticker_code/trade_date in manual missing-ticker source file: '.$key.'.');
+            }
+
+            $rowByDateCode[$key] = true;
+            $rowsByDate[$date][] = $row;
+        }
+
+        foreach ($rowsByDate as $date => $rows) {
+            usort($rows, function ($left, $right) {
+                return strcmp((string) ($left['ticker_code'] ?? ''), (string) ($right['ticker_code'] ?? ''));
+            });
+            $rowsByDate[$date] = $rows;
+        }
+
+        $fileTelemetry = $this->manualMissingTickerFileTelemetry($path, $parsed['row_count']);
+        $dateTelemetry = [];
+        $failedContexts = [];
+        $totalExpected = 0;
+        $totalSuccess = 0;
+
+        foreach ($requestedDates as $date) {
+            $expectedCodes = $missingPlan['missing_ticker_codes_by_date'][$date] ?? [];
+            $expectedSet = array_fill_keys($expectedCodes, true);
+            $returnedCodes = [];
+
+            foreach ($rowsByDate[$date] ?? [] as $row) {
+                $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+                if ($code !== '' && isset($expectedSet[$code])) {
+                    $returnedCodes[$code] = true;
+                }
+            }
+
+            $failedCodes = [];
+            foreach ($expectedCodes as $code) {
+                if (! isset($returnedCodes[$code])) {
+                    $failedCodes[] = $code;
+                    $failedContexts[] = [
+                        'ticker_code' => $code,
+                        'trade_date' => $date,
+                        'reason_code' => 'RUN_SOURCE_MANUAL_FILE_MISSING_ROW',
+                    ];
+                }
+            }
+
+            sort($failedCodes);
+            $successTickerCount = count($returnedCodes);
+            $failedTickerCount = count($failedCodes);
+            $totalExpected += count($expectedCodes);
+            $totalSuccess += $successTickerCount;
+
+            $dateTelemetry[$date] = array_merge($fileTelemetry, [
+                'source_mode' => 'manual_file',
+                'source_name' => 'LOCAL_FILE',
+                'source_acquisition_context' => 'missing_ticker_backfill',
+                'source_acquisition_mode' => 'manual_file',
+                'source_window_start' => $startDate,
+                'source_window_end' => $endDate,
+                'trade_date' => $date,
+                'expected_ticker_count' => count($expectedCodes),
+                'success_ticker_count' => $successTickerCount,
+                'failed_ticker_count' => $failedTickerCount,
+                'missing_ticker_codes' => $failedCodes,
+                'returned_row_count' => count($rowsByDate[$date] ?? []),
+                'accepted_row_count' => count($rowsByDate[$date] ?? []),
+                'rejected_row_count' => 0,
+                'invalid_row_count' => 0,
+                'source_acquisition_state' => $successTickerCount === 0 && count($expectedCodes) > 0
+                    ? 'FAILED'
+                    : ($failedTickerCount === 0 ? 'SUCCESS' : 'PARTIAL_SUCCESS'),
+                'source_final_status' => $successTickerCount === 0 && count($expectedCodes) > 0
+                    ? 'FAILED'
+                    : ($failedTickerCount === 0 ? 'SUCCESS' : 'PARTIAL'),
+                'final_reason_code' => $successTickerCount === 0 && count($expectedCodes) > 0
+                    ? 'RUN_SOURCE_MANUAL_FILE_NO_VALID_ROWS'
+                    : ($failedTickerCount > 0 ? 'RUN_SOURCE_MANUAL_FILE_MISSING_ROW' : null),
+            ]);
+        }
+
+        $failedTickerCodes = $this->sortedUniqueList(array_map(function ($context) {
+            return $context['ticker_code'];
+        }, $failedContexts));
+        $state = $failedContexts === []
+            ? 'SUCCESS'
+            : ($totalSuccess > 0 ? 'PARTIAL_SUCCESS' : 'FAILED');
+        $finalStatus = $failedContexts === []
+            ? 'SUCCESS'
+            : ($totalSuccess > 0 ? 'PARTIAL' : 'FAILED');
+        $batchId = 'MANUAL_FILE_'.str_replace('-', '', $startDate).'_'.str_replace('-', '', $endDate).'_001';
+
+        return [
+            'source_acquisition_batch_id' => $batchId,
+            'source_acquisition_mode' => 'manual_file',
+            'source_acquisition_state' => $state,
+            'source_final_status' => $finalStatus,
+            'warmup_start' => $startDate,
+            'requested_start' => $startDate,
+            'requested_end' => $endDate,
+            'windows' => [[
+                'window_start' => $startDate,
+                'window_end' => $endDate,
+            ]],
+            'window_count' => 1,
+            'ticker_count' => count($tickerCodes),
+            'configured_concurrency' => 1,
+            'trading_dates' => $requestedDates,
+            'estimated_http_requests' => 0,
+            'rows_by_trade_date' => $rowsByDate,
+            'date_telemetry' => $dateTelemetry,
+            'window_telemetry' => [[
+                'source_acquisition_batch_id' => $batchId,
+                'source_acquisition_mode' => 'manual_file',
+                'source_window_start' => $startDate,
+                'source_window_end' => $endDate,
+                'source_acquisition_state' => $state,
+                'source_final_status' => $finalStatus,
+                'expected_ticker_count' => $totalExpected,
+                'success_ticker_count' => $totalSuccess,
+                'failed_ticker_count' => count($failedTickerCodes),
+                'failed_ticker_codes' => $failedTickerCodes,
+                'failed_ticker_contexts' => $failedContexts,
+                'returned_row_count' => array_sum(array_map('count', $rowsByDate)),
+                'final_reason_code' => $failedContexts === [] ? null : 'RUN_SOURCE_MANUAL_FILE_MISSING_ROW',
+                'failure_scope' => $failedContexts === [] ? null : 'ticker',
+            ] + $fileTelemetry],
+            'source_acquisition_checkpoints' => $this->manualMissingTickerFailureCheckpoints($startDate, $endDate, $failedContexts),
+            'source_input_file' => $path,
+            'source_file_hash' => $fileTelemetry['source_file_hash'] ?? null,
+            'source_file_hash_algorithm' => $fileTelemetry['source_file_hash_algorithm'] ?? null,
+            'source_file_size_bytes' => $fileTelemetry['source_file_size_bytes'] ?? null,
+            'source_file_row_count' => $fileTelemetry['source_file_row_count'] ?? null,
+        ];
+    }
+
+    private function parseMissingTickerManualCsv($path)
+    {
+        $handle = fopen($path, 'r');
+        if (! $handle) {
+            throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_UNREADABLE: unable to read manual missing-ticker source file.');
+        }
+
+        $headers = null;
+        $rows = [];
+        $lineNumber = 0;
+
+        while (($line = fgetcsv($handle)) !== false) {
+            $lineNumber++;
+            if ($lineNumber === 1) {
+                $headers = array_map([$this, 'normalizeManualCsvHeader'], $line);
+                continue;
+            }
+
+            if ($this->manualCsvLineIsEmpty($line)) {
+                continue;
+            }
+
+            $row = [];
+            foreach ((array) $headers as $index => $header) {
+                if ($header === '') {
+                    continue;
+                }
+                $row[$header] = isset($line[$index]) ? trim((string) $line[$index]) : '';
+            }
+
+            $rows[] = $this->normalizeMissingTickerManualCsvRow($row, $lineNumber, $path);
+        }
+
+        fclose($handle);
+
+        if ($headers === null) {
+            throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_EMPTY: manual missing-ticker source file is empty.');
+        }
+
+        foreach (['ticker_code', 'trade_date', 'open', 'high', 'low', 'close', 'volume'] as $requiredHeader) {
+            if (! in_array($requiredHeader, $headers, true)) {
+                throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_INVALID_HEADER: manual missing-ticker CSV header must include '.$requiredHeader.'.');
+            }
+        }
+
+        return [
+            'row_count' => count($rows),
+            'rows' => $rows,
+        ];
+    }
+
+    private function normalizeMissingTickerManualCsvRow(array $row, $lineNumber, $path)
+    {
+        $tickerCode = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+        $tradeDate = trim((string) ($row['trade_date'] ?? ''));
+
+        if ($tickerCode === '') {
+            throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_INVALID_ROW: line '.$lineNumber.' ticker_code is required.');
+        }
+
+        if (! $this->isIsoDateString($tradeDate)) {
+            throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_INVALID_ROW: line '.$lineNumber.' trade_date must use YYYY-MM-DD.');
+        }
+
+        foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
+            if (! array_key_exists($field, $row) || trim((string) $row[$field]) === '') {
+                throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_INVALID_ROW: line '.$lineNumber.' '.$field.' is required.');
+            }
+            if (! is_numeric(str_replace(',', '', (string) $row[$field]))) {
+                throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_INVALID_ROW: line '.$lineNumber.' '.$field.' must be numeric.');
+            }
+        }
+
+        $canonicalSource = strtoupper(trim((string) ($row['canonical_source'] ?? ($row['source_name'] ?? 'SOURCE_BACKED_MANUAL'))));
+        $canonicalSource = preg_replace('/[^A-Z0-9_]+/', '_', $canonicalSource);
+        $canonicalSource = trim((string) $canonicalSource, '_');
+        if ($canonicalSource === '') {
+            $canonicalSource = 'SOURCE_BACKED_MANUAL';
+        }
+
+        $sourceRowRef = trim((string) ($row['source_row_ref'] ?? ''));
+        if ($sourceRowRef === '') {
+            $sourceRowRef = 'manual_file:'.basename(str_replace('\\', '/', (string) $path)).':'.$lineNumber;
+        }
+
+        return [
+            'ticker_code' => $tickerCode,
+            'trade_date' => $tradeDate,
+            'open' => str_replace(',', '', (string) $row['open']),
+            'high' => str_replace(',', '', (string) $row['high']),
+            'low' => str_replace(',', '', (string) $row['low']),
+            'close' => str_replace(',', '', (string) $row['close']),
+            'volume' => str_replace(',', '', (string) $row['volume']),
+            'adj_close' => trim((string) ($row['adj_close'] ?? '')) !== ''
+                ? str_replace(',', '', (string) $row['adj_close'])
+                : str_replace(',', '', (string) $row['close']),
+            'source_name' => 'LOCAL_FILE',
+            'canonical_source' => $canonicalSource,
+            'captured_at' => trim((string) ($row['captured_at'] ?? '')) !== ''
+                ? trim((string) $row['captured_at'])
+                : Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
+            'source_row_ref' => $sourceRowRef,
+        ];
+    }
+
+    private function manualMissingTickerFileTelemetry($path, $rowCount)
+    {
+        return [
+            'source_name' => 'LOCAL_FILE',
+            'source_input_file' => $path,
+            'source_file_hash' => hash_file('sha256', $path),
+            'source_file_hash_algorithm' => 'sha256',
+            'source_file_size_bytes' => filesize($path),
+            'source_file_row_count' => (int) $rowCount,
+        ];
+    }
+
+    private function manualMissingTickerFailureCheckpoints($startDate, $endDate, array $failedContexts)
+    {
+        $checkpoints = [];
+        foreach ($failedContexts as $context) {
+            $tradeDate = (string) ($context['trade_date'] ?? '');
+            $tickerCode = strtoupper(trim((string) ($context['ticker_code'] ?? '')));
+            if ($tradeDate === '' || $tickerCode === '') {
+                continue;
+            }
+
+            $key = $startDate.'|'.$endDate.'|'.$tradeDate.'|'.$tickerCode;
+            $checkpoints[$key] = [
+                'state' => 'FAILED',
+                'window_start' => $startDate,
+                'window_end' => $endDate,
+                'trade_date' => $tradeDate,
+                'ticker_code' => $tickerCode,
+                'reason_code' => 'RUN_SOURCE_MANUAL_FILE_MISSING_ROW',
+                'http_status' => null,
+                'failure_scope' => 'ticker',
+                'error_sample' => 'Manual missing-ticker CSV has no source-backed row for '.$tickerCode.' on '.$tradeDate.'.',
+            ];
+        }
+
+        return $checkpoints;
+    }
+
+    private function resolveManualMissingTickerInputFile($inputFile)
+    {
+        $inputFile = trim((string) $inputFile);
+        if ($inputFile === '') {
+            throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_REQUIRED: --input_file is required when source_mode=manual_file.');
+        }
+
+        $candidates = [$inputFile];
+        if (! $this->pathIsAbsolute($inputFile)) {
+            $candidates[] = base_path($inputFile);
+        }
+
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate)) {
+                $real = realpath($candidate);
+
+                return $real !== false ? $real : $candidate;
+            }
+        }
+
+        throw new \RuntimeException('MISSING_TICKER_MANUAL_FILE_NOT_FOUND: --input_file must point to an existing CSV file.');
+    }
+
+    private function normalizeManualCsvHeader($header)
+    {
+        $header = strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $header)));
+        $header = preg_replace('/[^a-z0-9]+/', '_', $header);
+
+        return trim((string) $header, '_');
+    }
+
+    private function manualCsvLineIsEmpty(array $line)
+    {
+        foreach ($line as $value) {
+            if (trim((string) $value) !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function isIsoDateString($value)
+    {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $value)) {
+            return false;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $value);
+
+        return $date !== false && $date->format('Y-m-d') === (string) $value;
+    }
+
+    private function pathIsAbsolute($path)
+    {
+        $path = (string) $path;
+
+        return preg_match('/^[A-Za-z]:[\/\\\\]/', $path) === 1
+            || strpos($path, '\\\\') === 0
+            || strpos($path, '/') === 0;
+    }
+
+    private function missingTickerDateTelemetry($requestedDate, $sourceMode, array $telemetry, array $missingCodes, array $providerRows)
+    {
+        $returnedCodes = [];
+        foreach ($providerRows as $row) {
+            $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+            if ($code !== '') {
+                $returnedCodes[$code] = true;
+            }
+        }
+
+        $missingSet = array_fill_keys($missingCodes, true);
+        $failedCodes = [];
+        foreach ($missingSet as $code => $_) {
+            if (! isset($returnedCodes[$code])) {
+                $failedCodes[] = $code;
+            }
+        }
+        sort($failedCodes);
+
+        $successTickerCount = count($returnedCodes);
+        $failedTickerCount = count($failedCodes);
+
+        return array_merge($telemetry, [
+            'source_mode' => $sourceMode,
+            'source_acquisition_context' => 'missing_ticker_backfill',
+            'trade_date' => $requestedDate,
+            'expected_ticker_count' => count($missingCodes),
+            'success_ticker_count' => $successTickerCount,
+            'failed_ticker_count' => $failedTickerCount,
+            'missing_ticker_codes' => $failedCodes,
+            'returned_row_count' => count($providerRows),
+            'accepted_row_count' => count($providerRows),
+            'rejected_row_count' => 0,
+            'invalid_row_count' => 0,
+            'source_acquisition_state' => $successTickerCount === 0
+                ? 'FAILED'
+                : ($failedTickerCount === 0 ? 'SUCCESS' : 'PARTIAL_SUCCESS'),
+            'source_final_status' => $successTickerCount === 0
+                ? 'FAILED'
+                : ($failedTickerCount === 0 ? 'SUCCESS' : 'PARTIAL'),
+            'final_reason_code' => $successTickerCount === 0
+                ? 'RUN_SOURCE_NO_VALID_DATA'
+                : ($failedTickerCount > 0 ? 'RUN_SOURCE_PARTIAL_RESPONSE' : null),
+        ]);
+    }
+
+    private function missingTickerNoopCase($requestedDate, $reasonCode)
+    {
+        return [
+            'requested_date' => $requestedDate,
+            'missing_ticker_count' => 0,
+            'missing_ticker_codes' => [],
+            'import_status' => 'SKIPPED',
+            'promote_status' => 'SKIPPED',
+            'evidence_status' => 'SKIPPED',
+            'fixture_status' => 'SKIPPED',
+            'replay_status' => 'SKIPPED',
+            'readable' => true,
+            'status' => 'SKIPPED_NO_MISSING_TICKERS',
+            'reason_code' => $reasonCode,
+        ];
+    }
+
+    private function finalizeMissingTickerSummary(array $summary)
+    {
+        $cases = $summary['cases'];
+        $successStatuses = ['SUCCESS', 'SKIPPED_VERIFIED', 'SKIPPED_NO_MISSING_TICKERS'];
+
+        $summary['dates_total'] = count($cases);
+        $summary['dates_success'] = count(array_filter($cases, function ($case) use ($successStatuses) {
+            return in_array(($case['status'] ?? null), $successStatuses, true);
+        }));
+        $summary['dates_skipped'] = count(array_filter($cases, function ($case) {
+            return ($case['status'] ?? null) === 'SKIPPED_NO_MISSING_TICKERS';
+        }));
+        $summary['dates_held'] = count(array_filter($cases, function ($case) {
+            return ($case['status'] ?? null) === 'HELD';
+        }));
+        $summary['dates_blocked'] = count(array_filter($cases, function ($case) {
+            return in_array(($case['status'] ?? null), ['BLOCKED', 'SOURCE_ACQUISITION_BLOCKED'], true);
+        }));
+        $summary['dates_failed'] = count(array_filter($cases, function ($case) {
+            return ($case['status'] ?? null) === 'FAILED';
+        }));
+        $summary['ticker_failures'] = array_sum(array_map(function ($case) {
+            return (int) ($case['tickers_failed'] ?? 0);
+        }, $cases));
+        $summary['missing_ticker_source_rows'] = array_sum(array_map(function ($case) {
+            return (int) ($case['missing_source_row_count'] ?? 0);
+        }, $cases));
+        $summary['candidate_source_row_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['candidate_source_row_count'] ?? 0);
+        }, $cases));
+        $summary['evidence_exported'] = count(array_filter($cases, function ($case) {
+            return in_array(($case['evidence_status'] ?? null), ['EXPORTED', 'EXPORTED_FAILURE'], true);
+        }));
+        $summary['fixtures_generated'] = count(array_filter($cases, function ($case) {
+            return ($case['fixture_status'] ?? null) === 'GENERATED';
+        }));
+        $summary['replay_verified'] = count(array_filter($cases, function ($case) {
+            return ($case['replay_status'] ?? null) === 'VERIFIED';
+        }));
+        $summary['bar_mutation_changed_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['bar_mutation_changed_count'] ?? 0);
+        }, $cases));
+        $summary['affected_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['affected_trade_date_count'] ?? 0);
+        }, $cases));
+        $summary['indicator_reprocessed_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['indicator_reprocessed_trade_date_count'] ?? 0);
+        }, $cases));
+        $summary['eligibility_reprocessed_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['eligibility_reprocessed_trade_date_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_state'] = $this->aggregateCaseState($cases, 'publication_reprocess_state', 'NOOP');
+        $summary['publication_reprocess_republished_trade_date_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_evidence_exported_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_evidence_exported_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_fixtures_generated_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_fixtures_generated_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_replay_verified_count'] = array_sum(array_map(function ($case) {
+            return (int) ($case['publication_reprocess_replay_verified_count'] ?? 0);
+        }, $cases));
+        $summary['publication_reprocess_correction_ids'] = $this->sortedUniqueList(array_reduce($cases, function ($carry, $case) {
+            return array_merge($carry, (array) ($case['publication_reprocess_correction_ids'] ?? []));
+        }, []));
+        $summary['publication_reprocess_republication_mode'] = $this->resolvedRepublicationMode(
+            $summary['publication_reprocess_state'],
+            array_values(array_filter(array_map(function ($case) {
+                return $case['publication_reprocess_republication_mode'] ?? null;
+            }, $cases)))
+        );
+        $summary['all_passed'] = $summary['dates_failed'] === 0 && $summary['dates_held'] === 0 && $summary['dates_blocked'] === 0;
+        $summary['status'] = (int) ($summary['missing_bar_count'] ?? 0) === 0
+            ? 'NOOP'
+            : ($summary['all_passed'] ? 'SUCCESS' : ($summary['dates_blocked'] > 0 && $summary['dates_success'] === 0 ? 'BLOCKED' : 'PARTIAL'));
+
+        return $summary;
+    }
+
+    private function missingTickerSourceAcquisitionShouldBlock(array $summary, array $acquired)
+    {
+        if ((int) ($summary['failed_ticker_count'] ?? 0) > 0 || (int) ($summary['failed_window_count'] ?? 0) > 0) {
+            return true;
+        }
+
+        $states = [
+            $summary['source_acquisition_state'] ?? null,
+            $summary['source_final_status'] ?? null,
+            $acquired['source_acquisition_state'] ?? null,
+            $acquired['source_final_status'] ?? null,
+        ];
+
+        foreach ((array) ($acquired['window_telemetry'] ?? []) as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $states[] = $entry['source_acquisition_state'] ?? null;
+            $states[] = $entry['source_final_status'] ?? null;
+        }
+
+        foreach ($states as $state) {
+            if (in_array((string) $state, ['FAILED', 'SYSTEMIC_FAILED', 'PARTIAL_SUCCESS', 'PARTIAL', 'PARTIAL_FAILED', 'FAILED_RETRY_BLOCKED', 'PARTIAL_RETRY_SUCCESS'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function blockedMissingTickerSourceAcquisitionSummary(array $summary, array $acquired, array $missingPlan, array $diagnostic)
+    {
+        $reasonCode = $diagnostic['reason_code'] ?? null;
+        if ($reasonCode === null || $reasonCode === '') {
+            $reasonCode = ((int) ($summary['failed_ticker_count'] ?? 0) > 0)
+                ? 'RUN_SOURCE_PARTIAL_RESPONSE'
+                : 'RUN_SOURCE_ACQUISITION_FAILED';
+        }
+
+        $failedTickerCodes = $this->failedTickerCodesFromAcquired($acquired);
+
+        $summary['status'] = 'BLOCKED';
+        $summary['stage'] = 'SOURCE_ACQUISITION';
+        $summary['publishability_state'] = 'NOT_READABLE';
+        $summary['reason_code'] = $reasonCode;
+        $summary['failed_ticker_codes'] = $failedTickerCodes;
+        $summary['mutation_guard'] = 'MISSING_TICKER_SOURCE_ACQUISITION_BLOCKED_BEFORE_IMPORT';
+        $summary['all_passed'] = false;
+        $summary['cases'] = [];
+
+        foreach ($summary['trading_dates'] as $requestedDate) {
+            $missingCodes = $missingPlan['missing_ticker_codes_by_date'][$requestedDate] ?? [];
+            if ($missingCodes === []) {
+                $summary['cases'][] = $this->missingTickerNoopCase($requestedDate, 'NO_MISSING_TICKERS');
+                continue;
+            }
+
+            $providerRows = $this->filterSourceRowsForTickerCodes($acquired['rows_by_trade_date'][$requestedDate] ?? [], $missingCodes);
+            $sourceAcquisition = $this->missingTickerDateTelemetry(
+                $requestedDate,
+                $summary['source_mode'] ?? 'api',
+                $acquired['date_telemetry'][$requestedDate] ?? [],
+                $missingCodes,
+                $providerRows
+            );
+            $dateFailedCodes = $sourceAcquisition['missing_ticker_codes'] ?? [];
+            if ($dateFailedCodes === [] && $failedTickerCodes !== []) {
+                $missingSet = array_fill_keys($missingCodes, true);
+                $dateFailedCodes = array_values(array_filter($failedTickerCodes, function ($tickerCode) use ($missingSet) {
+                    return isset($missingSet[$tickerCode]);
+                }));
+            }
+
+            $summary['cases'][] = [
+                'requested_date' => $requestedDate,
+                'missing_ticker_count' => count($missingCodes),
+                'missing_ticker_codes' => $missingCodes,
+                'failed_ticker_codes' => $this->sortedUniqueList($dateFailedCodes),
+                'tickers_expected' => count($missingCodes),
+                'tickers_success' => (int) ($sourceAcquisition['success_ticker_count'] ?? 0),
+                'tickers_failed' => (int) ($sourceAcquisition['failed_ticker_count'] ?? count($dateFailedCodes)),
+                'missing_source_row_count' => count($providerRows),
+                'candidate_source_row_count' => 0,
+                'source_acquisition_state' => $sourceAcquisition['source_acquisition_state'] ?? ($summary['source_acquisition_state'] ?? null),
+                'source_final_status' => $sourceAcquisition['source_final_status'] ?? ($summary['source_final_status'] ?? null),
+                'import_status' => 'SKIPPED_SOURCE_ACQUISITION_BLOCKED',
+                'promote_status' => 'SKIPPED',
+                'evidence_status' => ! empty($summary['with_evidence']) ? 'SKIPPED_SOURCE_ACQUISITION_BLOCKED' : 'SKIPPED',
+                'fixture_status' => ! empty($summary['with_replay']) ? 'SKIPPED_SOURCE_ACQUISITION_BLOCKED' : 'SKIPPED',
+                'replay_status' => ! empty($summary['with_replay']) ? 'SKIPPED_SOURCE_ACQUISITION_BLOCKED' : 'SKIPPED',
+                'readable' => false,
+                'status' => 'BLOCKED',
+                'stage' => 'SOURCE_ACQUISITION',
+                'reason_code' => $reasonCode,
+            ];
+        }
+
+        $summary = $this->finalizeMissingTickerSummary($summary);
+        $summary['status'] = 'BLOCKED';
+        $summary['stage'] = 'SOURCE_ACQUISITION';
+        $summary['publishability_state'] = 'NOT_READABLE';
+        $summary['reason_code'] = $reasonCode;
+        $summary['failed_ticker_codes'] = $failedTickerCodes;
+        $summary['mutation_guard'] = 'MISSING_TICKER_SOURCE_ACQUISITION_BLOCKED_BEFORE_IMPORT';
+        $summary['all_passed'] = false;
+
+        return $summary;
+    }
+
+    private function failedTickerCodesFromAcquired(array $acquired)
+    {
+        $codes = [];
+
+        foreach ($this->failureSamplesFromCheckpoints($acquired['source_acquisition_checkpoints'] ?? []) as $failure) {
+            $code = strtoupper(trim((string) ($failure['ticker_code'] ?? '')));
+            if ($code !== '') {
+                $codes[] = $code;
+            }
+        }
+
+        foreach ((array) ($acquired['window_telemetry'] ?? []) as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            foreach (['failed_ticker_codes', 'missing_ticker_codes'] as $field) {
+                foreach ((array) ($entry[$field] ?? []) as $code) {
+                    $code = strtoupper(trim((string) $code));
+                    if ($code !== '') {
+                        $codes[] = $code;
+                    }
+                }
+            }
+
+            foreach ((array) ($entry['failed_ticker_contexts'] ?? []) as $context) {
+                if (! is_array($context)) {
+                    continue;
+                }
+                $code = strtoupper(trim((string) ($context['ticker_code'] ?? '')));
+                if ($code !== '') {
+                    $codes[] = $code;
+                }
+            }
+        }
+
+        return $this->sortedUniqueList($codes);
+    }
+
+    private function normalizeTickerCodeFilter($value)
+    {
+        if ($value === null || $value === '' || $value === []) {
+            return [];
+        }
+
+        if (is_string($value)) {
+            $value = preg_split('/[,\s]+/', $value);
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return $this->sortedUniqueList(array_map(function ($code) {
+            return strtoupper(trim((string) $code));
+        }, $value));
+    }
+
+    private function resolveMissingTickerOutputDir($startDate, $endDate, $sourceMode, array $options)
+    {
+        if (! empty($options['output_dir'])) {
+            return (string) $options['output_dir'];
+        }
+
+        return storage_path('app/market_data/evidence/backfill_missing_tickers/'.$sourceMode.'_'.$startDate.'_to_'.$endDate);
+    }
+
+    private function artifactRepository()
+    {
+        if ($this->artifacts instanceof EodArtifactRepository) {
+            return $this->artifacts;
+        }
+
+        $this->artifacts = app(EodArtifactRepository::class);
+
+        return $this->artifacts;
     }
 
     private function filterOnlyFailedDates(array $requestedDates, array $checkpoint)
@@ -1344,6 +3076,11 @@ class BackfillLifecycleOrchestrator
     private function sourceModeIsApi($sourceMode)
     {
         return (string) $sourceMode === 'api';
+    }
+
+    private function sourceModeIsManualFile($sourceMode)
+    {
+        return (string) $sourceMode === 'manual_file';
     }
 
 

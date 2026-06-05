@@ -2,6 +2,7 @@
 
 use App\Application\MarketData\DTOs\MarketDataStageInput;
 use App\Application\MarketData\Exceptions\NoReadablePublicationException;
+use App\Application\MarketData\Services\BackfillLifecycleOrchestrator;
 use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
@@ -207,6 +208,67 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('input_file=storage/app/market_data/operator/manual-2026-04-14.csv', $display);
         $this->assertStringContainsString('source_name=LOCAL_FILE', $display);
         $this->assertStringContainsString('source_input_file=C:/ops/manual-2026-04-14.csv', $display);
+    }
+
+    public function test_backfill_lifecycle_command_accepts_manual_input_file_override_without_leaking_config(): void
+    {
+        config()->set('market_data.source.local_input_file', null);
+
+        $orchestrator = m::mock(BackfillLifecycleOrchestrator::class);
+        $orchestrator->shouldReceive('execute')
+            ->once()
+            ->with('2026-03-20', '2026-03-21', 'manual_file', m::on(function ($options) {
+                return ($options['input_file'] ?? null) === 'storage\\app\\market_data\\operator\\manual-multi-date.csv'
+                    && config('market_data.source.local_input_file') === 'storage\\app\\market_data\\operator\\manual-multi-date.csv'
+                    && ! empty($options['with_evidence'])
+                    && ! empty($options['with_replay']);
+            }))
+            ->andReturn([
+                'suite' => 'market_data_backfill_lifecycle',
+                'source_mode' => 'manual_file',
+                'source_acquisition_mode' => 'single_input_file_filtered_by_date',
+                'source_acquisition_batch_id' => null,
+                'requested_start' => '2026-03-20',
+                'requested_end' => '2026-03-21',
+                'warmup_start' => '2025-11-20',
+                'window_count' => 0,
+                'estimated_http_requests' => 0,
+                'configured_concurrency' => 1,
+                'ticker_count' => 2,
+                'trading_date_count' => 2,
+                'mode' => 'stop_on_error',
+                'with_evidence' => true,
+                'with_replay' => true,
+                'output_dir' => 'C:\\tmp\\lifecycle',
+                'input_file' => 'storage\\app\\market_data\\operator\\manual-multi-date.csv',
+                'cases' => [],
+                'status' => 'SUCCESS',
+                'all_passed' => true,
+            ]);
+
+        $this->app->instance(BackfillLifecycleOrchestrator::class, $orchestrator);
+
+        $command = new \App\Console\Commands\MarketData\BackfillLifecycleCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute([
+            'start_date' => '2026-03-20',
+            'end_date' => '2026-03-21',
+            '--source_mode' => 'manual_file',
+            '--input_file' => 'storage\\app\\market_data\\operator\\manual-multi-date.csv',
+            '--output_dir' => 'C:\\tmp\\lifecycle',
+            '--with-evidence' => true,
+            '--with-replay' => true,
+        ]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertNull(config('market_data.source.local_input_file'));
+        $this->assertStringContainsString('source_mode=manual_file', $display);
+        $this->assertStringContainsString('source_acquisition_mode=single_input_file_filtered_by_date', $display);
+        $this->assertStringContainsString('input_file=storage/app/market_data/operator/manual-multi-date.csv', $display);
     }
 
     public function test_backfill_command_blocks_missing_required_dates_with_reason_code(): void

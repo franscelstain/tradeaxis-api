@@ -9,6 +9,9 @@ This file may clarify computation order, warmup handling, and storage-facing imp
 ## Input source
 Input comes only from canonical `eod_bars` for valid trading days.
 Rows from `eod_invalid_bars` must never participate in indicator computation.
+Nullable `sector_code` context comes only from `ticker_sector_memberships` joined to active `market_data_sectors` for the requested trade date; missing membership must remain NULL and must not be forward-filled or faked.
+Nullable sector-rotation context comes only from `market_benchmark_indicators` for the active sector index code on D; missing sector-index bars/benchmark indicators must leave `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` NULL.
+Nullable event-risk context comes only from `market_data_corporate_actions` and `market_data_trading_status_events`. Corporate actions and UMA are exact-date context. Stateful trading statuses such as suspension and special monitoring are resolved as independent source-backed event states that carry forward until their matching recognized clear event. Missing source rows/state must leave `corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons` NULL. A source-backed non-risk status/state such as `ACTIVE` may stamp `event_risk_flag=0` only when no independent risk state remains active; absence of source data must never be converted into `0`.
 
 ## Trading-day ordering (LOCKED)
 For each ticker, bars are ordered by market-calendar trading day ascending.
@@ -61,14 +64,40 @@ If `close(D) <= 0` the source bar is invalid and the indicator must not be compu
 This uses the current day volume divided by the average volume of the **20 prior trading days excluding D**.
 Requires 21 canonical bars total: D plus D[-1]..D[-20].
 
-### 7) `roc20`
+### 7) `roc5`, `roc10`, `roc20`
+`roc5(D) = (P(D) / P(D[-5])) - 1`
+`roc10(D) = (P(D) / P(D[-10])) - 1`
 `roc20(D) = (P(D) / P(D[-20])) - 1`
-Requires both `P(D)` and `P(D[-20])`.
-This is a pure ratio, not a percentage-multiplied-by-100 field.
+Requires both current price basis and the requested lookback price basis.
+These are pure ratios, not percentage-multiplied-by-100 fields.
 
-### 8) `hh20`
+### 8) `hh20` and `ll20`
 `hh20(D) = MAX(high(x))` over `window(D, 20)`.
-This is based on real highs, not adjusted price basis.
+`ll20(D) = MIN(low(x))` over `window(D, 20)`.
+These are based on real highs/lows, not adjusted price basis.
+
+### 9) Range structure
+`close_to_hh20_pct(D) = ((P(D) - hh20(D)) / hh20(D)) * 100`
+`close_to_ll20_pct(D) = ((P(D) - ll20(D)) / ll20(D)) * 100`
+`range_20_pct(D) = ((hh20(D) - ll20(D)) / ll20(D)) * 100`
+`range_position_20_pct(D) = ((P(D) - ll20(D)) / (hh20(D) - ll20(D))) * 100`
+
+If `ll20 <= 0`, percentage fields that divide by `ll20` are NULL. If `hh20 - ll20 <= 0`, `range_position_20_pct` is NULL.
+
+### 10) Sector rotation context
+`sector_roc20(D)` is the active sector-index benchmark `roc_20` for the ticker's source-backed `sector_code` on D.
+`rs_20_vs_sector(D) = (roc20(D) * 100) - sector_roc20(D)`.
+`sector_rs_20_vs_ihsg(D) = sector_roc20(D) - IHSG_roc_20(D)`.
+
+`roc20` on the equity row remains a ratio. `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` are percentage/percentage-point fields aligned with benchmark `roc_20`.
+
+### 11) Event-risk source context
+`corporate_action_flag(D)` is `1` when at least one corporate-action source row exists for ticker/date D.
+`corporate_action_types(D)` is a deterministic comma-separated list of source-backed action types for D.
+`trading_status_code(D)` is a deterministic comma-separated list of source-backed trading status codes for D. Exact-date rows are included, and active carry-forward state is included for stateful statuses.
+`is_suspended(D)` and `is_uma(D)` are source-backed nullable flags. Suspension may carry forward from a prior `SUSPENDED` / `SUSPEND` source row until a recognized clear event such as `ACTIVE`, `UNSUSPENDED`, `RESUMED`, or suspension-lifted status. UMA is exact-date context unless a future contract defines a persistent UMA state.
+`event_risk_flag(D)` is `1` when corporate action, suspension, UMA, special monitoring, or risky trading status source context/state exists. It may be `0` only when a source row/state explicitly reports non-risk status and no independent risk state remains active. It remains `NULL` when no event-risk source row/state exists for the ticker/date.
+`event_risk_reasons(D)` is a deterministic comma-separated list of source-backed risk reasons.
 
 ## Null policy (LOCKED)
 - No forward-fill.
@@ -91,8 +120,11 @@ The baseline dependency horizon must include all active baseline dependencies:
 - `dv20_idr`: 20 trading days inclusive
 - `atr14_pct`: 14 Wilder TR values plus prior close dependency
 - `vol_ratio`: current date plus 20 prior trading days
+- `roc5`: current date plus D[-5]
+- `roc10`: current date plus D[-10]
 - `roc20`: current date plus D[-20]
 - `hh20`: 20 trading days inclusive
+- `ll20`: 20 trading days inclusive
 - `ma20`: 20 trading days inclusive
 - `ma50`: 50 trading days inclusive
 

@@ -10,14 +10,32 @@ class MarketBenchmarkRepository
 {
     public function activeBenchmarks()
     {
-        return DB::table('market_benchmarks')
-            ->where('is_active', 1)
-            ->orderBy('benchmark_code')
+        return $this->activeBenchmarkQuery()
             ->get()
             ->map(function ($row) {
                 return (array) $row;
             })
             ->all();
+    }
+
+    public function activeBenchmarksForProvider($provider)
+    {
+        $provider = strtolower(trim((string) $provider));
+
+        return $this->activeBenchmarkQuery()
+            ->whereRaw('LOWER(provider) = ?', [$provider])
+            ->get()
+            ->map(function ($row) {
+                return (array) $row;
+            })
+            ->all();
+    }
+
+    private function activeBenchmarkQuery()
+    {
+        return DB::table('market_benchmarks')
+            ->where('is_active', 1)
+            ->orderBy('benchmark_code');
     }
 
     public function findByCode($benchmarkCode)
@@ -84,5 +102,27 @@ class MarketBenchmarkRepository
             ->first();
 
         return $row && $row->roc_20 !== null ? (float) $row->roc_20 : null;
+    }
+
+    public function benchmarkRoc20s(array $benchmarkCodes, $tradeDate, $indicatorSetVersion)
+    {
+        $benchmarkCodes = array_values(array_unique(array_filter(array_map(function ($code) {
+            return Str::upper(trim((string) $code));
+        }, $benchmarkCodes))));
+
+        if (empty($benchmarkCodes)) {
+            return [];
+        }
+
+        return DB::table('market_benchmark_indicators')
+            ->whereIn('benchmark_code', $benchmarkCodes)
+            ->where('trade_date', $tradeDate)
+            ->where('indicator_set_version', $indicatorSetVersion)
+            ->whereNotNull('roc_20')
+            ->get()
+            ->mapWithKeys(function ($row) {
+                return [Str::upper(trim((string) $row->benchmark_code)) => (float) $row->roc_20];
+            })
+            ->all();
     }
 }

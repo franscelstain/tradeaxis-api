@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 class LocalFileEodBarsAdapter
 {
     private $lastAcquisitionTelemetry = [];
+    private $csvFileIndexCache = [];
+    private $jsonFileIndexCache = [];
 
     public function fetchOrLoadEodBars($tradeDate, $sourceMode)
     {
@@ -99,13 +101,13 @@ class LocalFileEodBarsAdapter
         return $telemetry;
     }
 
-    private function rememberManualFileTelemetry($path, $tradeDate, $format, array $rows)
+    private function rememberManualFileTelemetry($path, $tradeDate, $format, array $rows, array $context = [])
     {
         $sourceFileHash = is_file($path) ? hash_file('sha256', $path) : null;
         $sourceFileSize = is_file($path) ? filesize($path) : null;
         $rowCount = count($rows);
 
-        $this->lastAcquisitionTelemetry = [
+        $this->lastAcquisitionTelemetry = array_merge([
             'source_mode' => 'manual_file',
             'source_name' => 'LOCAL_FILE',
             'provider' => null,
@@ -123,7 +125,7 @@ class LocalFileEodBarsAdapter
             'trade_date' => $tradeDate,
             'source_final_status' => 'SUCCESS',
             'final_reason_code' => null,
-        ];
+        ], $context);
     }
 
     private function rememberManualFileFailureTelemetry($path, $tradeDate, $format, $reasonCode, array $context = [])
@@ -201,6 +203,55 @@ class LocalFileEodBarsAdapter
             );
         }
 
+        $index = $this->jsonFileIndex($path, $contents);
+        $rawRows = $this->rowsForRequestedDate($index, $tradeDate);
+        $rows = array_map(function ($entry) use ($tradeDate) {
+            return $this->normalizeRow($entry['row'], $tradeDate, $entry['source_row_ref']);
+        }, $rawRows);
+
+        if (count($rows) === 0) {
+            $this->blockEmptyManualFile($path, $tradeDate, 'json', 'RUN_SOURCE_MANUAL_FILE_EMPTY', [
+                'source_file_row_count' => 0,
+                'source_file_total_row_count' => $index['total_row_count'],
+                'source_file_filtered_out_row_count' => $index['total_row_count'],
+                'requested_trade_date' => $tradeDate,
+            ]);
+        }
+
+        $this->rememberManualFileTelemetry($path, $tradeDate, 'json', $rows, $this->filterTelemetryContext($index, $rows, $tradeDate));
+
+        return $rows;
+    }
+
+    private function loadCsv($path, $tradeDate)
+    {
+        $index = $this->csvFileIndex($path);
+        $rawRows = $this->rowsForRequestedDate($index, $tradeDate);
+
+        $rows = array_map(function ($entry) use ($tradeDate) {
+            return $this->normalizeRow($entry['row'], $tradeDate, $entry['source_row_ref']);
+        }, $rawRows);
+
+        if (count($rows) === 0) {
+            $this->blockEmptyManualFile($path, $tradeDate, 'csv', 'RUN_SOURCE_MANUAL_FILE_EMPTY', [
+                'source_file_row_count' => 0,
+                'source_file_total_row_count' => $index['total_row_count'],
+                'source_file_filtered_out_row_count' => $index['total_row_count'],
+                'requested_trade_date' => $tradeDate,
+            ]);
+        }
+
+        $this->rememberManualFileTelemetry($path, $tradeDate, 'csv', $rows, $this->filterTelemetryContext($index, $rows, $tradeDate));
+
+        return $rows;
+    }
+
+    private function jsonFileIndex($path, $contents)
+    {
+        if (isset($this->jsonFileIndexCache[$path])) {
+            return $this->jsonFileIndexCache[$path];
+        }
+
         $payload = json_decode($contents, true);
 
         if (! is_array($payload)) {
@@ -211,34 +262,33 @@ class LocalFileEodBarsAdapter
             );
         }
 
-        $rows = collect($payload)->map(function ($row, $index) use ($tradeDate, $path) {
+        $index = $this->emptyFileIndex();
+        foreach ($payload as $rowIndex => $row) {
             if (! is_array($row)) {
                 throw $this->manualFileException(
                     'File JSON bars lokal berisi row yang bukan object/array.',
                     'RUN_SOURCE_MANUAL_FILE_MALFORMED',
                     [
                         'source_input_file' => $path,
-                        'source_row_ref' => 'json:'.($index + 1),
+                        'source_row_ref' => 'json:'.($rowIndex + 1),
                     ]
                 );
             }
 
-            return $this->normalizeRow($row, $tradeDate, 'json:'.($index + 1));
-        })->all();
-
-        if (count($rows) === 0) {
-            $this->blockEmptyManualFile($path, $tradeDate, 'json', 'RUN_SOURCE_MANUAL_FILE_EMPTY', [
-                'source_file_row_count' => 0,
-            ]);
+            $this->addRowToFileIndex($index, $row, 'json:'.($rowIndex + 1));
         }
 
-        $this->rememberManualFileTelemetry($path, $tradeDate, 'json', $rows);
+        $this->jsonFileIndexCache[$path] = $index;
 
-        return $rows;
+        return $index;
     }
 
-    private function loadCsv($path, $tradeDate)
+    private function csvFileIndex($path)
     {
+        if (isset($this->csvFileIndexCache[$path])) {
+            return $this->csvFileIndexCache[$path];
+        }
+
         $handle = fopen($path, 'r');
 
         if ($handle === false) {
@@ -279,7 +329,7 @@ class LocalFileEodBarsAdapter
             }
         }
 
-        $rows = [];
+        $index = $this->emptyFileIndex();
         $line = 1;
         while (($data = fgetcsv($handle)) !== false) {
             $line++;
@@ -295,20 +345,72 @@ class LocalFileEodBarsAdapter
                 );
             }
 
-            $rows[] = $this->normalizeRow(array_combine($normalizedHeader, $data), $tradeDate, 'csv:'.$line);
+            $this->addRowToFileIndex($index, array_combine($normalizedHeader, $data), 'csv:'.$line);
         }
 
         fclose($handle);
 
-        if (count($rows) === 0) {
-            $this->blockEmptyManualFile($path, $tradeDate, 'csv', 'RUN_SOURCE_MANUAL_FILE_EMPTY', [
-                'source_file_row_count' => 0,
-            ]);
+        $this->csvFileIndexCache[$path] = $index;
+
+        return $index;
+    }
+
+    private function emptyFileIndex()
+    {
+        return [
+            'rows_by_trade_date' => [],
+            'fallback_rows' => [],
+            'total_row_count' => 0,
+        ];
+    }
+
+    private function addRowToFileIndex(array &$index, array $row, $sourceRowRef)
+    {
+        $index['total_row_count']++;
+        $entry = [
+            'row' => $row,
+            'source_row_ref' => $sourceRowRef,
+        ];
+        $tradeDate = $this->sourceRowTradeDateKey($row);
+
+        if ($tradeDate === null) {
+            $index['fallback_rows'][] = $entry;
+            return;
         }
 
-        $this->rememberManualFileTelemetry($path, $tradeDate, 'csv', $rows);
+        if (! isset($index['rows_by_trade_date'][$tradeDate])) {
+            $index['rows_by_trade_date'][$tradeDate] = [];
+        }
 
-        return $rows;
+        $index['rows_by_trade_date'][$tradeDate][] = $entry;
+    }
+
+    private function sourceRowTradeDateKey(array $row)
+    {
+        if (! array_key_exists('trade_date', $row) || $row['trade_date'] === null) {
+            return null;
+        }
+
+        $tradeDate = trim((string) $row['trade_date']);
+
+        return $tradeDate === '' ? null : $tradeDate;
+    }
+
+    private function rowsForRequestedDate(array $index, $tradeDate)
+    {
+        return array_values(array_merge(
+            $index['rows_by_trade_date'][(string) $tradeDate] ?? [],
+            $index['fallback_rows'] ?? []
+        ));
+    }
+
+    private function filterTelemetryContext(array $index, array $rows, $tradeDate)
+    {
+        return [
+            'source_file_total_row_count' => (int) $index['total_row_count'],
+            'source_file_filtered_out_row_count' => max(0, (int) $index['total_row_count'] - count($rows)),
+            'requested_trade_date' => $tradeDate,
+        ];
     }
 
     private function normalizeRow(array $row, $tradeDate, $fallbackRowRef)

@@ -8,13 +8,20 @@ use App\Console\Commands\MarketData\ComputeIndicatorsCommand;
 use App\Console\Commands\MarketData\DailyPipelineCommand;
 use App\Console\Commands\MarketData\BackfillMarketDataCommand;
 use App\Console\Commands\MarketData\BackfillLifecycleCommand;
+use App\Console\Commands\MarketData\BackfillMissingTickersCommand;
 use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PromoteMarketDataCommand;
 use App\Console\Commands\MarketData\ProviderSmokeCommand;
 use App\Console\Commands\MarketData\FinalizeRunCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
+use App\Console\Commands\MarketData\FullRangeCurrentEvidenceReplayCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
+use App\Console\Commands\MarketData\IngestSectorIndexBarsApiCommand;
+use App\Console\Commands\MarketData\ImportCorporateActionsCommand;
+use App\Console\Commands\MarketData\ImportSectorIndexBarsCommand;
+use App\Console\Commands\MarketData\ImportSectorMembershipCommand;
+use App\Console\Commands\MarketData\ImportTradingStatusEventsCommand;
 use App\Console\Commands\MarketData\SealDatasetCommand;
 use App\Console\Commands\MarketData\VerifyReplayCommand;
 use App\Console\Commands\MarketData\ReplaySmokeSuiteCommand;
@@ -41,9 +48,16 @@ class Kernel extends ConsoleKernel
         GenerateReplayFixtureCommand::class,
         FinalizeRunCommand::class,
         ExportEvidenceCommand::class,
+        FullRangeCurrentEvidenceReplayCommand::class,
+        IngestSectorIndexBarsApiCommand::class,
+        ImportCorporateActionsCommand::class,
+        ImportSectorIndexBarsCommand::class,
+        ImportSectorMembershipCommand::class,
+        ImportTradingStatusEventsCommand::class,
         DailyPipelineCommand::class,
         BackfillMarketDataCommand::class,
         BackfillLifecycleCommand::class,
+        BackfillMissingTickersCommand::class,
         CaptureSessionSnapshotCommand::class,
         PurgeSessionSnapshotCommand::class,
         PromoteMarketDataCommand::class,

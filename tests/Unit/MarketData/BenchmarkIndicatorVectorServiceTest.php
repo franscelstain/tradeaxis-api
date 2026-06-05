@@ -31,6 +31,9 @@ class BenchmarkIndicatorVectorServiceTest extends TestCase
         $this->assertEqualsWithDelta(0.2844950213, $row['roc_20'], 0.000000001);
         $this->assertSame(7040.5, $row['ma20']);
         $this->assertSame(7025.5, $row['ma50']);
+        $this->assertEqualsWithDelta(0.0710681544, $row['ma20_slope_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(0.1349335985, $row['close_to_ma20_pct'], 0.000000001);
+        $this->assertEqualsWithDelta(0.3487296285, $row['close_to_ma50_pct'], 0.000000001);
     }
 
     public function test_benchmark_indicator_insufficient_lookback_keeps_values_null()
@@ -43,6 +46,9 @@ class BenchmarkIndicatorVectorServiceTest extends TestCase
         $this->assertNull($row['roc_20']);
         $this->assertNull($row['ma20']);
         $this->assertNull($row['ma50']);
+        $this->assertNull($row['ma20_slope_pct']);
+        $this->assertNull($row['close_to_ma20_pct']);
+        $this->assertNull($row['close_to_ma50_pct']);
     }
 
     public function test_benchmark_indicator_zero_denominator_returns_null_without_error()
@@ -57,5 +63,6 @@ class BenchmarkIndicatorVectorServiceTest extends TestCase
         $this->assertSame(0, $row['is_valid']);
         $this->assertSame('IND_INVALID_BAR_INPUT', $row['invalid_reason_code']);
         $this->assertNull($row['roc_20']);
+        $this->assertNull($row['close_to_ma50_pct']);
     }
 }

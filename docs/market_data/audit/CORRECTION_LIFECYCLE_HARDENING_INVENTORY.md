@@ -31,7 +31,7 @@ Status: LOCKED_LOCAL_RUNTIME_PROOF for the final-lock patch source state. Operat
 | evidence export linkage | correction evidence records lineage and unchanged result | evidence export service | `CorrectionEvidenceExportServiceTest` | correction `3` export ADMITTED_COMPLETE | none |
 | replay verification linkage | replay stores/compares correction context when fixture resolves | replay service/repository preserved-baseline semantics | `ReplayVerificationServiceTest`, `ReplayEvidenceExportServiceTest`, Replay filter/static guard | fixture generation for run `8` succeeded; verify `replay_id=10` PASS/MATCH | none |
 | command output | operator sees baseline, candidate, switch, reason | correction/repair commands | command tests | request/run/repair outputs captured | none |
-| audit docs entry | active session and canonical entry synchronized | ledger + static guard | audit docs guard after docs update | correction scope locked; aggregate production-ready downgraded to REVIEW_REQUIRED | none |
+| audit docs entry | active session and canonical entry synchronized | ledger + static guard | audit docs guard after docs update | correction scope locked; older aggregate production-ready downgrade is superseded by later proof-pack and global-lock entries | none |
 | contract tracker entry | one canonical correction contract | tracker + static guard | audit docs guard after docs update | `CORRECTION_LIFECYCLE_SAFETY_CONTRACT -> LOCKED` | none |
 
 ## Runtime Proof
@@ -85,10 +85,10 @@ Status: LOCKED_LOCAL_RUNTIME_PROOF for the final-lock patch source state. Operat
 ## Remaining Risk
 
 - No correction lifecycle blocker remains in this scoped session.
-- Full market-data production-ready remains `REVIEW_REQUIRED` for this patched source state until the aggregate proof pack and ops runtime matrix are rerun.
+- The earlier aggregate production-ready `REVIEW_REQUIRED` state is superseded by the later aggregate proof pack, ops runtime matrix, provider-smoke refresh, and 2026-06-05 full global market-data lock.
 
 
-## Final Lock Patch Addendum — Unchanged Evidence Candidate Alias Fix
+## Final Lock Patch Addendum - Unchanged Evidence Candidate Alias Fix
 
 - Status: LOCKED_LOCAL_RUNTIME_PROOF.
 - The final audit found `correction-3/correction_evidence.json` still aliasing baseline/current publication `5` as `candidate_publication_id`, `new_publication.publication_id`, and `candidate_historical_publication_proof.publication_id`.
@@ -116,7 +116,7 @@ Status: LOCKED_LOCAL_RUNTIME_PROOF for the final-lock patch source state. Operat
 
 ---
 
-## 2026-05-23 — SOURCE READY → FULL PRODUCTION READY GAP CLOSURE
+## 2026-05-23 - Source Ready to Full Production Ready Gap Closure
 
 [SESSION] SOURCE_READY_FULL_PRODUCTION_READY_GAP_CLOSURE
 
@@ -171,7 +171,7 @@ Status: LOCKED_LOCAL_RUNTIME_PROOF for the final-lock patch source state. Operat
 - Previous provider-smoke / provider-rate-limit / ops-parity review-required next actions are superseded by the final provider smoke PASS and full MarketData PHPUnit PASS.
 - Previous active-looking scheduler missing-artifact wording is superseded by current due-run/non-silent-failure artifacts; successful scheduled daily production run proof remains not claimed.
 
-## 2026-05-24 — Market Benchmark + Indicator Extension Non-Regression Re-Check
+## 2026-05-24 - Market Benchmark + Indicator Extension Non-Regression Re-Check
 
 Status: `PASS`.
 

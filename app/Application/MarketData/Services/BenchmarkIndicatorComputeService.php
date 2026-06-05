@@ -55,4 +55,13 @@ class BenchmarkIndicatorComputeService
             config('market_data.indicators.set_version')
         );
     }
+
+    public function roc20s(array $benchmarkCodes, $requestedDate)
+    {
+        return $this->benchmarks->benchmarkRoc20s(
+            $benchmarkCodes,
+            $requestedDate,
+            config('market_data.indicators.set_version')
+        );
+    }
 }

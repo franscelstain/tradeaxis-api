@@ -63,6 +63,17 @@ Expected planning fields:
 - `with_evidence`
 - `with_replay`
 
+## Manual file range acquisition
+Untuk `source_mode=manual_file`, command dapat memakai file per tanggal dari local source directory atau satu file eksplisit gabungan lewat `--input_file`.
+
+Contoh satu CSV gabungan:
+
+```text
+php artisan market-data:backfill:lifecycle 2026-06-01 2026-06-30 --source_mode=manual_file --input_file=storage/app/market_data/manual/eod-bars-2026-06.csv --with-evidence --with-replay
+```
+
+CSV gabungan wajib tetap memiliki kolom `trade_date`. Saat menjalankan lifecycle range, adapter manual file memfilter baris berdasarkan requested `trade_date` yang sedang diproses, lalu promote/coverage/evidence/replay tetap berjalan per tanggal.
+
 ## Lifecycle order
 Per requested `trade_date`, command runs chronologically:
 - import/acquired bars persist
@@ -135,6 +146,39 @@ This cache is intentionally slim:
 
 `source_acquisition_checkpoint.json` remains the full retry identity artifact. `source_acquisition_diagnostics.json.reason_code` must match the explicit summary reason or the deterministic failed-checkpoint reason chosen from the retry scope.
 
+---
+
+# `market-data:backfill:missing-tickers`
+
+## Official role
+`market-data:backfill:missing-tickers` adalah command **MISSING TICKER FULL LIFECYCLE ORCHESTRATION** untuk mengisi hanya ticker/date yang hilang dari current `eod_bars`.
+
+Command ini digunakan ketika ticker master sudah berisi ticker aktif/listed untuk suatu trade date, tetapi bar ticker tersebut belum ada di artifact current. Ini berbeda dari membaca `eod_runs` duplicate/non-current; tanggal dianggap selesai jika sudah punya current readable publication, dan command ini hanya mencari gap bar ticker di artifact current.
+
+Contoh plan non-mutating:
+
+```text
+php artisan market-data:backfill:missing-tickers 2026-06-03 2026-06-03 --source_mode=api --plan -vvv
+```
+
+Contoh mutating lifecycle untuk ticker tertentu:
+
+```text
+php artisan market-data:backfill:missing-tickers 2023-01-02 2025-10-31 --source_mode=api --ticker_codes=ABCD --with-evidence --with-replay -vvv
+```
+
+## Lifecycle behavior
+- `--plan` menghitung gap dari ticker master versus current `eod_bars` tanpa menulis data.
+- Normal execution memakai API range acquisition hanya untuk ticker yang missing.
+- Untuk tanggal yang sudah memiliki current bars, candidate source payload dibangun dari current bars yang sudah ada ditambah API rows untuk ticker missing.
+- Candidate penuh tersebut masuk ke lifecycle biasa: import candidate, promote, compute indicators, build eligibility, hash, seal, finalize, evidence export, fixture generation, dan replay verify.
+- Source-backed sector, corporate-action, trading-status, UMA/suspend, dan event-risk fields ikut dihitung karena command tidak bypass compute lifecycle.
+
+## Operator meaning
+Selesainya command ini dengan `with-evidence`/`with-replay` berarti gap ticker yang diproses sudah melalui proof lifecycle yang sama seperti backfill lifecycle, bukan sekadar raw import.
+
+Jika `--ticker_codes` tidak diberikan, command memindai semua ticker universe untuk tanggal yang diminta. Gunakan `--ticker_codes` saat operator baru menambahkan ticker tertentu dan ingin menghindari source acquisition seluruh missing universe.
+
 ## Out-of-order import impact output
 Backfill and lifecycle commands may import dates that are older than already available or already readable dates.
 
@@ -191,6 +235,7 @@ Plain `market-data:backfill` remains import-only and must not switch current poi
 - `publication_reprocess_republished_trade_date_count`
 - `publication_reprocess_republished_trade_dates`
 - `publication_reprocess_candidate_trade_dates`
+- `publication_reprocess_readable_correction_candidate_trade_dates`
 - `publication_reprocess_blocked_trade_dates`
 - `publication_reprocess_failed_trade_dates`
 - `publication_reprocess_blocked_reason_code`

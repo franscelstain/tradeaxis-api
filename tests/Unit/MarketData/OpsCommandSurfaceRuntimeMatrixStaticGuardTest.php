@@ -49,6 +49,8 @@ class OpsCommandSurfaceRuntimeMatrixStaticGuardTest extends TestCase
         foreach ([
             'market-data:daily',
             'market-data:backfill',
+            'market-data:backfill:lifecycle',
+            'market-data:backfill:missing-tickers',
             'market-data:promote',
             'market-data:run:finalize',
             'market-data:eod-bars:ingest',
@@ -57,6 +59,12 @@ class OpsCommandSurfaceRuntimeMatrixStaticGuardTest extends TestCase
             'market-data:audit:hash',
             'market-data:dataset:seal',
             'market-data:evidence:export',
+            'market-data:evidence-replay:full-range-current',
+            'market-data:sector-indexes:ingest-api',
+            'market-data:sector-indexes:import-bars',
+            'market-data:sectors:import-memberships',
+            'market-data:events:import-corporate-actions',
+            'market-data:events:import-trading-status',
             'market-data:replay:verify',
             'market-data:replay:smoke',
             'market-data:replay:backfill',
@@ -73,7 +81,7 @@ class OpsCommandSurfaceRuntimeMatrixStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString('php artisan --env=testing list market-data', $inventory);
-        $this->assertStringContainsString('21 public market-data commands registered', $inventory);
+        $this->assertStringContainsString('29 public market-data commands registered', $inventory);
     }
 
     public function test_inventory_records_help_invalid_and_seeded_runtime_proof(): void

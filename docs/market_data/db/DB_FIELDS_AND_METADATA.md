@@ -140,6 +140,125 @@ Required constraint/index:
 - primary key `cal_date`
 - index `market_calendar_trading_idx (is_trading_day, cal_date)`
 
+### `market_data_sectors`
+
+Runtime owner: source-backed sector taxonomy for upstream market-data context.
+Repository: `SectorClassificationRepository`.
+
+Required fields:
+- `sector_code`
+- `sector_name`
+- `sector_index_code`
+- `classification_system`
+- `effective_from`
+- `effective_to`
+- `is_active`
+- `source_name`
+- `source_ref`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `sector_code`
+- index `(classification_system, is_active, sector_code)`
+- index `(sector_index_code)`
+
+### Sector index benchmark source
+
+Runtime owner: sector-index benchmark master and bars used to populate nullable sector-rotation fields.
+Tables:
+- `market_benchmarks`
+- `market_benchmark_bars`
+- `market_benchmark_indicators`
+
+Required sector benchmark codes:
+- `IDXENERGY`
+- `IDXBASIC`
+- `IDXINDUST`
+- `IDXNONCYC`
+- `IDXCYCLIC`
+- `IDXHEALTH`
+- `IDXFINANCE`
+- `IDXPROPERT`
+- `IDXTECHNO`
+- `IDXINFRA`
+- `IDXTRANS`
+
+Sector benchmark rows use provider `manual_sector_index_csv` unless a future audited provider is added. They must not be fetched through the Yahoo equity/benchmark API unless a verified provider symbol exists.
+
+### `ticker_sector_memberships`
+
+Runtime owner: historical ticker-to-sector membership used to populate nullable `eod_indicators.sector_code`, then resolve sector-index benchmark context for nullable `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg`.
+Repository: `SectorClassificationRepository`.
+
+Required fields:
+- `membership_id`
+- `ticker_id`
+- `sector_code`
+- `classification_system`
+- `effective_from`
+- `effective_to`
+- `source_name`
+- `source_ref`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `membership_id`
+- unique key `(ticker_id, classification_system, effective_from)`
+- index `(ticker_id, classification_system, effective_from, effective_to)`
+- index `(sector_code, classification_system, effective_from)`
+
+### `market_data_corporate_actions`
+
+Runtime owner: source-backed corporate action context used to populate nullable `eod_indicators.corporate_action_flag`, `corporate_action_types`, `event_risk_flag`, and `event_risk_reasons`.
+Repository: `EventRiskSourceRepository`.
+Import command: `market-data:events:import-corporate-actions`.
+
+Required fields:
+- `corporate_action_id`
+- `ticker_id`
+- `ticker_code`
+- `action_date`
+- `action_type`
+- `source_name`
+- `source_ref`
+- `notes`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `corporate_action_id`
+- unique key `(ticker_id, action_date, action_type, source_name)`
+- index `(action_date, ticker_id)`
+- index `(action_type, action_date)`
+
+### `market_data_trading_status_events`
+
+Runtime owner: source-backed trading status, UMA, suspend, and special-monitoring context used to populate nullable `eod_indicators.trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`. Suspension and special-monitoring rows are interpreted as independent stateful events that carry forward until matching source-backed clear/exit rows; UMA remains exact-date context.
+Repository: `EventRiskSourceRepository`.
+Import command: `market-data:events:import-trading-status`.
+
+Required fields:
+- `trading_status_id`
+- `ticker_id`
+- `ticker_code`
+- `trade_date`
+- `status_code`
+- `is_suspended`
+- `is_uma`
+- `source_name`
+- `source_ref`
+- `notes`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `trading_status_id`
+- unique key `(ticker_id, trade_date, status_code, source_name)`
+- index `(trade_date, ticker_id)`
+- index `(status_code, trade_date)`
+
 ### `md_session_snapshots`
 
 Runtime owner: intraday/session snapshot persistence.  

@@ -20,7 +20,9 @@ class CoverageGateCandidateScopeHardeningStaticGuardTest extends TestCase
         $this->assertStringContainsString("'candidate_publication_id='", $pipeline);
         $this->assertStringContainsString("'baseline_publication_id='", $pipeline);
         $this->assertStringContainsString('coverageBasisNoteSegments', $pipeline);
-        $this->assertStringContainsString('return $candidate && ! empty($candidate->publication_id) ? (int) $candidate->publication_id : 0;', $pipeline);
+        $this->assertStringContainsString('noteCandidateSupersedesPriorCurrent', $pipeline);
+        $this->assertStringContainsString('replaceBarsHistoryFromPublication', $pipeline);
+        $this->assertStringContainsString('ensureBarsHistoryFromCurrentTradeDate', $pipeline);
     }
 
     public function test_artifact_repository_filters_candidate_coverage_by_publication_id_not_live_current_fallback(): void

@@ -400,9 +400,9 @@ class EodPublicationRepository
         );
     }
 
-    public function getOrCreateCandidatePublication(EodRun $run, $supersedesPublicationId = null)
+    public function getOrCreateCandidatePublication(EodRun $run, $supersedesPublicationId = null, $allowSealed = false)
     {
-        return DB::transaction(function () use ($run, $supersedesPublicationId) {
+        return DB::transaction(function () use ($run, $supersedesPublicationId, $allowSealed) {
             $existing = DB::table('eod_publications')
                 ->where('run_id', $run->run_id)
                 ->where('trade_date', $run->trade_date_requested)
@@ -410,7 +410,7 @@ class EodPublicationRepository
                 ->lockForUpdate()
                 ->first();
 
-            if ($existing) {
+            if ($existing && $this->candidatePublicationIsReusable($existing, $supersedesPublicationId, $allowSealed)) {
                 return $existing;
             }
 
@@ -442,6 +442,27 @@ class EodPublicationRepository
 
             return DB::table('eod_publications')->where('publication_id', $publicationId)->first();
         });
+    }
+
+    private function candidatePublicationIsReusable($publication, $supersedesPublicationId, $allowSealed = false): bool
+    {
+        if (! $publication) {
+            return false;
+        }
+
+        if ((string) ($publication->seal_state ?? '') === 'SEALED' && ! $allowSealed) {
+            return false;
+        }
+
+        if ($supersedesPublicationId === null || $supersedesPublicationId === '') {
+            return true;
+        }
+
+        $supersedesPublicationId = (int) $supersedesPublicationId;
+
+        return (int) ($publication->supersedes_publication_id ?? 0) === $supersedesPublicationId
+            || (int) ($publication->previous_publication_id ?? 0) === $supersedesPublicationId
+            || (int) ($publication->replaced_publication_id ?? 0) === $supersedesPublicationId;
     }
 
     public function findByRunId($runId)
@@ -1178,7 +1199,7 @@ class EodPublicationRepository
         ];
         $manifest['component_column_contract'] = [
             'bars' => ['trade_date', 'ticker_id', 'open', 'high', 'low', 'close', 'volume', 'adj_close', 'source'],
-            'indicators' => ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc20', 'hh20'],
+            'indicators' => ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'sector_code', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc5', 'roc10', 'roc20', 'hh20', 'll20', 'ma20', 'ma50', 'close_to_hh20_pct', 'close_to_ll20_pct', 'range_20_pct', 'range_position_20_pct', 'close_vs_ma20_pct', 'close_vs_ma50_pct', 'ma20_slope_pct', 'rs_20_vs_ihsg', 'sector_roc20', 'rs_20_vs_sector', 'sector_rs_20_vs_ihsg', 'corporate_action_flag', 'corporate_action_types', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'],
             'eligibility' => ['trade_date', 'ticker_id', 'eligible', 'reason_code'],
         ];
         $manifest['coverage_context'] = [

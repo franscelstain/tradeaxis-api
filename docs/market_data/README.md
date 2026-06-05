@@ -153,10 +153,18 @@ Dokumen dalam domain ini tidak boleh lagi menyatakan atau menyiratkan bahwa:
 ---
 
 ## State
-Documentation baseline ini adalah target resmi untuk sesi implementasi berikutnya.
+Documentation baseline ini adalah baseline resmi untuk source state yang sudah dikunci.
 
 Status:
-- READY FOR IMPLEMENTATION
+- FULL GLOBAL MARKET-DATA PRODUCTION READY untuk current source state dan daily market-data lifecycle
+- MARKET_DATA_PRODUCTION_READY_LOCKED
+- ARCHIVED_FULL_RANGE_PROOF_WINDOW `2023-01-02` sampai `2025-10-31`
+- LATEST_OPERATOR_RUN_THROUGH `2026-06-04` sebagai current operation terakhir yang dilaporkan
 - DATE-DRIVEN READY
 - IMPORT vs PROMOTE CONSISTENT
 - CRITICAL EDGE CONTRACTS LOCKED
+
+Catatan scope:
+- production-ready lock berlaku untuk source state, kontrak lifecycle, dan operasi market-data harian yang berlanjut; status ini bukan tanggal akhir pemakaian aplikasi
+- range `2023-01-02` sampai `2025-10-31` adalah archived full-range proof window yang dibuktikan di audit Lumen, bukan batas terakhir aplikasi dinyatakan production-ready
+- latest operator run/current operation sudah berjalan sampai `2026-06-04`; future trading dates tetap diproses melalui daily lifecycle/backfill normal

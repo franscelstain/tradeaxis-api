@@ -28,7 +28,8 @@ class BenchmarkBarsIngestService
             ];
         }
 
-        $activeBenchmarks = $this->benchmarks->activeBenchmarks();
+        $apiProvider = (string) config('market_data.source.api.provider', 'yahoo_finance');
+        $activeBenchmarks = $this->benchmarks->activeBenchmarksForProvider($apiProvider);
         if (empty($activeBenchmarks)) {
             return [
                 'benchmark_import_status' => 'SKIPPED',

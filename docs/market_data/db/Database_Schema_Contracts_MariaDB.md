@@ -17,6 +17,13 @@ Minimum required schema support must exist for concepts equivalent to:
 - `eod_invalid_bars`
 - `eod_indicators`
 - `eod_eligibility`
+- `market_data_sectors`
+- `ticker_sector_memberships`
+- `market_data_corporate_actions`
+- `market_data_trading_status_events`
+- `market_benchmarks`
+- `market_benchmark_bars`
+- `market_benchmark_indicators`
 - `eod_runs`
 - `eod_run_events`
 - `eod_publications`
@@ -59,7 +66,34 @@ Must support:
 - mandatory non-null `publication_id` publication context on every live current row
 - readable-state linkage to run/publication context
 
-### 5. Runs
+### 5. Sector taxonomy and membership
+Must support:
+- IDX-IC sector taxonomy rows such as `A` through `K` plus `Z`
+- historical ticker-to-sector membership by `effective_from` / `effective_to`
+- source name/reference for manually supplied or official sector classification data
+- nullable `eod_indicators.sector_code` when no source-backed membership exists for the trade date
+- no fabricated sector codes in indicator rows without a valid membership row
+
+### 5b. Benchmark and sector-index history
+Must support:
+- IHSG benchmark rows outside the equity ticker universe
+- sector-index benchmark rows for active IDX-IC sectors that have a `sector_index_code`
+- manual/source-backed sector-index OHLC bars in `market_benchmark_bars`
+- benchmark indicators with `roc_20` used by nullable sector-rotation fields
+- no fabricated `sector_roc20`, `rs_20_vs_sector`, or `sector_rs_20_vs_ihsg` values when sector-index history is missing
+
+### 5c. Corporate action and trading status source context
+Must support:
+- source-backed corporate action rows by `(ticker_id, action_date, action_type, source_name)`
+- source-backed trading status rows by `(ticker_id, trade_date, status_code, source_name)`
+- explicit source name/reference fields for operator CSV or future audited providers
+- nullable `eod_indicators.corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`
+- `NULL` event-risk indicator fields when no source row/state exists for the ticker/date
+- source-backed `event_risk_flag=0` only when an explicit source row/state says the status is non-risk such as `ACTIVE`, `NORMAL`, `UNSUSPENDED`, or special-monitoring exit and no independent risk state remains active
+- source-backed carry-forward state for suspension and special monitoring until the matching recognized clear/exit row appears
+- no fabricated no-risk values from absence of corporate-action/trading-status source data
+
+### 6. Runs
 Must support, at minimum:
 - requested trade date
 - effective trade date
@@ -92,7 +126,7 @@ For the locked coverage-gate contract, `eod_runs` must also support coverage evi
 
 These fields exist so finalization does not have to infer denominator, numerator, or threshold after the fact.
 
-### 6. Run events
+### 7. Run events
 Must support:
 - append-only event trail
 - stage/event traceability
@@ -101,14 +135,14 @@ Must support:
 - structured payload detail
 - run/date linkage
 
-### 7. Publications
+### 8. Publications
 Must support:
 - current publication for one trade date
 - superseded publication history
 - publication version
 - explicit readable-vs-audit-only distinction
 
-### 8. Current-publication pointer
+### 9. Current-publication pointer
 When the hardened pointer model is adopted, schema must support:
 - exactly one pointer row per readable trade date
 - one pointed publication per trade date
@@ -145,6 +179,8 @@ That is distinct from the live current-table identity.
 - `eod_bars`: exactly one current readable row per `(trade_date, ticker_id)`
 - `eod_indicators`: exactly one current readable row per `(trade_date, ticker_id)`
 - `eod_eligibility`: exactly one current readable row per `(trade_date, ticker_id)`
+- `market_data_sectors`: one taxonomy row per `sector_code`
+- `ticker_sector_memberships`: one membership row per `(ticker_id, classification_system, effective_from)`
 - `md_replay_reason_code_counts`: one row per `(replay_id, trade_date, reason_code)`
 - `eod_publications`: one row per `(trade_date, publication_version)`
 

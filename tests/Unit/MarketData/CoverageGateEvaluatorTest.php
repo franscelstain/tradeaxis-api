@@ -4,6 +4,7 @@ require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
 
 use App\Application\MarketData\Services\CoverageGateEvaluator;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
+use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 use PHPUnit\Framework\TestCase;
 
@@ -81,6 +82,39 @@ class CoverageGateEvaluatorTest extends TestCase
         $this->assertCount(25, $result['missing_ticker_ids']);
         $this->assertCount(25, $result['missing_ticker_codes']);
         $this->assertSame('TKR0855', $result['missing_ticker_codes'][0]);
+    }
+
+    public function test_evaluator_excludes_source_backed_suspended_tickers_from_expected_universe(): void
+    {
+        $this->bindCoverageGateConfig();
+
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+        $eventRiskSources = $this->createMock(EventRiskSourceRepository::class);
+
+        $tickers->expects($this->once())
+            ->method('getUniverseForTradeDate')
+            ->with('2026-04-03')
+            ->willReturn($this->buildUniverseRows(10));
+
+        $eventRiskSources->expects($this->once())
+            ->method('suspendedTickerIdsAsOf')
+            ->with(range(1, 10), '2026-04-03')
+            ->willReturn([10]);
+
+        $artifacts->expects($this->once())
+            ->method('loadCanonicalBarTickerIdsForTradeDate')
+            ->with('2026-04-03', null)
+            ->willReturn(range(1, 9));
+
+        $service = new CoverageGateEvaluator($tickers, $artifacts, $eventRiskSources);
+        $result = $service->evaluate('2026-04-03');
+
+        $this->assertSame(9, $result['expected_universe_count']);
+        $this->assertSame(9, $result['available_eod_count']);
+        $this->assertSame(0, $result['missing_eod_count']);
+        $this->assertSame('PASS', $result['coverage_gate_status']);
+        $this->assertSame([], $result['missing_ticker_codes']);
     }
 
     public function test_evaluator_returns_not_evaluable_when_expected_universe_is_zero()
