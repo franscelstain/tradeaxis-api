@@ -10,11 +10,13 @@ Command resmi domain ini:
 - `market-data:daily`
 - `market-data:backfill`
 - `market-data:backfill:lifecycle`
+- `market-data:backfill:missing-tickers`
 - `market-data:promote`
 
 Tidak ada alias command promote lain.
 Tidak ada command import yang otomatis menyatakan requested date readable.
 `market-data:backfill:lifecycle` bukan alias import/promote; command ini adalah orchestrator eksplisit untuk menjalankan lifecycle lengkap per requested trading date.
+`market-data:backfill:missing-tickers` adalah lifecycle backfill khusus untuk ticker/date yang hilang dari current `eod_bars`; command ini bukan pengganti `market-data:backfill:lifecycle` untuk seluruh universe.
 
 ---
 
@@ -61,6 +63,7 @@ Owner untuk full lifecycle range trading date saat operator secara eksplisit mem
 Wajib:
 - menjaga satu requested `trade_date` sebagai satu run pipeline date-scope
 - memakai API `range_window` acquisition untuk `source_mode=api`
+- mendukung controlled recovery `manual_file` range dari file per tanggal atau satu `--input_file` gabungan yang difilter berdasarkan `trade_date`
 - menjalankan tanggal requested secara chronological
 - mengeluarkan summary per tanggal/stage
 - mengekspor evidence failure context untuk held/failed date bila memungkinkan
@@ -71,6 +74,21 @@ Dilarang:
 - mengubah `market-data:backfill` menjadi publish otomatis
 - menjalankan replay untuk non-readable atau non-sealed run
 - fallback diam-diam ke raw/latest/manual file
+
+### `market-data:backfill:missing-tickers`
+Owner untuk missing ticker/date lifecycle backfill saat operator sudah tahu yang perlu diisi adalah gap ticker tertentu atau gap current `eod_bars` terhadap ticker master.
+
+Wajib:
+- menghitung missing dari ticker master universe versus current `eod_bars`
+- mendukung `--ticker_codes` untuk membatasi universe
+- memakai `source_mode=api`
+- membangun candidate source rows dari current bars + API rows ticker missing
+- menjalankan promote/evidence/replay melalui lifecycle yang sama dengan backfill lifecycle
+
+Dilarang:
+- memakai duplicate/non-current `eod_runs` sebagai bukti tanggal belum selesai
+- menulis candidate hanya dari partial missing rows untuk tanggal yang sudah current
+- bypass compute indicators, eligibility, hash, seal, finalize, evidence, atau replay
 
 ### `market-data:promote`
 Owner untuk requested date yang hasil import-nya sudah persisted.

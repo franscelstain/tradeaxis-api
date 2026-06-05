@@ -899,7 +899,8 @@ class MarketDataPipelineService
 
                 $candidatePublication = $this->publications->getOrCreateCandidatePublication(
                     $run,
-                    $priorCurrent ? $priorCurrent->publication_id : null
+                    $priorCurrent ? $priorCurrent->publication_id : null,
+                    true
                 );
 
                 $candidateCurrent = null;
@@ -1671,14 +1672,33 @@ class MarketDataPipelineService
     private function resolveCandidateCoveragePublicationId($run, MarketDataStageInput $input, $priorCurrent = null)
     {
         $notes = (string) ($run->notes ?? '');
-        $noteCandidatePublicationId = $this->extractNoteValue($notes, 'candidate_publication_id');
+        $noteCandidatePublicationIds = $this->extractNoteValues($notes, 'candidate_publication_id');
+        $trustedSourcePublicationId = null;
 
-        if ($noteCandidatePublicationId !== null && $noteCandidatePublicationId !== '') {
-            return (int) $noteCandidatePublicationId;
+        if ($noteCandidatePublicationIds !== []) {
+            if ($input->correctionId === null || $priorCurrent === null) {
+                return (int) end($noteCandidatePublicationIds);
+            }
+
+            foreach (array_reverse($noteCandidatePublicationIds) as $noteCandidatePublicationId) {
+                if ($this->noteCandidateSupersedesPriorCurrent($noteCandidatePublicationId, $input->requestedDate, $priorCurrent)) {
+                    $trustedSourcePublicationId = (int) $noteCandidatePublicationId;
+                    break;
+                }
+            }
         }
 
         if (! empty($run->publication_id)) {
-            return (int) $run->publication_id;
+            $publicationId = (int) $run->publication_id;
+            if ($input->correctionId !== null && $priorCurrent !== null) {
+                if ($trustedSourcePublicationId !== null) {
+                    $this->artifacts->replaceBarsHistoryFromPublication($input->requestedDate, $trustedSourcePublicationId, $publicationId, $run->run_id);
+                } else {
+                    $this->artifacts->ensureBarsHistoryFromCurrentTradeDate($input->requestedDate, $publicationId, $run->run_id);
+                }
+            }
+
+            return $publicationId;
         }
 
         $isCandidateScopedRequest = in_array((string) $input->requestMode, ['promote', 'correction', 'full_publish'], true)
@@ -1695,10 +1715,55 @@ class MarketDataPipelineService
                 $priorCurrent ? $priorCurrent->publication_id : null
             );
 
-            return $candidate && ! empty($candidate->publication_id) ? (int) $candidate->publication_id : 0;
+            if (! $candidate || empty($candidate->publication_id)) {
+                return 0;
+            }
+
+            if ($input->correctionId !== null && $priorCurrent !== null) {
+                if ($trustedSourcePublicationId !== null) {
+                    $this->artifacts->replaceBarsHistoryFromPublication($input->requestedDate, $trustedSourcePublicationId, $candidate->publication_id, $run->run_id);
+                } else {
+                    $this->artifacts->ensureBarsHistoryFromCurrentTradeDate($input->requestedDate, $candidate->publication_id, $run->run_id);
+                }
+            }
+
+            return (int) $candidate->publication_id;
         } catch (\Throwable $e) {
             return 0;
         }
+    }
+
+    private function noteCandidateSupersedesPriorCurrent($candidatePublicationId, $requestedDate, $priorCurrent): bool
+    {
+        if ($candidatePublicationId === null || $candidatePublicationId === '') {
+            return false;
+        }
+
+        if (! $priorCurrent || empty($priorCurrent->publication_id)) {
+            return false;
+        }
+
+        try {
+            $candidate = DB::table('eod_publications')
+                ->where('publication_id', (int) $candidatePublicationId)
+                ->first();
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        if (! $candidate) {
+            return false;
+        }
+
+        if ((string) ($candidate->trade_date ?? '') !== (string) $requestedDate) {
+            return false;
+        }
+
+        $priorPublicationId = (int) $priorCurrent->publication_id;
+
+        return (int) ($candidate->supersedes_publication_id ?? 0) === $priorPublicationId
+            || (int) ($candidate->previous_publication_id ?? 0) === $priorPublicationId
+            || (int) ($candidate->replaced_publication_id ?? 0) === $priorPublicationId;
     }
 
     private function coverageBasisNoteSegments(array $coverage, $candidatePublicationId = null, $priorCurrent = null): array
@@ -2605,6 +2670,7 @@ class MarketDataPipelineService
             ! empty($publicationReprocess) ? 'publication_reprocess_republished_trade_date_count='.(int) ($publicationReprocess['republished_trade_date_count'] ?? 0) : null,
             ! empty($publicationReprocess['republished_trade_dates']) ? 'publication_reprocess_republished_trade_dates='.$this->compactNoteList((array) $publicationReprocess['republished_trade_dates']) : null,
             ! empty($publicationReprocess['candidate_trade_dates']) ? 'publication_reprocess_candidate_trade_dates='.$this->compactNoteList((array) $publicationReprocess['candidate_trade_dates']) : null,
+            ! empty($publicationReprocess['readable_correction_candidate_trade_dates']) ? 'publication_reprocess_readable_correction_candidate_trade_dates='.$this->compactNoteList((array) $publicationReprocess['readable_correction_candidate_trade_dates']) : null,
             ! empty($publicationReprocess['blocked_trade_dates']) ? 'publication_reprocess_blocked_trade_dates='.$this->compactNoteList((array) $publicationReprocess['blocked_trade_dates']) : null,
             ! empty($publicationReprocess['failed_trade_dates']) ? 'publication_reprocess_failed_trade_dates='.$this->compactNoteList((array) $publicationReprocess['failed_trade_dates']) : null,
             ! empty($publicationReprocess['blocked_reason_code']) ? 'publication_reprocess_blocked_reason_code='.(string) $publicationReprocess['blocked_reason_code'] : null,
@@ -2652,6 +2718,11 @@ class MarketDataPipelineService
         $candidateDates = array_values(array_filter($candidateDates, function ($date) use ($requestedDate) {
             return (string) $date !== $requestedDate;
         }));
+        $readableCorrectionDates = $this->parseCsvList($notes['publication_reprocess_readable_correction_candidate_trade_dates'] ?? '');
+        $readableCorrectionDates = array_values(array_filter($readableCorrectionDates, function ($date) use ($requestedDate) {
+            return (string) $date !== $requestedDate;
+        }));
+        $readableCorrectionSet = array_fill_keys($readableCorrectionDates, true);
 
         if ($candidateDates === []) {
             return $this->safeUpdateTelemetry($originRun, [
@@ -2671,7 +2742,7 @@ class MarketDataPipelineService
         $failureReason = null;
 
         foreach ($candidateDates as $tradeDate) {
-            if (in_array($tradeDate, $blockedDates, true)) {
+            if (in_array($tradeDate, $blockedDates, true) && ! isset($readableCorrectionSet[$tradeDate])) {
                 $blockedReason = $blockedReason ?: 'AFFECTED_PUBLICATION_REQUIRES_CORRECTION';
                 continue;
             }
@@ -2684,7 +2755,7 @@ class MarketDataPipelineService
                     continue;
                 }
 
-                if ($this->runLooksReadable($seedRun)) {
+                if (isset($readableCorrectionSet[$tradeDate]) || $this->runLooksReadable($seedRun)) {
                     $autoCorrection = $this->executeReadablePublicationAutoCorrectionForImpact($tradeDate, $sourceMode, $seedRun);
                     $promotedRun = $autoCorrection['run'];
                     if (isset($autoCorrection['correction_id'])) {
@@ -2696,6 +2767,8 @@ class MarketDataPipelineService
                     $republicationModes[] = 'AUTOMATED_NON_READABLE_DATES';
                 }
                 if ($this->runLooksReadable($promotedRun)) {
+                    $blockedDates = $this->removeDateFromList($blockedDates, $tradeDate);
+                    $failedDates = $this->removeDateFromList($failedDates, $tradeDate);
                     $republishedDates[] = $tradeDate;
                     continue;
                 }
@@ -2713,6 +2786,12 @@ class MarketDataPipelineService
         $failedDates = $this->sortedUniqueList($failedDates);
         $correctionIds = array_values(array_unique(array_map('intval', $correctionIds)));
         sort($correctionIds);
+        if ($blockedDates === []) {
+            $blockedReason = null;
+        }
+        if ($failedDates === []) {
+            $failureReason = null;
+        }
 
         $state = 'NOOP';
         if ($failedDates !== []) {
@@ -2874,6 +2953,13 @@ class MarketDataPipelineService
         sort($values);
 
         return $values;
+    }
+
+    private function removeDateFromList(array $dates, $tradeDate)
+    {
+        return array_values(array_filter($dates, function ($date) use ($tradeDate) {
+            return (string) $date !== (string) $tradeDate;
+        }));
     }
 
     private function runLooksReadable($run)
@@ -3595,6 +3681,24 @@ class MarketDataPipelineService
         }
 
         return null;
+    }
+
+    private function extractNoteValues(string $notes, string $key): array
+    {
+        $values = [];
+
+        foreach (explode(';', $notes) as $part) {
+            $part = trim($part);
+
+            if (strpos($part, $key.'=') === 0) {
+                $value = trim(substr($part, strlen($key) + 1));
+                if ($value !== '') {
+                    $values[] = $value;
+                }
+            }
+        }
+
+        return $values;
     }
 
     private function summarizeThrowable(\Throwable $e)

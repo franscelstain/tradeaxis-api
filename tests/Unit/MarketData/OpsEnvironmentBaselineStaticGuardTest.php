@@ -122,7 +122,7 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
         $inventory = $this->read('docs/market_data/audit/OPS_ENVIRONMENT_BASELINE_INVENTORY.md');
 
         foreach ([$status, $tracker] as $document) {
-            $this->assertStringContainsString("ACTIVE SESSION:\n- Market Data Event-Risk Source Context", $document);
+            $this->assertStringContainsString("ACTIVE SESSION:\n- Market Data Manual File Multi-Date Lifecycle Input", $document);
             $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
             $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);

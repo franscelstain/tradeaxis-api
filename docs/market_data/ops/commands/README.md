@@ -30,6 +30,7 @@ The command-specific docs below remain supporting material. They must not contra
 - `market-data:run:finalize`
 - `market-data:promote`
 - `market-data:backfill:lifecycle`
+- `market-data:backfill:missing-tickers`
 - `market-data:evidence:export`
 - `market-data:evidence-replay:full-range-current`
 - `market-data:sector-indexes:ingest-api`

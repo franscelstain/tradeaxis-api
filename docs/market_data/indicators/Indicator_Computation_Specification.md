@@ -11,7 +11,7 @@ Input comes only from canonical `eod_bars` for valid trading days.
 Rows from `eod_invalid_bars` must never participate in indicator computation.
 Nullable `sector_code` context comes only from `ticker_sector_memberships` joined to active `market_data_sectors` for the requested trade date; missing membership must remain NULL and must not be forward-filled or faked.
 Nullable sector-rotation context comes only from `market_benchmark_indicators` for the active sector index code on D; missing sector-index bars/benchmark indicators must leave `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` NULL.
-Nullable event-risk context comes only from `market_data_corporate_actions` and `market_data_trading_status_events` for the ticker/date. Missing source rows must leave `corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons` NULL. A source-backed non-risk status such as `ACTIVE` may stamp `event_risk_flag=0`; absence of source data must never be converted into `0`.
+Nullable event-risk context comes only from `market_data_corporate_actions` and `market_data_trading_status_events`. Corporate actions and UMA are exact-date context. Stateful trading statuses such as suspension and special monitoring are resolved as independent source-backed event states that carry forward until their matching recognized clear event. Missing source rows/state must leave `corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons` NULL. A source-backed non-risk status/state such as `ACTIVE` may stamp `event_risk_flag=0` only when no independent risk state remains active; absence of source data must never be converted into `0`.
 
 ## Trading-day ordering (LOCKED)
 For each ticker, bars are ordered by market-calendar trading day ascending.
@@ -94,9 +94,9 @@ If `ll20 <= 0`, percentage fields that divide by `ll20` are NULL. If `hh20 - ll2
 ### 11) Event-risk source context
 `corporate_action_flag(D)` is `1` when at least one corporate-action source row exists for ticker/date D.
 `corporate_action_types(D)` is a deterministic comma-separated list of source-backed action types for D.
-`trading_status_code(D)` is a deterministic comma-separated list of source-backed trading status codes for D.
-`is_suspended(D)` and `is_uma(D)` are source-backed nullable flags; they may be inferred from explicit status codes containing `SUSPEND` or `UMA`.
-`event_risk_flag(D)` is `1` when corporate action, suspension, UMA, or risky trading status source context exists. It may be `0` only when a source row explicitly reports a non-risk status. It remains `NULL` when no event-risk source row exists for the ticker/date.
+`trading_status_code(D)` is a deterministic comma-separated list of source-backed trading status codes for D. Exact-date rows are included, and active carry-forward state is included for stateful statuses.
+`is_suspended(D)` and `is_uma(D)` are source-backed nullable flags. Suspension may carry forward from a prior `SUSPENDED` / `SUSPEND` source row until a recognized clear event such as `ACTIVE`, `UNSUSPENDED`, `RESUMED`, or suspension-lifted status. UMA is exact-date context unless a future contract defines a persistent UMA state.
+`event_risk_flag(D)` is `1` when corporate action, suspension, UMA, special monitoring, or risky trading status source context/state exists. It may be `0` only when a source row/state explicitly reports non-risk status and no independent risk state remains active. It remains `NULL` when no event-risk source row/state exists for the ticker/date.
 `event_risk_reasons(D)` is a deterministic comma-separated list of source-backed risk reasons.
 
 ## Null policy (LOCKED)

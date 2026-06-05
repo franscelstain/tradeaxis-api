@@ -4,6 +4,7 @@ namespace App\Application\MarketData\Services;
 
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 use Carbon\Carbon;
 
@@ -13,17 +14,20 @@ class EodEligibilityBuildService
     private $artifacts;
     private $publications;
     private $decisions;
+    private $eventRiskSources;
 
     public function __construct(
         TickerMasterRepository $tickers,
         EodArtifactRepository $artifacts,
         EodPublicationRepository $publications,
-        EligibilityDecisionService $decisions
+        EligibilityDecisionService $decisions,
+        EventRiskSourceRepository $eventRiskSources = null
     ) {
         $this->tickers = $tickers;
         $this->artifacts = $artifacts;
         $this->publications = $publications;
         $this->decisions = $decisions;
+        $this->eventRiskSources = $eventRiskSources;
     }
 
     public function build($run, $requestedDate, $correctionMode = false)
@@ -35,7 +39,10 @@ class EodEligibilityBuildService
             || ! empty($candidatePublication->previous_publication_id)
             || ! empty($candidatePublication->replaced_publication_id);
 
-        $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
+        $universe = $this->filterSuspendedUniverseRows(
+            $this->tickers->getUniverseForTradeDate($requestedDate),
+            $requestedDate
+        );
         $bars = $this->artifacts->loadBarsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
         $indicators = $this->artifacts->loadIndicatorsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
         $rows = [];
@@ -79,5 +86,31 @@ class EodEligibilityBuildService
             'eligibility_pass_ratio' => $eligibilityRowsWritten > 0 ? round($eligibleRows / $eligibilityRowsWritten, 4) : null,
             'storage_target' => $useHistory ? 'eod_eligibility_history' : 'eod_eligibility',
         ];
+    }
+
+    private function filterSuspendedUniverseRows(array $universeRows, $tradeDate): array
+    {
+        if (! $this->eventRiskSources instanceof EventRiskSourceRepository || $universeRows === []) {
+            return $universeRows;
+        }
+
+        $tickerIds = array_values(array_filter(array_map(function ($row) {
+            return (int) ($row['ticker_id'] ?? 0);
+        }, $universeRows)));
+
+        if ($tickerIds === []) {
+            return $universeRows;
+        }
+
+        $suspendedIds = array_fill_keys($this->eventRiskSources->suspendedTickerIdsAsOf($tickerIds, $tradeDate), true);
+        if ($suspendedIds === []) {
+            return $universeRows;
+        }
+
+        return array_values(array_filter($universeRows, function ($row) use ($suspendedIds) {
+            $tickerId = (int) ($row['ticker_id'] ?? 0);
+
+            return $tickerId > 0 && ! isset($suspendedIds[$tickerId]);
+        }));
     }
 }

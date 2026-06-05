@@ -106,6 +106,7 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
             ['class' => 'DailyPipelineCommand', 'signature' => 'market-data:daily'],
             ['class' => 'BackfillMarketDataCommand', 'signature' => 'market-data:backfill'],
             ['class' => 'BackfillLifecycleCommand', 'signature' => 'market-data:backfill:lifecycle'],
+            ['class' => 'BackfillMissingTickersCommand', 'signature' => 'market-data:backfill:missing-tickers'],
             ['class' => 'PromoteMarketDataCommand', 'signature' => 'market-data:promote'],
             ['class' => 'ExportEvidenceCommand', 'signature' => 'market-data:evidence:export'],
             ['class' => 'FullRangeCurrentEvidenceReplayCommand', 'signature' => 'market-data:evidence-replay:full-range-current'],

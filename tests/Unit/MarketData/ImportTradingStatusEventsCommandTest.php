@@ -73,6 +73,27 @@ class ImportTradingStatusEventsCommandTest extends TestCase
         $this->assertSame('manual_trading_status_csv', $row->source_name);
     }
 
+    public function test_apply_imports_unsuspension_without_inferring_suspend_flag(): void
+    {
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,status_code,is_suspended,is_uma,source_ref\nBBCA,2026-05-20,unsuspended,,,idx\n");
+
+        $tester = $this->executeCommand([
+            'input_file' => $this->csvPath,
+            '--apply' => true,
+        ]);
+        $display = $tester->getDisplay();
+
+        $this->assertSame(0, $tester->getStatusCode());
+        $this->assertStringContainsString('status=APPLIED', $display);
+        $this->assertStringContainsString('status_codes=UNSUSPENDED', $display);
+
+        $row = DB::table('market_data_trading_status_events')->where('ticker_id', 1)->first();
+
+        $this->assertSame('UNSUSPENDED', $row->status_code);
+        $this->assertSame(0, (int) $row->is_suspended);
+        $this->assertNull($row->is_uma);
+    }
+
     public function test_invalid_boolean_blocks_trading_status_apply(): void
     {
         $this->csvPath = $this->writeCsv("ticker_code,trade_date,status_code,is_suspended,is_uma\nBBCA,2026-05-19,UMA,maybe,1\n");

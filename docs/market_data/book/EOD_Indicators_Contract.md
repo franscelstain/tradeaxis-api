@@ -110,11 +110,11 @@ Duplicate live indicator rows for the same key are forbidden.
 | `sector_rs_20_vs_ihsg` | sector benchmark `roc_20`, IHSG benchmark `roc_20` | same trade date | both benchmark indicators exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
 | `corporate_action_flag` | `market_data_corporate_actions` for ticker/date | exact trade-date source lookup | source row exists | `NULL` if no corporate-action source row exists | non-blocking; must not be fabricated |
 | `corporate_action_types` | `market_data_corporate_actions.action_type` | exact trade-date source lookup | source row exists | `NULL` if no corporate-action source row exists | non-blocking; deterministic comma list |
-| `trading_status_code` | `market_data_trading_status_events.status_code` | exact trade-date source lookup | source row exists | `NULL` if no trading-status source row exists | non-blocking; deterministic comma list |
-| `is_suspended` | `market_data_trading_status_events.is_suspended` / status inference | exact trade-date source lookup | source row exists or explicit status implies suspend | `NULL` if no source row exists | non-blocking; source-backed only |
-| `is_uma` | `market_data_trading_status_events.is_uma` / status inference | exact trade-date source lookup | source row exists or explicit status implies UMA | `NULL` if no source row exists | non-blocking; source-backed only |
-| `event_risk_flag` | corporate action/trading status context | exact trade-date source lookup | source row exists | `NULL` if no source row exists; `0` only for source-backed non-risk status | non-blocking; must not infer no risk from absence |
-| `event_risk_reasons` | source-backed event context | exact trade-date source lookup | source-backed risk exists | `NULL` if no risk reason exists | non-blocking; deterministic comma list |
+| `trading_status_code` | `market_data_trading_status_events.status_code` | exact trade-date rows plus stateful carry-forward lookup | source row/state exists | `NULL` if no trading-status source row/state exists | non-blocking; deterministic comma list |
+| `is_suspended` | `market_data_trading_status_events.is_suspended` / status inference | exact trade-date rows plus suspension carry-forward lookup | source row/state exists or explicit status implies suspend | `NULL` if no source row/state exists | non-blocking; source-backed only |
+| `is_uma` | `market_data_trading_status_events.is_uma` / status inference | exact trade-date lookup | source row exists or explicit status implies UMA | `NULL` if no source row exists | non-blocking; source-backed only |
+| `event_risk_flag` | corporate action/trading status context | exact trade-date rows plus independent stateful carry-forward lookup | source row/state exists | `NULL` if no source row/state exists; `0` only for source-backed non-risk status/state and no active independent risk state | non-blocking; must not infer no risk from absence |
+| `event_risk_reasons` | source-backed event context | exact trade-date rows plus stateful carry-forward lookup | source-backed risk exists | `NULL` if no risk reason exists | non-blocking; deterministic comma list |
 
 ## Price basis rule (LOCKED)
 Where closing-price basis is required, use per-date fallback:

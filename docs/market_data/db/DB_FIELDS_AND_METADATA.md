@@ -235,7 +235,7 @@ Required constraint/index:
 
 ### `market_data_trading_status_events`
 
-Runtime owner: source-backed trading status, UMA, and suspend context used to populate nullable `eod_indicators.trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`.
+Runtime owner: source-backed trading status, UMA, suspend, and special-monitoring context used to populate nullable `eod_indicators.trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`. Suspension and special-monitoring rows are interpreted as independent stateful events that carry forward until matching source-backed clear/exit rows; UMA remains exact-date context.
 Repository: `EventRiskSourceRepository`.
 Import command: `market-data:events:import-trading-status`.
 

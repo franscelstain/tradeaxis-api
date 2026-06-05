@@ -28,7 +28,7 @@ If any mandatory baseline indicator is NULL because required history is unavaila
 
 `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` are nullable and do not by themselves invalidate the row. Missing sector-index history means no source-backed sector rotation value exists for that date yet; implementations must not fabricate or forward-fill sector values.
 
-Event-risk context fields are nullable and do not by themselves invalidate the row. Missing corporate-action/trading-status source rows mean no source-backed event-risk context exists for that ticker/date yet; implementations must not fabricate `event_risk_flag=0` from absence. A `0` flag is valid only when an explicit source row reports non-risk status such as `ACTIVE` or `NORMAL`.
+Event-risk context fields are nullable and do not by themselves invalidate the row. Missing corporate-action/trading-status source rows or active source state means no source-backed event-risk context exists for that ticker/date yet; implementations must not fabricate `event_risk_flag=0` from absence. A `0` flag is valid only when an explicit source row/state reports non-risk status such as `ACTIVE`, `NORMAL`, `UNSUSPENDED`, or special-monitoring exit and no independent risk state remains active. Suspension and special-monitoring rows carry forward as independent source-backed risk states until their matching recognized clear event appears.
 
 ---
 

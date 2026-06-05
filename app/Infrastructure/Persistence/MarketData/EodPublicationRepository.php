@@ -400,9 +400,9 @@ class EodPublicationRepository
         );
     }
 
-    public function getOrCreateCandidatePublication(EodRun $run, $supersedesPublicationId = null)
+    public function getOrCreateCandidatePublication(EodRun $run, $supersedesPublicationId = null, $allowSealed = false)
     {
-        return DB::transaction(function () use ($run, $supersedesPublicationId) {
+        return DB::transaction(function () use ($run, $supersedesPublicationId, $allowSealed) {
             $existing = DB::table('eod_publications')
                 ->where('run_id', $run->run_id)
                 ->where('trade_date', $run->trade_date_requested)
@@ -410,7 +410,7 @@ class EodPublicationRepository
                 ->lockForUpdate()
                 ->first();
 
-            if ($existing) {
+            if ($existing && $this->candidatePublicationIsReusable($existing, $supersedesPublicationId, $allowSealed)) {
                 return $existing;
             }
 
@@ -442,6 +442,27 @@ class EodPublicationRepository
 
             return DB::table('eod_publications')->where('publication_id', $publicationId)->first();
         });
+    }
+
+    private function candidatePublicationIsReusable($publication, $supersedesPublicationId, $allowSealed = false): bool
+    {
+        if (! $publication) {
+            return false;
+        }
+
+        if ((string) ($publication->seal_state ?? '') === 'SEALED' && ! $allowSealed) {
+            return false;
+        }
+
+        if ($supersedesPublicationId === null || $supersedesPublicationId === '') {
+            return true;
+        }
+
+        $supersedesPublicationId = (int) $supersedesPublicationId;
+
+        return (int) ($publication->supersedes_publication_id ?? 0) === $supersedesPublicationId
+            || (int) ($publication->previous_publication_id ?? 0) === $supersedesPublicationId
+            || (int) ($publication->replaced_publication_id ?? 0) === $supersedesPublicationId;
     }
 
     public function findByRunId($runId)

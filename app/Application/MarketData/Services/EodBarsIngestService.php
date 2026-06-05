@@ -125,7 +125,7 @@ class EodBarsIngestService
                     'close' => $row['close'],
                     'volume' => $row['volume'],
                     'adj_close' => $row['adj_close'],
-                    'source' => strtoupper($row['source_name']),
+                    'source' => $this->canonicalSourceForRow($row),
                     'run_id' => $run->run_id,
                     'created_at' => $now,
                 ];
@@ -296,7 +296,7 @@ class EodBarsIngestService
                     'close' => $row['close'],
                     'volume' => $row['volume'],
                     'adj_close' => $row['adj_close'],
-                    'source' => strtoupper($row['source_name']),
+                    'source' => $this->canonicalSourceForRow($row),
                     'run_id' => $run->run_id,
                     'created_at' => $now,
                 ];
@@ -620,7 +620,7 @@ class EodBarsIngestService
             'trade_date' => $row['trade_date'] ?? null,
             'ticker_id' => $row['ticker_id'] ?? null,
             'run_id' => $runId,
-            'source' => strtoupper((string) ($row['source_name'] ?? config('market_data.source.default_source_name'))),
+            'source' => $this->canonicalSourceForRow($row),
             'source_row_ref' => (string) ($row['source_row_ref'] ?? ''),
             'open' => isset($row['open']) ? (float) $row['open'] : null,
             'high' => isset($row['high']) ? (float) $row['high'] : null,
@@ -634,5 +634,41 @@ class EodBarsIngestService
             'loser_of_ticker_id' => $winnerTickerId,
             'created_at' => $now,
         ];
+    }
+
+    private function canonicalSourceForRow(array $row)
+    {
+        $source = strtoupper(trim((string) ($row['canonical_source'] ?? $row['source_name'] ?? config('market_data.source.default_source_name'))));
+
+        if ($source === '') {
+            $source = strtoupper((string) config('market_data.source.default_source_name'));
+        }
+
+        return $this->canonicalSourceStorageCode($source);
+    }
+
+    private function canonicalSourceStorageCode($source)
+    {
+        $source = strtoupper(trim((string) $source));
+        $source = preg_replace('/[^A-Z0-9_]+/', '_', $source);
+        $source = trim((string) $source, '_');
+
+        if ($source === '') {
+            $source = strtoupper((string) config('market_data.source.default_source_name'));
+        }
+
+        $aliases = [
+            'IDX_STOCK_SUMMARY_NO_TRADE_CLOSE_CARRY_FORWARD' => 'IDX_NO_TRADE_CARRY_FORWARD',
+        ];
+
+        if (isset($aliases[$source])) {
+            return $aliases[$source];
+        }
+
+        if (strlen($source) <= 32) {
+            return $source;
+        }
+
+        return substr($source, 0, 23).'_'.substr(hash('crc32b', $source), 0, 8);
     }
 }

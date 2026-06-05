@@ -130,6 +130,180 @@ class EodBarsIngestServiceTest extends TestCase
         $this->assertSame('eod_bars', $result['storage_target']);
     }
 
+    public function test_acquired_rows_can_preserve_canonical_source_with_single_source_boundary()
+    {
+        $this->bindMarketDataConfig([
+            'market_data' => [
+                'platform' => ['timezone' => 'Asia/Jakarta'],
+                'source' => ['default_source_name' => 'YAHOO_FINANCE'],
+            ],
+        ]);
+
+        $localSource = $this->createMock(LocalFileEodBarsAdapter::class);
+        $apiSource = $this->createMock(PublicApiEodBarsAdapter::class);
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+        $publications = $this->createMock(EodPublicationRepository::class);
+
+        $run = new EodRun([
+            'run_id' => 59,
+            'trade_date_requested' => '2026-03-24',
+        ]);
+
+        $sourceRows = [
+            [
+                'ticker_code' => 'BBCA',
+                'trade_date' => '2026-03-24',
+                'open' => 100,
+                'high' => 110,
+                'low' => 99,
+                'close' => 108,
+                'volume' => 1000,
+                'adj_close' => 108,
+                'source_name' => 'YAHOO_FINANCE',
+                'canonical_source' => 'API_FREE',
+                'source_row_ref' => 'current:2026-03-24:BBCA',
+                'captured_at' => '2026-03-24T17:00:00+07:00',
+            ],
+            [
+                'ticker_code' => 'BBRI',
+                'trade_date' => '2026-03-24',
+                'open' => 200,
+                'high' => 210,
+                'low' => 198,
+                'close' => 205,
+                'volume' => 1500,
+                'adj_close' => 205,
+                'source_name' => 'YAHOO_FINANCE',
+                'source_row_ref' => 'yahoo:BBRI:2026-03-24',
+                'captured_at' => '2026-03-24T17:00:00+07:00',
+            ],
+        ];
+
+        $publications->expects($this->once())
+            ->method('findCurrentPublicationForTradeDate')
+            ->with('2026-03-24')
+            ->willReturn(null);
+
+        $tickers->expects($this->once())
+            ->method('resolveTickerIdsByCodes')
+            ->with(['BBCA', 'BBRI'])
+            ->willReturn(['BBCA' => 1, 'BBRI' => 2]);
+
+        $publications->expects($this->once())
+            ->method('getOrCreateCandidatePublication')
+            ->willReturn((object) [
+                'publication_id' => 703,
+                'publication_version' => 3,
+            ]);
+
+        $artifacts->expects($this->once())
+            ->method('replaceBars')
+            ->with(
+                '2026-03-24',
+                703,
+                59,
+                $this->callback(function (array $validRows) {
+                    return count($validRows) === 2
+                        && $validRows[0]['source'] === 'API_FREE'
+                        && $validRows[1]['source'] === 'YAHOO_FINANCE';
+                }),
+                $this->callback(function (array $invalidRows) {
+                    return count($invalidRows) === 0;
+                }),
+                false
+            );
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+
+        $result = $service->ingestAcquiredRows($run, '2026-03-24', 'api', $sourceRows, [
+            'source_acquisition_state' => 'SUCCESS',
+        ]);
+
+        $this->assertSame(2, $result['bars_rows_written']);
+        $this->assertSame('YAHOO_FINANCE', $result['source_name']);
+    }
+
+    public function test_long_manual_canonical_source_is_stored_as_bounded_source_code()
+    {
+        $this->bindMarketDataConfig([
+            'market_data' => [
+                'platform' => ['timezone' => 'Asia/Jakarta'],
+                'source' => ['default_source_name' => 'LOCAL_FILE'],
+            ],
+        ]);
+
+        $localSource = $this->createMock(LocalFileEodBarsAdapter::class);
+        $apiSource = $this->createMock(PublicApiEodBarsAdapter::class);
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+        $publications = $this->createMock(EodPublicationRepository::class);
+
+        $run = new EodRun([
+            'run_id' => 60,
+            'trade_date_requested' => '2026-03-24',
+        ]);
+
+        $sourceRows = [[
+            'ticker_code' => 'MASA',
+            'trade_date' => '2026-03-24',
+            'open' => 2230,
+            'high' => 2230,
+            'low' => 2230,
+            'close' => 2230,
+            'volume' => 0,
+            'adj_close' => 2230,
+            'source_name' => 'LOCAL_FILE',
+            'canonical_source' => 'IDX_STOCK_SUMMARY_NO_TRADE_CLOSE_CARRY_FORWARD',
+            'source_row_ref' => 'https://www.idx.id/primary/TradingSummary/GetStockSummary?date=20260324&start=0&length=1000#MASA',
+            'captured_at' => '2026-03-24T17:00:00+07:00',
+        ]];
+
+        $publications->expects($this->once())
+            ->method('findCurrentPublicationForTradeDate')
+            ->with('2026-03-24')
+            ->willReturn(null);
+
+        $tickers->expects($this->once())
+            ->method('resolveTickerIdsByCodes')
+            ->with(['MASA'])
+            ->willReturn(['MASA' => 10]);
+
+        $publications->expects($this->once())
+            ->method('getOrCreateCandidatePublication')
+            ->willReturn((object) [
+                'publication_id' => 704,
+                'publication_version' => 4,
+            ]);
+
+        $artifacts->expects($this->once())
+            ->method('replaceBars')
+            ->with(
+                '2026-03-24',
+                704,
+                60,
+                $this->callback(function (array $validRows) {
+                    return count($validRows) === 1
+                        && $validRows[0]['source'] === 'IDX_NO_TRADE_CARRY_FORWARD'
+                        && strlen($validRows[0]['source']) <= 32
+                        && (int) $validRows[0]['volume'] === 0;
+                }),
+                $this->callback(function (array $invalidRows) {
+                    return count($invalidRows) === 0;
+                }),
+                false
+            );
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+
+        $result = $service->ingestAcquiredRows($run, '2026-03-24', 'manual_file', $sourceRows, [
+            'source_acquisition_state' => 'SUCCESS',
+        ]);
+
+        $this->assertSame(1, $result['bars_rows_written']);
+        $this->assertSame('LOCAL_FILE', $result['source_name']);
+    }
+
     public function test_single_day_ingest_rejects_mixed_source_names_within_one_run_boundary()
     {
         $this->bindMarketDataConfig([

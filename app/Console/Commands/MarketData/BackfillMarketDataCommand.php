@@ -110,6 +110,7 @@ class BackfillMarketDataCommand extends AbstractMarketDataCommand
                 .(isset($case['publication_reprocess_republished_trade_date_count']) ? ' | publication_reprocess_republished_trade_date_count='.$case['publication_reprocess_republished_trade_date_count'] : '')
                 .(isset($case['publication_reprocess_republished_trade_dates']) ? ' | publication_reprocess_republished_trade_dates='.$case['publication_reprocess_republished_trade_dates'] : '')
                 .(isset($case['publication_reprocess_candidate_trade_dates']) ? ' | publication_reprocess_candidate_trade_dates='.$case['publication_reprocess_candidate_trade_dates'] : '')
+                .(isset($case['publication_reprocess_readable_correction_candidate_trade_dates']) ? ' | publication_reprocess_readable_correction_candidate_trade_dates='.$case['publication_reprocess_readable_correction_candidate_trade_dates'] : '')
                 .(isset($case['publication_reprocess_blocked_trade_dates']) ? ' | publication_reprocess_blocked_trade_dates='.$case['publication_reprocess_blocked_trade_dates'] : '')
                 .(isset($case['publication_reprocess_failed_trade_dates']) ? ' | publication_reprocess_failed_trade_dates='.$case['publication_reprocess_failed_trade_dates'] : '')
                 .(isset($case['publication_reprocess_blocked_reason_code']) ? ' | publication_reprocess_blocked_reason_code='.$case['publication_reprocess_blocked_reason_code'] : '')

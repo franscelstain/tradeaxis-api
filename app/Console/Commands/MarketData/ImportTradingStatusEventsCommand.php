@@ -197,7 +197,14 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
             $isSuspended = $suspended['value'];
             $isUma = $uma['value'];
 
-            if ($isSuspended === null && strpos($statusCode, 'SUSPEND') !== false) {
+            if ($this->isGlobalNormalStatusCode($statusCode)) {
+                $isSuspended = $isSuspended === null ? 0 : $isSuspended;
+                $isUma = $isUma === null ? 0 : $isUma;
+            } elseif ($isSuspended === null && $this->isSuspensionEndStatusCode($statusCode)) {
+                $isSuspended = 0;
+            }
+
+            if ($isSuspended === null && $this->isSuspensionStartStatusCode($statusCode)) {
                 $isSuspended = 1;
             }
 
@@ -280,6 +287,34 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
         $code = preg_replace('/[^A-Z0-9]+/', '_', $code);
 
         return trim((string) $code, '_');
+    }
+
+    private function isGlobalNormalStatusCode(string $statusCode): bool
+    {
+        $statusCode = $this->normalizeCode($statusCode);
+
+        return in_array($statusCode, ['ACTIVE', 'NORMAL', 'OPEN', 'REGULAR', 'RESUMED', 'RESUME_TRADING'], true);
+    }
+
+    private function isSuspensionStartStatusCode(string $statusCode): bool
+    {
+        $statusCode = $this->normalizeCode($statusCode);
+
+        return (strpos($statusCode, 'SUSPEND') !== false || strpos($statusCode, 'HALT') !== false)
+            && ! $this->isSuspensionEndStatusCode($statusCode);
+    }
+
+    private function isSuspensionEndStatusCode(string $statusCode): bool
+    {
+        $statusCode = $this->normalizeCode($statusCode);
+
+        foreach (['UNSUSPEND', 'RESUME', 'SUSPENSION_LIFTED', 'SUSPEND_LIFTED', 'LIFTED_SUSPENSION'] as $needle) {
+            if (strpos($statusCode, $needle) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isEmptyCsvLine(array $line)

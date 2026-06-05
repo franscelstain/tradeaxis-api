@@ -33,13 +33,14 @@ This inventory records the operator-runtime proof for the public market-data com
 ## Command Registry Proof
 
 Command: `php artisan --env=testing list market-data`.
-Result: exit 0, current source reports 28 public market-data commands registered. The 2026-05-20 matrix remains the historical 20-command runtime fixture proof; the lifecycle backfill command is public in the current source, the provider-smoke overlay added the safe live-provider command surface and final provider PASS proof, the 2026-06-03 extensions add proof-only full-range current evidence/replay orchestration plus dry-run/apply guarded sector membership, sector-index CSV bar import, and sector-index API bar import, and the 2026-06-04 extension adds dry-run/apply guarded corporate-action plus trading-status source imports.
+Result: exit 0, current source reports 29 public market-data commands registered. The 2026-05-20 matrix remains the historical 20-command runtime fixture proof; the lifecycle backfill command is public in the current source, the provider-smoke overlay added the safe live-provider command surface and final provider PASS proof, the 2026-06-03 extensions add proof-only full-range current evidence/replay orchestration plus dry-run/apply guarded sector membership, sector-index CSV bar import, and sector-index API bar import, the 2026-06-04 event-risk extension adds dry-run/apply guarded corporate-action plus trading-status source imports, and the current 2026-06-04 missing-ticker extension adds targeted lifecycle backfill for current `eod_bars` ticker/date gaps.
 
 | Command | Registered | Help Proof | Signature/Docs Sync | Guard Decision |
 |---|---:|---:|---|---|
 | `market-data:daily` | PASS | PASS | `--requested_date`, `--source_mode`, optional pipeline flags | command-owned date validation |
 | `market-data:backfill` | PASS | PASS | parser args optional only for command-owned missing-input output; operator contract still requires start/end dates | `COMMAND_MISSING_REQUIRED_INPUT`, date validation |
 | `market-data:backfill:lifecycle` | PASS | PASS | start/end range, source mode, plan/diagnose/resume/evidence/replay options | lifecycle orchestrator owns date/source/checkpoint validation |
+| `market-data:backfill:missing-tickers` | PASS | PASS | start/end range, `source_mode=api`, `--ticker_codes`, plan/resume/error-policy/evidence/replay options | ticker-master/current-bars gap scan; plan is non-mutating; lifecycle orchestrator owns promote/evidence/replay |
 | `market-data:promote` | PASS | PASS | `--requested_date` or `--run_id`, force replace guarded | date validation, force reason guard |
 | `market-data:run:finalize` | PASS | PASS | `--requested_date`, `--source_mode`, `--run_id` | finalize/pointer contract |
 | `market-data:eod-bars:ingest` | PASS | PASS | date/source options plus explicit `--request_mode` for stage-by-stage publish proof | command-owned request-mode validation + pipeline input validation |
@@ -68,14 +69,15 @@ Result: exit 0, current source reports 28 public market-data commands registered
 
 ## Provider-Smoke Safe-Mode Overlay
 
-`market-data:provider:smoke` is part of the current public command surface. Including `market-data:backfill:lifecycle`, `market-data:evidence-replay:full-range-current`, `market-data:sectors:import-memberships`, `market-data:sector-indexes:import-bars`, `market-data:sector-indexes:ingest-api`, `market-data:events:import-corporate-actions`, and `market-data:events:import-trading-status` brings the current command count to 28. The provider overlay is intentionally separated from the 2026-05-20 seeded fixture matrix because live provider behavior is environment/upstream dependent; the full-range evidence/replay extension is proof-only and uses existing current publications, while sector/event imports only write source, membership, or benchmark bar rows after CSV/API validation and explicit apply.
+`market-data:provider:smoke` is part of the current public command surface. Including `market-data:backfill:lifecycle`, `market-data:evidence-replay:full-range-current`, `market-data:sectors:import-memberships`, `market-data:sector-indexes:import-bars`, `market-data:sector-indexes:ingest-api`, `market-data:events:import-corporate-actions`, `market-data:events:import-trading-status`, and `market-data:backfill:missing-tickers` brings the current command count to 29. The provider overlay is intentionally separated from the 2026-05-20 seeded fixture matrix because live provider behavior is environment/upstream dependent; the full-range evidence/replay extension is proof-only and uses existing current publications, sector/event imports only write source, membership, or benchmark/source rows after CSV/API validation and explicit apply, and missing-ticker backfill enters the normal lifecycle only for current bar gaps.
 
 Current proof from this reconciliation:
 
 ```text
-php artisan list market-data -> 28 public market-data commands registered
+php artisan list market-data -> 29 public market-data commands registered
 php artisan market-data:provider:smoke --help -> exit 0
 php artisan market-data:backfill:lifecycle --help -> exit 0
+php artisan market-data:backfill:missing-tickers --help -> exit 0
 php artisan market-data:evidence-replay:full-range-current --help -> exit 0
 php artisan market-data:sector-indexes:ingest-api --help -> exit 0
 php artisan market-data:sector-indexes:import-bars --help -> exit 0
@@ -249,7 +251,7 @@ The prior enforced matrix kept these cases blocked because no isolated fixture p
 | Validation | Result |
 |---|---|
 | `php -l` changed command/test PHP files | PASS |
-| Final registry/help/provider-smoke/full-range-current/sector-import/event-import loop | PASS for current surface: `php artisan list market-data` exit 0; 28 public market-data commands registered; backfill lifecycle help exits 0; provider-smoke help exits 0; full-range current evidence/replay help exits 0; sector membership import help exits 0; sector index CSV bar import help exits 0; sector index API import help exits 0; corporate action import help exits 0; trading status import help exits 0; final provider smoke artifact records `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, and all non-destructive safety flags false. Historical 2026-05-20 fixture loop remains 20-command proof before lifecycle backfill, provider-smoke, full-range current proof orchestration, sector imports, and event imports were included in the current command surface count. |
+| Final registry/help/provider-smoke/full-range-current/sector-import/event-import/missing-ticker loop | PASS for current surface: `php artisan list market-data` exit 0; 29 public market-data commands registered; backfill lifecycle help exits 0; missing-ticker lifecycle help exits 0; provider-smoke help exits 0; full-range current evidence/replay help exits 0; sector membership import help exits 0; sector index CSV bar import help exits 0; sector index API import help exits 0; corporate action import help exits 0; trading status import help exits 0; final provider smoke artifact records `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`, and all non-destructive safety flags false. Historical 2026-05-20 fixture loop remains 20-command proof before lifecycle backfill, provider-smoke, full-range current proof orchestration, sector imports, event imports, and missing-ticker lifecycle were included in the current command surface count. |
 | Final invalid-input loop | PASS: daily/promote/backfill/evidence/replay/correction/snapshot/repair/purge/force-guard invalid cases exit 1 with `status=BLOCKED` and reason codes |
 | `vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php` | PASS: OK (57 tests, 341 assertions) |
 | `vendor/bin/phpunit tests/Unit/MarketData/CorrectionCommandsTest.php` | PASS: OK (11 tests, 60 assertions) |

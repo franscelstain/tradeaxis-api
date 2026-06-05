@@ -62,7 +62,7 @@ class TickerMasterRepository
         if ($delistedDateColumn) {
             $query->where(function ($sub) use ($delistedDateColumn, $tradeDate) {
                 $sub->whereNull($delistedDateColumn)
-                    ->orWhere($delistedDateColumn, '>=', $tradeDate);
+                    ->orWhere($delistedDateColumn, '>', $tradeDate);
             });
         }
 

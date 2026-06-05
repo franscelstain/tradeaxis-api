@@ -90,13 +90,14 @@ Scheduler proof is not live provider proof. Do not claim provider/API readiness 
 | `market-data:promote` | Explicit publish path | requested date/source, optional `--run_id`, optional force reason | `--force_replace=false` | coverage, seal, finalize, pointer, publication summary | Coverage/seal/pointer failure blocks readable output; next action follows reason code | import/promote, coverage |
 | `market-data:backfill` | Historical import-only range | `start_date`, `end_date`, source options | import-only range; no publish | case lines per date | Failed case does not imply readable; fix case then promote explicitly | backfill |
 | `market-data:backfill:lifecycle` | Historical full lifecycle range | `start_date`, `end_date`, `--source_mode`; optional `--plan`, `--with-evidence`, `--with-replay`, resume flags | `--plan` for non-mutating planning; normal execution is explicit | source acquisition, promote, evidence, replay, checkpoint summary | Source/provider failures are reason-coded; resume only failed checkpoints after review | backfill/lifecycle |
+| `market-data:backfill:missing-tickers` | Missing ticker/date lifecycle range | `start_date`, `end_date`, `--source_mode=api`; optional `--ticker_codes`, `--plan`, `--with-evidence`, `--with-replay` | `--plan` for non-mutating gap scan; normal execution is explicit | missing ticker counts, source acquisition, candidate row count, promote, evidence, replay | Use when ticker master has active/listed tickers missing from current `eod_bars`; fix provider/source failures before accepting | backfill/missing-tickers |
 | `market-data:evidence:export` | Export proof bundle | exactly one selector: run/correction/replay/date | no DB state mutation except artifact write | output path, run/publication/pointer/source/reason metadata | If metadata incomplete, treat proof as failed and rerun/export issue | evidence |
 | `market-data:evidence-replay:full-range-current` | Proof-only evidence/replay over current readable publications | optional start/end date; omitted range uses current publication pointer min/max | no API fetch, no import, no promote/finalize, no pointer switch | per-date run evidence, fixture path, replay MATCH/PASS, replay evidence, summary artifact | Missing current readable publication or replay mismatch blocks proof; use `--continue_on_error` only to collect all failures | evidence/replay/full-range |
 | `market-data:sector-indexes:ingest-api` | Fetch source-backed sector index OHLC bars from API | `start_date`, optional `end_date`, `--provider`, optional `--symbol_suffix` / `--symbol_map_json` | dry-run unless `--apply` | provider symbols, per-date fetched/upserted counts, missing benchmark codes, source reason codes | Fix provider symbols/source availability before apply; recompute/promote affected dates after apply | sector rotation |
 | `market-data:sector-indexes:import-bars` | Import source-backed sector index OHLC bars | CSV with `sector_index_code`, `trade_date`, `open`, `high`, `low`, `close`; optional `adj_close`, `volume` | dry-run unless `--apply` | row counts, valid rows, upsert count, benchmark codes, validation errors | Fix unknown sector index codes/OHLC ranges before apply; recompute/promote affected dates after apply | sector rotation |
 | `market-data:sectors:import-memberships` | Import source-backed ticker-sector membership | CSV with `ticker_code`, `sector_code`, `effective_from`; optional `effective_to`, `source_name`, `source_ref` | dry-run unless `--apply` | row counts, valid rows, upsert count, validation errors | Fix unknown tickers/sector codes/date ranges before apply; recompute/promote affected dates after apply | sector context |
 | `market-data:events:import-corporate-actions` | Import source-backed corporate action context | CSV with `ticker_code`, `action_date`, `action_type`; optional `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, action types, validation errors | Fix unknown tickers/date/type errors before apply; recompute/promote affected dates after apply | event-risk context |
-| `market-data:events:import-trading-status` | Import source-backed trading status, UMA, and suspension context | CSV with `ticker_code`, `trade_date`, `status_code`; optional `is_suspended`, `is_uma`, `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, status codes, validation errors | Fix unknown tickers/date/status errors before apply; recompute/promote affected dates after apply | event-risk context |
+| `market-data:events:import-trading-status` | Import source-backed trading status, UMA, suspension, and special-monitoring context | CSV with `ticker_code`, `trade_date`, `status_code`; optional `is_suspended`, `is_uma`, `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, status codes, validation errors | Fix unknown tickers/date/status errors before apply; suspension and special monitoring carry forward until clear/exit status; recompute/promote affected range from state start through clear/current after apply | event-risk context |
 | `market-data:replay:verify` | Verify executed run against fixture package | `run_id`, `fixture_path` | deterministic proof | replay id/status/mismatch reason | Mismatch blocks acceptance; next action is compare fixture/output and fix root cause | replay |
 | `market-data:replay:smoke` | Run built-in replay cases | `run_id` | deterministic smoke suite | valid/broken/missing/reason mismatch cases | Any failed case blocks readiness claim | replay |
 | `market-data:replay:backfill` | Replay verification over date range | start/end date, fixture case/root | deterministic range proof | case summaries | Failed case must be reason-coded and investigated | replay/backfill |
@@ -120,6 +121,7 @@ Help commands that must remain aligned with this runbook:
 php artisan market-data:daily --help
 php artisan market-data:promote --help
 php artisan market-data:backfill:lifecycle --help
+php artisan market-data:backfill:missing-tickers --help
 php artisan market-data:evidence:export --help
 php artisan market-data:evidence-replay:full-range-current --help
 php artisan market-data:sector-indexes:ingest-api --help
@@ -204,6 +206,14 @@ Required checks:
 - `pointer_switched=false`
 
 Manual file import must not become current/readable automatically. If the operator needs publication, use explicit promote.
+
+For many manual dates in one source-backed CSV, use lifecycle range instead of splitting files:
+
+```text
+php artisan market-data:backfill:lifecycle YYYY-MM-DD YYYY-MM-DD --source_mode=manual_file --input_file=storage/app/market_data/manual/eod-bars-range.csv --with-evidence --with-replay
+```
+
+The CSV must include `trade_date`; lifecycle filters the same input file per requested date and still runs coverage, indicators, eligibility, hash, seal, finalize, evidence, and replay per date.
 
 ## 5. Manual file promote flow
 

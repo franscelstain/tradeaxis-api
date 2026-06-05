@@ -15,7 +15,16 @@ class EodRunRepository
         return DB::transaction(function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId, $requestMode) {
             $activeRun = EodRun::query()
                 ->where('trade_date_requested', $requestedDate)
+                ->where('source', $sourceMode)
                 ->whereIn('lifecycle_state', ['PENDING', 'RUNNING', 'FINALIZING'])
+                ->where(function ($query) use ($requestMode) {
+                    if ($requestMode === null || trim((string) $requestMode) === '') {
+                        $query->whereNull('request_mode')->orWhere('request_mode', '');
+                        return;
+                    }
+
+                    $query->where('request_mode', $requestMode);
+                })
                 ->orderByDesc('run_id')
                 ->lockForUpdate()
                 ->first();

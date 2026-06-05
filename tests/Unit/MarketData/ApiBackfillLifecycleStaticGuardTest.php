@@ -54,6 +54,28 @@ class ApiBackfillLifecycleStaticGuardTest extends TestCase
         $this->assertStringContainsString('importDailyFromAcquiredRows', $orchestrator);
     }
 
+    public function test_missing_ticker_lifecycle_command_reuses_range_api_and_full_candidate_rows()
+    {
+        $kernel = file_get_contents($this->root.'/app/Console/Kernel.php');
+        $command = file_get_contents($this->root.'/app/Console/Commands/MarketData/BackfillMissingTickersCommand.php');
+        $orchestrator = file_get_contents($this->root.'/app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php');
+
+        $this->assertStringContainsString('BackfillMissingTickersCommand::class', $kernel);
+        $this->assertStringContainsString('market-data:backfill:missing-tickers', $command);
+        $this->assertStringContainsString('{--ticker_codes=}', $command);
+        $this->assertStringContainsString('executeMissingTickers', $command.$orchestrator);
+        $this->assertStringContainsString('resolveMissingTickerPlan', $orchestrator);
+        $this->assertStringContainsString('$fullUniverseRows', $orchestrator);
+        $this->assertStringContainsString('buildMissingTickerCandidateRows', $orchestrator);
+        $this->assertStringContainsString('loadCanonicalBarTickerIdsForTradeDate', $orchestrator);
+        $this->assertStringContainsString('loadBarsForTradeDate', $orchestrator);
+        $this->assertStringContainsString('importDailyFromAcquiredRows', $orchestrator);
+        $this->assertStringContainsString('promoteDaily', $orchestrator);
+        $this->assertStringContainsString('generateFixtureFromRun', $orchestrator);
+        $this->assertStringContainsString('verifyRunAgainstFixture', $orchestrator);
+        $this->assertStringContainsString('missing_ticker_backfill', $orchestrator);
+    }
+
     public function test_lifecycle_replay_is_gated_by_readability_and_evidence_success()
     {
         $orchestrator = file_get_contents($this->root.'/app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php');
@@ -90,6 +112,9 @@ class ApiBackfillLifecycleStaticGuardTest extends TestCase
         $this->assertStringContainsString('provider_error_sample', $command);
         $this->assertStringContainsString('SourceAcquisitionException $e', $orchestrator);
         $this->assertStringContainsString('blockedSourceAcquisitionSummary', $orchestrator);
+        $this->assertStringContainsString('missingTickerSourceAcquisitionShouldBlock', $orchestrator);
+        $this->assertStringContainsString('blockedMissingTickerSourceAcquisitionSummary', $orchestrator);
+        $this->assertStringContainsString('MISSING_TICKER_SOURCE_ACQUISITION_BLOCKED_BEFORE_IMPORT', $orchestrator);
         $this->assertStringContainsString('source_acquisition_diagnostics.json', $orchestrator);
         $this->assertStringContainsString('source_acquisition_checkpoint.json', $orchestrator);
         $this->assertStringContainsString('RUN_SOURCE_BAD_REQUEST', $adapter);

@@ -795,7 +795,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('getOrCreateCandidatePublication')
             ->once()
-            ->with(m::type(EodRun::class), 31)
+            ->with(m::type(EodRun::class), 31, true)
             ->andReturn($candidatePublication);
 
         $finalizeDecisions->shouldReceive('evaluate')
@@ -956,7 +956,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('getOrCreateCandidatePublication')
             ->once()
-            ->with(m::type(EodRun::class), 31)
+            ->with(m::type(EodRun::class), 31, true)
             ->andReturn($candidatePublication);
 
         $finalizeDecisions->shouldReceive('evaluate')
@@ -1133,7 +1133,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('getOrCreateCandidatePublication')
             ->once()
-            ->with(m::type(EodRun::class), 31)
+            ->with(m::type(EodRun::class), 31, true)
             ->andReturn($candidatePublication);
 
         $finalizeDecisions->shouldReceive('evaluate')
@@ -1285,7 +1285,7 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $publications->shouldReceive('getOrCreateCandidatePublication')
             ->once()
-            ->with(m::type(EodRun::class), 31)
+            ->with(m::type(EodRun::class), 31, true)
             ->andReturn($candidatePublication);
 
         $finalizeDecisions->shouldReceive('evaluate')

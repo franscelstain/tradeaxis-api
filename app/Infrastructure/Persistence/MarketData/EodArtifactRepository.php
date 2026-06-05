@@ -161,6 +161,66 @@ class EodArtifactRepository
         }
     }
 
+    public function replaceBarsHistoryFromPublication($tradeDate, $sourcePublicationId, $targetPublicationId, $runId)
+    {
+        if ($sourcePublicationId === null || $sourcePublicationId === '' || $targetPublicationId === null || $targetPublicationId === '') {
+            return;
+        }
+
+        $sourcePublicationId = (int) $sourcePublicationId;
+        $targetPublicationId = (int) $targetPublicationId;
+
+        if ($sourcePublicationId === $targetPublicationId) {
+            return;
+        }
+
+        DB::transaction(function () use ($tradeDate, $sourcePublicationId, $targetPublicationId, $runId) {
+            $sourceRows = $this->applyStableArtifactOrder(
+                DB::table('eod_bars_history')
+                    ->where('trade_date', $tradeDate)
+                    ->where('publication_id', $sourcePublicationId)
+            )->get();
+
+            if ($sourceRows->isEmpty()) {
+                $sourceRows = $this->applyStableArtifactOrder(
+                    DB::table('eod_bars')
+                        ->where('trade_date', $tradeDate)
+                        ->where('publication_id', $sourcePublicationId)
+                )->get();
+            }
+
+            if ($sourceRows->isEmpty()) {
+                return;
+            }
+
+            DB::table('eod_bars_history')
+                ->where('trade_date', $tradeDate)
+                ->where('publication_id', $targetPublicationId)
+                ->delete();
+
+            $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
+            $insert = [];
+            foreach ($sourceRows as $row) {
+                $insert[] = [
+                    'publication_id' => $targetPublicationId,
+                    'trade_date' => $row->trade_date,
+                    'ticker_id' => $row->ticker_id,
+                    'open' => $row->open,
+                    'high' => $row->high,
+                    'low' => $row->low,
+                    'close' => $row->close,
+                    'volume' => $row->volume,
+                    'adj_close' => $row->adj_close,
+                    'source' => $row->source,
+                    'run_id' => $runId,
+                    'created_at' => $now,
+                ];
+            }
+
+            DB::table('eod_bars_history')->insert($insert);
+        });
+    }
+
     public function loadBarsWindow($tradeDate, $lookbackDays, $requestedPublicationId = null)
     {
         $startDate = Carbon::parse($tradeDate)->subDays($lookbackDays + 10)->toDateString();
@@ -588,15 +648,8 @@ class EodArtifactRepository
 
     private function buildBarsMutationSummary($tradeDate, $publicationId, array $validRows, $useHistory, $includeRemoved = true)
     {
-        $table = $useHistory ? 'eod_bars_history' : 'eod_bars';
-        $query = DB::table($table)->where('trade_date', $tradeDate);
-
-        if ($useHistory) {
-            $query->where('publication_id', $publicationId);
-        }
-
         $existing = [];
-        foreach ($this->applyStableArtifactOrder($query)->get() as $row) {
+        foreach ($this->existingBarsForMutationSummary($tradeDate, $publicationId, $useHistory) as $row) {
             $row = (array) $row;
             $existing[(int) $row['ticker_id']] = $row;
         }
@@ -651,11 +704,66 @@ class EodArtifactRepository
             'updated_ticker_ids' => $updated,
             'removed_ticker_ids' => $removed,
             'changed_trade_dates' => $changedTradeDates,
-            'storage_target' => $table,
+            'storage_target' => $useHistory ? 'eod_bars_history' : 'eod_bars',
             'trade_date' => (string) $tradeDate,
             'publication_id' => $publicationId !== null ? (int) $publicationId : null,
             'mutation_detection_version' => 'eod_bar_mutation_v1',
         ];
+    }
+
+    private function existingBarsForMutationSummary($tradeDate, $publicationId, $useHistory)
+    {
+        if (! $useHistory) {
+            return $this->applyStableArtifactOrder(
+                DB::table('eod_bars')->where('trade_date', $tradeDate)
+            )->get();
+        }
+
+        $supersedesPublicationId = $this->supersededPublicationIdForCandidate($publicationId);
+        if ($supersedesPublicationId !== null) {
+            $historyBaseline = $this->applyStableArtifactOrder(
+                DB::table('eod_bars_history')
+                    ->where('trade_date', $tradeDate)
+                    ->where('publication_id', $supersedesPublicationId)
+            )->get();
+
+            if ($historyBaseline->count() > 0) {
+                return $historyBaseline;
+            }
+
+            $liveBaseline = $this->applyStableArtifactOrder(
+                DB::table('eod_bars')
+                    ->where('trade_date', $tradeDate)
+                    ->where('publication_id', $supersedesPublicationId)
+            )->get();
+
+            if ($liveBaseline->count() > 0) {
+                return $liveBaseline;
+            }
+        }
+
+        return $this->applyStableArtifactOrder(
+            DB::table('eod_bars_history')
+                ->where('trade_date', $tradeDate)
+                ->where('publication_id', $publicationId)
+        )->get();
+    }
+
+    private function supersededPublicationIdForCandidate($publicationId)
+    {
+        if ($publicationId === null || $publicationId === '') {
+            return null;
+        }
+
+        $publication = DB::table('eod_publications')
+            ->where('publication_id', $publicationId)
+            ->first();
+
+        if (! $publication || empty($publication->supersedes_publication_id)) {
+            return null;
+        }
+
+        return (int) $publication->supersedes_publication_id;
     }
 
     private function canonicalBarHash(array $row)
