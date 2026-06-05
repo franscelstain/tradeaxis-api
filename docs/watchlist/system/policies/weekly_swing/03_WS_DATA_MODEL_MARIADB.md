@@ -102,6 +102,6 @@ Field recommendation **MUST NOT** dipakai untuk memutuskan eligibility candidate
 ## Terminology Lock
 
 - `param_set_id` menunjuk row/instance paramset aktif yang dipakai untuk membentuk artifact.
-- `policy_version` menunjuk versi kontrak Weekly Swing yang sedang berlaku.
-- `schema_version` menunjuk versi schema paramset yang tervalidasi.
+- `policy_version` menunjuk label kontrak Weekly Swing yang sedang berlaku; nama field ini bukan klaim bahwa aplikasi sudah memiliki release/versioning runtime.
+- `schema_version` menunjuk label schema paramset yang tervalidasi; nama field ini bukan klaim versioning aplikasi.
 - Nama `paramset_version` tidak lagi normatif dan tidak boleh dipakai sebagai field meta runtime karena berpotensi mencampur tiga makna di atas.

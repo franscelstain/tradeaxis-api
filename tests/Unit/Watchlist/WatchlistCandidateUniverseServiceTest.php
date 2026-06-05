@@ -21,8 +21,8 @@ class WatchlistCandidateUniverseServiceTest extends TestCase
         $this->assertTrue($result['has_eligible_candidates']);
         $this->assertSame('WATCHLIST_CANDIDATE_UNIVERSE_READY', $result['reason_code']);
         $this->assertSame('WS', $result['policy_code']);
-        $this->assertSame('WS_EOD_RUNTIME_V1', $result['policy_version']);
-        $this->assertSame('WS_ACTIVE_BOOTSTRAP_V1', $result['paramset_code']);
+        $this->assertSame('WS_EOD_RUNTIME', $result['policy_version']);
+        $this->assertSame('WS_ACTIVE_BOOTSTRAP', $result['paramset_code']);
         $this->assertSame(4, $result['input_candidate_count']);
         $this->assertSame(1, $result['eligible_count']);
         $this->assertSame(3, $result['rejected_count']);

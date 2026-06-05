@@ -1,8 +1,8 @@
 {
   "policy_code": "WS",
-  "policy_version": "WS_EOD_RUNTIME_V1",
+  "policy_version": "WS_EOD_RUNTIME",
   "schema_version": "PARAMSET_JSON",
-  "paramset_code": "WS_FIXTURE_PARAMSET_VALID_V1",
+  "paramset_code": "WS_FIXTURE_PARAMSET_VALID",
   "data_contract": {
     "required_sources": {
       "value": [

@@ -59,6 +59,16 @@ Daftar reason code aktif saat ini harus tetap parity dengan `db/REASON_CODES_SEE
 - `WS_PLAN_HASH_MISMATCH`
 - `WS_PLAN_WRITEBACK_DETECTED`
 
+### PLAN grouping foundation reason codes
+
+Reason code berikut adalah reason code PLAN grouping foundation. Kode ini hanya menjelaskan membership group PLAN dan diagnostics AVOID. Kode ini bukan final recommendation, bukan confirm, bukan sell instruction, dan bukan execution instruction.
+
+- `WS_PLAN_TOP_PICK`
+- `WS_PLAN_SECONDARY`
+- `WS_PLAN_WATCH_ONLY`
+- `WS_PLAN_AVOID_LOW_SCORE`
+- `WS_PLAN_AVOID_EXCLUDED`
+
 
 ### RECOMMENDATION
 

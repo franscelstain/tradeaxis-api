@@ -1,8 +1,8 @@
 {
   "policy_code": "WS",
-  "policy_version": "WS_EOD_RUNTIME_V1",
+  "policy_version": "WS_EOD_RUNTIME",
   "schema_version": "PARAMSET_JSON",
-  "paramset_code": "WS_ACTIVE_BOOTSTRAP_V1",
+  "paramset_code": "WS_ACTIVE_BOOTSTRAP",
   "data_contract": {
     "required_sources": {
       "value": [

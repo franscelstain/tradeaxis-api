@@ -170,8 +170,8 @@ Forbidden backtest behavior:
 - using future price;
 - using future eligibility;
 - using final known dataset as if it existed historically;
-- mixing paramset versions without traceable artifact;
-- omitting universe, date range, or dataset version from evidence.
+- mixing paramset/code labels without traceable artifact;
+- omitting universe, date range, or dataset identity from evidence.
 
 ## Watchlist Implementation Update Rule
 
@@ -225,7 +225,7 @@ Final readiness may only be claimed after all of the following are true:
 - no raw/latest/`MAX(date)` bypass exists;
 - required indicators and eligibility guards are enforced;
 - scoring is deterministic and explainable;
-- paramset versioning is traceable;
+- paramset/code traceability is recorded;
 - recommendation output has acceptance tests;
 - backtest is no-lookahead and reproducible;
 - risk/liquidity/volatility gates exist;

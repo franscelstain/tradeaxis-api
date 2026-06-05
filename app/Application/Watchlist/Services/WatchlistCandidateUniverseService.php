@@ -6,8 +6,8 @@ class WatchlistCandidateUniverseService
 {
     public const DEFAULT_PARAMSET = [
         'policy_code' => 'WS',
-        'policy_version' => 'WS_EOD_RUNTIME_V1',
-        'paramset_code' => 'WS_ACTIVE_BOOTSTRAP_V1',
+        'policy_version' => 'WS_EOD_RUNTIME',
+        'paramset_code' => 'WS_ACTIVE_BOOTSTRAP',
         'liquidity' => [
             'min_dv20_idr' => 1000000000.0,
             'dv20_strong_idr' => 5000000000.0,

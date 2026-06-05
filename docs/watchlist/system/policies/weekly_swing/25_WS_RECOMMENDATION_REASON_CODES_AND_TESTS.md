@@ -16,6 +16,16 @@ Minimal reason code families yang sah:
 - `WS_REC_CAPITAL_INSUFFICIENT`
 - `WS_REC_MIN_LOT_NOT_AFFORDABLE`
 
+## A1. PLAN Grouping Reason-Code Boundary Reference
+
+Reason code berikut boleh muncul pada PLAN grouping output sebelum layer RECOMMENDATION berjalan. Kode ini bukan reason code recommendation final dan tidak boleh dipakai untuk menyimpulkan `recommended_flag`, `recommendation_label`, atau hasil CONFIRM.
+
+- `WS_PLAN_TOP_PICK`
+- `WS_PLAN_SECONDARY`
+- `WS_PLAN_WATCH_ONLY`
+- `WS_PLAN_AVOID_LOW_SCORE`
+- `WS_PLAN_AVOID_EXCLUDED`
+
 ## C. Acceptance Minima (LOCKED)
 
 Acceptance minimum recommendation **MUST** mencakup seluruh kasus berikut:

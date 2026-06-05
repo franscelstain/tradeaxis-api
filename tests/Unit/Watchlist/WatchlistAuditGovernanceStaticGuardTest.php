@@ -28,7 +28,7 @@ class WatchlistAuditGovernanceStaticGuardTest extends TestCase
     {
         $status = $this->readProjectFile('docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md');
 
-        $this->assertStringContainsString('PHASE_3_SCORING_FOUNDATION_PARTIAL / NOT_PRODUCTION_READY', $status);
+        $this->assertStringContainsString('PHASE_4_PLAN_GROUPING_FOUNDATION_DONE / NOT_PRODUCTION_READY', $status);
         $this->assertStringContainsString('Production readiness | `NOT_READY`', $status);
         $this->assertStringContainsString('Watchlist is not production-ready.', $status);
         $this->assertStringNotContainsString('FULLY'.'_PRODUCTION_READY', $status);
@@ -46,7 +46,7 @@ class WatchlistAuditGovernanceStaticGuardTest extends TestCase
             'WL-CONTRACT-004 — INDICATOR VALIDITY CONTRACT',
             'WL-CONTRACT-005 — ELIGIBILITY CONTRACT',
             'WL-CONTRACT-006 — SCORING DETERMINISM CONTRACT',
-            'WL-CONTRACT-007 — PARAMSET VERSION CONTRACT',
+            'WL-CONTRACT-007 — PARAMSET TRACEABILITY CONTRACT',
             'WL-CONTRACT-008 — SIGNAL EXPLAINABILITY CONTRACT',
             'WL-CONTRACT-009 — BACKTEST NO-LOOKAHEAD CONTRACT',
             'WL-CONTRACT-010 — BACKTEST REPRODUCIBILITY CONTRACT',
@@ -55,6 +55,8 @@ class WatchlistAuditGovernanceStaticGuardTest extends TestCase
             'WL-CONTRACT-013 — AUDIT ARTIFACT CONTRACT',
             'WL-CONTRACT-014 — DOCS SYNC CONTRACT',
             'WL-CONTRACT-015 — PRODUCTION READINESS CONTRACT',
+            'WL-CONTRACT-016 — PLAN GROUPING DETERMINISM CONTRACT',
+            'WL-CONTRACT-017 — PLAN GROUP BOUNDARY CONTRACT',
         ];
 
         foreach ($requiredContracts as $contract) {
@@ -86,7 +88,7 @@ class WatchlistAuditGovernanceStaticGuardTest extends TestCase
         $status = $this->readProjectFile('docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->readProjectFile('docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md');
 
-        $session = 'WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION';
+        $session = 'WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION';
 
         $this->assertStringContainsString($session, $status);
         $this->assertStringContainsString($session, $tracker);

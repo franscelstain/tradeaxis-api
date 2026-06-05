@@ -13,7 +13,7 @@
 -- become the owner of reason-code meaning.
 
 -- REASON_CODES_SEED.sql
--- Policy: WS_EOD_RUNTIME_V1
+-- Policy: WS_EOD_RUNTIME
 -- Table: watchlist_reason_codes(policy_code + reason_code composite PK, scope, severity, short_id, description_id, description_en)
 
 -- Tabel global watchlist_reason_codes didefinisikan oleh: ../../../db/05_DB_DDL_MARIADB.sql
@@ -115,6 +115,21 @@ INSERT INTO watchlist_reason_codes (policy_code, reason_code, scope, severity, s
 ('WS','WS_GRP_AVOID','PLAN','INFO','grp_avoid',
  'Masuk grup AVOID (ditolak oleh guard/data readiness atau kualitas sangat rendah).',
  'Classified into AVOID (rejected by guards/readiness or very low quality).'),
+('WS','WS_PLAN_TOP_PICK','PLAN','INFO','plan_top_pick',
+ 'Masuk PLAN group TOP_PICKS dari hasil scoring; bukan final recommendation.',
+ 'Classified into PLAN group TOP_PICKS from scoring output; not a final recommendation.'),
+('WS','WS_PLAN_SECONDARY','PLAN','INFO','plan_secondary',
+ 'Masuk PLAN group SECONDARY dari hasil scoring; bukan final recommendation.',
+ 'Classified into PLAN group SECONDARY from scoring output; not a final recommendation.'),
+('WS','WS_PLAN_WATCH_ONLY','PLAN','INFO','plan_watch_only',
+ 'Masuk PLAN group WATCH_ONLY untuk dipantau; bukan final recommendation.',
+ 'Classified into PLAN group WATCH_ONLY for monitoring; not a final recommendation.'),
+('WS','WS_PLAN_AVOID_LOW_SCORE','PLAN','INFO','plan_avoid_low_score',
+ 'Masuk diagnostics AVOID karena score_total di bawah ambang PLAN aktif.',
+ 'Classified into diagnostics AVOID because score_total is below the active PLAN threshold.'),
+('WS','WS_PLAN_AVOID_EXCLUDED','PLAN','INFO','plan_avoid_excluded',
+ 'Masuk diagnostics AVOID karena excluded dari scoring atau tidak valid untuk PLAN active group.',
+ 'Classified into diagnostics AVOID because it was excluded by scoring or invalid for active PLAN groups.'),
 
 ('WS','WS_SEL_PCT','PLAN','INFO','sel_pct',
  'Dipilih tampil karena masuk kuota persentil teratas dan lolos ambang skor.',

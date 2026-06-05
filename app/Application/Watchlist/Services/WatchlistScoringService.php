@@ -6,8 +6,8 @@ class WatchlistScoringService
 {
     public const DEFAULT_PARAMSET = [
         'policy_code' => 'WS',
-        'policy_version' => 'WS_EOD_RUNTIME_V1',
-        'paramset_code' => 'WS_ACTIVE_BOOTSTRAP_V1',
+        'policy_version' => 'WS_EOD_RUNTIME',
+        'paramset_code' => 'WS_ACTIVE_BOOTSTRAP',
         'setup' => [
             'roc_lo' => 0.02,
             'roc_hi' => 0.15,

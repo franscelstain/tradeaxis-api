@@ -14,21 +14,22 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION`
+`WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 Status:
-`PARTIAL` for Phase 3 scoring foundation until local PHPUnit confirms the new unit/static guards; readiness-critical contracts remain `PARTIAL` because no watchlist command/API runtime proof or artifact/log evidence exists yet.
+`DONE for Phase 4 unit/static scope` for PLAN grouping foundation. Local PHP lint and PHPUnit validation passed in this session; readiness-critical contracts remain `PARTIAL` because no watchlist command/API runtime proof or artifact/log evidence exists yet.
 
 Scope:
-Create deterministic PLAN scoring on top of `WatchlistCandidateUniverseService`, with component scores, weighted mean total score, factor breakdown, paramset traceability, and deterministic ranking. Recommendation, confirm, backtest, API, command, scheduler, portfolio, and execution remain out of scope.
+Create deterministic PLAN grouping on top of `WatchlistScoringService`, with TOP_PICKS, SECONDARY, WATCH_ONLY, diagnostics AVOID, grouping threshold/limit validation, paramset traceability, scoring metadata traceability, deterministic ranking, and ticker-id dedupe. Final recommendation, confirm, backtest, API, command, scheduler, portfolio, and execution remain out of scope.
 
 Evidence:
 
-- `app/Application/Watchlist/Services/WatchlistScoringService.php` created.
-- `tests/Unit/Watchlist/WatchlistScoringServiceTest.php` added.
-- `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php` added.
-- Candidate universe/read model pass-through updated for scoring metrics and `ticker_id` deterministic tie-break input.
-- Existing governance static guards are updated to track the active scoring session.
+- `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php` created.
+- `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php` added.
+- `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php` added.
+- Bootstrap labels normalized to `WS_EOD_RUNTIME` and `WS_ACTIVE_BOOTSTRAP`; no `_V1` suffix is used for watchlist runtime/bootstrap labels because the application does not have formal app/runtime versioning yet.
+- PLAN grouping reason codes added to `07_WS_REASON_CODES_AND_HASH.md`, `25_WS_RECOMMENDATION_REASON_CODES_AND_TESTS.md`, and support seed `db/REASON_CODES_SEED.sql`.
+- Existing governance static guards are updated to track the active PLAN grouping session.
 
 ## Status Rules
 
@@ -53,7 +54,7 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-004 | INDICATOR VALIDITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-005 | ELIGIBILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-006 | SCORING DETERMINISM CONTRACT | `PARTIAL` |
-| WL-CONTRACT-007 | PARAMSET VERSION CONTRACT | `PARTIAL` |
+| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `NOT_STARTED` |
 | WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `NOT_STARTED` |
@@ -62,6 +63,8 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `NOT_STARTED` |
 | WL-CONTRACT-014 | DOCS SYNC CONTRACT | `PARTIAL` |
 | WL-CONTRACT-015 | PRODUCTION READINESS CONTRACT | `PARTIAL` |
+| WL-CONTRACT-016 | PLAN GROUPING DETERMINISM CONTRACT | `PARTIAL` |
+| WL-CONTRACT-017 | PLAN GROUP BOUNDARY CONTRACT | `PARTIAL` |
 
 ---
 
@@ -343,6 +346,7 @@ Owner docs:
 Implementation files:
 
 - `app/Application/Watchlist/Services/WatchlistScoringService.php`
+- `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
 - `app/Application/Watchlist/Services/WatchlistCandidateUniverseService.php` scoring input metric pass-through
 - `app/Application/Watchlist/Services/WatchlistMarketDataConsumerReadService.php` ticker id pass-through
 - `app/Infrastructure/Persistence/MarketData/MarketDataWatchlistReadRepository.php` ticker id read-surface pass-through
@@ -351,36 +355,40 @@ Tests:
 
 - `tests/Unit/Watchlist/WatchlistScoringServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
 
 Runtime proof:
 `NOT_STARTED` — no watchlist command/API exists yet.
 
 Current gaps:
 
-- Scoring engine foundation exists for service + unit/static scope, but local PHPUnit proof is still required.
+- Scoring engine foundation is baseline local PASS for Phase 3 unit/static scope.
+- PLAN grouping foundation consumes scoring output and preserves deterministic sort keys for Phase 4 unit/static scope.
 - `score_total` is deterministic `WEIGHTED_MEAN` over momentum, breakout, volume, and risk components.
 - Component scores and total score are clamped to `0..1`.
 - Ranking sort keys are deterministic: `score_total_desc`, `score_breakout_desc`, `score_momentum_desc`, `dv20_idr_desc`, `atr14_pct_asc`, `ticker_id_asc`.
+- PLAN grouping deduplicates duplicate `ticker_id` by deterministic best item before active group assignment.
 - Contract is not `LOCKED` because there is no command/API runtime proof and no persisted artifact/log output yet.
 
 Acceptance criteria:
 
 - Same publication input + same paramset + same universe produces the same score and ranking.
 - Tie-breaking is deterministic.
-- Tests cover deterministic output.
+- Tests cover deterministic scoring output and deterministic PLAN grouping output.
 
 Last update:
-`2026-05-29 — WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-007 — PARAMSET VERSION CONTRACT
+## WL-CONTRACT-007 — PARAMSET TRACEABILITY CONTRACT
 
 Contract ID:
 `WL-CONTRACT-007`
 
 Title:
-`PARAMSET VERSION CONTRACT`
+`PARAMSET TRACEABILITY CONTRACT`
 
 Status:
 `PARTIAL`
@@ -396,6 +404,7 @@ Implementation files:
 
 - `app/Application/Watchlist/Services/WatchlistCandidateUniverseService.php`
 - `app/Application/Watchlist/Services/WatchlistScoringService.php`
+- `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
 
 Tests:
 
@@ -403,28 +412,33 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistCandidateUniverseStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistScoringServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
 
 Runtime proof:
 `NOT_STARTED` — no watchlist command/API exists yet.
 
 Current gaps:
 
-- Candidate universe records `policy_code`, `policy_version`, and `paramset_code`.
-- Scoring output records `policy_code`, `policy_version`, `paramset_code`, and `paramset_snapshot`.
+- Candidate universe records canonical policy/paramset labels: `policy_code`, `policy_version`, and `paramset_code`.
+- Scoring output records canonical policy/paramset labels plus `paramset_snapshot`.
+- PLAN grouping output records canonical policy/paramset labels plus `paramset_snapshot.grouping`.
+- Current bootstrap labels intentionally do not use `_V1` suffix because the watchlist application does not have formal app/runtime versioning yet.
 - Candidate universe accepts nested `{ value: ... }` paramset shape for the gate fields it owns.
 - Scoring accepts nested `{ value: ... }` weight shape for the fields it owns and rejects invalid weights.
+- PLAN grouping accepts nested `{ value: ... }` grouping threshold/limit shape for the fields it owns and rejects invalid threshold/limit contracts.
 - Candidate universe rejects invalid ATR percent-point units above `1.0`.
 - Scoring rejects candidate ATR unit drift above `1.0`.
 - Full runtime paramset loader/validator, persistence, hash, promotion, and artifact recording are still not implemented.
 
 Acceptance criteria:
 
-- Every scoring/recommendation/backtest execution has traceable paramset version.
+- Every scoring/recommendation/backtest execution has traceable policy/paramset identity.
 - Paramset validation rejects missing, unknown, invalid, or type-drifted fields.
-- Artifact output records paramset version/hash.
+- Artifact output records policy/paramset identity and hash when runtime artifacts are introduced.
 
 Last update:
-`2026-05-29 — WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ---
 
@@ -450,19 +464,24 @@ Owner docs:
 Implementation files:
 
 - `app/Application/Watchlist/Services/WatchlistScoringService.php`
+- `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
 
 Tests:
 
 - `tests/Unit/Watchlist/WatchlistScoringServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
 
 Runtime proof:
 `NOT_STARTED` — no watchlist command/API exists yet.
 
 Current gaps:
 
-- PLAN scoring explainability exists via `score_components`, `score_weights`, `factor_breakdown`, and `reason_codes`, but local PHPUnit proof is still required.
+- PLAN scoring explainability exists via `score_components`, `score_weights`, `factor_breakdown`, and `reason_codes`.
+- PLAN grouping explainability exists via `group_reason_code`, augmented `reason_codes`, `group_contract`, `paramset_snapshot.grouping`, and summary counts.
 - Explainability reason codes used by scoring are traceable to Weekly Swing owner docs / reason seed.
+- PLAN grouping reason codes `WS_PLAN_TOP_PICK`, `WS_PLAN_SECONDARY`, `WS_PLAN_WATCH_ONLY`, `WS_PLAN_AVOID_LOW_SCORE`, and `WS_PLAN_AVOID_EXCLUDED` are traceable to Weekly Swing reason-code docs / support seed.
 - Recommendation explainability is not implemented yet because recommendation engine remains out of scope.
 - Contract is not `LOCKED` because there is no command/API runtime proof and no artifact/log output yet.
 
@@ -472,7 +491,7 @@ Acceptance criteria:
 - Output includes enough factor breakdown to audit why a ticker is included, watched, avoided, or rejected.
 
 Last update:
-`2026-05-29 — WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ---
 
@@ -549,7 +568,7 @@ Current gaps:
 
 Acceptance criteria:
 
-- Backtest can be replayed with the same dataset version, publication scope, paramset version, universe, date range, and artifact manifest.
+- Backtest can be replayed with the same dataset identity, publication scope, paramset identity, universe, date range, and artifact manifest.
 - Replayed result matches expected metrics and output contract.
 
 Last update:
@@ -597,10 +616,12 @@ Current gaps:
 
 - Runtime risk/liquidity/volume gate exists at service + unit/static test level.
 - Scoring risk/volume quality components now exist at service + unit/static scope.
+- PLAN grouping consumes scored risk/volume-aware output without rewriting risk/liquidity formulas.
 - Guards implemented: `dv20_idr >= min_dv20_idr`, `atr14_pct >= min_atr14_pct`, `atr14_pct <= max_atr14_pct`, `vol_ratio >= min_vol_ratio`.
 - Canonical rejection reason priority implemented: `WS_DATA_MISSING`, `WS_LIQ_FAIL`, `WS_ATR_LOW`, `WS_ATR_HIGH`, `WS_VOLR_FAIL`.
 - Explainable row output includes `required_ok`, `guard_ok`, `eligible_plan`, `canonical_fail_reason_code`, `reason_codes`, `missing_fields`, `gate_metrics`, and `gate_thresholds`.
 - Scoring output includes risk factor breakdown and rejects ATR unit drift above `1.0`.
+- PLAN grouping keeps low-score candidates in diagnostics `AVOID` and prevents scoring exclusions from entering active PLAN groups.
 - Contract is not `LOCKED` because no command/API runtime proof, artifact output, backtest equivalence proof, or persisted universe snapshot exists yet.
 
 Acceptance criteria:
@@ -611,7 +632,7 @@ Acceptance criteria:
 - Production PLAN universe and future backtest universe can compare pass/fail + reason using canonical fields.
 
 Last update:
-`2026-05-29 — WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ---
 
@@ -723,14 +744,19 @@ Implementation files:
 - `tests/Unit/Watchlist/WatchlistMarketDataConsumerReadModelStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistCandidateUniverseStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
 - `docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md`
 - `docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md`
+- `docs/watchlist/system/policies/weekly_swing/07_WS_REASON_CODES_AND_HASH.md`
+- `docs/watchlist/system/policies/weekly_swing/25_WS_RECOMMENDATION_REASON_CODES_AND_TESTS.md`
+- `docs/watchlist/system/policies/weekly_swing/db/REASON_CODES_SEED.sql`
 
 Tests:
 
 - `WatchlistAuditGovernanceStaticGuardTest` added for initial docs guard.
 - `WatchlistMarketDataConsumerReadModelStaticGuardTest` added for Phase 1 docs/code synchronization guard.
 - `WatchlistScoringStaticGuardTest` added for Phase 3 docs/code synchronization guard.
+- `WatchlistPlanGroupingStaticGuardTest` added for Phase 4 docs/code synchronization guard.
 
 Runtime proof:
 `NOT_STARTED`
@@ -740,7 +766,8 @@ Current gaps:
 - Phase 1 code/test/docs sync completed for market-data consumer read model.
 - Phase 2 code/test/docs sync completed for candidate universe.
 - Phase 3 code/test/docs sync completed for scoring foundation.
-- Contract remains `PARTIAL` because future grouping/recommendation/backtest/API/runtime artifact docs are not implemented yet.
+- Phase 4 code/test/docs sync completed for PLAN grouping foundation.
+- Contract remains `PARTIAL` because future final recommendation/backtest/API/runtime artifact docs are not implemented yet.
 
 - Docs sync foundation exists, but future code/config/schema/test/runtime changes still need ongoing enforcement.
 - Runtime watchlist docs sync cannot be proven until runtime watchlist code exists.
@@ -752,7 +779,7 @@ Acceptance criteria:
 - Tracker contracts reflect actual code/test/runtime status without overclaim.
 
 Last update:
-`2026-05-29 — WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ---
 
@@ -780,25 +807,27 @@ Implementation files:
 - `app/Application/Watchlist/Services/WatchlistMarketDataConsumerReadService.php`
 - `app/Application/Watchlist/Services/WatchlistCandidateUniverseService.php`
 - `app/Application/Watchlist/Services/WatchlistScoringService.php`
+- `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
 
 Tests:
 
 - watchlist read model unit/static tests
 - watchlist candidate universe unit/static tests
 - watchlist scoring unit/static tests
+- watchlist PLAN grouping unit/static tests
 
 Runtime proof:
 `NOT_STARTED`
 
 Current gaps:
 
-- Read model, candidate universe, and scoring foundation exist at unit/static scope.
+- Read model, candidate universe, scoring foundation, and PLAN grouping foundation exist at unit/static scope.
 - Runtime proof is not available.
 - Artifacts are not available.
 - No API endpoint exists.
 - No watchlist command surface exists.
 - No production watchlist schema/migration exists.
-- No PLAN grouping/recommendation/backtest/portfolio-aware integration exists.
+- No final recommendation/backtest/portfolio-aware integration exists.
 - Core contracts are not `LOCKED` because runtime proof and artifact/log evidence are missing.
 
 Acceptance criteria:
@@ -807,7 +836,8 @@ Acceptance criteria:
 - No raw/latest/`MAX(date)` bypass.
 - Required indicator and eligibility guards locked.
 - Scoring deterministic and explainable.
-- Paramset version traceable.
+- PLAN grouping deterministic and explainable.
+- Paramset identity traceable.
 - Recommendation output tested.
 - Backtest no-lookahead and reproducible.
 - Risk gates present.
@@ -817,27 +847,135 @@ Acceptance criteria:
 - Docs sync complete.
 
 Last update:
-`2026-05-29 — WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+
+---
+
+## WL-CONTRACT-016 — PLAN GROUPING DETERMINISM CONTRACT
+
+Contract ID:
+`WL-CONTRACT-016`
+
+Title:
+`PLAN GROUPING DETERMINISM CONTRACT`
+
+Status:
+`PARTIAL`
+
+Owner docs:
+
+- `docs/watchlist/system/policies/weekly_swing/08_WS_PLAN_ALGORITHM.md`
+- `docs/watchlist/system/policies/weekly_swing/09_WS_DYNAMIC_SELECTION_DETERMINISTIC.md`
+- `docs/watchlist/system/policies/weekly_swing/04_WS_PARAMSET_JSON_CONTRACT.md`
+- `docs/watchlist/system/policies/weekly_swing/05_WS_PARAMETER_REGISTRY_COMPLETE.md`
+
+Implementation files:
+
+- `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
+- upstream source: `app/Application/Watchlist/Services/WatchlistScoringService.php`
+
+Tests:
+
+- `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
+
+Runtime proof:
+`NOT_STARTED` — no watchlist command/API exists yet.
+
+Current gaps:
+
+- PLAN grouping service exists for Phase 4 unit/static scope.
+- `TOP_PICKS`, `SECONDARY`, `WATCH_ONLY`, and diagnostics `AVOID` are formed deterministically from Phase 3 scored output.
+- Default bootstrap thresholds and limits are validated: top `0.70/5`, secondary `0.55/10`, watch-only `0.40/20`, avoid below `0.40`.
+- Sort keys follow Phase 3 scoring contract: `score_total_desc`, `score_breakout_desc`, `score_momentum_desc`, `dv20_idr_desc`, `atr14_pct_asc`, `ticker_id_asc`.
+- Duplicate `ticker_id` is resolved by deterministic best item.
+- Contract is not `LOCKED` because there is no command/API runtime proof and no artifact/log output yet.
+
+Acceptance criteria:
+
+- Same scored input + same grouping paramset produces identical PLAN groups.
+- Active PLAN groups do not depend on input array order.
+- Duplicate ticker IDs do not enter more than one active PLAN group.
+- Overflow from TOP_PICKS and SECONDARY follows deterministic threshold/limit rules.
+
+Last update:
+`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+
+---
+
+## WL-CONTRACT-017 — PLAN GROUP BOUNDARY CONTRACT
+
+Contract ID:
+`WL-CONTRACT-017`
+
+Title:
+`PLAN GROUP BOUNDARY CONTRACT`
+
+Status:
+`PARTIAL`
+
+Owner docs:
+
+- `docs/watchlist/system/policies/weekly_swing/01_WS_OVERVIEW.md`
+- `docs/watchlist/system/policies/weekly_swing/02_WS_CANONICAL_RUNTIME_FLOW.md`
+- `docs/watchlist/system/policies/weekly_swing/08_WS_PLAN_ALGORITHM.md`
+- `docs/watchlist/system/policies/weekly_swing/09_WS_DYNAMIC_SELECTION_DETERMINISTIC.md`
+- `docs/watchlist/system/policies/weekly_swing/10_WS_CONFIRM_OVERLAY.md`
+- `docs/watchlist/system/policies/weekly_swing/22_WS_RECOMMENDATION_OVERVIEW.md`
+- `docs/watchlist/system/policies/weekly_swing/23_WS_RECOMMENDATION_INPUT_OUTPUT_CONTRACT.md`
+- `docs/watchlist/system/policies/weekly_swing/24_WS_RECOMMENDATION_ALGORITHM.md`
+
+Implementation files:
+
+- `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
+
+Tests:
+
+- `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
+
+Runtime proof:
+`NOT_STARTED` — no watchlist command/API exists yet.
+
+Current gaps:
+
+- `TOP_PICKS` and `SECONDARY` are implemented only as PLAN groups, not final recommendation membership.
+- Grouping output explicitly carries `not_final_recommendation = true`.
+- Grouping does not read confirm, portfolio, execution, raw market-data, or backtest inputs.
+- Scoring excluded candidates and invalid scored items do not enter active PLAN groups.
+- Contract is not `LOCKED` because there is no command/API runtime proof and no artifact/log output yet.
+
+Acceptance criteria:
+
+- PLAN grouping consumes `WatchlistScoringService` only.
+- PLAN grouping does not create recommendation labels, confirm state, order/execution actions, portfolio allocation, or backtest metrics.
+- `AVOID` remains diagnostics and must not be interpreted as sell recommendation or execution instruction.
+- Future recommendation layer must consume PLAN grouping output without mutating PLAN group membership.
+
+Last update:
+`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ## Next Required Contract Work
 
 Next session must target:
 
-`WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`WATCHLIST — FINAL RECOMMENDATION LAYER FOUNDATION EXECUTION SESSION`
 
 Priority contracts:
 
 1. `WL-CONTRACT-006`
 2. `WL-CONTRACT-007`
 3. `WL-CONTRACT-008`
-4. `WL-CONTRACT-014`
-5. `WL-CONTRACT-015`
+4. `WL-CONTRACT-016`
+5. `WL-CONTRACT-017`
+6. `WL-CONTRACT-014`
+7. `WL-CONTRACT-015`
 
 Scope boundary:
 
-- consume `WatchlistScoringService` output;
-- create deterministic PLAN grouping only;
-- do not create final recommendation membership;
+- consume `WatchlistPlanGroupingService` output;
+- create final recommendation foundation only from PLAN groups;
+- preserve that recommendation can exist without confirm and can be empty even when `TOP_PICKS`/`SECONDARY` exists;
 - do not create confirm overlay;
 - do not create portfolio/execution logic;
 - do not create backtest/API/command runtime yet unless explicitly scoped in a later session.

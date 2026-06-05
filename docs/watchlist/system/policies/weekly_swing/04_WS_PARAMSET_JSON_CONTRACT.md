@@ -47,9 +47,11 @@ Top-level key di luar daftar ini dianggap unknown root key dan tidak termasuk ko
 Field meta root berikut wajib ada:
 
 - `policy_code` — canonical internal policy code saat ini: `WS`
-- `policy_version` — canonical policy version string untuk Weekly Swing paramset aktif
-- `schema_version` — canonical schema version string; fixture aktif saat ini memakai `PARAMSET_JSON`
+- `policy_version` — canonical policy contract label untuk Weekly Swing paramset aktif; field ini bukan klaim aplikasi sudah memiliki release/versioning runtime
+- `schema_version` — canonical schema contract label; fixture aktif saat ini memakai `PARAMSET_JSON`
 - `paramset_code` — identifier paramset
+
+Catatan interpretasi: nilai bootstrap aktif tidak memakai suffix seperti `_V1`. Jika fixture/file support lama memakai suffix tersebut pada `fixture_id` atau nama file, itu adalah identifier artefak contoh, bukan versioning aplikasi.
 
 Untuk parity lintas runtime artifacts, `policy_code = WS` adalah canonical internal identifier. Runtime outputs dapat memakai `meta.policy = WEEKLY_SWING` sebagai runtime / display label untuk strategy yang sama.
 

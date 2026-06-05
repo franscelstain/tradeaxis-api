@@ -16,8 +16,8 @@ class WatchlistScoringServiceTest extends TestCase
         $this->assertTrue($result['ready']);
         $this->assertSame('WATCHLIST_SCORING_READY', $result['reason_code']);
         $this->assertSame('WS', $result['policy_code']);
-        $this->assertSame('WS_EOD_RUNTIME_V1', $result['policy_version']);
-        $this->assertSame('WS_ACTIVE_BOOTSTRAP_V1', $result['paramset_code']);
+        $this->assertSame('WS_EOD_RUNTIME', $result['policy_version']);
+        $this->assertSame('WS_ACTIVE_BOOTSTRAP', $result['paramset_code']);
         $this->assertSame('WEIGHTED_MEAN', $result['score_contract']['combine_mode']);
         $this->assertSame(1, $result['summary']['scored_count']);
 
@@ -161,8 +161,8 @@ class WatchlistScoringServiceTest extends TestCase
         $result = $service->scoreForTradeDate('2026-05-19');
 
         $this->assertSame('WS', $result['policy_code']);
-        $this->assertSame('WS_EOD_RUNTIME_V1', $result['policy_version']);
-        $this->assertSame('WS_ACTIVE_BOOTSTRAP_V1', $result['paramset_code']);
+        $this->assertSame('WS_EOD_RUNTIME', $result['policy_version']);
+        $this->assertSame('WS_ACTIVE_BOOTSTRAP', $result['paramset_code']);
         $this->assertSame('WatchlistScoringService', $result['source_contract']['consumer']);
         $this->assertSame('WatchlistCandidateUniverseService', $result['source_contract']['upstream']);
         $this->assertTrue($result['source_contract']['no_raw_market_data']);
@@ -218,8 +218,8 @@ class WatchlistScoringServiceTest extends TestCase
             'reason_code' => 'WATCHLIST_CANDIDATE_UNIVERSE_READY',
             'candidate_universe_reason_code' => 'WATCHLIST_CANDIDATE_UNIVERSE_READY',
             'policy_code' => 'WS',
-            'policy_version' => 'WS_EOD_RUNTIME_V1',
-            'paramset_code' => 'WS_ACTIVE_BOOTSTRAP_V1',
+            'policy_version' => 'WS_EOD_RUNTIME',
+            'paramset_code' => 'WS_ACTIVE_BOOTSTRAP',
             'eligible_candidates' => $eligibleCandidates,
             'rejected_candidates' => $rejectedCandidates,
         ];
@@ -251,8 +251,8 @@ class WatchlistScoringServiceTest extends TestCase
             'publication_version' => 1,
             'run_id' => 3,
             'policy_code' => 'WS',
-            'policy_version' => 'WS_EOD_RUNTIME_V1',
-            'paramset_code' => 'WS_ACTIVE_BOOTSTRAP_V1',
+            'policy_version' => 'WS_EOD_RUNTIME',
+            'paramset_code' => 'WS_ACTIVE_BOOTSTRAP',
             'eligible_plan' => true,
             'guard_ok' => true,
             'reason_codes' => ['WS_LIQ_STRONG', 'WS_RISK_IDEAL'],
