@@ -4336,3 +4336,31 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 - Auto-correction uses the existing correction-current lifecycle and must continue to preserve baseline lineage, coverage, hash, seal, finalize, pointer, evidence, and replay guards.
 - No fake readable/current state is allowed if baseline resolution, correction approval, promotion, or pointer validation fails.
 - No DB schema change and no ENV/config key was added in this final validation lock.
+
+---
+
+## 2026-06-05 - PROVIDER SMOKE ARTIFACT REFRESH + FULL MARKETDATA SUITE RE-RUN
+
+[STATUS]
+- `DONE` for refreshing the authoritative provider-smoke runtime artifact after a stale invalid-date artifact caused static guard failures.
+- `OPS_RUNTIME_PARITY_PASSED` remains valid because the refreshed artifact is a real dry-run provider PASS and the full MarketData unit suite passed.
+
+[ROOT_CAUSE]
+- The authoritative artifact `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt` had been overwritten with a fail-closed smoke attempt for `2025-11-30`.
+- That attempt correctly returned `provider_smoke_status=BLOCKED` / `reason_code=PROVIDER_EMPTY_OR_INVALID_RESPONSE` because the provider payload did not contain timestamp/quote data for that selected date.
+- The docs still claimed `OPS_RUNTIME_PARITY_PASSED`, so the static guards correctly rejected the stale blocked artifact.
+
+[RUNTIME_PROOF]
+- Refreshed command: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0`.
+- Refreshed artifact result: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `source_reason_code=none`, `http_status=200`, `returned_row_count=1`, `attempt_count=1`, `retry_max=0`, `retry_exhausted=false`.
+- Safety flags remained false: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+
+[VALIDATION]
+- `vendor\bin\phpunit tests\Unit\MarketData\ProviderSmokeSafeModeStaticGuardTest.php` -> OK (6 tests, 169 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData\ProductionValidationRuntimeProofStaticGuardTest.php` -> OK (15 tests, 491 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData\ProductionSchedulerCronStaticGuardTest.php` -> OK (5 tests, 107 assertions).
+- `vendor\bin\phpunit tests\Unit\MarketData` -> OK (635 tests, 9474 assertions), Time 00:35.061, Memory 48.00 MB.
+
+[CLAIM_BOUNDARY]
+- This refresh is an artifact/proof synchronization only; it does not change provider smoke command behavior.
+- Future provider-smoke proof must not claim PASS unless the current authoritative artifact contains `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, valid HTTP/provider telemetry, and all non-destructive safety flags remain false.

@@ -4133,3 +4133,24 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - Already-readable affected-date auto-correction must use correction-current mode and must not fall back to normal full-publish replacement.
 - Plain import-only backfill output and summary must surface execution-layer fields when run notes carry them.
 - Future changes must keep these tests passing before claiming the import/backfill publication-impact surface is LOCKED.
+
+---
+
+## 2026-06-05 - PROVIDER SMOKE PROOF ARTIFACT RECONCILIATION
+
+[CONTRACT_STATUS]
+- `LOCKED` for provider-smoke proof synchronization with `OPS_RUNTIME_PARITY_PASSED`.
+- `LOCKED` for the no-false-PASS guard: provider-smoke PASS claims require an authoritative artifact containing `provider_smoke_status=PASS` and `reason_code=PROVIDER_SMOKE_OK`.
+
+[CONTRACT_CONFIRMATION]
+- A fail-closed provider smoke attempt such as `provider_smoke_status=BLOCKED` / `reason_code=PROVIDER_EMPTY_OR_INVALID_RESPONSE` remains valid behavior when Yahoo/PublicApi returns no timestamp/quote data for the selected ticker/date.
+- Such a blocked attempt cannot back an `OPS_RUNTIME_PARITY_PASSED` claim.
+- The current authoritative PASS proof is `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0`.
+- Current artifact proof fields: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `source_reason_code=none`, `http_status=200`, `returned_row_count=1`, `attempt_count=1`, `retry_exhausted=false`.
+- Non-destructive safety flags remain required: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+
+[VALIDATION_PROOF]
+- ProviderSmokeSafeModeStaticGuardTest -> OK (6 tests, 169 assertions).
+- ProductionValidationRuntimeProofStaticGuardTest -> OK (15 tests, 491 assertions).
+- ProductionSchedulerCronStaticGuardTest -> OK (5 tests, 107 assertions).
+- Full MarketData suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (635 tests, 9474 assertions), Time 00:35.061, Memory 48.00 MB.

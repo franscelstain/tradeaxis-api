@@ -905,3 +905,25 @@ This append-only reconciliation records the latest current source-state proof af
 - Benchmark proof: `IHSG` is stored as benchmark/index with provider symbol `^JKSE`; `^JKSE.JK` and `IHSG.JK` remain forbidden; benchmark `IND_INSUFFICIENT_HISTORY` is expected until enough historical IHSG bars exist.
 
 Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.
+
+---
+
+## 2026-06-05 - Provider Smoke Artifact Refresh and Full MarketData Suite Proof
+
+Status: `PASS`.
+
+This append-only reconciliation refreshes the authoritative provider-smoke proof after a stale invalid-date smoke artifact was detected by static guards.
+
+- Previous stale artifact state: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2025-11-30 --dry-run --retry-max=0` returned `provider_smoke_status=BLOCKED`, `reason_code=PROVIDER_EMPTY_OR_INVALID_RESPONSE`, `source_reason_code=RUN_SOURCE_RESPONSE_CHANGED`, and `http_status=200`.
+- That blocked result was fail-closed and must not be counted as provider PASS.
+- Refreshed command: `php artisan market-data:provider:smoke --ticker=BBCA --trade_date=2026-05-20 --dry-run --retry-max=0`.
+- Refreshed artifact: `storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt`.
+- Refreshed result: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `source_reason_code=none`, `http_status=200`, `returned_row_count=1`, `attempt_count=1`, `retry_max=0`, `retry_exhausted=false`, `timeout_seconds=10`.
+- Safety flags remained false: `publication_created=false`, `seal_executed=false`, `finalize_executed=false`, `pointer_switched=false`, `readable_publication_created=false`, `full_universe_fetch=false`.
+- Targeted static guards:
+  - `vendor\bin\phpunit tests\Unit\MarketData\ProviderSmokeSafeModeStaticGuardTest.php` -> OK (6 tests, 169 assertions).
+  - `vendor\bin\phpunit tests\Unit\MarketData\ProductionValidationRuntimeProofStaticGuardTest.php` -> OK (15 tests, 491 assertions).
+  - `vendor\bin\phpunit tests\Unit\MarketData\ProductionSchedulerCronStaticGuardTest.php` -> OK (5 tests, 107 assertions).
+- Full MarketData suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (635 tests, 9474 assertions), Time 00:35.061, Memory 48.00 MB.
+
+Final current-source decision remains `OPS_RUNTIME_PARITY_PASSED`, backed by a refreshed real provider PASS artifact and full MarketData PHPUnit proof.
