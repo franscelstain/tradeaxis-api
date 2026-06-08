@@ -28,7 +28,7 @@ class WatchlistAuditGovernanceStaticGuardTest extends TestCase
     {
         $status = $this->readProjectFile('docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md');
 
-        $this->assertStringContainsString('PHASE_4_PLAN_GROUPING_FOUNDATION_DONE / NOT_PRODUCTION_READY', $status);
+        $this->assertStringContainsString('PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY', $status);
         $this->assertStringContainsString('Production readiness | `NOT_READY`', $status);
         $this->assertStringContainsString('Watchlist is not production-ready.', $status);
         $this->assertStringNotContainsString('FULLY'.'_PRODUCTION_READY', $status);
@@ -57,6 +57,8 @@ class WatchlistAuditGovernanceStaticGuardTest extends TestCase
             'WL-CONTRACT-015 — PRODUCTION READINESS CONTRACT',
             'WL-CONTRACT-016 — PLAN GROUPING DETERMINISM CONTRACT',
             'WL-CONTRACT-017 — PLAN GROUP BOUNDARY CONTRACT',
+            'WL-CONTRACT-018 — RECOMMENDATION PLAN-SOURCE CONTRACT',
+            'WL-CONTRACT-019 — RECOMMENDATION DETERMINISM AND EMPTY-SET CONTRACT',
         ];
 
         foreach ($requiredContracts as $contract) {
@@ -88,7 +90,7 @@ class WatchlistAuditGovernanceStaticGuardTest extends TestCase
         $status = $this->readProjectFile('docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->readProjectFile('docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md');
 
-        $session = 'WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION';
+        $session = 'WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION';
 
         $this->assertStringContainsString($session, $status);
         $this->assertStringContainsString($session, $tracker);

@@ -185,6 +185,29 @@ INSERT INTO watchlist_reason_codes (policy_code, reason_code, scope, severity, s
  'Runtime volume relatively weak; breakout/momentum validation reduced.'),
 
 
+
+('WS','WS_CONFIRM_ELIGIBLE_RECOMMENDED','CONFIRM','INFO','confirm_eligible_recommended',
+ 'Ticker recommended masih berada dalam candidate PLAN immutable dan eligible untuk CONFIRM overlay.',
+ 'Recommended ticker is still in immutable PLAN candidates and eligible for CONFIRM overlay.'),
+('WS','WS_CONFIRM_ELIGIBLE_NON_RECOMMENDED','CONFIRM','INFO','confirm_eligible_non_recommended',
+ 'Ticker non-recommended masih berada dalam candidate PLAN immutable dan eligible untuk CONFIRM overlay.',
+ 'Non-recommended ticker is still in immutable PLAN candidates and eligible for CONFIRM overlay.'),
+('WS','WS_CONFIRM_APPLIED','CONFIRM','INFO','confirm_applied',
+ 'Evidence CONFIRM diterapkan sebagai overlay metadata tanpa mengubah recommendation.',
+ 'CONFIRM evidence applied as overlay metadata without mutating recommendation.'),
+('WS','WS_CONFIRM_NOT_APPLIED','CONFIRM','INFO','confirm_not_applied',
+ 'Evidence CONFIRM tidak diterapkan sebagai confirmed overlay dan tidak mengubah recommendation.',
+ 'CONFIRM evidence not applied as confirmed overlay and does not mutate recommendation.'),
+('WS','WS_CONFIRM_REJECTED_UNKNOWN_CANDIDATE','CONFIRM','BLOCK','confirm_rejected_unknown_candidate',
+ 'Evidence CONFIRM ditolak karena ticker tidak ditemukan pada candidate PLAN aktif.',
+ 'CONFIRM evidence rejected because ticker is not found in active PLAN candidates.'),
+('WS','WS_CONFIRM_REJECTED_NOT_PLAN_CANDIDATE','CONFIRM','BLOCK','confirm_rejected_not_plan_candidate',
+ 'Evidence CONFIRM ditolak karena ticker bukan candidate PLAN aktif.',
+ 'CONFIRM evidence rejected because ticker is not an active PLAN candidate.'),
+('WS','WS_CONFIRM_NO_DATA','CONFIRM','INFO','confirm_no_data',
+ 'Tidak ada evidence CONFIRM untuk candidate PLAN tersebut.',
+ 'No CONFIRM evidence exists for this PLAN candidate.'),
+
 ('WS','WS_DRIFT_FAR','CONFIRM','WARN','drift_far',
  'Harga runtime terlalu jauh dari entry band (indikasi chasing atau sudah lari).',
  'Runtime price too far from entry band (chasing or already moved).'),
@@ -253,7 +276,9 @@ INSERT INTO watchlist_reason_codes (policy_code, reason_code, scope, severity, s
 INSERT INTO reason_codes(code) VALUES
 ('WS_REC_SELECTED'),
 ('WS_REC_NOT_SELECTED'),
+('WS_REC_BORDERLINE'),
 ('WS_REC_EMPTY_SET'),
+('WS_REC_RANK_OUTSIDE_DYNAMIC_TARGET'),
+('WS_REC_CAPITAL_AWARE'),
 ('WS_REC_CAPITAL_INSUFFICIENT'),
-('WS_REC_MIN_LOT_NOT_AFFORDABLE'),
-('WS_REC_DYNAMIC_TARGET_EXCLUDED');
+('WS_REC_MIN_LOT_NOT_AFFORDABLE');

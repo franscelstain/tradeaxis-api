@@ -69,3 +69,18 @@ Jika ticker tidak berada pada candidate PLAN yang sah, maka hasil CONFIRM untuk 
 5. Jika ticker recommended lalu confirmed, hasil CONFIRM hanya bertindak sebagai strengthening signal.
 6. Jika ticker non-recommended lalu confirmed, hasil CONFIRM hanya bertindak sebagai candidate validation.
 7. CONFIRM tidak pernah membentuk atau mengubah recommendation.
+
+## Confirm Overlay Foundation Output Reason Codes
+
+Reason code foundation berikut boleh dipakai oleh implementation layer untuk menjelaskan binding dan hasil overlay CONFIRM:
+
+- `WS_CONFIRM_ELIGIBLE_RECOMMENDED` — ticker recommended masih merupakan candidate PLAN yang sah untuk CONFIRM.
+- `WS_CONFIRM_ELIGIBLE_NON_RECOMMENDED` — ticker non-recommended masih merupakan candidate PLAN yang sah untuk CONFIRM.
+- `WS_CONFIRM_APPLIED` — evidence CONFIRM valid diterapkan sebagai overlay metadata.
+- `WS_CONFIRM_NOT_APPLIED` — evidence tersedia tetapi tidak menjadi confirmed overlay.
+- `WS_CONFIRM_REJECTED_UNKNOWN_CANDIDATE` — evidence ditolak karena ticker tidak ditemukan pada candidate PLAN aktif.
+- `WS_CONFIRM_REJECTED_NOT_PLAN_CANDIDATE` — evidence ditolak karena ticker bukan candidate PLAN aktif.
+- `WS_CONFIRM_NO_DATA` — tidak ada evidence CONFIRM untuk candidate PLAN tersebut.
+
+Kode di atas tidak boleh dipakai untuk membentuk recommendation baru dan tidak boleh mengubah recommendation membership, rank, score, label, atau hash.
+

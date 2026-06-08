@@ -53,3 +53,16 @@ Recommendation **MUST** lolos replay deterministik.
 2. recommendation harus lolos acceptance minimum untuk empty set, capital-free, capital-aware, dan replay deterministik;
 3. recommendation dan confirm harus terbukti terpisah boundary-nya;
 4. hasil CONFIRM tidak boleh menjadi sumber perubahan recommendation.
+
+## B1. CONFIRM Overlay Boundary Reason-Code Reference
+
+Reason code berikut boleh muncul pada output CONFIRM overlay. Kode ini bukan reason code recommendation final dan tidak boleh dipakai untuk mengubah `recommended_flag`, `recommendation_rank`, `recommendation_score`, `recommendation_label`, atau hash recommendation:
+
+- `WS_CONFIRM_ELIGIBLE_RECOMMENDED`
+- `WS_CONFIRM_ELIGIBLE_NON_RECOMMENDED`
+- `WS_CONFIRM_APPLIED`
+- `WS_CONFIRM_NOT_APPLIED`
+- `WS_CONFIRM_REJECTED_UNKNOWN_CANDIDATE`
+- `WS_CONFIRM_REJECTED_NOT_PLAN_CANDIDATE`
+- `WS_CONFIRM_NO_DATA`
+

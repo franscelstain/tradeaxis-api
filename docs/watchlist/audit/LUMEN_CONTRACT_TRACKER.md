@@ -14,22 +14,21 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
 
 Status:
-`DONE for Phase 4 unit/static scope` for PLAN grouping foundation. Local PHP lint and PHPUnit validation passed in this session; readiness-critical contracts remain `PARTIAL` because no watchlist command/API runtime proof or artifact/log evidence exists yet.
+`DONE for Phase 6 unit/static scope` for confirm overlay foundation. Implementation, docs sync, PHP lint, and direct smoke proof exist, but PHPUnit cannot run in this sandbox because PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing. Local PHPUnit on a complete PHP runtime is required before promoting this session to `DONE for Phase 6 unit/static scope`. Readiness-critical contracts remain `PARTIAL` because no watchlist command/API runtime proof or artifact/log evidence exists yet.
 
 Scope:
-Create deterministic PLAN grouping on top of `WatchlistScoringService`, with TOP_PICKS, SECONDARY, WATCH_ONLY, diagnostics AVOID, grouping threshold/limit validation, paramset traceability, scoring metadata traceability, deterministic ranking, and ticker-id dedupe. Final recommendation, confirm, backtest, API, command, scheduler, portfolio, and execution remain out of scope.
+Create deterministic CONFIRM overlay foundation on top of immutable PLAN candidate binding. The service consumes `WatchlistPlanGroupingService` for active PLAN candidate eligibility and `WatchlistRecommendationService` only for immutable recommendation membership snapshot. Confirm overlay can apply to recommended and non-recommended active PLAN candidates, rejects unknown/non-PLAN evidence into diagnostics, and does not mutate recommendation membership, rank, score, label, or hash. Backtest, API, command, scheduler, portfolio allocation, broker instruction, and execution remain out of scope.
 
 Evidence:
 
-- `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php` created.
-- `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php` added.
-- `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php` added.
-- Bootstrap labels normalized to `WS_EOD_RUNTIME` and `WS_ACTIVE_BOOTSTRAP`; no `_V1` suffix is used for watchlist runtime/bootstrap labels because the application does not have formal app/runtime versioning yet.
-- PLAN grouping reason codes added to `07_WS_REASON_CODES_AND_HASH.md`, `25_WS_RECOMMENDATION_REASON_CODES_AND_TESTS.md`, and support seed `db/REASON_CODES_SEED.sql`.
-- Existing governance static guards are updated to track the active PLAN grouping session.
+- `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php` created.
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php` added.
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php` added.
+- Confirm overlay reason-code owner/support docs synchronized for active Phase 6 reason codes.
+- Priority contracts `WL-CONTRACT-017`, `WL-CONTRACT-018`, `WL-CONTRACT-019`, `WL-CONTRACT-008`, `WL-CONTRACT-014`, and `WL-CONTRACT-015` updated for confirm overlay foundation scope.
 
 ## Status Rules
 
@@ -65,6 +64,8 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-015 | PRODUCTION READINESS CONTRACT | `PARTIAL` |
 | WL-CONTRACT-016 | PLAN GROUPING DETERMINISM CONTRACT | `PARTIAL` |
 | WL-CONTRACT-017 | PLAN GROUP BOUNDARY CONTRACT | `PARTIAL` |
+| WL-CONTRACT-018 | RECOMMENDATION PLAN-SOURCE CONTRACT | `PARTIAL` |
+| WL-CONTRACT-019 | RECOMMENDATION DETERMINISM AND EMPTY-SET CONTRACT | `PARTIAL` |
 
 ---
 
@@ -405,6 +406,7 @@ Implementation files:
 - `app/Application/Watchlist/Services/WatchlistCandidateUniverseService.php`
 - `app/Application/Watchlist/Services/WatchlistScoringService.php`
 - `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
+- `app/Application/Watchlist/Services/WatchlistRecommendationService.php`
 
 Tests:
 
@@ -414,6 +416,8 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationStaticGuardTest.php`
 
 Runtime proof:
 `NOT_STARTED` — no watchlist command/API exists yet.
@@ -423,10 +427,12 @@ Current gaps:
 - Candidate universe records canonical policy/paramset labels: `policy_code`, `policy_version`, and `paramset_code`.
 - Scoring output records canonical policy/paramset labels plus `paramset_snapshot`.
 - PLAN grouping output records canonical policy/paramset labels plus `paramset_snapshot.grouping`.
+- Recommendation output records canonical policy/paramset labels plus `paramset_snapshot.recommendation` and `source_plan_reference`.
 - Current bootstrap labels intentionally do not use `_V1` suffix because the watchlist application does not have formal app/runtime versioning yet.
 - Candidate universe accepts nested `{ value: ... }` paramset shape for the gate fields it owns.
 - Scoring accepts nested `{ value: ... }` weight shape for the fields it owns and rejects invalid weights.
 - PLAN grouping accepts nested `{ value: ... }` grouping threshold/limit shape for the fields it owns and rejects invalid threshold/limit contracts.
+- Recommendation accepts nested `{ value: ... }` recommendation threshold/limit shape for the fields it owns and rejects invalid recommendation threshold/limit contracts.
 - Candidate universe rejects invalid ATR percent-point units above `1.0`.
 - Scoring rejects candidate ATR unit drift above `1.0`.
 - Full runtime paramset loader/validator, persistence, hash, promotion, and artifact recording are still not implemented.
@@ -438,7 +444,7 @@ Acceptance criteria:
 - Artifact output records policy/paramset identity and hash when runtime artifacts are introduced.
 
 Last update:
-`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — FINAL RECOMMENDATION LAYER FOUNDATION EXECUTION SESSION`
 
 ---
 
@@ -465,6 +471,8 @@ Implementation files:
 
 - `app/Application/Watchlist/Services/WatchlistScoringService.php`
 - `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
+- `app/Application/Watchlist/Services/WatchlistRecommendationService.php`
+- `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
 
 Tests:
 
@@ -472,6 +480,10 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
 
 Runtime proof:
 `NOT_STARTED` — no watchlist command/API exists yet.
@@ -480,10 +492,12 @@ Current gaps:
 
 - PLAN scoring explainability exists via `score_components`, `score_weights`, `factor_breakdown`, and `reason_codes`.
 - PLAN grouping explainability exists via `group_reason_code`, augmented `reason_codes`, `group_contract`, `paramset_snapshot.grouping`, and summary counts.
+- Recommendation explainability exists via `recommendation_label`, `recommended_flag`, `recommendation_score`, `recommendation_rank`, `reason_codes`, `recommendation_contract`, `source_plan_reference`, and summary counts.
 - Explainability reason codes used by scoring are traceable to Weekly Swing owner docs / reason seed.
 - PLAN grouping reason codes `WS_PLAN_TOP_PICK`, `WS_PLAN_SECONDARY`, `WS_PLAN_WATCH_ONLY`, `WS_PLAN_AVOID_LOW_SCORE`, and `WS_PLAN_AVOID_EXCLUDED` are traceable to Weekly Swing reason-code docs / support seed.
-- Recommendation explainability is not implemented yet because recommendation engine remains out of scope.
+- Recommendation reason codes `WS_REC_SELECTED`, `WS_REC_NOT_SELECTED`, `WS_REC_BORDERLINE`, `WS_REC_EMPTY_SET`, `WS_REC_RANK_OUTSIDE_DYNAMIC_TARGET`, `WS_REC_CAPITAL_AWARE`, `WS_REC_CAPITAL_INSUFFICIENT`, and `WS_REC_MIN_LOT_NOT_AFFORDABLE` are traceable to Weekly Swing owner docs / support seed.
 - Contract is not `LOCKED` because there is no command/API runtime proof and no artifact/log output yet.
+- Confirm overlay output adds reason-coded `confirm_reason_codes` and preserves recommendation reason-code separation at unit/static scope.
 
 Acceptance criteria:
 
@@ -491,7 +505,7 @@ Acceptance criteria:
 - Output includes enough factor breakdown to audit why a ticker is included, watched, avoided, or rejected.
 
 Last update:
-`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
 
 ---
 
@@ -745,11 +759,13 @@ Implementation files:
 - `tests/Unit/Watchlist/WatchlistCandidateUniverseStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationStaticGuardTest.php`
 - `docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md`
 - `docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md`
 - `docs/watchlist/system/policies/weekly_swing/07_WS_REASON_CODES_AND_HASH.md`
 - `docs/watchlist/system/policies/weekly_swing/25_WS_RECOMMENDATION_REASON_CODES_AND_TESTS.md`
 - `docs/watchlist/system/policies/weekly_swing/db/REASON_CODES_SEED.sql`
+- `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
 
 Tests:
 
@@ -757,6 +773,9 @@ Tests:
 - `WatchlistMarketDataConsumerReadModelStaticGuardTest` added for Phase 1 docs/code synchronization guard.
 - `WatchlistScoringStaticGuardTest` added for Phase 3 docs/code synchronization guard.
 - `WatchlistPlanGroupingStaticGuardTest` added for Phase 4 docs/code synchronization guard.
+- `WatchlistRecommendationStaticGuardTest` added for Phase 5 docs/code synchronization guard.
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
 
 Runtime proof:
 `NOT_STARTED`
@@ -767,10 +786,12 @@ Current gaps:
 - Phase 2 code/test/docs sync completed for candidate universe.
 - Phase 3 code/test/docs sync completed for scoring foundation.
 - Phase 4 code/test/docs sync completed for PLAN grouping foundation.
-- Contract remains `PARTIAL` because future final recommendation/backtest/API/runtime artifact docs are not implemented yet.
+- Phase 5 code/test/docs sync completed for final recommendation foundation.
+- Contract remains `PARTIAL` because backtest/API/runtime artifact docs are not implemented yet.
 
 - Docs sync foundation exists, but future code/config/schema/test/runtime changes still need ongoing enforcement.
 - Runtime watchlist docs sync cannot be proven until runtime watchlist code exists.
+- Phase 6 confirm overlay service, tests, reason-code docs, and Lumen tracker/status docs are synchronized for unit/static scope.
 
 Acceptance criteria:
 
@@ -779,7 +800,7 @@ Acceptance criteria:
 - Tracker contracts reflect actual code/test/runtime status without overclaim.
 
 Last update:
-`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
 
 ---
 
@@ -808,6 +829,8 @@ Implementation files:
 - `app/Application/Watchlist/Services/WatchlistCandidateUniverseService.php`
 - `app/Application/Watchlist/Services/WatchlistScoringService.php`
 - `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
+- `app/Application/Watchlist/Services/WatchlistRecommendationService.php`
+- `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
 
 Tests:
 
@@ -815,20 +838,24 @@ Tests:
 - watchlist candidate universe unit/static tests
 - watchlist scoring unit/static tests
 - watchlist PLAN grouping unit/static tests
+- watchlist recommendation unit/static tests
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
 
 Runtime proof:
 `NOT_STARTED`
 
 Current gaps:
 
-- Read model, candidate universe, scoring foundation, and PLAN grouping foundation exist at unit/static scope.
+- Read model, candidate universe, scoring foundation, PLAN grouping foundation, recommendation foundation, and confirm overlay foundation exist at unit/static/smoke scope.
 - Runtime proof is not available.
 - Artifacts are not available.
 - No API endpoint exists.
 - No watchlist command surface exists.
 - No production watchlist schema/migration exists.
-- No final recommendation/backtest/portfolio-aware integration exists.
+- No backtest/portfolio-aware integration exists; confirm overlay exists only at service + unit/static/smoke scope pending local PHPUnit.
 - Core contracts are not `LOCKED` because runtime proof and artifact/log evidence are missing.
+- Production readiness remains `NO`; confirm overlay foundation is service + unit/static only with no API/command/runtime artifact proof.
 
 Acceptance criteria:
 
@@ -839,6 +866,7 @@ Acceptance criteria:
 - PLAN grouping deterministic and explainable.
 - Paramset identity traceable.
 - Recommendation output tested.
+- Recommendation source is PLAN-only and empty recommendation is valid.
 - Backtest no-lookahead and reproducible.
 - Risk gates present.
 - Artifact/log proof present.
@@ -847,7 +875,7 @@ Acceptance criteria:
 - Docs sync complete.
 
 Last update:
-`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
 
 ---
 
@@ -928,21 +956,27 @@ Owner docs:
 Implementation files:
 
 - `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
+- `app/Application/Watchlist/Services/WatchlistRecommendationService.php`
+- `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
 
 Tests:
 
 - `tests/Unit/Watchlist/WatchlistPlanGroupingServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
 
 Runtime proof:
 `NOT_STARTED` — no watchlist command/API exists yet.
 
 Current gaps:
 
-- `TOP_PICKS` and `SECONDARY` are implemented only as PLAN groups, not final recommendation membership.
-- Grouping output explicitly carries `not_final_recommendation = true`.
-- Grouping does not read confirm, portfolio, execution, raw market-data, or backtest inputs.
-- Scoring excluded candidates and invalid scored items do not enter active PLAN groups.
+- Confirm overlay foundation now consumes active PLAN candidate binding from `WatchlistPlanGroupingService`.
+- Recommended PLAN candidates and non-recommended active PLAN candidates can receive CONFIRM overlay.
+- Unknown/non-active candidate evidence is rejected into diagnostics/excluded output.
+- Confirm overlay does not mutate recommendation membership, rank, score, label, or hash at unit/static scope.
 - Contract is not `LOCKED` because there is no command/API runtime proof and no artifact/log output yet.
 
 Acceptance criteria:
@@ -950,32 +984,142 @@ Acceptance criteria:
 - PLAN grouping consumes `WatchlistScoringService` only.
 - PLAN grouping does not create recommendation labels, confirm state, order/execution actions, portfolio allocation, or backtest metrics.
 - `AVOID` remains diagnostics and must not be interpreted as sell recommendation or execution instruction.
-- Future recommendation layer must consume PLAN grouping output without mutating PLAN group membership.
+- Recommendation layer must consume PLAN grouping output without mutating PLAN group membership.
+- Confirm overlay binds to candidate PLAN without mutating recommendation membership, rank, score, label, or hash.
 
 Last update:
-`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+
+---
+
+## WL-CONTRACT-018 — RECOMMENDATION PLAN-SOURCE CONTRACT
+
+Contract ID:
+`WL-CONTRACT-018`
+
+Title:
+`RECOMMENDATION PLAN-SOURCE CONTRACT`
+
+Status:
+`PARTIAL`
+
+Owner docs:
+
+- `docs/watchlist/system/policies/weekly_swing/01_WS_OVERVIEW.md`
+- `docs/watchlist/system/policies/weekly_swing/02_WS_CANONICAL_RUNTIME_FLOW.md`
+- `docs/watchlist/system/policies/weekly_swing/22_WS_RECOMMENDATION_OVERVIEW.md`
+- `docs/watchlist/system/policies/weekly_swing/23_WS_RECOMMENDATION_INPUT_OUTPUT_CONTRACT.md`
+- `docs/watchlist/system/policies/weekly_swing/24_WS_RECOMMENDATION_ALGORITHM.md`
+- `docs/watchlist/system/policies/weekly_swing/25_WS_RECOMMENDATION_REASON_CODES_AND_TESTS.md`
+
+Implementation files:
+
+- `app/Application/Watchlist/Services/WatchlistRecommendationService.php`
+- upstream source: `app/Application/Watchlist/Services/WatchlistPlanGroupingService.php`
+- `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
+
+Tests:
+
+- `tests/Unit/Watchlist/WatchlistRecommendationServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
+
+Runtime proof:
+`NOT_STARTED` — no watchlist command/API exists yet.
+
+Current gaps:
+
+- Recommendation service still does not read CONFIRM output.
+- Confirm overlay consumes recommendation output only as immutable membership snapshot after recommendation has already been produced from PLAN.
+- Confirm overlay does not add ticker into recommendation membership and does not remove ticker from recommendation membership.
+- Confirm overlay preserves source PLAN trade date, publication, run, policy, and paramset identity in output.
+- Contract is not `LOCKED` because there is no command/API runtime proof and no persisted artifact/log output yet.
+
+Acceptance criteria:
+
+- Recommendation output never adds ticker from outside PLAN source groups.
+- Recommendation can be produced without CONFIRM.
+- CONFIRM fields do not become source inputs for recommendation.
+- Recommendation metadata preserves source PLAN trade date, publication, run, policy, and paramset identity.
+
+Last update:
+`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+
+---
+
+## WL-CONTRACT-019 — RECOMMENDATION DETERMINISM AND EMPTY-SET CONTRACT
+
+Contract ID:
+`WL-CONTRACT-019`
+
+Title:
+`RECOMMENDATION DETERMINISM AND EMPTY-SET CONTRACT`
+
+Status:
+`PARTIAL`
+
+Owner docs:
+
+- `docs/watchlist/system/policies/weekly_swing/13_WS_CONTRACT_TEST_CHECKLIST.md`
+- `docs/watchlist/system/policies/weekly_swing/22_WS_RECOMMENDATION_OVERVIEW.md`
+- `docs/watchlist/system/policies/weekly_swing/23_WS_RECOMMENDATION_INPUT_OUTPUT_CONTRACT.md`
+- `docs/watchlist/system/policies/weekly_swing/24_WS_RECOMMENDATION_ALGORITHM.md`
+- `docs/watchlist/system/policies/weekly_swing/25_WS_RECOMMENDATION_REASON_CODES_AND_TESTS.md`
+
+Implementation files:
+
+- `app/Application/Watchlist/Services/WatchlistRecommendationService.php`
+- `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
+
+Tests:
+
+- `tests/Unit/Watchlist/WatchlistRecommendationServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistRecommendationStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
+
+Runtime proof:
+`NOT_STARTED` — no watchlist command/API exists yet.
+
+Current gaps:
+
+- Recommendation deterministic and empty-set behavior remains owned by `WatchlistRecommendationService`.
+- Confirm overlay foundation proves confirm evidence does not mutate `recommended_flag`, `recommendation_rank`, `recommendation_score`, `recommendation_label`, or available hash fields.
+- Empty recommendation does not block CONFIRM eligibility for active PLAN candidates when PLAN candidates exist.
+- Contract is not `LOCKED` because there is no command/API runtime proof, artifact hash, or persisted replay evidence yet.
+
+Acceptance criteria:
+
+- Same PLAN output + same recommendation paramset + same capital input produces identical recommendation output.
+- Empty recommendation is a valid output, not an error.
+- Dynamic recommendation count is algorithmic and may be zero.
+- Capital-aware replay is deterministic for identical explicit capital input.
+
+Last update:
+`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
 
 ## Next Required Contract Work
 
-Next session must target:
+Next session should target:
 
-`WATCHLIST — FINAL RECOMMENDATION LAYER FOUNDATION EXECUTION SESSION`
+`WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
 
 Priority contracts:
 
-1. `WL-CONTRACT-006`
-2. `WL-CONTRACT-007`
-3. `WL-CONTRACT-008`
-4. `WL-CONTRACT-016`
-5. `WL-CONTRACT-017`
-6. `WL-CONTRACT-014`
-7. `WL-CONTRACT-015`
+1. `WL-CONTRACT-009`
+2. `WL-CONTRACT-010`
+3. `WL-CONTRACT-013`
+4. `WL-CONTRACT-008`
+5. `WL-CONTRACT-014`
+6. `WL-CONTRACT-015`
 
 Scope boundary:
 
-- consume `WatchlistPlanGroupingService` output;
-- create final recommendation foundation only from PLAN groups;
-- preserve that recommendation can exist without confirm and can be empty even when `TOP_PICKS`/`SECONDARY` exists;
-- do not create confirm overlay;
-- do not create portfolio/execution logic;
-- do not create backtest/API/command runtime yet unless explicitly scoped in a later session.
+- consume immutable watchlist outputs without raw market-data bypass;
+- preserve publication-aware replay and no-lookahead constraints;
+- produce deterministic backtest foundation only;
+- do not create execution/order logic;
+- do not create portfolio allocation unless explicitly scoped later;
+- do not create API/command runtime yet unless explicitly scoped in a later session.
+

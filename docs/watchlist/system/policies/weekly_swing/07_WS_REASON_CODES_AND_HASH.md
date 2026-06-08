@@ -105,6 +105,20 @@ Recommendation hash harus stabil untuk PLAN, policy, dan capital input yang sama
 - `WS_DRIFT_FAR`
 - `WS_OUT_BAND`
 
+
+
+### CONFIRM overlay foundation reason codes
+
+Reason code berikut adalah reason code foundation untuk overlay CONFIRM. Kode ini hanya menjelaskan eligibility dan hasil overlay CONFIRM terhadap candidate PLAN immutable. Kode ini bukan reason code recommendation final, bukan portfolio allocation, bukan execution instruction, dan bukan backtest metric.
+
+- `WS_CONFIRM_ELIGIBLE_RECOMMENDED`
+- `WS_CONFIRM_ELIGIBLE_NON_RECOMMENDED`
+- `WS_CONFIRM_APPLIED`
+- `WS_CONFIRM_NOT_APPLIED`
+- `WS_CONFIRM_REJECTED_UNKNOWN_CANDIDATE`
+- `WS_CONFIRM_REJECTED_NOT_PLAN_CANDIDATE`
+- `WS_CONFIRM_NO_DATA`
+
 ### Backtest / coverage / eval / OOS / artifacts
 
 - `WS_BT_COV_CUTOFFS_MISSING`
@@ -170,6 +184,8 @@ Fixture `fixtures/hash_contract_vectors.json` adalah verification artifact untuk
 
 Perubahan pada reason code aktif atau hash semantics tidak boleh hidup hanya di seed SQL, vectors, atau runtime output. Perubahan tersebut harus terlebih dahulu atau secara bersamaan ditetapkan secara normatif di dokumen ini.
 
-## Recommendation Reason Codes Patch
+## Recommendation Reason Codes Sync Note
 
-Tambahan recommendation reason codes: `WS_REC_SELECTED`, `WS_REC_NOT_SELECTED`, `WS_REC_EMPTY_SET`, `WS_REC_CAPITAL_INSUFFICIENT`, `WS_REC_MIN_LOT_NOT_AFFORDABLE`, `WS_REC_DYNAMIC_TARGET_EXCLUDED`.
+Recommendation reason codes aktif untuk foundation ini adalah: `WS_REC_SELECTED`, `WS_REC_NOT_SELECTED`, `WS_REC_BORDERLINE`, `WS_REC_EMPTY_SET`, `WS_REC_RANK_OUTSIDE_DYNAMIC_TARGET`, `WS_REC_CAPITAL_AWARE`, `WS_REC_CAPITAL_INSUFFICIENT`, dan `WS_REC_MIN_LOT_NOT_AFFORDABLE`.
+
+Catatan sinkronisasi: `WS_REC_RANK_OUTSIDE_DYNAMIC_TARGET` adalah nama aktif untuk kandidat yang tidak terpilih karena berada di luar target dinamis recommendation. Jangan memakai alias lama atau istilah support lain untuk output runtime baru.
