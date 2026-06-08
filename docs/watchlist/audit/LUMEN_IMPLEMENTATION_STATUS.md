@@ -15,48 +15,55 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+`WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
 
 Status:
-`DONE for Phase 6 unit/static scope` for confirm overlay foundation. Implementation, docs sync, PHP lint, and direct smoke proof are complete in this sandbox, but PHPUnit cannot run here because PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing. Local PHPUnit on a complete PHP runtime is required before promoting this session to `DONE for Phase 6 unit/static scope`. Readiness-critical contracts remain `PARTIAL` because no watchlist command/API runtime proof or artifact/log output exists yet.
+`PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`. Phase 7 is DONE for unit/static scope based on local PHPUnit proof supplied after the sandbox patch. Phase 6 baseline remains `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY` and is not downgraded. Readiness-critical production scope remains `NOT_PRODUCTION_READY` because no watchlist command/API runtime proof, production schema, persisted artifact/log output, completed pricing metric engine, portfolio-aware integration, or walk-forward/OOS proof exists yet.
 
 Scope:
-Create deterministic CONFIRM overlay foundation on top of immutable PLAN candidate binding. This session consumes `WatchlistPlanGroupingService` as candidate PLAN source, uses `WatchlistRecommendationService` only as immutable recommendation membership snapshot, allows recommended and non-recommended PLAN candidates to confirm, rejects unknown/non-PLAN evidence into diagnostics, and preserves that CONFIRM does not mutate recommendation membership, score, rank, label, or hash. This session explicitly does not create portfolio/capital allocation, execution/order logic, backtest, API endpoint, artisan command, scheduler, production migration, or runtime artifact output.
+Create a deterministic backtest strategy foundation that consumes immutable PLAN grouping output, recommendation output, and confirm overlay output. This session implements explicit replay-window handling, publication-aware source alignment checks, no-lookahead failure behavior, deterministic replay ordering, explainable foundation output, diagnostics, and official backtest artifact-manifest references. This session explicitly does not create portfolio/capital allocation, broker instruction, execution/order automation, API endpoint, artisan command, scheduler, production migration, production schema, or runtime artifact persistence.
 
 Evidence:
 
-- `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php` created.
-- `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php` added.
-- `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php` added.
-- `WatchlistConfirmOverlayService` consumes immutable PLAN candidate binding from `WatchlistPlanGroupingService` and recommendation membership snapshot from `WatchlistRecommendationService`.
-- Recommended PLAN candidates can receive CONFIRM overlay without changing `recommended_flag`, `recommendation_rank`, `recommendation_score`, or `recommendation_label`.
-- Non-recommended PLAN candidates, including active PLAN `WATCH_ONLY`, can receive CONFIRM overlay without becoming recommended.
-- Unknown/non-active candidate evidence is rejected into diagnostics/excluded output.
-- Confirm overlay reason-code support is synchronized in owner/support docs for `WS_CONFIRM_ELIGIBLE_RECOMMENDED`, `WS_CONFIRM_ELIGIBLE_NON_RECOMMENDED`, `WS_CONFIRM_APPLIED`, `WS_CONFIRM_NOT_APPLIED`, `WS_CONFIRM_REJECTED_UNKNOWN_CANDIDATE`, `WS_CONFIRM_REJECTED_NOT_PLAN_CANDIDATE`, and `WS_CONFIRM_NO_DATA`.
+- `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php` created.
+- `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php` added.
+- `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php` added.
+- `WatchlistBacktestStrategyService` consumes `WatchlistPlanGroupingService`, `WatchlistRecommendationService`, and `WatchlistConfirmOverlayService` only; it does not consume scoring, candidate-universe, read-model, raw DB, or raw market-data services directly.
+- Backtest replay uses explicit trade-date windows and records `source_contract`, `backtest_contract`, `paramset_snapshot`, `replay_window`, `items`, `trades`, `evaluations`, `summary`, `diagnostics`, and `artifact_manifest`.
+- No-lookahead foundation rejects source outputs whose `trade_date_effective` is after the replay trade date.
+- Deterministic replay foundation sorts replay dates and output rows by stable trade-date/rank/ticker identity.
+- Empty recommendation remains valid and creates no active trade/evaluation.
+- Confirm overlay is diagnostic only; non-recommended confirmed PLAN candidates do not become recommendation-derived trade candidates.
+- Unknown/rejected confirm evidence is kept in diagnostics and does not become an active trade/evaluation.
+- Artifact manifest references the official Weekly Swing backtest artifacts but marks runtime persistence as not created.
 - Existing no raw/latest/`MAX(trade_date)` boundary remains enforced by static guards.
+- Local validation proof after the empty-recommendation paramset fix:
+  - `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestStrategy"` -> `OK (13 tests, 152 assertions)`.
+  - `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"` -> `OK (3 tests, 41 assertions)`.
+  - `vendor\bin\phpunit tests\Unit\Watchlist` -> `OK (104 tests, 1034 assertions)`.
 
 ## Source of Truth ZIP
 
-- Source ZIP: `watchlist.zip`
-- Session date: `2026-06-05`
-- Scope classification: Phase 6 watchlist confirm overlay foundation code + tests + docs sync.
+- Source ZIP: `tradeaxis-api.zip`
+- Session date: `2026-06-08`
+- Scope classification: Phase 7 watchlist backtest strategy engine foundation code + tests + docs sync.
 
 ## Current Implementation Baseline
 
 | Area | Status | Notes |
 |---|---|---|
-| Current status | `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY` | Read model, candidate universe gates, deterministic scoring foundation, deterministic PLAN grouping foundation, deterministic recommendation foundation, and confirm overlay foundation exist at unit/static scope. Whole watchlist remains not production-ready. |
-| Main feature code | `PARTIAL` | Read model, candidate universe gates, scoring foundation, PLAN grouping foundation, final recommendation foundation, and confirm overlay foundation exist. Backtest/runtime code is still not started. |
+| Current status | `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY` | Read model, candidate universe gates, deterministic scoring foundation, deterministic PLAN grouping foundation, deterministic recommendation foundation, confirm overlay foundation, and backtest strategy foundation exist at unit/static scope. Whole watchlist remains not production-ready. |
+| Main feature code | `DONE for Phase 7 unit/static scope` | Read model, candidate universe gates, scoring foundation, PLAN grouping foundation, final recommendation foundation, confirm overlay foundation, and backtest strategy foundation exist at service + unit/static scope. Runtime code is still not started. |
 | Runtime API | `NOT_STARTED` | No API endpoint created. |
 | Artisan command surface | `NOT_STARTED` | No watchlist command created. |
 | Database schema | `NOT_STARTED` | No production migration created. Existing SQL docs/fixtures are support artifacts only. |
-| Backtest engine | `NOT_STARTED` | No runtime backtest engine created. |
+| Backtest engine | `DONE for Phase 7 unit/static scope` | `WatchlistBacktestStrategyService` exists and local PHPUnit backtest/full watchlist suites pass. No runtime command/API, production schema, completed pricing metric engine, or persisted artifact output exists. |
 | Recommendation engine | `DONE for Phase 5 unit/static scope` | `WatchlistRecommendationService` derives recommendation only from PLAN grouping output. Confirm overlay now consumes recommendation membership as immutable snapshot and does not mutate it. |
 | PLAN grouping engine | `DONE for Phase 4 unit/static scope` | `WatchlistPlanGroupingService` maps Phase 3 scored output into deterministic PLAN groups only. |
 | Scoring engine | `DONE / LOCAL PASS` | `WatchlistScoringService` computes deterministic PLAN component scores and ranking over Phase 2 eligible universe rows; baseline validation at the start of this session is local PASS. |
 | Market-data consumer read model | `DONE` | `WatchlistMarketDataConsumerReadService` consumes the official market-data read surface and validates candidate readiness. |
 | Candidate universe / liquidity-risk gates | `DONE` | `WatchlistCandidateUniverseService` applies deterministic liquidity, ATR/risk, and volume participation guards over Phase 1 candidates. |
-| Test coverage | `PARTIAL` | Read model, candidate universe, scoring, PLAN grouping, recommendation, and confirm overlay unit/static tests exist. Full watchlist runtime proof is not available yet. |
+| Test coverage | `PASS for local unit/static scope` | Local PHPUnit proof is available for backtest strategy, full watchlist, and market-data watchlist read model suites. Runtime proof and persisted artifact proof are still not available. |
 | Artifact/log output | `NOT_STARTED` | No runtime artifact generator exists yet. |
 | Production readiness | `NOT_READY` | Watchlist is not production-ready. |
 
@@ -193,6 +200,14 @@ Market-data production-ready does not automatically make watchlist production-re
 | `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php` | `DONE for Phase 6 unit/static scope` | Consumes immutable PLAN candidate binding and recommendation membership snapshot, then adds CONFIRM overlay metadata without mutating recommendation membership, rank, score, label, or hash. |
 | `tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php` | `DONE for Phase 6 unit/static scope` | Covers recommended and non-recommended PLAN candidate confirm, unknown/non-PLAN diagnostics, source metadata preservation, immutability, and forbidden portfolio/execution/backtest/API/command fields. |
 | `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php` | `DONE for Phase 6 unit/static scope` | Guards PLAN/recommendation-only consumption, no raw/latest/MAX(date) bypass, no allocation/execution/backtest/runtime leakage, reason-code docs sync, and Lumen audit tracker sync. |
+
+## Phase 7 Created / Updated Files
+
+| File | Status | Purpose |
+|---|---|---|
+| `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php` | `DONE for Phase 7 unit/static scope` | Consumes PLAN grouping, recommendation, and confirm overlay outputs through explicit replay windows; preserves no-lookahead, deterministic replay, publication-aware alignment, and explainable foundation output without runtime persistence. |
+| `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php` | `DONE for Phase 7 unit/static scope` | Covers no-lookahead failure, deterministic replay, empty recommendation behavior, confirm-overlay diagnostic boundary, unknown/rejected confirm evidence, explainable output shape, and no portfolio/broker/order/runtime surface leakage. |
+| `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php` | `DONE for Phase 7 unit/static scope` | Guards PLAN/recommendation/confirm-only consumption, no raw/latest/`MAX(trade_date)` bypass, no allocation/order/runtime surface, backtest reason-code traceability, artifact manifest references, and Lumen audit tracker sync. |
 | `docs/watchlist/system/policies/weekly_swing/07_WS_REASON_CODES_AND_HASH.md` | `UPDATED` | Adds CONFIRM overlay foundation reason-code owner entries. |
 | `docs/watchlist/system/policies/weekly_swing/10_WS_CONFIRM_OVERLAY.md` | `UPDATED` | Adds CONFIRM overlay foundation reason-code semantics and immutability boundary wording. |
 | `docs/watchlist/system/policies/weekly_swing/25_WS_RECOMMENDATION_REASON_CODES_AND_TESTS.md` | `UPDATED` | Adds boundary reference that CONFIRM reason codes are not final recommendation reason codes and cannot mutate recommendation fields. |
@@ -202,11 +217,11 @@ Market-data production-ready does not automatically make watchlist production-re
 
 | Severity | Gap | Impact |
 |---|---|---|
-| `RUNTIME_PROOF_MISSING` | No watchlist command/API runtime proof exists for read model, candidate universe, scoring, PLAN grouping, or recommendation. | WL-CONTRACT-001 through WL-CONTRACT-008, WL-CONTRACT-011, WL-CONTRACT-014, WL-CONTRACT-016, WL-CONTRACT-017, WL-CONTRACT-018, and WL-CONTRACT-019 remain not `LOCKED`. |
-| `RUNTIME_PROOF_MISSING` | Confirm overlay exists only at service + unit/static scope. | CONFIRM foundation is implemented, but no watchlist command/API runtime proof or artifact/log output exists yet. |
+| `RUNTIME_PROOF_MISSING` | No watchlist command/API runtime proof exists for read model, candidate universe, scoring, PLAN grouping, recommendation, confirm overlay, or backtest strategy foundation. | Core contracts remain not `LOCKED` because runtime proof and artifact/log evidence are still missing. |
+| `RUNTIME_PROOF_MISSING` | Confirm overlay and backtest strategy exist only at service + unit/static scope. | Foundations are implemented and locally validated, but no watchlist command/API runtime proof or artifact/log output exists yet. |
 | `RUNTIME_PROOF_MISSING` | No watchlist artifact/log output exists. | Cannot claim audit artifact contract or production readiness. |
-| `DOCS_ONLY` | Governance/read model/candidate universe/scoring/PLAN grouping/recommendation/confirm docs are synced, but API/command/backtest/runtime artifact docs/code still need implementation sync. | Correct for current scope; not production readiness. |
-| `NOT_READY` | No runtime API, command, production schema, backtest engine, portfolio-aware boundary implementation, or artifact output exists. | Watchlist Production Ready remains `NO`. |
+| `DOCS_ONLY` | Governance/read model/candidate universe/scoring/PLAN grouping/recommendation/confirm/backtest docs are synced for unit/static scope, but API/command/runtime artifact docs/code still need implementation sync. | Correct for current scope; not production readiness. |
+| `NOT_READY` | No runtime API, command, production schema, backtest runtime artifact output, portfolio-aware boundary implementation, or production artifact output exists. | Watchlist Production Ready remains `NO`. |
 
 ## First Implementation Roadmap
 
@@ -277,18 +292,18 @@ Status: `DONE for Phase 5 unit/static scope`. This is not confirm, API/command r
 - Preserve recommendation immutability.
 - Add tests.
 
-Status: `PARTIAL for sandbox validation`. Implementation and smoke proof exist, but PHPUnit is pending local runtime because this sandbox lacks required PHP extensions. This is not API/command runtime, persistence runtime, backtest, portfolio allocation, broker instruction, execution, or production readiness.
+Status: `DONE for Phase 6 unit/static scope`. Confirm overlay implementation and static/unit coverage are covered by the local full watchlist PHPUnit proof. This is not API/command runtime, persistence runtime, backtest runtime, portfolio allocation, broker instruction, execution, or production readiness.
 
 ### Phase 7 — Backtest Strategy Engine
 
-- No lookahead.
-- Publication-aware replay.
-- Entry/exit rules.
-- Metrics.
-- Artifact output.
-- Add tests.
+- Consume immutable PLAN grouping output, recommendation output, and confirm overlay output.
+- Use explicit replay windows.
+- Preserve no-lookahead by rejecting future-effective source outputs.
+- Preserve deterministic replay ordering.
+- Produce explainable foundation output with diagnostics and official artifact-manifest references.
+- Add unit/static tests.
 
-Status: `NOT_STARTED`.
+Status: `DONE for Phase 7 unit/static scope`. Service, tests, static guard, docs sync, PHP lint, and local PHPUnit proof exist. This is not API/command runtime, persistence runtime, completed pricing metric engine, artifact persistence, portfolio allocation, broker instruction, execution, or production readiness.
 
 ### Phase 8 — Portfolio-Aware Integration
 
@@ -417,7 +432,7 @@ Evidence:
 
 ### 2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION
 
-Status: `PARTIAL for sandbox validation`; readiness-critical contracts remain `PARTIAL`.
+Status: `DONE for Phase 6 unit/static scope` after local full watchlist PHPUnit proof; readiness-critical production contracts remain `PARTIAL` / `NOT_READY`.
 
 Evidence:
 
@@ -429,9 +444,33 @@ Evidence:
 - Service output contains `source_contract`, `confirm_contract`, `immutability_contract`, `items`, `excluded`, and `summary`.
 - Static guard covers no raw market-data, no latest/`MAX(trade_date)`, and no portfolio/execution/backtest/API/command leakage.
 
+
+### 2026-06-08 — WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION LOCAL VALIDATION UPDATE
+
+Status: `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`.
+
+Local validation proof:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestStrategy"
+OK (13 tests, 152 assertions)
+
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"
+OK (3 tests, 41 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist
+OK (104 tests, 1034 assertions)
+```
+
+Notes:
+
+- Phase 7 is DONE for unit/static scope only.
+- Empty recommendation behavior is fixed and validated: no active trades/evaluations are created and `WATCHLIST_BACKTEST_EMPTY_RECOMMENDATION` is emitted for empty recommendation runs.
+- Production readiness remains `NOT_READY` because runtime API/command, persisted artifacts/logs, production schema, completed pricing metric engine, portfolio-aware integration, and walk-forward/OOS proof do not exist yet.
+
 ## Validation Log
 
-Validation performed in this session:
+Validation performed in this session and later local proof:
 
 ```text
 php -l app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php
@@ -439,20 +478,23 @@ php -l tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php
 php -l tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php
 php -d zend.assertions=1 -d assert.exception=1 /tmp/confirm_smoke.php
 vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistConfirmOverlay"
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestStrategy"
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"
+vendor\bin\phpunit tests\Unit\Watchlist
 ```
 
-Observed validation result in this sandbox:
+Observed validation result in the original sandbox and local runtime:
 
 ```text
 php -l app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php: PASS
 php -l tests/Unit/Watchlist/WatchlistConfirmOverlayServiceTest.php: PASS
 php -l tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php: PASS
 Direct confirm overlay smoke test: PASS
-vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistConfirmOverlay": BLOCKED
-Reason: PHPUnit requires PHP extensions dom, json, libxml, mbstring, tokenizer, xml, xmlwriter; sandbox PHP is missing dom, mbstring, xml, and xmlwriter.
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistConfirmOverlay": BLOCKED in original sandbox only
+Reason: PHPUnit requires PHP extensions dom, json, libxml, mbstring, tokenizer, xml, xmlwriter; original sandbox PHP is missing dom, mbstring, xml, and xmlwriter. Local full watchlist PHPUnit proof has since passed.
 ```
 
-No `LOCKED` or production-ready claim is made from this sandbox result.
+Local PHPUnit proof upgrades Phase 7 to DONE for unit/static scope. No `LOCKED` or production-ready claim is made because runtime API/command proof and persisted artifact/log evidence are still missing.
 
 ## Manual Validation Requirements
 
@@ -474,6 +516,8 @@ vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistMarketDataConsumerRea
 vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistPlan": PASS, 19 tests, 170 assertions
 vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistRecommendation": PASS, 20 tests, 174 assertions
 vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistScoring": PASS, 14 tests, 149 assertions
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestStrategy": PASS, 13 tests, 152 assertions
+vendor\bin\phpunit tests\Unit\Watchlist: PASS, 104 tests, 1034 assertions
 ```
 
 Pass criteria:
@@ -494,28 +538,27 @@ Pass criteria:
 Reason:
 
 - market-data consumer read model exists but has no watchlist command/API runtime proof yet;
-- candidate universe, scoring foundation, PLAN grouping foundation, recommendation foundation, and confirm overlay foundation exist only at service + unit/static scope;
+- candidate universe, scoring foundation, PLAN grouping foundation, recommendation foundation, confirm overlay foundation, and backtest strategy foundation exist only at service + unit/static scope;
 - no runtime artifact/log output exists yet;
 - no runtime API;
 - no command surface;
 - no production watchlist schema/migration;
-- no backtest engine;
+- backtest strategy foundation is DONE for service + unit/static scope but has no runtime command/API, completed pricing metric engine, persisted artifact proof, or walk-forward/OOS proof;
 - no portfolio-aware integration;
 - WL-CONTRACT-001 through WL-CONTRACT-008, WL-CONTRACT-011, WL-CONTRACT-014, WL-CONTRACT-016, WL-CONTRACT-017, WL-CONTRACT-018, and WL-CONTRACT-019 are not `LOCKED` because runtime proof/artifact evidence is missing;
-- WL-CONTRACT-009, WL-CONTRACT-010, WL-CONTRACT-012, and WL-CONTRACT-013 remain `NOT_STARTED`.
+- WL-CONTRACT-009, WL-CONTRACT-010, and WL-CONTRACT-013 are `DONE for Phase 7 unit/static foundation scope` but not `LOCKED`; WL-CONTRACT-012 remains `NOT_STARTED`.
 
 ## Next Required Sessions
 
 Recommended next session:
 
-`WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+`WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS EXECUTION SESSION`
 
 Target:
 
-- consume immutable PLAN/recommendation/confirm-ready watchlist outputs without raw market-data bypass;
-- implement publication-aware replay foundation;
-- preserve no-lookahead and deterministic replay contracts;
-- produce backtest foundation only, not execution/order automation;
-- no portfolio/capital allocation beyond explicitly scoped deterministic test inputs;
-- no API/command runtime unless explicitly scoped later.
+- keep Phase 7 service boundary intact;
+- add runtime-safe backtest pricing/evaluation only if official published EOD price series and calendar inputs are explicitly scoped;
+- persist or export official artifact-manifest outputs only through approved watchlist runtime surface;
+- prove no-lookahead, reproducibility, artifact output, and docs sync with local PHPUnit and runtime evidence;
+- do not add portfolio allocation, broker instruction, or execution automation.
 
