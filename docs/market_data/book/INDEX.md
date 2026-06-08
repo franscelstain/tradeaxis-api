@@ -35,6 +35,8 @@
 
 ## Indicators and adjustments
 - EOD_Indicators_Contract.md
+- Indicator_Nullability_And_OHLCV_Gap_Contract.md
+- Indicator_Recompute_Source_Scope_Contract.md
 - ../indicators/EOD_Indicators_Formula_Spec.md
 - Corporate_Action_and_Adjustment_Policy.md
 - Corporate_Action_and_Adjustment_Policy_Selected_Defaults_LOCKED.md
@@ -86,3 +88,5 @@ Archived actual execution evidence is part of the normative proof ecosystem, but
 - [Publishability Coverage Fallback Cross-Consistency Contract LOCKED](Publishability_Coverage_Fallback_Cross_Consistency_Contract_LOCKED.md)
 
 - [Correction Lifecycle Safety Contract](Correction_Lifecycle_Safety_Contract.md) — LOCKED contract for correction baseline safety, unchanged artifacts, failed pointer preservation, reseal, linkage, pointer switch, evidence, replay, and command output.
+
+- [Current Indicator Recompute Command Contract](Current_Indicator_Recompute_Command_Contract.md)

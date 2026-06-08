@@ -160,6 +160,7 @@ Status:
 - MARKET_DATA_PRODUCTION_READY_LOCKED
 - ARCHIVED_FULL_RANGE_PROOF_WINDOW `2023-01-02` sampai `2025-10-31`
 - LATEST_OPERATOR_RUN_THROUGH `2026-06-04` sebagai current operation terakhir yang dilaporkan
+- LATEST_FULL_PHPUNIT_PROOF `2026-06-08`: `vendor\bin\phpunit` OK (641 tests, 9547 assertions)
 - DATE-DRIVEN READY
 - IMPORT vs PROMOTE CONSISTENT
 - CRITICAL EDGE CONTRACTS LOCKED
@@ -168,3 +169,4 @@ Catatan scope:
 - production-ready lock berlaku untuk source state, kontrak lifecycle, dan operasi market-data harian yang berlanjut; status ini bukan tanggal akhir pemakaian aplikasi
 - range `2023-01-02` sampai `2025-10-31` adalah archived full-range proof window yang dibuktikan di audit Lumen, bukan batas terakhir aplikasi dinyatakan production-ready
 - latest operator run/current operation sudah berjalan sampai `2026-06-04`; future trading dates tetap diproses melalui daily lifecycle/backfill normal
+- hasil PHPUnit terbaru pada `2026-06-08` menjadi angka validasi aktif untuk sinkronisasi dokumen ini

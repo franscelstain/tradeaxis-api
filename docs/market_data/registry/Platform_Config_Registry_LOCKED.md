@@ -25,6 +25,10 @@ Defines output-affecting configuration that must be versioned, effective-dated, 
 - `VOL_RATIO_LOOKBACK_DAYS` = 20 (prior days, excluding D)
 - `ROC_LOOKBACK_DAYS` = 20
 - `HH_WINDOW_DAYS` = 20
+- `MA20_WINDOW_DAYS` = 20 when exposed as config; otherwise locked by indicator specification
+- `MA50_WINDOW_DAYS` = 50 when exposed as config; otherwise locked by indicator specification
+
+Indicator dependency windows are counted in market-calendar trading days. Calendar-day subtraction is not a valid source of truth for loading indicator history.
 
 ### Hash / serialization
 - `HASH_ALGORITHM` = `SHA-256`
@@ -37,6 +41,11 @@ Defines output-affecting configuration that must be versioned, effective-dated, 
 - `API_BACKOFF_MS`
 - `API_THROTTLE_QPS`
 - `CIRCUIT_BREAKER_ERROR_RATE`
+- `API_BACKFILL_WINDOW_DAYS` = provider request-window span, expressed as calendar-day source acquisition windows
+- `API_BACKFILL_WARMUP_DAYS` = legacy compatibility fallback only
+- `API_BACKFILL_WARMUP_TRADING_DAYS` = 120 by default; source-acquisition warmup dependency expressed in market-calendar trading days
+
+`API_BACKFILL_WARMUP_TRADING_DAYS` is output-affecting because it controls whether rolling indicators such as MA50, ROC20, ATR14, DV20, and sector benchmark dependencies have enough canonical history before requested-date promotion. If both legacy warmup-days and warmup-trading-days are present, the trading-day setting is the authoritative lifecycle warmup input.
 
 ### Session snapshot
 - `INTRADAY_RETENTION_DAYS`
@@ -65,3 +74,13 @@ Minimum requirement:
 ## Locked anti-drift rule
 When a config key changes and can alter canonical output, replay expectations and fixtures must be versioned accordingly.
 Silent config drift is forbidden.
+
+## Amendment 2026-06-05 - Market-calendar warmup config
+Lifecycle API backfill warmup must use `API_BACKFILL_WARMUP_TRADING_DAYS` and resolve `warmup_start` through `market_calendar` trading-day sequence ending at the first requested trading date.
+
+Locked rules:
+- do not compute lifecycle warmup by `subDays()` / calendar-day subtraction
+- do not treat `API_BACKFILL_WARMUP_DAYS` as authoritative when `API_BACKFILL_WARMUP_TRADING_DAYS` is configured
+- fail fast when the requested date is not an active trading day in `market_calendar`
+- fail fast when the configured trading-day warmup window cannot be resolved from available calendar rows
+- `.env.example` and config registry must stay synchronized whenever a `MARKET_DATA_*` key is added or removed

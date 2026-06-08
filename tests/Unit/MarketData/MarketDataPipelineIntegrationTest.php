@@ -36,6 +36,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $this->bootMarketDataSqlite();
         Carbon::setTestNow('2026-03-25 10:30:00');
+        $this->seedMarketCalendarRange('2025-01-01', '2026-12-31');
 
         $this->fixtureDir = storage_path('framework/testing/market_data_pipeline');
         if (! is_dir($this->fixtureDir)) {
@@ -4790,13 +4791,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $end = Carbon::parse($endDate);
 
         while ($date->lessThanOrEqualTo($end)) {
-            DB::table('market_calendar')->insert([
-                'cal_date' => $date->toDateString(),
-                'is_trading_day' => in_array($date->dayOfWeekIso, [6, 7], true) ? 0 : 1,
-                'source' => 'test_fixture',
-                'created_at' => Carbon::now()->toDateTimeString(),
-                'updated_at' => Carbon::now()->toDateTimeString(),
-            ]);
+            DB::table('market_calendar')->updateOrInsert(
+                ['cal_date' => $date->toDateString()],
+                [
+                    'is_trading_day' => in_array($date->dayOfWeekIso, [6, 7], true) ? 0 : 1,
+                    'source' => 'test_fixture',
+                    'created_at' => Carbon::now()->toDateTimeString(),
+                    'updated_at' => Carbon::now()->toDateTimeString(),
+                ]
+            );
             $date->addDay();
         }
     }
@@ -6165,6 +6168,8 @@ class ThrowingHistoryPromotionArtifactRepository extends EodArtifactRepository
 
     public function __construct(string $message)
     {
+        parent::__construct();
+
         $this->message = $message;
     }
 

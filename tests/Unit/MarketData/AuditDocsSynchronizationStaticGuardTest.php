@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Market Data Manual File Multi-Date Lifecycle Input', $statusActiveSession);
+        $this->assertSame('Market Data Indicator Warmup Window Audit', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -54,6 +54,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $this->assertStringContainsString('MARKET_DATA_MISSING_TICKER_LIFECYCLE_BACKFILL_CONTRACT', $document);
             $this->assertStringContainsString('MARKET_DATA_MISSING_TICKER_PARTIAL_SOURCE_ACQUISITION_GUARD_CONTRACT', $document);
             $this->assertStringContainsString('MARKET_DATA_MISSING_TICKER_FILTERED_CANDIDATE_PRESERVATION_CONTRACT', $document);
+            $this->assertStringContainsString('MARKET_DATA_INDICATOR_WARMUP_WINDOW_CONTRACT', $document);
             $this->assertStringContainsString('MARKET_DATA_MANUAL_FILE_MULTI_DATE_LIFECYCLE_INPUT_CONTRACT', $document);
         }
 
@@ -78,7 +79,7 @@ $this->assertStringContainsString('OK (534 tests, 8287 assertions)', $status.$tr
         $this->assertStringContainsString('`OPS_RUNTIME_PARITY_PASSED` requires scheduler due-run proof plus provider smoke PASS', $status.$tracker);
         $this->assertStringContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
         $this->assertStringContainsString('ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH', $status.$tracker);
-        $this->assertStringContainsString('29 registered market-data commands', $status.$tracker);
+        $this->assertStringContainsString('30 registered market-data commands', $status.$tracker);
 $this->assertStringContainsString('PROVIDER_SMOKE_OK', $status.$tracker);
 
 $this->assertStringContainsString('- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock -> DONE', $status);
@@ -169,7 +170,7 @@ $this->assertStringContainsString('replay_id=2', $status.$tracker);
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('MARKET_DATA_MANUAL_FILE_MULTI_DATE_LIFECYCLE_INPUT_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('MARKET_DATA_INDICATOR_WARMUP_WINDOW_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -178,7 +179,7 @@ $this->assertStringContainsString('replay_id=2', $status.$tracker);
             $this->assertContains($contractName, $trackerContracts, $contractName.' is referenced by implementation status but missing from contract tracker.');
         }
 
-        $this->assertMatchesRegularExpression('/^- [A-Z0-9_]+_CONTRACT (?:->|→) (LOCKED|ENFORCED|PARTIAL|BLOCKED|REVIEW_REQUIRED)$/', $contractEntry);
+        $this->assertMatchesRegularExpression('/^- [A-Z0-9_]+_CONTRACT (?:->|→) (DONE|LOCKED|ENFORCED|PARTIAL|BLOCKED|REVIEW_REQUIRED)$/', $contractEntry);
     }
 
     public function test_locked_contracts_have_concrete_validation_evidence(): void
@@ -360,7 +361,7 @@ public function test_market_benchmark_indicator_extension_final_lock_is_recorded
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(350, $registryCodes);
+        $this->assertCount(351, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

@@ -56,6 +56,7 @@ class OpsCommandSurfaceRuntimeMatrixStaticGuardTest extends TestCase
             'market-data:eod-bars:ingest',
             'market-data:eod-eligibility:build',
             'market-data:eod-indicators:compute',
+            'market-data:eod-indicators:recompute-current',
             'market-data:audit:hash',
             'market-data:dataset:seal',
             'market-data:evidence:export',
@@ -81,7 +82,7 @@ class OpsCommandSurfaceRuntimeMatrixStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString('php artisan --env=testing list market-data', $inventory);
-        $this->assertStringContainsString('29 public market-data commands registered', $inventory);
+        $this->assertStringContainsString('30 public market-data commands registered', $inventory);
     }
 
     public function test_inventory_records_help_invalid_and_seeded_runtime_proof(): void

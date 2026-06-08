@@ -80,7 +80,7 @@ class ImportCorporateActionsCommand extends AbstractMarketDataCommand
         $this->info('status='.($apply ? 'APPLIED' : 'DRY_RUN'));
         $this->line('reason_code='.($apply ? 'COMMAND_APPLY_CONFIRMED' : 'COMMAND_DRY_RUN_ONLY'));
         $this->renderSummary($inputFile, $parsed['row_count'], count($validated['valid_rows']), $upsertedCount, 0, $apply, $validated['action_types']);
-        $this->line('next_action='.($apply ? 'Run indicator recompute/promote for affected trade dates to stamp event-risk context into current publications.' : 'Re-run with --apply after reviewing validation output.'));
+        $this->line('next_action='.($apply ? 'Run existing lifecycle/promote flow for affected trade dates to stamp event-risk context into current publications.' : 'Re-run with --apply after reviewing validation output.'));
 
         return 0;
     }

@@ -24,6 +24,7 @@ The command-specific docs below remain supporting material. They must not contra
 - `market-data:daily`
 - `market-data:eod-bars:ingest`
 - `market-data:eod-indicators:compute`
+- `market-data:eod-indicators:recompute-current`
 - `market-data:eod-eligibility:build`
 - `market-data:audit:hash`
 - `market-data:dataset:seal`
@@ -59,3 +60,7 @@ The command-specific docs below remain supporting material. They must not contra
 - `market-data:promote` adalah satu-satunya command promote
 - operator tidak boleh memakai raw/staging/latest/MAX(date) sebagai proof readability
 - semua failure/hold/not-readable state harus ditindaklanjuti dari reason code dan runbook
+
+## Current indicator recompute lock
+
+`market-data:eod-indicators:recompute-current` is runtime-proven as the no-reimport indicator maintenance path. Runtime proof: full MarketData PHPUnit 640 tests / 9539 assertions on 2026-06-07, full-range recompute 807/807 success, and final current evidence/replay 807/807 MATCH/PASS. Latest docs-review validation on 2026-06-08 reran `vendor\bin\phpunit` and passed with OK (641 tests, 9547 assertions). It must remain read-only toward source/master tables and `eod_bars`.

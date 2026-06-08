@@ -13,6 +13,7 @@ use App\Console\Commands\MarketData\CaptureSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PromoteMarketDataCommand;
 use App\Console\Commands\MarketData\ProviderSmokeCommand;
+use App\Console\Commands\MarketData\RecomputeCurrentIndicatorsCommand;
 use App\Console\Commands\MarketData\FinalizeRunCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\FullRangeCurrentEvidenceReplayCommand;
@@ -62,6 +63,7 @@ class Kernel extends ConsoleKernel
         PurgeSessionSnapshotCommand::class,
         PromoteMarketDataCommand::class,
         ProviderSmokeCommand::class,
+        RecomputeCurrentIndicatorsCommand::class,
         RequestCorrectionCommand::class,
         RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,

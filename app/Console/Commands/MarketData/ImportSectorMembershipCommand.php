@@ -97,7 +97,7 @@ class ImportSectorMembershipCommand extends AbstractMarketDataCommand
         $this->info('status='.($apply ? 'APPLIED' : 'DRY_RUN'));
         $this->line('reason_code='.($apply ? 'COMMAND_APPLY_CONFIRMED' : 'COMMAND_DRY_RUN_ONLY'));
         $this->renderSummary($inputFile, $classificationSystem, $parsed['row_count'], count($validated['valid_rows']), $upsertedCount, 0, $apply);
-        $this->line('next_action='.($apply ? 'Run indicator recompute/promote for affected trade dates.' : 'Re-run with --apply after reviewing validation output.'));
+        $this->line('next_action='.($apply ? 'Run existing lifecycle/promote flow for affected trade dates.' : 'Re-run with --apply after reviewing validation output.'));
 
         return 0;
     }

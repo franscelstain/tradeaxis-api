@@ -1,6 +1,6 @@
 # Import vs Promote Separation Contract
 
-Status: ENFORCED — local PHPUnit validation pending before LOCKED.
+Status: ENFORCED historical guard marker; current Lumen contract status is LOCKED / LOCKED_LOCAL_PHPUNIT_PASS. Latest docs-review validation: `vendor\bin\phpunit` -> OK (641 tests, 9547 assertions) on 2026-06-08.
 
 Import/ingest is the process of accepting source data into traceable run/candidate context. Promote/publish is the process of making a dataset consumer-readable. These two paths must remain separate even when they share the same requested trade date, source mode, run lineage, or candidate publication context.
 

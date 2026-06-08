@@ -90,6 +90,22 @@ When invalid:
 The live current artifact must emit at most one row per `(trade_date, ticker_id)`.
 Duplicate live indicator rows for the same key are forbidden.
 
+
+## Indicator nullability and OHLCV gap policy (LOCKED)
+Indicator availability is evaluated per field. A missing dependency for `ma50` must not force `ma20`, `roc20`, `dv20_idr`, event-risk fields, or sector fields to NULL when their own dependencies are satisfied.
+
+Dataset-start and ticker-listed-date insufficient history are normal states. They produce NULL only for the affected formulas. They must not block the whole EOD publication date.
+
+If a ticker is active/listed on a valid `market_calendar` trading day but its provider OHLCV row is unavailable while other tickers have data, the publication may carry a zero OHLCV placeholder for that ticker to preserve universe coverage. Such a zero-placeholder row is not a valid price input: price-based, turnover, and range indicators depending on it must be NULL/invalid for that field rather than computed from price `0`.
+
+
+## Recompute source scope (LOCKED)
+Recomputing EOD indicators without updating sector/corporate/trading-status/master data means source/master tables are read-only. It forbids imports/upserts/fetches into sector membership, sector-index bars, corporate-action source rows, trading-status source rows, ticker master, and EOD bars.
+
+A new publication may still write fresh publication-bound `eod_indicators` rows, including sector, corporate-action, trading-status, suspension, UMA, and event-risk columns, as long as those values are resolved only from existing source/master rows. This is publication recompute, not source/master mutation.
+
+A future technical-only recompute mode must be explicitly named and must preserve publication-bound context columns from the prior current publication. No current command is approved for that mode.
+
 ## Dependency summary table (LOCKED)
 
 | Indicator | Input dependency | Window traversal | Warmup rule | Null rule | Blocking invalid reason |

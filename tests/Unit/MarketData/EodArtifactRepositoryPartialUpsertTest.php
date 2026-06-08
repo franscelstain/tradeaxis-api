@@ -162,6 +162,110 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
         $this->assertSame(2, DB::table('eod_bars_history')->where('publication_id', 77)->count());
     }
 
+
+    public function test_load_bars_window_uses_market_calendar_trading_window_for_ma50_history(): void
+    {
+        $rows = [];
+        $calendarRows = [];
+        $start = Carbon::parse('2026-01-01');
+
+        for ($i = 0; $i < 60; $i++) {
+            $date = $start->copy()->addDays($i * 2)->toDateString();
+            $close = 100 + $i;
+            $calendarRows[] = $this->calendarRow($date, true);
+            $rows[] = [
+                'trade_date' => $date,
+                'ticker_id' => 1,
+                'open' => $close - 1,
+                'high' => $close + 1,
+                'low' => $close - 1,
+                'close' => $close,
+                'volume' => 1000 + $i,
+                'adj_close' => $close,
+                'source' => 'YAHOO_FINANCE',
+                'run_id' => 10,
+                'publication_id' => 77,
+                'created_at' => Carbon::now()->toDateTimeString(),
+            ];
+        }
+
+        DB::table('market_calendar')->insert($calendarRows);
+        DB::table('eod_bars')->insert($rows);
+
+        $window = (new EodArtifactRepository())->loadBarsWindow($rows[59]['trade_date'], 60);
+
+        $this->assertArrayHasKey(1, $window);
+        $this->assertCount(60, $window[1]);
+        $this->assertSame('2026-01-01', $window[1][0]['trade_date']);
+        $this->assertSame($rows[59]['trade_date'], $window[1][59]['trade_date']);
+    }
+
+    public function test_load_bars_window_rejects_requested_date_missing_from_market_calendar(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE');
+
+        DB::table('market_calendar')->insert([
+            $this->calendarRow('2026-01-01', true),
+            $this->calendarRow('2026-01-02', true),
+        ]);
+
+        (new EodArtifactRepository())->loadBarsWindow('2026-01-03', 2);
+    }
+
+    public function test_load_bars_window_allows_partial_history_at_dataset_start(): void
+    {
+        DB::table('market_calendar')->insert([
+            $this->calendarRow('2026-01-01', true),
+            $this->calendarRow('2026-01-02', true),
+        ]);
+
+        DB::table('eod_bars')->insert([
+            $this->barForDate(1, '2026-01-01', 100),
+            $this->barForDate(1, '2026-01-02', 101),
+        ]);
+
+        $window = (new EodArtifactRepository())->loadBarsWindow('2026-01-02', 3);
+
+        $this->assertArrayHasKey(1, $window);
+        $this->assertCount(2, $window[1]);
+        $this->assertSame('2026-01-01', $window[1][0]['trade_date']);
+        $this->assertSame('2026-01-02', $window[1][1]['trade_date']);
+    }
+
+    private function barForDate(int $tickerId, string $date, float $close): array
+    {
+        return [
+            'trade_date' => $date,
+            'ticker_id' => $tickerId,
+            'open' => $close,
+            'high' => $close + 1,
+            'low' => $close - 1,
+            'close' => $close,
+            'volume' => 1000,
+            'adj_close' => $close,
+            'source' => 'unit_test',
+            'run_id' => 1,
+            'publication_id' => 1,
+            'created_at' => Carbon::now()->toDateTimeString(),
+        ];
+    }
+
+    private function calendarRow(string $date, bool $isTradingDay): array
+    {
+        return [
+            'cal_date' => $date,
+            'is_trading_day' => $isTradingDay ? 1 : 0,
+            'holiday_name' => $isTradingDay ? 'HARI BURSA' : 'AKHIR PEKAN',
+            'session_open_time' => null,
+            'session_close_time' => null,
+            'breaks_json' => null,
+            'source' => 'unit_test',
+            'created_at' => Carbon::now()->toDateTimeString(),
+            'updated_at' => Carbon::now()->toDateTimeString(),
+        ];
+    }
+
     private function bar(int $tickerId, string $source): array
     {
         return [

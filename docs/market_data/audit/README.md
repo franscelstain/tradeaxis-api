@@ -79,7 +79,7 @@ Range `2023-01-02` sampai `2025-10-31` adalah archived full-range proof window y
 Bukti penutup aktif berada di dua file Lumen:
 - full unfiltered missing-ticker plan: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`
 - full-range current evidence/replay: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`
-- full MarketData PHPUnit: `OK (635 tests, 9474 assertions)`
+- latest full PHPUnit docs-review proof: `vendor\bin\phpunit` -> `OK (641 tests, 9547 assertions)` pada `2026-06-08`
 
 Catatan `PARTIAL` atau `BLOCKED` bertanggal lebih lama di checkpoint Lumen adalah histori penyebab/perbaikan jika sudah diikuti oleh entry 2026-06-05 yang menutupnya.
 

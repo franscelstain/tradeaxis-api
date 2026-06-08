@@ -3,11 +3,28 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Market Data Manual File Multi-Date Lifecycle Input
+- Market Data Indicator Warmup Window Audit
 
 [SESSION_STATUS] COMPLETED
 
 [CURRENT_SOURCE_LOCK]
+
+- MARKET_DATA_INDICATOR_RECOMPUTE_EVIDENCE_NOOP_FIX=RESOLVED_RUNTIME_PROVEN; unchanged correction-current recompute preserves the prior current publication and exports correction evidence instead of failing run evidence with EVIDENCE_PUBLICATION_NOT_FOUND.
+- FULL_MARKET_DATA_PHPUNIT_AFTER_RECOMPUTE_COMMAND=PASSED (640 tests, 9539 assertions) after evidence no-op fix and final documentation sync baseline.
+- FULL_MARKET_DATA_PHPUNIT_LATEST_DOCS_REVIEW_2026_06_08=PASSED (641 tests, 9547 assertions) via `vendor\bin\phpunit`.
+- INDICATOR_RECOMPUTE_DRY_RUN_2023_01_02_TO_2026_06_04=PASSED (807/807, no source acquisition, no bar ingest, no source/master writes, no eod_bars writes).
+- INDICATOR_RECOMPUTE_RUNTIME_2023_01_02_TO_2026_06_04=PASSED (807 processed, 807 success, 0 failed, 0 skipped, all_passed=1; source acquisition/bar ingest/source-master/eod_bars writes all false).
+- INDICATOR_RECOMPUTE_FINAL_CURRENT_EVIDENCE_REPLAY_2023_01_02_TO_2026_06_04=PASSED (807 processed, 807 success, 0 failed, 0 errors, mismatch_count=0, all_passed=1).
+- MARKET_DATA_INDICATOR_NULLABILITY_CONTRACT=LOCKED_PER_FIELD_NULLABILITY_ZERO_PLACEHOLDER_INPUT_INVALID
+- FULL_MARKET_DATA_PHPUNIT_AFTER_INDICATOR_NULLABILITY_CLEANUP=PASSED (639 tests, 9509 assertions)
+- MARKET_DATA_INDICATOR_RECOMPUTE_SOURCE_SCOPE_RULE=SOURCE_MASTER_READ_ONLY_PUBLICATION_BOUND_FIELDS_RECOMPUTED_FROM_EXISTING_SOURCE
+- MARKET_DATA_INDICATOR_RECOMPUTE_COMMAND=market-data:eod-indicators:recompute-current
+- MARKET_DATA_CURRENT_INDICATOR_RECOMPUTE_COMMAND_STATUS=LOCKED_RUNTIME_FULL_RANGE_807_OF_807_CORRECTION_CURRENT_FROM_EXISTING_BARS_NO_SOURCE_MASTER_OR_EOD_BARS_WRITES
+- MARKET_DATA_INVALID_INDICATOR_ONLY_REPUBLISH_COMMAND=REMOVED_AFTER_OPERATOR_RUNTIME_SEAL_HASH_FAILURE; command surface is 30 registered market-data commands after adding the validated current-bars indicator recompute command
+- MARKET_DATA_CURRENT_COMMAND_SURFACE_MARKER=30-command command list/full help
+- MARKET_DATA_INDICATOR_WARMUP_WINDOW_CONTRACT_STATUS=LOCKED_OPERATOR_TARGETED_AUDIT_ENV_GUARD_AND_FULL_MARKETDATA_PHPUNIT_PASS
+- MARKET_DATA_INDICATOR_WARMUP_WINDOW_FINAL_RULE=Lifecycle source-acquisition warmup plus equity/benchmark indicator dependency loading must resolve required start dates from `market_calendar` trading-day sequence; calendar-day subtraction/overfetch is not the source of truth, and insufficient history is handled by per-indicator NULL outputs rather than whole-date failure.
+- MARKET_DATA_SECTOR_ROTATION_2026_06_04_FINAL_RULE=Sector rotation remains source-backed; if sector benchmark bars/indicators are absent for a trade date, sector-rotation fields must remain NULL until source import and the existing lifecycle/promote flow.
 - MARKET_DATA_MANUAL_FILE_MULTI_DATE_LIFECYCLE_INPUT_STATUS=LOCKED_SINGLE_INPUT_FILE_FILTERED_BY_TRADE_DATE_COMMAND_HELP_TARGETED_FULL_MARKETDATA_PHPUNIT_PASS
 - MARKET_DATA_MANUAL_FILE_MULTI_DATE_LIFECYCLE_RULE=market-data:backfill:lifecycle --source_mode=manual_file --input_file=<csv|json> filters rows per requested trade_date while keeping lifecycle/promote/evidence/replay per date
 - MARKET_DATA_MISSING_TICKER_FILTERED_CANDIDATE_PRESERVATION_STATUS=DONE_FULL_UNIVERSE_CURRENT_BARS_PRESERVED_STATIC_FULL_MARKETDATA_PHPUNIT_PASS
@@ -22,7 +39,7 @@ ACTIVE SESSION:
 - MARKET_DATA_MISSING_TICKER_REQUESTED_DATE_REPROCESS_DEFER_STATUS=DONE_SKIP_PUBLICATION_REPROCESS_DEFERS_NON_REQUESTED_AFFECTED_DATES_ONLY
 - FULL_GLOBAL_MARKET_DATA_LOCK_STATUS=LOCKED_UNFILTERED_MISSING_TICKER_PLAN_ZERO_FULL_RANGE_CURRENT_EVIDENCE_REPLAY_PASS
 - FULL_GLOBAL_MISSING_TICKER_PLAN=UNFILTERED_2023_01_02_TO_2025_10_31_MISSING_0_BARS_0_TICKERS_672_TRADING_DATES
-- FULL_GLOBAL_SOURCE_BLOCKERS=NONE_FOR_2023_01_02_TO_2025_10_31_CURRENT_READABLE_SOURCE_LOCK
+- FULL_GLOBAL_SOURCE_BLOCKERS=NONE_FOR_ARCHIVED_2023_01_02_TO_2025_10_31_CURRENT_READABLE_PROOF_WINDOW_AND_CURRENT_SOURCE_STATE
 - MARKET_DATA_MISSING_TICKER_PARTIAL_SOURCE_ACQUISITION_GUARD_STATUS=DONE_FAIL_FAST_BEFORE_IMPORT_PROMOTE_STATIC_FULL_MARKETDATA_PHPUNIT_PASS
 - MARKET_DATA_MISSING_TICKER_PARTIAL_SOURCE_ACQUISITION_RULE=ANY_FAILED_TICKER_OR_PARTIAL_WINDOW_BLOCKS_BEFORE_IMPORT_PROMOTE_CORRECTION
 - MARKET_DATA_MISSING_TICKER_PARTIAL_SOURCE_ACQUISITION_OUTPUT=STATUS_BLOCKED_STAGE_SOURCE_ACQUISITION_DIAGNOSTIC_ONLY_NO_RUN_ID
@@ -40,7 +57,6 @@ ACTIVE SESSION:
 - MARKET_DATA_EVENT_RISK_IMPORT_COMMANDS=market-data:events:import-corporate-actions,market-data:events:import-trading-status
 - MARKET_DATA_EVENT_RISK_NULL_RULE=NO_SOURCE_NULL_EXPLICIT_NON_RISK_ZERO_RISK_SOURCE_ONE
 - MARKET_DATA_EVENT_RISK_PUBLICATION_RULE=SOURCE_IMPORT_ONLY_RECOMPUTE_PROMOTE_REQUIRED_FOR_CURRENT_PUBLICATIONS
-- MARKET_DATA_COMMAND_SURFACE=29_REGISTERED_COMMANDS_AFTER_MISSING_TICKER_BACKFILL_EXTENSION
 - WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_STATUS=DONE_CURRENT_RANGE_PROMOTE_PASS_FULL_RANGE_EVIDENCE_REPLAY_PASS
 - MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS
 - BASELINE_BENCHMARK_EXTENSION_FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)
@@ -97,7 +113,7 @@ ACTIVE SESSION:
 - Runtime promote republish proof ran on existing current bars for the archived proof window 2023-01-02 through 2025-10-31; API/OHLC import was not repeated.
 - Evidence/replay proof after sector-rotation republish is full-range across 672/672 current readable publications; replay id range `3362-4033` all MATCH/PASS.
 - Event-risk source migration ran in both `.env` and `.env.testing`; command surface proof previously showed 28 registered market-data commands including the two guarded event source import commands.
-- Missing-ticker command surface proof shows 29 registered market-data commands including `market-data:backfill:missing-tickers`.
+- Current command surface proof shows 30 registered market-data commands including `market-data:backfill:missing-tickers` and `market-data:eod-indicators:recompute-current`.
 - Missing-ticker correction-candidate lineage proof: focused runtime for 2023-01-03 reached `promote=SUCCESS` / `readable=YES`; follow-up runtime for 2023-01-04 through 2023-01-31 promoted all 19 remaining January primary dates; Jan 2-Jan 31 `--plan` now reports selected ticker `missing_bar_count=0`.
 - Superseded missing-ticker downstream proof: the earlier Feb 2023-Oct 2025 plan reported `missing_bar_count=21361`, `missing_trade_date_count=651`, and `ticker_count=53`. That was an interim source-data gap, not a candidate-preservation bug, and it is closed by the later 2026-06-05 final unfiltered plan with zero missing bars.
 - Superseded full-global source blocker proof: the earlier unfiltered Jan 2023 run stopped at `stage=SOURCE_ACQUISITION` for `FREN`, `MASA`, `MFIN`, `RMBA`, and `TURI`. That blocker is retained as root-cause history only; it is closed for the archived proof window by source-backed overlay/backfill proof, final missing plan zero, and full-range current evidence/replay PASS.
@@ -122,6 +138,93 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- MARKET_DATA_INDICATOR_WARMUP_WINDOW_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-06-08
+
+  [RELATED_IMPLEMENTATION] Market Data Indicator Warmup Window Audit
+
+  [HISTORY]
+  - 2026-06-05 -> Uploaded OHLC/indicator CSV audit proved MA50 was missing from current indicator rows despite sufficient active-ticker OHLC history in the supplied 75-trading-date sample.
+  - 2026-06-05 -> Repository warmup loading was patched to resolve windows from `market_calendar` trading-day sequence and regression coverage was updated.
+  - 2026-06-05 -> Follow-up audit removed lifecycle API warmup calendar-day subtraction and added a static guard so source-acquisition warmup also resolves from `market_calendar`.
+  - 2026-06-05 -> Full-suite rerun exposed one remaining test-only subclass constructor that skipped the parent artifact repository constructor; fixture patched to initialize the inherited market-calendar dependency.
+  - 2026-06-05 -> Final operator-local validation passed after fixture/env/doc sync: `history_promotion_failure` OK (1 test, 29 assertions) and full `vendor\bin\phpunit tests\Unit\MarketData` OK (639 tests, 9490 assertions).
+  - 2026-06-06 -> Clarified recompute scope: no source/master writes means source tables are read-only, while publication-bound indicator rows may be regenerated from existing source/master data.
+  - 2026-06-06 -> Operator-local final validation after indicator nullability/source-scope docs sync passed: `ProductionValidationRuntimeProofStaticGuardTest.php` OK (15 tests, 491 assertions), `LoggingTraceabilityReasonCodesStaticGuardTest.php` OK (7 tests, 134 assertions), `AuditDocsSynchronizationStaticGuardTest.php` OK (11 tests, 644 assertions), and full `vendor\bin\phpunit tests\Unit\MarketData` OK (639 tests, 9509 assertions).
+  - 2026-06-07 -> Approved recompute command completed targeted/full PHPUnit, single-date runtime smoke, full-range recompute 807/807, and final current evidence/replay 807/807 with zero mismatches.
+  - 2026-06-08 -> Docs-review validation reran full `vendor\bin\phpunit`; result `OK (641 tests, 9547 assertions)`. This refresh updates the active documentation proof count and does not reopen the 807/807 runtime evidence/replay lock.
+
+  [DEFINED]
+  - `ma50` and `close_vs_ma50_pct` are nullable only when fewer than 50 valid trading bars exist or an input price is invalid.
+  - EOD bar dependency loading and lifecycle source-acquisition warmup must resolve trading-day windows from `market_calendar`, not from wall-clock calendar subtraction.
+  - Sector rotation fields remain source-backed; missing sector benchmark bars/indicators leave sector rotation NULL rather than fabricated.
+  - Source/master tables remain read-only for any future recompute-only operation: no writes to ticker master, sector membership, sector-index bars, corporate-action rows, trading-status rows, or EOD bars.
+  - Publication-bound `eod_indicators` fields may still be regenerated from existing source/master data; this is not source/master mutation. A technical-only context-freezing mode must be explicit and is not currently approved.
+
+  [IMPLEMENTED]
+  - `MarketCalendarRepository::tradingDateWindowStart` resolves the oldest required trading date ending at the requested date and validates calendar sufficiency.
+  - `EodArtifactRepository::loadBarsWindow` now uses the calendar-resolved trading window for equity indicator dependency loading.
+  - `MarketBenchmarkRepository::loadBarsWindow` now uses the same calendar-resolved trading window for IHSG/sector benchmark dependency loading.
+  - `BackfillLifecycleOrchestrator::warmupStart` now resolves lifecycle `warmup_start` through `MarketCalendarRepository::tradingDateWindowStart` using `warmup_trading_days` with fallback to legacy `warmup_days`.
+  - `EodArtifactRepositoryPartialUpsertTest::test_load_bars_window_uses_market_calendar_trading_window_for_ma50_history` plus missing-calendar/insufficient-history tests were added as regression coverage.
+  - `ApiBackfillLifecycleStaticGuardTest::test_lifecycle_warmup_start_is_resolved_from_market_calendar_trading_window` was added to prevent lifecycle warmup from falling back to `subDays(warmup_days)`.
+  - Integration-test artifact repository subclasses must call the parent constructor when they rely on inherited `loadBarsWindow` behavior.
+
+  [ENFORCED]
+  - Operator-local full suite passed after the history-promotion fixture constructor fix; this contract is locked for the current patched source state.
+  - Indicator compute still depends on actual ordered bars; no MA50/ROC20 is produced without enough valid price rows.
+  - The lifecycle warmup path and repositories no longer use calendar-day overfetch/subtraction for dependency windows; `market_calendar` is the source of truth.
+  - Missing/non-trading requested dates fail fast. Insufficient prior trading dates caused by dataset start or ticker listed_date must produce per-indicator NULL fields, not whole-date failure.
+  - Sector rotation remains nullable and source-backed when sector-index source rows are missing for the requested date.
+
+  [VALIDATED]
+  - Uploaded CSV audit matched all comparable non-MA50 equity formulas for 30/30 sample rows.
+  - Uploaded CSV audit recomputed non-null MA50 and `close_vs_ma50_pct` for 30/30 sample rows, while current indicator output had both fields NULL for those rows.
+  - Uploaded CSV audit found sector rotation populated for 903 rows on 2026-06-02 and 2026-06-03 but 0 rows on 2026-06-04; existing audit evidence records sector benchmark bar source range only through 2026-06-03.
+  - Sandbox `php -l` passed for `MarketCalendarRepository.php`, `EodArtifactRepository.php`, `MarketBenchmarkRepository.php`, `BackfillLifecycleOrchestrator.php`, `config/market_data.php`, `ApiBackfillLifecycleStaticGuardTest.php`, and `EodArtifactRepositoryPartialUpsertTest.php`.
+  - Operator-local targeted validation after market-calendar warmup patch passed: `ApiBackfillLifecycleStaticGuardTest.php` OK (15 tests, 109 assertions) and `EodArtifactRepositoryPartialUpsertTest.php` OK (6 tests, 28 assertions).
+  - Operator-local filtered validation passed for `Backfill` OK (65 tests, 444 assertions), `Indicator` OK (29 tests, 303 assertions), `Benchmark` OK (20 tests, 211 assertions), `Calendar` OK (7 tests, 219 assertions), and `Lifecycle` OK (47 tests, 474 assertions).
+  - Operator-local audit/env guard proof passed after doc/env sync: `AuditDocsSynchronizationStaticGuardTest.php` OK (11 tests, 639 assertions), `ConfigEnvGovernanceCleanupStaticGuardTest.php` OK (10 tests, 124 assertions), and `OpsEnvironmentBaselineStaticGuardTest.php` OK (8 tests, 107 assertions).
+  - Operator-local integration regression proof passed after fixture fixes: `reseal_failure` OK (1 test, 30 assertions) and `history_promotion_failure` OK (1 test, 29 assertions).
+  - Operator-local final full MarketData proof passed: `vendor\bin\phpunit tests\Unit\MarketData` / `tests/Unit/MarketData` -> OK (639 tests, 9490 assertions), Time 00:31.733, Memory 48.00 MB.
+  - Operator-local post-cleanup validation for source/master read-only vs publication-bound recompute boundary passed: `ProductionValidationRuntimeProofStaticGuardTest.php` OK (15 tests, 491 assertions), `LoggingTraceabilityReasonCodesStaticGuardTest.php` OK (7 tests, 134 assertions), `AuditDocsSynchronizationStaticGuardTest.php` OK (11 tests, 644 assertions), full `tests/Unit/MarketData` OK (639 tests, 9509 assertions).
+
+  [FINAL_RULE]
+  - Lifecycle source-acquisition warmup plus equity and benchmark indicator warmup loading must be trading-window safe by resolving dependency windows from `market_calendar`; calendar-day subtraction/overfetch is not the source of truth.
+  - Invalid/non-trading requested dates must fail fast, while dataset-start or ticker-listed-date insufficient MA50/ROC20 history must publish deterministic NULL fields instead of failing the whole date.
+  - The approved `market-data:eod-indicators:recompute-current` command is source/master read-only and may regenerate publication-bound context fields from existing source/master rows. A technical-only preserve-context mode remains unimplemented and would require separate contract/proof.
+  - Sector rotation must not be guessed; import the sector-index bar for the date, recompute benchmark indicators, then run the existing lifecycle/promote flow for equity indicators.
+
+  [LOCK_CONDITION]
+  - Satisfied by CSV formula audit, market-calendar runtime/static enforcement, targeted PHPUnit, audit/env guard tests, integration regression tests, full `tests\Unit\MarketData` / `tests/Unit/MarketData` PASS, latest docs-review `vendor\bin\phpunit` PASS (641 tests, 9547 assertions), full-range recompute 807/807 PASS, and final current evidence/replay 807/807 MATCH/PASS.
+
+  [NEXT_ACTION]
+  - No remaining source-code blocker for this contract.
+  - Operational data follow-up remains separate and non-blocking: import missing sector-index bars before expecting nullable sector-rotation fields for those dates. Use the approved `market-data:eod-indicators:recompute-current` command after source context is already present; the removed `market-data:eod-indicators:republish-current` remains invalid. Source/master read-only does not freeze publication-bound context columns unless a future explicit technical-only mode is separately designed and proven.
+
+
+- CURRENT_INDICATOR_RECOMPUTE_FROM_EXISTING_BARS_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-06-08
+
+  [RELATED_IMPLEMENTATION] Current Indicator Recompute From Existing Current Bars
+
+  [HISTORY]
+  - 2026-06-06 -> Contract defined correction-current recompute from existing current bars with no source/master or `eod_bars` writes.
+  - 2026-06-07 -> Unchanged-correction evidence routing was corrected and final targeted/full/runtime proof completed.
+  - 2026-06-08 -> Full docs-review PHPUnit refresh passed: `vendor\bin\phpunit` -> OK (641 tests, 9547 assertions).
+
+  [DEFINED] The command recalculates publication-bound indicators and eligibility from existing current readable bars. It must not acquire provider data, ingest bars, mutate `eod_bars`, or mutate ticker/sector/corporate-action/trading-status source/master tables. Publication-bound context fields may be re-resolved from existing source rows.
+
+  [IMPLEMENTED] `RecomputeCurrentIndicatorsCommand` uses `market_calendar`, current readable publication resolution, correction request/approval, `correction_current` lifecycle, candidate bar snapshot/hash/seal/finalize, and evidence selection between run evidence and correction evidence for preserved-current no-op outcomes.
+
+  [ENFORCED] Required force reason, current-readable seed publication, correction-current pointer safety, false source/bar/master write flags, per-field indicator nullability, and evidence/replay options are enforced by runtime code and static guards.
+
+  [VALIDATED] Operator-local validation passed. MarketData validation scope: `tests/Unit/MarketData`. The 2026-06-07 runtime command `vendor\bin\phpunit tests\Unit\MarketData` completed with `OK (640 tests, 9539 assertions)`, and the 2026-06-08 docs-review refresh `vendor\bin\phpunit` completed with `OK (641 tests, 9547 assertions)`. Targeted guards and artisan runtime validation also passed. The single-date smoke passed, full-range recompute passed 807/807, and final full-range current evidence/replay passed 807/807 with zero failures/errors/mismatches. 757 replacement publications used run evidence and 50 unchanged/preserved-current outcomes used correction evidence; all 807 evidence exports were `ADMITTED_COMPLETE`.
+
+  [FINAL_RULE] Recompute-only indicator maintenance must use `market-data:eod-indicators:recompute-current`. It may write new publication/history/evidence artifacts but must never import or mutate source/master/OHLCV tables. A failed candidate must not replace the prior current readable publication. An unchanged candidate must preserve the current publication and export correction evidence without false failure.
 
 - MARKET_DATA_MANUAL_FILE_MULTI_DATE_LIFECYCLE_INPUT_CONTRACT -> LOCKED
 
@@ -337,7 +440,7 @@ ACTIVE SESSION:
 - Prior source-backed suspension/special-monitoring rows carry forward until the matching recognized source-backed clear event is present.
 - Clear/normal rows are non-risk only when no independent risk state remains active.
 - `UNSUSPENDED` / resume / lifted codes are not inferred as `is_suspended=1` even though they contain the word `SUSPEND`.
-  - Source import does not mutate current readable publication pointers; affected ranges from state start through clear/current require recompute/promote/reseal before current indicators change.
+  - Source import does not mutate current readable publication pointers; affected ranges from state start through clear/current require the existing lifecycle/promote/reseal flow before current indicators change.
 
   [VALIDATED]
   - Operator-local syntax proof: `php -l app\Infrastructure\Persistence\MarketData\EventRiskSourceRepository.php` -> no syntax errors.
@@ -390,7 +493,7 @@ ACTIVE SESSION:
   [VALIDATED]
   - Operator-local syntax proof passed for `BackfillLifecycleOrchestrator.php` and `BackfillMissingTickersCommand.php`.
   - Operator-local command help proof: `php artisan market-data:backfill:missing-tickers --help` displayed usage/options without fatal error.
-  - Operator-local command list proof: `php artisan list market-data` showed 29 registered market-data commands including `market-data:backfill:missing-tickers`.
+  - Operator-local command list proof: `php artisan list market-data` showed 30 registered market-data commands including `market-data:backfill:missing-tickers`.
   - Operator-local non-mutating plan proof for `2026-06-03`: `status=PLAN_ONLY`, `source_acquisition_mode=range_window`, `window_count=1`, `estimated_http_requests=913`, `ticker_count=913`, `missing_bar_count=913`, `missing_trade_date_count=1`.
   - Operator-local behavioral proof: `vendor\bin\phpunit tests\Unit\MarketData\BackfillMissingTickerLifecycleTest.php` -> OK (2 tests, 10 assertions).
   - Operator-local Backfill regression proof: `vendor\bin\phpunit tests\Unit\MarketData --filter "Backfill"` -> OK (52 tests, 362 assertions).
@@ -418,7 +521,7 @@ ACTIVE SESSION:
   [HISTORY]
   - 2026-06-04 -> Contract opened for source-backed corporate-action, trading-status, UMA, suspend, and event-risk context after the scope was confirmed as market-data core upstream data.
   - 2026-06-04 -> Contract enforced with source tables, guarded CSV import commands, nullable indicator fields, compute/hash/history/read-model plumbing, docs, and targeted tests.
-  - 2026-06-04 -> Contract explicitly separates source import from current-publication mutation: imports only load source rows; recompute/promote/reseal makes affected dates official.
+  - 2026-06-04 -> Contract explicitly separates source import from current-publication mutation: imports only load source rows; the existing lifecycle/promote/reseal flow makes affected dates official.
   - 2026-06-04 -> Full `tests/Unit/MarketData` passed after audit-doc synchronization and event-risk source context updates: OK (609 tests, 9229 assertions).
 
   [DEFINED]
@@ -453,10 +556,10 @@ ACTIVE SESSION:
   - Operator-local full MarketData proof after event-risk source context: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (609 tests, 9229 assertions).
 
   [FINAL_RULE]
-  - LOCKED for the event-risk source context surface. Corporate-action/trading-status/UMA/suspend/event-risk data is source-backed nullable market-data context; no source row means NULL, explicit non-risk source rows may stamp zero, risk source rows stamp flags/reasons, and source import requires recompute/promote/reseal before affected dates become official current-readable publications.
+  - LOCKED for the event-risk source context surface. Corporate-action/trading-status/UMA/suspend/event-risk data is source-backed nullable market-data context; no source row means NULL, explicit non-risk source rows may stamp zero, risk source rows stamp flags/reasons, and source import requires the existing lifecycle/promote/reseal flow before affected dates become official current-readable publications.
 
   [NEXT_ACTION]
-  - Import official source CSVs when available, then recompute/promote affected dates and rerun evidence/replay for any current publication whose event-risk context changes.
+  - Import official source CSVs when available, then run the existing lifecycle/promote flow for affected dates and rerun evidence/replay for any current publication whose event-risk context changes.
 
 
 - WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_CONTRACT -> LOCKED
@@ -468,7 +571,7 @@ ACTIVE SESSION:
   [REVIEW_STATUS] LOCAL_FULL_MARKETDATA_PHPUNIT_PASS_CURRENT_RANGE_PROMOTE_PASS_FULL_RANGE_EVIDENCE_REPLAY_PASS
 
   [HISTORY]
-  - 2026-06-02 -> Contract enforced for Priority 1 weekly-swing equity indicators and IHSG context; full MarketData PHPUnit passed and runtime lock remains pending.
+  - 2026-06-02 -> Contract enforced for Priority 1 weekly-swing equity indicators and IHSG context; full MarketData PHPUnit passed and runtime lock was still pending at that moment. Later 2026-06-03/2026-06-04 runtime republish plus full-range evidence/replay proof closed the pending state.
   - 2026-06-02 -> Operator supplied `eod_runs` and `eod_publications` CSV snapshots; local runtime promote republished 672/672 current readable publications from existing current bars with force-replace audit reason.
   - 2026-06-02 -> Date completion interpretation corrected: unfinished duplicate rows for the same trade date are not remaining work when a current readable `SUCCESS / READABLE / PASS` publication exists for that date.
   - 2026-06-03 -> Added proof-only command `market-data:evidence-replay:full-range-current` and executed it across the current readable historical range; 672/672 run evidence exports, generated fixtures, replay verifies, and replay evidence exports passed.
@@ -493,7 +596,7 @@ ACTIVE SESSION:
   - Watchlist read output exposes `sector_code`, `sector_name`, and `sector_index_code` from the publication-bound indicator row and active sector taxonomy.
   - Watchlist read output exposes `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` from the publication-bound indicator row.
   - Benchmark read output exposes `ma20_slope_pct`, `close_to_ma20_pct`, and `close_to_ma50_pct` from `market_benchmark_indicators`.
-  - Sector index OHLC source ingestion is available through guarded CSV import (`market-data:sector-indexes:import-bars`) and guarded API import (`market-data:sector-indexes:ingest-api`) before recompute/promote stamps sector rotation values into current publications.
+  - Sector index OHLC source ingestion is available through guarded CSV import (`market-data:sector-indexes:import-bars`) and guarded API import (`market-data:sector-indexes:ingest-api`) before the existing lifecycle/promote flow stamps sector rotation values into current publications.
 
   [ENFORCED]
   - Existing consumer read-model guard remains the anti-bypass enforcement for raw/staging/latest/MAX(date) shortcuts.
@@ -2064,7 +2167,7 @@ ACTIVE SESSION:
   - Operator-local related targeted PHPUnit proof PASS: OperationalReadiness OK (10 tests, 199 assertions); CommandSurface OK (47 tests, 348 assertions); Evidence OK (44 tests, 767 assertions); Replay OK (39 tests, 655 assertions); Correction OK (65 tests, 1287 assertions); FailSafe OK (5 tests, 108 assertions).
   - Operator-local full MarketData proof PASS before final recovery patch: `vendor/bin/phpunit tests/Unit/MarketData` OK (378 tests, 5072 assertions).
   - Operator-local final runtime proof PASS after final recovery patch: Replay OK (43 tests, 717 assertions); Evidence OK (44 tests, 781 assertions); StaticGuard OK (116 tests, 2628 assertions); full `vendor/bin/phpunit tests/Unit/MarketData` OK (383 tests, 5188 assertions).
-  - Operator-local artisan command list/help proof PASS after fixture generator: command discovery showed 20 registered market-data commands including `market-data:replay:fixture:generate`; provider-smoke reconciliation recorded 21 registered market-data commands; the proof-only full-range current evidence/replay extension recorded 22 registered market-data commands; the sector membership import extension recorded 23 registered market-data commands; lifecycle reconciliation recorded 24 registered market-data commands; sector-index CSV import reconciliation recorded 25 registered market-data commands; sector-index API reconciliation recorded 26 registered market-data commands; event-risk source import reconciliation recorded 28 registered market-data commands; current missing-ticker lifecycle reconciliation records 29 registered market-data commands including `market-data:backfill:lifecycle`, `market-data:backfill:missing-tickers`, `market-data:sectors:import-memberships`, `market-data:sector-indexes:import-bars`, `market-data:sector-indexes:ingest-api`, `market-data:events:import-corporate-actions`, and `market-data:events:import-trading-status`, and required help surfaces display usage/options without fatal error.
+  - Operator-local artisan command list/help proof PASS after fixture generator: command discovery showed 20 registered market-data commands including `market-data:replay:fixture:generate`; provider-smoke reconciliation recorded 21 registered market-data commands; the proof-only full-range current evidence/replay extension recorded 22 registered market-data commands; the sector membership import extension recorded 23 registered market-data commands; lifecycle reconciliation recorded 24 registered market-data commands; sector-index CSV import reconciliation recorded 25 registered market-data commands; sector-index API reconciliation recorded 26 registered market-data commands; event-risk source import reconciliation recorded 28 registered market-data commands; current command surface records 30 registered market-data commands after invalid indicator-only republish command removal and current-bars recompute implementation, including `market-data:backfill:lifecycle`, `market-data:backfill:missing-tickers`, `market-data:eod-indicators:recompute-current`, `market-data:sectors:import-memberships`, `market-data:sector-indexes:import-bars`, `market-data:sector-indexes:ingest-api`, `market-data:events:import-corporate-actions`, and `market-data:events:import-trading-status`, and required help surfaces display usage/options without fatal error.
   - Operator-local flow proof PASS: daily import-only created `run_id=1` without promotion/current pointer switch; promote/finalize made publication `1` current/readable/sealed with coverage PASS; run evidence export produced complete 9-file evidence.
   - Operator-local replay proof PARTIAL after fix3: replay smoke/verify no longer hits `SQLSTATE[22001]`; stale committed `valid_case` returns clean MISMATCH, reason-code mismatch returns clean MISMATCH/pass, and broken/missing fixture cases surface `REPLAY_FIXTURE_SCHEMA_MISMATCH` / `REPLAY_EXPECTED_PROOF_INCOMPLETE`.
   - Operator-local replay proof PASS after fix4: generated runtime fixture command produced `fixture_generated=1` and `expected_result=MATCH`; generated fixture verify produced `replay_id=5`, `comparison_result=MATCH`, `mismatch_count=0`, `artifact_changed_scope=none`, and replay artifact path; smoke with `--generate_runtime_valid_case` produced `all_passed=1`, generated valid MATCH/pass, reason-code mismatch MISMATCH/pass, broken manifest ERROR/pass, and missing file ERROR/pass.
@@ -2072,13 +2175,13 @@ ACTIVE SESSION:
   - Operator-local failed/held runtime proof PASS after fix6: `run_id=2` daily import-only accepted 5 rows and stayed unpromoted/current; promote produced `HELD`, `NOT_READABLE`, `coverage_gate_state=FAIL`, `coverage_reason_code=COVERAGE_BELOW_THRESHOLD`, `coverage_summary=available=5/901 | missing=896 | ratio=0.0055 | threshold=0.9800`, `final_reason_code=RUN_PARTIAL_DATA`, and `pointer_switched=false`.
   - Operator-local held-run evidence export PASS_WITH_WARNING after fix6: `market-data:evidence:export --run_id=2` produced `evidence_completeness_state=INCOMPLETE`, `pointer_resolve_status=MISSING`, `fallback_used=1`, `file_count=8`, and `EVIDENCE_INCOMPLETE` warning for the non-readable held run.
   - Operator-local correction proof PASS after fix6: request produced `correction_id=1`; premature run was blocked with `COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE`; approve transitioned to `APPROVED`; correction run produced `run_id=3`, `SUCCESS`, `READABLE`, `PUBLISHED`, `RESEALED`, baseline publication `1`, candidate publication `3`, and pointer switched to current publication `3`; correction evidence export produced `correction_evidence.json`.
-  - Operator-local fresh command-list/full-help proof PASS after fix7, event-risk extension, and missing-ticker lifecycle extension: `php artisan list | findstr market-data` showed 20 registered market-data commands including `market-data:replay:fixture:generate`; provider-smoke reconciliation showed 21 registered market-data commands; the proof-only full-range current evidence/replay extension showed 22 registered market-data commands; the sector membership import extension showed 23 registered market-data commands; lifecycle reconciliation showed 24 registered market-data commands; sector-index CSV import reconciliation showed 25 registered market-data commands; sector-index API reconciliation showed 26 registered market-data commands; event-risk source import reconciliation showed 28 registered market-data commands; current missing-ticker lifecycle reconciliation shows 29 registered market-data commands including `market-data:backfill:lifecycle`, `market-data:backfill:missing-tickers`, `market-data:sectors:import-memberships`, `market-data:sector-indexes:import-bars`, `market-data:sector-indexes:ingest-api`, `market-data:events:import-corporate-actions`, and `market-data:events:import-trading-status`; `replay:fixture:generate --help` shows `run_id`, `--case`, and `--output_dir`; `replay:smoke --help` shows `--generate_runtime_valid_case`; `backfill:lifecycle --help` shows range/source/plan/evidence/replay/resume options; `backfill:missing-tickers --help` shows range/source/ticker filter/plan/evidence/replay options; `evidence-replay:full-range-current --help` shows optional date range, `--fixture_case`, `--output_dir`, `--continue_on_error`, and `--max_dates`; `sectors:import-memberships --help` shows CSV input, `--classification_system`, `--source_name`, `--dry-run`, and `--apply`; `sector-indexes:import-bars --help` shows CSV input, `--source_name`, `--dry-run`, and `--apply`; `sector-indexes:ingest-api --help` shows date range, `--provider`, `--symbol_suffix`, `--symbol_map_json`, `--dry-run`, `--apply`, `--continue_on_error`, and `--allow_partial`; `events:import-corporate-actions --help` and `events:import-trading-status --help` show CSV input, `--source_name`, `--dry-run`, and `--apply`; `replay:verify`, `evidence:export`, `daily`, `promote`, `run:finalize`, `correction:request`, `correction:approve`, `correction:run`, and `provider:smoke` help surfaces display usage/options without fatal error.
+  - Operator-local fresh command-list/full-help proof PASS after fix7, event-risk extension, and missing-ticker lifecycle extension: `php artisan list | findstr market-data` showed 20 registered market-data commands including `market-data:replay:fixture:generate`; provider-smoke reconciliation showed 21 registered market-data commands; the proof-only full-range current evidence/replay extension showed 22 registered market-data commands; the sector membership import extension showed 23 registered market-data commands; lifecycle reconciliation showed 24 registered market-data commands; sector-index CSV import reconciliation showed 25 registered market-data commands; sector-index API reconciliation showed 26 registered market-data commands; event-risk source import reconciliation showed 28 registered market-data commands; current command surface shows 30 registered market-data commands including `market-data:backfill:lifecycle`, `market-data:backfill:missing-tickers`, `market-data:eod-indicators:recompute-current`, `market-data:sectors:import-memberships`, `market-data:sector-indexes:import-bars`, `market-data:sector-indexes:ingest-api`, `market-data:events:import-corporate-actions`, and `market-data:events:import-trading-status`; `replay:fixture:generate --help` shows `run_id`, `--case`, and `--output_dir`; `replay:smoke --help` shows `--generate_runtime_valid_case`; `backfill:lifecycle --help` shows range/source/plan/evidence/replay/resume options; `backfill:missing-tickers --help` shows range/source/ticker filter/plan/evidence/replay options; `evidence-replay:full-range-current --help` shows optional date range, `--fixture_case`, `--output_dir`, `--continue_on_error`, and `--max_dates`; `sectors:import-memberships --help` shows CSV input, `--classification_system`, `--source_name`, `--dry-run`, and `--apply`; `sector-indexes:import-bars --help` shows CSV input, `--source_name`, `--dry-run`, and `--apply`; `sector-indexes:ingest-api --help` shows date range, `--provider`, `--symbol_suffix`, `--symbol_map_json`, `--dry-run`, `--apply`, `--continue_on_error`, and `--allow_partial`; `events:import-corporate-actions --help` and `events:import-trading-status --help` show CSV input, `--source_name`, `--dry-run`, and `--apply`; `replay:verify`, `evidence:export`, `daily`, `promote`, `run:finalize`, `correction:request`, `correction:approve`, `correction:run`, and `provider:smoke` help surfaces display usage/options without fatal error.
   - Replay generated MATCH artifact, replay evidence export by `--replay_id=5`, failed/held coverage proof, held-run evidence, correction lifecycle, correction guard, correction evidence export, and fresh command-list/full-help proof are now RUNTIME_PROOF_PASS or PASS_WITH_WARNING where the held run is intentionally incomplete.
   - Container runtime proof recovery on 2026-05-10: `php vendor/bin/phpunit --version` is blocked in the container by missing `dom`, `mbstring`, `xml`, and `xmlwriter`; `.env.testing` is absent in the container; `php artisan list` lists 20 market-data commands with PHP 8.4 deprecation warnings; `php -l` passed for 128 market-data PHP files. Status for this container run is `BLOCKED_CONTAINER_RUNTIME_ENV`, not runtime PASS.
   - Operator-local runtime proof recovery on 2026-05-12: PHP 7.4.33 has required extensions, testing migration and reason-code seed completed, Replay/Evidence/StaticGuard targeted filters passed, and full `tests/Unit/MarketData` passed with OK (383 tests, 5188 assertions). This operator-local result is the final runtime authority for this session.
 
   [FINAL_RULE]
-  - LOCKED. Production Validation contract is locked because operator-local runtime proof is complete and current: required PHP extensions are available, testing migration/seed succeeded, 29 registered market-data commands are confirmed, Replay/Evidence/StaticGuard targeted filters passed, full `tests/Unit/MarketData` passed with OK (383 tests, 5188 assertions), and flow/evidence/replay/failure/correction runtime artifacts are recorded. Container-only `BLOCKED_CONTAINER_RUNTIME_ENV` is now superseded by the final passed provider-smoke proof/support context and does not override the operator-local PASS result. Static guard and PHPUnit proof alone are not substitutes for runtime artifacts.
+  - LOCKED. Production Validation contract is locked because operator-local runtime proof is complete and current: required PHP extensions are available, testing migration/seed succeeded, 30 registered market-data commands are confirmed, Replay/Evidence/StaticGuard targeted filters passed, full `tests/Unit/MarketData` passed with OK (383 tests, 5188 assertions), and flow/evidence/replay/failure/correction runtime artifacts are recorded. Container-only `BLOCKED_CONTAINER_RUNTIME_ENV` is now superseded by the final passed provider-smoke proof/support context and does not override the operator-local PASS result. Static guard and PHPUnit proof alone are not substitutes for runtime artifacts.
 
   [NEXT_ACTION]
   - Continue append-only runtime evidence updates after future command/behavior changes.

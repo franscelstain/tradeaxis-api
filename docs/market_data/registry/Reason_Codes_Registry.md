@@ -154,6 +154,7 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `NO_READABLE_PUBLICATION` | READ_SIDE | HARD | A read-side consumer could not resolve a current readable publication through the authoritative pointer and must return no data. |
 | `COMMAND_MISSING_REQUIRED_INPUT` | COMMAND | HARD | Operator command input is missing or empty for a required argument or option. |
 | `COMMAND_INVALID_DATE_FORMAT` | COMMAND | HARD | Operator command date input does not use the locked `YYYY-MM-DD` format. |
+| `COMMAND_INVALID_DATE_RANGE` | COMMAND | HARD | Operator command date range is invalid because `start_date` is after `end_date`. |
 | `COMMAND_INVALID_SOURCE_MODE` | COMMAND | HARD | Operator command source mode is outside the locked API/manual-file source modes. |
 | `COMMAND_INVALID_PROMOTE_MODE` | COMMAND | HARD | Operator command promote mode is unsupported by the locked promote contract. |
 | `COMMAND_CONFLICTING_OPTIONS` | COMMAND | HARD | Operator command options are mutually exclusive or ambiguous. |

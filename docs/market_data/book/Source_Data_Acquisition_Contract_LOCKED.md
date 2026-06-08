@@ -186,6 +186,12 @@ Minimum telemetry tambahan:
 - `success_ticker_count`
 - `failed_ticker_count`
 
+Warmup contract:
+- `warmup_start` is a market-calendar trading-day boundary, not a calendar-day approximation.
+- The boundary must be resolved from the first requested trading date using configured warmup trading-day count.
+- If the requested date is missing from `market_calendar` or the prior trading-day window is insufficient, source acquisition must be blocked before import/promote.
+- Warmup bars are support history for rolling indicators and benchmark dependencies; they do not become requested publication targets unless the operator requested those dates.
+
 Yahoo Finance chart API harus menggunakan precise `period1` / `period2` boundaries for range-window acquisition. Provider `range=10d` style defaults are not sufficient for arbitrary historical backfill windows.
 
 ---
@@ -211,3 +217,20 @@ Resume-only-failed state vocabulary:
 - `SYSTEMIC_FAILED` only for true global/provider/config acquisition failure
 
 Resume-only-failed diagnostics must include failed checkpoint total/eligible/retried/skipped counts, retry success/failure counts, skipped reasons, and a failure sample consistent with `source_acquisition_checkpoint.json`.
+
+
+## API range-window market-calendar warmup addendum
+For lifecycle API backfill, range-window source acquisition must resolve warmup through the market calendar.
+
+Forbidden:
+- `requested_start - N calendar days` as the source of truth
+- fixed holiday buffers as the source of truth
+- publishing requested dates when the warmup calendar dependency cannot be proven
+
+Required:
+- `warmup_start = tradingDateWindowStart(first_requested_trading_date, MARKET_DATA_API_BACKFILL_WARMUP_TRADING_DAYS)` or equivalent repository contract, capped at the first available trading date when the dataset itself starts later than the requested warmup horizon
+- fail-fast validation for non-trading requested dates
+- no fail-fast solely because the dataset-start boundary has fewer prior trading dates than the ideal warmup horizon; early indicators must be NULL per field as needed
+- telemetry that records `warmup_start`, `requested_start`, `requested_end`, and `source_acquisition_mode=range_window`
+
+This rule exists so rolling indicators and benchmark indicators do not become NULL merely because a long holiday/weekend sequence made calendar-day warmup shorter than the required trading-day history, while still allowing deterministic NULL outputs at the beginning of the available dataset.

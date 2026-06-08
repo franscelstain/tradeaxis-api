@@ -2,7 +2,8 @@
 
 [SESSION]
 - Name: Replay Historical Determinism Hardening
-- Status: READY_FOR_LOCAL_RUNTIME_VALIDATION
+- Status: LOCKED_LOCAL_PHPUNIT_PASS
+- Historical transition marker retained for traceability: READY_FOR_LOCAL_RUNTIME_VALIDATION before operator-local rerun.
 - Last Updated: 2026-05-17
 - Scope: hardening edge case untuk replay actual-state historical publication setelah current pointer berpindah.
 
@@ -98,8 +99,8 @@
 | `php vendor/bin/phpunit --version` | blocked by missing extensions | n/a | n/a | BLOCKED_CONTAINER_RUNTIME_ENV |
 
 [FINAL_STATUS]
-- READY_FOR_LOCAL_RUNTIME_VALIDATION.
-- Tidak boleh DONE/LOCKED sampai operator-local targeted PHPUnit dan full `tests/Unit/MarketData` PASS.
+- LOCKED_LOCAL_PHPUNIT_PASS.
+- Historical `READY_FOR_LOCAL_RUNTIME_VALIDATION` state was closed after operator-local targeted PHPUnit and full `tests/Unit/MarketData` passed, as recorded in `LUMEN_IMPLEMENTATION_STATUS.md` and `LUMEN_CONTRACT_TRACKER.md`.
 
 
 ## Local Feedback Follow-up Patch - 2026-05-17
@@ -112,4 +113,4 @@
 [POST_PATCH_STATIC_VALIDATION]
 - `php -l tests/Unit/MarketData/ReplayHistoricalDeterminismHardeningStaticGuardTest.php` -> No syntax errors detected.
 - `php -l tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php` -> No syntax errors detected.
-- Full operator-local PHPUnit rerun is still required before DONE/LOCKED.
+- Full operator-local PHPUnit rerun was later completed; this line is retained as post-patch history, not active work.

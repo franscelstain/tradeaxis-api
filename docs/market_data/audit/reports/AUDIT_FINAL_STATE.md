@@ -35,6 +35,8 @@ Dokumen ini **tidak boleh** memakai penamaan berbasis putaran revisi (`R1`, `R2`
 
 The `2023-01-02` through `2025-10-31` range is the archived full-range proof window used by the active audit evidence, not the final date of production readiness. Latest operator run/current operation is recorded through `2026-06-04`, and future dates remain part of normal daily lifecycle/backfill work.
 
+Latest docs-review validation on `2026-06-08` passed `vendor\bin\phpunit` with `OK (641 tests, 9547 assertions)`.
+
 The active package state is not dependent on older history files. Older `PARTIAL` / `FAIL` / `BLOCKED` notes remain historical when a later checkpoint explicitly closes them.
 
 ## State rule

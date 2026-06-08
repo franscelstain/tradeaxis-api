@@ -94,6 +94,30 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->assertStringContainsString('next_action=Re-run with --apply --reason=', $command);
     }
 
+
+
+    public function test_recompute_current_indicators_is_current_bars_only_and_does_not_import_source(): void
+    {
+        $command = file_get_contents($this->commandDir.'/RecomputeCurrentIndicatorsCommand.php');
+        $pipeline = file_get_contents(base_path('app/Application/MarketData/Services/MarketDataPipelineService.php'));
+
+        $this->assertStringContainsString('market-data:eod-indicators:recompute-current', $command);
+        $this->assertStringContainsString('indicator_recompute_from_existing_current_bars', $command);
+        $this->assertStringContainsString('source_acquisition_executed', $command);
+        $this->assertStringContainsString('bar_ingest_executed', $command);
+        $this->assertStringContainsString('source_master_write_executed', $command);
+        $this->assertStringContainsString('eod_bars_write_executed', $command);
+        $this->assertStringContainsString('promoteDaily(', $command);
+        $this->assertStringContainsString('correction_current', $command);
+        $this->assertStringContainsString('exportCorrectionEvidence', $command);
+        $this->assertStringContainsString('recomputePreservedCurrentPublication', $command);
+        $this->assertStringNotContainsString('completeIngest(', $command);
+        $this->assertStringNotContainsString('acquireSourceRows', $command);
+        $this->assertStringNotContainsString('ingestAcquiredRows', $command);
+        $this->assertStringContainsString('bars_rows_written_source=current_publication_snapshot', $pipeline);
+        $this->assertStringContainsString('bar_ingest_executed=false', $pipeline);
+    }
+
     private function expectedCommands(): array
     {
         return [
@@ -126,6 +150,7 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
             ['class' => 'RunCorrectionCommand', 'signature' => 'market-data:correction:run'],
             ['class' => 'RepairCurrentPublicationIntegrityCommand', 'signature' => 'market-data:current-publication:repair'],
             ['class' => 'ProviderSmokeCommand', 'signature' => 'market-data:provider:smoke'],
+            ['class' => 'RecomputeCurrentIndicatorsCommand', 'signature' => 'market-data:eod-indicators:recompute-current'],
         ];
     }
 }

@@ -564,7 +564,7 @@ class MarketDataPipelineService
                 $coverageGateState = CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? 'NOT_EVALUABLE');
                 $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
-                $run = $this->runs->updateTelemetry($run, [
+                $coverageTelemetry = [
                     'quality_gate_state' => $qualityGateState,
                     'coverage_universe_count' => $coverage['expected_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
@@ -577,7 +577,19 @@ class MarketDataPipelineService
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
                     'notes' => $this->appendRunNotes($run->notes ?? null, $this->coverageBasisNoteSegments($coverage, $coverageBasisPublicationId, $priorCurrent)),
-                ]);
+                ];
+
+                if ($input->correctionId !== null && $priorCurrent !== null && empty($run->bars_rows_written)) {
+                    $coverageTelemetry['bars_rows_written'] = (int) ($coverage['available_eod_count'] ?? 0);
+                    $coverageTelemetry['invalid_bar_count'] = 0;
+                    $coverageTelemetry['notes'] = $this->appendRunNotes($coverageTelemetry['notes'], [
+                        'bars_rows_written_source=current_publication_snapshot',
+                        'source_acquisition_executed=false',
+                        'bar_ingest_executed=false',
+                    ]);
+                }
+
+                $run = $this->runs->updateTelemetry($run, $coverageTelemetry);
 
                 $this->runs->appendEvent(
                     $run,
