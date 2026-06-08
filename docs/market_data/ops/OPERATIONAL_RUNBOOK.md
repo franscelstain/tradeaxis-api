@@ -1,6 +1,6 @@
 # OPERATIONAL RUNBOOK — MARKET DATA
 
-Status: ENFORCED pending operator-local targeted and full MarketData PHPUnit validation.
+Status: LOCKED / MARKET_DATA_PRODUCTION_READY_LOCKED. Latest docs-review validation: `vendor\bin\phpunit` -> OK (641 tests, 9547 assertions) on 2026-06-08.
 Contract: OPERATIONAL_READINESS_CONTRACT.
 Owner: market-data operational layer.
 
@@ -83,6 +83,7 @@ Scheduler proof is not live provider proof. Do not claim provider/API readiness 
 | `market-data:daily` | Import-only daily sequence | `--requested_date` or `--latest`, `--source_mode`, optional `--input_file`, `--output_dir` | Import-only; no readable publish claim | `run_id`, `request_mode=import_only`, `import_status`, `promote_status=NOT_PROMOTED`, source summary | If no valid source, stop and export evidence; next action is fix source or rerun import | command surface, import/promote, fail-safe |
 | `market-data:eod-bars:ingest` | Acquire/canonicalize EOD bars | requested date/source/run context; optional explicit `--request_mode=full_publish` for stage-chain publish proof | stage-only | row counts, source context, invalid count, request mode | If zero valid rows, stop; next action is source fix | fail-safe, source resilience |
 | `market-data:eod-indicators:compute` | Compute deterministic indicators | requested date/source/run context | stage-only | stage status, hash context | If input artifact missing, stop and inspect run evidence | hash/seal |
+| `market-data:eod-indicators:recompute-current` | Recompute indicators from existing current readable bars | start/end date, force reason | `--dry-run`; normal run creates correction-current publication | per-date correction/run/publication summary; source/bar/import flags false | If it fails, previous current publication remains current; inspect correction/run evidence | current indicator recompute |
 | `market-data:eod-eligibility:build` | Build eligibility and coverage context | requested date/source/run context | stage-only | coverage available/universe/missing/ratio | If coverage below threshold, stop before promote | coverage gate |
 | `market-data:audit:hash` | Compute deterministic hashes | requested date/source/run context | stage-only | bars/indicator/eligibility hashes | If hash changes without data change, stop and investigate determinism | hash/seal |
 | `market-data:dataset:seal` | Seal coherent dataset candidate | requested date/source/run context | seal only | `seal_state=SEALED`, `sealed_at`, `sealed_by` | If unsealed, cannot finalize/read | seal contract |
@@ -93,11 +94,11 @@ Scheduler proof is not live provider proof. Do not claim provider/API readiness 
 | `market-data:backfill:missing-tickers` | Missing ticker/date lifecycle range | `start_date`, `end_date`, `--source_mode=api`; optional `--ticker_codes`, `--plan`, `--with-evidence`, `--with-replay` | `--plan` for non-mutating gap scan; normal execution is explicit | missing ticker counts, source acquisition, candidate row count, promote, evidence, replay | Use when ticker master has active/listed tickers missing from current `eod_bars`; fix provider/source failures before accepting | backfill/missing-tickers |
 | `market-data:evidence:export` | Export proof bundle | exactly one selector: run/correction/replay/date | no DB state mutation except artifact write | output path, run/publication/pointer/source/reason metadata | If metadata incomplete, treat proof as failed and rerun/export issue | evidence |
 | `market-data:evidence-replay:full-range-current` | Proof-only evidence/replay over current readable publications | optional start/end date; omitted range uses current publication pointer min/max | no API fetch, no import, no promote/finalize, no pointer switch | per-date run evidence, fixture path, replay MATCH/PASS, replay evidence, summary artifact | Missing current readable publication or replay mismatch blocks proof; use `--continue_on_error` only to collect all failures | evidence/replay/full-range |
-| `market-data:sector-indexes:ingest-api` | Fetch source-backed sector index OHLC bars from API | `start_date`, optional `end_date`, `--provider`, optional `--symbol_suffix` / `--symbol_map_json` | dry-run unless `--apply` | provider symbols, per-date fetched/upserted counts, missing benchmark codes, source reason codes | Fix provider symbols/source availability before apply; recompute/promote affected dates after apply | sector rotation |
-| `market-data:sector-indexes:import-bars` | Import source-backed sector index OHLC bars | CSV with `sector_index_code`, `trade_date`, `open`, `high`, `low`, `close`; optional `adj_close`, `volume` | dry-run unless `--apply` | row counts, valid rows, upsert count, benchmark codes, validation errors | Fix unknown sector index codes/OHLC ranges before apply; recompute/promote affected dates after apply | sector rotation |
-| `market-data:sectors:import-memberships` | Import source-backed ticker-sector membership | CSV with `ticker_code`, `sector_code`, `effective_from`; optional `effective_to`, `source_name`, `source_ref` | dry-run unless `--apply` | row counts, valid rows, upsert count, validation errors | Fix unknown tickers/sector codes/date ranges before apply; recompute/promote affected dates after apply | sector context |
-| `market-data:events:import-corporate-actions` | Import source-backed corporate action context | CSV with `ticker_code`, `action_date`, `action_type`; optional `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, action types, validation errors | Fix unknown tickers/date/type errors before apply; recompute/promote affected dates after apply | event-risk context |
-| `market-data:events:import-trading-status` | Import source-backed trading status, UMA, suspension, and special-monitoring context | CSV with `ticker_code`, `trade_date`, `status_code`; optional `is_suspended`, `is_uma`, `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, status codes, validation errors | Fix unknown tickers/date/status errors before apply; suspension and special monitoring carry forward until clear/exit status; recompute/promote affected range from state start through clear/current after apply | event-risk context |
+| `market-data:sector-indexes:ingest-api` | Fetch source-backed sector index OHLC bars from API | `start_date`, optional `end_date`, `--provider`, optional `--symbol_suffix` / `--symbol_map_json` | dry-run unless `--apply` | provider symbols, per-date fetched/upserted counts, missing benchmark codes, source reason codes | Fix provider symbols/source availability before apply; run the existing lifecycle/promote flow for affected dates after apply | sector rotation |
+| `market-data:sector-indexes:import-bars` | Import source-backed sector index OHLC bars | CSV with `sector_index_code`, `trade_date`, `open`, `high`, `low`, `close`; optional `adj_close`, `volume` | dry-run unless `--apply` | row counts, valid rows, upsert count, benchmark codes, validation errors | Fix unknown sector index codes/OHLC ranges before apply; run the existing lifecycle/promote flow for affected dates after apply | sector rotation |
+| `market-data:sectors:import-memberships` | Import source-backed ticker-sector membership | CSV with `ticker_code`, `sector_code`, `effective_from`; optional `effective_to`, `source_name`, `source_ref` | dry-run unless `--apply` | row counts, valid rows, upsert count, validation errors | Fix unknown tickers/sector codes/date ranges before apply; run the existing lifecycle/promote flow for affected dates after apply | sector context |
+| `market-data:events:import-corporate-actions` | Import source-backed corporate action context | CSV with `ticker_code`, `action_date`, `action_type`; optional `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, action types, validation errors | Fix unknown tickers/date/type errors before apply; run the existing lifecycle/promote flow for affected dates after apply | event-risk context |
+| `market-data:events:import-trading-status` | Import source-backed trading status, UMA, suspension, and special-monitoring context | CSV with `ticker_code`, `trade_date`, `status_code`; optional `is_suspended`, `is_uma`, `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, status codes, validation errors | Fix unknown tickers/date/status errors before apply; suspension and special monitoring carry forward until clear/exit status; run the existing lifecycle/promote flow for the affected range from state start through clear/current after apply | event-risk context |
 | `market-data:replay:verify` | Verify executed run against fixture package | `run_id`, `fixture_path` | deterministic proof | replay id/status/mismatch reason | Mismatch blocks acceptance; next action is compare fixture/output and fix root cause | replay |
 | `market-data:replay:smoke` | Run built-in replay cases | `run_id` | deterministic smoke suite | valid/broken/missing/reason mismatch cases | Any failed case blocks readiness claim | replay |
 | `market-data:replay:backfill` | Replay verification over date range | start/end date, fixture case/root | deterministic range proof | case summaries | Failed case must be reason-coded and investigated | replay/backfill |
@@ -639,3 +640,60 @@ OK (... tests, ... assertions)
 Pass criteria: all targeted filters and full `tests/Unit/MarketData` pass locally, and command help lists match this runbook.
 
 Fail criteria: any command missing from docs, missing terminal state handling, missing reason-code handling, missing evidence/replay flow, missing manual DB action policy, or any PHPUnit failure.
+
+
+
+## Source/master read-only recompute boundary
+`market-data:eod-indicators:recompute-current` is the implemented current-bars recompute command for this boundary. It does not perform source acquisition, bar ingest, source/master writes, or `eod_bars` writes. It creates a correction-current publication from existing current readable bars and recomputes publication-bound indicator and eligibility artifacts.
+
+"Without updating sector/corporate-action/trading-status/master data" means no writes to source/master tables and no source import commands. It does not mean publication-bound `eod_indicators` context columns are frozen; a new publication may recalculate those fields from existing source rows. A context-freezing technical-only mode must be explicit and separately proven.
+
+### Current indicator recompute from existing current bars
+
+Use this only when OHLCV/source/master data is already correct and only publication-bound indicators need recalculation. It does not fetch API data, ingest bars, import sector/corporate/trading-status sources, update masters, or write `eod_bars`. It creates a correction-current publication from existing current bars and recomputes indicator/eligibility artifacts.
+
+```powershell
+php artisan market-data:eod-indicators:recompute-current <start_date> <end_date> `
+    --force_replace_reason="indicator_recompute_from_existing_current_bars" `
+    --with-evidence `
+    --with-replay `
+    --continue-on-error `
+    -vvv
+```
+
+## Validated current-indicator recompute procedure
+
+Use this path only when current OHLCV and source/master facts are already correct and publication-bound indicators must be recalculated without importing again.
+
+```powershell
+php artisan market-data:eod-indicators:recompute-current 2023-01-02 2026-06-04 `
+    --force_replace_reason="indicator_recompute_from_existing_current_bars" `
+    --with-evidence `
+    --with-replay `
+    --continue-on-error `
+    -vvv
+```
+
+Expected boundary output:
+
+```text
+source_acquisition_executed=false
+bar_ingest_executed=false
+source_master_write_executed=false
+eod_bars_write_executed=false
+```
+
+Final 2026-06-07 runtime proof for `2023-01-02..2026-06-04`: 807 processed, 807 success, 0 failed/skipped, `all_passed=1`. Full MarketData PHPUnit passed at 640 tests / 9539 assertions for that runtime lock. Latest docs-review validation on 2026-06-08 reran `vendor\bin\phpunit` and passed with OK (641 tests, 9547 assertions). 757 replacement publications used run evidence and 50 unchanged/preserved-current outcomes used correction evidence; all 807 evidence exports were `ADMITTED_COMPLETE`.
+
+After a mutating recompute, reconcile the final current pointers:
+
+```powershell
+php artisan market-data:evidence-replay:full-range-current 2023-01-02 2026-06-04 `
+    --continue_on_error `
+    --output_dir=storage/app/market_data/evidence/indicator_recompute_current/full_range_current_2023-01-02_to_2026-06-04 `
+    -vvv
+```
+
+Final reconciliation proof: 807 processed, 807 success, 0 failures/errors, `all_passed=1`; every date MATCH/PASS with zero mismatches.
+
+Do not rerun the entire historical range unless OHLCV, indicator formulas/dependencies, source context, eligibility, or publication/hash/seal logic changed. For a narrow change, recompute and replay only the affected range.

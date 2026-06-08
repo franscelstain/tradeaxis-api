@@ -70,7 +70,8 @@ class BackfillLifecycleOrchestrator
         $outputDir = $this->resolveOutputDir($startDate, $endDate, $sourceMode, $options);
         $this->ensureDirectory($outputDir);
         $checkpoint = $this->readCheckpoint($outputDir);
-        $warmupStart = $this->warmupStart($startDate);
+        $firstRequestedTradingDate = (string) $requestedDates[0];
+        $warmupStart = $this->warmupStart($firstRequestedTradingDate);
         $acquisitionDates = $this->calendar->tradingDatesBetween($warmupStart, $endDate);
         $tickerCodes = $this->resolveTickerUniverse($requestedDates);
         $mode = $this->resolveErrorPolicy($options);
@@ -3049,11 +3050,14 @@ class BackfillLifecycleOrchestrator
         return storage_path('app/market_data/evidence/backfill_lifecycle/'.$sourceMode.'_'.$startDate.'_to_'.$endDate);
     }
 
-    private function warmupStart($startDate)
+    private function warmupStart($firstRequestedTradingDate)
     {
-        return Carbon::parse($startDate, config('market_data.platform.timezone', 'Asia/Jakarta'))
-            ->subDays(max(0, (int) config('market_data.source.api_backfill.warmup_days', 120)))
-            ->toDateString();
+        $requiredTradingDates = max(1, (int) config(
+            'market_data.source.api_backfill.warmup_trading_days',
+            config('market_data.source.api_backfill.warmup_days', 120)
+        ));
+
+        return $this->calendar->tradingDateWindowStart($firstRequestedTradingDate, $requiredTradingDates);
     }
 
     private function resolveErrorPolicy(array $options)

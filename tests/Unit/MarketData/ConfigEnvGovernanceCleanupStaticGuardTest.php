@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Market Data Manual File Multi-Date Lifecycle Input", $status);
+- Market Data Indicator Warmup Window Audit", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Market Data Manual File Multi-Date Lifecycle Input", $tracker);
+- Market Data Indicator Warmup Window Audit", $tracker);
         $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);

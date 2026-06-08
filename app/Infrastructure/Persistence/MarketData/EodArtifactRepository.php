@@ -8,6 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 class EodArtifactRepository
 {
+    private $calendar;
+
+    public function __construct(MarketCalendarRepository $calendar = null)
+    {
+        $this->calendar = $calendar ?: new MarketCalendarRepository();
+    }
+
     public function replaceBars($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows, $useHistory = false)
     {
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory) {
@@ -223,7 +230,7 @@ class EodArtifactRepository
 
     public function loadBarsWindow($tradeDate, $lookbackDays, $requestedPublicationId = null)
     {
-        $startDate = Carbon::parse($tradeDate)->subDays($lookbackDays + 10)->toDateString();
+        $startDate = $this->calendar->tradingDateWindowStart($tradeDate, $lookbackDays);
 
         $rows = $this->applyStableArtifactOrder(
             DB::table('eod_bars')->whereBetween('trade_date', [$startDate, $tradeDate])

@@ -2,12 +2,18 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class MarketBenchmarkRepository
 {
+    private $calendar;
+
+    public function __construct(MarketCalendarRepository $calendar = null)
+    {
+        $this->calendar = $calendar ?: new MarketCalendarRepository();
+    }
+
     public function activeBenchmarks()
     {
         return $this->activeBenchmarkQuery()
@@ -78,9 +84,7 @@ class MarketBenchmarkRepository
 
     public function loadBarsWindow($benchmarkCode, $tradeDate, $lookbackTradingDays)
     {
-        $startDate = Carbon::parse($tradeDate)
-            ->subDays(max(90, ((int) $lookbackTradingDays * 3)))
-            ->toDateString();
+        $startDate = $this->calendar->tradingDateWindowStart($tradeDate, $lookbackTradingDays);
 
         return DB::table('market_benchmark_bars')
             ->where('benchmark_code', Str::upper(trim((string) $benchmarkCode)))

@@ -81,6 +81,7 @@ return [
         'api_backfill' => [
             'window_days' => (int) env('MARKET_DATA_API_BACKFILL_WINDOW_DAYS', 90),
             'warmup_days' => (int) env('MARKET_DATA_API_BACKFILL_WARMUP_DAYS', 120),
+            'warmup_trading_days' => (int) env('MARKET_DATA_API_BACKFILL_WARMUP_TRADING_DAYS', env('MARKET_DATA_API_BACKFILL_WARMUP_DAYS', 120)),
             'concurrency' => (int) env('MARKET_DATA_API_BACKFILL_CONCURRENCY', 5),
             'max_dates_per_run' => (int) env('MARKET_DATA_API_BACKFILL_MAX_DATES_PER_RUN', 20),
             'collect_all_errors' => (bool) env('MARKET_DATA_API_BACKFILL_COLLECT_ALL_ERRORS', false),

@@ -63,6 +63,12 @@ Expected planning fields:
 - `with_evidence`
 - `with_replay`
 
+Warmup rule:
+- `warmup_start` must be resolved from `market_calendar` using configured `MARKET_DATA_API_BACKFILL_WARMUP_TRADING_DAYS`, ending at the first requested trading date.
+- `warmup_start` must not be calculated from `subDays()` or fixed calendar-day subtraction.
+- If the first requested date is not an active trading day, or the trading calendar cannot provide the required prior warmup window, the lifecycle command must fail fast instead of publishing indicators with starved history.
+- Warmup rows may be acquired/imported as support history, but they are not requested publication targets unless they are also inside the requested date range.
+
 ## Manual file range acquisition
 Untuk `source_mode=manual_file`, command dapat memakai file per tanggal dari local source directory atau satu file eksplisit gabungan lewat `--input_file`.
 
@@ -263,3 +269,17 @@ Operational rule after this lock:
 - Lifecycle/full-publish publication reprocess may auto-correct an already-readable affected downstream date only through the correction-current lifecycle.
 - The correction-current path must preserve baseline lineage and must not bypass coverage, hash, seal, finalize, pointer, evidence, or replay guards.
 - Normal full-publish must not replace an already-readable affected date directly.
+
+
+## Amendment 2026-06-05 - Market-calendar lifecycle warmup
+`market-data:backfill:lifecycle` must treat source-acquisition warmup as a trading-day dependency.
+
+Required behavior:
+- read requested trading dates from `market_calendar`
+- resolve warmup start through the configured trading-day window, not wall-clock days
+- keep requested-date lifecycle boundaries per trading date
+- block invalid or insufficient calendar dependency with an explicit reason instead of silently producing NULL rolling indicators
+
+Operational implication:
+- if MA50 or ROC20-based outputs are unexpectedly NULL while OHLC history exists, verify `market_calendar` coverage and lifecycle warmup-window resolution before changing indicator formulas
+- sector rotation remains source-backed; `sector_roc20` for a date still requires sector-index bars and benchmark indicators for that same date

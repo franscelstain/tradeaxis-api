@@ -1,6 +1,6 @@
 # Market-Data Production Proof Pack
 
-Last updated: 2026-06-05
+Last updated: 2026-06-08
 Source ZIP: `tradeaxis-api.zip`
 Source ZIP path: `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`
 Locked source-state ZIP SHA-256: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`
@@ -16,7 +16,7 @@ Current 2026-06-05 lock overlay:
 - latest operator run/current operation: through `2026-06-04`
 - final missing plan: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`
 - full-range current evidence/replay: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`
-- latest full MarketData suite: `OK (635 tests, 9474 assertions)`
+- latest full PHPUnit docs-review proof: `OK (641 tests, 9547 assertions)` on `2026-06-08`
 - remaining blockers for the archived proof window and current source-state closure: none
 
 The proof window above is the audited evidence boundary, not the final date of production readiness. The market-data application remains production-ready for the current source state and ongoing daily lifecycle/backfill operation.
@@ -951,7 +951,7 @@ This reconciliation closes the prior missing-ticker/source-gap history for the a
 - Latest operator run/current operation: through `2026-06-04`.
 - Final missing plan proof: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`.
 - Final full-range current evidence/replay proof: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`.
-- Full MarketData proof after manual-file multi-date lifecycle input: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (635 tests, 9474 assertions).
+- Latest full PHPUnit docs-review proof: `vendor\bin\phpunit` -> OK (641 tests, 9547 assertions) on `2026-06-08`.
 - Current source blockers for this proof window and source-state closure: none.
 
 Earlier `PARTIAL`, `BLOCKED`, or source-provider blocker entries in this proof pack are retained as remediation history only when followed by this 2026-06-05 lock entry. Future and latest dates remain normal daily/backfill lifecycle work; production readiness is the platform/source-state lifecycle contract, not a terminal date.

@@ -141,6 +141,7 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('NO_READABLE_PUBLICATION', 'READ_SIDE', 'A read-side consumer could not resolve a current readable publication through the authoritative pointer and must return no data.', 'HARD', 1),
 ('COMMAND_MISSING_REQUIRED_INPUT', 'COMMAND', 'Operator command input is missing or empty for a required argument or option.', 'HARD', 1),
 ('COMMAND_INVALID_DATE_FORMAT', 'COMMAND', 'Operator command date input does not use the locked YYYY-MM-DD format.', 'HARD', 1),
+('COMMAND_INVALID_DATE_RANGE', 'COMMAND', 'Operator command date range is invalid because start_date is after end_date.', 'HARD', 1),
 ('COMMAND_INVALID_SOURCE_MODE', 'COMMAND', 'Operator command source mode is outside the locked API/manual-file source modes.', 'HARD', 1),
 ('COMMAND_INVALID_PROMOTE_MODE', 'COMMAND', 'Operator command promote mode is unsupported by the locked promote contract.', 'HARD', 1),
 ('COMMAND_CONFLICTING_OPTIONS', 'COMMAND', 'Operator command options are mutually exclusive or ambiguous.', 'HARD', 1),
@@ -351,9 +352,9 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('AFFECTED_DATE_RUN_NOT_FOUND', 'PUBLICATION_REPROCESS', 'Affected non-readable date could not be promoted because no persisted run exists.', 'HARD', 1),
 ('PUBLICATION_REPROCESS_NOT_READABLE', 'PUBLICATION_REPROCESS', 'Affected-date promote flow completed without producing a readable publication.', 'HARD', 1),
 ('PUBLICATION_REPROCESS_FAILED', 'PUBLICATION_REPROCESS', 'Publication reprocess failed before completing promote/hash/seal/finalize.', 'HARD', 1),
-('PUBLICATION_REPROCESS_REPLAY_FAILED', 'PUBLICATION_REPROCESS', 'Publication reprocess produced a readable run but requested replay verification failed.', 'HARD', 1)
+('PUBLICATION_REPROCESS_REPLAY_FAILED', 'PUBLICATION_REPROCESS', 'Publication reprocess produced a readable run but requested replay verification failed.', 'HARD', 1),
 ON DUPLICATE KEY UPDATE
   `category` = VALUES(`category`),
   `description` = VALUES(`description`),
   `severity` = VALUES(`severity`),
-  `is_active` = VALUES(`is_active`);
+  `is_active` = VALUES(`is_active`)

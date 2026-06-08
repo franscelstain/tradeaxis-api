@@ -1,6 +1,6 @@
 # Full Market-Data Production Ready Inventory
 
-Last updated: 2026-06-05
+Last updated: 2026-06-08
 
 ## Decision
 
@@ -10,11 +10,13 @@ The active 2026-06-05 checkpoint adds the full-global market-data evidence lock.
 
 Latest operator run/current operation is recorded through `2026-06-04`. Dates after the proof window continue through normal daily lifecycle/backfill operation.
 
+Latest docs-review validation on `2026-06-08`: `vendor\bin\phpunit` -> `OK (641 tests, 9547 assertions)`.
+
 Current active proof:
 - `FULL_GLOBAL_MARKET_DATA_LOCK_STATUS=LOCKED_UNFILTERED_MISSING_TICKER_PLAN_ZERO_FULL_RANGE_CURRENT_EVIDENCE_REPLAY_PASS`
 - unfiltered missing-ticker plan: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`
 - full-range current evidence/replay: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`
-- full MarketData PHPUnit: `OK (635 tests, 9474 assertions)`
+- latest full PHPUnit docs-review proof: `OK (641 tests, 9547 assertions)`
 - refreshed provider smoke proof: `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, `http_status=200`
 - `REMAINING_BLOCKERS: none` for the archived full-range proof window and current source-state closure
 
@@ -139,7 +141,7 @@ Current 2026-05-20 correction lifecycle validation is recorded in `CORRECTION_LI
 - Latest operator run/current operation: through `2026-06-04`; ongoing dates remain normal daily lifecycle/backfill work.
 - Full global missing-ticker plan: `0` missing bars, `0` missing trade dates, `0` remaining tickers, `672` trading dates.
 - Full global current evidence/replay: `672/672` passed, `failed_count=0`, `all_passed=1`.
-- Latest full MarketData PHPUnit proof: `OK (635 tests, 9474 assertions)`.
+- Latest full PHPUnit docs-review proof: `OK (641 tests, 9547 assertions)`.
 - Replay current-readable runtime proof: `LOCKED`.
 - Historical non-current replay runtime proof: `LOCKED`.
 - Replay historical non-current runtime artifact proof: `LOCKED`.

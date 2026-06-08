@@ -101,6 +101,17 @@ class ApiBackfillLifecycleStaticGuardTest extends TestCase
         }
     }
 
+    public function test_lifecycle_warmup_start_is_resolved_from_market_calendar_trading_window()
+    {
+        $orchestrator = file_get_contents($this->root.'/app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php');
+        $config = file_get_contents($this->root.'/config/market_data.php');
+
+        $this->assertStringContainsString('tradingDateWindowStart($firstRequestedTradingDate, $requiredTradingDates)', $orchestrator);
+        $this->assertStringContainsString('warmup_trading_days', $orchestrator);
+        $this->assertStringNotContainsString('->subDays(max(0, (int) config(\'market_data.source.api_backfill.warmup_days\'', $orchestrator);
+        $this->assertStringContainsString('MARKET_DATA_API_BACKFILL_WARMUP_TRADING_DAYS', $config);
+    }
+
     public function test_source_acquisition_failures_keep_domain_reason_and_diagnostics()
     {
         $command = file_get_contents($this->root.'/app/Console/Commands/MarketData/BackfillLifecycleCommand.php');

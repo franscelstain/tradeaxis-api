@@ -23,6 +23,13 @@ Notation:
 - `D[-N]` = Nth prior trading day relative to D
 - `window(D, N)` = `D[-(N-1)] ... D`, inclusive, total N rows
 
+Window loader contract:
+- equity indicator loaders must resolve their start boundary from `market_calendar`, not calendar-day subtraction
+- benchmark/sector indicator loaders must use the same market-calendar dependency rule
+- requested date must be present as an active trading day in `market_calendar`; otherwise computation must fail safely before publication
+- insufficient prior trading-day span at the beginning of the available dataset is not a global error; loaders use the earliest available trading date and each indicator applies its own NULL rule
+- a valid loader window does not fake valid prices; per-ticker indicators remain NULL only for the fields whose dependencies are missing, insufficient, or invalid
+
 ## Price basis (LOCKED)
 `P(D)` is defined as:
 - `adj_close`, when `PRICE_BASIS_DEFAULT=ADJ_CLOSE` and `adj_close IS NOT NULL`
@@ -99,12 +106,20 @@ If `ll20 <= 0`, percentage fields that divide by `ll20` are NULL. If `hh20 - ll2
 `event_risk_flag(D)` is `1` when corporate action, suspension, UMA, special monitoring, or risky trading status source context/state exists. It may be `0` only when a source row/state explicitly reports non-risk status and no independent risk state remains active. It remains `NULL` when no event-risk source row/state exists for the ticker/date.
 `event_risk_reasons(D)` is a deterministic comma-separated list of source-backed risk reasons.
 
-## Null policy (LOCKED)
+
+## Source/master immutability during recompute (LOCKED)
+Indicator recompute from existing data, if introduced as a future approved command, must be read-only against source/master tables and `eod_bars`. Publication-bound indicator artifacts may be regenerated from existing source/master state.
+
+Therefore, source context fields such as sector, corporate action, trading status, suspension, UMA, and event-risk may be recalculated in the new publication from existing source rows. This must not be misread as importing or mutating the source tables themselves.
+
+## Nullability and missing-bar policy (LOCKED)
 - No forward-fill.
-- No zero-fill.
 - No calendar-gap interpolation.
-- Missing required history => indicator NULL and `is_valid=0`.
-- Optional/non-baseline indicators may be NULL without invalidating the row only if explicitly declared in a future registry version.
+- Indicator nullability is per field, not per row: the fields whose dependencies are satisfied must still be computed even when another field is NULL.
+- Missing required history for a specific formula => that formula output is NULL and its validity/reason context reflects insufficient history; it must not fail the whole publication date.
+- A ticker newly listed after the dataset start accumulates indicators gradually according to the bars actually available since `listed_date`; MA20, MA50, ROC20, ATR14, and volume-derived fields may become non-NULL on different dates.
+- A zero OHLCV placeholder for a ticker active on a valid trading day is allowed only as a publication-completeness representation of a missing provider row. It is not a valid market price input for price-based indicators.
+- When `open/high/low/close/adj_close <= 0` because a row is a missing-provider placeholder, price-based and turnover indicators depending on that input must be NULL or invalid for that field; other fields with valid dependencies may still compute.
 
 ## Rounding/storage (LOCKED)
 Store using output column precision defined in schema.
@@ -146,3 +161,21 @@ Execution proof fields:
 - `indicator_reprocess_execution_summary.failure_reason_code`
 
 `EXECUTED` is valid only when compute ran. `NOOP` is valid for unchanged bars/no affected dates. `BLOCKED` is valid for readable affected dates that require correction.
+
+
+## Amendment 2026-06-05 - Market-calendar window loading
+MA50 and sector-rotation audit found that repository/window loading must be locked separately from formula semantics.
+
+Formula rules did not change:
+- `ma50` requires 50 canonical trading bars for the ticker
+- `roc20` requires current price basis and D[-20]
+- sector rotation requires source-backed sector benchmark indicators for D
+
+Implementation rules are now explicit:
+- load equity bars using a market-calendar trading-date window large enough for the maximum configured dependency horizon when available
+- when the requested date is near the beginning of the dataset and fewer prior trading dates exist, use the available window and let each indicator emit NULL according to its own dependency rule
+- load benchmark/sector bars using the same market-calendar trading-date window rule
+- lifecycle source-acquisition warmup must be based on trading days, not calendar days, while historical dataset bootstrap may start at the first available trading date
+- missing sector-index bars for D leave sector fields NULL until the sector source is imported and the affected date is recomputed/promoted
+
+This amendment prevents long IDX holiday periods from starving rolling indicators such as MA50 when sufficient historical OHLC bars exist, without turning expected early-dataset/ticker-listed-date insufficient history into a publication error.
