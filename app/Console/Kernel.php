@@ -32,12 +32,14 @@ use App\Console\Commands\MarketData\RequestCorrectionCommand;
 use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
 use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
+use App\Console\Commands\Watchlist\RunBacktestPublishedPriceProofCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
     protected $commands = [
+        RunBacktestPublishedPriceProofCommand::class,
         IngestEodBarsCommand::class,
         ComputeIndicatorsCommand::class,
         BuildEligibilityCommand::class,

@@ -147,6 +147,8 @@ Wajib memiliki:
 - `min_month_win_rate_min`
 - `min_month_avg_ret_net_min`
 
+Runtime backtest yang menghasilkan artifact evaluasi wajib membawa section `eval` ini ke `paramset_snapshot`. Threshold tidak boleh hilang di antara active/bootstrap paramset, strategy replay, metrics, dan artifact export. Bila salah satu threshold evaluasi wajib tidak dapat di-resolve, runtime proof harus fail closed dengan reason code evaluasi yang canonical dan tidak boleh menulis artifact PASS. Canonical bootstrap saat ini memakai `min_trades = 120` dan `min_trades_oos = 40`. `min_days_covered.value = 0` adalah sentinel dinamis, bukan floor nol; runtime wajib menulis nilai efektif `ceil(0.70 * total_trading_days_in_window)` pada metric sufficiency artifact.
+
 ### `hash_contract`
 Wajib memiliki:
 - `version`

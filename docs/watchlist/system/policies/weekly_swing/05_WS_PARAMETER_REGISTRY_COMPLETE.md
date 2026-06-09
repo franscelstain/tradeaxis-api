@@ -542,20 +542,23 @@ Untuk Weekly Swing, namespace parameter bersifat tunggal dan canonical. Code waj
 ### L. Evaluation (backtest & OOS)
 
 - `eval.min_trades_oos` (integer >= 0) — minimum jumlah trade di OOS agar proof tidak bias sample kecil.
+  - Default canonical bootstrap: 40.
   - Origin: DET
   - Alasan: mencegah OOS “lulus” karena trade terlalu sedikit.
   - Kapan diubah: bila rentang backtest dipersingkat/diperpanjang signifikan.
   - Cara ubah: update paramset + jalankan ulang OOS proof.
 
 - `eval.min_trades` (integer >= 0) — minimum jumlah trade untuk evaluasi in-sample.
+  - Default canonical bootstrap: 120.
   - Origin: DET
   - Alasan: mencegah param menang karena sample kecil.
   - Kapan diubah: bila rentang backtest berubah signifikan.
   - Cara ubah: update paramset + rerun calibration.
 
-- `eval.min_days_covered` (integer >= 0) — minimum jumlah hari trading yang tercakup dalam window evaluasi agar hasil tidak bias karena coverage parsial.
+- `eval.min_days_covered` (integer >= 0) — minimum jumlah distinct replay trade date yang tercakup oleh evaluasi runtime agar hasil tidak bias karena coverage parsial. Covered date berarti minimal satu trade pada tanggal itu `metrics_ready = true`, atau tanggal tersebut merupakan explicit valid empty-recommendation day. Tanggal yang seluruh kandidatnya di-skip tidak covered. Denominator formula dinamis tetap seluruh trading date pada explicit replay window.
   - Origin: DET
-  - Default: ceil(0.70 * total_trading_days_in_window)
+  - Stored bootstrap sentinel: 0.
+  - Effective runtime default: ceil(0.70 * total_trading_days_in_window); sentinel 0 tidak boleh digunakan langsung sebagai gate.
   - Alasan: mencegah pemilihan param yang hanya “aktif” pada sebagian kecil hari dalam window.
   - Kapan diubah: jika definisi `days_covered` berubah atau window backtest dipersingkat/diperpanjang signifikan.
   - Cara ubah: update paramset evaluasi + jalankan ulang kalibrasi.
@@ -580,6 +583,12 @@ Untuk Weekly Swing, namespace parameter bersifat tunggal dan canonical. Code waj
   - Alasan: membatasi kondisi terburuk per bulan agar param tidak memiliki “bulan jeblok” yang terlalu dalam.
   - Kapan diubah: jika strategi ingin lebih agresif/defensif atau definisi period berubah.
   - Cara ubah: update paramset evaluasi + jalankan ulang kalibrasi.
+
+Runtime binding rule (LOCKED):
+- seluruh key `eval.*` wajib berasal dari active/bootstrap paramset snapshot;
+- metrics service hanya membaca threshold dari `paramset_snapshot.eval` dan tidak boleh memiliki fallback angka tersembunyi;
+- bootstrap value boleh berbeda dari threshold produksi yang telah dikalibrasi, tetapi value, origin, status, dan identity paramset harus tetap traceable;
+- threshold unresolved harus memblokir runtime artifact PASS, walaupun canonical metric fields berhasil dihitung.
 
 ## Next
 ### Weekly Swing

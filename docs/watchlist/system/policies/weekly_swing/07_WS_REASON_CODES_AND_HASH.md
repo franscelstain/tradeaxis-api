@@ -139,6 +139,15 @@ Reason code berikut adalah reason code foundation untuk overlay CONFIRM. Kode in
 - `WS_BT_ARTIFACT_MISSING`
 - `WS_BT_ARTIFACT_NOT_ALLOWED`
 - `WS_BT_ARTIFACT_PARAM_ID_MISMATCH`
+- `BT_SKIP_NO_TRADABLE_ENTRY`
+- `BT_SKIP_NO_TRADABLE_EXIT`
+
+Semantics tambahan untuk tradable-bar backtest:
+
+- `BT_SKIP_NO_TRADABLE_ENTRY` berarti exact-date published bar tersedia, tetapi volume tidak positif sehingga tidak ada fill entry executable.
+- `BT_SKIP_NO_TRADABLE_EXIT` berarti exact-date published bar tersedia untuk exit/time-exit, tetapi volume tidak positif sehingga tidak ada fill exit executable.
+- Kedua code adalah backtest evaluation diagnostics. Kode ini bukan reason code PLAN, RECOMMENDATION, CONFIRM, portfolio, atau broker execution.
+- Kedua kondisi wajib menghasilkan `ret_net = NULL`; zero return sintetis dilarang.
 
 Tidak boleh ada reason code aktif di seed atau runtime output yang tidak dapat ditelusuri ke daftar aktif di dokumen ini.
 

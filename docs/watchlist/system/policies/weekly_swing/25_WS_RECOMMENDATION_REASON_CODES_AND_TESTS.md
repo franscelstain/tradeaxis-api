@@ -66,3 +66,12 @@ Reason code berikut boleh muncul pada output CONFIRM overlay. Kode ini bukan rea
 - `WS_CONFIRM_REJECTED_NOT_PLAN_CANDIDATE`
 - `WS_CONFIRM_NO_DATA`
 
+## B2. Backtest Evaluation Reason-Code Boundary Reference
+
+Reason code berikut boleh muncul setelah recommendation trade candidate dibekukan dan published price series dievaluasi. Kode ini bukan reason code recommendation dan tidak boleh mengubah `recommended_flag`, rank, score, label, atau hash recommendation:
+
+- `BT_SKIP_NO_TRADABLE_ENTRY`
+- `BT_SKIP_NO_TRADABLE_EXIT`
+
+Keduanya hanya menjelaskan bahwa published bar tidak executable karena volume tidak positif. Recommendation tetap dipertahankan sebagai source candidate; backtest evaluation-lah yang di-skip dengan `ret_net = NULL`.
+

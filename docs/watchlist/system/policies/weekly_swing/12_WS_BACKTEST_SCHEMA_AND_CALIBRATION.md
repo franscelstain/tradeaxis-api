@@ -67,6 +67,28 @@ Bagian ini mengunci cara backtest dihitung agar hasil kalibrasi 2 tahun reproduc
 - Harga entry default: **open(D+1)**.
 - Jika open(D+1) tidak tersedia: fallback **close(D+1)** dan catat `BT_FALLBACK_ENTRY_PRICE`.
 
+### B1. Tradable-Bar Rule (LOCKED)
+
+Published/readable EOD row dan executable backtest bar adalah dua konsep berbeda.
+
+- Bar tetap sah sebagai data market-data published walaupun `volume = 0`; watchlist tidak boleh mengubah atau menghapus row upstream tersebut.
+- Untuk simulasi entry, stop, target, dan time-exit, bar dianggap executable hanya jika `volume` numerik dan `volume > 0`.
+- `volume = 0` atau `volume IS NULL` berarti tidak ada bukti transaksi executable pada tanggal tersebut.
+- Entry D+1 dengan bar non-executable harus di-skip dengan `BT_SKIP_NO_TRADABLE_ENTRY`; harga OHLC statis tidak boleh dipakai sebagai fill sintetis.
+- Bar non-executable di dalam horizon exit diabaikan untuk hit stop/target.
+- Jika time-exit jatuh pada bar non-executable dan tidak ada exit sah sebelumnya, trade di-skip dengan `BT_SKIP_NO_TRADABLE_EXIT`.
+- Skip karena bar non-executable harus menghasilkan `ret_net = NULL`, bukan return nol.
+- Runtime artifact wajib mencatat volume entry/exit dan tanggal bar non-executable yang diabaikan bila tersedia.
+
+Canonical runtime marker:
+
+```text
+tradable_bar_rule = POSITIVE_VOLUME_REQUIRED
+min_tradable_volume = 1
+```
+
+Rule ini adalah execution/evaluation semantics milik backtest watchlist. Rule ini bukan perubahan definisi publication/readability market-data.
+
 ### C. Exit Model (horizon Weekly Swing)
 - Horizon maksimum: **5 trading day** sejak entry (D+1 s/d D+5).
 - Exit utama (ambil yang pertama terpenuhi):
@@ -156,12 +178,17 @@ dan **bukan** kolom wajib pada `watchlist_bt_eval`, kecuali schema `watchlist_bt
   - Rumus: `turnover_top_per_week` = total_executed_trades_top / total_weeks_in_window.
   - Catatan: yang dihitung hanya trade yang lolos (tidak termasuk trade yang di-skip oleh Assumptions → H).
 
-### H. Missing Data Handling (LOCKED)
+### H. Missing Data and Non-Tradable Bar Handling (LOCKED)
 - Jika OHLC untuk hari entry tidak lengkap → skip trade, catat `BT_SKIP_MISSING_OHLC_ENTRY`.
+- Jika bar entry published tetapi `volume <= 0` atau volume tidak tersedia → skip trade, catat `BT_SKIP_NO_TRADABLE_ENTRY`.
 - Jika OHLC untuk salah satu hari evaluasi (D+1..D+5) tidak lengkap:
   - Hari itu tidak dipakai untuk hit stop/target.
   - Jika sampai D+5 tidak ada close yang valid untuk time-exit → skip trade, catat `BT_SKIP_MISSING_OHLC_EXIT`.
+- Jika bar evaluasi published tetapi non-executable karena volume tidak positif:
+  - Hari itu tidak dipakai untuk hit stop/target.
+  - Jika time-exit tidak mempunyai bar executable dan tidak ada exit sah sebelumnya → skip trade, catat `BT_SKIP_NO_TRADABLE_EXIT`.
 - Semua skip harus tercatat (count) agar evaluasi tidak menipu.
+- Semua trade yang di-skip wajib memiliki `ret_net = NULL`; zero return sintetis dilarang.
 
 ### I. Ranking & Picks (LOCKED)
 - Picks dibuat dari PLAN score pada D:
@@ -202,6 +229,12 @@ Dokumen ini tidak mengambil alih acceptance threshold OOS dan evaluation suffici
    Rule (LOCKED):
    Nilai threshold `:min_*` WAJIB berasal dari Parameter Registry (05) / paramset evaluasi.
    Tidak boleh hardcode angka di implementasi.
+
+   Coverage semantics (LOCKED):
+   - `total_trading_days_in_window` = seluruh trading date pada explicit replay window;
+   - `ev.days_covered` = distinct replay date dengan minimal satu completed metrics-ready evaluation, ditambah explicit valid empty-recommendation date;
+   - replay date yang seluruh trade candidate-nya di-skip karena calendar, missing price, atau non-tradable bar tidak dihitung covered;
+   - implementasi dilarang mengisi `ev.days_covered` langsung dari jumlah requested replay dates.
 
    Mapping parameter (LOCKED):
    - `:min_trades` -> `ws.eval.min_trades`

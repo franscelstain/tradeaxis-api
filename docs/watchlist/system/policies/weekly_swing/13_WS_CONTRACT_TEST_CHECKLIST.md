@@ -54,6 +54,18 @@ Checklist ini menetapkan acceptance minimum untuk artefak dan boundary Weekly Sw
 - [ ] menjalankan CONFIRM setelah recommendation tidak mengubah payload recommendation normatif
 - [ ] menjalankan CONFIRM pada ticker non-recommended tidak mengubah membership recommendation
 
+## G. Published-Price Backtest Runtime Acceptance
+- [ ] runtime replay menggunakan explicit `from/to` dan official trading calendar
+- [ ] exact-date readable publication dan published EOD OHLCV digunakan tanpa latest fallback
+- [ ] trade candidate dibekukan sebelum future price series dibaca
+- [ ] bar `volume <= 0` atau volume tidak tersedia tidak digunakan sebagai entry, TP, SL, atau time-exit fill
+- [ ] zero-volume entry menghasilkan `BT_SKIP_NO_TRADABLE_ENTRY` dan `ret_net = NULL`
+- [ ] zero-volume final exit menghasilkan `BT_SKIP_NO_TRADABLE_EXIT` dan `ret_net = NULL`
+- [ ] canonical `eval` thresholds tersedia pada `paramset_snapshot`
+- [ ] threshold unresolved memblokir artifact export
+- [ ] input identik menghasilkan canonical `validation.artifact_hash` identik
+- [ ] file-byte hash boleh berbeda hanya karena metadata non-hashed yang terdokumentasi
+
 ## Final Rules
 
 1. Acceptance Weekly Swing **MUST** mencakup PLAN, RECOMMENDATION, CONFIRM, dan boundary di antaranya.

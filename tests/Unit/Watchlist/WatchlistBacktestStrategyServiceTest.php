@@ -180,6 +180,60 @@ class WatchlistBacktestStrategyServiceTest extends TestCase
         $this->assertFalse($result['summary']['production_ready']);
     }
 
+    public function test_backtest_preserves_eval_thresholds_in_paramset_snapshot(): void
+    {
+        $planMap = [
+            '2026-05-19' => $this->planOutput('2026-05-19', [
+                'TOP_PICKS' => [
+                    $this->planItem(1, 'EVAL', 'TOP_PICKS', 0.90, 1),
+                ],
+            ]),
+        ];
+        $eval = [
+            'min_trades' => 120,
+            'min_days_covered' => 40,
+            'min_p25_ret_net_top' => -0.03,
+            'min_month_win_rate_min' => 0.45,
+            'min_month_avg_ret_net_min' => -0.01,
+        ];
+
+        $result = $this->serviceForPlanMap($planMap)->backtestForReplayWindow(
+            ['2026-05-19'],
+            [],
+            ['eval' => $eval]
+        );
+
+        foreach ($eval as $key => $value) {
+            $this->assertSame($value, $result['paramset_snapshot']['eval'][$key]);
+            $this->assertSame($value, $result['meta']['paramset_snapshot']['eval'][$key]);
+        }
+        $this->assertArrayHasKey('min_trades_oos', $result['paramset_snapshot']['eval']);
+    }
+
+    public function test_backtest_default_paramset_binds_canonical_eval_thresholds_and_tradable_bar_rule(): void
+    {
+        $defaults = WatchlistBacktestStrategyService::defaultParamset();
+
+        $this->assertSame('PARAMSET_JSON', $defaults['schema_version']);
+        foreach ([
+            'min_trades_oos',
+            'min_trades',
+            'min_days_covered',
+            'min_p25_ret_net_top',
+            'min_month_win_rate_min',
+            'min_month_avg_ret_net_min',
+        ] as $key) {
+            $this->assertArrayHasKey($key, $defaults['eval']);
+            $this->assertArrayHasKey('value', $defaults['eval'][$key]);
+            $this->assertSame('ACTIVE', $defaults['eval'][$key]['status']);
+        }
+        $this->assertSame(40, $defaults['eval']['min_trades_oos']['value']);
+        $this->assertSame(120, $defaults['eval']['min_trades']['value']);
+        $this->assertSame(0, $defaults['eval']['min_days_covered']['value']);
+        $this->assertSame('POSITIVE_VOLUME_REQUIRED', $defaults['backtest']['tradable_bar_rule']);
+        $this->assertSame(1, $defaults['backtest']['min_tradable_volume']);
+    }
+
     public function test_backtest_foundation_does_not_emit_portfolio_broker_order_or_runtime_surface_fields(): void
     {
         $planMap = [

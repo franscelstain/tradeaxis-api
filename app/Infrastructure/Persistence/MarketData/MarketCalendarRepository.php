@@ -20,6 +20,40 @@ class MarketCalendarRepository
             ->all();
     }
 
+
+    public function tradingCalendarRowsBetween($startDate, $endDate): array
+    {
+        return DB::table('market_calendar')
+            ->whereBetween('cal_date', [$startDate, $endDate])
+            ->where('is_trading_day', 1)
+            ->orderBy('cal_date')
+            ->get(['cal_date', 'source'])
+            ->map(function ($row) {
+                return [
+                    'trade_date' => (string) $row->cal_date,
+                    'source_name' => $row->source !== null ? (string) $row->source : null,
+                ];
+            })
+            ->all();
+    }
+
+    public function tradingCalendarRowsAfter($tradeDate, $limit): array
+    {
+        return DB::table('market_calendar')
+            ->where('cal_date', '>', $tradeDate)
+            ->where('is_trading_day', 1)
+            ->orderBy('cal_date')
+            ->limit(max(1, (int) $limit))
+            ->get(['cal_date', 'source'])
+            ->map(function ($row) {
+                return [
+                    'trade_date' => (string) $row->cal_date,
+                    'source_name' => $row->source !== null ? (string) $row->source : null,
+                ];
+            })
+            ->all();
+    }
+
     public function tradingDateWindowStart($endDate, $requiredTradingDates, $allowPartialWindow = true)
     {
         $requiredTradingDates = max(1, (int) $requiredTradingDates);

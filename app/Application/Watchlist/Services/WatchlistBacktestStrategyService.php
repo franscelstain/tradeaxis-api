@@ -7,7 +7,58 @@ class WatchlistBacktestStrategyService
     public const DEFAULT_PARAMSET = [
         'policy_code' => 'WS',
         'policy_version' => 'WS_EOD_RUNTIME',
+        'schema_version' => 'PARAMSET_JSON',
         'paramset_code' => 'WS_ACTIVE_BOOTSTRAP',
+        'eval' => [
+            'min_trades_oos' => [
+                'value' => 40,
+                'origin' => 'DET',
+                'status' => 'ACTIVE',
+                'bt_target' => false,
+                'rationale' => 'Canonical OOS minimum trade-count floor from the locked OOS contract.',
+                'change_triggers' => ['OOS window changes', 'Trade definition changes'],
+            ],
+            'min_trades' => [
+                'value' => 120,
+                'origin' => 'DET',
+                'status' => 'ACTIVE',
+                'bt_target' => false,
+                'rationale' => 'Canonical in-sample minimum trade-count floor from the locked metric-sufficiency contract.',
+                'change_triggers' => ['Backtest window changes', 'Trade definition changes'],
+            ],
+            'min_days_covered' => [
+                'value' => 0,
+                'origin' => 'DET',
+                'status' => 'ACTIVE',
+                'bt_target' => false,
+                'rationale' => 'Zero is a documented dynamic sentinel; runtime resolves it to ceil(70% of trading days in the evaluation window).',
+                'change_triggers' => ['Coverage definition changes', 'Backtest window changes'],
+            ],
+            'min_p25_ret_net_top' => [
+                'value' => -0.03,
+                'origin' => 'DET',
+                'status' => 'ACTIVE',
+                'bt_target' => false,
+                'rationale' => 'Canonical bootstrap downside floor for TOP picks.',
+                'change_triggers' => ['Volatility regime changes', 'Risk tolerance changes'],
+            ],
+            'min_month_win_rate_min' => [
+                'value' => 0.45,
+                'origin' => 'DET',
+                'status' => 'ACTIVE',
+                'bt_target' => false,
+                'rationale' => 'Canonical bootstrap monthly win-rate stability floor.',
+                'change_triggers' => ['Evaluation period definition changes'],
+            ],
+            'min_month_avg_ret_net_min' => [
+                'value' => -0.01,
+                'origin' => 'DET',
+                'status' => 'ACTIVE',
+                'bt_target' => false,
+                'rationale' => 'Canonical bootstrap monthly average-return stability floor.',
+                'change_triggers' => ['Evaluation period definition changes', 'Risk tolerance changes'],
+            ],
+        ],
         'backtest' => [
             'engine_mode' => 'PLAN_RECOMMENDATION_REPLAY_FOUNDATION',
             'replay_mode' => 'EXPLICIT_TRADE_DATE_WINDOW',
@@ -21,6 +72,9 @@ class WatchlistBacktestStrategyService
             'lot_size' => 100,
             'slippage_entry_pct' => 0.0,
             'slippage_exit_pct' => 0.0,
+            'holding_days' => 5,
+            'tradable_bar_rule' => 'POSITIVE_VOLUME_REQUIRED',
+            'min_tradable_volume' => 1,
             'sort_keys' => [
                 'trade_date_asc',
                 'recommendation_rank_asc',
@@ -522,16 +576,19 @@ class WatchlistBacktestStrategyService
         $recommendationDefaults = WatchlistRecommendationService::defaultParamset();
         $backtestInput = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
         $recommendationInput = is_array($paramset['recommendation'] ?? null) ? $paramset['recommendation'] : [];
+        $evalInput = is_array($paramset['eval'] ?? null) ? $paramset['eval'] : [];
 
         return [
             'policy_code' => (string) ($paramset['policy_code'] ?? $defaults['policy_code']),
             'policy_version' => (string) ($paramset['policy_version'] ?? $defaults['policy_version']),
+            'schema_version' => (string) ($paramset['schema_version'] ?? $defaults['schema_version']),
             'paramset_code' => (string) ($paramset['paramset_code'] ?? $defaults['paramset_code']),
             'backtest' => array_merge($defaults['backtest'], $backtestInput),
             'recommendation' => array_replace_recursive(
                 $recommendationDefaults['recommendation'],
                 $recommendationInput
             ),
+            'eval' => array_replace_recursive($defaults['eval'], $evalInput),
         ];
     }
 

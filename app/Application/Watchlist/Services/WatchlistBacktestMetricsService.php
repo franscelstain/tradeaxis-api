@@ -13,7 +13,6 @@ class WatchlistBacktestMetricsService
         array $tradingCalendar = []
     ): array {
         $trades = $this->sortReplayRows($backtestPayload['trades'] ?? []);
-        $evaluations = $backtestPayload['evaluations'] ?? [];
         $replayDates = $this->normalizedTradeDates($backtestPayload['replay_window']['trade_dates'] ?? []);
         $diagnostics = [];
         $evaluatedTrades = [];
@@ -63,10 +62,11 @@ class WatchlistBacktestMetricsService
                     }
                 } else {
                     $rejectedNoDataCount++;
-                    $diagnostics[] = $this->diagnosticItem($trade['trade_date'] ?? null, $evaluation['reason_code'] ?? 'WATCHLIST_BACKTEST_EVALUATION_SKIPPED_NO_PUBLISHED_PRICE', [
-                        'ticker_id' => $trade['ticker_id'] ?? null,
-                        'ticker' => $trade['ticker'] ?? $trade['ticker_code'] ?? null,
-                    ]);
+                    $diagnostics[] = $this->diagnosticItem(
+                        $trade['trade_date'] ?? null,
+                        $evaluation['reason_code'] ?? 'WATCHLIST_BACKTEST_EVALUATION_SKIPPED_NO_PUBLISHED_PRICE',
+                        $this->evaluationDiagnosticContext($trade, $evaluation)
+                    );
                 }
             }
         } else {
@@ -82,6 +82,20 @@ class WatchlistBacktestMetricsService
 
         $reasonCodeDistribution = $this->reasonCodeDistribution($backtestPayload, $evaluatedTrades, $diagnostics);
         $ready = count($returnValues) > 0 && $rejectedNoDataCount === 0;
+        $paramsetSnapshot = is_array($backtestPayload['paramset_snapshot'] ?? null)
+            ? $backtestPayload['paramset_snapshot']
+            : [];
+        $canonicalEvalMetrics = $this->canonicalEvalMetrics(
+            $evaluatedTrades,
+            $replayDates,
+            $backtestPayload,
+            $paramsetSnapshot
+        );
+        $metricSufficiency = $this->metricSufficiency(
+            $canonicalEvalMetrics,
+            count($replayDates),
+            $paramsetSnapshot
+        );
 
         return [
             'ready' => $ready,
@@ -102,6 +116,8 @@ class WatchlistBacktestMetricsService
                 'no_plan_mutation' => true,
                 'no_recommendation_mutation' => true,
                 'no_confirm_mutation' => true,
+                'positive_volume_required_for_execution' => true,
+                'zero_volume_bar_is_published_but_non_executable' => true,
                 'no_allocation_runtime' => true,
                 'not_execution_runtime' => true,
             ],
@@ -124,6 +140,8 @@ class WatchlistBacktestMetricsService
                 'max_gain' => count($returnValues) > 0 ? max($returnValues) : null,
                 'max_loss' => count($returnValues) > 0 ? min($returnValues) : null,
             ],
+            'canonical_eval_metrics' => $canonicalEvalMetrics,
+            'metric_sufficiency' => $metricSufficiency,
             'exit_outcomes' => [
                 'hit_target_count' => $hitTargetCount,
                 'hit_stop_count' => $hitStopCount,
@@ -140,6 +158,12 @@ class WatchlistBacktestMetricsService
         $ticker = $this->tickerCode($trade);
         $tradeDate = (string) ($trade['trade_date'] ?? '');
         $entryDate = $this->nextTradingDate($tradeDate, $calendarDates);
+        $paramset = is_array($backtestPayload['paramset_snapshot'] ?? null)
+            ? $backtestPayload['paramset_snapshot']
+            : [];
+        $backtest = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
+        $minTradableVolume = max(1, $this->intOrNull($backtest['min_tradable_volume'] ?? null) ?? 1);
+        $tradableBarRule = (string) ($backtest['tradable_bar_rule'] ?? 'POSITIVE_VOLUME_REQUIRED');
 
         if ($ticker === '' || $tradeDate === '' || $entryDate === null) {
             return $this->skippedEvaluation($trade, 'WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE');
@@ -149,6 +173,17 @@ class WatchlistBacktestMetricsService
         if ($entryBar === null) {
             return $this->skippedEvaluation($trade, 'WATCHLIST_BACKTEST_EVALUATION_SKIPPED_NO_PUBLISHED_PRICE', [
                 'entry_trade_date' => $entryDate,
+            ]);
+        }
+
+        $entryVolume = $this->intOrNull($entryBar['volume'] ?? null);
+        if (! $this->isTradableVolume($entryVolume, $minTradableVolume)) {
+            return $this->skippedEvaluation($trade, 'BT_SKIP_NO_TRADABLE_ENTRY', [
+                'entry_trade_date' => $entryDate,
+                'entry_volume' => $entryVolume,
+                'tradable_bar_rule' => $tradableBarRule,
+                'min_tradable_volume' => $minTradableVolume,
+                'message' => 'Published entry bar exists but has no executable market volume.',
             ]);
         }
 
@@ -162,11 +197,10 @@ class WatchlistBacktestMetricsService
         if ($entryPrice === null || $entryPrice <= 0) {
             return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_ENTRY', [
                 'entry_trade_date' => $entryDate,
+                'entry_volume' => $entryVolume,
             ]);
         }
 
-        $paramset = $backtestPayload['paramset_snapshot'] ?? [];
-        $backtest = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
         $holdingDays = max(1, $this->intOrNull($backtest['holding_days'] ?? null) ?? 5);
         $exitDates = $this->tradingWindowFrom($entryDate, $calendarDates, $holdingDays);
         if (count($exitDates) < $holdingDays) {
@@ -181,7 +215,9 @@ class WatchlistBacktestMetricsService
         $exitPrice = null;
         $exitDate = null;
         $exitReasonCode = null;
+        $exitBar = null;
         $reasonCodes = [];
+        $ignoredNonTradableExitDates = [];
         if ($entryFallbackReason !== null) {
             $reasonCodes[] = $entryFallbackReason;
         }
@@ -195,6 +231,23 @@ class WatchlistBacktestMetricsService
                 if ($index === count($exitDates) - 1) {
                     return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_EXIT', [
                         'exit_trade_date' => $date,
+                        'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
+                    ]);
+                }
+                continue;
+            }
+
+            $barVolume = $this->intOrNull($bar['volume'] ?? null);
+            if (! $this->isTradableVolume($barVolume, $minTradableVolume)) {
+                $ignoredNonTradableExitDates[] = $date;
+                if ($index === count($exitDates) - 1) {
+                    return $this->skippedEvaluation($trade, 'BT_SKIP_NO_TRADABLE_EXIT', [
+                        'exit_trade_date' => $date,
+                        'exit_volume' => $barVolume,
+                        'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
+                        'tradable_bar_rule' => $tradableBarRule,
+                        'min_tradable_volume' => $minTradableVolume,
+                        'message' => 'Published exit bar exists but has no executable market volume.',
                     ]);
                 }
                 continue;
@@ -208,6 +261,7 @@ class WatchlistBacktestMetricsService
                     $exitPrice = $levels['stop_price'];
                     $exitDate = $date;
                     $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_STOP';
+                    $exitBar = $bar;
                     if ($high !== null && $high >= $levels['target_price']) {
                         $reasonCodes[] = 'BT_AMBIGUOUS_HIT_STOP_PRIOR';
                     }
@@ -218,6 +272,7 @@ class WatchlistBacktestMetricsService
                     $exitPrice = $levels['target_price'];
                     $exitDate = $date;
                     $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_TARGET';
+                    $exitBar = $bar;
                     break;
                 }
             }
@@ -227,16 +282,21 @@ class WatchlistBacktestMetricsService
                 if ($close === null || $close <= 0) {
                     return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_EXIT', [
                         'exit_trade_date' => $date,
+                        'exit_volume' => $barVolume,
+                        'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
                     ]);
                 }
                 $exitPrice = $close;
                 $exitDate = $date;
                 $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_HOLD_EXPIRED';
+                $exitBar = $bar;
             }
         }
 
         if ($exitPrice === null || $exitDate === null || $exitReasonCode === null) {
-            return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_EXIT');
+            return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_EXIT', [
+                'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
+            ]);
         }
 
         $notionalIdr = $this->floatOrNull($backtest['notional_idr'] ?? null) ?? 10000000.0;
@@ -253,6 +313,7 @@ class WatchlistBacktestMetricsService
             return $this->skippedEvaluation($trade, 'BT_SKIP_NOT_ENOUGH_NOTIONAL', [
                 'entry_trade_date' => $entryDate,
                 'entry_price' => $entryPrice,
+                'entry_volume' => $entryVolume,
                 'notional_idr' => $notionalIdr,
             ]);
         }
@@ -267,6 +328,7 @@ class WatchlistBacktestMetricsService
             'trade_date' => $tradeDate,
             'ticker_id' => $trade['ticker_id'] ?? null,
             'ticker' => $ticker,
+            'bucket_code' => $trade['bucket_code'] ?? null,
             'metrics_ready' => true,
             'reason_code' => 'WATCHLIST_BACKTEST_EVALUATION_READY',
             'entry_trade_date' => $entryDate,
@@ -274,6 +336,18 @@ class WatchlistBacktestMetricsService
             'exit_reason_code' => $exitReasonCode,
             'entry_price' => $entryPrice,
             'exit_price' => $exitPrice,
+            'entry_volume' => $entryVolume,
+            'exit_volume' => $this->intOrNull($exitBar['volume'] ?? null),
+            'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
+            'tradable_bar_rule' => $tradableBarRule,
+            'min_tradable_volume' => $minTradableVolume,
+            'entry_publication_id' => $entryBar['publication_id'] ?? null,
+            'entry_publication_version' => $entryBar['publication_version'] ?? null,
+            'entry_run_id' => $entryBar['run_id'] ?? null,
+            'exit_publication_id' => $exitBar['publication_id'] ?? null,
+            'exit_publication_version' => $exitBar['publication_version'] ?? null,
+            'exit_run_id' => $exitBar['run_id'] ?? null,
+            'source_name' => $entryBar['source_name'] ?? null,
             'quantity' => $quantity,
             'gross_buy_idr' => $grossBuy,
             'gross_sell_idr' => $grossSell,
@@ -290,12 +364,60 @@ class WatchlistBacktestMetricsService
             'trade_date' => $trade['trade_date'] ?? null,
             'ticker_id' => $trade['ticker_id'] ?? null,
             'ticker' => $trade['ticker'] ?? $trade['ticker_code'] ?? null,
+            'bucket_code' => $trade['bucket_code'] ?? null,
             'metrics_ready' => false,
             'reason_code' => $reasonCode,
+            'message' => $this->reasonMessage($reasonCode),
             'ret_net' => null,
             'is_win' => null,
             'reason_codes' => [$reasonCode],
         ], $extra);
+    }
+
+    private function evaluationDiagnosticContext(array $trade, array $evaluation): array
+    {
+        $context = [
+            'ticker_id' => $trade['ticker_id'] ?? null,
+            'ticker' => $trade['ticker'] ?? $trade['ticker_code'] ?? null,
+        ];
+        foreach ([
+            'message',
+            'entry_trade_date',
+            'entry_volume',
+            'exit_trade_date',
+            'exit_volume',
+            'ignored_non_tradable_exit_dates',
+            'tradable_bar_rule',
+            'min_tradable_volume',
+            'required_holding_days',
+            'available_holding_days',
+        ] as $key) {
+            if (array_key_exists($key, $evaluation)) {
+                $context[$key] = $evaluation[$key];
+            }
+        }
+
+        return $context;
+    }
+
+    private function isTradableVolume(?int $volume, int $minimum): bool
+    {
+        return $volume !== null && $volume >= $minimum;
+    }
+
+    private function reasonMessage(string $reasonCode): string
+    {
+        $messages = [
+            'WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE' => 'Required trading-calendar horizon is unavailable.',
+            'WATCHLIST_BACKTEST_EVALUATION_SKIPPED_NO_PUBLISHED_PRICE' => 'Required exact-date published price row is unavailable.',
+            'BT_SKIP_MISSING_OHLC_ENTRY' => 'Entry OHLC is incomplete or non-positive.',
+            'BT_SKIP_MISSING_OHLC_EXIT' => 'No valid OHLC was available for the required exit evaluation.',
+            'BT_SKIP_NO_TRADABLE_ENTRY' => 'Entry bar is published but has no positive executable volume.',
+            'BT_SKIP_NO_TRADABLE_EXIT' => 'Exit bar is published but has no positive executable volume.',
+            'BT_SKIP_NOT_ENOUGH_NOTIONAL' => 'Configured notional cannot purchase one board lot.',
+        ];
+
+        return $messages[$reasonCode] ?? 'Backtest evaluation was skipped by a reason-coded fail-safe rule.';
     }
 
     private function targetStopLevels(float $entryPrice, array $trade, array $backtest): array
@@ -334,7 +456,10 @@ class WatchlistBacktestMetricsService
             return null;
         }
 
-        if (($bar['published'] ?? true) !== true) {
+        if (($bar['published'] ?? false) !== true || ($bar['readable'] ?? true) !== true) {
+            return null;
+        }
+        if (isset($bar['trade_date']) && (string) $bar['trade_date'] !== $tradeDate) {
             return null;
         }
 
@@ -445,6 +570,277 @@ class WatchlistBacktestMetricsService
         }
 
         return 'WATCHLIST_BACKTEST_EVALUATION_SKIPPED_NO_PUBLISHED_PRICE';
+    }
+
+    private function canonicalEvalMetrics(
+        array $evaluatedTrades,
+        array $replayDates,
+        array $backtestPayload,
+        array $paramset
+    ): array {
+        $topTrades = array_values(array_filter($evaluatedTrades, function (array $evaluation): bool {
+            $bucket = strtoupper((string) ($evaluation['bucket_code'] ?? 'TOP_PICKS'));
+
+            return ($evaluation['metrics_ready'] ?? false) === true
+                && in_array($bucket, ['TOP', 'TOP_PICKS'], true)
+                && $this->floatOrNull($evaluation['ret_net'] ?? null) !== null;
+        }));
+        $returns = array_values(array_map(function (array $evaluation): float {
+            return (float) $evaluation['ret_net'];
+        }, $topTrades));
+        sort($returns, SORT_NUMERIC);
+
+        $monthly = [];
+        foreach ($topTrades as $evaluation) {
+            $tradeDate = (string) ($evaluation['trade_date'] ?? '');
+            if (strlen($tradeDate) < 7) {
+                continue;
+            }
+            $month = substr($tradeDate, 0, 7);
+            $monthly[$month][] = (float) $evaluation['ret_net'];
+        }
+        ksort($monthly, SORT_STRING);
+
+        $monthWinRates = [];
+        $monthAverages = [];
+        $thresholds = $this->evaluationThresholds($paramset);
+        $monthlyThresholdsResolved = $thresholds['min_month_win_rate_min'] !== null
+            && $thresholds['min_month_avg_ret_net_min'] !== null;
+        $periodFailCount = $monthlyThresholdsResolved ? 0 : null;
+        foreach ($monthly as $monthReturns) {
+            $wins = count(array_filter($monthReturns, function (float $value): bool {
+                return $value > 0;
+            }));
+            $winRate = count($monthReturns) > 0 ? $wins / count($monthReturns) : null;
+            $average = count($monthReturns) > 0 ? array_sum($monthReturns) / count($monthReturns) : null;
+            if ($winRate !== null) {
+                $monthWinRates[] = $winRate;
+            }
+            if ($average !== null) {
+                $monthAverages[] = $average;
+            }
+            if ($monthlyThresholdsResolved
+                && ($winRate === null
+                    || $average === null
+                    || $winRate < $thresholds['min_month_win_rate_min']
+                    || $average < $thresholds['min_month_avg_ret_net_min'])) {
+                $periodFailCount++;
+            }
+        }
+
+        $wins = count(array_filter($returns, function (float $value): bool {
+            return $value > 0;
+        }));
+
+        return [
+            'picks_count' => count($returns),
+            'days_covered' => $this->coveredReplayDateCount(
+                $evaluatedTrades,
+                $backtestPayload,
+                $replayDates
+            ),
+            'avg_ret_net_top' => count($returns) > 0 ? array_sum($returns) / count($returns) : null,
+            'win_rate_top' => count($returns) > 0 ? $wins / count($returns) : null,
+            'median_ret_net_top' => $this->median($returns),
+            'p25_ret_net_top' => $this->percentile($returns, 0.25),
+            'p75_ret_net_top' => $this->percentile($returns, 0.75),
+            'min_ret_net_top' => count($returns) > 0 ? min($returns) : null,
+            'max_ret_net_top' => count($returns) > 0 ? max($returns) : null,
+            'month_win_rate_min' => $monthWinRates !== [] ? min($monthWinRates) : null,
+            'month_avg_ret_net_min' => $monthAverages !== [] ? min($monthAverages) : null,
+            'periods_count' => count($monthly),
+            'period_fail_count' => $periodFailCount,
+            'derived_query_metrics' => [
+                'loss_rate_top' => count($returns) > 0 ? 1 - ($wins / count($returns)) : null,
+            ],
+        ];
+    }
+
+    private function coveredReplayDateCount(
+        array $evaluatedTrades,
+        array $backtestPayload,
+        array $replayDates
+    ): int {
+        $allowedDates = array_fill_keys($replayDates, true);
+        $coveredDates = [];
+
+        foreach ($evaluatedTrades as $evaluation) {
+            if (($evaluation['metrics_ready'] ?? false) !== true) {
+                continue;
+            }
+
+            $tradeDate = (string) ($evaluation['trade_date'] ?? '');
+            if ($tradeDate !== '' && isset($allowedDates[$tradeDate])) {
+                $coveredDates[$tradeDate] = true;
+            }
+        }
+
+        foreach (($backtestPayload['diagnostics'] ?? []) as $diagnostic) {
+            if (! is_array($diagnostic)
+                || ($diagnostic['reason_code'] ?? null) !== 'WATCHLIST_BACKTEST_EMPTY_RECOMMENDATION_VALID') {
+                continue;
+            }
+
+            $tradeDate = (string) ($diagnostic['trade_date'] ?? '');
+            if ($tradeDate !== '' && isset($allowedDates[$tradeDate])) {
+                $coveredDates[$tradeDate] = true;
+            }
+        }
+
+        return count($coveredDates);
+    }
+
+    private function metricSufficiency(array $metrics, int $totalTradingDays, array $paramset): array
+    {
+        $required = [
+            'picks_count',
+            'days_covered',
+            'avg_ret_net_top',
+            'win_rate_top',
+            'median_ret_net_top',
+            'p25_ret_net_top',
+            'p75_ret_net_top',
+            'min_ret_net_top',
+            'max_ret_net_top',
+            'month_win_rate_min',
+            'month_avg_ret_net_min',
+        ];
+        $missing = [];
+        foreach ($required as $field) {
+            if (! array_key_exists($field, $metrics) || $metrics[$field] === null) {
+                $missing[] = $field;
+            }
+        }
+
+        $configuredThresholds = $this->evaluationThresholds($paramset);
+        $thresholds = $configuredThresholds;
+        if ($thresholds['min_days_covered'] !== null && $thresholds['min_days_covered'] === 0) {
+            $thresholds['min_days_covered'] = (int) ceil(0.70 * max(0, $totalTradingDays));
+        }
+        $requiredThresholds = [
+            'min_trades',
+            'min_days_covered',
+            'min_p25_ret_net_top',
+            'min_month_win_rate_min',
+            'min_month_avg_ret_net_min',
+        ];
+        $missingThresholds = [];
+        foreach ($requiredThresholds as $field) {
+            if (! array_key_exists($field, $thresholds) || $thresholds[$field] === null) {
+                $missingThresholds[] = $field;
+            }
+        }
+        $thresholdsResolved = $missingThresholds === [];
+
+        $gates = [
+            'minimum_trade_count' => $thresholdsResolved
+                ? ($metrics['picks_count'] ?? 0) >= $thresholds['min_trades']
+                : null,
+            'minimum_coverage' => $thresholdsResolved
+                ? ($metrics['days_covered'] ?? 0) >= $thresholds['min_days_covered']
+                : null,
+            'average_return_positive' => ($metrics['avg_ret_net_top'] ?? null) !== null
+                ? $metrics['avg_ret_net_top'] > 0
+                : null,
+            'median_return_non_negative' => ($metrics['median_ret_net_top'] ?? null) !== null
+                ? $metrics['median_ret_net_top'] >= 0
+                : null,
+            'p25_downside_bound' => $thresholdsResolved && ($metrics['p25_ret_net_top'] ?? null) !== null
+                ? $metrics['p25_ret_net_top'] >= $thresholds['min_p25_ret_net_top']
+                : null,
+            'monthly_win_rate_floor' => $thresholdsResolved && ($metrics['month_win_rate_min'] ?? null) !== null
+                ? $metrics['month_win_rate_min'] >= $thresholds['min_month_win_rate_min']
+                : null,
+            'monthly_average_floor' => $thresholdsResolved && ($metrics['month_avg_ret_net_min'] ?? null) !== null
+                ? $metrics['month_avg_ret_net_min'] >= $thresholds['min_month_avg_ret_net_min']
+                : null,
+        ];
+
+        $allGatesPass = ! in_array(false, $gates, true) && ! in_array(null, $gates, true);
+
+        return [
+            'required_fields_available' => $missing === [],
+            'missing_required_fields' => $missing,
+            'thresholds_resolved' => $thresholdsResolved,
+            'missing_thresholds' => $missingThresholds,
+            'threshold_source' => $thresholdsResolved ? 'paramset_snapshot.eval' : 'UNRESOLVED_PARAMSET_EVAL_THRESHOLDS',
+            'configured_thresholds' => $configuredThresholds,
+            'effective_thresholds' => $thresholds,
+            'coverage_threshold_rule' => ($configuredThresholds['min_days_covered'] ?? null) === 0
+                ? 'CEIL_70_PERCENT_OF_TOTAL_TRADING_DAYS'
+                : 'PARAMSET_EXPLICIT_VALUE',
+            'canonical_persisted_metrics' => $required,
+            'derived_query_report_metrics' => ['loss_rate_top'],
+            'diagnostic_counters' => [
+                'total_replay_dates',
+                'total_recommendations',
+                'total_evaluated_trades',
+                'hit_target_count',
+                'hit_stop_count',
+                'timeout_hold_expired_count',
+                'empty_recommendation_days',
+                'rejected_no_data_evaluation_count',
+                'reason_code_distribution',
+            ],
+            'gating_thresholds' => array_merge($thresholds, [
+                'total_trading_days_in_window' => $totalTradingDays,
+            ]),
+            'gates' => $gates,
+            'calibration_valid' => $missing === [] && $thresholdsResolved && $allGatesPass,
+            'production_ready' => false,
+        ];
+    }
+
+    private function evaluationThresholds(array $paramset): array
+    {
+        $eval = is_array($paramset['eval'] ?? null) ? $paramset['eval'] : [];
+        $backtest = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
+        $fallback = is_array($backtest['metric_thresholds'] ?? null) ? $backtest['metric_thresholds'] : [];
+
+        return [
+            'min_trades' => $this->thresholdInt($eval['min_trades'] ?? $fallback['min_trades'] ?? null),
+            'min_days_covered' => $this->thresholdInt($eval['min_days_covered'] ?? $fallback['min_days_covered'] ?? null),
+            'min_p25_ret_net_top' => $this->thresholdFloat($eval['min_p25_ret_net_top'] ?? $fallback['min_p25_ret_net_top'] ?? null),
+            'min_month_win_rate_min' => $this->thresholdFloat($eval['min_month_win_rate_min'] ?? $fallback['min_month_win_rate_min'] ?? null),
+            'min_month_avg_ret_net_min' => $this->thresholdFloat($eval['min_month_avg_ret_net_min'] ?? $fallback['min_month_avg_ret_net_min'] ?? null),
+        ];
+    }
+
+    private function thresholdInt($value): ?int
+    {
+        if (is_array($value)) {
+            $value = $value['value'] ?? null;
+        }
+
+        return is_numeric($value) ? max(0, (int) $value) : null;
+    }
+
+    private function thresholdFloat($value): ?float
+    {
+        if (is_array($value)) {
+            $value = $value['value'] ?? null;
+        }
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    private function percentile(array $values, float $percentile): ?float
+    {
+        if ($values === []) {
+            return null;
+        }
+
+        sort($values, SORT_NUMERIC);
+        $index = (count($values) - 1) * $percentile;
+        $lower = (int) floor($index);
+        $upper = (int) ceil($index);
+        if ($lower === $upper) {
+            return (float) $values[$lower];
+        }
+
+        $weight = $index - $lower;
+
+        return (float) $values[$lower] + (((float) $values[$upper] - (float) $values[$lower]) * $weight);
     }
 
     private function median(array $values): ?float

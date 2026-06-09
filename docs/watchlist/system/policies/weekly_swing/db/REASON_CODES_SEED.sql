@@ -232,7 +232,7 @@ INSERT INTO watchlist_reason_codes (policy_code, reason_code, scope, severity, s
 ('WS','WS_BT_EVAL_DOWNSIDE_FAIL','PLAN','BLOCK','bt_eval_downside_fail',
  'BT eval downside bound gagal (p25/min di bawah toleransi).',
  'BT eval downside bound gagal (p25/min di bawah toleransi).'),
-('WS','WS_BT_EVAL_METRICS_MISSING','PLAN','BLOCK','bt_eval_metrics_missing',
+('WS','WS_BT_EVAL_METRICS_MISSING','BT','BLOCK','bt_eval_metrics_missing',
  'BT eval metrics wajib tidak lengkap, sufficiency guard gagal.',
  'BT eval metrics wajib tidak lengkap, sufficiency guard gagal.'),
 ('WS','WS_BT_EVAL_MIN_DAYS_FAIL','PLAN','BLOCK','bt_eval_min_days_fail',
@@ -270,7 +270,13 @@ INSERT INTO watchlist_reason_codes (policy_code, reason_code, scope, severity, s
  'BT artifact reference guard gagal: artefak tidak ada di allowlist.'),
 ('WS','WS_BT_ARTIFACT_PARAM_ID_MISMATCH','BT','BLOCK','bt_artifact_param_id_mismatch',
  'BT artifact reference guard gagal: param_id artifact tidak konsisten.',
- 'BT artifact reference guard gagal: param_id artifact tidak konsisten.');
+ 'BT artifact reference guard gagal: param_id artifact tidak konsisten.'),
+('WS','BT_SKIP_NO_TRADABLE_ENTRY','BT','WARN','bt_skip_no_tradable_entry',
+ 'Bar entry published tersedia tetapi volume tidak positif; trade tidak memiliki fill entry executable dan di-skip.',
+ 'Published entry bar exists but volume is not positive; the trade has no executable entry fill and is skipped.'),
+('WS','BT_SKIP_NO_TRADABLE_EXIT','BT','WARN','bt_skip_no_tradable_exit',
+ 'Bar exit published tersedia tetapi volume tidak positif; trade tidak memiliki fill exit executable dan di-skip.',
+ 'Published exit bar exists but volume is not positive; the trade has no executable exit fill and is skipped.');
 
 -- Recommendation reason codes
 INSERT INTO reason_codes(code) VALUES

@@ -460,22 +460,22 @@
   },
   "eval": {
     "min_trades_oos": {
-      "value": 0,
+      "value": 40,
       "origin": "DET",
       "status": "ACTIVE",
       "bt_target": false,
-      "rationale": "Gate OOS minimal trades untuk menghindari bias sample kecil.",
+      "rationale": "Canonical OOS minimum trade-count floor untuk menghindari bias sample kecil.",
       "change_triggers": [
         "Perubahan window OOS",
         "Perubahan definisi trade"
       ]
     },
     "min_trades": {
-      "value": 0,
+      "value": 120,
       "origin": "DET",
       "status": "ACTIVE",
       "bt_target": false,
-      "rationale": "Gate in-sample minimal trades untuk menghindari bias sample kecil.",
+      "rationale": "Canonical in-sample minimum trade-count floor untuk evaluasi kalibrasi dua tahun.",
       "change_triggers": [
         "Perubahan window backtest",
         "Perubahan definisi trade"
@@ -486,7 +486,7 @@
       "origin": "DET",
       "status": "ACTIVE",
       "bt_target": false,
-      "rationale": "Minimum hari tercakup agar evaluasi tidak bias karena coverage parsial.",
+      "rationale": "Sentinel dinamis: runtime wajib resolve menjadi ceil(70% * total trading days in window).",
       "change_triggers": [
         "Perubahan definisi days_covered",
         "Perubahan window backtest"

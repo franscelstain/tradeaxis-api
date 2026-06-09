@@ -17,6 +17,10 @@ class WatchlistBacktestRuntimeArtifactService
         'metrics',
         'summary',
         'diagnostics',
+        'calendar_manifest',
+        'price_series_manifest',
+        'publication_manifest',
+        'runtime_execution',
         'artifact_manifest',
         'validation',
     ];
@@ -35,10 +39,11 @@ class WatchlistBacktestRuntimeArtifactService
         array $options = []
     ): array {
         $payload = $this->normalizeBacktestPayload($backtestPayload);
+        $runtimeContext = is_array($options['runtime_context'] ?? null) ? $options['runtime_context'] : [];
         $metrics = $this->metricsService->buildMetrics($payload, $publishedPriceSeriesByTicker, $tradingCalendar);
-        $inputManifest = $this->inputManifest($payload, $publishedPriceSeriesByTicker, $tradingCalendar);
+        $inputManifest = $this->inputManifest($payload, $publishedPriceSeriesByTicker, $tradingCalendar, $runtimeContext);
         $diagnostics = $this->sortDiagnostics(array_merge($payload['diagnostics'] ?? [], $metrics['diagnostics'] ?? []));
-        $artifactReady = $this->hasRequiredSections($payload) && ! $this->hasFatalDiagnostic($diagnostics);
+        $artifactReady = $this->hasRequiredSourceSections($payload) && ! $this->hasFatalDiagnostic($diagnostics);
 
         $artifact = [
             'ready' => $artifactReady,
@@ -53,16 +58,39 @@ class WatchlistBacktestRuntimeArtifactService
             ]),
             'source_contract' => $payload['source_contract'] ?? [],
             'backtest_contract' => array_merge($payload['backtest_contract'] ?? [], [
+                'foundation_only' => false,
                 'runtime_artifact_created' => true,
+                'published_price_runtime_proof' => true,
+                'official_trading_calendar_consumed' => $tradingCalendar !== [],
+                'price_series_consumed' => $publishedPriceSeriesByTicker !== [],
                 'metrics_ready' => (bool) ($metrics['ready'] ?? false),
                 'not_production_ready' => true,
             ]),
             'paramset_snapshot' => $payload['paramset_snapshot'] ?? [],
             'replay_window' => $payload['replay_window'] ?? [],
             'input_manifest' => $inputManifest,
+            'calendar_manifest' => $runtimeContext['calendar_manifest'] ?? [],
+            'price_series_manifest' => $runtimeContext['price_series_manifest'] ?? [],
+            'publication_manifest' => $runtimeContext['publication_manifest'] ?? [],
+            'runtime_execution' => array_merge([
+                'sequence' => [
+                    'resolve_official_trading_calendar',
+                    'replay_plan_recommendation_confirm',
+                    'freeze_trade_candidates',
+                    'read_exact_date_published_eod_series',
+                    'evaluate_metrics',
+                    'build_deterministic_artifact',
+                ],
+                'trade_candidates_frozen_before_price_read' => true,
+                'future_price_used_for_evaluation_only' => true,
+                'no_plan_mutation' => true,
+                'no_recommendation_mutation' => true,
+                'no_confirm_mutation' => true,
+                'not_execution_runtime' => true,
+            ], $runtimeContext['runtime_execution'] ?? []),
             'items' => $payload['items'] ?? [],
             'trades' => $payload['trades'] ?? [],
-            'evaluations' => $payload['evaluations'] ?? [],
+            'evaluations' => $metrics['evaluated_trades'] ?? ($payload['evaluations'] ?? []),
             'metrics' => $metrics,
             'summary' => $this->summary($payload, $metrics, $artifactReady),
             'diagnostics' => $diagnostics,
@@ -152,8 +180,19 @@ class WatchlistBacktestRuntimeArtifactService
         return $payload;
     }
 
-    private function inputManifest(array $payload, array $publishedPriceSeriesByTicker, array $tradingCalendar): array
-    {
+    private function inputManifest(
+        array $payload,
+        array $publishedPriceSeriesByTicker,
+        array $tradingCalendar,
+        array $runtimeContext = []
+    ): array {
+        $priceSeriesManifest = is_array($runtimeContext['price_series_manifest'] ?? null)
+            ? $runtimeContext['price_series_manifest']
+            : [];
+        $calendarManifest = is_array($runtimeContext['calendar_manifest'] ?? null)
+            ? $runtimeContext['calendar_manifest']
+            : [];
+
         return [
             'source_payload_hash' => $this->stableHash($payload),
             'source_payload_contract' => 'WatchlistBacktestStrategyService output',
@@ -163,8 +202,14 @@ class WatchlistBacktestRuntimeArtifactService
             'evaluations_count' => count($payload['evaluations'] ?? []),
             'price_series_contract' => $publishedPriceSeriesByTicker === [] ? 'UNAVAILABLE' : 'PUBLISHED_EOD_PRICE_SERIES_INPUT',
             'price_series_ticker_count' => count($publishedPriceSeriesByTicker),
+            'price_series_hash' => $this->stableHash($publishedPriceSeriesByTicker),
+            'required_price_date_count' => $priceSeriesManifest['required_price_date_count'] ?? 0,
+            'resolved_price_date_count' => $priceSeriesManifest['resolved_price_date_count'] ?? 0,
+            'missing_price_dates' => $priceSeriesManifest['missing_price_dates'] ?? [],
             'calendar_contract' => $tradingCalendar === [] ? 'UNAVAILABLE' : 'EXPLICIT_TRADING_CALENDAR_INPUT',
             'calendar_trade_date_count' => count($tradingCalendar),
+            'calendar_hash' => $calendarManifest['calendar_hash'] ?? $this->stableHash($tradingCalendar),
+            'calendar_source' => $calendarManifest['calendar_source'] ?? null,
             'no_raw_market_data_input' => true,
             'no_latest_shortcut_input' => true,
             'no_max_trade_date_shortcut_input' => true,
@@ -224,6 +269,11 @@ class WatchlistBacktestRuntimeArtifactService
             'source_payload_hash_matches_input_manifest' => ($artifact['input_manifest']['source_payload_hash'] ?? null) === $this->stableHash($payload),
             'metrics_ready' => (bool) ($metrics['ready'] ?? false),
             'metrics_reason_code' => $metrics['reason_code'] ?? null,
+            'metric_required_fields_available' => (bool) ($metrics['metric_sufficiency']['required_fields_available'] ?? false),
+            'metric_calibration_valid' => (bool) ($metrics['metric_sufficiency']['calibration_valid'] ?? false),
+            'runtime_input_lineage_present' => ! empty($artifact['publication_manifest']) || empty($artifact['trades']),
+            'trade_candidates_frozen_before_price_read' => (bool) ($artifact['runtime_execution']['trade_candidates_frozen_before_price_read'] ?? false),
+            'future_price_used_for_evaluation_only' => (bool) ($artifact['runtime_execution']['future_price_used_for_evaluation_only'] ?? false),
             'no_lookahead' => (bool) ($artifact['backtest_contract']['no_lookahead'] ?? false),
             'deterministic_replay' => (bool) ($artifact['backtest_contract']['deterministic_replay'] ?? false),
             'publication_aware_replay' => (bool) ($artifact['backtest_contract']['publication_aware_replay'] ?? false),
@@ -249,10 +299,33 @@ class WatchlistBacktestRuntimeArtifactService
         return 'WATCHLIST_BACKTEST_RUNTIME_ARTIFACT_READY';
     }
 
+    private function hasRequiredSourceSections(array $payload): bool
+    {
+        foreach ([
+            'meta',
+            'source_contract',
+            'backtest_contract',
+            'paramset_snapshot',
+            'replay_window',
+            'items',
+            'trades',
+            'evaluations',
+            'summary',
+            'diagnostics',
+            'artifact_manifest',
+        ] as $section) {
+            if (! array_key_exists($section, $payload)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private function hasRequiredSections(array $payload): bool
     {
         foreach (self::OUTPUT_SECTIONS as $section) {
-            if (! array_key_exists($section, $payload) && $section !== 'input_manifest' && $section !== 'metrics' && $section !== 'validation') {
+            if (! array_key_exists($section, $payload)) {
                 return false;
             }
         }
@@ -298,7 +371,14 @@ class WatchlistBacktestRuntimeArtifactService
 
     private function artifactForHash(array $artifact): array
     {
-        unset($artifact['validation']['artifact_hash'], $artifact['meta']['artifact_hash']);
+        unset(
+            $artifact['validation']['artifact_hash'],
+            $artifact['meta']['artifact_hash'],
+            $artifact['meta']['generated_at'],
+            $artifact['runtime_execution']['executed_at'],
+            $artifact['runtime_execution']['output_path'],
+            $artifact['runtime_execution']['file_sha1']
+        );
 
         return $artifact;
     }

@@ -15,57 +15,62 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS EXECUTION SESSION`
+`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
 
 Status:
-`DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS / NOT_PRODUCTION_READY`. Phase 7 remains `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`. Phase 6 remains `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY`. Local validation for the current scope is PASS: `WatchlistBacktest` 25 tests / 286 assertions, full `tests\Unit\Watchlist` 116 tests / 1168 assertions, and `MarketDataWatchlistReadModelTest` 3 tests / 41 assertions. Readiness-critical production scope remains `NOT_PRODUCTION_READY` because no watchlist command/API runtime proof, production schema, production persisted artifact/log evidence, portfolio-aware integration, or walk-forward/OOS proof exists yet.
+`DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`.
+
+Historical baselines remain preserved and are not downgraded:
+
+- `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
+- `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
+- `DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS / NOT_PRODUCTION_READY`;
+- prior local evidence remains `WatchlistBacktest` 25 tests / 286 assertions, full `tests\Unit\Watchlist` 116 tests / 1168 assertions, and `MarketDataWatchlistReadModelTest` 3 tests / 41 assertions.
 
 Scope:
-Add a runtime-safe backtest artifact and metrics foundation on top of the existing `WatchlistBacktestStrategyService` output. This session keeps the PLAN / RECOMMENDATION / CONFIRM boundary intact, adds deterministic artifact shaping, JSON export foundation, metrics aggregation, fail-safe pricing/calendar diagnostics, and static/unit guard coverage. This session explicitly does not create portfolio allocation, position sizing final, broker instruction, order recommendation, execution automation, API endpoint, artisan command, scheduler, production migration, or production schema.
+Connect the Phase 7 replay boundary to official market-data application read surfaces for explicit trading-calendar windows and exact-date current readable published EOD OHLCV, then orchestrate strategy replay, price evaluation, canonical metrics, deterministic artifact generation, and explicit JSON export through a watchlist proof command. No portfolio allocation, order, broker instruction, scheduler, API endpoint, market-data producer behavior, or production migration is added.
 
-Evidence:
+Current evidence:
 
-- `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php` remains the Phase 7 boundary and is not rewritten.
-- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php` added.
-- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php` added.
-- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php` added.
-- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php` added.
-- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php` added.
-- Runtime artifact output records `meta`, `source_contract`, `backtest_contract`, `paramset_snapshot`, `replay_window`, `input_manifest`, `items`, `trades`, `evaluations`, `metrics`, `summary`, `diagnostics`, `artifact_manifest`, and `validation`.
-- Artifact manifest references official Weekly Swing backtest artifacts including `watchlist_bt_eval`, `watchlist_bt_picks_ws`, `watchlist_bt_universe_ws`, `watchlist_bt_cutoffs_ws`, and `watchlist_bt_oos_eval_ws`.
-- Metrics foundation records total replay dates, total recommendations, evaluated trade count, win rate, average return, median return, max gain, max loss, hit target count, hit stop count, hold-expired count, empty recommendation days, rejected/no-data evaluation count, missing price/calendar diagnostics, and reason-code distribution.
-- If published EOD price series or explicit trading calendar input is missing, metrics fail safe with `WATCHLIST_BACKTEST_PRICE_SERIES_UNAVAILABLE`, `WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE`, and `WATCHLIST_BACKTEST_EVALUATION_SKIPPED_NO_PUBLISHED_PRICE`; no raw/staging/unsealed/latest fallback is created.
-- JSON artifact export foundation exists through `WatchlistBacktestRuntimeArtifactService::writeJsonArtifact()` only; no command/API/production schema/persistence surface is added.
-- Local validation after the metrics float-output correction is fully PASS:
-  - `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktest"` — OK (25 tests, 286 assertions).
-  - `vendor\bin\phpunit tests\Unit\Watchlist` — OK (116 tests, 1168 assertions).
-  - `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"` — OK (3 tests, 41 assertions).
-- Watchlist Production Ready remains `NO`.
+- official application read surfaces now exist for trading calendar and exact-date published EOD series;
+- watchlist runtime orchestration freezes the strategy payload before future-price reads and verifies that payload remains unchanged;
+- runtime artifact now records calendar, price-series, publication lineage, runtime execution, canonical metrics, and a deterministic canonical artifact hash;
+- command `watchlist:backtest-published-price-proof` requires explicit `--from`, `--to`, and `--output`;
+- final operator PHPUnit passed: PublishedPrice `17 tests / 146 assertions`, MetricsService `8 / 63`, Backtest `48 / 497`, full Watchlist `139 / 1379`, PublishedEodSeries `6 / 29`, TradingCalendar `4 / 16`, and existing MarketData watchlist read model `3 / 41`;
+- official operator command replay `2026-05-21` through `2026-05-29` passed twice after zero-volume, threshold-binding, and dynamic-coverage closure;
+- both final runs resolved 9/9 required price dates, evaluated 13 trades, emitted 2 reason-coded non-fatal diagnostics, resolved metric thresholds, and produced equal canonical artifact hash `0eaa353d20df901c4f372c0000951408578bf302`;
+- publication lineage passed for 10/10 dates through `2026-06-08` with current pointer, `SEALED`, `SUCCESS`, `READABLE`, coverage `PASS`, and current-publication identity;
+- dynamic coverage proof passed with `days_covered=5`, `total_trading_days_in_window=5`, effective `min_days_covered=4`, and `minimum_coverage=true`;
+- metric thresholds are resolved with `min_trades=120`; `metric_calibration_valid=0` is expected for this smoke window because only 13 trades were evaluated;
+- KING correctly emitted `BT_SKIP_MISSING_OHLC_EXIT` after ignoring zero-volume dates `2026-05-25`, `2026-05-26`, and `2026-05-29`; no synthetic exit or zero return was created;
+- BKDP correctly emitted `BT_SKIP_NO_TRADABLE_ENTRY` with `entry_volume=0`;
+- file SHA-1 differed between runs because output path and execution metadata are non-hashed, while canonical artifact hash equality passed;
+- watchlist remains `NOT_PRODUCTION_READY`; no contract is promoted to `LOCKED`, and walk-forward/OOS plus production operating proof remain outstanding.
 
 ## Source of Truth ZIP
 
 - Source ZIP: `tradeaxis-api.zip`
-- Session date: `2026-06-08`
+- Session date: `2026-06-09`
 - Latest local validation date: `2026-06-09`
-- Scope classification: watchlist backtest runtime artifact and metrics foundation code + tests + docs sync.
+- Scope classification: watchlist published-price runtime integration + official operator proof + zero-volume/metric-threshold closure + corrected dynamic coverage semantics; final operator rerun passed.
 
 ## Current Implementation Baseline
 
 | Area | Status | Notes |
 |---|---|---|
-| Current status | `DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS / NOT_PRODUCTION_READY` | Read model, candidate universe gates, deterministic scoring foundation, deterministic PLAN grouping foundation, deterministic recommendation foundation, confirm overlay foundation, backtest strategy foundation, runtime artifact foundation, and metrics foundation exist at unit/static scope. Whole watchlist remains not production-ready. |
-| Main feature code | `DONE for runtime artifact and metrics foundation unit/static scope` | Read model, candidate universe gates, scoring foundation, PLAN grouping foundation, final recommendation foundation, confirm overlay foundation, backtest strategy foundation, runtime artifact foundation, and metrics foundation exist at service + unit/static scope. Command/API runtime remains not started. |
+| Current status | `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY` | Read model, candidate universe gates, deterministic scoring foundation, deterministic PLAN grouping foundation, deterministic recommendation foundation, confirm overlay foundation, backtest strategy foundation, runtime artifact foundation, and metrics foundation exist at unit/static scope. Whole watchlist remains not production-ready. |
+| Main feature code | `DONE for published-price runtime proof scope` | Official calendar and published OHLC read surfaces, watchlist runtime orchestration, command, artifact export, metrics, and tests exist; final operator PHPUnit and database-backed command proof passed. |
 | Runtime API | `NOT_STARTED` | No API endpoint created. |
-| Artisan command surface | `NOT_STARTED` | No watchlist command created. |
+| Artisan command surface | `IMPLEMENTED / LOCAL_RUNTIME_PROOF_PASS` | Command produced two final deterministic artifacts on the supported operator environment with equal canonical artifact hash. |
 | Database schema | `NOT_STARTED` | No production migration created. Existing SQL docs/fixtures are support artifacts only. |
-| Backtest engine | `DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS` | `WatchlistBacktestStrategyService` remains intact; `WatchlistBacktestRuntimeArtifactService` and `WatchlistBacktestMetricsService` add deterministic artifact/metrics foundation. The current backtest filter and full watchlist suite pass locally. No runtime command/API, production schema, production persisted artifact evidence, or walk-forward/OOS proof exists. |
+| Backtest engine | `DONE for published-price runtime proof scope` | Phase 7 strategy remains intact. Published-price orchestration, zero-volume execution semantics, metric threshold binding, dynamic coverage, final PHPUnit regression, and two-run command proof pass. OOS and production operating proof remain incomplete. |
 | Recommendation engine | `DONE for Phase 5 unit/static scope` | `WatchlistRecommendationService` derives recommendation only from PLAN grouping output. Confirm overlay now consumes recommendation membership as immutable snapshot and does not mutate it. |
 | PLAN grouping engine | `DONE for Phase 4 unit/static scope` | `WatchlistPlanGroupingService` maps Phase 3 scored output into deterministic PLAN groups only. |
 | Scoring engine | `DONE / LOCAL PASS` | `WatchlistScoringService` computes deterministic PLAN component scores and ranking over Phase 2 eligible universe rows; baseline validation at the start of this session is local PASS. |
-| Market-data consumer read model | `DONE` | `WatchlistMarketDataConsumerReadService` consumes the official market-data read surface and validates candidate readiness. |
+| Market-data consumer read model | `DONE for published-price range-read runtime proof scope` | Existing watchlist read model remains intact; new market-data application services expose official trading-calendar windows and exact-date current-readable published EOD OHLCV without watchlist DB access. |
 | Candidate universe / liquidity-risk gates | `DONE` | `WatchlistCandidateUniverseService` applies deterministic liquidity, ATR/risk, and volume participation guards over Phase 1 candidates. |
-| Test coverage | `DONE / LOCAL_PHPUNIT_PASS` | `WatchlistBacktest` OK (25 tests, 286 assertions); full `tests\Unit\Watchlist` OK (116 tests, 1168 assertions); `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions). |
-| Artifact/log output | `DONE for runtime artifact foundation unit/static scope` | Runtime-safe artifact shaping and JSON export foundation exist in service scope. No command/API production artifact/log proof exists yet. |
+| Test coverage | `LOCAL_PHPUNIT_PASS` | Final operator evidence: PublishedPrice 17/146, MetricsService 8/63, Backtest 48/497, full Watchlist 139/1379, PublishedEodSeries 6/29, TradingCalendar 4/16, existing Watchlist read model 3/41. |
+| Artifact/log output | `DONE for deterministic JSON runtime evidence scope` | Two final official command artifacts exist with equal canonical hash `0eaa353d20df901c4f372c0000951408578bf302`; production persistence/operating evidence remains out of scope. |
 | Production readiness | `NOT_READY` | Watchlist is not production-ready. |
 
 ## Existing Docs Discovered
@@ -236,11 +241,11 @@ Runtime artifact/metrics diagnostic codes in this session are internal backtest 
 
 | Severity | Gap | Impact |
 |---|---|---|
-| `RUNTIME_PROOF_MISSING` | No watchlist command/API runtime proof exists for read model, candidate universe, scoring, PLAN grouping, recommendation, confirm overlay, or backtest strategy foundation. | Core contracts remain not `LOCKED` because command/API runtime proof and production persisted artifact/log evidence are still missing. |
-| `RUNTIME_PROOF_MISSING` | Confirm overlay, backtest strategy, runtime artifact, and metrics foundations exist at service + unit/static scope. | Foundations are implemented and locally validated, but no watchlist command/API runtime proof or production persisted artifact/log evidence exists yet. |
-| `RUNTIME_PROOF_MISSING` | Runtime-safe artifact shaping and JSON export foundation exist, but no command-driven production persisted artifact/log evidence exists. | The artifact contract remains not `LOCKED`, and production readiness cannot be claimed. |
-| `DOCS_ONLY` | Governance/read model/candidate universe/scoring/PLAN grouping/recommendation/confirm/backtest/artifact/metrics docs are synced for unit/static scope, but future API/command/persistence docs and code still require implementation sync. | Correct for current scope; not production readiness. |
-| `NOT_READY` | No runtime API, command, production schema, command-driven production artifact persistence, portfolio-aware boundary implementation, or walk-forward/OOS proof exists. | Watchlist Production Ready remains `NO`. |
+| `EXTERNAL_DEPENDENCY` | Sandbox runs PHP `8.4.16`; project Artisan guard requires PHP `< 8.4`. | Official command/database runtime proof cannot be executed here. |
+| `RUNTIME_PROOF_MISSING` | New PHPUnit filters and full regression suite have not been executed against the current patch under supported PHP. | New integration remains `PARTIAL`, although prior Phase 6/7/artifact/metrics baselines remain preserved. |
+| `RUNTIME_PROOF_MISSING` | Registered command has not been run twice against an official fixture/integration database. | Command exit behavior, DB-backed exact-date publication lineage, and command-level hash reproducibility remain unproven. |
+| `REVIEW_REQUIRED` | File 12 locks TP/SL/time-exit while file 16 states fixed holding as default. | Metric sufficiency cannot be claimed complete until owner precedence/governance is explicit. |
+| `NOT_READY` | Walk-forward/OOS proof and production operating proof do not exist. | `WL-CONTRACT-015` remains `PARTIAL / NOT_READY`; watchlist remains `NOT_PRODUCTION_READY`. |
 
 ## First Implementation Roadmap
 
@@ -335,22 +340,22 @@ Status: `NOT_STARTED`.
 
 ### Phase 9 — API/Command Surface
 
-- Artisan commands.
-- API endpoints.
-- Output contract.
-- Evidence artifacts.
+- Published-price Artisan proof command implemented with explicit `--from`, `--to`, and `--output`.
+- No API endpoint and no scheduler.
+- Deterministic JSON output contract exists at service level.
+- Official Artisan/database evidence remains blocked in this sandbox.
 
-Status: `NOT_STARTED`.
+Status: `PARTIAL / RUNTIME_BLOCKED`.
 
 ### Phase 10 — Production Readiness Audit
 
-- Full PHPUnit.
-- StaticGuard.
-- Runtime command proof.
-- Artifact proof.
-- Docs sync.
+- Historical full PHPUnit baseline preserved; current patch PHPUnit still required under supported PHP.
+- Grouped static validation passes.
+- Controlled service/read-surface artifact proof passes.
+- Official runtime command/database proof, OOS proof, and production operating proof remain missing.
+- Docs sync is current for this patch.
 
-Status: `NOT_STARTED`.
+Status: `IN_PROGRESS / NOT_READY`.
 
 ## Evidence Log
 
@@ -546,6 +551,8 @@ Local PHPUnit proof upgrades Phase 7 to DONE for unit/static scope. No `LOCKED` 
 
 ## Latest Completed Local Validation
 
+This section preserves the last completed local baseline before the current published-price patch. It is historical evidence and does not claim that the new tests were executed in the sandbox.
+
 The required local validation for the current runtime artifact and metrics foundation scope is complete:
 
 ```powershell
@@ -566,7 +573,7 @@ Validated outcomes:
 - market-data watchlist consumer read-model test remains green;
 - no regression is observed in Phase 1 through Phase 7 unit/static coverage;
 - documentation static guards pass as part of the full watchlist suite;
-- local PHPUnit is no longer a pending requirement for this session.
+- local PHPUnit was no longer pending for that historical runtime-artifact foundation session; the current published-price patch still requires supported-environment PHPUnit execution.
 
 ## Production Readiness Status
 
@@ -574,31 +581,30 @@ Validated outcomes:
 
 Reason:
 
-- market-data consumer read model exists but has no watchlist command/API runtime proof yet;
-- candidate universe, scoring foundation, PLAN grouping foundation, recommendation foundation, confirm overlay foundation, and backtest strategy foundation exist only at service + unit/static scope;
-- runtime artifact and metrics foundation exists at service + unit/static scope, but no command/API production artifact/log proof exists yet;
-- no runtime API;
-- no command surface;
-- no production watchlist schema/migration;
-- backtest strategy foundation is DONE and runtime artifact/metrics foundation exists, but there is no runtime command/API proof, production persisted artifact proof, portfolio-aware integration, or walk-forward/OOS proof;
-- no portfolio-aware integration;
-- WL-CONTRACT-001 through WL-CONTRACT-008, WL-CONTRACT-011, WL-CONTRACT-014, WL-CONTRACT-016, WL-CONTRACT-017, WL-CONTRACT-018, and WL-CONTRACT-019 are not `LOCKED` because runtime proof/artifact evidence is missing;
-- WL-CONTRACT-009, WL-CONTRACT-010, and WL-CONTRACT-013 are `DONE for runtime artifact and metrics foundation unit/static scope` but not `LOCKED`; WL-CONTRACT-012 remains `NOT_STARTED`.
+- Phase 6, Phase 7, runtime artifact foundation, and metrics foundation remain historically validated and are not downgraded;
+- official trading-calendar and exact-date published OHLC read surfaces, orchestration, command, and deterministic service artifacts now exist;
+- current-patch PHPUnit regression and official command/database runtime proof passed on the supported operator environment;
+- file 12/file 16 exit-model wording and zero-volume execution semantics are synchronized;
+- no walk-forward/OOS proof;
+- no production operating proof;
+- no portfolio/execution scope was added;
+- no contract is `LOCKED` and `WL-CONTRACT-015` remains `PARTIAL / NOT_READY`.
 
 ## Next Required Sessions
 
 Recommended next session:
 
-`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
 
 Target:
 
-- keep Phase 7 strategy service and runtime artifact/metrics services intact;
-- connect backtest evaluation only to official published/sealed EOD price series and explicit trading-calendar input;
-- add runtime proof or command only if it remains artifact generation/evaluation only;
-- persist/export official artifact-manifest output with deterministic evidence hash;
-- prove no-lookahead, reproducibility, publication-aware replay, metric sufficiency, and docs sync locally;
-- do not add portfolio allocation, position sizing final, broker instruction, order recommendation, or execution automation.
+- consume the completed published-price runtime proof as the immutable replay foundation;
+- implement and prove chronological train/calibration/test segmentation without future leakage;
+- keep exact-date current-readable publication, calendar, paramset, and artifact lineage per fold;
+- prove deterministic fold construction, OOS-only evaluation, aggregate OOS metrics, and reproducible artifacts;
+- retain zero-volume non-tradable handling and no synthetic fills;
+- keep portfolio allocation, final position sizing, broker instruction, execution automation, scheduler, and production API out of scope;
+- keep watchlist `NOT_PRODUCTION_READY` until OOS and production operating evidence are complete.
 
 
 ## Runtime Artifact and Metrics Foundation Update — 2026-06-08
@@ -625,3 +631,304 @@ Production readiness:
 
 - Watchlist Production Ready remains `NO`.
 - Contracts are not promoted to `LOCKED` because command/API runtime proof, production persisted artifact evidence, production schema, and walk-forward/OOS proof are still missing.
+
+## Published Price Series Runtime Integration Update — 2026-06-09
+
+Session:
+`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+
+Status:
+`PARTIAL — implementation and controlled service runtime proof complete / official Artisan and database runtime proof blocked / NOT_PRODUCTION_READY`.
+
+Implemented files:
+
+- `app/Application/MarketData/Services/MarketDataTradingCalendarReadService.php`;
+- `app/Application/MarketData/Services/MarketDataPublishedEodSeriesReadService.php`;
+- `app/Infrastructure/Persistence/MarketData/MarketDataPublishedEodSeriesReadRepository.php`;
+- `app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php`;
+- `app/Application/Watchlist/Services/WatchlistBacktestPublishedPriceRuntimeService.php`;
+- `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php`;
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php`;
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php`;
+- `app/Console/Commands/Watchlist/RunBacktestPublishedPriceProofCommand.php`;
+- `app/Console/Kernel.php`.
+
+Added test files:
+
+- `tests/Unit/MarketData/MarketDataTradingCalendarReadModelTest.php`;
+- `tests/Unit/MarketData/MarketDataPublishedEodSeriesReadModelTest.php`;
+- `tests/Unit/Watchlist/WatchlistBacktestPublishedPriceRuntimeServiceTest.php`;
+- `tests/Unit/Watchlist/WatchlistBacktestPublishedPriceProofCommandTest.php`;
+- `tests/Unit/Watchlist/WatchlistBacktestPublishedPriceRuntimeStaticGuardTest.php`.
+
+Modified test files:
+
+- `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php`;
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php`.
+
+Audit docs updated:
+
+- `docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md`;
+- `docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md`.
+
+Runtime evidence written:
+
+- `storage/app/watchlist/backtest/published-price-service-proof-run-1.json`;
+- `storage/app/watchlist/backtest/published-price-service-proof-run-2.json`;
+- `storage/app/watchlist/backtest/published-price-service-proof-missing-exit.json`;
+- `storage/app/watchlist/backtest/published-price-service-proof-evidence.json`;
+- `storage/app/watchlist/backtest/published-price-read-surface-proof-evidence.json`.
+
+Validation evidence:
+
+- `php -l`: PASS for 17 changed/new PHP source and test files, 0 failures;
+- grouped static validation: PASS, 0 failures;
+- controlled application-service runtime proof: PASS, 25 direct assertions;
+- controlled market-data application read-surface proof: PASS, 21 direct assertions;
+- strategy paramset snapshot regression smoke: PASS, 4 direct assertions;
+- command argument fail-safe smoke without Artisan bootstrap: PASS, 4 direct assertions;
+- canonical artifact hash run 1: `bb2268bbc053d7aa85fd5a400e834c519cfd3429`;
+- canonical artifact hash run 2: `bb2268bbc053d7aa85fd5a400e834c519cfd3429`;
+- canonical hash equality: PASS;
+- file SHA-1 differs because `generated_at`, `executed_at`, and output path are intentionally non-hashed metadata;
+- metric required fields are available for the controlled proof, but calibration validity is false because the proof has only one evaluated trade and does not meet file 16 gates;
+- missing publication and future-effective source fail closed; missing exit OHLC remains a reason-coded skip with `ret_net = null`.
+
+Sandbox blockers:
+
+- `php artisan watchlist:backtest-published-price-proof --from=2026-05-19 --to=2026-05-19 --output=storage/app/watchlist/backtest/command-proof-blocked.json --overwrite` exits `2` with `ENV_UNSUPPORTED_PHP_VERSION`; project requires PHP `>= 7.3` and `< 8.4`, sandbox is PHP `8.4.16`, and no command artifact is written;
+- each requested PHPUnit command exits `1` before test discovery because required extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are absent; test and assertion counts are therefore unavailable for the current patch;
+- official database-backed command proof therefore remains `BLOCKED`.
+
+Historical pre-closure owner conflict — RESOLVED by the later gap-closure update:
+
+- file 12 locks TP/SL/time-exit up to D+5;
+- file 16 states fixed holding as its default evaluation model;
+- the closure update explicitly aligns file 16 to file 12 rule-based TP/SL/time-exit semantics;
+- metric sufficiency remains `PARTIAL` only until the current closure-patch PHPUnit and runtime rerun are completed.
+
+Production readiness:
+
+- `NOT_PRODUCTION_READY`;
+- `WL-CONTRACT-015` remains `PARTIAL / NOT_READY`;
+- no contract is promoted to `LOCKED`.
+
+
+
+## Published Price Runtime Proof and Gap Closure Update — 2026-06-09
+
+Session:
+`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+
+Status:
+`PARTIAL — LOCAL_RUNTIME_PROOF_PASS for the operator-tested pre-closure build / zero-volume tradability and canonical metric-threshold closure implemented / current coverage-fix patch rerun required / NOT_PRODUCTION_READY`.
+
+### Operator PHPUnit evidence
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestPublishedPrice"
+OK (13 tests, 87 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktest"
+OK (39 tests, 375 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist
+OK (130 tests, 1257 assertions)
+
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataPublishedEodSeries"
+OK (6 tests, 29 assertions)
+
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataTradingCalendar"
+OK (4 tests, 16 assertions)
+
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"
+OK (3 tests, 41 assertions)
+```
+
+The first PublishedEodSeries attempt exposed a test-fixture error caused by inserting a historical publication row into live `eod_bars`, whose canonical key is `(trade_date, ticker_id)`. The fixture was corrected to place the non-current row in `eod_bars_history`; the rerun passed 6 tests / 29 assertions. No production reader defect was found.
+
+### Official operator runtime evidence before closure patch
+
+Replay window:
+
+```text
+from=2026-05-21
+to=2026-05-29
+replay_date_count=5
+calendar_date_count=10
+required_price_date_count=9
+resolved_price_date_count=9
+evaluated_trade_count=13
+diagnostic_count=2
+```
+
+Two command runs completed with `status=PASS`. Canonical artifact hash matched:
+
+```text
+run 1 artifact_hash=03dce5cbd7176a6065dc711e0d9907a2279f9cc3
+run 2 artifact_hash=03dce5cbd7176a6065dc711e0d9907a2279f9cc3
+hash equality=PASS
+```
+
+File SHA-1 differed because output path and execution metadata are intentionally excluded from the canonical artifact hash. Publication evidence covered 10/10 required dates from `2026-05-21` through `2026-06-08`; each date resolved a current pointer with `SEALED`, `SUCCESS`, `READABLE`, coverage `PASS`, and current-publication identity.
+
+The two non-fatal diagnostics were:
+
+```text
+2026-05-21 KING BT_SKIP_MISSING_OHLC_EXIT
+2026-05-26 BKDP BT_SKIP_MISSING_OHLC_EXIT
+```
+
+Operator bar inspection confirmed inactive/non-trading rows: equal OHLC with `volume = 0`, followed by unavailable bars. This exposed a semantic gap: a published row is not automatically an executable backtest fill.
+
+### Closure implemented after operator proof
+
+- Entry and exit fills now require numeric `volume >= 1`.
+- Zero-volume rows remain valid published market-data rows but are ignored for TP/SL and cannot become entry, exit, or synthetic zero-return fills.
+- Added canonical diagnostics `BT_SKIP_NO_TRADABLE_ENTRY` and `BT_SKIP_NO_TRADABLE_EXIT`.
+- BKDP-like D+1 zero-volume cases now fail at entry; zero-volume days inside a KING-like exit horizon are recorded in `ignored_non_tradable_exit_dates`.
+- Runtime paramset snapshot now carries all required `eval` thresholds.
+- Canonical bootstrap floors are `min_trades = 120`, `min_trades_oos = 40`, downside `-0.03`, monthly win-rate `0.45`, and monthly average `-0.01`.
+- `min_days_covered = 0` is only a dynamic sentinel; metrics resolves it to `ceil(70% * total_trading_days_in_window)` and writes both configured and effective thresholds.
+- Runtime export fails closed with `WS_BT_EVAL_METRICS_MISSING` when required thresholds remain unresolved.
+- File 16 is synchronized with file 12: active execution is TP/SL with deterministic stop priority and time-exit at a maximum five-trading-day horizon; fixed holding is not the active default.
+
+Controlled closure-patch validation confirms:
+
+```text
+php -l: PASS for all 9 closure-patch PHP source/test files
+static parity/safety validation: PASS, 20 assertions
+gap-closure metrics harness: PASS, 12 assertions
+controlled runtime determinism harness: PASS, 10 assertions
+canonical hash run 1: e2d725378e6df67ffa579017fdbb2399e8bdc322
+canonical hash run 2: e2d725378e6df67ffa579017fdbb2399e8bdc322
+hash equality: PASS
+file SHA equality: false, expected because output path/execution metadata are non-hashed
+
+default_thresholds_resolved=true
+min_trades=120
+min_days_covered effective=ceil(70% * replay days)
+zero-volume entry => BT_SKIP_NO_TRADABLE_ENTRY, ret_net=null
+zero-volume final exit => BT_SKIP_NO_TRADABLE_EXIT, ret_net=null
+normal positive-volume trade => evaluated
+```
+
+### Dynamic coverage correction after first closure rerun
+
+The first operator PHPUnit rerun correctly failed the sentinel test because the implementation used the same requested replay-date count as both observed `days_covered` and total-window denominator. That made `minimum_coverage` always true whenever the explicit window existed.
+
+Corrected runtime semantics:
+
+```text
+total_trading_days_in_window = count(explicit replay trading dates)
+days_covered = distinct replay dates with >= 1 metrics_ready trade
+             + explicit WATCHLIST_BACKTEST_EMPTY_RECOMMENDATION_VALID dates
+all candidates skipped on a date = not covered
+```
+
+Controlled proof after the correction:
+
+```text
+1 covered day / 10 requested days => effective floor 7 => minimum_coverage=false
+7 covered days / 10 requested days => effective floor 7 => minimum_coverage=true
+valid empty-recommendation day => counted once as covered
+coverage pass still does not bypass min_trades/return/stability gates
+```
+
+The corrected service and regression tests require operator PHPUnit and two-run command rerun before the current patch can be promoted.
+
+### Current boundary
+
+The operator runtime evidence above proves the pre-closure implementation. Because execution semantics and hashed paramset metadata changed afterward, the current closure patch must be rerun locally. Its artifact hash is expected to differ from `03dce5...`, but two identical closure-patch runs must still match each other.
+
+Production readiness remains `NOT_PRODUCTION_READY`. No contract is promoted to `LOCKED`; walk-forward/OOS and production operating proof remain outstanding.
+
+## Published Price Runtime Proof Final Closure Update — 2026-06-09
+
+Session:
+`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+
+Final status:
+`DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`.
+
+### Final operator PHPUnit evidence
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestPublishedPrice"
+OK (17 tests, 146 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestMetricsServiceTest"
+OK (8 tests, 63 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktest"
+OK (48 tests, 497 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist
+OK (139 tests, 1379 assertions)
+
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataPublishedEodSeries"
+OK (6 tests, 29 assertions)
+
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataTradingCalendar"
+OK (4 tests, 16 assertions)
+
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"
+OK (3 tests, 41 assertions)
+```
+
+### Final official command proof
+
+```text
+command: watchlist:backtest-published-price-proof
+replay_from: 2026-05-21
+replay_to: 2026-05-29
+run_count: 2
+status: PASS for both runs
+replay_date_count: 5
+calendar_date_count: 10
+required_price_date_count: 9
+resolved_price_date_count: 9
+evaluated_trade_count: 13
+diagnostic_count: 2
+metric_required_fields_available: 1
+metric_thresholds_resolved: 1
+metric_min_trades: 120
+metric_min_days_covered: 4
+metric_coverage_threshold_rule: CEIL_70_PERCENT_OF_TOTAL_TRADING_DAYS
+days_covered: 5
+total_trading_days_in_window: 5
+minimum_coverage: true
+metric_calibration_valid: 0
+canonical_artifact_hash_run_1: 0eaa353d20df901c4f372c0000951408578bf302
+canonical_artifact_hash_run_2: 0eaa353d20df901c4f372c0000951408578bf302
+canonical_hash_equality: true
+production_ready: 0
+```
+
+`metric_calibration_valid=0` is expected and correct for this smoke window because 13 evaluated trades do not meet `min_trades=120`. Threshold resolution, coverage calculation, runtime orchestration, and deterministic artifact generation passed.
+
+### Final zero-volume diagnostics
+
+- KING (`trade_date=2026-05-21`) emitted `BT_SKIP_MISSING_OHLC_EXIT`; zero-volume dates `2026-05-25`, `2026-05-26`, and `2026-05-29` were recorded in `ignored_non_tradable_exit_dates`, no synthetic exit was created, and no zero return was fabricated.
+- BKDP (`trade_date=2026-05-26`) emitted `BT_SKIP_NO_TRADABLE_ENTRY` with `entry_volume=0`; the trade was never treated as entered.
+
+### Final scope conclusion
+
+- Official trading-calendar runtime read: PASS.
+- Exact-date current-readable published EOD OHLCV runtime read: PASS.
+- Publication lineage: PASS for 10/10 required dates through `2026-06-08`.
+- Immutable strategy output before future-price evaluation: PASS.
+- Zero-volume non-tradable handling: PASS.
+- Metric threshold binding and dynamic coverage: PASS.
+- Deterministic two-run canonical hash: PASS.
+- JSON runtime evidence export: PASS.
+- Portfolio/execution leakage: none introduced.
+- Walk-forward/OOS proof: not started.
+- Production operating proof: not available.
+- Overall watchlist status remains `NOT_PRODUCTION_READY`.
+
+Earlier references in this document to a required closure/coverage rerun are historical and are superseded by this final closure update.
+
+Next session:
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`.
+
