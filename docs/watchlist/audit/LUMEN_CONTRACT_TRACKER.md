@@ -14,31 +14,31 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+`WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS EXECUTION SESSION`
 
 Status:
-`PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`. Phase 7 is DONE for unit/static scope based on local PHPUnit proof supplied after the sandbox patch. Phase 6 baseline remains `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY` and is not downgraded. Readiness-critical production contracts remain `PARTIAL` / `NOT_READY` because no watchlist command/API runtime proof, production schema, persisted artifact/log evidence, completed pricing metric engine, portfolio-aware integration, or walk-forward/OOS proof exists yet.
+`DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS / NOT_PRODUCTION_READY`. Phase 7 remains `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`. Phase 6 remains `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY`. Local validation for the current scope is PASS: `WatchlistBacktest` 25 tests / 286 assertions, full `tests\Unit\Watchlist` 116 tests / 1168 assertions, and `MarketDataWatchlistReadModelTest` 3 tests / 41 assertions. Readiness-critical production contracts remain `PARTIAL` / `NOT_READY` because no watchlist command/API runtime proof, production schema, production persisted artifact/log evidence, portfolio-aware integration, or walk-forward/OOS proof exists yet.
 
 Scope:
-Create deterministic backtest strategy foundation on top of immutable PLAN grouping, recommendation, and confirm overlay outputs. The service consumes `WatchlistPlanGroupingService`, `WatchlistRecommendationService`, and `WatchlistConfirmOverlayService`; uses explicit replay windows; fails closed on future-effective source output; keeps confirm overlay diagnostic-only; and produces explainable foundation output plus official artifact-manifest references. API, command, scheduler, portfolio allocation, broker instruction, execution automation, production migration, production schema, and runtime artifact persistence remain out of scope.
+Add deterministic runtime artifact and metrics foundation on top of existing `WatchlistBacktestStrategyService` output. The runtime artifact service builds official-manifest-shaped output and JSON export foundation. The metrics service evaluates only from explicit published EOD price series and explicit trading-calendar input; when those inputs are absent, it fails safe with diagnostics instead of raw/latest fallback. API, command, scheduler, portfolio allocation, position sizing final, broker instruction, order recommendation, execution automation, production migration, production schema, and production runtime persistence remain out of scope.
 
 Evidence:
 
-- `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php` created.
-- `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php` added.
-- `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php` added.
-- Backtest foundation consumes PLAN grouping, recommendation, and confirm overlay services only.
-- No-lookahead foundation rejects `trade_date_effective` after replay `trade_date`.
-- Deterministic replay foundation normalizes explicit replay dates and sorts output rows by stable date/rank/ticker identity.
-- Local PHPUnit proof exists for Phase 7 backtest foundation: `WatchlistBacktestStrategy` OK (13 tests, 152 assertions), full `tests\Unit\Watchlist` OK (104 tests, 1034 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
-- Empty recommendation behavior remains valid and creates no active trade/evaluation.
-- Non-recommended confirmed PLAN candidates remain non-recommended and do not become trade candidates.
-- Unknown/rejected confirm evidence is kept in diagnostics, not active evaluation.
-- Priority contracts `WL-CONTRACT-009`, `WL-CONTRACT-010`, `WL-CONTRACT-013`, `WL-CONTRACT-008`, `WL-CONTRACT-014`, and `WL-CONTRACT-015` updated for backtest foundation scope.
-- Local validation proof after the empty-recommendation paramset fix:
-  - `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestStrategy"` -> `OK (13 tests, 152 assertions)`.
-  - `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"` -> `OK (3 tests, 41 assertions)`.
-  - `vendor\bin\phpunit tests\Unit\Watchlist` -> `OK (104 tests, 1034 assertions)`.
+- `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php` remains the Phase 7 replay boundary.
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php` added.
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php` added.
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php` added.
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php` added.
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php` added.
+- Runtime artifact output includes `meta`, `source_contract`, `backtest_contract`, `paramset_snapshot`, `replay_window`, `input_manifest`, `items`, `trades`, `evaluations`, `metrics`, `summary`, `diagnostics`, `artifact_manifest`, and `validation`.
+- Metrics foundation includes total replay dates, total recommendations, total evaluated trades, win rate, average return, median return, max gain, max loss, hit target count, hit stop count, hold-expired count, empty recommendation days, rejected/no-data evaluation count, missing price/calendar diagnostics, and reason-code distribution.
+- Missing price/calendar inputs emit `WATCHLIST_BACKTEST_PRICE_SERIES_UNAVAILABLE`, `WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE`, and `WATCHLIST_BACKTEST_EVALUATION_SKIPPED_NO_PUBLISHED_PRICE`.
+- Static guard covers no raw/staging/unsealed market-data, no latest/`MAX(trade_date)`, no API/command/schema, and no portfolio/execution leakage for artifact/metrics services.
+- Local validation after the metrics float-output correction is fully PASS:
+  - `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktest"` — OK (25 tests, 286 assertions).
+  - `vendor\bin\phpunit tests\Unit\Watchlist` — OK (116 tests, 1168 assertions).
+  - `vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"` — OK (3 tests, 41 assertions).
+- Watchlist Production Ready remains `NO`.
 
 ## Status Rules
 
@@ -64,13 +64,13 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-005 | ELIGIBILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-006 | SCORING DETERMINISM CONTRACT | `PARTIAL` |
 | WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `PARTIAL` |
-| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for unit/static scope` |
-| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for unit/static scope` |
-| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `DONE for unit/static scope` |
+| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for runtime artifact and metrics foundation unit/static scope` |
+| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for runtime artifact and metrics foundation unit/static scope` |
+| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `DONE for runtime artifact and metrics foundation unit/static scope` |
 | WL-CONTRACT-011 | RISK GATE CONTRACT | `PARTIAL` |
 | WL-CONTRACT-012 | PORTFOLIO AWARENESS BOUNDARY | `NOT_STARTED` |
-| WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for unit/static foundation scope` |
-| WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for Phase 7 unit/static scope` |
+| WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for runtime artifact and metrics foundation unit/static scope` |
+| WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for runtime artifact and metrics foundation unit/static scope` |
 | WL-CONTRACT-015 | PRODUCTION READINESS CONTRACT | `PARTIAL / NOT_READY` |
 | WL-CONTRACT-016 | PLAN GROUPING DETERMINISM CONTRACT | `PARTIAL` |
 | WL-CONTRACT-017 | PLAN GROUP BOUNDARY CONTRACT | `PARTIAL` |
@@ -484,6 +484,8 @@ Implementation files:
 - `app/Application/Watchlist/Services/WatchlistRecommendationService.php`
 - `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
 - `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php`
 
 Tests:
 
@@ -497,9 +499,12 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`PARTIAL` — service-level artifact/metrics explainability exists and is locally validated; no command/API production runtime or persisted artifact proof exists yet.
 
 Current gaps:
 
@@ -509,10 +514,10 @@ Current gaps:
 - Explainability reason codes used by scoring are traceable to Weekly Swing owner docs / reason seed.
 - PLAN grouping reason codes `WS_PLAN_TOP_PICK`, `WS_PLAN_SECONDARY`, `WS_PLAN_WATCH_ONLY`, `WS_PLAN_AVOID_LOW_SCORE`, and `WS_PLAN_AVOID_EXCLUDED` are traceable to Weekly Swing reason-code docs / support seed.
 - Recommendation reason codes `WS_REC_SELECTED`, `WS_REC_NOT_SELECTED`, `WS_REC_BORDERLINE`, `WS_REC_EMPTY_SET`, `WS_REC_RANK_OUTSIDE_DYNAMIC_TARGET`, `WS_REC_CAPITAL_AWARE`, `WS_REC_CAPITAL_INSUFFICIENT`, and `WS_REC_MIN_LOT_NOT_AFFORDABLE` are traceable to Weekly Swing owner docs / support seed.
-- Contract is not `LOCKED` because there is no command/API runtime proof and no artifact/log output yet.
+- Contract is not `LOCKED` because there is no command/API runtime proof or production persisted artifact/log evidence yet.
 - Confirm overlay output adds reason-coded `confirm_reason_codes` and preserves recommendation reason-code separation at unit/static scope.
 - Backtest foundation output adds reason-coded diagnostics/evaluations, `source_contract`, `backtest_contract`, `paramset_snapshot`, `replay_window`, `summary`, and `artifact_manifest` at service + unit/static scope.
-- Local PHPUnit proof exists for Phase 7 backtest foundation: `WatchlistBacktestStrategy` OK (13 tests, 152 assertions), full `tests\Unit\Watchlist` OK (104 tests, 1034 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
+- Current local PHPUnit proof is fully green: `WatchlistBacktest` OK (25 tests, 286 assertions), full `tests\Unit\Watchlist` OK (116 tests, 1168 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
 
 Acceptance criteria:
 
@@ -520,7 +525,7 @@ Acceptance criteria:
 - Output includes enough factor breakdown to audit why a ticker is included, watched, avoided, or rejected.
 
 Last update:
-`2026-06-08 — WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-09 — WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS LOCAL VALIDATION UPDATE`
 
 ---
 
@@ -533,7 +538,7 @@ Title:
 `BACKTEST NO-LOOKAHEAD CONTRACT`
 
 Status:
-`DONE for unit/static scope`
+`DONE for runtime artifact and metrics foundation unit/static scope`
 
 Owner docs:
 
@@ -545,22 +550,27 @@ Owner docs:
 Implementation files:
 
 - `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php`
 
 Tests:
 
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED`
+`PARTIAL` — service-level deterministic artifact/metrics foundation exists, but no command/API production runtime proof exists yet.
 
 Current gaps:
 
-- Backtest foundation service exists at unit/static scope.
-- Local PHPUnit proof exists for Phase 7 backtest foundation: `WatchlistBacktestStrategy` OK (13 tests, 152 assertions), full `tests\Unit\Watchlist` OK (104 tests, 1034 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
+- Backtest foundation service exists at unit/static scope and runtime artifact/metrics foundation now exists at service scope.
+- Current local PHPUnit proof is fully green: `WatchlistBacktest` OK (25 tests, 286 assertions), full `tests\Unit\Watchlist` OK (116 tests, 1168 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
 - No-lookahead guard exists for future-effective source output.
 - Service consumes existing PLAN/recommendation/confirm output layers and does not read raw market-data.
-- Contract is not `LOCKED` because runtime command/API proof, persisted artifacts, complete EOD pricing evaluation, and OOS proof are not available yet; local PHPUnit proof exists for unit/static scope.
+- Contract is not `LOCKED` because command/API runtime proof, production persisted artifacts, complete published EOD pricing evaluation proof, and OOS proof are not available yet.
 
 Acceptance criteria:
 
@@ -568,7 +578,7 @@ Acceptance criteria:
 - Tests include lookahead guard cases.
 
 Last update:
-`2026-06-08 — WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-09 — WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS LOCAL VALIDATION UPDATE`
 
 ---
 
@@ -581,7 +591,7 @@ Title:
 `BACKTEST REPRODUCIBILITY CONTRACT`
 
 Status:
-`DONE for unit/static scope`
+`DONE for runtime artifact and metrics foundation unit/static scope`
 
 Owner docs:
 
@@ -592,21 +602,29 @@ Owner docs:
 Implementation files:
 
 - `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php`
 
 Tests:
 
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED`
+`PARTIAL` — deterministic artifact hash and JSON export foundation exist at service level; no command/API production runtime proof exists yet.
 
 Current gaps:
 
 - Explicit replay-window normalization and deterministic output ordering exist at service + unit/static scope.
 - Source publication/run metadata is preserved in foundation output.
 - Official artifact-manifest references are present.
-- Contract is not `LOCKED` because completed pricing metrics, persisted artifacts, and runtime replay proof are not available yet; local PHPUnit proof exists for unit/static scope.
+- Runtime artifact service adds deterministic `input_manifest`, `validation.artifact_hash`, and JSON export foundation.
+- Metrics service is deterministic for identical payload + explicit price/calendar input and fails safe when official inputs are missing.
+- Current local PHPUnit proof is fully green: `WatchlistBacktest` OK (25 tests, 286 assertions), full `tests\Unit\Watchlist` OK (116 tests, 1168 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
+- Contract is not `LOCKED` because completed production pricing runtime proof, production persisted artifacts, and command/API replay proof are not available yet.
 
 Acceptance criteria:
 
@@ -614,7 +632,7 @@ Acceptance criteria:
 - Replayed result matches expected metrics and output contract.
 
 Last update:
-`2026-06-08 — WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-09 — WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS LOCAL VALIDATION UPDATE`
 
 ---
 
@@ -730,7 +748,7 @@ Title:
 `AUDIT ARTIFACT CONTRACT`
 
 Status:
-`DONE for unit/static foundation scope`
+`DONE for runtime artifact and metrics foundation unit/static scope`
 
 Owner docs:
 
@@ -741,21 +759,27 @@ Owner docs:
 Implementation files:
 
 - `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php`
 
 Tests:
 
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED`
+`PARTIAL` — runtime-safe artifact shape and JSON export foundation exist at service level; no production persisted artifact/log proof exists yet.
 
 Current gaps:
 
 - Backtest foundation output includes `artifact_manifest` with official Weekly Swing artifact names.
-- Local PHPUnit proof exists for Phase 7 backtest foundation: `WatchlistBacktestStrategy` OK (13 tests, 152 assertions), full `tests\Unit\Watchlist` OK (104 tests, 1034 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
-- Runtime artifact persistence is explicitly `false`; no command/API artifact/log output exists.
-- Contract is not `LOCKED` because persisted runtime artifact/log proof is not available.
+- Current local PHPUnit proof is fully green: `WatchlistBacktest` OK (25 tests, 286 assertions), full `tests\Unit\Watchlist` OK (116 tests, 1168 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
+- Runtime artifact service now creates deterministic artifact shape, `input_manifest`, `metrics`, `validation`, `artifact_hash`, and JSON export foundation.
+- Runtime production persistence remains explicitly `false`; no command/API artifact/log output exists.
+- Contract is not `LOCKED` because command/API runtime proof and persisted production runtime artifact/log evidence are not available.
 
 Acceptance criteria:
 
@@ -763,7 +787,7 @@ Acceptance criteria:
 - Artifact records publication, paramset, universe, result, reason code/factor output, and validation status.
 
 Last update:
-`2026-06-08 — WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+`2026-06-09 — WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS LOCAL VALIDATION UPDATE`
 
 ---
 
@@ -776,7 +800,7 @@ Title:
 `DOCS SYNC CONTRACT`
 
 Status:
-`DONE for Phase 7 unit/static scope`
+`DONE for runtime artifact and metrics foundation unit/static scope`
 
 Owner docs:
 
@@ -801,6 +825,8 @@ Implementation files:
 - `docs/watchlist/system/policies/weekly_swing/db/REASON_CODES_SEED.sql`
 - `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
 - `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php`
 
 Tests:
 
@@ -813,9 +839,12 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED`
+`PARTIAL` — current docs/code synchronization is locally proven through the full watchlist suite; future command/API/persistence docs cannot be proven until those surfaces exist.
 
 Current gaps:
 
@@ -824,13 +853,14 @@ Current gaps:
 - Phase 3 code/test/docs sync completed for scoring foundation.
 - Phase 4 code/test/docs sync completed for PLAN grouping foundation.
 - Phase 5 code/test/docs sync completed for final recommendation foundation.
-- Contract remains `PARTIAL` because API/runtime artifact docs and runtime proof are not implemented yet.
+- Current unit/static docs synchronization scope is DONE; the contract remains not `LOCKED` because command/API/persistence runtime surfaces and their evidence do not exist yet.
 
 - Docs sync foundation exists, but future code/config/schema/test/runtime changes still need ongoing enforcement.
-- Runtime watchlist docs sync cannot be proven until runtime watchlist code exists.
+- Command/API/persistence docs sync cannot be proven until those runtime surfaces exist.
 - Phase 6 confirm overlay service, tests, reason-code docs, and Lumen tracker/status docs are synchronized for unit/static scope.
 - Phase 7 backtest strategy service, tests, static guard, and Lumen tracker/status docs are synchronized for unit/static scope.
-- Local PHPUnit proof exists for Phase 7 backtest foundation: `WatchlistBacktestStrategy` OK (13 tests, 152 assertions), full `tests\Unit\Watchlist` OK (104 tests, 1034 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
+- Runtime artifact/metrics docs, tests, and Lumen audit trackers are synchronized for unit/static scope.
+- Current local PHPUnit proof is fully green: `WatchlistBacktest` OK (25 tests, 286 assertions), full `tests\Unit\Watchlist` OK (116 tests, 1168 assertions), and `MarketDataWatchlistReadModelTest` OK (3 tests, 41 assertions).
 
 Acceptance criteria:
 
@@ -839,7 +869,7 @@ Acceptance criteria:
 - Tracker contracts reflect actual code/test/runtime status without overclaim.
 
 Last update:
-`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+`2026-06-09 — WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS LOCAL VALIDATION UPDATE`
 
 ---
 
@@ -871,6 +901,8 @@ Implementation files:
 - `app/Application/Watchlist/Services/WatchlistRecommendationService.php`
 - `app/Application/Watchlist/Services/WatchlistConfirmOverlayService.php`
 - `app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php`
 
 Tests:
 
@@ -883,21 +915,25 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistConfirmOverlayStaticGuardTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php`
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED`
+`PARTIAL` — service-level artifact/metrics foundation and local unit/static proof exist; command/API production runtime proof does not exist.
 
 Current gaps:
 
 - Read model, candidate universe, scoring foundation, PLAN grouping foundation, recommendation foundation, confirm overlay foundation, and backtest strategy foundation exist at unit/static/smoke scope.
-- Runtime proof is not available.
-- Artifacts are not available.
+- Command/API production runtime proof is not available.
+- Runtime-safe artifact shaping and JSON export foundation exist, but production persisted artifact/log evidence is not available.
 - No API endpoint exists.
 - No watchlist command surface exists.
 - No production watchlist schema/migration exists.
-- Backtest strategy foundation is DONE at service + unit/static scope with local PHPUnit proof; no completed pricing metric engine, runtime artifact persistence, or portfolio-aware integration exists.
-- Core contracts are not `LOCKED` because runtime proof and artifact/log evidence are missing.
-- Production readiness remains `NO`; confirm overlay and backtest strategy foundations are service + unit/static only with no API/command/runtime artifact proof.
+- Backtest strategy, runtime artifact, and metrics foundations are DONE at service + unit/static scope with local PHPUnit proof; no published-price production runtime evaluation, runtime artifact persistence, or portfolio-aware integration exists.
+- Core contracts are not `LOCKED` because command/API runtime proof and production persisted artifact/log evidence are missing.
+- Full local validation is PASS: `WatchlistBacktest` 25 tests / 286 assertions, full watchlist 116 tests / 1168 assertions, and market-data watchlist read model 3 tests / 41 assertions.
+- Production readiness remains `NO`; current foundations are service + unit/static only with no API/command production runtime or persisted artifact proof.
 
 Acceptance criteria:
 
@@ -917,7 +953,7 @@ Acceptance criteria:
 - Docs sync complete.
 
 Last update:
-`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+`2026-06-09 — WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS LOCAL VALIDATION UPDATE`
 
 ---
 
@@ -1153,6 +1189,9 @@ Last update:
 
 ## Phase 7 Local Validation Update — 2026-06-08
 
+Session:
+`WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+
 Status:
 `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`.
 
@@ -1180,11 +1219,75 @@ Contract impact:
 
 No Phase 7 contract is moved to `LOCKED` because command/API runtime proof, persisted artifact/log evidence, completed pricing metric engine, production schema, and walk-forward/OOS proof do not exist yet.
 
+
+
+## Runtime Artifact and Metrics Contract Update — 2026-06-08
+
+Session:
+`WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS EXECUTION SESSION`
+
+Status:
+`DONE for runtime artifact and metrics foundation unit/static scope / NOT_PRODUCTION_READY`.
+
+Priority contract impact:
+
+- `WL-CONTRACT-008`: explainability extended through artifact diagnostics, metric diagnostics, and reason-code distribution.
+- `WL-CONTRACT-009`: no-lookahead boundary preserved; metrics only uses explicit replay trade dates, explicit calendar input, and published EOD price series input.
+- `WL-CONTRACT-010`: reproducibility improved with deterministic artifact hash, source payload hash, stable JSON encoding, and deterministic metrics aggregation.
+- `WL-CONTRACT-013`: runtime artifact shape now exists at service level with official manifest references and JSON export foundation.
+- `WL-CONTRACT-014`: audit docs synchronized for runtime artifact and metrics foundation.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`; no production-ready claim.
+
+Implementation files:
+
+- `app/Application/Watchlist/Services/WatchlistBacktestRuntimeArtifactService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php`
+
+Tests:
+
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestMetricsServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestRuntimeArtifactStaticGuardTest.php`
+
+Internal diagnostics added for backtest artifact/metrics scope only:
+
+- `WATCHLIST_BACKTEST_PRICE_SERIES_UNAVAILABLE`
+- `WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE`
+- `WATCHLIST_BACKTEST_EVALUATION_SKIPPED_NO_PUBLISHED_PRICE`
+- `WATCHLIST_BACKTEST_RUNTIME_ARTIFACT_READY_WITH_EVALUATION_SKIPPED`
+
+No contract is moved to `LOCKED` because command/API runtime proof, production persisted artifact/log evidence, production schema, and walk-forward/OOS proof are still missing.
+
+## Runtime Artifact and Metrics Local Validation Update — 2026-06-09
+
+Status:
+`DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS / NOT_PRODUCTION_READY`.
+
+Evidence:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktest"
+OK (25 tests, 286 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist
+OK (116 tests, 1168 assertions)
+
+vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest"
+OK (3 tests, 41 assertions)
+```
+
+Contract impact:
+
+- `WL-CONTRACT-008`, `WL-CONTRACT-009`, `WL-CONTRACT-010`, `WL-CONTRACT-013`, and `WL-CONTRACT-014` retain DONE status for the current unit/static foundation scope with completed local PHPUnit proof.
+- `WL-CONTRACT-015` remains `PARTIAL / NOT_READY`.
+- The current local test requirement is satisfied; remaining blockers are command/API runtime proof, published-price production replay evidence, production persisted artifact/log evidence, production schema where required, and walk-forward/OOS proof.
+- No contract is promoted to `LOCKED`.
+
 ## Next Required Contract Work
 
 Next session should target:
 
-`WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS EXECUTION SESSION`
+`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
 
 Priority contracts:
 
@@ -1198,8 +1301,8 @@ Priority contracts:
 Scope boundary:
 
 - keep Phase 7 backtest service boundary intact;
-- add pricing/evaluation only through official published EOD price series and trading-calendar input if explicitly scoped;
-- produce or persist official artifact-manifest outputs through approved runtime surface;
-- prove local PHPUnit and runtime artifact evidence;
-- do not create broker instruction, execution/order automation, or portfolio allocation unless explicitly scoped later.
+- connect pricing/evaluation only through official published EOD price series and explicit trading-calendar input;
+- produce deterministic runtime artifact evidence hash and persisted/exported artifact proof;
+- prove local PHPUnit, runtime artifact evidence, metric sufficiency, and docs sync;
+- do not create broker instruction, order recommendation, execution automation, position sizing final, or portfolio allocation unless explicitly scoped later.
 
