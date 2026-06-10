@@ -700,7 +700,7 @@ ACTIVE SESSION:
 
 - MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT -> LOCKED
 
-  [LAST_UPDATED] 2026-05-24
+  [LAST_UPDATED] 2026-06-10
 
   [RELATED_IMPLEMENTATION] Market Benchmark + Indicator Extension / Final Production Ready Re-Lock
 
@@ -709,6 +709,8 @@ ACTIVE SESSION:
   [HISTORY]
   - 2026-05-24 -> Contract added after the benchmark/indicator extension produced passing migration, targeted PHPUnit, StaticGuard, full MarketData PHPUnit, daily/promote runtime proof, evidence export, replay verify, and manual benchmark DB query evidence.
   - 2026-05-24 -> This contract re-locks current source-state production readiness after adding IHSG benchmark support and equity indicator extension.
+  - 2026-06-10 -> Runtime defect closed: benchmark `RUN_SOURCE_NO_VALID_DATA` no longer blocks equity ingestion before coverage evaluation.
+  - 2026-06-10 -> Backfill lifecycle for `2026-06-09` validated the corrected order and non-blocking rule with `run_id=37919`, readable current publication `38186`, evidence export, fixture generation, replay verification, and full MarketData PHPUnit PASS.
 
   [DEFINED]
   - Benchmark/index instruments are owned outside the equity ticker universe. `tickers` remains the equity universe; `market_benchmarks` owns `IHSG`.
@@ -716,6 +718,7 @@ ACTIVE SESSION:
   - Benchmark bars are deterministic by `(benchmark_code, trade_date)` and benchmark indicators are deterministic by `(benchmark_code, trade_date, indicator_set_version)`.
   - Equity indicator extension must compute `ma20`, `ma50`, `close_to_hh20_pct`, `close_vs_ma20_pct`, `close_vs_ma50_pct`, `ma20_slope_pct`, and `rs_20_vs_ihsg` without raw/staging/latest/MAX(date) shortcuts.
   - `rs_20_vs_ihsg` must use IHSG benchmark `roc_20`; insufficient benchmark history must return nullable output/reason-coded invalid state rather than fake values.
+  - Benchmark acquisition availability is not part of the equity coverage universe. Benchmark unavailability must not hold or fail an otherwise valid equity lifecycle before equity bars are ingested.
 
   [IMPLEMENTED]
   - Migration `2026_05_24_000001_add_market_benchmark_indicator_extension` creates benchmark tables, seeds `IHSG/^JKSE`, and adds equity indicator extension columns.
@@ -723,6 +726,7 @@ ACTIVE SESSION:
   - `BenchmarkBarsIngestService`, `BenchmarkIndicatorComputeService`, `BenchmarkIndicatorVectorService`, and `MarketBenchmarkRepository` own benchmark ingest/computation/storage.
   - `IndicatorVectorService` and `EodIndicatorsComputeService` own the equity indicator extension and benchmark ROC dependency.
   - Evidence/replay artifacts include the new indicator hash state through the existing publication artifact hashing flow.
+  - `MarketDataPipelineService` ingests equity bars before benchmark bars and handles benchmark-source failure as a non-blocking benchmark outcome while preserving nullable benchmark-dependent indicators.
 
   [VALIDATED]
   - Operator-local migration proof: `php artisan migrate` -> migrated successfully.
@@ -737,11 +741,15 @@ ACTIVE SESSION:
   - Operator-local evidence proof: `COMPLETE / ADMITTED_COMPLETE`, `pointer_resolve_status=RESOLVED_READABLE_CURRENT`, `file_count=11`.
   - Operator-local replay proof: `replay_id=2`, `MATCH / PASS / mismatch_count=0`.
   - Operator-local manual DB proof: `market_benchmarks` contains `IHSG/^JKSE/INDEX/is_active=1`; `market_benchmark_bars` contains IHSG `2026-05-19`; `market_benchmark_indicators` contains `IND_INSUFFICIENT_HISTORY`, which is expected for one benchmark bar.
+  - Operator-local backfill proof for `2026-06-09`: `run_id=37919`, 948/948 equity bars accepted, coverage PASS, promotion SUCCESS, evidence EXPORTED, fixture GENERATED, replay VERIFIED, readable YES.
+  - Operator-local database proof: requested/effective date both `2026-06-09`; 948 rows each in bars, indicators, and eligibility; current pointer references `publication_id=38186`, `run_id=37919`, version 1, sealed.
+  - Operator-local full MarketData proof after the fix: OK (641 tests, 9554 assertions).
 
   [FINAL_RULE]
   - LOCKED. The current source state can claim `FULLY_PRODUCTION_READY` after the market benchmark + indicator extension because migration, test, runtime, evidence, replay, benchmark DB proof, docs, and static guards are synchronized.
   - `^JKSE.JK`, `IHSG.JK`, hardcoded IHSG ROC, fake benchmark indicator values, and raw/staging/latest/MAX(date) indicator reads remain forbidden.
   - `IND_INSUFFICIENT_HISTORY` is a valid non-blocking benchmark indicator state until enough historical IHSG bars exist.
+  - A missing benchmark target-date bar or benchmark-source failure must never prevent available equity rows from being ingested and evaluated. Benchmark-dependent values may remain NULL, but equity publication safety gates remain authoritative.
   - Future benchmark/indicator/provider/schema/config changes must rerun targeted benchmark/indicator guards, AuditDocs guard, StaticGuard, full `tests/Unit/MarketData`, and daily/promote/evidence/replay proof before preserving this claim.
 
   [NEXT_ACTION]

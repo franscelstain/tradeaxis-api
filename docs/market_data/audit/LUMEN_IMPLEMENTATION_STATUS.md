@@ -3,12 +3,16 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Market Data Indicator Warmup Window Audit
+- Backfill Lifecycle Benchmark Non-Blocking Recovery / 2026-06-09 Runtime Proof
 
 [SESSION_STATUS] LOCKED
 
 [CURRENT_SOURCE_LOCK]
 
+- MARKET_DATA_BACKFILL_2026_06_09_BENCHMARK_NON_BLOCKING_FIX=RESOLVED_RUNTIME_PROVEN; benchmark acquisition failure can no longer terminate the equity lifecycle before equity bars are ingested.
+- MARKET_DATA_BACKFILL_2026_06_09_RUNTIME=PASSED run_id=37919; 948/948 equity bars accepted, coverage PASS, promote SUCCESS, evidence EXPORTED, fixture GENERATED, replay VERIFIED, readable YES.
+- MARKET_DATA_BACKFILL_2026_06_09_PUBLICATION_POINTER=CONFIRMED publication_id=38186, run_id=37919, publication_version=1, sealed_at=2026-06-10 21:07:07.
+- FULL_MARKET_DATA_PHPUNIT_AFTER_BENCHMARK_NON_BLOCKING_FIX=PASSED (641 tests, 9554 assertions).
 - MARKET_DATA_INDICATOR_RECOMPUTE_EVIDENCE_NOOP_FIX=RESOLVED_RUNTIME_PROVEN; unchanged correction-current recompute preserves the prior current publication and exports correction evidence instead of failing run evidence with EVIDENCE_PUBLICATION_NOT_FOUND.
 - FULL_MARKET_DATA_PHPUNIT_AFTER_RECOMPUTE_COMMAND=PASSED (640 tests, 9539 assertions) after evidence no-op fix and final documentation sync baseline.
 - FULL_MARKET_DATA_PHPUNIT_LATEST_DOCS_REVIEW_2026_06_08=PASSED (641 tests, 9547 assertions) via `vendor\bin\phpunit`.
@@ -753,7 +757,7 @@ ACTIVE SESSION:
 
   [SESSION_STATUS] FULLY_PRODUCTION_READY
 
-  [LAST_UPDATED] 2026-05-24
+  [LAST_UPDATED] 2026-06-10
 
   [RELATED_CONTRACT] MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT
 
@@ -768,6 +772,10 @@ ACTIVE SESSION:
   - 2026-05-24 -> Evidence export for `run_id=3` returned `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, and `file_count=11`.
   - 2026-05-24 -> Replay fixture and verify for `run_id=3` returned `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0` with `replay_id=2`.
   - 2026-05-24 -> Manual DB proof confirms `market_benchmarks` contains `IHSG/^JKSE/INDEX/is_active=1`, `market_benchmark_bars` contains IHSG bar for `2026-05-19`, and `market_benchmark_indicators` correctly records `IND_INSUFFICIENT_HISTORY` for single-bar benchmark history.
+  - 2026-06-10 -> Backfill lifecycle defect confirmed: benchmark ingest executed before equity ingest, so `RUN_SOURCE_NO_VALID_DATA` from the benchmark path held the whole requested date even when 948 equity rows were available.
+  - 2026-06-10 -> `MarketDataPipelineService` was corrected to ingest equity bars first and treat benchmark-source unavailability as non-blocking for the equity publication path; benchmark-dependent outputs remain nullable when benchmark input is unavailable.
+  - 2026-06-10 -> Operator runtime proof for `2026-06-09` passed with `run_id=37919`, 948 accepted bars, coverage PASS, promote SUCCESS, evidence export, fixture generation, replay verification, readable publication, and current pointer `publication_id=38186`.
+  - 2026-06-10 -> Full MarketData PHPUnit passed after the fix: `OK (641 tests, 9554 assertions)`.
 
   [IMPLEMENTATION]
   - Benchmark/index data is owned by `market_benchmarks`, `market_benchmark_bars`, and `market_benchmark_indicators`; IHSG is not inserted into the equity `tickers` universe.
@@ -775,6 +783,7 @@ ACTIVE SESSION:
   - Equity indicator extension fields are present in `eod_indicators` and `eod_indicators_history`: `ma20`, `ma50`, `close_to_hh20_pct`, `close_vs_ma20_pct`, `close_vs_ma50_pct`, `ma20_slope_pct`, and `rs_20_vs_ihsg`.
   - `rs_20_vs_ihsg` uses IHSG benchmark ROC (`roc20('IHSG', requestedDate)`) and remains nullable when benchmark history is insufficient; no hardcoded benchmark return is allowed.
   - The extension preserves current-readable publication, hash/seal, coverage, evidence export, and replay determinism contracts.
+  - Equity-bar ingest precedes benchmark ingest. Benchmark-source unavailability must not prevent available equity bars from reaching coverage, indicator, eligibility, hash, seal, finalize, evidence, or replay stages.
 
   [VALIDATED]
   - Migration proof: `php artisan migrate` -> `Migrated: 2026_05_24_000001_add_market_benchmark_indicator_extension (190.31ms)`.
@@ -788,11 +797,16 @@ ACTIVE SESSION:
   - Promote proof: `terminal_status=SUCCESS`, `publishability_state=READABLE`, `coverage_gate_state=PASS`, `seal_state=SEALED`, `pointer_switched=true`, `current_publication_id=2`, `publication_id=2`.
   - Evidence proof: `evidence_completeness_state=COMPLETE`, `evidence_admission_state=ADMITTED_COMPLETE`, `pointer_resolve_status=RESOLVED_READABLE_CURRENT`, `file_count=11`.
   - Replay proof: `replay_id=2`, `comparison_result=MATCH`, `replay_status=PASS`, `mismatch_count=0`, `pointer_summary=expected:2 actual:2`.
+  - Backfill recovery proof: `market-data:backfill:lifecycle 2026-06-09 2026-06-09 --source_mode=api --with-evidence --with-replay -vvv` -> `run_id=37919`, `import=SUCCESS`, `coverage=PASS`, `promote=SUCCESS`, `evidence=EXPORTED`, `fixture=GENERATED`, `replay=VERIFIED`, `readable=YES`.
+  - Database proof: `eod_runs` records requested/effective `2026-06-09`, `SUCCESS / PASS / READABLE`, 948 bars written, zero invalid bars, and coverage `1.0`; `eod_bars`, `eod_indicators`, and `eod_eligibility` each contain 948 rows for the date.
+  - Publication-pointer proof: `trade_date=2026-06-09`, `publication_id=38186`, `run_id=37919`, `publication_version=1`, sealed and current at `2026-06-10 21:07:07`.
+  - Full regression proof: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (641 tests, 9554 assertions).
 
   [FINAL_BEHAVIOR]
   - `FULLY_PRODUCTION_READY` is restored as the active source-state decision after the benchmark/indicator extension.
   - `MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS`, `FULL_MARKET_DATA_PHPUNIT=PASSED`, `RUNTIME_VALIDATION=PASS`, `EVIDENCE_EXPORT=PASS`, `REPLAY_VERIFY=PASS`, and `FULL_MARKET_DATA_PRODUCTION_READY=YES` are valid together for this current source state.
   - `IND_INSUFFICIENT_HISTORY` for IHSG benchmark indicators is expected when only one benchmark bar is present; this is not a blocker and must not be replaced by fake values.
+  - Missing/unavailable benchmark source data is non-blocking for an otherwise valid equity publication. The run may continue with nullable benchmark-dependent values; it must not be held before equity ingest solely because benchmark acquisition returned no target-date bar.
   - No successful scheduled daily production run is claimed by this entry; scheduler due-run/non-silent proof remains the scheduler scope.
 
   [EVIDENCE]

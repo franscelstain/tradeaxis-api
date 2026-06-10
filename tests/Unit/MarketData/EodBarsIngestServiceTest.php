@@ -5,6 +5,7 @@ require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
 use App\Application\MarketData\Services\EodBarsIngestService;
 use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
 use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
@@ -576,4 +577,72 @@ class EodBarsIngestServiceTest extends TestCase
         $this->assertSame('LOCAL_FILE', $result['source_name']);
         $this->assertSame('eod_bars', $result['storage_target']);
     }
+
+    public function test_zero_canonical_rows_preserve_acquisition_telemetry_and_expose_invalid_reason_summary()
+    {
+        $this->bindMarketDataConfig([
+            'market_data' => [
+                'platform' => ['timezone' => 'Asia/Jakarta'],
+                'source' => ['default_source_name' => 'API_FREE'],
+            ],
+        ]);
+
+        $localSource = $this->createMock(LocalFileEodBarsAdapter::class);
+        $apiSource = $this->createMock(PublicApiEodBarsAdapter::class);
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+        $publications = $this->createMock(EodPublicationRepository::class);
+
+        $run = new EodRun([
+            'run_id' => 61,
+            'trade_date_requested' => '2026-06-09',
+        ]);
+
+        $sourceRows = [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-06-09',
+            'open' => 9000,
+            'high' => 9100,
+            'low' => 8950,
+            'close' => 9050,
+            'volume' => 1000,
+            'adj_close' => 9050,
+            'source_name' => 'API_FREE',
+            'source_row_ref' => 'yahoo:BBCA:2026-06-09',
+            'captured_at' => '2026-06-10 11:42:34',
+        ]];
+
+        $publications->expects($this->once())
+            ->method('findCurrentPublicationForTradeDate')
+            ->with('2026-06-09')
+            ->willReturn(null);
+
+        $tickers->expects($this->once())
+            ->method('resolveTickerIdsByCodes')
+            ->with(['BBCA'])
+            ->willReturn([]);
+
+        $publications->expects($this->never())->method('getOrCreateCandidatePublication');
+        $artifacts->expects($this->never())->method('replaceBars');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+
+        try {
+            $service->ingestAcquiredRows($run, '2026-06-09', 'api', $sourceRows, [
+                'source_acquisition_batch_id' => 'API_20260609_20260609_001',
+                'source_acquisition_state' => 'SUCCESS',
+                'expected_ticker_count' => 1,
+                'success_ticker_count' => 1,
+            ]);
+            $this->fail('Expected SourceAcquisitionException was not thrown.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+            $this->assertSame('API_20260609_20260609_001', $context['source_acquisition_batch_id']);
+            $this->assertSame(1, $context['returned_row_count']);
+            $this->assertSame(1, $context['invalid_row_count']);
+            $this->assertSame(['BAR_TICKER_MAPPING_MISSING' => 1], $context['invalid_reason_summary']);
+            $this->assertSame('BAR_TICKER_MAPPING_MISSING', $context['invalid_rows_sample'][0]['invalid_reason_code']);
+        }
+    }
+
 }

@@ -206,15 +206,7 @@ class MarketDataPipelineService
         try {
             $sourceRows = $this->barsIngest->acquireSourceRows($input->requestedDate, $input->sourceMode);
             $sourceAcquisitionTelemetry = $this->barsIngest->consumeSourceAcquisitionTelemetry($input->sourceMode);
-            $benchmarkResult = $this->benchmarkBarsIngest !== null
-                ? $this->benchmarkBarsIngest->ingest($input->requestedDate, $input->sourceMode)
-                : [
-                    'benchmark_import_status' => 'SKIPPED',
-                    'benchmark_skip_reason_code' => 'BENCHMARK_SERVICE_NOT_BOUND',
-                    'benchmark_rows_written' => 0,
-                ];
-
-            return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisitionTelemetry, $benchmarkResult) {
+            return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisitionTelemetry) {
                 $result = $this->barsIngest->ingestAcquiredRows(
                     $run,
                     $input->requestedDate,
@@ -224,6 +216,7 @@ class MarketDataPipelineService
                     $priorCurrent
                 );
                 $result = $this->withImpactReprocessExecution($run, $input, $result);
+                $benchmarkResult = $this->ingestBenchmarkNonBlocking($input->requestedDate, $input->sourceMode);
 
                 $sourceAcquisition = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
@@ -428,15 +421,7 @@ class MarketDataPipelineService
         }
 
         try {
-            $benchmarkResult = $this->benchmarkBarsIngest !== null
-                ? $this->benchmarkBarsIngest->ingest($input->requestedDate, $input->sourceMode)
-                : [
-                    'benchmark_import_status' => 'SKIPPED',
-                    'benchmark_skip_reason_code' => 'BENCHMARK_SERVICE_NOT_BOUND',
-                    'benchmark_rows_written' => 0,
-                ];
-
-            return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisition, $benchmarkResult) {
+            return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisition) {
                 $result = $this->barsIngest->ingestAcquiredRows(
                     $run,
                     $input->requestedDate,
@@ -446,6 +431,7 @@ class MarketDataPipelineService
                     $priorCurrent
                 );
                 $result = $this->withImpactReprocessExecution($run, $input, $result);
+                $benchmarkResult = $this->ingestBenchmarkNonBlocking($input->requestedDate, $input->sourceMode);
                 $sourceAcquisitionResult = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
                     : [];
@@ -3289,6 +3275,30 @@ class MarketDataPipelineService
         return $run;
     }
 
+
+    private function ingestBenchmarkNonBlocking($requestedDate, $sourceMode)
+    {
+        if ($this->benchmarkBarsIngest === null) {
+            return [
+                'benchmark_import_status' => 'SKIPPED',
+                'benchmark_skip_reason_code' => 'BENCHMARK_SERVICE_NOT_BOUND',
+                'benchmark_rows_written' => 0,
+            ];
+        }
+
+        try {
+            return $this->benchmarkBarsIngest->ingest($requestedDate, $sourceMode);
+        } catch (\Throwable $e) {
+            return [
+                'benchmark_import_status' => 'FAILED_NON_BLOCKING',
+                'benchmark_skip_reason_code' => $e instanceof SourceAcquisitionException
+                    ? $e->reasonCode()
+                    : 'BENCHMARK_IMPORT_FAILED',
+                'benchmark_rows_written' => 0,
+                'benchmark_error_message' => $e->getMessage(),
+            ];
+        }
+    }
 
     private function sourceTelemetryColumns($sourceMode, $resolvedSourceName = null, array $sourceAcquisition = [], $fallbackFinalReasonCode = null)
     {

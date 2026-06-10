@@ -1,6 +1,6 @@
 # Market-Data Production Proof Pack
 
-Last updated: 2026-06-08
+Last updated: 2026-06-10
 Source ZIP: `tradeaxis-api.zip`
 Source ZIP path: `D:\Laravel\tradeaxis-api\tradeaxis-api.zip`
 Locked source-state ZIP SHA-256: `86b29452bf563b1f52d9c423072049b0babb6640be5e2ede0dcb1551fa1be325`
@@ -22,6 +22,25 @@ Current 2026-06-05 lock overlay:
 The proof window above is the audited evidence boundary, not the final date of production readiness. The market-data application remains production-ready for the current source state and ongoing daily lifecycle/backfill operation.
 
 Older command counts, provider-smoke attempts, or partial-source notes below remain historical if a later dated section supersedes them.
+
+## 2026-06-10 Backfill Lifecycle Benchmark Recovery Proof
+
+The API backfill lifecycle for `2026-06-09` exposed a pipeline-order defect: benchmark ingest could return `RUN_SOURCE_NO_VALID_DATA` and hold the run before 948 available equity rows reached equity ingest. The pipeline was corrected so equity ingest precedes benchmark ingest and benchmark-source unavailability is non-blocking for equity publication.
+
+Final operator proof:
+- command: `php artisan market-data:backfill:lifecycle 2026-06-09 2026-06-09 --source_mode=api --with-evidence --with-replay -vvv`
+- run: `run_id=37919`
+- result: `import=SUCCESS`, `coverage=PASS`, `promote=SUCCESS`, `evidence=EXPORTED`, `fixture=GENERATED`, `replay=VERIFIED`, `readable=YES`
+- equity rows: 948 accepted/written, zero invalid
+- indicators: 948 equity indicator rows; benchmark indicator stage wrote 12 rows with zero invalid
+- eligibility: 948 rows
+- effective date: `2026-06-09`, no fallback
+- current publication pointer: `publication_id=38186`, `run_id=37919`, version 1, sealed at `2026-06-10 21:07:07`
+- regression suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (641 tests, 9554 assertions)
+
+The command-level source acquisition remained `PARTIAL_SUCCESS` because one warmup/window request failed, but target-date acquisition and canonical ingest were complete for 948/948 equity tickers. This did not weaken target-date coverage or publication correctness.
+
+Decision: `VALIDATED_RUNTIME_PROVEN_PUBLICATION_POINTER_CONFIRMED`. No further manual test is required for this defect.
 
 ## 1. Environment Baseline
 
