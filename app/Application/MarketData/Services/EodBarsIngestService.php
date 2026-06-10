@@ -59,12 +59,27 @@ class EodBarsIngestService
         }
 
         if ($sourceRows === []) {
+            $emptyContext = array_merge(
+                $this->emptySourceAcquisitionContext($requestedDate, $sourceMode),
+                $sourceAcquisition ?: []
+            );
+            $emptyContext['source_mode'] = $sourceMode;
+            $emptyContext['trade_date'] = $requestedDate;
+            $emptyContext['returned_row_count'] = 0;
+            $emptyContext['accepted_row_count'] = 0;
+            $emptyContext['rejected_row_count'] = 0;
+            $emptyContext['invalid_row_count'] = 0;
+            $emptyContext['source_final_status'] = 'FAILED';
+            $emptyContext['final_reason_code'] = $this->noValidSourceDataReasonCode($sourceMode);
+            $emptyContext['no_valid_data'] = true;
+            $emptyContext['empty_response_blocked'] = true;
+
             throw new SourceAcquisitionException(
                 'Source returned zero rows for requested trade_date; empty source output is not a valid ingest artifact.',
                 $this->noValidSourceDataReasonCode($sourceMode),
                 0,
                 null,
-                $this->emptySourceAcquisitionContext($requestedDate, $sourceMode)
+                $emptyContext
             );
         }
 
@@ -159,6 +174,8 @@ class EodBarsIngestService
                 'accepted_row_count' => 0,
                 'rejected_row_count' => count($invalidRows),
                 'invalid_row_count' => count($invalidRows),
+                'invalid_reason_summary' => $this->summarizeInvalidReasons($invalidRows),
+                'invalid_rows_sample' => $this->invalidRowsSample($invalidRows),
                 'source_final_status' => 'FAILED',
                 'final_reason_code' => $this->noValidSourceDataReasonCode($sourceMode),
                 'no_valid_data' => true,
@@ -330,6 +347,8 @@ class EodBarsIngestService
                 'accepted_row_count' => 0,
                 'rejected_row_count' => count($invalidRows),
                 'invalid_row_count' => count($invalidRows),
+                'invalid_reason_summary' => $this->summarizeInvalidReasons($invalidRows),
+                'invalid_rows_sample' => $this->invalidRowsSample($invalidRows),
                 'source_final_status' => 'FAILED',
                 'final_reason_code' => $this->noValidSourceDataReasonCode($sourceMode),
                 'no_valid_data' => true,
@@ -453,6 +472,32 @@ class EodBarsIngestService
         ];
     }
 
+
+
+    private function summarizeInvalidReasons(array $invalidRows)
+    {
+        $summary = [];
+        foreach ($invalidRows as $row) {
+            $reasonCode = (string) ($row['invalid_reason_code'] ?? 'UNKNOWN_INVALID_ROW');
+            $summary[$reasonCode] = ($summary[$reasonCode] ?? 0) + 1;
+        }
+
+        ksort($summary);
+        return $summary;
+    }
+
+    private function invalidRowsSample(array $invalidRows)
+    {
+        return array_slice(array_map(function (array $row) {
+            return [
+                'ticker_id' => $row['ticker_id'] ?? null,
+                'trade_date' => $row['trade_date'] ?? null,
+                'source_row_ref' => $row['source_row_ref'] ?? null,
+                'invalid_reason_code' => $row['invalid_reason_code'] ?? null,
+                'invalid_note' => $row['invalid_note'] ?? null,
+            ];
+        }, $invalidRows), 0, 10);
+    }
 
     private function noValidSourceDataReasonCode($sourceMode)
     {

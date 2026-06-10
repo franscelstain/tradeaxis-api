@@ -33,9 +33,9 @@ Dokumen ini **tidak boleh** memakai penamaan berbasis putaran revisi (`R1`, `R2`
 ## Final verdict
 **PASS - full global market-data production-ready for the locked source state and ongoing daily market-data lifecycle.**
 
-The `2023-01-02` through `2025-10-31` range is the archived full-range proof window used by the active audit evidence, not the final date of production readiness. Latest operator run/current operation is recorded through `2026-06-04`, and future dates remain part of normal daily lifecycle/backfill work.
+The `2023-01-02` through `2025-10-31` range is the archived full-range proof window used by the active audit evidence, not the final date of production readiness. Latest operator run/current operation is recorded through `2026-06-09`. The API backfill lifecycle for that date is runtime-proven as `SUCCESS / READABLE / PASS`, with 948 equity bars, 948 indicator rows, 948 eligibility rows, evidence export, generated fixture, replay verification, and current pointer `publication_id=38186` for `run_id=37919`. Future dates remain part of normal daily lifecycle/backfill work.
 
-Latest docs-review validation on `2026-06-08` passed `vendor\bin\phpunit` with `OK (641 tests, 9547 assertions)`.
+Latest full MarketData validation on `2026-06-10` passed `vendor\bin\phpunit tests\Unit\MarketData` with `OK (641 tests, 9554 assertions)`.
 
 The active package state is not dependent on older history files. Older `PARTIAL` / `FAIL` / `BLOCKED` notes remain historical when a later checkpoint explicitly closes them.
 
