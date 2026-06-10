@@ -74,3 +74,45 @@ Catatan attachment pada bagian ini membantu pembaca memahami jejak dokumen atau 
 - query atau extract yang membuktikan coverage,
 - daftar exception atau anomaly note,
 - pointer ke artefak detail yang dapat dibuka ulang saat audit.
+
+## Recorded R1 IS Evidence — 2026-06-10
+
+Bagian ini mencatat hasil final supported-runtime dari chronological holdout R1. Catatan ini hanya evidence referensial faktual dan tidak mengubah kontrak normatif acceptance OOS.
+
+### Identitas run
+
+```text
+requested range: 2023-01-02 sampai 2026-05-29
+split rule: FLOOR_70_PERCENT_IS_REMAINDER_OOS
+IS: 2023-01-02 sampai 2025-05-21 / 562 trading dates
+reserved OOS: 2025-05-22 sampai 2026-05-29 / 242 trading dates
+canonical grid count: 24
+eval model: ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS
+canonical artifact hash: f4ec8464f08515b31d7d26636851acea930307d6
+```
+
+### Hasil
+
+```text
+valid IS params: 0
+failed IS params: 24
+maximum picks count: 1445
+maximum days covered: 513
+failure classes: robust return, downside, stability
+per-evaluation runtime/source diagnostics: tidak ada
+best-IS binding: tidak ada
+OOS execution: tidak dimulai
+OOS acceptance: tidak dievaluasi
+promotion eligibility: NOT_ELIGIBLE — OOS proof missing
+production ready: false
+```
+
+### Pointer evidence
+
+- `storage/app/watchlist/backtest/oos-proof-run-1.json`
+- `storage/app/watchlist/backtest/oos-proof-execution-price-corrected-is-failed.json`
+- `storage/app/watchlist/backtest/oos-is-evaluation-matrix-execution-corrected.csv`
+
+### Interpretasi review
+
+Infrastruktur proof menyelesaikan seluruh fase IS dan fail closed karena tidak ada row yang lolos semua canonical gate. Ini bukan OOS acceptance failure karena OOS tidak pernah dibaca atau dievaluasi. R1 tetap menjadi immutable failed-IS evidence. Setiap riset R2 wajib memakai catalog/version baru, hanya menggunakan IS, dan mempertahankan acceptance gates serta corrected execution-price semantics yang sama.

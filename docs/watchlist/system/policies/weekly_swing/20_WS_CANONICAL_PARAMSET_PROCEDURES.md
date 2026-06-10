@@ -45,7 +45,7 @@ Jika lock tidak diperoleh, promote wajib gagal dan tidak boleh lanjut ke status 
 
 Promote canonical Weekly Swing mensyaratkan OOS proof yang lolos acceptance gate berikut:
 
-- `picks_count_oos > 0`
+- `picks_count_oos >= ws.eval.min_trades_oos` (canonical default `40`)
 - `avg_ret_net_top_oos > 0`
 - `median_ret_net_top_oos >= 0`
 - `month_win_rate_min_oos >= 0.45`

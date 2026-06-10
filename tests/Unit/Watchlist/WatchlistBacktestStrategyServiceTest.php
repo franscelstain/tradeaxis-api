@@ -60,6 +60,10 @@ class WatchlistBacktestStrategyServiceTest extends TestCase
         $this->assertSame('CONFIRMED', $itemsByTicker['WCHA']['confirm_state']);
 
         $this->assertSame('EVALUATION_CANDIDATE', $result['trades'][0]['trade_state']);
+        $this->assertSame(0.05, $result['trades'][0]['atr14_pct']);
+        $this->assertSame(1.5, $result['trades'][0]['stop_atr_mult']);
+        $this->assertSame(1.5, $result['trades'][0]['min_rr']);
+        $this->assertSame('PUBLISHED_EOD_OHLCV_REQUIRED_AT_RUNTIME', $result['trades'][0]['pricing_model']);
         $this->assertTrue($result['trades'][0]['contract_flags']['from_recommendation_layer']);
         $this->assertTrue($result['trades'][0]['contract_flags']['confirm_does_not_create_recommendation']);
         $this->assertFalse($result['evaluations'][0]['metrics_ready']);

@@ -61,11 +61,18 @@ class WatchlistBacktestPublishedPriceRuntimeStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('POSITIVE_VOLUME_REQUIRED', $strategy.$runtime.$owners);
         $this->assertStringContainsString('min_tradable_volume', $strategy.$runtime.$metrics);
-        foreach (['BT_SKIP_NO_TRADABLE_ENTRY', 'BT_SKIP_NO_TRADABLE_EXIT'] as $reasonCode) {
+        foreach ([
+            'BT_SKIP_NO_TRADABLE_ENTRY',
+            'BT_SKIP_NO_TRADABLE_EXIT',
+            'BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY',
+            'BT_SKIP_NON_EXECUTABLE_PRICE_EXIT',
+        ] as $reasonCode) {
             $this->assertStringContainsString($reasonCode, $metrics);
             $this->assertGreaterThanOrEqual(5, substr_count($owners, $reasonCode));
         }
         $this->assertStringContainsString('zero_volume_bar_is_published_but_non_executable', $metrics);
+        $this->assertStringContainsString('gap_through_trigger_fills_at_open', $metrics);
+        $this->assertStringContainsString('trigger_level_is_distinct_from_executed_price', $metrics);
     }
 
     public function test_runtime_paramset_binds_eval_thresholds_and_blocks_unresolved_threshold_export(): void

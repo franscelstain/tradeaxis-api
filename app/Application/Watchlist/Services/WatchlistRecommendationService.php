@@ -343,6 +343,11 @@ class WatchlistRecommendationService
                 'group_rank' => $item['group_rank'] ?? null,
                 'group_reason_code' => $item['group_reason_code'] ?? null,
                 'score_total' => $item['score_total'] ?? null,
+                'atr14_pct' => $item['score_metrics']['atr14_pct'] ?? null,
+                'dv20_idr' => $item['score_metrics']['dv20_idr'] ?? null,
+                'vol_ratio' => $item['score_metrics']['vol_ratio'] ?? null,
+                'stop_price' => $item['stop_price'] ?? null,
+                'target_price' => $item['target_price'] ?? null,
             ],
         ];
     }

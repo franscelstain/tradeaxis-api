@@ -223,3 +223,7 @@ Model persistence yang sah untuk Weekly Swing adalah:
 - immutable business fields
 - no back-mutation from confirm to recommendation
 - no leakage ke execution atau portfolio
+
+## Evaluation identity and seed deployment
+
+Use the migrations or synchronized DDL/closure SQL before seeding the grid. `watchlist_bt_eval` must use the versioned identity `(policy_code, param_id, eval_model, paramset_hash, from_date, to_date)`. This allows historical legacy evidence and current canonical semantics to coexist without overwrite. Seed the canonical grid with `watchlist:backtest-param-grid-seed`; reruns must be idempotent.

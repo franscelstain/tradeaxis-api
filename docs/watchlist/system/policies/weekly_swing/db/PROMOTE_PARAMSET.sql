@@ -66,7 +66,7 @@ BEGIN
     AND o.policy_code = @POLICY
     AND o.policy_version = @TARGET_POLICY_VERSION
     AND o.param_id_best_is = @TARGET_BT_PARAM_ID
-    AND o.picks_count_oos > 0
+    AND o.picks_count_oos >= 40
     AND o.avg_ret_net_top_oos > 0
     AND o.median_ret_net_top_oos >= 0
     AND o.month_win_rate_min_oos >= 0.45

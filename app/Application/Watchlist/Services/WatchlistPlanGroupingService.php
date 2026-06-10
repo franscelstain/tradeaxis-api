@@ -10,6 +10,8 @@ class WatchlistPlanGroupingService
         'paramset_code' => 'WS_ACTIVE_BOOTSTRAP',
         'grouping' => [
             'grouping_mode' => 'PLAN_GROUPING_DETERMINISTIC',
+            'top_min_score_q' => null,
+            'secondary_min_score_q' => null,
             'top_picks' => [
                 'min_score_total' => 0.70,
                 'max_items' => 5,
@@ -85,17 +87,20 @@ class WatchlistPlanGroupingService
         }
 
         $items = $this->deduplicateBestItems($this->collectEligibleItems($scoredOutput['items'] ?? [], $payload));
+        $resolvedThresholds = $this->resolvedThresholds($items, $resolvedParamset);
+        $payload['group_contract']['resolved_thresholds'] = $resolvedThresholds;
+        $payload['cutoff_manifest'] = $resolvedThresholds;
 
         foreach ($items as $item) {
             $scoreTotal = (float) $item['score_total'];
 
-            if ($scoreTotal >= $resolvedParamset['grouping']['top_picks']['min_score_total']
+            if ($scoreTotal >= $resolvedThresholds['top_picks_min_score_total']
                 && count($payload['groups']['TOP_PICKS']) < $resolvedParamset['grouping']['top_picks']['max_items']) {
                 $payload['groups']['TOP_PICKS'][] = $this->groupItem($item, 'TOP_PICKS', 'WS_PLAN_TOP_PICK', count($payload['groups']['TOP_PICKS']) + 1);
                 continue;
             }
 
-            if ($scoreTotal >= $resolvedParamset['grouping']['secondary']['min_score_total']
+            if ($scoreTotal >= $resolvedThresholds['secondary_min_score_total']
                 && count($payload['groups']['SECONDARY']) < $resolvedParamset['grouping']['secondary']['max_items']) {
                 $payload['groups']['SECONDARY'][] = $this->groupItem($item, 'SECONDARY', 'WS_PLAN_SECONDARY', count($payload['groups']['SECONDARY']) + 1);
                 continue;
@@ -249,6 +254,45 @@ class WatchlistPlanGroupingService
         return $unique;
     }
 
+    private function resolvedThresholds(array $items, array $paramset): array
+    {
+        $scores = array_values(array_map(function (array $item): float {
+            return (float) $item['score_total'];
+        }, $items));
+        sort($scores, SORT_NUMERIC);
+
+        $topQuantile = $paramset['grouping']['top_min_score_q'];
+        $secondaryQuantile = $paramset['grouping']['secondary_min_score_q'];
+        $quantileMode = $topQuantile !== null && $secondaryQuantile !== null && $scores !== [];
+
+        return [
+            'mode' => $quantileMode ? 'DAILY_SCORE_QUANTILE' : 'STATIC_SCORE_THRESHOLD',
+            'top_min_score_q' => $topQuantile,
+            'secondary_min_score_q' => $secondaryQuantile,
+            'top_picks_min_score_total' => $quantileMode
+                ? $this->percentile($scores, (float) $topQuantile)
+                : (float) $paramset['grouping']['top_picks']['min_score_total'],
+            'secondary_min_score_total' => $quantileMode
+                ? $this->percentile($scores, (float) $secondaryQuantile)
+                : (float) $paramset['grouping']['secondary']['min_score_total'],
+            'score_count' => count($scores),
+            'score_payload_hash' => sha1(json_encode($scores, JSON_UNESCAPED_SLASHES)),
+        ];
+    }
+
+    private function percentile(array $values, float $percentile): float
+    {
+        $index = (count($values) - 1) * $percentile;
+        $lower = (int) floor($index);
+        $upper = (int) ceil($index);
+        if ($lower === $upper) {
+            return (float) $values[$lower];
+        }
+        $weight = $index - $lower;
+
+        return (float) $values[$lower] + (((float) $values[$upper] - (float) $values[$lower]) * $weight);
+    }
+
     private function groupItem(array $item, string $group, string $reasonCode, int $groupRank): array
     {
         $reasonCodes = $item['reason_codes'] ?? [];
@@ -344,31 +388,33 @@ class WatchlistPlanGroupingService
     private function resolveParamset(array $paramset): array
     {
         $defaults = self::DEFAULT_PARAMSET;
-
-        return [
-            'policy_code' => (string) ($paramset['policy_code'] ?? $defaults['policy_code']),
-            'policy_version' => (string) ($paramset['policy_version'] ?? $defaults['policy_version']),
-            'paramset_code' => (string) ($paramset['paramset_code'] ?? $defaults['paramset_code']),
-            'grouping' => [
-                'grouping_mode' => (string) $this->paramValueMixed($paramset, ['grouping', 'grouping_mode'], $defaults['grouping']['grouping_mode']),
-                'top_picks' => [
-                    'min_score_total' => $this->paramValueMixed($paramset, ['grouping', 'top_picks', 'min_score_total'], $defaults['grouping']['top_picks']['min_score_total']),
-                    'max_items' => $this->paramValueMixed($paramset, ['grouping', 'top_picks', 'max_items'], $defaults['grouping']['top_picks']['max_items']),
-                ],
-                'secondary' => [
-                    'min_score_total' => $this->paramValueMixed($paramset, ['grouping', 'secondary', 'min_score_total'], $defaults['grouping']['secondary']['min_score_total']),
-                    'max_items' => $this->paramValueMixed($paramset, ['grouping', 'secondary', 'max_items'], $defaults['grouping']['secondary']['max_items']),
-                ],
-                'watch_only' => [
-                    'min_score_total' => $this->paramValueMixed($paramset, ['grouping', 'watch_only', 'min_score_total'], $defaults['grouping']['watch_only']['min_score_total']),
-                    'max_items' => $this->paramValueMixed($paramset, ['grouping', 'watch_only', 'max_items'], $defaults['grouping']['watch_only']['max_items']),
-                ],
-                'avoid' => [
-                    'max_score_total_below' => $this->paramValueMixed($paramset, ['grouping', 'avoid', 'max_score_total_below'], $defaults['grouping']['avoid']['max_score_total_below']),
-                ],
-                'sort_keys' => $defaults['grouping']['sort_keys'],
+        $resolved = $paramset;
+        $resolved['policy_code'] = (string) ($paramset['policy_code'] ?? $defaults['policy_code']);
+        $resolved['policy_version'] = (string) ($paramset['policy_version'] ?? $defaults['policy_version']);
+        $resolved['paramset_code'] = (string) ($paramset['paramset_code'] ?? $defaults['paramset_code']);
+        $resolved['grouping'] = [
+            'grouping_mode' => (string) $this->paramValueMixed($paramset, ['grouping', 'grouping_mode'], $defaults['grouping']['grouping_mode']),
+            'top_min_score_q' => $this->paramValueMixed($paramset, ['grouping', 'top_min_score_q'], $defaults['grouping']['top_min_score_q']),
+            'secondary_min_score_q' => $this->paramValueMixed($paramset, ['grouping', 'secondary_min_score_q'], $defaults['grouping']['secondary_min_score_q']),
+            'top_picks' => [
+                'min_score_total' => $this->paramValueMixed($paramset, ['grouping', 'top_picks', 'min_score_total'], $defaults['grouping']['top_picks']['min_score_total']),
+                'max_items' => $this->paramValueMixed($paramset, ['grouping', 'top_picks', 'max_items'], $defaults['grouping']['top_picks']['max_items']),
             ],
+            'secondary' => [
+                'min_score_total' => $this->paramValueMixed($paramset, ['grouping', 'secondary', 'min_score_total'], $defaults['grouping']['secondary']['min_score_total']),
+                'max_items' => $this->paramValueMixed($paramset, ['grouping', 'secondary', 'max_items'], $defaults['grouping']['secondary']['max_items']),
+            ],
+            'watch_only' => [
+                'min_score_total' => $this->paramValueMixed($paramset, ['grouping', 'watch_only', 'min_score_total'], $defaults['grouping']['watch_only']['min_score_total']),
+                'max_items' => $this->paramValueMixed($paramset, ['grouping', 'watch_only', 'max_items'], $defaults['grouping']['watch_only']['max_items']),
+            ],
+            'avoid' => [
+                'max_score_total_below' => $this->paramValueMixed($paramset, ['grouping', 'avoid', 'max_score_total_below'], $defaults['grouping']['avoid']['max_score_total_below']),
+            ],
+            'sort_keys' => $defaults['grouping']['sort_keys'],
         ];
+
+        return $resolved;
     }
 
     private function validateParamset(array $paramset): array
@@ -377,6 +423,18 @@ class WatchlistPlanGroupingService
 
         if ($paramset['grouping']['grouping_mode'] !== 'PLAN_GROUPING_DETERMINISTIC') {
             $errors[] = 'grouping.grouping_mode must be PLAN_GROUPING_DETERMINISTIC';
+        }
+
+        foreach (['top_min_score_q', 'secondary_min_score_q'] as $field) {
+            $value = $paramset['grouping'][$field];
+            if ($value !== null && (! $this->isNumericValue($value) || (float) $value < 0.0 || (float) $value > 1.0)) {
+                $errors[] = 'grouping.'.$field.' must be null or numeric between 0 and 1';
+            }
+        }
+        if ($paramset['grouping']['top_min_score_q'] !== null
+            && $paramset['grouping']['secondary_min_score_q'] !== null
+            && (float) $paramset['grouping']['top_min_score_q'] < (float) $paramset['grouping']['secondary_min_score_q']) {
+            $errors[] = 'grouping.top_min_score_q must be >= grouping.secondary_min_score_q';
         }
 
         foreach ([

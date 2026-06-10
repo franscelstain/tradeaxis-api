@@ -141,6 +141,10 @@ Reason code berikut adalah reason code foundation untuk overlay CONFIRM. Kode in
 - `WS_BT_ARTIFACT_PARAM_ID_MISMATCH`
 - `BT_SKIP_NO_TRADABLE_ENTRY`
 - `BT_SKIP_NO_TRADABLE_EXIT`
+- `BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY`
+- `BT_SKIP_NON_EXECUTABLE_PRICE_EXIT`
+- `BT_GAP_THROUGH_STOP_AT_OPEN`
+- `BT_GAP_THROUGH_TARGET_AT_OPEN`
 
 Semantics tambahan untuk tradable-bar backtest:
 
@@ -148,6 +152,8 @@ Semantics tambahan untuk tradable-bar backtest:
 - `BT_SKIP_NO_TRADABLE_EXIT` berarti exact-date published bar tersedia untuk exit/time-exit, tetapi volume tidak positif sehingga tidak ada fill exit executable.
 - Kedua code adalah backtest evaluation diagnostics. Kode ini bukan reason code PLAN, RECOMMENDATION, CONFIRM, portfolio, atau broker execution.
 - Kedua kondisi wajib menghasilkan `ret_net = NULL`; zero return sintetis dilarang.
+- `BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY` dan `BT_SKIP_NON_EXECUTABLE_PRICE_EXIT` berarti raw OHLC tidak berada pada fraksi harga executable; keduanya wajib menghasilkan `ret_net = NULL`.
+- `BT_GAP_THROUGH_STOP_AT_OPEN` dan `BT_GAP_THROUGH_TARGET_AT_OPEN` adalah informational evaluation codes yang membuktikan opening-gap fill memakai harga open, bukan theoretical trigger level.
 
 Tidak boleh ada reason code aktif di seed atau runtime output yang tidak dapat ditelusuri ke daftar aktif di dokumen ini.
 

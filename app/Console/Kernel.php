@@ -33,6 +33,8 @@ use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
 use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
 use App\Console\Commands\Watchlist\RunBacktestPublishedPriceProofCommand;
+use App\Console\Commands\Watchlist\RunBacktestOosProofCommand;
+use App\Console\Commands\Watchlist\SeedBacktestParamGridCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
@@ -40,6 +42,8 @@ class Kernel extends ConsoleKernel
 {
     protected $commands = [
         RunBacktestPublishedPriceProofCommand::class,
+        RunBacktestOosProofCommand::class,
+        SeedBacktestParamGridCommand::class,
         IngestEodBarsCommand::class,
         ComputeIndicatorsCommand::class,
         BuildEligibilityCommand::class,

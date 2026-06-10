@@ -29,6 +29,75 @@ class MarketDataPublishedEodSeriesReadService
         $requestedCodes = $this->normalizeTickerCodes($tickerCodes);
         $tradeDates = $this->normalizeTradeDates($exactTradeDates);
 
+        if ($tradeDates === []) {
+            $calendar = $this->calendar->resolveTradingDates($fromDate, $toDate);
+            if (! ($calendar['is_ready'] ?? false)) {
+                return $this->blocked(
+                    $fromDate,
+                    $toDate,
+                    $requestedCodes,
+                    [],
+                    'WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE',
+                    $calendar['diagnostics'] ?? []
+                );
+            }
+            $tradeDates = $calendar['trade_dates'];
+        }
+
+        $tickerCodesByTradeDate = [];
+        foreach ($tradeDates as $tradeDate) {
+            $tickerCodesByTradeDate[$tradeDate] = $requestedCodes;
+        }
+
+        return $this->readResolvedSeries(
+            $fromDate,
+            $toDate,
+            $tradeDates,
+            $requestedCodes,
+            $tickerCodesByTradeDate,
+            false
+        );
+    }
+
+    /**
+     * Resolve only ticker/date pairs that can actually be consumed by the frozen
+     * backtest candidates. This keeps a long historical proof bounded by trade
+     * density instead of universe-size x trading-day cartesian expansion.
+     */
+    public function readPublishedSeriesForDateTickerMap(
+        string $fromDate,
+        string $toDate,
+        array $tickerCodesByTradeDate
+    ): array {
+        $normalizedMap = $this->normalizeDateTickerMap($tickerCodesByTradeDate);
+        $tradeDates = array_keys($normalizedMap);
+        $requestedCodes = [];
+
+        foreach ($normalizedMap as $codes) {
+            foreach ($codes as $code) {
+                $requestedCodes[$code] = $code;
+            }
+        }
+        ksort($requestedCodes, SORT_STRING);
+
+        return $this->readResolvedSeries(
+            $fromDate,
+            $toDate,
+            $tradeDates,
+            array_values($requestedCodes),
+            $normalizedMap,
+            true
+        );
+    }
+
+    private function readResolvedSeries(
+        string $fromDate,
+        string $toDate,
+        array $tradeDates,
+        array $requestedCodes,
+        array $tickerCodesByTradeDate,
+        bool $targetedDateTickerRead
+    ): array {
         if (! $this->isValidDate($fromDate) || ! $this->isValidDate($toDate) || strcmp($fromDate, $toDate) > 0) {
             return $this->blocked($fromDate, $toDate, $requestedCodes, $tradeDates, 'WATCHLIST_BACKTEST_PRICE_SERIES_UNAVAILABLE', [[
                 'trade_date' => null,
@@ -49,14 +118,6 @@ class MarketDataPublishedEodSeriesReadService
             }
         }
 
-        if ($tradeDates === []) {
-            $calendar = $this->calendar->resolveTradingDates($fromDate, $toDate);
-            if (! ($calendar['is_ready'] ?? false)) {
-                return $this->blocked($fromDate, $toDate, $requestedCodes, [], 'WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE', $calendar['diagnostics'] ?? []);
-            }
-            $tradeDates = $calendar['trade_dates'];
-        }
-
         $series = [];
         $publicationManifest = [];
         $missingPublicationDates = [];
@@ -64,8 +125,12 @@ class MarketDataPublishedEodSeriesReadService
         $missingPriceRows = [];
         $diagnostics = [];
         $resolvedRowCount = 0;
+        $requestedTickerDatePairCount = 0;
 
         foreach ($tradeDates as $tradeDate) {
+            $codesForDate = $tickerCodesByTradeDate[$tradeDate] ?? [];
+            $requestedTickerDatePairCount += count($codesForDate);
+
             $readiness = $this->readiness->readinessForTradeDate($tradeDate);
             if (! ($readiness['is_ready'] ?? false)) {
                 $missingPublicationDates[] = $tradeDate;
@@ -78,6 +143,7 @@ class MarketDataPublishedEodSeriesReadService
                     'run_id' => $readiness['run_id'] ?? null,
                     'pointer_resolve_status' => $readiness['pointer_resolve_status'] ?? 'NOT_RESOLVED_READABLE_CURRENT',
                     'source_name' => $readiness['source_name'] ?? null,
+                    'requested_ticker_count' => count($codesForDate),
                     'row_count' => 0,
                     'payload_hash' => null,
                 ];
@@ -95,7 +161,7 @@ class MarketDataPublishedEodSeriesReadService
                 $tradeDate,
                 (int) $readiness['publication_id'],
                 (int) $readiness['run_id'],
-                $requestedCodes
+                $codesForDate
             );
             $resolvedRowCount += count($rows);
             $returnedCodes = [];
@@ -116,11 +182,11 @@ class MarketDataPublishedEodSeriesReadService
                 $series[$tickerCode][$tradeDate] = $bar;
             }
 
-            $missingCodes = array_values(array_filter($requestedCodes, function (string $code) use ($returnedCodes): bool {
+            $missingCodes = array_values(array_filter($codesForDate, function (string $code) use ($returnedCodes): bool {
                 return ! isset($returnedCodes[$code]);
             }));
 
-            if ($rows === [] && $requestedCodes !== []) {
+            if ($rows === [] && $codesForDate !== []) {
                 $missingPriceDates[] = $tradeDate;
             }
             foreach ($missingCodes as $missingCode) {
@@ -147,6 +213,7 @@ class MarketDataPublishedEodSeriesReadService
                 'run_id' => (int) $readiness['run_id'],
                 'pointer_resolve_status' => $readiness['pointer_resolve_status'],
                 'source_name' => $readiness['source_name'],
+                'requested_ticker_count' => count($codesForDate),
                 'row_count' => count($rows),
                 'missing_tickers' => $missingCodes,
                 'payload_hash' => $this->stableHash($rows),
@@ -169,10 +236,12 @@ class MarketDataPublishedEodSeriesReadService
             'requested_to_date' => $toDate,
             'requested_trade_dates' => $tradeDates,
             'requested_tickers' => $requestedCodes,
+            'requested_tickers_by_trade_date' => $tickerCodesByTradeDate,
             'series_by_ticker' => $series,
             'publication_manifest' => $publicationManifest,
             'price_series_manifest' => [
                 'ticker_count' => count($requestedCodes),
+                'requested_ticker_date_pair_count' => $requestedTickerDatePairCount,
                 'required_price_date_count' => count($tradeDates),
                 'resolved_publication_date_count' => count($tradeDates) - count($missingPublicationDates),
                 'resolved_price_date_count' => count($tradeDates) - count(array_unique(array_merge($missingPublicationDates, $missingPriceDates))),
@@ -181,6 +250,8 @@ class MarketDataPublishedEodSeriesReadService
                 'missing_price_dates' => $missingPriceDates,
                 'missing_price_rows' => $missingPriceRows,
                 'source_payload_hash' => $this->stableHash($series),
+                'targeted_date_ticker_read' => $targetedDateTickerRead,
+                'read_mode' => $targetedDateTickerRead ? 'TARGETED_DATE_TICKER_MAP' : 'DATE_RANGE_TICKER_UNION',
                 'exact_date_resolution_only' => true,
                 'no_latest_fallback' => true,
                 'no_max_trade_date' => true,
@@ -205,10 +276,12 @@ class MarketDataPublishedEodSeriesReadService
             'requested_to_date' => $toDate,
             'requested_trade_dates' => $tradeDates,
             'requested_tickers' => $tickerCodes,
+            'requested_tickers_by_trade_date' => [],
             'series_by_ticker' => [],
             'publication_manifest' => [],
             'price_series_manifest' => [
                 'ticker_count' => count($tickerCodes),
+                'requested_ticker_date_pair_count' => 0,
                 'required_price_date_count' => count($tradeDates),
                 'resolved_publication_date_count' => 0,
                 'resolved_price_date_count' => 0,
@@ -217,6 +290,8 @@ class MarketDataPublishedEodSeriesReadService
                 'missing_price_dates' => $tradeDates,
                 'missing_price_rows' => [],
                 'source_payload_hash' => $this->stableHash([]),
+                'targeted_date_ticker_read' => false,
+                'read_mode' => 'BLOCKED',
                 'exact_date_resolution_only' => true,
                 'no_latest_fallback' => true,
                 'no_max_trade_date' => true,
@@ -251,6 +326,24 @@ class MarketDataPublishedEodSeriesReadService
         ksort($normalized, SORT_STRING);
 
         return array_values($normalized);
+    }
+
+    private function normalizeDateTickerMap(array $tickerCodesByTradeDate): array
+    {
+        $normalized = [];
+        foreach ($tickerCodesByTradeDate as $tradeDate => $tickerCodes) {
+            $date = trim((string) $tradeDate);
+            if ($date === '' || ! is_array($tickerCodes)) {
+                continue;
+            }
+            $codes = $this->normalizeTickerCodes($tickerCodes);
+            if ($codes !== []) {
+                $normalized[$date] = $codes;
+            }
+        }
+        ksort($normalized, SORT_STRING);
+
+        return $normalized;
     }
 
     private function isValidDate(string $value): bool

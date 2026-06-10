@@ -20,6 +20,8 @@ class WatchlistCandidateUniverseService
             'max_atr14_pct' => 0.12,
             'atr_ideal_low' => 0.035,
             'atr_ideal_high' => 0.075,
+            'stop_atr_mult' => 1.5,
+            'min_rr' => 1.5,
         ],
     ];
 

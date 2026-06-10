@@ -14,34 +14,39 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
 
 Status:
-`DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`.
+`DONE for OOS execution infrastructure / EXECUTION_PRICE_CORRECTION_VALIDATED / FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`.
 
 Historical baselines remain valid and are not downgraded:
 
 - `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
 - `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
-- `DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS / NOT_PRODUCTION_READY`.
+- `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`.
 
-Final operator proof exists for the closure build: all requested Watchlist/MarketData PHPUnit scopes passed, the command ran twice against current readable publications, zero-volume execution semantics and dynamic 70% coverage behaved correctly, metric thresholds resolved, and canonical artifact hash equality passed. Published-price runtime proof scope is complete; walk-forward/OOS and production operating proof remain outstanding.
+Current OOS contract evidence:
 
-Coverage correction evidence:
-
-- operator PublishedPrice `17/146` PASS;
-- operator Backtest `47/490` and full Watchlist `138/1372` each had the same single dynamic-coverage failure;
-- MarketData PublishedEodSeries `6/29`, TradingCalendar `4/16`, and Watchlist read model `3/41` PASS;
-- corrected coverage semantics pass controlled `1/10 FAIL`, `7/10 PASS`, and explicit empty-recommendation coverage checks.
+- canonical schema and the deterministic 24-row R1 grid are deployed and verified;
+- final supported operator PHPUnit is green: ParamGrid `4/636`, MetricsService `15/113`, PublishedPrice `18/177`, OOS `24/186`, Backtest `87/1430`, and full Watchlist `179/2318`;
+- execution-price semantics are validated under `GAP=OPEN;PX=IDX_BANDS`: opening gaps fill at open, intraday triggers are price-band normalized, trigger/executed price are distinct, and non-executable fractional source OHLC fails closed;
+- full explicit-range runtime used IS `2023-01-02..2025-05-21` / `562` trading dates and reserved OOS `2025-05-22..2026-05-29` / `242` trading dates;
+- all 24 rows completed IS evaluation; `is_valid_param_count=0`, `is_failed_param_count=24`, `is_max_picks_count=1445`, and `is_max_days_covered=513`;
+- no per-evaluation runtime/source diagnostics remain; the failure set is limited to canonical robust-return, downside, and stability gates;
+- no best-of-failed binding was created, OOS did not execute, and OOS data was not used for R1 selection or diagnosis;
+- corrected canonical artifact hash is `f4ec8464f08515b31d7d26636851acea930307d6`;
+- R1 is final failed-IS evidence and must remain immutable; any next calibration uses a new catalog/version and IS only;
+- no `LOCAL_OOS_PROOF_PASS`, promotion eligibility, production-ready status, or contract `LOCKED` claim is made.
 
 Priority contract status:
 
-- `WL-CONTRACT-007`: DONE for published-price runtime paramset traceability scope; remains not `LOCKED`;
-- `WL-CONTRACT-008`: DONE for published-price runtime explainability scope; remains not `LOCKED`;
-- `WL-CONTRACT-009`: DONE for published-price no-lookahead runtime proof scope; remains not `LOCKED`;
-- `WL-CONTRACT-010`: DONE for published-price deterministic runtime reproducibility scope; remains not `LOCKED`;
-- `WL-CONTRACT-013`: DONE for deterministic JSON runtime artifact evidence scope; remains not `LOCKED`;
-- `WL-CONTRACT-014`: DONE for current docs synchronization scope;
+- `WL-CONTRACT-007`: DONE for corrected full-range IS paramset traceability scope; remains not `LOCKED`;
+- `WL-CONTRACT-008`: DONE for corrected full-range IS explainability scope; remains not `LOCKED`;
+- `WL-CONTRACT-009`: DONE for IS-only/no-lookahead runtime scope; OOS proof remains absent and contract is not `LOCKED`;
+- `WL-CONTRACT-010`: PARTIAL for latest corrected semantics because one full-range artifact exists but a second identical R1 rerun is unnecessary after the terminal no-valid-IS result; reproducibility remains guarded by deterministic unit/static coverage;
+- `WL-CONTRACT-011`: PARTIAL; risk execution semantics are validated, but R1 quality gates fail;
+- `WL-CONTRACT-013`: DONE for IS failure evidence/artifact scope; OOS evidence is absent because OOS did not execute;
+- `WL-CONTRACT-014`: DONE for final R1 result docs synchronization scope;
 - `WL-CONTRACT-015`: `PARTIAL / NOT_READY`.
 
 No contract is `LOCKED`. Watchlist Production Ready remains `NO`.
@@ -69,14 +74,14 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-004 | INDICATOR VALIDITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-005 | ELIGIBILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-006 | SCORING DETERMINISM CONTRACT | `PARTIAL` |
-| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for published-price runtime scope / NOT LOCKED` |
-| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for published-price runtime scope / NOT LOCKED` |
-| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for published-price runtime scope / NOT LOCKED` |
-| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `DONE for published-price runtime scope / NOT LOCKED` |
+| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for corrected full-range IS runtime scope / NOT LOCKED` |
+| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for corrected full-range IS runtime scope / NOT LOCKED` |
+| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for IS-only runtime scope / OOS PROOF MISSING / NOT LOCKED` |
+| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `PARTIAL for corrected full-range runtime evidence / NOT LOCKED` |
 | WL-CONTRACT-011 | RISK GATE CONTRACT | `PARTIAL` |
 | WL-CONTRACT-012 | PORTFOLIO AWARENESS BOUNDARY | `NOT_STARTED` |
-| WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for deterministic JSON runtime evidence scope / NOT LOCKED` |
-| WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for final published-price runtime proof docs sync scope` |
+| WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for IS failure evidence scope / OOS EVIDENCE MISSING / NOT LOCKED` |
+| WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for final R1 IS result docs sync scope` |
 | WL-CONTRACT-015 | PRODUCTION READINESS CONTRACT | `PARTIAL / NOT_READY` |
 | WL-CONTRACT-016 | PLAN GROUPING DETERMINISM CONTRACT | `PARTIAL` |
 | WL-CONTRACT-017 | PLAN GROUP BOUNDARY CONTRACT | `PARTIAL` |
@@ -1367,29 +1372,33 @@ Contract impact:
 
 ## Next Required Contract Work
 
-Next session should target:
+Next session must target:
 
-`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`
 
 Priority contracts:
 
-1. `WL-CONTRACT-009`
-2. `WL-CONTRACT-010`
-3. `WL-CONTRACT-013`
-4. `WL-CONTRACT-007`
-5. `WL-CONTRACT-008`
+1. `WL-CONTRACT-006`
+2. `WL-CONTRACT-007`
+3. `WL-CONTRACT-008`
+4. `WL-CONTRACT-011`
+5. `WL-CONTRACT-010`
 6. `WL-CONTRACT-014`
 7. `WL-CONTRACT-015`
 
 Required proof:
 
-- build deterministic chronological train/calibration/test folds without future leakage;
-- resolve exact-date current-readable publication, calendar, paramset, and input lineage independently for every fold;
-- prove OOS-only evaluation and prevent in-sample/calibration rows from entering OOS metrics;
-- preserve positive-volume tradability and no-synthetic-fill semantics;
-- generate deterministic per-fold and aggregate OOS artifacts with reproducible hashes;
-- keep portfolio allocation, execution, broker integration, scheduler, and production API out of scope;
-- retain `WL-CONTRACT-015` as `PARTIAL / NOT_READY` until OOS and production operating evidence are complete.
+- preserve R1 rows, artifacts, hashes, and failed metrics without overwrite or reinterpretation;
+- create a new finite deterministic R2 catalog/version using IS evidence only;
+- do not read or use the reserved OOS suffix to choose R2 variables, values, ranking, or acceptance;
+- focus R2 on entry quality: momentum threshold, breakout proximity/extension, volume confirmation, ATR selection band, liquidity threshold, scoring weights, and TOP_PICKS quantile;
+- keep canonical sufficiency, return, downside, and stability gates unchanged;
+- retain exact official publication/calendar/OHLCV reads and corrected execution-price semantics;
+- prove catalog determinism, cross-field validity, stable ordering, idempotent persistence, and no best-of-failed behavior;
+- OOS may execute only after at least one R2 row passes every IS gate and an immutable best-IS binding is frozen;
+- keep promotion, portfolio, broker, scheduler, API, and production-ready claims out of scope;
+- retain `WL-CONTRACT-015` as `PARTIAL / NOT_READY`.
+
 ## Published Price Runtime Contract Update — 2026-06-09
 
 Session:
@@ -1539,3 +1548,158 @@ Earlier statements in this tracker that current closure/coverage PHPUnit or comm
 Next required session:
 `WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`.
 
+## Walk-Forward/OOS Unit-Static Contract Update — 2026-06-09
+
+Session:
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+
+Status:
+`DONE for walk-forward/OOS implementation unit-static scope / LOCAL_SMOKE_PASS / OFFICIAL_RUNTIME_PROOF_BLOCKED / NOT_PRODUCTION_READY`.
+
+### Contract decisions synchronized before implementation
+
+- chronological split rule: `is_count=floor(0.70*N)` and OOS receives the full remainder;
+- IS is the exact ordered prefix and OOS is the exact ordered suffix, with no overlap or hidden gap;
+- final calibration tie-break: smallest `param_id` after all four canonical rank metrics tie;
+- OOS minimum trade gate: `picks_count_oos >= ws.eval.min_trades_oos`, default `40`;
+- OOS fixture acceptance keys now match file 17 only;
+- official OOS row binds to the selected `watchlist_bt_eval` through `is_eval_id`.
+
+### Implementation evidence by contract
+
+- `WL-CONTRACT-007`: DB grid rows are snapshotted and hashed; the selected IS eval id, param id, paramset, metrics, eval model, calendar, price, and publication hashes form one immutable binding before OOS begins.
+- `WL-CONTRACT-008`: reason-coded failures exist for missing proof, insufficient OOS window, return failure, stability failure, and downside failure; incomplete canonical metrics fail closed instead of persisting zeros.
+- `WL-CONTRACT-009`: calibration method input is limited to IS dates/options; OOS metrics are not an accepted input; one frozen binding is evaluated after selection; controlled mutation of OOS outcomes does not alter the IS selection/hash.
+- `WL-CONTRACT-010`: split/date/grid/binding/evaluation hashes are deterministic; artifact hash excludes generated timestamp and operational INSERTED/IDEMPOTENT status; controlled identical rerun hash equality passed.
+- `WL-CONTRACT-013`: official repositories target `watchlist_bt_param_grid`, `watchlist_bt_eval`, and `watchlist_bt_oos_eval_ws`; duplicate payload conflict fails closed; evidence sections are `split_manifest`, `is_calibration`, `best_is_binding`, `oos_evaluation`, `oos_acceptance`, and `persistence_manifest`.
+- `WL-CONTRACT-014`: owner docs, DDL, promotion guard, fixture, implementation tracker, and this contract tracker are synchronized.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`; OOS supported-runtime proof and production operating proof are absent.
+
+### Validation and blocker evidence
+
+```text
+changed/new PHP lint: PASS
+controlled OOS smoke: 35 assertions / PASS
+controlled quantile smoke: 6 assertions / PASS
+new OOS PHPUnit source: 20 methods / 118 assertion-expectation call sites
+Artisan OOS run 1: exit 2 before bootstrap / unsupported PHP 8.4.16 / no artifact
+Artisan OOS run 2: exit 2 before bootstrap / unsupported PHP 8.4.16 / no artifact
+requested PHPUnit scopes: exit 1 before discovery / missing dom, mbstring, xml, xmlwriter
+```
+
+The controlled smoke does not satisfy official runtime proof. Therefore:
+
+```text
+LOCAL_OOS_PROOF_PASS: not claimed
+OOS_ACCEPTANCE_FAIL: not claimed because OOS runtime did not execute
+Promotion eligibility: NOT_ELIGIBLE — OOS proof missing
+Production ready: NO
+```
+
+No contract is promoted to `LOCKED`.
+
+
+## OOS Runtime Gap-Closure Contract Update — 2026-06-09
+
+Status:
+`DONE for OOS runtime gap-closure implementation unit/static scope / OPERATOR_RERUN_REQUIRED / NOT_PRODUCTION_READY`.
+
+Contract impact:
+
+- `WL-CONTRACT-007`: canonical grid now includes stop ATR multiplier and minimum RR, and the immutable binding hashes the exact runtime snapshot.
+- `WL-CONTRACT-008`: failed IS evaluations expose aggregate gates plus deterministic worst/best trade evidence rather than a misleading zero best-binding summary.
+- `WL-CONTRACT-009`: exact date/ticker price reads occur only after candidates are frozen; OOS remains excluded from grid selection.
+- `WL-CONTRACT-010`: volatile DB `created_at` is excluded from canonical grid payload; one proof remains one explicit chronological window even when reads are internally bounded.
+- `WL-CONTRACT-013`: schema, migrations, canonical seed, eval identity, grid/eval/OOS repositories, and JSON proof sections are synchronized. Historical unversioned IS evidence is preserved using explicit legacy identity markers.
+- `WL-CONTRACT-014`: policy, implementation guidance, DDL, SQL seed, migrations, tests, and audit trackers are synchronized for the closure patch.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`; corrected supported-runtime OOS acceptance proof is still required.
+
+Operator pre-patch evidence preserved:
+
+```text
+Full Watchlist: 162 tests / 1519 assertions / PASS
+Backtest: 70 tests / 631 assertions / PASS
+chronological split: PASS
+single baseline IS calibration: executed
+single baseline valid IS candidates: 0
+OOS: not executed
+```
+
+No contract is promoted to `LOCKED`. Promotion remains `NOT_ELIGIBLE — corrected OOS proof missing`.
+
+## OOS Post-Deployment Regression Contract Correction — 2026-06-10
+
+Operator execution proved the 24-row canonical database seed and param-grid catalog tests pass, then exposed three parity regressions: stale static-guard cardinality `18`, missing strategy bootstrap ATR/RR defaults, and runtime metadata not rebound onto returned strategy payloads before freeze.
+
+Contract impact:
+
+- `WL-CONTRACT-007`: parameter traceability now uses one cardinality source (`CATALOG_COUNT=24`), exact persisted-set validation, and non-null bootstrap risk defaults.
+- `WL-CONTRACT-008`: trade candidates and artifacts consistently expose ATR/RR and exact published-price runtime semantics.
+- `WL-CONTRACT-009`: runtime metadata binding occurs before the frozen strategy hash and before future-price access.
+- `WL-CONTRACT-010`: catalog/SQL/test cardinality parity no longer depends on duplicated literals; deterministic payload hashing includes the bound runtime metadata.
+- `WL-CONTRACT-013`: persisted grid extras/missing rows fail closed with `WS_BT_PARAM_GRID_PERSISTED_SET_MISMATCH`.
+- `WL-CONTRACT-014`: owner contract, implementation guidance, tests, and trackers are synchronized.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY` pending supported operator PHPUnit and OOS rerun.
+
+No contract is promoted to `LOCKED`. Promotion remains `NOT_ELIGIBLE — corrected OOS proof missing`.
+
+
+## OOS Grid Cross-Field Paramset Contract Correction — 2026-06-10
+
+Operator full-window execution proved the memory-safe runtime and 24-row grid load, but aggregate IS failures included `WATCHLIST_BACKTEST_SOURCE_NOT_READY`. The cause was a row-projection defect: strict `max_atr14_pct` values were merged with a wider default ideal ATR band.
+
+Contract impact:
+
+- `WL-CONTRACT-007`: immutable paramset binding now includes deterministic `bt_grid_resolution` companion values and rule marker.
+- `WL-CONTRACT-008`: strict canonical rows may no longer fail as source-not-ready solely due to contradictory default ATR companion values.
+- `WL-CONTRACT-009`: companion-band projection is completed before replay and uses no OOS metrics or future prices.
+- `WL-CONTRACT-010`: all 24 catalog rows are covered by deterministic cross-field invariants.
+- `WL-CONTRACT-014`: policy, implementation guidance, checklist, tests, and trackers are synchronized.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`; corrected full-window rerun and actual IS/OOS result are still required.
+
+No metric acceptance threshold was weakened. No best-of-failed selection or promotion is allowed.
+
+## Execution-Price Corrected Full-Range R1 IS Contract Result — 2026-06-10
+
+Session:
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+
+Final status:
+`FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`.
+
+### Evidence
+
+```text
+ParamGrid: 4 tests / 636 assertions / PASS
+MetricsService: 15 tests / 113 assertions / PASS
+PublishedPrice: 18 tests / 177 assertions / PASS
+OOS: 24 tests / 186 assertions / PASS
+Backtest: 87 tests / 1430 assertions / PASS
+Full Watchlist: 179 tests / 2318 assertions / PASS
+
+IS window: 2023-01-02 through 2025-05-21 / 562 trading dates
+Reserved OOS window: 2025-05-22 through 2026-05-29 / 242 trading dates
+Canonical grid rows: 24
+Valid IS rows: 0
+Failed IS rows: 24
+Maximum evaluated picks: 1445
+Maximum days covered: 513
+Canonical artifact hash: f4ec8464f08515b31d7d26636851acea930307d6
+```
+
+### Contract impact
+
+- `WL-CONTRACT-006`: deterministic scoring/runtime execution is proven, but R1 entry quality is insufficient; remains `PARTIAL`.
+- `WL-CONTRACT-007`: all R1 param snapshots and grid identities are traceable through full IS runtime; DONE for this scope, not `LOCKED`.
+- `WL-CONTRACT-008`: trade-level trigger/executed-price evidence and aggregate gate failures are explainable; DONE for corrected IS evidence scope, not `LOCKED`.
+- `WL-CONTRACT-009`: IS-only calibration and no best-of-failed behavior are proven in supported runtime; OOS no-retune runtime proof remains absent.
+- `WL-CONTRACT-010`: one deterministic corrected artifact exists; contract remains `PARTIAL` because no OOS artifact/hash pair exists.
+- `WL-CONTRACT-011`: execution risk rules are validated, but every R1 row fails at least one canonical quality gate; remains `PARTIAL`.
+- `WL-CONTRACT-013`: official IS failure evidence exists; OOS evidence is correctly absent.
+- `WL-CONTRACT-014`: final R1 result, validation, artifact hash, and next-session boundary are synchronized.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`.
+
+No contract is promoted to `LOCKED`. No acceptance gate was weakened. No OOS data was used for R1 selection. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
+
+Next required work:
+`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`.

@@ -24,6 +24,13 @@ class WatchlistBacktestPublishedPriceRuntimeService
         $this->artifacts = $artifacts ?: new WatchlistBacktestRuntimeArtifactService();
     }
 
+    public function evaluateWindow(string $fromDate, string $toDate, array $options = []): array
+    {
+        return $this->execute($fromDate, $toDate, '', array_merge($options, [
+            'skip_artifact_write' => true,
+        ]));
+    }
+
     public function execute(
         string $fromDate,
         string $toDate,
@@ -44,6 +51,7 @@ class WatchlistBacktestPublishedPriceRuntimeService
             $runtimeParamset,
             is_array($options['capital_input'] ?? null) ? $options['capital_input'] : []
         );
+        $backtestPayload = $this->bindRuntimeMetadataBeforeFreeze($backtestPayload, $runtimeParamset);
         $frozenStrategyHash = $this->stableHash($backtestPayload);
 
         if (! ($backtestPayload['is_ready'] ?? false)) {
@@ -58,18 +66,23 @@ class WatchlistBacktestPublishedPriceRuntimeService
             );
         }
 
-        $tickerCodes = $this->tickerCodes($backtestPayload['trades'] ?? []);
-        $requiredPriceDates = $this->requiredPriceDates(
-            $calendar['trade_dates'],
+        $requiredPriceTickerMap = $this->requiredPriceTickerMap(
+            $backtestPayload['trades'] ?? [],
             $calendar['calendar_dates'],
             5
         );
+        $requiredPriceDates = array_keys($requiredPriceTickerMap);
+        $tickerCodes = $this->tickerCodesFromDateMap($requiredPriceTickerMap);
 
         $priceFromDate = $requiredPriceDates[0] ?? $fromDate;
         $priceToDate = $requiredPriceDates[count($requiredPriceDates) - 1] ?? $toDate;
         $priceRead = $tickerCodes === []
             ? $this->emptyPriceRead($priceFromDate, $priceToDate)
-            : $this->priceSeries->readPublishedSeries($priceFromDate, $priceToDate, $tickerCodes, $requiredPriceDates);
+            : $this->priceSeries->readPublishedSeriesForDateTickerMap(
+                $priceFromDate,
+                $priceToDate,
+                $requiredPriceTickerMap
+            );
 
         if (! ($priceRead['is_ready'] ?? false)) {
             return $this->blocked(
@@ -106,7 +119,7 @@ class WatchlistBacktestPublishedPriceRuntimeService
                     'publication_manifest' => $priceRead['publication_manifest'] ?? [],
                     'runtime_execution' => [
                         'executed_at' => $executedAt,
-                        'output_path' => $outputPath,
+                        'output_path' => ($options['skip_artifact_write'] ?? false) ? null : $outputPath,
                         'trade_candidates_frozen_before_price_read' => true,
                         'future_price_used_for_evaluation_only' => true,
                         'strategy_payload_hash' => $frozenStrategyHash,
@@ -114,6 +127,8 @@ class WatchlistBacktestPublishedPriceRuntimeService
                         'strategy_payload_immutable' => $frozenStrategyHash === $this->stableHash($backtestPayload),
                         'ticker_count' => count($tickerCodes),
                         'required_price_date_count' => count($requiredPriceDates),
+                        'requested_ticker_date_pair_count' => array_sum(array_map('count', $requiredPriceTickerMap)),
+                        'targeted_date_ticker_read' => true,
                         'trade_candidate_count' => count($backtestPayload['trades'] ?? []),
                     ],
                 ],
@@ -151,6 +166,22 @@ class WatchlistBacktestPublishedPriceRuntimeService
                 'artifact' => $artifact,
                 'strategy_payload_hash' => $frozenStrategyHash,
             ]);
+        }
+
+        if (($options['skip_artifact_write'] ?? false) === true) {
+            return $this->readyResult(
+                $calendar,
+                $backtestPayload,
+                $priceRead,
+                $artifact,
+                [
+                    'ready' => true,
+                    'is_ready' => true,
+                    'status' => 'SKIPPED_IN_MEMORY_EVALUATION',
+                    'path' => null,
+                ],
+                $frozenStrategyHash
+            );
         }
 
         if (is_file($outputPath)) {
@@ -196,6 +227,24 @@ class WatchlistBacktestPublishedPriceRuntimeService
             ]);
         }
 
+        return $this->readyResult(
+            $calendar,
+            $backtestPayload,
+            $priceRead,
+            $artifact,
+            $write,
+            $frozenStrategyHash
+        );
+    }
+
+    private function readyResult(
+        array $calendar,
+        array $backtestPayload,
+        array $priceRead,
+        array $artifact,
+        array $write,
+        string $frozenStrategyHash
+    ): array {
         return [
             'ready' => true,
             'is_ready' => true,
@@ -219,6 +268,70 @@ class WatchlistBacktestPublishedPriceRuntimeService
         ];
     }
 
+    private function bindRuntimeMetadataBeforeFreeze(array $payload, array $runtimeParamset): array
+    {
+        $snapshot = is_array($payload['paramset_snapshot'] ?? null)
+            ? $payload['paramset_snapshot']
+            : [];
+        $snapshotBacktest = is_array($snapshot['backtest'] ?? null)
+            ? $snapshot['backtest']
+            : [];
+        $runtimeBacktest = is_array($runtimeParamset['backtest'] ?? null)
+            ? $runtimeParamset['backtest']
+            : [];
+
+        foreach ([
+            'engine_mode',
+            'pricing_model',
+            'price_read_mode',
+            'holding_days',
+            'tradable_bar_rule',
+            'min_tradable_volume',
+            'source_price_mode',
+            'gap_fill_rule',
+            'price_fraction_rule',
+            'price_fraction_reference',
+            'price_normalization_rule',
+        ] as $key) {
+            if (array_key_exists($key, $runtimeBacktest)) {
+                $snapshotBacktest[$key] = $runtimeBacktest[$key];
+            }
+        }
+        $snapshot['backtest'] = $snapshotBacktest;
+        $payload['paramset_snapshot'] = $snapshot;
+
+        if (! isset($payload['meta']) || ! is_array($payload['meta'])) {
+            $payload['meta'] = [];
+        }
+        $payload['meta']['paramset_snapshot'] = $snapshot;
+
+        foreach (($payload['trades'] ?? []) as $index => $trade) {
+            if (! is_array($trade)) {
+                continue;
+            }
+            if (array_key_exists('pricing_model', $runtimeBacktest)) {
+                $trade['pricing_model'] = $runtimeBacktest['pricing_model'];
+            }
+            if (array_key_exists('price_read_mode', $runtimeBacktest)) {
+                $trade['price_read_mode'] = $runtimeBacktest['price_read_mode'];
+            }
+            foreach ([
+                'source_price_mode',
+                'gap_fill_rule',
+                'price_fraction_rule',
+                'price_fraction_reference',
+                'price_normalization_rule',
+            ] as $key) {
+                if (array_key_exists($key, $runtimeBacktest)) {
+                    $trade[$key] = $runtimeBacktest[$key];
+                }
+            }
+            $payload['trades'][$index] = $trade;
+        }
+
+        return $payload;
+    }
+
     private function runtimeParamset(array $paramset): array
     {
         $defaults = WatchlistBacktestStrategyService::defaultParamset();
@@ -226,44 +339,62 @@ class WatchlistBacktestPublishedPriceRuntimeService
         $backtest = is_array($resolved['backtest'] ?? null) ? $resolved['backtest'] : [];
         $resolved['backtest'] = array_replace_recursive($backtest, [
             'engine_mode' => 'PLAN_RECOMMENDATION_PUBLISHED_PRICE_REPLAY',
-            'pricing_model' => 'PUBLISHED_EOD_OHLC_EXACT_DATE',
+            'pricing_model' => 'PUBLISHED_EOD_OHLCV_CURRENT_READABLE_EXACT_DATE',
+            'price_read_mode' => 'TARGETED_DATE_TICKER_MAP',
             'holding_days' => 5,
             'tradable_bar_rule' => 'POSITIVE_VOLUME_REQUIRED',
             'min_tradable_volume' => 1,
+            'source_price_mode' => 'RAW_TRADABLE_OHLC_REQUIRED',
+            'gap_fill_rule' => 'OPEN_IF_GAP_THROUGH_TRIGGER',
+            'price_fraction_rule' => 'IDX_EQUITY_PRICE_BANDS',
+            'price_fraction_reference' => 'THEORETICAL_LEVEL',
+            'price_normalization_rule' => 'CONSERVATIVE_STOP_FLOOR_TARGET_CEIL',
         ]);
 
         return $resolved;
     }
 
-    private function requiredPriceDates(array $replayDates, array $calendarDates, int $holdingDays): array
+    private function requiredPriceTickerMap(array $trades, array $calendarDates, int $holdingDays): array
     {
         $required = [];
         $calendarIndex = array_flip($calendarDates);
 
-        foreach ($replayDates as $tradeDate) {
-            if (! isset($calendarIndex[$tradeDate])) {
+        foreach ($trades as $trade) {
+            $tradeDate = trim((string) ($trade['trade_date'] ?? ''));
+            $tickerCode = strtoupper(trim((string) ($trade['ticker'] ?? $trade['ticker_code'] ?? '')));
+            if ($tradeDate === '' || $tickerCode === '' || ! isset($calendarIndex[$tradeDate])) {
                 continue;
             }
+
             $start = (int) $calendarIndex[$tradeDate] + 1;
             for ($offset = 0; $offset < $holdingDays; $offset++) {
-                if (isset($calendarDates[$start + $offset])) {
-                    $required[$calendarDates[$start + $offset]] = $calendarDates[$start + $offset];
+                if (! isset($calendarDates[$start + $offset])) {
+                    continue;
                 }
+                $priceDate = (string) $calendarDates[$start + $offset];
+                $required[$priceDate][$tickerCode] = $tickerCode;
             }
         }
 
         ksort($required, SORT_STRING);
+        foreach ($required as &$codes) {
+            ksort($codes, SORT_STRING);
+            $codes = array_values($codes);
+        }
+        unset($codes);
 
-        return array_values($required);
+        return $required;
     }
 
-    private function tickerCodes(array $trades): array
+    private function tickerCodesFromDateMap(array $tickerCodesByDate): array
     {
         $codes = [];
-        foreach ($trades as $trade) {
-            $code = strtoupper(trim((string) ($trade['ticker'] ?? $trade['ticker_code'] ?? '')));
-            if ($code !== '') {
-                $codes[$code] = $code;
+        foreach ($tickerCodesByDate as $dateCodes) {
+            foreach ($dateCodes as $code) {
+                $normalized = strtoupper(trim((string) $code));
+                if ($normalized !== '') {
+                    $codes[$normalized] = $normalized;
+                }
             }
         }
         ksort($codes, SORT_STRING);
@@ -285,6 +416,7 @@ class WatchlistBacktestPublishedPriceRuntimeService
             'publication_manifest' => [],
             'price_series_manifest' => [
                 'ticker_count' => 0,
+                'requested_ticker_date_pair_count' => 0,
                 'required_price_date_count' => 0,
                 'resolved_publication_date_count' => 0,
                 'resolved_price_date_count' => 0,
@@ -293,6 +425,7 @@ class WatchlistBacktestPublishedPriceRuntimeService
                 'missing_price_dates' => [],
                 'missing_price_rows' => [],
                 'source_payload_hash' => $this->stableHash([]),
+                'targeted_date_ticker_read' => true,
                 'exact_date_resolution_only' => true,
                 'no_latest_fallback' => true,
                 'no_max_trade_date' => true,

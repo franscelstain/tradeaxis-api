@@ -44,6 +44,15 @@ class WatchlistBacktestPublishedPriceRuntimeServiceTest extends TestCase
         $this->assertTrue($first['artifact']['backtest_contract']['official_trading_calendar_consumed']);
         $this->assertFalse($first['artifact']['backtest_contract']['foundation_only']);
         $this->assertSame(5, $first['artifact']['price_series_manifest']['required_price_date_count']);
+        $this->assertTrue($first['artifact']['price_series_manifest']['targeted_date_ticker_read']);
+        $this->assertSame(5, $first['artifact']['price_series_manifest']['requested_ticker_date_pair_count']);
+        $this->assertSame('PUBLISHED_EOD_OHLCV_CURRENT_READABLE_EXACT_DATE', $first['artifact']['paramset_snapshot']['backtest']['pricing_model']);
+        $this->assertSame('TARGETED_DATE_TICKER_MAP', $first['artifact']['paramset_snapshot']['backtest']['price_read_mode']);
+        $this->assertSame('RAW_TRADABLE_OHLC_REQUIRED', $first['artifact']['paramset_snapshot']['backtest']['source_price_mode']);
+        $this->assertSame('OPEN_IF_GAP_THROUGH_TRIGGER', $first['artifact']['paramset_snapshot']['backtest']['gap_fill_rule']);
+        $this->assertSame('IDX_EQUITY_PRICE_BANDS', $first['artifact']['paramset_snapshot']['backtest']['price_fraction_rule']);
+        $this->assertSame('THEORETICAL_LEVEL', $first['artifact']['paramset_snapshot']['backtest']['price_fraction_reference']);
+        $this->assertSame('CONSERVATIVE_STOP_FLOOR_TARGET_CEIL', $first['artifact']['paramset_snapshot']['backtest']['price_normalization_rule']);
         $this->assertSame(1, $first['artifact']['metrics']['canonical_eval_metrics']['days_covered']);
         $this->assertSame(1, $first['artifact']['metrics']['canonical_eval_metrics']['picks_count']);
         $this->assertTrue($first['metric_thresholds_resolved']);
@@ -52,6 +61,26 @@ class WatchlistBacktestPublishedPriceRuntimeServiceTest extends TestCase
 
         @unlink($firstPath);
         @unlink($secondPath);
+    }
+
+    public function test_internal_evaluate_window_keeps_full_evidence_in_memory_without_json_temp_write(): void
+    {
+        $service = new WatchlistBacktestPublishedPriceRuntimeService(
+            $this->fakeStrategy($this->backtestPayload()),
+            $this->fakeCalendar($this->calendarPayload()),
+            $this->fakePrices($this->pricePayload()),
+            new WatchlistBacktestRuntimeArtifactService()
+        );
+
+        $result = $service->evaluateWindow('2026-05-19', '2026-05-19', [
+            'executed_at' => '2026-06-09T01:00:00+07:00',
+        ]);
+
+        $this->assertTrue($result['is_ready']);
+        $this->assertSame('SKIPPED_IN_MEMORY_EVALUATION', $result['write']['status']);
+        $this->assertNull($result['write']['path']);
+        $this->assertNull($result['artifact']['runtime_execution']['output_path']);
+        $this->assertSame(1, $result['evaluated_trade_count']);
     }
 
     public function test_runtime_binds_default_eval_thresholds_and_positive_volume_rule_before_strategy_replay(): void
@@ -85,7 +114,17 @@ class WatchlistBacktestPublishedPriceRuntimeServiceTest extends TestCase
             new WatchlistBacktestRuntimeArtifactService()
         );
 
-        $result = $service->execute('2026-05-19', '2026-05-19', $path);
+        $result = $service->execute('2026-05-19', '2026-05-19', $path, [
+            'paramset' => [
+                'backtest' => [
+                    'source_price_mode' => 'CALLER_OVERRIDE_NOT_ALLOWED',
+                    'gap_fill_rule' => 'CALLER_OVERRIDE_NOT_ALLOWED',
+                    'price_fraction_rule' => 'CALLER_OVERRIDE_NOT_ALLOWED',
+                    'price_fraction_reference' => 'CALLER_OVERRIDE_NOT_ALLOWED',
+                    'price_normalization_rule' => 'CALLER_OVERRIDE_NOT_ALLOWED',
+                ],
+            ],
+        ]);
 
         $this->assertTrue($result['is_ready']);
         $this->assertSame('WS_ACTIVE_BOOTSTRAP', $strategy->receivedParamset['paramset_code']);
@@ -96,6 +135,15 @@ class WatchlistBacktestPublishedPriceRuntimeServiceTest extends TestCase
         $this->assertSame(0.45, $strategy->receivedParamset['eval']['min_month_win_rate_min']['value']);
         $this->assertSame('POSITIVE_VOLUME_REQUIRED', $strategy->receivedParamset['backtest']['tradable_bar_rule']);
         $this->assertSame(1, $strategy->receivedParamset['backtest']['min_tradable_volume']);
+        $this->assertSame('PUBLISHED_EOD_OHLCV_CURRENT_READABLE_EXACT_DATE', $strategy->receivedParamset['backtest']['pricing_model']);
+        $this->assertSame('TARGETED_DATE_TICKER_MAP', $strategy->receivedParamset['backtest']['price_read_mode']);
+        $this->assertSame('RAW_TRADABLE_OHLC_REQUIRED', $strategy->receivedParamset['backtest']['source_price_mode']);
+        $this->assertSame('OPEN_IF_GAP_THROUGH_TRIGGER', $strategy->receivedParamset['backtest']['gap_fill_rule']);
+        $this->assertSame('IDX_EQUITY_PRICE_BANDS', $strategy->receivedParamset['backtest']['price_fraction_rule']);
+        $this->assertSame('THEORETICAL_LEVEL', $strategy->receivedParamset['backtest']['price_fraction_reference']);
+        $this->assertSame('CONSERVATIVE_STOP_FLOOR_TARGET_CEIL', $strategy->receivedParamset['backtest']['price_normalization_rule']);
+        $this->assertSame(1.5, $strategy->receivedParamset['risk']['stop_atr_mult']);
+        $this->assertSame(1.5, $strategy->receivedParamset['risk']['min_rr']);
 
         @unlink($path);
     }
@@ -261,6 +309,14 @@ class WatchlistBacktestPublishedPriceRuntimeServiceTest extends TestCase
             ): array {
                 return $this->payload;
             }
+
+            public function readPublishedSeriesForDateTickerMap(
+                string $fromDate,
+                string $toDate,
+                array $tickerCodesByTradeDate
+            ): array {
+                return $this->payload;
+            }
         };
     }
 
@@ -324,6 +380,7 @@ class WatchlistBacktestPublishedPriceRuntimeServiceTest extends TestCase
             }, array_keys($bars['AAA']), array_keys(array_keys($bars['AAA'])))),
             'price_series_manifest' => [
                 'ticker_count' => 1,
+                'requested_ticker_date_pair_count' => 5,
                 'required_price_date_count' => 5,
                 'resolved_price_date_count' => 5,
                 'resolved_price_row_count' => 5,
@@ -331,6 +388,7 @@ class WatchlistBacktestPublishedPriceRuntimeServiceTest extends TestCase
                 'missing_price_dates' => [],
                 'missing_price_rows' => [],
                 'source_payload_hash' => str_repeat('b', 40),
+                'targeted_date_ticker_read' => true,
                 'exact_date_resolution_only' => true,
                 'no_latest_fallback' => true,
                 'no_max_trade_date' => true,
@@ -377,6 +435,8 @@ class WatchlistBacktestPublishedPriceRuntimeServiceTest extends TestCase
                     'min_month_avg_ret_net_min' => -0.01,
                 ],
                 'backtest' => [
+                    'pricing_model' => 'FOUNDATION_ONLY_PRICE_SERIES_NOT_CONSUMED',
+                    'price_read_mode' => 'UNBOUND',
                     'holding_days' => 5,
                     'fee_buy_idr' => 2500,
                     'fee_sell_idr' => 2500,

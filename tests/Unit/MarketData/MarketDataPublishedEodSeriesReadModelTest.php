@@ -122,6 +122,40 @@ class MarketDataPublishedEodSeriesReadModelTest extends TestCase
         $this->assertFalse($result['diagnostics'][0]['fatal']);
     }
 
+    public function test_targeted_date_ticker_map_reads_only_requested_pairs(): void
+    {
+        $this->seedTicker(2, 'TLKM', 'Telkom Indonesia');
+        foreach ([
+            ['2026-05-19', 11, 21, 1],
+            ['2026-05-20', 12, 22, 1],
+        ] as $row) {
+            [$date, $runId, $publicationId, $version] = $row;
+            $this->seedReadablePublication($date, $runId, $publicationId, $version);
+        }
+        $this->seedBar('2026-05-19', 1, 11, 21, 9000, 123456, 8995);
+        $this->seedBar('2026-05-19', 2, 11, 21, 3000, 123456, 2995);
+        $this->seedBar('2026-05-20', 1, 12, 22, 9100, 123456, 9095);
+        $this->seedBar('2026-05-20', 2, 12, 22, 3100, 123456, 3095);
+
+        $result = (new MarketDataPublishedEodSeriesReadService())->readPublishedSeriesForDateTickerMap(
+            '2026-05-19',
+            '2026-05-20',
+            [
+                '2026-05-19' => ['BBCA'],
+                '2026-05-20' => ['TLKM'],
+            ]
+        );
+
+        $this->assertTrue($result['is_ready']);
+        $this->assertTrue($result['price_series_manifest']['targeted_date_ticker_read']);
+        $this->assertSame(2, $result['price_series_manifest']['requested_ticker_date_pair_count']);
+        $this->assertSame(2, $result['price_series_manifest']['resolved_price_row_count']);
+        $this->assertArrayHasKey('2026-05-19', $result['series_by_ticker']['BBCA']);
+        $this->assertArrayNotHasKey('2026-05-20', $result['series_by_ticker']['BBCA']);
+        $this->assertArrayHasKey('2026-05-20', $result['series_by_ticker']['TLKM']);
+        $this->assertArrayNotHasKey('2026-05-19', $result['series_by_ticker']['TLKM']);
+    }
+
     public function test_published_series_does_not_leak_rows_from_non_current_publication(): void
     {
         $this->seedReadablePublication('2026-05-19', 99, 999, 1, [

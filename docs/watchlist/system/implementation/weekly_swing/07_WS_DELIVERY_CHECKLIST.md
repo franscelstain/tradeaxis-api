@@ -108,3 +108,14 @@ Checklist delivery dianggap lolos hanya bila:
 - [ ] tidak ada code path yang memakai recommendation sebagai syarat eligibility `CONFIRM` pada candidate `PLAN`
 - [ ] tidak ada leakage ke portfolio
 - [ ] tidak ada leakage ke execution
+
+## OOS runtime closure delivery
+
+- migrate schema, including stop/RR grid columns and versioned IS-eval identity;
+- seed the canonical deterministic grid and verify more than one row;
+- run PHPUnit regressions;
+- execute one explicit chronological window;
+- inspect IS failure summaries and extreme trade evidence;
+- run a second identical proof only after OOS executes;
+- verify idempotent persistence and equal canonical artifact hashes;
+- keep `production_ready=0` and do not promote any paramset.

@@ -61,6 +61,11 @@ Checklist ini menetapkan acceptance minimum untuk artefak dan boundary Weekly Sw
 - [ ] bar `volume <= 0` atau volume tidak tersedia tidak digunakan sebagai entry, TP, SL, atau time-exit fill
 - [ ] zero-volume entry menghasilkan `BT_SKIP_NO_TRADABLE_ENTRY` dan `ret_net = NULL`
 - [ ] zero-volume final exit menghasilkan `BT_SKIP_NO_TRADABLE_EXIT` dan `ret_net = NULL`
+- [ ] gap di bawah stop memakai executable open, bukan theoretical stop
+- [ ] gap di atas target memakai executable open, bukan theoretical target
+- [ ] intraday stop/target memakai normalized IDX price fraction
+- [ ] artifact membedakan `trigger_price` dan `executed_price`
+- [ ] adjusted-looking/fractional OHLC entry/exit fail closed dengan `ret_net = NULL`
 - [ ] canonical `eval` thresholds tersedia pada `paramset_snapshot`
 - [ ] threshold unresolved memblokir artifact export
 - [ ] input identik menghasilkan canonical `validation.artifact_hash` identik
@@ -74,3 +79,24 @@ Checklist ini menetapkan acceptance minimum untuk artefak dan boundary Weekly Sw
 4. CONFIRM eligibility **MUST** berasal dari candidate PLAN membership.
 5. Ticker non-recommended **MAY** tetap memiliki CONFIRM yang valid jika masih merupakan candidate PLAN.
 6. CONFIRM **MUST NOT** mengubah recommendation payload normatif.
+
+## OOS runtime gap-closure test additions
+
+- canonical grid catalog is non-empty, deterministic, duplicate-free, and ordered by persisted `param_id ASC`;
+- every grid row has valid units, positive targets, `stop_atr_mult > 0`, `min_rr > 0`, and scoring weights summing to `1.0`;
+- grid seed rerun is idempotent and duplicate database payloads fail closed;
+- existing grid schema without stop/RR is migrated without deleting rows;
+- `watchlist_bt_eval` identity includes `eval_model` and `paramset_hash`, preserving legacy evidence across semantic reruns;
+- published-price runtime reads exact candidate date/ticker pairs instead of a full date/ticker cartesian product;
+- IS grid evaluation stays in memory and writes no temporary JSON per parameter;
+- ATR/RR fallback levels are applied when PLAN has no explicit stop/target and carry trade evidence;
+- OOS proof remains one explicit window; internal bounded reads do not change split or selection;
+- worst/best trade evidence contains prices, dates, level source, returns, volumes, and publication lineage where available.
+
+## OOS grid paramset compatibility
+
+- [ ] Every canonical `watchlist_bt_param_grid` row resolves into a cross-field valid runtime paramset.
+- [ ] `min_atr14_pct <= atr_ideal_low <= atr_ideal_high <= max_atr14_pct` for all rows.
+- [ ] Strict max-ATR rows are not rejected only because active default ideal-band values are wider.
+- [ ] `bt_grid_resolution.risk_band_rule` is present and deterministic.
+- [ ] The projection uses no OOS metrics or price outcomes.

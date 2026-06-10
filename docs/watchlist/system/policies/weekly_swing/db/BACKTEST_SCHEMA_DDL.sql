@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_param_grid (
   w_volume DECIMAL(10,6) NOT NULL,
   w_breakout DECIMAL(10,6) NOT NULL,
   w_risk DECIMAL(10,6) NOT NULL,
+  -- deterministic exit-risk calibration
+  stop_atr_mult DECIMAL(10,6) NOT NULL,
+  min_rr DECIMAL(10,6) NOT NULL,
   -- picks sizing
   top_picks_target INT NOT NULL,
   secondary_target INT NOT NULL,
@@ -43,13 +46,31 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_param_grid (
   notes VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (param_id),
-  KEY IDX_bt_grid_policy (policy_code, param_id)
+  KEY IDX_bt_grid_policy (policy_code, param_id),
+  UNIQUE KEY UQ_bt_grid_policy_payload (
+    policy_code,
+    min_dv20_idr,
+    max_atr14_pct,
+    min_vol_ratio,
+    w_momentum,
+    w_volume,
+    w_breakout,
+    w_risk,
+    stop_atr_mult,
+    min_rr,
+    top_picks_target,
+    secondary_target,
+    top_min_score_q,
+    secondary_min_score_q
+  )
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS watchlist_bt_eval (
   eval_id BIGINT NOT NULL AUTO_INCREMENT,
   policy_code VARCHAR(16) NOT NULL,
   param_id INT NOT NULL,
+  eval_model VARCHAR(96) NOT NULL,
+  paramset_hash CHAR(40) NOT NULL,
 
   -- evaluation window metadata
   from_date DATE NOT NULL,
@@ -86,7 +107,7 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_eval (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (eval_id),
-  UNIQUE KEY UQ_bt_eval_policy_param_window (policy_code, param_id, from_date, to_date),
+  UNIQUE KEY UQ_bt_eval_policy_param_window (policy_code, param_id, eval_model, paramset_hash, from_date, to_date),
 
   -- ranking index: keep existing + extend for robust ranking
   KEY IDX_bt_eval_rank (policy_code, avg_ret_net_top, median_ret_net_top, month_win_rate_min, p25_ret_net_top, win_rate_top),
@@ -100,6 +121,7 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_oos_eval_ws (
   policy_version VARCHAR(32) NOT NULL,
   eval_model VARCHAR(96) NOT NULL,
   param_id_best_is INT NOT NULL,
+  is_eval_id BIGINT NOT NULL,
 
   -- in-sample window (where it was selected)
   from_date_is DATE NOT NULL,
@@ -122,13 +144,14 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_oos_eval_ws (
 
   PRIMARY KEY (oos_id),  
   UNIQUE KEY UQ_bt_oos_policy_param_windows (
-    policy_code, policy_version, eval_model, param_id_best_is,
+    policy_code, policy_version, eval_model, param_id_best_is, is_eval_id,
     from_date_is, to_date_is, from_date_oos, to_date_oos
   ),
   KEY IDX_bt_oos_rank (policy_code, avg_ret_net_top_oos, win_rate_top_oos, median_ret_net_top_oos),
   
 
-  CONSTRAINT FK_bt_oos_param_best_is FOREIGN KEY (param_id_best_is) REFERENCES watchlist_bt_param_grid(param_id)
+  CONSTRAINT FK_bt_oos_param_best_is FOREIGN KEY (param_id_best_is) REFERENCES watchlist_bt_param_grid(param_id),
+  CONSTRAINT FK_bt_oos_is_eval FOREIGN KEY (is_eval_id) REFERENCES watchlist_bt_eval(eval_id)
 ) ENGINE=InnoDB;
 
 -- Picks yang dihasilkan per asof_eod_date dan param_id (untuk audit dan analisis detail)

@@ -276,7 +276,19 @@ INSERT INTO watchlist_reason_codes (policy_code, reason_code, scope, severity, s
  'Published entry bar exists but volume is not positive; the trade has no executable entry fill and is skipped.'),
 ('WS','BT_SKIP_NO_TRADABLE_EXIT','BT','WARN','bt_skip_no_tradable_exit',
  'Bar exit published tersedia tetapi volume tidak positif; trade tidak memiliki fill exit executable dan di-skip.',
- 'Published exit bar exists but volume is not positive; the trade has no executable exit fill and is skipped.');
+ 'Published exit bar exists but volume is not positive; the trade has no executable exit fill and is skipped.'),
+('WS','BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY','BT','WARN','bt_skip_non_executable_price_entry',
+ 'OHLC entry tidak sesuai fraksi harga IDX executable; trade di-skip tanpa return sintetis.',
+ 'Entry OHLC does not conform to an executable IDX price fraction; the trade is skipped without a synthetic return.'),
+('WS','BT_SKIP_NON_EXECUTABLE_PRICE_EXIT','BT','WARN','bt_skip_non_executable_price_exit',
+ 'OHLC exit tidak sesuai fraksi harga IDX executable; trade di-skip tanpa return sintetis.',
+ 'Exit OHLC does not conform to an executable IDX price fraction; the trade is skipped without a synthetic return.'),
+('WS','BT_GAP_THROUGH_STOP_AT_OPEN','BT','INFO','bt_gap_through_stop_at_open',
+ 'Opening price melewati stop trigger; fill memakai executable open.',
+ 'The opening price gaps through the stop trigger; the fill uses the executable open.'),
+('WS','BT_GAP_THROUGH_TARGET_AT_OPEN','BT','INFO','bt_gap_through_target_at_open',
+ 'Opening price melewati target trigger; fill memakai executable open.',
+ 'The opening price gaps through the target trigger; the fill uses the executable open.');
 
 -- Recommendation reason codes
 INSERT INTO reason_codes(code) VALUES

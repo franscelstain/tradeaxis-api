@@ -55,7 +55,7 @@ Fee & slippage wajib eksplisit dan konsisten.
 
 - Trade hanya masuk `picks_count` dan agregasi return bila entry serta exit memenuhi tradable-bar rule file 12.
 - Bar published dengan `volume <= 0` atau volume tidak tersedia tidak boleh digunakan sebagai fill entry/exit, tidak boleh memicu TP/SL, dan tidak boleh menghasilkan return nol sintetis.
-- Trade yang di-skip karena `BT_SKIP_NO_TRADABLE_ENTRY` atau `BT_SKIP_NO_TRADABLE_EXIT` tetap masuk diagnostic counters, tetapi tidak masuk canonical return distribution.
+- Trade yang di-skip karena `BT_SKIP_NO_TRADABLE_ENTRY`, `BT_SKIP_NO_TRADABLE_EXIT`, `BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY`, atau `BT_SKIP_NON_EXECUTABLE_PRICE_EXIT` tetap masuk diagnostic counters, tetapi tidak masuk canonical return distribution.
 
 ---
 
@@ -156,6 +156,9 @@ Urutan ranking default:
 3) Tie-breaker: lebih tinggi `median_ret_net_top`
 4) Tie-breaker: lebih tinggi `month_win_rate_min`
 5) Tie-breaker: lebih kecil downside (`p25_ret_net_top` lebih tinggi)
+6) Final deterministic tie-break: `param_id` paling kecil.
+
+Urutan database yang tidak dijamin tidak boleh dipakai sebagai tie-break implisit.
 
 ---
 

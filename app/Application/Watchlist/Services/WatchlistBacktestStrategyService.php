@@ -59,12 +59,16 @@ class WatchlistBacktestStrategyService
                 'change_triggers' => ['Evaluation period definition changes', 'Risk tolerance changes'],
             ],
         ],
+        'risk' => [
+            'stop_atr_mult' => 1.5,
+            'min_rr' => 1.5,
+        ],
         'backtest' => [
             'engine_mode' => 'PLAN_RECOMMENDATION_REPLAY_FOUNDATION',
             'replay_mode' => 'EXPLICIT_TRADE_DATE_WINDOW',
             'entry_model' => 'D_PLUS_1_OPEN_DOCUMENTED',
             'exit_model' => 'WEEKLY_SWING_MAX_5_TRADING_DAYS_DOCUMENTED',
-            'pricing_model' => 'FOUNDATION_ONLY_PRICE_SERIES_NOT_CONSUMED',
+            'pricing_model' => 'PUBLISHED_EOD_OHLCV_REQUIRED_AT_RUNTIME',
             'fee_model' => 'IDR_FIXED',
             'fee_buy_idr' => 2500.0,
             'fee_sell_idr' => 2500.0,
@@ -75,6 +79,11 @@ class WatchlistBacktestStrategyService
             'holding_days' => 5,
             'tradable_bar_rule' => 'POSITIVE_VOLUME_REQUIRED',
             'min_tradable_volume' => 1,
+            'source_price_mode' => 'RAW_TRADABLE_OHLC_REQUIRED',
+            'gap_fill_rule' => 'OPEN_IF_GAP_THROUGH_TRIGGER',
+            'price_fraction_rule' => 'IDX_EQUITY_PRICE_BANDS',
+            'price_fraction_reference' => 'THEORETICAL_LEVEL',
+            'price_normalization_rule' => 'CONSERVATIVE_STOP_FLOOR_TARGET_CEIL',
             'sort_keys' => [
                 'trade_date_asc',
                 'recommendation_rank_asc',
@@ -290,11 +299,21 @@ class WatchlistBacktestStrategyService
             'plan_rank' => $this->intOrNull($recommendationItem['plan_rank'] ?? $planReference['plan_rank'] ?? null),
             'recommendation_rank' => $this->intOrNull($recommendationItem['recommendation_rank'] ?? null),
             'recommendation_score' => $this->floatOrNull($recommendationItem['recommendation_score'] ?? null),
+            'atr14_pct' => $this->floatOrNull($planReference['atr14_pct'] ?? null),
+            'stop_price' => $this->floatOrNull($planReference['stop_price'] ?? null),
+            'target_price' => $this->floatOrNull($planReference['target_price'] ?? null),
+            'stop_atr_mult' => $this->floatOrNull($paramset['risk']['stop_atr_mult'] ?? null),
+            'min_rr' => $this->floatOrNull($paramset['risk']['min_rr'] ?? null),
             'confirm_state' => $confirmItem['confirm_state'] ?? 'NO_DATA',
             'trade_state' => 'EVALUATION_CANDIDATE',
             'entry_model' => $paramset['backtest']['entry_model'],
             'exit_model' => $paramset['backtest']['exit_model'],
             'pricing_model' => $paramset['backtest']['pricing_model'],
+            'source_price_mode' => $paramset['backtest']['source_price_mode'],
+            'gap_fill_rule' => $paramset['backtest']['gap_fill_rule'],
+            'price_fraction_rule' => $paramset['backtest']['price_fraction_rule'],
+            'price_fraction_reference' => $paramset['backtest']['price_fraction_reference'],
+            'price_normalization_rule' => $paramset['backtest']['price_normalization_rule'],
             'reason_codes' => $this->uniqueReasonCodes($reasonCodes),
             'source_reference' => [
                 'plan_hash' => $planOutput['plan_hash'] ?? null,
@@ -576,20 +595,23 @@ class WatchlistBacktestStrategyService
         $recommendationDefaults = WatchlistRecommendationService::defaultParamset();
         $backtestInput = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
         $recommendationInput = is_array($paramset['recommendation'] ?? null) ? $paramset['recommendation'] : [];
+        $riskInput = is_array($paramset['risk'] ?? null) ? $paramset['risk'] : [];
         $evalInput = is_array($paramset['eval'] ?? null) ? $paramset['eval'] : [];
 
-        return [
-            'policy_code' => (string) ($paramset['policy_code'] ?? $defaults['policy_code']),
-            'policy_version' => (string) ($paramset['policy_version'] ?? $defaults['policy_version']),
-            'schema_version' => (string) ($paramset['schema_version'] ?? $defaults['schema_version']),
-            'paramset_code' => (string) ($paramset['paramset_code'] ?? $defaults['paramset_code']),
-            'backtest' => array_merge($defaults['backtest'], $backtestInput),
-            'recommendation' => array_replace_recursive(
-                $recommendationDefaults['recommendation'],
-                $recommendationInput
-            ),
-            'eval' => array_replace_recursive($defaults['eval'], $evalInput),
-        ];
+        $resolved = $paramset;
+        $resolved['policy_code'] = (string) ($paramset['policy_code'] ?? $defaults['policy_code']);
+        $resolved['policy_version'] = (string) ($paramset['policy_version'] ?? $defaults['policy_version']);
+        $resolved['schema_version'] = (string) ($paramset['schema_version'] ?? $defaults['schema_version']);
+        $resolved['paramset_code'] = (string) ($paramset['paramset_code'] ?? $defaults['paramset_code']);
+        $resolved['backtest'] = array_merge($defaults['backtest'], $backtestInput);
+        $resolved['risk'] = array_replace_recursive($defaults['risk'], $riskInput);
+        $resolved['recommendation'] = array_replace_recursive(
+            $recommendationDefaults['recommendation'],
+            $recommendationInput
+        );
+        $resolved['eval'] = array_replace_recursive($defaults['eval'], $evalInput);
+
+        return $resolved;
     }
 
     private function indexByTickerIdentity(array $items): array
@@ -703,15 +725,22 @@ class WatchlistBacktestStrategyService
         return strcmp((string) ($left['ticker'] ?? ''), (string) ($right['ticker'] ?? ''));
     }
 
+    public static function canonicalEvalModel(array $paramset): string
+    {
+        $backtest = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
+        $slip = rtrim(rtrim(number_format((float) ($backtest['slippage_entry_pct'] ?? 0.0), 6, '.', ''), '0'), '.');
+
+        return sprintf(
+            'ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=%d;FEE=%s;SLIP=%s;GAP=OPEN;PX=IDX_BANDS',
+            (int) ($backtest['holding_days'] ?? 5),
+            (string) ($backtest['fee_model'] ?? 'IDR_FIXED'),
+            $slip === '' ? '0' : $slip
+        );
+    }
+
     private function evalModel(array $paramset): string
     {
-        return implode('|', [
-            'entry='.$paramset['backtest']['entry_model'],
-            'exit='.$paramset['backtest']['exit_model'],
-            'fee='.$paramset['backtest']['fee_model'],
-            'slip_entry='.$paramset['backtest']['slippage_entry_pct'],
-            'slip_exit='.$paramset['backtest']['slippage_exit_pct'],
-        ]);
+        return self::canonicalEvalModel($paramset);
     }
 
     private function hasMismatch(array $values): bool

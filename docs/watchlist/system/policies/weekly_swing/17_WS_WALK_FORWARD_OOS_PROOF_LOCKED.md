@@ -28,6 +28,19 @@ Default split:
 
 Split harus berbasis urutan waktu (time series), bukan random split.
 
+### Deterministic split rounding (LOCKED)
+
+Untuk `N` ordered trading dates:
+
+- `is_count = floor(0.70 * N)`;
+- `oos_count = N - is_count`;
+- IS adalah prefix `ordered_dates[0 .. is_count-1]`;
+- OOS adalah suffix `ordered_dates[is_count .. N-1]`;
+- tidak ada overlap, randomization, hidden gap, atau date yang dibuang;
+- split gagal tertutup jika salah satu sisi kosong.
+
+Rule `floor` dipilih agar OOS tidak pernah lebih kecil dari sisa chronological 30% akibat pembulatan. Artifact wajib menyimpan `N`, `split_index = is_count`, rule identifier `FLOOR_70_PERCENT_IS_REMAINDER_OOS`, serta hash ordered/IS/OOS dates.
+
 ---
 
 ## Walk-forward protocol (LOCKED)
@@ -93,17 +106,19 @@ Output OOS wajib menyimpan:
 `eval_model` wajib merepresentasikan komponen perhitungan return secara eksplisit agar tidak menjadi label kosong.
 
 Format minimum (LOCKED):
-`ENTRY=ENTRY_RULE;EXIT=EXIT_RULE;HOLD=INT_DAYS;FEE=FEE_MODEL;SLIP=DECIMAL_PCT`
+`ENTRY=ENTRY_RULE;EXIT=EXIT_RULE;HOLD=INT_DAYS;FEE=FEE_MODEL;SLIP=DECIMAL_PCT;GAP=GAP_RULE;PX=PRICE_RULE`
 
 Enum minimum yang diizinkan:
 - `ENTRY_RULE`: `NEXT_OPEN`
 - `EXIT_RULE`: `STOP_TP_OR_TIME`, `TIME_ONLY`
 - `FEE_MODEL`: `IDR_FIXED`, `IDR_TIERED`
 - `SLIP`: angka desimal non-negatif dalam format string ringkas (contoh `0`, `0.001`)
+- `GAP_RULE`: `OPEN` untuk gap-through-trigger fill pada opening price
+- `PRICE_RULE`: `IDX_BANDS` untuk executable IDX equity price fraction
 
 Contoh valid:
-- `ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0`
-- `ENTRY=NEXT_OPEN;EXIT=TIME_ONLY;HOLD=5;FEE=IDR_TIERED;SLIP=0.001`
+- `ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS`
+- `ENTRY=NEXT_OPEN;EXIT=TIME_ONLY;HOLD=5;FEE=IDR_TIERED;SLIP=0.001;GAP=OPEN;PX=IDX_BANDS`
 
 Catatan implementasi:
 - Panjang `eval_model` harus cukup untuk menyimpan string canonical ini utuh; DDL backtest mengunci kolom sebagai `VARCHAR(96)`.
@@ -111,3 +126,18 @@ Catatan implementasi:
 ## Next
 ### Weekly Swing
 - 18_WS_BACKTEST_ARTIFACT_MANIFEST_LOCKED.md
+## Single-window and internal batching rule (LOCKED)
+
+A chronological 70/30 proof is one command over one explicit `(from_date, to_date)` range. A long range may be processed internally using bounded exact date/ticker reads, but it must not be divided into several independently calibrated commands and combined afterward.
+
+Required order remains:
+
+```text
+freeze ordered trading dates
+→ deterministic 70/30 split
+→ run every official grid row on the complete IS prefix
+→ freeze one best-IS binding
+→ read/evaluate the complete OOS suffix with that exact binding
+```
+
+Internal batching or targeted pair reads must not change split boundaries, date hashes, grid order, best-IS selection, or canonical artifact hash.

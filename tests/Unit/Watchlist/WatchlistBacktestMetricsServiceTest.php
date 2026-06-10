@@ -22,6 +22,9 @@ class WatchlistBacktestMetricsServiceTest extends TestCase
         $this->assertTrue($metrics['metrics_contract']['no_latest_shortcut']);
         $this->assertTrue($metrics['metrics_contract']['positive_volume_required_for_execution']);
         $this->assertTrue($metrics['metrics_contract']['zero_volume_bar_is_published_but_non_executable']);
+        $this->assertSame('RAW_TRADABLE_OHLC_REQUIRED', $metrics['metrics_contract']['source_price_mode']);
+        $this->assertSame('OPEN_IF_GAP_THROUGH_TRIGGER', $metrics['metrics_contract']['gap_fill_rule']);
+        $this->assertSame('IDX_EQUITY_PRICE_BANDS', $metrics['metrics_contract']['price_fraction_rule']);
     }
 
     public function test_metrics_evaluates_time_exit_with_published_price_series_and_explicit_calendar(): void
@@ -259,6 +262,238 @@ class WatchlistBacktestMetricsServiceTest extends TestCase
         $this->assertSame(7, $sufficiency['effective_thresholds']['min_days_covered']);
         $this->assertTrue($sufficiency['gates']['minimum_coverage']);
         $this->assertFalse($sufficiency['calibration_valid']);
+    }
+
+    public function test_metrics_derives_canonical_atr_stop_and_rr_target_when_plan_levels_are_absent(): void
+    {
+        $trade = $this->trade('2026-05-19', 1, 'AAA');
+        $trade['atr14_pct'] = 0.04;
+        $payload = $this->backtestPayload([
+            'risk' => [
+                'stop_atr_mult' => 1.5,
+                'min_rr' => 1.5,
+            ],
+            'backtest' => [
+                'notional_idr' => 1000000,
+                'lot_size' => 100,
+                'fee_buy_idr' => 0,
+                'fee_sell_idr' => 0,
+                'slippage_entry_pct' => 0,
+                'slippage_exit_pct' => 0,
+                'holding_days' => 5,
+            ],
+        ], [$trade]);
+
+        $metrics = (new WatchlistBacktestMetricsService())->buildMetrics(
+            $payload,
+            $this->priceSeries('AAA', [
+                '2026-05-20' => ['open' => 100, 'high' => 102, 'low' => 99, 'close' => 101],
+                '2026-05-21' => ['open' => 101, 'high' => 102, 'low' => 93, 'close' => 95],
+                '2026-05-22' => ['open' => 95, 'high' => 96, 'low' => 94, 'close' => 95],
+                '2026-05-25' => ['open' => 95, 'high' => 96, 'low' => 94, 'close' => 95],
+                '2026-05-26' => ['open' => 95, 'high' => 96, 'low' => 94, 'close' => 95],
+            ]),
+            ['2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-25', '2026-05-26']
+        );
+
+        $evaluation = $metrics['evaluated_trades'][0];
+        $this->assertTrue($evaluation['metrics_ready']);
+        $this->assertSame('WATCHLIST_BACKTEST_EXIT_STOP', $evaluation['exit_reason_code']);
+        $this->assertSame('ATR_RR_FALLBACK', $evaluation['target_stop_source']);
+        $this->assertEqualsWithDelta(94.0, $evaluation['stop_price'], 0.000001);
+        $this->assertEqualsWithDelta(109.0, $evaluation['target_price'], 0.000001);
+        $this->assertEqualsWithDelta(-0.06, $evaluation['ret_net'], 0.000001);
+        $this->assertContains('WATCHLIST_BACKTEST_TARGET_STOP_ATR_RR_FALLBACK', $evaluation['reason_codes']);
+    }
+
+    public function test_gap_through_stop_fills_at_executable_open_not_theoretical_stop(): void
+    {
+        $trade = $this->trade('2026-05-19', 1, 'AAA');
+        $trade['stop_price'] = 48.5037;
+        $trade['target_price'] = 53.0;
+        $metrics = (new WatchlistBacktestMetricsService())->buildMetrics(
+            $this->backtestPayload([
+                'backtest' => [
+                    'notional_idr' => 1000000,
+                    'lot_size' => 100,
+                    'fee_buy_idr' => 0,
+                    'fee_sell_idr' => 0,
+                    'slippage_entry_pct' => 0,
+                    'slippage_exit_pct' => 0,
+                    'holding_days' => 5,
+                ],
+            ], [$trade]),
+            $this->priceSeries('AAA', [
+                '2026-05-20' => ['open' => 50, 'high' => 51, 'low' => 49, 'close' => 50],
+                '2026-05-21' => ['open' => 47, 'high' => 48, 'low' => 46, 'close' => 47],
+                '2026-05-22' => ['open' => 47, 'high' => 48, 'low' => 46, 'close' => 47],
+                '2026-05-25' => ['open' => 47, 'high' => 48, 'low' => 46, 'close' => 47],
+                '2026-05-26' => ['open' => 47, 'high' => 48, 'low' => 46, 'close' => 47],
+            ]),
+            ['2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-25', '2026-05-26']
+        );
+
+        $evaluation = $metrics['evaluated_trades'][0];
+        $this->assertSame('WATCHLIST_BACKTEST_EXIT_STOP', $evaluation['exit_reason_code']);
+        $this->assertSame(48.0, $evaluation['stop_trigger_price']);
+        $this->assertSame(48.5037, $evaluation['stop_price']);
+        $this->assertSame(48.0, $evaluation['trigger_price']);
+        $this->assertSame(47.0, $evaluation['executed_price']);
+        $this->assertSame('GAP_THROUGH_STOP_AT_OPEN', $evaluation['fill_rule']);
+        $this->assertTrue($evaluation['gap_detected']);
+        $this->assertEqualsWithDelta(-0.06, $evaluation['ret_net'], 0.000001);
+        $this->assertContains('BT_GAP_THROUGH_STOP_AT_OPEN', $evaluation['reason_codes']);
+    }
+
+    public function test_gap_through_target_fills_at_executable_open(): void
+    {
+        $trade = $this->trade('2026-05-19', 1, 'AAA');
+        $trade['stop_price'] = 48.0;
+        $trade['target_price'] = 51.2;
+        $metrics = (new WatchlistBacktestMetricsService())->buildMetrics(
+            $this->backtestPayload([
+                'backtest' => [
+                    'notional_idr' => 1000000,
+                    'lot_size' => 100,
+                    'fee_buy_idr' => 0,
+                    'fee_sell_idr' => 0,
+                    'slippage_entry_pct' => 0,
+                    'slippage_exit_pct' => 0,
+                    'holding_days' => 5,
+                ],
+            ], [$trade]),
+            $this->priceSeries('AAA', [
+                '2026-05-20' => ['open' => 50, 'high' => 51, 'low' => 49, 'close' => 50],
+                '2026-05-21' => ['open' => 55, 'high' => 56, 'low' => 54, 'close' => 55],
+                '2026-05-22' => ['open' => 55, 'high' => 56, 'low' => 54, 'close' => 55],
+                '2026-05-25' => ['open' => 55, 'high' => 56, 'low' => 54, 'close' => 55],
+                '2026-05-26' => ['open' => 55, 'high' => 56, 'low' => 54, 'close' => 55],
+            ]),
+            ['2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-25', '2026-05-26']
+        );
+
+        $evaluation = $metrics['evaluated_trades'][0];
+        $this->assertSame('WATCHLIST_BACKTEST_EXIT_TARGET', $evaluation['exit_reason_code']);
+        $this->assertSame(52.0, $evaluation['target_trigger_price']);
+        $this->assertSame(51.2, $evaluation['target_price']);
+        $this->assertSame(52.0, $evaluation['trigger_price']);
+        $this->assertSame(55.0, $evaluation['executed_price']);
+        $this->assertSame('GAP_THROUGH_TARGET_AT_OPEN', $evaluation['fill_rule']);
+        $this->assertTrue($evaluation['gap_detected']);
+        $this->assertEqualsWithDelta(0.10, $evaluation['ret_net'], 0.000001);
+        $this->assertContains('BT_GAP_THROUGH_TARGET_AT_OPEN', $evaluation['reason_codes']);
+    }
+
+    public function test_intraday_levels_use_conservative_idx_price_fraction_normalization(): void
+    {
+        $trade = $this->trade('2026-05-19', 1, 'AAA');
+        $trade['stop_price'] = 226.0809374902;
+        $trade['target_price'] = 330.8785937647;
+        $metrics = (new WatchlistBacktestMetricsService())->buildMetrics(
+            $this->backtestPayload([
+                'backtest' => [
+                    'notional_idr' => 1000000,
+                    'lot_size' => 100,
+                    'fee_buy_idr' => 0,
+                    'fee_sell_idr' => 0,
+                    'slippage_entry_pct' => 0,
+                    'slippage_exit_pct' => 0,
+                    'holding_days' => 5,
+                ],
+            ], [$trade]),
+            $this->priceSeries('AAA', [
+                '2026-05-20' => ['open' => 268, 'high' => 270, 'low' => 266, 'close' => 268],
+                '2026-05-21' => ['open' => 270, 'high' => 330, 'low' => 268, 'close' => 328],
+                '2026-05-22' => ['open' => 328, 'high' => 332, 'low' => 326, 'close' => 330],
+                '2026-05-25' => ['open' => 330, 'high' => 332, 'low' => 328, 'close' => 330],
+                '2026-05-26' => ['open' => 330, 'high' => 332, 'low' => 328, 'close' => 330],
+            ]),
+            ['2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-25', '2026-05-26']
+        );
+
+        $evaluation = $metrics['evaluated_trades'][0];
+        $this->assertSame(226.0, $evaluation['stop_trigger_price']);
+        $this->assertSame(332.0, $evaluation['target_trigger_price']);
+        $this->assertSame('2026-05-22', $evaluation['exit_trade_date']);
+        $this->assertSame(332.0, $evaluation['executed_price']);
+        $this->assertSame('INTRADAY_TARGET_AT_NORMALIZED_TRIGGER', $evaluation['fill_rule']);
+        $this->assertFalse($evaluation['gap_detected']);
+        $this->assertSame('IDX_EQUITY_PRICE_BANDS', $evaluation['price_fraction_rule']);
+        $this->assertSame('THEORETICAL_LEVEL', $evaluation['price_fraction_reference']);
+        $this->assertSame('CONSERVATIVE_STOP_FLOOR_TARGET_CEIL', $evaluation['price_normalization_rule']);
+    }
+
+    public function test_fractional_adjusted_like_entry_ohlc_is_rejected(): void
+    {
+        $metrics = (new WatchlistBacktestMetricsService())->buildMetrics(
+            $this->backtestPayload(),
+            $this->priceSeries('AAA', [
+                '2026-05-20' => ['open' => 494.4835, 'high' => 504.0851, 'low' => 474.3201, 'close' => 474.3201],
+                '2026-05-21' => ['open' => 474, 'high' => 480, 'low' => 470, 'close' => 474],
+                '2026-05-22' => ['open' => 474, 'high' => 480, 'low' => 470, 'close' => 474],
+                '2026-05-25' => ['open' => 474, 'high' => 480, 'low' => 470, 'close' => 474],
+                '2026-05-26' => ['open' => 474, 'high' => 480, 'low' => 470, 'close' => 474],
+            ]),
+            ['2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-25', '2026-05-26']
+        );
+
+        $evaluation = $metrics['evaluated_trades'][0];
+        $this->assertFalse($evaluation['metrics_ready']);
+        $this->assertSame('BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY', $evaluation['reason_code']);
+        $this->assertContains('open', $evaluation['invalid_price_fields']);
+        $this->assertSame('RAW_TRADABLE_OHLC_REQUIRED', $evaluation['source_price_mode']);
+        $this->assertNull($evaluation['ret_net']);
+    }
+
+    public function test_fractional_adjusted_like_exit_ohlc_is_rejected(): void
+    {
+        $metrics = (new WatchlistBacktestMetricsService())->buildMetrics(
+            $this->backtestPayload(),
+            $this->priceSeries('AAA', [
+                '2026-05-20' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+                '2026-05-21' => ['open' => 494.4835, 'high' => 504.0851, 'low' => 474.3201, 'close' => 474.3201],
+                '2026-05-22' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+                '2026-05-25' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+                '2026-05-26' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+            ]),
+            ['2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-25', '2026-05-26']
+        );
+
+        $evaluation = $metrics['evaluated_trades'][0];
+        $this->assertFalse($evaluation['metrics_ready']);
+        $this->assertSame('BT_SKIP_NON_EXECUTABLE_PRICE_EXIT', $evaluation['reason_code']);
+        $this->assertSame('2026-05-21', $evaluation['exit_trade_date']);
+        $this->assertContains('open', $evaluation['invalid_price_fields']);
+        $this->assertNull($evaluation['ret_net']);
+    }
+
+    public function test_integer_raw_ohlc_is_not_rejected_when_bar_crosses_price_bands(): void
+    {
+        $metrics = (new WatchlistBacktestMetricsService())->buildMetrics(
+            $this->backtestPayload([
+                'backtest' => [
+                    'notional_idr' => 1000000,
+                    'lot_size' => 100,
+                    'fee_buy_idr' => 0,
+                    'fee_sell_idr' => 0,
+                    'slippage_entry_pct' => 0,
+                    'slippage_exit_pct' => 0,
+                    'holding_days' => 5,
+                ],
+            ]),
+            $this->priceSeries('AAA', [
+                '2026-05-20' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+                '2026-05-21' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+                '2026-05-22' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+                '2026-05-25' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+                '2026-05-26' => ['open' => 500, 'high' => 505, 'low' => 495, 'close' => 500],
+            ]),
+            ['2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-25', '2026-05-26']
+        );
+
+        $this->assertTrue($metrics['evaluated_trades'][0]['metrics_ready']);
+        $this->assertSame('WATCHLIST_BACKTEST_EXIT_HOLD_EXPIRED', $metrics['evaluated_trades'][0]['exit_reason_code']);
+        $this->assertSame(500.0, $metrics['evaluated_trades'][0]['executed_price']);
     }
 
     public function test_metrics_output_is_deterministic_for_same_inputs(): void

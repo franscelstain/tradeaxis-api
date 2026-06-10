@@ -6,6 +6,11 @@ class WatchlistBacktestMetricsService
 {
     private const PRICE_SERIES_CONTRACT = 'PUBLISHED_EOD_PRICE_SERIES_INPUT';
     private const CALENDAR_CONTRACT = 'EXPLICIT_TRADING_CALENDAR_INPUT';
+    private const PRICE_FRACTION_RULE = 'IDX_EQUITY_PRICE_BANDS';
+    private const PRICE_FRACTION_REFERENCE = 'THEORETICAL_LEVEL';
+    private const PRICE_NORMALIZATION_RULE = 'CONSERVATIVE_STOP_FLOOR_TARGET_CEIL';
+    private const GAP_FILL_RULE = 'OPEN_IF_GAP_THROUGH_TRIGGER';
+    private const SOURCE_PRICE_MODE = 'RAW_TRADABLE_OHLC_REQUIRED';
 
     public function buildMetrics(
         array $backtestPayload,
@@ -118,6 +123,14 @@ class WatchlistBacktestMetricsService
                 'no_confirm_mutation' => true,
                 'positive_volume_required_for_execution' => true,
                 'zero_volume_bar_is_published_but_non_executable' => true,
+                'raw_tradable_ohlc_required' => true,
+                'source_price_mode' => self::SOURCE_PRICE_MODE,
+                'gap_through_trigger_fills_at_open' => true,
+                'gap_fill_rule' => self::GAP_FILL_RULE,
+                'trigger_level_is_distinct_from_executed_price' => true,
+                'price_fraction_rule' => self::PRICE_FRACTION_RULE,
+                'price_fraction_reference' => self::PRICE_FRACTION_REFERENCE,
+                'price_normalization_rule' => self::PRICE_NORMALIZATION_RULE,
                 'no_allocation_runtime' => true,
                 'not_execution_runtime' => true,
             ],
@@ -164,6 +177,13 @@ class WatchlistBacktestMetricsService
         $backtest = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
         $minTradableVolume = max(1, $this->intOrNull($backtest['min_tradable_volume'] ?? null) ?? 1);
         $tradableBarRule = (string) ($backtest['tradable_bar_rule'] ?? 'POSITIVE_VOLUME_REQUIRED');
+        // Execution-price semantics are canonical runtime rules, not calibration knobs.
+        // Param-grid or caller payloads must not weaken or relabel the actual fill model.
+        $sourcePriceMode = self::SOURCE_PRICE_MODE;
+        $gapFillRule = self::GAP_FILL_RULE;
+        $priceFractionRule = self::PRICE_FRACTION_RULE;
+        $priceNormalizationRule = self::PRICE_NORMALIZATION_RULE;
+        $priceFractionReference = self::PRICE_FRACTION_REFERENCE;
 
         if ($ticker === '' || $tradeDate === '' || $entryDate === null) {
             return $this->skippedEvaluation($trade, 'WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE');
@@ -188,9 +208,11 @@ class WatchlistBacktestMetricsService
         }
 
         $entryPrice = $this->floatOrNull($entryBar['open'] ?? null);
+        $entryPriceSource = 'OPEN';
         $entryFallbackReason = null;
         if ($entryPrice === null || $entryPrice <= 0) {
             $entryPrice = $this->floatOrNull($entryBar['close'] ?? null);
+            $entryPriceSource = 'CLOSE_FALLBACK';
             $entryFallbackReason = 'BT_FALLBACK_ENTRY_PRICE';
         }
 
@@ -198,6 +220,21 @@ class WatchlistBacktestMetricsService
             return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_ENTRY', [
                 'entry_trade_date' => $entryDate,
                 'entry_volume' => $entryVolume,
+            ]);
+        }
+
+        $entryInvalidPriceFields = $this->invalidExecutableOhlcFields($entryBar);
+        if (! $this->isExecutablePrice($entryPrice) || $entryInvalidPriceFields !== []) {
+            return $this->skippedEvaluation($trade, 'BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY', [
+                'entry_trade_date' => $entryDate,
+                'entry_price' => $entryPrice,
+                'entry_price_source' => $entryPriceSource,
+                'entry_volume' => $entryVolume,
+                'invalid_price_fields' => $entryInvalidPriceFields,
+                'source_price_mode' => $sourcePriceMode,
+                'price_fraction_rule' => $priceFractionRule,
+                'price_fraction_reference' => $priceFractionReference,
+                'message' => 'Entry OHLC does not represent an executable raw IDX price step.',
             ]);
         }
 
@@ -211,11 +248,16 @@ class WatchlistBacktestMetricsService
             ]);
         }
 
-        $levels = $this->targetStopLevels($entryPrice, $trade, $backtest);
+        $levels = $this->targetStopLevels($entryPrice, $trade, $paramset);
         $exitPrice = null;
+        $triggerPrice = null;
         $exitDate = null;
         $exitReasonCode = null;
+        $fillRule = null;
+        $gapDetected = false;
         $exitBar = null;
+        $usedStopTriggerPrice = null;
+        $usedTargetTriggerPrice = null;
         $reasonCodes = [];
         $ignoredNonTradableExitDates = [];
         if ($entryFallbackReason !== null) {
@@ -223,6 +265,8 @@ class WatchlistBacktestMetricsService
         }
         if (! $levels['has_target_stop']) {
             $reasonCodes[] = 'WATCHLIST_BACKTEST_TARGET_STOP_LEVEL_UNAVAILABLE';
+        } elseif (($levels['source'] ?? null) === 'ATR_RR_FALLBACK') {
+            $reasonCodes[] = 'WATCHLIST_BACKTEST_TARGET_STOP_ATR_RR_FALLBACK';
         }
 
         foreach ($exitDates as $index => $date) {
@@ -253,25 +297,90 @@ class WatchlistBacktestMetricsService
                 continue;
             }
 
-            if ($levels['has_target_stop']) {
-                $low = $this->floatOrNull($bar['low'] ?? null);
-                $high = $this->floatOrNull($bar['high'] ?? null);
+            $invalidPriceFields = $this->invalidExecutableOhlcFields($bar);
+            if ($invalidPriceFields !== []) {
+                return $this->skippedEvaluation($trade, 'BT_SKIP_NON_EXECUTABLE_PRICE_EXIT', [
+                    'exit_trade_date' => $date,
+                    'exit_volume' => $barVolume,
+                    'invalid_price_fields' => $invalidPriceFields,
+                    'source_price_mode' => $sourcePriceMode,
+                    'price_fraction_rule' => $priceFractionRule,
+                    'price_fraction_reference' => $priceFractionReference,
+                    'message' => 'Exit OHLC does not represent executable raw IDX price steps.',
+                ]);
+            }
 
-                if ($low !== null && $low <= $levels['stop_price']) {
-                    $exitPrice = $levels['stop_price'];
+            $open = $this->floatOrNull($bar['open'] ?? null);
+            $low = $this->floatOrNull($bar['low'] ?? null);
+            $high = $this->floatOrNull($bar['high'] ?? null);
+            if ($open === null || $open <= 0 || $low === null || $high === null) {
+                return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_EXIT', [
+                    'exit_trade_date' => $date,
+                    'exit_volume' => $barVolume,
+                ]);
+            }
+
+            if ($levels['has_target_stop']) {
+                $stopTriggerPrice = $levels['stop_trigger_price'];
+                $targetTriggerPrice = $levels['target_trigger_price'];
+                $usedStopTriggerPrice = $stopTriggerPrice;
+                $usedTargetTriggerPrice = $targetTriggerPrice;
+                if ($stopTriggerPrice === null || $targetTriggerPrice === null) {
+                    return $this->skippedEvaluation($trade, 'BT_SKIP_NON_EXECUTABLE_PRICE_EXIT', [
+                        'exit_trade_date' => $date,
+                        'exit_volume' => $barVolume,
+                        'source_price_mode' => $sourcePriceMode,
+                        'price_fraction_rule' => $priceFractionRule,
+                        'price_fraction_reference' => $priceFractionReference,
+                        'message' => 'Stop or target cannot be normalized to the exit bar price fraction.',
+                    ]);
+                }
+
+                // Opening auction is observed before the intraday range. A gap through a
+                // trigger must therefore fill at the executable open, not at a theoretical level.
+                if ($open <= $stopTriggerPrice) {
+                    $exitPrice = $open;
+                    $triggerPrice = $stopTriggerPrice;
                     $exitDate = $date;
                     $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_STOP';
+                    $fillRule = 'GAP_THROUGH_STOP_AT_OPEN';
+                    $gapDetected = true;
                     $exitBar = $bar;
-                    if ($high !== null && $high >= $levels['target_price']) {
+                    $reasonCodes[] = 'BT_GAP_THROUGH_STOP_AT_OPEN';
+                    break;
+                }
+
+                if ($open >= $targetTriggerPrice) {
+                    $exitPrice = $open;
+                    $triggerPrice = $targetTriggerPrice;
+                    $exitDate = $date;
+                    $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_TARGET';
+                    $fillRule = 'GAP_THROUGH_TARGET_AT_OPEN';
+                    $gapDetected = true;
+                    $exitBar = $bar;
+                    $reasonCodes[] = 'BT_GAP_THROUGH_TARGET_AT_OPEN';
+                    break;
+                }
+
+                if ($low <= $stopTriggerPrice) {
+                    $exitPrice = $stopTriggerPrice;
+                    $triggerPrice = $stopTriggerPrice;
+                    $exitDate = $date;
+                    $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_STOP';
+                    $fillRule = 'INTRADAY_STOP_AT_NORMALIZED_TRIGGER';
+                    $exitBar = $bar;
+                    if ($high >= $targetTriggerPrice) {
                         $reasonCodes[] = 'BT_AMBIGUOUS_HIT_STOP_PRIOR';
                     }
                     break;
                 }
 
-                if ($high !== null && $high >= $levels['target_price']) {
-                    $exitPrice = $levels['target_price'];
+                if ($high >= $targetTriggerPrice) {
+                    $exitPrice = $targetTriggerPrice;
+                    $triggerPrice = $targetTriggerPrice;
                     $exitDate = $date;
                     $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_TARGET';
+                    $fillRule = 'INTRADAY_TARGET_AT_NORMALIZED_TRIGGER';
                     $exitBar = $bar;
                     break;
                 }
@@ -287,8 +396,10 @@ class WatchlistBacktestMetricsService
                     ]);
                 }
                 $exitPrice = $close;
+                $triggerPrice = null;
                 $exitDate = $date;
                 $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_HOLD_EXPIRED';
+                $fillRule = 'TIME_EXIT_AT_CLOSE';
                 $exitBar = $bar;
             }
         }
@@ -322,6 +433,7 @@ class WatchlistBacktestMetricsService
         $grossBuy = $entryEffective * $quantity;
         $grossSell = $exitEffective * $quantity;
         $netPnl = $grossSell - $grossBuy - $feeBuy - $feeSell;
+        $retGross = ($grossSell - $grossBuy) / $grossBuy;
         $retNet = $netPnl / ($grossBuy + $feeBuy);
 
         return [
@@ -335,7 +447,25 @@ class WatchlistBacktestMetricsService
             'exit_trade_date' => $exitDate,
             'exit_reason_code' => $exitReasonCode,
             'entry_price' => $entryPrice,
+            'entry_price_source' => $entryPriceSource,
             'exit_price' => $exitPrice,
+            'executed_price' => $exitPrice,
+            'trigger_price' => $triggerPrice,
+            'fill_rule' => $fillRule,
+            'gap_detected' => $gapDetected,
+            'gap_fill_rule' => $gapFillRule,
+            'source_price_mode' => $sourcePriceMode,
+            'price_fraction_rule' => $priceFractionRule,
+            'price_fraction_reference' => $priceFractionReference,
+            'price_normalization_rule' => $priceNormalizationRule,
+            'stop_price' => $levels['stop_price'],
+            'target_price' => $levels['target_price'],
+            'stop_trigger_price' => $usedStopTriggerPrice,
+            'target_trigger_price' => $usedTargetTriggerPrice,
+            'target_stop_source' => $levels['source'],
+            'atr14_pct' => $levels['atr14_pct'],
+            'stop_atr_mult' => $levels['stop_atr_mult'],
+            'min_rr' => $levels['min_rr'],
             'entry_volume' => $entryVolume,
             'exit_volume' => $this->intOrNull($exitBar['volume'] ?? null),
             'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
@@ -349,9 +479,12 @@ class WatchlistBacktestMetricsService
             'exit_run_id' => $exitBar['run_id'] ?? null,
             'source_name' => $entryBar['source_name'] ?? null,
             'quantity' => $quantity,
+            'entry_effective_price' => $entryEffective,
+            'exit_effective_price' => $exitEffective,
             'gross_buy_idr' => $grossBuy,
             'gross_sell_idr' => $grossSell,
             'net_pnl_idr' => $netPnl,
+            'ret_gross' => $retGross,
             'ret_net' => $retNet,
             'is_win' => $retNet > 0,
             'reason_codes' => $this->uniqueReasonCodes(array_merge($reasonCodes, [$exitReasonCode])),
@@ -391,6 +524,12 @@ class WatchlistBacktestMetricsService
             'min_tradable_volume',
             'required_holding_days',
             'available_holding_days',
+            'entry_price',
+            'entry_price_source',
+            'invalid_price_fields',
+            'source_price_mode',
+            'price_fraction_rule',
+            'price_fraction_reference',
         ] as $key) {
             if (array_key_exists($key, $evaluation)) {
                 $context[$key] = $evaluation[$key];
@@ -415,31 +554,137 @@ class WatchlistBacktestMetricsService
             'BT_SKIP_NO_TRADABLE_ENTRY' => 'Entry bar is published but has no positive executable volume.',
             'BT_SKIP_NO_TRADABLE_EXIT' => 'Exit bar is published but has no positive executable volume.',
             'BT_SKIP_NOT_ENOUGH_NOTIONAL' => 'Configured notional cannot purchase one board lot.',
+            'BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY' => 'Entry OHLC does not conform to executable raw IDX price steps.',
+            'BT_SKIP_NON_EXECUTABLE_PRICE_EXIT' => 'Exit OHLC does not conform to executable raw IDX price steps.',
         ];
 
         return $messages[$reasonCode] ?? 'Backtest evaluation was skipped by a reason-coded fail-safe rule.';
     }
 
-    private function targetStopLevels(float $entryPrice, array $trade, array $backtest): array
+    private function targetStopLevels(float $entryPrice, array $trade, array $paramset): array
     {
+        $backtest = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
+        $risk = is_array($paramset['risk'] ?? null) ? $paramset['risk'] : [];
         $targetPrice = $this->floatOrNull($trade['target_price'] ?? null);
         $stopPrice = $this->floatOrNull($trade['stop_price'] ?? null);
+        $source = ($targetPrice !== null || $stopPrice !== null) ? 'PLAN_LEVELS' : null;
 
         $targetPct = $this->floatOrNull($backtest['target_pct'] ?? null);
         $stopPct = $this->floatOrNull($backtest['stop_pct'] ?? null);
-
         if ($targetPrice === null && $targetPct !== null && $targetPct > 0) {
             $targetPrice = $entryPrice * (1 + $targetPct);
+            $source = 'BACKTEST_FIXED_PERCENT';
         }
         if ($stopPrice === null && $stopPct !== null && $stopPct > 0) {
             $stopPrice = $entryPrice * (1 - $stopPct);
+            $source = 'BACKTEST_FIXED_PERCENT';
         }
 
+        $atr14Pct = $this->floatOrNull($trade['atr14_pct'] ?? null);
+        $stopAtrMult = $this->floatOrNull($trade['stop_atr_mult'] ?? $risk['stop_atr_mult'] ?? $backtest['stop_atr_mult'] ?? null);
+        $minRr = $this->floatOrNull($trade['min_rr'] ?? $risk['min_rr'] ?? $backtest['min_rr'] ?? null);
+
+        if (($stopPrice === null || $targetPrice === null)
+            && $atr14Pct !== null && $atr14Pct > 0 && $atr14Pct <= 1
+            && $stopAtrMult !== null && $stopAtrMult > 0
+            && $minRr !== null && $minRr > 0) {
+            if ($stopPrice === null) {
+                $stopPrice = $entryPrice * (1 - ($stopAtrMult * $atr14Pct));
+            }
+            if ($targetPrice === null && $stopPrice > 0 && $stopPrice < $entryPrice) {
+                $targetPrice = $entryPrice + ($minRr * ($entryPrice - $stopPrice));
+            }
+            $source = 'ATR_RR_FALLBACK';
+        }
+
+        $stopTriggerPrice = $stopPrice !== null ? $this->normalizeStopTriggerPrice($stopPrice) : null;
+        $targetTriggerPrice = $targetPrice !== null ? $this->normalizeTargetTriggerPrice($targetPrice) : null;
+        $hasTargetStop = $targetPrice !== null
+            && $stopPrice !== null
+            && $stopTriggerPrice !== null
+            && $targetTriggerPrice !== null
+            && $stopPrice > 0
+            && $stopPrice < $entryPrice
+            && $stopTriggerPrice < $entryPrice
+            && $targetTriggerPrice > $entryPrice;
+
         return [
-            'has_target_stop' => $targetPrice !== null && $stopPrice !== null && $targetPrice > 0 && $stopPrice > 0,
-            'target_price' => $targetPrice,
-            'stop_price' => $stopPrice,
+            'has_target_stop' => $hasTargetStop,
+            'target_price' => $hasTargetStop ? $targetPrice : null,
+            'stop_price' => $hasTargetStop ? $stopPrice : null,
+            'target_trigger_price' => $hasTargetStop ? $targetTriggerPrice : null,
+            'stop_trigger_price' => $hasTargetStop ? $stopTriggerPrice : null,
+            'source' => $hasTargetStop ? $source : null,
+            'atr14_pct' => $atr14Pct,
+            'stop_atr_mult' => $stopAtrMult,
+            'min_rr' => $minRr,
+            'price_fraction_rule' => self::PRICE_FRACTION_RULE,
+            'price_fraction_reference' => self::PRICE_FRACTION_REFERENCE,
+            'price_normalization_rule' => self::PRICE_NORMALIZATION_RULE,
         ];
+    }
+
+    private function normalizeStopTriggerPrice(float $price): ?float
+    {
+        if ($price <= 0) {
+            return null;
+        }
+        $tick = $this->priceTick($price);
+        $normalized = floor(($price + 0.000000001) / $tick) * $tick;
+
+        return $normalized > 0 ? (float) $normalized : null;
+    }
+
+    private function normalizeTargetTriggerPrice(float $price): ?float
+    {
+        if ($price <= 0) {
+            return null;
+        }
+        $tick = $this->priceTick($price);
+        $normalized = ceil(($price - 0.000000001) / $tick) * $tick;
+
+        return $normalized > 0 ? (float) $normalized : null;
+    }
+
+    private function priceTick(float $price): float
+    {
+        if ($price < 200) {
+            return 1.0;
+        }
+        if ($price < 500) {
+            return 2.0;
+        }
+        if ($price < 2000) {
+            return 5.0;
+        }
+        if ($price < 5000) {
+            return 10.0;
+        }
+
+        return 25.0;
+    }
+
+    private function isExecutablePrice(?float $price): bool
+    {
+        return $price !== null
+            && $price > 0
+            && abs($price - round($price)) <= 0.000001;
+    }
+
+    private function invalidExecutableOhlcFields(array $bar): array
+    {
+        $invalid = [];
+        foreach (['open', 'high', 'low', 'close'] as $field) {
+            if (! array_key_exists($field, $bar)) {
+                continue;
+            }
+            $price = $this->floatOrNull($bar[$field]);
+            if (! $this->isExecutablePrice($price)) {
+                $invalid[] = $field;
+            }
+        }
+
+        return $invalid;
     }
 
     private function publishedBar(array $priceSeries, string $ticker, string $tradeDate): ?array

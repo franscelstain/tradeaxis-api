@@ -118,3 +118,54 @@ Step 1 tidak boleh diimplementasikan sebagai salah satu shortcut berikut:
 3. domain compute menulis persistence atau membentuk response transport final;
 4. repository/persistence adapter menjalankan scoring, ranking, atau confirm decision.
 
+
+## Chronological OOS bounded-read flow
+
+For IS/OOS execution, freeze candidates first, derive the exact date/ticker pairs needed for D+1 through the maximum exit horizon, and resolve those pairs through `MarketDataPublishedEodSeriesReadService::readPublishedSeriesForDateTickerMap`. Do not allocate a full universe/date matrix. IS grid rows are evaluated in memory; only the final OOS proof export is written.
+
+## Published-Price Runtime Metadata Freeze Rule
+
+The published-price runtime owns the exact price-consumption markers. After strategy replay returns and before candidate freezing/hash calculation, it must bind:
+
+```text
+pricing_model = PUBLISHED_EOD_OHLCV_CURRENT_READABLE_EXACT_DATE
+price_read_mode = TARGETED_DATE_TICKER_MAP
+```
+
+The binding must be reflected in `paramset_snapshot`, `meta.paramset_snapshot`, and runtime trade evidence. It must happen before future-price access so the frozen hash represents the exact runtime semantics. The binding may not backfill missing evaluation thresholds; unresolved thresholds must still fail closed.
+
+The default Weekly Swing replay risk values are `stop_atr_mult=1.5` and `min_rr=1.5`. Grid values remain authoritative when explicitly supplied.
+
+
+## BT-grid paramset compatibility projection
+
+`WatchlistBacktestIsCalibrationService` must not merge a low `max_atr14_pct` grid value with the wider active default ideal ATR band directly. It delegates row-to-paramset construction to `WatchlistBacktestParamGridParamsetFactory` before any daily replay begins.
+
+The factory records:
+
+```text
+bt_grid_resolution.risk_band_rule = CLAMP_DEFAULT_IDEAL_ATR_BAND_TO_GRID_MAX_ATR
+```
+
+and guarantees:
+
+```text
+min_atr14_pct <= atr_ideal_low <= atr_ideal_high <= max_atr14_pct
+```
+
+This prevents valid strict grid rows from being misclassified as `WATCHLIST_BACKTEST_SOURCE_NOT_READY` because of an internally contradictory paramset. The projection is deterministic from the grid row plus canonical defaults and must remain independent of OOS data.
+
+
+## Executable price and gap-fill boundary
+
+Published OHLC availability is not sufficient evidence of an executable fill. The pricing evaluator must:
+
+- require raw tradable integer-rupiah OHLC and reject adjusted-looking fractional bars;
+- preserve theoretical `stop_price` / `target_price` separately from normalized trigger levels;
+- fill an opening gap through stop or target at the bar open;
+- use conservative stop-floor / target-ceil normalization for intraday triggers;
+- emit `trigger_price`, `executed_price`, `fill_rule`, `gap_detected`, and price-rule markers;
+- fail closed on adjusted-looking/non-executable OHLC rather than fabricate a raw fill.
+- force these semantics at runtime; caller/grid overrides are ignored so artifact labels cannot diverge from actual fill behavior.
+
+Changing these semantics changes `eval_model` and requires fresh IS/OOS evaluation rows; historical rows remain immutable.

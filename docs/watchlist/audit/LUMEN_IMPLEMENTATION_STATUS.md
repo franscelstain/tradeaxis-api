@@ -15,63 +15,61 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
 
 Status:
-`DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`.
+`DONE for OOS execution infrastructure / EXECUTION_PRICE_CORRECTION_VALIDATED / FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`.
 
 Historical baselines remain preserved and are not downgraded:
 
 - `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
 - `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
-- `DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS / NOT_PRODUCTION_READY`;
-- prior local evidence remains `WatchlistBacktest` 25 tests / 286 assertions, full `tests\Unit\Watchlist` 116 tests / 1168 assertions, and `MarketDataWatchlistReadModelTest` 3 tests / 41 assertions.
+- `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`;
+- final published-price operator evidence remains PublishedPrice `17/146`, MetricsService `8/63`, Backtest `48/497`, full Watchlist `139/1379`, PublishedEodSeries `6/29`, TradingCalendar `4/16`, and MarketDataWatchlistReadModel `3/41`.
 
 Scope:
-Connect the Phase 7 replay boundary to official market-data application read surfaces for explicit trading-calendar windows and exact-date current readable published EOD OHLCV, then orchestrate strategy replay, price evaluation, canonical metrics, deterministic artifact generation, and explicit JSON export through a watchlist proof command. No portfolio allocation, order, broker instruction, scheduler, API endpoint, market-data producer behavior, or production migration is added.
+Implement the minimum canonical chronological 70/30 Weekly Swing OOS proof over explicit historical windows. The implementation reads the official trading calendar and published EOD series through existing application surfaces, calibrates every official database param-grid row only on the IS prefix, freezes the best valid IS binding, evaluates the OOS suffix without re-tuning, persists official evaluation rows idempotently, and exports deterministic evidence. It does not add portfolio allocation, order, broker instruction, scheduler, API endpoint, paramset promotion, or production-trading state.
 
 Current evidence:
 
-- official application read surfaces now exist for trading calendar and exact-date published EOD series;
-- watchlist runtime orchestration freezes the strategy payload before future-price reads and verifies that payload remains unchanged;
-- runtime artifact now records calendar, price-series, publication lineage, runtime execution, canonical metrics, and a deterministic canonical artifact hash;
-- command `watchlist:backtest-published-price-proof` requires explicit `--from`, `--to`, and `--output`;
-- final operator PHPUnit passed: PublishedPrice `17 tests / 146 assertions`, MetricsService `8 / 63`, Backtest `48 / 497`, full Watchlist `139 / 1379`, PublishedEodSeries `6 / 29`, TradingCalendar `4 / 16`, and existing MarketData watchlist read model `3 / 41`;
-- official operator command replay `2026-05-21` through `2026-05-29` passed twice after zero-volume, threshold-binding, and dynamic-coverage closure;
-- both final runs resolved 9/9 required price dates, evaluated 13 trades, emitted 2 reason-coded non-fatal diagnostics, resolved metric thresholds, and produced equal canonical artifact hash `0eaa353d20df901c4f372c0000951408578bf302`;
-- publication lineage passed for 10/10 dates through `2026-06-08` with current pointer, `SEALED`, `SUCCESS`, `READABLE`, coverage `PASS`, and current-publication identity;
-- dynamic coverage proof passed with `days_covered=5`, `total_trading_days_in_window=5`, effective `min_days_covered=4`, and `minimum_coverage=true`;
-- metric thresholds are resolved with `min_trades=120`; `metric_calibration_valid=0` is expected for this smoke window because only 13 trades were evaluated;
-- KING correctly emitted `BT_SKIP_MISSING_OHLC_EXIT` after ignoring zero-volume dates `2026-05-25`, `2026-05-26`, and `2026-05-29`; no synthetic exit or zero return was created;
-- BKDP correctly emitted `BT_SKIP_NO_TRADABLE_ENTRY` with `entry_volume=0`;
-- file SHA-1 differed between runs because output path and execution metadata are non-hashed, while canonical artifact hash equality passed;
-- watchlist remains `NOT_PRODUCTION_READY`; no contract is promoted to `LOCKED`, and walk-forward/OOS plus production operating proof remain outstanding.
+- canonical 24-row grid is deployed and idempotent: `catalog_count=24`, `param_grid_count=24`;
+- supported operator PHPUnit is green after execution-price correction: ParamGrid `4/636`, MetricsService `15/113`, PublishedPrice `18/177`, OOS `24/186`, Backtest `87/1430`, and full Watchlist `179/2318`;
+- full explicit historical proof executed with `from=2023-01-02` and `to=2026-05-29`; split is deterministic with IS `2023-01-02..2025-05-21` / `562` trading dates and OOS `2025-05-22..2026-05-29` / `242` trading dates;
+- all 24 canonical rows completed IS evaluation without memory exhaustion, source-readiness failure, raw-reader fallback, or per-evaluation runtime/source diagnostics;
+- `is_valid_param_count=0`, `is_failed_param_count=24`, `is_max_picks_count=1445`, and `is_max_days_covered=513`;
+- the only IS failure classes are `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_DOWNSIDE_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`; no best-of-failed binding was created;
+- param 9 is the only evaluated row with positive average return among the nearest rows but still fails median, downside, and both stability gates; param 24 passes downside only and fails average, median, and both stability gates;
+- execution-price correction is validated: opening gaps fill at open, intraday trigger prices use deterministic IDX price-band normalization, trigger and executed prices are distinct, and non-executable fractional source OHLC fails closed;
+- the corrected canonical artifact hash is `f4ec8464f08515b31d7d26636851acea930307d6`; operator evidence path is `storage/app/watchlist/backtest/oos-proof-run-1.json`;
+- global diagnostic is `WS_BT_OOS_PROOF_MISSING` because no valid IS binding exists; per-evaluation diagnostics are empty;
+- OOS did not execute, no `watchlist_bt_oos_eval_ws` proof was created for this run, no promotion occurred, and promotion eligibility remains `NOT_ELIGIBLE — OOS proof missing`;
+- R1 is preserved as failed IS research evidence. The next justified work is a separate R2 entry-quality calibration session using IS only; acceptance gates and the OOS suffix remain unchanged and unread for R2 design.
 
 ## Source of Truth ZIP
 
 - Source ZIP: `tradeaxis-api.zip`
-- Session date: `2026-06-09`
-- Latest local validation date: `2026-06-09`
-- Scope classification: watchlist published-price runtime integration + official operator proof + zero-volume/metric-threshold closure + corrected dynamic coverage semantics; final operator rerun passed.
+- Session date: `2026-06-10`
+- Latest local validation date: `2026-06-10`
+- Scope classification: supported-runtime chronological 70/30 proof infrastructure and full IS calibration completed; R1 has no valid IS parameter, so OOS did not execute.
 
 ## Current Implementation Baseline
 
 | Area | Status | Notes |
 |---|---|---|
-| Current status | `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY` | Read model, candidate universe gates, deterministic scoring foundation, deterministic PLAN grouping foundation, deterministic recommendation foundation, confirm overlay foundation, backtest strategy foundation, runtime artifact foundation, and metrics foundation exist at unit/static scope. Whole watchlist remains not production-ready. |
-| Main feature code | `DONE for published-price runtime proof scope` | Official calendar and published OHLC read surfaces, watchlist runtime orchestration, command, artifact export, metrics, and tests exist; final operator PHPUnit and database-backed command proof passed. |
-| Runtime API | `NOT_STARTED` | No API endpoint created. |
-| Artisan command surface | `IMPLEMENTED / LOCAL_RUNTIME_PROOF_PASS` | Command produced two final deterministic artifacts on the supported operator environment with equal canonical artifact hash. |
-| Database schema | `NOT_STARTED` | No production migration created. Existing SQL docs/fixtures are support artifacts only. |
-| Backtest engine | `DONE for published-price runtime proof scope` | Phase 7 strategy remains intact. Published-price orchestration, zero-volume execution semantics, metric threshold binding, dynamic coverage, final PHPUnit regression, and two-run command proof pass. OOS and production operating proof remain incomplete. |
-| Recommendation engine | `DONE for Phase 5 unit/static scope` | `WatchlistRecommendationService` derives recommendation only from PLAN grouping output. Confirm overlay now consumes recommendation membership as immutable snapshot and does not mutate it. |
-| PLAN grouping engine | `DONE for Phase 4 unit/static scope` | `WatchlistPlanGroupingService` maps Phase 3 scored output into deterministic PLAN groups only. |
-| Scoring engine | `DONE / LOCAL PASS` | `WatchlistScoringService` computes deterministic PLAN component scores and ranking over Phase 2 eligible universe rows; baseline validation at the start of this session is local PASS. |
-| Market-data consumer read model | `DONE for published-price range-read runtime proof scope` | Existing watchlist read model remains intact; new market-data application services expose official trading-calendar windows and exact-date current-readable published EOD OHLCV without watchlist DB access. |
-| Candidate universe / liquidity-risk gates | `DONE` | `WatchlistCandidateUniverseService` applies deterministic liquidity, ATR/risk, and volume participation guards over Phase 1 candidates. |
-| Test coverage | `LOCAL_PHPUNIT_PASS` | Final operator evidence: PublishedPrice 17/146, MetricsService 8/63, Backtest 48/497, full Watchlist 139/1379, PublishedEodSeries 6/29, TradingCalendar 4/16, existing Watchlist read model 3/41. |
-| Artifact/log output | `DONE for deterministic JSON runtime evidence scope` | Two final official command artifacts exist with equal canonical hash `0eaa353d20df901c4f372c0000951408578bf302`; production persistence/operating evidence remains out of scope. |
-| Production readiness | `NOT_READY` | Watchlist is not production-ready. |
+| Current status | `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY` | OOS infrastructure and corrected execution semantics are validated, but no canonical R1 parameter passed all IS gates. |
+| Main feature code | `DONE for OOS execution infrastructure scope` | Deterministic split, official grid, IS-only calibration, immutable binding boundary, OOS no-retune service, official persistence, and artifact export exist. |
+| Runtime API | `NOT_STARTED` | No API endpoint created, by scope. |
+| Artisan command surface | `IMPLEMENTED / SUPPORTED-RUNTIME EXECUTED` | `watchlist:backtest-oos-proof` executed over the full explicit range and correctly stopped before OOS because no valid IS binding existed. |
+| Database schema | `DEPLOYED / VERIFIED FOR CURRENT OOS SCOPE` | Backtest schema migrations and canonical 24-row grid seed executed successfully. |
+| Backtest engine | `DONE for corrected IS runtime scope / OOS NOT EXECUTED` | Full IS replay completed under gap-aware, price-band-normalized execution semantics; no best-of-failed selection occurred. |
+| Recommendation engine | `DONE for Phase 5 unit/static scope` | Recommendation remains derived only from PLAN; calibration/OOS does not mutate recommendation membership. |
+| PLAN grouping engine | `DONE for Phase 4 scope + deterministic BT quantile support` | Official grid quantiles are deterministic and runtime-tested. |
+| Scoring engine | `DONE / R1 QUALITY INSUFFICIENT` | Scoring execution is deterministic, but the R1 grid did not produce a parameter satisfying canonical IS quality gates. |
+| Market-data consumer read model | `DONE for published-price runtime scope` | Full-range replay used official calendar/publication/OHLCV surfaces without raw/latest/MAX-date bypass. |
+| Candidate universe / liquidity-risk gates | `DONE for current runtime scope` | All 24 rows pass cross-field paramset validation and reach IS metric evaluation. |
+| Test coverage | `LOCAL_PHPUNIT_PASS` | ParamGrid `4/636`, MetricsService `15/113`, PublishedPrice `18/177`, OOS `24/186`, Backtest `87/1430`, full Watchlist `179/2318`. |
+| Artifact/log output | `IS FAILURE EVIDENCE AVAILABLE / OOS ARTIFACT ABSENT` | Corrected IS artifact hash `f4ec8464f08515b31d7d26636851acea930307d6`; no OOS evidence exists because no valid IS binding exists. |
+| Production readiness | `NOT_READY` | R1 quality failed, OOS proof is missing, promotion is not eligible, and production operating proof remains absent. |
 
 ## Existing Docs Discovered
 
@@ -241,11 +239,11 @@ Runtime artifact/metrics diagnostic codes in this session are internal backtest 
 
 | Severity | Gap | Impact |
 |---|---|---|
-| `EXTERNAL_DEPENDENCY` | Sandbox runs PHP `8.4.16`; project Artisan guard requires PHP `< 8.4`. | Official command/database runtime proof cannot be executed here. |
-| `RUNTIME_PROOF_MISSING` | New PHPUnit filters and full regression suite have not been executed against the current patch under supported PHP. | New integration remains `PARTIAL`, although prior Phase 6/7/artifact/metrics baselines remain preserved. |
-| `RUNTIME_PROOF_MISSING` | Registered command has not been run twice against an official fixture/integration database. | Command exit behavior, DB-backed exact-date publication lineage, and command-level hash reproducibility remain unproven. |
-| `REVIEW_REQUIRED` | File 12 locks TP/SL/time-exit while file 16 states fixed holding as default. | Metric sufficiency cannot be claimed complete until owner precedence/governance is explicit. |
-| `NOT_READY` | Walk-forward/OOS proof and production operating proof do not exist. | `WL-CONTRACT-015` remains `PARTIAL / NOT_READY`; watchlist remains `NOT_PRODUCTION_READY`. |
+| `EXTERNAL_DEPENDENCY` | Sandbox runs PHP `8.4.16`; project Artisan guard requires PHP `< 8.4`. | Official OOS command/database proof cannot bootstrap here. |
+| `EXTERNAL_DEPENDENCY` | PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing. | PHPUnit exits before test discovery; no current-patch PHPUnit PASS can be claimed. |
+| `RUNTIME_PROOF_MISSING` | Official tables and populated `watchlist_bt_param_grid` were not reachable in a supported runtime. | DB-backed IS/OOS persistence ids, official lineage, OOS metrics, and acceptance remain unproven. |
+| `RUNTIME_PROOF_MISSING` | Two identical supported-environment OOS command runs do not yet exist. | Canonical artifact hash equality is proven only by controlled smoke, not official operator execution. |
+| `NOT_READY` | OOS acceptance and production operating proof are missing. | No paramset promotion review eligibility and no production-ready claim. |
 
 ## First Implementation Roadmap
 
@@ -581,31 +579,34 @@ Validated outcomes:
 
 Reason:
 
-- Phase 6, Phase 7, runtime artifact foundation, and metrics foundation remain historically validated and are not downgraded;
-- official trading-calendar and exact-date published OHLC read surfaces, orchestration, command, and deterministic service artifacts now exist;
-- current-patch PHPUnit regression and official command/database runtime proof passed on the supported operator environment;
-- file 12/file 16 exit-model wording and zero-volume execution semantics are synchronized;
-- no walk-forward/OOS proof;
-- no production operating proof;
-- no portfolio/execution scope was added;
+- historical Phase 6, Phase 7, runtime artifact, metrics, and published-price runtime baselines remain valid and are not downgraded;
+- canonical schema, 24-row grid, execution-price semantics, PHPUnit, and full-range IS runtime are validated;
+- all 24 R1 parameters failed one or more canonical IS quality gates;
+- no valid `param_id_best_is` or immutable best-IS binding exists;
+- OOS did not execute and no OOS acceptance artifact exists;
+- no promotion was executed and promotion eligibility is `NOT_ELIGIBLE — OOS proof missing`;
+- no portfolio, broker, scheduler, API, or production-execution scope was added;
 - no contract is `LOCKED` and `WL-CONTRACT-015` remains `PARTIAL / NOT_READY`.
+
+Watchlist is not production-ready.
 
 ## Next Required Sessions
 
-Recommended next session:
+Required next session:
 
-`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`
 
 Target:
 
-- consume the completed published-price runtime proof as the immutable replay foundation;
-- implement and prove chronological train/calibration/test segmentation without future leakage;
-- keep exact-date current-readable publication, calendar, paramset, and artifact lineage per fold;
-- prove deterministic fold construction, OOS-only evaluation, aggregate OOS metrics, and reproducible artifacts;
-- retain zero-volume non-tradable handling and no synthetic fills;
-- keep portfolio allocation, final position sizing, broker instruction, execution automation, scheduler, and production API out of scope;
-- keep watchlist `NOT_PRODUCTION_READY` until OOS and production operating evidence are complete.
-
+- preserve R1 artifact and matrix as immutable failed-IS evidence;
+- create a new deterministic catalog/version rather than editing R1 rows in place;
+- use IS data only; the OOS suffix must not be read or used to design R2;
+- focus on entry-quality variables such as momentum threshold, breakout proximity/extension, volume confirmation, ATR selection band, liquidity threshold, scoring weights, and TOP_PICKS quantile;
+- keep canonical metric sufficiency and acceptance gates unchanged;
+- avoid unbounded/manual trial loops and keep the search space documented and finite;
+- require all R2 rows to pass the same cross-field, execution-price, determinism, and persistence guards;
+- select no best-of-failed parameter; OOS may start only if at least one R2 row passes every canonical IS gate;
+- keep promotion, portfolio, broker, scheduler, API, and production-ready claims out of scope.
 
 ## Runtime Artifact and Metrics Foundation Update — 2026-06-08
 
@@ -932,3 +933,327 @@ Earlier references in this document to a required closure/coverage rerun are his
 Next session:
 `WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`.
 
+## Walk-Forward/OOS Implementation Unit-Static Update — 2026-06-09
+
+Session:
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+
+Session status:
+`DONE for walk-forward/OOS implementation unit-static scope / LOCAL_SMOKE_PASS / OFFICIAL_RUNTIME_PROOF_BLOCKED / NOT_PRODUCTION_READY`.
+
+### TRACE result
+
+```text
+official trading calendar
+→ official current-readable published EOD series
+→ WatchlistBacktestPublishedPriceRuntimeService
+→ WatchlistBacktestStrategyService
+→ WatchlistBacktestMetricsService
+→ official watchlist_bt_param_grid
+→ IS-only calibration and watchlist_bt_eval
+→ deterministic 70/30 split
+→ immutable best-IS binding
+→ OOS one-param evaluation without re-tuning
+→ watchlist_bt_oos_eval_ws
+→ deterministic JSON evidence
+```
+
+No raw market-data reader, latest/`MAX(trade_date)` shortcut, hidden current-date default, PLAN/RECOMMENDATION/CONFIRM mutation, paramset status mutation, portfolio allocation, order, broker, scheduler, or API endpoint was introduced.
+
+### Contract drift closed
+
+- file 17 now locks `is_count=floor(0.70*N)` and assigns the remainder to OOS;
+- file 16 and file 12 now end canonical ranking with `param_id ASC`;
+- file 20 and `PROMOTE_PARAMSET.sql` now require the canonical minimum OOS count, default `40`, rather than `picks_count_oos > 0`;
+- the OOS fixture now uses only owner acceptance gates;
+- OOS DDL now records `is_eval_id` with a foreign key to `watchlist_bt_eval`.
+
+### Implementation evidence
+
+Created:
+
+- `WatchlistBacktestOosSplitService`;
+- `WatchlistBacktestIsCalibrationService`;
+- `WatchlistBacktestOosProofService`;
+- official param-grid, IS-evaluation, and OOS-evaluation repositories;
+- `RunBacktestOosProofCommand` and Kernel registration;
+- seven OOS/quantile PHPUnit test files.
+
+Updated:
+
+- published-price runtime with an internal explicit-window evaluation surface;
+- strategy paramset propagation and canonical eval model;
+- PLAN grouping with deterministic daily quantile cutoffs for official BT-grid fields;
+- owner contracts, DDL, promotion SQL, fixture, and audit trackers.
+
+### Validation evidence
+
+```text
+PHP lint: PASS for every changed/new PHP file
+controlled OOS smoke: PASS / 35 assertions
+controlled grouping quantile smoke: PASS / 6 assertions
+new OOS PHPUnit source: 20 test methods / 118 assertion-expectation call sites
+official Artisan attempt 1: exit 2 / unsupported PHP 8.4.16 / no artifact
+official Artisan attempt 2: exit 2 / unsupported PHP 8.4.16 / no artifact
+requested PHPUnit scopes: exit 1 before discovery / missing dom, mbstring, xml, xmlwriter
+```
+
+The controlled smoke proves split odd/even behavior, canonical ranking/tie-break, immutable binding, no OOS selection leakage, OOS gates, missing-metric fail-closed behavior, exact-duplicate idempotency, conflicting-duplicate rejection, no promotion mutation, and canonical hash equality across INSERTED/IDEMPOTENT persistence status. It does not replace supported-environment PHPUnit or official DB-backed command evidence.
+
+### Runtime and promotion conclusion
+
+```text
+Official OOS runtime evidence: BLOCKED
+LOCAL_OOS_PROOF_PASS: NOT CLAIMED
+OOS_ACCEPTANCE_FAIL: NOT CLAIMED (OOS did not execute)
+Promotion eligibility: NOT_ELIGIBLE — OOS proof missing
+Production ready: false
+```
+
+No contract is promoted to `LOCKED`.
+
+
+## OOS Supported-Runtime Finding and Gap-Closure Implementation Update — 2026-06-09
+
+Session:
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+
+Current status:
+`DONE for OOS runtime gap-closure implementation unit/static scope / OPERATOR_RERUN_REQUIRED / NOT_PRODUCTION_READY`.
+
+### Operator evidence received before this closure patch
+
+```text
+watchlist:backtest-oos-proof command registration: PASS
+WatchlistBacktestOos: 19 tests / 117 assertions / PASS
+WatchlistBacktestIsCalibration: 3 tests / 17 assertions / PASS
+WatchlistPlanGroupingQuantileCutoff: 1 test / 6 assertions / PASS
+WatchlistBacktest: 70 tests / 631 assertions / PASS
+Full Watchlist: 162 tests / 1519 assertions / PASS
+MarketDataPublishedEodSeries: 6 tests / 29 assertions / PASS
+MarketDataTradingCalendar: 4 tests / 16 assertions / PASS
+MarketDataWatchlistReadModelTest: 3 tests / 41 assertions / PASS
+```
+
+The first long-range attempt (`2023-01-02` through `2026-05-29`) exhausted the 512 MB PHP memory limit while materializing published prices. A shorter supported-runtime attempt (`2025-01-02` through `2026-05-29`) completed the chronological split and IS calibration:
+
+```text
+IS: 2025-01-02 through 2025-12-17 / 229 trading dates
+OOS: 2025-12-18 through 2026-05-29 / 99 trading dates
+param_grid_count: 1
+is_valid_param_count: 0
+picks_count: 629
+IS coverage: PASS
+average return: PASS
+median return: FAIL
+p25 downside: FAIL
+monthly win-rate floor: FAIL
+monthly average floor: FAIL
+OOS: not started because no valid IS binding existed
+```
+
+The existing one-row baseline was correctly rejected. No best-of-failed selection and no OOS retuning occurred.
+
+### Confirmed implementation gaps closed by this patch
+
+- Added a deterministic, curated, 24-row canonical WS parameter catalog and idempotent database seed command/seeder/SQL.
+- Added official grid columns for `stop_atr_mult` and `min_rr`; both are bound into the runtime paramset.
+- Propagated `atr14_pct` and level inputs through recommendation/backtest candidates.
+- Added canonical ATR/RR stop/target fallback when PLAN has no explicit levels.
+- Replaced date/ticker cartesian published-price loading with exact frozen candidate date/ticker pair reads.
+- Removed per-grid temporary JSON writes during IS calibration and released iteration memory.
+- Corrected runtime metadata to `PUBLISHED_EOD_OHLCV_CURRENT_READABLE_EXACT_DATE` / `TARGETED_DATE_TICKER_MAP`.
+- Added compact deterministic worst/best trade evidence with entry/exit and publication lineage to each IS evaluation reference.
+- Versioned `watchlist_bt_eval` identity with `eval_model` and `paramset_hash`, and OOS identity with `is_eval_id`, so the earlier `eval_id=1` evidence can remain while corrected semantics are rerun; no deletion or overwrite is required.
+- Added migrations and synchronized SQL for fresh and existing databases.
+
+### Current validation boundary
+
+The code and documentation patch has local syntax/static validation in the packaging environment. Official PHPUnit and database-backed rerun for this closure patch must be executed by the operator under the supported project PHP/runtime. Historical operator PASS evidence above is preserved but does not prove the new closure patch.
+
+Required next operator sequence:
+
+```text
+migrate schema
+seed canonical grid
+run OOS/backtest/full-Watchlist/MarketData PHPUnit
+run one explicit OOS proof
+if best IS exists and OOS executes, run the same proof a second time
+compare canonical hashes and persistence ids/status
+```
+
+Current conclusion:
+
+```text
+LOCAL_OOS_PROOF_PASS: NOT CLAIMED
+OOS_ACCEPTANCE_FAIL: NOT CLAIMED for the corrected multi-grid runtime
+Promotion eligibility: NOT_ELIGIBLE — corrected OOS proof missing
+Production ready: false
+```
+
+Watchlist is not production-ready.
+
+## OOS Post-Deployment Regression Root-Cause Correction — 2026-06-10
+
+Supported operator deployment confirmed the canonical grid seed itself was healthy:
+
+```text
+catalog_count=24
+inserted_count=0
+updated_count=0
+existing_count=24
+param_grid_count=24
+WatchlistBacktestParamGrid: 2 tests / 535 assertions / PASS
+```
+
+The subsequent suites exposed three source-level regressions in the uploaded source of truth:
+
+1. `WatchlistBacktestOosStaticGuardTest` duplicated the obsolete literal `18` even though the catalog and SQL seed contain 24 rows.
+2. `WatchlistBacktestStrategyService::DEFAULT_PARAMSET` had no nested risk defaults, so a standalone strategy replay emitted `stop_atr_mult=null` and `min_rr=null`.
+3. `WatchlistBacktestPublishedPriceRuntimeService` passed runtime metadata into strategy replay but trusted the returned payload to echo it. Test doubles and legacy payloads could therefore omit `pricing_model` / `price_read_mode`, causing artifact drift and an undefined index.
+
+Root corrections:
+
+- added `WatchlistBacktestParamGridCatalog::CATALOG_COUNT=24` and made catalog/SQL static guards derive from it;
+- added exact persisted-catalog validation with fail-closed code `WS_BT_PARAM_GRID_PERSISTED_SET_MISMATCH`;
+- added canonical strategy defaults `risk.stop_atr_mult=1.5` and `risk.min_rr=1.5`, with nested risk resolution;
+- bound published-price runtime metadata onto the returned strategy payload before the frozen strategy hash and before price reads;
+- synchronized top-level/meta paramset snapshots and trade runtime metadata without fabricating missing eval thresholds;
+- synchronized owner contract, implementation flow, test guidance, and audit trackers.
+
+Packaging-environment validation:
+
+```text
+PHP lint: PASS for all changed PHP files
+controlled root-cause smoke: 15 assertions / PASS
+official PHPUnit: not executable in packaging environment because dom, mbstring, xml, xmlwriter are unavailable
+```
+
+Operator rerun is required. No `LOCAL_OOS_PROOF_PASS`, promotion eligibility, or production-ready claim is made.
+
+
+## OOS Full-Window Operator Result and Grid Cross-Field Closure — 2026-06-10
+
+Supported operator validation after the post-deployment correction:
+
+```text
+WatchlistBacktestParamGrid: 2 tests / 535 assertions / PASS
+WatchlistBacktestOos: 24 tests / 174 assertions / PASS
+WatchlistBacktestStrategy: 15 tests / 191 assertions / PASS
+WatchlistBacktestPublishedPrice: 18 tests / 155 assertions / PASS
+WatchlistBacktest: 79 tests / 1252 assertions / PASS
+Full Watchlist: 171 tests / 2140 assertions / PASS
+```
+
+The full explicit OOS command then executed without memory exhaustion:
+
+```text
+from=2023-01-02
+split IS=2023-01-02..2025-05-21 / 562 trading dates
+split OOS=2025-05-22..2026-05-29 / 242 trading dates
+param_grid_count=24
+is_valid_param_count=0
+is_failed_param_count=24
+is_max_picks_count=1513
+is_max_days_covered=513
+reason_code=WS_BT_OOS_PROOF_MISSING
+```
+
+Static source analysis identified a technical failure mixed into the honest statistical failures: 19 strict catalog rows have `max_atr14_pct < 0.075`, while the previous row-to-paramset merge retained active `atr_ideal_high=0.075`. Candidate/scoring validation therefore rejected those rows as internally contradictory before daily replay, surfacing aggregate `WATCHLIST_BACKTEST_SOURCE_NOT_READY`.
+
+Root correction:
+
+- introduced `WatchlistBacktestParamGridParamsetFactory` as the single row-to-runtime-paramset boundary;
+- locked deterministic companion-band projection `CLAMP_DEFAULT_IDEAL_ATR_BAND_TO_GRID_MAX_ATR`;
+- records resolved values in `bt_grid_resolution`;
+- guarantees `min_atr14_pct <= atr_ideal_low <= atr_ideal_high <= max_atr14_pct` for all 24 rows;
+- added catalog-wide PHPUnit/static guards.
+
+This correction removes a technical false rejection. It does not weaken metric gates and does not guarantee that any parameter will pass IS. The operator must rerun the same full command. If all 24 rows execute but still fail robust-return/downside/stability gates, that result is an honest strategy-calibration failure, not a runtime defect.
+
+Current status:
+
+```text
+UNIT/REGRESSION BASELINE: PASS
+FULL-WINDOW TECHNICAL EXECUTION: PASS
+GRID CROSS-FIELD CORRECTION: IMPLEMENTED / OPERATOR RERUN REQUIRED
+LOCAL_OOS_PROOF_PASS: NOT CLAIMED
+PROMOTION: NOT_ELIGIBLE
+NOT_PRODUCTION_READY
+```
+
+## Execution-Price Corrected Full-Range R1 IS Final Result — 2026-06-10
+
+Session:
+`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+
+Final session status:
+`DONE for OOS execution infrastructure / EXECUTION_PRICE_CORRECTION_VALIDATED / FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`.
+
+### Final operator validation
+
+```text
+WatchlistBacktestParamGrid: 4 tests / 636 assertions / PASS
+WatchlistBacktestMetricsServiceTest: 15 tests / 113 assertions / PASS
+WatchlistBacktestPublishedPrice: 18 tests / 177 assertions / PASS
+WatchlistBacktestOos: 24 tests / 186 assertions / PASS
+WatchlistBacktest: 87 tests / 1430 assertions / PASS
+Full Watchlist: 179 tests / 2318 assertions / PASS
+```
+
+### Final supported-runtime evidence
+
+```text
+requested_from=2023-01-02
+requested_to=2026-05-29
+split_rule=FLOOR_70_PERCENT_IS_REMAINDER_OOS
+is_from=2023-01-02
+is_to=2025-05-21
+is_trading_date_count=562
+oos_from=2025-05-22
+oos_to=2026-05-29
+oos_trading_date_count=242
+param_grid_count=24
+is_valid_param_count=0
+is_failed_param_count=24
+is_max_picks_count=1445
+is_max_days_covered=513
+is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+artifact_hash=f4ec8464f08515b31d7d26636851acea930307d6
+production_ready=0
+exit_code=1
+```
+
+The run completed the full IS evaluation. Exit code `1` is the correct fail-closed result for `WS_BT_OOS_PROOF_MISSING` when no parameter passes every IS gate. It is not a runtime or database defect.
+
+### Diagnostics and quality conclusion
+
+- no per-evaluation runtime/source diagnostics were emitted;
+- no `WATCHLIST_BACKTEST_SOURCE_NOT_READY`, price-read, OHLC, tradability, or execution failure remained;
+- all failures are canonical return/downside/stability gate failures;
+- param 9 passes average return only and fails median, downside, and stability;
+- param 24 passes downside only and fails average, median, and stability;
+- R1 therefore has no eligible best-IS binding and OOS correctly remains unread/unexecuted.
+
+### Evidence retained
+
+- canonical runtime artifact: `storage/app/watchlist/backtest/oos-proof-run-1.json`;
+- frozen copy: `storage/app/watchlist/backtest/oos-proof-execution-price-corrected-is-failed.json`;
+- IS matrix: `storage/app/watchlist/backtest/oos-is-evaluation-matrix-execution-corrected.csv`;
+- canonical artifact hash: `f4ec8464f08515b31d7d26636851acea930307d6`.
+
+### Final boundary
+
+```text
+R1_EXECUTION_VALIDATED
+R1_GRID_FAILED_IS_QUALITY
+NO_VALID_IS_PARAM
+OOS_NOT_EXECUTED
+NOT_ELIGIBLE_FOR_PROMOTION
+NOT_PRODUCTION_READY
+```
+
+No owner acceptance rule was weakened, no OOS data was used for selection, no best-of-failed parameter was created, and no contract is promoted to `LOCKED`.
+
+Next session:
+`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`.

@@ -124,3 +124,30 @@ Testing Weekly Swing yang sah bukan hanya membuktikan “fitur jalan”, tetapi 
 - artifact separation tetap utuh
 - confirm tidak memutasi recommendation
 - implementation tidak bocor ke domain lain
+
+## OOS closure validation focus
+
+Validation must cover catalog constraints, seed idempotency, eval identity versioning, targeted exact-pair reads, in-memory calibration, ATR/RR target-stop fallback, extreme trade evidence, no OOS selection input, and deterministic two-run hashes.
+
+## Post-Deployment Regression Guards
+
+Mandatory guards for the OOS runtime closure:
+
+- catalog cardinality checks derive from `WatchlistBacktestParamGridCatalog::CATALOG_COUNT`, currently `24`, instead of a duplicated literal;
+- the SQL seed contains exactly one `INSERT ... WHERE NOT EXISTS` pair per canonical catalog row;
+- missing `risk.stop_atr_mult` and `risk.min_rr` resolve to the bootstrap defaults `1.5` and `1.5` in strategy trade candidates;
+- published-price runtime metadata is rebound before the frozen strategy hash, including when a test double or legacy strategy payload omits `pricing_model` / `price_read_mode`;
+- runtime metadata binding does not fabricate missing evaluation thresholds;
+- persisted WS grid rows must match the canonical catalog exactly; extra or missing rows fail closed.
+
+
+## Canonical grid cross-field compatibility guard
+
+Tests must construct a runtime paramset for every canonical catalog row and assert:
+
+```text
+min_atr14_pct <= atr_ideal_low <= atr_ideal_high <= max_atr14_pct
+risk_band_rule = CLAMP_DEFAULT_IDEAL_ATR_BAND_TO_GRID_MAX_ATR
+```
+
+At least one baseline row must preserve the default ideal ATR band, and at least one strict row with `max_atr14_pct < default atr_ideal_high` must prove deterministic clamping. Static guards must prove IS calibration delegates to the canonical paramset factory rather than recreating row mapping locally.

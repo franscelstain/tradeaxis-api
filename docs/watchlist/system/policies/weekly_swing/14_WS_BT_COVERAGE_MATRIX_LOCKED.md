@@ -121,3 +121,23 @@ Dokumen ini harus dibuktikan minimal oleh test:
 
 ## Next
 - [`15_WS_UNIVERSE_EQUIVALENCE_CONTRACT_LOCKED.md`](15_WS_UNIVERSE_EQUIVALENCE_CONTRACT_LOCKED.md)
+
+## 9) Implemented minimum grid mapping for chronological OOS calibration
+
+| param_key | origin | grid_column | cutoff_dependency | pick_dependency | eval_dependency | notes |
+|---|---|---|---|---|---|---|
+| `liquidity.min_dv20_idr` | MAN/BT target | `min_dv20_idr` | candidate selection | eligible/executed candidates | `watchlist_bt_eval` + OOS | IDR integer |
+| `risk.max_atr14_pct` | MAN/BT target | `max_atr14_pct` | candidate selection | eligible/executed candidates | `watchlist_bt_eval` + OOS | fractional ATR |
+| `volume.min_vol_ratio` | MAN/BT target | `min_vol_ratio` | candidate selection | eligible/executed candidates | `watchlist_bt_eval` + OOS | ratio |
+| `scoring.weights.momentum` | MAN/BT target | `w_momentum` | score/bucket | pick score | `watchlist_bt_eval` + OOS | weights total 1.0 |
+| `scoring.weights.volume` | MAN/BT target | `w_volume` | score/bucket | pick score | `watchlist_bt_eval` + OOS | weights total 1.0 |
+| `scoring.weights.breakout` | MAN/BT target | `w_breakout` | score/bucket | pick score | `watchlist_bt_eval` + OOS | weights total 1.0 |
+| `scoring.weights.risk` | MAN/BT target | `w_risk` | score/bucket | pick score | `watchlist_bt_eval` + OOS | weights total 1.0 |
+| `risk.stop_atr_mult` | MAN/BT target | `stop_atr_mult` | none | evaluated trade stop | `watchlist_bt_eval` + OOS | ATR fallback stop |
+| `risk.min_rr` | MAN/BT target | `min_rr` | none | evaluated trade target | `watchlist_bt_eval` + OOS | RR fallback target |
+| `grouping.top_picks_target` | BT target | `top_picks_target` | TOP cutoff | TOP picks | `watchlist_bt_eval` + OOS | positive integer |
+| `grouping.secondary_target` | BT target | `secondary_target` | secondary cutoff | secondary picks | `watchlist_bt_eval` + OOS | positive integer |
+| `grouping.top_min_score_q` | BT | `top_min_score_q` | `watchlist_bt_cutoffs_ws` | TOP picks | `watchlist_bt_eval` + OOS | quantile `0..1` |
+| `grouping.secondary_min_score_q` | BT | `secondary_min_score_q` | `watchlist_bt_cutoffs_ws` | secondary picks | `watchlist_bt_eval` + OOS | quantile `0..1` |
+
+This table documents the implemented minimum grid mapping. It does not waive the full picks/cutoffs/universe evidence required by this document for a later promotion review.

@@ -111,3 +111,17 @@ Sebuah patch Weekly Swing hanya dianggap bersih secara artefak jika:
 
 ## Next
 - [`19_WS_DEPRECATED_OR_NONSCOPE_ARTIFACTS_LEDGER.md`](19_WS_DEPRECATED_OR_NONSCOPE_ARTIFACTS_LEDGER.md)
+
+## 8) Official deployment support for the OOS runtime
+
+The following are supporting deployment artifacts controlled by the official schema/owner documents. They do not create additional official runtime tables:
+
+- `db/BACKTEST_SCHEMA_DDL.sql`;
+- `db/BACKTEST_PARAM_GRID_SEED.sql`;
+- `db/BACKTEST_OOS_RUNTIME_GAP_CLOSURE.sql`;
+- Laravel migrations for the same schema changes;
+- `WatchlistBacktestParamGridSeeder` and `watchlist:backtest-param-grid-seed`.
+
+A JSON OOS proof export is evidence transport, not a new table or a replacement for `watchlist_bt_eval` / `watchlist_bt_oos_eval_ws`.
+
+Read-only operator verification may use `db/BACKTEST_OOS_RUNTIME_VERIFY.sql`; this is a support query, not a persisted artifact.

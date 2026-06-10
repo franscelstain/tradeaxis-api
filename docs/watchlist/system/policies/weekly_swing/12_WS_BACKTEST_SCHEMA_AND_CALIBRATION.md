@@ -91,12 +91,40 @@ Rule ini adalah execution/evaluation semantics milik backtest watchlist. Rule in
 
 ### C. Exit Model (horizon Weekly Swing)
 - Horizon maksimum: **5 trading day** sejak entry (D+1 s/d D+5).
-- Exit utama (ambil yang pertama terpenuhi):
-  1) Stop loss: jika **low** hari t <= stop_price → exit di **stop_price**.
-  2) Take profit: jika **high** hari t >= target_price → exit di **target_price**.
-  3) Time exit: jika sampai akhir horizon belum kena stop/target → exit di **close(D+5)**.
-- Jika dalam 1 hari terjadi kondisi stop dan target sekaligus (low <= stop dan high >= target):
-  - Prioritas hit: **STOP dulu** (konservatif), catat `BT_AMBIGUOUS_HIT_STOP_PRIOR`.
+- `stop_price` dan `target_price` adalah theoretical policy levels; keduanya bukan otomatis harga fill.
+- Sebelum evaluasi, theoretical levels dinormalisasi ke fraksi harga executable:
+  - stop trigger dibulatkan turun ke fraksi valid;
+  - target trigger dibulatkan naik ke fraksi valid;
+  - marker: `price_fraction_rule = IDX_EQUITY_PRICE_BANDS`;
+  - normalized stop/target memakai band fraksi dari theoretical level masing-masing;
+  - marker: `price_fraction_reference = THEORETICAL_LEVEL`;
+  - marker: `price_normalization_rule = CONSERVATIVE_STOP_FLOOR_TARGET_CEIL`.
+  - canonical price-band table used for theoretical trigger normalization:
+    - `< 200` → `1`;
+    - `200 .. < 500` → `2`;
+    - `500 .. < 2_000` → `5`;
+    - `2_000 .. < 5_000` → `10`;
+    - `>= 5_000` → `25`.
+- Exit utama mengambil event pertama menurut urutan observable berikut:
+  1) Jika **open(t) <= stop_trigger_price**, gap melewati stop dan fill wajib di **open(t)** dengan `GAP_THROUGH_STOP_AT_OPEN`.
+  2) Jika **open(t) >= target_trigger_price**, gap melewati target dan fill wajib di **open(t)** dengan `GAP_THROUGH_TARGET_AT_OPEN`.
+  3) Jika tidak ada opening gap dan **low(t) <= stop_trigger_price**, exit di normalized stop trigger.
+  4) Jika tidak ada opening gap dan **high(t) >= target_trigger_price**, exit di normalized target trigger.
+  5) Jika sampai akhir horizon belum kena stop/target, exit di executable **close(D+5)**.
+- Jika open berada di antara stop dan target lalu dalam bar yang sama low menyentuh stop dan high menyentuh target, prioritas **STOP dulu** dan catat `BT_AMBIGUOUS_HIT_STOP_PRIOR`.
+- Opening gap selalu dievaluasi sebelum high/low intraday; karena itu target-at-open dapat mendahului low intraday dan stop-at-open dapat mendahului high intraday.
+- Artifact wajib membedakan `trigger_price` dari `executed_price`, serta mencatat `fill_rule` dan `gap_detected`.
+- Seluruh execution-price markers pada section ini adalah canonical runtime rules, bukan grid/calibration knobs; caller atau paramset tidak boleh menggantinya.
+
+### C1. Executable source-price rule (LOCKED)
+
+- Entry, stop/target evaluation, dan time-exit hanya boleh memakai raw OHLC dalam satuan rupiah bulat; transformed/adjusted fractional OHLC bukan harga fill executable.
+- `adj_close` tidak boleh menggantikan raw `open/high/low/close` untuk simulasi fill.
+- Bar dengan OHLC fractional/transformed yang tidak sesuai fraksi harga harus fail closed:
+  - entry: `BT_SKIP_NON_EXECUTABLE_PRICE_ENTRY`;
+  - exit: `BT_SKIP_NON_EXECUTABLE_PRICE_EXIT`.
+- Kedua kondisi menghasilkan `ret_net = NULL`; runtime tidak boleh menebak raw price atau mengubah adjusted-looking OHLC menjadi fill.
+- Marker: `source_price_mode = RAW_TRADABLE_OHLC_REQUIRED`.
 
 ### D. Level Stop/Target (deterministik)
 - Jika policy menyimpan level di PLAN:
@@ -263,7 +291,7 @@ Dokumen ini tidak mengambil alih acceptance threshold OOS dan evaluation suffici
      ev.median_ret_net_top DESC,
      ev.month_win_rate_min DESC,
      ev.p25_ret_net_top DESC,
-     ev.win_rate_top DESC
+     ev.param_id ASC
    LIMIT 1;
    ```
 4) Buat param_set baru (DRAFT):
@@ -368,3 +396,103 @@ Indexes:
 ## Next
 ### Weekly Swing
 - 13_WS_CONTRACT_TEST_CHECKLIST.md
+
+## OOS Runtime Gap Closure — Deterministic Grid, Evaluation Identity, and Bounded Reads (LOCKED)
+
+The minimum chronological OOS runtime uses one explicit historical window. Operators must not split one requested proof into multiple commands and merge the results, because every command would create a different 70/30 split and a different calibration boundary.
+
+### Canonical grid source
+
+Runtime calibration reads only `watchlist_bt_param_grid`, ordered by `param_id ASC`. The canonical bootstrap catalog is implemented by `WatchlistBacktestParamGridCatalog` and persisted idempotently through:
+
+- `php artisan watchlist:backtest-param-grid-seed`;
+- `database/seeders/Watchlist/WatchlistBacktestParamGridSeeder.php`;
+- [`db/BACKTEST_PARAM_GRID_SEED.sql`](db/BACKTEST_PARAM_GRID_SEED.sql) for operator SQL deployment.
+
+The bootstrap catalog is deterministic and curated before OOS execution. The current canonical bootstrap cardinality is `24`, exposed by `WatchlistBacktestParamGridCatalog::CATALOG_COUNT`; catalog code, SQL seed cardinality, repository persistence, and static guards must derive from that single source instead of duplicating a literal count. Any cardinality change requires synchronized owner-doc, catalog, SQL seed, and test updates.
+
+It is not generated from OOS metrics, random search, Bayesian search, or current runtime outcomes. Every row must satisfy:
+
+- scoring weights sum to `1.0`;
+- quantiles are inside `0..1` and `top_min_score_q >= secondary_min_score_q`;
+- targets are positive integers;
+- ATR values use fractional units;
+- `stop_atr_mult > 0` and `min_rr > 0`.
+
+The official grid columns include:
+
+```text
+min_dv20_idr
+max_atr14_pct
+min_vol_ratio
+w_momentum
+w_volume
+w_breakout
+w_risk
+stop_atr_mult
+min_rr
+top_picks_target
+secondary_target
+top_min_score_q
+secondary_min_score_q
+```
+
+### Versioned evaluation identity
+
+`watchlist_bt_eval` identity is:
+
+```text
+policy_code + param_id + eval_model + paramset_hash + from_date + to_date
+```
+
+This identity preserves historical evidence when evaluation semantics or a paramset snapshot changes. An old row must not be overwritten or deleted merely to permit a rerun. Existing unversioned rows are migrated to explicit legacy markers by the gap-closure migration/SQL.
+
+Exact duplicate payloads are idempotent. The same identity with different metrics fails closed. The OOS identity also includes `is_eval_id`, ensuring that an OOS result is bound to one exact frozen IS evaluation and corrected IS semantics can coexist with historical proof rows.
+
+### Memory-bounded published-price read
+
+After PLAN/recommendation candidates are frozen, the runtime builds an exact `trade_date -> ticker_code[]` map for entry/exit evaluation and reads only those date/ticker pairs through the official published EOD read surface. The runtime must not materialize `all candidate tickers × all required dates` when most pairs are not consumed.
+
+Canonical markers:
+
+```text
+pricing_model = PUBLISHED_EOD_OHLCV_CURRENT_READABLE_EXACT_DATE
+price_read_mode = TARGETED_DATE_TICKER_MAP
+targeted_date_ticker_read = true
+```
+
+These runtime-owned markers are bound to the returned strategy payload **before** the frozen strategy hash is computed and before any future-price read begins. This binding must update the top-level and meta paramset snapshots consistently, while leaving missing canonical evaluation thresholds missing so threshold validation can still fail closed rather than fabricating evidence.
+
+The bootstrap strategy risk defaults remain `risk.stop_atr_mult = 1.5` and `risk.min_rr = 1.5` when those inputs are absent. Explicit grid/runtime values override the defaults; a missing nested `risk` section must not silently produce null trade-candidate risk fields.
+
+IS calibration is in-memory and does not write a temporary JSON file for every grid row. One final proof artifact is exported by the OOS orchestrator. Per-grid iteration state must be released before evaluating the next row.
+
+### Trade evidence in the proof artifact
+
+For every IS evaluation reference, the proof artifact includes compact deterministic extreme-trade evidence (worst and best evaluated trades) with entry/exit dates, prices, volume, stop/target source, ATR/RR inputs, return, and publication lineage. This evidence supports diagnosis without creating an unofficial shadow table. It does not replace the official table allowlist or the separate full coverage requirements for promotion.
+
+## Canonical grid cross-field projection rule (LOCKED)
+
+`watchlist_bt_param_grid.max_atr14_pct` is an explicit grid axis, while the minimum OOS bootstrap schema does not persist separate `atr_ideal_low` and `atr_ideal_high` columns. A grid row must never be combined with incompatible active defaults.
+
+Before strategy/scoring execution, the runtime paramset factory must resolve the companion ATR band deterministically:
+
+```text
+min_atr14_pct = canonical active minimum
+atr_ideal_high = max(min_atr14_pct, min(canonical default atr_ideal_high, grid.max_atr14_pct))
+atr_ideal_low  = max(min_atr14_pct, min(canonical default atr_ideal_low, atr_ideal_high))
+```
+
+Canonical marker:
+
+```text
+risk_band_rule = CLAMP_DEFAULT_IDEAL_ATR_BAND_TO_GRID_MAX_ATR
+```
+
+Required invariants:
+
+```text
+min_atr14_pct <= atr_ideal_low <= atr_ideal_high <= max_atr14_pct
+```
+
+The resolved values and rule must be present in the immutable paramset snapshot under `bt_grid_resolution`. This is a deterministic compatibility projection, not OOS tuning. It may not inspect IS/OOS metrics, prices, or ranking results. A row with `max_atr14_pct < min_atr14_pct` must fail closed as invalid.
