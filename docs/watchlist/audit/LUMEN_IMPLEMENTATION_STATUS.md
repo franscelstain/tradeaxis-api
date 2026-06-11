@@ -15,25 +15,34 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 SEED AND IS TWO-RUN VALIDATION SESSION`
+`WATCHLIST - WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
 
 Status:
-`DONE for downside/stability C01 calibration execution infrastructure / LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+`DONE for C01 failure diagnostic scope / NEXT_CATALOG_NOT_DESIGNED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
 
-Current C01 calibration execution evidence:
+Current C01 failure diagnostic evidence:
 
-- R2 runtime artifacts `storage/app/watchlist/backtest/r2-is-run-1.json` and `storage/app/watchlist/backtest/r2-is-run-2.json` are present and file SHA1 identical: `124d41bfe9635de633d38dd959336b5a8d1b146f`;
-- both R2 artifacts retain canonical artifact hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`, `is_valid_param_count=0`, `is_failed_param_count=12`, and failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
-- requested R1 storage filenames `r1-final-is-failed.json` and `r1-final-is-evaluation-matrix.csv` are absent in this workspace; available R1 comparison is limited to `storage/app/watchlist/backtest/oos-is-evaluation-matrix-execution-corrected.csv` and tracker/reference notes;
-- R2 failure diagnostic confirms all 12 rows passed trade-count and coverage gates but failed downside, robust-return, and stability gates; no runtime/source diagnostics, no OOS leakage, no publication/calendar failure, and no price-execution drift are supported by the artifact;
-- C01 reference note is updated at `docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C01_CALIBRATION_NOTE.md`;
-- code-owned C01 catalog identity is `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, hash `604ac98f6f193a4c317d4f25582deada84682846`;
-- C01 is implemented in PHP with explicit catalog class, repository allowlist, paramset factory projection, seed command, database seeder, and IS artifact labels;
-- C01 seed command executed locally with `status=PASS`, `inserted_count=8`, `r1_immutable=1`, `r2_immutable=1`, `oos_executed=0`, and exit code `0`;
-- C01 IS calibration executed twice on exact IS `2023-01-02..2025-05-21`; both runs returned domain-valid exit code `1` with `status=C01_GRID_FAILED_IS_QUALITY` and artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
-- C01 result is `is_valid_param_count=0`, `is_failed_param_count=8`, failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`;
-- C01 was not promoted and is not production-ready;
-- OOS was not run or read in this session.
+- source ZIP/workspace evidence was read; no assumption from prior sessions is used without a current file;
+- R1 remains immutable historical evidence: `WS_BT_GRID_BOOTSTRAP_2026_06`, version `R1`, count `24`, hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`;
+- R2 remains immutable historical evidence: `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, version `R2`, count `12`, hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`, artifact hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`;
+- C01 remains immutable failed-IS evidence: `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, hash `604ac98f6f193a4c317d4f25582deada84682846`;
+- C01 two-run artifacts are present and deterministic: file SHA1 run 1 `04F6C664A0C9006C16542A8380034A0A633041DC`, file SHA1 run 2 `04F6C664A0C9006C16542A8380034A0A633041DC`, artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
+- C01 has `is_valid_param_count=0`, `is_failed_param_count=8`, and no best IS binding;
+- all 8 C01 rows passed minimum coverage and trade-count gates but failed robust return, downside, and monthly stability gates;
+- C01 failure is not explained by coverage starvation, data-quality diagnostics, persistence overwrite, OOS leakage, or execution-model drift in the artifact;
+- current artifact is not detailed enough to choose a safe next semantic catalog focus; no `C02` or new-focus catalog is created in this session;
+- follow-up reference note created: `docs/watchlist/system/policies/weekly_swing/_refs/WS_C01_FAILURE_DIAGNOSTIC_NOTE.md`;
+- OOS was not run or read; promotion remains impossible.
+
+Post-diagnostic operator PHPUnit validation is now available and does not change C01 quality/OOS status:
+
+```text
+operator_phpunit_watchlist_backtest_c01=PASS / 12 tests / 381 assertions / exit 0
+operator_phpunit_watchlist_backtest_filter=PASS / 130 tests / 2829 assertions / exit 0
+operator_phpunit_full_watchlist=PASS / 222 tests / 3717 assertions / exit 0
+```
+
+These commands validate the current Watchlist unit/static regression scope in the supported operator environment. They do not create a valid IS parameter, do not read OOS, do not create a best IS binding, and do not change promotion eligibility.
 
 Historical baselines remain preserved and are not downgraded:
 
@@ -1686,3 +1695,58 @@ production_ready=0
 | Promotion | `NOT_ELIGIBLE` | OOS proof missing and C01 has no valid IS parameter. |
 
 No next catalog was created in this session. Any further catalog design must be a separate session.
+
+
+## C01 Failure Diagnostic Result - 2026-06-11
+
+Session:
+`WATCHLIST - WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
+
+Status:
+`DONE for C01 failure diagnostic scope / NEXT_CATALOG_NOT_DESIGNED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+Reference note:
+`docs/watchlist/system/policies/weekly_swing/_refs/WS_C01_FAILURE_DIAGNOSTIC_NOTE.md`
+
+### Evidence
+
+```text
+C01 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
+C01 catalog_version=C01
+C01 catalog_count=8
+C01 catalog_hash=604ac98f6f193a4c317d4f25582deada84682846
+C01 artifact_hash=c8505ce5a9045629234a685984d9138b3990c775
+C01 file_sha1_run_1=04F6C664A0C9006C16542A8380034A0A633041DC
+C01 file_sha1_run_2=04F6C664A0C9006C16542A8380034A0A633041DC
+C01 file_sha1_equal=true
+C01 is_valid_param_count=0
+C01 is_failed_param_count=8
+C01 best_is_binding=null
+failure_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+max_requested_market_data_date=2025-05-21
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+production_ready=0
+```
+
+### Diagnostic conclusion
+
+- C01 did not fail because coverage or trade count was too low. Every row has `508` covered days and at least `1382` picks.
+- C01 failed because all rows still have negative average return, negative median return, p25 downside below `-0.03`, month-win minimum far below `0.45`, and month-average minimum below `-0.01`.
+- Best observed C01 average is `-0.001727`; best p25 is `-0.044179`; best month-win minimum is `0.228070`. None reaches the canonical gate.
+- The artifact supports `SCORE_RANKING`/`SETUP_FILTER` suspicion, but does not include trade-level, ticker-level, or setup-bucket drilldown needed to safely choose that as the next catalog focus.
+- No C02 or new-focus catalog was created. The correct next move is IS-only drilldown diagnostics, not another catalog.
+
+### Eligibility
+
+```text
+OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE — OOS proof missing
+PRODUCTION_READY=false
+```
+
+### Validation boundary
+
+No PHP code, migration, seeder, database row, runtime command, OOS command, PLAN, RECOMMENDATION, or CONFIRM behavior was changed in this diagnostic update. Local Artisan/PHPUnit execution is `BLOCKED` in this container because `php artisan list` returns `ENV_UNSUPPORTED_PHP_VERSION` for PHP `8.4.16`; therefore no local Artisan/PHPUnit PASS is claimed by the assistant. Supported-operator PHPUnit evidence was later provided for this exact diagnostic-sync state: `WatchlistBacktestC01` 12 tests / 381 assertions / exit 0, `WatchlistBacktest` filter 130 tests / 2829 assertions / exit 0, and full `tests\Unit\Watchlist` 222 tests / 3717 assertions / exit 0.

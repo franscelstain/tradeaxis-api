@@ -433,10 +433,24 @@ R2 infrastructure/runtime: PASS
 R2 strategy/catalog quality: FAIL
 R2 is not an OOS acceptance failure
 OOS was not read for C01 implementation
-C01 is design-only and not runtime-proven
+C01 IS runtime was executed twice and failed quality with no valid IS parameter
 No best-of-failed binding exists
 No acceptance gate was lowered
 No execution price semantics changed
 No PLAN/RECOMMENDATION/CONFIRM semantics changed
 No promotion or production-ready claim is made
 ```
+
+## Follow-up Failure Diagnostic
+
+A dedicated C01 failure diagnostic note was added after the two-run failed-IS result:
+
+```text
+docs/watchlist/system/policies/weekly_swing/_refs/WS_C01_FAILURE_DIAGNOSTIC_NOTE.md
+DONE for C01 failure diagnostic scope
+NEXT_CATALOG_NOT_DESIGNED
+OOS_NOT_READ
+NOT_PRODUCTION_READY
+```
+
+The follow-up diagnostic confirms that C01 did not fail because of low coverage or low trade count. It failed because all rows still have negative robust-return metrics, p25 downside below the floor, and monthly stability far below the required minimum. No C02 or new-focus catalog is designed from the current artifact alone.
