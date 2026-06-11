@@ -35,6 +35,7 @@ use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
 use App\Console\Commands\Watchlist\RunBacktestPublishedPriceProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestOosProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestIsCalibrationCommand;
+use App\Console\Commands\Watchlist\RunBacktestIsDiagnoseCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestR2ParamGridCommand;
@@ -47,6 +48,7 @@ class Kernel extends ConsoleKernel
         RunBacktestPublishedPriceProofCommand::class,
         RunBacktestOosProofCommand::class,
         RunBacktestIsCalibrationCommand::class,
+        RunBacktestIsDiagnoseCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

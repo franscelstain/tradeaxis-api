@@ -15,34 +15,54 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
+`WATCHLIST - C01 IS FAILURE DRILLDOWN PAYLOAD EXPANSION SESSION`
 
 Status:
-`DONE for C01 failure diagnostic scope / NEXT_CATALOG_NOT_DESIGNED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+`DONE for C01 IS failure drilldown diagnostic runtime scope / LOCAL_C01_IS_FAILURE_DRILLDOWN_EXECUTED / NEXT_CATALOG_NOT_DESIGNED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
 
-Current C01 failure diagnostic evidence:
+Current C01 IS failure drilldown evidence:
 
 - source ZIP/workspace evidence was read; no assumption from prior sessions is used without a current file;
 - R1 remains immutable historical evidence: `WS_BT_GRID_BOOTSTRAP_2026_06`, version `R1`, count `24`, hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`;
 - R2 remains immutable historical evidence: `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, version `R2`, count `12`, hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`, artifact hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`;
 - C01 remains immutable failed-IS evidence: `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, hash `604ac98f6f193a4c317d4f25582deada84682846`;
-- C01 two-run artifacts are present and deterministic: file SHA1 run 1 `04F6C664A0C9006C16542A8380034A0A633041DC`, file SHA1 run 2 `04F6C664A0C9006C16542A8380034A0A633041DC`, artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
+- C01 two-run artifacts remain deterministic in this workspace: file SHA1 run 1 `04f6c664a0c9006c16542a8380034a0a633041dc`, file SHA1 run 2 `04f6c664a0c9006c16542a8380034a0a633041dc`, artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
 - C01 has `is_valid_param_count=0`, `is_failed_param_count=8`, and no best IS binding;
-- all 8 C01 rows passed minimum coverage and trade-count gates but failed robust return, downside, and monthly stability gates;
-- C01 failure is not explained by coverage starvation, data-quality diagnostics, persistence overwrite, OOS leakage, or execution-model drift in the artifact;
-- current artifact is not detailed enough to choose a safe next semantic catalog focus; no `C02` or new-focus catalog is created in this session;
-- follow-up reference note created: `docs/watchlist/system/policies/weekly_swing/_refs/WS_C01_FAILURE_DIAGNOSTIC_NOTE.md`;
+- expanded the IS-only diagnostic command/service `watchlist:backtest-is-diagnose` to generate a deeper file artifact without OOS service/repository dependencies;
+- diagnostic artifact surface is file-only and now includes per-param, gate-gap, ticker/month/date, setup/ATR/score, breakout/momentum/volume/liquidity/sector, score-component, runtime-consumed parameter, runtime field availability, data-quality, and no-OOS leakage sections;
+- C01 drilldown run 1 and run 2 were generated locally with exit code `0`;
+- C01 drilldown file SHA1 run 1 `2ad5568ae2240822783e696972705a99055baae6`;
+- C01 drilldown file SHA1 run 2 `2ad5568ae2240822783e696972705a99055baae6`;
+- C01 drilldown canonical artifact hash run 1 `49368eb26aed7975a53cb21701197372d26cd64f`;
+- C01 drilldown canonical artifact hash run 2 `49368eb26aed7975a53cb21701197372d26cd64f`;
+- C01 drilldown `is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753`;
+- runtime trade/evaluation payload still does not export `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, or score components, so those feature bucket sections are emitted as `FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE`, `NOT_DERIVED`, and `NOT_USED_FOR_NEXT_CATALOG_DECISION`;
+- no C02 or new-focus catalog is created because feature-level root cause remains unavailable in runtime evidence;
 - OOS was not run or read; promotion remains impossible.
 
-Post-diagnostic operator PHPUnit validation is now available and does not change C01 quality/OOS status:
+Local validation actually performed in this environment:
 
 ```text
-operator_phpunit_watchlist_backtest_c01=PASS / 12 tests / 381 assertions / exit 0
-operator_phpunit_watchlist_backtest_filter=PASS / 130 tests / 2829 assertions / exit 0
-operator_phpunit_full_watchlist=PASS / 222 tests / 3717 assertions / exit 0
+php -l app/Application/Watchlist/Services/WatchlistBacktestIsFailureDrilldownService.php = PASS
+php -l app/Console/Commands/Watchlist/RunBacktestIsDiagnoseCommand.php = PASS
+php -l tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownServiceTest.php = PASS
+php -l tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownStaticGuardTest.php = PASS
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestIsFailureDrilldown" = PASS / 4 tests / 65 assertions
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestC01" = PASS / 12 tests / 381 assertions
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestIsCalibration" = PASS / 3 tests / 26 assertions
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestMetricsServiceTest" = PASS / 15 tests / 113 assertions
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestPublishedPrice" = PASS / 18 tests / 177 assertions
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestOos" = PASS / 24 tests / 228 assertions
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktest" = PASS / 134 tests / 2894 assertions
+vendor/bin/phpunit tests/Unit/Watchlist = PASS / 226 tests / 3782 assertions
+vendor/bin/phpunit tests/Unit/MarketData --filter "MarketDataPublishedEodSeries" = PASS / 7 tests / 37 assertions
+vendor/bin/phpunit tests/Unit/MarketData --filter "MarketDataTradingCalendar" = PASS / 4 tests / 16 assertions
+vendor/bin/phpunit tests/Unit/MarketData --filter "MarketDataWatchlistReadModelTest" = PASS / 3 tests / 41 assertions
+php artisan watchlist:backtest-is-diagnose run 1 = PASS / exit code 0 / status=DONE
+php artisan watchlist:backtest-is-diagnose run 2 = PASS / exit code 0 / status=DONE
 ```
 
-These commands validate the current Watchlist unit/static regression scope in the supported operator environment. They do not create a valid IS parameter, do not read OOS, do not create a best IS binding, and do not change promotion eligibility.
+No migration, seed, OOS proof, calibration rerun, database write proof, or production-readiness proof was performed in this session.
 
 Historical baselines remain preserved and are not downgraded:
 
@@ -50,64 +70,46 @@ Historical baselines remain preserved and are not downgraded:
 - `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
 - `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`;
 - `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`;
-- final R1 operator validation remains ParamGrid `4/636`, MetricsService `15/113`, PublishedPrice `18/177`, OOS `24/186`, Backtest `87/1430`, and full Watchlist `179/2318`.
+- `LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`;
+- post-expansion local validation is `WatchlistBacktestC01` 12/381, `WatchlistBacktest` 134/2894, and full Watchlist 226/3782; counts increased because C01 drilldown tests were added.
 
-Preserved final R2 supported-operator evidence:
-
-- migration `2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality` ran successfully in batch `10`;
-- post-fix PHPUnit passed: R2 factory `12/106`, R2 static guard `5/53`, OOS persistence `3/13`, R2 suite `26/530`, OOS suite `24/228`, Backtest suite `117/2442`, full Watchlist `209/3330`;
-- R1 identity remains `WS_BT_GRID_BOOTSTRAP_2026_06`, version `R1`, count `24`, hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`;
-- R2 identity is `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, version `R2`, count `12`, hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`;
-- R2 seed run 1 inserted `12` rows; R2 seed run 2 inserted `0`, updated `0`, and found `12` existing rows; both returned exit code `0` and `r1_immutable=1`;
-- R1 and R2 coexist in `watchlist_bt_param_grid` with distinct catalog code/version/count/hash and no mixed catalog hash;
-- R2 IS calibration was run twice on the exact IS window `2023-01-02..2025-05-21`; both runs produced the same artifact hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`;
-- R2 IS result is `is_valid_param_count=0`, `is_failed_param_count=12`, reason `WS_BT_R2_NO_VALID_IS_CANDIDATE`, failure codes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`;
-- no best-IS binding exists for R2; no best-of-failed is allowed;
-- strict IS boundary was preserved: `max_requested_market_data_date=2025-05-21`, `max_allowed_market_data_date=2025-05-21`, and `strict_is_boundary_all_evaluations=1`;
-- OOS was not read or executed: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
-- `production_ready=0`.
-
-Final R2 conclusion:
+OOS-proof eligibility:
 
 ```text
-R2 infrastructure/runtime: PASS
-R2 catalog/persistence/idempotency: PASS
-R2 deterministic two-run IS proof: PASS
-R2 strategy/catalog quality: FAIL
-OOS proof eligibility: NOT_ELIGIBLE_FOR_OOS_PROOF — no valid R2 IS parameter
-Promotion eligibility: NOT_ELIGIBLE — OOS proof missing
-Production readiness: NOT_READY
+NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter
 ```
 
-Anti-misinterpretation decision for future catalog naming:
+Promotion eligibility:
 
-- `R1` and `R2` are retained only as historical aliases and backward-compatible runtime/evidence identities.
-- Do not rename historical R1/R2 catalog identities, hashes, DB rows, or artifact references after runtime evidence exists.
-- Do not continue numeric R-series naming for new calibration catalogs. `R3`, `R4`, `R5`, and later names are deprecated and must not be used for new catalog identity.
-- Future calibration catalogs must use semantic campaign naming: `WS_BT_GRID_<FOCUS>_C##_YYYY_MM`.
-- The next catalog, if implemented, must start as a separate semantic catalog such as `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, not as an edit to R2 and not as `R3`.
-- Any future session may mention `R1/R2` only to reference immutable historical evidence, not as the active naming pattern.
+```text
+NOT_ELIGIBLE — OOS proof missing
+```
 
-Required next session:
+Superseded prior one-run note next session label:
 
-`WATCHLIST — WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION`
+`WATCHLIST — C01 IS FAILURE DRILLDOWN OPERATOR RUNTIME EXECUTION SESSION`
+
+Current required next session:
+
+`WATCHLIST - C01 RUNTIME FEATURE FIELD EXPORT DECISION SESSION`
 
 Required next-session boundary:
 
-- begin from the R2 failed-IS evidence, not from OOS;
+- keep C01 failed-IS interpretation unchanged unless new runtime evidence exists;
 - do not run OOS;
-- do not mutate R1 or R2;
+- do not mutate R1, R2, or C01;
 - do not lower file-16 acceptance gates;
 - do not create a best-of-failed binding;
-- design a new semantic catalog only if diagnostics prove the axis ownership, runtime consumption, invariants, and finite deterministic search design;
+- decide whether to export runtime feature fields for `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, and score components before designing any next semantic catalog;
+- do not create C02 unless feature-level root-cause focus is proven from runtime evidence;
 - status starts as `NOT_PRODUCTION_READY` and promotion remains `NOT_ELIGIBLE — OOS proof missing`.
 
 ## Source of Truth ZIP
 
 - Source ZIP: `tradeaxis-api.zip`
-- Session date: `2026-06-10`
-- Latest local validation date: `2026-06-10`
-- Scope classification: R2 entry-quality calibration implementation completed at unit/static source scope; supported operator migration, PHPUnit, seed, and exact IS runtime proof remain required.
+- Session date: `2026-06-11`
+- Latest local validation date: `2026-06-11`
+- Scope classification: C01 IS failure drilldown payload expansion completed at code, unit/static, and local IS-only runtime diagnostic scope; OOS remains unread and production readiness is not claimed.
 
 ## Current Implementation Baseline
 
@@ -1750,3 +1752,164 @@ PRODUCTION_READY=false
 ### Validation boundary
 
 No PHP code, migration, seeder, database row, runtime command, OOS command, PLAN, RECOMMENDATION, or CONFIRM behavior was changed in this diagnostic update. Local Artisan/PHPUnit execution is `BLOCKED` in this container because `php artisan list` returns `ENV_UNSUPPORTED_PHP_VERSION` for PHP `8.4.16`; therefore no local Artisan/PHPUnit PASS is claimed by the assistant. Supported-operator PHPUnit evidence was later provided for this exact diagnostic-sync state: `WatchlistBacktestC01` 12 tests / 381 assertions / exit 0, `WatchlistBacktest` filter 130 tests / 2829 assertions / exit 0, and full `tests\Unit\Watchlist` 222 tests / 3717 assertions / exit 0.
+
+## C01 IS Failure Drilldown Unit-Static Implementation Result - 2026-06-11
+
+### Evidence
+
+- Added IS-only drilldown service: `app/Application/Watchlist/Services/WatchlistBacktestIsFailureDrilldownService.php`.
+- Added command: `app/Console/Commands/Watchlist/RunBacktestIsDiagnoseCommand.php`.
+- Registered command in `app/Console/Kernel.php`.
+- Added unit/static tests for service and command guardrails.
+- Added reference note: `docs/watchlist/system/policies/weekly_swing/_refs/WS_C01_IS_FAILURE_DRILLDOWN_NOTE.md`.
+- Existing C01 artifacts remain immutable and deterministic: catalog hash `604ac98f6f193a4c317d4f25582deada84682846`, artifact hash `c8505ce5a9045629234a685984d9138b3990c775`, two file SHA1 values `04f6c664a0c9006c16542a8380034a0a633041dc`.
+- Locked file 16 and 17 SHA1 values remain `31299d858b68ee351ae898f4c9380d8753a65d8a` and `39519a391158a7b2dcf7b6e989079788d61669be`.
+
+### Implemented diagnostic output
+
+The command is designed to produce a deterministic file-only artifact with:
+
+```text
+per_param_status
+per_param_failure_codes
+per_param_key_metrics
+nearest_gate_gap
+worst_gate_gap
+ticker_loss_cluster_summary
+ticker_profit_cluster_summary
+month_failure_cluster_summary
+month_profit_cluster_summary
+trade_date_failure_cluster_summary
+setup_bucket_summary
+atr_bucket_summary
+score_bucket_summary
+param_axis_effectiveness_summary
+dead_parameter_or_silent_default_summary
+data_quality_diagnostic_summary
+no_oos_leakage_summary
+next_focus_recommendation
+```
+
+Known limitation: current runtime trade/evaluation payload does not export `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, or score components. Therefore feature-level breakout/momentum/volume/liquidity/sector cluster analysis is marked as payload gap, not invented.
+
+### Validation boundary
+
+Actually run locally:
+
+```text
+php -l app/Application/Watchlist/Services/WatchlistBacktestIsFailureDrilldownService.php = PASS
+php -l app/Console/Commands/Watchlist/RunBacktestIsDiagnoseCommand.php = PASS
+php -l tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownServiceTest.php = PASS
+php -l tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownStaticGuardTest.php = PASS
+isolated stubbed PHP smoke for deterministic hash/file equality = PASS
+```
+
+Blocked locally:
+
+```text
+php artisan list = BLOCKED / ENV_UNSUPPORTED_PHP_VERSION / PHP 8.4.16; required >=7.3 and <8.4
+php vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestIsFailureDrilldown" = BLOCKED / missing extensions: dom, mbstring, xml, xmlwriter
+```
+
+No PHPUnit PASS, Artisan PASS, DB runtime proof, or C01 drilldown runtime artifact is claimed in this environment.
+
+### Current conclusion
+
+```text
+DONE for C01 IS failure drilldown unit-static implementation scope
+OPERATOR_C01_IS_DRILLDOWN_RUNTIME_REQUIRED
+NEXT_CATALOG_NOT_DESIGNED
+OOS_NOT_READ
+NOT_PRODUCTION_READY
+```
+
+OOS-proof eligibility remains:
+
+```text
+NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter
+```
+
+Promotion eligibility remains:
+
+```text
+NOT_ELIGIBLE — OOS proof missing
+```
+
+
+## C01 IS Failure Drilldown Workspace Artifact Review - 2026-06-11
+
+### Evidence inspected from current ZIP/workspace
+
+```text
+storage/app/watchlist/backtest/c01-is-failure-drilldown-run-1.json
+file_sha1=db0a8498faca15e49871ee3b33ab420075cac156
+artifact_hash=c2cfd4d8a438108cd53636bccf4303b12e243de7
+catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
+catalog_version=C01
+catalog_hash=604ac98f6f193a4c317d4f25582deada84682846
+catalog_count=8
+is_from=2023-01-02
+is_to=2025-05-21
+max_requested_market_data_date=2025-05-21
+strict_is_boundary_all_evaluations=true
+oos_service_invoked=false
+oos_repository_invoked=false
+oos_table_unchanged=true
+oos_executed=false
+production_ready=false
+best_is_binding=null
+```
+
+The artifact contains all required drilldown top-level sections, including per-param status/failure/metrics, gate gaps, ticker/month/date clusters, setup/ATR/score buckets, parameter-axis effectiveness, data-quality diagnostics, no-OOS leakage summary, and next-focus recommendation.
+
+### Runtime finding from available one-run artifact
+
+```text
+per_param_failure_distribution:
+- WS_BT_EVAL_DOWNSIDE_FAIL=8
+- WS_BT_EVAL_ROBUST_RETURN_FAIL=8
+- WS_BT_EVAL_STABILITY_FAIL=8
+
+next_focus_recommendation.decision=NEXT_CATALOG_NOT_DESIGNED
+next_focus_recommendation.focus=DIAGNOSTIC_PAYLOAD_ENRICHMENT_BEFORE_C02
+```
+
+Top observed loss clusters from the available artifact are ticker-level and month-level, but breakout, momentum, volume, liquidity, and sector root-cause conclusions remain blocked by payload gaps because `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, and score components are not exported in the current trade/evaluation payload.
+
+### Validation boundary
+
+Actually run locally in this session:
+
+```text
+php -l app/Application/Watchlist/Services/WatchlistBacktestIsFailureDrilldownService.php = PASS
+php -l app/Console/Commands/Watchlist/RunBacktestIsDiagnoseCommand.php = PASS
+php -l tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownServiceTest.php = PASS
+php -l tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownStaticGuardTest.php = PASS
+php artisan list = BLOCKED / ENV_UNSUPPORTED_PHP_VERSION / PHP 8.4.16
+php vendor/bin/phpunit --version = BLOCKED / missing extensions: dom,mbstring,xml,xmlwriter
+```
+
+No PHPUnit PASS, Artisan diagnostic execution PASS, DB proof, OOS proof, or two-run deterministic drilldown proof is claimed by this assistant.
+
+### Current conclusion
+
+```text
+DONE for C01 IS failure drilldown workspace one-run artifact review scope
+C01_IS_DRILLDOWN_RUN1_AVAILABLE
+OPERATOR_TWO_RUN_PROOF_REQUIRED
+NEXT_CATALOG_NOT_DESIGNED
+OOS_NOT_READ
+NOT_PRODUCTION_READY
+```
+
+OOS-proof eligibility remains:
+
+```text
+NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter
+```
+
+Promotion eligibility remains:
+
+```text
+NOT_ELIGIBLE — OOS proof missing
+```

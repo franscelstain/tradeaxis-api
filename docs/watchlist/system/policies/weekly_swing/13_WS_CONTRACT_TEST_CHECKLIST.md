@@ -132,3 +132,19 @@ Checklist ini menetapkan acceptance minimum untuk artefak dan boundary Weekly Sw
 - [ ] C01 calibration uses only `2023-01-02..2025-05-21` and does not call OOS service/repository or mutate `watchlist_bt_oos_eval_ws`.
 - [ ] C01 runtime returns `C01_GRID_FAILED_IS_QUALITY` when all rows reach canonical gates but none pass.
 - [ ] C01 success may freeze a best-IS binding only when every canonical IS gate passes; no best-of-failed binding is allowed.
+
+## C01 IS Failure Drilldown Payload Additions
+
+- [ ] `watchlist:backtest-is-diagnose` requires explicit catalog/from/to/output and has no OOS option.
+- [ ] drilldown reads only `2023-01-02..2025-05-21` for the immutable C01 diagnostic window.
+- [ ] artifact includes `is_trading_date_hash`, `artifact_hash`, and `canonical_artifact_hash`.
+- [ ] canonical artifact hash excludes timestamp-like metadata such as `generated_at`.
+- [ ] two identical drilldown runs produce equal canonical artifact hashes.
+- [ ] file SHA1 is identical when generated files are byte-identical.
+- [ ] artifact contains ticker, month, trade-date, setup, ATR, score, breakout, momentum, volume, liquidity, sector, and score-component diagnostic sections.
+- [ ] diagnostic feature sections are runtime-derived only when source fields exist in evaluated trade evidence.
+- [ ] missing runtime feature fields are marked `FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE`, `NOT_DERIVED`, and `NOT_USED_FOR_NEXT_CATALOG_DECISION`.
+- [ ] `runtime_consumed_parameter_summary` covers only registry/runtime-owned C01 axes.
+- [ ] `dead_parameter_or_silent_default_summary` reports catalog mapping gaps or explicitly records no detected dead/silent default axis.
+- [ ] no next catalog is designed from unavailable diagnostic fields.
+- [ ] no OOS service/repository call, OOS table write, best-of-failed binding, promotion, order, broker, allocation, or production-ready output occurs.

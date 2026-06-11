@@ -14,10 +14,10 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
+`WATCHLIST - C01 IS FAILURE DRILLDOWN PAYLOAD EXPANSION SESSION`
 
 Status:
-`DONE for C01 failure diagnostic scope / NEXT_CATALOG_NOT_DESIGNED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+`DONE for C01 IS failure drilldown diagnostic runtime scope / LOCAL_C01_IS_FAILURE_DRILLDOWN_EXECUTED / NEXT_CATALOG_NOT_DESIGNED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
 
 Historical baselines remain valid and are not downgraded:
 
@@ -27,36 +27,44 @@ Historical baselines remain valid and are not downgraded:
 - `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`;
 - `LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
 
-Current C01 failure diagnostic contract evidence:
+Current C01 IS failure drilldown contract evidence:
 
 - R1/R2/C01 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
-- C01 two-run artifacts are deterministic by file SHA1 equality `04F6C664A0C9006C16542A8380034A0A633041DC` and canonical artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
-- C01 runtime quality failed with `is_valid_param_count=0`, `is_failed_param_count=8`, no best IS binding, and failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
-- all C01 rows passed coverage and trade-count gates; failure is strategy/catalog quality, not infrastructure coverage starvation;
-- C01 failure is not supported as data-quality/publication/calendar/OOS/persistence-overwrite drift by the available artifact;
-- no next catalog was designed because the artifact lacks trade-level/month-level/ticker-level/setup-bucket drilldown required to choose a semantic focus safely;
+- C01 two-run artifacts remain deterministic by file SHA1 equality `04f6c664a0c9006c16542a8380034a0a633041dc` and canonical artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
+- C01 runtime quality remains failed with `is_valid_param_count=0`, `is_failed_param_count=8`, no best IS binding, and failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- expanded the IS-only diagnostic command/service to generate deeper C01 failure drilldown artifacts without OOS service/repository dependency;
+- current workspace contains C01 drilldown run 1 and run 2 with identical file SHA1 `2ad5568ae2240822783e696972705a99055baae6`;
+- C01 drilldown canonical artifact hash is identical across both runs: `49368eb26aed7975a53cb21701197372d26cd64f`;
+- C01 drilldown `is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753`;
+- two-run diagnostic commands completed with exit code `0` and `status=DONE`;
+- command blocks empty `--catalog-code`, requires explicit `--from`, `--to`, `--output`, and requires explicit `--overwrite` for replacement;
+- service enforces exact frozen IS window `2023-01-02..2025-05-21`, `hard_market_data_to_date`, no latest/active fallback markers, no current-date/default max-date path, no OOS write, and no production-ready/promotion output;
+- current payload gap is explicit: feature-level breakout/momentum/volume/liquidity/sector/score-component buckets cannot be proven until runtime trade/evaluation payload exports the fields; the artifact records this as `FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE`, `NOT_DERIVED`, and `NOT_USED_FOR_NEXT_CATALOG_DECISION`;
 - no file-16 gate, file-17 OOS proof rule, PLAN/RECOMMENDATION/CONFIRM behavior, execution model, OOS table, or promotion rule changed.
 
-Post-diagnostic operator PHPUnit validation is available for the current Watchlist unit/static regression scope:
+Local validation actually performed:
 
 ```text
-vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC01" = PASS / 12 tests / 381 assertions / exit 0
-vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktest" = PASS / 130 tests / 2829 assertions / exit 0
-vendor\bin\phpunit tests\Unit\Watchlist = PASS / 222 tests / 3717 assertions / exit 0
+php lint new/changed PHP files = PASS
+watchlist:backtest-is-diagnose run 1 = PASS / exit code 0 / status=DONE
+watchlist:backtest-is-diagnose run 2 = PASS / exit code 0 / status=DONE
+WatchlistBacktestIsFailureDrilldown = PASS / 4 tests / 65 assertions
+WatchlistBacktestC01 = PASS / 12 tests / 381 assertions
+WatchlistBacktest = PASS / 134 tests / 2894 assertions
+Full Watchlist = PASS / 226 tests / 3782 assertions
+MarketData published/calendar/read-model filters = PASS
 ```
-
-This validation is operator-provided supported-environment evidence. It does not override the failed C01 IS quality result, does not create best IS binding, does not read OOS, and does not make any contract `LOCKED`.
 
 Priority contract status:
 
-- `WL-CONTRACT-006`: PARTIAL; R2 and C01 scoring/runtime quality failed canonical IS gates;
+- `WL-CONTRACT-006`: PARTIAL; C01 scoring/runtime quality failed canonical IS gates and feature-level root cause still needs runtime payload enrichment/execution;
 - `WL-CONTRACT-007`: DONE for C01 immutable traceability and failed-IS evidence scope, not `LOCKED`;
-- `WL-CONTRACT-008`: DONE for C01 failure diagnostic scope, not `LOCKED`;
-- `WL-CONTRACT-009`: DONE for no-OOS IS runtime boundary scope, not `LOCKED`;
-- `WL-CONTRACT-010`: DONE for deterministic C01 failed-quality two-run artifact proof, not `LOCKED` because quality failed;
-- `WL-CONTRACT-011`: PARTIAL; fixed execution semantics are preserved, but risk/setup/scoring quality failed;
-- `WL-CONTRACT-013`: DONE for C01 failed-quality artifact plus diagnostic note scope;
-- `WL-CONTRACT-014`: DONE for C01 diagnostic docs synchronization scope;
+- `WL-CONTRACT-008`: DONE for C01 IS failure drilldown runtime diagnostic surface, feature-level source fields still unavailable, not `LOCKED`;
+- `WL-CONTRACT-009`: DONE for no-OOS IS diagnostic runtime boundary proof, not `LOCKED`;
+- `WL-CONTRACT-010`: DONE for C01 drilldown deterministic two-run proof, quality still fails and contract is not `LOCKED`;
+- `WL-CONTRACT-011`: PARTIAL; risk/setup/scoring quality failed and root-cause focus is not proven;
+- `WL-CONTRACT-013`: DONE for C01 drilldown artifact contract runtime shape;
+- `WL-CONTRACT-014`: DONE for C01 drilldown docs synchronization scope;
 - `WL-CONTRACT-015`: `PARTIAL / NOT_READY`.
 
 No contract is `LOCKED`. C01 OOS-proof eligibility is `NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter`. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
@@ -85,12 +93,12 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-005 | ELIGIBILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-006 | SCORING DETERMINISM CONTRACT | `PARTIAL` |
 | WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for C01 immutable traceability and failed-IS evidence scope / NOT LOCKED` |
-| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for C01 failure diagnostic scope / NEXT_CATALOG_NOT_DESIGNED / NOT LOCKED` |
+| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for C01 drilldown payload expansion runtime scope / NEXT_CATALOG_NOT_DESIGNED / NOT LOCKED` |
 | WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for C01 no-OOS IS runtime boundary scope / NOT LOCKED` |
 | WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `DONE for C01 failed-quality two-run proof / QUALITY FAIL / NOT LOCKED` |
 | WL-CONTRACT-011 | RISK GATE CONTRACT | `PARTIAL` |
 | WL-CONTRACT-012 | PORTFOLIO AWARENESS BOUNDARY | `NOT_STARTED` |
-| WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for C01 failed-quality runtime artifact scope / NOT LOCKED` |
+| WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for C01 drilldown expanded artifact runtime scope / NOT LOCKED` |
 | WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for C01 diagnostic docs sync scope` |
 | WL-CONTRACT-015 | PRODUCTION READINESS CONTRACT | `PARTIAL / NOT_READY` |
 | WL-CONTRACT-016 | PLAN GROUPING DETERMINISM CONTRACT | `PARTIAL` |
@@ -2055,3 +2063,80 @@ WATCHLIST - WEEKLY SWING C01 IS FAILURE DRILLDOWN DIAGNOSTIC SESSION
 ```
 
 No next catalog was designed. A future catalog requires additional IS-only trade/month/ticker/setup-bucket drilldown evidence first.
+
+## C01 IS Failure Drilldown Unit-Static Contract Result - 2026-06-11
+
+### Evidence
+
+- Added `WatchlistBacktestIsFailureDrilldownService.php` as an IS-only file artifact generator.
+- Added `RunBacktestIsDiagnoseCommand.php` with explicit catalog/date/output options.
+- Registered `RunBacktestIsDiagnoseCommand::class` in `app/Console/Kernel.php` without scheduler wiring.
+- Added unit/static tests for deterministic artifact shape, no-OOS boundary, command registration, and dependency guardrails.
+- Added `WS_C01_IS_FAILURE_DRILLDOWN_NOTE.md` reference note.
+- Preserved C01 catalog hash `604ac98f6f193a4c317d4f25582deada84682846` and existing C01 artifact hash `c8505ce5a9045629234a685984d9138b3990c775`.
+
+### Contract impact
+
+- `WL-CONTRACT-008` moves from diagnostic-note-only to source-supported IS drilldown artifact surface, but remains not locked until operator runtime artifact proof exists.
+- `WL-CONTRACT-009` remains no-OOS by source boundary: no OOS service/repository dependency, no OOS table write path, explicit IS dates only.
+- `WL-CONTRACT-010` remains partial: deterministic source/hash design exists, but supported runtime two-run artifact equality is still operator-required.
+- `WL-CONTRACT-013` expands artifact contract coverage to C01 drilldown fields.
+- `WL-CONTRACT-014` updated for status/reference-note synchronization.
+- `WL-CONTRACT-015` remains not ready.
+
+### Validation boundary
+
+```text
+php lint new/changed PHP files = PASS
+isolated stubbed PHP smoke = PASS
+Artisan runtime = BLOCKED locally by unsupported PHP 8.4.16
+PHPUnit = BLOCKED locally by missing dom, mbstring, xml, xmlwriter extensions
+```
+
+No runtime C01 drilldown PASS, OOS PASS, promotion, or production-readiness claim is recorded.
+
+### Required next contract work
+
+```text
+WATCHLIST — C01 IS FAILURE DRILLDOWN OPERATOR RUNTIME EXECUTION SESSION
+```
+
+Run two IS-only diagnostic command executions, compare canonical artifact hash and file SHA1, confirm no OOS leakage, and only then decide whether diagnostic payload is sufficient for C02 or whether feature-level payload enrichment is required first.
+
+
+## C01 IS Failure Drilldown Workspace Artifact Review Contract Result - 2026-06-11
+
+### Evidence
+
+- Current ZIP/workspace contains `storage/app/watchlist/backtest/c01-is-failure-drilldown-run-1.json`.
+- The available artifact preserves C01 identity: catalog code `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, hash `604ac98f6f193a4c317d4f25582deada84682846`.
+- The available artifact reports file SHA1 `db0a8498faca15e49871ee3b33ab420075cac156` and canonical artifact hash `c2cfd4d8a438108cd53636bccf4303b12e243de7`.
+- The available artifact reports no-OOS markers: `max_requested_market_data_date=2025-05-21`, `strict_is_boundary_all_evaluations=true`, `oos_service_invoked=false`, `oos_repository_invoked=false`, `oos_table_unchanged=true`, `oos_executed=false`, and `production_ready=false`.
+- The available artifact reports all eight C01 params failed downside, robust-return, and stability gates.
+
+### Contract impact
+
+- `WL-CONTRACT-008`: upgraded from source-surface-only to source plus one workspace drilldown artifact; still not `LOCKED` because two-run deterministic proof and operator PHPUnit/runtime proof are missing.
+- `WL-CONTRACT-009`: remains no-OOS by source boundary and one artifact markers; not `LOCKED` without supported runtime proof.
+- `WL-CONTRACT-010`: remains `PARTIAL`; one artifact is available, but `canonical_artifact_hash_run_1 == run_2` is not proven for drilldown.
+- `WL-CONTRACT-013`: artifact contract shape is present in source and in one workspace artifact.
+- `WL-CONTRACT-014`: docs synchronized for the one-run artifact review.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`.
+
+### Validation boundary
+
+```text
+php lint diagnostic service/command/tests = PASS
+php artisan list = BLOCKED / ENV_UNSUPPORTED_PHP_VERSION / PHP 8.4.16
+php vendor/bin/phpunit --version = BLOCKED / missing extensions: dom,mbstring,xml,xmlwriter
+```
+
+No OOS proof, promotion, production readiness, or next catalog design is unlocked by this result.
+
+### Required next contract work
+
+```text
+WATCHLIST — C01 IS FAILURE DRILLDOWN OPERATOR TWO-RUN PROOF SESSION
+```
+
+Run the IS-only diagnostic command twice in the supported operator environment, compare canonical artifact hash and file SHA1, confirm no OOS leakage, and keep `NEXT_CATALOG_NOT_DESIGNED` unless the runtime payload is enriched enough to support a specific next semantic catalog decision.
