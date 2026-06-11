@@ -126,6 +126,7 @@ class WatchlistMarketDataConsumerReadService
             'ticker_id' => isset($row['ticker_id']) ? (int) $row['ticker_id'] : null,
             'ticker_code' => strtoupper(trim((string) $row['ticker_code'])),
             'ticker_name' => $row['ticker_name'] ?? null,
+            'sector_code' => $this->sectorCodeOrNull($row['sector_code'] ?? null),
             'close_price' => (float) $row['close_price'],
             'volume' => (int) $row['volume'],
             'source_name' => $row['source_name'] ?? null,
@@ -180,5 +181,16 @@ class WatchlistMarketDataConsumerReadService
         }
 
         return array_values(array_unique($violations));
+    }
+
+    private function sectorCodeOrNull($value): ?string
+    {
+        if ($value === null || ! is_scalar($value)) {
+            return null;
+        }
+
+        $sectorCode = strtoupper(trim((string) $value));
+
+        return $sectorCode === '' ? null : $sectorCode;
     }
 }

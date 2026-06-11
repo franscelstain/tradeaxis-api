@@ -284,6 +284,10 @@ class WatchlistBacktestStrategyService
         array $paramset
     ): array {
         $planReference = $recommendationItem['plan_reference'] ?? [];
+        $planItem = $this->planItemForRecommendation($planOutput, $recommendationItem) ?? [];
+        $scoreMetrics = $this->diagnosticScoreMetrics($planItem, is_array($planReference) ? $planReference : []);
+        $scoreComponents = $this->diagnosticScoreComponents($planItem);
+        $factorBreakdown = $this->diagnosticFactorBreakdown($planItem);
         $reasonCodes = $recommendationItem['reason_codes'] ?? [];
         $reasonCodes[] = 'WS_REC_SELECTED';
 
@@ -299,7 +303,20 @@ class WatchlistBacktestStrategyService
             'plan_rank' => $this->intOrNull($recommendationItem['plan_rank'] ?? $planReference['plan_rank'] ?? null),
             'recommendation_rank' => $this->intOrNull($recommendationItem['recommendation_rank'] ?? null),
             'recommendation_score' => $this->floatOrNull($recommendationItem['recommendation_score'] ?? null),
-            'atr14_pct' => $this->floatOrNull($planReference['atr14_pct'] ?? null),
+            'score_total' => $this->floatOrNull($planItem['score_total'] ?? ($planReference['score_total'] ?? null)),
+            'score_components' => $scoreComponents,
+            'score_metrics' => $scoreMetrics,
+            'factor_breakdown' => $factorBreakdown,
+            'score_momentum' => $scoreComponents['score_momentum'] ?? null,
+            'score_breakout' => $scoreComponents['score_breakout'] ?? null,
+            'score_volume' => $scoreComponents['score_volume'] ?? null,
+            'score_risk' => $scoreComponents['score_risk'] ?? null,
+            'dv20_idr' => $scoreMetrics['dv20_idr'] ?? null,
+            'vol_ratio' => $scoreMetrics['vol_ratio'] ?? null,
+            'roc20' => $scoreMetrics['roc20'] ?? null,
+            'close_to_hh20_pct' => $scoreMetrics['close_to_hh20_pct'] ?? null,
+            'sector_code' => $scoreMetrics['sector_code'] ?? null,
+            'atr14_pct' => $this->floatOrNull($planReference['atr14_pct'] ?? ($scoreMetrics['atr14_pct'] ?? null)),
             'stop_price' => $this->floatOrNull($planReference['stop_price'] ?? null),
             'target_price' => $this->floatOrNull($planReference['target_price'] ?? null),
             'stop_atr_mult' => $this->floatOrNull($paramset['risk']['stop_atr_mult'] ?? null),
@@ -321,6 +338,7 @@ class WatchlistBacktestStrategyService
                 'publication_id' => $planOutput['publication_id'] ?? $recommendationOutput['meta']['publication_id'] ?? null,
                 'publication_version' => $planOutput['publication_version'] ?? $recommendationOutput['meta']['publication_version'] ?? null,
                 'run_id' => $planOutput['run_id'] ?? $recommendationOutput['meta']['run_id'] ?? null,
+                'diagnostic_feature_source' => $planItem === [] ? 'PLAN_REFERENCE_FALLBACK' : 'PLAN_GROUP_ITEM',
             ],
             'contract_flags' => [
                 'from_recommendation_layer' => true,
@@ -614,6 +632,79 @@ class WatchlistBacktestStrategyService
         return $resolved;
     }
 
+    private function planItemForRecommendation(array $planOutput, array $recommendationItem): ?array
+    {
+        $planItems = [];
+        foreach (['TOP_PICKS', 'SECONDARY', 'WATCH_ONLY', 'AVOID'] as $group) {
+            foreach (($planOutput['groups'][$group] ?? []) as $item) {
+                if (is_array($item)) {
+                    $planItems[] = $item;
+                }
+            }
+        }
+
+        foreach (($planOutput['excluded'] ?? []) as $item) {
+            if (is_array($item)) {
+                $planItems[] = $item;
+            }
+        }
+
+        return $this->firstItemForKeys(
+            $this->indexByTickerIdentity($planItems),
+            $this->identityKeys($recommendationItem)
+        );
+    }
+
+    private function diagnosticScoreMetrics(array $planItem, array $planReference): array
+    {
+        $source = is_array($planItem['score_metrics'] ?? null) ? $planItem['score_metrics'] : [];
+        $numericFields = [
+            'dv20_idr',
+            'atr14_pct',
+            'vol_ratio',
+            'roc20',
+            'hh20',
+            'ma20',
+            'ma50',
+            'close_to_hh20_pct',
+            'close_vs_ma20_pct',
+            'close_vs_ma50_pct',
+            'ma20_slope_pct',
+            'rs_20_vs_ihsg',
+        ];
+        $metrics = [];
+        foreach ($numericFields as $field) {
+            $metrics[$field] = $this->floatOrNull($source[$field] ?? $planReference[$field] ?? null);
+        }
+
+        $sectorCode = $this->stringOrNull($source['sector_code'] ?? $planReference['sector_code'] ?? $planItem['sector_code'] ?? null);
+        $metrics['sector_code'] = $sectorCode === null ? null : strtoupper($sectorCode);
+
+        return $metrics;
+    }
+
+    private function diagnosticScoreComponents(array $planItem): array
+    {
+        $source = is_array($planItem['score_components'] ?? null) ? $planItem['score_components'] : [];
+        $components = [];
+        foreach (['score_momentum', 'score_breakout', 'score_volume', 'score_risk'] as $field) {
+            $components[$field] = $this->floatOrNull($source[$field] ?? null);
+        }
+
+        return $components;
+    }
+
+    private function diagnosticFactorBreakdown(array $planItem): array
+    {
+        $source = is_array($planItem['factor_breakdown'] ?? null) ? $planItem['factor_breakdown'] : [];
+        $breakdown = [];
+        foreach (['momentum', 'breakout', 'volume', 'risk'] as $component) {
+            $breakdown[$component] = is_array($source[$component] ?? null) ? $source[$component] : [];
+        }
+
+        return $breakdown;
+    }
+
     private function indexByTickerIdentity(array $items): array
     {
         $index = [];
@@ -796,5 +887,16 @@ class WatchlistBacktestStrategyService
         }
 
         return (float) $value;
+    }
+
+    private function stringOrNull($value): ?string
+    {
+        if ($value === null || ! is_scalar($value)) {
+            return null;
+        }
+
+        $string = trim((string) $value);
+
+        return $string === '' ? null : $string;
     }
 }

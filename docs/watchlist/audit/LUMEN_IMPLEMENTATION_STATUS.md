@@ -31,13 +31,14 @@ Current C01 IS failure drilldown evidence:
 - expanded the IS-only diagnostic command/service `watchlist:backtest-is-diagnose` to generate a deeper file artifact without OOS service/repository dependencies;
 - diagnostic artifact surface is file-only and now includes per-param, gate-gap, ticker/month/date, setup/ATR/score, breakout/momentum/volume/liquidity/sector, score-component, runtime-consumed parameter, runtime field availability, data-quality, and no-OOS leakage sections;
 - C01 drilldown run 1 and run 2 were generated locally with exit code `0`;
-- C01 drilldown file SHA1 run 1 `2ad5568ae2240822783e696972705a99055baae6`;
-- C01 drilldown file SHA1 run 2 `2ad5568ae2240822783e696972705a99055baae6`;
-- C01 drilldown canonical artifact hash run 1 `49368eb26aed7975a53cb21701197372d26cd64f`;
-- C01 drilldown canonical artifact hash run 2 `49368eb26aed7975a53cb21701197372d26cd64f`;
+- C01 drilldown file SHA1 run 1 `a34f6efaca2fdd16a052637a5e455013b60244cd`;
+- C01 drilldown file SHA1 run 2 `a34f6efaca2fdd16a052637a5e455013b60244cd`;
+- C01 drilldown canonical artifact hash run 1 `1212405907b33c98b787f473af07472fa74b2508`;
+- C01 drilldown canonical artifact hash run 2 `1212405907b33c98b787f473af07472fa74b2508`;
 - C01 drilldown `is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753`;
-- runtime trade/evaluation payload still does not export `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, or score components, so those feature bucket sections are emitted as `FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE`, `NOT_DERIVED`, and `NOT_USED_FOR_NEXT_CATALOG_DECISION`;
-- no C02 or new-focus catalog is created because feature-level root cause remains unavailable in runtime evidence;
+- runtime trade/evaluation payload now exports `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, and score components from existing market-data/scoring/PLAN evidence into strategy trades, so the breakout/momentum/volume/liquidity/sector/score-component diagnostic buckets are `DERIVED_FROM_RUNTIME_EVIDENCE`;
+- derived diagnostic review snapshot is recorded in `_refs/WS_C01_IS_FAILURE_DRILLDOWN_NOTE.md`; candidate focus for a future review is anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability, but C02 remains `NOT_DESIGNED`;
+- no C02 or new-focus catalog is created in this session; the newly derived diagnostic buckets are evidence for review, not promotion or OOS proof;
 - OOS was not run or read; promotion remains impossible.
 
 Local validation actually performed in this environment:
@@ -53,8 +54,8 @@ vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestIsCalibration
 vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestMetricsServiceTest" = PASS / 15 tests / 113 assertions
 vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestPublishedPrice" = PASS / 18 tests / 177 assertions
 vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestOos" = PASS / 24 tests / 228 assertions
-vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktest" = PASS / 134 tests / 2894 assertions
-vendor/bin/phpunit tests/Unit/Watchlist = PASS / 226 tests / 3782 assertions
+vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktest" = PASS / 134 tests / 2903 assertions
+vendor/bin/phpunit tests/Unit/Watchlist = PASS / 226 tests / 3791 assertions
 vendor/bin/phpunit tests/Unit/MarketData --filter "MarketDataPublishedEodSeries" = PASS / 7 tests / 37 assertions
 vendor/bin/phpunit tests/Unit/MarketData --filter "MarketDataTradingCalendar" = PASS / 4 tests / 16 assertions
 vendor/bin/phpunit tests/Unit/MarketData --filter "MarketDataWatchlistReadModelTest" = PASS / 3 tests / 41 assertions
@@ -71,7 +72,7 @@ Historical baselines remain preserved and are not downgraded:
 - `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`;
 - `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`;
 - `LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`;
-- post-expansion local validation is `WatchlistBacktestC01` 12/381, `WatchlistBacktest` 134/2894, and full Watchlist 226/3782; counts increased because C01 drilldown tests were added.
+- post-gap-fix local validation is `WatchlistBacktestC01` 12/381, `WatchlistBacktest` 134/2903, and full Watchlist 226/3791; counts increased because C01 drilldown and feature-evidence tests were added.
 
 OOS-proof eligibility:
 
@@ -91,7 +92,7 @@ Superseded prior one-run note next session label:
 
 Current required next session:
 
-`WATCHLIST - C01 RUNTIME FEATURE FIELD EXPORT DECISION SESSION`
+`WATCHLIST - C01 DERIVED DIAGNOSTIC REVIEW BEFORE NEXT CATALOG SESSION`
 
 Required next-session boundary:
 
@@ -100,8 +101,8 @@ Required next-session boundary:
 - do not mutate R1, R2, or C01;
 - do not lower file-16 acceptance gates;
 - do not create a best-of-failed binding;
-- decide whether to export runtime feature fields for `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, and score components before designing any next semantic catalog;
-- do not create C02 unless feature-level root-cause focus is proven from runtime evidence;
+- review the derived breakout/momentum/volume/liquidity/sector/score-component buckets before designing any next semantic catalog;
+- do not create C02 unless feature-level root-cause focus is explicitly selected from the derived runtime evidence;
 - status starts as `NOT_PRODUCTION_READY` and promotion remains `NOT_ELIGIBLE — OOS proof missing`.
 
 ## Source of Truth ZIP
@@ -1790,7 +1791,7 @@ no_oos_leakage_summary
 next_focus_recommendation
 ```
 
-Known limitation: current runtime trade/evaluation payload does not export `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, or score components. Therefore feature-level breakout/momentum/volume/liquidity/sector cluster analysis is marked as payload gap, not invented.
+Superseded limitation: this historical session found that runtime trade/evaluation payload did not yet export `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, or score components. The active `2026-06-11` C01 payload expansion now exports those fields into diagnostic strategy trades and derives the feature buckets from runtime evidence.
 
 ### Validation boundary
 

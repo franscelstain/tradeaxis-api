@@ -516,6 +516,7 @@ class WatchlistScoringService
             'close_vs_ma50_pct' => $this->metricOrNull($gateMetrics['close_vs_ma50_pct'] ?? $indicators['close_vs_ma50_pct'] ?? $candidate['close_vs_ma50_pct'] ?? null),
             'ma20_slope_pct' => $this->metricOrNull($gateMetrics['ma20_slope_pct'] ?? $indicators['ma20_slope_pct'] ?? $candidate['ma20_slope_pct'] ?? null),
             'rs_20_vs_ihsg' => $this->metricOrNull($gateMetrics['rs_20_vs_ihsg'] ?? $indicators['rs_20_vs_ihsg'] ?? $candidate['rs_20_vs_ihsg'] ?? null),
+            'sector_code' => $this->sectorCodeOrNull($candidate['sector_code'] ?? $gateMetrics['sector_code'] ?? $indicators['sector_code'] ?? null),
         ];
     }
 
@@ -529,6 +530,17 @@ class WatchlistScoringService
         }
 
         return $missing;
+    }
+
+    private function sectorCodeOrNull($value): ?string
+    {
+        if ($value === null || ! is_scalar($value)) {
+            return null;
+        }
+
+        $sectorCode = strtoupper(trim((string) $value));
+
+        return $sectorCode === '' ? null : $sectorCode;
     }
 
     private function resolveParamset(array $paramset): array

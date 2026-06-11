@@ -51,12 +51,12 @@ Current expanded drilldown runtime evidence:
 ```text
 c01_is_failure_drilldown_run_1_exit_code=0
 c01_is_failure_drilldown_run_2_exit_code=0
-c01_is_failure_drilldown_run_1_file_sha1=2ad5568ae2240822783e696972705a99055baae6
-c01_is_failure_drilldown_run_2_file_sha1=2ad5568ae2240822783e696972705a99055baae6
-canonical_artifact_hash_run_1=49368eb26aed7975a53cb21701197372d26cd64f
-canonical_artifact_hash_run_2=49368eb26aed7975a53cb21701197372d26cd64f
-artifact_hash_run_1=49368eb26aed7975a53cb21701197372d26cd64f
-artifact_hash_run_2=49368eb26aed7975a53cb21701197372d26cd64f
+c01_is_failure_drilldown_run_1_file_sha1=a34f6efaca2fdd16a052637a5e455013b60244cd
+c01_is_failure_drilldown_run_2_file_sha1=a34f6efaca2fdd16a052637a5e455013b60244cd
+canonical_artifact_hash_run_1=1212405907b33c98b787f473af07472fa74b2508
+canonical_artifact_hash_run_2=1212405907b33c98b787f473af07472fa74b2508
+artifact_hash_run_1=1212405907b33c98b787f473af07472fa74b2508
+artifact_hash_run_2=1212405907b33c98b787f473af07472fa74b2508
 is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753
 max_requested_market_data_date=2025-05-21
 oos_service_invoked=false
@@ -74,9 +74,14 @@ Changed/active source files:
 
 ```text
 app/Application/Watchlist/Services/WatchlistBacktestIsFailureDrilldownService.php
+app/Application/Watchlist/Services/WatchlistMarketDataConsumerReadService.php
+app/Application/Watchlist/Services/WatchlistCandidateUniverseService.php
+app/Application/Watchlist/Services/WatchlistScoringService.php
+app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php
 app/Console/Commands/Watchlist/RunBacktestIsDiagnoseCommand.php
 tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownServiceTest.php
 tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownStaticGuardTest.php
+tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php
 docs/watchlist/system/policies/weekly_swing/_refs/WS_C01_IS_FAILURE_DRILLDOWN_NOTE.md
 docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md
 docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md
@@ -180,7 +185,7 @@ Timestamp-like metadata such as `generated_at` is excluded from the canonical ar
 
 ## Feature Field Availability
 
-Current runtime evidence does not export the following feature-level fields into the evaluated trade payload:
+Current runtime evidence exports the following feature-level fields from existing market-data/scoring/PLAN evidence into strategy trades consumed by the drilldown:
 
 ```text
 close_to_hh20_pct
@@ -191,15 +196,15 @@ sector_code
 score_components
 ```
 
-Therefore the affected diagnostic sections are emitted with explicit markers:
+Therefore the affected diagnostic sections are now derived from runtime evidence:
 
 ```text
-FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE
-NOT_DERIVED
-NOT_USED_FOR_NEXT_CATALOG_DECISION
+AVAILABLE_IN_RUNTIME_EVIDENCE
+DERIVED_FROM_RUNTIME_EVIDENCE
+DIAGNOSTIC_ONLY_REQUIRES_SEPARATE_REVIEW
 ```
 
-Affected sections:
+Derived sections:
 
 ```text
 breakout_extension_bucket_summary
@@ -210,12 +215,72 @@ sector_bucket_summary
 score_component_effectiveness_summary
 ```
 
-This is an evidence finding, not a catalog recommendation. C02 or any next semantic catalog remains not designed.
+This is an evidence finding, not a catalog recommendation. C02 or any next semantic catalog remains not designed in this session.
+
+## Derived Diagnostic Review Snapshot
+
+The final two-run artifact supports feature-level diagnostic review, but still keeps `NEXT_CATALOG_NOT_DESIGNED`.
+
+Gate summary:
+
+```text
+nearest_gate_gap=avg_ret_net_top -0.001727
+worst_gate_gap=month_win_rate_min -0.309649
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL:8, WS_BT_EVAL_ROBUST_RETURN_FAIL:8, WS_BT_EVAL_STABILITY_FAIL:8
+```
+
+Bucket signals with sample count >= 100:
+
+```text
+breakout.close_to_hh20_pct best=-0.02..0 avg_ret_net=-0.000684 win_rate=0.400254 trade_count=6311
+breakout.close_to_hh20_pct worst=<=-0.05 avg_ret_net=-0.006192 win_rate=0.376440 trade_count=5034
+
+momentum.roc20 best=0.02..0.05 avg_ret_net=0.001527 win_rate=0.473039 trade_count=408
+momentum.roc20 worst=0.10..0.15 avg_ret_net=-0.005570 win_rate=0.366364 trade_count=2533
+
+volume.vol_ratio best=1.2..1.5 avg_ret_net=0.003101 win_rate=0.401460 trade_count=137
+volume.vol_ratio worst=2.5..3 avg_ret_net=-0.006539 win_rate=0.366093 trade_count=1628
+
+liquidity.dv20_idr best=2500000000..5000000000 avg_ret_net=0.018319 win_rate=0.517949 trade_count=195
+liquidity.dv20_idr worst=>20000000000 avg_ret_net=-0.005876 win_rate=0.373921 trade_count=8919
+
+sector.sector_code best=I avg_ret_net=0.005115 win_rate=0.416021 trade_count=387
+sector.sector_code worst=B avg_ret_net=-0.014239 win_rate=0.322107 trade_count=1158
+```
+
+Score-component directional finding:
+
+```text
+score_momentum=HIGHER_COMPONENT_ASSOCIATED_WITH_LOWER_AVG_RET_NET delta=-0.001393
+score_breakout=HIGHER_COMPONENT_ASSOCIATED_WITH_HIGHER_AVG_RET_NET delta=0.070219
+score_volume=HIGHER_COMPONENT_ASSOCIATED_WITH_HIGHER_AVG_RET_NET delta=0.068841
+score_risk=HIGHER_COMPONENT_ASSOCIATED_WITH_HIGHER_AVG_RET_NET delta=0.075071
+```
+
+Interpretation for the next session only:
+
+```text
+Candidate focus to review: anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability.
+Catalog implementation status: NOT_STARTED.
+C02 status: NOT_DESIGNED.
+```
 
 ## Local Validation Performed
 
 ```text
 php -l app/Application/Watchlist/Services/WatchlistBacktestIsFailureDrilldownService.php
+PASS / exit code 0
+
+php -l app/Application/Watchlist/Services/WatchlistMarketDataConsumerReadService.php
+PASS / exit code 0
+
+php -l app/Application/Watchlist/Services/WatchlistCandidateUniverseService.php
+PASS / exit code 0
+
+php -l app/Application/Watchlist/Services/WatchlistScoringService.php
+PASS / exit code 0
+
+php -l app/Application/Watchlist/Services/WatchlistBacktestStrategyService.php
 PASS / exit code 0
 
 php -l app/Console/Commands/Watchlist/RunBacktestIsDiagnoseCommand.php
@@ -225,6 +290,9 @@ php -l tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownServiceTest.php
 PASS / exit code 0
 
 php -l tests/Unit/Watchlist/WatchlistBacktestIsFailureDrilldownStaticGuardTest.php
+PASS / exit code 0
+
+php -l tests/Unit/Watchlist/WatchlistBacktestStrategyServiceTest.php
 PASS / exit code 0
 
 vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestIsFailureDrilldown"
@@ -246,10 +314,10 @@ vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestOos"
 PASS / 24 tests / 228 assertions / exit code 0
 
 vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktest"
-PASS / 134 tests / 2894 assertions / exit code 0
+PASS / 134 tests / 2903 assertions / exit code 0
 
 vendor/bin/phpunit tests/Unit/Watchlist
-PASS / 226 tests / 3782 assertions / exit code 0
+PASS / 226 tests / 3791 assertions / exit code 0
 
 vendor/bin/phpunit tests/Unit/MarketData --filter "MarketDataPublishedEodSeries"
 PASS / 7 tests / 37 assertions / exit code 0
@@ -283,4 +351,4 @@ Promotion eligibility:
 NOT_ELIGIBLE - OOS proof missing
 ```
 
-Next session should decide whether runtime feature fields can be exported safely into IS diagnostic evidence. It must not create C02 until a runtime-consumed root-cause focus is proven.
+Next session should review the derived runtime feature buckets and choose an explicit root-cause focus, or keep `NEXT_CATALOG_NOT_DESIGNED`. It must not create C02 until that focus is justified by the diagnostic evidence.

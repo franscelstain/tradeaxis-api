@@ -33,13 +33,14 @@ Current C01 IS failure drilldown contract evidence:
 - C01 two-run artifacts remain deterministic by file SHA1 equality `04f6c664a0c9006c16542a8380034a0a633041dc` and canonical artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
 - C01 runtime quality remains failed with `is_valid_param_count=0`, `is_failed_param_count=8`, no best IS binding, and failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
 - expanded the IS-only diagnostic command/service to generate deeper C01 failure drilldown artifacts without OOS service/repository dependency;
-- current workspace contains C01 drilldown run 1 and run 2 with identical file SHA1 `2ad5568ae2240822783e696972705a99055baae6`;
-- C01 drilldown canonical artifact hash is identical across both runs: `49368eb26aed7975a53cb21701197372d26cd64f`;
+- current workspace contains C01 drilldown run 1 and run 2 with identical file SHA1 `a34f6efaca2fdd16a052637a5e455013b60244cd`;
+- C01 drilldown canonical artifact hash is identical across both runs: `1212405907b33c98b787f473af07472fa74b2508`;
 - C01 drilldown `is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753`;
 - two-run diagnostic commands completed with exit code `0` and `status=DONE`;
 - command blocks empty `--catalog-code`, requires explicit `--from`, `--to`, `--output`, and requires explicit `--overwrite` for replacement;
 - service enforces exact frozen IS window `2023-01-02..2025-05-21`, `hard_market_data_to_date`, no latest/active fallback markers, no current-date/default max-date path, no OOS write, and no production-ready/promotion output;
-- current payload gap is explicit: feature-level breakout/momentum/volume/liquidity/sector/score-component buckets cannot be proven until runtime trade/evaluation payload exports the fields; the artifact records this as `FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE`, `NOT_DERIVED`, and `NOT_USED_FOR_NEXT_CATALOG_DECISION`;
+- the prior payload gap is closed for the current runtime: breakout/momentum/volume/liquidity/sector/score-component buckets are derived from runtime evidence exported through market-data, candidate, scoring, PLAN, and strategy trade payloads;
+- derived diagnostic review is recorded as review-only evidence; candidate focus is anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability, while C02 remains `NOT_DESIGNED`;
 - no file-16 gate, file-17 OOS proof rule, PLAN/RECOMMENDATION/CONFIRM behavior, execution model, OOS table, or promotion rule changed.
 
 Local validation actually performed:
@@ -50,16 +51,16 @@ watchlist:backtest-is-diagnose run 1 = PASS / exit code 0 / status=DONE
 watchlist:backtest-is-diagnose run 2 = PASS / exit code 0 / status=DONE
 WatchlistBacktestIsFailureDrilldown = PASS / 4 tests / 65 assertions
 WatchlistBacktestC01 = PASS / 12 tests / 381 assertions
-WatchlistBacktest = PASS / 134 tests / 2894 assertions
-Full Watchlist = PASS / 226 tests / 3782 assertions
+WatchlistBacktest = PASS / 134 tests / 2903 assertions
+Full Watchlist = PASS / 226 tests / 3791 assertions
 MarketData published/calendar/read-model filters = PASS
 ```
 
 Priority contract status:
 
-- `WL-CONTRACT-006`: PARTIAL; C01 scoring/runtime quality failed canonical IS gates and feature-level root cause still needs runtime payload enrichment/execution;
+- `WL-CONTRACT-006`: PARTIAL; C01 scoring/runtime quality failed canonical IS gates, but feature-level drilldown is now runtime-derived for diagnostic review;
 - `WL-CONTRACT-007`: DONE for C01 immutable traceability and failed-IS evidence scope, not `LOCKED`;
-- `WL-CONTRACT-008`: DONE for C01 IS failure drilldown runtime diagnostic surface, feature-level source fields still unavailable, not `LOCKED`;
+- `WL-CONTRACT-008`: DONE for C01 IS failure drilldown runtime diagnostic surface, feature-level buckets now runtime-derived, not `LOCKED`;
 - `WL-CONTRACT-009`: DONE for no-OOS IS diagnostic runtime boundary proof, not `LOCKED`;
 - `WL-CONTRACT-010`: DONE for C01 drilldown deterministic two-run proof, quality still fails and contract is not `LOCKED`;
 - `WL-CONTRACT-011`: PARTIAL; risk/setup/scoring quality failed and root-cause focus is not proven;

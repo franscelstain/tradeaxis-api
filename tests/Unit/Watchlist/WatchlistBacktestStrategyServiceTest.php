@@ -61,6 +61,15 @@ class WatchlistBacktestStrategyServiceTest extends TestCase
 
         $this->assertSame('EVALUATION_CANDIDATE', $result['trades'][0]['trade_state']);
         $this->assertSame(0.05, $result['trades'][0]['atr14_pct']);
+        $this->assertSame(0.08, $result['trades'][0]['roc20']);
+        $this->assertSame(-0.011, $result['trades'][0]['close_to_hh20_pct']);
+        $this->assertSame(7000000000.0, $result['trades'][0]['dv20_idr']);
+        $this->assertSame(1.50, $result['trades'][0]['vol_ratio']);
+        $this->assertSame('G', $result['trades'][0]['sector_code']);
+        $this->assertSame(0.80, $result['trades'][0]['score_components']['score_momentum']);
+        $this->assertSame(0.08, $result['trades'][0]['score_metrics']['roc20']);
+        $this->assertSame('G', $result['trades'][0]['score_metrics']['sector_code']);
+        $this->assertSame(0.08, $result['trades'][0]['factor_breakdown']['momentum']['roc20']);
         $this->assertSame(1.5, $result['trades'][0]['stop_atr_mult']);
         $this->assertSame(1.5, $result['trades'][0]['min_rr']);
         $this->assertSame('PUBLISHED_EOD_OHLCV_REQUIRED_AT_RUNTIME', $result['trades'][0]['pricing_model']);
@@ -356,6 +365,7 @@ class WatchlistBacktestStrategyServiceTest extends TestCase
         return [
             'ticker_id' => $tickerId,
             'ticker_code' => $tickerCode,
+            'sector_code' => 'G',
             'trade_date' => '2026-05-19',
             'trade_date_effective' => '2026-05-19',
             'publication_id' => 2,
@@ -369,6 +379,21 @@ class WatchlistBacktestStrategyServiceTest extends TestCase
                 'score_volume' => 0.80,
                 'score_risk' => 0.80,
             ],
+            'factor_breakdown' => [
+                'momentum' => [
+                    'roc20' => 0.08,
+                ],
+                'breakout' => [
+                    'close_to_hh20_pct' => -0.011,
+                ],
+                'volume' => [
+                    'vol_ratio' => 1.50,
+                    'dv20_idr' => 7000000000.0,
+                ],
+                'risk' => [
+                    'atr14_pct' => 0.0500,
+                ],
+            ],
             'reason_codes' => ['WS_PLAN_TOP_PICK'],
             'ranking_keys' => [
                 'score_total_desc' => $scoreTotal,
@@ -378,6 +403,16 @@ class WatchlistBacktestStrategyServiceTest extends TestCase
                 'dv20_idr' => 7000000000.0,
                 'atr14_pct' => 0.0500,
                 'vol_ratio' => 1.50,
+                'roc20' => 0.08,
+                'hh20' => 9100.0,
+                'ma20' => 8500.0,
+                'ma50' => 8000.0,
+                'close_to_hh20_pct' => -0.011,
+                'close_vs_ma20_pct' => 0.04,
+                'close_vs_ma50_pct' => 0.09,
+                'ma20_slope_pct' => 0.02,
+                'rs_20_vs_ihsg' => 0.03,
+                'sector_code' => 'G',
             ],
             'plan_group' => $group,
             'group_semantic' => $group,

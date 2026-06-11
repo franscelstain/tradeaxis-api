@@ -186,6 +186,7 @@ class WatchlistCandidateUniverseService
             'ticker_id' => $candidate['ticker_id'] ?? null,
             'ticker_code' => strtoupper(trim((string) ($candidate['ticker_code'] ?? ''))),
             'ticker_name' => $candidate['ticker_name'] ?? null,
+            'sector_code' => $this->sectorCodeOrNull($candidate['sector_code'] ?? ($candidate['indicators']['sector_code'] ?? null)),
             'close_price' => $candidate['close_price'] ?? null,
             'required_ok' => $missingFields === [],
             'guard_ok' => $failReasons === [],
@@ -233,6 +234,17 @@ class WatchlistCandidateUniverseService
         }
 
         return (float) $value;
+    }
+
+    private function sectorCodeOrNull($value): ?string
+    {
+        if ($value === null || ! is_scalar($value)) {
+            return null;
+        }
+
+        $sectorCode = strtoupper(trim((string) $value));
+
+        return $sectorCode === '' ? null : $sectorCode;
     }
 
     private function missingGuardFields(array $metrics): array
