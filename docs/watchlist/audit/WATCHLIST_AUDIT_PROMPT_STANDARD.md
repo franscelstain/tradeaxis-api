@@ -97,20 +97,34 @@ Rules:
 - Do not create or recommend `R3`, `R4`, `R5`, or later catalog identity.
 - Future catalog identity must use semantic focus + catalog attempt:
   `WS_BT_GRID_<FOCUS>_C##_YYYY_MM`.
+- `C##` means Catalog attempt within a named focus/campaign, not system revision. It must never stand alone without the focus/campaign name.
 - Future run evidence may use:
   `WS_BT_IS_<FOCUS>_C##_RUN_##` and `WS_BT_OOS_<FOCUS>_C##_RUN_##`.
 - If a previous catalog already has runtime evidence, do not rename, mutate, or reinterpret it to improve the result.
 - If no IS row passes canonical gates, OOS is not eligible and the next session must be diagnostic/design-first, not OOS.
 
-Current historical aliases:
+Current historical aliases/evidence labels:
 
 ```text
 R1 = WS_BT_GRID_BOOTSTRAP_2026_06
 R2 = WS_BT_GRID_ENTRY_QUALITY_R2_2026_06
+C01 = WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
 ```
 
-Recommended post-R2 session naming pattern:
+Current post-C01 next-session naming pattern:
 
 ```text
-WATCHLIST — WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION
+WATCHLIST — WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION
 ```
+
+Next catalog naming rule:
+
+```text
+If the same DOWNSIDE_STABILITY focus continues:
+WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06
+
+If diagnosis chooses a new focus:
+WS_BT_GRID_<NEW_FOCUS>_C01_YYYY_MM
+```
+
+Never mutate `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06` after its failed-IS runtime evidence.

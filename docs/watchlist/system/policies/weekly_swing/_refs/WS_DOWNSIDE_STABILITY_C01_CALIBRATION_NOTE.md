@@ -174,7 +174,7 @@ No exit-axis grid, fee/slippage change, holding-horizon change, gap-fill change,
 
 ## C01 Design Manifest
 
-This is the code-owned C01 manifest implemented for unit/static scope. It is not yet seeded into an operator database in this session and not run through IS calibration.
+This is the code-owned C01 manifest that was seeded by the operator and executed twice on the exact IS window. It remains failed-IS quality evidence only; it is not an OOS proof, not a promotion, and not production readiness evidence.
 
 ```text
 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
@@ -298,7 +298,7 @@ vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataTradingCalendar": P
 vendor\bin\phpunit tests\Unit\MarketData --filter "MarketDataWatchlistReadModelTest": PASS, 3 tests, 41 assertions, exit code 0
 ```
 
-No Artisan seed, migration, C01 IS calibration, OOS proof, promotion, or production runtime command was executed in this scope.
+No OOS proof, promotion, or production runtime command was executed. The C01 seed and C01 IS calibration commands were executed by the operator later and are recorded in the `C01 Seed And Runtime Evidence` section below.
 
 ## C01 Seed And Runtime Evidence
 

@@ -1388,7 +1388,7 @@ Contract impact:
 
 Next session must target:
 
-`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`
+`WATCHLIST — WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
 
 Priority contracts:
 
@@ -1403,15 +1403,27 @@ Priority contracts:
 Required proof:
 
 - preserve R1 rows, artifacts, hashes, and failed metrics without overwrite or reinterpretation;
-- create a new finite deterministic R2 catalog/version using IS evidence only;
-- do not read or use the reserved OOS suffix to choose R2 variables, values, ranking, or acceptance;
-- focus R2 on entry quality: momentum threshold, breakout proximity/extension, volume confirmation, ATR selection band, liquidity threshold, scoring weights, and TOP_PICKS quantile;
+- preserve R2 rows, artifacts, hashes, and failed metrics without overwrite or reinterpretation;
+- preserve C01 rows, artifacts, hashes, and failed metrics without overwrite or reinterpretation;
+- treat C01 failure reason `WS_BT_C01_NO_VALID_IS_CANDIDATE` as failed IS quality evidence, not as OOS evidence;
+- diagnose why C01 still failed `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`;
+- decide whether the next semantic catalog remains in the same focus as `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06` or starts a new focus as `WS_BT_GRID_<NEW_FOCUS>_C01_YYYY_MM`;
+- use IS evidence only; do not read or use reserved OOS to choose variables, values, ranking, or acceptance;
 - keep canonical sufficiency, return, downside, and stability gates unchanged;
 - retain exact official publication/calendar/OHLCV reads and corrected execution-price semantics;
-- prove catalog determinism, cross-field validity, stable ordering, idempotent persistence, and no best-of-failed behavior;
-- OOS may execute only after at least one R2 row passes every IS gate and an immutable best-IS binding is frozen;
+- prove catalog determinism, cross-field validity, stable ordering, idempotent persistence, no best-of-failed behavior, and no mutation after first runtime;
+- OOS may execute only after at least one future semantic catalog row passes every IS gate and an immutable best-IS binding is frozen;
 - keep promotion, portfolio, broker, scheduler, API, and production-ready claims out of scope;
 - retain `WL-CONTRACT-015` as `PARTIAL / NOT_READY`.
+
+Naming rule:
+
+```text
+R3/R4/R5 naming is forbidden for new catalog identity.
+C01 already refers to executed DOWNSIDE_STABILITY failed-IS evidence.
+If the same focus continues, use WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06.
+If focus changes, use WS_BT_GRID_<NEW_FOCUS>_C01_YYYY_MM.
+```
 
 ## Published Price Runtime Contract Update — 2026-06-09
 

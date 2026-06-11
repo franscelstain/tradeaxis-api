@@ -642,33 +642,37 @@ Watchlist is not production-ready.
 
 Required next session:
 
-`WATCHLIST — WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION`
+`WATCHLIST — WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
 
 Why this is next:
 
 - R1 failed IS quality across 24 rows.
-- R2 executed successfully on IS across 12 rows but again produced `is_valid_param_count=0`.
-- The common failure families are `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`.
+- R2 executed successfully on IS across 12 rows but produced `is_valid_param_count=0`.
+- C01 executed successfully on IS across 8 rows but again produced `is_valid_param_count=0`.
+- C01 failure reason is `WS_BT_C01_NO_VALID_IS_CANDIDATE`.
+- The repeated failure families remain `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`.
 - OOS is not eligible because there is no frozen best-IS binding.
-- Continuing numeric `R3` naming is explicitly deprecated; the next catalog must use semantic campaign naming.
+- C01 already has runtime evidence and must not be mutated after seeing the failed-IS result.
 
 Required target:
 
-- diagnose why R1/R2 failed the downside, robust-return, and stability gates;
-- design a finite deterministic semantic catalog, if justified, using `WS_BT_GRID_<FOCUS>_C##_YYYY_MM` naming;
-- recommended focus name: `DOWNSIDE_STABILITY`, with possible catalog identity `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`;
-- preserve R1 and R2 as immutable failed-IS evidence;
+- diagnose why C01 still failed downside, robust-return, and stability gates despite semantic downside/stability focus;
+- decide whether the next semantic catalog stays in the same focus as `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06` or shifts to a new focus using `WS_BT_GRID_<FOCUS>_C01_YYYY_MM`;
+- preserve R1, R2, and C01 as immutable failed-IS evidence;
 - use IS data only; reserved OOS must remain unread;
 - keep file-16 canonical gates unchanged;
 - do not create best-of-failed, active paramset, promotion, production-ready claim, or OOS run;
-- do not mutate `WS_BT_GRID_BOOTSTRAP_2026_06` or `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`.
+- do not mutate `WS_BT_GRID_BOOTSTRAP_2026_06`, `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, or `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`.
 
 Anti-ambiguity naming rule:
 
 ```text
 R1/R2 = historical aliases only.
+C01 = executed historical failed-IS catalog for DOWNSIDE_STABILITY.
 R3/R4/R5 naming = deprecated for new catalog identity.
 Future catalog code = WS_BT_GRID_<FOCUS>_C##_YYYY_MM.
+If same focus continues, use DOWNSIDE_STABILITY_C02, not an edit to C01.
+If focus changes, reset to <NEW_FOCUS>_C01.
 Future evidence run code = WS_BT_<IS|OOS>_<FOCUS>_C##_RUN_##.
 ```
 
