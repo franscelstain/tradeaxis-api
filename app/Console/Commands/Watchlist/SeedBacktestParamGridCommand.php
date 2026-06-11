@@ -16,7 +16,7 @@ class SeedBacktestParamGridCommand extends Command
     {
         try {
             $result = (new WatchlistBacktestParamGridRepository())->seedCanonical(
-                WatchlistBacktestParamGridCatalog::rows()
+                WatchlistBacktestParamGridCatalog::persistenceRows()
             );
         } catch (\Throwable $e) {
             $this->error('status=BLOCKED');

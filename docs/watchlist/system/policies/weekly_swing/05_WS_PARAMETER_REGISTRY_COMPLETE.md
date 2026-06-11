@@ -38,6 +38,7 @@ Gunakan registry ini sebagai sumber kebenaran definisi per key.
 
 ### C1. Volume confirmation
 - `volume.min_vol_ratio` (MAN/ACTIVE, bt_target=true)
+- `volume.strong_vol_ratio` (MAN/ACTIVE, bt_target=true)
 
 ### D. Risk & stops
 - `risk.min_atr14_pct` (MAN/ACTIVE, bt_target=true)
@@ -251,6 +252,13 @@ Untuk Weekly Swing, namespace parameter bersifat tunggal dan canonical. Code waj
   - Origin: MAN/ACTIVE, bt_target=true
   - Rationale: konfirmasi bahwa pergerakan harga didukung volume; mencegah sinyal lemah pada volume kering.
   - Change triggers: recalibrate BT 2y; perubahan karakter volume pasar.
+
+- `volume.strong_vol_ratio` (number >= `volume.min_vol_ratio`) — ambang volume kuat untuk komponen skor volume.
+  - Origin: MAN/BT, bt_target=true
+  - Unit: ratio terhadap volume baseline yang sama dengan `volume.min_vol_ratio`.
+  - Rationale: membedakan sekadar lolos guard volume dari partisipasi kuat; runtime `WatchlistScoringService` mengonsumsi nilai ini secara langsung.
+  - Change triggers: recalibration entry-quality atau perubahan distribusi volume pasar.
+  - Cara ubah: catalog calibration baru; perubahan setelah first execution wajib memakai catalog version baru.
 
 ### D. Risk & stops
 

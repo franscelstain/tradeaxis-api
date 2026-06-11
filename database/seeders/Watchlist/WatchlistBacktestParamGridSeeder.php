@@ -11,7 +11,7 @@ class WatchlistBacktestParamGridSeeder extends Seeder
     public function run(): void
     {
         (new WatchlistBacktestParamGridRepository())->seedCanonical(
-            WatchlistBacktestParamGridCatalog::rows()
+            WatchlistBacktestParamGridCatalog::persistenceRows()
         );
     }
 }

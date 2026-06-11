@@ -2,112 +2,176 @@
 
 namespace App\Infrastructure\Persistence\Watchlist;
 
+use App\Application\Watchlist\Services\WatchlistBacktestParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestR2ParamGridCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 class WatchlistBacktestParamGridRepository
 {
-    private const PAYLOAD_COLUMNS = [
-        'policy_code',
-        'min_dv20_idr',
-        'max_atr14_pct',
-        'min_vol_ratio',
-        'w_momentum',
-        'w_volume',
-        'w_breakout',
-        'w_risk',
-        'stop_atr_mult',
-        'min_rr',
-        'top_picks_target',
-        'secondary_target',
-        'top_min_score_q',
-        'secondary_min_score_q',
+    private const META_COLUMNS = [
+        'policy_code', 'catalog_code', 'catalog_version', 'catalog_hash',
+        'row_code', 'row_hash', 'rationale',
+    ];
+
+    private const PARAMETER_COLUMNS = [
+        'min_dv20_idr', 'dv20_strong_idr',
+        'min_vol_ratio', 'strong_vol_ratio',
+        'min_atr14_pct', 'max_atr14_pct', 'atr_ideal_low', 'atr_ideal_high',
+        'roc_lo', 'roc_hi', 'mom_roc20_soft_min', 'bo_near_below_pct', 'bo_max_ext_pct',
+        'w_momentum', 'w_volume', 'w_breakout', 'w_risk',
+        'stop_atr_mult', 'min_rr',
+        'top_picks_target', 'secondary_target',
+        'top_min_score_q', 'secondary_min_score_q',
+    ];
+
+    private const PERSISTED_COLUMNS = [
+        'policy_code', 'catalog_code', 'catalog_version', 'catalog_hash',
+        'row_code', 'row_hash', 'rationale',
+        'min_dv20_idr', 'dv20_strong_idr',
+        'min_vol_ratio', 'strong_vol_ratio',
+        'min_atr14_pct', 'max_atr14_pct', 'atr_ideal_low', 'atr_ideal_high',
+        'roc_lo', 'roc_hi', 'mom_roc20_soft_min', 'bo_near_below_pct', 'bo_max_ext_pct',
+        'w_momentum', 'w_volume', 'w_breakout', 'w_risk',
+        'stop_atr_mult', 'min_rr',
+        'top_picks_target', 'secondary_target',
+        'top_min_score_q', 'secondary_min_score_q',
+        'notes',
     ];
 
     public function allForPolicy(string $policyCode = 'WS'): array
     {
+        return $this->allForCatalog(WatchlistBacktestParamGridCatalog::CATALOG_CODE, $policyCode);
+    }
+
+    public function allForCatalog(string $catalogCode, string $policyCode = 'WS'): array
+    {
         $this->assertSchema();
+        $catalogCode = trim($catalogCode);
+        if ($catalogCode === '') {
+            throw new RuntimeException('WS_BT_R2_CATALOG_MISSING: explicit catalog_code is required.');
+        }
+
         $rows = DB::table('watchlist_bt_param_grid')
             ->where('policy_code', $policyCode)
+            ->where('catalog_code', $catalogCode)
+            ->orderBy('row_code', 'asc')
             ->orderBy('param_id', 'asc')
-            ->select(array_merge(['param_id'], self::PAYLOAD_COLUMNS, ['notes']))
+            ->select(array_merge(['param_id'], self::PERSISTED_COLUMNS))
             ->get();
 
         return array_values(array_map(function ($row): array {
-            $value = (array) $row;
-
-            return [
-                'param_id' => (int) $value['param_id'],
-                'policy_code' => (string) $value['policy_code'],
-                'min_dv20_idr' => (int) $value['min_dv20_idr'],
-                'max_atr14_pct' => (float) $value['max_atr14_pct'],
-                'min_vol_ratio' => (float) $value['min_vol_ratio'],
-                'w_momentum' => (float) $value['w_momentum'],
-                'w_volume' => (float) $value['w_volume'],
-                'w_breakout' => (float) $value['w_breakout'],
-                'w_risk' => (float) $value['w_risk'],
-                'stop_atr_mult' => (float) $value['stop_atr_mult'],
-                'min_rr' => (float) $value['min_rr'],
-                'top_picks_target' => (int) $value['top_picks_target'],
-                'secondary_target' => (int) $value['secondary_target'],
-                'top_min_score_q' => (float) $value['top_min_score_q'],
-                'secondary_min_score_q' => (float) $value['secondary_min_score_q'],
-                'notes' => $value['notes'] !== null ? (string) $value['notes'] : null,
-            ];
+            return $this->castRow((array) $row);
         }, $rows->all()));
     }
 
     public function seedCanonical(array $rows): array
     {
+        if ($rows !== [] && ! array_key_exists('catalog_code', $rows[0])) {
+            $rows = WatchlistBacktestParamGridCatalog::persistenceRows();
+        }
+
+        return $this->seedCatalog($rows);
+    }
+
+    public function seedCatalog(array $rows): array
+    {
         $this->assertSchema();
         $this->validateCatalog($rows);
+
+        $catalogCode = (string) $rows[0]['catalog_code'];
+        $policyCode = (string) $rows[0]['policy_code'];
+        $beforeOtherCatalogs = $this->otherCatalogSnapshots($catalogCode, $policyCode);
         $inserted = 0;
-        $updated = 0;
         $existing = 0;
+        $persisted = [];
+        $snapshot = [];
 
-        DB::transaction(function () use ($rows, &$inserted, &$updated, &$existing): void {
+        DB::transaction(function () use (
+            $rows,
+            $catalogCode,
+            $policyCode,
+            $beforeOtherCatalogs,
+            &$inserted,
+            &$existing,
+            &$persisted,
+            &$snapshot
+        ): void {
             foreach ($rows as $row) {
-                $query = DB::table('watchlist_bt_param_grid');
-                foreach (self::PAYLOAD_COLUMNS as $column) {
-                    $query->where($column, $row[$column]);
-                }
+                $matches = DB::table('watchlist_bt_param_grid')
+                    ->where('policy_code', $row['policy_code'])
+                    ->where('catalog_code', $row['catalog_code'])
+                    ->where('row_code', $row['row_code'])
+                    ->orderBy('param_id', 'asc')
+                    ->get();
 
-                $matches = $query->orderBy('param_id', 'asc')->get();
                 if ($matches->count() > 1) {
                     throw new RuntimeException(
-                        'WS_BT_PARAM_GRID_DUPLICATE_CONFLICT: existing database contains duplicate canonical payload rows.'
+                        'WS_BT_R2_CATALOG_IDENTITY_CONFLICT: duplicate catalog_code + row_code identity exists.'
                     );
                 }
 
                 if ($matches->count() === 1) {
-                    $match = (array) $matches->first();
-                    if ((string) ($match['notes'] ?? '') !== (string) ($row['notes'] ?? '')) {
-                        DB::table('watchlist_bt_param_grid')
-                            ->where('param_id', (int) $match['param_id'])
-                            ->update(['notes' => $row['notes']]);
-                        $updated++;
-                    } else {
-                        $existing++;
+                    $existingRow = $this->castRow((array) $matches->first());
+                    if ($this->canonicalPersistedPayload($existingRow) !== $this->canonicalPersistedPayload($row)) {
+                        throw new RuntimeException(
+                            'WS_BT_R2_CATALOG_IDENTITY_CONFLICT: immutable catalog row payload differs from the persisted row.'
+                        );
                     }
+                    $existing++;
                     continue;
                 }
 
-                DB::table('watchlist_bt_param_grid')->insert($row);
+                DB::table('watchlist_bt_param_grid')->insert($this->canonicalPersistedPayload($row));
                 $inserted++;
             }
-        });
 
-        $persisted = $this->allForPolicy('WS');
-        $this->assertPersistedCatalogMatches($persisted, $rows);
+            $persisted = $this->allForCatalog($catalogCode, $policyCode);
+            $this->assertPersistedCatalogMatches($persisted, $rows);
+            if ($beforeOtherCatalogs !== $this->otherCatalogSnapshots($catalogCode, $policyCode)) {
+                throw new RuntimeException('WS_BT_R1_MUTATION_REJECTED: seeding one catalog mutated another catalog.');
+            }
+            $snapshot = $this->catalogSnapshot($catalogCode, $policyCode);
+        });
 
         return [
             'status' => 'SEEDED',
+            'catalog_code' => $catalogCode,
+            'catalog_version' => (string) $rows[0]['catalog_version'],
+            'catalog_hash' => (string) $rows[0]['catalog_hash'],
             'inserted_count' => $inserted,
-            'updated_count' => $updated,
+            'updated_count' => 0,
             'existing_count' => $existing,
             'param_grid_count' => count($persisted),
-            'param_grid_hash' => $this->stableHash($persisted),
+            'param_grid_hash' => $snapshot['persisted_set_hash'],
+            'ordered_row_hashes' => $snapshot['ordered_row_hashes'],
+        ];
+    }
+
+    public function catalogSnapshot(string $catalogCode, string $policyCode = 'WS'): array
+    {
+        $rows = $this->allForCatalog($catalogCode, $policyCode);
+        $catalogHashes = array_values(array_unique(array_map(function (array $row): string {
+            return (string) $row['catalog_hash'];
+        }, $rows)));
+
+        return [
+            'policy_code' => $policyCode,
+            'catalog_code' => $catalogCode,
+            'catalog_count' => count($rows),
+            'catalog_hash' => count($catalogHashes) === 1 ? $catalogHashes[0] : null,
+            'ordered_param_ids' => array_values(array_map(function (array $row): int {
+                return (int) $row['param_id'];
+            }, $rows)),
+            'ordered_row_hashes' => array_values(array_map(function (array $row): string {
+                return (string) $row['row_hash'];
+            }, $rows)),
+            'persisted_set_hash' => $this->stableHash(array_map(function (array $row): array {
+                unset($row['param_id']);
+
+                return $row;
+            }, $rows)),
         ];
     }
 
@@ -116,7 +180,7 @@ class WatchlistBacktestParamGridRepository
         if (! Schema::hasTable('watchlist_bt_param_grid')) {
             throw new RuntimeException('WS_BT_PARAM_GRID_SCHEMA_MISMATCH: watchlist_bt_param_grid table is missing.');
         }
-        foreach (array_merge(['param_id'], self::PAYLOAD_COLUMNS, ['notes']) as $column) {
+        foreach (array_merge(['param_id'], self::PERSISTED_COLUMNS) as $column) {
             if (! Schema::hasColumn('watchlist_bt_param_grid', $column)) {
                 throw new RuntimeException(
                     'WS_BT_PARAM_GRID_SCHEMA_MISMATCH: watchlist_bt_param_grid is missing column '.$column.'.'
@@ -128,56 +192,113 @@ class WatchlistBacktestParamGridRepository
     private function validateCatalog(array $rows): void
     {
         if ($rows === []) {
-            throw new RuntimeException('WS_BT_PARAM_GRID_CATALOG_EMPTY: canonical parameter grid must not be empty.');
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: catalog must not be empty.');
         }
 
-        $keys = [];
+        $identity = null;
+        $this->assertKnownCatalogIdentity($rows);
+        $rowCodes = [];
+        $parameterPayloads = [];
         foreach ($rows as $index => $row) {
-            foreach (array_merge(self::PAYLOAD_COLUMNS, ['notes']) as $column) {
+            foreach (self::PERSISTED_COLUMNS as $column) {
                 if (! array_key_exists($column, $row)) {
-                    throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: missing '.$column.' at catalog index '.$index.'.');
-                }
-            }
-            if ((string) $row['policy_code'] !== 'WS') {
-                throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: policy_code must be WS.');
-            }
-            if ((int) $row['min_dv20_idr'] < 0
-                || (float) $row['max_atr14_pct'] <= 0
-                || (float) $row['max_atr14_pct'] > 1
-                || (float) $row['min_vol_ratio'] < 0) {
-                throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: guard thresholds are outside canonical units.');
-            }
-
-            $weightTotal = (float) $row['w_momentum']
-                + (float) $row['w_volume']
-                + (float) $row['w_breakout']
-                + (float) $row['w_risk'];
-            if (abs($weightTotal - 1.0) > 0.000001) {
-                throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: scoring weights must sum to 1.0.');
-            }
-            foreach (['w_momentum', 'w_volume', 'w_breakout', 'w_risk'] as $weight) {
-                if ((float) $row[$weight] < 0 || (float) $row[$weight] > 1) {
-                    throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: scoring weights must be within 0..1.');
+                    throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: missing '.$column.' at catalog index '.$index.'.');
                 }
             }
 
-            $topQ = (float) $row['top_min_score_q'];
-            $secondaryQ = (float) $row['secondary_min_score_q'];
-            if ($topQ < 0 || $topQ > 1 || $secondaryQ < 0 || $secondaryQ > 1 || $topQ < $secondaryQ) {
-                throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: grouping quantiles are invalid.');
-            }
-            if ((float) $row['stop_atr_mult'] <= 0 || (float) $row['min_rr'] <= 0) {
-                throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: stop_atr_mult and min_rr must be positive.');
-            }
-            if ((int) $row['top_picks_target'] <= 0 || (int) $row['secondary_target'] <= 0) {
-                throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: grouping targets must be positive integers.');
+            $currentIdentity = [
+                (string) $row['policy_code'],
+                (string) $row['catalog_code'],
+                (string) $row['catalog_version'],
+                (string) $row['catalog_hash'],
+            ];
+            $identity = $identity ?? $currentIdentity;
+            if ($identity !== $currentIdentity || $currentIdentity[0] !== 'WS' || in_array('', $currentIdentity, true)) {
+                throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: catalog identity must be non-empty, stable, and policy WS.');
             }
 
-            $key = $this->stableHash(array_intersect_key($row, array_flip(self::PAYLOAD_COLUMNS)));
-            if (isset($keys[$key])) {
-                throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: canonical catalog contains duplicate payload rows.');
+            $rowCode = trim((string) $row['row_code']);
+            if ($rowCode === '' || isset($rowCodes[$rowCode])) {
+                throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: row_code must be non-empty and unique inside a catalog.');
             }
-            $keys[$key] = true;
+            $rowCodes[$rowCode] = true;
+            if ((string) $row['row_hash'] !== sha1((string) $row['catalog_code'].'|'.$rowCode)) {
+                throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: row_hash does not match catalog_code + row_code.');
+            }
+
+            $this->assertParameterInvariants($row);
+            $parameterHash = $this->stableHash(array_intersect_key($row, array_flip(self::PARAMETER_COLUMNS)));
+            if (isset($parameterPayloads[$parameterHash])) {
+                throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: duplicate canonical parameter combination inside catalog.');
+            }
+            $parameterPayloads[$parameterHash] = true;
+        }
+    }
+
+    private function assertKnownCatalogIdentity(array $rows): void
+    {
+        $code = (string) ($rows[0]['catalog_code'] ?? '');
+        $version = (string) ($rows[0]['catalog_version'] ?? '');
+        $hash = (string) ($rows[0]['catalog_hash'] ?? '');
+        $known = [
+            WatchlistBacktestParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestParamGridCatalog::hash(),
+                WatchlistBacktestParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestR2ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestR2ParamGridCatalog::hash(),
+                WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT,
+            ],
+        ];
+        if (! isset($known[$code])) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: catalog_code is not an approved immutable catalog.');
+        }
+        [$expectedVersion, $expectedHash, $expectedCount] = $known[$code];
+        if ($version !== $expectedVersion || $hash !== $expectedHash || count($rows) !== $expectedCount) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: catalog version/count/hash differs from the approved immutable definition.');
+        }
+    }
+
+    private function assertParameterInvariants(array $row): void
+    {
+        if ((int) $row['min_dv20_idr'] < 0 || (int) $row['dv20_strong_idr'] < (int) $row['min_dv20_idr']) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: liquidity thresholds are invalid.');
+        }
+        if ((float) $row['min_vol_ratio'] < 0 || (float) $row['strong_vol_ratio'] < (float) $row['min_vol_ratio']) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: volume thresholds are invalid.');
+        }
+        if (! ((float) $row['min_atr14_pct'] <= (float) $row['atr_ideal_low']
+            && (float) $row['atr_ideal_low'] <= (float) $row['atr_ideal_high']
+            && (float) $row['atr_ideal_high'] <= (float) $row['max_atr14_pct'])) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: ATR band invariant is invalid.');
+        }
+        if ((float) $row['roc_lo'] >= (float) $row['roc_hi']) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: setup.roc_lo must be lower than setup.roc_hi.');
+        }
+        foreach (['bo_near_below_pct', 'bo_max_ext_pct', 'top_min_score_q', 'secondary_min_score_q'] as $field) {
+            if ((float) $row[$field] < 0 || (float) $row[$field] > 1) {
+                throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: '.$field.' must be within 0..1.');
+            }
+        }
+        if ((float) $row['secondary_min_score_q'] > (float) $row['top_min_score_q']) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: secondary quantile must not exceed top quantile.');
+        }
+
+        $weightTotal = (float) $row['w_momentum'] + (float) $row['w_volume']
+            + (float) $row['w_breakout'] + (float) $row['w_risk'];
+        if (abs($weightTotal - 1.0) > 0.000001) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: scoring weights must sum to 1.0.');
+        }
+        foreach (['w_momentum', 'w_volume', 'w_breakout', 'w_risk'] as $field) {
+            if ((float) $row[$field] < 0 || (float) $row[$field] > 1) {
+                throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: scoring weights must be within 0..1.');
+            }
+        }
+        if ((float) $row['stop_atr_mult'] <= 0 || (float) $row['min_rr'] <= 0
+            || (int) $row['top_picks_target'] <= 0 || (int) $row['secondary_target'] <= 0) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: fixed execution/grouping values must be positive.');
         }
     }
 
@@ -185,11 +306,12 @@ class WatchlistBacktestParamGridRepository
     {
         $persistedSet = $this->catalogSet($persisted);
         $catalogSet = $this->catalogSet($catalog);
-
         if ($persistedSet !== $catalogSet) {
-            throw new RuntimeException(
-                'WS_BT_PARAM_GRID_PERSISTED_SET_MISMATCH: database WS grid must match the canonical catalog exactly.'
-            );
+            $catalogCode = (string) ($catalog[0]['catalog_code'] ?? '');
+            $reasonCode = $catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE
+                ? 'WS_BT_PARAM_GRID_PERSISTED_SET_MISMATCH'
+                : 'WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH';
+            throw new RuntimeException($reasonCode.': persisted catalog differs from the immutable catalog definition.');
         }
     }
 
@@ -197,22 +319,82 @@ class WatchlistBacktestParamGridRepository
     {
         $set = [];
         foreach ($rows as $row) {
-            $payload = [];
-            foreach (array_merge(self::PAYLOAD_COLUMNS, ['notes']) as $column) {
-                $payload[$column] = $row[$column] ?? null;
-            }
-            $set[] = $this->stableHash($payload);
+            $set[] = $this->stableHash($this->canonicalPersistedPayload($row));
         }
-
         sort($set, SORT_STRING);
 
         return $set;
     }
 
+    private function otherCatalogSnapshots(string $excludedCatalog, string $policyCode): array
+    {
+        $this->assertSchema();
+        $codes = DB::table('watchlist_bt_param_grid')
+            ->where('policy_code', $policyCode)
+            ->where('catalog_code', '<>', $excludedCatalog)
+            ->distinct()
+            ->orderBy('catalog_code', 'asc')
+            ->pluck('catalog_code')
+            ->all();
+        $snapshots = [];
+        foreach ($codes as $code) {
+            $snapshots[(string) $code] = $this->catalogSnapshot((string) $code, $policyCode);
+        }
+
+        return $snapshots;
+    }
+
+    private function canonicalPersistedPayload(array $row): array
+    {
+        $payload = [];
+        foreach (self::PERSISTED_COLUMNS as $column) {
+            $payload[$column] = $row[$column] ?? null;
+        }
+
+        return $this->castRow($payload, false);
+    }
+
+    private function castRow(array $value, bool $includeParamId = true): array
+    {
+        $row = [];
+        if ($includeParamId && array_key_exists('param_id', $value)) {
+            $row['param_id'] = (int) $value['param_id'];
+        }
+        foreach (self::PERSISTED_COLUMNS as $column) {
+            $item = $value[$column] ?? null;
+            if (in_array($column, ['min_dv20_idr', 'dv20_strong_idr', 'top_picks_target', 'secondary_target'], true)) {
+                $item = $item === null ? null : (int) $item;
+            } elseif (in_array($column, self::PARAMETER_COLUMNS, true)) {
+                $item = $item === null ? null : (float) $item;
+            } elseif ($item !== null) {
+                $item = (string) $item;
+            }
+            $row[$column] = $item;
+        }
+
+        return $row;
+    }
+
     private function stableHash(array $payload): string
     {
-        ksort($payload, SORT_STRING);
+        return sha1(json_encode($this->normalizeForHash($payload), JSON_UNESCAPED_SLASHES));
+    }
 
-        return sha1(json_encode($payload, JSON_UNESCAPED_SLASHES));
+    private function normalizeForHash($value)
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+        if (array_keys($value) === range(0, count($value) - 1)) {
+            return array_map(function ($item) {
+                return $this->normalizeForHash($item);
+            }, $value);
+        }
+        ksort($value, SORT_STRING);
+        foreach ($value as $key => $item) {
+            $value[$key] = $this->normalizeForHash($item);
+        }
+
+        return $value;
     }
 }

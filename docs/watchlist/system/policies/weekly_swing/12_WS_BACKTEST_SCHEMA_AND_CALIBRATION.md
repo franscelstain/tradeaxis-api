@@ -496,3 +496,74 @@ min_atr14_pct <= atr_ideal_low <= atr_ideal_high <= max_atr14_pct
 ```
 
 The resolved values and rule must be present in the immutable paramset snapshot under `bt_grid_resolution`. This is a deterministic compatibility projection, not OOS tuning. It may not inspect IS/OOS metrics, prices, or ranking results. A row with `max_atr14_pct < min_atr14_pct` must fail closed as invalid.
+
+## R2 Catalog Identity and IS-Only Calibration Contract
+
+R1 and R2 must coexist in the official tables without implicit “latest” or “active catalog” selection.
+
+### Catalog identity
+
+`watchlist_bt_param_grid` persists:
+
+```text
+policy_code
+catalog_code
+catalog_version
+catalog_hash
+row_code
+row_hash
+rationale
+```
+
+The canonical row identity is `(policy_code, catalog_code, row_code)`. A seed rerun with an identical payload is idempotent. The same identity with a different payload fails closed. R1 remains `WS_BT_GRID_BOOTSTRAP_2026_06` with count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`.
+
+### R2 entry-quality columns
+
+The official grid stores the runtime-consumed entry-quality fields for liquidity, volume, ATR band, ROC/breakout setup, score weights, and grouping quantiles. The R2 catalog is finite, curated, deterministic, and includes one R1-semantics control row. Random, Bayesian, and post-result catalog mutation are forbidden.
+
+### Evaluation identity
+
+`watchlist_bt_eval` identity includes:
+
+```text
+policy_code
+catalog_code
+catalog_version
+param_id
+paramset_hash
+eval_model
+from_date
+to_date
+```
+
+Exact reruns are idempotent; conflicting payloads fail with `WS_BT_EVAL_IDENTITY_CONFLICT`.
+
+### Strict IS boundary
+
+The R2 command accepts only the exact IS window:
+
+```text
+2023-01-02 through 2025-05-21
+```
+
+The published-price runtime receives `hard_market_data_to_date = 2025-05-21`. Because the canonical holding horizon is five trading days, the final five IS trading dates are retained in the calendar/lineage manifest but excluded from entry generation. This prevents any exit evaluation from requesting reserved OOS prices. The rule is:
+
+```text
+EXCLUDE_LAST_HOLDING_DAYS_FROM_ENTRY_GENERATION;KEEP_ALL_PRICE_READS_WITHIN_IS
+```
+
+The runtime may not call an OOS service/repository, write `watchlist_bt_oos_eval_ws`, infer a current/latest date, or read market data after the explicit IS boundary. Canonical metric gates remain owned by file 16 and are unchanged.
+
+### Fixed execution snapshot
+
+Every R2 row uses exactly:
+
+```text
+ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS
+risk.stop_atr_mult=1.50
+risk.min_rr=1.50
+grouping.top_picks_target=5
+grouping.secondary_target=10
+```
+
+R2 success freezes a best-IS binding only when every canonical gate passes. R2 failure creates no binding and never selects best-of-failed.

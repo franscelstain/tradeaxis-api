@@ -24,50 +24,52 @@
 CREATE TABLE IF NOT EXISTS watchlist_bt_param_grid (
   param_id INT NOT NULL AUTO_INCREMENT,
   policy_code VARCHAR(16) NOT NULL,
-  -- guardrails
-  min_dv20_idr BIGINT NOT NULL,
-  max_atr14_pct DECIMAL(10,6) NOT NULL,
+  catalog_code VARCHAR(64) NOT NULL,
+  catalog_version VARCHAR(16) NOT NULL,
+  catalog_hash CHAR(40) NOT NULL,
+  row_code VARCHAR(64) NOT NULL,
+  row_hash CHAR(40) NOT NULL,
+  rationale TEXT NOT NULL,
+  -- entry-quality guardrails and scoring inputs
+  min_dv20_idr BIGINT UNSIGNED NOT NULL,
+  dv20_strong_idr BIGINT UNSIGNED NOT NULL,
   min_vol_ratio DECIMAL(10,6) NOT NULL,
-  -- weights (raw; normalisasi dilakukan saat compute)
+  strong_vol_ratio DECIMAL(10,6) NOT NULL,
+  min_atr14_pct DECIMAL(10,6) NOT NULL,
+  max_atr14_pct DECIMAL(10,6) NOT NULL,
+  atr_ideal_low DECIMAL(10,6) NOT NULL,
+  atr_ideal_high DECIMAL(10,6) NOT NULL,
+  roc_lo DECIMAL(10,6) NOT NULL,
+  roc_hi DECIMAL(10,6) NOT NULL,
+  mom_roc20_soft_min DECIMAL(10,6) NOT NULL,
+  bo_near_below_pct DECIMAL(10,6) NOT NULL,
+  bo_max_ext_pct DECIMAL(10,6) NOT NULL,
+  -- scoring weights; canonical invariant total = 1
   w_momentum DECIMAL(10,6) NOT NULL,
   w_volume DECIMAL(10,6) NOT NULL,
   w_breakout DECIMAL(10,6) NOT NULL,
   w_risk DECIMAL(10,6) NOT NULL,
-  -- deterministic exit-risk calibration
+  -- fixed execution-risk axes for R2 entry-quality calibration
   stop_atr_mult DECIMAL(10,6) NOT NULL,
   min_rr DECIMAL(10,6) NOT NULL,
-  -- picks sizing
-  top_picks_target INT NOT NULL,
-  secondary_target INT NOT NULL,
-  -- grouping quantile cutoffs (BT)
+  -- fixed grouping counts and calibrated grouping quantile cutoffs
+  top_picks_target INT UNSIGNED NOT NULL,
+  secondary_target INT UNSIGNED NOT NULL,
   top_min_score_q DECIMAL(10,6) NOT NULL,
   secondary_min_score_q DECIMAL(10,6) NOT NULL,
-  -- meta
   notes VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (param_id),
-  KEY IDX_bt_grid_policy (policy_code, param_id),
-  UNIQUE KEY UQ_bt_grid_policy_payload (
-    policy_code,
-    min_dv20_idr,
-    max_atr14_pct,
-    min_vol_ratio,
-    w_momentum,
-    w_volume,
-    w_breakout,
-    w_risk,
-    stop_atr_mult,
-    min_rr,
-    top_picks_target,
-    secondary_target,
-    top_min_score_q,
-    secondary_min_score_q
-  )
+  UNIQUE KEY UQ_bt_grid_catalog_row (policy_code, catalog_code, row_code),
+  KEY IDX_bt_grid_catalog (policy_code, catalog_code, param_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS watchlist_bt_eval (
   eval_id BIGINT NOT NULL AUTO_INCREMENT,
   policy_code VARCHAR(16) NOT NULL,
+  catalog_code VARCHAR(64) NOT NULL,
+  catalog_version VARCHAR(16) NOT NULL,
+  catalog_hash CHAR(40) NOT NULL,
   param_id INT NOT NULL,
   eval_model VARCHAR(96) NOT NULL,
   paramset_hash CHAR(40) NOT NULL,
@@ -82,14 +84,14 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_eval (
   avg_ret_net_top DECIMAL(10,6) NOT NULL,
   win_rate_top DECIMAL(10,6) NOT NULL,
 
-  -- distribution & downside metrics (anti-outlier / risk bound)
+  -- distribution & downside metrics
   median_ret_net_top DECIMAL(10,6) NOT NULL,
   p25_ret_net_top DECIMAL(10,6) NOT NULL,
   p75_ret_net_top DECIMAL(10,6) NOT NULL,
   min_ret_net_top DECIMAL(10,6) NOT NULL,
   max_ret_net_top DECIMAL(10,6) NOT NULL,
 
-  -- stability metrics (period-based, default: monthly)
+  -- stability metrics
   periods_count TINYINT UNSIGNED NOT NULL,
   period_fail_count TINYINT UNSIGNED NOT NULL,
   month_win_rate_min DECIMAL(10,6) NOT NULL,
@@ -105,13 +107,15 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_eval (
   max_ret_net_all DECIMAL(10,6) NULL,
 
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
   PRIMARY KEY (eval_id),
-  UNIQUE KEY UQ_bt_eval_policy_param_window (policy_code, param_id, eval_model, paramset_hash, from_date, to_date),
-
-  -- ranking index: keep existing + extend for robust ranking
-  KEY IDX_bt_eval_rank (policy_code, avg_ret_net_top, median_ret_net_top, month_win_rate_min, p25_ret_net_top, win_rate_top),
-
+  UNIQUE KEY UQ_bt_eval_catalog_param_window (
+    policy_code, catalog_code, catalog_version, param_id,
+    eval_model, paramset_hash, from_date, to_date
+  ),
+  KEY IDX_bt_eval_catalog_rank (
+    policy_code, catalog_code, avg_ret_net_top,
+    median_ret_net_top, month_win_rate_min, p25_ret_net_top, win_rate_top
+  ),
   CONSTRAINT FK_bt_eval_param FOREIGN KEY (param_id) REFERENCES watchlist_bt_param_grid(param_id)
 ) ENGINE=InnoDB;
 

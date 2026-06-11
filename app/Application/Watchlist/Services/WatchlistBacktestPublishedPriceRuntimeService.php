@@ -37,7 +37,20 @@ class WatchlistBacktestPublishedPriceRuntimeService
         string $outputPath,
         array $options = []
     ): array {
-        $calendar = $this->calendar->resolveReplayWindow($fromDate, $toDate, 5);
+        $hardBoundary = trim((string) ($options['hard_market_data_to_date'] ?? ''));
+        $strictBoundary = $hardBoundary !== '';
+        if ($strictBoundary && $hardBoundary !== $toDate) {
+            return $this->blocked('WS_BT_R2_IS_BOUNDARY_VIOLATION', [[
+                'trade_date' => null,
+                'reason_code' => 'WS_BT_R2_IS_BOUNDARY_VIOLATION',
+                'message' => 'hard_market_data_to_date must equal the explicit IS --to boundary.',
+                'fatal' => true,
+            ]]);
+        }
+
+        $calendar = $strictBoundary
+            ? $this->calendar->resolveTradingDates($fromDate, $toDate)
+            : $this->calendar->resolveReplayWindow($fromDate, $toDate, 5);
         if (! ($calendar['is_ready'] ?? false)) {
             return $this->blocked($calendar['reason_code'] ?? 'WATCHLIST_BACKTEST_CALENDAR_UNAVAILABLE', $calendar['diagnostics'] ?? []);
         }
@@ -45,8 +58,21 @@ class WatchlistBacktestPublishedPriceRuntimeService
         $runtimeParamset = $this->runtimeParamset(
             is_array($options['paramset'] ?? null) ? $options['paramset'] : []
         );
+        $holdingDays = max(1, (int) ($runtimeParamset['backtest']['holding_days'] ?? 5));
+        $strategyTradeDates = $calendar['trade_dates'];
+        if ($strictBoundary) {
+            if (count($strategyTradeDates) <= $holdingDays) {
+                return $this->blocked('WS_BT_OOS_WINDOW_INSUFFICIENT', [[
+                    'trade_date' => null,
+                    'reason_code' => 'WS_BT_OOS_WINDOW_INSUFFICIENT',
+                    'message' => 'IS window does not contain enough trading dates for a fully contained holding horizon.',
+                    'fatal' => true,
+                ]], ['calendar' => $calendar]);
+            }
+            $strategyTradeDates = array_slice($strategyTradeDates, 0, count($strategyTradeDates) - $holdingDays);
+        }
         $backtestPayload = $this->strategy->backtestForReplayWindow(
-            $calendar['trade_dates'],
+            $strategyTradeDates,
             is_array($options['confirm_inputs_by_trade_date'] ?? null) ? $options['confirm_inputs_by_trade_date'] : [],
             $runtimeParamset,
             is_array($options['capital_input'] ?? null) ? $options['capital_input'] : []
@@ -69,13 +95,27 @@ class WatchlistBacktestPublishedPriceRuntimeService
         $requiredPriceTickerMap = $this->requiredPriceTickerMap(
             $backtestPayload['trades'] ?? [],
             $calendar['calendar_dates'],
-            5
+            $holdingDays
         );
         $requiredPriceDates = array_keys($requiredPriceTickerMap);
         $tickerCodes = $this->tickerCodesFromDateMap($requiredPriceTickerMap);
 
         $priceFromDate = $requiredPriceDates[0] ?? $fromDate;
         $priceToDate = $requiredPriceDates[count($requiredPriceDates) - 1] ?? $toDate;
+        if ($strictBoundary && strcmp($priceToDate, $hardBoundary) > 0) {
+            return $this->blocked('WS_BT_R2_IS_BOUNDARY_VIOLATION', [[
+                'trade_date' => null,
+                'reason_code' => 'WS_BT_R2_IS_BOUNDARY_VIOLATION',
+                'message' => 'Published-price request would cross the explicit IS boundary.',
+                'requested_price_to_date' => $priceToDate,
+                'hard_market_data_to_date' => $hardBoundary,
+                'fatal' => true,
+            ]], [
+                'calendar' => $calendar,
+                'backtest_payload' => $backtestPayload,
+                'strategy_payload_hash' => $frozenStrategyHash,
+            ]);
+        }
         $priceRead = $tickerCodes === []
             ? $this->emptyPriceRead($priceFromDate, $priceToDate)
             : $this->priceSeries->readPublishedSeriesForDateTickerMap(
@@ -130,6 +170,16 @@ class WatchlistBacktestPublishedPriceRuntimeService
                         'requested_ticker_date_pair_count' => array_sum(array_map('count', $requiredPriceTickerMap)),
                         'targeted_date_ticker_read' => true,
                         'trade_candidate_count' => count($backtestPayload['trades'] ?? []),
+                        'strict_is_boundary' => $strictBoundary,
+                        'hard_market_data_to_date' => $strictBoundary ? $hardBoundary : null,
+                        'max_requested_market_data_date' => $priceToDate,
+                        'strategy_trade_date_count' => count($strategyTradeDates),
+                        'boundary_censored_trade_date_count' => $strictBoundary
+                            ? count($calendar['trade_dates']) - count($strategyTradeDates)
+                            : 0,
+                        'boundary_censoring_rule' => $strictBoundary
+                            ? 'EXCLUDE_LAST_HOLDING_DAYS_FROM_ENTRY_GENERATION;KEEP_ALL_PRICE_READS_WITHIN_IS'
+                            : null,
                     ],
                 ],
             ]

@@ -15,61 +15,94 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
 
 Status:
-`DONE for OOS execution infrastructure / EXECUTION_PRICE_CORRECTION_VALIDATED / FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`.
+`DONE for R2 entry-quality calibration execution infrastructure / LOCAL_R2_IS_CALIBRATION_EXECUTED / R2_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
 
 Historical baselines remain preserved and are not downgraded:
 
 - `PHASE_6_CONFIRM_OVERLAY_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
 - `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`;
 - `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`;
-- final published-price operator evidence remains PublishedPrice `17/146`, MetricsService `8/63`, Backtest `48/497`, full Watchlist `139/1379`, PublishedEodSeries `6/29`, TradingCalendar `4/16`, and MarketDataWatchlistReadModel `3/41`.
+- `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`;
+- final R1 operator validation remains ParamGrid `4/636`, MetricsService `15/113`, PublishedPrice `18/177`, OOS `24/186`, Backtest `87/1430`, and full Watchlist `179/2318`.
 
-Scope:
-Implement the minimum canonical chronological 70/30 Weekly Swing OOS proof over explicit historical windows. The implementation reads the official trading calendar and published EOD series through existing application surfaces, calibrates every official database param-grid row only on the IS prefix, freezes the best valid IS binding, evaluates the OOS suffix without re-tuning, persists official evaluation rows idempotently, and exports deterministic evidence. It does not add portfolio allocation, order, broker instruction, scheduler, API endpoint, paramset promotion, or production-trading state.
+Final R2 supported-operator evidence:
 
-Current evidence:
+- migration `2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality` ran successfully in batch `10`;
+- post-fix PHPUnit passed: R2 factory `12/106`, R2 static guard `5/53`, OOS persistence `3/13`, R2 suite `26/530`, OOS suite `24/228`, Backtest suite `117/2442`, full Watchlist `209/3330`;
+- R1 identity remains `WS_BT_GRID_BOOTSTRAP_2026_06`, version `R1`, count `24`, hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`;
+- R2 identity is `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, version `R2`, count `12`, hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`;
+- R2 seed run 1 inserted `12` rows; R2 seed run 2 inserted `0`, updated `0`, and found `12` existing rows; both returned exit code `0` and `r1_immutable=1`;
+- R1 and R2 coexist in `watchlist_bt_param_grid` with distinct catalog code/version/count/hash and no mixed catalog hash;
+- R2 IS calibration was run twice on the exact IS window `2023-01-02..2025-05-21`; both runs produced the same artifact hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`;
+- R2 IS result is `is_valid_param_count=0`, `is_failed_param_count=12`, reason `WS_BT_R2_NO_VALID_IS_CANDIDATE`, failure codes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`;
+- no best-IS binding exists for R2; no best-of-failed is allowed;
+- strict IS boundary was preserved: `max_requested_market_data_date=2025-05-21`, `max_allowed_market_data_date=2025-05-21`, and `strict_is_boundary_all_evaluations=1`;
+- OOS was not read or executed: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
+- `production_ready=0`.
 
-- canonical 24-row grid is deployed and idempotent: `catalog_count=24`, `param_grid_count=24`;
-- supported operator PHPUnit is green after execution-price correction: ParamGrid `4/636`, MetricsService `15/113`, PublishedPrice `18/177`, OOS `24/186`, Backtest `87/1430`, and full Watchlist `179/2318`;
-- full explicit historical proof executed with `from=2023-01-02` and `to=2026-05-29`; split is deterministic with IS `2023-01-02..2025-05-21` / `562` trading dates and OOS `2025-05-22..2026-05-29` / `242` trading dates;
-- all 24 canonical rows completed IS evaluation without memory exhaustion, source-readiness failure, raw-reader fallback, or per-evaluation runtime/source diagnostics;
-- `is_valid_param_count=0`, `is_failed_param_count=24`, `is_max_picks_count=1445`, and `is_max_days_covered=513`;
-- the only IS failure classes are `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_DOWNSIDE_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`; no best-of-failed binding was created;
-- param 9 is the only evaluated row with positive average return among the nearest rows but still fails median, downside, and both stability gates; param 24 passes downside only and fails average, median, and both stability gates;
-- execution-price correction is validated: opening gaps fill at open, intraday trigger prices use deterministic IDX price-band normalization, trigger and executed prices are distinct, and non-executable fractional source OHLC fails closed;
-- the corrected canonical artifact hash is `f4ec8464f08515b31d7d26636851acea930307d6`; operator evidence path is `storage/app/watchlist/backtest/oos-proof-run-1.json`;
-- global diagnostic is `WS_BT_OOS_PROOF_MISSING` because no valid IS binding exists; per-evaluation diagnostics are empty;
-- OOS did not execute, no `watchlist_bt_oos_eval_ws` proof was created for this run, no promotion occurred, and promotion eligibility remains `NOT_ELIGIBLE — OOS proof missing`;
-- R1 is preserved as failed IS research evidence. The next justified work is a separate R2 entry-quality calibration session using IS only; acceptance gates and the OOS suffix remain unchanged and unread for R2 design.
+Final R2 conclusion:
+
+```text
+R2 infrastructure/runtime: PASS
+R2 catalog/persistence/idempotency: PASS
+R2 deterministic two-run IS proof: PASS
+R2 strategy/catalog quality: FAIL
+OOS proof eligibility: NOT_ELIGIBLE_FOR_OOS_PROOF — no valid R2 IS parameter
+Promotion eligibility: NOT_ELIGIBLE — OOS proof missing
+Production readiness: NOT_READY
+```
+
+Anti-misinterpretation decision for future catalog naming:
+
+- `R1` and `R2` are retained only as historical aliases and backward-compatible runtime/evidence identities.
+- Do not rename historical R1/R2 catalog identities, hashes, DB rows, or artifact references after runtime evidence exists.
+- Do not continue numeric R-series naming for new calibration catalogs. `R3`, `R4`, `R5`, and later names are deprecated and must not be used for new catalog identity.
+- Future calibration catalogs must use semantic campaign naming: `WS_BT_GRID_<FOCUS>_C##_YYYY_MM`.
+- The next catalog, if implemented, must start as a separate semantic catalog such as `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, not as an edit to R2 and not as `R3`.
+- Any future session may mention `R1/R2` only to reference immutable historical evidence, not as the active naming pattern.
+
+Required next session:
+
+`WATCHLIST — WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION`
+
+Required next-session boundary:
+
+- begin from the R2 failed-IS evidence, not from OOS;
+- do not run OOS;
+- do not mutate R1 or R2;
+- do not lower file-16 acceptance gates;
+- do not create a best-of-failed binding;
+- design a new semantic catalog only if diagnostics prove the axis ownership, runtime consumption, invariants, and finite deterministic search design;
+- status starts as `NOT_PRODUCTION_READY` and promotion remains `NOT_ELIGIBLE — OOS proof missing`.
 
 ## Source of Truth ZIP
 
 - Source ZIP: `tradeaxis-api.zip`
 - Session date: `2026-06-10`
 - Latest local validation date: `2026-06-10`
-- Scope classification: supported-runtime chronological 70/30 proof infrastructure and full IS calibration completed; R1 has no valid IS parameter, so OOS did not execute.
+- Scope classification: R2 entry-quality calibration implementation completed at unit/static source scope; supported operator migration, PHPUnit, seed, and exact IS runtime proof remain required.
 
 ## Current Implementation Baseline
 
 | Area | Status | Notes |
 |---|---|---|
-| Current status | `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY` | OOS infrastructure and corrected execution semantics are validated, but no canonical R1 parameter passed all IS gates. |
-| Main feature code | `DONE for OOS execution infrastructure scope` | Deterministic split, official grid, IS-only calibration, immutable binding boundary, OOS no-retune service, official persistence, and artifact export exist. |
+| Current status | `LOCAL_R2_IS_CALIBRATION_EXECUTED / R2_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY` | R2 implementation and supported IS execution are complete; catalog quality failed all canonical IS gates. |
+| Main feature code | `DONE for R2 entry-quality execution infrastructure` | Explicit R2 catalog, catalog-aware persistence, strict IS-only orchestration, and deterministic evidence export are implemented and exercised. |
 | Runtime API | `NOT_STARTED` | No API endpoint created, by scope. |
-| Artisan command surface | `IMPLEMENTED / SUPPORTED-RUNTIME EXECUTED` | `watchlist:backtest-oos-proof` executed over the full explicit range and correctly stopped before OOS because no valid IS binding existed. |
-| Database schema | `DEPLOYED / VERIFIED FOR CURRENT OOS SCOPE` | Backtest schema migrations and canonical 24-row grid seed executed successfully. |
-| Backtest engine | `DONE for corrected IS runtime scope / OOS NOT EXECUTED` | Full IS replay completed under gap-aware, price-band-normalized execution semantics; no best-of-failed selection occurred. |
+| Artisan command surface | `IMPLEMENTED / OPERATOR EXECUTED` | `watchlist:backtest-r2-param-grid-seed` ran twice idempotently; `watchlist:backtest-is-calibrate` ran twice on exact IS. |
+| Database schema | `MIGRATION APPLIED` | Catalog identity, R2 fields, and catalog-aware eval identity are deployed; R1/R2 coexistence is proven. |
+| Backtest engine | `R2 STRICT-IS PATH EXECUTED` | Hard IS boundary and final HOLD=5 entry censoring are proven; max requested market-data date stayed at `2025-05-21`. |
 | Recommendation engine | `DONE for Phase 5 unit/static scope` | Recommendation remains derived only from PLAN; calibration/OOS does not mutate recommendation membership. |
 | PLAN grouping engine | `DONE for Phase 4 scope + deterministic BT quantile support` | Official grid quantiles are deterministic and runtime-tested. |
-| Scoring engine | `DONE / R1 QUALITY INSUFFICIENT` | Scoring execution is deterministic, but the R1 grid did not produce a parameter satisfying canonical IS quality gates. |
-| Market-data consumer read model | `DONE for published-price runtime scope` | Full-range replay used official calendar/publication/OHLCV surfaces without raw/latest/MAX-date bypass. |
-| Candidate universe / liquidity-risk gates | `DONE for current runtime scope` | All 24 rows pass cross-field paramset validation and reach IS metric evaluation. |
-| Test coverage | `LOCAL_PHPUNIT_PASS` | ParamGrid `4/636`, MetricsService `15/113`, PublishedPrice `18/177`, OOS `24/186`, Backtest `87/1430`, full Watchlist `179/2318`. |
-| Artifact/log output | `IS FAILURE EVIDENCE AVAILABLE / OOS ARTIFACT ABSENT` | Corrected IS artifact hash `f4ec8464f08515b31d7d26636851acea930307d6`; no OOS evidence exists because no valid IS binding exists. |
-| Production readiness | `NOT_READY` | R1 quality failed, OOS proof is missing, promotion is not eligible, and production operating proof remains absent. |
+| Scoring engine | `R2 ENTRY-QUALITY AXES EXECUTED / QUALITY FAIL` | Selected axes are runtime-consumed, but all 12 rows failed canonical IS quality gates. |
+| Market-data consumer read model | `DONE for published-price runtime scope + R2 STRICT-IS READ PROOF` | R2 did not read after the explicit IS boundary and did not invoke OOS services/repositories. |
+| Candidate universe / liquidity-risk gates | `R2 MAPPING AND INVARIANTS EXECUTED` | Runtime consumers and cross-field guards are verified; no valid R2 candidate survived all gates. |
+| Test coverage | `PASS` | R2 regression suites and full Watchlist suite pass: full Watchlist `209 tests / 3330 assertions`. |
+| Artifact/log output | `R2 IS ARTIFACT PRODUCED` | Two IS artifacts produced identical hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`; best binding is absent by design. |
+| Production readiness | `NOT_READY` | R2 has no valid IS parameter; OOS proof is not eligible and promotion remains impossible. |
 
 ## Existing Docs Discovered
 
@@ -594,19 +627,35 @@ Watchlist is not production-ready.
 
 Required next session:
 
-`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`
+`WATCHLIST — WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION`
 
-Target:
+Why this is next:
 
-- preserve R1 artifact and matrix as immutable failed-IS evidence;
-- create a new deterministic catalog/version rather than editing R1 rows in place;
-- use IS data only; the OOS suffix must not be read or used to design R2;
-- focus on entry-quality variables such as momentum threshold, breakout proximity/extension, volume confirmation, ATR selection band, liquidity threshold, scoring weights, and TOP_PICKS quantile;
-- keep canonical metric sufficiency and acceptance gates unchanged;
-- avoid unbounded/manual trial loops and keep the search space documented and finite;
-- require all R2 rows to pass the same cross-field, execution-price, determinism, and persistence guards;
-- select no best-of-failed parameter; OOS may start only if at least one R2 row passes every canonical IS gate;
-- keep promotion, portfolio, broker, scheduler, API, and production-ready claims out of scope.
+- R1 failed IS quality across 24 rows.
+- R2 executed successfully on IS across 12 rows but again produced `is_valid_param_count=0`.
+- The common failure families are `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`.
+- OOS is not eligible because there is no frozen best-IS binding.
+- Continuing numeric `R3` naming is explicitly deprecated; the next catalog must use semantic campaign naming.
+
+Required target:
+
+- diagnose why R1/R2 failed the downside, robust-return, and stability gates;
+- design a finite deterministic semantic catalog, if justified, using `WS_BT_GRID_<FOCUS>_C##_YYYY_MM` naming;
+- recommended focus name: `DOWNSIDE_STABILITY`, with possible catalog identity `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`;
+- preserve R1 and R2 as immutable failed-IS evidence;
+- use IS data only; reserved OOS must remain unread;
+- keep file-16 canonical gates unchanged;
+- do not create best-of-failed, active paramset, promotion, production-ready claim, or OOS run;
+- do not mutate `WS_BT_GRID_BOOTSTRAP_2026_06` or `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`.
+
+Anti-ambiguity naming rule:
+
+```text
+R1/R2 = historical aliases only.
+R3/R4/R5 naming = deprecated for new catalog identity.
+Future catalog code = WS_BT_GRID_<FOCUS>_C##_YYYY_MM.
+Future evidence run code = WS_BT_<IS|OOS>_<FOCUS>_C##_RUN_##.
+```
 
 ## Runtime Artifact and Metrics Foundation Update — 2026-06-08
 
@@ -1257,3 +1306,209 @@ No owner acceptance rule was weakened, no OOS data was used for selection, no be
 
 Next session:
 `WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`.
+
+## R2 Entry-Quality Calibration Implementation Update — 2026-06-10
+
+Session:
+`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
+
+Status:
+`DONE for R2 entry-quality calibration implementation unit-static scope / OPERATOR_R2_IS_RERUN_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+Implemented closure:
+
+- immutable R1 catalog count/hash retained at `24` / `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`;
+- new explicit R2 catalog `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, version `R2`, count `12`, hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`;
+- compact curated entry-quality rows with one R1 control row and fixed execution/exit axes;
+- catalog-aware schema/repositories and deterministic R1 backfill;
+- explicit runtime mapping for all persisted R2 fields, with cross-field guards and no silent R2 fallback;
+- catalog-aware eval identity, exact-rerun idempotence, and conflict fail-closed behavior;
+- dedicated `watchlist:backtest-r2-param-grid-seed` and `watchlist:backtest-is-calibrate` commands;
+- exact immutable IS window `2023-01-02..2025-05-21` and hard maximum market-data date `2025-05-21`;
+- final-five-trading-day entry censoring to preserve HOLD=5 without OOS price reads;
+- R1 before/after snapshot proof and OOS-table before/after snapshot proof in the R2 artifact;
+- best binding only after every unchanged canonical IS gate passes; no best-of-failed;
+- policy, validator, reason-code seed, schema DDL, checklist, artifact manifest, implementation status, and contract tracker synchronized;
+- files 16 and 17 were not modified.
+
+Packaging validation:
+
+```text
+PHP syntax lint: PASS / 312 PHP files
+R2 pure-PHP smoke: PASS / 180 assertions
+R1 factory compatibility: PASS / 24 of 24 rows
+R1 IS-calibration service compatibility: PASS / exact output equality
+R1 catalog hash direct check: PASS
+R2 catalog count/hash direct check: PASS
+official PHPUnit: BLOCKED before discovery (missing dom, mbstring, xml, xmlwriter; exit 1)
+artisan migration/seed/calibration: EXPECTED FAIL-CLOSED (PHP 8.4.16 unsupported; exit 2)
+PDO database drivers: unavailable
+package installation attempt: BLOCKED (DNS resolution failure)
+```
+
+No R2 seed, database migration, IS replay, evaluation rows, best binding, or two-run artifact was fabricated in this environment. Therefore runtime result, OOS-proof eligibility, and R2 quality verdict remain operator-dependent.
+
+Supersession note:
+
+The implementation-only status below was the correct status before supported-operator evidence existed. It is superseded by the final R2 operator result immediately following this section. Do not use `OPERATOR_R2_IS_RERUN_REQUIRED` as the current status after the final evidence block.
+
+Historical pre-runtime status:
+
+```text
+OPERATOR_R2_IS_RERUN_REQUIRED
+OOS_NOT_READ
+OOS_PROOF_ELIGIBILITY=NOT_DETERMINED
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE — OOS proof missing
+NOT_PRODUCTION_READY
+```
+
+## R2 Entry-Quality Calibration Final Operator Result — 2026-06-10
+
+Session:
+`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
+
+Final status:
+`DONE for R2 entry-quality calibration execution infrastructure / LOCAL_R2_IS_CALIBRATION_EXECUTED / R2_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+### Final operator validation
+
+```text
+WatchlistBacktestR2ParamGridParamsetFactoryTest: 12 tests / 106 assertions / PASS
+WatchlistBacktestR2StaticGuardTest: 5 tests / 53 assertions / PASS
+WatchlistBacktestOosPersistenceTest: 3 tests / 13 assertions / PASS
+WatchlistBacktestR2: 26 tests / 530 assertions / PASS
+WatchlistBacktestOos: 24 tests / 228 assertions / PASS
+WatchlistBacktest: 117 tests / 2442 assertions / PASS
+Full Watchlist: 209 tests / 3330 assertions / PASS
+```
+
+### Migration and seed evidence
+
+```text
+migration=2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality
+migration_status=Yes
+migration_batch=10
+
+R2 seed run 1:
+status=PASS
+catalog_code=WS_BT_GRID_ENTRY_QUALITY_R2_2026_06
+catalog_version=R2
+catalog_count=12
+catalog_hash=0f2eaadaa446980a3d5e48cd498df2a8157c01a5
+inserted_count=12
+updated_count=0
+existing_count=0
+r1_catalog_count=24
+r1_catalog_hash=9da8b0983c57bde1ce0a1fbf1c119756f8af431c
+r1_immutable=1
+exit_code=0
+
+R2 seed run 2:
+status=PASS
+inserted_count=0
+updated_count=0
+existing_count=12
+r1_immutable=1
+exit_code=0
+```
+
+Coexistence proof:
+
+```text
+R1 catalog_code=WS_BT_GRID_BOOTSTRAP_2026_06
+R1 catalog_version=R1
+R1 catalog_count=24
+R1 distinct_row_codes=24
+R1 distinct_row_hashes=24
+R1 catalog_hash=9da8b0983c57bde1ce0a1fbf1c119756f8af431c
+
+R2 catalog_code=WS_BT_GRID_ENTRY_QUALITY_R2_2026_06
+R2 catalog_version=R2
+R2 catalog_count=12
+R2 distinct_row_codes=12
+R2 distinct_row_hashes=12
+R2 catalog_hash=0f2eaadaa446980a3d5e48cd498df2a8157c01a5
+```
+
+### Final R2 IS runtime evidence
+
+Both IS calibration runs used the exact same inputs:
+
+```text
+catalog_code=WS_BT_GRID_ENTRY_QUALITY_R2_2026_06
+catalog_version=R2
+catalog_count=12
+catalog_hash=0f2eaadaa446980a3d5e48cd498df2a8157c01a5
+is_from=2023-01-02
+is_to=2025-05-21
+is_trading_date_count=562
+is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753
+```
+
+Both runs produced the same final result:
+
+```text
+status=R2_GRID_FAILED_IS_QUALITY
+reason_code=WS_BT_R2_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id_best_is=null
+best_is_binding_hash=null
+artifact_hash=8a8521fc9a3726d90f2b77506532a1e5392def8b
+production_ready=0
+```
+
+No-OOS proof:
+
+```text
+max_requested_market_data_date=2025-05-21
+max_allowed_market_data_date=2025-05-21
+strict_is_boundary_all_evaluations=1
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+```
+
+### Final R2 verdict
+
+R2 infrastructure, schema, seed, strict-IS runtime, deterministic artifacting, no-OOS boundary, and test coverage are accepted for this scope. R2 strategy/catalog quality failed because no R2 row passed every canonical IS gate.
+
+This is not an OOS acceptance failure. OOS remained unread and unexecuted. The result must be preserved as failed-IS evidence.
+
+### Final R2 boundary
+
+```text
+LOCAL_R2_IS_CALIBRATION_EXECUTED
+R2_GRID_FAILED_IS_QUALITY
+NO_VALID_R2_IS_PARAM
+NO_BEST_IS_BINDING
+NOT_ELIGIBLE_FOR_OOS_PROOF — no valid R2 IS parameter
+OOS_NOT_READ
+NOT_ELIGIBLE_FOR_PROMOTION — OOS proof missing
+NOT_PRODUCTION_READY
+```
+
+No file-16 acceptance gate was changed. No best-of-failed parameter was selected. No R1/R2 catalog identity may be mutated to make this result appear better.
+
+### Catalog naming decision
+
+`R1` and `R2` remain valid only as historical aliases and backward-compatible evidence labels. They must not become the future naming pattern. New calibration catalogs must not be named `R3`, `R4`, `R5`, or later.
+
+Future naming rule:
+
+```text
+catalog code: WS_BT_GRID_<FOCUS>_C##_YYYY_MM
+IS evidence:  WS_BT_IS_<FOCUS>_C##_RUN_##
+OOS evidence: WS_BT_OOS_<FOCUS>_C##_RUN_##
+```
+
+Recommended next catalog focus, if diagnostics justify a new catalog:
+
+```text
+WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
+```
+
+Next session:
+`WATCHLIST — WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION`.

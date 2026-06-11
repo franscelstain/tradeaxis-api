@@ -216,3 +216,18 @@ Artifacts tersebut tidak boleh lebih authoritative daripada dokumen ini.
 ## Final Contract Rule
 
 Jika sebuah key, nested structure, atau audit field tidak dapat ditelusuri ke kontrak yang ditetapkan di dokumen ini, key atau structure tersebut tidak boleh dianggap bagian dari paramset contract Weekly Swing.
+
+## I. Backtest Catalog Projection Envelope
+
+Backtest calibration may wrap the canonical runtime paramset with two audit-only sections:
+
+- `bt_catalog`: `catalog_code`, `catalog_version`, `catalog_hash`, `row_code`, `row_hash`, and rationale;
+- `bt_grid`: the exact immutable catalog payload; generated database surrogate `param_id` is excluded and remains in evaluation/binding identity.
+
+Rules:
+
+1. The wrapper does not mutate the production paramset contract or imply ACTIVE/promotion status.
+2. Every explicit R2 catalog field must be projected into its canonical nested runtime key before replay.
+3. An explicit catalog value may not be replaced by a runtime default.
+4. The catalog metadata and projected paramset are included in the deterministic paramset hash; the hash must not depend on a database-generated surrogate `param_id`.
+5. `risk.stop_atr_mult`, `risk.min_rr`, `grouping.top_picks_target=5`, `grouping.secondary_target=10`, fees, slippage, gap rule, price normalization, and holding horizon are fixed for the R2 entry-quality catalog.

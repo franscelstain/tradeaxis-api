@@ -151,3 +151,16 @@ risk_band_rule = CLAMP_DEFAULT_IDEAL_ATR_BAND_TO_GRID_MAX_ATR
 ```
 
 At least one baseline row must preserve the default ideal ATR band, and at least one strict row with `max_atr14_pct < default atr_ideal_high` must prove deterministic clamping. Static guards must prove IS calibration delegates to the canonical paramset factory rather than recreating row mapping locally.
+
+## R2 Entry-Quality Regression Focus
+
+Tests must additionally prove:
+
+- R1 factory output from an enriched persisted row is byte-for-byte array-equivalent to the historical R1 runtime snapshot;
+- R2 catalog identity/count/hash and ordered rows are deterministic;
+- every R2 persisted axis is projected and consumed, while grouping item counts and execution axes remain fixed;
+- R2 catalog seed is transactional, idempotent, and rejects conflicting/partial persisted sets;
+- eval duplicate identity is idempotent and conflicting payload fails closed;
+- strict IS replay never requests a calendar or published price after `2025-05-21`;
+- post-IS data mutation cannot alter R2 metrics, binding, or canonical artifact hash;
+- no best-of-failed, OOS service call, OOS repository call, OOS-table mutation, promotion, or production-ready claim is possible.

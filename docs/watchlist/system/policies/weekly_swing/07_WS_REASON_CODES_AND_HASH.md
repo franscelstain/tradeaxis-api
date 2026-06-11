@@ -204,3 +204,21 @@ Perubahan pada reason code aktif atau hash semantics tidak boleh hidup hanya di 
 Recommendation reason codes aktif untuk foundation ini adalah: `WS_REC_SELECTED`, `WS_REC_NOT_SELECTED`, `WS_REC_BORDERLINE`, `WS_REC_EMPTY_SET`, `WS_REC_RANK_OUTSIDE_DYNAMIC_TARGET`, `WS_REC_CAPITAL_AWARE`, `WS_REC_CAPITAL_INSUFFICIENT`, dan `WS_REC_MIN_LOT_NOT_AFFORDABLE`.
 
 Catatan sinkronisasi: `WS_REC_RANK_OUTSIDE_DYNAMIC_TARGET` adalah nama aktif untuk kandidat yang tidak terpilih karena berada di luar target dinamis recommendation. Jangan memakai alias lama atau istilah support lain untuk output runtime baru.
+
+## E. R2 IS-Only Calibration Reason Codes
+
+The following BT-scope reason codes are active for immutable catalog identity, IS-only execution, and persistence conflict handling:
+
+- `WS_BT_R2_CATALOG_MISSING` — explicit R2 catalog identity is absent or the requested catalog has no rows.
+- `WS_BT_R2_CATALOG_INVALID` — catalog shape, unit, invariant, range, or deterministic identity is invalid.
+- `WS_BT_R2_CATALOG_IDENTITY_CONFLICT` — an existing immutable catalog row has the same identity but a different payload.
+- `WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH` — persisted catalog count/set/hash differs from the code-owned immutable catalog.
+- `WS_BT_R2_NO_VALID_IS_CANDIDATE` — no R2 row passes every canonical IS gate; no best-of-failed binding may be created.
+- `WS_BT_R2_IS_BOUNDARY_VIOLATION` — an IS-only request attempts to cross `2025-05-21`.
+- `WS_BT_R2_IS_WINDOW_MISMATCH` — the immutable R2 catalog is requested with a window other than `2023-01-02` through `2025-05-21`.
+- `WS_BT_R2_CALIBRATION_FAILED` — an unclassified R2 orchestration failure blocks evidence creation.
+- `WS_BT_R1_MUTATION_REJECTED` — an R2 operation detects or attempts a change to immutable R1 state.
+- `WS_BT_R2_OOS_PERSISTENCE_MUTATION` — `watchlist_bt_oos_eval_ws` changes during IS-only execution.
+- `WS_BT_EVAL_IDENTITY_CONFLICT` — the same canonical eval identity is presented with a different payload.
+
+These codes do not imply OOS execution, promotion, ACTIVE status, or production readiness.

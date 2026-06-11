@@ -32,16 +32,47 @@ class WatchlistBacktestIsCalibrationService
         }
 
         $policyCode = (string) ($options['policy_code'] ?? 'WS');
-        $gridRows = $this->paramGrid->allForPolicy($policyCode);
+        $catalogCode = trim((string) ($options['catalog_code'] ?? WatchlistBacktestParamGridCatalog::CATALOG_CODE));
+        if ($catalogCode === '') {
+            return $this->blocked('WS_BT_R2_CATALOG_MISSING', 'Explicit catalog_code is required for IS calibration.');
+        }
+        $gridRows = $catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE
+            ? $this->paramGrid->allForPolicy($policyCode)
+            : $this->paramGrid->allForCatalog($catalogCode, $policyCode);
         if ($gridRows === []) {
-            return $this->blocked('WS_BT_OOS_PROOF_MISSING', 'Official watchlist_bt_param_grid contains no row for the requested policy.', [
-                'param_grid_count' => 0,
-            ]);
+            $isLegacyR1 = $catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE;
+            return $this->blocked(
+                $isLegacyR1 ? 'WS_BT_OOS_PROOF_MISSING' : 'WS_BT_R2_CATALOG_MISSING',
+                $isLegacyR1
+                    ? 'Official watchlist_bt_param_grid contains no row for the requested policy.'
+                    : 'Official watchlist_bt_param_grid contains no row for the requested explicit catalog.',
+                ['param_grid_count' => 0]
+            );
         }
 
-        usort($gridRows, function (array $left, array $right): int {
-            return ((int) ($left['param_id'] ?? 0)) <=> ((int) ($right['param_id'] ?? 0));
+        $isLegacyR1 = $catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE;
+        usort($gridRows, function (array $left, array $right) use ($isLegacyR1): int {
+            if ($isLegacyR1) {
+                return ((int) ($left['param_id'] ?? 0)) <=> ((int) ($right['param_id'] ?? 0));
+            }
+            $comparison = strcmp((string) ($left['row_code'] ?? ''), (string) ($right['row_code'] ?? ''));
+            return $comparison !== 0
+                ? $comparison
+                : (((int) ($left['param_id'] ?? 0)) <=> ((int) ($right['param_id'] ?? 0)));
         });
+
+        $catalogVersions = array_values(array_unique(array_map(function (array $row) use ($isLegacyR1): string {
+            return (string) ($row['catalog_version'] ?? ($isLegacyR1 ? WatchlistBacktestParamGridCatalog::CATALOG_VERSION : ''));
+        }, $gridRows)));
+        $catalogHashes = array_values(array_unique(array_map(function (array $row) use ($isLegacyR1): string {
+            return (string) ($row['catalog_hash'] ?? ($isLegacyR1 ? WatchlistBacktestParamGridCatalog::hash() : ''));
+        }, $gridRows)));
+        if (count($catalogVersions) !== 1 || count($catalogHashes) !== 1
+            || $catalogVersions[0] === '' || $catalogHashes[0] === '') {
+            throw new \RuntimeException('WS_BT_R2_CATALOG_IDENTITY_CONFLICT: persisted catalog identity is inconsistent.');
+        }
+        $catalogVersion = $catalogVersions[0];
+        $catalogHash = $catalogHashes[0];
 
         $from = $dates[0];
         $to = $dates[count($dates) - 1];
@@ -51,14 +82,19 @@ class WatchlistBacktestIsCalibrationService
 
         foreach ($gridRows as $gridRow) {
             $paramId = (int) ($gridRow['param_id'] ?? 0);
+            $rowCode = (string) ($gridRow['row_code'] ?? ('PARAM_'.$paramId));
             $paramset = $this->paramsetFromGridRow($gridRow);
-            $result = $this->runtime->evaluateWindow($from, $to, [
+            $runtimeOptions = [
                 'paramset' => $paramset,
                 'executed_at' => $options['executed_at'] ?? null,
-            ]);
+            ];
+            if ($catalogCode !== WatchlistBacktestParamGridCatalog::CATALOG_CODE) {
+                $runtimeOptions['hard_market_data_to_date'] = $to;
+            }
+            $result = $this->runtime->evaluateWindow($from, $to, $runtimeOptions);
 
             if (! ($result['is_ready'] ?? false)) {
-                $references[] = [
+                $reference = [
                     'param_id' => $paramId,
                     'status' => 'RUNTIME_FAILED',
                     'reason_code' => $result['reason_code'] ?? 'WATCHLIST_BACKTEST_RUNTIME_ARTIFACT_NOT_READY',
@@ -67,6 +103,14 @@ class WatchlistBacktestIsCalibrationService
                     'artifact_hash' => null,
                     'diagnostics' => $result['diagnostics'] ?? [],
                 ];
+                if (! $isLegacyR1) {
+                    $reference = array_merge([
+                        'param_id' => $paramId,
+                        'row_code' => $rowCode,
+                        'catalog_code' => $catalogCode,
+                    ], array_diff_key($reference, ['param_id' => true]));
+                }
+                $references[] = $reference;
                 unset($result, $paramset);
                 $this->releaseIterationMemory();
                 continue;
@@ -82,7 +126,7 @@ class WatchlistBacktestIsCalibrationService
             $sufficiency = $artifact['metrics']['metric_sufficiency'] ?? [];
             if (! ($sufficiency['required_fields_available'] ?? false)
                 || ! ($sufficiency['thresholds_resolved'] ?? false)) {
-                $references[] = [
+                $reference = [
                     'param_id' => $paramId,
                     'status' => 'METRICS_INSUFFICIENT',
                     'reason_code' => 'WS_BT_EVAL_METRICS_MISSING',
@@ -92,6 +136,14 @@ class WatchlistBacktestIsCalibrationService
                     'artifact_hash' => $result['artifact_hash'] ?? null,
                     'trade_evidence' => $this->extremeTradeEvidence($artifact['metrics']['evaluated_trades'] ?? []),
                 ];
+                if (! $isLegacyR1) {
+                    $reference = array_merge([
+                        'param_id' => $paramId,
+                        'row_code' => $rowCode,
+                        'catalog_code' => $catalogCode,
+                    ], array_diff_key($reference, ['param_id' => true]));
+                }
+                $references[] = $reference;
                 unset($result, $artifact, $metrics, $sufficiency, $paramset);
                 $this->releaseIterationMemory();
                 continue;
@@ -101,6 +153,10 @@ class WatchlistBacktestIsCalibrationService
             $paramsetHash = $this->stableHash($paramset);
             $persisted = $this->evaluations->persist($this->evaluationRow(
                 $policyCode,
+                $catalogCode,
+                $catalogVersion,
+                $catalogHash,
+                $isLegacyR1,
                 $paramId,
                 $evalModel,
                 $paramsetHash,
@@ -133,6 +189,23 @@ class WatchlistBacktestIsCalibrationService
                 'requested_ticker_date_pair_count' => (int) ($result['price_read']['price_series_manifest']['requested_ticker_date_pair_count'] ?? 0),
                 'trade_evidence' => $this->extremeTradeEvidence($artifact['metrics']['evaluated_trades'] ?? []),
             ];
+            if (! $isLegacyR1) {
+                $reference = array_merge([
+                    'param_id' => $paramId,
+                    'row_code' => $rowCode,
+                    'catalog_code' => $catalogCode,
+                    'catalog_version' => $catalogVersion,
+                    'catalog_hash' => $catalogHash,
+                ], array_diff_key($reference, ['param_id' => true]));
+                $reference['requested_ticker_date_pair_count'] = (int) ($result['artifact']['runtime_execution']['requested_ticker_date_pair_count']
+                    ?? $result['price_read']['price_series_manifest']['requested_ticker_date_pair_count']
+                    ?? 0);
+                $reference['strict_is_boundary'] = (bool) ($result['artifact']['runtime_execution']['strict_is_boundary'] ?? false);
+                $reference['hard_market_data_to_date'] = $result['artifact']['runtime_execution']['hard_market_data_to_date'] ?? null;
+                $reference['max_requested_market_data_date'] = $result['artifact']['runtime_execution']['max_requested_market_data_date'] ?? null;
+                $reference['strategy_trade_date_count'] = (int) ($result['artifact']['runtime_execution']['strategy_trade_date_count'] ?? count($dates));
+                $reference['boundary_censored_trade_date_count'] = (int) ($result['artifact']['runtime_execution']['boundary_censored_trade_date_count'] ?? 0);
+            }
             $references[] = $reference;
             if ($reference['calibration_valid']) {
                 $valid[] = $reference;
@@ -177,21 +250,37 @@ class WatchlistBacktestIsCalibrationService
             ],
         ];
         if ($binding !== null) {
+            if (! $isLegacyR1) {
+                $binding = array_merge([
+                    'policy_code' => $policyCode,
+                    'catalog_code' => $catalogCode,
+                    'catalog_version' => $catalogVersion,
+                    'catalog_hash' => $catalogHash,
+                    'row_code' => $best['row_code'],
+                ], $binding);
+            }
             $binding['binding_hash'] = $this->stableHash($binding);
         }
 
-        return [
+        $noValidReasonCode = $catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE
+            ? 'WS_BT_OOS_PROOF_MISSING'
+            : 'WS_BT_R2_NO_VALID_IS_CANDIDATE';
+
+        $paramGridHashRows = $isLegacyR1
+            ? array_map([WatchlistBacktestParamGridCatalog::class, 'legacyRuntimeRow'], $gridRows)
+            : $gridRows;
+        $response = [
             'ready' => $binding !== null,
             'is_ready' => $binding !== null,
             'status' => $binding !== null ? 'READY' : 'BLOCKED',
-            'reason_code' => $binding !== null ? null : 'WS_BT_OOS_PROOF_MISSING',
+            'reason_code' => $binding !== null ? null : $noValidReasonCode,
             'policy_code' => $policyCode,
             'is_from' => $from,
             'is_to' => $to,
             'is_trading_date_count' => count($dates),
             'is_trading_date_hash' => $expectedDateHash,
             'param_grid_count' => count($gridRows),
-            'param_grid_hash' => $this->stableHash($gridRows),
+            'param_grid_hash' => $this->stableHash($paramGridHashRows),
             'is_valid_param_count' => count($valid),
             'is_failed_param_count' => count($references) - count($valid),
             'is_failure_reason_codes' => $this->evaluationFailureReasonCodes($references),
@@ -200,12 +289,31 @@ class WatchlistBacktestIsCalibrationService
             'evaluations' => $references,
             'best_is_binding' => $binding,
             'diagnostics' => $binding !== null ? [] : [[
-                'reason_code' => 'WS_BT_OOS_PROOF_MISSING',
+                'reason_code' => $noValidReasonCode,
                 'message' => 'No in-sample parameter passed every canonical metric sufficiency gate; no best-IS binding was created.',
                 'fatal' => true,
             ]],
             'production_ready' => false,
         ];
+        if (! $isLegacyR1) {
+            $response = array_merge([
+                'ready' => $response['ready'],
+                'is_ready' => $response['is_ready'],
+                'status' => $response['status'],
+                'reason_code' => $response['reason_code'],
+                'policy_code' => $policyCode,
+                'catalog_code' => $catalogCode,
+                'catalog_version' => $catalogVersion,
+                'catalog_hash' => $catalogHash,
+                'ordered_param_hashes' => array_values(array_map(function (array $reference): ?string {
+                    return $reference['paramset_hash'] ?? null;
+                }, $references)),
+            ], array_diff_key($response, [
+                'ready' => true, 'is_ready' => true, 'status' => true, 'reason_code' => true, 'policy_code' => true,
+            ]));
+        }
+
+        return $response;
     }
 
     private function sufficiencyReasonCodes(array $sufficiency): array
@@ -245,6 +353,10 @@ class WatchlistBacktestIsCalibrationService
 
     private function evaluationRow(
         string $policyCode,
+        string $catalogCode,
+        string $catalogVersion,
+        string $catalogHash,
+        bool $isLegacyR1,
         int $paramId,
         string $evalModel,
         string $paramsetHash,
@@ -253,7 +365,7 @@ class WatchlistBacktestIsCalibrationService
         array $metrics
     ): array
     {
-        return [
+        $row = [
             'policy_code' => $policyCode,
             'param_id' => $paramId,
             'eval_model' => $evalModel,
@@ -281,6 +393,16 @@ class WatchlistBacktestIsCalibrationService
             'min_ret_net_all' => null,
             'max_ret_net_all' => null,
         ];
+        if (! $isLegacyR1) {
+            $row = array_merge([
+                'policy_code' => $policyCode,
+                'catalog_code' => $catalogCode,
+                'catalog_version' => $catalogVersion,
+                'catalog_hash' => $catalogHash,
+            ], array_diff_key($row, ['policy_code' => true]));
+        }
+
+        return $row;
     }
 
     private function evalModel(array $paramset): string

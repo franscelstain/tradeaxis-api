@@ -145,3 +145,20 @@ Fixtures tersebut mendukung dokumen ini dan tidak menggantikannya sebagai owner 
 ## Final Validator Rule
 
 Tidak ada invalid state Weekly Swing yang boleh hidup hanya di fixtures atau di file referensial tanpa rule normatif yang dapat ditelusuri ke dokumen ini.
+
+## J. R2 Entry-Quality Catalog Validation
+
+For catalog `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, validation must fail closed unless all rules below pass:
+
+```text
+liquidity.min_dv20_idr >= 0
+liquidity.dv20_strong_idr >= liquidity.min_dv20_idr
+volume.min_vol_ratio >= 0
+volume.strong_vol_ratio >= volume.min_vol_ratio
+risk.min_atr14_pct <= risk.atr_ideal_low <= risk.atr_ideal_high <= risk.max_atr14_pct
+setup.roc_lo < setup.roc_hi
+0 <= grouping.secondary_min_score_q <= grouping.top_min_score_q <= 1
+sum(scoring.weights.value.*) = 1
+```
+
+Every persisted R2 field is required, numeric in its declared unit, and mapped explicitly into the runtime paramset. Missing fields, duplicate canonical parameter combinations, invalid catalog identity/hash, or a catalog row that differs from an already persisted immutable row must fail closed. No silent fallback is permitted for an R2 field.

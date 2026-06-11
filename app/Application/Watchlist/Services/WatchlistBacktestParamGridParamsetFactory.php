@@ -7,9 +7,21 @@ use RuntimeException;
 class WatchlistBacktestParamGridParamsetFactory
 {
     public const RISK_BAND_RESOLUTION_RULE = 'CLAMP_DEFAULT_IDEAL_ATR_BAND_TO_GRID_MAX_ATR';
+    public const EXPLICIT_R2_RISK_BAND_RULE = 'EXPLICIT_CATALOG_ENTRY_QUALITY_ATR_BAND';
 
     public function make(array $row): array
     {
+        $catalogCode = trim((string) ($row['catalog_code'] ?? WatchlistBacktestParamGridCatalog::CATALOG_CODE));
+        if ($catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE) {
+            return $this->makeLegacyR1($row);
+        }
+
+        return $this->makeR2($row, $catalogCode);
+    }
+
+    private function makeLegacyR1(array $row): array
+    {
+        $row = WatchlistBacktestParamGridCatalog::legacyRuntimeRow($row);
         $base = array_replace_recursive(
             WatchlistScoringService::defaultParamset(),
             WatchlistPlanGroupingService::defaultParamset(),
@@ -88,6 +100,197 @@ class WatchlistBacktestParamGridParamsetFactory
                 'secondary' => ['max_items' => $this->requiredInt($row, 'secondary_target')],
             ],
         ]);
+    }
+
+    private function makeR2(array $row, string $catalogCode): array
+    {
+        $base = array_replace_recursive(
+            WatchlistScoringService::defaultParamset(),
+            WatchlistPlanGroupingService::defaultParamset(),
+            WatchlistRecommendationService::defaultParamset(),
+            WatchlistBacktestStrategyService::defaultParamset()
+        );
+
+        $paramId = $this->requiredInt($row, 'param_id');
+        $catalogVersion = trim((string) ($row['catalog_version'] ?? ''));
+        $rowCode = trim((string) ($row['row_code'] ?? ''));
+        $catalogHash = trim((string) ($row['catalog_hash'] ?? ''));
+        $rowHash = trim((string) ($row['row_hash'] ?? ''));
+        $rationale = trim((string) ($row['rationale'] ?? ''));
+        if ($catalogCode !== WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE
+            || $catalogVersion !== WatchlistBacktestR2ParamGridCatalog::CATALOG_VERSION
+            || $catalogHash !== WatchlistBacktestR2ParamGridCatalog::hash()
+            || $rowCode === ''
+            || $rowHash !== sha1($catalogCode.'|'.$rowCode)
+            || $rationale === '') {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: approved R2 catalog metadata must be explicit and exact.');
+        }
+
+        $minDv20Idr = $this->requiredFloat($row, 'min_dv20_idr');
+        $dv20StrongIdr = $this->requiredFloat($row, 'dv20_strong_idr');
+        $minVolRatio = $this->requiredFloat($row, 'min_vol_ratio');
+        $strongVolRatio = $this->requiredFloat($row, 'strong_vol_ratio');
+        $minAtr14Pct = $this->requiredFloat($row, 'min_atr14_pct');
+        $maxAtr14Pct = $this->requiredFloat($row, 'max_atr14_pct');
+        $idealLow = $this->requiredFloat($row, 'atr_ideal_low');
+        $idealHigh = $this->requiredFloat($row, 'atr_ideal_high');
+        $rocLo = $this->requiredFloat($row, 'roc_lo');
+        $rocHi = $this->requiredFloat($row, 'roc_hi');
+        $momRoc20SoftMin = $this->requiredFloat($row, 'mom_roc20_soft_min');
+        $boNearBelowPct = $this->requiredFloat($row, 'bo_near_below_pct');
+        $boMaxExtPct = $this->requiredFloat($row, 'bo_max_ext_pct');
+
+        $weights = [
+            'momentum' => $this->requiredFloat($row, 'w_momentum'),
+            'volume' => $this->requiredFloat($row, 'w_volume'),
+            'breakout' => $this->requiredFloat($row, 'w_breakout'),
+            'risk' => $this->requiredFloat($row, 'w_risk'),
+        ];
+        $topMinScoreQ = $this->requiredFloat($row, 'top_min_score_q');
+        $secondaryMinScoreQ = $this->requiredFloat($row, 'secondary_min_score_q');
+
+        $gridSnapshot = $row;
+        unset($gridSnapshot['param_id']);
+
+        $this->assertInvariants(
+            $minDv20Idr,
+            $dv20StrongIdr,
+            $minVolRatio,
+            $strongVolRatio,
+            $minAtr14Pct,
+            $idealLow,
+            $idealHigh,
+            $maxAtr14Pct,
+            $rocLo,
+            $rocHi,
+            $boNearBelowPct,
+            $boMaxExtPct,
+            $weights,
+            $topMinScoreQ,
+            $secondaryMinScoreQ
+        );
+
+        $stopAtrMult = $this->requiredFloat($row, 'stop_atr_mult');
+        $minRr = $this->requiredFloat($row, 'min_rr');
+        $topPicksTarget = $this->requiredInt($row, 'top_picks_target');
+        $secondaryTarget = $this->requiredInt($row, 'secondary_target');
+        if (abs($stopAtrMult - WatchlistBacktestR2ParamGridCatalog::FIXED_STOP_ATR_MULT) > 0.000001
+            || abs($minRr - WatchlistBacktestR2ParamGridCatalog::FIXED_MIN_RR) > 0.000001
+            || $topPicksTarget !== WatchlistBacktestR2ParamGridCatalog::FIXED_TOP_PICKS_TARGET
+            || $secondaryTarget !== WatchlistBacktestR2ParamGridCatalog::FIXED_SECONDARY_TARGET) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: R2 fixed execution/grouping snapshot drifted.');
+        }
+
+        return array_replace_recursive($base, [
+            'policy_code' => (string) ($row['policy_code'] ?? 'WS'),
+            'policy_version' => 'WS_EOD_RUNTIME',
+            'paramset_code' => $catalogCode.'_'.$rowCode,
+            'bt_catalog' => [
+                'catalog_code' => $catalogCode,
+                'catalog_version' => $catalogVersion,
+                'catalog_hash' => $catalogHash,
+                'row_code' => $rowCode,
+                'row_hash' => $rowHash,
+                'rationale' => $rationale,
+            ],
+            'bt_grid' => $gridSnapshot,
+            'bt_grid_resolution' => [
+                'risk_band_rule' => self::EXPLICIT_R2_RISK_BAND_RULE,
+                'min_atr14_pct' => $minAtr14Pct,
+                'max_atr14_pct' => $maxAtr14Pct,
+                'atr_ideal_low' => $idealLow,
+                'atr_ideal_high' => $idealHigh,
+                'source' => 'explicit immutable catalog values',
+                'explicit_catalog_values_preserved' => true,
+            ],
+            'setup' => [
+                'roc_lo' => $rocLo,
+                'roc_hi' => $rocHi,
+                'mom_roc20_soft_min' => $momRoc20SoftMin,
+                'bo_near_below_pct' => $boNearBelowPct,
+                'bo_max_ext_pct' => $boMaxExtPct,
+            ],
+            'liquidity' => [
+                'min_dv20_idr' => $minDv20Idr,
+                'dv20_strong_idr' => $dv20StrongIdr,
+            ],
+            'risk' => [
+                'min_atr14_pct' => $minAtr14Pct,
+                'max_atr14_pct' => $maxAtr14Pct,
+                'atr_ideal_low' => $idealLow,
+                'atr_ideal_high' => $idealHigh,
+                'stop_atr_mult' => $stopAtrMult,
+                'min_rr' => $minRr,
+            ],
+            'volume' => [
+                'min_vol_ratio' => $minVolRatio,
+                'strong_vol_ratio' => $strongVolRatio,
+            ],
+            'scoring' => [
+                'weights' => $weights,
+            ],
+            'grouping' => [
+                'top_min_score_q' => $topMinScoreQ,
+                'secondary_min_score_q' => $secondaryMinScoreQ,
+                'top_picks' => ['max_items' => $topPicksTarget],
+                'secondary' => ['max_items' => $secondaryTarget],
+            ],
+        ]);
+    }
+
+    private function assertInvariants(
+        float $minDv20Idr,
+        float $dv20StrongIdr,
+        float $minVolRatio,
+        float $strongVolRatio,
+        float $minAtr14Pct,
+        float $idealLow,
+        float $idealHigh,
+        float $maxAtr14Pct,
+        float $rocLo,
+        float $rocHi,
+        float $boNearBelowPct,
+        float $boMaxExtPct,
+        array $weights,
+        float $topMinScoreQ,
+        float $secondaryMinScoreQ
+    ): void {
+        if ($minDv20Idr < 0 || $dv20StrongIdr < $minDv20Idr) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: dv20_strong_idr must be >= min_dv20_idr and both liquidity thresholds must be non-negative.');
+        }
+        if ($minVolRatio < 0 || $strongVolRatio < $minVolRatio) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: strong_vol_ratio must be >= min_vol_ratio and both volume thresholds must be non-negative.');
+        }
+        if ($minAtr14Pct < 0 || $maxAtr14Pct > 1
+            || ! ($minAtr14Pct <= $idealLow && $idealLow <= $idealHigh && $idealHigh <= $maxAtr14Pct)) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: ATR band invariant or fractional range is invalid.');
+        }
+        if ($rocLo >= $rocHi) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: roc_lo must be lower than roc_hi.');
+        }
+        if ($boNearBelowPct < 0 || $boNearBelowPct > 1 || $boMaxExtPct < 0 || $boMaxExtPct > 1) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: breakout fractional ranges are invalid.');
+        }
+        if (abs(array_sum($weights) - 1.0) > 0.000001
+            || count(array_filter($weights, function (float $weight): bool {
+                return $weight < 0 || $weight > 1;
+            })) > 0) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: scoring weights must sum to 1.0 and each weight must be within 0..1.');
+        }
+        if ($secondaryMinScoreQ < 0 || $secondaryMinScoreQ > 1
+            || $topMinScoreQ < 0 || $topMinScoreQ > 1
+            || $secondaryMinScoreQ > $topMinScoreQ) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: grouping quantiles are invalid.');
+        }
+    }
+
+    private function floatOrDefault(array $row, string $key, $default): float
+    {
+        if (! array_key_exists($key, $row)) {
+            return (float) $default;
+        }
+
+        return $this->requiredFloat($row, $key);
     }
 
     private function requiredFloat(array $row, string $key): float

@@ -100,3 +100,22 @@ Checklist ini menetapkan acceptance minimum untuk artefak dan boundary Weekly Sw
 - [ ] Strict max-ATR rows are not rejected only because active default ideal-band values are wider.
 - [ ] `bt_grid_resolution.risk_band_rule` is present and deterministic.
 - [ ] The projection uses no OOS metrics or price outcomes.
+
+## R2 Entry-Quality IS-Only Calibration Additions
+
+- [ ] R1 rows remain count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c` before and after R2 seed/calibration.
+- [ ] R2 has a distinct explicit catalog code/version/hash and coexists with R1.
+- [ ] R2 catalog is finite, curated, deterministic, duplicate-free, and contains one R1 control row.
+- [ ] every R2 axis is `bt_target=true`, persisted, mapped, and consumed by runtime.
+- [ ] changing each R2 field changes the paramset hash or relevant deterministic output.
+- [ ] explicit R2 values are never replaced by defaults.
+- [ ] liquidity, volume, ATR, ROC, weight, and quantile invariants fail closed.
+- [ ] `risk.stop_atr_mult`, `risk.min_rr`, `grouping.top_picks_target=5`, `grouping.secondary_target=10`, fees, slippage, gap rule, price bands, and HOLD=5 remain fixed.
+- [ ] command requires explicit catalog/from/to/output and exposes no OOS option.
+- [ ] only `2023-01-02..2025-05-21` is accepted for the immutable R2 run.
+- [ ] final five IS dates are censored from entry generation, not read beyond the IS boundary.
+- [ ] mutation of data after `2025-05-21` cannot change R2 metrics, binding, or artifact hash.
+- [ ] no OOS service/repository call and no OOS table mutation occur.
+- [ ] exact eval rerun is idempotent; conflicting duplicate fails closed.
+- [ ] no best-of-failed binding is created.
+- [ ] two identical runs produce equal catalog/date/evaluation/binding/artifact hashes.

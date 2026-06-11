@@ -29,7 +29,7 @@ class WatchlistBacktestOosPersistenceTest extends TestCase
         $this->assertSame(10, $second['eval_id']);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('WS_BT_OOS_PROOF_MISSING');
+        $this->expectExceptionMessage('WS_BT_EVAL_IDENTITY_CONFLICT');
         $changed = $row;
         $changed['avg_ret_net_top'] = 0.99;
         $repository->persist($changed);

@@ -56,6 +56,7 @@ class WatchlistBacktestOosProofService
         try {
             $calibration = $this->calibration->calibrate($split['is_dates'], [
                 'policy_code' => 'WS',
+                'catalog_code' => WatchlistBacktestParamGridCatalog::CATALOG_CODE,
                 'executed_at' => $options['executed_at'] ?? null,
             ]);
         } catch (\Throwable $e) {

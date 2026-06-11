@@ -1,33 +1,32 @@
--- Canonical deterministic Weekly Swing bootstrap parameter grid.
--- Runtime source remains watchlist_bt_param_grid; this file is an idempotent seed artifact.
--- Acceptance gates are not changed by this seed.
--- Requires stop_atr_mult and min_rr columns from BACKTEST_SCHEMA_DDL.sql / migration 2026_06_09_000002.
--- Catalog is declared before OOS execution and must never be altered from OOS outcomes.
+-- Canonical deterministic Weekly Swing R1 bootstrap parameter grid.
+-- Runtime source remains watchlist_bt_param_grid; this file is an idempotent support seed.
+-- R1 identity and historical hash are immutable.
+-- Requires catalog/R2 schema migration 2026_06_10_000001.
+-- Prefer watchlist:backtest-param-grid-seed because the repository also rejects conflicting immutable payloads.
 
 START TRANSACTION;
 
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_01_BASELINE'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 1000000000 AND
-    max_atr14_pct = 0.120000 AND
-    min_vol_ratio = 1.200000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.200000 AND
-    stop_atr_mult = 1.500000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 5 AND
-    secondary_target = 10 AND
-    top_min_score_q = 0.800000 AND
-    secondary_min_score_q = 0.650000;
-
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -42,9 +41,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '01_BASELINE',
+  'd0ad2af3a061c42e879922e621ed265b17cb8847',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   1000000000,
-  0.120000,
+  5000000000,
   1.200000,
+  2.500000,
+  0.020000,
+  0.120000,
+  0.035000,
+  0.075000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.200000,
   0.300000,
@@ -57,46 +72,33 @@ SELECT
   0.650000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_01_BASELINE'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 1000000000 AND
-    max_atr14_pct = 0.120000 AND
-    min_vol_ratio = 1.200000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.200000 AND
-    stop_atr_mult = 1.500000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 5 AND
-    secondary_target = 10 AND
-    top_min_score_q = 0.800000 AND
-    secondary_min_score_q = 0.650000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '01_BASELINE'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_02_BALANCED_QUALITY'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.100000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.850000 AND
-    secondary_min_score_q = 0.700000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -111,9 +113,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '02_BALANCED_QUALITY',
+  'c2e9f29a0b67afe05ec506aa4e91e00683a99015',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.100000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.100000,
+  0.035000,
+  0.075000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.200000,
   0.350000,
@@ -126,46 +144,33 @@ SELECT
   0.700000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_02_BALANCED_QUALITY'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.100000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.850000 AND
-    secondary_min_score_q = 0.700000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '02_BALANCED_QUALITY'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_03_BREAKOUT_QUALITY'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.080000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.450000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -180,9 +185,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '03_BREAKOUT_QUALITY',
+  'c65ec5d79ad33c00d0c4473a3a7186d64ec35a2d',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.080000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.080000,
+  0.035000,
+  0.075000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.250000,
   0.150000,
   0.450000,
@@ -195,46 +216,33 @@ SELECT
   0.750000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_03_BREAKOUT_QUALITY'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.080000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.450000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '03_BREAKOUT_QUALITY'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_04_VOLUME_BREAKOUT'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.080000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.300000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -249,9 +257,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '04_VOLUME_BREAKOUT',
+  'd4eb7bd81f2524a605516c96fbe6a8f2cd45e3f7',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.080000,
+  5000000000,
   2.000000,
+  2.500000,
+  0.020000,
+  0.080000,
+  0.035000,
+  0.075000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.200000,
   0.300000,
   0.350000,
@@ -264,46 +288,33 @@ SELECT
   0.750000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_04_VOLUME_BREAKOUT'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.080000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.300000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '04_VOLUME_BREAKOUT'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_05_HIGH_LIQ_BREAKOUT'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.080000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.400000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -318,9 +329,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '05_HIGH_LIQ_BREAKOUT',
+  '362f97040cb0d6cb3e2f28026f634a633f2db4cd',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.080000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.080000,
+  0.035000,
+  0.075000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.250000,
   0.200000,
   0.400000,
@@ -333,46 +360,33 @@ SELECT
   0.750000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_05_HIGH_LIQ_BREAKOUT'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.080000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.400000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '05_HIGH_LIQ_BREAKOUT'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_06_LOW_ATR_BALANCED'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.050000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -387,9 +401,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '06_LOW_ATR_BALANCED',
+  'a17742cf03ca9bc6ec1cde754f3507f87b87b843',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.050000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.050000,
+  0.035000,
+  0.050000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.200000,
   0.350000,
@@ -402,46 +432,33 @@ SELECT
   0.750000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_06_LOW_ATR_BALANCED'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.050000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '06_LOW_ATR_BALANCED'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_07_LOW_ATR_HIGH_VOLUME'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.300000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -456,9 +473,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '07_LOW_ATR_HIGH_VOLUME',
+  '1ea53cb20e6c376acd35b84265adcf30983a554f',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.040000,
+  5000000000,
   2.000000,
+  2.500000,
+  0.020000,
+  0.040000,
+  0.035000,
+  0.040000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.200000,
   0.300000,
   0.350000,
@@ -471,46 +504,33 @@ SELECT
   0.800000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_07_LOW_ATR_HIGH_VOLUME'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.300000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '07_LOW_ATR_HIGH_VOLUME'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_08_STRICT_QUALITY'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.050000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.250000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -525,9 +545,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '08_STRICT_QUALITY',
+  'c7212265062364a346c6d693d5c9355d1bb52f58',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.050000,
+  5000000000,
   2.000000,
+  2.500000,
+  0.020000,
+  0.050000,
+  0.035000,
+  0.050000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.250000,
   0.250000,
   0.350000,
@@ -540,46 +576,33 @@ SELECT
   0.800000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_08_STRICT_QUALITY'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.050000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.250000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '08_STRICT_QUALITY'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_09_MOMENTUM_BREAKOUT'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.060000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.350000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -594,9 +617,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '09_MOMENTUM_BREAKOUT',
+  '02b9a56f932c9c7dd0a0dceedbcb1b5ad34c5112',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.060000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.060000,
+  0.035000,
+  0.060000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.350000,
   0.150000,
   0.350000,
@@ -609,46 +648,33 @@ SELECT
   0.750000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_09_MOMENTUM_BREAKOUT'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.060000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.350000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '09_MOMENTUM_BREAKOUT'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_10_RISK_TILT'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.060000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.300000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -663,9 +689,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '10_RISK_TILT',
+  '9a70e2b3b80560a446fa44cf511ac431c7f19e15',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.060000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.060000,
+  0.035000,
+  0.060000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.250000,
   0.150000,
   0.300000,
@@ -678,46 +720,33 @@ SELECT
   0.750000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_10_RISK_TILT'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.060000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.300000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '10_RISK_TILT'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_11_VOLUME_TILT'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 1000000000 AND
-    max_atr14_pct = 0.060000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.350000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -732,9 +761,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '11_VOLUME_TILT',
+  'f7783d8b795fe7e285e74e41d93f620f5e30143e',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   1000000000,
-  0.060000,
+  5000000000,
   2.000000,
+  2.500000,
+  0.020000,
+  0.060000,
+  0.035000,
+  0.060000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.200000,
   0.350000,
   0.300000,
@@ -747,46 +792,33 @@ SELECT
   0.750000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_11_VOLUME_TILT'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 1000000000 AND
-    max_atr14_pct = 0.060000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.350000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.900000 AND
-    secondary_min_score_q = 0.750000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '11_VOLUME_TILT'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_12_BROAD_LOW_ATR'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 1000000000 AND
-    max_atr14_pct = 0.050000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.200000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.850000 AND
-    secondary_min_score_q = 0.700000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -801,9 +833,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '12_BROAD_LOW_ATR',
+  'deace300329e8196950da12f95dd94b719de668b',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   1000000000,
-  0.050000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.050000,
+  0.035000,
+  0.050000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.200000,
   0.300000,
@@ -816,46 +864,33 @@ SELECT
   0.700000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_12_BROAD_LOW_ATR'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 1000000000 AND
-    max_atr14_pct = 0.050000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.200000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.850000 AND
-    secondary_min_score_q = 0.700000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '12_BROAD_LOW_ATR'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_13_HIGH_LIQ_MODERATE'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.070000 AND
-    min_vol_ratio = 1.200000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.200000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.850000 AND
-    secondary_min_score_q = 0.700000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -870,9 +905,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '13_HIGH_LIQ_MODERATE',
+  'af85561ddd9de3b169aa9c5943b12ce9eac1be07',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.070000,
+  5000000000,
   1.200000,
+  2.500000,
+  0.020000,
+  0.070000,
+  0.035000,
+  0.070000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.150000,
   0.350000,
@@ -885,46 +936,33 @@ SELECT
   0.700000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_13_HIGH_LIQ_MODERATE'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.070000 AND
-    min_vol_ratio = 1.200000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.200000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 3 AND
-    secondary_target = 5 AND
-    top_min_score_q = 0.850000 AND
-    secondary_min_score_q = 0.700000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '13_HIGH_LIQ_MODERATE'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_14_VERY_LOW_ATR'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -939,9 +977,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '14_VERY_LOW_ATR',
+  '1780003b5a3a20a641d58a83649028daa393cec9',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.040000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.040000,
+  0.035000,
+  0.040000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.200000,
   0.350000,
@@ -954,46 +1008,33 @@ SELECT
   0.800000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_14_VERY_LOW_ATR'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '14_VERY_LOW_ATR'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_15_ULTRA_STRICT_VOLUME'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.035000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.300000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1008,9 +1049,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '15_ULTRA_STRICT_VOLUME',
+  'ac262af01312a24732043c21658644013bff273d',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.035000,
+  5000000000,
   2.000000,
+  2.500000,
+  0.020000,
+  0.035000,
+  0.035000,
+  0.035000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.200000,
   0.300000,
   0.350000,
@@ -1023,46 +1080,33 @@ SELECT
   0.850000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_15_ULTRA_STRICT_VOLUME'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.035000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.300000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '15_ULTRA_STRICT_VOLUME'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_16_ULTRA_STRICT_BREAKOUT'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.400000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.500000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1077,9 +1121,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '16_ULTRA_STRICT_BREAKOUT',
+  '42ee2ff1736b12ee520a4ee41018483ad9d133f1',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.040000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.040000,
+  0.035000,
+  0.040000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.150000,
   0.400000,
@@ -1092,46 +1152,33 @@ SELECT
   0.850000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_16_ULTRA_STRICT_BREAKOUT'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.400000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.500000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '16_ULTRA_STRICT_BREAKOUT'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_17_BREAKOUT_MAX'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.070000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.500000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1146,9 +1193,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '17_BREAKOUT_MAX',
+  '87ef1b24d81c47b1e8de5adb5c24a5b5bdbc11e1',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.070000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.070000,
+  0.035000,
+  0.070000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.200000,
   0.150000,
   0.500000,
@@ -1161,46 +1224,33 @@ SELECT
   0.800000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_17_BREAKOUT_MAX'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.070000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.500000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.250000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '17_BREAKOUT_MAX'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_18_RISK_QUALITY_MAX'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.050000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.300000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1215,9 +1265,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '18_RISK_QUALITY_MAX',
+  '74db002291a9d3115f0b12d4b99114aa09ee1977',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.050000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.050000,
+  0.035000,
+  0.050000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.250000,
   0.150000,
   0.300000,
@@ -1230,46 +1296,33 @@ SELECT
   0.850000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_18_RISK_QUALITY_MAX'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.050000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.300000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '18_RISK_QUALITY_MAX'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_19_DOWNSIDE_CAP_BALANCED'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 0.750000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1284,9 +1337,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '19_DOWNSIDE_CAP_BALANCED',
+  '3fc6cb256947e2adc204afdef709a48ccf22a7ce',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.040000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.040000,
+  0.035000,
+  0.040000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.200000,
   0.350000,
@@ -1299,46 +1368,33 @@ SELECT
   0.800000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_19_DOWNSIDE_CAP_BALANCED'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 0.750000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '19_DOWNSIDE_CAP_BALANCED'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_20_DOWNSIDE_CAP_BREAKOUT'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.450000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 0.750000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1353,9 +1409,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '20_DOWNSIDE_CAP_BREAKOUT',
+  '8f63bc764fab30fe76fa886154def88cea3611d2',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.040000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.040000,
+  0.035000,
+  0.040000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.250000,
   0.150000,
   0.450000,
@@ -1368,46 +1440,33 @@ SELECT
   0.850000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_20_DOWNSIDE_CAP_BREAKOUT'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.450000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 0.750000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '20_DOWNSIDE_CAP_BREAKOUT'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_21_DOWNSIDE_CAP_VOLUME'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.300000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 0.750000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1422,9 +1481,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '21_DOWNSIDE_CAP_VOLUME',
+  'f2d869ddd29647ade466c8b27d58f61f21e3a116',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.040000,
+  5000000000,
   2.000000,
+  2.500000,
+  0.020000,
+  0.040000,
+  0.035000,
+  0.040000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.200000,
   0.300000,
   0.350000,
@@ -1437,46 +1512,33 @@ SELECT
   0.850000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_21_DOWNSIDE_CAP_VOLUME'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.040000 AND
-    min_vol_ratio = 2.000000 AND
-    w_momentum = 0.200000 AND
-    w_volume = 0.300000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 0.750000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '21_DOWNSIDE_CAP_VOLUME'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_22_ULTRA_LOW_ATR_BALANCED'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.030000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1491,9 +1553,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '22_ULTRA_LOW_ATR_BALANCED',
+  '8bc9791cc7cbeaa15ffb92c8c45ea876dcef89b5',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   2500000000,
-  0.030000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.030000,
+  0.030000,
+  0.030000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.300000,
   0.200000,
   0.350000,
@@ -1506,46 +1584,33 @@ SELECT
   0.800000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_22_ULTRA_LOW_ATR_BALANCED'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 2500000000 AND
-    max_atr14_pct = 0.030000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.300000 AND
-    w_volume = 0.200000 AND
-    w_breakout = 0.350000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 1.500000 AND
-    top_picks_target = 2 AND
-    secondary_target = 3 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.800000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '22_ULTRA_LOW_ATR_BALANCED'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_23_ULTRA_LOW_ATR_BREAKOUT'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.030000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.450000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1560,9 +1625,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '23_ULTRA_LOW_ATR_BREAKOUT',
+  'f5abc9f044f0e374b64f2cc8f61fc402d05fe066',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.030000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.030000,
+  0.030000,
+  0.030000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.250000,
   0.150000,
   0.450000,
@@ -1575,46 +1656,33 @@ SELECT
   0.850000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_23_ULTRA_LOW_ATR_BREAKOUT'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.030000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.450000 AND
-    w_risk = 0.150000 AND
-    stop_atr_mult = 1.000000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '23_ULTRA_LOW_ATR_BREAKOUT'
 );
-
-UPDATE watchlist_bt_param_grid
-SET notes = 'WS_BT_GRID_BOOTSTRAP_2026_06_24_ULTRA_LOW_ATR_RISK'
-WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.030000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.300000 AND
-    stop_atr_mult = 0.750000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000;
 
 INSERT INTO watchlist_bt_param_grid (
   policy_code,
+  catalog_code,
+  catalog_version,
+  catalog_hash,
+  row_code,
+  row_hash,
+  rationale,
   min_dv20_idr,
-  max_atr14_pct,
+  dv20_strong_idr,
   min_vol_ratio,
+  strong_vol_ratio,
+  min_atr14_pct,
+  max_atr14_pct,
+  atr_ideal_low,
+  atr_ideal_high,
+  roc_lo,
+  roc_hi,
+  mom_roc20_soft_min,
+  bo_near_below_pct,
+  bo_max_ext_pct,
   w_momentum,
   w_volume,
   w_breakout,
@@ -1629,9 +1697,25 @@ INSERT INTO watchlist_bt_param_grid (
 )
 SELECT
   'WS',
+  'WS_BT_GRID_BOOTSTRAP_2026_06',
+  'R1',
+  '9da8b0983c57bde1ce0a1fbf1c119756f8af431c',
+  '24_ULTRA_LOW_ATR_RISK',
+  'af09f197880a2f94a5d4ffd580e0a99ad4359043',
+  'Immutable R1 bootstrap row preserved from the original canonical catalog.',
   5000000000,
-  0.030000,
+  5000000000,
   1.500000,
+  2.500000,
+  0.020000,
+  0.030000,
+  0.030000,
+  0.030000,
+  0.020000,
+  0.150000,
+  0.000000,
+  0.020000,
+  0.050000,
   0.250000,
   0.150000,
   0.300000,
@@ -1644,26 +1728,19 @@ SELECT
   0.850000,
   'WS_BT_GRID_BOOTSTRAP_2026_06_24_ULTRA_LOW_ATR_RISK'
 WHERE NOT EXISTS (
-  SELECT 1
-  FROM watchlist_bt_param_grid
-  WHERE policy_code = 'WS' AND
-    min_dv20_idr = 5000000000 AND
-    max_atr14_pct = 0.030000 AND
-    min_vol_ratio = 1.500000 AND
-    w_momentum = 0.250000 AND
-    w_volume = 0.150000 AND
-    w_breakout = 0.300000 AND
-    w_risk = 0.300000 AND
-    stop_atr_mult = 0.750000 AND
-    min_rr = 2.000000 AND
-    top_picks_target = 1 AND
-    secondary_target = 2 AND
-    top_min_score_q = 0.950000 AND
-    secondary_min_score_q = 0.850000
+  SELECT 1 FROM watchlist_bt_param_grid
+  WHERE policy_code = 'WS'
+    AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06'
+    AND row_code = '24_ULTRA_LOW_ATR_RISK'
 );
 
-COMMIT;
-
-SELECT COUNT(*) AS ws_param_grid_count
+-- Fail the operator review if cardinality or identity is not exact.
+SELECT
+  COUNT(*) AS r1_catalog_count,
+  MIN(catalog_hash) AS r1_catalog_hash_min,
+  MAX(catalog_hash) AS r1_catalog_hash_max
 FROM watchlist_bt_param_grid
-WHERE policy_code = 'WS';
+WHERE policy_code = 'WS'
+  AND catalog_code = 'WS_BT_GRID_BOOTSTRAP_2026_06';
+
+COMMIT;

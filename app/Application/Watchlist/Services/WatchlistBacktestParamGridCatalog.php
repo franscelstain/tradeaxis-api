@@ -5,6 +5,7 @@ namespace App\Application\Watchlist\Services;
 class WatchlistBacktestParamGridCatalog
 {
     public const CATALOG_CODE = 'WS_BT_GRID_BOOTSTRAP_2026_06';
+    public const CATALOG_VERSION = 'R1';
     public const CATALOG_COUNT = 24;
 
     public static function rows(): array
@@ -35,6 +36,71 @@ class WatchlistBacktestParamGridCatalog
             self::row('23_ULTRA_LOW_ATR_BREAKOUT', 5000000000, 0.03, 1.50, 0.25, 0.15, 0.45, 0.15, 1.00, 2.00, 1, 2, 0.95, 0.85),
             self::row('24_ULTRA_LOW_ATR_RISK', 5000000000, 0.03, 1.50, 0.25, 0.15, 0.30, 0.30, 0.75, 2.00, 1, 2, 0.95, 0.85),
         ];
+    }
+
+
+    public static function legacyRuntimeRow(array $row): array
+    {
+        $fields = [
+            'policy_code', 'min_dv20_idr', 'max_atr14_pct', 'min_vol_ratio',
+            'w_momentum', 'w_volume', 'w_breakout', 'w_risk',
+            'stop_atr_mult', 'min_rr', 'top_picks_target', 'secondary_target',
+            'top_min_score_q', 'secondary_min_score_q', 'notes',
+        ];
+        $legacy = [];
+        if (array_key_exists('param_id', $row)) {
+            $legacy['param_id'] = (int) $row['param_id'];
+        }
+        foreach ($fields as $field) {
+            $value = $row[$field] ?? null;
+            if (in_array($field, ['min_dv20_idr', 'top_picks_target', 'secondary_target'], true)) {
+                $value = $value === null ? null : (int) $value;
+            } elseif (in_array($field, [
+                'max_atr14_pct', 'min_vol_ratio', 'w_momentum', 'w_volume', 'w_breakout', 'w_risk',
+                'stop_atr_mult', 'min_rr', 'top_min_score_q', 'secondary_min_score_q',
+            ], true)) {
+                $value = $value === null ? null : (float) $value;
+            } elseif ($value !== null) {
+                $value = (string) $value;
+            }
+            $legacy[$field] = $value;
+        }
+
+        return $legacy;
+    }
+
+    public static function persistenceRows(): array
+    {
+        $rows = self::rows();
+        $catalogHash = self::hash();
+        foreach ($rows as $index => &$row) {
+            $rowCode = preg_replace('/^'.preg_quote(self::CATALOG_CODE, '/').'_/','', (string) $row['notes']);
+            if (! is_string($rowCode) || $rowCode === '') {
+                $rowCode = sprintf('R1_ROW_%02d', $index + 1);
+            }
+            $row = array_merge([
+                'catalog_code' => self::CATALOG_CODE,
+                'catalog_version' => self::CATALOG_VERSION,
+                'catalog_hash' => $catalogHash,
+                'row_code' => $rowCode,
+                'row_hash' => sha1(self::CATALOG_CODE.'|'.$rowCode),
+                'rationale' => 'Immutable R1 bootstrap row preserved from the original canonical catalog.',
+                'dv20_strong_idr' => 5000000000,
+                'strong_vol_ratio' => 2.50,
+                'min_atr14_pct' => 0.020,
+                'atr_ideal_low' => 0.035,
+                'atr_ideal_high' => min(0.075, (float) $row['max_atr14_pct']),
+                'roc_lo' => 0.020,
+                'roc_hi' => 0.150,
+                'mom_roc20_soft_min' => 0.000,
+                'bo_near_below_pct' => 0.020,
+                'bo_max_ext_pct' => 0.050,
+            ], $row);
+            $row['atr_ideal_low'] = min((float) $row['atr_ideal_low'], (float) $row['atr_ideal_high']);
+        }
+        unset($row);
+
+        return $rows;
     }
 
     public static function hash(): string

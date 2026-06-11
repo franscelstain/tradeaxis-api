@@ -2,7 +2,7 @@
 
 class WatchlistBacktestOosSchemaContractTest extends TestCase
 {
-    public function test_fresh_schema_and_existing_database_closure_share_canonical_grid_and_eval_identity(): void
+    public function test_fresh_schema_existing_closure_and_r2_migration_share_canonical_identity(): void
     {
         $ddl = file_get_contents(base_path(
             'docs/watchlist/system/policies/weekly_swing/db/BACKTEST_SCHEMA_DDL.sql'
@@ -22,8 +22,11 @@ class WatchlistBacktestOosSchemaContractTest extends TestCase
         $oosMigration = file_get_contents(base_path(
             'database/migrations/2026_06_09_000004_version_watchlist_bt_oos_identity.php'
         ));
+        $r2Migration = file_get_contents(base_path(
+            'database/migrations/2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality.php'
+        ));
 
-        foreach ([$ddl, $closure, $freshMigration, $gridMigration, $evalMigration, $oosMigration] as $content) {
+        foreach ([$ddl, $closure, $freshMigration, $gridMigration, $evalMigration, $oosMigration, $r2Migration] as $content) {
             $this->assertIsString($content);
             $this->assertNotSame('', trim($content));
         }
@@ -33,6 +36,20 @@ class WatchlistBacktestOosSchemaContractTest extends TestCase
             $this->assertStringContainsString($column, $closure);
             $this->assertStringContainsString($column, $freshMigration);
             $this->assertStringContainsString($column, $gridMigration);
+            $this->assertStringContainsString($column, $r2Migration);
+        }
+
+        foreach (['catalog_code', 'catalog_version', 'catalog_hash'] as $column) {
+            $this->assertStringContainsString($column, $ddl);
+            $this->assertStringContainsString($column, $r2Migration);
+        }
+        foreach ([
+            'row_code', 'row_hash', 'rationale', 'dv20_strong_idr', 'strong_vol_ratio',
+            'min_atr14_pct', 'atr_ideal_low', 'atr_ideal_high', 'roc_lo', 'roc_hi',
+            'mom_roc20_soft_min', 'bo_near_below_pct', 'bo_max_ext_pct',
+        ] as $column) {
+            $this->assertStringContainsString($column, $ddl);
+            $this->assertStringContainsString($column, $r2Migration);
         }
 
         foreach (['eval_model', 'paramset_hash'] as $column) {
@@ -40,12 +57,13 @@ class WatchlistBacktestOosSchemaContractTest extends TestCase
             $this->assertStringContainsString($column, $closure);
             $this->assertStringContainsString($column, $freshMigration);
             $this->assertStringContainsString($column, $evalMigration);
+            $this->assertStringContainsString($column, $r2Migration);
         }
 
         $this->assertStringContainsString('LEGACY_UNVERSIONED', $closure);
         $this->assertStringContainsString('LEGACY_UNVERSIONED', $evalMigration);
         $this->assertStringContainsString(
-            'policy_code, param_id, eval_model, paramset_hash, from_date, to_date',
+            'policy_code, catalog_code, catalog_version, param_id,',
             $ddl
         );
         $this->assertStringContainsString(
@@ -53,9 +71,11 @@ class WatchlistBacktestOosSchemaContractTest extends TestCase
             $ddl
         );
         $this->assertStringContainsString('is_eval_id', $oosMigration);
+        $this->assertStringContainsString('UQ_bt_grid_catalog_row', $r2Migration);
+        $this->assertStringContainsString('UQ_bt_eval_catalog_param_window', $r2Migration);
     }
 
-    public function test_evaluation_repository_uses_versioned_identity_and_keeps_conflict_fail_closed(): void
+    public function test_evaluation_repository_uses_catalog_aware_identity_and_keeps_conflict_fail_closed(): void
     {
         $repository = file_get_contents(base_path(
             'app/Infrastructure/Persistence/Watchlist/WatchlistBacktestEvaluationRepository.php'
@@ -63,10 +83,14 @@ class WatchlistBacktestOosSchemaContractTest extends TestCase
 
         $this->assertIsString($repository);
         $this->assertStringContainsString(
-            "['policy_code', 'param_id', 'eval_model', 'paramset_hash', 'from_date', 'to_date']",
+            "'policy_code', 'catalog_code', 'catalog_version', 'param_id'",
             $repository
         );
-        $this->assertStringContainsString('Duplicate persistence conflict', $repository);
+        $this->assertStringContainsString(
+            "'eval_model', 'paramset_hash', 'from_date', 'to_date'",
+            $repository
+        );
+        $this->assertStringContainsString('WS_BT_EVAL_IDENTITY_CONFLICT', $repository);
         $this->assertStringNotContainsString('updateOrInsert', $repository);
     }
 }
