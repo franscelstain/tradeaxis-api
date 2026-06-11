@@ -15,59 +15,239 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C02 DOWNSIDE STABILITY SEMANTIC CATALOG IMPLEMENTATION SESSION`
+`WATCHLIST - C03 OPERATOR VALIDATION AND IS QUALITY FORENSIC FINALIZATION SESSION`
 
 Status:
-`IMPLEMENTED_CODE_AND_STATIC_GUARDS_READY / LOCAL_PHP_LINT_PASS / LOCAL_C02_PURE_PHP_SMOKE_PASS / PHPUNIT_BLOCKED / ARTISAN_BLOCKED / OPERATOR_VALIDATION_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+`C03_IMPLEMENTED / C03_OPERATOR_VALIDATION_PASS / C03_SEED_PASS / C03_IS_EXECUTION_PASS / C03_IS_QUALITY_FAIL / C03_REJECTED_AS_STRATEGY_CATALOG / C03_DETERMINISTIC_TWO_RUN / OOS_NOT_RUN / NOT_PRODUCTION_READY / C04_REQUIRED`.
 
-Current C02 implementation evidence in this workspace:
+Current C03 final evidence:
 
-- source ZIP/workspace evidence was read; C02 was derived from current C01 drilldown evidence, not from a prior-session assumption;
+- C03 is a new catalog identity, not a patch to C02: `WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06`, version `C03`, count `10`, hash `29e15ceab1b3f7dc31a21f339ac6ab7483e14800`;
+- C03 implementation unit/static validation passed in the operator runtime: `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC03"` = PASS / `OK (12 tests, 461 assertions)`;
+- full Watchlist PHPUnit passed in the operator runtime: `vendor\bin\phpunit tests\Unit\Watchlist` = PASS / `OK (250 tests, 4643 assertions)`;
+- C03 seed passed: `inserted_count=10`, `updated_count=0`, `existing_count=0`;
+- R1/R2/C01/C02 immutability was preserved during C03 seed: `r1_immutable=1`, `r2_immutable=1`, `c01_immutable=1`, `c02_immutable=1`;
+- C03 IS calibration run 1 and run 2 both executed in the operator runtime and produced the same deterministic artifact hash `649e8fead0c57262307f749a4776f053f5ccd0f8`;
+- C03 IS quality failed deterministically: `status=C03_GRID_FAILED_IS_QUALITY`, `reason_code=WS_BT_C03_NO_VALID_IS_CANDIDATE`, `is_valid_param_count=0`, `is_failed_param_count=10`;
+- C03 failure reason family was unchanged from C02 at aggregate command-output level: `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- C03 did not invoke OOS: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
+- C03 has no frozen best IS binding: `param_id_best_is=` empty and `best_is_binding_hash=` empty;
+- C03 production readiness remains false: `production_ready=0`.
+
+C03 files added or extended:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC03ParamGridCatalog.php
+app/Application/Watchlist/Services/WatchlistBacktestParamGridParamsetFactory.php
+app/Application/Watchlist/Services/WatchlistBacktestIsCalibrationExecutionService.php
+app/Application/Watchlist/Services/WatchlistBacktestIsCalibrationService.php
+app/Infrastructure/Persistence/Watchlist/WatchlistBacktestParamGridRepository.php
+app/Console/Commands/Watchlist/SeedBacktestC03ParamGridCommand.php
+database/seeders/Watchlist/WatchlistBacktestC03ParamGridSeeder.php
+app/Console/Kernel.php
+tests/Unit/Watchlist/WatchlistBacktestC03ParamGridCatalogTest.php
+tests/Unit/Watchlist/WatchlistBacktestC03ParamGridParamsetFactoryTest.php
+tests/Unit/Watchlist/WatchlistBacktestC03StaticGuardTest.php
+docs/watchlist/audit/WS_C03_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/WS_C03_OPERATOR_FORENSIC_FINAL_RESULT.md
+docs/watchlist/audit/_artifacts/c03-forensic-summary.csv
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C03_DESIGN_NOTE.md
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C04_DESIGN_INPUT_NOTE.md
+```
+
+Authoring-environment validation that was performed before operator validation:
+
+```text
+php -l C03/modified Watchlist PHP files = PASS
+php /tmp/c03_smoke.php = PASS / exit code 0 / catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06 / catalog_version=C03 / catalog_count=10 / catalog_hash=29e15ceab1b3f7dc31a21f339ac6ab7483e14800 / factory_rows=10
+```
+
+Operator-provided validation output on supported project environment:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC03" = PASS / OK (12 tests, 461 assertions) / exit code 0
+vendor\bin\phpunit tests\Unit\Watchlist = PASS / OK (250 tests, 4643 assertions) / exit code 0
+php artisan watchlist:backtest-c03-param-grid-seed = PASS / catalog_count=10 / inserted_count=10 / updated_count=0 / existing_count=0 / r1_immutable=1 / r2_immutable=1 / c01_immutable=1 / c02_immutable=1 / oos_executed=0 / production_ready=0
+C03 IS calibration run 1 = C03_GRID_FAILED_IS_QUALITY / WS_BT_C03_NO_VALID_IS_CANDIDATE / valid=0 / failed=10 / artifact_hash=649e8fead0c57262307f749a4776f053f5ccd0f8 / OOS guards clean / production_ready=0
+C03 IS calibration run 2 = C03_GRID_FAILED_IS_QUALITY / WS_BT_C03_NO_VALID_IS_CANDIDATE / valid=0 / failed=10 / artifact_hash=649e8fead0c57262307f749a4776f053f5ccd0f8 / OOS guards clean / production_ready=0
+```
+
+C03 seed identity snapshot:
+
+```text
+catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06
+catalog_version=C03
+catalog_count=10
+catalog_hash=29e15ceab1b3f7dc31a21f339ac6ab7483e14800
+r1_catalog_count=24
+r1_catalog_hash=9da8b0983c57bde1ce0a1fbf1c119756f8af431c
+r2_catalog_count=12
+r2_catalog_hash=0f2eaadaa446980a3d5e48cd498df2a8157c01a5
+c01_catalog_count=8
+c01_catalog_hash=604ac98f6f193a4c317d4f25582deada84682846
+c02_catalog_count=8
+c02_catalog_hash=7287c438e15bd03d6beb4796e4d5159ecd8ed59a
+```
+
+C03 IS calibration deterministic markers:
+
+```text
+is_from=2023-01-02
+is_to=2025-05-21
+is_trading_date_count=562
+is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753
+strict_is_boundary_all_evaluations=1
+artifact_hash_run_1=649e8fead0c57262307f749a4776f053f5ccd0f8
+artifact_hash_run_2=649e8fead0c57262307f749a4776f053f5ccd0f8
+```
+
+C03 final decision state:
+
+```text
+C03_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C03 is not eligible for OOS because it has no valid IS candidate, no `param_id_best_is`, and no `best_is_binding_hash`. OOS remains `NOT_RUN` and must not be claimed PASS.
+
+Forensic limitation:
+
+```text
+storage/app/watchlist/backtest/c03-is-run-1.json and c03-is-run-2.json were produced on the operator machine, but the JSON artifact contents were not uploaded into this repository ZIP. Therefore this update records aggregate command-output evidence and creates a forensic summary that marks per-param metric extraction as OPERATOR_ARTIFACT_REQUIRED instead of reconstructing metrics.
+```
+
+Next required work:
+
+- C04 must be a new catalog identity, not a mutation of C03;
+- C04 must be based on C02 + C03 failure evidence;
+- C04 must change the candidate-selection axis and not merely tighten C03 numeric values;
+- C04 must not loosen canonical IS quality gates to make weak candidates pass;
+- C04 must not introduce unsupported sector filters;
+- C04 remains IS-only until it produces at least one valid IS candidate with a non-empty best IS binding.
+
+## PRIOR SESSION — C02 DOWNSIDE STABILITY OPERATOR FORENSIC FINALIZATION SESSION
+
+Session:
+`WATCHLIST - C02 DOWNSIDE STABILITY OPERATOR FORENSIC FINALIZATION SESSION`
+
+Status:
+`C02_IMPLEMENTATION_PASS / C02_OPERATOR_VALIDATION_PASS / C02_IS_EXECUTION_PASS / C02_IS_QUALITY_FAIL / C02_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY / C03_REQUIRED`.
+
+Current C02 final evidence:
+
+- source ZIP/workspace evidence was read before C02 implementation; C02 was derived from current C01 drilldown evidence, not from a prior-session assumption;
 - R1 remains immutable historical evidence: `WS_BT_GRID_BOOTSTRAP_2026_06`, version `R1`, count `24`, hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`;
 - R2 remains immutable historical evidence: `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, version `R2`, count `12`, hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`;
 - C01 remains immutable failed-IS evidence: `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, hash `604ac98f6f193a4c317d4f25582deada84682846`;
-- C02 is now implemented as `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06`, version `C02`, count `8`, hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`;
+- C02 is implemented as `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06`, version `C02`, count `8`, hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`;
 - C02 uses C01 runtime drilldown review focus: anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability;
 - C02 does not add unsupported sector filters; sector evidence is retained as diagnostic-only existing-axis proxy with `sector_filter_used=false`;
-- C02 seed command requires R1/R2/C01 persisted catalog snapshots to be intact before seeding and emits `r1_immutable=1`, `r2_immutable=1`, `c01_immutable=1` only after snapshot equality;
-- C02 IS calibration definition requires C01 immutability proof and remains IS-only with no OOS proof or promotion path;
-- new C02 unit/static tests were added for catalog determinism, row/parameter hashes, C01 reference-row copy, factory mapping, explicit runtime-axis coverage, no R-series naming, no unsupported sector filter, and locked file hash preservation.
+- C02 seed command preserves R1/R2/C01 immutability markers;
+- C02 IS calibration remains IS-only and did not read or mutate OOS;
+- C02 final forensic result is recorded in `docs/watchlist/audit/WS_C02_OPERATOR_FORENSIC_FINAL_RESULT.md`.
 
-Local validation actually performed in this authoring environment:
+Authoring-environment validation actually performed before operator validation:
 
 ```text
 php -l C02 PHP files and modified Watchlist PHP files = PASS
 php /tmp/c02_smoke.php = PASS / exit code 0 / catalog_hash=7287c438e15bd03d6beb4796e4d5159ecd8ed59a / factory_rows=8
 ```
 
-Local validation blocked in this authoring environment:
+Authoring-environment validation blockers:
 
 ```text
 php vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestC02" = BLOCKED / exit code 1 / missing extensions: dom, mbstring, xml, xmlwriter
 php artisan list = BLOCKED / exit code 2 / ENV_UNSUPPORTED_PHP_VERSION / current PHP 8.4.16, project requires PHP >= 7.3 and < 8.4
 ```
 
-No PHPUnit, Artisan seed, migration, calibration, backfill, replay, diagnostic runtime, OOS proof, or database write proof is claimed for C02 in this authoring environment. Runtime PASS remains `OPERATOR_VALIDATION_REQUIRED` until operator output is provided.
+Operator-provided validation output on supported project environment:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC02" = PASS / OK (12 tests, 391 assertions) / exit code 0
+vendor\bin\phpunit tests\Unit\Watchlist = PASS / OK (238 tests, 4182 assertions) / exit code 0
+php artisan watchlist:backtest-c02-param-grid-seed = PASS / catalog_count=8 / inserted_count=8 / updated_count=0 / r1_immutable=1 / r2_immutable=1 / c01_immutable=1 / oos_executed=0 / production_ready=0
+```
+
+Post-docs validation evidence supplied after C02 final documentation update:
+
+```text
+scope=DOCUMENTATION_AND_FORENSIC_CSV_ONLY
+runtime_code_changed=false
+catalog_changed=false
+seed_rerun_required=false
+calibration_rerun_required=false
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC02" = PASS / OK (12 tests, 391 assertions) / Time 00:01.281 / Memory 14.00 MB / exit code 0
+vendor\bin\phpunit tests\Unit\Watchlist = PASS / OK (238 tests, 4182 assertions) / Time 00:04.431 / Memory 24.00 MB / exit code 0
+post_docs_validation_verdict=PASS
+```
+
+This post-docs validation confirms the C02 final documentation/forensic CSV sync did not break C02 static guards or the full Watchlist unit suite. It is not a new seed, not a new calibration, not OOS proof, and not production-readiness evidence.
+
+Operator-provided C02 IS calibration output:
+
+```text
+run_1.status=C02_GRID_FAILED_IS_QUALITY
+run_1.reason_code=WS_BT_R2_NO_VALID_IS_CANDIDATE
+run_1.catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06
+run_1.catalog_version=C02
+run_1.catalog_count=8
+run_1.catalog_hash=7287c438e15bd03d6beb4796e4d5159ecd8ed59a
+run_1.is_from=2023-01-02
+run_1.is_to=2025-05-21
+run_1.is_trading_date_count=562
+run_1.is_valid_param_count=0
+run_1.is_failed_param_count=8
+run_1.is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+run_1.param_id_best_is=<empty>
+run_1.best_is_binding_hash=<empty>
+run_1.strict_is_boundary_all_evaluations=1
+run_1.oos_service_invoked=0
+run_1.oos_repository_invoked=0
+run_1.oos_table_unchanged=1
+run_1.oos_executed=0
+run_1.artifact_hash=81da37a1c526cf71c096a4be6fc8623b013ae3a2
+run_1.production_ready=0
+
+run_2.status=C02_GRID_FAILED_IS_QUALITY
+run_2.reason_code=WS_BT_R2_NO_VALID_IS_CANDIDATE
+run_2.is_valid_param_count=0
+run_2.is_failed_param_count=8
+run_2.artifact_hash=81da37a1c526cf71c096a4be6fc8623b013ae3a2
+run_2.production_ready=0
+```
+
+C02 forensic final summary:
+
+- artifact root keys were verified: `all_evaluations`, `best_is_binding`, `catalog_manifest`, `gate_summary`, `is_window_manifest`, `meta`, `no_oos_read_proof`, `validation`, and related proof sections;
+- artifact version is `WATCHLIST_C02_IS_CALIBRATION_V1`;
+- `valid_count=0`, `failed_count=8`, and `best_is_binding_empty=true`;
+- `failure_reason_distribution` is `WS_BT_EVAL_DOWNSIDE_FAIL=8`, `WS_BT_EVAL_ROBUST_RETURN_FAIL=8`, `WS_BT_EVAL_STABILITY_FAIL=8`;
+- every C02 row failed all three quality families;
+- `minimum_coverage=true` and `minimum_trade_count=true`, so C02 failed because strategy quality was poor, not because sample/data coverage was insufficient;
+- C02 had `days_covered=506..508`, `picks_count=1360..1435`, `win_rate_top=39.44%..41.82%`, negative median return on all rows, `p25_ret_net_top=-4.97%..-5.59%`, `month_win_rate_min=14.03%..23.21%`, and `period_fail_count=18..22` of `27`;
+- best average-return reference row was `param_id=51`, `row_code=06_BROAD_SAMPLE_NEAR_BREAKOUT`, with `avg_ret_net_top=0.180984%`, but it still failed median return, downside, and stability gates;
+- best stability-proxy reference row was `param_id=52`, `row_code=07_STABILITY_PROXY_SECTOR_REVIEW`, with `month_win_rate_min=23.214286%`, still far below the `45%` floor and still failed return/downside gates.
 
 C02 OOS-proof eligibility:
 
 ```text
-NOT_ELIGIBLE_FOR_OOS_PROOF — C02 IS calibration has not been run and no valid C02 IS binding exists
+NOT_ELIGIBLE_FOR_OOS_PROOF — C02 has no valid IS param, no best IS binding, and no best IS binding hash.
 ```
 
 Promotion eligibility:
 
 ```text
-NOT_ELIGIBLE — OOS proof missing
+NOT_ELIGIBLE — C02 strategy quality failed; OOS proof is missing; production_ready remains false.
 ```
 
-Required next validation boundary:
+Required next work:
 
-- run C02 PHPUnit/static tests in the supported PHP baseline;
-- seed C02 and confirm R1/R2/C01 immutable markers;
-- run C02 IS calibration twice on `2023-01-02..2025-05-21`;
-- compare C02 artifact hashes;
-- do not run/read OOS unless C02 produces a valid IS binding and an explicit OOS-proof session is opened.
+- preserve R1/R2/C01/C02 as immutable historical evidence;
+- do not mutate C02 to force a pass;
+- do not run OOS for C02;
+- design a new `C03` catalog from C02 forensic metrics;
+- C03 must change candidate filtering/parameter design, not merely loosen canonical gates;
+- keep file-16 canonical gates unchanged unless a separate owner-approved contract session explicitly changes those gates;
+- continue to treat OOS and production readiness as unavailable until a future catalog produces a valid frozen IS binding.
 
 ## PRIOR SESSION — C01 DIAGNOSTIC PAYLOAD EXPANSION
 
@@ -94,7 +274,7 @@ Current C01 IS failure drilldown evidence:
 - C01 drilldown canonical artifact hash run 2 `1212405907b33c98b787f473af07472fa74b2508`;
 - C01 drilldown `is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753`;
 - runtime trade/evaluation payload now exports `close_to_hh20_pct`, `roc20`, `vol_ratio`, `dv20_idr`, `sector_code`, and score components from existing market-data/scoring/PLAN evidence into strategy trades, so the breakout/momentum/volume/liquidity/sector/score-component diagnostic buckets are `DERIVED_FROM_RUNTIME_EVIDENCE`;
-- derived diagnostic review snapshot is recorded in `_refs/WS_C01_IS_FAILURE_DRILLDOWN_NOTE.md`; candidate focus for a future review is anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability, but C02 remains `NOT_DESIGNED`;
+- derived diagnostic review snapshot is recorded in `_refs/WS_C01_IS_FAILURE_DRILLDOWN_NOTE.md`; candidate focus for a future review was anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability; at that historical session boundary C02 remained `NOT_DESIGNED`, and this is superseded by the current C02 final result above;
 - no C02 or new-focus catalog is created in this session; the newly derived diagnostic buckets are evidence for review, not promotion or OOS proof;
 - OOS was not run or read; promotion remains impossible.
 
@@ -711,37 +891,37 @@ Watchlist is not production-ready.
 
 Required next session:
 
-`WATCHLIST — WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
+`WATCHLIST — C03 IS QUALITY CATALOG DESIGN AND IMPLEMENTATION SESSION`
 
 Why this is next:
 
-- R1 failed IS quality across 24 rows.
-- R2 executed successfully on IS across 12 rows but produced `is_valid_param_count=0`.
-- C01 executed successfully on IS across 8 rows but again produced `is_valid_param_count=0`.
-- C01 failure reason is `WS_BT_C01_NO_VALID_IS_CANDIDATE`.
-- The repeated failure families remain `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`.
-- OOS is not eligible because there is no frozen best-IS binding.
-- C01 already has runtime evidence and must not be mutated after seeing the failed-IS result.
+- R1, R2, C01, and C02 all failed to produce a valid IS binding.
+- C02 is now fully implemented and operator-validated for tests/seed/execution, but rejected as a strategy-quality catalog.
+- C02 produced deterministic IS artifacts, but `valid_count=0`, `failed_count=8`, and `best_is_binding_empty=true`.
+- Every C02 param failed downside, robust-return, and stability gates.
+- C02 failure is not caused by insufficient coverage or insufficient trade count; `minimum_coverage=true` and `minimum_trade_count=true`.
+- Post-docs validation after the C02 final documentation/forensic CSV sync passed `WatchlistBacktestC02` and the full `tests/Unit/Watchlist` suite; no runtime/catalog/seed/calibration changes were made in that documentation-only sync.
+- OOS remains ineligible because there is no frozen best-IS binding.
 
 Required target:
 
-- diagnose why C01 still failed downside, robust-return, and stability gates despite semantic downside/stability focus;
-- decide whether the next semantic catalog stays in the same focus as `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06` or shifts to a new focus using `WS_BT_GRID_<FOCUS>_C01_YYYY_MM`;
-- preserve R1, R2, and C01 as immutable failed-IS evidence;
+- update/retain C02 as immutable rejected strategy-quality evidence;
+- design C03 as a new catalog identity, not a mutation of C02;
+- use C02 forensic metrics to reduce weak picks and improve median return, p25 downside, and monthly stability;
+- preserve R1/R2/C01/C02 identities and hashes;
 - use IS data only; reserved OOS must remain unread;
-- keep file-16 canonical gates unchanged;
-- do not create best-of-failed, active paramset, promotion, production-ready claim, or OOS run;
-- do not mutate `WS_BT_GRID_BOOTSTRAP_2026_06`, `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, or `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`.
+- keep file-16 canonical gates unchanged unless separately owner-approved;
+- do not create best-of-failed, active paramset, promotion, production-ready claim, or OOS run.
 
 Anti-ambiguity naming rule:
 
 ```text
 R1/R2 = historical aliases only.
 C01 = executed historical failed-IS catalog for DOWNSIDE_STABILITY.
+C02 = implemented and operator-validated but rejected failed-IS catalog for DOWNSIDE_STABILITY.
 R3/R4/R5 naming = deprecated for new catalog identity.
-Future catalog code = WS_BT_GRID_<FOCUS>_C##_YYYY_MM.
-If same focus continues, use DOWNSIDE_STABILITY_C02, not an edit to C01.
-If focus changes, reset to <NEW_FOCUS>_C01.
+Future same-focus catalog code = WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06.
+Future changed-focus catalog code = WS_BT_GRID_<FOCUS>_C01_YYYY_MM.
 Future evidence run code = WS_BT_<IS|OOS>_<FOCUS>_C##_RUN_##.
 ```
 

@@ -5,6 +5,7 @@ namespace App\Infrastructure\Persistence\Watchlist;
 use App\Application\Watchlist\Services\WatchlistBacktestParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC01ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC02ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestC03ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestR2ParamGridCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -262,6 +263,11 @@ class WatchlistBacktestParamGridRepository
                 WatchlistBacktestC02ParamGridCatalog::CATALOG_VERSION,
                 WatchlistBacktestC02ParamGridCatalog::hash(),
                 WatchlistBacktestC02ParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestC03ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestC03ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestC03ParamGridCatalog::hash(),
+                WatchlistBacktestC03ParamGridCatalog::CATALOG_COUNT,
             ],
         ];
         if (! isset($known[$code])) {

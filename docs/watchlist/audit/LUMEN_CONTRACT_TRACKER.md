@@ -14,10 +14,72 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C02 DOWNSIDE STABILITY SEMANTIC CATALOG IMPLEMENTATION SESSION`
+`WATCHLIST - C03 OPERATOR VALIDATION AND IS QUALITY FORENSIC FINALIZATION SESSION`
 
 Status:
-`IMPLEMENTED_CODE_AND_STATIC_GUARDS_READY / LOCAL_PHP_LINT_PASS / LOCAL_C02_PURE_PHP_SMOKE_PASS / PHPUNIT_BLOCKED / ARTISAN_BLOCKED / OPERATOR_VALIDATION_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+`C03_OPERATOR_VALIDATED / C03_SEEDED / C03_IS_EXECUTED / C03_IS_QUALITY_FAILED / C03_REJECTED_AS_STRATEGY_CATALOG / C03_DETERMINISTIC / OOS_NOT_RUN / NOT_PRODUCTION_READY / C04_REQUIRED`.
+
+Current C03 contract evidence:
+
+- R1/R2/C01/C02 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C02 remains rejected as a strategy-quality catalog and was not patched to look successful;
+- C03 is a new semantic C-campaign catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06`, version `C03`, count `10`, hash `29e15ceab1b3f7dc31a21f339ac6ab7483e14800`;
+- C03 operator PHPUnit validation passed: C03 filter `OK (12 tests, 461 assertions)` and full Watchlist `OK (250 tests, 4643 assertions)`;
+- C03 seed passed and inserted 10 catalog rows with `updated_count=0`;
+- seed-time R1/R2/C01/C02 immutability markers were all true;
+- C03 IS calibration run 1 and run 2 both failed quality with the same deterministic artifact hash `649e8fead0c57262307f749a4776f053f5ccd0f8`;
+- C03 quality failure is explicit: `C03_GRID_FAILED_IS_QUALITY` / `WS_BT_C03_NO_VALID_IS_CANDIDATE` / `is_valid_param_count=0` / `is_failed_param_count=10`;
+- C03 did not open OOS and all reported OOS guards remained clean;
+- C03 has no best IS binding and no best IS binding hash, so it cannot advance to OOS.
+
+Contract status update:
+
+- `WL-CONTRACT-007`: PASS for C03 catalog identity, seed, and R1/R2/C01/C02 immutability evidence;
+- `WL-CONTRACT-008`: PASS for C03 traceability as a new catalog derived from C02/C01 evidence, not a mutation of prior catalogs;
+- `WL-CONTRACT-009`: PASS for C03 IS-only boundary in operator calibration output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C03 IS calibration;
+- `WL-CONTRACT-011`: FAILED_QUALITY for C03 strategy quality because no valid IS candidate exists;
+- `WL-CONTRACT-014`: PASS for C03 docs/test/command tracking update, with per-param C03 forensic metrics still requiring operator artifact JSON content.
+
+C03 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C03 has no valid IS binding and no OOS proof. C03 must remain rejected as a strategy-quality catalog.
+
+Next contract work:
+
+```text
+C04_REQUIRED
+```
+
+C04 must be a new catalog identity and must change the candidate-selection axis using only runtime-supported fields. It must not mutate R1/R2/C01/C02/C03, must not add unsupported sector filters, must not loosen quality gates, and must not run OOS unless a valid IS candidate is first proven.
+
+## PRIOR SESSION — C02 DOWNSIDE STABILITY OPERATOR FORENSIC FINALIZATION SESSION
+
+Session:
+`WATCHLIST - C02 DOWNSIDE STABILITY OPERATOR FORENSIC FINALIZATION SESSION`
+
+Status:
+`C02_IMPLEMENTATION_PASS / C02_OPERATOR_VALIDATION_PASS / C02_IS_EXECUTION_PASS / C02_IS_QUALITY_FAIL / C02_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY / C03_REQUIRED`.
 
 Current C02 contract evidence:
 
@@ -25,36 +87,75 @@ Current C02 contract evidence:
 - C02 is a new semantic C-campaign catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06`, version `C02`, count `8`, hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`;
 - C02 design comes from current C01 runtime-derived drilldown buckets and uses only existing runtime-consumed grid axes;
 - C02 does not introduce `sector_code` or `sector_filter` as a persisted/grid axis; sector evidence is diagnostic-only until a real sector axis is designed and consumed safely by runtime;
-- C02 seed command fails closed unless persisted R1/R2/C01 snapshots exist with expected counts/hashes;
-- C02 IS calibration artifact definition includes C01 immutability proof and remains no-OOS/no-promotion;
-- C02 static/unit guards were added, but PHPUnit execution is blocked in this authoring environment by missing PHP extensions.
+- C02 seed is operator-validated as PASS with R1/R2/C01 immutability markers intact and `oos_executed=0`;
+- C02 unit/static tests are operator-validated as PASS: `WatchlistBacktestC02` 12 tests / 391 assertions;
+- full Watchlist unit/static suite is operator-validated as PASS: 238 tests / 4182 assertions;
+- C02 IS calibration executed twice and produced deterministic artifact hash `81da37a1c526cf71c096a4be6fc8623b013ae3a2`;
+- C02 IS execution returned `C02_GRID_FAILED_IS_QUALITY`, `is_valid_param_count=0`, `is_failed_param_count=8`, empty best IS binding, and `production_ready=0`;
+- every C02 param failed `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`;
+- OOS service/repository/table markers remained clean: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
+- final forensic details are recorded in `docs/watchlist/audit/WS_C02_OPERATOR_FORENSIC_FINAL_RESULT.md`.
+- post-docs validation evidence confirms the final C02 documentation/forensic CSV sync did not break `WatchlistBacktestC02` or the full Watchlist unit suite.
 
-Local validation actually performed:
+Authoring environment validation actually performed:
 
 ```text
 php lint C02/modified Watchlist PHP files = PASS
 C02 pure PHP catalog/factory smoke = PASS / exit code 0
 ```
 
-Blocked local validation:
+Operator validation evidence supplied after authoring:
 
 ```text
-PHPUnit = BLOCKED / missing dom, mbstring, xml, xmlwriter
-Artisan = BLOCKED / ENV_UNSUPPORTED_PHP_VERSION / PHP 8.4.16 outside supported project baseline
+C02 PHPUnit = PASS / OK (12 tests, 391 assertions)
+Full Watchlist PHPUnit = PASS / OK (238 tests, 4182 assertions)
+C02 seed = PASS / inserted_count=8 / updated_count=0 / r1_immutable=1 / r2_immutable=1 / c01_immutable=1 / oos_executed=0 / production_ready=0
+C02 IS run 1 = C02_GRID_FAILED_IS_QUALITY / artifact_hash=81da37a1c526cf71c096a4be6fc8623b013ae3a2 / is_valid_param_count=0 / is_failed_param_count=8
+C02 IS run 2 = C02_GRID_FAILED_IS_QUALITY / artifact_hash=81da37a1c526cf71c096a4be6fc8623b013ae3a2 / is_valid_param_count=0 / is_failed_param_count=8
 ```
 
-No C02 runtime PASS, seed PASS, calibration PASS, replay PASS, or OOS proof is claimed until operator output is supplied.
+Post-docs validation evidence after documentation/forensic CSV sync:
 
-Priority contract status update:
+```text
+scope=DOCUMENTATION_AND_FORENSIC_CSV_ONLY
+runtime_code_changed=false
+catalog_changed=false
+seed_rerun_required=false
+calibration_rerun_required=false
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC02" = PASS / OK (12 tests, 391 assertions) / Time 00:01.281 / Memory 14.00 MB / exit code 0
+vendor\bin\phpunit tests\Unit\Watchlist = PASS / OK (238 tests, 4182 assertions) / Time 00:04.431 / Memory 24.00 MB / exit code 0
+post_docs_validation_verdict=PASS
+```
 
-- `WL-CONTRACT-007`: DONE for C02 immutable catalog identity implementation/static scope, not `LOCKED`;
-- `WL-CONTRACT-008`: DONE for C02 explainability/design traceability implementation/static scope, not `LOCKED`;
-- `WL-CONTRACT-009`: DONE for C02 IS-only artifact definition/static no-OOS boundary, runtime proof still operator-required;
-- `WL-CONTRACT-010`: PARTIAL for C02 reproducibility until two-run operator artifact hashes are supplied;
-- `WL-CONTRACT-011`: PARTIAL; risk/setup/scoring quality remains unproven until C02 IS calibration output exists;
-- `WL-CONTRACT-015`: `PARTIAL / NOT_READY`.
+Contract impact:
 
-No contract is `LOCKED`. C02 OOS-proof eligibility is `NOT_ELIGIBLE_FOR_OOS_PROOF — C02 IS calibration has not been run and no valid C02 IS binding exists`. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
+- `WL-CONTRACT-007`: DONE for C02 immutable catalog identity and seed immutability evidence, not production `LOCKED`;
+- `WL-CONTRACT-008`: DONE for C02 explainability/design traceability and final forensic evidence;
+- `WL-CONTRACT-009`: DONE for C02 IS-only artifact boundary and no-OOS runtime markers;
+- `WL-CONTRACT-010`: DONE for C02 two-run deterministic artifact hash proof;
+- `WL-CONTRACT-011`: FAILED_STRATEGY_QUALITY for C02; no row passed canonical IS gates;
+- `WL-CONTRACT-014`: docs synchronized for C02 operator evidence and forensic final; post-docs PHPUnit validation PASS confirms the sync did not break Watchlist static/unit guards;
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`; production readiness remains blocked.
+
+C02 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE_FOR_OOS_PROOF — C02 has zero valid IS candidates and no frozen best-IS binding.
+```
+
+Promotion eligibility:
+
+```text
+NOT_ELIGIBLE — C02 failed strategy quality and OOS proof is missing.
+```
+
+Required next contract work:
+
+```text
+WATCHLIST — C03 IS QUALITY CATALOG DESIGN AND IMPLEMENTATION SESSION
+```
+
+The next contract work must design a new C03 catalog from C02 forensic metrics. It must preserve R1/R2/C01/C02 as immutable evidence, keep OOS unread, avoid best-of-failed selection, and avoid production-ready claims.
 
 ## PRIOR SESSION — C01 DIAGNOSTIC PAYLOAD EXPANSION
 
@@ -85,7 +186,7 @@ Current C01 IS failure drilldown contract evidence:
 - command blocks empty `--catalog-code`, requires explicit `--from`, `--to`, `--output`, and requires explicit `--overwrite` for replacement;
 - service enforces exact frozen IS window `2023-01-02..2025-05-21`, `hard_market_data_to_date`, no latest/active fallback markers, no current-date/default max-date path, no OOS write, and no production-ready/promotion output;
 - the prior payload gap is closed for the current runtime: breakout/momentum/volume/liquidity/sector/score-component buckets are derived from runtime evidence exported through market-data, candidate, scoring, PLAN, and strategy trade payloads;
-- derived diagnostic review is recorded as review-only evidence; candidate focus is anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability, while C02 remains `NOT_DESIGNED`;
+- derived diagnostic review is recorded as review-only evidence; candidate focus was anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability; at that historical session boundary C02 remained `NOT_DESIGNED`, and this is superseded by the current C02 final result above;
 - no file-16 gate, file-17 OOS proof rule, PLAN/RECOMMENDATION/CONFIRM behavior, execution model, OOS table, or promotion rule changed.
 
 Local validation actually performed:
@@ -138,14 +239,14 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-004 | INDICATOR VALIDITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-005 | ELIGIBILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-006 | SCORING DETERMINISM CONTRACT | `PARTIAL` |
-| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for C02 immutable catalog identity implementation/static scope / OPERATOR_VALIDATION_REQUIRED / NOT LOCKED` |
-| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for C02 design traceability/static scope / OPERATOR_VALIDATION_REQUIRED / NOT LOCKED` |
-| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for C02 IS-only artifact definition/static no-OOS boundary / OPERATOR_VALIDATION_REQUIRED / NOT LOCKED` |
-| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `PARTIAL for C02 until two-run operator artifact hashes are supplied / NOT LOCKED` |
-| WL-CONTRACT-011 | RISK GATE CONTRACT | `PARTIAL` |
+| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for C02 immutable catalog identity + operator seed immutability evidence / NOT LOCKED` |
+| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for C02 design traceability + final forensic evidence / NOT LOCKED` |
+| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for C02 IS-only runtime no-OOS proof / NOT LOCKED` |
+| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `DONE for C02 two-run deterministic artifact hash / NOT LOCKED` |
+| WL-CONTRACT-011 | RISK GATE CONTRACT | `FAILED_STRATEGY_QUALITY for C02 / PARTIAL` |
 | WL-CONTRACT-012 | PORTFOLIO AWARENESS BOUNDARY | `NOT_STARTED` |
 | WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for C01 drilldown expanded artifact runtime scope / NOT LOCKED` |
-| WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for C01 diagnostic docs sync scope` |
+| WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for C02 operator + forensic final docs sync scope` |
 | WL-CONTRACT-015 | PRODUCTION READINESS CONTRACT | `PARTIAL / NOT_READY` |
 | WL-CONTRACT-016 | PLAN GROUPING DETERMINISM CONTRACT | `PARTIAL` |
 | WL-CONTRACT-017 | PLAN GROUP BOUNDARY CONTRACT | `PARTIAL` |

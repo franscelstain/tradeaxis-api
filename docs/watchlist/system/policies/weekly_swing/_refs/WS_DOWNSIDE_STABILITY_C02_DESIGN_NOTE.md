@@ -77,14 +77,14 @@ sector_evidence_usage=DIAGNOSTIC_REVIEW_ONLY_EXISTING_AXIS_PROXY
 
 ## Local validation in authoring environment
 
-Executed in the current sandbox:
+Executed in the authoring sandbox before operator validation:
 
 ```text
 php -l C02 PHP files and modified Watchlist files = PASS
 C02 pure PHP catalog/factory smoke = PASS / exit code 0
 ```
 
-Blocked in the current sandbox:
+Blocked in the authoring sandbox:
 
 ```text
 php vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestC02" = BLOCKED / exit code 1
@@ -94,19 +94,120 @@ php artisan list = BLOCKED / exit code 2
 reason=ENV_UNSUPPORTED_PHP_VERSION; current PHP 8.4.16, project guard requires PHP >= 7.3 and < 8.4
 ```
 
-No PHPUnit, Artisan seed, migration, calibration, OOS proof, replay, diagnostic run, or database write proof is claimed for C02 until operator output is provided from a supported environment.
+## Operator validation final result
 
-## Required operator validation before claiming C02 runtime PASS
-
-1. Run C02 unit/static tests.
-2. Run full Watchlist unit tests.
-3. Seed C02 and confirm R1/R2/C01 immutable markers.
-4. Run C02 IS calibration twice on the frozen IS window.
-5. Compare artifact hashes across the two C02 runs.
-6. Keep OOS unread unless C02 produces at least one valid IS binding and the separate OOS proof session is explicitly opened.
-
-Until those outputs are supplied, C02 status remains:
+Operator output was supplied from the supported project environment. C02 is now validated for implementation/test/seed/execution, but rejected as a strategy-quality catalog.
 
 ```text
-IMPLEMENTED_CODE_AND_STATIC_GUARDS_READY / RUNTIME_VALIDATION_BLOCKED_IN_AUTHORING_ENV / OPERATOR_VALIDATION_REQUIRED / NOT_PRODUCTION_READY
+C02 PHPUnit = PASS / OK (12 tests, 391 assertions)
+Full Watchlist PHPUnit = PASS / OK (238 tests, 4182 assertions)
+C02 seed = PASS / catalog_count=8 / inserted_count=8 / updated_count=0 / r1_immutable=1 / r2_immutable=1 / c01_immutable=1 / oos_executed=0 / production_ready=0
+C02 IS run 1 = C02_GRID_FAILED_IS_QUALITY / is_valid_param_count=0 / is_failed_param_count=8 / artifact_hash=81da37a1c526cf71c096a4be6fc8623b013ae3a2
+C02 IS run 2 = C02_GRID_FAILED_IS_QUALITY / is_valid_param_count=0 / is_failed_param_count=8 / artifact_hash=81da37a1c526cf71c096a4be6fc8623b013ae3a2
 ```
+
+C02 two-run determinism is proven for the reported artifact hash:
+
+```text
+artifact_hash_run_1=81da37a1c526cf71c096a4be6fc8623b013ae3a2
+artifact_hash_run_2=81da37a1c526cf71c096a4be6fc8623b013ae3a2
+hash_equal=1
+```
+
+## Post-docs validation evidence
+
+After the final C02 documentation and forensic CSV sync, operator validation was rerun for the focused C02 test and the full Watchlist suite.
+
+```text
+scope=DOCUMENTATION_AND_FORENSIC_CSV_ONLY
+runtime_code_changed=false
+catalog_changed=false
+seed_rerun_required=false
+calibration_rerun_required=false
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC02" = PASS / OK (12 tests, 391 assertions) / Time 00:01.281 / Memory 14.00 MB / exit code 0
+vendor\bin\phpunit tests\Unit\Watchlist = PASS / OK (238 tests, 4182 assertions) / Time 00:04.431 / Memory 24.00 MB / exit code 0
+post_docs_validation_verdict=PASS
+```
+
+This is docs/static-guard validation evidence only. It is not a new seed, not a new calibration, not OOS proof, and not production-readiness evidence.
+
+## Final forensic result
+
+C02 artifact manifest:
+
+```text
+artifact_version=WATCHLIST_C02_IS_CALIBRATION_V1
+catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06
+catalog_version=C02
+catalog_count=8
+catalog_hash=7287c438e15bd03d6beb4796e4d5159ecd8ed59a
+is_from=2023-01-02
+is_to=2025-05-21
+trading_date_count=562
+valid_count=0
+failed_count=8
+best_is_binding_empty=true
+strict_is_boundary=true
+oos_executed=false
+production_ready=false
+catalog_hash_matches=true
+r1_immutable=true
+r2_immutable=true
+c01_immutable=true
+no_oos_market_read=true
+no_oos_table_mutation=true
+```
+
+All eight C02 rows failed all three quality families:
+
+```text
+WS_BT_EVAL_DOWNSIDE_FAIL=8
+WS_BT_EVAL_ROBUST_RETURN_FAIL=8
+WS_BT_EVAL_STABILITY_FAIL=8
+```
+
+The representative gate detail shows C02 had enough sample but poor quality:
+
+```text
+minimum_coverage=true
+minimum_trade_count=true
+average_return_positive=false
+median_return_non_negative=false
+monthly_average_floor=false
+monthly_win_rate_floor=false
+p25_downside_bound=false
+```
+
+Metric range across all C02 rows:
+
+```text
+days_covered=506..508
+picks_count=1360..1435
+win_rate_top=39.44%..41.82%
+median_ret_net_top=-2.10%..-1.72%
+p25_ret_net_top=-5.59%..-4.97%
+month_win_rate_min=14.03%..23.21%
+period_fail_count=18..22 of 27
+```
+
+Best reference rows are still rejected:
+
+```text
+param_id=51 / row_code=06_BROAD_SAMPLE_NEAR_BREAKOUT / avg_ret_net_top=0.180984% / median_ret_net_top=-1.7164% / p25_ret_net_top=-5.4058% / month_win_rate_min=14.0351%
+param_id=52 / row_code=07_STABILITY_PROXY_SECTOR_REVIEW / month_win_rate_min=23.2143% / avg_ret_net_top=-0.0694% / median_ret_net_top=-1.8353% / p25_ret_net_top=-5.5662%
+```
+
+## Final C02 verdict
+
+```text
+C02_IMPLEMENTATION_PASS
+C02_OPERATOR_VALIDATION_PASS
+C02_IS_EXECUTION_PASS
+C02_IS_QUALITY_FAIL
+C02_REJECTED_AS_STRATEGY_CATALOG
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+C03_REQUIRED
+```
+
+C02 must remain immutable rejected evidence. Do not patch C02 to force a pass. Do not run OOS for C02. The next catalog must be C03 or a new-focus C01, derived from C02 forensic metrics.

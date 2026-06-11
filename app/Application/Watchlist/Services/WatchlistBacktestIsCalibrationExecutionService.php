@@ -78,6 +78,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             if (! empty($definition['requires_c01_catalog'])) {
                 $c01Before = $this->paramGrid->catalogSnapshot(WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE);
             }
+            $c02Before = [];
+            if (! empty($definition['requires_c02_catalog'])) {
+                $c02Before = $this->paramGrid->catalogSnapshot(WatchlistBacktestC02ParamGridCatalog::CATALOG_CODE);
+            }
             $oosBefore = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CATALOG_INVALID'), $e->getMessage());
@@ -98,7 +102,12 @@ class WatchlistBacktestIsCalibrationExecutionService
         if (! empty($definition['requires_c01_catalog'])
             && ((int) ($c01Before['catalog_count'] ?? 0) !== WatchlistBacktestC01ParamGridCatalog::CATALOG_COUNT
                 || (string) ($c01Before['catalog_hash'] ?? '') !== WatchlistBacktestC01ParamGridCatalog::hash())) {
-            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable C01 catalog count/hash is not intact before C02 calibration.');
+            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable C01 catalog count/hash is not intact before curated calibration.');
+        }
+        if (! empty($definition['requires_c02_catalog'])
+            && ((int) ($c02Before['catalog_count'] ?? 0) !== WatchlistBacktestC02ParamGridCatalog::CATALOG_COUNT
+                || (string) ($c02Before['catalog_hash'] ?? '') !== WatchlistBacktestC02ParamGridCatalog::hash())) {
+            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable C02 catalog count/hash is not intact before C03 calibration.');
         }
 
         $executedAt = $toDate.'T23:59:59+07:00';
@@ -114,6 +123,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             if (! empty($definition['requires_c01_catalog'])) {
                 $c01After = $this->paramGrid->catalogSnapshot(WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE);
             }
+            $c02After = [];
+            if (! empty($definition['requires_c02_catalog'])) {
+                $c02After = $this->paramGrid->catalogSnapshot(WatchlistBacktestC02ParamGridCatalog::CATALOG_CODE);
+            }
             $oosAfter = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CALIBRATION_FAILED'), $e->getMessage());
@@ -126,7 +139,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'R2 snapshot changed during IS-only calibration.');
         }
         if (! empty($definition['requires_c01_catalog']) && $c01Before !== $c01After) {
-            return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'C01 snapshot changed during C02 IS-only calibration.');
+            return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'C01 snapshot changed during curated IS-only calibration.');
+        }
+        if (! empty($definition['requires_c02_catalog']) && $c02Before !== $c02After) {
+            return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'C02 snapshot changed during C03 IS-only calibration.');
         }
         if ($oosBefore !== $oosAfter) {
             return $this->blocked('WS_BT_R2_OOS_PERSISTENCE_MUTATION', 'watchlist_bt_oos_eval_ws changed during IS-only calibration.');
@@ -146,6 +162,8 @@ class WatchlistBacktestIsCalibrationExecutionService
             $r2After,
             $c01Before,
             $c01After,
+            $c02Before ?? [],
+            $c02After ?? [],
             $catalogSnapshot,
             $oosBefore,
             $oosAfter
@@ -228,6 +246,8 @@ class WatchlistBacktestIsCalibrationExecutionService
         array $r2After,
         array $c01Before,
         array $c01After,
+        array $c02Before,
+        array $c02After,
         array $catalogSnapshot,
         array $oosBefore,
         array $oosAfter
@@ -393,6 +413,12 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'after' => $c01After,
                 'equal' => $c01Before === $c01After,
             ],
+            'c02_immutability_proof' => [
+                'required' => ! empty($definition['requires_c02_catalog']),
+                'before' => $c02Before,
+                'after' => $c02After,
+                'equal' => $c02Before === $c02After,
+            ],
             'no_oos_read_proof' => [
                 'strict_is_boundary_all_evaluations' => $strictBoundaryAll,
                 'max_requested_market_data_date' => $maxRequestedDate,
@@ -413,6 +439,7 @@ class WatchlistBacktestIsCalibrationExecutionService
             'r1_immutable' => $r1Before === $r1After,
             'r2_immutable' => $r2Before === $r2After,
             'c01_immutable' => empty($definition['requires_c01_catalog']) || $c01Before === $c01After,
+            'c02_immutable' => empty($definition['requires_c02_catalog']) || $c02Before === $c02After,
             'no_oos_table_mutation' => $oosBefore === $oosAfter,
             'no_oos_market_data_read' => ($maxRequestedDate === null || strcmp($maxRequestedDate, self::R2_MAX_IS_DATE) <= 0)
                 && $strictBoundaryAll,
@@ -514,6 +541,7 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'artifact_scope' => 'WEEKLY_SWING_R2_ENTRY_QUALITY_IS_ONLY',
                 'failed_status' => 'R2_GRID_FAILED_IS_QUALITY',
                 'requires_c01_catalog' => false,
+                'requires_c02_catalog' => false,
             ],
             WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE => [
                 'catalog_code' => WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE,
@@ -533,6 +561,7 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'artifact_scope' => 'WEEKLY_SWING_DOWNSIDE_STABILITY_C01_IS_ONLY',
                 'failed_status' => 'C01_GRID_FAILED_IS_QUALITY',
                 'requires_c01_catalog' => false,
+                'requires_c02_catalog' => false,
             ],
             WatchlistBacktestC02ParamGridCatalog::CATALOG_CODE => [
                 'catalog_code' => WatchlistBacktestC02ParamGridCatalog::CATALOG_CODE,
@@ -552,6 +581,27 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'artifact_scope' => 'WEEKLY_SWING_DOWNSIDE_STABILITY_C02_IS_ONLY',
                 'failed_status' => 'C02_GRID_FAILED_IS_QUALITY',
                 'requires_c01_catalog' => true,
+                'requires_c02_catalog' => false,
+            ],
+            WatchlistBacktestC03ParamGridCatalog::CATALOG_CODE => [
+                'catalog_code' => WatchlistBacktestC03ParamGridCatalog::CATALOG_CODE,
+                'catalog_version' => WatchlistBacktestC03ParamGridCatalog::CATALOG_VERSION,
+                'catalog_count' => WatchlistBacktestC03ParamGridCatalog::CATALOG_COUNT,
+                'catalog_hash' => WatchlistBacktestC03ParamGridCatalog::hash(),
+                'parameter_axes' => WatchlistBacktestC03ParamGridCatalog::parameterAxes(),
+                'axis_rationale' => WatchlistBacktestC03ParamGridCatalog::axisRationale(),
+                'provenance' => WatchlistBacktestC03ParamGridCatalog::provenance(),
+                'manifest_rows' => WatchlistBacktestC03ParamGridCatalog::manifestRows(),
+                'reference_row_code' => WatchlistBacktestC03ParamGridCatalog::REFERENCE_ROW_CODE,
+                'fixed_stop_atr_mult' => WatchlistBacktestC03ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC03ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC03ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC03ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'artifact_version' => 'WATCHLIST_C03_IS_CALIBRATION_V1',
+                'artifact_scope' => 'WEEKLY_SWING_DOWNSIDE_STABILITY_C03_IS_ONLY',
+                'failed_status' => 'C03_GRID_FAILED_IS_QUALITY',
+                'requires_c01_catalog' => true,
+                'requires_c02_catalog' => true,
             ],
         ];
 
