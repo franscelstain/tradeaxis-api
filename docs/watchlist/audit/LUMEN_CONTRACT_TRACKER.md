@@ -14,6 +14,51 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C02 DOWNSIDE STABILITY SEMANTIC CATALOG IMPLEMENTATION SESSION`
+
+Status:
+`IMPLEMENTED_CODE_AND_STATIC_GUARDS_READY / LOCAL_PHP_LINT_PASS / LOCAL_C02_PURE_PHP_SMOKE_PASS / PHPUNIT_BLOCKED / ARTISAN_BLOCKED / OPERATOR_VALIDATION_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+Current C02 contract evidence:
+
+- R1/R2/C01 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C02 is a new semantic C-campaign catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06`, version `C02`, count `8`, hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`;
+- C02 design comes from current C01 runtime-derived drilldown buckets and uses only existing runtime-consumed grid axes;
+- C02 does not introduce `sector_code` or `sector_filter` as a persisted/grid axis; sector evidence is diagnostic-only until a real sector axis is designed and consumed safely by runtime;
+- C02 seed command fails closed unless persisted R1/R2/C01 snapshots exist with expected counts/hashes;
+- C02 IS calibration artifact definition includes C01 immutability proof and remains no-OOS/no-promotion;
+- C02 static/unit guards were added, but PHPUnit execution is blocked in this authoring environment by missing PHP extensions.
+
+Local validation actually performed:
+
+```text
+php lint C02/modified Watchlist PHP files = PASS
+C02 pure PHP catalog/factory smoke = PASS / exit code 0
+```
+
+Blocked local validation:
+
+```text
+PHPUnit = BLOCKED / missing dom, mbstring, xml, xmlwriter
+Artisan = BLOCKED / ENV_UNSUPPORTED_PHP_VERSION / PHP 8.4.16 outside supported project baseline
+```
+
+No C02 runtime PASS, seed PASS, calibration PASS, replay PASS, or OOS proof is claimed until operator output is supplied.
+
+Priority contract status update:
+
+- `WL-CONTRACT-007`: DONE for C02 immutable catalog identity implementation/static scope, not `LOCKED`;
+- `WL-CONTRACT-008`: DONE for C02 explainability/design traceability implementation/static scope, not `LOCKED`;
+- `WL-CONTRACT-009`: DONE for C02 IS-only artifact definition/static no-OOS boundary, runtime proof still operator-required;
+- `WL-CONTRACT-010`: PARTIAL for C02 reproducibility until two-run operator artifact hashes are supplied;
+- `WL-CONTRACT-011`: PARTIAL; risk/setup/scoring quality remains unproven until C02 IS calibration output exists;
+- `WL-CONTRACT-015`: `PARTIAL / NOT_READY`.
+
+No contract is `LOCKED`. C02 OOS-proof eligibility is `NOT_ELIGIBLE_FOR_OOS_PROOF — C02 IS calibration has not been run and no valid C02 IS binding exists`. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
+
+## PRIOR SESSION — C01 DIAGNOSTIC PAYLOAD EXPANSION
+
+Session:
 `WATCHLIST - C01 IS FAILURE DRILLDOWN PAYLOAD EXPANSION SESSION`
 
 Status:
@@ -93,10 +138,10 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-004 | INDICATOR VALIDITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-005 | ELIGIBILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-006 | SCORING DETERMINISM CONTRACT | `PARTIAL` |
-| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for C01 immutable traceability and failed-IS evidence scope / NOT LOCKED` |
-| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for C01 drilldown payload expansion runtime scope / NEXT_CATALOG_NOT_DESIGNED / NOT LOCKED` |
-| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for C01 no-OOS IS runtime boundary scope / NOT LOCKED` |
-| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `DONE for C01 failed-quality two-run proof / QUALITY FAIL / NOT LOCKED` |
+| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for C02 immutable catalog identity implementation/static scope / OPERATOR_VALIDATION_REQUIRED / NOT LOCKED` |
+| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for C02 design traceability/static scope / OPERATOR_VALIDATION_REQUIRED / NOT LOCKED` |
+| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for C02 IS-only artifact definition/static no-OOS boundary / OPERATOR_VALIDATION_REQUIRED / NOT LOCKED` |
+| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `PARTIAL for C02 until two-run operator artifact hashes are supplied / NOT LOCKED` |
 | WL-CONTRACT-011 | RISK GATE CONTRACT | `PARTIAL` |
 | WL-CONTRACT-012 | PORTFOLIO AWARENESS BOUNDARY | `NOT_STARTED` |
 | WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for C01 drilldown expanded artifact runtime scope / NOT LOCKED` |

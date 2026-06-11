@@ -515,11 +515,11 @@ row_hash
 rationale
 ```
 
-The canonical row identity is `(policy_code, catalog_code, row_code)`. A seed rerun with an identical payload is idempotent. The same identity with a different payload fails closed. R1 remains `WS_BT_GRID_BOOTSTRAP_2026_06` with count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`. R2 remains `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06` with count `12` and hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`. C01 is `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06` with version `C01`, count `8`, and code-owned hash `604ac98f6f193a4c317d4f25582deada84682846`.
+The canonical row identity is `(policy_code, catalog_code, row_code)`. A seed rerun with an identical payload is idempotent. The same identity with a different payload fails closed. R1 remains `WS_BT_GRID_BOOTSTRAP_2026_06` with count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`. R2 remains `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06` with count `12` and hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`. C01 remains `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06` with version `C01`, count `8`, and code-owned hash `604ac98f6f193a4c317d4f25582deada84682846`. C02 is `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06` with version `C02`, count `8`, and code-owned hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`; it is derived from C01 diagnostic review and requires R1/R2/C01 immutability before seed/calibration.
 
 ### Curated entry-quality columns
 
-The official grid stores the runtime-consumed entry-quality fields for liquidity, volume, ATR band, ROC/breakout setup, score weights, and grouping quantiles. R2 and C01 catalogs are finite, curated, deterministic, and explicit. Random, Bayesian, latest-catalog fallback, active-catalog fallback, and post-result catalog mutation are forbidden.
+The official grid stores the runtime-consumed entry-quality fields for liquidity, volume, ATR band, ROC/breakout setup, score weights, and grouping quantiles. R2, C01, and C02 catalogs are finite, curated, deterministic, and explicit. Random, Bayesian, latest-catalog fallback, active-catalog fallback, unsupported sector-filter injection, and post-result catalog mutation are forbidden.
 
 ### Evaluation identity
 
@@ -540,7 +540,7 @@ Exact reruns are idempotent; conflicting payloads fail with `WS_BT_EVAL_IDENTITY
 
 ### Strict IS boundary
 
-The IS calibration command accepts only the exact IS window for immutable R2/C01 execution:
+The IS calibration command accepts only the exact IS window for immutable R2/C01/C02 execution:
 
 ```text
 2023-01-02 through 2025-05-21
@@ -556,7 +556,7 @@ The runtime may not call an OOS service/repository, write `watchlist_bt_oos_eval
 
 ### Fixed execution snapshot
 
-Every R2/C01 row uses exactly:
+Every R2/C01/C02 row uses exactly:
 
 ```text
 ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS
@@ -566,4 +566,4 @@ grouping.top_picks_target=5
 grouping.secondary_target=10
 ```
 
-R2/C01 success freezes a best-IS binding only when every canonical gate passes. R2/C01 failure creates no binding and never selects best-of-failed. C01 is not eligible for OOS proof until a separate IS runtime creates a valid frozen C01 binding.
+R2/C01/C02 success freezes a best-IS binding only when every canonical gate passes. R2/C01/C02 failure creates no binding and never selects best-of-failed. C01/C02 are not eligible for OOS proof until a separate IS runtime creates a valid frozen binding for that exact catalog.

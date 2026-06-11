@@ -74,6 +74,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             $r2Before = $catalogCode === WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE
                 ? $catalogSnapshot
                 : $this->paramGrid->catalogSnapshot(WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE);
+            $c01Before = [];
+            if (! empty($definition['requires_c01_catalog'])) {
+                $c01Before = $this->paramGrid->catalogSnapshot(WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE);
+            }
             $oosBefore = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CATALOG_INVALID'), $e->getMessage());
@@ -91,6 +95,11 @@ class WatchlistBacktestIsCalibrationExecutionService
             || (string) $r2Before['catalog_hash'] !== WatchlistBacktestR2ParamGridCatalog::hash()) {
             return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable R2 catalog count/hash is not intact.');
         }
+        if (! empty($definition['requires_c01_catalog'])
+            && ((int) ($c01Before['catalog_count'] ?? 0) !== WatchlistBacktestC01ParamGridCatalog::CATALOG_COUNT
+                || (string) ($c01Before['catalog_hash'] ?? '') !== WatchlistBacktestC01ParamGridCatalog::hash())) {
+            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable C01 catalog count/hash is not intact before C02 calibration.');
+        }
 
         $executedAt = $toDate.'T23:59:59+07:00';
         try {
@@ -101,6 +110,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             ]);
             $r1After = $this->paramGrid->catalogSnapshot(WatchlistBacktestParamGridCatalog::CATALOG_CODE);
             $r2After = $this->paramGrid->catalogSnapshot(WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE);
+            $c01After = [];
+            if (! empty($definition['requires_c01_catalog'])) {
+                $c01After = $this->paramGrid->catalogSnapshot(WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE);
+            }
             $oosAfter = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CALIBRATION_FAILED'), $e->getMessage());
@@ -111,6 +124,9 @@ class WatchlistBacktestIsCalibrationExecutionService
         }
         if ($r2Before !== $r2After) {
             return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'R2 snapshot changed during IS-only calibration.');
+        }
+        if (! empty($definition['requires_c01_catalog']) && $c01Before !== $c01After) {
+            return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'C01 snapshot changed during C02 IS-only calibration.');
         }
         if ($oosBefore !== $oosAfter) {
             return $this->blocked('WS_BT_R2_OOS_PERSISTENCE_MUTATION', 'watchlist_bt_oos_eval_ws changed during IS-only calibration.');
@@ -128,6 +144,8 @@ class WatchlistBacktestIsCalibrationExecutionService
             $r1After,
             $r2Before,
             $r2After,
+            $c01Before,
+            $c01After,
             $catalogSnapshot,
             $oosBefore,
             $oosAfter
@@ -208,6 +226,8 @@ class WatchlistBacktestIsCalibrationExecutionService
         array $r1After,
         array $r2Before,
         array $r2After,
+        array $c01Before,
+        array $c01After,
         array $catalogSnapshot,
         array $oosBefore,
         array $oosAfter
@@ -367,6 +387,12 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'after' => $r2After,
                 'equal' => $r2Before === $r2After,
             ],
+            'c01_immutability_proof' => [
+                'required' => ! empty($definition['requires_c01_catalog']),
+                'before' => $c01Before,
+                'after' => $c01After,
+                'equal' => $c01Before === $c01After,
+            ],
             'no_oos_read_proof' => [
                 'strict_is_boundary_all_evaluations' => $strictBoundaryAll,
                 'max_requested_market_data_date' => $maxRequestedDate,
@@ -386,6 +412,7 @@ class WatchlistBacktestIsCalibrationExecutionService
             'catalog_hash_matches' => $catalogSnapshot['catalog_hash'] === $definition['catalog_hash'],
             'r1_immutable' => $r1Before === $r1After,
             'r2_immutable' => $r2Before === $r2After,
+            'c01_immutable' => empty($definition['requires_c01_catalog']) || $c01Before === $c01After,
             'no_oos_table_mutation' => $oosBefore === $oosAfter,
             'no_oos_market_data_read' => ($maxRequestedDate === null || strcmp($maxRequestedDate, self::R2_MAX_IS_DATE) <= 0)
                 && $strictBoundaryAll,
@@ -486,6 +513,7 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'artifact_version' => self::ARTIFACT_VERSION,
                 'artifact_scope' => 'WEEKLY_SWING_R2_ENTRY_QUALITY_IS_ONLY',
                 'failed_status' => 'R2_GRID_FAILED_IS_QUALITY',
+                'requires_c01_catalog' => false,
             ],
             WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE => [
                 'catalog_code' => WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE,
@@ -504,6 +532,26 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'artifact_version' => 'WATCHLIST_C01_IS_CALIBRATION_V1',
                 'artifact_scope' => 'WEEKLY_SWING_DOWNSIDE_STABILITY_C01_IS_ONLY',
                 'failed_status' => 'C01_GRID_FAILED_IS_QUALITY',
+                'requires_c01_catalog' => false,
+            ],
+            WatchlistBacktestC02ParamGridCatalog::CATALOG_CODE => [
+                'catalog_code' => WatchlistBacktestC02ParamGridCatalog::CATALOG_CODE,
+                'catalog_version' => WatchlistBacktestC02ParamGridCatalog::CATALOG_VERSION,
+                'catalog_count' => WatchlistBacktestC02ParamGridCatalog::CATALOG_COUNT,
+                'catalog_hash' => WatchlistBacktestC02ParamGridCatalog::hash(),
+                'parameter_axes' => WatchlistBacktestC02ParamGridCatalog::parameterAxes(),
+                'axis_rationale' => WatchlistBacktestC02ParamGridCatalog::axisRationale(),
+                'provenance' => WatchlistBacktestC02ParamGridCatalog::provenance(),
+                'manifest_rows' => WatchlistBacktestC02ParamGridCatalog::manifestRows(),
+                'reference_row_code' => WatchlistBacktestC02ParamGridCatalog::REFERENCE_ROW_CODE,
+                'fixed_stop_atr_mult' => WatchlistBacktestC02ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC02ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC02ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC02ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'artifact_version' => 'WATCHLIST_C02_IS_CALIBRATION_V1',
+                'artifact_scope' => 'WEEKLY_SWING_DOWNSIDE_STABILITY_C02_IS_ONLY',
+                'failed_status' => 'C02_GRID_FAILED_IS_QUALITY',
+                'requires_c01_catalog' => true,
             ],
         ];
 

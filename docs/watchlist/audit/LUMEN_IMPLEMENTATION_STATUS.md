@@ -15,6 +15,63 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C02 DOWNSIDE STABILITY SEMANTIC CATALOG IMPLEMENTATION SESSION`
+
+Status:
+`IMPLEMENTED_CODE_AND_STATIC_GUARDS_READY / LOCAL_PHP_LINT_PASS / LOCAL_C02_PURE_PHP_SMOKE_PASS / PHPUNIT_BLOCKED / ARTISAN_BLOCKED / OPERATOR_VALIDATION_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+Current C02 implementation evidence in this workspace:
+
+- source ZIP/workspace evidence was read; C02 was derived from current C01 drilldown evidence, not from a prior-session assumption;
+- R1 remains immutable historical evidence: `WS_BT_GRID_BOOTSTRAP_2026_06`, version `R1`, count `24`, hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`;
+- R2 remains immutable historical evidence: `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06`, version `R2`, count `12`, hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`;
+- C01 remains immutable failed-IS evidence: `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, hash `604ac98f6f193a4c317d4f25582deada84682846`;
+- C02 is now implemented as `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06`, version `C02`, count `8`, hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`;
+- C02 uses C01 runtime drilldown review focus: anti-chase / moderate-liquidity-volume / near-breakout / sector-aware stability;
+- C02 does not add unsupported sector filters; sector evidence is retained as diagnostic-only existing-axis proxy with `sector_filter_used=false`;
+- C02 seed command requires R1/R2/C01 persisted catalog snapshots to be intact before seeding and emits `r1_immutable=1`, `r2_immutable=1`, `c01_immutable=1` only after snapshot equality;
+- C02 IS calibration definition requires C01 immutability proof and remains IS-only with no OOS proof or promotion path;
+- new C02 unit/static tests were added for catalog determinism, row/parameter hashes, C01 reference-row copy, factory mapping, explicit runtime-axis coverage, no R-series naming, no unsupported sector filter, and locked file hash preservation.
+
+Local validation actually performed in this authoring environment:
+
+```text
+php -l C02 PHP files and modified Watchlist PHP files = PASS
+php /tmp/c02_smoke.php = PASS / exit code 0 / catalog_hash=7287c438e15bd03d6beb4796e4d5159ecd8ed59a / factory_rows=8
+```
+
+Local validation blocked in this authoring environment:
+
+```text
+php vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestC02" = BLOCKED / exit code 1 / missing extensions: dom, mbstring, xml, xmlwriter
+php artisan list = BLOCKED / exit code 2 / ENV_UNSUPPORTED_PHP_VERSION / current PHP 8.4.16, project requires PHP >= 7.3 and < 8.4
+```
+
+No PHPUnit, Artisan seed, migration, calibration, backfill, replay, diagnostic runtime, OOS proof, or database write proof is claimed for C02 in this authoring environment. Runtime PASS remains `OPERATOR_VALIDATION_REQUIRED` until operator output is provided.
+
+C02 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE_FOR_OOS_PROOF — C02 IS calibration has not been run and no valid C02 IS binding exists
+```
+
+Promotion eligibility:
+
+```text
+NOT_ELIGIBLE — OOS proof missing
+```
+
+Required next validation boundary:
+
+- run C02 PHPUnit/static tests in the supported PHP baseline;
+- seed C02 and confirm R1/R2/C01 immutable markers;
+- run C02 IS calibration twice on `2023-01-02..2025-05-21`;
+- compare C02 artifact hashes;
+- do not run/read OOS unless C02 produces a valid IS binding and an explicit OOS-proof session is opened.
+
+## PRIOR SESSION — C01 DIAGNOSTIC PAYLOAD EXPANSION
+
+Session:
 `WATCHLIST - C01 IS FAILURE DRILLDOWN PAYLOAD EXPANSION SESSION`
 
 Status:
