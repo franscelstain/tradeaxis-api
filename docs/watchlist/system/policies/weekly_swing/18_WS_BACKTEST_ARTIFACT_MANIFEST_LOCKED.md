@@ -126,7 +126,7 @@ A JSON OOS proof export is evidence transport, not a new table or a replacement 
 
 Read-only operator verification may use `db/BACKTEST_OOS_RUNTIME_VERIFY.sql`; this is a support query, not a persisted artifact.
 
-## 9) Official R2 IS Calibration Evidence Transport
+## 9) Official R2/C01 IS Calibration Evidence Transport
 
 The deterministic JSON produced by `watchlist:backtest-is-calibrate` is an official IS-calibration evidence transport. It is not a new database table and does not replace `watchlist_bt_param_grid` or `watchlist_bt_eval`.
 
@@ -145,9 +145,10 @@ gate_summary
 diagnostic_summary
 persistence_manifest
 r1_immutability_proof
+r2_immutability_proof
 no_oos_read_proof
 validation
 ```
 
 
-The artifact must record `production_ready=false`, `oos_executed=false`, and `paramset_promoted=false`. A filename is operator-selected evidence transport, not catalog identity. The normative reference note is `_refs/WS_R2_ENTRY_QUALITY_CALIBRATION_NOTE.md`.
+The artifact must record `production_ready=false`, `oos_executed=false`, and `paramset_promoted=false`. A filename is operator-selected evidence transport, not catalog identity. The normative reference notes are `_refs/WS_R2_ENTRY_QUALITY_CALIBRATION_NOTE.md` for R2 and `_refs/WS_DOWNSIDE_STABILITY_C01_CALIBRATION_NOTE.md` for C01.

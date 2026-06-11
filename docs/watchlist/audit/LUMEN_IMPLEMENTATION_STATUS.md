@@ -15,10 +15,25 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
+`WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 SEED AND IS TWO-RUN VALIDATION SESSION`
 
 Status:
-`DONE for R2 entry-quality calibration execution infrastructure / LOCAL_R2_IS_CALIBRATION_EXECUTED / R2_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+`DONE for downside/stability C01 calibration execution infrastructure / LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+Current C01 calibration execution evidence:
+
+- R2 runtime artifacts `storage/app/watchlist/backtest/r2-is-run-1.json` and `storage/app/watchlist/backtest/r2-is-run-2.json` are present and file SHA1 identical: `124d41bfe9635de633d38dd959336b5a8d1b146f`;
+- both R2 artifacts retain canonical artifact hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`, `is_valid_param_count=0`, `is_failed_param_count=12`, and failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- requested R1 storage filenames `r1-final-is-failed.json` and `r1-final-is-evaluation-matrix.csv` are absent in this workspace; available R1 comparison is limited to `storage/app/watchlist/backtest/oos-is-evaluation-matrix-execution-corrected.csv` and tracker/reference notes;
+- R2 failure diagnostic confirms all 12 rows passed trade-count and coverage gates but failed downside, robust-return, and stability gates; no runtime/source diagnostics, no OOS leakage, no publication/calendar failure, and no price-execution drift are supported by the artifact;
+- C01 reference note is updated at `docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C01_CALIBRATION_NOTE.md`;
+- code-owned C01 catalog identity is `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, hash `604ac98f6f193a4c317d4f25582deada84682846`;
+- C01 is implemented in PHP with explicit catalog class, repository allowlist, paramset factory projection, seed command, database seeder, and IS artifact labels;
+- C01 seed command executed locally with `status=PASS`, `inserted_count=8`, `r1_immutable=1`, `r2_immutable=1`, `oos_executed=0`, and exit code `0`;
+- C01 IS calibration executed twice on exact IS `2023-01-02..2025-05-21`; both runs returned domain-valid exit code `1` with `status=C01_GRID_FAILED_IS_QUALITY` and artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
+- C01 result is `is_valid_param_count=0`, `is_failed_param_count=8`, failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, and `WS_BT_EVAL_STABILITY_FAIL`;
+- C01 was not promoted and is not production-ready;
+- OOS was not run or read in this session.
 
 Historical baselines remain preserved and are not downgraded:
 
@@ -28,7 +43,7 @@ Historical baselines remain preserved and are not downgraded:
 - `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`;
 - final R1 operator validation remains ParamGrid `4/636`, MetricsService `15/113`, PublishedPrice `18/177`, OOS `24/186`, Backtest `87/1430`, and full Watchlist `179/2318`.
 
-Final R2 supported-operator evidence:
+Preserved final R2 supported-operator evidence:
 
 - migration `2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality` ran successfully in batch `10`;
 - post-fix PHPUnit passed: R2 factory `12/106`, R2 static guard `5/53`, OOS persistence `3/13`, R2 suite `26/530`, OOS suite `24/228`, Backtest suite `117/2442`, full Watchlist `209/3330`;
@@ -89,20 +104,20 @@ Required next-session boundary:
 
 | Area | Status | Notes |
 |---|---|---|
-| Current status | `LOCAL_R2_IS_CALIBRATION_EXECUTED / R2_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY` | R2 implementation and supported IS execution are complete; catalog quality failed all canonical IS gates. |
-| Main feature code | `DONE for R2 entry-quality execution infrastructure` | Explicit R2 catalog, catalog-aware persistence, strict IS-only orchestration, and deterministic evidence export are implemented and exercised. |
+| Current status | `DONE for downside/stability C01 calibration execution infrastructure / LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY` | C01 seed and two-run IS executed; infrastructure is deterministic, but all C01 rows failed canonical IS quality gates. |
+| Main feature code | `DONE for C01 implementation and IS execution infrastructure` | Explicit C01 catalog, repository allowlist, paramset projection, seed command/seeder, and IS artifact labels are implemented without mutating R1/R2. |
 | Runtime API | `NOT_STARTED` | No API endpoint created, by scope. |
-| Artisan command surface | `IMPLEMENTED / OPERATOR EXECUTED` | `watchlist:backtest-r2-param-grid-seed` ran twice idempotently; `watchlist:backtest-is-calibrate` ran twice on exact IS. |
+| Artisan command surface | `C01 SEED AND IS COMMANDS EXECUTED` | `watchlist:backtest-c01-param-grid-seed` passed; `watchlist:backtest-is-calibrate` ran twice for C01 and returned failed-quality evidence. |
 | Database schema | `MIGRATION APPLIED` | Catalog identity, R2 fields, and catalog-aware eval identity are deployed; R1/R2 coexistence is proven. |
-| Backtest engine | `R2 STRICT-IS PATH EXECUTED` | Hard IS boundary and final HOLD=5 entry censoring are proven; max requested market-data date stayed at `2025-05-21`. |
+| Backtest engine | `R2 STRICT-IS PATH EXECUTED; C01 STRICT-IS PATH EXECUTED` | Hard IS boundary stayed `2023-01-02..2025-05-21`; C01 max requested date stayed `2025-05-21`. |
 | Recommendation engine | `DONE for Phase 5 unit/static scope` | Recommendation remains derived only from PLAN; calibration/OOS does not mutate recommendation membership. |
 | PLAN grouping engine | `DONE for Phase 4 scope + deterministic BT quantile support` | Official grid quantiles are deterministic and runtime-tested. |
-| Scoring engine | `R2 ENTRY-QUALITY AXES EXECUTED / QUALITY FAIL` | Selected axes are runtime-consumed, but all 12 rows failed canonical IS quality gates. |
+| Scoring engine | `R2 ENTRY-QUALITY AXES EXECUTED / QUALITY FAIL; C01 EXECUTED / QUALITY FAIL` | C01 reuses registry-owned consumed axes, but 0 of 8 rows passed canonical IS gates. |
 | Market-data consumer read model | `DONE for published-price runtime scope + R2 STRICT-IS READ PROOF` | R2 did not read after the explicit IS boundary and did not invoke OOS services/repositories. |
 | Candidate universe / liquidity-risk gates | `R2 MAPPING AND INVARIANTS EXECUTED` | Runtime consumers and cross-field guards are verified; no valid R2 candidate survived all gates. |
 | Test coverage | `PASS` | R2 regression suites and full Watchlist suite pass: full Watchlist `209 tests / 3330 assertions`. |
-| Artifact/log output | `R2 IS ARTIFACT PRODUCED` | Two IS artifacts produced identical hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`; best binding is absent by design. |
-| Production readiness | `NOT_READY` | R2 has no valid IS parameter; OOS proof is not eligible and promotion remains impossible. |
+| Artifact/log output | `R2 IS ARTIFACT PRODUCED; C01 IS ARTIFACT PRODUCED` | Two R2 IS artifacts produced identical hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`; two C01 IS artifacts produced identical hash `c8505ce5a9045629234a685984d9138b3990c775`. |
+| Production readiness | `NOT_READY` | R2 and C01 have no valid IS parameter; OOS proof and promotion remain impossible. |
 
 ## Existing Docs Discovered
 
@@ -1512,3 +1527,158 @@ WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
 
 Next session:
 `WATCHLIST — WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION`.
+
+## Downside/Stability C01 Implementation Unit-Static Result - 2026-06-11
+
+Session:
+`WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 IMPLEMENTATION UNIT-STATIC SESSION`
+
+Status:
+`DONE for downside/stability C01 implementation unit-static scope / OPERATOR_C01_IS_RERUN_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+### Evidence
+
+```text
+C01 catalog code: WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
+C01 catalog version: C01
+C01 catalog count: 8
+C01 catalog hash: 604ac98f6f193a4c317d4f25582deada84682846
+C01 seed command: watchlist:backtest-c01-param-grid-seed
+C01 IS artifact version: WATCHLIST_C01_IS_CALIBRATION_V1
+C01 IS artifact scope: WEEKLY_SWING_DOWNSIDE_STABILITY_C01_IS_ONLY
+C01 runtime status: C01_GRID_FAILED_IS_QUALITY
+OOS status: OOS_NOT_READ
+PHPUnit C01: 12 tests / 381 assertions / exit 0
+PHPUnit Backtest filter: 130 tests / 2829 assertions / exit 0
+PHPUnit full Watchlist: 222 tests / 3717 assertions / exit 0
+MarketData required filters: 7/37, 4/16, 3/41 / exit 0
+```
+
+### Implemented files
+
+- `app/Application/Watchlist/Services/WatchlistBacktestC01ParamGridCatalog.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestParamGridParamsetFactory.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestIsCalibrationExecutionService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestIsCalibrationService.php`
+- `app/Infrastructure/Persistence/Watchlist/WatchlistBacktestParamGridRepository.php`
+- `app/Console/Commands/Watchlist/SeedBacktestC01ParamGridCommand.php`
+- `database/seeders/Watchlist/WatchlistBacktestC01ParamGridSeeder.php`
+- `tests/Unit/Watchlist/WatchlistBacktestC01ParamGridCatalogTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestC01ParamGridParamsetFactoryTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestC01StaticGuardTest.php`
+
+### Boundary
+
+C01 implementation initially did not run seed, migration, IS calibration, OOS proof, promotion, portfolio, broker, order, or production-trading flows. The later C01 seed/IS validation result below supersedes the runtime `NOT_RUN` portion of this unit-static section. Promotion remains `NOT_ELIGIBLE - OOS proof missing`.
+
+## Downside/Stability C01 Diagnostic-Design Result - 2026-06-11
+
+Session:
+`WATCHLIST - WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION`
+
+Status:
+`DONE for downside/stability C01 diagnostic-design scope / C01_IMPLEMENTATION_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+### Evidence read
+
+```text
+r2-is-run-1.json present=true
+r2-is-run-2.json present=true
+r2 file SHA1 equality=true
+r2 file SHA1=124d41bfe9635de633d38dd959336b5a8d1b146f
+r2 canonical artifact hash=8a8521fc9a3726d90f2b77506532a1e5392def8b
+r1-final-is-failed.json present=false
+r1-final-is-evaluation-matrix.csv present=false
+available R1 comparison artifact=oos-is-evaluation-matrix-execution-corrected.csv
+```
+
+### Diagnostic conclusion
+
+- R2 infrastructure/runtime remains PASS and R2 strategy/catalog quality remains FAIL.
+- All 12 R2 rows passed minimum trade count and coverage, then failed robust-return, downside, and stability gates.
+- The R2 artifact contains no runtime/source diagnostics and preserves strict IS boundary `max_requested_market_data_date=2025-05-21`.
+- The failure is not an OOS acceptance failure and OOS remained unread.
+- Available R1 corrected IS matrix supports low/ultra-low ATR as a relevant downside axis, but it also shows stability/robust-return remain unsolved; therefore no best-of-failed parameter is selected.
+
+### C01 design result
+
+Reference note:
+`docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C01_CALIBRATION_NOTE.md`
+
+```text
+catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
+catalog_version=C01
+catalog_count=8
+catalog_hash=b746748945df595171b45d44c7c3fbbaa199a9f4
+implementation_status=C01_IMPLEMENTATION_REQUIRED
+runtime_status=NOT_RUN
+oos_proof_eligibility=NOT_DETERMINED
+promotion_eligibility=NOT_ELIGIBLE - OOS proof missing
+production_ready=false
+```
+
+The design is finite, curated, deterministic, and uses only registry-owned runtime-consumed axes. It keeps execution semantics fixed:
+
+```text
+ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS
+```
+
+### Files changed
+
+- created `docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C01_CALIBRATION_NOTE.md`;
+- updated `docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md`;
+- updated `docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md`.
+
+### Validation boundary
+
+No PHP code, migration, seeder, database rows, or runtime command was changed in this diagnostic-design scope. C01 IS calibration is not executable until a later implementation session adds the catalog to code and persistence allowlists. No PHPUnit or Artisan runtime PASS is claimed for C01.
+
+## Downside/Stability C01 Seed And IS Two-Run Result - 2026-06-11
+
+Session:
+`WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 SEED AND IS TWO-RUN VALIDATION SESSION`
+
+Status:
+`DONE for downside/stability C01 calibration execution infrastructure / LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+### Evidence
+
+```text
+C01 seed status=PASS
+C01 seed exit_code=0
+C01 inserted_count=8
+C01 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
+C01 catalog_version=C01
+C01 catalog_count=8
+C01 catalog_hash=604ac98f6f193a4c317d4f25582deada84682846
+R1 immutable=PASS
+R2 immutable=PASS
+C01 IS run 1 status=C01_GRID_FAILED_IS_QUALITY
+C01 IS run 2 status=C01_GRID_FAILED_IS_QUALITY
+C01 IS command exit_codes=1,1
+C01 IS artifact_hash=c8505ce5a9045629234a685984d9138b3990c775
+C01 IS file SHA1 run 1=04F6C664A0C9006C16542A8380034A0A633041DC
+C01 IS file SHA1 run 2=04F6C664A0C9006C16542A8380034A0A633041DC
+C01 valid IS rows=0
+C01 failed IS rows=8
+C01 failure classes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+max_requested_market_data_date=2025-05-21
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+production_ready=0
+```
+
+### Checklist
+
+| Item | Status | Notes |
+|---|---|---|
+| C01 seed | `PASS` | Inserted 8 rows and preserved R1/R2. |
+| C01 two-run determinism | `PASS` | File SHA1, artifact hash, catalog hash, date hash, evaluations, eval IDs, and none-binding are equal. |
+| C01 quality gates | `FAIL` | All 8 rows failed downside, robust-return, and stability gates. |
+| Best IS binding | `NOT_CREATED` | No valid C01 IS parameter; no best-of-failed binding. |
+| OOS proof | `NOT_RUN` | OOS was not read, invoked, or written. |
+| Promotion | `NOT_ELIGIBLE` | OOS proof missing and C01 has no valid IS parameter. |
+
+No next catalog was created in this session. Any further catalog design must be a separate session.

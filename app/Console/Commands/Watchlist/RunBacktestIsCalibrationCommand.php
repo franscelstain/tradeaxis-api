@@ -8,13 +8,13 @@ use Illuminate\Console\Command;
 class RunBacktestIsCalibrationCommand extends Command
 {
     protected $signature = 'watchlist:backtest-is-calibrate
-        {--catalog-code= : Explicit immutable R2 catalog code}
+        {--catalog-code= : Explicit immutable IS calibration catalog code}
         {--from= : Explicit historical IS start date in YYYY-MM-DD}
         {--to= : Explicit historical IS end date in YYYY-MM-DD}
         {--output= : Explicit JSON evidence output path}
         {--overwrite : Explicitly replace an existing output file}';
 
-    protected $description = 'Run deterministic Weekly Swing R2 in-sample-only calibration without reading or writing OOS evidence.';
+    protected $description = 'Run deterministic Weekly Swing in-sample-only calibration without reading or writing OOS evidence.';
 
     public function handle(): int
     {
@@ -38,7 +38,7 @@ class RunBacktestIsCalibrationCommand extends Command
                 strcmp($toDate, WatchlistBacktestIsCalibrationExecutionService::R2_MAX_IS_DATE) > 0
                     ? 'WS_BT_R2_IS_BOUNDARY_VIOLATION'
                     : 'WS_BT_R2_IS_WINDOW_MISMATCH',
-                'R2 requires the exact IS window '.WatchlistBacktestIsCalibrationExecutionService::R2_MIN_IS_DATE
+                'IS calibration requires the exact window '.WatchlistBacktestIsCalibrationExecutionService::R2_MIN_IS_DATE
                     .' through '.WatchlistBacktestIsCalibrationExecutionService::R2_MAX_IS_DATE.'.'
             );
         }

@@ -14,10 +14,10 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
+`WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 SEED AND IS TWO-RUN VALIDATION SESSION`
 
 Status:
-`DONE for R2 implementation unit-static scope / OPERATOR_R2_IS_RERUN_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+`DONE for downside/stability C01 calibration execution infrastructure / LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
 
 Historical baselines remain valid and are not downgraded:
 
@@ -26,7 +26,19 @@ Historical baselines remain valid and are not downgraded:
 - `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`;
 - `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`.
 
-Current R2 contract evidence:
+Current C01 calibration execution contract evidence:
+
+- R1/R2 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- R2 artifacts in workspace prove the two-run failed-IS result remains deterministic by file SHA1 equality and canonical artifact hash `8a8521fc9a3726d90f2b77506532a1e5392def8b`;
+- R2 failure is diagnosed as downside, robust-return, and stability failure after successful coverage/trade-count gates, not as OOS failure or runtime/source failure;
+- C01 uses semantic campaign identity `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, code-owned hash `604ac98f6f193a4c317d4f25582deada84682846`;
+- C01 uses only registry-owned `bt_target=true` axes already proven runtime-consumed by R2 paths;
+- C01 keeps fixed execution semantics `ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS`;
+- C01 is implemented in code, unit/static validated, seeded locally, and run twice on exact IS;
+- C01 runtime quality failed with `is_valid_param_count=0`, `is_failed_param_count=8`, and failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- no file-16 gate, file-17 OOS proof rule, PLAN/RECOMMENDATION/CONFIRM behavior, or promotion rule changed.
+
+Preserved R2 contract evidence:
 
 - immutable R1 identity remains code/count/hash exact;
 - R2 has a distinct explicit code/version/count/hash and one semantics-control row;
@@ -37,21 +49,21 @@ Current R2 contract evidence:
 - no OOS service/repository call, no OOS command option, and no OOS write path exist in the R2 orchestrator;
 - execution model remains `ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS`;
 - files 16 and 17 remain unchanged;
-- runtime/test proof is not claimed because the packaging environment lacks PHPUnit-required extensions and a PDO database driver.
+- C01 runtime proof is not claimed; R2 supported-operator proof remains preserved as historical evidence below.
 
 Priority contract status:
 
-- `WL-CONTRACT-006`: PARTIAL; R2 deterministic entry-quality implementation exists, runtime quality is unproven;
-- `WL-CONTRACT-007`: DONE for R2 catalog/paramset traceability implementation scope, not `LOCKED`;
-- `WL-CONTRACT-008`: DONE for R2 reason-coded implementation scope, not `LOCKED`;
-- `WL-CONTRACT-009`: DONE for strict IS/no-OOS implementation scope, supported runtime proof required;
-- `WL-CONTRACT-010`: PARTIAL; two-run deterministic runtime proof required;
-- `WL-CONTRACT-011`: PARTIAL; fixed execution semantics implemented, R2 quality unproven;
-- `WL-CONTRACT-013`: DONE for R2 evidence schema/export implementation scope, runtime artifact absent;
-- `WL-CONTRACT-014`: DONE for R2 docs synchronization scope;
+- `WL-CONTRACT-006`: PARTIAL; R2 runtime quality failed and C01 runtime quality also failed canonical IS gates;
+- `WL-CONTRACT-007`: DONE for C01 implementation unit-static traceability scope, not `LOCKED`;
+- `WL-CONTRACT-008`: DONE for C01 failure diagnostic/design explainability plus unit/static implementation scope, not `LOCKED`;
+- `WL-CONTRACT-009`: DONE for no-OOS implementation/runtime boundary scope; C01 stayed within IS;
+- `WL-CONTRACT-010`: DONE for C01 failed-quality two-run deterministic runtime proof; not `LOCKED` because quality failed;
+- `WL-CONTRACT-011`: PARTIAL; fixed execution semantics are preserved, but C01 quality failed;
+- `WL-CONTRACT-013`: DONE for C01 reference-note and runtime artifact transport scope;
+- `WL-CONTRACT-014`: DONE for C01 implementation docs synchronization scope;
 - `WL-CONTRACT-015`: `PARTIAL / NOT_READY`.
 
-No contract is `LOCKED`. OOS-proof eligibility is not determined until the real R2 IS result exists. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
+No contract is `LOCKED`. C01 OOS-proof eligibility is `NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter`. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
 
 ## Status Rules
 
@@ -76,14 +88,14 @@ No contract may move to `LOCKED` only because documentation exists.
 | WL-CONTRACT-004 | INDICATOR VALIDITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-005 | ELIGIBILITY CONTRACT | `PARTIAL` |
 | WL-CONTRACT-006 | SCORING DETERMINISM CONTRACT | `PARTIAL` |
-| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for R2 implementation scope / RUNTIME PROOF REQUIRED / NOT LOCKED` |
-| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for R2 reason-coded implementation scope / NOT LOCKED` |
-| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for R2 strict-IS implementation scope / RUNTIME PROOF REQUIRED / NOT LOCKED` |
-| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `PARTIAL / R2 TWO-RUN PROOF REQUIRED / NOT LOCKED` |
+| WL-CONTRACT-007 | PARAMSET TRACEABILITY CONTRACT | `DONE for C01 implementation unit-static traceability scope / RUNTIME PROOF NOT RUN / NOT LOCKED` |
+| WL-CONTRACT-008 | SIGNAL EXPLAINABILITY CONTRACT | `DONE for C01 failure diagnostic/design plus unit-static implementation scope / NOT LOCKED` |
+| WL-CONTRACT-009 | BACKTEST NO-LOOKAHEAD CONTRACT | `DONE for C01 no-OOS IS runtime boundary scope / NOT LOCKED` |
+| WL-CONTRACT-010 | BACKTEST REPRODUCIBILITY CONTRACT | `DONE for C01 failed-quality two-run proof / QUALITY FAIL / NOT LOCKED` |
 | WL-CONTRACT-011 | RISK GATE CONTRACT | `PARTIAL` |
 | WL-CONTRACT-012 | PORTFOLIO AWARENESS BOUNDARY | `NOT_STARTED` |
-| WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for R2 artifact implementation scope / RUNTIME ARTIFACT MISSING / NOT LOCKED` |
-| WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for R2 implementation docs sync scope` |
+| WL-CONTRACT-013 | AUDIT ARTIFACT CONTRACT | `DONE for C01 failed-quality runtime artifact scope / NOT LOCKED` |
+| WL-CONTRACT-014 | DOCS SYNC CONTRACT | `DONE for C01 implementation docs sync scope` |
 | WL-CONTRACT-015 | PRODUCTION READINESS CONTRACT | `PARTIAL / NOT_READY` |
 | WL-CONTRACT-016 | PLAN GROUPING DETERMINISM CONTRACT | `PARTIAL` |
 | WL-CONTRACT-017 | PLAN GROUP BOUNDARY CONTRACT | `PARTIAL` |
@@ -1836,3 +1848,162 @@ WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
 ```
 
 The next session must not mutate R1/R2, must not run OOS, must not lower canonical gates, and must not create a best-of-failed binding.
+
+## Downside/Stability C01 Diagnostic-Design Contract Result - 2026-06-11
+
+Session:
+`WATCHLIST - WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION`
+
+Status:
+`DONE for downside/stability C01 diagnostic-design scope / C01_IMPLEMENTATION_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+### Evidence
+
+```text
+R2 artifacts present: r2-is-run-1.json, r2-is-run-2.json
+R2 artifact hash: 8a8521fc9a3726d90f2b77506532a1e5392def8b
+R2 valid IS rows: 0
+R2 failed IS rows: 12
+R2 failure classes: WS_BT_EVAL_DOWNSIDE_FAIL, WS_BT_EVAL_ROBUST_RETURN_FAIL, WS_BT_EVAL_STABILITY_FAIL
+R2 max requested market-data date: 2025-05-21
+R2 OOS service/repository invoked: false
+R2 OOS table unchanged: true
+C01 reference note: docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C01_CALIBRATION_NOTE.md
+C01 catalog design: WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06 / C01 / 8 / b746748945df595171b45d44c7c3fbbaa199a9f4
+```
+
+### Contract impact
+
+- `WL-CONTRACT-006`: R2 scoring/runtime execution is preserved as failed quality evidence; C01 scoring design is finite and traceable but not implemented or runtime-proven.
+- `WL-CONTRACT-007`: C01 design has stable semantic identity, count, catalog hash, row hashes, and parameter hashes, but no PHP catalog class, seeder, DB row, or runtime paramset projection exists yet.
+- `WL-CONTRACT-008`: R2 failure reason distribution is explicitly diagnosed; C01 row rationales are documented. Runtime explainability remains unproven for C01.
+- `WL-CONTRACT-009`: C01 design keeps strict IS-only scope and fixed execution semantics. No OOS runtime proof, service call, repository call, or table write occurred.
+- `WL-CONTRACT-010`: C01 has no two-run runtime proof. Future proof must show catalog hash equality, IS date hash equality, metric equality, binding equality or none equality, artifact hash equality, idempotence, OOS table unchanged, and max requested/read date `<= 2025-05-21`.
+- `WL-CONTRACT-011`: C01 keeps stop ATR, RR, fee, slippage, gap, price-band, and holding semantics fixed. Risk/ATR axes are design inputs only until implementation.
+- `WL-CONTRACT-013`: C01 reference note is a deterministic design artifact, not a runtime artifact.
+- `WL-CONTRACT-014`: implementation status, contract tracker, and C01 reference note are synchronized.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`; C01 IS runtime and all OOS proof are absent.
+
+No contract is promoted to `LOCKED`. No acceptance gate was weakened. No OOS data was used. No best-of-failed binding exists.
+
+Final eligibility:
+
+```text
+OOS_PROOF_ELIGIBILITY=NOT_DETERMINED
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE - OOS proof missing
+PRODUCTION_READY=false
+```
+
+Next required work:
+
+```text
+WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 IMPLEMENTATION UNIT-STATIC SESSION
+```
+
+## Downside/Stability C01 Implementation Unit-Static Contract Result - 2026-06-11
+
+Session:
+`WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 IMPLEMENTATION UNIT-STATIC SESSION`
+
+Status:
+`DONE for downside/stability C01 implementation unit-static scope / OPERATOR_C01_IS_RERUN_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+### Evidence
+
+```text
+C01 catalog code: WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
+C01 catalog version: C01
+C01 catalog count: 8
+C01 catalog hash: 604ac98f6f193a4c317d4f25582deada84682846
+C01 seed command: watchlist:backtest-c01-param-grid-seed
+C01 IS artifact version: WATCHLIST_C01_IS_CALIBRATION_V1
+C01 IS artifact scope: WEEKLY_SWING_DOWNSIDE_STABILITY_C01_IS_ONLY
+C01 runtime status: C01_GRID_FAILED_IS_QUALITY (supersedes initial unit-static NOT_RUN status)
+OOS status: OOS_NOT_READ
+PHPUnit C01: 12 tests / 381 assertions / exit 0
+PHPUnit Backtest filter: 130 tests / 2829 assertions / exit 0
+PHPUnit full Watchlist: 222 tests / 3717 assertions / exit 0
+MarketData required filters: 7/37, 4/16, 3/41 / exit 0
+```
+
+### Contract impact
+
+- `WL-CONTRACT-006`: C01 scoring axes are implemented and projected; later runtime result below proves quality failed.
+- `WL-CONTRACT-007`: C01 has stable semantic identity, count, catalog hash, row hashes, parameter hashes, repository allowlist, and factory projection.
+- `WL-CONTRACT-008`: C01 row rationale and R2 diagnostic remain documented; later runtime result below records real IS execution.
+- `WL-CONTRACT-009`: C01 keeps strict IS-only command boundary and does not introduce OOS service/repository/table writes.
+- `WL-CONTRACT-010`: Superseded by the later C01 two-run runtime result below.
+- `WL-CONTRACT-011`: C01 keeps stop ATR, RR, fee, slippage, gap, price-band, and holding semantics fixed.
+- `WL-CONTRACT-013`: Superseded by the later C01 runtime artifact result below.
+- `WL-CONTRACT-014`: implementation status, contract tracker, policy docs, and C01 reference note are synchronized.
+- `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`; C01 IS runtime later failed quality and all OOS proof remains absent.
+
+No contract is promoted to `LOCKED`. No acceptance gate was weakened. No OOS data was used. No best-of-failed binding exists.
+
+Final eligibility:
+
+```text
+OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF - no valid IS parameter
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE - OOS proof missing
+PRODUCTION_READY=false
+```
+
+Next required work:
+
+```text
+WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 SEED AND IS TWO-RUN VALIDATION SESSION
+```
+
+## Downside/Stability C01 Seed And IS Two-Run Contract Result - 2026-06-11
+
+Session:
+`WATCHLIST - WEEKLY SWING DOWNSIDE/STABILITY C01 SEED AND IS TWO-RUN VALIDATION SESSION`
+
+Status:
+`DONE for downside/stability C01 calibration execution infrastructure / LOCAL_C01_IS_CALIBRATION_EXECUTED / C01_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
+
+### Evidence
+
+```text
+C01 seed status=PASS
+C01 seed exit_code=0
+C01 inserted_count=8
+C01 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06
+C01 catalog_version=C01
+C01 catalog_count=8
+C01 catalog_hash=604ac98f6f193a4c317d4f25582deada84682846
+C01 IS artifact_hash=c8505ce5a9045629234a685984d9138b3990c775
+C01 IS file SHA1 run 1=04F6C664A0C9006C16542A8380034A0A633041DC
+C01 IS file SHA1 run 2=04F6C664A0C9006C16542A8380034A0A633041DC
+C01 valid IS rows=0
+C01 failed IS rows=8
+C01 failure classes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+max_requested_market_data_date=2025-05-21
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+production_ready=0
+```
+
+### Checklist
+
+| Item | Status | Notes |
+|---|---|---|
+| R1/R2 preservation | `PASS` | Seed and artifacts preserve R1/R2 count/hash. |
+| C01 seed | `PASS` | 8 rows inserted, exit code `0`. |
+| C01 two-run determinism | `PASS` | File SHA1, artifact hash, catalog hash, date hash, evaluations, eval IDs, and none-binding are equal. |
+| C01 quality gates | `FAIL` | All rows fail downside, robust-return, and stability gates. |
+| C01 best binding | `NOT_CREATED` | No valid IS parameter, no best-of-failed. |
+| OOS proof | `NOT_RUN` | OOS was not read or invoked. |
+| Promotion | `NOT_ELIGIBLE` | OOS proof missing and C01 has no valid IS parameter. |
+
+Final eligibility:
+
+```text
+OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF - no valid IS parameter
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE - OOS proof missing
+PRODUCTION_READY=false
+```
+
+No next catalog was created in this session. Any further catalog design must be a separate future session.

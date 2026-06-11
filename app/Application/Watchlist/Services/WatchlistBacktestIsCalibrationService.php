@@ -262,9 +262,7 @@ class WatchlistBacktestIsCalibrationService
             $binding['binding_hash'] = $this->stableHash($binding);
         }
 
-        $noValidReasonCode = $catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE
-            ? 'WS_BT_OOS_PROOF_MISSING'
-            : 'WS_BT_R2_NO_VALID_IS_CANDIDATE';
+        $noValidReasonCode = $this->noValidReasonCode($catalogCode);
 
         $paramGridHashRows = $isLegacyR1
             ? array_map([WatchlistBacktestParamGridCatalog::class, 'legacyRuntimeRow'], $gridRows)
@@ -344,6 +342,18 @@ class WatchlistBacktestIsCalibrationService
         }
 
         return array_values(array_unique($codes));
+    }
+
+    private function noValidReasonCode(string $catalogCode): string
+    {
+        if ($catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE) {
+            return 'WS_BT_OOS_PROOF_MISSING';
+        }
+        if ($catalogCode === WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE) {
+            return 'WS_BT_C01_NO_VALID_IS_CANDIDATE';
+        }
+
+        return 'WS_BT_R2_NO_VALID_IS_CANDIDATE';
     }
 
     private function paramsetFromGridRow(array $row): array

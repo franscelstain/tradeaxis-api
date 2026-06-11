@@ -2,6 +2,7 @@
 
 use App\Application\Watchlist\Services\WatchlistBacktestParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestParamGridParamsetFactory;
+use App\Application\Watchlist\Services\WatchlistBacktestC01ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestR2ParamGridCatalog;
 
 class WatchlistBacktestR1ImmutabilityTest extends TestCase
@@ -50,5 +51,15 @@ class WatchlistBacktestR1ImmutabilityTest extends TestCase
         $this->assertNotSame(WatchlistBacktestParamGridCatalog::CATALOG_CODE, WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE);
         $this->assertNotSame(WatchlistBacktestParamGridCatalog::CATALOG_VERSION, WatchlistBacktestR2ParamGridCatalog::CATALOG_VERSION);
         $this->assertNotSame(WatchlistBacktestParamGridCatalog::hash(), WatchlistBacktestR2ParamGridCatalog::hash());
+    }
+
+    public function test_c01_catalog_does_not_reuse_r1_or_r2_identity(): void
+    {
+        $this->assertNotSame(WatchlistBacktestParamGridCatalog::CATALOG_CODE, WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE);
+        $this->assertNotSame(WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE, WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE);
+        $this->assertNotSame(WatchlistBacktestParamGridCatalog::CATALOG_VERSION, WatchlistBacktestC01ParamGridCatalog::CATALOG_VERSION);
+        $this->assertNotSame(WatchlistBacktestR2ParamGridCatalog::CATALOG_VERSION, WatchlistBacktestC01ParamGridCatalog::CATALOG_VERSION);
+        $this->assertNotSame(WatchlistBacktestParamGridCatalog::hash(), WatchlistBacktestC01ParamGridCatalog::hash());
+        $this->assertNotSame(WatchlistBacktestR2ParamGridCatalog::hash(), WatchlistBacktestC01ParamGridCatalog::hash());
     }
 }

@@ -119,3 +119,16 @@ Checklist ini menetapkan acceptance minimum untuk artefak dan boundary Weekly Sw
 - [ ] exact eval rerun is idempotent; conflicting duplicate fails closed.
 - [ ] no best-of-failed binding is created.
 - [ ] two identical runs produce equal catalog/date/evaluation/binding/artifact hashes.
+
+## C01 Downside/Stability IS-Only Implementation Additions
+
+- [ ] R1 rows remain count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c` before and after C01 seed/calibration.
+- [ ] R2 rows remain count `12` and hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5` before and after C01 seed/calibration.
+- [ ] C01 has semantic catalog identity `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, and hash `604ac98f6f193a4c317d4f25582deada84682846`.
+- [ ] C01 catalog is finite, curated, deterministic, duplicate-free, and has no `_R3_`, `_R4_`, or `_R5_` catalog identity.
+- [ ] every C01 axis is `bt_target=true`, persisted, mapped, and consumed by runtime.
+- [ ] explicit C01 values are never replaced by defaults.
+- [ ] C01 seed is explicit and idempotent; conflicting duplicate payloads fail closed.
+- [ ] C01 calibration uses only `2023-01-02..2025-05-21` and does not call OOS service/repository or mutate `watchlist_bt_oos_eval_ws`.
+- [ ] C01 runtime returns `C01_GRID_FAILED_IS_QUALITY` when all rows reach canonical gates but none pass.
+- [ ] C01 success may freeze a best-IS binding only when every canonical IS gate passes; no best-of-failed binding is allowed.

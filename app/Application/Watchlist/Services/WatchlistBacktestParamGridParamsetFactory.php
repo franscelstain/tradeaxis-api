@@ -7,7 +7,8 @@ use RuntimeException;
 class WatchlistBacktestParamGridParamsetFactory
 {
     public const RISK_BAND_RESOLUTION_RULE = 'CLAMP_DEFAULT_IDEAL_ATR_BAND_TO_GRID_MAX_ATR';
-    public const EXPLICIT_R2_RISK_BAND_RULE = 'EXPLICIT_CATALOG_ENTRY_QUALITY_ATR_BAND';
+    public const EXPLICIT_CATALOG_RISK_BAND_RULE = 'EXPLICIT_CATALOG_ENTRY_QUALITY_ATR_BAND';
+    public const EXPLICIT_R2_RISK_BAND_RULE = self::EXPLICIT_CATALOG_RISK_BAND_RULE;
 
     public function make(array $row): array
     {
@@ -16,7 +17,7 @@ class WatchlistBacktestParamGridParamsetFactory
             return $this->makeLegacyR1($row);
         }
 
-        return $this->makeR2($row, $catalogCode);
+        return $this->makeCuratedCatalog($row, $catalogCode);
     }
 
     private function makeLegacyR1(array $row): array
@@ -102,8 +103,9 @@ class WatchlistBacktestParamGridParamsetFactory
         ]);
     }
 
-    private function makeR2(array $row, string $catalogCode): array
+    private function makeCuratedCatalog(array $row, string $catalogCode): array
     {
+        $definition = $this->catalogDefinition($catalogCode);
         $base = array_replace_recursive(
             WatchlistScoringService::defaultParamset(),
             WatchlistPlanGroupingService::defaultParamset(),
@@ -117,13 +119,12 @@ class WatchlistBacktestParamGridParamsetFactory
         $catalogHash = trim((string) ($row['catalog_hash'] ?? ''));
         $rowHash = trim((string) ($row['row_hash'] ?? ''));
         $rationale = trim((string) ($row['rationale'] ?? ''));
-        if ($catalogCode !== WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE
-            || $catalogVersion !== WatchlistBacktestR2ParamGridCatalog::CATALOG_VERSION
-            || $catalogHash !== WatchlistBacktestR2ParamGridCatalog::hash()
+        if ($catalogVersion !== $definition['version']
+            || $catalogHash !== $definition['hash']
             || $rowCode === ''
             || $rowHash !== sha1($catalogCode.'|'.$rowCode)
             || $rationale === '') {
-            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: approved R2 catalog metadata must be explicit and exact.');
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: approved catalog metadata must be explicit and exact.');
         }
 
         $minDv20Idr = $this->requiredFloat($row, 'min_dv20_idr');
@@ -174,11 +175,11 @@ class WatchlistBacktestParamGridParamsetFactory
         $minRr = $this->requiredFloat($row, 'min_rr');
         $topPicksTarget = $this->requiredInt($row, 'top_picks_target');
         $secondaryTarget = $this->requiredInt($row, 'secondary_target');
-        if (abs($stopAtrMult - WatchlistBacktestR2ParamGridCatalog::FIXED_STOP_ATR_MULT) > 0.000001
-            || abs($minRr - WatchlistBacktestR2ParamGridCatalog::FIXED_MIN_RR) > 0.000001
-            || $topPicksTarget !== WatchlistBacktestR2ParamGridCatalog::FIXED_TOP_PICKS_TARGET
-            || $secondaryTarget !== WatchlistBacktestR2ParamGridCatalog::FIXED_SECONDARY_TARGET) {
-            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: R2 fixed execution/grouping snapshot drifted.');
+        if (abs($stopAtrMult - $definition['fixed_stop_atr_mult']) > 0.000001
+            || abs($minRr - $definition['fixed_min_rr']) > 0.000001
+            || $topPicksTarget !== $definition['fixed_top_picks_target']
+            || $secondaryTarget !== $definition['fixed_secondary_target']) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: fixed execution/grouping snapshot drifted.');
         }
 
         return array_replace_recursive($base, [
@@ -195,7 +196,7 @@ class WatchlistBacktestParamGridParamsetFactory
             ],
             'bt_grid' => $gridSnapshot,
             'bt_grid_resolution' => [
-                'risk_band_rule' => self::EXPLICIT_R2_RISK_BAND_RULE,
+                'risk_band_rule' => self::EXPLICIT_CATALOG_RISK_BAND_RULE,
                 'min_atr14_pct' => $minAtr14Pct,
                 'max_atr14_pct' => $maxAtr14Pct,
                 'atr_ideal_low' => $idealLow,
@@ -236,6 +237,34 @@ class WatchlistBacktestParamGridParamsetFactory
                 'secondary' => ['max_items' => $secondaryTarget],
             ],
         ]);
+    }
+
+    private function catalogDefinition(string $catalogCode): array
+    {
+        $definitions = [
+            WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE => [
+                'version' => WatchlistBacktestR2ParamGridCatalog::CATALOG_VERSION,
+                'hash' => WatchlistBacktestR2ParamGridCatalog::hash(),
+                'fixed_stop_atr_mult' => WatchlistBacktestR2ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestR2ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestR2ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestR2ParamGridCatalog::FIXED_SECONDARY_TARGET,
+            ],
+            WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE => [
+                'version' => WatchlistBacktestC01ParamGridCatalog::CATALOG_VERSION,
+                'hash' => WatchlistBacktestC01ParamGridCatalog::hash(),
+                'fixed_stop_atr_mult' => WatchlistBacktestC01ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC01ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC01ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC01ParamGridCatalog::FIXED_SECONDARY_TARGET,
+            ],
+        ];
+
+        if (! isset($definitions[$catalogCode])) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: catalog_code is not an approved immutable catalog.');
+        }
+
+        return $definitions[$catalogCode];
     }
 
     private function assertInvariants(

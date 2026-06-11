@@ -41,19 +41,21 @@ class WatchlistBacktestIsCalibrationExecutionService
         if ($catalogCode === '') {
             return $this->blocked('WS_BT_R2_CATALOG_MISSING', 'Explicit catalog code is required.');
         }
-        if ($catalogCode !== WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE) {
-            return $this->blocked('WS_BT_R2_CATALOG_INVALID', 'IS-only R2 command accepts only the immutable R2 catalog identity.');
+        try {
+            $definition = $this->catalogDefinition($catalogCode);
+        } catch (\Throwable $e) {
+            return $this->blocked('WS_BT_R2_CATALOG_INVALID', $e->getMessage());
         }
         if (strcmp($toDate, self::R2_MAX_IS_DATE) > 0) {
             return $this->blocked(
                 'WS_BT_R2_IS_BOUNDARY_VIOLATION',
-                'R2 calibration may not request or read any date after '.self::R2_MAX_IS_DATE.'.'
+                'IS calibration may not request or read any date after '.self::R2_MAX_IS_DATE.'.'
             );
         }
         if ($fromDate !== self::R2_MIN_IS_DATE || $toDate !== self::R2_MAX_IS_DATE) {
             return $this->blocked(
                 'WS_BT_R2_IS_WINDOW_MISMATCH',
-                'Immutable R2 calibration requires the exact IS window '.self::R2_MIN_IS_DATE.' through '.self::R2_MAX_IS_DATE.'.'
+                'Immutable IS calibration requires the exact window '.self::R2_MIN_IS_DATE.' through '.self::R2_MAX_IS_DATE.'.'
             );
         }
 
@@ -68,7 +70,10 @@ class WatchlistBacktestIsCalibrationExecutionService
 
         try {
             $r1Before = $this->paramGrid->catalogSnapshot(WatchlistBacktestParamGridCatalog::CATALOG_CODE);
-            $r2Snapshot = $this->paramGrid->catalogSnapshot($catalogCode);
+            $catalogSnapshot = $this->paramGrid->catalogSnapshot($catalogCode);
+            $r2Before = $catalogCode === WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE
+                ? $catalogSnapshot
+                : $this->paramGrid->catalogSnapshot(WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE);
             $oosBefore = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CATALOG_INVALID'), $e->getMessage());
@@ -78,9 +83,13 @@ class WatchlistBacktestIsCalibrationExecutionService
             || (string) $r1Before['catalog_hash'] !== WatchlistBacktestParamGridCatalog::hash()) {
             return $this->blocked('WS_BT_R1_MUTATION_REJECTED', 'Immutable R1 catalog count/hash is not intact.');
         }
-        if ((int) $r2Snapshot['catalog_count'] !== WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT
-            || (string) $r2Snapshot['catalog_hash'] !== WatchlistBacktestR2ParamGridCatalog::hash()) {
-            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Persisted R2 count/hash differs from the immutable catalog.');
+        if ((int) $catalogSnapshot['catalog_count'] !== $definition['catalog_count']
+            || (string) $catalogSnapshot['catalog_hash'] !== $definition['catalog_hash']) {
+            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Persisted catalog count/hash differs from the immutable catalog.');
+        }
+        if ((int) $r2Before['catalog_count'] !== WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT
+            || (string) $r2Before['catalog_hash'] !== WatchlistBacktestR2ParamGridCatalog::hash()) {
+            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable R2 catalog count/hash is not intact.');
         }
 
         $executedAt = $toDate.'T23:59:59+07:00';
@@ -91,19 +100,24 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'executed_at' => $executedAt,
             ]);
             $r1After = $this->paramGrid->catalogSnapshot(WatchlistBacktestParamGridCatalog::CATALOG_CODE);
+            $r2After = $this->paramGrid->catalogSnapshot(WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE);
             $oosAfter = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CALIBRATION_FAILED'), $e->getMessage());
         }
 
         if ($r1Before !== $r1After) {
-            return $this->blocked('WS_BT_R1_MUTATION_REJECTED', 'R1 snapshot changed during R2 calibration.');
+            return $this->blocked('WS_BT_R1_MUTATION_REJECTED', 'R1 snapshot changed during IS-only calibration.');
+        }
+        if ($r2Before !== $r2After) {
+            return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'R2 snapshot changed during IS-only calibration.');
         }
         if ($oosBefore !== $oosAfter) {
             return $this->blocked('WS_BT_R2_OOS_PERSISTENCE_MUTATION', 'watchlist_bt_oos_eval_ws changed during IS-only calibration.');
         }
 
         $artifact = $this->buildArtifact(
+            $definition,
             $catalogCode,
             $fromDate,
             $toDate,
@@ -112,7 +126,9 @@ class WatchlistBacktestIsCalibrationExecutionService
             $calibration,
             $r1Before,
             $r1After,
-            $r2Snapshot,
+            $r2Before,
+            $r2After,
+            $catalogSnapshot,
             $oosBefore,
             $oosAfter
         );
@@ -138,7 +154,7 @@ class WatchlistBacktestIsCalibrationExecutionService
         if (! ($write['is_ready'] ?? false)) {
             return $this->blocked(
                 $write['reason_code'] ?? 'WATCHLIST_BACKTEST_ARTIFACT_WRITE_FAILED',
-                'R2 IS evidence artifact could not be written.',
+                'IS evidence artifact could not be written.',
                 ['artifact' => $artifact, 'write' => $write]
             );
         }
@@ -154,7 +170,7 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'reason_code' => $firstFailure['reason_code'] ?? 'WS_BT_R2_CALIBRATION_FAILED',
                 'diagnostics' => [[
                     'reason_code' => $firstFailure['reason_code'] ?? 'WS_BT_R2_CALIBRATION_FAILED',
-                    'message' => 'At least one R2 row did not reach canonical metric-gate evaluation. The artifact was written for honest diagnosis, but this is not an IS-quality verdict.',
+                    'message' => 'At least one catalog row did not reach canonical metric-gate evaluation. The artifact was written for honest diagnosis, but this is not an IS-quality verdict.',
                     'fatal' => true,
                 ]],
                 'calendar' => $calendar,
@@ -169,7 +185,7 @@ class WatchlistBacktestIsCalibrationExecutionService
         return [
             'ready' => true,
             'is_ready' => true,
-            'status' => ($calibration['is_valid_param_count'] ?? 0) > 0 ? 'PASS' : 'R2_GRID_FAILED_IS_QUALITY',
+            'status' => ($calibration['is_valid_param_count'] ?? 0) > 0 ? 'PASS' : $definition['failed_status'],
             'reason_code' => $calibration['reason_code'],
             'calendar' => $calendar,
             'calibration' => $calibration,
@@ -181,6 +197,7 @@ class WatchlistBacktestIsCalibrationExecutionService
     }
 
     private function buildArtifact(
+        array $definition,
         string $catalogCode,
         string $fromDate,
         string $toDate,
@@ -189,7 +206,9 @@ class WatchlistBacktestIsCalibrationExecutionService
         array $calibration,
         array $r1Before,
         array $r1After,
-        array $r2Snapshot,
+        array $r2Before,
+        array $r2After,
+        array $catalogSnapshot,
         array $oosBefore,
         array $oosAfter
     ): array {
@@ -247,7 +266,7 @@ class WatchlistBacktestIsCalibrationExecutionService
 
         $control = null;
         foreach ($evaluations as $evaluation) {
-            if (($evaluation['row_code'] ?? null) === WatchlistBacktestR2ParamGridCatalog::R1_CONTROL_ROW_CODE) {
+            if (($evaluation['row_code'] ?? null) === $definition['reference_row_code']) {
                 $control = $evaluation;
                 break;
             }
@@ -255,9 +274,9 @@ class WatchlistBacktestIsCalibrationExecutionService
 
         $artifact = [
             'meta' => [
-                'artifact_version' => self::ARTIFACT_VERSION,
+                'artifact_version' => $definition['artifact_version'],
                 'generated_at' => $executedAt,
-                'scope' => 'WEEKLY_SWING_R2_ENTRY_QUALITY_IS_ONLY',
+                'scope' => $definition['artifact_scope'],
                 'oos_executed' => false,
                 'paramset_promoted' => false,
                 'production_ready' => false,
@@ -265,25 +284,25 @@ class WatchlistBacktestIsCalibrationExecutionService
             'catalog_manifest' => [
                 'policy_code' => 'WS',
                 'catalog_code' => $catalogCode,
-                'catalog_version' => WatchlistBacktestR2ParamGridCatalog::CATALOG_VERSION,
-                'catalog_count' => WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT,
-                'catalog_hash' => WatchlistBacktestR2ParamGridCatalog::hash(),
-                'ordered_row_hashes' => $r2Snapshot['ordered_row_hashes'],
+                'catalog_version' => $definition['catalog_version'],
+                'catalog_count' => $definition['catalog_count'],
+                'catalog_hash' => $definition['catalog_hash'],
+                'ordered_row_hashes' => $catalogSnapshot['ordered_row_hashes'],
                 'ordered_param_hashes' => $calibration['ordered_param_hashes'] ?? [],
-                'provenance' => WatchlistBacktestR2ParamGridCatalog::provenance(),
-                'curated_rows' => WatchlistBacktestR2ParamGridCatalog::manifestRows(),
+                'provenance' => $definition['provenance'],
+                'curated_rows' => $definition['manifest_rows'],
                 'immutable_after_first_execution' => true,
                 'random_or_bayesian_search' => false,
-                'control_row_code' => WatchlistBacktestR2ParamGridCatalog::R1_CONTROL_ROW_CODE,
+                'control_row_code' => $definition['reference_row_code'],
             ],
             'parameter_axes' => [
-                'entry_quality_axes' => WatchlistBacktestR2ParamGridCatalog::parameterAxes(),
-                'axis_rationale' => WatchlistBacktestR2ParamGridCatalog::axisRationale(),
+                'entry_quality_axes' => $definition['parameter_axes'],
+                'axis_rationale' => $definition['axis_rationale'],
                 'fixed_execution_axes' => [
-                    'risk.stop_atr_mult' => WatchlistBacktestR2ParamGridCatalog::FIXED_STOP_ATR_MULT,
-                    'risk.min_rr' => WatchlistBacktestR2ParamGridCatalog::FIXED_MIN_RR,
-                    'grouping.top_picks_target' => WatchlistBacktestR2ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
-                    'grouping.secondary_target' => WatchlistBacktestR2ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                    'risk.stop_atr_mult' => $definition['fixed_stop_atr_mult'],
+                    'risk.min_rr' => $definition['fixed_min_rr'],
+                    'grouping.top_picks_target' => $definition['fixed_top_picks_target'],
+                    'grouping.secondary_target' => $definition['fixed_secondary_target'],
                     'eval_model' => 'ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS',
                 ],
             ],
@@ -291,7 +310,7 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'r1_catalog_code' => WatchlistBacktestParamGridCatalog::CATALOG_CODE,
                 'r1_catalog_hash' => WatchlistBacktestParamGridCatalog::hash(),
                 'r1_reference_row' => '01_BASELINE',
-                'r2_control_row_code' => WatchlistBacktestR2ParamGridCatalog::R1_CONTROL_ROW_CODE,
+                'catalog_reference_row_code' => $definition['reference_row_code'],
                 'control_evaluation' => $control,
                 'control_is_not_automatically_valid_or_best' => true,
             ],
@@ -343,6 +362,11 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'after' => $r1After,
                 'equal' => $r1Before === $r1After,
             ],
+            'r2_immutability_proof' => [
+                'before' => $r2Before,
+                'after' => $r2After,
+                'equal' => $r2Before === $r2After,
+            ],
             'no_oos_read_proof' => [
                 'strict_is_boundary_all_evaluations' => $strictBoundaryAll,
                 'max_requested_market_data_date' => $maxRequestedDate,
@@ -358,17 +382,18 @@ class WatchlistBacktestIsCalibrationExecutionService
         ];
 
         $artifact['validation'] = [
-            'catalog_count_matches' => $r2Snapshot['catalog_count'] === WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT,
-            'catalog_hash_matches' => $r2Snapshot['catalog_hash'] === WatchlistBacktestR2ParamGridCatalog::hash(),
+            'catalog_count_matches' => $catalogSnapshot['catalog_count'] === $definition['catalog_count'],
+            'catalog_hash_matches' => $catalogSnapshot['catalog_hash'] === $definition['catalog_hash'],
             'r1_immutable' => $r1Before === $r1After,
+            'r2_immutable' => $r2Before === $r2After,
             'no_oos_table_mutation' => $oosBefore === $oosAfter,
             'no_oos_market_data_read' => ($maxRequestedDate === null || strcmp($maxRequestedDate, self::R2_MAX_IS_DATE) <= 0)
                 && $strictBoundaryAll,
-            'all_rows_evaluated_or_reason_coded' => count($evaluations) === WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT,
-            'all_rows_reached_canonical_gates' => count($evaluations) === WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT
+            'all_rows_evaluated_or_reason_coded' => count($evaluations) === $definition['catalog_count'],
+            'all_rows_reached_canonical_gates' => count($evaluations) === $definition['catalog_count']
                 && count(array_filter($evaluations, function (array $evaluation): bool {
                     return in_array((string) ($evaluation['status'] ?? ''), ['VALID', 'GATES_FAILED'], true);
-                })) === WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT,
+                })) === $definition['catalog_count'],
             'best_binding_only_when_valid' => ($calibration['best_is_binding'] ?? null) === null
                 ? ((int) ($calibration['is_valid_param_count'] ?? 0) === 0)
                 : ((int) ($calibration['is_valid_param_count'] ?? 0) > 0),
@@ -439,6 +464,54 @@ class WatchlistBacktestIsCalibrationExecutionService
         }
 
         return $fallback;
+    }
+
+    private function catalogDefinition(string $catalogCode): array
+    {
+        $definitions = [
+            WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE => [
+                'catalog_code' => WatchlistBacktestR2ParamGridCatalog::CATALOG_CODE,
+                'catalog_version' => WatchlistBacktestR2ParamGridCatalog::CATALOG_VERSION,
+                'catalog_count' => WatchlistBacktestR2ParamGridCatalog::CATALOG_COUNT,
+                'catalog_hash' => WatchlistBacktestR2ParamGridCatalog::hash(),
+                'parameter_axes' => WatchlistBacktestR2ParamGridCatalog::parameterAxes(),
+                'axis_rationale' => WatchlistBacktestR2ParamGridCatalog::axisRationale(),
+                'provenance' => WatchlistBacktestR2ParamGridCatalog::provenance(),
+                'manifest_rows' => WatchlistBacktestR2ParamGridCatalog::manifestRows(),
+                'reference_row_code' => WatchlistBacktestR2ParamGridCatalog::R1_CONTROL_ROW_CODE,
+                'fixed_stop_atr_mult' => WatchlistBacktestR2ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestR2ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestR2ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestR2ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'artifact_version' => self::ARTIFACT_VERSION,
+                'artifact_scope' => 'WEEKLY_SWING_R2_ENTRY_QUALITY_IS_ONLY',
+                'failed_status' => 'R2_GRID_FAILED_IS_QUALITY',
+            ],
+            WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE => [
+                'catalog_code' => WatchlistBacktestC01ParamGridCatalog::CATALOG_CODE,
+                'catalog_version' => WatchlistBacktestC01ParamGridCatalog::CATALOG_VERSION,
+                'catalog_count' => WatchlistBacktestC01ParamGridCatalog::CATALOG_COUNT,
+                'catalog_hash' => WatchlistBacktestC01ParamGridCatalog::hash(),
+                'parameter_axes' => WatchlistBacktestC01ParamGridCatalog::parameterAxes(),
+                'axis_rationale' => WatchlistBacktestC01ParamGridCatalog::axisRationale(),
+                'provenance' => WatchlistBacktestC01ParamGridCatalog::provenance(),
+                'manifest_rows' => WatchlistBacktestC01ParamGridCatalog::manifestRows(),
+                'reference_row_code' => WatchlistBacktestC01ParamGridCatalog::REFERENCE_ROW_CODE,
+                'fixed_stop_atr_mult' => WatchlistBacktestC01ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC01ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC01ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC01ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'artifact_version' => 'WATCHLIST_C01_IS_CALIBRATION_V1',
+                'artifact_scope' => 'WEEKLY_SWING_DOWNSIDE_STABILITY_C01_IS_ONLY',
+                'failed_status' => 'C01_GRID_FAILED_IS_QUALITY',
+            ],
+        ];
+
+        if (! isset($definitions[$catalogCode])) {
+            throw new \RuntimeException('catalog_code is not an approved immutable IS calibration catalog.');
+        }
+
+        return $definitions[$catalogCode];
     }
 
     private function stableHash(array $payload): string
