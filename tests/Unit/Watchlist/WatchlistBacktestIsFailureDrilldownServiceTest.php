@@ -91,9 +91,56 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
         $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['liquidity_dv20_bucket_summary']['status']);
         $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['sector_bucket_summary']['status']);
         $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['score_component_effectiveness_summary']['status']);
+        $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['short_term_momentum_roc5_bucket_summary']['status']);
+        $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['short_term_momentum_roc10_bucket_summary']['status']);
+        $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['range_position_20_bucket_summary']['status']);
+        $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['sector_roc20_bucket_summary']['status']);
+        $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['event_risk_flag_summary']['status']);
         $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['score_components']['status']);
+        $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['roc5']['status']);
+        $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['corporate_action_flag']['status']);
+        $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['corporate_action_types']['status']);
+        $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['trading_status_code']['status']);
+        $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['event_risk_reasons']['status']);
+        $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['event_risk_flag_summary']['fields']['corporate_action_types']['status']);
         $this->assertArrayHasKey('bo_near_below_pct_hit_miss', $artifact['breakout_extension_bucket_summary']);
         $this->assertArrayHasKey('directional_finding', $artifact['score_component_effectiveness_summary']['components']['score_momentum']);
+
+        @unlink($output);
+    }
+
+    public function test_it_supports_param_id_scoped_non_c01_drilldown_without_oos_claim(): void
+    {
+        $output = sys_get_temp_dir().DIRECTORY_SEPARATOR.'watchlist-c07-drilldown-param-filter-test.json';
+        @unlink($output);
+
+        $service = new WatchlistBacktestIsFailureDrilldownService(
+            $this->runtime(true),
+            $this->gridRepository([
+                $this->gridRow(1, '00_TEST_A', 'C07', 'hash-c07'),
+                $this->gridRow(2, '01_TEST_B', 'C07', 'hash-c07'),
+            ]),
+            $this->paramsetFactory()
+        );
+
+        $result = $service->execute(
+            'WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06',
+            '2023-01-02',
+            '2025-05-21',
+            $output,
+            ['overwrite' => true, 'param_id' => 2]
+        );
+
+        $this->assertTrue($result['is_ready']);
+        $this->assertSame('WS_BT_IS_FAILURE_DRILLDOWN_READY', $result['reason_code']);
+        $this->assertSame('IS_ONLY_CATALOG_FAILURE_DRILLDOWN', $result['artifact']['meta']['scope']);
+        $this->assertSame(1, $result['artifact']['catalog_count']);
+        $this->assertSame(2, $result['artifact']['row_filter']['param_id']);
+        $this->assertSame(2, $result['artifact']['per_param_status'][0]['param_id']);
+        $this->assertSame('01_TEST_B', $result['artifact']['per_param_status'][0]['row_code']);
+        $this->assertTrue($result['artifact']['validation']['row_filter_applied']);
+        $this->assertFalse($result['artifact']['no_oos_leakage_summary']['oos_executed']);
+        $this->assertFalse($result['artifact']['meta']['production_ready']);
 
         @unlink($output);
     }
@@ -193,6 +240,18 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                         'score_volume' => 0.65,
                                         'score_risk' => 0.55,
                                     ],
+                                    'roc5' => 0.025,
+                                    'roc10' => 0.035,
+                                    'close_to_ll20_pct' => 0.08,
+                                    'range_20_pct' => 0.12,
+                                    'range_position_20_pct' => 0.68,
+                                    'sector_roc20' => 0.03,
+                                    'rs_20_vs_sector' => 0.02,
+                                    'sector_rs_20_vs_ihsg' => 0.01,
+                                    'corporate_action_types' => 'DIVIDEND',
+                                    'trading_status_code' => 'ACTIVE',
+                                    'event_risk_flag' => 0,
+                                    'event_risk_reasons' => 'CORPORATE_ACTION:DIVIDEND',
                                 ] : []),
                                 array_merge([
                                     'metrics_ready' => true,
@@ -214,6 +273,18 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                         'score_volume' => 0.88,
                                         'score_risk' => 0.49,
                                     ],
+                                    'roc5' => -0.005,
+                                    'roc10' => 0.015,
+                                    'close_to_ll20_pct' => 0.21,
+                                    'range_20_pct' => 0.18,
+                                    'range_position_20_pct' => 0.91,
+                                    'sector_roc20' => -0.01,
+                                    'rs_20_vs_sector' => -0.02,
+                                    'sector_rs_20_vs_ihsg' => 0.04,
+                                    'corporate_action_types' => null,
+                                    'trading_status_code' => 'ACTIVE',
+                                    'event_risk_flag' => 0,
+                                    'event_risk_reasons' => null,
                                 ] : []),
                             ],
                         ],
@@ -229,6 +300,18 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'vol_ratio' => 1.7,
                                     'dv20_idr' => 8000000000,
                                     'sector_code' => 'FIN',
+                                    'roc5' => 0.025,
+                                    'roc10' => 0.035,
+                                    'close_to_ll20_pct' => 0.08,
+                                    'range_20_pct' => 0.12,
+                                    'range_position_20_pct' => 0.68,
+                                    'sector_roc20' => 0.03,
+                                    'rs_20_vs_sector' => 0.02,
+                                    'sector_rs_20_vs_ihsg' => 0.01,
+                                    'corporate_action_types' => 'DIVIDEND',
+                                    'trading_status_code' => 'ACTIVE',
+                                    'event_risk_flag' => 0,
+                                    'event_risk_reasons' => 'CORPORATE_ACTION:DIVIDEND',
                                 ],
                             ] : []),
                             array_merge([
@@ -242,6 +325,18 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'vol_ratio' => 2.4,
                                     'dv20_idr' => 12000000000,
                                     'sector_code' => 'IDXTECH',
+                                    'roc5' => -0.005,
+                                    'roc10' => 0.015,
+                                    'close_to_ll20_pct' => 0.21,
+                                    'range_20_pct' => 0.18,
+                                    'range_position_20_pct' => 0.91,
+                                    'sector_roc20' => -0.01,
+                                    'rs_20_vs_sector' => -0.02,
+                                    'sector_rs_20_vs_ihsg' => 0.04,
+                                    'corporate_action_types' => null,
+                                    'trading_status_code' => 'ACTIVE',
+                                    'event_risk_flag' => 0,
+                                    'event_risk_reasons' => null,
                                 ],
                             ] : []),
                         ],
@@ -251,43 +346,74 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
         };
     }
 
-    private function gridRepository(): WatchlistBacktestParamGridRepository
+    private function gridRepository(array $rows = null): WatchlistBacktestParamGridRepository
+    {
+        if ($rows === null) {
+            return $this->defaultGridRepository();
+        }
+
+        return new class($rows) extends WatchlistBacktestParamGridRepository {
+            private array $rows;
+
+            public function __construct(array $rows)
+            {
+                $this->rows = $rows;
+            }
+
+            public function allForCatalog(string $catalogCode, string $policyCode = 'WS'): array
+            {
+                return array_map(function (array $row) use ($catalogCode): array {
+                    $row['catalog_code'] = $catalogCode;
+                    $row['row_hash'] = sha1($catalogCode.'|'.$row['row_code']);
+
+                    return $row;
+                }, $this->rows);
+            }
+        };
+    }
+
+    private function defaultGridRepository(): WatchlistBacktestParamGridRepository
     {
         return new class extends WatchlistBacktestParamGridRepository {
             public function allForCatalog(string $catalogCode, string $policyCode = 'WS'): array
             {
                 return [
-                    [
-                        'param_id' => 1,
-                        'policy_code' => 'WS',
-                        'catalog_code' => $catalogCode,
-                        'catalog_version' => 'C01',
-                        'catalog_hash' => '604ac98f6f193a4c317d4f25582deada84682846',
-                        'row_code' => '00_TEST',
-                        'row_hash' => sha1($catalogCode.'|00_TEST'),
-                        'min_dv20_idr' => 2500000000,
-                        'dv20_strong_idr' => 5000000000,
-                        'min_vol_ratio' => 1.5,
-                        'strong_vol_ratio' => 2.0,
-                        'min_atr14_pct' => 0.02,
-                        'max_atr14_pct' => 0.05,
-                        'atr_ideal_low' => 0.025,
-                        'atr_ideal_high' => 0.04,
-                        'roc_lo' => 0.02,
-                        'roc_hi' => 0.15,
-                        'mom_roc20_soft_min' => 0.0,
-                        'bo_near_below_pct' => 0.02,
-                        'bo_max_ext_pct' => 0.05,
-                        'w_momentum' => 0.25,
-                        'w_volume' => 0.25,
-                        'w_breakout' => 0.25,
-                        'w_risk' => 0.25,
-                        'top_min_score_q' => 0.80,
-                        'secondary_min_score_q' => 0.65,
-                    ],
+                    WatchlistBacktestIsFailureDrilldownServiceTest::gridRow(1, '00_TEST', 'C01', '604ac98f6f193a4c317d4f25582deada84682846', $catalogCode),
                 ];
             }
         };
+    }
+
+    public static function gridRow(int $paramId, string $rowCode, string $catalogVersion, string $catalogHash, string $catalogCode = 'WS_BT_GRID_TEST'): array
+    {
+        return [
+            'param_id' => $paramId,
+            'policy_code' => 'WS',
+            'catalog_code' => $catalogCode,
+            'catalog_version' => $catalogVersion,
+            'catalog_hash' => $catalogHash,
+            'row_code' => $rowCode,
+            'row_hash' => sha1($catalogCode.'|'.$rowCode),
+            'min_dv20_idr' => 2500000000,
+            'dv20_strong_idr' => 5000000000,
+            'min_vol_ratio' => 1.5,
+            'strong_vol_ratio' => 2.0,
+            'min_atr14_pct' => 0.02,
+            'max_atr14_pct' => 0.05,
+            'atr_ideal_low' => 0.025,
+            'atr_ideal_high' => 0.04,
+            'roc_lo' => 0.02,
+            'roc_hi' => 0.15,
+            'mom_roc20_soft_min' => 0.0,
+            'bo_near_below_pct' => 0.02,
+            'bo_max_ext_pct' => 0.05,
+            'w_momentum' => 0.25,
+            'w_volume' => 0.25,
+            'w_breakout' => 0.25,
+            'w_risk' => 0.25,
+            'top_min_score_q' => 0.80,
+            'secondary_min_score_q' => 0.65,
+        ];
     }
 
     private function paramsetFactory(): WatchlistBacktestParamGridParamsetFactory

@@ -15,6 +15,93 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C08 RUNTIME PAYLOAD ENRICHMENT AND BATCHED C07 FAILURE DRILLDOWN SESSION`
+
+Status:
+`C08_RUNTIME_PAYLOAD_ENRICHED / C07_BATCHED_DRILLDOWN_EXECUTED / C07_REJECTED_AS_STRATEGY_CATALOG / C08_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C08 diagnostic evidence:
+
+- no new strategy catalog was created; C08 is a runtime diagnostic/enrichment session;
+- C07 remains rejected as a strategy-quality catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06`, version `C07`, count `12`, hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`;
+- runtime payload enrichment now carries `corporate_action_types`, `trading_status_code`, and `event_risk_reasons` through the diagnostic path when source-backed values exist;
+- nullable market-data semantics remain intact: missing source context is not converted into `0`;
+- new IS-only batch command `watchlist:backtest-is-diagnose-batch` executed all 12 C07 params and wrote 12 scoped JSON artifacts plus a summary CSV;
+- batch command result: `status=PASS`, `reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY`, `diagnostic_param_count=12`, `ready_count=12`, `blocked_count=0`;
+- summary artifact SHA1: `49101D6AA702A898A3F691A7553823A8DFB2F125`;
+- C07 batch metrics still fail strategy quality: picks `728..1355`, median return `-1.0279%..-0.6993%`, p25 return `-4.0156%..-3.4276%`, monthly win-rate minimum `17.86%..25.00%`;
+- after enrichment, `trading_status_code`, `event_risk_flag`, `is_suspended`, and `is_uma` are available in runtime evidence, while `corporate_action_flag`, `corporate_action_types`, and `event_risk_reasons` remain missing in evaluated C07 trades;
+- validation passed: `WatchlistBacktestIsFailureDrilldown` = `OK (5 tests, 107 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (301 tests, 6586 assertions)`;
+- OOS was not run, no best-of-failed binding was selected, and production readiness remains false.
+
+C08 decision:
+
+```text
+C07_REMAINS_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+C08_STRATEGY_CATALOG_CREATED=false
+NEXT_CATALOG_NOT_DESIGNED
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+```
+
+C08 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C08_RUNTIME_PAYLOAD_AND_BATCHED_C07_DRILLDOWN_FINAL_RESULT.md
+docs/watchlist/audit/WS_C08_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c08-batched-c07-drilldown-summary.csv
+```
+
+## PRIOR SESSION - C07 SCOPED FAILURE DRILLDOWN / NEXT-CATALOG DECISION GATE SESSION
+
+Session:
+`WATCHLIST - C07 SCOPED FAILURE DRILLDOWN / NEXT-CATALOG DECISION GATE SESSION`
+
+Status:
+`C07_SCOPED_DRILLDOWN_IMPLEMENTED / C07_SCOPED_DRILLDOWN_EXECUTED / C07_SCOPED_DRILLDOWN_DETERMINISTIC / C08_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C07 scoped drilldown evidence:
+
+- C07 remains rejected as a strategy-quality catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06`, version `C07`, count `12`, hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`;
+- the IS-only diagnostic command now supports explicit scoped filters `--param-id` and `--row-code` so heavy drilldowns can be run without full-catalog timeout;
+- scoped C07 drilldown was executed for `param_id=102` and `param_id=106`, each with two deterministic runs;
+- param 102 artifact hash and file SHA1 were stable: `c362ff6682a69b8db145887214b137e786ea731a` / `27A86FD7737628F549134E3951E60C353E143AC5`;
+- param 106 artifact hash and file SHA1 were stable: `f7a91a3e9dc1c3ab13aedd04a7daabf51f90201e` / `61A9E01CA23E5B292790323B5E22EB1BD7B7A720`;
+- both scoped rows retained negative average/median return, p25 downside below `-3%`, and monthly win-rate minimum far below `45%`;
+- runtime trade evidence was available for most C07 feature fields, but `corporate_action_flag` was missing in scoped evidence;
+- risk and volume score components had positive directional association, while momentum was inversely associated and breakout was weak/inconsistent;
+- C08 was not created because scoped evidence does not justify another same-shape threshold catalog;
+- validation passed after scoped drilldown changes: `WatchlistBacktestIsFailureDrilldown` = `OK (5 tests, 84 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (301 tests, 6563 assertions)`;
+- OOS was not run, no best-of-failed binding was selected, and production readiness remains false.
+
+C07 scoped drilldown summary:
+
+```text
+param_102=05_ANTI_REVERSAL_NOT_OVEREXTENDED / picks=1017 / median=-0.6993% / p25=-3.4831% / month_win_min=25.00%
+param_106=09_LOW_ATR_RANGE_SECTOR / picks=986 / median=-0.7569% / p25=-3.4276% / month_win_min=20.59%
+next_focus=RUNTIME_PAYLOAD_ENRICHMENT_BEFORE_NEXT_CATALOG
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+```
+
+C07 scoped drilldown decision:
+
+```text
+C08_NOT_CREATED
+NEXT_CATALOG_NOT_DESIGNED
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+```
+
+Scoped drilldown result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C07_SCOPED_FAILURE_DRILLDOWN_FINAL_RESULT.md
+docs/watchlist/audit/_artifacts/c07-scoped-drilldown-summary.csv
+```
+
+## PRIOR SESSION - C07 STRATEGY-QUALITY REDESIGN / RUNTIME FEATURE AUDIT SESSION
+
+Session:
 `WATCHLIST - C07 STRATEGY-QUALITY REDESIGN / RUNTIME FEATURE AUDIT SESSION`
 
 Status:
@@ -755,9 +842,9 @@ Runtime artifact/metrics diagnostic codes in this session are internal backtest 
 
 | Severity | Gap | Impact |
 |---|---|---|
-| `STRATEGY_QUALITY_BLOCKED` | C07 has `is_valid_param_count=0`, empty `param_id_best_is`, and empty `best_is_binding_hash`. | C07 cannot advance to OOS and must remain rejected as a strategy-quality catalog. |
+| `STRATEGY_QUALITY_BLOCKED` | C07 has `is_valid_param_count=0`, empty `param_id_best_is`, and empty `best_is_binding_hash`; scoped drilldowns for params 102 and 106 still fail robust return/downside/stability. | C07 cannot advance to OOS and must remain rejected as a strategy-quality catalog. |
 | `OOS_NOT_ELIGIBLE` | OOS is intentionally not run for C07 because no valid frozen IS binding exists. | No OOS PASS, promotion review, or production-ready claim may be made. |
-| `NEXT_DIAGNOSTIC_REQUIRED` | C04/C05/C06/C07 candidate-selection retunes have not solved median return, p25 downside, or monthly stability. | Further work should start with deeper per-trade/ticker/month diagnostics or a new approved strategy family/exit model, not a same-shape C08 threshold retune. |
+| `RUNTIME_PAYLOAD_ENRICHMENT_BEFORE_NEXT_CATALOG` | Scoped drilldown found `corporate_action_flag` missing and only scoped two C07 rows. | C08 should not be created as a same-shape threshold retune; next work should enrich/complete runtime diagnostic payload or define a distinct strategy family/exit model. |
 
 ## First Implementation Roadmap
 

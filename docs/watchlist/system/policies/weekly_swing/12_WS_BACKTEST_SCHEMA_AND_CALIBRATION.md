@@ -927,3 +927,103 @@ docs/watchlist/audit/WS_C07_OPERATOR_FORENSIC_FINAL_RESULT.md
 docs/watchlist/audit/_artifacts/c07-forensic-summary.csv
 docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C07_DESIGN_NOTE.md
 ```
+
+### C07 scoped failure drilldown addendum
+
+After C07 failed IS quality, a scoped IS-only drilldown surface was added so heavy catalogs can be diagnosed by explicit `param_id` or `row_code` without full-catalog timeout. This is diagnostic-only and does not change any catalog identity, quality gate, or OOS boundary.
+
+```text
+C07 scoped drilldown params=102,106
+C07 scoped drilldown artifact_hash_param_102=c362ff6682a69b8db145887214b137e786ea731a
+C07 scoped drilldown artifact_hash_param_106=f7a91a3e9dc1c3ab13aedd04a7daabf51f90201e
+C07 scoped drilldown next_focus=RUNTIME_PAYLOAD_ENRICHMENT_BEFORE_NEXT_CATALOG
+C07 scoped drilldown next_decision=NEXT_CATALOG_NOT_DESIGNED
+C08 created=false
+OOS=NOT_RUN
+production_ready=0
+```
+
+Scoped findings:
+
+```text
+param_102 median=-0.6993% / p25=-3.4831% / month_win_min=25.00%
+param_106 median=-0.7569% / p25=-3.4276% / month_win_min=20.59%
+missing_runtime_evidence_field=corporate_action_flag
+```
+
+The scoped drilldown confirms that C07 remains ineligible for OOS and does not justify a same-shape C08 threshold retune. Any future catalog must be based on additional runtime payload enrichment or a distinct approved strategy family/exit model.
+
+Scoped drilldown result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C07_SCOPED_FAILURE_DRILLDOWN_FINAL_RESULT.md
+docs/watchlist/audit/_artifacts/c07-scoped-drilldown-summary.csv
+```
+
+### C08 runtime payload and batched C07 drilldown addendum
+
+After the C07 scoped drilldown found a runtime evidence gap, C08 was handled as a diagnostic/runtime enrichment session, not as a new strategy catalog.
+
+```text
+C08 strategy_catalog_created=false
+C07 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06
+C07 catalog_version=C07
+C07 catalog_count=12
+C07 catalog_hash=233b45b06cbf34da221d5d7de2d9725fdf4d3441
+OOS=NOT_RUN
+production_ready=0
+```
+
+Runtime payload enrichment carries the following source-backed nullable context into diagnostic evidence when present:
+
+```text
+corporate_action_types
+trading_status_code
+event_risk_reasons
+```
+
+The enrichment does not convert missing source context to `0`. `corporate_action_flag` may be derived only when non-empty `corporate_action_types` exists and the explicit flag is absent.
+
+The C08 batch diagnostic command is IS-only:
+
+```text
+php artisan watchlist:backtest-is-diagnose-batch --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06 --from=2023-01-02 --to=2025-05-21 --output-dir=storage/app/watchlist/backtest/c08-batched-c07-drilldown --summary=storage/app/watchlist/backtest/c08-batched-c07-drilldown-summary.csv --overwrite
+```
+
+Executed batch result:
+
+```text
+status=PASS
+reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY
+diagnostic_param_count=12
+ready_count=12
+blocked_count=0
+summary_sha1=49101D6AA702A898A3F691A7553823A8DFB2F125
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+production_ready=0
+```
+
+C08 batched findings:
+
+```text
+picks_count=728..1355
+median_ret_net_top=-1.0279%..-0.6993%
+p25_ret_net_top=-4.0156%..-3.4276%
+month_win_rate_min=17.86%..25.00%
+available_event_context=trading_status_code,event_risk_flag,is_suspended,is_uma
+missing_runtime_evidence_fields=corporate_action_flag,corporate_action_types,event_risk_reasons
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+```
+
+C08 does not change C07 strategy quality. C07 remains ineligible for OOS because no valid IS candidate, `param_id_best_is`, or `best_is_binding_hash` exists.
+
+C08 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C08_RUNTIME_PAYLOAD_AND_BATCHED_C07_DRILLDOWN_FINAL_RESULT.md
+docs/watchlist/audit/WS_C08_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c08-batched-c07-drilldown-summary.csv
+```

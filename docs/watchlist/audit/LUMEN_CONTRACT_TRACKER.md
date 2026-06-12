@@ -14,6 +14,123 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C08 RUNTIME PAYLOAD ENRICHMENT AND BATCHED C07 FAILURE DRILLDOWN SESSION`
+
+Status:
+`C08_RUNTIME_PAYLOAD_ENRICHED / C07_BATCHED_DRILLDOWN_EXECUTED / C07_REJECTED_AS_STRATEGY_CATALOG / C08_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C08 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C07 remains rejected as a strategy-quality catalog and was not patched to look successful;
+- C08 did not create a strategy catalog, did not select best-of-failed, and did not invoke OOS;
+- `watchlist:backtest-is-diagnose-batch` is an explicit IS-only file-artifact command for scoped per-param diagnostics;
+- batch C07 drilldown executed all 12 params with `ready_count=12`, `blocked_count=0`, `oos_executed=0`, and `production_ready=0`;
+- batch CSV artifact SHA1 is `49101D6AA702A898A3F691A7553823A8DFB2F125`;
+- runtime enrichment closed diagnostic pass-through for `trading_status_code` and preserved nullable source-backed event-risk semantics;
+- remaining runtime evidence gap is explicit: `corporate_action_flag`, `corporate_action_types`, and `event_risk_reasons` are still missing in evaluated C07 trades;
+- validation passed after C08 changes: `WatchlistBacktestIsFailureDrilldown` = `OK (5 tests, 107 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (301 tests, 6586 assertions)`.
+
+Contract status update:
+
+- `WL-CONTRACT-008`: PASS for batch diagnostic traceability and explicit next-catalog non-design decision;
+- `WL-CONTRACT-009`: PASS for strict IS-only boundary in batch drilldown output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during batch drilldown;
+- `WL-CONTRACT-011`: FAILED_QUALITY remains for C07 strategy quality;
+- `WL-CONTRACT-013`: PASS for batched drilldown artifact surface;
+- `WL-CONTRACT-014`: PASS for C08 docs and CSV tracking.
+
+C08 audit references:
+
+```text
+docs/watchlist/audit/WS_C08_RUNTIME_PAYLOAD_AND_BATCHED_C07_DRILLDOWN_FINAL_RESULT.md
+docs/watchlist/audit/WS_C08_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c08-batched-c07-drilldown-summary.csv
+```
+
+C08 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C07 has no valid IS binding, and C08 was diagnostic/runtime work only. OOS has not been run and must not be claimed PASS.
+
+## PRIOR SESSION - C07 SCOPED FAILURE DRILLDOWN / NEXT-CATALOG DECISION GATE SESSION
+
+Session:
+`WATCHLIST - C07 SCOPED FAILURE DRILLDOWN / NEXT-CATALOG DECISION GATE SESSION`
+
+Status:
+`C07_SCOPED_DRILLDOWN_IMPLEMENTED / C07_SCOPED_DRILLDOWN_EXECUTED / C07_SCOPED_DRILLDOWN_DETERMINISTIC / C08_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C07 scoped drilldown contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C07 remains rejected as a strategy-quality catalog and was not patched to look successful;
+- C07 scoped drilldown is IS-only and file-artifact-only; it does not depend on OOS service/repository/table writes;
+- diagnostic command supports explicit `--param-id` and `--row-code` filters for heavy catalogs;
+- scoped param 102 and param 106 drilldown each ran twice with deterministic artifact hash and file SHA1;
+- scoped param 102 artifact hash `c362ff6682a69b8db145887214b137e786ea731a`, file SHA1 `27A86FD7737628F549134E3951E60C353E143AC5`;
+- scoped param 106 artifact hash `f7a91a3e9dc1c3ab13aedd04a7daabf51f90201e`, file SHA1 `61A9E01CA23E5B292790323B5E22EB1BD7B7A720`;
+- validation passed after scoped drilldown changes: `WatchlistBacktestIsFailureDrilldown` = `OK (5 tests, 84 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (301 tests, 6563 assertions)`;
+- next decision is explicit: `NEXT_CATALOG_NOT_DESIGNED`;
+- C08 was not created, no OOS was run, no best-of-failed binding was selected, and production readiness remains false.
+
+Contract status update:
+
+- `WL-CONTRACT-008`: PASS for C07 scoped diagnostic traceability and explicit next-catalog non-design decision;
+- `WL-CONTRACT-009`: PASS for strict IS-only boundary in scoped drilldown output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during scoped drilldown;
+- `WL-CONTRACT-011`: FAILED_QUALITY remains for C07 strategy quality;
+- `WL-CONTRACT-013`: PASS for scoped drilldown artifact surface;
+- `WL-CONTRACT-014`: PASS for scoped drilldown docs and CSV tracking.
+
+C07 scoped drilldown OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C07 has no valid IS binding and scoped drilldown did not design C08. C07 must remain rejected as a strategy-quality catalog.
+
+## PRIOR SESSION - C07 STRATEGY-QUALITY REDESIGN / RUNTIME FEATURE AUDIT SESSION
+
+Session:
 `WATCHLIST - C07 STRATEGY-QUALITY REDESIGN / RUNTIME FEATURE AUDIT SESSION`
 
 Status:

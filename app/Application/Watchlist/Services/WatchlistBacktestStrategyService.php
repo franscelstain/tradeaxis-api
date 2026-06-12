@@ -671,11 +671,29 @@ class WatchlistBacktestStrategyService
             'close_vs_ma50_pct',
             'ma20_slope_pct',
             'rs_20_vs_ihsg',
+            'roc5',
+            'roc10',
+            'll20',
+            'close_to_ll20_pct',
+            'range_20_pct',
+            'range_position_20_pct',
+            'sector_roc20',
+            'rs_20_vs_sector',
+            'sector_rs_20_vs_ihsg',
         ];
         $metrics = [];
         foreach ($numericFields as $field) {
             $metrics[$field] = $this->floatOrNull($source[$field] ?? $planReference[$field] ?? null);
         }
+
+        $corporateActionTypes = $this->stringOrNull($source['corporate_action_types'] ?? $planReference['corporate_action_types'] ?? null);
+        $metrics['corporate_action_flag'] = $this->corporateActionFlagOrNull($source['corporate_action_flag'] ?? $planReference['corporate_action_flag'] ?? null, $corporateActionTypes);
+        $metrics['corporate_action_types'] = $corporateActionTypes;
+        $metrics['trading_status_code'] = $this->stringOrNull($source['trading_status_code'] ?? $planReference['trading_status_code'] ?? null);
+        $metrics['is_suspended'] = $this->flagOrNull($source['is_suspended'] ?? $planReference['is_suspended'] ?? null);
+        $metrics['is_uma'] = $this->flagOrNull($source['is_uma'] ?? $planReference['is_uma'] ?? null);
+        $metrics['event_risk_flag'] = $this->flagOrNull($source['event_risk_flag'] ?? $planReference['event_risk_flag'] ?? null);
+        $metrics['event_risk_reasons'] = $this->stringOrNull($source['event_risk_reasons'] ?? $planReference['event_risk_reasons'] ?? null);
 
         $sectorCode = $this->stringOrNull($source['sector_code'] ?? $planReference['sector_code'] ?? $planItem['sector_code'] ?? null);
         $metrics['sector_code'] = $sectorCode === null ? null : strtoupper($sectorCode);
@@ -887,6 +905,25 @@ class WatchlistBacktestStrategyService
         }
 
         return (float) $value;
+    }
+
+    private function flagOrNull($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value === 1 ? 1 : 0;
+    }
+
+    private function corporateActionFlagOrNull($value, ?string $corporateActionTypes): ?int
+    {
+        $explicit = $this->flagOrNull($value);
+        if ($explicit !== null) {
+            return $explicit;
+        }
+
+        return $corporateActionTypes === null ? null : 1;
     }
 
     private function stringOrNull($value): ?string

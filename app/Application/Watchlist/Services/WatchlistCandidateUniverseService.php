@@ -226,6 +226,7 @@ class WatchlistCandidateUniverseService
         ];
 
         if ($this->usesC07ExtendedMetrics($paramset)) {
+            $corporateActionTypes = $this->stringOrNull($indicators['corporate_action_types'] ?? $candidate['corporate_action_types'] ?? null);
             $metrics += [
                 'roc5' => $this->metricOrNull($indicators['roc_5'] ?? $indicators['roc5'] ?? $candidate['roc_5'] ?? $candidate['roc5'] ?? null),
                 'roc10' => $this->metricOrNull($indicators['roc_10'] ?? $indicators['roc10'] ?? $candidate['roc_10'] ?? $candidate['roc10'] ?? null),
@@ -236,10 +237,13 @@ class WatchlistCandidateUniverseService
                 'sector_roc20' => $this->metricOrNull($indicators['sector_roc20'] ?? $candidate['sector_roc20'] ?? null),
                 'rs_20_vs_sector' => $this->metricOrNull($indicators['rs_20_vs_sector'] ?? $candidate['rs_20_vs_sector'] ?? null),
                 'sector_rs_20_vs_ihsg' => $this->metricOrNull($indicators['sector_rs_20_vs_ihsg'] ?? $candidate['sector_rs_20_vs_ihsg'] ?? null),
-                'corporate_action_flag' => $this->flagOrNull($indicators['corporate_action_flag'] ?? $candidate['corporate_action_flag'] ?? null),
+                'corporate_action_flag' => $this->corporateActionFlagOrNull($indicators['corporate_action_flag'] ?? $candidate['corporate_action_flag'] ?? null, $corporateActionTypes),
+                'corporate_action_types' => $corporateActionTypes,
+                'trading_status_code' => $this->stringOrNull($indicators['trading_status_code'] ?? $candidate['trading_status_code'] ?? null),
                 'is_suspended' => $this->flagOrNull($indicators['is_suspended'] ?? $candidate['is_suspended'] ?? null),
                 'is_uma' => $this->flagOrNull($indicators['is_uma'] ?? $candidate['is_uma'] ?? null),
                 'event_risk_flag' => $this->flagOrNull($indicators['event_risk_flag'] ?? $candidate['event_risk_flag'] ?? null),
+                'event_risk_reasons' => $this->stringOrNull($indicators['event_risk_reasons'] ?? $candidate['event_risk_reasons'] ?? null),
             ];
         }
 
@@ -262,6 +266,27 @@ class WatchlistCandidateUniverseService
         }
 
         return (int) $value === 1 ? 1 : 0;
+    }
+
+    private function corporateActionFlagOrNull($value, ?string $corporateActionTypes): ?int
+    {
+        $explicit = $this->flagOrNull($value);
+        if ($explicit !== null) {
+            return $explicit;
+        }
+
+        return $corporateActionTypes === null ? null : 1;
+    }
+
+    private function stringOrNull($value): ?string
+    {
+        if ($value === null || ! is_scalar($value)) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+
+        return $normalized === '' ? null : $normalized;
     }
 
     private function sectorCodeOrNull($value): ?string

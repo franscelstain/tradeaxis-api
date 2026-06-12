@@ -62,3 +62,53 @@ month_win_rate_min=17.86%..25.00%
 ```
 
 C07 recovered sample size and improved monthly-win minimum versus C06, but all rows still failed robust return, p25 downside, and stability. C07 is rejected as a strategy-quality catalog and is not eligible for OOS.
+
+## Scoped post-failure drilldown
+
+After the C07 final IS quality failure, scoped IS-only drilldown was executed for:
+
+```text
+param_id=102 / 05_ANTI_REVERSAL_NOT_OVEREXTENDED
+param_id=106 / 09_LOW_ATR_RANGE_SECTOR
+```
+
+Both scoped rows remained invalid:
+
+```text
+param_102 median=-0.6993% / p25=-3.4831% / month_win_min=25.00%
+param_106 median=-0.7569% / p25=-3.4276% / month_win_min=20.59%
+```
+
+The scoped drilldown found risk and volume score components directionally healthier than momentum, while `corporate_action_flag` remained missing from scoped runtime evidence. C08 was not created from this evidence. The next step is runtime payload enrichment or a distinct strategy family/exit model, not another same-shape C07 threshold retune.
+
+## C08 runtime diagnostic follow-up
+
+C08 did not create a strategy catalog. It enriched the diagnostic payload for source-backed nullable event context and added a batched IS-only C07 drilldown command.
+
+Executed C08 batch result:
+
+```text
+command=php artisan watchlist:backtest-is-diagnose-batch --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06 --from=2023-01-02 --to=2025-05-21 --output-dir=storage/app/watchlist/backtest/c08-batched-c07-drilldown --summary=storage/app/watchlist/backtest/c08-batched-c07-drilldown-summary.csv --overwrite
+status=PASS
+reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY
+diagnostic_param_count=12
+ready_count=12
+blocked_count=0
+summary_sha1=49101D6AA702A898A3F691A7553823A8DFB2F125
+oos_executed=0
+production_ready=0
+```
+
+C08 batch findings:
+
+```text
+picks_count=728..1355
+median_ret_net_top=-1.0279%..-0.6993%
+p25_ret_net_top=-4.0156%..-3.4276%
+month_win_rate_min=17.86%..25.00%
+available_event_context=trading_status_code,event_risk_flag,is_suspended,is_uma
+missing_runtime_evidence_fields=corporate_action_flag,corporate_action_types,event_risk_reasons
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+```
+
+C07 remains rejected as a strategy-quality catalog and remains ineligible for OOS. The C08 runtime evidence does not justify a same-shape C08/C09 threshold retune.

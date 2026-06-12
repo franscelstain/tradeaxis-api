@@ -64,6 +64,27 @@ class WatchlistBacktestIsFailureDrilldownService
             ]);
         }
 
+        $rowFilter = $this->rowFilter($options);
+        if ($rowFilter !== null) {
+            $rows = array_values(array_filter($rows, function (array $row) use ($rowFilter): bool {
+                if ($rowFilter['param_id'] !== null && (int) ($row['param_id'] ?? 0) !== $rowFilter['param_id']) {
+                    return false;
+                }
+                if ($rowFilter['row_code'] !== null && (string) ($row['row_code'] ?? '') !== $rowFilter['row_code']) {
+                    return false;
+                }
+
+                return true;
+            }));
+            if ($rows === []) {
+                return $this->blocked('WS_BT_IS_DRILLDOWN_ROW_FILTER_NO_MATCH', 'No catalog rows matched the explicit drilldown row filter.', [
+                    'catalog_code' => $catalogCode,
+                    'policy_code' => $policyCode,
+                    'row_filter' => $rowFilter,
+                ]);
+            }
+        }
+
         usort($rows, function (array $left, array $right): int {
             $comparison = strcmp((string) ($left['row_code'] ?? ''), (string) ($right['row_code'] ?? ''));
             if ($comparison !== 0) {
@@ -183,7 +204,7 @@ class WatchlistBacktestIsFailureDrilldownService
             'meta' => [
                 'artifact_version' => 'WATCHLIST_BT_IS_FAILURE_DRILLDOWN_V1',
                 'generated_at' => $options['generated_at'] ?? null,
-                'scope' => 'IS_ONLY_C01_FAILURE_DRILLDOWN',
+                'scope' => $catalogVersion === 'C01' ? 'IS_ONLY_C01_FAILURE_DRILLDOWN' : 'IS_ONLY_CATALOG_FAILURE_DRILLDOWN',
                 'production_ready' => false,
                 'oos_executed' => false,
                 'paramset_promoted' => false,
@@ -192,6 +213,7 @@ class WatchlistBacktestIsFailureDrilldownService
             'catalog_version' => $catalogVersion,
             'catalog_hash' => $catalogHash,
             'catalog_count' => count($rows),
+            'row_filter' => $rowFilter,
             'is_from' => $fromDate,
             'is_to' => $toDate,
             'is_trading_date_count' => $isTradingDateCount,
@@ -231,9 +253,17 @@ class WatchlistBacktestIsFailureDrilldownService
             'setup_bucket_summary' => $this->clusterBy($allEvaluatedTrades, 'bucket_code', null, 20),
             'breakout_extension_bucket_summary' => $this->breakoutExtensionBucketSummary($allEvaluatedTrades),
             'momentum_roc_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'roc20', [-0.05, 0.0, 0.02, 0.05, 0.10, 0.15, 0.25]),
+            'short_term_momentum_roc5_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'roc5', [-0.05, -0.02, 0.0, 0.02, 0.05, 0.10, 0.15]),
+            'short_term_momentum_roc10_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'roc10', [-0.08, -0.03, 0.0, 0.02, 0.05, 0.10, 0.18]),
             'volume_ratio_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'vol_ratio', [1.0, 1.2, 1.5, 2.0, 2.5, 3.0]),
             'liquidity_dv20_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'dv20_idr', [1000000000, 2500000000, 5000000000, 7500000000, 10000000000, 15000000000, 20000000000]),
             'atr_bucket_summary' => $this->numericBucketSummary($allEvaluatedTrades, 'atr14_pct', [0.02, 0.03, 0.04, 0.05, 0.08, 0.12]),
+            'close_to_ll20_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'close_to_ll20_pct', [0.0, 0.02, 0.04, 0.08, 0.12, 0.20]),
+            'range_position_20_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'range_position_20_pct', [0.20, 0.35, 0.50, 0.65, 0.80, 0.95, 1.10]),
+            'sector_roc20_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'sector_roc20', [-0.08, -0.04, -0.02, 0.0, 0.03, 0.06, 0.12]),
+            'rs_20_vs_sector_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'rs_20_vs_sector', [-0.08, -0.04, -0.02, 0.0, 0.03, 0.06, 0.12]),
+            'sector_rs_20_vs_ihsg_bucket_summary' => $this->numericBucketSummaryFromRuntime($allEvaluatedTrades, 'sector_rs_20_vs_ihsg', [-0.08, -0.04, -0.02, 0.0, 0.03, 0.06, 0.12]),
+            'event_risk_flag_summary' => $this->eventRiskFlagSummary($allEvaluatedTrades),
             'score_bucket_summary' => $this->numericBucketSummary($allEvaluatedTrades, 'recommendation_score', [0.60, 0.70, 0.80, 0.90, 1.00]),
             'sector_bucket_summary' => $this->categoricalBucketSummaryFromRuntime($allEvaluatedTrades, 'sector_code'),
             'score_component_effectiveness_summary' => $this->scoreComponentEffectivenessSummary($allEvaluatedTrades),
@@ -257,10 +287,11 @@ class WatchlistBacktestIsFailureDrilldownService
                 'production_ready' => false,
             ],
             'diagnostic_reason_summary' => $this->diagnosticReasonSummary($paramDiagnostics, $allRuntimeDiagnostics),
-            'next_focus_recommendation' => $this->nextFocusRecommendation($paramDiagnostics, $allEvaluatedTrades, $runtimeFieldAvailability),
+            'next_focus_recommendation' => $this->nextFocusRecommendation($paramDiagnostics, $allEvaluatedTrades, $runtimeFieldAvailability, $catalogVersion),
             'validation' => [
                 'runtime_ready_all_params' => $runtimeReadyAll,
                 'catalog_count_matches' => count($rows) === count($paramDiagnostics),
+                'row_filter_applied' => $rowFilter !== null,
                 'catalog_hash_single_value' => $catalogHash !== null,
                 'is_trading_date_hash_single_value' => $isTradingDateHash !== null,
                 'no_oos_market_data_read' => $oosBoundaryOk,
@@ -284,7 +315,9 @@ class WatchlistBacktestIsFailureDrilldownService
         return [
             'is_ready' => true,
             'status' => 'DONE',
-            'reason_code' => 'WS_BT_C01_IS_FAILURE_DRILLDOWN_READY',
+            'reason_code' => $catalogVersion === 'C01'
+                ? 'WS_BT_C01_IS_FAILURE_DRILLDOWN_READY'
+                : 'WS_BT_IS_FAILURE_DRILLDOWN_READY',
             'artifact_hash' => $artifact['artifact_hash'],
             'artifact' => $artifact,
             'write' => $write,
@@ -329,6 +362,69 @@ class WatchlistBacktestIsFailureDrilldownService
                 ['score_metrics', 'roc20'],
                 ['factor_breakdown', 'momentum', 'roc20'],
             ]));
+            $trade['roc5'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['roc5'],
+                ['roc_5'],
+                ['score_metrics', 'roc5'],
+                ['score_metrics', 'roc_5'],
+            ]));
+            $trade['roc10'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['roc10'],
+                ['roc_10'],
+                ['score_metrics', 'roc10'],
+                ['score_metrics', 'roc_10'],
+            ]));
+            $trade['ll20'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['ll20'],
+                ['score_metrics', 'll20'],
+            ]));
+            $trade['close_to_ll20_pct'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['close_to_ll20_pct'],
+                ['score_metrics', 'close_to_ll20_pct'],
+            ]));
+            $trade['range_20_pct'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['range_20_pct'],
+                ['score_metrics', 'range_20_pct'],
+            ]));
+            $trade['range_position_20_pct'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['range_position_20_pct'],
+                ['score_metrics', 'range_position_20_pct'],
+            ]));
+            $trade['sector_roc20'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['sector_roc20'],
+                ['score_metrics', 'sector_roc20'],
+            ]));
+            $trade['rs_20_vs_sector'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['rs_20_vs_sector'],
+                ['score_metrics', 'rs_20_vs_sector'],
+            ]));
+            $trade['sector_rs_20_vs_ihsg'] = $this->floatOrNull($this->firstAvailable($trade, [
+                ['sector_rs_20_vs_ihsg'],
+                ['score_metrics', 'sector_rs_20_vs_ihsg'],
+            ]));
+            $corporateActionTypes = $this->stringOrNull($this->firstAvailable($trade, [
+                ['corporate_action_types'],
+                ['score_metrics', 'corporate_action_types'],
+            ]));
+            $trade['corporate_action_types'] = $corporateActionTypes;
+            $trade['trading_status_code'] = $this->stringOrNull($this->firstAvailable($trade, [
+                ['trading_status_code'],
+                ['score_metrics', 'trading_status_code'],
+            ]));
+            $trade['event_risk_reasons'] = $this->stringOrNull($this->firstAvailable($trade, [
+                ['event_risk_reasons'],
+                ['score_metrics', 'event_risk_reasons'],
+            ]));
+            $trade['corporate_action_flag'] = $this->corporateActionFlagOrNull($this->firstAvailable($trade, [
+                ['corporate_action_flag'],
+                ['score_metrics', 'corporate_action_flag'],
+            ]), $corporateActionTypes);
+            foreach (['is_suspended', 'is_uma', 'event_risk_flag'] as $flagField) {
+                $trade[$flagField] = $this->flagOrNull($this->firstAvailable($trade, [
+                    [$flagField],
+                    ['score_metrics', $flagField],
+                ]));
+            }
             $trade['vol_ratio'] = $this->floatOrNull($this->firstAvailable($trade, [
                 ['vol_ratio'],
                 ['score_metrics', 'vol_ratio'],
@@ -723,6 +819,60 @@ class WatchlistBacktestIsFailureDrilldownService
         ];
     }
 
+    private function eventRiskFlagSummary(array $trades): array
+    {
+        $fields = [
+            'corporate_action_flag',
+            'corporate_action_types',
+            'trading_status_code',
+            'is_suspended',
+            'is_uma',
+            'event_risk_flag',
+            'event_risk_reasons',
+        ];
+        $flagFields = ['corporate_action_flag', 'is_suspended', 'is_uma', 'event_risk_flag'];
+        $fieldSummaries = [];
+        $hasAnyField = false;
+        foreach ($fields as $field) {
+            $fieldSummaries[$field] = $this->categoricalBucketSummaryFromRuntime($trades, $field);
+            $hasAnyField = $hasAnyField || (($fieldSummaries[$field]['status'] ?? null) === 'DERIVED_FROM_RUNTIME_EVIDENCE');
+        }
+
+        if (! $hasAnyField) {
+            return $this->unavailableBucket(
+                'event-risk flags are not exported in current backtest trade/evaluation payload.',
+                $fields
+            );
+        }
+
+        $bucketed = [];
+        foreach ($trades as $trade) {
+            $any = null;
+            foreach ($flagFields as $field) {
+                $flag = $this->flagOrNull($trade[$field] ?? null);
+                if ($flag === null) {
+                    continue;
+                }
+                $any = $any === null ? ($flag === 1) : ($any || $flag === 1);
+            }
+            foreach (['corporate_action_types', 'event_risk_reasons'] as $field) {
+                if ($this->stringOrNull($trade[$field] ?? null) !== null) {
+                    $any = true;
+                }
+            }
+            $trade['any_event_risk_flag'] = $any;
+            $bucketed[] = $trade;
+        }
+
+        return [
+            'status' => 'DERIVED_FROM_RUNTIME_EVIDENCE',
+            'derivation_status' => 'DERIVED',
+            'next_catalog_decision_usage' => 'DIAGNOSTIC_ONLY_REQUIRES_SEPARATE_REVIEW',
+            'fields' => $fieldSummaries,
+            'any_event_risk_flag_hit_miss' => $this->booleanBucketSummary($bucketed, 'any_event_risk_flag'),
+        ];
+    }
+
     private function booleanBucketSummary(array $trades, string $field): array
     {
         $bucketed = [];
@@ -1067,7 +1217,7 @@ class WatchlistBacktestIsFailureDrilldownService
         ];
     }
 
-    private function nextFocusRecommendation(array $paramDiagnostics, array $trades, array $runtimeFieldAvailability): array
+    private function nextFocusRecommendation(array $paramDiagnostics, array $trades, array $runtimeFieldAvailability, ?string $catalogVersion = null): array
     {
         $failureDistribution = [];
         foreach ($paramDiagnostics as $param) {
@@ -1089,17 +1239,25 @@ class WatchlistBacktestIsFailureDrilldownService
             }
         }
 
+        $isC01 = $catalogVersion === null || $catalogVersion === '' || $catalogVersion === 'C01';
+
         return [
             'decision' => $validCount > 0 ? 'VALID_IS_BINDING_AVAILABLE' : 'NEXT_CATALOG_NOT_DESIGNED',
             'recommended_status' => $validCount > 0
                 ? 'ELIGIBLE_FOR_SEPARATE_OOS_PROOF_SESSION'
                 : 'NOT_ELIGIBLE_FOR_OOS_PROOF_NO_VALID_IS_PARAMETER',
-            'focus' => $missingRuntimeFields === [] ? 'DIAGNOSTIC_REVIEW_BEFORE_C02' : 'DIAGNOSTIC_PAYLOAD_ENRICHMENT_BEFORE_C02',
+            'focus' => $isC01
+                ? ($missingRuntimeFields === [] ? 'DIAGNOSTIC_REVIEW_BEFORE_C02' : 'DIAGNOSTIC_PAYLOAD_ENRICHMENT_BEFORE_C02')
+                : ($missingRuntimeFields === [] ? 'STRATEGY_QUALITY_DIAGNOSTIC_BEFORE_NEXT_CATALOG' : 'RUNTIME_PAYLOAD_ENRICHMENT_BEFORE_NEXT_CATALOG'),
             'rationale' => $availableTradeCount > 0
-                ? ($missingRuntimeFields === []
+                ? ($isC01
+                    ? ($missingRuntimeFields === []
                     ? 'C01 still fails canonical robust return/downside/stability gates. Runtime feature fields are present for diagnostic review, but no next catalog is created in this session.'
                     : 'C01 still fails canonical robust return/downside/stability gates. Runtime trade-level output supports ticker/month/date/ATR/score drilldown, but feature-level setup/ROC/volume/liquidity/breakout/sector root-cause fields are not all exported yet, so C02 should not be designed only from current evidence.')
-                : 'No evaluated trade payload was available; do not design C02.',
+                    : ($missingRuntimeFields === []
+                        ? 'The requested catalog still fails canonical robust return/downside/stability gates. Runtime feature fields are present for diagnostic review, but no next catalog is created by this diagnostic command.'
+                        : 'The requested catalog still fails canonical robust return/downside/stability gates. Runtime trade-level output is missing fields required for a safe next catalog decision.'))
+                : ($isC01 ? 'No evaluated trade payload was available; do not design C02.' : 'No evaluated trade payload was available; do not design a next catalog.'),
             'failure_distribution' => $failureDistribution,
             'missing_runtime_evidence_fields' => $missingRuntimeFields,
             'missing_field_decision_usage' => self::NOT_USED_FOR_NEXT_CATALOG_DECISION,
@@ -1115,6 +1273,21 @@ class WatchlistBacktestIsFailureDrilldownService
             'dv20_idr' => 'numeric',
             'sector_code' => 'scalar',
             'score_components' => 'score_components',
+            'roc5' => 'numeric',
+            'roc10' => 'numeric',
+            'close_to_ll20_pct' => 'numeric',
+            'range_20_pct' => 'numeric',
+            'range_position_20_pct' => 'numeric',
+            'sector_roc20' => 'numeric',
+            'rs_20_vs_sector' => 'numeric',
+            'sector_rs_20_vs_ihsg' => 'numeric',
+            'corporate_action_flag' => 'scalar',
+            'corporate_action_types' => 'scalar',
+            'trading_status_code' => 'scalar',
+            'is_suspended' => 'scalar',
+            'is_uma' => 'scalar',
+            'event_risk_flag' => 'scalar',
+            'event_risk_reasons' => 'scalar',
         ];
         $summary = [];
         foreach ($fields as $field => $type) {
@@ -1238,6 +1411,30 @@ class WatchlistBacktestIsFailureDrilldownService
         return array_values($normalized);
     }
 
+    private function rowFilter(array $options): ?array
+    {
+        $paramId = null;
+        $rawParamId = $options['param_id'] ?? null;
+        if (is_scalar($rawParamId) && trim((string) $rawParamId) !== '') {
+            $paramId = ctype_digit(trim((string) $rawParamId)) ? (int) trim((string) $rawParamId) : -1;
+        }
+
+        $rowCode = null;
+        $rawRowCode = $options['row_code'] ?? null;
+        if (is_scalar($rawRowCode) && trim((string) $rawRowCode) !== '') {
+            $rowCode = trim((string) $rawRowCode);
+        }
+
+        if ($paramId === null && $rowCode === null) {
+            return null;
+        }
+
+        return [
+            'param_id' => $paramId,
+            'row_code' => $rowCode,
+        ];
+    }
+
     private function blocked(string $reasonCode, string $message, array $extra = []): array
     {
         return array_merge([
@@ -1311,6 +1508,39 @@ class WatchlistBacktestIsFailureDrilldownService
     private function floatOrNull($value): ?float
     {
         return is_numeric($value) ? (float) $value : null;
+    }
+
+    private function flagOrNull($value): ?int
+    {
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+        if (is_numeric($value)) {
+            return ((int) $value) === 1 ? 1 : 0;
+        }
+
+        return null;
+    }
+
+    private function corporateActionFlagOrNull($value, ?string $corporateActionTypes): ?int
+    {
+        $explicit = $this->flagOrNull($value);
+        if ($explicit !== null) {
+            return $explicit;
+        }
+
+        return $corporateActionTypes === null ? null : 1;
+    }
+
+    private function stringOrNull($value): ?string
+    {
+        if ($value === null || ! is_scalar($value)) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+
+        return $normalized === '' ? null : $normalized;
     }
 
     private function uniqueReasonCodes(array $reasonCodes): array

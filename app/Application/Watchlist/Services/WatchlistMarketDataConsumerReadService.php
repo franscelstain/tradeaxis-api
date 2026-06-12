@@ -156,9 +156,12 @@ class WatchlistMarketDataConsumerReadService
                 'rs_20_vs_sector' => $this->floatOrNull($row['rs_20_vs_sector'] ?? null),
                 'sector_rs_20_vs_ihsg' => $this->floatOrNull($row['sector_rs_20_vs_ihsg'] ?? null),
                 'corporate_action_flag' => $this->intFlagOrNull($row['corporate_action_flag'] ?? null),
+                'corporate_action_types' => $this->stringOrNull($row['corporate_action_types'] ?? null),
+                'trading_status_code' => $this->stringOrNull($row['trading_status_code'] ?? null),
                 'is_suspended' => $this->intFlagOrNull($row['is_suspended'] ?? null),
                 'is_uma' => $this->intFlagOrNull($row['is_uma'] ?? null),
                 'event_risk_flag' => $this->intFlagOrNull($row['event_risk_flag'] ?? null),
+                'event_risk_reasons' => $this->stringOrNull($row['event_risk_reasons'] ?? null),
             ],
         ];
     }
@@ -210,6 +213,17 @@ class WatchlistMarketDataConsumerReadService
     private function floatOrNull($value): ?float
     {
         return $value === null || $value === '' ? null : (float) $value;
+    }
+
+    private function stringOrNull($value): ?string
+    {
+        if ($value === null || ! is_scalar($value)) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+
+        return $normalized === '' ? null : $normalized;
     }
 
     private function intFlagOrNull($value): ?int

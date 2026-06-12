@@ -12,6 +12,8 @@ class RunBacktestIsDiagnoseCommand extends Command
         {--catalog-code= : Explicit immutable IS calibration catalog code}
         {--from= : Explicit historical IS start date in YYYY-MM-DD}
         {--to= : Explicit historical IS end date in YYYY-MM-DD}
+        {--param-id= : Optional explicit param_id filter for scoped heavy drilldown}
+        {--row-code= : Optional explicit row_code filter for scoped heavy drilldown}
         {--output= : Explicit JSON drilldown output path}
         {--overwrite : Explicitly replace an existing output file}';
 
@@ -55,6 +57,8 @@ class RunBacktestIsDiagnoseCommand extends Command
                 : app(WatchlistBacktestIsFailureDrilldownService::class);
             $result = $service->execute($catalogCode, $fromDate, $toDate, $outputPath, [
                 'overwrite' => (bool) $this->option('overwrite'),
+                'param_id' => $this->option('param-id'),
+                'row_code' => $this->option('row-code'),
             ]);
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e), $e->getMessage());
@@ -84,6 +88,7 @@ class RunBacktestIsDiagnoseCommand extends Command
         $this->line('catalog_version='.(string) ($artifact['catalog_version'] ?? ''));
         $this->line('catalog_count='.(string) ($artifact['catalog_count'] ?? 0));
         $this->line('catalog_hash='.(string) ($artifact['catalog_hash'] ?? ''));
+        $this->line('diagnostic_param_count='.(string) ($artifact['catalog_count'] ?? 0));
         $this->line('is_from='.$fromDate);
         $this->line('is_to='.$toDate);
         $this->line('is_trading_date_hash='.(string) ($artifact['is_trading_date_hash'] ?? ''));

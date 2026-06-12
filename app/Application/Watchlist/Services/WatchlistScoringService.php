@@ -520,6 +520,7 @@ class WatchlistScoringService
         ];
 
         if (($paramset['bt_catalog']['catalog_version'] ?? null) === 'C07') {
+            $corporateActionTypes = $this->stringOrNull($gateMetrics['corporate_action_types'] ?? $indicators['corporate_action_types'] ?? $candidate['corporate_action_types'] ?? null);
             $metrics += [
                 'roc5' => $this->metricOrNull($gateMetrics['roc5'] ?? $indicators['roc_5'] ?? $indicators['roc5'] ?? $candidate['roc_5'] ?? $candidate['roc5'] ?? null),
                 'roc10' => $this->metricOrNull($gateMetrics['roc10'] ?? $indicators['roc_10'] ?? $indicators['roc10'] ?? $candidate['roc_10'] ?? $candidate['roc10'] ?? null),
@@ -530,10 +531,13 @@ class WatchlistScoringService
                 'sector_roc20' => $this->metricOrNull($gateMetrics['sector_roc20'] ?? $indicators['sector_roc20'] ?? $candidate['sector_roc20'] ?? null),
                 'rs_20_vs_sector' => $this->metricOrNull($gateMetrics['rs_20_vs_sector'] ?? $indicators['rs_20_vs_sector'] ?? $candidate['rs_20_vs_sector'] ?? null),
                 'sector_rs_20_vs_ihsg' => $this->metricOrNull($gateMetrics['sector_rs_20_vs_ihsg'] ?? $indicators['sector_rs_20_vs_ihsg'] ?? $candidate['sector_rs_20_vs_ihsg'] ?? null),
-                'corporate_action_flag' => $this->flagOrNull($gateMetrics['corporate_action_flag'] ?? $indicators['corporate_action_flag'] ?? $candidate['corporate_action_flag'] ?? null),
+                'corporate_action_flag' => $this->corporateActionFlagOrNull($gateMetrics['corporate_action_flag'] ?? $indicators['corporate_action_flag'] ?? $candidate['corporate_action_flag'] ?? null, $corporateActionTypes),
+                'corporate_action_types' => $corporateActionTypes,
+                'trading_status_code' => $this->stringOrNull($gateMetrics['trading_status_code'] ?? $indicators['trading_status_code'] ?? $candidate['trading_status_code'] ?? null),
                 'is_suspended' => $this->flagOrNull($gateMetrics['is_suspended'] ?? $indicators['is_suspended'] ?? $candidate['is_suspended'] ?? null),
                 'is_uma' => $this->flagOrNull($gateMetrics['is_uma'] ?? $indicators['is_uma'] ?? $candidate['is_uma'] ?? null),
                 'event_risk_flag' => $this->flagOrNull($gateMetrics['event_risk_flag'] ?? $indicators['event_risk_flag'] ?? $candidate['event_risk_flag'] ?? null),
+                'event_risk_reasons' => $this->stringOrNull($gateMetrics['event_risk_reasons'] ?? $indicators['event_risk_reasons'] ?? $candidate['event_risk_reasons'] ?? null),
             ];
         }
 
@@ -783,5 +787,26 @@ class WatchlistScoringService
         }
 
         return (int) $value === 1 ? 1 : 0;
+    }
+
+    private function corporateActionFlagOrNull($value, ?string $corporateActionTypes): ?int
+    {
+        $explicit = $this->flagOrNull($value);
+        if ($explicit !== null) {
+            return $explicit;
+        }
+
+        return $corporateActionTypes === null ? null : 1;
+    }
+
+    private function stringOrNull($value): ?string
+    {
+        if ($value === null || ! is_scalar($value)) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+
+        return $normalized === '' ? null : $normalized;
     }
 }
