@@ -1,7 +1,7 @@
 # WS Downside Stability C04 Design Input Note
 
-Status: DESIGN_INPUT_ONLY
-Implementation status: NOT_STARTED
+Status: SUPERSEDED_BY_C04_IMPLEMENTATION_RESULT
+Implementation status: IMPLEMENTED_AND_REJECTED_AS_STRATEGY_QUALITY_CATALOG
 OOS status: NOT_RUN
 Production readiness: false
 Last updated: 2026-06-11
@@ -11,6 +11,14 @@ Last updated: 2026-06-11
 C04 is required because C03 was implemented, seeded, validated, and calibrated, but failed IS quality deterministically.
 
 This note is not a C04 implementation. It defines the minimum design constraints for the next same-focus catalog.
+
+Implementation result note:
+
+```text
+WS_DOWNSIDE_STABILITY_C04_DESIGN_NOTE.md
+WS_C04_OPERATOR_FORENSIC_FINAL_RESULT.md
+WS_C04_OPERATOR_VALIDATION_COMMANDS.md
+```
 
 ## 2. Evidence carried forward
 
@@ -92,3 +100,39 @@ production_ready=0
 ```
 
 If C04 fails IS quality, OOS must remain `NOT_RUN` and C04 must be rejected as a strategy-quality catalog.
+
+## 7. C04 implementation outcome
+
+C04 was implemented as:
+
+```text
+catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C04_2026_06
+catalog_version=C04
+catalog_count=10
+catalog_hash=0ce3a313c45432c5a4d607def12b3f774988f324
+```
+
+C04 preserved R1/R2/C01/C02/C03 immutability and did not run OOS. C04 IS run 1 and run 2 were deterministic with artifact hash:
+
+```text
+fe964ee879dddc8aa8a83372e8c2d05aed5e8259
+```
+
+C04 failed IS quality:
+
+```text
+status=C04_GRID_FAILED_IS_QUALITY
+reason_code=WS_BT_C04_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=10
+param_id_best_is=
+best_is_binding_hash=
+```
+
+Final decision:
+
+```text
+C04_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+```

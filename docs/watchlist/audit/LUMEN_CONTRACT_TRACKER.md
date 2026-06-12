@@ -14,6 +14,182 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C06 MODERATE-CAP CANDIDATE-SELECTION IMPLEMENTATION SESSION`
+
+Status:
+`C06_IMPLEMENTED / C06_SEEDED / C06_IS_EXECUTED / C06_IS_QUALITY_FAILED / C06_REJECTED_AS_STRATEGY_CATALOG / C06_DETERMINISTIC / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C06 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C02/C03/C04/C05 remain rejected as strategy-quality catalogs and were not patched to look successful;
+- C06 is a new semantic C-campaign catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C06_2026_06`, version `C06`, count `12`, hash `6c93d67fb77319a02cecc3d96fd99bb0e139a1ac`;
+- C06 uses a C06-only runtime-supported candidate-selection extension in `bt_grid_resolution.candidate_selection_extension`;
+- C06 does not introduce unsupported `sector_code` or `sector_filter` catalog axes;
+- C06 PHPUnit validation passed: C06 filter `OK (13 tests, 503 assertions)` and full Watchlist `OK (290 tests, 6168 assertions)`;
+- C06 seed passed and inserted 12 catalog rows with `updated_count=0`;
+- seed-time R1/R2/C01/C02/C03/C04/C05 immutability markers were all true;
+- C06 IS calibration run 1 and run 2 both failed quality with the same deterministic artifact hash `ede8ca6f53ea49141a5e047e6094b7a282cdb232`;
+- C06 quality failure is explicit: `C06_GRID_FAILED_IS_QUALITY` / `WS_BT_C06_NO_VALID_IS_CANDIDATE` / `is_valid_param_count=0` / `is_failed_param_count=12`;
+- C06 did not open OOS and all reported OOS guards remained clean;
+- C06 has no best IS binding and no best IS binding hash, so it cannot advance to OOS.
+
+Contract status update:
+
+- `WL-CONTRACT-007`: PASS for C06 catalog identity, seed, and R1/R2/C01/C02/C03/C04/C05 immutability evidence;
+- `WL-CONTRACT-008`: PASS for C06 traceability as a new catalog derived from C01/C04/C05 forensic evidence, not a mutation of prior catalogs;
+- `WL-CONTRACT-009`: PASS for C06 IS-only boundary in calibration output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C06 IS calibration;
+- `WL-CONTRACT-011`: FAILED_QUALITY for C06 strategy quality because no valid IS candidate exists;
+- `WL-CONTRACT-014`: PASS for C06 docs/test/command/forensic tracking update with per-param C06 metrics extracted from current artifacts.
+
+C06 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C06 has no valid IS binding and no OOS proof. C06 must remain rejected as a strategy-quality catalog.
+
+## PRIOR SESSION - C05 SOFT SAMPLE-AWARE CANDIDATE-SELECTION IMPLEMENTATION SESSION
+
+Session:
+`WATCHLIST - C05 SOFT SAMPLE-AWARE CANDIDATE-SELECTION IMPLEMENTATION SESSION`
+
+Status:
+`C05_IMPLEMENTED / C05_SEEDED / C05_IS_EXECUTED / C05_IS_QUALITY_FAILED / C05_REJECTED_AS_STRATEGY_CATALOG / C05_DETERMINISTIC / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C05 contract evidence:
+
+- R1/R2/C01/C02/C03/C04 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C02/C03/C04 remain rejected as strategy-quality catalogs and were not patched to look successful;
+- C05 is a new semantic C-campaign catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C05_2026_06`, version `C05`, count `12`, hash `476af5dde18079b1270556bc44bbc632edd46e27`;
+- C05 uses a C05-only runtime-supported candidate-selection extension in `bt_grid_resolution.candidate_selection_extension`;
+- C05 does not introduce unsupported `sector_code` or `sector_filter` catalog axes;
+- C05 PHPUnit validation passed: C05 filter `OK (13 tests, 523 assertions)` and full Watchlist `OK (277 tests, 5665 assertions)`;
+- C05 seed passed and inserted 12 catalog rows with `updated_count=0`;
+- seed-time R1/R2/C01/C02/C03/C04 immutability markers were all true;
+- C05 IS calibration run 1 and run 2 both failed quality with the same deterministic artifact hash `f8288cb2d395e397f433dae854c0ad80b4650a8d`;
+- C05 quality failure is explicit: `C05_GRID_FAILED_IS_QUALITY` / `WS_BT_C05_NO_VALID_IS_CANDIDATE` / `is_valid_param_count=0` / `is_failed_param_count=12`;
+- C05 did not open OOS and all reported OOS guards remained clean;
+- C05 has no best IS binding and no best IS binding hash, so it cannot advance to OOS.
+
+Contract status update:
+
+- `WL-CONTRACT-007`: PASS for C05 catalog identity, seed, and R1/R2/C01/C02/C03/C04 immutability evidence;
+- `WL-CONTRACT-008`: PASS for C05 traceability as a new catalog derived from C04 forensic evidence, not a mutation of prior catalogs;
+- `WL-CONTRACT-009`: PASS for C05 IS-only boundary in calibration output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C05 IS calibration;
+- `WL-CONTRACT-011`: FAILED_QUALITY for C05 strategy quality because no valid IS candidate exists;
+- `WL-CONTRACT-014`: PASS for C05 docs/test/command/forensic tracking update with per-param C05 metrics extracted from current artifacts.
+
+C05 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C05 has no valid IS binding and no OOS proof. C05 must remain rejected as a strategy-quality catalog.
+
+## PRIOR SESSION - C04 IS CANDIDATE-SELECTION REDESIGN AND IMPLEMENTATION SESSION
+
+Session:
+`WATCHLIST - C04 IS CANDIDATE-SELECTION REDESIGN AND IMPLEMENTATION SESSION`
+
+Status:
+`C04_IMPLEMENTED / C04_SEEDED / C04_IS_EXECUTED / C04_IS_QUALITY_FAILED / C04_REJECTED_AS_STRATEGY_CATALOG / C04_DETERMINISTIC / OOS_NOT_RUN / NOT_PRODUCTION_READY / C05_REQUIRED_IF_CONTINUED`.
+
+Current C04 contract evidence:
+
+- R1/R2/C01/C02/C03 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C02 and C03 remain rejected as strategy-quality catalogs and were not patched to look successful;
+- C04 is a new semantic C-campaign catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C04_2026_06`, version `C04`, count `10`, hash `0ce3a313c45432c5a4d607def12b3f774988f324`;
+- C04 uses a C04-only runtime-supported candidate-selection extension in `bt_grid_resolution.candidate_selection_extension`;
+- C04 does not introduce unsupported `sector_code` or `sector_filter` catalog axes;
+- C04 PHPUnit validation passed: C04 filter `OK (14 tests, 499 assertions)` and full Watchlist `OK (264 tests, 5142 assertions)`;
+- C04 seed passed and inserted 10 catalog rows with `updated_count=0`;
+- seed-time R1/R2/C01/C02/C03 immutability markers were all true;
+- C04 IS calibration run 1 and run 2 both failed quality with the same deterministic artifact hash `fe964ee879dddc8aa8a83372e8c2d05aed5e8259`;
+- C04 quality failure is explicit: `C04_GRID_FAILED_IS_QUALITY` / `WS_BT_C04_NO_VALID_IS_CANDIDATE` / `is_valid_param_count=0` / `is_failed_param_count=10`;
+- C04 did not open OOS and all reported OOS guards remained clean;
+- C04 has no best IS binding and no best IS binding hash, so it cannot advance to OOS.
+
+Contract status update:
+
+- `WL-CONTRACT-007`: PASS for C04 catalog identity, seed, and R1/R2/C01/C02/C03 immutability evidence;
+- `WL-CONTRACT-008`: PASS for C04 traceability as a new catalog derived from C01/C02/C03 forensic evidence, not a mutation of prior catalogs;
+- `WL-CONTRACT-009`: PASS for C04 IS-only boundary in calibration output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C04 IS calibration;
+- `WL-CONTRACT-011`: FAILED_QUALITY for C04 strategy quality because no valid IS candidate exists;
+- `WL-CONTRACT-014`: PASS for C04 docs/test/command/forensic tracking update with per-param C04 metrics extracted from current artifacts.
+
+C04 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C04 has no valid IS binding and no OOS proof. C04 must remain rejected as a strategy-quality catalog.
+
+Next contract work if continued:
+
+```text
+C05_REQUIRED
+```
+
+C05 must be a new catalog identity and must preserve R1/R2/C01/C02/C03/C04 immutability. It must not add unsupported sector filters, must not loosen canonical gates, and must not run OOS unless a valid IS candidate is first proven.
+
+## PRIOR SESSION - C03 OPERATOR VALIDATION AND IS QUALITY FORENSIC FINALIZATION SESSION
+
+Session:
 `WATCHLIST - C03 OPERATOR VALIDATION AND IS QUALITY FORENSIC FINALIZATION SESSION`
 
 Status:
@@ -39,7 +215,7 @@ Contract status update:
 - `WL-CONTRACT-009`: PASS for C03 IS-only boundary in operator calibration output;
 - `WL-CONTRACT-010`: PASS for OOS non-invocation during C03 IS calibration;
 - `WL-CONTRACT-011`: FAILED_QUALITY for C03 strategy quality because no valid IS candidate exists;
-- `WL-CONTRACT-014`: PASS for C03 docs/test/command tracking update, with per-param C03 forensic metrics still requiring operator artifact JSON content.
+- `WL-CONTRACT-014`: PASS for C03 docs/test/command tracking update; per-param C03 forensic metrics are now extracted from available workspace JSON artifacts.
 
 C03 OOS-proof eligibility:
 

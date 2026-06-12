@@ -6,6 +6,9 @@ use App\Application\Watchlist\Services\WatchlistBacktestParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC01ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC02ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC03ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestC04ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestC05ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestC06ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestR2ParamGridCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -268,6 +271,21 @@ class WatchlistBacktestParamGridRepository
                 WatchlistBacktestC03ParamGridCatalog::CATALOG_VERSION,
                 WatchlistBacktestC03ParamGridCatalog::hash(),
                 WatchlistBacktestC03ParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestC04ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestC04ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestC04ParamGridCatalog::hash(),
+                WatchlistBacktestC04ParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestC05ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestC05ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestC05ParamGridCatalog::hash(),
+                WatchlistBacktestC05ParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestC06ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestC06ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestC06ParamGridCatalog::hash(),
+                WatchlistBacktestC06ParamGridCatalog::CATALOG_COUNT,
             ],
         ];
         if (! isset($known[$code])) {

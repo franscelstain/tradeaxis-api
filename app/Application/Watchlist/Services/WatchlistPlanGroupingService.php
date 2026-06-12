@@ -86,7 +86,11 @@ class WatchlistPlanGroupingService
             return $payload;
         }
 
-        $items = $this->deduplicateBestItems($this->collectEligibleItems($scoredOutput['items'] ?? [], $payload));
+        $items = $this->deduplicateBestItems($this->collectEligibleItems(
+            $scoredOutput['items'] ?? [],
+            $payload,
+            $resolvedParamset
+        ));
         $resolvedThresholds = $this->resolvedThresholds($items, $resolvedParamset);
         $payload['group_contract']['resolved_thresholds'] = $resolvedThresholds;
         $payload['cutoff_manifest'] = $resolvedThresholds;
@@ -213,7 +217,7 @@ class WatchlistPlanGroupingService
         ];
     }
 
-    private function collectEligibleItems(array $items, array &$payload): array
+    private function collectEligibleItems(array $items, array &$payload, array $paramset): array
     {
         $eligible = [];
 
@@ -227,6 +231,15 @@ class WatchlistPlanGroupingService
                 $avoidItem = $this->avoidItem($item, 'WS_PLAN_AVOID_EXCLUDED');
                 $payload['excluded'][] = $avoidItem;
                 $payload['groups']['AVOID'][] = $avoidItem;
+                continue;
+            }
+
+            $qualityReasonCodes = $this->candidateSelectionExtensionFailures($item, $paramset);
+            if ($qualityReasonCodes !== []) {
+                $payload['excluded'][] = $this->avoidItem(
+                    $this->withReasonCodes($item, $qualityReasonCodes),
+                    'WATCHLIST_C04_ENTRY_QUALITY_FLOOR_FAIL'
+                );
                 continue;
             }
 
@@ -321,6 +334,339 @@ class WatchlistPlanGroupingService
         $item['eligible_plan_group'] = false;
 
         return $item;
+    }
+
+    private function withReasonCodes(array $item, array $reasonCodes): array
+    {
+        $item['reason_codes'] = array_values(array_unique(array_merge(
+            $item['reason_codes'] ?? [],
+            $reasonCodes
+        )));
+
+        return $item;
+    }
+
+    private function c04QualityFloorFailures(array $item, array $paramset): array
+    {
+        $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
+        if (! is_array($extension)
+            || (string) ($extension['mode'] ?? '') !== 'C04_BALANCED_COMPONENT_AND_TREND_FLOOR') {
+            return [];
+        }
+
+        $failures = [];
+        $componentMinimums = is_array($extension['score_component_min'] ?? null)
+            ? $extension['score_component_min']
+            : [];
+        foreach ($componentMinimums as $component => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->componentValue($item, (string) $component);
+            if ($value === null || $value < (float) $minimum) {
+                $failures[] = 'WATCHLIST_C04_SCORE_COMPONENT_FLOOR_FAIL';
+                break;
+            }
+        }
+
+        $momentum = is_array($item['factor_breakdown']['momentum'] ?? null)
+            ? $item['factor_breakdown']['momentum']
+            : [];
+        $breakout = is_array($item['factor_breakdown']['breakout'] ?? null)
+            ? $item['factor_breakdown']['breakout']
+            : [];
+        $trendFloors = is_array($extension['trend_metric_floor'] ?? null)
+            ? $extension['trend_metric_floor']
+            : [];
+        foreach ($trendFloors as $metric => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->numericOrNull($momentum[$metric] ?? null);
+            if ($value === null || $value < (float) $minimum) {
+                $failures[] = 'WATCHLIST_C04_TREND_CONFIRM_FAIL';
+                break;
+            }
+        }
+
+        if (($extension['raw_setup_guards']['roc20_between_catalog_roc_lo_and_roc_hi'] ?? false) === true) {
+            $roc20 = $this->numericOrNull($momentum['roc20'] ?? null);
+            $rocLo = $this->numericOrNull($paramset['setup']['roc_lo'] ?? null);
+            $rocHi = $this->numericOrNull($paramset['setup']['roc_hi'] ?? null);
+            if ($roc20 === null || $rocLo === null || $rocHi === null || $roc20 < $rocLo || $roc20 > $rocHi) {
+                $failures[] = 'WATCHLIST_C04_SETUP_RANGE_FAIL';
+            }
+        }
+
+        if (($extension['raw_setup_guards']['close_to_hh20_between_negative_bo_near_below_and_bo_max_ext'] ?? false) === true) {
+            $closeToHh20 = $this->numericOrNull($breakout['close_to_hh20_pct'] ?? null);
+            $nearBelow = $this->numericOrNull($paramset['setup']['bo_near_below_pct'] ?? null);
+            $maxExtension = $this->numericOrNull($paramset['setup']['bo_max_ext_pct'] ?? null);
+            if ($closeToHh20 === null || $nearBelow === null || $maxExtension === null
+                || $closeToHh20 < -$nearBelow || $closeToHh20 > $maxExtension) {
+                $failures[] = 'WATCHLIST_C04_SETUP_RANGE_FAIL';
+            }
+        }
+
+        $failures = array_values(array_unique($failures));
+        if ($failures !== []) {
+            $failures[] = (string) ($extension['reason_code'] ?? 'WATCHLIST_C04_ENTRY_QUALITY_FLOOR_FAIL');
+        }
+
+        return array_values(array_unique($failures));
+    }
+
+    private function candidateSelectionExtensionFailures(array $item, array $paramset): array
+    {
+        $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
+        if (! is_array($extension)) {
+            return [];
+        }
+
+        $mode = (string) ($extension['mode'] ?? '');
+        if ($mode === 'C04_BALANCED_COMPONENT_AND_TREND_FLOOR') {
+            return $this->c04QualityFloorFailures($item, $paramset);
+        }
+        if ($mode === 'C05_SOFT_BALANCED_SAMPLE_STABILITY_FLOOR') {
+            return $this->c05QualityFloorFailures($item, $paramset);
+        }
+        if ($mode === 'C06_MODERATE_LIQUIDITY_VOLUME_ROC_STABILITY_FLOOR') {
+            return $this->c06QualityFloorFailures($item, $paramset);
+        }
+
+        return [];
+    }
+
+    private function c05QualityFloorFailures(array $item, array $paramset): array
+    {
+        $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
+        if (! is_array($extension)
+            || (string) ($extension['mode'] ?? '') !== 'C05_SOFT_BALANCED_SAMPLE_STABILITY_FLOOR') {
+            return [];
+        }
+
+        $failures = [];
+        $componentMinimums = is_array($extension['score_component_min'] ?? null)
+            ? $extension['score_component_min']
+            : [];
+        $componentValues = [];
+        $componentPassCount = 0;
+        foreach ($componentMinimums as $component => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->componentValue($item, (string) $component);
+            if ($value === null) {
+                $failures[] = 'WATCHLIST_C05_SCORE_COMPONENT_COUNT_FAIL';
+                continue;
+            }
+            $componentValues[] = $value;
+            if ($value >= (float) $minimum) {
+                $componentPassCount++;
+            }
+        }
+
+        $requiredComponentPassCount = (int) ($extension['score_component_required_pass_count'] ?? count($componentMinimums));
+        if ($componentPassCount < $requiredComponentPassCount) {
+            $failures[] = 'WATCHLIST_C05_SCORE_COMPONENT_COUNT_FAIL';
+        }
+        $componentAverageMin = $this->numericOrNull($extension['score_component_average_min'] ?? null);
+        if ($componentAverageMin !== null && $componentValues !== []
+            && (array_sum($componentValues) / count($componentValues)) < $componentAverageMin) {
+            $failures[] = 'WATCHLIST_C05_SCORE_COMPONENT_AVERAGE_FAIL';
+        }
+
+        $momentum = is_array($item['factor_breakdown']['momentum'] ?? null)
+            ? $item['factor_breakdown']['momentum']
+            : [];
+        $breakout = is_array($item['factor_breakdown']['breakout'] ?? null)
+            ? $item['factor_breakdown']['breakout']
+            : [];
+        $trendFloors = is_array($extension['trend_metric_floor'] ?? null)
+            ? $extension['trend_metric_floor']
+            : [];
+        $trendPassCount = 0;
+        foreach ($trendFloors as $metric => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->numericOrNull($momentum[$metric] ?? null);
+            if ($value !== null && $value >= (float) $minimum) {
+                $trendPassCount++;
+            }
+        }
+        $requiredTrendPassCount = (int) ($extension['trend_metric_required_pass_count'] ?? count($trendFloors));
+        if ($trendPassCount < $requiredTrendPassCount) {
+            $failures[] = 'WATCHLIST_C05_TREND_CONFIRM_COUNT_FAIL';
+        }
+
+        $rawSetupGuards = is_array($extension['raw_setup_guards'] ?? null)
+            ? $extension['raw_setup_guards']
+            : [];
+        if (($rawSetupGuards['roc20_between_catalog_roc_lo_and_roc_hi_with_tolerance'] ?? false) === true) {
+            $roc20 = $this->numericOrNull($momentum['roc20'] ?? null);
+            $rocLo = $this->numericOrNull($paramset['setup']['roc_lo'] ?? null);
+            $rocHi = $this->numericOrNull($paramset['setup']['roc_hi'] ?? null);
+            $lowerTolerance = $this->numericOrNull($rawSetupGuards['roc20_lower_tolerance'] ?? null) ?? 0.0;
+            $upperTolerance = $this->numericOrNull($rawSetupGuards['roc20_upper_tolerance'] ?? null) ?? 0.0;
+            if ($roc20 === null || $rocLo === null || $rocHi === null
+                || $roc20 < ($rocLo - $lowerTolerance) || $roc20 > ($rocHi + $upperTolerance)) {
+                $failures[] = 'WATCHLIST_C05_SETUP_RANGE_FAIL';
+            }
+        }
+
+        if (($rawSetupGuards['close_to_hh20_between_negative_bo_near_below_and_bo_max_ext_with_tolerance'] ?? false) === true) {
+            $closeToHh20 = $this->numericOrNull($breakout['close_to_hh20_pct'] ?? null);
+            $nearBelow = $this->numericOrNull($paramset['setup']['bo_near_below_pct'] ?? null);
+            $maxExtension = $this->numericOrNull($paramset['setup']['bo_max_ext_pct'] ?? null);
+            $lowerTolerance = $this->numericOrNull($rawSetupGuards['close_to_hh20_lower_tolerance'] ?? null) ?? 0.0;
+            $upperTolerance = $this->numericOrNull($rawSetupGuards['close_to_hh20_upper_tolerance'] ?? null) ?? 0.0;
+            if ($closeToHh20 === null || $nearBelow === null || $maxExtension === null
+                || $closeToHh20 < (-$nearBelow - $lowerTolerance) || $closeToHh20 > ($maxExtension + $upperTolerance)) {
+                $failures[] = 'WATCHLIST_C05_SETUP_RANGE_FAIL';
+            }
+        }
+
+        $failures = array_values(array_unique($failures));
+        if ($failures !== []) {
+            $failures[] = (string) ($extension['reason_code'] ?? 'WATCHLIST_C05_ENTRY_QUALITY_FLOOR_FAIL');
+        }
+
+        return array_values(array_unique($failures));
+    }
+
+    private function c06QualityFloorFailures(array $item, array $paramset): array
+    {
+        $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
+        if (! is_array($extension)
+            || (string) ($extension['mode'] ?? '') !== 'C06_MODERATE_LIQUIDITY_VOLUME_ROC_STABILITY_FLOOR') {
+            return [];
+        }
+
+        $failures = [];
+        $scoreMetrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $momentum = is_array($item['factor_breakdown']['momentum'] ?? null)
+            ? $item['factor_breakdown']['momentum']
+            : [];
+        $breakout = is_array($item['factor_breakdown']['breakout'] ?? null)
+            ? $item['factor_breakdown']['breakout']
+            : [];
+        $bounds = is_array($extension['runtime_metric_bounds'] ?? null)
+            ? $extension['runtime_metric_bounds']
+            : [];
+
+        if (($bounds['dv20_between_catalog_min_and_strong'] ?? false) === true) {
+            $dv20 = $this->numericOrNull($scoreMetrics['dv20_idr'] ?? null);
+            $min = $this->numericOrNull($paramset['liquidity']['min_dv20_idr'] ?? null);
+            $max = $this->numericOrNull($paramset['liquidity']['dv20_strong_idr'] ?? null);
+            if ($dv20 === null || $min === null || $max === null || $dv20 < $min || $dv20 > $max) {
+                $failures[] = 'WATCHLIST_C06_LIQUIDITY_STABILITY_RANGE_FAIL';
+            }
+        }
+
+        if (($bounds['vol_ratio_between_catalog_min_and_strong'] ?? false) === true) {
+            $volRatio = $this->numericOrNull($scoreMetrics['vol_ratio'] ?? null);
+            $min = $this->numericOrNull($paramset['volume']['min_vol_ratio'] ?? null);
+            $max = $this->numericOrNull($paramset['volume']['strong_vol_ratio'] ?? null);
+            if ($volRatio === null || $min === null || $max === null || $volRatio < $min || $volRatio > $max) {
+                $failures[] = 'WATCHLIST_C06_VOLUME_STABILITY_RANGE_FAIL';
+            }
+        }
+
+        if (($bounds['atr14_between_catalog_min_and_max'] ?? false) === true) {
+            $atr = $this->numericOrNull($scoreMetrics['atr14_pct'] ?? null);
+            $min = $this->numericOrNull($paramset['risk']['min_atr14_pct'] ?? null);
+            $max = $this->numericOrNull($paramset['risk']['max_atr14_pct'] ?? null);
+            if ($atr === null || $min === null || $max === null || $atr < $min || $atr > $max) {
+                $failures[] = 'WATCHLIST_C06_ATR_REGIME_RANGE_FAIL';
+            }
+        }
+
+        if (($bounds['roc20_between_catalog_roc_lo_and_roc_hi'] ?? false) === true) {
+            $roc20 = $this->numericOrNull($momentum['roc20'] ?? null);
+            $rocLo = $this->numericOrNull($paramset['setup']['roc_lo'] ?? null);
+            $rocHi = $this->numericOrNull($paramset['setup']['roc_hi'] ?? null);
+            if ($roc20 === null || $rocLo === null || $rocHi === null || $roc20 < $rocLo || $roc20 > $rocHi) {
+                $failures[] = 'WATCHLIST_C06_ROC_REGIME_RANGE_FAIL';
+            }
+        }
+
+        if (($bounds['close_to_hh20_between_negative_bo_near_below_and_bo_max_ext'] ?? false) === true) {
+            $closeToHh20 = $this->numericOrNull($breakout['close_to_hh20_pct'] ?? null);
+            $nearBelow = $this->numericOrNull($paramset['setup']['bo_near_below_pct'] ?? null);
+            $maxExtension = $this->numericOrNull($paramset['setup']['bo_max_ext_pct'] ?? null);
+            if ($closeToHh20 === null || $nearBelow === null || $maxExtension === null
+                || $closeToHh20 < -$nearBelow || $closeToHh20 > $maxExtension) {
+                $failures[] = 'WATCHLIST_C06_BREAKOUT_RANGE_FAIL';
+            }
+        }
+
+        $componentMinimums = is_array($extension['score_component_min'] ?? null)
+            ? $extension['score_component_min']
+            : [];
+        $componentValues = [];
+        $componentPassCount = 0;
+        foreach ($componentMinimums as $component => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->componentValue($item, (string) $component);
+            if ($value === null) {
+                $failures[] = 'WATCHLIST_C06_SCORE_COMPONENT_COUNT_FAIL';
+                continue;
+            }
+            $componentValues[] = $value;
+            if ($value >= (float) $minimum) {
+                $componentPassCount++;
+            }
+        }
+
+        $requiredComponentPassCount = (int) ($extension['score_component_required_pass_count'] ?? count($componentMinimums));
+        if ($componentPassCount < $requiredComponentPassCount) {
+            $failures[] = 'WATCHLIST_C06_SCORE_COMPONENT_COUNT_FAIL';
+        }
+        $componentAverageMin = $this->numericOrNull($extension['score_component_average_min'] ?? null);
+        if ($componentAverageMin !== null && $componentValues !== []
+            && (array_sum($componentValues) / count($componentValues)) < $componentAverageMin) {
+            $failures[] = 'WATCHLIST_C06_SCORE_COMPONENT_AVERAGE_FAIL';
+        }
+
+        $trendFloors = is_array($extension['trend_metric_floor'] ?? null)
+            ? $extension['trend_metric_floor']
+            : [];
+        $trendPassCount = 0;
+        foreach ($trendFloors as $metric => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->numericOrNull($momentum[$metric] ?? null);
+            if ($value !== null && $value >= (float) $minimum) {
+                $trendPassCount++;
+            }
+        }
+        $requiredTrendPassCount = (int) ($extension['trend_metric_required_pass_count'] ?? count($trendFloors));
+        if ($trendPassCount < $requiredTrendPassCount) {
+            $failures[] = 'WATCHLIST_C06_TREND_CONFIRM_COUNT_FAIL';
+        }
+
+        $failures = array_values(array_unique($failures));
+        if ($failures !== []) {
+            $failures[] = (string) ($extension['reason_code'] ?? 'WATCHLIST_C06_ENTRY_QUALITY_FLOOR_FAIL');
+        }
+
+        return array_values(array_unique($failures));
+    }
+
+    private function componentValue(array $item, string $component): ?float
+    {
+        $value = $item['score_components'][$component] ?? $item[$component] ?? null;
+
+        return $this->numericOrNull($value);
+    }
+
+    private function numericOrNull($value): ?float
+    {
+        return $this->isNumericValue($value) ? (float) $value : null;
     }
 
     private function fillPlanRanks(array &$payload): void

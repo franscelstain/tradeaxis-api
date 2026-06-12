@@ -515,11 +515,11 @@ row_hash
 rationale
 ```
 
-The canonical row identity is `(policy_code, catalog_code, row_code)`. A seed rerun with an identical payload is idempotent. The same identity with a different payload fails closed. R1 remains `WS_BT_GRID_BOOTSTRAP_2026_06` with count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`. R2 remains `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06` with count `12` and hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`. C01 remains `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06` with version `C01`, count `8`, and code-owned hash `604ac98f6f193a4c317d4f25582deada84682846`. C02 is `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06` with version `C02`, count `8`, and code-owned hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`; it remains rejected as a strategy-quality catalog. C03 is `WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06` with version `C03`, count `10`, and code-owned hash `29e15ceab1b3f7dc31a21f339ac6ab7483e14800`; it is derived from C02 forensic evidence and requires R1/R2/C01/C02 immutability before seed/calibration.
+The canonical row identity is `(policy_code, catalog_code, row_code)`. A seed rerun with an identical payload is idempotent. The same identity with a different payload fails closed. R1 remains `WS_BT_GRID_BOOTSTRAP_2026_06` with count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`. R2 remains `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06` with count `12` and hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`. C01 remains `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06` with version `C01`, count `8`, and code-owned hash `604ac98f6f193a4c317d4f25582deada84682846`. C02 is `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06` with version `C02`, count `8`, and code-owned hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`; it remains rejected as a strategy-quality catalog. C03 is `WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06` with version `C03`, count `10`, and code-owned hash `29e15ceab1b3f7dc31a21f339ac6ab7483e14800`; it remains rejected as a strategy-quality catalog. C04 is `WS_BT_GRID_DOWNSIDE_STABILITY_C04_2026_06` with version `C04`, count `10`, and code-owned hash `0ce3a313c45432c5a4d607def12b3f774988f324`; it remains rejected as a strategy-quality catalog. C05 is `WS_BT_GRID_DOWNSIDE_STABILITY_C05_2026_06` with version `C05`, count `12`, and code-owned hash `476af5dde18079b1270556bc44bbc632edd46e27`; it remains rejected as a strategy-quality catalog. C06 is `WS_BT_GRID_DOWNSIDE_STABILITY_C06_2026_06` with version `C06`, count `12`, and code-owned hash `6c93d67fb77319a02cecc3d96fd99bb0e139a1ac`; it is derived from C01/C04/C05 forensic evidence and requires R1/R2/C01/C02/C03/C04/C05 immutability before seed/calibration.
 
 ### Curated entry-quality columns
 
-The official grid stores the runtime-consumed entry-quality fields for liquidity, volume, ATR band, ROC/breakout setup, score weights, and grouping quantiles. R2, C01, C02, and C03 catalogs are finite, curated, deterministic, and explicit. Random, Bayesian, latest-catalog fallback, active-catalog fallback, unsupported sector-filter injection, and post-result catalog mutation are forbidden.
+The official grid stores the runtime-consumed entry-quality fields for liquidity, volume, ATR band, ROC/breakout setup, score weights, and grouping quantiles. R2, C01, C02, C03, C04, C05, and C06 catalogs are finite, curated, deterministic, and explicit. Random, Bayesian, latest-catalog fallback, active-catalog fallback, unsupported sector-filter injection, and post-result catalog mutation are forbidden.
 
 ### Evaluation identity
 
@@ -540,7 +540,7 @@ Exact reruns are idempotent; conflicting payloads fail with `WS_BT_EVAL_IDENTITY
 
 ### Strict IS boundary
 
-The IS calibration command accepts only the exact IS window for immutable R2/C01/C02/C03 execution:
+The IS calibration command accepts only the exact IS window for immutable R2/C01/C02/C03/C04/C05/C06 execution:
 
 ```text
 2023-01-02 through 2025-05-21
@@ -556,7 +556,7 @@ The runtime may not call an OOS service/repository, write `watchlist_bt_oos_eval
 
 ### Fixed execution snapshot
 
-Every R2/C01/C02/C03 row uses exactly:
+Every R2/C01/C02/C03/C04/C05/C06 row uses exactly:
 
 ```text
 ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS
@@ -566,7 +566,7 @@ grouping.top_picks_target=5
 grouping.secondary_target=10
 ```
 
-R2/C01/C02/C03 success freezes a best-IS binding only when every canonical gate passes. R2/C01/C02/C03 failure creates no binding and never selects best-of-failed. C01/C02/C03 are not eligible for OOS proof until a separate IS runtime creates a valid frozen binding for that exact catalog.
+R2/C01/C02/C03/C04/C05/C06 success freezes a best-IS binding only when every canonical gate passes. R2/C01/C02/C03/C04/C05/C06 failure creates no binding and never selects best-of-failed. C01/C02/C03/C04/C05/C06 are not eligible for OOS proof until a separate IS runtime creates a valid frozen binding for that exact catalog.
 
 ### C02 final operator result
 
@@ -672,3 +672,194 @@ C04 design input is recorded in:
 docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C04_DESIGN_INPUT_NOTE.md
 ```
 
+### C04 final operator result
+
+C04 has been implemented, seeded, and calibrated as a new IS-quality catalog candidate. It is not a C03 mutation, not a C03 pass-forcing patch, and not an OOS unlock.
+
+```text
+C04 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C04_2026_06
+C04 catalog_version=C04
+C04 catalog_count=10
+C04 catalog_hash=0ce3a313c45432c5a4d607def12b3f774988f324
+C04 design_source=C01/C02/C03 forensic metrics + runtime-supported candidate-selection axes
+C04 sector_filter_used=false
+C04 OOS=NOT_RUN
+C04 production_ready=0
+```
+
+C04 validation result:
+
+```text
+C04 PHPUnit filter=PASS / OK (14 tests, 499 assertions)
+Full Watchlist PHPUnit=PASS / OK (264 tests, 5142 assertions)
+C04 seed=PASS / inserted_count=10 / updated_count=0 / existing_count=0
+R1/R2/C01/C02/C03 immutable=1
+C04 IS run 1=C04_GRID_FAILED_IS_QUALITY / valid=0 / failed=10 / artifact_hash=fe964ee879dddc8aa8a83372e8c2d05aed5e8259
+C04 IS run 2=C04_GRID_FAILED_IS_QUALITY / valid=0 / failed=10 / artifact_hash=fe964ee879dddc8aa8a83372e8c2d05aed5e8259
+C04 deterministic=true
+C04 OOS=NOT_RUN
+C04 production_ready=0
+```
+
+C04 failed quality with:
+
+```text
+reason_code=WS_BT_C04_NO_VALID_IS_CANDIDATE
+is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id_best_is=
+best_is_binding_hash=
+```
+
+C04 final forensic summary:
+
+```text
+picks_count=82..176
+median_ret_net_top=-1.2712%..-0.0501%
+p25_ret_net_top=-3.8881%..-3.0868%
+month_win_rate_min=0.00%..0.00%
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL=10,WS_BT_EVAL_MIN_TRADES_FAIL=7,WS_BT_EVAL_ROBUST_RETURN_FAIL=10,WS_BT_EVAL_STABILITY_FAIL=10
+```
+
+C04 final decision:
+
+```text
+C04_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C04 is not eligible for OOS because it has no valid IS candidate, no best IS param, and no best IS binding hash. OOS has not been run and must not be claimed PASS.
+
+C04 forensic result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C04_OPERATOR_FORENSIC_FINAL_RESULT.md
+docs/watchlist/audit/_artifacts/c04-forensic-summary.csv
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C04_DESIGN_NOTE.md
+```
+
+### C05 final operator result
+
+C05 has been implemented, seeded, and calibrated as a new IS-quality catalog candidate. It is not a C04 mutation and not an OOS unlock.
+
+```text
+C05 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C05_2026_06
+C05 catalog_version=C05
+C05 catalog_count=12
+C05 catalog_hash=476af5dde18079b1270556bc44bbc632edd46e27
+C05 design_source=C04 forensic metrics + runtime-supported soft sample-aware candidate-selection axes
+C05 sector_filter_used=false
+C05 OOS=NOT_RUN
+C05 production_ready=0
+```
+
+C05 validation result:
+
+```text
+C05 PHPUnit filter=PASS / OK (13 tests, 523 assertions)
+Full Watchlist PHPUnit=PASS / OK (277 tests, 5665 assertions)
+C05 seed=PASS / inserted_count=12 / updated_count=0 / existing_count=0
+R1/R2/C01/C02/C03/C04 immutable=1
+C05 IS run 1=C05_GRID_FAILED_IS_QUALITY / valid=0 / failed=12 / artifact_hash=f8288cb2d395e397f433dae854c0ad80b4650a8d
+C05 IS run 2=C05_GRID_FAILED_IS_QUALITY / valid=0 / failed=12 / artifact_hash=f8288cb2d395e397f433dae854c0ad80b4650a8d
+C05 deterministic=true
+C05 OOS=NOT_RUN
+C05 production_ready=0
+```
+
+C05 failed quality with:
+
+```text
+reason_code=WS_BT_C05_NO_VALID_IS_CANDIDATE
+is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id_best_is=
+best_is_binding_hash=
+```
+
+C05 final forensic summary:
+
+```text
+picks_count=370..886
+median_ret_net_top=-1.6122%..-0.7301%
+p25_ret_net_top=-4.0209%..-3.2708%
+month_win_rate_min=0.00%..18.75%
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL=12,WS_BT_EVAL_ROBUST_RETURN_FAIL=12,WS_BT_EVAL_STABILITY_FAIL=12
+```
+
+C05 final decision:
+
+```text
+C05_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C05 is not eligible for OOS because it has no valid IS candidate, no best IS param, and no best IS binding hash. OOS has not been run and must not be claimed PASS.
+
+C05 forensic result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C05_OPERATOR_FORENSIC_FINAL_RESULT.md
+docs/watchlist/audit/_artifacts/c05-forensic-summary.csv
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C05_DESIGN_NOTE.md
+```
+
+### C06 final operator result
+
+C06 has been implemented, seeded, and calibrated as a new IS-quality catalog candidate. It is not a C05 mutation and not an OOS unlock.
+
+```text
+C06 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C06_2026_06
+C06 catalog_version=C06
+C06 catalog_count=12
+C06 catalog_hash=6c93d67fb77319a02cecc3d96fd99bb0e139a1ac
+C06 design_source=C01/C04/C05 forensic metrics + runtime-supported moderate-liquidity/volume/ROC cap axes
+C06 sector_filter_used=false
+C06 OOS=NOT_RUN
+C06 production_ready=0
+```
+
+C06 validation result:
+
+```text
+C06 PHPUnit filter=PASS / OK (13 tests, 503 assertions)
+Full Watchlist PHPUnit=PASS / OK (290 tests, 6168 assertions)
+C06 seed=PASS / inserted_count=12 / updated_count=0 / existing_count=0
+R1/R2/C01/C02/C03/C04/C05 immutable=1
+C06 IS run 1=C06_GRID_FAILED_IS_QUALITY / valid=0 / failed=12 / artifact_hash=ede8ca6f53ea49141a5e047e6094b7a282cdb232
+C06 IS run 2=C06_GRID_FAILED_IS_QUALITY / valid=0 / failed=12 / artifact_hash=ede8ca6f53ea49141a5e047e6094b7a282cdb232
+C06 deterministic=true
+C06 OOS=NOT_RUN
+C06 production_ready=0
+```
+
+C06 failed quality with:
+
+```text
+reason_code=WS_BT_C06_NO_VALID_IS_CANDIDATE
+is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id_best_is=
+best_is_binding_hash=
+```
+
+C06 final forensic summary:
+
+```text
+picks_count=9..214
+median_ret_net_top=-1.6757%..1.6637%
+p25_ret_net_top=-3.4390%..-0.6101%
+month_win_rate_min=0.00%..0.00%
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL=5,WS_BT_EVAL_MIN_TRADES_FAIL=9,WS_BT_EVAL_ROBUST_RETURN_FAIL=10,WS_BT_EVAL_STABILITY_FAIL=12
+```
+
+C06 final decision:
+
+```text
+C06_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C06 is not eligible for OOS because it has no valid IS candidate, no best IS param, and no best IS binding hash. OOS has not been run and must not be claimed PASS.
+
+C06 forensic result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C06_OPERATOR_FORENSIC_FINAL_RESULT.md
+docs/watchlist/audit/_artifacts/c06-forensic-summary.csv
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C06_DESIGN_NOTE.md
+```

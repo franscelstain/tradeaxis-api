@@ -163,18 +163,43 @@ WS_BT_EVAL_STABILITY_FAIL
 
 This means the C03 design change did not produce even one strategy-quality IS candidate. The correct interpretation is not that C03 implementation is broken; the implementation is validated. The failure is strategy quality.
 
-## 7. Forensic limitation
+## 7. Forensic artifact detail
 
-The operator command output includes artifact paths:
+The JSON artifacts are available in the current workspace:
 
 ```text
 storage/app/watchlist/backtest/c03-is-run-1.json
 storage/app/watchlist/backtest/c03-is-run-2.json
 ```
 
-Those JSON artifact contents are not present in this repository ZIP and were not uploaded in this session. Therefore this document does not reconstruct per-parameter metrics such as `picks_count`, `median_ret_net_top`, `p25_ret_net_top`, or `month_win_rate_min`.
+Per-row C03 metrics have been extracted into:
 
-The companion CSV `docs/watchlist/audit/_artifacts/c03-forensic-summary.csv` records aggregate command-output evidence and marks per-row metric extraction as `OPERATOR_ARTIFACT_REQUIRED`.
+```text
+docs/watchlist/audit/_artifacts/c03-forensic-summary.csv
+storage/app/watchlist/backtest/c03-forensic-summary.csv
+```
+
+C03 failure reason distribution:
+
+```text
+WS_BT_EVAL_DOWNSIDE_FAIL=10
+WS_BT_EVAL_ROBUST_RETURN_FAIL=10
+WS_BT_EVAL_STABILITY_FAIL=10
+```
+
+Per-row metric ranges from `c03-is-run-1.json`:
+
+```text
+picks_count=1104..1432
+days_covered=503..508
+avg_ret_net_top=-0.3368%..0.1810%
+median_ret_net_top=-1.7639%..-1.0634%
+p25_ret_net_top=-5.4058%..-3.7924%
+month_win_rate_min=10.00%..20.69%
+win_rate_top=38.45%..41.82%
+```
+
+This confirms C03 had meaningful sample size, but its candidate selection remained too weak: all medians were negative, all p25 downside values were worse than the `-3%` threshold, and monthly stability remained far below the required floor.
 
 ## 8. Final decision
 

@@ -182,6 +182,19 @@ class WatchlistBacktestParamGridParamsetFactory
             throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: fixed execution/grouping snapshot drifted.');
         }
 
+        $btGridResolution = [
+            'risk_band_rule' => self::EXPLICIT_CATALOG_RISK_BAND_RULE,
+            'min_atr14_pct' => $minAtr14Pct,
+            'max_atr14_pct' => $maxAtr14Pct,
+            'atr_ideal_low' => $idealLow,
+            'atr_ideal_high' => $idealHigh,
+            'source' => 'explicit immutable catalog values',
+            'explicit_catalog_values_preserved' => true,
+        ];
+        if (isset($definition['candidate_selection_extension'])) {
+            $btGridResolution['candidate_selection_extension'] = $definition['candidate_selection_extension'];
+        }
+
         return array_replace_recursive($base, [
             'policy_code' => (string) ($row['policy_code'] ?? 'WS'),
             'policy_version' => 'WS_EOD_RUNTIME',
@@ -195,15 +208,7 @@ class WatchlistBacktestParamGridParamsetFactory
                 'rationale' => $rationale,
             ],
             'bt_grid' => $gridSnapshot,
-            'bt_grid_resolution' => [
-                'risk_band_rule' => self::EXPLICIT_CATALOG_RISK_BAND_RULE,
-                'min_atr14_pct' => $minAtr14Pct,
-                'max_atr14_pct' => $maxAtr14Pct,
-                'atr_ideal_low' => $idealLow,
-                'atr_ideal_high' => $idealHigh,
-                'source' => 'explicit immutable catalog values',
-                'explicit_catalog_values_preserved' => true,
-            ],
+            'bt_grid_resolution' => $btGridResolution,
             'setup' => [
                 'roc_lo' => $rocLo,
                 'roc_hi' => $rocHi,
@@ -273,6 +278,33 @@ class WatchlistBacktestParamGridParamsetFactory
                 'fixed_min_rr' => WatchlistBacktestC03ParamGridCatalog::FIXED_MIN_RR,
                 'fixed_top_picks_target' => WatchlistBacktestC03ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
                 'fixed_secondary_target' => WatchlistBacktestC03ParamGridCatalog::FIXED_SECONDARY_TARGET,
+            ],
+            WatchlistBacktestC04ParamGridCatalog::CATALOG_CODE => [
+                'version' => WatchlistBacktestC04ParamGridCatalog::CATALOG_VERSION,
+                'hash' => WatchlistBacktestC04ParamGridCatalog::hash(),
+                'fixed_stop_atr_mult' => WatchlistBacktestC04ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC04ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC04ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC04ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'candidate_selection_extension' => WatchlistBacktestC04ParamGridCatalog::candidateSelectionExtension(),
+            ],
+            WatchlistBacktestC05ParamGridCatalog::CATALOG_CODE => [
+                'version' => WatchlistBacktestC05ParamGridCatalog::CATALOG_VERSION,
+                'hash' => WatchlistBacktestC05ParamGridCatalog::hash(),
+                'fixed_stop_atr_mult' => WatchlistBacktestC05ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC05ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC05ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC05ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'candidate_selection_extension' => WatchlistBacktestC05ParamGridCatalog::candidateSelectionExtension(),
+            ],
+            WatchlistBacktestC06ParamGridCatalog::CATALOG_CODE => [
+                'version' => WatchlistBacktestC06ParamGridCatalog::CATALOG_VERSION,
+                'hash' => WatchlistBacktestC06ParamGridCatalog::hash(),
+                'fixed_stop_atr_mult' => WatchlistBacktestC06ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC06ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC06ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC06ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'candidate_selection_extension' => WatchlistBacktestC06ParamGridCatalog::candidateSelectionExtension(),
             ],
         ];
 

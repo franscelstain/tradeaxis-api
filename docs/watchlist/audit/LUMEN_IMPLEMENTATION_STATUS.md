@@ -15,6 +15,183 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C06 MODERATE-CAP CANDIDATE-SELECTION IMPLEMENTATION SESSION`
+
+Status:
+`C06_IMPLEMENTED / C06_SEED_PASS / C06_IS_EXECUTION_PASS / C06_IS_QUALITY_FAIL / C06_REJECTED_AS_STRATEGY_CATALOG / C06_DETERMINISTIC_TWO_RUN / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C06 final evidence:
+
+- C06 is a new catalog identity, not a patch to C05: `WS_BT_GRID_DOWNSIDE_STABILITY_C06_2026_06`, version `C06`, count `12`, hash `6c93d67fb77319a02cecc3d96fd99bb0e139a1ac`;
+- C06 uses only runtime-supported candidate-selection axes: DV20 upper/lower runtime bounds, volume upper/lower runtime bounds, ATR band, ROC band, close-to-HH20 setup band, score component pass-count/average floor, and trend pass-count floor;
+- C06 does not add a sector filter; sector remains diagnostic-only;
+- C06 implementation validation passed in the current workspace: `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC06"` = PASS / `OK (13 tests, 503 assertions)`;
+- full Watchlist PHPUnit passed in the current workspace: `vendor\bin\phpunit tests\Unit\Watchlist` = PASS / `OK (290 tests, 6168 assertions)`;
+- C06 seed passed: `inserted_count=12`, `updated_count=0`, `existing_count=0`;
+- R1/R2/C01/C02/C03/C04/C05 immutability was preserved during C06 seed;
+- C06 IS calibration run 1 and run 2 both executed and produced the same deterministic artifact hash `ede8ca6f53ea49141a5e047e6094b7a282cdb232`;
+- C06 IS quality failed deterministically: `status=C06_GRID_FAILED_IS_QUALITY`, `reason_code=WS_BT_C06_NO_VALID_IS_CANDIDATE`, `is_valid_param_count=0`, `is_failed_param_count=12`;
+- C06 failure reason family: `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_MIN_TRADES_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- C06 did not invoke OOS: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
+- C06 has no frozen best IS binding: `param_id_best_is=` empty and `best_is_binding_hash=` empty;
+- C06 production readiness remains false: `production_ready=0`.
+
+C06 final forensic summary:
+
+```text
+picks_count=9..214
+median_ret_net_top=-1.6757%..1.6637%
+p25_ret_net_top=-3.4390%..-0.6101%
+month_win_rate_min=0.00%..0.00%
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL=5,WS_BT_EVAL_MIN_TRADES_FAIL=9,WS_BT_EVAL_ROBUST_RETURN_FAIL=10,WS_BT_EVAL_STABILITY_FAIL=12
+```
+
+C06 final decision state:
+
+```text
+C06_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C06 is not eligible for OOS because it has no valid IS candidate, no `param_id_best_is`, and no `best_is_binding_hash`. OOS remains `NOT_RUN` and must not be claimed PASS.
+
+## PRIOR SESSION - C05 SOFT SAMPLE-AWARE CANDIDATE-SELECTION IMPLEMENTATION SESSION
+
+Session:
+`WATCHLIST - C05 SOFT SAMPLE-AWARE CANDIDATE-SELECTION IMPLEMENTATION SESSION`
+
+Status:
+`C05_IMPLEMENTED / C05_SEED_PASS / C05_IS_EXECUTION_PASS / C05_IS_QUALITY_FAIL / C05_REJECTED_AS_STRATEGY_CATALOG / C05_DETERMINISTIC_TWO_RUN / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C05 final evidence:
+
+- C05 is a new catalog identity, not a patch to C04: `WS_BT_GRID_DOWNSIDE_STABILITY_C05_2026_06`, version `C05`, count `12`, hash `476af5dde18079b1270556bc44bbc632edd46e27`;
+- C05 uses only runtime-supported candidate-selection axes and a soft pass-count/average floor to address C04 sample collapse;
+- C05 does not add a sector filter; sector remains diagnostic-only;
+- C05 implementation validation passed in the current workspace: `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC05"` = PASS / `OK (13 tests, 523 assertions)`;
+- full Watchlist PHPUnit passed in the current workspace: `vendor\bin\phpunit tests\Unit\Watchlist` = PASS / `OK (277 tests, 5665 assertions)`;
+- C05 seed passed: `inserted_count=12`, `updated_count=0`, `existing_count=0`;
+- R1/R2/C01/C02/C03/C04 immutability was preserved during C05 seed;
+- C05 IS calibration run 1 and run 2 both executed and produced the same deterministic artifact hash `f8288cb2d395e397f433dae854c0ad80b4650a8d`;
+- C05 IS quality failed deterministically: `status=C05_GRID_FAILED_IS_QUALITY`, `reason_code=WS_BT_C05_NO_VALID_IS_CANDIDATE`, `is_valid_param_count=0`, `is_failed_param_count=12`;
+- C05 failure reason family: `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- C05 did not invoke OOS: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
+- C05 has no frozen best IS binding: `param_id_best_is=` empty and `best_is_binding_hash=` empty;
+- C05 production readiness remains false: `production_ready=0`.
+
+C05 final forensic summary:
+
+```text
+picks_count=370..886
+median_ret_net_top=-1.6122%..-0.7301%
+p25_ret_net_top=-4.0209%..-3.2708%
+month_win_rate_min=0.00%..18.75%
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL=12,WS_BT_EVAL_ROBUST_RETURN_FAIL=12,WS_BT_EVAL_STABILITY_FAIL=12
+```
+
+C05 final decision state:
+
+```text
+C05_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C05 is not eligible for OOS because it has no valid IS candidate, no `param_id_best_is`, and no `best_is_binding_hash`. OOS remains `NOT_RUN` and must not be claimed PASS.
+
+## PRIOR SESSION - C04 IS CANDIDATE-SELECTION REDESIGN AND IMPLEMENTATION SESSION
+
+Session:
+`WATCHLIST - C04 IS CANDIDATE-SELECTION REDESIGN AND IMPLEMENTATION SESSION`
+
+Status:
+`C04_IMPLEMENTED / C04_SEED_PASS / C04_IS_EXECUTION_PASS / C04_IS_QUALITY_FAIL / C04_REJECTED_AS_STRATEGY_CATALOG / C04_DETERMINISTIC_TWO_RUN / OOS_NOT_RUN / NOT_PRODUCTION_READY / C05_REQUIRED_IF_CONTINUED`.
+
+Current C04 final evidence:
+
+- C04 is a new catalog identity, not a patch to C03: `WS_BT_GRID_DOWNSIDE_STABILITY_C04_2026_06`, version `C04`, count `10`, hash `0ce3a313c45432c5a4d607def12b3f774988f324`;
+- C04 uses only runtime-supported candidate-selection axes: score components, trend/relative-strength fields, ROC band, close-to-HH20 setup band, and existing grouping quantiles;
+- C04 does not add a sector filter; sector remains diagnostic-only;
+- C04 implementation validation passed in the current workspace: `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC04"` = PASS / `OK (14 tests, 499 assertions)`;
+- full Watchlist PHPUnit passed in the current workspace: `vendor\bin\phpunit tests\Unit\Watchlist` = PASS / `OK (264 tests, 5142 assertions)`;
+- C04 seed passed: `inserted_count=10`, `updated_count=0`, `existing_count=0`;
+- R1/R2/C01/C02/C03 immutability was preserved during C04 seed: `r1_immutable=1`, `r2_immutable=1`, `c01_immutable=1`, `c02_immutable=1`, `c03_immutable=1`;
+- C04 IS calibration run 1 and run 2 both executed and produced the same deterministic artifact hash `fe964ee879dddc8aa8a83372e8c2d05aed5e8259`;
+- C04 IS quality failed deterministically: `status=C04_GRID_FAILED_IS_QUALITY`, `reason_code=WS_BT_C04_NO_VALID_IS_CANDIDATE`, `is_valid_param_count=0`, `is_failed_param_count=10`;
+- C04 failure reason family: `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_MIN_TRADES_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- C04 did not invoke OOS: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
+- C04 has no frozen best IS binding: `param_id_best_is=` empty and `best_is_binding_hash=` empty;
+- C04 production readiness remains false: `production_ready=0`.
+
+C04 files added or extended:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC04ParamGridCatalog.php
+app/Application/Watchlist/Services/WatchlistBacktestParamGridParamsetFactory.php
+app/Application/Watchlist/Services/WatchlistBacktestIsCalibrationExecutionService.php
+app/Application/Watchlist/Services/WatchlistBacktestIsCalibrationService.php
+app/Application/Watchlist/Services/WatchlistPlanGroupingService.php
+app/Infrastructure/Persistence/Watchlist/WatchlistBacktestParamGridRepository.php
+app/Console/Commands/Watchlist/SeedBacktestC04ParamGridCommand.php
+database/seeders/Watchlist/WatchlistBacktestC04ParamGridSeeder.php
+app/Console/Kernel.php
+tests/Unit/Watchlist/WatchlistBacktestC04ParamGridCatalogTest.php
+tests/Unit/Watchlist/WatchlistBacktestC04ParamGridParamsetFactoryTest.php
+tests/Unit/Watchlist/WatchlistBacktestC04StaticGuardTest.php
+docs/watchlist/audit/WS_C04_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/WS_C04_OPERATOR_FORENSIC_FINAL_RESULT.md
+docs/watchlist/audit/_artifacts/c04-forensic-summary.csv
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C04_DESIGN_NOTE.md
+```
+
+Current-session validation output:
+
+```text
+php -l C04/modified Watchlist PHP files = PASS
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC04" = PASS / OK (14 tests, 499 assertions) / exit code 0
+vendor\bin\phpunit tests\Unit\Watchlist = PASS / OK (264 tests, 5142 assertions) / exit code 0
+php artisan watchlist:backtest-c04-param-grid-seed = PASS / catalog_count=10 / inserted_count=10 / updated_count=0 / existing_count=0 / r1_immutable=1 / r2_immutable=1 / c01_immutable=1 / c02_immutable=1 / c03_immutable=1 / oos_executed=0 / production_ready=0
+C04 IS calibration run 1 = C04_GRID_FAILED_IS_QUALITY / WS_BT_C04_NO_VALID_IS_CANDIDATE / valid=0 / failed=10 / artifact_hash=fe964ee879dddc8aa8a83372e8c2d05aed5e8259 / OOS guards clean / production_ready=0
+C04 IS calibration run 2 = C04_GRID_FAILED_IS_QUALITY / WS_BT_C04_NO_VALID_IS_CANDIDATE / valid=0 / failed=10 / artifact_hash=fe964ee879dddc8aa8a83372e8c2d05aed5e8259 / OOS guards clean / production_ready=0
+```
+
+C04 IS calibration deterministic markers:
+
+```text
+is_from=2023-01-02
+is_to=2025-05-21
+is_trading_date_count=562
+is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753
+strict_is_boundary_all_evaluations=1
+artifact_hash_run_1=fe964ee879dddc8aa8a83372e8c2d05aed5e8259
+artifact_hash_run_2=fe964ee879dddc8aa8a83372e8c2d05aed5e8259
+```
+
+C04 final decision state:
+
+```text
+C04_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C04 is not eligible for OOS because it has no valid IS candidate, no `param_id_best_is`, and no `best_is_binding_hash`. OOS remains `NOT_RUN` and must not be claimed PASS.
+
+C04 forensic summary:
+
+```text
+picks_count=82..176
+median_ret_net_top=-1.2712%..-0.0501%
+p25_ret_net_top=-3.8881%..-3.0868%
+month_win_rate_min=0.00%..0.00%
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL=10,WS_BT_EVAL_MIN_TRADES_FAIL=7,WS_BT_EVAL_ROBUST_RETURN_FAIL=10,WS_BT_EVAL_STABILITY_FAIL=10
+```
+
+Next required work if continued:
+
+- C05 must be a new catalog identity, not a mutation of C04;
+- C05 must preserve R1/R2/C01/C02/C03/C04 immutability;
+- C05 must not loosen canonical IS gates or add unsupported sector filters;
+- C05 should keep C04's useful average/p25 improvement direction while restoring meaningful sample size and directly addressing monthly stability.
+
+## PRIOR SESSION - C03 OPERATOR VALIDATION AND IS QUALITY FORENSIC FINALIZATION SESSION
+
+Session:
 `WATCHLIST - C03 OPERATOR VALIDATION AND IS QUALITY FORENSIC FINALIZATION SESSION`
 
 Status:
@@ -109,10 +286,10 @@ C03_REJECTED_AS_STRATEGY_QUALITY_CATALOG
 
 C03 is not eligible for OOS because it has no valid IS candidate, no `param_id_best_is`, and no `best_is_binding_hash`. OOS remains `NOT_RUN` and must not be claimed PASS.
 
-Forensic limitation:
+Forensic artifact detail:
 
 ```text
-storage/app/watchlist/backtest/c03-is-run-1.json and c03-is-run-2.json were produced on the operator machine, but the JSON artifact contents were not uploaded into this repository ZIP. Therefore this update records aggregate command-output evidence and creates a forensic summary that marks per-param metric extraction as OPERATOR_ARTIFACT_REQUIRED instead of reconstructing metrics.
+storage/app/watchlist/backtest/c03-is-run-1.json and c03-is-run-2.json are available in the current workspace. Per-row metrics were extracted into docs/watchlist/audit/_artifacts/c03-forensic-summary.csv and storage/app/watchlist/backtest/c03-forensic-summary.csv.
 ```
 
 Next required work:
