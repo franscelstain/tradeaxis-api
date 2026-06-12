@@ -234,3 +234,70 @@ backtest.target_pct|backtest.stop_pct=metrics consumed when present but absent f
 ```
 
 C11 confirms that a future catalog cannot be created responsibly by only varying exit settings in the existing C07 catalog path. The next session must first define an approved exit-model or strategy-family contract, with schema/factory/runtime boundary behavior and tests, before any new strategy catalog is considered.
+
+## C12 exit-model redesign contract follow-up
+
+C12 did not create a strategy catalog. It converted C11 blockers into an explicit redesign contract artifact while keeping catalog creation unauthorized.
+
+Executed C12 command:
+
+```text
+command=php artisan watchlist:backtest-exit-model-redesign-contract --c11-artifact=storage/app/watchlist/backtest/c11-exit-model-contract-audit.json --output=storage/app/watchlist/backtest/c12-exit-model-redesign-contract.json --overwrite
+status=PASS
+reason_code=WS_BT_C12_EXIT_MODEL_REDESIGN_CONTRACT_READY
+source_c11_artifact_hash=4b8a6a383c1ad9f5cab78394b3851b4b3a3325ea
+artifact_hash=04d4e2f230685962fadd1bc26c294cbaed10f38b
+design_contract_ready=1
+catalog_creation_authorized=0
+exit_model_catalog_authorized=0
+strategy_catalog_created=0
+oos_executed=0
+production_ready=0
+```
+
+C12 first-phase future implementation policy:
+
+```text
+allowed_axes=risk.min_rr|risk.stop_atr_mult
+blocked_axes=backtest.holding_days|backtest.target_pct|backtest.stop_pct
+next_required_step=IMPLEMENT_CONTRACTED_EXIT_AXIS_SUPPORT_BEFORE_CATALOG
+```
+
+C12 confirms that the next session may implement new-family support for `risk.min_rr` and `risk.stop_atr_mult` as explicit future catalog axes, but must keep C01-C07 fixed-execution guards intact. No future catalog may run OOS unless IS produces at least one valid row and a non-empty best binding hash.
+
+## C13 exit-axis support follow-up
+
+C13 did not create a strategy catalog. It implemented the C12 exit-axis support boundary while preserving C07 and all prior catalogs as immutable failed-quality evidence.
+
+Executed C13 command:
+
+```text
+command=php artisan watchlist:backtest-exit-axis-support-audit --c12-artifact=storage/app/watchlist/backtest/c12-exit-model-redesign-contract.json --output=storage/app/watchlist/backtest/c13-exit-axis-support-audit.json --overwrite
+status=PASS
+reason_code=WS_BT_C13_EXIT_AXIS_SUPPORT_READY
+source_c12_artifact_hash=04d4e2f230685962fadd1bc26c294cbaed10f38b
+artifact_hash=73ba035edfa22f19b4b3525ee3f522241fbae291
+support_ready=1
+fixed_guard_rejects_drift=1
+variable_policy_accepts_risk_axes=1
+variable_policy_blocks_holding_days=1
+variable_policy_blocks_target_stop_pct=1
+catalog_creation_authorized=0
+future_catalog_definition_work_authorized=1
+exit_model_catalog_authorized=0
+strategy_catalog_created=0
+oos_executed=0
+production_ready=0
+```
+
+C13 support policy:
+
+```text
+future_supported_axes=risk.stop_atr_mult|risk.min_rr
+first_phase_blocked_axes=backtest.holding_days|backtest.target_pct|backtest.stop_pct
+historical_catalog_execution_policy=FIXED_EXECUTION_SNAPSHOT
+future_policy=VARIABLE_RISK_EXIT_AXIS_V1
+next_required_step=CREATE_NEW_EXIT_AXIS_CATALOG_DEFINITION_AND_SEED_IS_ONLY
+```
+
+C13 confirms that the next session may create a new exit-axis catalog definition and seed it for IS-only calibration. It does not authorize OOS, production readiness, best-of-failed selection, or mutation of C07.

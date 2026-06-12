@@ -1,0 +1,107 @@
+{
+    "meta": {
+        "artifact_version": "WATCHLIST_C13_EXIT_AXIS_SUPPORT_AUDIT_V1",
+        "generated_at": "2026-06-13T00:03:16+07:00",
+        "scope": "C13_EXIT_AXIS_SUPPORT_ONLY_NO_STRATEGY_CATALOG",
+        "source_c12_artifact_path": "D:\\Laravel\\watchlist\\tradeaxis-api/storage/app/watchlist/backtest/c12-exit-model-redesign-contract.json",
+        "source_c12_file_sha1": "b3575122db69a0ca8ead4d3c78b328687c2cc894",
+        "source_c12_artifact_hash": "04d4e2f230685962fadd1bc26c294cbaed10f38b",
+        "oos_executed": false,
+        "strategy_catalog_created": false,
+        "production_ready": false,
+        "artifact_hash": "73ba035edfa22f19b4b3525ee3f522241fbae291"
+    },
+    "source_catalog": {
+        "catalog_code": "WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06",
+        "catalog_version": "C07",
+        "catalog_count": "12",
+        "catalog_hash": "233b45b06cbf34da221d5d7de2d9725fdf4d3441",
+        "catalog_mutated": false
+    },
+    "source_c12_decision": {
+        "status": "EXIT_MODEL_REDESIGN_CONTRACT_READY",
+        "reason_code": "WS_BT_C12_EXIT_MODEL_REDESIGN_CONTRACT_READY",
+        "design_contract_ready": true,
+        "catalog_creation_authorized": false,
+        "exit_model_catalog_authorized": false,
+        "next_required_step": "IMPLEMENT_CONTRACTED_EXIT_AXIS_SUPPORT_BEFORE_CATALOG"
+    },
+    "implemented_support_contract": {
+        "policy": "VARIABLE_RISK_EXIT_AXIS_V1",
+        "runtime_supported_first_phase_axes": [
+            "risk.stop_atr_mult",
+            "risk.min_rr"
+        ],
+        "blocked_first_phase_axes": [
+            "backtest.holding_days",
+            "backtest.target_pct",
+            "backtest.stop_pct"
+        ],
+        "contract_source": "C12_EXIT_MODEL_REDESIGN_CONTRACT",
+        "keeps_grouping_fixed_in_first_phase": true,
+        "does_not_relax_is_quality_gates": true,
+        "does_not_create_catalog": true,
+        "does_not_run_oos": true
+    },
+    "source_c12_allowed_axis_policy": [
+        {
+            "axis": "risk.min_rr",
+            "authorization": "CONDITIONALLY_ALLOWED_FOR_FUTURE_IMPLEMENTATION",
+            "why": "C10 target-hit share is low while stop-or-timeout dominates; min_rr is runtime/schema supported but fixed in C01-C07.",
+            "required_before_catalog": [
+                "new_catalog_definition_entry_in_paramset_factory",
+                "calibration_execution_definition_update",
+                "static_guard_showing_c01_c07_remain_fixed",
+                "two_run_is_only_seed_and_calibration_proof"
+            ]
+        },
+        {
+            "axis": "risk.stop_atr_mult",
+            "authorization": "CONDITIONALLY_ALLOWED_FOR_FUTURE_IMPLEMENTATION",
+            "why": "Stop distance is runtime/schema supported, but changing it can worsen downside; any future use must keep locked p25 and stability gates unchanged.",
+            "required_before_catalog": [
+                "new_catalog_definition_entry_in_paramset_factory",
+                "explicit_downside_risk_rationale_per_row",
+                "static_guard_showing_no_gate_relaxation",
+                "two_run_is_only_seed_and_calibration_proof"
+            ]
+        }
+    ],
+    "support_probe": {
+        "fixed_guard_rejects_drift": true,
+        "fixed_guard_reason": "WS_BT_R2_CATALOG_INVALID: fixed execution/grouping snapshot drifted.",
+        "variable_policy_accepts_risk_axes": true,
+        "variable_policy_runtime_axes": [
+            "risk.stop_atr_mult",
+            "risk.min_rr"
+        ],
+        "variable_policy_blocks_holding_days": true,
+        "variable_policy_blocks_target_stop_pct": true,
+        "factory_fixed_catalogs_preserve_legacy_error_message": true
+    },
+    "decision": {
+        "status": "EXIT_AXIS_SUPPORT_READY_FOR_FUTURE_CATALOG_DEFINITION",
+        "reason_code": "WS_BT_C13_EXIT_AXIS_SUPPORT_READY",
+        "support_ready": true,
+        "strategy_catalog_created": false,
+        "catalog_creation_authorized": false,
+        "future_catalog_definition_work_authorized": true,
+        "exit_model_catalog_authorized": false,
+        "next_required_step": "CREATE_NEW_EXIT_AXIS_CATALOG_DEFINITION_AND_SEED_IS_ONLY",
+        "oos_eligible": false,
+        "production_ready": false
+    },
+    "no_oos_leakage_summary": {
+        "oos_service_invoked": false,
+        "oos_repository_invoked": false,
+        "oos_executed": false,
+        "production_ready": false
+    },
+    "validation": {
+        "source_c12_artifact_exists": true,
+        "source_c12_artifact_hash_present": true,
+        "source_c12_next_step_matches": true,
+        "support_probe_passed": true,
+        "artifact_hash": "73ba035edfa22f19b4b3525ee3f522241fbae291"
+    }
+}

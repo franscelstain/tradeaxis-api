@@ -241,12 +241,14 @@ class WatchlistBacktestExitModelContractAuditService
     private function codeContractAudit(): array
     {
         $factory = $this->fileContents(base_path('app/Application/Watchlist/Services/WatchlistBacktestParamGridParamsetFactory.php'));
+        $exitAxisSupport = $this->fileContents(base_path('app/Application/Watchlist/Services/WatchlistBacktestExitAxisSupport.php'));
         $runtime = $this->fileContents(base_path('app/Application/Watchlist/Services/WatchlistBacktestPublishedPriceRuntimeService.php'));
         $metrics = $this->fileContents(base_path('app/Application/Watchlist/Services/WatchlistBacktestMetricsService.php'));
         $repository = $this->fileContents(base_path('app/Infrastructure/Persistence/Watchlist/WatchlistBacktestParamGridRepository.php'));
 
         return [
-            'factory_rejects_fixed_execution_snapshot_drift' => strpos($factory, 'fixed execution/grouping snapshot drifted') !== false,
+            'factory_rejects_fixed_execution_snapshot_drift' => strpos($factory, 'WatchlistBacktestExitAxisSupport::resolve') !== false
+                && strpos($exitAxisSupport, 'fixed execution/grouping snapshot drifted') !== false,
             'factory_defines_c07_as_fixed_execution_catalog' => strpos($factory, 'WatchlistBacktestC07ParamGridCatalog::FIXED_STOP_ATR_MULT') !== false
                 && strpos($factory, 'WatchlistBacktestC07ParamGridCatalog::FIXED_MIN_RR') !== false,
             'metrics_consumes_stop_atr_mult_and_min_rr' => strpos($metrics, 'stop_atr_mult') !== false

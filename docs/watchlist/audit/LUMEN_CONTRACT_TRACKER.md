@@ -14,6 +14,138 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C13 EXIT AXIS SUPPORT SESSION`
+
+Status:
+`C13_EXIT_AXIS_SUPPORT_READY / STRATEGY_CATALOG_NOT_CREATED / C07_REJECTED_AS_STRATEGY_CATALOG / FUTURE_CATALOG_DEFINITION_WORK_AUTHORIZED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C13 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C07 remains rejected as a strategy-quality catalog and was not patched to look successful;
+- C13 did not create a strategy catalog, did not select best-of-failed, and did not invoke OOS;
+- C13 adds exit-axis support for future variable risk-exit catalog definitions while preserving fixed execution for historical catalogs;
+- C13 command reads C12 evidence and emits a support-audit artifact with `support_ready=1`;
+- C13 keeps `catalog_creation_authorized=0`, `exit_model_catalog_authorized=0`, `strategy_catalog_created=0`, `oos_executed=0`, and `production_ready=0`;
+- C13 artifact hash is deterministic across two runs: `73ba035edfa22f19b4b3525ee3f522241fbae291`;
+- C13 docs artifact file SHA1 is `11548827E3DD8249BBE3FDAA2F545816A01FA31C`;
+- implemented future first-phase axes are `risk.stop_atr_mult` and `risk.min_rr`;
+- blocked first-phase axes remain `backtest.holding_days`, `backtest.target_pct`, and `backtest.stop_pct`;
+- validation passed after C13 changes: `WatchlistBacktestExitAxisSupport` = `OK (11 tests, 59 assertions)`, `WatchlistBacktestR2ParamGridParamsetFactory` = `OK (12 tests, 106 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, `WatchlistBacktestExitModelRedesignContract` = `OK (3 tests, 33 assertions)`, `WatchlistBacktestExitModelContractAudit` = `OK (3 tests, 34 assertions)`, full Watchlist = `OK (319 tests, 6728 assertions)`.
+
+Contract status update:
+
+- `WL-CONTRACT-008`: PASS for exit-axis support traceability and explicit no-catalog decision;
+- `WL-CONTRACT-009`: PASS for strict artifact-only support audit and no OOS boundary crossing;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C13 support audit;
+- `WL-CONTRACT-011`: FAILED_QUALITY remains for C07 strategy quality;
+- `WL-CONTRACT-013`: PASS for C13 support artifact surface;
+- `WL-CONTRACT-014`: PASS for C13 docs and JSON artifact tracking.
+
+C13 audit references:
+
+```text
+docs/watchlist/audit/WS_C13_EXIT_AXIS_SUPPORT_FINAL_RESULT.md
+docs/watchlist/audit/WS_C13_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c13-exit-axis-support-audit.json
+```
+
+C13 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+catalog_creation_authorized=0
+future_catalog_definition_work_authorized=1
+exit_model_catalog_authorized=0
+strategy_catalog_created=0
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C13 is an exit-axis support artifact only. It does not create a catalog, run IS calibration for a new catalog, or run OOS. OOS has not been run and must not be claimed PASS.
+
+## PRIOR SESSION - C12 EXIT MODEL REDESIGN CONTRACT SESSION
+
+Session:
+`WATCHLIST - C12 EXIT MODEL REDESIGN CONTRACT SESSION`
+
+Status:
+`C12_EXIT_MODEL_REDESIGN_CONTRACT_READY / CATALOG_CREATION_NOT_AUTHORIZED / C07_REJECTED_AS_STRATEGY_CATALOG / C12_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C12 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C07 remains rejected as a strategy-quality catalog and was not patched to look successful;
+- C12 did not create a strategy catalog, did not select best-of-failed, and did not invoke OOS;
+- C12 adds a redesign-contract command that reads C11 evidence and emits a contract artifact with `design_contract_ready=1`;
+- C12 keeps `catalog_creation_authorized=0`, `exit_model_catalog_authorized=0`, `oos_executed=0`, and `production_ready=0`;
+- C12 artifact hash is deterministic across two runs: `04d4e2f230685962fadd1bc26c294cbaed10f38b`;
+- C12 docs artifact file SHA1 is `B3575122DB69A0CA8EAD4D3C78B328687C2CC894`;
+- allowed first-phase future axes are `risk.min_rr` and `risk.stop_atr_mult`;
+- blocked first-phase axes are `backtest.holding_days` and `backtest.target_pct|backtest.stop_pct`;
+- validation passed after C12 changes: `WatchlistBacktestExitModelRedesignContract` = `OK (3 tests, 33 assertions)`, `WatchlistBacktestExitModelContractAudit` = `OK (3 tests, 34 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (308 tests, 6669 assertions)`.
+
+Contract status update:
+
+- `WL-CONTRACT-008`: PASS for exit-model redesign contract traceability and explicit no-catalog decision;
+- `WL-CONTRACT-009`: PASS for strict artifact-only contract generation and no OOS boundary crossing;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C12 redesign contract generation;
+- `WL-CONTRACT-011`: FAILED_QUALITY remains for C07 strategy quality;
+- `WL-CONTRACT-013`: PASS for C12 contract artifact surface;
+- `WL-CONTRACT-014`: PASS for C12 docs and JSON artifact tracking.
+
+C12 audit references:
+
+```text
+docs/watchlist/audit/WS_C12_EXIT_MODEL_REDESIGN_CONTRACT_FINAL_RESULT.md
+docs/watchlist/audit/WS_C12_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c12-exit-model-redesign-contract.json
+```
+
+C12 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+catalog_creation_authorized=0
+exit_model_catalog_authorized=0
+strategy_catalog_created=0
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C12 is a redesign contract artifact only. It does not create a catalog, run IS calibration for a new catalog, or run OOS. OOS has not been run and must not be claimed PASS.
+
+## PRIOR SESSION - C11 EXIT MODEL CONTRACT AUDIT SESSION
+
+Session:
 `WATCHLIST - C11 EXIT MODEL CONTRACT AUDIT SESSION`
 
 Status:

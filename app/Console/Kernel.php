@@ -34,6 +34,8 @@ use App\Console\Commands\MarketData\ApproveCorrectionCommand;
 use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
 use App\Console\Commands\Watchlist\RunBacktestPublishedPriceProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestExitModelContractAuditCommand;
+use App\Console\Commands\Watchlist\RunBacktestExitModelRedesignContractCommand;
+use App\Console\Commands\Watchlist\RunBacktestExitAxisSupportAuditCommand;
 use App\Console\Commands\Watchlist\RunBacktestOosProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestIsCalibrationCommand;
 use App\Console\Commands\Watchlist\RunBacktestIsDiagnoseBatchCommand;
@@ -55,6 +57,8 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         RunBacktestPublishedPriceProofCommand::class,
         RunBacktestExitModelContractAuditCommand::class,
+        RunBacktestExitModelRedesignContractCommand::class,
+        RunBacktestExitAxisSupportAuditCommand::class,
         RunBacktestOosProofCommand::class,
         RunBacktestIsCalibrationCommand::class,
         RunBacktestIsDiagnoseBatchCommand::class,

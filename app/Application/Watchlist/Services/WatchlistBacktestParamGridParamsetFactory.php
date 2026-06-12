@@ -171,16 +171,19 @@ class WatchlistBacktestParamGridParamsetFactory
             $secondaryMinScoreQ
         );
 
-        $stopAtrMult = $this->requiredFloat($row, 'stop_atr_mult');
-        $minRr = $this->requiredFloat($row, 'min_rr');
-        $topPicksTarget = $this->requiredInt($row, 'top_picks_target');
-        $secondaryTarget = $this->requiredInt($row, 'secondary_target');
-        if (abs($stopAtrMult - $definition['fixed_stop_atr_mult']) > 0.000001
-            || abs($minRr - $definition['fixed_min_rr']) > 0.000001
-            || $topPicksTarget !== $definition['fixed_top_picks_target']
-            || $secondaryTarget !== $definition['fixed_secondary_target']) {
-            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: fixed execution/grouping snapshot drifted.');
-        }
+        $executionAxes = WatchlistBacktestExitAxisSupport::resolve(
+            $row,
+            $definition['execution_axis_policy'] ?? WatchlistBacktestExitAxisSupport::fixedExecutionDefinition(
+                (float) $definition['fixed_stop_atr_mult'],
+                (float) $definition['fixed_min_rr'],
+                (int) $definition['fixed_top_picks_target'],
+                (int) $definition['fixed_secondary_target']
+            )
+        );
+        $stopAtrMult = (float) $executionAxes['stop_atr_mult'];
+        $minRr = (float) $executionAxes['min_rr'];
+        $topPicksTarget = (int) $executionAxes['top_picks_target'];
+        $secondaryTarget = (int) $executionAxes['secondary_target'];
 
         $btGridResolution = [
             'risk_band_rule' => self::EXPLICIT_CATALOG_RISK_BAND_RULE,
@@ -193,6 +196,9 @@ class WatchlistBacktestParamGridParamsetFactory
         ];
         if (isset($definition['candidate_selection_extension'])) {
             $btGridResolution['candidate_selection_extension'] = $definition['candidate_selection_extension'];
+        }
+        if (! empty($executionAxes['bt_grid_resolution']) && is_array($executionAxes['bt_grid_resolution'])) {
+            $btGridResolution = array_replace_recursive($btGridResolution, $executionAxes['bt_grid_resolution']);
         }
 
         return array_replace_recursive($base, [

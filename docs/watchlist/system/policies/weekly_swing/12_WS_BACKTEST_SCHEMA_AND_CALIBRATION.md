@@ -1228,3 +1228,158 @@ docs/watchlist/audit/WS_C11_EXIT_MODEL_CONTRACT_AUDIT_FINAL_RESULT.md
 docs/watchlist/audit/WS_C11_OPERATOR_VALIDATION_COMMANDS.md
 docs/watchlist/audit/_artifacts/c11-exit-model-contract-audit.json
 ```
+
+### C12 exit-model redesign contract addendum
+
+C12 did not create a strategy catalog. It converts the C11 blocker list into an explicit redesign contract and keeps catalog creation unauthorized for this session.
+
+```text
+C12 strategy_catalog_created=false
+C12 design_contract_ready=true
+C12 catalog_creation_authorized=false
+C12 exit_model_catalog_authorized=false
+C07 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06
+C07 catalog_version=C07
+C07 catalog_count=12
+C07 catalog_hash=233b45b06cbf34da221d5d7de2d9725fdf4d3441
+C12 OOS=NOT_RUN
+C12 production_ready=0
+```
+
+The C12 command consumes C11 contract evidence and writes a redesign-contract artifact:
+
+```text
+php artisan watchlist:backtest-exit-model-redesign-contract --c11-artifact=storage/app/watchlist/backtest/c11-exit-model-contract-audit.json --output=storage/app/watchlist/backtest/c12-exit-model-redesign-contract.json --overwrite
+```
+
+Executed C12 result:
+
+```text
+status=PASS
+reason_code=WS_BT_C12_EXIT_MODEL_REDESIGN_CONTRACT_READY
+source_c11_artifact_hash=4b8a6a383c1ad9f5cab78394b3851b4b3a3325ea
+design_contract_ready=1
+catalog_creation_authorized=0
+exit_model_catalog_authorized=0
+next_required_step=IMPLEMENT_CONTRACTED_EXIT_AXIS_SUPPORT_BEFORE_CATALOG
+strategy_catalog_created=0
+oos_executed=0
+artifact_hash=04d4e2f230685962fadd1bc26c294cbaed10f38b
+production_ready=0
+```
+
+C12 allowed first-phase future implementation axes:
+
+```text
+risk.min_rr
+risk.stop_atr_mult
+```
+
+These axes are allowed only for future implementation work because they are already represented in official schema/factory/runtime metrics. They remain fixed for R1/R2/C01/C02/C03/C04/C05/C06/C07.
+
+C12 blocked first-phase axes:
+
+```text
+backtest.holding_days
+backtest.target_pct|backtest.stop_pct
+```
+
+C12 required implementation sequence before any future catalog:
+
+```text
+create_new_catalog_identity_only_after_contract_support_exists
+keep_c01_c07_fixed_execution_snapshot_guards
+add_factory_and_calibration_definitions_for_the_new_family_only
+add static/unit guards for no_oos_no_best_of_failed_no_gate_relaxation
+seed_new_catalog_idempotently
+run_is_calibration_twice_only
+allow_oos_only_if_is_valid_param_count_ge_1_and_best_binding_hash_is_non_empty
+```
+
+C12 confirms that the next step is implementation of contracted exit-axis support for a future new-family catalog path, not a catalog, not OOS, and not mutation of C07.
+
+C12 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C12_EXIT_MODEL_REDESIGN_CONTRACT_FINAL_RESULT.md
+docs/watchlist/audit/WS_C12_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c12-exit-model-redesign-contract.json
+```
+
+### C13 exit-axis support addendum
+
+C13 did not create a strategy catalog. It implements the C12 support boundary for a future new-family catalog path while keeping the historical fixed-execution catalogs immutable.
+
+```text
+C13 strategy_catalog_created=false
+C13 support_ready=true
+C13 catalog_creation_authorized=false
+C13 future_catalog_definition_work_authorized=true
+C13 exit_model_catalog_authorized=false
+C07 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06
+C07 catalog_version=C07
+C07 catalog_count=12
+C07 catalog_hash=233b45b06cbf34da221d5d7de2d9725fdf4d3441
+C13 OOS=NOT_RUN
+C13 production_ready=0
+```
+
+The C13 command consumes C12 redesign-contract evidence and writes a support-audit artifact:
+
+```text
+php artisan watchlist:backtest-exit-axis-support-audit --c12-artifact=storage/app/watchlist/backtest/c12-exit-model-redesign-contract.json --output=storage/app/watchlist/backtest/c13-exit-axis-support-audit.json --overwrite
+```
+
+Executed C13 result:
+
+```text
+status=PASS
+reason_code=WS_BT_C13_EXIT_AXIS_SUPPORT_READY
+source_c12_artifact_hash=04d4e2f230685962fadd1bc26c294cbaed10f38b
+support_ready=1
+fixed_guard_rejects_drift=1
+variable_policy_accepts_risk_axes=1
+variable_policy_blocks_holding_days=1
+variable_policy_blocks_target_stop_pct=1
+catalog_creation_authorized=0
+future_catalog_definition_work_authorized=1
+exit_model_catalog_authorized=0
+next_required_step=CREATE_NEW_EXIT_AXIS_CATALOG_DEFINITION_AND_SEED_IS_ONLY
+strategy_catalog_created=0
+oos_executed=0
+artifact_hash=73ba035edfa22f19b4b3525ee3f522241fbae291
+production_ready=0
+```
+
+C13 implements support for these future first-phase variable risk-exit axes:
+
+```text
+risk.stop_atr_mult
+risk.min_rr
+```
+
+These axes remain fixed for R1/R2/C01/C02/C03/C04/C05/C06/C07. C13 preserves the fixed execution/grouping drift guard for existing catalogs.
+
+C13 blocks these first-phase axes:
+
+```text
+backtest.holding_days
+backtest.target_pct
+backtest.stop_pct
+```
+
+C13 next step:
+
+```text
+CREATE_NEW_EXIT_AXIS_CATALOG_DEFINITION_AND_SEED_IS_ONLY
+```
+
+The next catalog session must still create a new catalog identity, seed idempotently, run IS calibration twice only, and keep OOS blocked unless a valid IS binding exists.
+
+C13 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C13_EXIT_AXIS_SUPPORT_FINAL_RESULT.md
+docs/watchlist/audit/WS_C13_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c13-exit-axis-support-audit.json
+```
