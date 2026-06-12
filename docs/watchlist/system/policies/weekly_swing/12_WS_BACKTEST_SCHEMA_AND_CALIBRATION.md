@@ -515,11 +515,11 @@ row_hash
 rationale
 ```
 
-The canonical row identity is `(policy_code, catalog_code, row_code)`. A seed rerun with an identical payload is idempotent. The same identity with a different payload fails closed. R1 remains `WS_BT_GRID_BOOTSTRAP_2026_06` with count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`. R2 remains `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06` with count `12` and hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`. C01 remains `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06` with version `C01`, count `8`, and code-owned hash `604ac98f6f193a4c317d4f25582deada84682846`. C02 is `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06` with version `C02`, count `8`, and code-owned hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`; it remains rejected as a strategy-quality catalog. C03 is `WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06` with version `C03`, count `10`, and code-owned hash `29e15ceab1b3f7dc31a21f339ac6ab7483e14800`; it remains rejected as a strategy-quality catalog. C04 is `WS_BT_GRID_DOWNSIDE_STABILITY_C04_2026_06` with version `C04`, count `10`, and code-owned hash `0ce3a313c45432c5a4d607def12b3f774988f324`; it remains rejected as a strategy-quality catalog. C05 is `WS_BT_GRID_DOWNSIDE_STABILITY_C05_2026_06` with version `C05`, count `12`, and code-owned hash `476af5dde18079b1270556bc44bbc632edd46e27`; it remains rejected as a strategy-quality catalog. C06 is `WS_BT_GRID_DOWNSIDE_STABILITY_C06_2026_06` with version `C06`, count `12`, and code-owned hash `6c93d67fb77319a02cecc3d96fd99bb0e139a1ac`; it is derived from C01/C04/C05 forensic evidence and requires R1/R2/C01/C02/C03/C04/C05 immutability before seed/calibration.
+The canonical row identity is `(policy_code, catalog_code, row_code)`. A seed rerun with an identical payload is idempotent. The same identity with a different payload fails closed. R1 remains `WS_BT_GRID_BOOTSTRAP_2026_06` with count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c`. R2 remains `WS_BT_GRID_ENTRY_QUALITY_R2_2026_06` with count `12` and hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5`. C01 remains `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06` with version `C01`, count `8`, and code-owned hash `604ac98f6f193a4c317d4f25582deada84682846`. C02 is `WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06` with version `C02`, count `8`, and code-owned hash `7287c438e15bd03d6beb4796e4d5159ecd8ed59a`; it remains rejected as a strategy-quality catalog. C03 is `WS_BT_GRID_DOWNSIDE_STABILITY_C03_2026_06` with version `C03`, count `10`, and code-owned hash `29e15ceab1b3f7dc31a21f339ac6ab7483e14800`; it remains rejected as a strategy-quality catalog. C04 is `WS_BT_GRID_DOWNSIDE_STABILITY_C04_2026_06` with version `C04`, count `10`, and code-owned hash `0ce3a313c45432c5a4d607def12b3f774988f324`; it remains rejected as a strategy-quality catalog. C05 is `WS_BT_GRID_DOWNSIDE_STABILITY_C05_2026_06` with version `C05`, count `12`, and code-owned hash `476af5dde18079b1270556bc44bbc632edd46e27`; it remains rejected as a strategy-quality catalog. C06 is `WS_BT_GRID_DOWNSIDE_STABILITY_C06_2026_06` with version `C06`, count `12`, and code-owned hash `6c93d67fb77319a02cecc3d96fd99bb0e139a1ac`; it remains rejected as a strategy-quality catalog. C07 is `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06` with version `C07`, count `12`, and code-owned hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`; it is derived from C01/C04/C05/C06 forensic evidence plus runtime feature audit and requires R1/R2/C01/C02/C03/C04/C05/C06 immutability before seed/calibration.
 
 ### Curated entry-quality columns
 
-The official grid stores the runtime-consumed entry-quality fields for liquidity, volume, ATR band, ROC/breakout setup, score weights, and grouping quantiles. R2, C01, C02, C03, C04, C05, and C06 catalogs are finite, curated, deterministic, and explicit. Random, Bayesian, latest-catalog fallback, active-catalog fallback, unsupported sector-filter injection, and post-result catalog mutation are forbidden.
+The official grid stores the runtime-consumed entry-quality fields for liquidity, volume, ATR band, ROC/breakout setup, score weights, grouping quantiles, and catalog-scoped optional feature confirmations. R2, C01, C02, C03, C04, C05, C06, and C07 catalogs are finite, curated, deterministic, and explicit. Random, Bayesian, latest-catalog fallback, active-catalog fallback, unsupported sector-filter injection, and post-result catalog mutation are forbidden.
 
 ### Evaluation identity
 
@@ -540,7 +540,7 @@ Exact reruns are idempotent; conflicting payloads fail with `WS_BT_EVAL_IDENTITY
 
 ### Strict IS boundary
 
-The IS calibration command accepts only the exact IS window for immutable R2/C01/C02/C03/C04/C05/C06 execution:
+The IS calibration command accepts only the exact IS window for immutable R2/C01/C02/C03/C04/C05/C06/C07 execution:
 
 ```text
 2023-01-02 through 2025-05-21
@@ -556,7 +556,7 @@ The runtime may not call an OOS service/repository, write `watchlist_bt_oos_eval
 
 ### Fixed execution snapshot
 
-Every R2/C01/C02/C03/C04/C05/C06 row uses exactly:
+Every R2/C01/C02/C03/C04/C05/C06/C07 row uses exactly:
 
 ```text
 ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS
@@ -566,7 +566,7 @@ grouping.top_picks_target=5
 grouping.secondary_target=10
 ```
 
-R2/C01/C02/C03/C04/C05/C06 success freezes a best-IS binding only when every canonical gate passes. R2/C01/C02/C03/C04/C05/C06 failure creates no binding and never selects best-of-failed. C01/C02/C03/C04/C05/C06 are not eligible for OOS proof until a separate IS runtime creates a valid frozen binding for that exact catalog.
+R2/C01/C02/C03/C04/C05/C06/C07 success freezes a best-IS binding only when every canonical gate passes. R2/C01/C02/C03/C04/C05/C06/C07 failure creates no binding and never selects best-of-failed. C01/C02/C03/C04/C05/C06/C07 are not eligible for OOS proof until a separate IS runtime creates a valid frozen binding for that exact catalog.
 
 ### C02 final operator result
 
@@ -862,4 +862,68 @@ C06 forensic result is recorded in:
 docs/watchlist/audit/WS_C06_OPERATOR_FORENSIC_FINAL_RESULT.md
 docs/watchlist/audit/_artifacts/c06-forensic-summary.csv
 docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C06_DESIGN_NOTE.md
+```
+
+### C07 final operator result
+
+C07 has been implemented, seeded, and calibrated as a new IS-quality catalog candidate after a runtime feature audit. It is not a C06 mutation and not an OOS unlock.
+
+```text
+C07 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06
+C07 catalog_version=C07
+C07 catalog_count=12
+C07 catalog_hash=233b45b06cbf34da221d5d7de2d9725fdf4d3441
+C07 design_source=C01/C04/C05/C06 forensic metrics + runtime-supported short-term/range/sector-relative/event-risk feature audit
+C07 sector_filter_used=false
+C07 OOS=NOT_RUN
+C07 production_ready=0
+```
+
+C07 validation result:
+
+```text
+C07 PHPUnit filter=PASS / OK (10 tests, 376 assertions)
+Full Watchlist PHPUnit=PASS / OK (300 tests, 6544 assertions)
+C07 seed=PASS / inserted_count=12 / updated_count=0 / existing_count=0
+R1/R2/C01/C02/C03/C04/C05/C06 immutable=1
+C07 IS run 1=C07_GRID_FAILED_IS_QUALITY / valid=0 / failed=12 / artifact_hash=c562d0a37ec7911c17c50072413fbbae25bb6114
+C07 IS run 2=C07_GRID_FAILED_IS_QUALITY / valid=0 / failed=12 / artifact_hash=c562d0a37ec7911c17c50072413fbbae25bb6114
+C07 deterministic=true
+C07 OOS=NOT_RUN
+C07 production_ready=0
+```
+
+C07 failed quality with:
+
+```text
+reason_code=WS_BT_C07_NO_VALID_IS_CANDIDATE
+is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id_best_is=
+best_is_binding_hash=
+```
+
+C07 final forensic summary:
+
+```text
+picks_count=728..1355
+median_ret_net_top=-1.0279%..-0.6993%
+p25_ret_net_top=-4.0156%..-3.4276%
+month_win_rate_min=17.86%..25.00%
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL=12,WS_BT_EVAL_ROBUST_RETURN_FAIL=12,WS_BT_EVAL_STABILITY_FAIL=12
+```
+
+C07 final decision:
+
+```text
+C07_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C07 is not eligible for OOS because it has no valid IS candidate, no best IS param, and no best IS binding hash. OOS has not been run and must not be claimed PASS.
+
+C07 forensic result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C07_OPERATOR_FORENSIC_FINAL_RESULT.md
+docs/watchlist/audit/_artifacts/c07-forensic-summary.csv
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C07_DESIGN_NOTE.md
 ```

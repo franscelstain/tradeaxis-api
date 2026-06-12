@@ -112,7 +112,7 @@ class WatchlistScoringService
                 continue;
             }
 
-            $metrics = $this->extractMetrics($candidate);
+            $metrics = $this->extractMetrics($candidate, $resolvedParamset);
             $missing = $this->missingScoreFields($metrics);
 
             if ($missing !== []) {
@@ -498,12 +498,12 @@ class WatchlistScoringService
         return (float) ($item[$key] ?? 0.0);
     }
 
-    private function extractMetrics(array $candidate): array
+    private function extractMetrics(array $candidate, array $paramset = []): array
     {
         $gateMetrics = $candidate['gate_metrics'] ?? [];
         $indicators = $candidate['indicators'] ?? [];
 
-        return [
+        $metrics = [
             'dv20_idr' => $this->metricOrNull($gateMetrics['dv20_idr'] ?? $indicators['dv20idr'] ?? $indicators['dv20_idr'] ?? $candidate['dv20_idr'] ?? $candidate['dv20idr'] ?? null),
             'atr14_pct' => $this->metricOrNull($gateMetrics['atr14_pct'] ?? $indicators['atr14_pct'] ?? $candidate['atr14_pct'] ?? null),
             'vol_ratio' => $this->metricOrNull($gateMetrics['vol_ratio'] ?? $indicators['vol_ratio'] ?? $candidate['vol_ratio'] ?? null),
@@ -518,6 +518,26 @@ class WatchlistScoringService
             'rs_20_vs_ihsg' => $this->metricOrNull($gateMetrics['rs_20_vs_ihsg'] ?? $indicators['rs_20_vs_ihsg'] ?? $candidate['rs_20_vs_ihsg'] ?? null),
             'sector_code' => $this->sectorCodeOrNull($candidate['sector_code'] ?? $gateMetrics['sector_code'] ?? $indicators['sector_code'] ?? null),
         ];
+
+        if (($paramset['bt_catalog']['catalog_version'] ?? null) === 'C07') {
+            $metrics += [
+                'roc5' => $this->metricOrNull($gateMetrics['roc5'] ?? $indicators['roc_5'] ?? $indicators['roc5'] ?? $candidate['roc_5'] ?? $candidate['roc5'] ?? null),
+                'roc10' => $this->metricOrNull($gateMetrics['roc10'] ?? $indicators['roc_10'] ?? $indicators['roc10'] ?? $candidate['roc_10'] ?? $candidate['roc10'] ?? null),
+                'll20' => $this->metricOrNull($gateMetrics['ll20'] ?? $indicators['ll20'] ?? $candidate['ll20'] ?? null),
+                'close_to_ll20_pct' => $this->metricOrNull($gateMetrics['close_to_ll20_pct'] ?? $indicators['close_to_ll20_pct'] ?? $candidate['close_to_ll20_pct'] ?? null),
+                'range_20_pct' => $this->metricOrNull($gateMetrics['range_20_pct'] ?? $indicators['range_20_pct'] ?? $candidate['range_20_pct'] ?? null),
+                'range_position_20_pct' => $this->metricOrNull($gateMetrics['range_position_20_pct'] ?? $indicators['range_position_20_pct'] ?? $candidate['range_position_20_pct'] ?? null),
+                'sector_roc20' => $this->metricOrNull($gateMetrics['sector_roc20'] ?? $indicators['sector_roc20'] ?? $candidate['sector_roc20'] ?? null),
+                'rs_20_vs_sector' => $this->metricOrNull($gateMetrics['rs_20_vs_sector'] ?? $indicators['rs_20_vs_sector'] ?? $candidate['rs_20_vs_sector'] ?? null),
+                'sector_rs_20_vs_ihsg' => $this->metricOrNull($gateMetrics['sector_rs_20_vs_ihsg'] ?? $indicators['sector_rs_20_vs_ihsg'] ?? $candidate['sector_rs_20_vs_ihsg'] ?? null),
+                'corporate_action_flag' => $this->flagOrNull($gateMetrics['corporate_action_flag'] ?? $indicators['corporate_action_flag'] ?? $candidate['corporate_action_flag'] ?? null),
+                'is_suspended' => $this->flagOrNull($gateMetrics['is_suspended'] ?? $indicators['is_suspended'] ?? $candidate['is_suspended'] ?? null),
+                'is_uma' => $this->flagOrNull($gateMetrics['is_uma'] ?? $indicators['is_uma'] ?? $candidate['is_uma'] ?? null),
+                'event_risk_flag' => $this->flagOrNull($gateMetrics['event_risk_flag'] ?? $indicators['event_risk_flag'] ?? $candidate['event_risk_flag'] ?? null),
+            ];
+        }
+
+        return $metrics;
     }
 
     private function missingScoreFields(array $metrics): array
@@ -546,8 +566,7 @@ class WatchlistScoringService
     private function resolveParamset(array $paramset): array
     {
         $defaults = self::DEFAULT_PARAMSET;
-
-        return [
+        $resolved = [
             'policy_code' => (string) ($paramset['policy_code'] ?? $defaults['policy_code']),
             'policy_version' => (string) ($paramset['policy_version'] ?? $defaults['policy_version']),
             'paramset_code' => (string) ($paramset['paramset_code'] ?? $defaults['paramset_code']),
@@ -577,6 +596,15 @@ class WatchlistScoringService
                 'weights' => $this->resolveWeights($paramset, $defaults['scoring']['weights']),
             ],
         ];
+
+        if (isset($paramset['bt_catalog'])) {
+            $resolved['bt_catalog'] = $paramset['bt_catalog'];
+        }
+        if (isset($paramset['bt_grid_resolution'])) {
+            $resolved['bt_grid_resolution'] = $paramset['bt_grid_resolution'];
+        }
+
+        return $resolved;
     }
 
     private function resolveWeights(array $paramset, array $defaults): array
@@ -746,5 +774,14 @@ class WatchlistScoringService
         }
 
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    private function flagOrNull($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value === 1 ? 1 : 0;
     }
 }

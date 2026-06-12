@@ -15,6 +15,48 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C07 STRATEGY-QUALITY REDESIGN / RUNTIME FEATURE AUDIT SESSION`
+
+Status:
+`C07_IMPLEMENTED / C07_SEED_PASS / C07_IS_EXECUTION_PASS / C07_IS_QUALITY_FAIL / C07_REJECTED_AS_STRATEGY_CATALOG / C07_DETERMINISTIC_TWO_RUN / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C07 final evidence:
+
+- C07 is a new catalog identity, not a patch to C06: `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06`, version `C07`, count `12`, hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`;
+- C07 uses newly audited runtime-supported feature axes: `roc_5`, `roc_10`, `close_to_ll20_pct`, `range_20_pct`, `range_position_20_pct`, `sector_roc20`, `rs_20_vs_sector`, `sector_rs_20_vs_ihsg`, and event-risk flags, plus existing score/trend/setup guards;
+- C07 does not add a sector filter; sector-relative fields are used only as continuous confirmation metrics;
+- C07 implementation validation passed in the current workspace: `vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC07"` = PASS / `OK (10 tests, 376 assertions)`;
+- full Watchlist PHPUnit passed in the current workspace: `vendor\bin\phpunit tests\Unit\Watchlist` = PASS / `OK (300 tests, 6544 assertions)`;
+- C07 seed passed: `inserted_count=12`, `updated_count=0`, `existing_count=0`;
+- R1/R2/C01/C02/C03/C04/C05/C06 immutability was preserved during C07 seed;
+- C07 IS calibration run 1 and run 2 both executed and produced the same deterministic artifact hash `c562d0a37ec7911c17c50072413fbbae25bb6114`;
+- C07 IS quality failed deterministically: `status=C07_GRID_FAILED_IS_QUALITY`, `reason_code=WS_BT_C07_NO_VALID_IS_CANDIDATE`, `is_valid_param_count=0`, `is_failed_param_count=12`;
+- C07 failure reason family: `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- C07 did not invoke OOS: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
+- C07 has no frozen best IS binding: `param_id_best_is=` empty and `best_is_binding_hash=` empty;
+- C07 production readiness remains false: `production_ready=0`.
+
+C07 final forensic summary:
+
+```text
+picks_count=728..1355
+median_ret_net_top=-1.0279%..-0.6993%
+p25_ret_net_top=-4.0156%..-3.4276%
+month_win_rate_min=17.86%..25.00%
+failure_distribution=WS_BT_EVAL_DOWNSIDE_FAIL=12,WS_BT_EVAL_ROBUST_RETURN_FAIL=12,WS_BT_EVAL_STABILITY_FAIL=12
+```
+
+C07 final decision state:
+
+```text
+C07_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+```
+
+C07 is not eligible for OOS because it has no valid IS candidate, no `param_id_best_is`, and no `best_is_binding_hash`. OOS remains `NOT_RUN` and must not be claimed PASS.
+
+## PRIOR SESSION - C06 MODERATE-CAP CANDIDATE-SELECTION IMPLEMENTATION SESSION
+
+Session:
 `WATCHLIST - C06 MODERATE-CAP CANDIDATE-SELECTION IMPLEMENTATION SESSION`
 
 Status:
@@ -713,11 +755,9 @@ Runtime artifact/metrics diagnostic codes in this session are internal backtest 
 
 | Severity | Gap | Impact |
 |---|---|---|
-| `EXTERNAL_DEPENDENCY` | Sandbox runs PHP `8.4.16`; project Artisan guard requires PHP `< 8.4`. | Official OOS command/database proof cannot bootstrap here. |
-| `EXTERNAL_DEPENDENCY` | PHP extensions `dom`, `mbstring`, `xml`, and `xmlwriter` are missing. | PHPUnit exits before test discovery; no current-patch PHPUnit PASS can be claimed. |
-| `RUNTIME_PROOF_MISSING` | Official tables and populated `watchlist_bt_param_grid` were not reachable in a supported runtime. | DB-backed IS/OOS persistence ids, official lineage, OOS metrics, and acceptance remain unproven. |
-| `RUNTIME_PROOF_MISSING` | Two identical supported-environment OOS command runs do not yet exist. | Canonical artifact hash equality is proven only by controlled smoke, not official operator execution. |
-| `NOT_READY` | OOS acceptance and production operating proof are missing. | No paramset promotion review eligibility and no production-ready claim. |
+| `STRATEGY_QUALITY_BLOCKED` | C07 has `is_valid_param_count=0`, empty `param_id_best_is`, and empty `best_is_binding_hash`. | C07 cannot advance to OOS and must remain rejected as a strategy-quality catalog. |
+| `OOS_NOT_ELIGIBLE` | OOS is intentionally not run for C07 because no valid frozen IS binding exists. | No OOS PASS, promotion review, or production-ready claim may be made. |
+| `NEXT_DIAGNOSTIC_REQUIRED` | C04/C05/C06/C07 candidate-selection retunes have not solved median return, p25 downside, or monthly stability. | Further work should start with deeper per-trade/ticker/month diagnostics or a new approved strategy family/exit model, not a same-shape C08 threshold retune. |
 
 ## First Implementation Roadmap
 

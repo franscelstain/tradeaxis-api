@@ -137,15 +137,28 @@ class WatchlistMarketDataConsumerReadService
                 'dv20idr' => (float) $row['dv20idr'],
                 'atr14_pct' => (float) $row['atr14_pct'],
                 'vol_ratio' => (float) $row['vol_ratio'],
+                'roc_5' => $this->floatOrNull($row['roc_5'] ?? null),
+                'roc_10' => $this->floatOrNull($row['roc_10'] ?? null),
                 'roc_20' => (float) $row['roc_20'],
                 'hh20' => (float) $row['hh20'],
+                'll20' => $this->floatOrNull($row['ll20'] ?? null),
                 'ma20' => (float) $row['ma20'],
                 'ma50' => (float) $row['ma50'],
                 'close_to_hh20_pct' => (float) $row['close_to_hh20_pct'],
+                'close_to_ll20_pct' => $this->floatOrNull($row['close_to_ll20_pct'] ?? null),
+                'range_20_pct' => $this->floatOrNull($row['range_20_pct'] ?? null),
+                'range_position_20_pct' => $this->floatOrNull($row['range_position_20_pct'] ?? null),
                 'close_vs_ma20_pct' => (float) $row['close_vs_ma20_pct'],
                 'close_vs_ma50_pct' => (float) $row['close_vs_ma50_pct'],
                 'ma20_slope_pct' => (float) $row['ma20_slope_pct'],
                 'rs_20_vs_ihsg' => (float) $row['rs_20_vs_ihsg'],
+                'sector_roc20' => $this->floatOrNull($row['sector_roc20'] ?? null),
+                'rs_20_vs_sector' => $this->floatOrNull($row['rs_20_vs_sector'] ?? null),
+                'sector_rs_20_vs_ihsg' => $this->floatOrNull($row['sector_rs_20_vs_ihsg'] ?? null),
+                'corporate_action_flag' => $this->intFlagOrNull($row['corporate_action_flag'] ?? null),
+                'is_suspended' => $this->intFlagOrNull($row['is_suspended'] ?? null),
+                'is_uma' => $this->intFlagOrNull($row['is_uma'] ?? null),
+                'event_risk_flag' => $this->intFlagOrNull($row['event_risk_flag'] ?? null),
             ],
         ];
     }
@@ -192,5 +205,15 @@ class WatchlistMarketDataConsumerReadService
         $sectorCode = strtoupper(trim((string) $value));
 
         return $sectorCode === '' ? null : $sectorCode;
+    }
+
+    private function floatOrNull($value): ?float
+    {
+        return $value === null || $value === '' ? null : (float) $value;
+    }
+
+    private function intFlagOrNull($value): ?int
+    {
+        return $value === null || $value === '' ? null : ((int) $value === 1 ? 1 : 0);
     }
 }

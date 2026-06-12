@@ -14,6 +14,63 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C07 STRATEGY-QUALITY REDESIGN / RUNTIME FEATURE AUDIT SESSION`
+
+Status:
+`C07_IMPLEMENTED / C07_SEEDED / C07_IS_EXECUTED / C07_IS_QUALITY_FAILED / C07_REJECTED_AS_STRATEGY_CATALOG / C07_DETERMINISTIC / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C07 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C02/C03/C04/C05/C06 remain rejected as strategy-quality catalogs and were not patched to look successful;
+- C07 is a new semantic C-campaign catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06`, version `C07`, count `12`, hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`;
+- C07 uses a C07-only runtime-supported candidate-selection extension in `bt_grid_resolution.candidate_selection_extension`;
+- C07 introduces runtime pass-through for audited optional metrics and uses sector-relative values only as continuous confirmation metrics;
+- C07 does not introduce unsupported `sector_code`, sector whitelist, or `sector_filter` catalog axes;
+- C07 PHPUnit validation passed: C07 filter `OK (10 tests, 376 assertions)` and full Watchlist `OK (300 tests, 6544 assertions)`;
+- C07 seed passed and inserted 12 catalog rows with `updated_count=0`;
+- seed-time R1/R2/C01/C02/C03/C04/C05/C06 immutability markers were all true;
+- C07 IS calibration run 1 and run 2 both failed quality with the same deterministic artifact hash `c562d0a37ec7911c17c50072413fbbae25bb6114`;
+- C07 quality failure is explicit: `C07_GRID_FAILED_IS_QUALITY` / `WS_BT_C07_NO_VALID_IS_CANDIDATE` / `is_valid_param_count=0` / `is_failed_param_count=12`;
+- C07 did not open OOS and all reported OOS guards remained clean;
+- C07 has no best IS binding and no best IS binding hash, so it cannot advance to OOS.
+
+Contract status update:
+
+- `WL-CONTRACT-007`: PASS for C07 catalog identity, seed, and R1/R2/C01/C02/C03/C04/C05/C06 immutability evidence;
+- `WL-CONTRACT-008`: PASS for C07 traceability as a new catalog derived from C01/C04/C05/C06 forensic evidence and runtime feature audit, not a mutation of prior catalogs;
+- `WL-CONTRACT-009`: PASS for C07 IS-only boundary in calibration output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C07 IS calibration;
+- `WL-CONTRACT-011`: FAILED_QUALITY for C07 strategy quality because no valid IS candidate exists;
+- `WL-CONTRACT-014`: PASS for C07 docs/test/command/forensic tracking update with per-param C07 metrics extracted from current artifacts.
+
+C07 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C07 has no valid IS binding and no OOS proof. C07 must remain rejected as a strategy-quality catalog.
+
+## PRIOR SESSION - C06 MODERATE-CAP CANDIDATE-SELECTION IMPLEMENTATION SESSION
+
+Session:
 `WATCHLIST - C06 MODERATE-CAP CANDIDATE-SELECTION IMPLEMENTATION SESSION`
 
 Status:

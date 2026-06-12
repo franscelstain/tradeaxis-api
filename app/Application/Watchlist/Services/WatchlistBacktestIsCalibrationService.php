@@ -364,6 +364,9 @@ class WatchlistBacktestIsCalibrationService
         if ($catalogCode === WatchlistBacktestC06ParamGridCatalog::CATALOG_CODE) {
             return 'WS_BT_C06_NO_VALID_IS_CANDIDATE';
         }
+        if ($catalogCode === WatchlistBacktestC07ParamGridCatalog::CATALOG_CODE) {
+            return 'WS_BT_C07_NO_VALID_IS_CANDIDATE';
+        }
 
         return 'WS_BT_R2_NO_VALID_IS_CANDIDATE';
     }

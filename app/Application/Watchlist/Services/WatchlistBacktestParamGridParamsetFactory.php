@@ -306,6 +306,15 @@ class WatchlistBacktestParamGridParamsetFactory
                 'fixed_secondary_target' => WatchlistBacktestC06ParamGridCatalog::FIXED_SECONDARY_TARGET,
                 'candidate_selection_extension' => WatchlistBacktestC06ParamGridCatalog::candidateSelectionExtension(),
             ],
+            WatchlistBacktestC07ParamGridCatalog::CATALOG_CODE => [
+                'version' => WatchlistBacktestC07ParamGridCatalog::CATALOG_VERSION,
+                'hash' => WatchlistBacktestC07ParamGridCatalog::hash(),
+                'fixed_stop_atr_mult' => WatchlistBacktestC07ParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC07ParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC07ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC07ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'candidate_selection_extension' => WatchlistBacktestC07ParamGridCatalog::candidateSelectionExtension(),
+            ],
         ];
 
         if (! isset($definitions[$catalogCode])) {

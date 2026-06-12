@@ -433,6 +433,9 @@ class WatchlistPlanGroupingService
         if ($mode === 'C06_MODERATE_LIQUIDITY_VOLUME_ROC_STABILITY_FLOOR') {
             return $this->c06QualityFloorFailures($item, $paramset);
         }
+        if ($mode === 'C07_SHORT_TERM_RANGE_SECTOR_CONFIRMATION') {
+            return $this->c07QualityFloorFailures($item, $paramset);
+        }
 
         return [];
     }
@@ -657,6 +660,176 @@ class WatchlistPlanGroupingService
         return array_values(array_unique($failures));
     }
 
+    private function c07QualityFloorFailures(array $item, array $paramset): array
+    {
+        $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
+        if (! is_array($extension)
+            || (string) ($extension['mode'] ?? '') !== 'C07_SHORT_TERM_RANGE_SECTOR_CONFIRMATION') {
+            return [];
+        }
+
+        $failures = [];
+        $scoreMetrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $momentum = is_array($item['factor_breakdown']['momentum'] ?? null)
+            ? $item['factor_breakdown']['momentum']
+            : [];
+        $breakout = is_array($item['factor_breakdown']['breakout'] ?? null)
+            ? $item['factor_breakdown']['breakout']
+            : [];
+
+        $eventRiskFlags = is_array($extension['event_risk_disallow_flags'] ?? null)
+            ? $extension['event_risk_disallow_flags']
+            : [];
+        foreach ($eventRiskFlags as $metric) {
+            $value = $scoreMetrics[$metric] ?? null;
+            if ($value !== null && (int) $value === 1) {
+                $failures[] = 'WATCHLIST_C07_EVENT_RISK_FLAG_FAIL';
+                break;
+            }
+        }
+
+        $rangeBounds = is_array($extension['range_position_20_pct_between'] ?? null)
+            ? $extension['range_position_20_pct_between']
+            : [];
+        if ($rangeBounds !== []) {
+            $rangePosition = $this->fractionOrNull($scoreMetrics['range_position_20_pct'] ?? null);
+            $min = $this->numericOrNull($rangeBounds['min'] ?? null);
+            $max = $this->numericOrNull($rangeBounds['max'] ?? null);
+            if ($rangePosition === null || $min === null || $max === null || $rangePosition < $min || $rangePosition > $max) {
+                $failures[] = 'WATCHLIST_C07_RANGE_POSITION_FAIL';
+            }
+        }
+
+        $confirmationFloors = is_array($extension['confirmation_metric_floor'] ?? null)
+            ? $extension['confirmation_metric_floor']
+            : [];
+        $confirmationPassCount = 0;
+        foreach ($confirmationFloors as $metric => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->c07MetricValue($metric, $scoreMetrics, $momentum, $breakout);
+            if ($value !== null && $value >= (float) $minimum) {
+                $confirmationPassCount++;
+            }
+        }
+        $requiredConfirmationPassCount = (int) ($extension['confirmation_metric_required_pass_count'] ?? count($confirmationFloors));
+        if ($confirmationPassCount < $requiredConfirmationPassCount) {
+            $failures[] = 'WATCHLIST_C07_CONFIRMATION_COUNT_FAIL';
+        }
+
+        $componentMinimums = is_array($extension['score_component_min'] ?? null)
+            ? $extension['score_component_min']
+            : [];
+        $componentValues = [];
+        $componentPassCount = 0;
+        foreach ($componentMinimums as $component => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->componentValue($item, (string) $component);
+            if ($value === null) {
+                $failures[] = 'WATCHLIST_C07_SCORE_COMPONENT_COUNT_FAIL';
+                continue;
+            }
+            $componentValues[] = $value;
+            if ($value >= (float) $minimum) {
+                $componentPassCount++;
+            }
+        }
+
+        $requiredComponentPassCount = (int) ($extension['score_component_required_pass_count'] ?? count($componentMinimums));
+        if ($componentPassCount < $requiredComponentPassCount) {
+            $failures[] = 'WATCHLIST_C07_SCORE_COMPONENT_COUNT_FAIL';
+        }
+        $componentAverageMin = $this->numericOrNull($extension['score_component_average_min'] ?? null);
+        if ($componentAverageMin !== null && $componentValues !== []
+            && (array_sum($componentValues) / count($componentValues)) < $componentAverageMin) {
+            $failures[] = 'WATCHLIST_C07_SCORE_COMPONENT_AVERAGE_FAIL';
+        }
+
+        $trendFloors = is_array($extension['trend_metric_floor'] ?? null)
+            ? $extension['trend_metric_floor']
+            : [];
+        $trendPassCount = 0;
+        foreach ($trendFloors as $metric => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->numericOrNull($momentum[$metric] ?? null);
+            if ($value !== null && $value >= (float) $minimum) {
+                $trendPassCount++;
+            }
+        }
+        $requiredTrendPassCount = (int) ($extension['trend_metric_required_pass_count'] ?? count($trendFloors));
+        if ($trendPassCount < $requiredTrendPassCount) {
+            $failures[] = 'WATCHLIST_C07_TREND_CONFIRM_COUNT_FAIL';
+        }
+
+        $rawSetupGuards = is_array($extension['raw_setup_guards'] ?? null)
+            ? $extension['raw_setup_guards']
+            : [];
+        if (($rawSetupGuards['roc20_between_catalog_roc_lo_and_roc_hi_with_tolerance'] ?? false) === true) {
+            $roc20 = $this->numericOrNull($momentum['roc20'] ?? null);
+            $rocLo = $this->numericOrNull($paramset['setup']['roc_lo'] ?? null);
+            $rocHi = $this->numericOrNull($paramset['setup']['roc_hi'] ?? null);
+            $lowerTolerance = $this->numericOrNull($rawSetupGuards['roc20_lower_tolerance'] ?? null) ?? 0.0;
+            $upperTolerance = $this->numericOrNull($rawSetupGuards['roc20_upper_tolerance'] ?? null) ?? 0.0;
+            if ($roc20 === null || $rocLo === null || $rocHi === null
+                || $roc20 < ($rocLo - $lowerTolerance) || $roc20 > ($rocHi + $upperTolerance)) {
+                $failures[] = 'WATCHLIST_C07_SETUP_RANGE_FAIL';
+            }
+        }
+
+        if (($rawSetupGuards['close_to_hh20_between_negative_bo_near_below_and_bo_max_ext_with_tolerance'] ?? false) === true) {
+            $closeToHh20 = $this->numericOrNull($breakout['close_to_hh20_pct'] ?? null);
+            $nearBelow = $this->numericOrNull($paramset['setup']['bo_near_below_pct'] ?? null);
+            $maxExtension = $this->numericOrNull($paramset['setup']['bo_max_ext_pct'] ?? null);
+            $lowerTolerance = $this->numericOrNull($rawSetupGuards['close_to_hh20_lower_tolerance'] ?? null) ?? 0.0;
+            $upperTolerance = $this->numericOrNull($rawSetupGuards['close_to_hh20_upper_tolerance'] ?? null) ?? 0.0;
+            if ($closeToHh20 === null || $nearBelow === null || $maxExtension === null
+                || $closeToHh20 < (-$nearBelow - $lowerTolerance) || $closeToHh20 > ($maxExtension + $upperTolerance)) {
+                $failures[] = 'WATCHLIST_C07_SETUP_RANGE_FAIL';
+            }
+        }
+
+        $failures = array_values(array_unique($failures));
+        if ($failures !== []) {
+            $failures[] = (string) ($extension['reason_code'] ?? 'WATCHLIST_C07_ENTRY_QUALITY_FLOOR_FAIL');
+        }
+
+        return array_values(array_unique($failures));
+    }
+
+    private function c07MetricValue(string $metric, array $scoreMetrics, array $momentum, array $breakout): ?float
+    {
+        if (array_key_exists($metric, $momentum)) {
+            return $this->numericOrNull($momentum[$metric]);
+        }
+        if (array_key_exists($metric, $breakout)) {
+            return $this->numericOrNull($breakout[$metric]);
+        }
+        if (! array_key_exists($metric, $scoreMetrics)) {
+            return null;
+        }
+
+        if (in_array($metric, [
+            'roc5',
+            'roc10',
+            'roc20',
+            'close_to_ll20_pct',
+            'range_20_pct',
+            'range_position_20_pct',
+            'sector_roc20',
+            'rs_20_vs_sector',
+            'sector_rs_20_vs_ihsg',
+        ], true)) {
+            return $this->fractionOrNull($scoreMetrics[$metric]);
+        }
+
+        return $this->numericOrNull($scoreMetrics[$metric]);
+    }
+
     private function componentValue(array $item, string $component): ?float
     {
         $value = $item['score_components'][$component] ?? $item[$component] ?? null;
@@ -667,6 +840,16 @@ class WatchlistPlanGroupingService
     private function numericOrNull($value): ?float
     {
         return $this->isNumericValue($value) ? (float) $value : null;
+    }
+
+    private function fractionOrNull($value): ?float
+    {
+        $numeric = $this->numericOrNull($value);
+        if ($numeric === null) {
+            return null;
+        }
+
+        return abs($numeric) > 1.0 ? $numeric / 100.0 : $numeric;
     }
 
     private function fillPlanRanks(array &$payload): void

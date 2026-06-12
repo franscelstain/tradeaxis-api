@@ -127,7 +127,7 @@ class WatchlistCandidateUniverseService
 
     private function evaluateCandidate(array $candidate, array $paramset): array
     {
-        $metrics = $this->extractMetrics($candidate);
+        $metrics = $this->extractMetrics($candidate, $paramset);
         $missingFields = $this->missingGuardFields($metrics);
         $failReasons = [];
         $infoReasons = [];
@@ -207,11 +207,10 @@ class WatchlistCandidateUniverseService
         ];
     }
 
-    private function extractMetrics(array $candidate): array
+    private function extractMetrics(array $candidate, array $paramset = []): array
     {
         $indicators = $candidate['indicators'] ?? [];
-
-        return [
+        $metrics = [
             'dv20_idr' => $this->metricOrNull($indicators['dv20idr'] ?? $indicators['dv20_idr'] ?? $candidate['dv20idr'] ?? $candidate['dv20_idr'] ?? null),
             'atr14_pct' => $this->metricOrNull($indicators['atr14_pct'] ?? $candidate['atr14_pct'] ?? null),
             'vol_ratio' => $this->metricOrNull($indicators['vol_ratio'] ?? $candidate['vol_ratio'] ?? null),
@@ -225,6 +224,26 @@ class WatchlistCandidateUniverseService
             'ma20_slope_pct' => $this->metricOrNull($indicators['ma20_slope_pct'] ?? $candidate['ma20_slope_pct'] ?? null),
             'rs_20_vs_ihsg' => $this->metricOrNull($indicators['rs_20_vs_ihsg'] ?? $candidate['rs_20_vs_ihsg'] ?? null),
         ];
+
+        if ($this->usesC07ExtendedMetrics($paramset)) {
+            $metrics += [
+                'roc5' => $this->metricOrNull($indicators['roc_5'] ?? $indicators['roc5'] ?? $candidate['roc_5'] ?? $candidate['roc5'] ?? null),
+                'roc10' => $this->metricOrNull($indicators['roc_10'] ?? $indicators['roc10'] ?? $candidate['roc_10'] ?? $candidate['roc10'] ?? null),
+                'll20' => $this->metricOrNull($indicators['ll20'] ?? $candidate['ll20'] ?? null),
+                'close_to_ll20_pct' => $this->metricOrNull($indicators['close_to_ll20_pct'] ?? $candidate['close_to_ll20_pct'] ?? null),
+                'range_20_pct' => $this->metricOrNull($indicators['range_20_pct'] ?? $candidate['range_20_pct'] ?? null),
+                'range_position_20_pct' => $this->metricOrNull($indicators['range_position_20_pct'] ?? $candidate['range_position_20_pct'] ?? null),
+                'sector_roc20' => $this->metricOrNull($indicators['sector_roc20'] ?? $candidate['sector_roc20'] ?? null),
+                'rs_20_vs_sector' => $this->metricOrNull($indicators['rs_20_vs_sector'] ?? $candidate['rs_20_vs_sector'] ?? null),
+                'sector_rs_20_vs_ihsg' => $this->metricOrNull($indicators['sector_rs_20_vs_ihsg'] ?? $candidate['sector_rs_20_vs_ihsg'] ?? null),
+                'corporate_action_flag' => $this->flagOrNull($indicators['corporate_action_flag'] ?? $candidate['corporate_action_flag'] ?? null),
+                'is_suspended' => $this->flagOrNull($indicators['is_suspended'] ?? $candidate['is_suspended'] ?? null),
+                'is_uma' => $this->flagOrNull($indicators['is_uma'] ?? $candidate['is_uma'] ?? null),
+                'event_risk_flag' => $this->flagOrNull($indicators['event_risk_flag'] ?? $candidate['event_risk_flag'] ?? null),
+            ];
+        }
+
+        return $metrics;
     }
 
     private function metricOrNull($value): ?float
@@ -234,6 +253,15 @@ class WatchlistCandidateUniverseService
         }
 
         return (float) $value;
+    }
+
+    private function flagOrNull($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value === 1 ? 1 : 0;
     }
 
     private function sectorCodeOrNull($value): ?string
@@ -294,8 +322,7 @@ class WatchlistCandidateUniverseService
     private function resolveParamset(array $paramset): array
     {
         $defaults = self::DEFAULT_PARAMSET;
-
-        return [
+        $resolved = [
             'policy_code' => (string) ($paramset['policy_code'] ?? $defaults['policy_code']),
             'policy_version' => (string) ($paramset['policy_version'] ?? $defaults['policy_version']),
             'paramset_code' => (string) ($paramset['paramset_code'] ?? $defaults['paramset_code']),
@@ -313,6 +340,20 @@ class WatchlistCandidateUniverseService
                 'atr_ideal_high' => $this->paramValue($paramset, ['risk', 'atr_ideal_high'], $defaults['risk']['atr_ideal_high']),
             ],
         ];
+
+        if (($paramset['bt_catalog']['catalog_version'] ?? null) === 'C07') {
+            $resolved['bt_catalog'] = $paramset['bt_catalog'];
+            if (isset($paramset['bt_grid_resolution'])) {
+                $resolved['bt_grid_resolution'] = $paramset['bt_grid_resolution'];
+            }
+        }
+
+        return $resolved;
+    }
+
+    private function usesC07ExtendedMetrics(array $paramset): bool
+    {
+        return ($paramset['bt_catalog']['catalog_version'] ?? null) === 'C07';
     }
 
     private function paramValue(array $paramset, array $path, float $default): float
