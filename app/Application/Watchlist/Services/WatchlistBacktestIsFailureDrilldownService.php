@@ -9,7 +9,9 @@ class WatchlistBacktestIsFailureDrilldownService
 {
     public const DEFAULT_OUTPUT_PATH = 'storage/app/watchlist/backtest/c01-is-failure-drilldown.json';
     private const FIELD_NOT_AVAILABLE = 'FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE';
+    private const NULLABLE_NO_POSITIVE_EVIDENCE = 'AVAILABLE_NULLABLE_NO_POSITIVE_RUNTIME_EVIDENCE';
     private const NOT_DERIVED = 'NOT_DERIVED';
+    private const DERIVED_NULL_ONLY = 'DERIVED_NULL_ONLY';
     private const NOT_USED_FOR_NEXT_CATALOG_DECISION = 'NOT_USED_FOR_NEXT_CATALOG_DECISION';
 
     private WatchlistBacktestPublishedPriceRuntimeService $runtime;
@@ -181,6 +183,8 @@ class WatchlistBacktestIsFailureDrilldownService
                 'metrics' => $canonicalMetrics,
                 'gates' => $gates,
                 'effective_thresholds' => $thresholds,
+                'exit_outcomes' => is_array($metrics['exit_outcomes'] ?? null) ? $metrics['exit_outcomes'] : [],
+                'reason_code_distribution' => is_array($metrics['reason_code_distribution'] ?? null) ? $metrics['reason_code_distribution'] : [],
                 'nearest_gate_gap' => $this->nearestGateGap($canonicalMetrics, $thresholds),
                 'worst_gate_gap' => $this->worstGateGap($canonicalMetrics, $thresholds),
                 'trade_count' => count(array_filter($enrichedTrades, function (array $trade): bool {
@@ -267,6 +271,7 @@ class WatchlistBacktestIsFailureDrilldownService
             'score_bucket_summary' => $this->numericBucketSummary($allEvaluatedTrades, 'recommendation_score', [0.60, 0.70, 0.80, 0.90, 1.00]),
             'sector_bucket_summary' => $this->categoricalBucketSummaryFromRuntime($allEvaluatedTrades, 'sector_code'),
             'score_component_effectiveness_summary' => $this->scoreComponentEffectivenessSummary($allEvaluatedTrades),
+            'exit_model_diagnostic_summary' => $this->exitModelDiagnosticSummary($allEvaluatedTrades, $paramDiagnostics),
             'grouping_quantile_summary' => $this->groupingQuantileSummary($rows, $paramDiagnostics),
             'param_axis_effectiveness_summary' => $this->paramAxisEffectiveness($rows, $paramDiagnostics),
             'runtime_consumed_parameter_summary' => $runtimeConsumedParameterSummary,
@@ -402,29 +407,51 @@ class WatchlistBacktestIsFailureDrilldownService
                 ['sector_rs_20_vs_ihsg'],
                 ['score_metrics', 'sector_rs_20_vs_ihsg'],
             ]));
+            $runtimeFieldPresence = [];
             $corporateActionTypes = $this->stringOrNull($this->firstAvailable($trade, [
                 ['corporate_action_types'],
                 ['score_metrics', 'corporate_action_types'],
             ]));
+            $runtimeFieldPresence['corporate_action_types'] = $this->anyPathExists($trade, [
+                ['corporate_action_types'],
+                ['score_metrics', 'corporate_action_types'],
+            ]);
             $trade['corporate_action_types'] = $corporateActionTypes;
             $trade['trading_status_code'] = $this->stringOrNull($this->firstAvailable($trade, [
                 ['trading_status_code'],
                 ['score_metrics', 'trading_status_code'],
             ]));
+            $runtimeFieldPresence['trading_status_code'] = $this->anyPathExists($trade, [
+                ['trading_status_code'],
+                ['score_metrics', 'trading_status_code'],
+            ]);
             $trade['event_risk_reasons'] = $this->stringOrNull($this->firstAvailable($trade, [
                 ['event_risk_reasons'],
                 ['score_metrics', 'event_risk_reasons'],
             ]));
+            $runtimeFieldPresence['event_risk_reasons'] = $this->anyPathExists($trade, [
+                ['event_risk_reasons'],
+                ['score_metrics', 'event_risk_reasons'],
+            ]);
             $trade['corporate_action_flag'] = $this->corporateActionFlagOrNull($this->firstAvailable($trade, [
                 ['corporate_action_flag'],
                 ['score_metrics', 'corporate_action_flag'],
             ]), $corporateActionTypes);
+            $runtimeFieldPresence['corporate_action_flag'] = $this->anyPathExists($trade, [
+                ['corporate_action_flag'],
+                ['score_metrics', 'corporate_action_flag'],
+            ]);
             foreach (['is_suspended', 'is_uma', 'event_risk_flag'] as $flagField) {
                 $trade[$flagField] = $this->flagOrNull($this->firstAvailable($trade, [
                     [$flagField],
                     ['score_metrics', $flagField],
                 ]));
+                $runtimeFieldPresence[$flagField] = $this->anyPathExists($trade, [
+                    [$flagField],
+                    ['score_metrics', $flagField],
+                ]);
             }
+            $trade['_runtime_field_presence'] = $runtimeFieldPresence;
             $trade['vol_ratio'] = $this->floatOrNull($this->firstAvailable($trade, [
                 ['vol_ratio'],
                 ['score_metrics', 'vol_ratio'],
@@ -801,9 +828,19 @@ class WatchlistBacktestIsFailureDrilldownService
         return $summary;
     }
 
-    private function categoricalBucketSummaryFromRuntime(array $trades, string $field): array
+    private function categoricalBucketSummaryFromRuntime(array $trades, string $field, bool $nullable = false): array
     {
         if (! $this->hasScalarRuntimeEvidence($trades, $field)) {
+            if ($nullable && $this->hasRuntimeFieldPresence($trades, $field)) {
+                return [
+                    'status' => self::NULLABLE_NO_POSITIVE_EVIDENCE,
+                    'field' => $field,
+                    'derivation_status' => self::DERIVED_NULL_ONLY,
+                    'next_catalog_decision_usage' => 'DIAGNOSTIC_ONLY_REQUIRES_SEPARATE_REVIEW',
+                    'summary' => $this->clusterBy($trades, $field, null, 50),
+                ];
+            }
+
             return $this->unavailableBucket(
                 $field.' is not exported in current backtest trade/evaluation payload.',
                 [$field]
@@ -834,8 +871,9 @@ class WatchlistBacktestIsFailureDrilldownService
         $fieldSummaries = [];
         $hasAnyField = false;
         foreach ($fields as $field) {
-            $fieldSummaries[$field] = $this->categoricalBucketSummaryFromRuntime($trades, $field);
-            $hasAnyField = $hasAnyField || (($fieldSummaries[$field]['status'] ?? null) === 'DERIVED_FROM_RUNTIME_EVIDENCE');
+            $fieldSummaries[$field] = $this->categoricalBucketSummaryFromRuntime($trades, $field, true);
+            $hasAnyField = $hasAnyField
+                || in_array(($fieldSummaries[$field]['status'] ?? null), ['DERIVED_FROM_RUNTIME_EVIDENCE', self::NULLABLE_NO_POSITIVE_EVIDENCE], true);
         }
 
         if (! $hasAnyField) {
@@ -929,6 +967,46 @@ class WatchlistBacktestIsFailureDrilldownService
         }
 
         return $summary;
+    }
+
+    private function exitModelDiagnosticSummary(array $trades, array $paramDiagnostics): array
+    {
+        if (! $this->hasScalarRuntimeEvidence($trades, 'exit_reason_code')) {
+            return $this->unavailableBucket(
+                'exit_reason_code is not exported in current backtest trade/evaluation payload.',
+                ['exit_reason_code']
+            );
+        }
+
+        return [
+            'status' => 'DERIVED_FROM_RUNTIME_EVIDENCE',
+            'derivation_status' => 'DERIVED',
+            'next_catalog_decision_usage' => 'DIAGNOSTIC_ONLY_REQUIRES_SEPARATE_REVIEW',
+            'exit_reason_distribution' => $this->categoricalBucketSummaryFromRuntime($trades, 'exit_reason_code'),
+            'target_stop_source_distribution' => $this->categoricalBucketSummaryFromRuntime($trades, 'target_stop_source'),
+            'fill_rule_distribution' => $this->categoricalBucketSummaryFromRuntime($trades, 'fill_rule'),
+            'gap_detected_hit_miss' => $this->booleanBucketSummary($trades, 'gap_detected'),
+            'per_param_exit_outcomes' => $this->perParamExitOutcomes($paramDiagnostics),
+            'diagnostic_interpretation' => 'Exit outcomes are diagnostic-only evidence. They do not change canonical IS gates, select a best failed row, or unlock OOS.',
+        ];
+    }
+
+    private function perParamExitOutcomes(array $paramDiagnostics): array
+    {
+        return array_map(function (array $param): array {
+            $exitOutcomes = is_array($param['exit_outcomes'] ?? null) ? $param['exit_outcomes'] : [];
+
+            return [
+                'param_id' => $param['param_id'],
+                'row_code' => $param['row_code'],
+                'hit_target_count' => $exitOutcomes['hit_target_count'] ?? null,
+                'hit_stop_count' => $exitOutcomes['hit_stop_count'] ?? null,
+                'timeout_hold_expired_count' => $exitOutcomes['timeout_hold_expired_count'] ?? null,
+                'reason_code_distribution' => is_array($param['reason_code_distribution'] ?? null)
+                    ? $param['reason_code_distribution']
+                    : [],
+            ];
+        }, $paramDiagnostics);
     }
 
     private function directionalFinding(array $trades, string $field): array
@@ -1150,9 +1228,13 @@ class WatchlistBacktestIsFailureDrilldownService
             }
         }
         $fieldExportGaps = [];
+        $nullableNoPositiveFields = [];
         foreach ($runtimeFieldAvailability as $field => $summary) {
             if (($summary['status'] ?? null) === self::FIELD_NOT_AVAILABLE) {
                 $fieldExportGaps[] = $field;
+            }
+            if (($summary['status'] ?? null) === self::NULLABLE_NO_POSITIVE_EVIDENCE) {
+                $nullableNoPositiveFields[] = $field;
             }
         }
 
@@ -1161,7 +1243,9 @@ class WatchlistBacktestIsFailureDrilldownService
             'dead_parameter_candidates' => $dead,
             'confirmed_runtime_consumed_axes' => array_keys($runtimeConsumedParameterSummary['parameters'] ?? []),
             'diagnostic_payload_gap' => $fieldExportGaps,
+            'nullable_runtime_no_positive_evidence_fields' => $nullableNoPositiveFields,
             'not_derived_marker' => self::NOT_DERIVED,
+            'nullable_no_positive_marker' => self::NULLABLE_NO_POSITIVE_EVIDENCE,
             'next_catalog_decision_usage_for_gaps' => self::NOT_USED_FOR_NEXT_CATALOG_DECISION,
             'finding' => $fieldExportGaps === []
                 ? 'Diagnostic feature fields are available in runtime evidence; use them only as diagnostic evidence, not as promotion proof.'
@@ -1233,9 +1317,13 @@ class WatchlistBacktestIsFailureDrilldownService
             return (bool) ($trade['metrics_ready'] ?? false);
         }));
         $missingRuntimeFields = [];
+        $nullableNoPositiveFields = [];
         foreach ($runtimeFieldAvailability as $field => $summary) {
             if (($summary['status'] ?? null) === self::FIELD_NOT_AVAILABLE) {
                 $missingRuntimeFields[] = $field;
+            }
+            if (($summary['status'] ?? null) === self::NULLABLE_NO_POSITIVE_EVIDENCE) {
+                $nullableNoPositiveFields[] = $field;
             }
         }
 
@@ -1260,6 +1348,7 @@ class WatchlistBacktestIsFailureDrilldownService
                 : ($isC01 ? 'No evaluated trade payload was available; do not design C02.' : 'No evaluated trade payload was available; do not design a next catalog.'),
             'failure_distribution' => $failureDistribution,
             'missing_runtime_evidence_fields' => $missingRuntimeFields,
+            'nullable_runtime_no_positive_evidence_fields' => $nullableNoPositiveFields,
             'missing_field_decision_usage' => self::NOT_USED_FOR_NEXT_CATALOG_DECISION,
         ];
     }
@@ -1281,13 +1370,13 @@ class WatchlistBacktestIsFailureDrilldownService
             'sector_roc20' => 'numeric',
             'rs_20_vs_sector' => 'numeric',
             'sector_rs_20_vs_ihsg' => 'numeric',
-            'corporate_action_flag' => 'scalar',
-            'corporate_action_types' => 'scalar',
-            'trading_status_code' => 'scalar',
-            'is_suspended' => 'scalar',
-            'is_uma' => 'scalar',
-            'event_risk_flag' => 'scalar',
-            'event_risk_reasons' => 'scalar',
+            'corporate_action_flag' => 'nullable_scalar',
+            'corporate_action_types' => 'nullable_scalar',
+            'trading_status_code' => 'nullable_scalar',
+            'is_suspended' => 'nullable_scalar',
+            'is_uma' => 'nullable_scalar',
+            'event_risk_flag' => 'nullable_scalar',
+            'event_risk_reasons' => 'nullable_scalar',
         ];
         $summary = [];
         foreach ($fields as $field => $type) {
@@ -1295,6 +1384,21 @@ class WatchlistBacktestIsFailureDrilldownService
                 $available = $this->hasNumericRuntimeEvidence($trades, $field);
             } elseif ($type === 'scalar') {
                 $available = $this->hasScalarRuntimeEvidence($trades, $field);
+            } elseif ($type === 'nullable_scalar') {
+                $available = $this->hasScalarRuntimeEvidence($trades, $field);
+                $hasPresence = $this->hasRuntimeFieldPresence($trades, $field);
+                $summary[$field] = [
+                    'status' => $available
+                        ? 'AVAILABLE_IN_RUNTIME_EVIDENCE'
+                        : ($hasPresence ? self::NULLABLE_NO_POSITIVE_EVIDENCE : self::FIELD_NOT_AVAILABLE),
+                    'derivation_status' => $available
+                        ? 'DERIVABLE'
+                        : ($hasPresence ? self::DERIVED_NULL_ONLY : self::NOT_DERIVED),
+                    'next_catalog_decision_usage' => ($available || $hasPresence)
+                        ? 'DIAGNOSTIC_ONLY_REQUIRES_SEPARATE_REVIEW'
+                        : self::NOT_USED_FOR_NEXT_CATALOG_DECISION,
+                ];
+                continue;
             } else {
                 $available = false;
                 foreach (['score_momentum', 'score_breakout', 'score_volume', 'score_risk'] as $component) {
@@ -1354,6 +1458,22 @@ class WatchlistBacktestIsFailureDrilldownService
         return false;
     }
 
+    private function hasRuntimeFieldPresence(array $trades, string $field): bool
+    {
+        foreach ($trades as $trade) {
+            if (! ($trade['metrics_ready'] ?? false)) {
+                continue;
+            }
+
+            $presence = is_array($trade['_runtime_field_presence'] ?? null) ? $trade['_runtime_field_presence'] : [];
+            if (($presence[$field] ?? false) === true) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function firstAvailable(array $source, array $paths)
     {
         foreach ($paths as $path) {
@@ -1364,6 +1484,30 @@ class WatchlistBacktestIsFailureDrilldownService
         }
 
         return null;
+    }
+
+    private function anyPathExists(array $source, array $paths): bool
+    {
+        foreach ($paths as $path) {
+            if ($this->pathExists($source, $path)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function pathExists(array $source, array $path): bool
+    {
+        $cursor = $source;
+        foreach ($path as $segment) {
+            if (! is_array($cursor) || ! array_key_exists($segment, $cursor)) {
+                return false;
+            }
+            $cursor = $cursor[$segment];
+        }
+
+        return true;
     }
 
     private function valueAtPath(array $source, array $path)

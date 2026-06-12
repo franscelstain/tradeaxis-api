@@ -96,6 +96,9 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
         $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['range_position_20_bucket_summary']['status']);
         $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['sector_roc20_bucket_summary']['status']);
         $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['event_risk_flag_summary']['status']);
+        $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['exit_model_diagnostic_summary']['status']);
+        $this->assertSame(1, $artifact['exit_model_diagnostic_summary']['per_param_exit_outcomes'][0]['hit_stop_count']);
+        $this->assertSame(1, $artifact['exit_model_diagnostic_summary']['per_param_exit_outcomes'][0]['timeout_hold_expired_count']);
         $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['score_components']['status']);
         $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['roc5']['status']);
         $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['corporate_action_flag']['status']);
@@ -105,6 +108,54 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
         $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['event_risk_flag_summary']['fields']['corporate_action_types']['status']);
         $this->assertArrayHasKey('bo_near_below_pct_hit_miss', $artifact['breakout_extension_bucket_summary']);
         $this->assertArrayHasKey('directional_finding', $artifact['score_component_effectiveness_summary']['components']['score_momentum']);
+
+        @unlink($output);
+    }
+
+    public function test_it_distinguishes_nullable_event_context_with_no_positive_runtime_evidence_from_missing_payload(): void
+    {
+        $output = sys_get_temp_dir().DIRECTORY_SEPARATOR.'watchlist-c07-drilldown-nullable-event-context-test.json';
+        @unlink($output);
+
+        $service = new WatchlistBacktestIsFailureDrilldownService(
+            $this->runtime(true, false),
+            $this->gridRepository([
+                $this->gridRow(2, '01_TEST_B', 'C07', 'hash-c07'),
+            ]),
+            $this->paramsetFactory()
+        );
+
+        $result = $service->execute(
+            'WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06',
+            '2023-01-02',
+            '2025-05-21',
+            $output,
+            ['overwrite' => true, 'param_id' => 2]
+        );
+
+        $artifact = $result['artifact'];
+        $this->assertTrue($result['is_ready']);
+        $this->assertSame([], $artifact['next_focus_recommendation']['missing_runtime_evidence_fields']);
+        $this->assertSame([
+            'corporate_action_flag',
+            'corporate_action_types',
+            'event_risk_reasons',
+        ], $artifact['next_focus_recommendation']['nullable_runtime_no_positive_evidence_fields']);
+        $this->assertSame(
+            'AVAILABLE_NULLABLE_NO_POSITIVE_RUNTIME_EVIDENCE',
+            $artifact['runtime_field_availability_summary']['corporate_action_types']['status']
+        );
+        $this->assertSame(
+            'DERIVED_NULL_ONLY',
+            $artifact['runtime_field_availability_summary']['corporate_action_types']['derivation_status']
+        );
+        $this->assertSame(
+            'AVAILABLE_NULLABLE_NO_POSITIVE_RUNTIME_EVIDENCE',
+            $artifact['event_risk_flag_summary']['fields']['corporate_action_types']['status']
+        );
+        $this->assertSame('STRATEGY_QUALITY_DIAGNOSTIC_BEFORE_NEXT_CATALOG', $artifact['next_focus_recommendation']['focus']);
+        $this->assertFalse($artifact['no_oos_leakage_summary']['oos_executed']);
+        $this->assertFalse($artifact['meta']['production_ready']);
 
         @unlink($output);
     }
@@ -167,15 +218,17 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
         $this->assertSame([], $runtime->calls);
     }
 
-    private function runtime(bool $includeFeatureFields = false): WatchlistBacktestPublishedPriceRuntimeService
+    private function runtime(bool $includeFeatureFields = false, bool $includeCorporateActionContext = true): WatchlistBacktestPublishedPriceRuntimeService
     {
-        return new class($includeFeatureFields) extends WatchlistBacktestPublishedPriceRuntimeService {
+        return new class($includeFeatureFields, $includeCorporateActionContext) extends WatchlistBacktestPublishedPriceRuntimeService {
             public array $calls = [];
             private bool $includeFeatureFields;
+            private bool $includeCorporateActionContext;
 
-            public function __construct(bool $includeFeatureFields)
+            public function __construct(bool $includeFeatureFields, bool $includeCorporateActionContext)
             {
                 $this->includeFeatureFields = $includeFeatureFields;
+                $this->includeCorporateActionContext = $includeCorporateActionContext;
             }
 
             public function evaluateWindow(string $fromDate, string $toDate, array $options = []): array
@@ -219,6 +272,15 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'min_month_avg_ret_net_min' => -0.01,
                                 ],
                             ],
+                            'exit_outcomes' => [
+                                'hit_target_count' => 0,
+                                'hit_stop_count' => 1,
+                                'timeout_hold_expired_count' => 1,
+                            ],
+                            'reason_code_distribution' => [
+                                'WATCHLIST_BACKTEST_EXIT_STOP' => 1,
+                                'WATCHLIST_BACKTEST_EXIT_HOLD_EXPIRED' => 1,
+                            ],
                             'evaluated_trades' => [
                                 array_merge([
                                     'metrics_ready' => true,
@@ -228,6 +290,10 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'bucket_code' => 'TOP',
                                     'atr14_pct' => 0.031,
                                     'ret_net' => -0.05,
+                                    'exit_reason_code' => 'WATCHLIST_BACKTEST_EXIT_STOP',
+                                    'target_stop_source' => 'ATR_RR_FALLBACK',
+                                    'fill_rule' => 'STOP_INTRADAY',
+                                    'gap_detected' => false,
                                 ], $this->includeFeatureFields ? [
                                     'close_to_hh20_pct' => -0.006,
                                     'roc20' => 0.041,
@@ -248,10 +314,13 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'sector_roc20' => 0.03,
                                     'rs_20_vs_sector' => 0.02,
                                     'sector_rs_20_vs_ihsg' => 0.01,
-                                    'corporate_action_types' => 'DIVIDEND',
+                                    'corporate_action_flag' => null,
+                                    'corporate_action_types' => $this->includeCorporateActionContext ? 'DIVIDEND' : null,
                                     'trading_status_code' => 'ACTIVE',
+                                    'is_suspended' => 0,
+                                    'is_uma' => 0,
                                     'event_risk_flag' => 0,
-                                    'event_risk_reasons' => 'CORPORATE_ACTION:DIVIDEND',
+                                    'event_risk_reasons' => $this->includeCorporateActionContext ? 'CORPORATE_ACTION:DIVIDEND' : null,
                                 ] : []),
                                 array_merge([
                                     'metrics_ready' => true,
@@ -261,6 +330,10 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'bucket_code' => 'SECONDARY',
                                     'atr14_pct' => 0.052,
                                     'ret_net' => 0.04,
+                                    'exit_reason_code' => 'WATCHLIST_BACKTEST_EXIT_HOLD_EXPIRED',
+                                    'target_stop_source' => 'ATR_RR_FALLBACK',
+                                    'fill_rule' => 'HOLD_EXPIRED_CLOSE',
+                                    'gap_detected' => false,
                                 ], $this->includeFeatureFields ? [
                                     'close_to_hh20_pct' => 0.031,
                                     'roc20' => 0.085,
@@ -281,8 +354,11 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'sector_roc20' => -0.01,
                                     'rs_20_vs_sector' => -0.02,
                                     'sector_rs_20_vs_ihsg' => 0.04,
+                                    'corporate_action_flag' => null,
                                     'corporate_action_types' => null,
                                     'trading_status_code' => 'ACTIVE',
+                                    'is_suspended' => 0,
+                                    'is_uma' => 0,
                                     'event_risk_flag' => 0,
                                     'event_risk_reasons' => null,
                                 ] : []),
@@ -308,10 +384,13 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'sector_roc20' => 0.03,
                                     'rs_20_vs_sector' => 0.02,
                                     'sector_rs_20_vs_ihsg' => 0.01,
-                                    'corporate_action_types' => 'DIVIDEND',
+                                    'corporate_action_flag' => null,
+                                    'corporate_action_types' => $this->includeCorporateActionContext ? 'DIVIDEND' : null,
                                     'trading_status_code' => 'ACTIVE',
+                                    'is_suspended' => 0,
+                                    'is_uma' => 0,
                                     'event_risk_flag' => 0,
-                                    'event_risk_reasons' => 'CORPORATE_ACTION:DIVIDEND',
+                                    'event_risk_reasons' => $this->includeCorporateActionContext ? 'CORPORATE_ACTION:DIVIDEND' : null,
                                 ],
                             ] : []),
                             array_merge([
@@ -333,8 +412,11 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
                                     'sector_roc20' => -0.01,
                                     'rs_20_vs_sector' => -0.02,
                                     'sector_rs_20_vs_ihsg' => 0.04,
+                                    'corporate_action_flag' => null,
                                     'corporate_action_types' => null,
                                     'trading_status_code' => 'ACTIVE',
+                                    'is_suspended' => 0,
+                                    'is_uma' => 0,
                                     'event_risk_flag' => 0,
                                     'event_risk_reasons' => null,
                                 ],

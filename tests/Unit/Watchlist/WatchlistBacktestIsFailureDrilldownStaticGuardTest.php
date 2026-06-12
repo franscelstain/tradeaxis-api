@@ -31,12 +31,16 @@ class WatchlistBacktestIsFailureDrilldownStaticGuardTest extends TestCase
         $this->assertStringContainsString('is_trading_date_hash', $service);
         $this->assertStringContainsString('runtime_consumed_parameter_summary', $service);
         $this->assertStringContainsString('score_component_effectiveness_summary', $service);
+        $this->assertStringContainsString('exit_model_diagnostic_summary', $service);
+        $this->assertStringContainsString('per_param_exit_outcomes', $service);
         $this->assertStringContainsString('sector_bucket_summary', $service);
         $this->assertStringContainsString('event_risk_flag_summary', $service);
         $this->assertStringContainsString('corporate_action_types', $service);
         $this->assertStringContainsString('trading_status_code', $service);
         $this->assertStringContainsString('event_risk_reasons', $service);
         $this->assertStringContainsString('FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE', $service);
+        $this->assertStringContainsString('AVAILABLE_NULLABLE_NO_POSITIVE_RUNTIME_EVIDENCE', $service);
+        $this->assertStringContainsString('DERIVED_NULL_ONLY', $service);
         $this->assertStringContainsString('NOT_DERIVED', $service);
         $this->assertStringContainsString('NOT_USED_FOR_NEXT_CATALOG_DECISION', $service);
         $this->assertStringContainsString('IS_ONLY_BATCHED_FAILURE_DRILLDOWN', $batchCommand);

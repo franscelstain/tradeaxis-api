@@ -1027,3 +1027,204 @@ docs/watchlist/audit/WS_C08_RUNTIME_PAYLOAD_AND_BATCHED_C07_DRILLDOWN_FINAL_RESU
 docs/watchlist/audit/WS_C08_OPERATOR_VALIDATION_COMMANDS.md
 docs/watchlist/audit/_artifacts/c08-batched-c07-drilldown-summary.csv
 ```
+
+### C09 nullable event-context runtime coverage addendum
+
+C09 did not create a strategy catalog. It clarified runtime diagnostic semantics for source-backed nullable event context after C08 showed corporate-action fields as missing in evaluated C07 trade evidence.
+
+```text
+C09 strategy_catalog_created=false
+C07 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06
+C07 catalog_version=C07
+C07 catalog_count=12
+C07 catalog_hash=233b45b06cbf34da221d5d7de2d9725fdf4d3441
+OOS=NOT_RUN
+production_ready=0
+```
+
+Read-only IS source coverage:
+
+```text
+market_data_corporate_actions rows=262
+market_data_trading_status_events rows=1469
+eod_indicators rows=501386
+eod_indicators corporate_action_types_present=243
+eod_indicators event_risk_reasons_present=28746
+eod_indicators trading_status_code_present=69560
+```
+
+The IS-only drilldown artifact now distinguishes:
+
+```text
+AVAILABLE_IN_RUNTIME_EVIDENCE
+AVAILABLE_NULLABLE_NO_POSITIVE_RUNTIME_EVIDENCE
+FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE
+```
+
+Executed C09 batch:
+
+```text
+php artisan watchlist:backtest-is-diagnose-batch --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06 --from=2023-01-02 --to=2025-05-21 --output-dir=storage/app/watchlist/backtest/c09-batched-c07-nullable-context-drilldown --summary=storage/app/watchlist/backtest/c09-batched-c07-nullable-context-summary.csv --overwrite
+```
+
+Executed result:
+
+```text
+status=PASS
+reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY
+diagnostic_param_count=12
+ready_count=12
+blocked_count=0
+summary_sha1=4A317C890F416619FA2F24396D1EC9DDDE8CC3AB
+missing_runtime_evidence_fields=
+nullable_runtime_no_positive_evidence_fields=corporate_action_flag|corporate_action_types|event_risk_reasons
+next_focus=STRATEGY_QUALITY_DIAGNOSTIC_BEFORE_NEXT_CATALOG
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+oos_executed=0
+production_ready=0
+```
+
+C09 batched strategy-quality metrics:
+
+```text
+picks_count=728..1355
+median_ret_net_top=-1.0279%..-0.6993%
+p25_ret_net_top=-4.0156%..-3.4276%
+month_win_rate_min=17.86%..25.00%
+```
+
+C09 closes the runtime diagnostic semantics gap, but it does not change strategy quality. C07 remains rejected and remains ineligible for OOS.
+
+C09 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C09_NULLABLE_EVENT_CONTEXT_RUNTIME_COVERAGE_FINAL_RESULT.md
+docs/watchlist/audit/WS_C09_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c09-batched-c07-nullable-context-summary.csv
+```
+
+### C10 exit-model diagnostic addendum
+
+C10 did not create a strategy catalog. It added diagnostic-only exit outcome evidence after C09 confirmed that runtime diagnostic fields are represented well enough for C07 strategy-quality review.
+
+```text
+C10 strategy_catalog_created=false
+C07 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06
+C07 catalog_version=C07
+C07 catalog_count=12
+C07 catalog_hash=233b45b06cbf34da221d5d7de2d9725fdf4d3441
+C10 OOS=NOT_RUN
+C10 production_ready=0
+```
+
+The C10 batch diagnostic command is IS-only:
+
+```text
+php artisan watchlist:backtest-is-diagnose-batch --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06 --from=2023-01-02 --to=2025-05-21 --output-dir=storage/app/watchlist/backtest/c10-batched-c07-exit-model-drilldown --summary=storage/app/watchlist/backtest/c10-batched-c07-exit-model-summary.csv --overwrite
+```
+
+Executed C10 result:
+
+```text
+status=PASS
+reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY
+diagnostic_param_count=12
+ready_count=12
+blocked_count=0
+summary_sha1=04EE547EE3F982901CABE23E55078868F14104C9
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+production_ready=0
+```
+
+C10 batched strategy-quality metrics:
+
+```text
+picks_count=728..1355
+median_ret_net_top=-1.0279%..-0.6993%
+p25_ret_net_top=-4.0156%..-3.4276%
+month_win_rate_min=17.86%..25.00%
+hit_target_count=168..249
+hit_stop_count=315..504
+timeout_hold_expired_count=443..667
+```
+
+C10 confirms that C07 remains rejected and remains ineligible for OOS. The exit outcome evidence supports a future explicitly approved exit-model or strategy-family redesign review, but it does not justify mutating C07, selecting best-of-failed, or launching OOS.
+
+C10 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C10_EXIT_MODEL_DIAGNOSTIC_FINAL_RESULT.md
+docs/watchlist/audit/WS_C10_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c10-batched-c07-exit-model-summary.csv
+```
+
+### C11 exit-model contract audit addendum
+
+C11 did not create a strategy catalog. It formalized the post-C10 decision gate: exit-model catalog work is not authorized under the current C01-C07 fixed-execution contract.
+
+```text
+C11 strategy_catalog_created=false
+C11 exit_model_catalog_authorized=false
+C07 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06
+C07 catalog_version=C07
+C07 catalog_count=12
+C07 catalog_hash=233b45b06cbf34da221d5d7de2d9725fdf4d3441
+C11 OOS=NOT_RUN
+C11 production_ready=0
+```
+
+The C11 command consumes C10 IS-only evidence and writes a JSON contract artifact:
+
+```text
+php artisan watchlist:backtest-exit-model-contract-audit --c10-summary=storage/app/watchlist/backtest/c10-batched-c07-exit-model-summary.csv --output=storage/app/watchlist/backtest/c11-exit-model-contract-audit.json --overwrite
+```
+
+Executed C11 result:
+
+```text
+status=PASS
+reason_code=WS_BT_C11_EXIT_MODEL_CONTRACT_AUDIT_READY
+summary_row_count=12
+source_summary_sha1=04ee547ee3f982901cabe23e55078868f14104c9
+hit_target_total=2585
+hit_stop_total=4927
+timeout_hold_expired_total=6858
+exit_model_catalog_authorized=0
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+strategy_catalog_created=0
+oos_executed=0
+artifact_hash=4b8a6a383c1ad9f5cab78394b3851b4b3a3325ea
+production_ready=0
+```
+
+C11 blocking reasons:
+
+```text
+C01_C07_FACTORY_REJECTS_EXIT_AXIS_DRIFT
+PUBLISHED_RUNTIME_FORCES_HOLD_5
+PARAM_GRID_SCHEMA_LACKS_TARGET_STOP_PERCENT_FIELDS
+C10_SUMMARY_REMAINS_BELOW_LOCKED_IS_GATES
+C10_EXIT_OUTCOMES_STOP_OR_TIMEOUT_DOMINATE_TARGET
+```
+
+Supported-but-not-authorized exit axes are classified as follows:
+
+```text
+risk.stop_atr_mult: runtime/schema supported, fixed for R1/R2/C01/C02/C03/C04/C05/C06/C07
+risk.min_rr: runtime/schema supported, fixed for R1/R2/C01/C02/C03/C04/C05/C06/C07
+backtest.holding_days: metrics consumed, published-price runtime currently forces HOLD=5
+backtest.target_pct|backtest.stop_pct: metrics consumed when present, not present in param-grid schema or curated rows
+```
+
+C11 confirms that the next step is an explicit exit-model or strategy-family redesign contract, not a new catalog, not OOS, and not mutation of C07.
+
+C11 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C11_EXIT_MODEL_CONTRACT_AUDIT_FINAL_RESULT.md
+docs/watchlist/audit/WS_C11_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c11-exit-model-contract-audit.json
+```

@@ -14,6 +14,198 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C11 EXIT MODEL CONTRACT AUDIT SESSION`
+
+Status:
+`C11_EXIT_MODEL_CONTRACT_AUDIT_READY / EXIT_MODEL_CATALOG_NOT_AUTHORIZED / C07_REJECTED_AS_STRATEGY_CATALOG / C11_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C11 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C07 remains rejected as a strategy-quality catalog and was not patched to look successful;
+- C11 did not create a strategy catalog, did not select best-of-failed, and did not invoke OOS;
+- C11 adds a contract-audit command that reads C10 IS-only evidence and explicitly reports `exit_model_catalog_authorized=0`;
+- C11 command result: `status=PASS`, `reason_code=WS_BT_C11_EXIT_MODEL_CONTRACT_AUDIT_READY`, `summary_row_count=12`, `oos_executed=0`, and `production_ready=0`;
+- C11 artifact hash is deterministic across two runs: `4b8a6a383c1ad9f5cab78394b3851b4b3a3325ea`;
+- C11 docs artifact file SHA1 is `E00E9BA960E50CE1E32ABA717BDFBD1EC0BE54A4`;
+- code contract audit confirms `factory_rejects_fixed_execution_snapshot_drift=true`, `published_runtime_forces_holding_days_5=true`, and `param_grid_schema_exposes_target_stop_pct=false`;
+- C07 strategy quality remains failed: best median return remains negative, best p25 downside remains worse than `-3%`, and best monthly win-rate minimum remains below `45%`;
+- validation passed after C11 changes: `WatchlistBacktestExitModelContractAudit` = `OK (3 tests, 34 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, `WatchlistBacktestIsFailureDrilldown` = `OK (6 tests, 123 assertions)`, full Watchlist = `OK (305 tests, 6636 assertions)`.
+
+Contract status update:
+
+- `WL-CONTRACT-008`: PASS for exit-model contract traceability and explicit next-catalog non-design decision;
+- `WL-CONTRACT-009`: PASS for strict IS-only artifact consumption and no OOS boundary crossing;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C11 contract audit;
+- `WL-CONTRACT-011`: FAILED_QUALITY remains for C07 strategy quality;
+- `WL-CONTRACT-013`: PASS for C11 contract artifact surface;
+- `WL-CONTRACT-014`: PASS for C11 docs and JSON artifact tracking.
+
+C11 audit references:
+
+```text
+docs/watchlist/audit/WS_C11_EXIT_MODEL_CONTRACT_AUDIT_FINAL_RESULT.md
+docs/watchlist/audit/WS_C11_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c11-exit-model-contract-audit.json
+```
+
+C11 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+exit_model_catalog_authorized=0
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C07 has no valid IS binding, and C11 explicitly says the exit-model catalog is not authorized under the current contract. OOS has not been run and must not be claimed PASS.
+
+## PRIOR SESSION - C10 EXIT MODEL DIAGNOSTIC / STRATEGY QUALITY DECISION GATE SESSION
+
+Session:
+`WATCHLIST - C10 EXIT MODEL DIAGNOSTIC / STRATEGY QUALITY DECISION GATE SESSION`
+
+Status:
+`C10_EXIT_MODEL_DIAGNOSTIC_EXECUTED / C07_BATCHED_DRILLDOWN_EXECUTED / C07_REJECTED_AS_STRATEGY_CATALOG / C10_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C10 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C07 remains rejected as a strategy-quality catalog and was not patched to look successful;
+- C10 did not create a strategy catalog, did not select best-of-failed, and did not invoke OOS;
+- C10 adds diagnostic-only exit outcome fields to IS drilldown artifacts and the batched summary;
+- C10 batch C07 drilldown executed all 12 params with `ready_count=12`, `blocked_count=0`, `oos_executed=0`, and `production_ready=0`;
+- batch CSV artifact SHA1 is `04EE547EE3F982901CABE23E55078868F14104C9`;
+- `missing_runtime_evidence_fields` is empty across the C10 batch summary;
+- nullable no-positive fields remain explicit: `corporate_action_flag`, `corporate_action_types`, and `event_risk_reasons`;
+- C07 strategy quality remains failed: median return remains negative, p25 downside remains worse than `-3%`, and monthly win-rate minimum remains far below `45%`;
+- exit diagnostics show stops and time-expiry dominate target hits: `hit_target_count=168..249`, `hit_stop_count=315..504`, `timeout_hold_expired_count=443..667`;
+- validation passed after C10 changes: `WatchlistBacktestIsFailureDrilldown` = `OK (6 tests, 123 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (302 tests, 6602 assertions)`.
+
+Contract status update:
+
+- `WL-CONTRACT-008`: PASS for exit-model diagnostic traceability and explicit next-catalog non-design decision;
+- `WL-CONTRACT-009`: PASS for strict IS-only boundary in batch drilldown output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during batch drilldown;
+- `WL-CONTRACT-011`: FAILED_QUALITY remains for C07 strategy quality;
+- `WL-CONTRACT-013`: PASS for exit-model batch artifact surface;
+- `WL-CONTRACT-014`: PASS for C10 docs and CSV tracking.
+
+C10 audit references:
+
+```text
+docs/watchlist/audit/WS_C10_EXIT_MODEL_DIAGNOSTIC_FINAL_RESULT.md
+docs/watchlist/audit/WS_C10_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c10-batched-c07-exit-model-summary.csv
+```
+
+C10 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C07 has no valid IS binding, and C10 was diagnostic exit-model work only. OOS has not been run and must not be claimed PASS.
+
+## PRIOR SESSION - C09 NULLABLE EVENT CONTEXT RUNTIME COVERAGE SESSION
+
+Session:
+`WATCHLIST - C09 NULLABLE EVENT CONTEXT RUNTIME COVERAGE SESSION`
+
+Status:
+`C09_NULLABLE_EVENT_CONTEXT_CLASSIFIED / C07_BATCHED_DRILLDOWN_EXECUTED / C07_REJECTED_AS_STRATEGY_CATALOG / C09_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C09 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C07 remains rejected as a strategy-quality catalog and was not patched to look successful;
+- C09 did not create a strategy catalog, did not select best-of-failed, and did not invoke OOS;
+- source coverage was audited read-only for the frozen IS window;
+- nullable event context now has an explicit diagnostic status: `AVAILABLE_NULLABLE_NO_POSITIVE_RUNTIME_EVIDENCE`;
+- C09 batch C07 drilldown executed all 12 params with `ready_count=12`, `blocked_count=0`, `oos_executed=0`, and `production_ready=0`;
+- batch CSV artifact SHA1 is `4A317C890F416619FA2F24396D1EC9DDDE8CC3AB`;
+- `missing_runtime_evidence_fields` is empty across the C09 batch summary;
+- nullable no-positive fields are explicit: `corporate_action_flag`, `corporate_action_types`, and `event_risk_reasons`;
+- C07 strategy quality remains failed: median return remains negative, p25 downside remains worse than `-3%`, and monthly win-rate minimum remains far below `45%`;
+- validation passed after C09 changes: `WatchlistBacktestIsFailureDrilldown` = `OK (6 tests, 118 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (302 tests, 6597 assertions)`.
+
+Contract status update:
+
+- `WL-CONTRACT-008`: PASS for nullable context diagnostic traceability and explicit next-catalog non-design decision;
+- `WL-CONTRACT-009`: PASS for strict IS-only boundary in batch drilldown output;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during batch drilldown;
+- `WL-CONTRACT-011`: FAILED_QUALITY remains for C07 strategy quality;
+- `WL-CONTRACT-013`: PASS for nullable context batch artifact surface;
+- `WL-CONTRACT-014`: PASS for C09 docs and CSV tracking.
+
+C09 audit references:
+
+```text
+docs/watchlist/audit/WS_C09_NULLABLE_EVENT_CONTEXT_RUNTIME_COVERAGE_FINAL_RESULT.md
+docs/watchlist/audit/WS_C09_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c09-batched-c07-nullable-context-summary.csv
+```
+
+C09 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+next_decision=NEXT_CATALOG_NOT_DESIGNED
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C07 has no valid IS binding, and C09 was diagnostic/runtime semantics work only. OOS has not been run and must not be claimed PASS.
+
+## PRIOR SESSION - C08 RUNTIME PAYLOAD ENRICHMENT AND BATCHED C07 FAILURE DRILLDOWN SESSION
+
+Session:
 `WATCHLIST - C08 RUNTIME PAYLOAD ENRICHMENT AND BATCHED C07 FAILURE DRILLDOWN SESSION`
 
 Status:

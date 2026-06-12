@@ -15,6 +15,143 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C11 EXIT MODEL CONTRACT AUDIT SESSION`
+
+Status:
+`C11_EXIT_MODEL_CONTRACT_AUDIT_READY / EXIT_MODEL_CATALOG_NOT_AUTHORIZED / C07_REJECTED_AS_STRATEGY_CATALOG / C11_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C11 diagnostic evidence:
+
+- no new strategy catalog was created; C11 is an IS-only exit-model contract audit session;
+- C07 remains rejected as a strategy-quality catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06`, version `C07`, count `12`, hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`;
+- C11 command `watchlist:backtest-exit-model-contract-audit` reads the C10 summary CSV and writes a JSON audit artifact;
+- C11 command result: `status=PASS`, `reason_code=WS_BT_C11_EXIT_MODEL_CONTRACT_AUDIT_READY`, `summary_row_count=12`;
+- source C10 summary SHA1: `04ee547ee3f982901cabe23e55078868f14104c9`;
+- C11 artifact hash is deterministic across two runs: `4b8a6a383c1ad9f5cab78394b3851b4b3a3325ea`;
+- C11 docs artifact file SHA1: `E00E9BA960E50CE1E32ABA717BDFBD1EC0BE54A4`;
+- exit totals remain weak: `hit_target_total=2585`, `hit_stop_total=4927`, `timeout_hold_expired_total=6858`, target hit share `17.99%`, stop-or-timeout share `82.01%`;
+- best C10 metrics still fail locked gates: median `-0.6993%`, p25 `-3.4276%`, monthly win-rate minimum `25.00%`;
+- exit-model catalog authorization is explicitly false because current code/factory/runtime contract blocks unsafe exit-axis catalog creation;
+- validation passed: `WatchlistBacktestExitModelContractAudit` = `OK (3 tests, 34 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, `WatchlistBacktestIsFailureDrilldown` = `OK (6 tests, 123 assertions)`, full Watchlist = `OK (305 tests, 6636 assertions)`;
+- OOS was not run, no best-of-failed binding was selected, and production readiness remains false.
+
+C11 blocking reasons:
+
+```text
+C01_C07_FACTORY_REJECTS_EXIT_AXIS_DRIFT
+PUBLISHED_RUNTIME_FORCES_HOLD_5
+PARAM_GRID_SCHEMA_LACKS_TARGET_STOP_PERCENT_FIELDS
+C10_SUMMARY_REMAINS_BELOW_LOCKED_IS_GATES
+C10_EXIT_OUTCOMES_STOP_OR_TIMEOUT_DOMINATE_TARGET
+```
+
+C11 decision:
+
+```text
+C07_REMAINS_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+C11_STRATEGY_CATALOG_CREATED=false
+EXIT_MODEL_CATALOG_AUTHORIZED=false
+NEXT_CATALOG_NOT_DESIGNED
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+```
+
+C11 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C11_EXIT_MODEL_CONTRACT_AUDIT_FINAL_RESULT.md
+docs/watchlist/audit/WS_C11_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c11-exit-model-contract-audit.json
+```
+
+## PRIOR SESSION - C10 EXIT MODEL DIAGNOSTIC / STRATEGY QUALITY DECISION GATE SESSION
+
+Session:
+`WATCHLIST - C10 EXIT MODEL DIAGNOSTIC / STRATEGY QUALITY DECISION GATE SESSION`
+
+Status:
+`C10_EXIT_MODEL_DIAGNOSTIC_EXECUTED / C07_BATCHED_DRILLDOWN_EXECUTED / C07_REJECTED_AS_STRATEGY_CATALOG / C10_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C10 diagnostic evidence:
+
+- no new strategy catalog was created; C10 is an IS-only exit-model diagnostic session;
+- C07 remains rejected as a strategy-quality catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06`, version `C07`, count `12`, hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`;
+- C10 added diagnostic-only exit outcome evidence to scoped drilldown artifacts and the batch CSV: `hit_target_count`, `hit_stop_count`, `timeout_hold_expired_count`, `exit_model_diagnostic_summary`, and `per_param_exit_outcomes`;
+- C10 batch command executed all 12 C07 params and wrote 12 scoped JSON artifacts plus a summary CSV;
+- batch command result: `status=PASS`, `reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY`, `diagnostic_param_count=12`, `ready_count=12`, `blocked_count=0`;
+- summary artifact SHA1: `04EE547EE3F982901CABE23E55078868F14104C9`;
+- C10 batch metrics still fail strategy quality: picks `728..1355`, median return `-1.0279%..-0.6993%`, p25 return `-4.0156%..-3.4276%`, monthly win-rate minimum `17.86%..25.00%`;
+- exit outcomes show targets are hit less often than stops/time-expiry: `hit_target_count=168..249`, `hit_stop_count=315..504`, `timeout_hold_expired_count=443..667`;
+- `missing_runtime_evidence_fields` remains empty for C07 batch artifacts;
+- nullable no-positive fields remain explicit: `corporate_action_flag`, `corporate_action_types`, and `event_risk_reasons`;
+- next focus remains `STRATEGY_QUALITY_DIAGNOSTIC_BEFORE_NEXT_CATALOG`;
+- next decision remains `NEXT_CATALOG_NOT_DESIGNED`;
+- validation passed: `WatchlistBacktestIsFailureDrilldown` = `OK (6 tests, 123 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (302 tests, 6602 assertions)`;
+- OOS was not run, no best-of-failed binding was selected, and production readiness remains false.
+
+C10 decision:
+
+```text
+C07_REMAINS_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+C10_STRATEGY_CATALOG_CREATED=false
+NEXT_CATALOG_NOT_DESIGNED
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+```
+
+C10 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C10_EXIT_MODEL_DIAGNOSTIC_FINAL_RESULT.md
+docs/watchlist/audit/WS_C10_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c10-batched-c07-exit-model-summary.csv
+```
+
+## PRIOR SESSION - C09 NULLABLE EVENT CONTEXT RUNTIME COVERAGE SESSION
+
+Session:
+`WATCHLIST - C09 NULLABLE EVENT CONTEXT RUNTIME COVERAGE SESSION`
+
+Status:
+`C09_NULLABLE_EVENT_CONTEXT_CLASSIFIED / C07_BATCHED_DRILLDOWN_EXECUTED / C07_REJECTED_AS_STRATEGY_CATALOG / C09_STRATEGY_CATALOG_NOT_CREATED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C09 diagnostic evidence:
+
+- no new strategy catalog was created; C09 is a runtime diagnostic semantics session;
+- C07 remains rejected as a strategy-quality catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06`, version `C07`, count `12`, hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`;
+- read-only IS source coverage confirmed corporate-action context exists in the DB but is sparse: `market_data_corporate_actions=262`, `market_data_trading_status_events=1469`, `eod_indicators=501386`, `corporate_action_types_present=243`, `event_risk_reasons_present=28746`, `trading_status_code_present=69560`;
+- IS-only drilldown now distinguishes `AVAILABLE_NULLABLE_NO_POSITIVE_RUNTIME_EVIDENCE` from `FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE`;
+- C09 batch command executed all 12 C07 params and wrote 12 scoped JSON artifacts plus a summary CSV;
+- batch command result: `status=PASS`, `reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY`, `diagnostic_param_count=12`, `ready_count=12`, `blocked_count=0`;
+- summary artifact SHA1: `4A317C890F416619FA2F24396D1EC9DDDE8CC3AB`;
+- C09 batch metrics still fail strategy quality: picks `728..1355`, median return `-1.0279%..-0.6993%`, p25 return `-4.0156%..-3.4276%`, monthly win-rate minimum `17.86%..25.00%`;
+- `missing_runtime_evidence_fields` is now empty for C07 batch artifacts;
+- nullable no-positive fields are explicit: `corporate_action_flag`, `corporate_action_types`, and `event_risk_reasons`;
+- next focus changed from runtime payload enrichment to `STRATEGY_QUALITY_DIAGNOSTIC_BEFORE_NEXT_CATALOG`;
+- validation passed: `WatchlistBacktestIsFailureDrilldown` = `OK (6 tests, 118 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, full Watchlist = `OK (302 tests, 6597 assertions)`;
+- OOS was not run, no best-of-failed binding was selected, and production readiness remains false.
+
+C09 decision:
+
+```text
+C07_REMAINS_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+C09_STRATEGY_CATALOG_CREATED=false
+NEXT_CATALOG_NOT_DESIGNED
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+```
+
+C09 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C09_NULLABLE_EVENT_CONTEXT_RUNTIME_COVERAGE_FINAL_RESULT.md
+docs/watchlist/audit/WS_C09_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c09-batched-c07-nullable-context-summary.csv
+```
+
+## PRIOR SESSION - C08 RUNTIME PAYLOAD ENRICHMENT AND BATCHED C07 FAILURE DRILLDOWN SESSION
+
+Session:
 `WATCHLIST - C08 RUNTIME PAYLOAD ENRICHMENT AND BATCHED C07 FAILURE DRILLDOWN SESSION`
 
 Status:

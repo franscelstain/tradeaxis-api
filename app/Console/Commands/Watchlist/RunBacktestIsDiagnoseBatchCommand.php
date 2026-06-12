@@ -162,6 +162,11 @@ class RunBacktestIsDiagnoseBatchCommand extends Command
         $missing = is_array($next['missing_runtime_evidence_fields'] ?? null)
             ? implode('|', $next['missing_runtime_evidence_fields'])
             : '';
+        $nullableNoPositive = is_array($next['nullable_runtime_no_positive_evidence_fields'] ?? null)
+            ? implode('|', $next['nullable_runtime_no_positive_evidence_fields'])
+            : '';
+        $exit = is_array($artifact['exit_model_diagnostic_summary'] ?? null) ? $artifact['exit_model_diagnostic_summary'] : [];
+        $exitOutcomes = $this->firstRow($exit['per_param_exit_outcomes'] ?? []);
 
         return [
             'scope' => 'IS_ONLY_BATCHED_FAILURE_DRILLDOWN',
@@ -187,7 +192,11 @@ class RunBacktestIsDiagnoseBatchCommand extends Command
             'p25_ret_net_top' => (string) ($metrics['p25_ret_net_top'] ?? ''),
             'month_win_rate_min' => (string) ($metrics['month_win_rate_min'] ?? ''),
             'month_avg_ret_net_min' => (string) ($metrics['month_avg_ret_net_min'] ?? ''),
+            'hit_target_count' => (string) ($exitOutcomes['hit_target_count'] ?? ''),
+            'hit_stop_count' => (string) ($exitOutcomes['hit_stop_count'] ?? ''),
+            'timeout_hold_expired_count' => (string) ($exitOutcomes['timeout_hold_expired_count'] ?? ''),
             'missing_runtime_evidence_fields' => $missing,
+            'nullable_runtime_no_positive_evidence_fields' => $nullableNoPositive,
             'next_focus' => (string) ($next['focus'] ?? ''),
             'next_decision' => (string) ($next['decision'] ?? ''),
             'oos_service_invoked' => ! empty($noOos['oos_service_invoked']) ? '1' : '0',
