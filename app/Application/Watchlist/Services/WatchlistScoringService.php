@@ -519,7 +519,7 @@ class WatchlistScoringService
             'sector_code' => $this->sectorCodeOrNull($candidate['sector_code'] ?? $gateMetrics['sector_code'] ?? $indicators['sector_code'] ?? null),
         ];
 
-        if (($paramset['bt_catalog']['catalog_version'] ?? null) === 'C07') {
+        if ($this->usesC07OptionalRuntimeMetrics($paramset)) {
             $corporateActionTypes = $this->stringOrNull($gateMetrics['corporate_action_types'] ?? $indicators['corporate_action_types'] ?? $candidate['corporate_action_types'] ?? null);
             $metrics += [
                 'roc5' => $this->metricOrNull($gateMetrics['roc5'] ?? $indicators['roc_5'] ?? $indicators['roc5'] ?? $candidate['roc_5'] ?? $candidate['roc5'] ?? null),
@@ -542,6 +542,16 @@ class WatchlistScoringService
         }
 
         return $metrics;
+    }
+
+    private function usesC07OptionalRuntimeMetrics(array $paramset): bool
+    {
+        $catalogVersion = (string) ($paramset['bt_catalog']['catalog_version'] ?? '');
+        $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
+        $extensionMode = is_array($extension) ? (string) ($extension['mode'] ?? '') : '';
+
+        return in_array($catalogVersion, ['C07', 'C14'], true)
+            || $extensionMode === 'C07_SHORT_TERM_RANGE_SECTOR_CONFIRMATION';
     }
 
     private function missingScoreFields(array $metrics): array

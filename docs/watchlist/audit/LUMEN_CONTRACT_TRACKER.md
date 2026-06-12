@@ -14,12 +14,78 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C14 VARIABLE RISK-EXIT CATALOG SESSION`
+
+Status:
+`C14_IMPLEMENTED_SEEDED_DETERMINISTIC / IS_QUALITY_FAILED / C14_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C14 contract evidence:
+
+- R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
+- C14 created a new catalog identity: `WS_BT_GRID_DOWNSIDE_STABILITY_C14_2026_06`, version `C14`, count `12`, hash `079430de7c94fd0226d0f3b47d5eb1e9f906fd6a`;
+- C14 consumes C13 exit-axis support through `VARIABLE_RISK_EXIT_AXIS_V1`;
+- C14 uses only the supported variable axes `risk.stop_atr_mult` and `risk.min_rr`;
+- C14 keeps blocked first-phase axes blocked: `backtest.holding_days`, `backtest.target_pct`, and `backtest.stop_pct`;
+- C14 does not introduce a sector filter or any unsupported runtime axis;
+- C14 seed passed with immutable markers set to `1` for R1/R2/C01/C02/C03/C04/C05/C06/C07;
+- C14 IS calibration run 1 and run 2 produced the same canonical artifact hash: `70d021daafc254fb2ed826ff05015d42bac5dd8d`;
+- C14 failed locked IS quality gates with `is_valid_param_count=0`, `is_failed_param_count=12`, `param_id_best_is=`, and `best_is_binding_hash=`;
+- C14 OOS guard remained clean: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`;
+- C14 keeps `production_ready=0`;
+- validation passed after C14 changes: `WatchlistBacktestC14` = `OK (10 tests, 458 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, `WatchlistBacktestExitAxisSupport` = `OK (11 tests, 59 assertions)`, full Watchlist = `OK (329 tests, 7186 assertions)`.
+
+Contract status update:
+
+- `WL-CONTRACT-008`: PASS for C14 traceability from C13 exit-axis support into a new catalog identity;
+- `WL-CONTRACT-009`: PASS for deterministic IS-only calibration artifact generation;
+- `WL-CONTRACT-010`: PASS for OOS non-invocation during C14 seed and IS calibration;
+- `WL-CONTRACT-011`: FAILED_QUALITY for C14 strategy quality;
+- `WL-CONTRACT-013`: PASS for C14 artifact surface;
+- `WL-CONTRACT-014`: PASS for C14 docs and artifact tracking.
+
+C14 audit references:
+
+```text
+docs/watchlist/audit/WS_C14_VARIABLE_RISK_EXIT_CATALOG_FINAL_RESULT.md
+docs/watchlist/audit/WS_C14_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c14-is-run-1.json
+docs/watchlist/audit/_artifacts/c14-is-run-2.json
+docs/watchlist/audit/_artifacts/c14-forensic-summary.csv
+```
+
+C14 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+oos_executed=0
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C14 is rejected as a strategy-quality catalog. OOS was not run and must not be claimed PASS.
+
+## PRIOR SESSION - C13 EXIT AXIS SUPPORT SESSION
+
+Session:
 `WATCHLIST - C13 EXIT AXIS SUPPORT SESSION`
 
 Status:
 `C13_EXIT_AXIS_SUPPORT_READY / STRATEGY_CATALOG_NOT_CREATED / C07_REJECTED_AS_STRATEGY_CATALOG / FUTURE_CATALOG_DEFINITION_WORK_AUTHORIZED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
-Current C13 contract evidence:
+Prior C13 contract evidence:
 
 - R1/R2/C01/C02/C03/C04/C05/C06/C07 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
 - C07 remains rejected as a strategy-quality catalog and was not patched to look successful;

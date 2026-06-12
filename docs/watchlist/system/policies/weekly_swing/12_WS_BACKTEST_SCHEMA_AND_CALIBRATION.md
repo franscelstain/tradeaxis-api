@@ -1383,3 +1383,113 @@ docs/watchlist/audit/WS_C13_EXIT_AXIS_SUPPORT_FINAL_RESULT.md
 docs/watchlist/audit/WS_C13_OPERATOR_VALIDATION_COMMANDS.md
 docs/watchlist/audit/_artifacts/c13-exit-axis-support-audit.json
 ```
+
+### C14 variable risk-exit catalog addendum
+
+C14 is the first new catalog created from C13 support. It creates a new immutable catalog identity and keeps all historical catalogs unchanged.
+
+```text
+C14 catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C14_2026_06
+C14 catalog_version=C14
+C14 catalog_count=12
+C14 catalog_hash=079430de7c94fd0226d0f3b47d5eb1e9f906fd6a
+C14 OOS=NOT_RUN
+C14 production_ready=0
+```
+
+C14 uses the C13-supported variable risk-exit policy:
+
+```text
+execution_axis_policy=VARIABLE_RISK_EXIT_AXIS_V1
+allowed_variable_axes=risk.stop_atr_mult|risk.min_rr
+fixed_grouping_axes=backtest.top_n|backtest.secondary_n
+blocked_first_phase_axes=backtest.holding_days|backtest.target_pct|backtest.stop_pct
+sector_filter_authorized=false
+```
+
+C14 seed evidence:
+
+```text
+command=php artisan watchlist:backtest-c14-param-grid-seed
+status=PASS
+catalog_count=12
+catalog_hash=079430de7c94fd0226d0f3b47d5eb1e9f906fd6a
+r1_immutable=1
+r2_immutable=1
+c01_immutable=1
+c02_immutable=1
+c03_immutable=1
+c04_immutable=1
+c05_immutable=1
+c06_immutable=1
+c07_immutable=1
+oos_executed=0
+production_ready=0
+```
+
+C14 IS-only calibration was executed twice over the locked IS window:
+
+```text
+is_from=2023-01-02
+is_to=2025-05-21
+is_trading_date_count=562
+is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753
+run_1_artifact=storage/app/watchlist/backtest/c14-is-run-1.json
+run_2_artifact=storage/app/watchlist/backtest/c14-is-run-2.json
+run_1_artifact_hash=70d021daafc254fb2ed826ff05015d42bac5dd8d
+run_2_artifact_hash=70d021daafc254fb2ed826ff05015d42bac5dd8d
+```
+
+C14 final IS result:
+
+```text
+status=C14_GRID_FAILED_IS_QUALITY
+reason_code=WS_BT_C14_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id_best_is=
+best_is_binding_hash=
+strict_is_boundary_all_evaluations=1
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+production_ready=0
+```
+
+C14 forensic summary:
+
+```text
+minimum_trade_count_passed=12/12
+minimum_coverage_passed=12/12
+median_return_non_negative_passed=0/12
+p25_downside_bound_passed=5/12
+monthly_win_rate_floor_passed=0/12
+monthly_average_floor_passed=0/12
+picks_count=729..1359
+median_ret_net_top=-1.5648%..-0.4848%
+p25_ret_net_top=-3.5375%..-2.6583%
+month_win_rate_min=14.81%..30.77%
+```
+
+C14 decision:
+
+```text
+C14_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+OOS_NOT_ELIGIBLE
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+```
+
+C14 confirms that varying `risk.stop_atr_mult` and `risk.min_rr` alone is insufficient to pass locked IS quality gates. The next catalog session must use C14 forensic evidence to redesign candidate selection or the strategy family before OOS can be considered. OOS remains blocked unless a future catalog produces `is_valid_param_count >= 1`, a non-empty `param_id_best_is`, and a non-empty `best_is_binding_hash`.
+
+C14 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C14_VARIABLE_RISK_EXIT_CATALOG_FINAL_RESULT.md
+docs/watchlist/audit/WS_C14_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c14-is-run-1.json
+docs/watchlist/audit/_artifacts/c14-is-run-2.json
+docs/watchlist/audit/_artifacts/c14-forensic-summary.csv
+```

@@ -15,12 +15,59 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C14 VARIABLE RISK-EXIT CATALOG SESSION`
+
+Status:
+`C14_IMPLEMENTED_SEEDED_DETERMINISTIC / IS_QUALITY_FAILED / C14_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+Current C14 implementation evidence:
+
+- C14 created a new strategy catalog from C13 support, without mutating R1/R2/C01/C02/C03/C04/C05/C06/C07;
+- C14 catalog identity: `WS_BT_GRID_DOWNSIDE_STABILITY_C14_2026_06`, version `C14`, count `12`, hash `079430de7c94fd0226d0f3b47d5eb1e9f906fd6a`;
+- C14 uses C13 `VARIABLE_RISK_EXIT_AXIS_V1` support for `risk.stop_atr_mult` and `risk.min_rr`;
+- C14 keeps `backtest.holding_days`, `backtest.target_pct`, `backtest.stop_pct`, and sector filters blocked;
+- C14 reuses the C07 candidate-selection confirmation layer and fixes the runtime enrichment scope so C14 receives the same C07 optional metrics when the C07 extension is active;
+- C14 seed command passed with all historical immutable markers set to `1` through C07;
+- C14 IS calibration was run twice for `2023-01-02..2025-05-21` and produced deterministic canonical artifact hash `70d021daafc254fb2ed826ff05015d42bac5dd8d`;
+- C14 final IS result: `status=C14_GRID_FAILED_IS_QUALITY`, `reason_code=WS_BT_C14_NO_VALID_IS_CANDIDATE`, `is_valid_param_count=0`, `is_failed_param_count=12`;
+- C14 failure reasons: `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
+- forensic evidence: `minimum_trade_count_passed=12/12`, `minimum_coverage_passed=12/12`, `median_return_non_negative_passed=0/12`, `p25_downside_bound_passed=5/12`, `monthly_win_rate_floor_passed=0/12`, `monthly_average_floor_passed=0/12`;
+- metric ranges: `picks_count=729..1359`, `median_ret_net_top=-1.5648%..-0.4848%`, `p25_ret_net_top=-3.5375%..-2.6583%`, `month_win_rate_min=14.81%..30.77%`;
+- C14 did not select a best-of-failed binding: `param_id_best_is=` and `best_is_binding_hash=` are empty;
+- C14 keeps `oos_executed=0` and `production_ready=0`;
+- validation passed: `WatchlistBacktestC14` = `OK (10 tests, 458 assertions)`, `WatchlistBacktestC07` = `OK (10 tests, 376 assertions)`, `WatchlistBacktestExitAxisSupport` = `OK (11 tests, 59 assertions)`, full Watchlist = `OK (329 tests, 7186 assertions)`.
+
+C14 decision:
+
+```text
+C14_REJECTED_AS_STRATEGY_QUALITY_CATALOG
+is_valid_param_count=0
+param_id_best_is=
+best_is_binding_hash=
+OOS_NOT_ELIGIBLE
+OOS_NOT_RUN
+NOT_PRODUCTION_READY
+```
+
+C14 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C14_VARIABLE_RISK_EXIT_CATALOG_FINAL_RESULT.md
+docs/watchlist/audit/WS_C14_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c14-is-run-1.json
+docs/watchlist/audit/_artifacts/c14-is-run-2.json
+docs/watchlist/audit/_artifacts/c14-forensic-summary.csv
+```
+
+## PRIOR SESSION - C13 EXIT AXIS SUPPORT SESSION
+
+Session:
 `WATCHLIST - C13 EXIT AXIS SUPPORT SESSION`
 
 Status:
 `C13_EXIT_AXIS_SUPPORT_READY / STRATEGY_CATALOG_NOT_CREATED / C07_REJECTED_AS_STRATEGY_CATALOG / FUTURE_CATALOG_DEFINITION_WORK_AUTHORIZED / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
-Current C13 support evidence:
+Prior C13 support evidence:
 
 - no new strategy catalog was created; C13 is an exit-axis support implementation and audit session;
 - C07 remains rejected as a strategy-quality catalog: `WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06`, version `C07`, count `12`, hash `233b45b06cbf34da221d5d7de2d9725fdf4d3441`;

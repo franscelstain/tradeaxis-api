@@ -366,7 +366,7 @@ class WatchlistCandidateUniverseService
             ],
         ];
 
-        if (($paramset['bt_catalog']['catalog_version'] ?? null) === 'C07') {
+        if ($this->usesC07ExtendedMetrics($paramset)) {
             $resolved['bt_catalog'] = $paramset['bt_catalog'];
             if (isset($paramset['bt_grid_resolution'])) {
                 $resolved['bt_grid_resolution'] = $paramset['bt_grid_resolution'];
@@ -378,7 +378,12 @@ class WatchlistCandidateUniverseService
 
     private function usesC07ExtendedMetrics(array $paramset): bool
     {
-        return ($paramset['bt_catalog']['catalog_version'] ?? null) === 'C07';
+        $catalogVersion = (string) ($paramset['bt_catalog']['catalog_version'] ?? '');
+        $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
+        $extensionMode = is_array($extension) ? (string) ($extension['mode'] ?? '') : '';
+
+        return in_array($catalogVersion, ['C07', 'C14'], true)
+            || $extensionMode === 'C07_SHORT_TERM_RANGE_SECTOR_CONFIRMATION';
     }
 
     private function paramValue(array $paramset, array $path, float $default): float

@@ -301,3 +301,43 @@ next_required_step=CREATE_NEW_EXIT_AXIS_CATALOG_DEFINITION_AND_SEED_IS_ONLY
 ```
 
 C13 confirms that the next session may create a new exit-axis catalog definition and seed it for IS-only calibration. It does not authorize OOS, production readiness, best-of-failed selection, or mutation of C07.
+
+## C14 variable risk-exit follow-up
+
+C14 used the C13-supported `VARIABLE_RISK_EXIT_AXIS_V1` policy to create a new catalog without mutating C07 or earlier catalogs.
+
+```text
+catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C14_2026_06
+catalog_version=C14
+catalog_count=12
+catalog_hash=079430de7c94fd0226d0f3b47d5eb1e9f906fd6a
+allowed_variable_axes=risk.stop_atr_mult|risk.min_rr
+blocked_first_phase_axes=backtest.holding_days|backtest.target_pct|backtest.stop_pct
+OOS=NOT_RUN
+production_ready=0
+```
+
+C14 seed passed and both IS-only calibration runs produced the same canonical artifact hash:
+
+```text
+artifact_hash=70d021daafc254fb2ed826ff05015d42bac5dd8d
+status=C14_GRID_FAILED_IS_QUALITY
+reason_code=WS_BT_C14_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+param_id_best_is=
+best_is_binding_hash=
+oos_executed=0
+production_ready=0
+```
+
+C14 forensic result:
+
+```text
+median_return_non_negative_passed=0/12
+p25_downside_bound_passed=5/12
+monthly_win_rate_floor_passed=0/12
+monthly_average_floor_passed=0/12
+```
+
+C14 confirms that varying only the supported first-phase risk-exit axes is not enough. The next strategy-quality session should redesign candidate selection or strategy-family behavior before OOS can be considered.

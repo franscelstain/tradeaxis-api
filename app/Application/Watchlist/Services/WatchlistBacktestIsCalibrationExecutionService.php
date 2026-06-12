@@ -98,6 +98,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             if (! empty($definition['requires_c06_catalog'])) {
                 $c06Before = $this->paramGrid->catalogSnapshot(WatchlistBacktestC06ParamGridCatalog::CATALOG_CODE);
             }
+            $c07Before = [];
+            if (! empty($definition['requires_c07_catalog'])) {
+                $c07Before = $this->paramGrid->catalogSnapshot(WatchlistBacktestC07ParamGridCatalog::CATALOG_CODE);
+            }
             $oosBefore = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CATALOG_INVALID'), $e->getMessage());
@@ -145,6 +149,11 @@ class WatchlistBacktestIsCalibrationExecutionService
                 || (string) ($c06Before['catalog_hash'] ?? '') !== WatchlistBacktestC06ParamGridCatalog::hash())) {
             return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable C06 catalog count/hash is not intact before C07 calibration.');
         }
+        if (! empty($definition['requires_c07_catalog'])
+            && ((int) ($c07Before['catalog_count'] ?? 0) !== WatchlistBacktestC07ParamGridCatalog::CATALOG_COUNT
+                || (string) ($c07Before['catalog_hash'] ?? '') !== WatchlistBacktestC07ParamGridCatalog::hash())) {
+            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable C07 catalog count/hash is not intact before C14 calibration.');
+        }
 
         $executedAt = $toDate.'T23:59:59+07:00';
         try {
@@ -179,6 +188,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             if (! empty($definition['requires_c06_catalog'])) {
                 $c06After = $this->paramGrid->catalogSnapshot(WatchlistBacktestC06ParamGridCatalog::CATALOG_CODE);
             }
+            $c07After = [];
+            if (! empty($definition['requires_c07_catalog'])) {
+                $c07After = $this->paramGrid->catalogSnapshot(WatchlistBacktestC07ParamGridCatalog::CATALOG_CODE);
+            }
             $oosAfter = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CALIBRATION_FAILED'), $e->getMessage());
@@ -208,6 +221,9 @@ class WatchlistBacktestIsCalibrationExecutionService
         if (! empty($definition['requires_c06_catalog']) && $c06Before !== $c06After) {
             return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'C06 snapshot changed during C07 IS-only calibration.');
         }
+        if (! empty($definition['requires_c07_catalog']) && $c07Before !== $c07After) {
+            return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'C07 snapshot changed during C14 IS-only calibration.');
+        }
         if ($oosBefore !== $oosAfter) {
             return $this->blocked('WS_BT_R2_OOS_PERSISTENCE_MUTATION', 'watchlist_bt_oos_eval_ws changed during IS-only calibration.');
         }
@@ -236,6 +252,8 @@ class WatchlistBacktestIsCalibrationExecutionService
             $c05After ?? [],
             $c06Before ?? [],
             $c06After ?? [],
+            $c07Before ?? [],
+            $c07After ?? [],
             $catalogSnapshot,
             $oosBefore,
             $oosAfter
@@ -328,6 +346,8 @@ class WatchlistBacktestIsCalibrationExecutionService
         array $c05After,
         array $c06Before,
         array $c06After,
+        array $c07Before,
+        array $c07After,
         array $catalogSnapshot,
         array $oosBefore,
         array $oosAfter
@@ -415,17 +435,10 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'random_or_bayesian_search' => false,
                 'control_row_code' => $definition['reference_row_code'],
             ],
-            'parameter_axes' => [
+            'parameter_axes' => array_merge([
                 'entry_quality_axes' => $definition['parameter_axes'],
                 'axis_rationale' => $definition['axis_rationale'],
-                'fixed_execution_axes' => [
-                    'risk.stop_atr_mult' => $definition['fixed_stop_atr_mult'],
-                    'risk.min_rr' => $definition['fixed_min_rr'],
-                    'grouping.top_picks_target' => $definition['fixed_top_picks_target'],
-                    'grouping.secondary_target' => $definition['fixed_secondary_target'],
-                    'eval_model' => 'ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS',
-                ],
-            ],
+            ], $this->executionAxisArtifact($definition)),
             'r1_control_reference' => [
                 'r1_catalog_code' => WatchlistBacktestParamGridCatalog::CATALOG_CODE,
                 'r1_catalog_hash' => WatchlistBacktestParamGridCatalog::hash(),
@@ -566,10 +579,61 @@ class WatchlistBacktestIsCalibrationExecutionService
             ];
             $artifact['validation']['c06_immutable'] = $c06Before === $c06After;
         }
+        if (! empty($definition['requires_c07_catalog'])) {
+            $artifact['c07_immutability_proof'] = [
+                'required' => true,
+                'before' => $c07Before,
+                'after' => $c07After,
+                'equal' => $c07Before === $c07After,
+            ];
+            $artifact['validation']['c07_immutable'] = $c07Before === $c07After;
+        }
         $artifact['validation']['artifact_hash'] = $this->stableHash($this->artifactForHash($artifact));
         $artifact['meta']['artifact_hash'] = $artifact['validation']['artifact_hash'];
 
         return $artifact;
+    }
+
+    private function executionAxisArtifact(array $definition): array
+    {
+        $policy = is_array($definition['execution_axis_policy'] ?? null)
+            ? (string) ($definition['execution_axis_policy']['policy'] ?? '')
+            : WatchlistBacktestExitAxisSupport::POLICY_FIXED_EXECUTION;
+
+        if ($policy === WatchlistBacktestExitAxisSupport::POLICY_VARIABLE_RISK_EXIT_AXIS) {
+            $axisPolicy = $definition['execution_axis_policy'];
+
+            return [
+                'execution_axis_policy' => WatchlistBacktestExitAxisSupport::POLICY_VARIABLE_RISK_EXIT_AXIS,
+                'variable_execution_axes' => [
+                    'risk.stop_atr_mult' => is_array($axisPolicy['bounds'] ?? null) ? [
+                        'min' => $axisPolicy['bounds']['stop_atr_mult_min'] ?? null,
+                        'max' => $axisPolicy['bounds']['stop_atr_mult_max'] ?? null,
+                    ] : [],
+                    'risk.min_rr' => is_array($axisPolicy['bounds'] ?? null) ? [
+                        'min' => $axisPolicy['bounds']['min_rr_min'] ?? null,
+                        'max' => $axisPolicy['bounds']['min_rr_max'] ?? null,
+                    ] : [],
+                ],
+                'fixed_grouping_axes' => [
+                    'grouping.top_picks_target' => $definition['fixed_top_picks_target'],
+                    'grouping.secondary_target' => $definition['fixed_secondary_target'],
+                ],
+                'blocked_first_phase_axes' => $axisPolicy['blocked_first_phase_axes'] ?? [],
+                'contract_source' => $axisPolicy['contract_source'] ?? WatchlistBacktestExitAxisSupport::CONTRACT_SOURCE,
+                'eval_model' => 'ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS',
+            ];
+        }
+
+        return [
+            'fixed_execution_axes' => [
+                'risk.stop_atr_mult' => $definition['fixed_stop_atr_mult'],
+                'risk.min_rr' => $definition['fixed_min_rr'],
+                'grouping.top_picks_target' => $definition['fixed_top_picks_target'],
+                'grouping.secondary_target' => $definition['fixed_secondary_target'],
+                'eval_model' => 'ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS',
+            ],
+        ];
     }
 
 
@@ -813,6 +877,30 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'requires_c04_catalog' => true,
                 'requires_c05_catalog' => true,
                 'requires_c06_catalog' => true,
+            ],
+            WatchlistBacktestC14ParamGridCatalog::CATALOG_CODE => [
+                'catalog_code' => WatchlistBacktestC14ParamGridCatalog::CATALOG_CODE,
+                'catalog_version' => WatchlistBacktestC14ParamGridCatalog::CATALOG_VERSION,
+                'catalog_count' => WatchlistBacktestC14ParamGridCatalog::CATALOG_COUNT,
+                'catalog_hash' => WatchlistBacktestC14ParamGridCatalog::hash(),
+                'parameter_axes' => WatchlistBacktestC14ParamGridCatalog::parameterAxes(),
+                'axis_rationale' => WatchlistBacktestC14ParamGridCatalog::axisRationale(),
+                'provenance' => WatchlistBacktestC14ParamGridCatalog::provenance(),
+                'manifest_rows' => WatchlistBacktestC14ParamGridCatalog::manifestRows(),
+                'reference_row_code' => WatchlistBacktestC14ParamGridCatalog::REFERENCE_ROW_CODE,
+                'fixed_top_picks_target' => WatchlistBacktestC14ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC14ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'execution_axis_policy' => WatchlistBacktestC14ParamGridCatalog::exitAxisPolicy(),
+                'artifact_version' => 'WATCHLIST_C14_IS_CALIBRATION_V1',
+                'artifact_scope' => 'WEEKLY_SWING_DOWNSIDE_STABILITY_C14_VARIABLE_RISK_EXIT_IS_ONLY',
+                'failed_status' => 'C14_GRID_FAILED_IS_QUALITY',
+                'requires_c01_catalog' => true,
+                'requires_c02_catalog' => true,
+                'requires_c03_catalog' => true,
+                'requires_c04_catalog' => true,
+                'requires_c05_catalog' => true,
+                'requires_c06_catalog' => true,
+                'requires_c07_catalog' => true,
             ],
         ];
 
