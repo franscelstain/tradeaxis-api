@@ -1,5 +1,7 @@
 <?php
 
+use App\Application\Watchlist\Services\WatchlistBacktestC15ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestParamGridParamsetFactory;
 use App\Application\Watchlist\Services\WatchlistCandidateUniverseService;
 use App\Application\Watchlist\Services\WatchlistScoringService;
 
@@ -187,6 +189,52 @@ class WatchlistScoringServiceTest extends TestCase
         foreach (['recommendation_label', 'confirm_state', 'portfolio_allocation', 'order_instruction', 'execution_action', 'buy_signal', 'sell_signal', 'backtest_metric'] as $forbidden) {
             $this->assertStringNotContainsString($forbidden, $encoded);
         }
+    }
+
+
+    public function test_scoring_preserves_c15_extended_runtime_metrics_for_grouping_guards(): void
+    {
+        $row = WatchlistBacktestC15ParamGridCatalog::rows()[1];
+        $row['param_id'] = 15001;
+        $paramset = (new WatchlistBacktestParamGridParamsetFactory())->make($row);
+        $service = new WatchlistScoringService($this->fakeCandidateUniverse($this->universe([
+            $this->candidate(1, 'BBCA', [
+                'dv20_idr' => 3500000000.0,
+                'atr14_pct' => 0.0250,
+                'vol_ratio' => 1.30,
+                'roc20' => 0.010,
+                'roc5' => -0.010,
+                'roc10' => -0.006,
+                'close_to_ll20_pct' => 0.10,
+                'range_20_pct' => 0.18,
+                'range_position_20_pct' => 0.55,
+                'sector_roc20' => 0.005,
+                'rs_20_vs_sector' => 0.002,
+                'sector_rs_20_vs_ihsg' => 0.001,
+                'corporate_action_flag' => 0,
+                'corporate_action_types' => '',
+                'trading_status_code' => 'ACTIVE',
+                'is_suspended' => 0,
+                'is_uma' => 0,
+                'event_risk_flag' => 0,
+                'event_risk_reasons' => '',
+            ]),
+        ])));
+
+        $result = $service->scoreForTradeDate('2026-05-19', $paramset);
+
+        $this->assertTrue($result['ready']);
+        $metrics = $result['items'][0]['score_metrics'];
+        foreach (['roc5', 'roc10', 'close_to_ll20_pct', 'range_20_pct', 'range_position_20_pct', 'sector_roc20', 'rs_20_vs_sector', 'sector_rs_20_vs_ihsg'] as $field) {
+            $this->assertArrayHasKey($field, $metrics);
+            $this->assertNotNull($metrics[$field]);
+        }
+        foreach (['corporate_action_flag', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'] as $field) {
+            $this->assertArrayHasKey($field, $metrics);
+        }
+        $this->assertSame(-0.010, $metrics['roc5']);
+        $this->assertArrayHasKey('score_components', $result['items'][0]);
+        $this->assertArrayHasKey('factor_breakdown', $result['items'][0]);
     }
 
     private function fakeCandidateUniverse(array $payload): WatchlistCandidateUniverseService

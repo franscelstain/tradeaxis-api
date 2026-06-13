@@ -1,0 +1,99 @@
+{
+  "artifact_hash": "060e6f60b2aa128f400a7ecade8a5164fd9818a4",
+  "artifact_type": "C15_FINAL_EVIDENCE_SUMMARY",
+  "best_failed_anchors": [
+    {
+      "avg_ret_net_top": 0.006883180654542075,
+      "median_ret_net_top": 0.012895721654698088,
+      "month_win_rate_min": 0,
+      "param_id": 122,
+      "picks_count": 47,
+      "row_code": "01_CORE_MID_DV20_NEUTRAL_ROC20",
+      "win_rate_top": 0.6170212765957447
+    },
+    {
+      "avg_ret_net_top": 0.006845509113568816,
+      "median_ret_net_top": 0.012504636025864869,
+      "month_win_rate_min": 0,
+      "param_id": 130,
+      "picks_count": 38,
+      "row_code": "09_TIGHT_RISK_MID_DV20",
+      "win_rate_top": 0.631578947368421
+    }
+  ],
+  "c15_final_decision": "REJECTED_AS_IS_QUALITY_CATALOG",
+  "catalog_code": "WS_BT_GRID_DOWNSIDE_STABILITY_C15_2026_06",
+  "catalog_count": 12,
+  "catalog_hash": "cc07324262151783dc6b5583ebd91a96c0d0527d",
+  "catalog_version": "C15",
+  "drilldown_fix4": {
+    "blocked_count": 0,
+    "diagnostic_param_count": 12,
+    "missing_runtime_evidence_fields": [],
+    "next_decision": "NEXT_CATALOG_NOT_DESIGNED",
+    "next_focus": "STRATEGY_QUALITY_DIAGNOSTIC_BEFORE_NEXT_CATALOG",
+    "oos_executed": 0,
+    "picks_count_range": [
+      33,
+      179
+    ],
+    "production_ready": 0,
+    "ready_count": 12,
+    "reason_code": "WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY",
+    "status": "PASS"
+  },
+  "generated_at_date": "2026-06-13",
+  "is_calibration_fix4": {
+    "artifact_hash": "1b96a2c38c0aacced72e441bb8d0ecaff045eabf",
+    "deterministic": true,
+    "failure_reason_codes": [
+      "WS_BT_EVAL_MIN_TRADES_FAIL",
+      "WS_BT_EVAL_ROBUST_RETURN_FAIL",
+      "WS_BT_EVAL_STABILITY_FAIL"
+    ],
+    "is_failed_param_count": 12,
+    "is_valid_param_count": 0,
+    "no_oos_market_data_read": true,
+    "no_oos_table_mutation": true,
+    "production_ready": false,
+    "reason_code": "WS_BT_C15_NO_VALID_IS_CANDIDATE",
+    "run1_status": "C15_GRID_FAILED_IS_QUALITY",
+    "run2_status": "C15_GRID_FAILED_IS_QUALITY",
+    "strict_is_boundary_all_evaluations": true
+  },
+  "next_action": "C16_SAMPLE_RECOVERY_AND_STABILITY_DESIGN_FROM_C15_EVIDENCE",
+  "oos_status": "NOT_RUN_NOT_AUTHORIZED",
+  "phpunit": {
+    "WatchlistBacktestC15": "OK (10 tests, 534 assertions)",
+    "WatchlistCandidateUniverseService": "OK (5 tests, 68 assertions)",
+    "WatchlistFull": "OK (341 tests, 7771 assertions)",
+    "WatchlistScoringService": "OK (9 tests, 107 assertions)"
+  },
+  "production_ready": 0,
+  "runtime_payload_status": "PASS",
+  "sample_recovery_negative_evidence": [
+    {
+      "avg_ret_net_top": 0.0005140667032005254,
+      "median_ret_net_top": -0.0004999100166468416,
+      "month_win_rate_min": 0,
+      "param_id": 129,
+      "picks_count": 118
+    },
+    {
+      "avg_ret_net_top": -0.00013693463183753784,
+      "median_ret_net_top": -0.0004998800287930896,
+      "month_win_rate_min": 0,
+      "param_id": 132,
+      "picks_count": 179
+    }
+  ],
+  "seed": {
+    "historical_immutability": "R1/R2/C01/C02/C03/C04/C05/C06/C07/C14 all true",
+    "inserted_count": 12,
+    "oos_executed": 0,
+    "production_ready": 0,
+    "status": "PASS",
+    "updated_count": 0
+  },
+  "source": "operator_provided_runtime_evidence"
+}

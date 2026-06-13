@@ -48,6 +48,7 @@ use App\Console\Commands\Watchlist\SeedBacktestC05ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC06ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC07ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC14ParamGridCommand;
+use App\Console\Commands\Watchlist\SeedBacktestC15ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestR2ParamGridCommand;
 use Illuminate\Console\Scheduling\Schedule;
@@ -74,6 +75,7 @@ class Kernel extends ConsoleKernel
         SeedBacktestC06ParamGridCommand::class,
         SeedBacktestC07ParamGridCommand::class,
         SeedBacktestC14ParamGridCommand::class,
+        SeedBacktestC15ParamGridCommand::class,
         IngestEodBarsCommand::class,
         ComputeIndicatorsCommand::class,
         BuildEligibilityCommand::class,

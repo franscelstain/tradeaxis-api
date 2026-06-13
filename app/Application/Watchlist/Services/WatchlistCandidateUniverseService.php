@@ -382,8 +382,18 @@ class WatchlistCandidateUniverseService
         $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
         $extensionMode = is_array($extension) ? (string) ($extension['mode'] ?? '') : '';
 
-        return in_array($catalogVersion, ['C07', 'C14'], true)
-            || $extensionMode === 'C07_SHORT_TERM_RANGE_SECTOR_CONFIRMATION';
+        $c07C14CatalogVersions = ['C07', 'C14'];
+        $extendedCatalogVersions = ['C07', 'C14', 'C15'];
+
+        if (in_array($catalogVersion, $c07C14CatalogVersions, true)) {
+            return true;
+        }
+
+        return in_array($catalogVersion, $extendedCatalogVersions, true)
+            || in_array($extensionMode, [
+                'C07_SHORT_TERM_RANGE_SECTOR_CONFIRMATION',
+                'C15_CONTROLLED_PULLBACK_MID_LIQUIDITY_ANTI_OVEREXTENSION',
+            ], true);
     }
 
     private function paramValue(array $paramset, array $path, float $default): float

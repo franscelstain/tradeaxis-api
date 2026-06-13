@@ -1,0 +1,10 @@
+{
+  "artifact_hash": "294ac91958072ba4c4a1bc60abd46c1c4ab429ca",
+  "artifact_type": "C15_ROOT_CAUSE_DECISION_SUPERSESSION_NOTE",
+  "current_final_artifact": "c15-final-evidence-summary.json",
+  "current_final_decision": "C15_CREATED_RUNTIME_VALIDATED_REJECTED_AS_IS_QUALITY_CATALOG",
+  "generated_at_date": "2026-06-13",
+  "oos_executed": 0,
+  "production_ready": 0,
+  "supersedes_context_only": "c15-root-cause-decision.json was a pre-C15 diagnostic-prerequisite artifact from repository evidence only."
+}

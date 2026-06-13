@@ -15,6 +15,97 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C15 FINAL EVIDENCE SESSION`
+
+Current status:
+
+`C15_IMPLEMENTED / C15_RUNTIME_PAYLOAD_FIX4_VALIDATED / IS_QUALITY_FAILED / C15_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C15 final implementation evidence:
+
+- immutable catalog `WS_BT_GRID_DOWNSIDE_STABILITY_C15_2026_06` exists with `catalog_version=C15`, `catalog_count=12`, and `catalog_hash=cc07324262151783dc6b5583ebd91a96c0d0527d`;
+- runtime extension `C15_CONTROLLED_PULLBACK_MID_LIQUIDITY_ANTI_OVEREXTENSION` is implemented and receives the required runtime payload after fix4;
+- C15 keeps controlled ROC5 pullback, mid-DV20 range, volume spike control, neutral/cooling ROC20 range, and score upper cap behavior;
+- C15 does not mutate R1/R2/C01/C02/C03/C04/C05/C06/C07/C14 historical catalog identities;
+- C15 does not use collapsed diagnostic axes as promotion proof;
+- C15 did not run OOS and remains `production_ready=0`.
+
+### C15 post-fix4 operator validation evidence
+
+Operator-provided validation after fix4 recorded:
+
+```text
+WatchlistBacktestC15: OK (10 tests, 534 assertions)
+WatchlistCandidateUniverseService: OK (5 tests, 68 assertions)
+WatchlistScoringService: OK (9 tests, 107 assertions)
+Full Watchlist suite: OK (341 tests, 7771 assertions)
+C15 diagnose-batch: status=PASS, ready_count=12, blocked_count=0
+C15 fix4 drilldown: missing_runtime_evidence_fields empty for all 12 rows
+C15 IS calibration run 1: status=C15_GRID_FAILED_IS_QUALITY, reason_code=WS_BT_C15_NO_VALID_IS_CANDIDATE
+C15 IS calibration run 2: status=C15_GRID_FAILED_IS_QUALITY, reason_code=WS_BT_C15_NO_VALID_IS_CANDIDATE
+C15 deterministic artifact_hash=1b96a2c38c0aacced72e441bb8d0ecaff045eabf
+strict_is_boundary_all_evaluations=1
+no_oos_market_data_read=True
+no_oos_table_mutation=True
+OOS_NOT_RUN
+production_ready=0
+```
+
+C15 failed locked IS quality gates honestly, not because of runtime missing metrics:
+
+```text
+is_valid_param_count=0
+is_failed_param_count=12
+failure_reason_codes=WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+all_rows_reached_canonical_gates=True
+eval_count=12
+best_of_failed_forbidden=True
+param_id_best_is=
+best_is_binding_hash=
+```
+
+C15 strategy-quality interpretation:
+
+- best failed anchors were `param_id=122` and `param_id=130` because both had positive average return, positive median return, controlled p25 downside, and win-rate above 60%;
+- both anchors failed minimum-trade and monthly-stability gates, especially `month_win_rate_min=0`;
+- sample-recovery rows such as `param_id=129` and `param_id=132` increased trade count but degraded median/average quality and still failed monthly stability;
+- `score` bucket `0.7..0.8` and `vol_ratio` bucket `1.5..2` were the most useful diagnostic patterns;
+- `score` bucket `0.8..0.9` and low-volume buckets `1.0..1.5` repeatedly degraded quality;
+- C15 is therefore rejected as a strategy-quality catalog and should not be promoted, manually selected, or sent to OOS.
+
+C15 decision:
+
+```text
+C15_CATALOG_CREATED=true
+C15_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C15_2026_06
+C15_CATALOG_VERSION=C15
+C15_CATALOG_COUNT=12
+C15_CATALOG_HASH=cc07324262151783dc6b5583ebd91a96c0d0527d
+C15_SEED_STATUS=PASS
+C15_RUNTIME_PAYLOAD_STATUS=PASS
+C15_DRILLDOWN_STATUS=PASS_RUNTIME_READY
+C15_IS_CALIBRATION_STATUS=C15_GRID_FAILED_IS_QUALITY
+C15_VALID_PARAM_COUNT=0
+C15_FAILED_PARAM_COUNT=12
+C15_BEST_FAILED_ANCHORS=122,130
+C15_STRATEGY_DECISION=REJECTED_AS_IS_QUALITY_CATALOG
+C15_NEXT_ACTION=C16_SAMPLE_RECOVERY_AND_STABILITY_DESIGN_FROM_C15_EVIDENCE
+OOS_NOT_RUN
+production_ready=0
+```
+
+C15 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C15_STRATEGY_QUALITY_ROOT_CAUSE_FINAL_RESULT.md
+docs/watchlist/audit/WS_C15_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c15-final-evidence-summary.json
+docs/watchlist/audit/_artifacts/c15-fix4-param-summary.csv
+```
+
+## PRIOR SESSION - C14 VARIABLE RISK-EXIT CATALOG SESSION
+
+Session:
 `WATCHLIST - C14 VARIABLE RISK-EXIT CATALOG SESSION`
 
 Status:

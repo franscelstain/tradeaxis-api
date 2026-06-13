@@ -1,5 +1,7 @@
 <?php
 
+use App\Application\Watchlist\Services\WatchlistBacktestC15ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestParamGridParamsetFactory;
 use App\Application\Watchlist\Services\WatchlistCandidateUniverseService;
 use App\Application\Watchlist\Services\WatchlistMarketDataConsumerReadService;
 
@@ -135,6 +137,50 @@ class WatchlistCandidateUniverseServiceTest extends TestCase
         $this->assertContains('risk.max_atr14_pct must be a fraction between 0 and 1, not percent-points', $invalid['paramset_errors']);
     }
 
+
+    public function test_candidate_universe_enriches_c15_runtime_payload_with_short_term_and_event_metrics(): void
+    {
+        $row = WatchlistBacktestC15ParamGridCatalog::rows()[1];
+        $row['param_id'] = 15001;
+        $paramset = (new WatchlistBacktestParamGridParamsetFactory())->make($row);
+
+        $payload = $this->sourcePayload([
+            $this->candidate('BBCA', 3500000000.0, 0.0250, 1.30, [
+                'roc5' => -0.010,
+                'roc10' => -0.006,
+                'roc_20' => 0.010,
+                'close_to_ll20_pct' => 0.10,
+                'range_20_pct' => 0.18,
+                'range_position_20_pct' => 0.55,
+                'sector_roc20' => 0.005,
+                'rs_20_vs_sector' => 0.002,
+                'sector_rs_20_vs_ihsg' => 0.001,
+                'corporate_action_flag' => 0,
+                'corporate_action_types' => '',
+                'trading_status_code' => 'ACTIVE',
+                'is_suspended' => 0,
+                'is_uma' => 0,
+                'event_risk_flag' => 0,
+                'event_risk_reasons' => '',
+            ]),
+        ]);
+
+        $service = new WatchlistCandidateUniverseService($this->fakeReadModel($payload));
+        $result = $service->buildCandidateUniverseForTradeDate('2026-05-19', $paramset);
+
+        $this->assertTrue($result['is_ready']);
+        $this->assertSame(1, $result['eligible_count']);
+        $metrics = $result['eligible_candidates'][0]['gate_metrics'];
+        foreach (['roc5', 'roc10', 'close_to_ll20_pct', 'range_20_pct', 'range_position_20_pct', 'sector_roc20', 'rs_20_vs_sector', 'sector_rs_20_vs_ihsg'] as $field) {
+            $this->assertArrayHasKey($field, $metrics);
+            $this->assertNotNull($metrics[$field]);
+        }
+        foreach (['corporate_action_flag', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'] as $field) {
+            $this->assertArrayHasKey($field, $metrics);
+        }
+        $this->assertSame(-0.010, $metrics['roc5']);
+    }
+
     private function fakeReadModel(array $payload): WatchlistMarketDataConsumerReadService
     {
         return new class($payload) extends WatchlistMarketDataConsumerReadService {
@@ -174,7 +220,7 @@ class WatchlistCandidateUniverseServiceTest extends TestCase
         ];
     }
 
-    private function candidate(string $tickerCode, float $dv20Idr, float $atr14Pct, float $volRatio): array
+    private function candidate(string $tickerCode, float $dv20Idr, float $atr14Pct, float $volRatio, array $indicatorOverrides = []): array
     {
         return [
             'trade_date' => '2026-05-19',
@@ -201,7 +247,7 @@ class WatchlistCandidateUniverseServiceTest extends TestCase
                 'close_vs_ma50_pct' => 4.6,
                 'ma20_slope_pct' => 1.2,
                 'rs_20_vs_ihsg' => 3.4,
-            ],
+            ] + $indicatorOverrides,
         ];
     }
 }
