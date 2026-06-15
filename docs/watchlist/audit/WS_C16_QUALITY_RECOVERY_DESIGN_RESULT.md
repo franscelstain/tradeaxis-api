@@ -1,0 +1,270 @@
+# WS C16 Quality Recovery Design Result
+
+## Scope
+
+This document records the C16 source-level design and implementation result for the weekly swing watchlist backtest catalog.
+
+C16 is strictly scoped to:
+
+```text
+domain=watchlist
+active_policy=weekly_swing
+watchlist_only_shows_suggestions=true
+execution_engine=false
+portfolio_engine=false
+broker_or_order_placement=false
+production_ready=0
+```
+
+C16 does not alter recommendation or confirmation semantics. Recommendation remains PLAN-only. Confirmation remains an overlay from candidate PLAN evidence and does not mutate recommendation.
+
+## Baseline from C15
+
+C15 final evidence remains locked:
+
+```text
+C15_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C15_2026_06
+C15_CATALOG_VERSION=C15
+C15_CATALOG_HASH=cc07324262151783dc6b5583ebd91a96c0d0527d
+C15_RUNTIME_PAYLOAD_FIX4_VALIDATED
+C15_IS_CALIBRATION_STATUS=C15_GRID_FAILED_IS_QUALITY
+reason_code=WS_BT_C15_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+artifact_hash=1b96a2c38c0aacced72e441bb8d0ecaff045eabf
+OOS_NOT_RUN
+production_ready=0
+```
+
+C15 is not promoted, renamed, patched to look successful, or used as a best-of-failed binding.
+
+## C16 identity
+
+```text
+C16_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C16_2026_06
+C16_CATALOG_VERSION=C16
+C16_CATALOG_COUNT=12
+C16_CATALOG_HASH=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
+C16_WORKING_CONCEPT=C16_CONTROLLED_PULLBACK_SCORE_07_08_VOLUME_15_20_STABILITY_RECOVERY
+C16_RUNTIME_EXTENSION_MODE=C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY
+C16_RUNTIME_EXTENSION_DECISION=OPTION_B_NEW_C16_MODE
+```
+
+## Runtime extension decision
+
+Decision: **Option B - introduce a new C16 extension mode**.
+
+Rationale:
+
+- reusing the C15 extension mode would blur C15/C16 provenance;
+- C16 requires an explicit absolute score window `0.700000..0.799999`, not just quantile thresholds;
+- C16 needs to prove that score window, volume range, ROC5 pullback, ROC20 segment, ATR regime, and component/trend floors are runtime-consumed;
+- C15 remains immutable and rejected as an IS quality catalog.
+
+## Design rationale
+
+C16 is built from C15 failure evidence, not from broad relaxation.
+
+C15 evidence used:
+
+- best failed anchors `param_id=122` and `param_id=130` had positive average return, positive median return, controlled p25 downside, and win rate above 60%;
+- both anchors failed minimum-trade and monthly stability, so C16 targets stability recovery without loosening core quality too broadly;
+- `score` bucket `0.7..0.8` was the most useful diagnostic range;
+- `score` bucket `0.8..0.9` was consistently treated as overextended/bad for this context;
+- `vol_ratio` bucket `1.5..2.0` was the useful volume-quality band;
+- lower volume `1.0..1.5` degraded quality;
+- DV20 `2.5B..5B` remains the primary liquidity band;
+- ROC5 `-0.02..0` remains the controlled pullback band;
+- C15 broad recovery rows such as `param_id=129` and `param_id=132` raised sample count but damaged quality and are explicitly rejected as basis.
+
+## Final operator validation result
+
+C16 is now runtime-validated and final as an IS-quality failure.
+
+Operator validation summary:
+
+```text
+WatchlistBacktestC16: OK (12 tests, 553 assertions)
+Full Watchlist: OK (355 tests, 8377 assertions)
+Seed C16: PASS, existing_count=12, catalog_hash=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
+Diagnose batch C16: PASS, diagnostic_param_count=12, ready_count=12, blocked_count=0
+IS calibration run 1: C16_GRID_FAILED_IS_QUALITY, artifact_hash=63698d0c809a1f2124d8218273ba4d34d9c78deb
+IS calibration run 2: C16_GRID_FAILED_IS_QUALITY, artifact_hash=63698d0c809a1f2124d8218273ba4d34d9c78deb
+```
+
+Final verdict:
+
+```text
+C16_GRID_FAILED_IS_QUALITY=true
+reason_code=WS_BT_C16_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+best_is_binding=null
+param_id_best_is=null
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Failure distribution:
+
+```text
+WS_BT_EVAL_MIN_TRADES_FAIL=12
+WS_BT_EVAL_STABILITY_FAIL=12
+WS_BT_EVAL_ROBUST_RETURN_FAIL=2
+WS_BT_EVAL_DOWNSIDE_FAIL=1
+```
+
+Interpretation:
+
+C16 is not a runtime failure. All 12 rows reached canonical evaluation gates. The dominant failure is strategy quality: every row failed minimum-trade count and monthly stability. Only two rows failed robust return and only one row failed downside, so C16's best rows contain useful diagnostic signal but the catalog is too selective and unstable for IS validity.
+
+Top failed-but-informative rows:
+
+| param_id | row_code | picks | avg_ret_net_top | median_ret_net_top | p25_ret_net_top | win_rate_top | month_win_rate_min | month_avg_ret_net_min | reasons |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 140 | `07_ONE_R_TARGET_MID_DV20` | 18 | 0.011211943757134253 | 0.01964352860021483 | -0.0005000262656370382 | 0.6666666666666666 | 0 | -0.020496921903774473 | `WS_BT_EVAL_MIN_TRADES_FAIL`, `WS_BT_EVAL_STABILITY_FAIL` |
+| 134 | `01_STRICT_CORE_NEGATIVE_ROC20` | 9 | 0.010945814734692241 | 0.016024647147672825 | 0.009806374143193075 | 0.7777777777777778 | 0 | -0.023051207110541698 | `WS_BT_EVAL_MIN_TRADES_FAIL`, `WS_BT_EVAL_STABILITY_FAIL` |
+| 143 | `10_NEGATIVE_ROC20_ONE_R_TIGHT` | 9 | 0.010183644001474135 | 0.009806374143193075 | -0.0005000750112516877 | 0.6666666666666666 | 0 | -0.00876254113692971 | `WS_BT_EVAL_MIN_TRADES_FAIL`, `WS_BT_EVAL_STABILITY_FAIL` |
+| 137 | `04_DV20_TO_6B_STRICT_SCORE_WINDOW` | 23 | 0.009360533427912102 | 0.012426717442501378 | -0.00849797552112197 | 0.6956521739130435 | 0 | -0.02961925251413419 | `WS_BT_EVAL_MIN_TRADES_FAIL`, `WS_BT_EVAL_STABILITY_FAIL` |
+| 141 | `08_DV20_TO_7_5B_STRICT_RECOVERY` | 27 | 0.008633804146019317 | 0.015121058474093186 | -0.01669320666024352 | 0.6296296296296297 | 0 | -0.02961925251413419 | `WS_BT_EVAL_MIN_TRADES_FAIL`, `WS_BT_EVAL_STABILITY_FAIL` |
+
+C16 final decision:
+
+```text
+C16_MUTATION_ALLOWED=false
+C16_PROMOTION_ALLOWED=false
+C16_OOS_ALLOWED=false
+C16_PRODUCTION_READY=0
+NEXT_STEP=C17_QUALITY_PRESERVING_SAMPLE_RECOVERY
+```
+
+C17 must be a new immutable catalog. It may use C16 rows `140`, `134`, `143`, `137`, and `141` as diagnostic anchors only, not as best-of-failed bindings. C17 should recover sample count without lowering canonical gates, mutating C16, using ticker/month blacklists, or running OOS before a valid IS candidate exists.
+
+## C16 row families
+
+C16 uses 12 deterministic rows:
+
+```text
+00_C15_130_SHAPE_TIGHT_SCORE_VOLUME_CONTROL
+01_STRICT_CORE_NEGATIVE_ROC20
+02_STRICT_CORE_LOW_POSITIVE_ROC20
+03_LOW_ATR_MID_DV20_CONTROL
+04_DV20_TO_6B_STRICT_SCORE_WINDOW
+05_VOLUME_15_TO_22_GUARDED_TEST
+06_TIGHT_ATR_TIGHT_RISK
+07_ONE_R_TARGET_MID_DV20
+08_DV20_TO_7_5B_STRICT_RECOVERY
+09_VOLUME_15_TO_25_LOW_ATR_STRICT
+10_NEGATIVE_ROC20_ONE_R_TIGHT
+11_DV20_TO_6B_NEG_ROC20_LOW_ATR
+```
+
+Family interpretation:
+
+- strict anchor rows keep DV20 `2.5B..5B`, volume ratio `1.5..2.0`, ROC5 pullback, and C16 score window;
+- controlled sample recovery rows modestly expand DV20 or volume only under stricter score/ROC/ATR guards;
+- ROC20 split rows test cooling `-0.05..0` and low-positive continuation `0..0.02` without high-momentum chase;
+- anti-overextension rows reject score above `0.799999`;
+- risk/exit tuning rows use supported variable exit axes from existing exit-axis support and do not change canonical IS gates.
+
+## Runtime-consumed guards
+
+C16 guard is consumed in `WatchlistPlanGroupingService` through mode:
+
+```text
+C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY
+```
+
+Runtime guard checks include:
+
+```text
+DV20 between catalog min and strong
+volume ratio between catalog min and strong
+ATR14 between catalog min and max
+ROC20 between catalog roc_lo and roc_hi
+ROC5 between -0.020 and 0.000
+score_total >= 0.700000
+score_total <= 0.799999
+score component minimums
+score component pass count
+score component average minimum
+trend metric floor pass count
+```
+
+C16 uses no ticker blacklist and no month blacklist.
+
+## Source-level validation actually run
+
+```text
+php -l selected C16 and touched PHP files: PASS
+C16 source smoke: PASS
+C16_CATALOG_HASH=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
+C16_CATALOG_COUNT=12
+C16_RUNTIME_MODE=C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY
+C15_UNCHANGED=1
+OOS_EXECUTED=0
+production_ready=0
+```
+
+## Blocked runtime validation
+
+```text
+PHPUnit: NOT_RUN / BLOCKED
+Reason: local PHP is missing required extensions dom, mbstring, xml, xmlwriter.
+
+Artisan: NOT_RUN / BLOCKED
+Reason: local PHP is 8.4.16 while Lumen command guard requires PHP >= 7.3 and < 8.4.
+```
+
+The local sandbox could not run PHPUnit or Artisan because of environment limitations, but final operator evidence has since supplied PHPUnit, seed, diagnose-batch, and IS calibration results. See **Final operator validation result** above for the authoritative C16 final status.
+
+## Final status
+
+```text
+C16_IMPLEMENTED=true
+C16_RUNTIME_VALIDATED=true
+C16_SEED_PASS=true
+C16_DIAGNOSE_BATCH_PASS=true
+C16_IS_CALIBRATION_DETERMINISTIC=true
+C16_GRID_FAILED_IS_QUALITY=true
+reason_code=WS_BT_C16_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+WATCHLIST_SCOPE_ONLY=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+
+## Follow-up: C15 static guard regex fix
+
+Operator full Watchlist rerun still failed in `WatchlistBacktestC15StaticGuardTest` because the prior regex pattern rendered as `/$extendedCatalogVersions.../` at PCRE level. The test has been refined to use a single-quoted PHP regex string with a literal escaped PCRE dollar, preserving the guard that C15 remains in `$extendedCatalogVersions` while allowing C16 to coexist.
+
+This historical follow-up was superseded by final operator evidence: full Watchlist PHPUnit later passed with 355 tests and 8377 assertions, and C16 seed/diagnose/IS calibration were completed.
+
+
+## Follow-up: C16 seed repository approval fix
+
+Operator validation after the C15 static guard fix produced:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC15StaticGuardTest" = OK (5 tests, 46 assertions)
+vendor\bin\phpunit tests\Unit\Watchlist = OK (354 tests, 8371 assertions)
+php artisan watchlist:backtest-c16-param-grid-seed = BLOCKED / WS_BT_R2_CATALOG_INVALID / catalog_code is not an approved immutable catalog
+```
+
+Root cause: `WatchlistBacktestParamGridRepository::assertKnownCatalogIdentity()` still approved immutable catalog identities only through C15, while the C16 seed command correctly calls the same repository guard. This was a repository approval-list gap, not a reason to bypass immutability.
+
+Patch applied:
+
+```text
+app/Infrastructure/Persistence/Watchlist/WatchlistBacktestParamGridRepository.php
+- add WatchlistBacktestC16ParamGridCatalog import
+- add C16 catalog code/version/hash/count to the approved immutable catalog map
+
+tests/Unit/Watchlist/WatchlistBacktestC16StaticGuardTest.php
+- add static guard proving repository approval includes C16 identity
+```
+
+No C15/C14/C01-R2 catalog identity was changed. No OOS path was introduced. Runtime seed PASS is still not claimed until the operator reruns `php artisan watchlist:backtest-c16-param-grid-seed`.

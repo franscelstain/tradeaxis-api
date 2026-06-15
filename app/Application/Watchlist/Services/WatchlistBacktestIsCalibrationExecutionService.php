@@ -106,6 +106,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             if (! empty($definition['requires_c14_catalog'])) {
                 $c14Before = $this->paramGrid->catalogSnapshot(WatchlistBacktestC14ParamGridCatalog::CATALOG_CODE);
             }
+            $c15Before = [];
+            if (! empty($definition['requires_c15_catalog'])) {
+                $c15Before = $this->paramGrid->catalogSnapshot(WatchlistBacktestC15ParamGridCatalog::CATALOG_CODE);
+            }
             $oosBefore = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CATALOG_INVALID'), $e->getMessage());
@@ -163,6 +167,11 @@ class WatchlistBacktestIsCalibrationExecutionService
                 || (string) ($c14Before['catalog_hash'] ?? '') !== WatchlistBacktestC14ParamGridCatalog::hash())) {
             return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable C14 catalog count/hash is not intact before C15 calibration.');
         }
+        if (! empty($definition['requires_c15_catalog'])
+            && ((int) ($c15Before['catalog_count'] ?? 0) !== WatchlistBacktestC15ParamGridCatalog::CATALOG_COUNT
+                || (string) ($c15Before['catalog_hash'] ?? '') !== WatchlistBacktestC15ParamGridCatalog::hash())) {
+            return $this->blocked('WS_BT_R2_CATALOG_PERSISTED_SET_MISMATCH', 'Immutable C15 catalog count/hash is not intact before C16 calibration.');
+        }
 
         $executedAt = $toDate.'T23:59:59+07:00';
         try {
@@ -205,6 +214,10 @@ class WatchlistBacktestIsCalibrationExecutionService
             if (! empty($definition['requires_c14_catalog'])) {
                 $c14After = $this->paramGrid->catalogSnapshot(WatchlistBacktestC14ParamGridCatalog::CATALOG_CODE);
             }
+            $c15After = [];
+            if (! empty($definition['requires_c15_catalog'])) {
+                $c15After = $this->paramGrid->catalogSnapshot(WatchlistBacktestC15ParamGridCatalog::CATALOG_CODE);
+            }
             $oosAfter = $this->oosTableSnapshot();
         } catch (\Throwable $e) {
             return $this->blocked($this->reasonCode($e, 'WS_BT_R2_CALIBRATION_FAILED'), $e->getMessage());
@@ -239,6 +252,9 @@ class WatchlistBacktestIsCalibrationExecutionService
         }
         if (! empty($definition['requires_c14_catalog']) && $c14Before !== $c14After) {
             return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'C14 snapshot changed during C15 IS-only calibration.');
+        }
+        if (! empty($definition['requires_c15_catalog']) && $c15Before !== $c15After) {
+            return $this->blocked('WS_BT_R2_CATALOG_IDENTITY_CONFLICT', 'C15 snapshot changed during C16 IS-only calibration.');
         }
         if ($oosBefore !== $oosAfter) {
             return $this->blocked('WS_BT_R2_OOS_PERSISTENCE_MUTATION', 'watchlist_bt_oos_eval_ws changed during IS-only calibration.');
@@ -955,6 +971,32 @@ class WatchlistBacktestIsCalibrationExecutionService
                 'requires_c06_catalog' => true,
                 'requires_c07_catalog' => true,
                 'requires_c14_catalog' => true,
+            ],
+            WatchlistBacktestC16ParamGridCatalog::CATALOG_CODE => [
+                'catalog_code' => WatchlistBacktestC16ParamGridCatalog::CATALOG_CODE,
+                'catalog_version' => WatchlistBacktestC16ParamGridCatalog::CATALOG_VERSION,
+                'catalog_count' => WatchlistBacktestC16ParamGridCatalog::CATALOG_COUNT,
+                'catalog_hash' => WatchlistBacktestC16ParamGridCatalog::hash(),
+                'parameter_axes' => WatchlistBacktestC16ParamGridCatalog::parameterAxes(),
+                'axis_rationale' => WatchlistBacktestC16ParamGridCatalog::axisRationale(),
+                'provenance' => WatchlistBacktestC16ParamGridCatalog::provenance(),
+                'manifest_rows' => WatchlistBacktestC16ParamGridCatalog::manifestRows(),
+                'reference_row_code' => WatchlistBacktestC16ParamGridCatalog::REFERENCE_ROW_CODE,
+                'fixed_top_picks_target' => WatchlistBacktestC16ParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC16ParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'execution_axis_policy' => WatchlistBacktestC16ParamGridCatalog::exitAxisPolicy(),
+                'artifact_version' => 'WATCHLIST_C16_IS_CALIBRATION_V1',
+                'artifact_scope' => 'WEEKLY_SWING_DOWNSIDE_STABILITY_C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_IS_ONLY',
+                'failed_status' => 'C16_GRID_FAILED_IS_QUALITY',
+                'requires_c01_catalog' => true,
+                'requires_c02_catalog' => true,
+                'requires_c03_catalog' => true,
+                'requires_c04_catalog' => true,
+                'requires_c05_catalog' => true,
+                'requires_c06_catalog' => true,
+                'requires_c07_catalog' => true,
+                'requires_c14_catalog' => true,
+                'requires_c15_catalog' => true,
             ],
         ];
 

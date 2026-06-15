@@ -14,6 +14,193 @@ Behavioral owner tetap:
 
 ## ACTIVE SESSION
 
+
+Session:
+`WATCHLIST - C16 FINAL OPERATOR VALIDATION AND STRATEGY QUALITY RESULT SESSION`
+
+Current status:
+
+`C16_IMPLEMENTED / C16_RUNTIME_VALIDATED / C16_SEED_PASS / C16_DIAGNOSE_BATCH_PASS / C16_IS_CALIBRATION_DETERMINISTIC / C16_GRID_FAILED_IS_QUALITY / C16_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C16 final implementation identity:
+
+```text
+C16_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C16_2026_06
+C16_CATALOG_VERSION=C16
+C16_CATALOG_COUNT=12
+C16_CATALOG_HASH=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
+C16_RUNTIME_EXTENSION_MODE=C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY
+C16_RUNTIME_EXTENSION_DECISION=OPTION_B_NEW_C16_MODE
+C16_WORKING_CONCEPT=C16_CONTROLLED_PULLBACK_SCORE_07_08_VOLUME_15_20_STABILITY_RECOVERY
+```
+
+C16 source and runtime commitments remain unchanged:
+
+- C16 is a new immutable catalog and does not mutate C15, C14, C01-C07, R1, or R2 identities.
+- C16 uses a dedicated runtime extension mode, not the C15 mode.
+- C16 consumed its score window, volume range, ROC5 pullback, ROC20 segment, ATR regime, and component/trend quality floors at runtime.
+- C16 does not introduce ticker blacklist, month blacklist, sector filter, execution, broker integration, portfolio behavior, OOS execution, or production readiness.
+- Recommendation remains PLAN-only; confirmation remains an overlay from candidate PLAN evidence and does not mutate recommendation.
+
+## C16 final operator validation evidence
+
+Operator PHPUnit validation after follow-up patches:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC16"
+OK (12 tests, 553 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist
+OK (355 tests, 8377 assertions)
+```
+
+Operator seed validation:
+
+```text
+php artisan watchlist:backtest-c16-param-grid-seed
+status=PASS
+catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C16_2026_06
+catalog_version=C16
+catalog_count=12
+catalog_hash=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
+inserted_count=0
+updated_count=0
+existing_count=12
+r1_immutable=1
+r2_immutable=1
+c01_immutable=1
+c02_immutable=1
+c03_immutable=1
+c04_immutable=1
+c05_immutable=1
+c06_immutable=1
+c07_immutable=1
+c14_immutable=1
+c15_immutable=1
+oos_executed=0
+production_ready=0
+```
+
+Operator diagnose-batch validation:
+
+```text
+php artisan watchlist:backtest-is-diagnose-batch --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C16_2026_06 --from=2023-01-02 --to=2025-05-21 --output-dir=storage/app/watchlist/backtest/c16-drilldown --summary=storage/app/watchlist/backtest/c16-drilldown-summary.csv --overwrite
+status=PASS
+reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY
+catalog_version=C16
+catalog_count=12
+catalog_hash=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
+diagnostic_param_count=12
+ready_count=12
+blocked_count=0
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+production_ready=0
+```
+
+Operator IS calibration validation was run twice and deterministic:
+
+```text
+run_1_status=C16_GRID_FAILED_IS_QUALITY
+run_2_status=C16_GRID_FAILED_IS_QUALITY
+reason_code=WS_BT_C16_NO_VALID_IS_CANDIDATE
+catalog_code=WS_BT_GRID_DOWNSIDE_STABILITY_C16_2026_06
+catalog_version=C16
+catalog_count=12
+catalog_hash=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
+is_from=2023-01-02
+is_to=2025-05-21
+is_trading_date_count=562
+is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753
+is_valid_param_count=0
+is_failed_param_count=12
+is_failure_reason_codes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id_best_is=
+best_is_binding_hash=
+strict_is_boundary_all_evaluations=1
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+artifact_hash=63698d0c809a1f2124d8218273ba4d34d9c78deb
+production_ready=0
+```
+
+The two IS calibration artifacts were deterministic because both runs produced the same final artifact hash:
+
+```text
+c16_is_run_1_artifact_hash=63698d0c809a1f2124d8218273ba4d34d9c78deb
+c16_is_run_2_artifact_hash=63698d0c809a1f2124d8218273ba4d34d9c78deb
+```
+
+## C16 final strategy-quality result
+
+C16 failed canonical IS strategy-quality gates:
+
+```text
+C16_GRID_FAILED_IS_QUALITY=true
+reason_code=WS_BT_C16_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+best_is_binding=null
+param_id_best_is=null
+OOS_ELIGIBLE=false
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C16 failure distribution from `all_evaluations`:
+
+```text
+WS_BT_EVAL_MIN_TRADES_FAIL=12
+WS_BT_EVAL_STABILITY_FAIL=12
+WS_BT_EVAL_ROBUST_RETURN_FAIL=2
+WS_BT_EVAL_DOWNSIDE_FAIL=1
+```
+
+Interpretation:
+
+- C16 is technically validated and reached canonical gates for all 12 rows.
+- C16 failed as a strategy catalog because sample count and monthly stability were insufficient for every row.
+- The primary blockers are `WS_BT_EVAL_MIN_TRADES_FAIL` and `WS_BT_EVAL_STABILITY_FAIL`, not a broad runtime/data failure.
+- C16 must not be promoted, OOS-tested, or marked production-ready.
+- C16 should be preserved as failed IS evidence and used only as diagnostic input for a future C17 catalog.
+
+Top failed-but-informative C16 rows:
+
+```text
+param_id=140 row_code=07_ONE_R_TARGET_MID_DV20 picks=18 avg=0.011211943757134253 median=0.01964352860021483 p25=-0.0005000262656370382 win_rate=0.6666666666666666 month_win_rate_min=0 month_avg_ret_net_min=-0.020496921903774473 reasons=WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id=134 row_code=01_STRICT_CORE_NEGATIVE_ROC20 picks=9 avg=0.010945814734692241 median=0.016024647147672825 p25=0.009806374143193075 win_rate=0.7777777777777778 month_win_rate_min=0 month_avg_ret_net_min=-0.023051207110541698 reasons=WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id=143 row_code=10_NEGATIVE_ROC20_ONE_R_TIGHT picks=9 avg=0.010183644001474135 median=0.009806374143193075 p25=-0.0005000750112516877 win_rate=0.6666666666666666 month_win_rate_min=0 month_avg_ret_net_min=-0.00876254113692971 reasons=WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id=137 row_code=04_DV20_TO_6B_STRICT_SCORE_WINDOW picks=23 avg=0.009360533427912102 median=0.012426717442501378 p25=-0.00849797552112197 win_rate=0.6956521739130435 month_win_rate_min=0 month_avg_ret_net_min=-0.02961925251413419 reasons=WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL
+param_id=141 row_code=08_DV20_TO_7_5B_STRICT_RECOVERY picks=27 avg=0.008633804146019317 median=0.015121058474093186 p25=-0.01669320666024352 win_rate=0.6296296296296297 month_win_rate_min=0 month_avg_ret_net_min=-0.02961925251413419 reasons=WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL
+```
+
+## C16 final next action
+
+```text
+NEXT_ACTION=DOCUMENT_C16_FINAL_AND_DESIGN_C17
+C16_MUTATION_ALLOWED=false
+C16_OOS_ALLOWED=false
+C16_PROMOTION_ALLOWED=false
+C17_DESIGN_DIRECTION=QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16_FAILURE_EVIDENCE
+```
+
+C17 should use C16 rows `140`, `134`, `143`, `137`, and `141` as diagnostic anchors only. C17 must be a new immutable catalog and must not lower canonical gates, mutate C16, use best-of-failed binding, blacklist tickers/months, or run OOS until a valid IS candidate exists.
+
+C16 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C16_QUALITY_RECOVERY_DESIGN_RESULT.md
+docs/watchlist/audit/WS_C16_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c16-source-implementation-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C16_DESIGN_NOTE.md
+```
+
+## PRIOR SESSION - C15 FINAL EVIDENCE SESSION
+
 Session:
 `WATCHLIST - C15 FINAL EVIDENCE SESSION`
 
@@ -2820,3 +3007,13 @@ Promotion eligibility remains:
 ```text
 NOT_ELIGIBLE — OOS proof missing
 ```
+
+
+2026-06-13 C16 static guard follow-up: patched WatchlistBacktestC15StaticGuardTest regex to match literal `$extendedCatalogVersions` with an escaped PCRE dollar. Operator full Watchlist failure showed the previous regex was parsed as `/$extendedCatalogVersions.../`, so this patch keeps the C15 guard intent while allowing C16 in the extended catalog list. Runtime PASS is still operator-validation required.
+
+2026-06-14 C16 seed follow-up: operator PHPUnit validation passed (`WatchlistBacktestC15StaticGuardTest` 5/5, full `tests/Unit/Watchlist` 354/354, 8371 assertions). C16 seed then blocked with `WS_BT_R2_CATALOG_INVALID: catalog_code is not an approved immutable catalog`. Root cause identified as `WatchlistBacktestParamGridRepository::assertKnownCatalogIdentity()` missing C16 in the approved immutable catalog map. Patched repository C16 approval and added a C16 static guard. Seed PASS was operator-validation-required at that point and is now superseded by final C16 evidence: seed PASS, diagnose-batch PASS, and deterministic IS calibration failure are recorded in the active session.
+
+
+## Audit Append - 2026-06-15 C16 final operator validation
+
+C16 final operator validation is now recorded as runtime-validated but strategy-quality failed. PHPUnit C16 and full Watchlist suites passed, seed passed, diagnose-batch passed, and IS calibration run 1/run 2 were deterministic with artifact hash `63698d0c809a1f2124d8218273ba4d34d9c78deb`. C16 remains `OOS_NOT_RUN` and `production_ready=0` because `is_valid_param_count=0` and `best_is_binding=null`.

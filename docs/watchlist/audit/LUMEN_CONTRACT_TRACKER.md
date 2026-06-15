@@ -13,6 +13,119 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 
 ## ACTIVE SESSION
 
+
+Session:
+`WATCHLIST - C16 FINAL OPERATOR VALIDATION AND STRATEGY QUALITY RESULT SESSION`
+
+Current status:
+
+`C16_IMPLEMENTED / C16_RUNTIME_VALIDATED / C16_SEED_PASS / C16_DIAGNOSE_BATCH_PASS / C16_IS_CALIBRATION_DETERMINISTIC / C16_GRID_FAILED_IS_QUALITY / C16_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C16 final contract status:
+
+- `WL-CONTRACT-008`: PASS. C16 is traceable as a new immutable catalog derived from C15/C16 failure evidence and does not mutate or promote C15.
+- `WL-CONTRACT-009`: PASS. Operator seed, diagnose-batch, and IS calibration evidence is now available.
+- `WL-CONTRACT-010`: PASS. OOS non-invocation is proven by operator output: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`.
+- `WL-CONTRACT-011`: FAIL AS STRATEGY QUALITY / PASS AS EVALUATED. C16 reached canonical gates but produced `is_valid_param_count=0`, so it is rejected as a strategy catalog.
+- `WL-CONTRACT-013`: PASS. C16 catalog, factory, runtime extension, seed command, static guards, operator commands doc, and final source/runtime summary artifact are present.
+- `WL-CONTRACT-014`: PASS. C16 docs/status tracking are updated with final operator evidence.
+
+C16 boundary commitments remain satisfied:
+
+```text
+watchlist_scope_only=true
+weekly_swing_policy_only=true
+recommendation_from_PLAN_only=true
+recommendation_can_exist_without_confirm=true
+confirm_eligibility_from_candidate_PLAN=true
+non_recommended_candidate_can_confirm=true
+confirm_does_not_mutate_recommendation=true
+recommended_plus_confirmed_means_confirm_strengthens_only=true
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C16 implementation identity:
+
+```text
+C16_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C16_2026_06
+C16_CATALOG_VERSION=C16
+C16_CATALOG_COUNT=12
+C16_CATALOG_HASH=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
+C16_RUNTIME_EXTENSION_MODE=C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY
+C16_RUNTIME_EXTENSION_DECISION=OPTION_B_NEW_C16_MODE
+C15_UNCHANGED=true
+C01_TO_C15_IMMUTABLE=true
+```
+
+Validation status:
+
+```text
+php -l selected C16/touched files: PASS
+C16 source smoke: PASS
+Operator PHPUnit C16: PASS OK (12 tests, 553 assertions)
+Operator full Watchlist: PASS OK (355 tests, 8377 assertions)
+Operator seed: PASS catalog_count=12 catalog_hash=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2 existing_count=12
+Operator diagnose-batch: PASS diagnostic_param_count=12 ready_count=12 blocked_count=0
+Operator IS calibration run 1: C16_GRID_FAILED_IS_QUALITY artifact_hash=63698d0c809a1f2124d8218273ba4d34d9c78deb
+Operator IS calibration run 2: C16_GRID_FAILED_IS_QUALITY artifact_hash=63698d0c809a1f2124d8218273ba4d34d9c78deb
+IS calibration deterministic=true
+```
+
+C16 final strategy-quality verdict:
+
+```text
+C16_GRID_FAILED_IS_QUALITY=true
+reason_code=WS_BT_C16_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+failure_reason_distribution.WS_BT_EVAL_MIN_TRADES_FAIL=12
+failure_reason_distribution.WS_BT_EVAL_STABILITY_FAIL=12
+failure_reason_distribution.WS_BT_EVAL_ROBUST_RETURN_FAIL=2
+failure_reason_distribution.WS_BT_EVAL_DOWNSIDE_FAIL=1
+best_is_binding=null
+param_id_best_is=null
+OOS_ELIGIBLE=false
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C16 OOS-proof eligibility:
+
+```text
+NOT_ELIGIBLE
+```
+
+Reason:
+
+```text
+C16 reached canonical IS gates but produced zero valid IS candidates.
+is_valid_param_count=0
+param_id_best_is=null
+best_is_binding_hash=null
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Production-readiness status:
+
+```text
+NOT_PRODUCTION_READY
+```
+
+Reason: C16 is runtime-validated but failed IS strategy-quality gates. C16 must remain rejected as a strategy catalog and may only be used as diagnostic evidence for a future C17 catalog.
+
+C16 audit references:
+
+```text
+docs/watchlist/audit/WS_C16_QUALITY_RECOVERY_DESIGN_RESULT.md
+docs/watchlist/audit/WS_C16_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c16-source-implementation-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C16_DESIGN_NOTE.md
+```
+
+## PRIOR SESSION - C15 FINAL EVIDENCE SESSION
+
 Session:
 `WATCHLIST - C15 FINAL EVIDENCE SESSION`
 
@@ -3118,3 +3231,13 @@ WATCHLIST — C01 IS FAILURE DRILLDOWN OPERATOR TWO-RUN PROOF SESSION
 ```
 
 Run the IS-only diagnostic command twice in the supported operator environment, compare canonical artifact hash and file SHA1, confirm no OOS leakage, and keep `NEXT_CATALOG_NOT_DESIGNED` unless the runtime payload is enriched enough to support a specific next semantic catalog decision.
+
+
+2026-06-13 C16 follow-up: C15 static guard compatibility patch refined. The C15 guard now matches literal `$extendedCatalogVersions` via escaped PCRE dollar instead of the broken unescaped dollar regex. No watchlist PLAN/recommendation/confirm boundary changed.
+
+2026-06-14 C16 seed contract follow-up: PHPUnit operator evidence is now PASS for full Watchlist unit suite (354 tests, 8371 assertions). Seed was BLOCKED by immutable catalog approval-list gap in `WatchlistBacktestParamGridRepository`; C16 approval entry and static guard were added. No OOS/prod readiness unlocked until seed + diagnose + IS calibration are rerun and provided as evidence.
+
+
+## Contract Append - 2026-06-15 C16 final operator validation
+
+C16 is now closed as `C16_GRID_FAILED_IS_QUALITY` after operator runtime validation. Seed and diagnose-batch passed, IS calibration was deterministic, and OOS/prod readiness remain locked because no valid IS candidate exists.

@@ -105,8 +105,8 @@ class WatchlistBacktestC15StaticGuardTest extends TestCase
         foreach ([$candidateUniverse, $scoring, $grouping] as $source) {
             $this->assertStringContainsString('C15_CONTROLLED_PULLBACK_MID_LIQUIDITY_ANTI_OVEREXTENSION', $source);
         }
-        $this->assertStringContainsString("['C07', 'C14', 'C15']", $candidateUniverse);
-        $this->assertStringContainsString("['C07', 'C14', 'C15']", $scoring);
+        $this->assertMatchesRegularExpression('/\$extendedCatalogVersions\s*=\s*\[[^\]]*\'C15\'[^\]]*\]/', $candidateUniverse);
+        $this->assertMatchesRegularExpression('/\$extendedCatalogVersions\s*=\s*\[[^\]]*\'C15\'[^\]]*\]/', $scoring);
         $this->assertStringContainsString("'roc5'", $candidateUniverse);
         $this->assertStringContainsString("'roc5'", $scoring);
         $this->assertStringContainsString('$this->fractionOrNull($momentum[$metric] ?? $scoreMetrics[$metric] ?? null)', $grouping);
