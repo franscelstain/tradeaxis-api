@@ -1,0 +1,140 @@
+# Weekly Swing C19 Selection Model Redesign Design Note
+
+## Scope
+
+C19 redesigns selection after scoring for Weekly Swing backtest diagnostics. It does not change the canonical evaluation model and does not introduce production behavior.
+
+Canonical evaluation remains:
+
+```text
+ENTRY=NEXT_OPEN
+EXIT=STOP_TP_OR_TIME
+HOLD=5
+FEE=IDR_FIXED
+SLIP=0
+GAP=OPEN
+PX=IDX_BANDS
+```
+
+## Problem Proven by C18
+
+C18 final diagnostic proved that raw candidates and scored candidates are available, but selection collapses after scoring.
+
+```text
+PRIMARY_ROOT_CAUSE=selection_collapse_after_scored_pool
+SECONDARY_ROOT_CAUSE=volume_dv20_atr_entry_quality_grouping_guards_too_restrictive
+SECONDARY_ALWAYS_ZERO_OBSERVED=true
+```
+
+Therefore C19 must not be a new static catalog-only iteration. It must redesign the path from scored pool to TOP/SECONDARY/recommendation.
+
+## C19 Design Principle
+
+C19 separates canonical fatal guards from selection-extension quality shaping.
+
+Keep fatal:
+
+```text
+minimum liquidity
+minimum volume
+ATR min/max
+score chase block
+risk component floor
+breakout component floor
+minimum component balance
+minimum trend safety
+```
+
+Convert to bounded penalty candidate after scored pool:
+
+```text
+DV20 bucket overflow
+volume spike above strong bucket
+ATR outside ideal but inside allowed range
+ROC5 pullback miss
+ROC20 segment miss
+score window miss below score-chase area
+borderline component/trend state
+```
+
+## SECONDARY Role
+
+SECONDARY should become a controlled recovery buffer.
+
+```text
+SECONDARY_IS_BUFFER=true
+SECONDARY_IS_NOT_FINAL_TRADE=true
+SECONDARY_REQUIRES_RECOMMENDATION=true
+SECONDARY_REQUIRES_FUTURE_PRICE_EVALUATION=true
+```
+
+This fixes the current C17/C18 behavior where SECONDARY is only leftover after the same hard guards and can remain zero.
+
+## Monthly Coverage-Aware Selector
+
+Monthly coverage can be an objective, not a blacklist.
+
+Allowed:
+
+```text
+rank quality candidates per month
+fill underrepresented months first
+fill globally after monthly ranking
+skip month if no candidate passes quality floor
+```
+
+Not allowed:
+
+```text
+month blacklist
+forced low-quality pick
+lowering canonical downside gates
+ticker blacklist
+sector whitelist without contract and evidence
+```
+
+## C19 Current Decision
+
+```text
+C19_DIAGNOSTIC_IMPLEMENTED=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Next eligible step is operator validation of the C19 diagnostic/prototype. Catalog implementation is blocked until price-evaluated IS evidence proves sample recovery without damaging downside.
+
+## C19 v3 Diagnostic Clarification
+
+C19 v3 fixes diagnostic mapping and selector simulation. It does not change production behavior.
+
+Mapping corrections:
+
+```text
+PlanGrouping groups.TOP_PICKS and groups.SECONDARY are direct item arrays.
+Recommendation selected count must be read from summary.recommended_count when present.
+Candidate raw/eligible counts must be read from CandidateUniverse top-level counters when present.
+```
+
+Selector simulation source:
+
+```text
+scored candidates only
+not existing TOP/SECONDARY after collapse
+```
+
+The v3 selector can propose TOP/SECONDARY buffers for analysis, but those buffers are not final recommendations, not CONFIRM signals, not orders, and not production-ready output.
+
+```text
+C19_V3_DIAGNOSTIC_MAPPING_FIXED=true
+C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+```
+
+
+## C19 v3.1 Diagnostic Patch Note
+
+C19 v3.1 fixes a diagnostic component-key alias gap. The selector simulation must resolve both canonical extension keys (`score_momentum`, `score_breakout`, `score_volume`, `score_risk`) and scored/test payload keys (`momentum`, `breakout`, `volume`, `risk`). Without this alias, valid borderline recovery candidates can be incorrectly treated as component-balance failures, causing proposed SECONDARY recovery to stay zero in the unit fixture.
+
+This patch does not create a catalog, does not run OOS, does not mutate C18 or earlier catalogs, and does not change the canonical evaluation model.

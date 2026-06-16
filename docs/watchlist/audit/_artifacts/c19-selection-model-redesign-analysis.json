@@ -1,0 +1,78 @@
+{
+  "artifact_type": "C19_SELECTION_MODEL_REDESIGN_ANALYSIS_SOURCE_ARTIFACT",
+  "runtime_proof": false,
+  "source_truth": "repository source audit plus operator-provided C18 final evidence in session prompt",
+  "status": "DESIGN_SOURCE_ARTIFACT_ONLY",
+  "c19_phase": "FASE_A_B_SELECTION_MODEL_REDESIGN_DIAGNOSTIC_V3",
+  "c19_strategy_model_redesign": true,
+  "c19_not_catalog_churn": true,
+  "c19_diagnostic_implemented": true,
+  "c19_v3_diagnostic_mapping_fixed": true,
+  "c19_v3_selector_simulation_from_scored_pool": true,
+  "c19_catalog_implementation_deferred": true,
+  "c19_catalog_code": "NOT_CREATED",
+  "oos_not_run": true,
+  "production_ready": 0,
+  "source_path_findings": {
+    "candidate_universe": "DV20, volume, and ATR canonical source gates remain hard reject.",
+    "scoring": "Scored pool availability is not the primary blocker.",
+    "plan_grouping": "C17 extension hard rejects scored items before TOP/SECONDARY allocation.",
+    "plan_grouping_output_shape_v3": "groups.TOP_PICKS and groups.SECONDARY are mapped as direct item arrays with fallback support for legacy items wrappers.",
+    "recommendation_output_shape_v3": "summary.recommended_count is the selected recommendation count; items may include evaluated/non-selected entries.",
+    "secondary": "SECONDARY can stay zero because it is only leftover after the same hard guards and cutoff.",
+    "recommendation": "Recommendation consumes TOP/SECONDARY only and can shrink output further by threshold/cap."
+  },
+  "proposed_model": {
+    "source": "scored candidates, not collapsed TOP/SECONDARY",
+    "fatal_guards_preserved": [
+      "DV20 minimum via scored-pool source",
+      "volume minimum via scored-pool source",
+      "ATR min/max via scored-pool source",
+      "score chase block",
+      "risk floor",
+      "breakout floor",
+      "component balance",
+      "trend safety"
+    ],
+    "penalty_candidates": [
+      "DV20 bucket overflow",
+      "volume spike/range miss",
+      "ATR segment miss inside canonical gate",
+      "ROC5 miss",
+      "ROC20 miss",
+      "score window miss",
+      "borderline trend state"
+    ],
+    "secondary_role": "controlled recovery buffer",
+    "monthly_selector": "coverage-aware ranking objective without month blacklist"
+  },
+  "operator_evidence_carried_forward": {
+    "post_fix_phpunit_c19_filter": "PASS: OK (5 tests, 70 assertions)",
+    "post_fix_full_watchlist": "PASS: OK (377 tests, 9121 assertions)",
+    "c19_v2_full_diagnostic": "PASS artifact_hash=6737a7a07e2a1c71be38797d1406e8fc7c7e79e7",
+    "c19_v2_param_149_150_diagnostic": "PASS artifact_hash=5b0943bc8b3d17138bd2cf77fd209f4fccdcd34a",
+    "c19_v2_diagnostic_limitation": "mapping/proposal was safe but insufficient: proposed recovery stayed zero and current path keys were ambiguous"
+  },
+  "validation_status": {
+    "php_lint_changed_files": "PASS",
+    "phpunit_c19_filter": "BLOCKED_IN_AGENT_ENV_MISSING_DOM_MBSTRING_XML_XMLWRITER",
+    "full_watchlist_phpunit": "NOT_RUN_SAME_BLOCKER",
+    "runtime_diagnostic_v3": "OPERATOR_VALIDATION_REQUIRED",
+    "post_v3_1_phpunit_c19_filter": "OPERATOR_VALIDATION_REQUIRED",
+    "post_v3_1_full_watchlist_phpunit": "OPERATOR_VALIDATION_REQUIRED"
+  },
+  "c19_v3_1_component_alias_fix": true,
+  "c19_v3_1_test_fixture_secondary_buffer_fix": true,
+  "operator_v3_first_rerun": "FAIL: proposed secondary stayed zero in unit fixture",
+  "agent_v3_1_self_check": {
+    "runtime_proof": false,
+    "fixture_check_only": true,
+    "max_current_top_count": 2,
+    "max_current_secondary_count": 0,
+    "max_current_recommended_count": 2,
+    "max_proposed_top_count": 2,
+    "max_proposed_secondary_count": 2,
+    "max_proposed_recommended_count": 4,
+    "params_with_proposed_secondary_recovery": 1
+  }
+}

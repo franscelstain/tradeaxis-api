@@ -41,6 +41,7 @@ use App\Console\Commands\Watchlist\RunBacktestIsCalibrationCommand;
 use App\Console\Commands\Watchlist\RunBacktestIsDiagnoseBatchCommand;
 use App\Console\Commands\Watchlist\RunBacktestIsDiagnoseCommand;
 use App\Console\Commands\Watchlist\RunBacktestC18FunnelDiagnoseCommand;
+use App\Console\Commands\Watchlist\RunBacktestC19SelectionDiagnoseCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -69,6 +70,7 @@ class Kernel extends ConsoleKernel
         RunBacktestIsDiagnoseBatchCommand::class,
         RunBacktestIsDiagnoseCommand::class,
         RunBacktestC18FunnelDiagnoseCommand::class,
+        RunBacktestC19SelectionDiagnoseCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

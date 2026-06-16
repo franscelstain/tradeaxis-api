@@ -13,9 +13,73 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 
 ## ACTIVE SESSION
 
-
 Session:
-`WATCHLIST - C18 FINAL DIAGNOSTIC-FIRST FUNNEL AND MONTHLY COVERAGE RESULT`
+`WATCHLIST - C19 STRATEGY MODEL REDESIGN ANALYSIS AND SELECTION DIAGNOSTIC`
+
+Current status:
+
+`C19_STRATEGY_MODEL_REDESIGN / C19_NOT_CATALOG_CHURN / C19_SELECTION_MODEL_ANALYSIS_DONE / C19_DIAGNOSTIC_IMPLEMENTED / C19_V3_DIAGNOSTIC_MAPPING_FIXED / C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL / C19_CATALOG_IMPLEMENTATION_DEFERRED / C18_UNCHANGED / C01_TO_C18_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C19 contract status:
+
+- `WL-CONTRACT-008`: PASS AS ANALYSIS / CATALOG DEFERRED. C19 is a strategy model redesign diagnostic, not an immutable catalog iteration.
+- `WL-CONTRACT-009`: PARTIAL PASS / V3 VALIDATION REQUIRED. Operator supplied post-fix C19 PHPUnit and full Watchlist PASS output, then C19 v2 runtime diagnostic PASS output. C19 v2 was safe but diagnostically insufficient; v3 mapping/selector simulation now requires operator rerun.
+- `WL-CONTRACT-010`: PASS BY STATIC DESIGN. C19 diagnostic service/command does not invoke OOS service or repository and emits explicit zero OOS markers.
+- `WL-CONTRACT-011`: NOT_READY. No C19 catalog can be promoted because the current output is diagnostic/prototype only and has no canonical price-evaluated IS stability proof.
+- `WL-CONTRACT-013`: PASS AS FASE A/B DIAGNOSTIC. C19 adds source audit, selection redesign diagnostic/prototype command, tests, operator commands, result docs, and policy design note.
+- `WL-CONTRACT-014`: PASS. C19 implementation status, contract tracker, analysis, diagnostic result, operator commands, policy note, and design artifact are synchronized.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked; C19 has no catalog, no OOS proof, no promotion.
+
+C19 boundary commitments:
+
+```text
+watchlist_scope_only=true
+weekly_swing_policy_only=true
+recommendation_from_PLAN_only=true
+recommendation_can_exist_without_confirm=true
+confirm_eligibility_from_candidate_PLAN=true
+confirm_does_not_mutate_recommendation=true
+C19_STRATEGY_MODEL_REDESIGN=true
+C19_NOT_CATALOG_CHURN=true
+C19_V3_DIAGNOSTIC_MAPPING_FIXED=true
+C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+C18_UNCHANGED=true
+C01_TO_C18_IMMUTABLE=true
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C19 source-path finding:
+
+```text
+SECONDARY_ALWAYS_ZERO_CAUSE=design_cutoff_guard_behavior_not_runtime_bug
+TOP_CUTOFF_LOCATION=WatchlistPlanGroupingService::groupScoredOutput
+C17_HARD_REJECT_LOCATION=WatchlistPlanGroupingService::candidateSelectionExtensionFailures / c17QualityFloorFailures
+RECOMMENDATION_DROP_LOCATION=WatchlistRecommendationService::recommendFromPlanOutput / dynamicTargetCount
+DV20_VOLUME_ATR_CANONICAL_SOURCE_GUARDS=remain_hard_reject
+C17_EXTENSION_DV20_VOLUME_ATR_ROC_SCORE_WINDOWS=penalty_candidate_for_C19_prototype
+MONTHLY_SELECTOR=coverage-aware ranking objective, not month blacklist
+C19_V3_MAPPING=PlanGrouping direct group arrays + Recommendation summary.recommended_count
+C19_V3_SELECTOR=starts from scored candidates, not collapsed TOP/SECONDARY
+```
+
+Required next validation:
+
+```text
+OPERATOR_PRE_FIX_PHPUNIT_C19_FILTER=PASS_WITH_SIGNATURE_WARNINGS: OK (5 tests, 70 assertions)
+OPERATOR_PRE_FIX_FULL_WATCHLIST=PASS_WITH_SIGNATURE_WARNINGS: OK (377 tests, 9121 assertions)
+C19_TEST_FAKE_SIGNATURE_WARNING_FIX_APPLIED=true
+POST_FIX_PHPUNIT_C19_FILTER=PASS: OK (5 tests, 70 assertions)
+POST_FIX_FULL_WATCHLIST_PHPUNIT=PASS: OK (377 tests, 9121 assertions)
+C19_V2_SELECTION_DIAGNOSE=PASS_SAFE_BUT_MAPPING_INSUFFICIENT
+C19_V3_SELECTION_DIAGNOSE=OPERATOR_VALIDATION_REQUIRED
+C19_V3_1_COMPONENT_ALIAS_AND_FIXTURE_PATCH_APPLIED=true
+C19_CATALOG_DECISION=DEFER_UNTIL_DIAGNOSTIC_AND_PRICE_EVALUATED_IS_PROOF
+```
+
+## PRIOR SESSION - C18 FINAL DIAGNOSTIC-FIRST FUNNEL AND MONTHLY COVERAGE RESULT
 
 Current status:
 
