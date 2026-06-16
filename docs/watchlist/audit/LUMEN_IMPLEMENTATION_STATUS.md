@@ -16,31 +16,277 @@ Behavioral owner tetap:
 
 
 Session:
-`WATCHLIST - C16 FINAL OPERATOR VALIDATION AND STRATEGY QUALITY RESULT SESSION`
+`WATCHLIST - C18 FINAL DIAGNOSTIC-FIRST FUNNEL AND MONTHLY COVERAGE RESULT`
 
 Current status:
 
-`C16_IMPLEMENTED / C16_RUNTIME_VALIDATED / C16_SEED_PASS / C16_DIAGNOSE_BATCH_PASS / C16_IS_CALIBRATION_DETERMINISTIC / C16_GRID_FAILED_IS_QUALITY / C16_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C18_DIAGNOSTIC_FIRST / C18_PHASE_A_DIAGNOSTIC_DONE / C18_FUNNEL_DIAGNOSTIC_RUNTIME_VALIDATED / C18_CATALOG_IMPLEMENTATION_DEFERRED / C17_UNCHANGED / C01_TO_C17_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
-C16 final implementation identity:
+C18 final identity:
 
 ```text
-C16_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C16_2026_06
-C16_CATALOG_VERSION=C16
-C16_CATALOG_COUNT=12
-C16_CATALOG_HASH=0ad1289f79d78787cdca275f0b3f3e2ba90bf8f2
-C16_RUNTIME_EXTENSION_MODE=C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY
-C16_RUNTIME_EXTENSION_DECISION=OPTION_B_NEW_C16_MODE
-C16_WORKING_CONCEPT=C16_CONTROLLED_PULLBACK_SCORE_07_08_VOLUME_15_20_STABILITY_RECOVERY
+C18_PHASE=C18_PHASE_A_DIAGNOSTIC_FIRST_FUNNEL_AUDIT
+C18_ARTIFACT_TYPE=C18_FUNNEL_AND_MONTHLY_COVERAGE_DIAGNOSTIC
+C18_DIAGNOSTIC_COMMAND=watchlist:backtest-c18-funnel-diagnose
+C18_SOURCE_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06
+C18_SOURCE_CATALOG_VERSION=C17
+C18_SOURCE_CATALOG_HASH=d411bfbee6fb14c17d821aa92e7e0fea06925d67
+C18_CATALOG_IMPLEMENTATION_DEFERRED=true
+C18_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
 ```
 
-C16 source and runtime commitments remain unchanged:
+C18 implementation result:
 
-- C16 is a new immutable catalog and does not mutate C15, C14, C01-C07, R1, or R2 identities.
-- C16 uses a dedicated runtime extension mode, not the C15 mode.
-- C16 consumed its score window, volume range, ROC5 pullback, ROC20 segment, ATR regime, and component/trend quality floors at runtime.
-- C16 does not introduce ticker blacklist, month blacklist, sector filter, execution, broker integration, portfolio behavior, OOS execution, or production readiness.
-- Recommendation remains PLAN-only; confirmation remains an overlay from candidate PLAN evidence and does not mutate recommendation.
+- added `WatchlistBacktestC18FunnelDiagnosticService`;
+- added `RunBacktestC18FunnelDiagnoseCommand`;
+- registered the command in Console Kernel;
+- added runtime-first default diagnostic mode;
+- added optional `--deep-funnel` and `--progress-every` for expensive per-date funnel diagnosis;
+- added C18 funnel diagnostic and static guard tests;
+- added/finalized C18 audit/operator/policy docs;
+- did not create C18 catalog, seeder, seed command, repository approval, or factory mapping;
+- did not mutate C17/C16/C15/C14/C01-C07/R1/R2;
+- did not run OOS;
+- did not set `production_ready=1`.
+
+Operator validation evidence provided on 2026-06-16:
+
+```text
+PHPUNIT_C18_FUNNEL=PASS: OK (6 tests, 95 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (372 tests, 9051 assertions)
+COMMAND_HELP_CONFIRMED_OPTIONS=--deep-funnel,--progress-every
+```
+
+Runtime-first full 12 diagnostic evidence:
+
+```text
+status=PASS
+reason_code=WS_BT_C18_FUNNEL_DIAGNOSTIC_READY
+scope=IS_ONLY_DIAGNOSTIC
+diagnostic_param_count=12
+max_evaluated_picks_count=42
+max_recommended_count_before_price_evaluation=0
+params_with_empty_evaluation_months=12
+c18_catalog_implementation_deferred=1
+artifact_hash=b03a79896f3cfd985f6462bd1456494eaac8e405
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_executed=0
+production_ready=0
+```
+
+Deep funnel evidence for the best sample row `param_id=150`:
+
+```text
+status=PASS
+artifact_hash=8b47719f082525a71346aeafd67a5927c1ed1bdd
+raw=402887
+eligible=40342
+scored=40342
+top=64
+secondary=0
+recommended=46
+requested_pairs=218
+evaluated=42
+```
+
+Deep funnel evidence for the best return/controlled pullback row `param_id=149`:
+
+```text
+status=PASS
+artifact_hash=3dd342f47f7e1397d7ec8defb9e15af26184ca33
+raw=402887
+eligible=39594
+scored=39594
+top=83
+secondary=0
+recommended=38
+requested_pairs=184
+evaluated=35
+```
+
+C18 final root-cause conclusion:
+
+```text
+RAW_CANDIDATE_NOT_INSUFFICIENT=true
+SCORING_POOL_AVAILABLE=true
+PRIMARY_ROOT_CAUSE=selection_collapse_after_scored_pool
+SECONDARY_ROOT_CAUSE=volume_dv20_atr_entry_quality_grouping_guards_too_restrictive
+MONTHLY_EMPTY_CAUSED_BY_SELECTION_COLLAPSE=true
+PRICE_AVAILABILITY_NOT_PRIMARY=true
+```
+
+C18 final decision:
+
+```text
+C18_DIAGNOSTIC_FIRST=true
+C18_PHASE_A_DIAGNOSTIC_DONE=true
+C18_FUNNEL_DIAGNOSTIC_RUNTIME_VALIDATED=true
+C18_CATALOG_IMPLEMENTATION_DEFERRED=true
+C18_CATALOG_CODE=NOT_CREATED
+C17_UNCHANGED=true
+C01_TO_C17_IMMUTABLE=true
+WATCHLIST_SCOPE_ONLY=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C18 Fase B catalog implementation is not approved. The next work should be C19 strategy model redesign, not another C18 catalog iteration. C19 must address grouping/recommendation collapse from large scored pools, `SECONDARY=0`, and volume/DV20/ATR/entry-quality/ROC guard strictness without lowering canonical gates, using blacklist/whitelist shortcuts, running OOS, or setting production ready.
+
+## PRIOR SESSION - C17 FINAL OPERATOR VALIDATION AND STRATEGY QUALITY RESULT
+
+
+Session:
+`WATCHLIST - C17 FINAL OPERATOR VALIDATION AND STRATEGY QUALITY RESULT SESSION`
+
+Current status:
+
+`C17_IMPLEMENTED_SOURCE_LEVEL / C17_RUNTIME_VALIDATED / C17_PHPUNIT_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C17_SEED_PASS / C17_DIAGNOSE_BATCH_PASS / C17_IS_CALIBRATION_DETERMINISTIC / C17_GRID_FAILED_IS_QUALITY / C17_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C17 final implementation identity:
+
+```text
+C17_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06
+C17_CATALOG_VERSION=C17
+C17_CATALOG_COUNT=12
+C17_CATALOG_HASH=d411bfbee6fb14c17d821aa92e7e0fea06925d67
+C17_RUNTIME_EXTENSION_MODE=C17_QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16
+C17_WORKING_CONCEPT=C17_QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16
+```
+
+C17 runtime validation evidence provided by operator:
+
+```text
+php vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestC17"
+OK (11 tests, 579 assertions)
+
+vendor\bin\phpunit tests\Unit\Watchlist
+OK (366 tests, 8956 assertions)
+
+php artisan watchlist:backtest-c17-param-grid-seed
+status=PASS
+catalog_count=12
+catalog_hash=d411bfbee6fb14c17d821aa92e7e0fea06925d67
+inserted_count=12
+updated_count=0
+existing_count=0
+c16_immutable=1
+oos_executed=0
+production_ready=0
+
+php artisan watchlist:backtest-is-diagnose-batch --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 --from=2023-01-02 --to=2025-05-21 --output-dir=storage/app/watchlist/backtest/c17-drilldown --summary=storage/app/watchlist/backtest/c17-drilldown-summary.csv --overwrite
+status=PASS
+reason_code=WS_BT_IS_FAILURE_DRILLDOWN_BATCH_READY
+diagnostic_param_count=12
+ready_count=12
+blocked_count=0
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_table_unchanged=1
+oos_executed=0
+production_ready=0
+
+php artisan watchlist:backtest-is-calibrate --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 --from=2023-01-02 --to=2025-05-21 --output=storage/app/watchlist/backtest/c17-is-run-1.json
+status=C17_GRID_FAILED_IS_QUALITY
+reason_code=WS_BT_C17_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+artifact_hash=23c30d70aeefa88701de8d9a59dd9217ee340ae6
+oos_executed=0
+production_ready=0
+
+php artisan watchlist:backtest-is-calibrate --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 --from=2023-01-02 --to=2025-05-21 --output=storage/app/watchlist/backtest/c17-is-run-2.json
+status=C17_GRID_FAILED_IS_QUALITY
+reason_code=WS_BT_C17_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+artifact_hash=23c30d70aeefa88701de8d9a59dd9217ee340ae6
+oos_executed=0
+production_ready=0
+```
+
+C17 final IS quality result:
+
+```text
+C17_GRID_FAILED_IS_QUALITY=true
+reason_code=WS_BT_C17_NO_VALID_IS_CANDIDATE
+is_valid_param_count=0
+is_failed_param_count=12
+is_trading_date_count=562
+is_trading_date_hash=581dd450ebcbd56cb3a1c066c9fc80bbccb3a753
+artifact_hash=23c30d70aeefa88701de8d9a59dd9217ee340ae6
+best_is_binding=null
+param_id_best_is=null
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C17 failure distribution:
+
+| Reason code | Count |
+| --- | ---: |
+| `WS_BT_EVAL_MIN_TRADES_FAIL` | 12 |
+| `WS_BT_EVAL_ROBUST_RETURN_FAIL` | 5 |
+| `WS_BT_EVAL_STABILITY_FAIL` | 12 |
+
+C17 diagnostic interpretation:
+
+- C17 passed engineering/runtime validation, but failed IS strategy-quality validation.
+- Minimum trade count remains the hard blocker: threshold is `120`, while the largest C17 row produced only `42` picks.
+- Monthly stability remains failed for all rows: `month_win_rate_min=0` for every C17 row, versus required minimum `0.45`.
+- Worst monthly average return remains below the canonical floor `-0.01`; observed row-level worst month averages range from `-0.038226` to `-0.022407`.
+- Downside gate improved versus C16: C17 has `WS_BT_EVAL_DOWNSIDE_FAIL=0`, with all rows passing `p25_ret_net_top >= -0.03`.
+- Robust-return failure remains in `5` rows and is concentrated in the negative-ROC20 / one-R derived branches.
+- C17 must not proceed to OOS because `is_valid_param_count=0` and `best_is_binding=null`.
+
+Top C17 rows by average return:
+
+| Param | Row | Picks | Avg net | Median net | P25 net | Win rate | Worst month avg | Failures |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 149 | `04_DV20_2B_6B_CONTROLLED_PULLBACK` | 35 | 0.008152 | 0.012427 | -0.012497 | 65.71% | -0.029619 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 154 | `09_MID_DV20_LOWER_VOLUME_GUARDED` | 16 | 0.007882 | 0.013650 | -0.002502 | 62.50% | -0.022407 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 145 | `00_C16_140_SCORE_65_80_MID_DV20_ONE_R` | 35 | 0.007509 | 0.009399 | -0.008772 | 57.14% | -0.033502 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 148 | `03_SCORE_70_85_LOW_ATR_NEG_ROC20` | 28 | 0.005751 | 0.010993 | -0.000500 | 67.86% | -0.038226 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 150 | `05_DV20_25_75_SCORE_68_82` | 42 | 0.004921 | 0.010993 | -0.016792 | 54.76% | -0.033550 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 152 | `07_VOL_150_250_ONE_R_LOW_ATR` | 26 | 0.002450 | 0.006692 | -0.019023 | 53.85% | -0.029619 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 151 | `06_VOL_150_250_LOW_ATR_NEG_ROC20` | 25 | 0.001634 | 0.006692 | -0.017164 | 52.00% | -0.029619 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 147 | `02_NEG_ROC20_ONE_R_SCORE_68_82` | 17 | -0.000317 | 0.006692 | -0.020298 | 52.94% | -0.038226 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 156 | `11_C16_143_DERIVED_ONE_R_SCORE_70_85` | 19 | -0.000336 | 0.006692 | -0.021458 | 52.63% | -0.038226 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 155 | `10_C16_134_DERIVED_NEG_ROC20_SCORE_68_82` | 15 | -0.000492 | 0.009399 | -0.021675 | 53.33% | -0.038226 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 153 | `08_SCORE_70_85_DV20_2B_6B_ROC20_COOLING` | 19 | -0.001047 | 0.006692 | -0.021675 | 52.63% | -0.038226 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+| 146 | `01_NEG_ROC20_SCORE_65_80_DV20_2B_6B` | 17 | -0.001111 | 0.006692 | -0.020298 | 52.94% | -0.038226 | `WS_BT_EVAL_MIN_TRADES_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL` |
+
+Top C17 rows by sample recovery:
+
+| Param | Row | Picks | Avg net | Win rate | Worst month avg | Period fail/periods |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 150 | `05_DV20_25_75_SCORE_68_82` | 42 | 0.004921 | 54.76% | -0.033550 | 6/20 |
+| 145 | `00_C16_140_SCORE_65_80_MID_DV20_ONE_R` | 35 | 0.007509 | 57.14% | -0.033502 | 5/20 |
+| 149 | `04_DV20_2B_6B_CONTROLLED_PULLBACK` | 35 | 0.008152 | 65.71% | -0.029619 | 4/20 |
+| 148 | `03_SCORE_70_85_LOW_ATR_NEG_ROC20` | 28 | 0.005751 | 67.86% | -0.038226 | 5/19 |
+| 152 | `07_VOL_150_250_ONE_R_LOW_ATR` | 26 | 0.002450 | 53.85% | -0.029619 | 6/13 |
+| 151 | `06_VOL_150_250_LOW_ATR_NEG_ROC20` | 25 | 0.001634 | 52.00% | -0.029619 | 6/13 |
+
+C17 final decision:
+
+```text
+C17_RUNTIME_VALIDATED=true
+C17_REJECTED_AS_STRATEGY_CATALOG=true
+NEXT_CATALOG_REQUIRED=true
+NEXT_CATALOG_NOT_DESIGNED=true
+OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE — OOS proof missing
+PRODUCTION_READY=false
+```
+
+C17 next work is now superseded by active C18 Fase A diagnostic-first work. C18 must first analyze funnel and monthly coverage root cause before any catalog is designed. Any future C18 catalog must be based on IS diagnostic evidence and must not lower canonical gates, mutate C17/C16/C15/C14/C01-C07/R1/R2, use ticker/month blacklist, sector whitelist, best-of-failed binding, or run OOS before a valid IS candidate exists.
+
+## C16 FINAL BASELINE RETAINED
+
+C16 remains immutable and unchanged. C16 final status stays `C16_GRID_FAILED_IS_QUALITY`, `OOS_NOT_RUN=true`, and `production_ready=0`. C17 used C16 only as diagnostic direction, not as binding or promotion.
 
 ## C16 final operator validation evidence
 

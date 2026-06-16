@@ -1,0 +1,62 @@
+{
+  "artifact_type": "final_operator_validation_summary",
+  "runtime_proof": true,
+  "evidence_source": "operator_provided_transcript_plus_uploaded_c17_is_run_1_and_c17_drilldown_summary",
+  "catalog_code": "WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06",
+  "catalog_version": "C17",
+  "catalog_count": 12,
+  "catalog_hash": "d411bfbee6fb14c17d821aa92e7e0fea06925d67",
+  "runtime_extension_mode": "C17_QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16",
+  "operator_validation": {
+    "phpunit_c17": "PASS_11_TESTS_579_ASSERTIONS",
+    "full_watchlist_phpunit": "PASS_366_TESTS_8956_ASSERTIONS",
+    "seed_c17": "PASS",
+    "diagnose_batch_c17": "PASS_12_READY_0_BLOCKED",
+    "is_calibration_run_1_status": "C17_GRID_FAILED_IS_QUALITY",
+    "is_calibration_run_2_status": "C17_GRID_FAILED_IS_QUALITY",
+    "is_calibration_deterministic": true,
+    "artifact_hash_run_1": "23c30d70aeefa88701de8d9a59dd9217ee340ae6",
+    "artifact_hash_run_2": "23c30d70aeefa88701de8d9a59dd9217ee340ae6"
+  },
+  "strategy_quality": {
+    "valid_param_count": 0,
+    "failed_param_count": 12,
+    "reason_code": "WS_BT_C17_NO_VALID_IS_CANDIDATE",
+    "failure_reason_distribution": {
+      "WS_BT_EVAL_MIN_TRADES_FAIL": 12,
+      "WS_BT_EVAL_STABILITY_FAIL": 12,
+      "WS_BT_EVAL_ROBUST_RETURN_FAIL": 5
+    },
+    "downside_failure_count": 0,
+    "positive_average_return_rows": 7,
+    "min_trades_threshold": 120,
+    "max_observed_picks_count": 42,
+    "month_win_rate_min_all_rows": 0,
+    "month_avg_ret_net_min_range": [
+      -0.038226498504745805,
+      -0.02240667679508204
+    ],
+    "best_avg_return_param_id": 149,
+    "best_avg_return_row_code": "04_DV20_2B_6B_CONTROLLED_PULLBACK",
+    "best_avg_return": 0.00815218922367435,
+    "largest_sample_param_id": 150,
+    "largest_sample_row_code": "05_DV20_25_75_SCORE_68_82",
+    "largest_sample_picks_count": 42
+  },
+  "safety_boundaries": {
+    "oos_service_invoked": false,
+    "oos_repository_invoked": false,
+    "oos_table_unchanged": true,
+    "oos_executed": false,
+    "production_ready": false,
+    "best_is_binding": null,
+    "paramset_promoted": false
+  },
+  "next_step": {
+    "next_catalog_required": true,
+    "next_catalog": "C18",
+    "status": "NEXT_CATALOG_NOT_DESIGNED",
+    "must_remain_is_only": true,
+    "oos_allowed": false
+  }
+}

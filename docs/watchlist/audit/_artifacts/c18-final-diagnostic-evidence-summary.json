@@ -1,0 +1,128 @@
+{
+  "artifact_type": "C18_FINAL_DIAGNOSTIC_EVIDENCE_SUMMARY",
+  "runtime_proof": "operator_provided_output_summary",
+  "scope": "IS_ONLY_DIAGNOSTIC_FINAL_SUMMARY",
+  "finalized_at": "2026-06-16",
+  "source_catalog_code": "WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06",
+  "source_catalog_version": "C17",
+  "source_catalog_count": 12,
+  "source_catalog_hash": "d411bfbee6fb14c17d821aa92e7e0fea06925d67",
+  "canonical_min_trades": 120,
+  "operator_validation": {
+    "phpunit_c18_funnel": "PASS: 6 tests, 95 assertions",
+    "full_watchlist_phpunit": "PASS: 372 tests, 9051 assertions",
+    "command_help_confirmed_deep_funnel_options": true
+  },
+  "runtime_first_full_12": {
+    "status": "PASS",
+    "reason_code": "WS_BT_C18_FUNNEL_DIAGNOSTIC_READY",
+    "scope": "IS_ONLY_DIAGNOSTIC",
+    "diagnostic_param_count": 12,
+    "max_evaluated_picks_count": 42,
+    "max_recommended_count_before_price_evaluation": 0,
+    "params_with_empty_evaluation_months": 12,
+    "c18_catalog_implementation_deferred": true,
+    "artifact_hash": "b03a79896f3cfd985f6462bd1456494eaac8e405",
+    "oos_executed": 0,
+    "production_ready": 0
+  },
+  "deep_funnel_param_150": {
+    "status": "PASS",
+    "artifact_hash": "8b47719f082525a71346aeafd67a5927c1ed1bdd",
+    "raw": 402887,
+    "eligible": 40342,
+    "scored": 40342,
+    "top": 64,
+    "secondary": 0,
+    "recommended": 46,
+    "requested_pairs": 218,
+    "evaluated": 42,
+    "top_contributors": {
+      "dv20_guard": 1248306,
+      "volume_guard": 1110514,
+      "grouping_cutoff": 725090,
+      "atr_guard": 650785,
+      "score_window": 49403,
+      "price_availability_or_boundary_censoring": 12
+    }
+  },
+  "deep_funnel_param_149": {
+    "status": "PASS",
+    "artifact_hash": "3dd342f47f7e1397d7ec8defb9e15af26184ca33",
+    "raw": 402887,
+    "eligible": 39594,
+    "scored": 39594,
+    "top": 83,
+    "secondary": 0,
+    "recommended": 38,
+    "requested_pairs": 184,
+    "evaluated": 35,
+    "monthly_collapse_examples": [
+      {
+        "month": "2024-07",
+        "raw": 18813,
+        "eligible": 1935,
+        "scored": 1935,
+        "top": 1,
+        "recommended": 0
+      },
+      {
+        "month": "2023-08",
+        "raw": 16764,
+        "eligible": 1473,
+        "scored": 1473,
+        "top": 2,
+        "recommended": 0
+      },
+      {
+        "month": "2025-01",
+        "raw": 15548,
+        "eligible": 1376,
+        "scored": 1376,
+        "top": 4,
+        "recommended": 0
+      },
+      {
+        "month": "2024-11",
+        "raw": 16322,
+        "eligible": 1347,
+        "scored": 1347,
+        "top": 0,
+        "recommended": 0
+      },
+      {
+        "month": "2023-04",
+        "raw": 10294,
+        "eligible": 1173,
+        "scored": 1173,
+        "top": 0,
+        "recommended": 0
+      },
+      {
+        "month": "2024-06",
+        "raw": 14603,
+        "eligible": 1161,
+        "scored": 1161,
+        "top": 2,
+        "recommended": 0
+      }
+    ]
+  },
+  "root_cause_conclusion": {
+    "raw_candidate_not_insufficient": true,
+    "scoring_pool_available": true,
+    "primary_root_cause": "selection_collapse_after_scored_pool",
+    "secondary_root_cause": "volume_dv20_atr_entry_quality_grouping_guards_too_restrictive",
+    "monthly_empty_caused_by_selection_collapse": true,
+    "price_availability_not_primary": true
+  },
+  "final_decision": {
+    "c18_diagnostic_first": true,
+    "c18_phase_a_diagnostic_done": true,
+    "c18_catalog_implementation_deferred": true,
+    "c18_catalog_code": "NOT_CREATED",
+    "oos_not_run": true,
+    "production_ready": 0,
+    "next_step": "C19_STRATEGY_MODEL_REDESIGN_NOT_CATALOG_CHURN"
+  }
+}

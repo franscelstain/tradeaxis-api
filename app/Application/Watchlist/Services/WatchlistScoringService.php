@@ -551,7 +551,7 @@ class WatchlistScoringService
         $extensionMode = is_array($extension) ? (string) ($extension['mode'] ?? '') : '';
 
         $c07C14CatalogVersions = ['C07', 'C14'];
-        $extendedCatalogVersions = ['C07', 'C14', 'C15', 'C16'];
+        $extendedCatalogVersions = ['C07', 'C14', 'C15', 'C16', 'C17'];
 
         if (in_array($catalogVersion, $c07C14CatalogVersions, true)) {
             return true;
@@ -562,6 +562,7 @@ class WatchlistScoringService
                 'C07_SHORT_TERM_RANGE_SECTOR_CONFIRMATION',
                 'C15_CONTROLLED_PULLBACK_MID_LIQUIDITY_ANTI_OVEREXTENSION',
                 'C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY',
+                'C17_QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16',
             ], true);
     }
 

@@ -443,6 +443,9 @@ class WatchlistPlanGroupingService
         if ($mode === 'C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY') {
             return $this->c16QualityFloorFailures($item, $paramset);
         }
+        if ($mode === 'C17_QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16') {
+            return $this->c17QualityFloorFailures($item, $paramset);
+        }
 
         return [];
     }
@@ -1073,6 +1076,163 @@ class WatchlistPlanGroupingService
         }
 
         return array_values(array_unique($failures));
+    }
+
+
+    private function c17QualityFloorFailures(array $item, array $paramset): array
+    {
+        $extension = $paramset['bt_grid_resolution']['candidate_selection_extension'] ?? null;
+        if (! is_array($extension)
+            || (string) ($extension['mode'] ?? '') !== 'C17_QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16') {
+            return [];
+        }
+
+        $failures = [];
+        $scoreMetrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $momentum = is_array($item['factor_breakdown']['momentum'] ?? null)
+            ? $item['factor_breakdown']['momentum']
+            : [];
+
+        $bounds = is_array($extension['runtime_metric_bounds'] ?? null)
+            ? $extension['runtime_metric_bounds']
+            : [];
+        if (($bounds['dv20_between_catalog_min_and_strong'] ?? false) === true) {
+            $dv20 = $this->numericOrNull($scoreMetrics['dv20_idr'] ?? null);
+            $min = $this->numericOrNull($paramset['liquidity']['min_dv20_idr'] ?? null);
+            $max = $this->numericOrNull($paramset['liquidity']['dv20_strong_idr'] ?? null);
+            if ($dv20 === null || $min === null || $max === null || $dv20 < $min || $dv20 > $max) {
+                $failures[] = 'WATCHLIST_C17_DV20_SAMPLE_RECOVERY_RANGE_FAIL';
+            }
+        }
+
+        if (($bounds['vol_ratio_between_catalog_min_and_strong'] ?? false) === true) {
+            $volRatio = $this->numericOrNull($scoreMetrics['vol_ratio'] ?? null);
+            $min = $this->numericOrNull($paramset['volume']['min_vol_ratio'] ?? null);
+            $max = $this->numericOrNull($paramset['volume']['strong_vol_ratio'] ?? null);
+            if ($volRatio === null || $min === null || $max === null || $volRatio < $min || $volRatio > $max) {
+                $failures[] = 'WATCHLIST_C17_VOLUME_RECOVERY_RANGE_FAIL';
+            }
+        }
+
+        if (($bounds['atr14_between_catalog_min_and_max'] ?? false) === true) {
+            $atr = $this->numericOrNull($scoreMetrics['atr14_pct'] ?? null);
+            $min = $this->numericOrNull($paramset['risk']['min_atr14_pct'] ?? null);
+            $max = $this->numericOrNull($paramset['risk']['max_atr14_pct'] ?? null);
+            if ($atr === null || $min === null || $max === null || $atr < $min || $atr > $max) {
+                $failures[] = 'WATCHLIST_C17_ATR_SEGMENT_RANGE_FAIL';
+            }
+        }
+
+        if (($bounds['roc20_between_catalog_roc_lo_and_roc_hi'] ?? false) === true) {
+            $roc20 = $this->fractionOrNull($momentum['roc20'] ?? $scoreMetrics['roc20'] ?? null);
+            $rocLo = $this->numericOrNull($paramset['setup']['roc_lo'] ?? null);
+            $rocHi = $this->numericOrNull($paramset['setup']['roc_hi'] ?? null);
+            if ($roc20 === null || $rocLo === null || $rocHi === null || $roc20 < $rocLo || $roc20 > $rocHi) {
+                $failures[] = 'WATCHLIST_C17_ROC20_SEGMENT_RANGE_FAIL';
+            }
+        }
+
+        $shortTermBounds = is_array($extension['short_term_momentum_bounds'] ?? null)
+            ? $extension['short_term_momentum_bounds']
+            : [];
+        foreach ($shortTermBounds as $metric => $range) {
+            if (! is_array($range)) {
+                continue;
+            }
+            $value = $this->fractionOrNull($momentum[$metric] ?? $scoreMetrics[$metric] ?? null);
+            $min = $this->numericOrNull($range['min'] ?? null);
+            $max = $this->numericOrNull($range['max'] ?? null);
+            if ($value === null || $min === null || $max === null || $value < $min || $value > $max) {
+                $failures[] = 'WATCHLIST_C17_ROC5_CONTROLLED_PULLBACK_RANGE_FAIL';
+            }
+        }
+
+        $score = $this->numericOrNull($item['score_total'] ?? null);
+        [$scoreMin, $scoreMax] = $this->c17ScoreWindowBounds(
+            $extension,
+            (string) ($paramset['bt_catalog']['row_code'] ?? '')
+        );
+        if ($scoreMin !== null && ($score === null || $score < $scoreMin)) {
+            $failures[] = 'WATCHLIST_C17_SCORE_WINDOW_LOW_FAIL';
+        }
+        if ($scoreMax !== null && ($score === null || $score > $scoreMax)) {
+            $failures[] = 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL';
+        }
+
+        $scoreChase = is_array($extension['blocked_score_chase'] ?? null) ? $extension['blocked_score_chase'] : [];
+        $chaseMin = $this->numericOrNull($scoreChase['score_total_min'] ?? null);
+        $chaseMax = $this->numericOrNull($scoreChase['score_total_max'] ?? null);
+        if ($score !== null && $chaseMin !== null && $chaseMax !== null && $score >= $chaseMin && $score <= $chaseMax) {
+            $failures[] = (string) ($scoreChase['reason_code'] ?? 'WATCHLIST_C17_SCORE_CHASE_BLOCKED');
+        }
+
+        $componentMinimums = is_array($extension['score_component_min'] ?? null)
+            ? $extension['score_component_min']
+            : [];
+        $componentValues = [];
+        $componentPassCount = 0;
+        foreach ($componentMinimums as $component => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->componentValue($item, (string) $component);
+            if ($value === null) {
+                $failures[] = 'WATCHLIST_C17_SCORE_COMPONENT_COUNT_FAIL';
+                continue;
+            }
+            $componentValues[] = $value;
+            if ($value >= (float) $minimum) {
+                $componentPassCount++;
+            }
+        }
+
+        $requiredComponentPassCount = (int) ($extension['score_component_required_pass_count'] ?? count($componentMinimums));
+        if ($componentPassCount < $requiredComponentPassCount) {
+            $failures[] = 'WATCHLIST_C17_SCORE_COMPONENT_COUNT_FAIL';
+        }
+        $componentAverageMin = $this->numericOrNull($extension['score_component_average_min'] ?? null);
+        if ($componentAverageMin !== null && $componentValues !== []
+            && (array_sum($componentValues) / count($componentValues)) < $componentAverageMin) {
+            $failures[] = 'WATCHLIST_C17_SCORE_COMPONENT_AVERAGE_FAIL';
+        }
+
+        $trendFloors = is_array($extension['trend_metric_floor'] ?? null)
+            ? $extension['trend_metric_floor']
+            : [];
+        $trendPassCount = 0;
+        foreach ($trendFloors as $metric => $minimum) {
+            if (! is_numeric($minimum)) {
+                continue;
+            }
+            $value = $this->fractionOrNull($momentum[$metric] ?? $scoreMetrics[$metric] ?? null);
+            if ($value !== null && $value >= (float) $minimum) {
+                $trendPassCount++;
+            }
+        }
+        $requiredTrendPassCount = (int) ($extension['trend_metric_required_pass_count'] ?? count($trendFloors));
+        if ($trendPassCount < $requiredTrendPassCount) {
+            $failures[] = 'WATCHLIST_C17_TREND_CONFIRM_COUNT_FAIL';
+        }
+
+        $failures = array_values(array_unique($failures));
+        if ($failures !== []) {
+            $failures[] = (string) ($extension['reason_code'] ?? 'WATCHLIST_C17_ENTRY_QUALITY_FLOOR_FAIL');
+        }
+
+        return array_values(array_unique($failures));
+    }
+
+    private function c17ScoreWindowBounds(array $extension, string $rowCode): array
+    {
+        $windows = is_array($extension['score_windows_by_row_code'] ?? null)
+            ? $extension['score_windows_by_row_code']
+            : [];
+        $window = is_array($windows[$rowCode] ?? null) ? $windows[$rowCode] : [];
+
+        return [
+            $this->numericOrNull($window['min'] ?? $extension['score_total_min'] ?? null),
+            $this->numericOrNull($window['max'] ?? $extension['score_total_max'] ?? null),
+        ];
     }
 
     private function c07MetricValue(string $metric, array $scoreMetrics, array $momentum, array $breakout): ?float

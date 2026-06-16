@@ -13,6 +13,7 @@ use App\Application\Watchlist\Services\WatchlistBacktestC07ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC14ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC15ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC16ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestC17ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestR2ParamGridCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -310,6 +311,11 @@ class WatchlistBacktestParamGridRepository
                 WatchlistBacktestC16ParamGridCatalog::CATALOG_VERSION,
                 WatchlistBacktestC16ParamGridCatalog::hash(),
                 WatchlistBacktestC16ParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestC17ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestC17ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestC17ParamGridCatalog::hash(),
+                WatchlistBacktestC17ParamGridCatalog::CATALOG_COUNT,
             ],
         ];
         if (! isset($known[$code])) {

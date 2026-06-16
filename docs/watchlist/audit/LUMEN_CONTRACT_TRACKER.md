@@ -15,11 +15,146 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 
 
 Session:
-`WATCHLIST - C16 FINAL OPERATOR VALIDATION AND STRATEGY QUALITY RESULT SESSION`
+`WATCHLIST - C18 FINAL DIAGNOSTIC-FIRST FUNNEL AND MONTHLY COVERAGE RESULT`
 
 Current status:
 
-`C16_IMPLEMENTED / C16_RUNTIME_VALIDATED / C16_SEED_PASS / C16_DIAGNOSE_BATCH_PASS / C16_IS_CALIBRATION_DETERMINISTIC / C16_GRID_FAILED_IS_QUALITY / C16_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C18_DIAGNOSTIC_FIRST / C18_PHASE_A_DIAGNOSTIC_DONE / C18_FUNNEL_DIAGNOSTIC_RUNTIME_VALIDATED / C18_CATALOG_IMPLEMENTATION_DEFERRED / C17_UNCHANGED / C01_TO_C17_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C18 final contract status:
+
+- `WL-CONTRACT-008`: PASS AS DIAGNOSTIC / CATALOG DEFERRED. C18 is traceable to C17 failed-IS evidence and proves the next action must be model redesign, not blind catalog churn. No C18 immutable catalog exists.
+- `WL-CONTRACT-009`: PASS. Operator provided C18 funnel PHPUnit, full Watchlist PHPUnit, runtime-first full 12 diagnostic, and deep funnel diagnostics for params 150 and 149.
+- `WL-CONTRACT-010`: PASS. All C18 diagnostic outputs keep `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`; no OOS proof path is introduced.
+- `WL-CONTRACT-011`: FAIL AS STRATEGY CANDIDATE / PASS AS DIAGNOSTIC. C18 proves no catalog should be promoted: full 12 max evaluated picks remains `42` versus canonical `120`, and all 12 rows have empty evaluation months.
+- `WL-CONTRACT-013`: PASS AS FASE A. C18 diagnostic service, command, tests, operator command doc, audit result, design note, and final evidence artifact are present.
+- `WL-CONTRACT-014`: PASS. Implementation status, contract tracker, C18 diagnostic result, operator commands, policy note, and final evidence summary are synchronized.
+- `WL-CONTRACT-015`: NOT_READY. Promotion and production readiness remain locked because C18 has no valid IS candidate and no OOS proof.
+
+C18 boundary commitments:
+
+```text
+watchlist_scope_only=true
+weekly_swing_policy_only=true
+recommendation_from_PLAN_only=true
+recommendation_can_exist_without_confirm=true
+confirm_eligibility_from_candidate_PLAN=true
+non_recommended_candidate_can_confirm=true
+confirm_does_not_mutate_recommendation=true
+recommended_plus_confirmed_means_confirm_strengthens_only=true
+C18_CATALOG_IMPLEMENTATION_DEFERRED=true
+C18_CATALOG_CODE=NOT_CREATED
+C17_UNCHANGED=true
+C01_TO_C17_IMMUTABLE=true
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C18 validation evidence:
+
+```text
+PHPUNIT_C18_FUNNEL=PASS: 6 tests, 95 assertions
+FULL_WATCHLIST_PHPUNIT=PASS: 372 tests, 9051 assertions
+RUNTIME_FIRST_FULL_12=PASS: artifact_hash=b03a79896f3cfd985f6462bd1456494eaac8e405
+DEEP_FUNNEL_PARAM_150=PASS: artifact_hash=8b47719f082525a71346aeafd67a5927c1ed1bdd
+DEEP_FUNNEL_PARAM_149=PASS: artifact_hash=3dd342f47f7e1397d7ec8defb9e15af26184ca33
+```
+
+C18 diagnostic conclusion:
+
+```text
+RAW_CANDIDATE_NOT_INSUFFICIENT=true
+SCORING_POOL_AVAILABLE=true
+PRIMARY_ROOT_CAUSE=selection_collapse_after_scored_pool
+SECONDARY_ROOT_CAUSE=volume_dv20_atr_entry_quality_grouping_guards_too_restrictive
+MONTHLY_EMPTY_CAUSED_BY_SELECTION_COLLAPSE=true
+PRICE_AVAILABILITY_NOT_PRIMARY=true
+```
+
+Required next contract work:
+
+```text
+C19_STRATEGY_MODEL_REDESIGN_REQUIRED=true
+DO_NOT_CREATE_C18_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_SET_PRODUCTION_READY=true
+```
+
+## PRIOR SESSION - C17 FINAL OPERATOR VALIDATION AND STRATEGY QUALITY RESULT
+
+
+Session:
+`WATCHLIST - C17 FINAL OPERATOR VALIDATION AND STRATEGY QUALITY RESULT SESSION`
+
+Current status:
+
+`C17_IMPLEMENTED_SOURCE_LEVEL / C17_RUNTIME_VALIDATED / C17_PHPUNIT_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C17_SEED_PASS / C17_DIAGNOSE_BATCH_PASS / C17_IS_CALIBRATION_DETERMINISTIC / C17_GRID_FAILED_IS_QUALITY / C17_REJECTED_AS_STRATEGY_CATALOG / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C17 final contract status:
+
+- `WL-CONTRACT-008`: PASS AS TRACEABLE / FAIL AS STRATEGY QUALITY. C17 is traceable as a new immutable catalog derived from C16 final failed-IS evidence, but no C17 row passed canonical IS quality gates.
+- `WL-CONTRACT-009`: PASS. Operator provided PHPUnit, seed, diagnose-batch, and deterministic IS calibration outputs for C17.
+- `WL-CONTRACT-010`: PASS. OOS non-invocation is proven by operator output: `oos_service_invoked=0`, `oos_repository_invoked=0`, `oos_table_unchanged=1`, `oos_executed=0`.
+- `WL-CONTRACT-011`: FAIL AS STRATEGY QUALITY / PASS AS EVALUATED. C17 reached canonical gates but produced `is_valid_param_count=0`; therefore it is rejected as a strategy catalog.
+- `WL-CONTRACT-013`: PASS. C17 catalog, factory resolution, runtime extension, seed command, repository guard, static tests, operator command docs, final evidence artifact, and C17 drilldown artifacts are present.
+- `WL-CONTRACT-014`: PASS. C17 implementation status, contract tracker, operator commands, design result, policy note, and artifact summary are synchronized.
+- `WL-CONTRACT-015`: NOT_READY. Promotion and production readiness remain locked because C17 has no valid IS candidate and no OOS proof.
+
+C17 boundary commitments:
+
+```text
+watchlist_scope_only=true
+weekly_swing_policy_only=true
+recommendation_from_PLAN_only=true
+recommendation_can_exist_without_confirm=true
+confirm_eligibility_from_candidate_PLAN=true
+non_recommended_candidate_can_confirm=true
+confirm_does_not_mutate_recommendation=true
+recommended_plus_confirmed_means_confirm_strengthens_only=true
+C17_UNCHANGED_AFTER_RELEASE=true
+C16_UNCHANGED=true
+C01_TO_C17_IMMUTABLE=true
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C17 final identity and evidence:
+
+```text
+C17_CATALOG_CODE=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06
+C17_CATALOG_VERSION=C17
+C17_CATALOG_COUNT=12
+C17_CATALOG_HASH=d411bfbee6fb14c17d821aa92e7e0fea06925d67
+C17_RUNTIME_EXTENSION_MODE=C17_QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16
+PHPUNIT_C17=PASS: 11 tests, 579 assertions
+FULL_WATCHLIST_PHPUNIT=PASS: 366 tests, 8956 assertions
+C17_SEED_PASS=true
+C17_DIAGNOSE_BATCH_PASS=true
+C17_IS_CALIBRATION_DETERMINISTIC=true
+C17_IS_ARTIFACT_HASH=23c30d70aeefa88701de8d9a59dd9217ee340ae6
+C17_VALID_PARAM_COUNT=0
+C17_FAILED_PARAM_COUNT=12
+C17_FAILURE_REASON_DISTRIBUTION=MIN_TRADES:12,STABILITY:12,ROBUST_RETURN:5,DOWNSIDE:0
+```
+
+C17 final strategy-quality verdict:
+
+```text
+C17_GRID_FAILED_IS_QUALITY=true
+reason_code=WS_BT_C17_NO_VALID_IS_CANDIDATE
+best_is_binding=null
+OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE — OOS proof missing
+PRODUCTION_READY=false
+```
+
+Required next contract work from C17 is now superseded by active C18 Fase A:
+
+```text
+WATCHLIST - C18 DIAGNOSTIC-FIRST FUNNEL AND MONTHLY COVERAGE SOURCE SESSION
+```
+
+C18 must remain diagnostic-first until funnel/monthly evidence justifies Fase B. Any future C18 catalog must be a new immutable catalog and must not mutate C17/C16/C15/C14/C01-C07/R1/R2, lower canonical gates, run OOS, promote failed rows, blacklist tickers/months, whitelist sectors, or change PLAN/RECOMMENDATION/CONFIRM boundaries.
 
 C16 final contract status:
 

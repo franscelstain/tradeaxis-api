@@ -118,8 +118,8 @@ class WatchlistBacktestC16StaticGuardTest extends TestCase
         foreach ([$candidateUniverse, $scoring, $grouping] as $source) {
             $this->assertStringContainsString('C16_CONTROLLED_PULLBACK_SCORE_WINDOW_VOLUME_QUALITY_RECOVERY', $source);
         }
-        $this->assertStringContainsString("['C07', 'C14', 'C15', 'C16']", $candidateUniverse);
-        $this->assertStringContainsString("['C07', 'C14', 'C15', 'C16']", $scoring);
+        $this->assertMatchesRegularExpression('/\$extendedCatalogVersions\s*=\s*\[[^\]]*\'C16\'[^\]]*\]/', $candidateUniverse);
+        $this->assertMatchesRegularExpression('/\$extendedCatalogVersions\s*=\s*\[[^\]]*\'C16\'[^\]]*\]/', $scoring);
         $this->assertStringContainsString("'roc5'", $candidateUniverse);
         $this->assertStringContainsString("'roc5'", $scoring);
         $this->assertStringContainsString('WATCHLIST_C16_SCORE_WINDOW_LOW_FAIL', $grouping);
