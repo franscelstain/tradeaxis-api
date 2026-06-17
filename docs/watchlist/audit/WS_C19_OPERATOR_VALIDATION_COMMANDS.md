@@ -446,3 +446,123 @@ If best_sample_qualified_profile exists and quality_ok=true -> continue only to 
 If best_any_sample improves but sample-qualified quality_ok=false -> continue tuning; do not catalog.
 If only tiny sample looks good -> record as diagnostic clue only.
 ```
+
+## 11. C19 Tahap 5C — Sample-Quality Frontier Diagnostic
+
+Run tests after applying Tahap 5C patch:
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC19"
+vendor\bin\phpunit tests\Unit\Watchlist
+```
+
+Run focused frontier diagnostic first:
+
+```powershell
+php artisan watchlist:backtest-c19-quality-recovery-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --param-ids=148,152,155 `
+  --profile-codes=Q11_FRONTIER_L0_STRICT_NO_OVEREXTENSION_CORE,Q12_FRONTIER_L1_LOW_ATR_NO_OVEREXTENSION_90,Q13_FRONTIER_L2_DOWNSIDE_BACKFILL_110,Q14_FRONTIER_L3_CONTROLLED_OVEREXTENSION_125,Q15_FRONTIER_L4_BASELINE_BOUNDARY_135 `
+  --progress `
+  --output=storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5c-frontier-focused.json `
+  --overwrite
+```
+
+If focused run is fast and useful, run all-param frontier:
+
+```powershell
+php artisan watchlist:backtest-c19-quality-recovery-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --profile-codes=Q11_FRONTIER_L0_STRICT_NO_OVEREXTENSION_CORE,Q12_FRONTIER_L1_LOW_ATR_NO_OVEREXTENSION_90,Q13_FRONTIER_L2_DOWNSIDE_BACKFILL_110,Q14_FRONTIER_L3_CONTROLLED_OVEREXTENSION_125,Q15_FRONTIER_L4_BASELINE_BOUNDARY_135 `
+  --progress `
+  --output=storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5c-frontier-all-param.json `
+  --overwrite
+```
+
+Inspect frontier table:
+
+```powershell
+$run = Get-Content storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5c-frontier-focused.json | ConvertFrom-Json
+
+$run.sample_quality_frontier_table |
+    Select-Object `
+        profile_code,
+        frontier_level,
+        param_id,
+        @{n='target';e={$_.frontier_target_selected_count}},
+        @{n='selected';e={$_.proposed_recommended_count}},
+        @{n='evaluated';e={$_.evaluated_picks_count}},
+        @{n='avg';e={[math]::Round($_.avg_ret_net_top * 100, 2)}},
+        @{n='median';e={[math]::Round($_.median_ret_net_top * 100, 2)}},
+        @{n='p25';e={[math]::Round($_.p25_ret_net_top * 100, 2)}},
+        @{n='win';e={[math]::Round($_.win_rate_top * 100, 2)}},
+        period_fail_count,
+        sample_gate,
+        quality_gate |
+    Format-Table -AutoSize
+```
+
+Decision rule:
+
+```text
+If no frontier row has sample_gate=true and quality_gate=true -> do not catalog; stop C19 catalog path or redesign concept.
+If a frontier row has sample_gate=true and quality_gate=true -> repeat IS proof only, still no OOS and no catalog.
+If only small-sample frontier is positive -> record as diagnostic clue only.
+```
+## 11. C19 Final Documentation / Closure Evidence
+
+C19 final evidence is now closed by Tahap 5C. No further C19 catalog command is authorized.
+
+Final operator evidence to record:
+
+```text
+PHPUNIT_C19=PASS: OK (13 tests, 192 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (385 tests, 9243 assertions)
+TAHAP_5C_FRONTIER_FOCUSED=PASS: artifact_hash=971d1186bff72e185db59dc1c223d423186a7ad4
+TAHAP_5C_FRONTIER_ALL_PARAM=PASS: artifact_hash=18ae8b1f1dcfc5ddecc2279d3c9fd0ce69079e6d
+profiles_with_sample_target_reached=2
+profiles_with_quality_improvement=0
+profiles_with_quality_target_reached=0
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Final review command for frontier table:
+
+```powershell
+$run = Get-Content storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5c-frontier-all-param.json | ConvertFrom-Json
+
+$run.sample_quality_frontier_table |
+    Select-Object `
+        profile_code,
+        frontier_level,
+        param_id,
+        @{n='target';e={$_.frontier_target_selected_count}},
+        @{n='selected';e={$_.proposed_recommended_count}},
+        @{n='evaluated';e={$_.evaluated_picks_count}},
+        @{n='avg';e={[math]::Round($_.avg_ret_net_top * 100, 2)}},
+        @{n='median';e={[math]::Round($_.median_ret_net_top * 100, 2)}},
+        @{n='p25';e={[math]::Round($_.p25_ret_net_top * 100, 2)}},
+        @{n='win';e={[math]::Round($_.win_rate_top * 100, 2)}},
+        period_fail_count,
+        sample_gate,
+        quality_gate |
+    Sort-Object frontier_level, avg -Descending |
+    Format-Table -AutoSize
+```
+
+Final verdict expected from the evidence:
+
+```text
+C19_DIAGNOSTIC_SUCCESS=true
+C19_CATALOG_CANDIDATE_FAILED=true
+C19_STOP_TUNING=true
+NEXT_STEP=C20_REGIME_AND_TRADE_DATE_QUALITY_GATE_DESIGN
+```
+
+Do not run C19 OOS, do not promote C19, do not seed a C19 catalog, and do not set `production_ready=1`.

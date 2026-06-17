@@ -3431,3 +3431,85 @@ PHPUNIT_C19_FILTER=OPERATOR_VALIDATION_REQUIRED
 FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
 C19_TAHAP_5B_FOCUSED_DIAGNOSTIC=OPERATOR_VALIDATION_REQUIRED
 ```
+
+## Audit Append - C19 Tahap 5C Sample-Quality Frontier Diagnostic
+
+C19 Tahap 5C has been implemented as an IS-only sample-quality frontier diagnostic after Tahap 5B proved that hybrid backfill profiles still failed to reach the 120 evaluated-pick sample target.
+
+Source-level changes:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC19ProposedSelectionPriceDiagnosticService.php
+app/Application/Watchlist/Services/WatchlistBacktestC19QualityRecoveryDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC19QualityRecoveryDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC19QualityRecoveryDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC19StaticGuardTest.php
+docs/watchlist/audit/WS_C19_QUALITY_RECOVERY_TUNING_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C19_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+New frontier profiles:
+
+```text
+Q11_FRONTIER_L0_STRICT_NO_OVEREXTENSION_CORE
+Q12_FRONTIER_L1_LOW_ATR_NO_OVEREXTENSION_90
+Q13_FRONTIER_L2_DOWNSIDE_BACKFILL_110
+Q14_FRONTIER_L3_CONTROLLED_OVEREXTENSION_125
+Q15_FRONTIER_L4_BASELINE_BOUNDARY_135
+```
+
+Status markers:
+
+```text
+C19_TAHAP_5C_SAMPLE_QUALITY_FRONTIER_SOURCE_IMPLEMENTED=true
+C19_TAHAP_5C_OPERATOR_VALIDATION_REQUIRED=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+No runtime proof is claimed by this source patch. Operator must run PHPUnit and the frontier diagnostic commands before any conclusion.
+## Watchlist C19 final diagnostic closure
+
+C19 is closed as diagnostic success and catalog-candidate failure.
+
+Operator evidence:
+
+```text
+PHPUNIT_C19=PASS: OK (13 tests, 192 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (385 tests, 9243 assertions)
+C19_TAHAP_5C_FRONTIER_FOCUSED=PASS: artifact_hash=971d1186bff72e185db59dc1c223d423186a7ad4
+C19_TAHAP_5C_FRONTIER_ALL_PARAM=PASS: artifact_hash=18ae8b1f1dcfc5ddecc2279d3c9fd0ce69079e6d
+profiles_with_sample_target_reached=2
+profiles_with_quality_improvement=0
+profiles_with_quality_target_reached=0
+```
+
+Final frontier result:
+
+```text
+L0/L1 quality-positive core: evaluated=53, avg=0.00%, median=+0.55%, win=52.83%, sample_gate=false
+L2 larger backfill: evaluated=104, avg=-0.18%, median=-0.05%, win=42.31%, sample_gate=false
+L3 sample-qualified: evaluated=121, avg=-0.18%, median=-0.05%, win=39.67%, quality_gate=false
+L4 sample-qualified baseline boundary: evaluated=124, avg=-0.18%, median=-0.05%, win=43.55%, quality_gate=false
+```
+
+C19 final status:
+
+```text
+C19_DIAGNOSTIC_SUCCESS=true
+C19_SAMPLE_RECOVERY_SOLVED=true
+C19_PRICE_EVALUATION_CONFIRMED=true
+C19_QUALITY_SIGNAL_FOUND=true
+C19_QUALITY_CORE_SAMPLE_TOO_SMALL=true
+C19_SAMPLE_QUALIFIED_FRONTIER_QUALITY_FAILED=true
+C19_CATALOG_CANDIDATE_FAILED=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+C19_STOP_TUNING=true
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Next implementation direction is C20 regime/trade-date quality gate design. C19 does not unlock OOS proof, promotion, production readiness, or catalog creation.

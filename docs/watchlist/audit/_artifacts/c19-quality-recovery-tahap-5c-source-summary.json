@@ -1,0 +1,36 @@
+{
+  "artifact_type": "C19_QUALITY_RECOVERY_TAHAP_5C_SOURCE_SUMMARY",
+  "status": "SOURCE_LEVEL_IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED",
+  "scope": "IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC",
+  "reason_code": "WS_BT_C19_TAHAP_5C_SAMPLE_QUALITY_FRONTIER_SOURCE_READY",
+  "operator_evidence_driving_patch": {
+    "tahap_5b_all_param": {
+      "artifact_hash": "2b1bccba66daaed7b81073324841838604ae1558",
+      "profiles_with_sample_target_reached": 0,
+      "profiles_with_quality_target_reached": 0,
+      "best_sample_qualified_profile_code": "",
+      "interpretation": "quality-positive profiles remained small-sample; larger-sample profiles remained negative"
+    }
+  },
+  "new_frontier_profiles": [
+    "Q11_FRONTIER_L0_STRICT_NO_OVEREXTENSION_CORE",
+    "Q12_FRONTIER_L1_LOW_ATR_NO_OVEREXTENSION_90",
+    "Q13_FRONTIER_L2_DOWNSIDE_BACKFILL_110",
+    "Q14_FRONTIER_L3_CONTROLLED_OVEREXTENSION_125",
+    "Q15_FRONTIER_L4_BASELINE_BOUNDARY_135"
+  ],
+  "new_artifact_fields": [
+    "sample_quality_frontier_table",
+    "sample_quality_frontier_interpretation",
+    "frontier_level_count",
+    "best_frontier_profile_code",
+    "best_frontier_evaluated_picks_count"
+  ],
+  "safety_boundaries": {
+    "C19_CATALOG_IMPLEMENTATION_DEFERRED": true,
+    "C19_CATALOG_CODE": "NOT_CREATED",
+    "OOS_NOT_RUN": true,
+    "production_ready": 0,
+    "quality_profiles_use_price_outcome_for_selection": false
+  }
+}

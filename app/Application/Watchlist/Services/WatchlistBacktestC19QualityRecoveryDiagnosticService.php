@@ -112,6 +112,8 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'baseline_profile_code' => WatchlistBacktestC19ProposedSelectionPriceDiagnosticService::DEFAULT_QUALITY_PROFILE,
             'quality_gate_definition' => $this->qualityGateDefinition(),
             'profile_summaries' => $ranked,
+            'sample_quality_frontier_table' => $this->sampleQualityFrontierTable($ranked),
+            'sample_quality_frontier_interpretation' => $this->sampleQualityFrontierInterpretation($ranked),
             'best_profile_summary' => $ranked[0] ?? null,
             'best_any_sample_profile_summary' => $this->bestAnySampleProfileSummary($profileRuns),
             'best_sample_qualified_profile_summary' => $this->bestSampleQualifiedProfileSummary($profileRuns),
@@ -147,6 +149,9 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'best_evaluated_picks_count' => $ranked[0]['best_param']['evaluated_picks_count'] ?? null,
             'best_sample_qualified_profile_code' => (string) (($this->bestSampleQualifiedProfileSummary($profileRuns)['profile_code'] ?? '')),
             'best_any_sample_profile_code' => (string) (($this->bestAnySampleProfileSummary($profileRuns)['profile_code'] ?? '')),
+            'frontier_level_count' => count($this->sampleQualityFrontierTable($ranked)),
+            'best_frontier_profile_code' => (string) (($this->bestFrontierSummary($ranked)['profile_code'] ?? '')),
+            'best_frontier_evaluated_picks_count' => $this->bestFrontierSummary($ranked)['best_param']['evaluated_picks_count'] ?? null,
             'profiles_with_sample_target_reached' => count(array_filter($ranked, function (array $summary): bool {
                 return ($summary['best_param']['evaluated_sample_target_reached'] ?? false) === true;
             })),
@@ -236,6 +241,14 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'stop_to_target_ratio' => $target > 0 ? $stop / $target : null,
             'evaluated_sample_target_reached' => $sampleReached,
             'quality_target_reached' => $sampleReached && $avg !== null && $avg >= 0.0 && $median !== null && $median >= 0.0 && $win !== null && $win >= 0.45,
+            'frontier_level' => (int) ($diag['quality_profile_diagnostic']['stage_counts']['frontier_level'] ?? -1),
+            'frontier_target_selected_count' => (int) ($diag['quality_profile_diagnostic']['stage_counts']['frontier_target_selected_count'] ?? 0),
+            'frontier_l0_count' => (int) ($diag['quality_profile_diagnostic']['stage_counts']['frontier_l0_count'] ?? 0),
+            'frontier_l1_count' => (int) ($diag['quality_profile_diagnostic']['stage_counts']['frontier_l1_count'] ?? 0),
+            'frontier_l2_count' => (int) ($diag['quality_profile_diagnostic']['stage_counts']['frontier_l2_count'] ?? 0),
+            'frontier_l3_count' => (int) ($diag['quality_profile_diagnostic']['stage_counts']['frontier_l3_count'] ?? 0),
+            'frontier_l4_count' => (int) ($diag['quality_profile_diagnostic']['stage_counts']['frontier_l4_count'] ?? 0),
+            'frontier_rejected_count' => (int) ($diag['quality_profile_diagnostic']['stage_counts']['frontier_rejected_count'] ?? 0),
             'profile_removed_reason_counts' => $diag['quality_profile_diagnostic']['removed_reason_counts'] ?? [],
         ];
     }
@@ -420,6 +433,117 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
         return $qualified[0] ?? null;
     }
 
+    private function sampleQualityFrontierTable(array $ranked): array
+    {
+        $rows = [];
+        foreach ($ranked as $summary) {
+            $profile = (string) ($summary['profile_code'] ?? '');
+            $definition = is_array($summary['profile_definition'] ?? null) ? $summary['profile_definition'] : [];
+            if (empty($definition['sample_quality_frontier'])) {
+                continue;
+            }
+            $best = is_array($summary['best_param'] ?? null) ? $summary['best_param'] : [];
+            $rows[] = [
+                'profile_code' => $profile,
+                'frontier_level' => (int) ($definition['frontier_level'] ?? ($best['frontier_level'] ?? -1)),
+                'param_id' => $best['param_id'] ?? null,
+                'row_code' => $best['row_code'] ?? null,
+                'frontier_target_selected_count' => $best['frontier_target_selected_count'] ?? null,
+                'proposed_recommended_count' => $best['proposed_recommended_count'] ?? null,
+                'evaluated_picks_count' => $best['evaluated_picks_count'] ?? null,
+                'avg_ret_net_top' => $best['avg_ret_net_top'] ?? null,
+                'median_ret_net_top' => $best['median_ret_net_top'] ?? null,
+                'p25_ret_net_top' => $best['p25_ret_net_top'] ?? null,
+                'win_rate_top' => $best['win_rate_top'] ?? null,
+                'period_fail_count' => $best['period_fail_count'] ?? null,
+                'stop_count' => $best['stop_count'] ?? null,
+                'target_count' => $best['target_count'] ?? null,
+                'sample_gate' => ($best['evaluated_sample_target_reached'] ?? false) === true,
+                'quality_gate' => ($best['quality_target_reached'] ?? false) === true,
+                'frontier_l0_count' => $best['frontier_l0_count'] ?? null,
+                'frontier_l1_count' => $best['frontier_l1_count'] ?? null,
+                'frontier_l2_count' => $best['frontier_l2_count'] ?? null,
+                'frontier_l3_count' => $best['frontier_l3_count'] ?? null,
+                'frontier_l4_count' => $best['frontier_l4_count'] ?? null,
+            ];
+        }
+        usort($rows, function (array $left, array $right): int {
+            return ((int) ($left['frontier_level'] ?? 99)) <=> ((int) ($right['frontier_level'] ?? 99));
+        });
+        return array_values($rows);
+    }
+
+    private function bestFrontierSummary(array $ranked): ?array
+    {
+        $frontier = array_values(array_filter($ranked, function (array $summary): bool {
+            $definition = is_array($summary['profile_definition'] ?? null) ? $summary['profile_definition'] : [];
+            return ! empty($definition['sample_quality_frontier']);
+        }));
+        if ($frontier === []) {
+            return null;
+        }
+        usort($frontier, function (array $left, array $right): int {
+            $l = $left['best_param'] ?? [];
+            $r = $right['best_param'] ?? [];
+            foreach ([
+                ['quality_target_reached', false],
+                ['evaluated_sample_target_reached', false],
+                ['avg_ret_net_top', false],
+                ['median_ret_net_top', false],
+                ['win_rate_top', false],
+                ['evaluated_picks_count', false],
+            ] as $sort) {
+                [$key, $ascending] = $sort;
+                $a = $l[$key] ?? ($ascending ? PHP_INT_MAX : -INF);
+                $b = $r[$key] ?? ($ascending ? PHP_INT_MAX : -INF);
+                if ($a == $b) {
+                    continue;
+                }
+                $cmp = $a <=> $b;
+                return $ascending ? $cmp : -$cmp;
+            }
+            return strcmp((string) ($left['profile_code'] ?? ''), (string) ($right['profile_code'] ?? ''));
+        });
+        return $frontier[0] ?? null;
+    }
+
+    private function sampleQualityFrontierInterpretation(array $ranked): array
+    {
+        $table = $this->sampleQualityFrontierTable($ranked);
+        if ($table === []) {
+            return [
+                'frontier_evaluated' => false,
+                'decision' => 'NO_FRONTIER_PROFILES_RUN',
+            ];
+        }
+        $sampleQualified = array_values(array_filter($table, function (array $row): bool {
+            return ($row['sample_gate'] ?? false) === true;
+        }));
+        $qualityQualified = array_values(array_filter($table, function (array $row): bool {
+            return ($row['quality_gate'] ?? false) === true;
+        }));
+        $bestEvaluated = $table;
+        usort($bestEvaluated, function (array $left, array $right): int {
+            return ((int) ($right['evaluated_picks_count'] ?? 0)) <=> ((int) ($left['evaluated_picks_count'] ?? 0));
+        });
+        $bestAvg = $table;
+        usort($bestAvg, function (array $left, array $right): int {
+            return ((float) ($right['avg_ret_net_top'] ?? -INF)) <=> ((float) ($left['avg_ret_net_top'] ?? -INF));
+        });
+        return [
+            'frontier_evaluated' => true,
+            'frontier_level_count' => count($table),
+            'sample_qualified_level_count' => count($sampleQualified),
+            'quality_qualified_level_count' => count($qualityQualified),
+            'best_sample_level' => $bestEvaluated[0] ?? null,
+            'best_quality_level' => $bestAvg[0] ?? null,
+            'decision' => $qualityQualified !== []
+                ? 'FRONTIER_HAS_QUALITY_SAMPLE_CANDIDATE_FOR_REPEAT_IS_PROOF'
+                : 'FRONTIER_HAS_NO_CATALOG_CANDIDATE_KEEP_REDESIGN_OR_STOP_C19',
+            'note' => 'Frontier rows are diagnostic only. Do not promote a frontier level unless sample and quality gates are both reached and repeat IS proof passes.',
+        ];
+    }
+
     private function recommendedNextStep(array $ranked, array $baseline): array
     {
         $best = $ranked[0] ?? [];
@@ -517,6 +641,7 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'quality_profiles_use_price_outcome_for_selection' => false,
             'fast_default_profiles' => self::FAST_DEFAULT_PROFILES,
             'all_profiles_requires_explicit_flag' => true,
+            'sample_quality_frontier_diagnostic_supported' => true,
             'catalog_allowed' => false,
         ];
     }

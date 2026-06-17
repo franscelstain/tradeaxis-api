@@ -65,6 +65,36 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'selector_input_only' => true,
                 'hybrid_backfill' => true,
             ],
+            'Q11_FRONTIER_L0_STRICT_NO_OVEREXTENSION_CORE' => [
+                'description' => 'Tahap 5C frontier L0: strict no-overextension quality core; measures high-quality low-sample boundary.',
+                'selector_input_only' => true,
+                'sample_quality_frontier' => true,
+                'frontier_level' => 0,
+            ],
+            'Q12_FRONTIER_L1_LOW_ATR_NO_OVEREXTENSION_90' => [
+                'description' => 'Tahap 5C frontier L1: no-overextension plus low-ATR/ROC20 discipline, targeting the next sample step.',
+                'selector_input_only' => true,
+                'sample_quality_frontier' => true,
+                'frontier_level' => 1,
+            ],
+            'Q13_FRONTIER_L2_DOWNSIDE_BACKFILL_110' => [
+                'description' => 'Tahap 5C frontier L2: downside-aware backfill without heavy overextension, testing near-110 evaluated sample.',
+                'selector_input_only' => true,
+                'sample_quality_frontier' => true,
+                'frontier_level' => 2,
+            ],
+            'Q14_FRONTIER_L3_CONTROLLED_OVEREXTENSION_125' => [
+                'description' => 'Tahap 5C frontier L3: controlled mild overextension backfill, testing whether sample can approach 120 without quality collapse.',
+                'selector_input_only' => true,
+                'sample_quality_frontier' => true,
+                'frontier_level' => 3,
+            ],
+            'Q15_FRONTIER_L4_BASELINE_BOUNDARY_135' => [
+                'description' => 'Tahap 5C frontier L4: baseline-boundary ladder level; records deterioration when sample is forced toward the old 135 selection.',
+                'selector_input_only' => true,
+                'sample_quality_frontier' => true,
+                'frontier_level' => 4,
+            ],
         ];
     }
 
@@ -450,6 +480,9 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
         if ($this->isHybridBackfillProfile($profile)) {
             return $this->applyHybridBackfillProfile($items, $profile, $paramset);
         }
+        if ($this->isSampleQualityFrontierProfile($profile)) {
+            return $this->applySampleQualityFrontierProfile($items, $profile, $paramset);
+        }
 
         $kept = [];
         $removedReasons = [];
@@ -494,6 +527,15 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
             'Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL',
             'Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125',
         ], true);
+    }
+
+    private function isSampleQualityFrontierProfile(string $profile): bool
+    {
+        return strpos($profile, 'Q11_FRONTIER_') === 0
+            || strpos($profile, 'Q12_FRONTIER_') === 0
+            || strpos($profile, 'Q13_FRONTIER_') === 0
+            || strpos($profile, 'Q14_FRONTIER_') === 0
+            || strpos($profile, 'Q15_FRONTIER_') === 0;
     }
 
     private function applyHybridBackfillProfile(array $items, string $profile, array $paramset): array
@@ -575,6 +617,206 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'price_outcome_not_used_for_selection',
             ],
         ];
+    }
+
+    private function applySampleQualityFrontierProfile(array $items, string $profile, array $paramset): array
+    {
+        $items = array_values(array_filter($items, 'is_array'));
+        $ranked = $this->rankSampleQualityFrontierItems($items, $profile);
+        $target = $this->sampleQualityFrontierTargetCount($profile);
+        $selected = [];
+        $removedReasons = [];
+        $levelCounts = [
+            'L0_STRICT_CORE' => 0,
+            'L1_LOW_ATR_NO_OVEREXTENSION' => 0,
+            'L2_DOWNSIDE_BACKFILL' => 0,
+            'L3_CONTROLLED_OVEREXTENSION' => 0,
+            'L4_BASELINE_BOUNDARY' => 0,
+            'REJECTED' => 0,
+        ];
+
+        foreach ($ranked as $item) {
+            $level = $this->sampleQualityFrontierLevel($item, $paramset);
+            if (! $this->sampleQualityFrontierLevelAllowed($level, $profile)) {
+                $levelCounts['REJECTED']++;
+                $this->addReasonCounts($removedReasons, ['Q5C_REJECT_FRONTIER_LEVEL_'.$level]);
+                continue;
+            }
+            if (count($selected) >= $target) {
+                $this->addReasonCounts($removedReasons, ['Q5C_REJECT_OVER_FRONTIER_TARGET']);
+                continue;
+            }
+            $stage = $level === 'L0_STRICT_CORE' ? 'frontier_core' : 'frontier_backfill';
+            $item = $this->tagQualityStageItem($item, $stage, $profile);
+            $item['_c19_frontier_level'] = $level;
+            $selected[] = $item;
+            $levelCounts[$level] = ($levelCounts[$level] ?? 0) + 1;
+        }
+
+        $selected = $this->rankSampleQualityFrontierItems($selected, $profile);
+        return [
+            'items' => array_values($selected),
+            'removed_count' => max(0, count($items) - count($selected)),
+            'removed_reason_counts' => $this->topCounts($removedReasons, 20),
+            'stage_counts' => [
+                'baseline_selected_count' => count($items),
+                'frontier_level' => $this->sampleQualityFrontierProfileLevel($profile),
+                'frontier_target_selected_count' => $target,
+                'core_selected_count' => $levelCounts['L0_STRICT_CORE'] ?? 0,
+                'backfill_selected_count' => count($selected) - (int) ($levelCounts['L0_STRICT_CORE'] ?? 0),
+                'final_selected_count' => count($selected),
+                'frontier_l0_count' => $levelCounts['L0_STRICT_CORE'] ?? 0,
+                'frontier_l1_count' => $levelCounts['L1_LOW_ATR_NO_OVEREXTENSION'] ?? 0,
+                'frontier_l2_count' => $levelCounts['L2_DOWNSIDE_BACKFILL'] ?? 0,
+                'frontier_l3_count' => $levelCounts['L3_CONTROLLED_OVEREXTENSION'] ?? 0,
+                'frontier_l4_count' => $levelCounts['L4_BASELINE_BOUNDARY'] ?? 0,
+                'frontier_rejected_count' => $levelCounts['REJECTED'] ?? 0,
+            ],
+            'selection_lineage' => [
+                'sample_quality_frontier_ladder',
+                'frontier_level_'.$this->sampleQualityFrontierProfileLevel($profile),
+                'price_outcome_not_used_for_selection',
+            ],
+        ];
+    }
+
+    private function sampleQualityFrontierTargetCount(string $profile): int
+    {
+        if (strpos($profile, 'Q11_FRONTIER_') === 0) {
+            return 70;
+        }
+        if (strpos($profile, 'Q12_FRONTIER_') === 0) {
+            return 95;
+        }
+        if (strpos($profile, 'Q13_FRONTIER_') === 0) {
+            return 115;
+        }
+        if (strpos($profile, 'Q14_FRONTIER_') === 0) {
+            return 130;
+        }
+        return 135;
+    }
+
+    private function sampleQualityFrontierProfileLevel(string $profile): int
+    {
+        if (strpos($profile, 'Q11_FRONTIER_') === 0) {
+            return 0;
+        }
+        if (strpos($profile, 'Q12_FRONTIER_') === 0) {
+            return 1;
+        }
+        if (strpos($profile, 'Q13_FRONTIER_') === 0) {
+            return 2;
+        }
+        if (strpos($profile, 'Q14_FRONTIER_') === 0) {
+            return 3;
+        }
+        return 4;
+    }
+
+    private function sampleQualityFrontierLevelAllowed(string $level, string $profile): bool
+    {
+        $profileLevel = $this->sampleQualityFrontierProfileLevel($profile);
+        $levelMap = [
+            'L0_STRICT_CORE' => 0,
+            'L1_LOW_ATR_NO_OVEREXTENSION' => 1,
+            'L2_DOWNSIDE_BACKFILL' => 2,
+            'L3_CONTROLLED_OVEREXTENSION' => 3,
+            'L4_BASELINE_BOUNDARY' => 4,
+        ];
+        return ($levelMap[$level] ?? 99) <= $profileLevel;
+    }
+
+    private function sampleQualityFrontierLevel(array $item, array $paramset): string
+    {
+        $failures = array_values(array_map('strval', is_array($item['current_extension_failures'] ?? null) ? $item['current_extension_failures'] : []));
+        $metrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $score = $this->numericOrNull($item['score_total'] ?? null);
+        $quality = $this->numericOrNull($item['quality_score'] ?? null);
+        $penalty = $this->numericOrNull($item['penalty_total'] ?? null) ?? 0.0;
+        $atr = $this->numericOrNull($metrics['atr14_pct'] ?? null);
+        $roc20 = $this->numericOrNull($metrics['roc20'] ?? null);
+
+        if ($this->qualityProfileRejectReasons($item, 'Q02_NO_SCORE_OVEREXTENSION_RECOVERY', $paramset) === []) {
+            return 'L0_STRICT_CORE';
+        }
+        if (! $this->hasReason($failures, 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL')
+            && ($atr === null || $atr <= 0.040)
+            && ($roc20 === null || $roc20 <= 0.050)
+            && ($quality === null || $quality >= 0.52)
+            && $penalty <= 0.125) {
+            return 'L1_LOW_ATR_NO_OVEREXTENSION';
+        }
+        if (($quality === null || $quality >= 0.515)
+            && $penalty <= 0.135
+            && ($atr === null || $atr <= 0.046)
+            && ($score === null || $score < 0.895)) {
+            return 'L2_DOWNSIDE_BACKFILL';
+        }
+        if (($quality === null || $quality >= 0.50)
+            && $penalty <= 0.155
+            && ($score === null || $score < 0.905)) {
+            return 'L3_CONTROLLED_OVEREXTENSION';
+        }
+        return 'L4_BASELINE_BOUNDARY';
+    }
+
+    private function rankSampleQualityFrontierItems(array $items, string $profile): array
+    {
+        usort($items, function (array $left, array $right) use ($profile): int {
+            $leftScore = $this->sampleQualityFrontierRankScore($left, $profile);
+            $rightScore = $this->sampleQualityFrontierRankScore($right, $profile);
+            if ($leftScore != $rightScore) {
+                return $rightScore <=> $leftScore;
+            }
+            foreach ([
+                ['penalty_total', true],
+                ['quality_score', false],
+                ['score_total', false],
+                ['trade_date', true],
+                ['ticker_id', true],
+                ['ticker_code', true],
+            ] as $sort) {
+                [$key, $ascending] = $sort;
+                $a = $left[$key] ?? '';
+                $b = $right[$key] ?? '';
+                if ($a == $b) {
+                    continue;
+                }
+                $cmp = $a <=> $b;
+                return $ascending ? $cmp : -$cmp;
+            }
+            return 0;
+        });
+        return array_values($items);
+    }
+
+    private function sampleQualityFrontierRankScore(array $item, string $profile): float
+    {
+        $metrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $failures = array_values(array_map('strval', is_array($item['current_extension_failures'] ?? null) ? $item['current_extension_failures'] : []));
+        $quality = $this->numericOrNull($item['quality_score'] ?? null) ?? 0.0;
+        $score = $this->numericOrNull($item['score_total'] ?? null) ?? 0.0;
+        $penalty = $this->numericOrNull($item['penalty_total'] ?? null) ?? 0.0;
+        $atr = $this->numericOrNull($metrics['atr14_pct'] ?? null);
+        $roc20 = $this->numericOrNull($metrics['roc20'] ?? null);
+        $rank = ($quality * 2.3) + ($score * 0.22) - ($penalty * 2.9);
+        if ($atr !== null) {
+            $rank -= max(0.0, $atr - 0.028) * 7.5;
+        }
+        if ($roc20 !== null && $roc20 > 0.025) {
+            $rank -= ($roc20 - 0.025) * 2.5;
+        }
+        if ($this->hasReason($failures, 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL')) {
+            $rank -= $this->sampleQualityFrontierProfileLevel($profile) >= 3 ? 0.11 : 0.18;
+        }
+        if ($this->hasReason($failures, 'WATCHLIST_C17_ENTRY_QUALITY_FLOOR_FAIL')) {
+            $rank -= 0.14;
+        }
+        if ($this->hasReason($failures, 'WATCHLIST_C17_ROC5_CONTROLLED_PULLBACK_RANGE_FAIL')) {
+            $rank -= 0.06;
+        }
+        return $rank;
     }
 
     private function hybridCoreAccepts(array $item, string $profile, array $paramset): bool

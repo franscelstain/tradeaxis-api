@@ -61,8 +61,11 @@ class WatchlistBacktestC19StaticGuardTest extends TestCase
         $this->assertStringContainsString('IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC', $service);
         $this->assertStringContainsString('Q05_DOWNSIDE_AWARE_SCORE_120', $priceService);
         $this->assertStringContainsString('Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120', $priceService);
+        $this->assertStringContainsString('Q11_FRONTIER_L0_STRICT_NO_OVEREXTENSION_CORE', $priceService);
+        $this->assertStringContainsString('sample_quality_frontier', $priceService);
         $this->assertStringContainsString('hybrid_backfill', $priceService);
         $this->assertStringContainsString('best_sample_qualified_profile_summary', $service);
+        $this->assertStringContainsString('sample_quality_frontier_table', $service);
         $this->assertStringContainsString('quality_profiles_use_price_outcome_for_selection', $service);
         $this->assertStringContainsString('c19_catalog_implementation_deferred', $command);
         $this->assertStringContainsString('oos_service_invoked', $command);

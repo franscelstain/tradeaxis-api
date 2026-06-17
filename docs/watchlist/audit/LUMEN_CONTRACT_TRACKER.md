@@ -3506,3 +3506,61 @@ no price-outcome based candidate selection
 ```
 
 Tahap 5B profiles must use selector-time inputs only. Price data may only be consumed after candidates are frozen for canonical diagnostic evaluation.
+
+## Contract Append - C19 Tahap 5C Sample-Quality Frontier Diagnostic
+
+Tahap 5C extends the C19 diagnostic artifact contract with a sample-quality frontier table. It does not change production Watchlist behavior and does not create or approve a C19 catalog.
+
+Contract markers:
+
+```text
+C19_TAHAP_5C_SAMPLE_QUALITY_FRONTIER_DIAGNOSTIC=true
+sample_quality_frontier_table=true
+sample_quality_frontier_interpretation=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Forbidden changes remain unchanged: no OOS service/repository path, no price-outcome candidate selection, no ticker/month/sector blacklist, no repository/factory catalog mapping, and no production readiness.
+## Contract Append - C19 final diagnostic closure
+
+C19 is now closed as a diagnostic success and catalog-candidate failure. The C19 work added diagnostic source, price-evaluated IS-only proof paths, quality recovery profiles, and a sample-quality frontier table, but no frontier level satisfied both the canonical sample target and the quality target.
+
+Final runtime evidence:
+
+```text
+PHPUNIT_C19=PASS: 13 tests, 192 assertions
+FULL_WATCHLIST_PHPUNIT=PASS: 385 tests, 9243 assertions
+C19_TAHAP_5C_FRONTIER_FOCUSED=PASS: artifact_hash=971d1186bff72e185db59dc1c223d423186a7ad4
+C19_TAHAP_5C_FRONTIER_ALL_PARAM=PASS: artifact_hash=18ae8b1f1dcfc5ddecc2279d3c9fd0ce69079e6d
+profiles_with_sample_target_reached=2
+profiles_with_quality_improvement=0
+profiles_with_quality_target_reached=0
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_executed=0
+production_ready=0
+```
+
+Contract status:
+
+```text
+WL-CONTRACT-008: PASS AS DIAGNOSTIC TRACEABILITY / FAIL AS STRATEGY QUALITY
+WL-CONTRACT-009: PASS for operator PHPUnit and IS-only diagnostic command evidence
+WL-CONTRACT-010: PASS for OOS non-invocation markers
+WL-CONTRACT-011: FAIL AS CATALOG CANDIDATE because no sample-qualified quality-positive frontier exists
+WL-CONTRACT-013: PASS for C19 diagnostic artifact surface and docs
+WL-CONTRACT-014: PASS after final documentation synchronization
+WL-CONTRACT-015: NOT_READY because C19 has no eligible catalog or OOS proof
+```
+
+Required next contract work:
+
+```text
+C20_REGIME_AND_TRADE_DATE_QUALITY_GATE_DESIGN_REQUIRED=true
+DO_NOT_CREATE_C19_CATALOG=true
+DO_NOT_RUN_C19_OOS=true
+DO_NOT_SET_PRODUCTION_READY=true
+```

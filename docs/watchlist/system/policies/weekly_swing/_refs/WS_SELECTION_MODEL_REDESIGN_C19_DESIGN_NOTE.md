@@ -224,3 +224,51 @@ best_any_sample_profile_summary = diagnostic clue only
 best_sample_qualified_profile_summary = sample-safe decision candidate
 best_profile_summary = decision-safe aggregate profile
 ```
+
+## Tahap 5C design note — Sample-quality frontier
+
+Tahap 5B all-param diagnostics showed no sample-qualified profile. Tahap 5C therefore uses a ladder/frontier design instead of adding isolated profiles.
+
+The ladder intentionally moves from strict quality to baseline boundary:
+
+```text
+L0 strict no-overextension core
+L1 low-ATR/no-overextension support
+L2 downside-aware low-penalty backfill
+L3 controlled mild-overextension backfill
+L4 baseline-boundary fill
+```
+
+The purpose is to decide whether C19 has a viable frontier. If quality collapses before evaluated sample reaches 120, C19 should be treated as diagnostic success but catalog-candidate failure. No OOS, production readiness, or catalog creation is permitted from this diagnostic.
+## C19 final design decision
+
+Tahap 5C confirms that C19 should stop as a catalog path. The diagnostic succeeded, but the sample-quality frontier failed.
+
+Final frontier evidence:
+
+```text
+L0/L1: evaluated=53, avg=0.00%, median=+0.55%, win=52.83%, sample insufficient
+L2: evaluated=104, avg=-0.18%, median=-0.05%, win=42.31%, sample insufficient and quality deteriorated
+L3: evaluated=121, avg=-0.18%, median=-0.05%, win=39.67%, sample sufficient but quality failed
+L4: evaluated=124, avg=-0.18%, median=-0.05%, win=43.55%, sample sufficient but quality failed
+```
+
+Design implication:
+
+```text
+quality-positive C19 core is too small
+sample-qualified C19 frontier is quality-negative
+forced coverage/recovery remains harmful
+```
+
+Final boundary:
+
+```text
+C19_DIAGNOSTIC_SUCCESS=true
+C19_CATALOG_CANDIDATE_FAILED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+The next strategy concept must not be another C19 recovery profile. The next concept should focus on regime and trade-date quality: days/months may be intentionally no-pick when market conditions are poor.

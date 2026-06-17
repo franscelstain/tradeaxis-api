@@ -1,0 +1,127 @@
+{
+  "artifact_type": "C19_FINAL_DIAGNOSTIC_RESULT_SUMMARY",
+  "status": "C19_DIAGNOSTIC_SUCCESS_CATALOG_CANDIDATE_FAILED",
+  "scope": "IS_ONLY_DIAGNOSTIC_AND_PRICE_EVALUATION",
+  "reason_code": "WS_BT_C19_FRONTIER_CONFIRMS_SAMPLE_QUALITY_TRADEOFF_NOT_CATALOG_READY",
+  "operator_validation": {
+    "phpunit_c19": "PASS: OK (13 tests, 192 assertions)",
+    "phpunit_watchlist_full": "PASS: OK (385 tests, 9243 assertions)",
+    "tahap_5c_frontier_focused": {
+      "status": "PASS",
+      "artifact_path": "storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5c-frontier-focused.json",
+      "artifact_hash": "971d1186bff72e185db59dc1c223d423186a7ad4"
+    },
+    "tahap_5c_frontier_all_param": {
+      "status": "PASS",
+      "artifact_path": "storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5c-frontier-all-param.json",
+      "artifact_hash": "18ae8b1f1dcfc5ddecc2279d3c9fd0ce69079e6d",
+      "profile_count": 5,
+      "profile_scope": "EXPLICIT",
+      "profiles_with_sample_target_reached": 2,
+      "profiles_with_quality_improvement": 0,
+      "profiles_with_quality_target_reached": 0,
+      "c19_catalog_implementation_deferred": 1,
+      "oos_service_invoked": 0,
+      "oos_repository_invoked": 0,
+      "oos_executed": 0,
+      "production_ready": 0
+    }
+  },
+  "frontier_evidence_all_param": [
+    {
+      "frontier_level": 0,
+      "profile_code": "Q11_FRONTIER_L0_STRICT_NO_OVEREXTENSION_CORE",
+      "param_id": 148,
+      "target": 70,
+      "selected": 61,
+      "evaluated": 53,
+      "avg_pct": 0.0,
+      "median_pct": 0.55,
+      "p25_pct": -1.92,
+      "win_rate_pct": 52.83,
+      "sample_gate": false,
+      "quality_gate": false
+    },
+    {
+      "frontier_level": 1,
+      "profile_code": "Q12_FRONTIER_L1_LOW_ATR_NO_OVEREXTENSION_90",
+      "param_id": 148,
+      "target": 95,
+      "selected": 61,
+      "evaluated": 53,
+      "avg_pct": 0.0,
+      "median_pct": 0.55,
+      "p25_pct": -1.92,
+      "win_rate_pct": 52.83,
+      "sample_gate": false,
+      "quality_gate": false
+    },
+    {
+      "frontier_level": 2,
+      "profile_code": "Q13_FRONTIER_L2_DOWNSIDE_BACKFILL_110",
+      "param_id": 148,
+      "target": 115,
+      "selected": 115,
+      "evaluated": 104,
+      "avg_pct": -0.18,
+      "median_pct": -0.05,
+      "p25_pct": -1.79,
+      "win_rate_pct": 42.31,
+      "sample_gate": false,
+      "quality_gate": false
+    },
+    {
+      "frontier_level": 3,
+      "profile_code": "Q14_FRONTIER_L3_CONTROLLED_OVEREXTENSION_125",
+      "param_id": 152,
+      "target": 130,
+      "selected": 130,
+      "evaluated": 121,
+      "avg_pct": -0.18,
+      "median_pct": -0.05,
+      "p25_pct": -1.86,
+      "win_rate_pct": 39.67,
+      "sample_gate": true,
+      "quality_gate": false
+    },
+    {
+      "frontier_level": 4,
+      "profile_code": "Q15_FRONTIER_L4_BASELINE_BOUNDARY_135",
+      "param_id": 148,
+      "target": 135,
+      "selected": 135,
+      "evaluated": 124,
+      "avg_pct": -0.18,
+      "median_pct": -0.05,
+      "p25_pct": -1.82,
+      "win_rate_pct": 43.55,
+      "sample_gate": true,
+      "quality_gate": false
+    }
+  ],
+  "final_interpretation": {
+    "sample_recovery_solved": true,
+    "price_evaluation_confirmed": true,
+    "quality_signal_found": true,
+    "quality_core_sample_too_small": true,
+    "sample_qualified_frontier_quality_failed": true,
+    "quality_improvement_before_sample_target": false,
+    "catalog_candidate_failed": true,
+    "repeat_is_proof_unlocked": false,
+    "oos_unlocked": false,
+    "production_ready": false
+  },
+  "final_decision": {
+    "C19_DIAGNOSTIC_SUCCESS": true,
+    "C19_CATALOG_CANDIDATE_FAILED": true,
+    "C19_CATALOG_CODE": "NOT_CREATED",
+    "C19_STOP_TUNING": true,
+    "C19_DO_NOT_REPEAT_IS_PROOF": true,
+    "C19_DO_NOT_RUN_OOS": true,
+    "NEXT_STEP": "C20_REGIME_AND_TRADE_DATE_QUALITY_GATE_DESIGN"
+  },
+  "notes": [
+    "Some PowerShell top-level Select-Object fields can appear blank because the relevant C19 summary markers are nested in the artifact or printed by the command console. This is not treated as runtime failure when the console markers and frontier table are available.",
+    "No C19 catalog, seed command, repository/factory mapping, promotion, OOS proof, or production readiness is authorized by this result."
+  ]
+}

@@ -193,3 +193,135 @@ win_rate_top >= 45%
 ```
 
 If no sample-qualified profile reaches quality target, the next step remains redesign/tuning, not catalog and not OOS.
+
+## Tahap 5C — Sample-Quality Frontier Diagnostic
+
+Tahap 5B runtime evidence showed that hybrid backfill profiles remained below the canonical evaluated sample target. The best quality signals were still small-sample profiles, while larger-sample profiles remained negative. Tahap 5C therefore adds a ladder/frontier diagnostic instead of more ad-hoc profiles.
+
+Tahap 5C answers one question:
+
+```text
+Can C19 approach the 120 evaluated-pick sample target without quality collapsing back toward the negative Tahap 4 baseline?
+```
+
+### New Tahap 5C frontier profiles
+
+```text
+Q11_FRONTIER_L0_STRICT_NO_OVEREXTENSION_CORE
+Q12_FRONTIER_L1_LOW_ATR_NO_OVEREXTENSION_90
+Q13_FRONTIER_L2_DOWNSIDE_BACKFILL_110
+Q14_FRONTIER_L3_CONTROLLED_OVEREXTENSION_125
+Q15_FRONTIER_L4_BASELINE_BOUNDARY_135
+```
+
+The profiles form a ladder:
+
+```text
+L0: strict no-overextension core
+L1: add low-ATR / no-overextension support
+L2: add downside-aware low-penalty backfill
+L3: add controlled mild overextension backfill
+L4: baseline-boundary fill, used to observe deterioration near the old 135 selection size
+```
+
+The artifact now includes:
+
+```text
+sample_quality_frontier_table
+sample_quality_frontier_interpretation
+frontier_level_count
+best_frontier_profile_code
+best_frontier_evaluated_picks_count
+```
+
+Each frontier row records:
+
+```text
+profile_code
+frontier_level
+param_id
+row_code
+frontier_target_selected_count
+proposed_recommended_count
+evaluated_picks_count
+avg_ret_net_top
+median_ret_net_top
+p25_ret_net_top
+win_rate_top
+period_fail_count
+stop_count
+target_count
+sample_gate
+quality_gate
+frontier_l0_count
+frontier_l1_count
+frontier_l2_count
+frontier_l3_count
+frontier_l4_count
+```
+
+Safety boundaries remain unchanged:
+
+```text
+IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC=true
+quality_profiles_use_price_outcome_for_selection=false
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Tahap 5C is not a catalog step. If the frontier shows no sample+quality candidate, record it as useful negative evidence and stop C19 catalog work or move to a different strategy concept.
+## Final C19 Closure — diagnostic success, catalog candidate failed
+
+Operator final evidence confirms that Tahap 5C ran successfully but did not find any frontier level that satisfies both the sample gate and the quality gate.
+
+```text
+PHPUNIT_C19=PASS: OK (13 tests, 192 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (385 tests, 9243 assertions)
+TAHAP_5C_FRONTIER_FOCUSED=PASS: artifact_hash=971d1186bff72e185db59dc1c223d423186a7ad4
+TAHAP_5C_FRONTIER_ALL_PARAM=PASS: artifact_hash=18ae8b1f1dcfc5ddecc2279d3c9fd0ce69079e6d
+profiles_with_sample_target_reached=2
+profiles_with_quality_improvement=0
+profiles_with_quality_target_reached=0
+c19_catalog_implementation_deferred=1
+oos_executed=0
+production_ready=0
+```
+
+Final all-param frontier:
+
+```text
+L0 Q11 param 148: target=70, selected=61, evaluated=53, avg=0.00%, median=+0.55%, p25=-1.92%, win=52.83%, sample_gate=false, quality_gate=false
+L1 Q12 param 148: target=95, selected=61, evaluated=53, avg=0.00%, median=+0.55%, p25=-1.92%, win=52.83%, sample_gate=false, quality_gate=false
+L2 Q13 param 148: target=115, selected=115, evaluated=104, avg=-0.18%, median=-0.05%, p25=-1.79%, win=42.31%, sample_gate=false, quality_gate=false
+L3 Q14 param 152: target=130, selected=130, evaluated=121, avg=-0.18%, median=-0.05%, p25=-1.86%, win=39.67%, sample_gate=true, quality_gate=false
+L4 Q15 param 148: target=135, selected=135, evaluated=124, avg=-0.18%, median=-0.05%, p25=-1.82%, win=43.55%, sample_gate=true, quality_gate=false
+```
+
+Final interpretation:
+
+```text
+C19_SAMPLE_RECOVERY_SOLVED=true
+C19_PRICE_EVALUATION_CONFIRMED=true
+C19_QUALITY_SIGNAL_FOUND=true
+C19_QUALITY_CORE_SAMPLE_TOO_SMALL=true
+C19_SAMPLE_QUALIFIED_FRONTIER_QUALITY_FAILED=true
+C19_CATALOG_CANDIDATE_FAILED=true
+```
+
+Final decision:
+
+```text
+C19_DIAGNOSTIC_SUCCESS=true
+C19_CATALOG_CANDIDATE_FAILED=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+C19_STOP_TUNING=true
+C19_DO_NOT_REPEAT_IS_PROOF=true
+C19_DO_NOT_RUN_OOS=true
+production_ready=0
+NEXT_STEP=C20_REGIME_AND_TRADE_DATE_QUALITY_GATE_DESIGN
+```
+
+C19 must not continue into catalog, OOS, promotion, or production readiness. Additional C19 profile tuning is not recommended because the frontier already shows the core trade-off: quality-positive samples are too small, while sample-qualified levels revert to negative quality.
