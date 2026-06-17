@@ -15,6 +15,7 @@ class RunBacktestC19ProposedSelectionPriceDiagnoseCommand extends Command
         {--param-ids= : Optional comma-separated param ids.}
         {--output= : Output artifact path.}
         {--selection-output= : Optional intermediate C19 selection artifact path.}
+        {--quality-profile= : Optional Tahap 5 quality profile code for single-profile price diagnostic.}
         {--overwrite : Replace existing output artifact.}';
 
     protected $description = 'Run C19 IS-only proposed-selection price diagnostic without creating catalog, OOS, or production artifacts.';
@@ -35,6 +36,7 @@ class RunBacktestC19ProposedSelectionPriceDiagnoseCommand extends Command
         $output = (string) ($this->option('output') ?: WatchlistBacktestC19ProposedSelectionPriceDiagnosticService::DEFAULT_OUTPUT_PATH);
         $paramIds = (string) ($this->option('param-ids') ?: '');
         $selectionOutput = (string) ($this->option('selection-output') ?: '');
+        $qualityProfile = (string) ($this->option('quality-profile') ?: '');
 
         $options = [
             'param_ids' => $paramIds,
@@ -42,6 +44,9 @@ class RunBacktestC19ProposedSelectionPriceDiagnoseCommand extends Command
         ];
         if ($selectionOutput !== '') {
             $options['selection_output_path'] = $selectionOutput;
+        }
+        if ($qualityProfile !== '') {
+            $options['quality_profile'] = $qualityProfile;
         }
 
         $result = $this->service->execute($catalogCode, $from, $to, $output, $options);
@@ -52,6 +57,7 @@ class RunBacktestC19ProposedSelectionPriceDiagnoseCommand extends Command
             'scope',
             'artifact_path',
             'artifact_hash',
+            'quality_profile',
             'diagnostic_param_count',
             'max_proposed_recommended_count',
             'max_requested_pairs_count',

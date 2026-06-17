@@ -1,0 +1,26 @@
+{
+  "artifact_type": "C19_QUALITY_RECOVERY_TUNING_DIAGNOSTIC_FASTFIX_SOURCE_SUMMARY",
+  "status": "SOURCE_PATCHED_OPERATOR_VALIDATION_REQUIRED",
+  "reason_code": "WS_BT_C19_TAHAP_5_FULL_DIAGNOSTIC_TOO_SLOW_FASTFIX_READY",
+  "problem_observed": {
+    "operator_full_run_artifact_exists": false,
+    "diagnostic_issue": "Full Tahap 5 brute-force execution did not complete and produced no artifact.",
+    "do_not_record_as_runtime_evidence": true
+  },
+  "changes": {
+    "fast_default_profiles": ["Q00_TAHAP_4_BASELINE", "Q05_DOWNSIDE_AWARE_SCORE_120"],
+    "all_profiles_requires_explicit_flag": true,
+    "profile_codes_alias_added": true,
+    "max_profiles_option_added": true,
+    "max_params_option_added": true,
+    "progress_option_added": true,
+    "shared_selection_artifact_reuse_added": true
+  },
+  "safety_boundaries": {
+    "C19_CATALOG_IMPLEMENTATION_DEFERRED": true,
+    "C19_CATALOG_CODE": "NOT_CREATED",
+    "OOS_NOT_RUN": true,
+    "production_ready": 0,
+    "quality_profiles_use_price_outcome_for_selection": false
+  }
+}

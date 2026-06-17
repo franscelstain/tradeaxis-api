@@ -3342,3 +3342,42 @@ NOT_ELIGIBLE — OOS proof missing
 ## Audit Append - 2026-06-15 C16 final operator validation
 
 C16 final operator validation is now recorded as runtime-validated but strategy-quality failed. PHPUnit C16 and full Watchlist suites passed, seed passed, diagnose-batch passed, and IS calibration run 1/run 2 were deterministic with artifact hash `63698d0c809a1f2124d8218273ba4d34d9c78deb`. C16 remains `OOS_NOT_RUN` and `production_ready=0` because `is_valid_param_count=0` and `best_is_binding=null`.
+
+## Audit Append - C19 Tahap 5 Quality Recovery Tuning Diagnostic
+
+C19 Tahap 5 source-level diagnostic has been implemented to compare quality-recovery profiles after Tahap 4 proved evaluated-sample recovery but return quality remained negative. This is not a catalog/promotion step.
+
+Implemented source:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC19QualityRecoveryDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC19QualityRecoveryDiagnoseCommand.php
+```
+
+Updated source:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC19ProposedSelectionPriceDiagnosticService.php
+app/Console/Kernel.php
+```
+
+Key markers:
+
+```text
+C19_QUALITY_RECOVERY_TUNING_DIAGNOSTIC=true
+IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC=true
+quality_profiles_use_price_outcome_for_selection=false
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Validation boundary:
+
+```text
+php lint changed PHP files = PASS
+PHPUnit/runtime command = OPERATOR_VALIDATION_REQUIRED
+```
+
+Tahap 5 must record only results that help the next decision. A profile that merely preserves sample but keeps negative return quality must be recorded as useful negative evidence, not promoted as catalog evidence.

@@ -46,6 +46,32 @@ class WatchlistBacktestC19StaticGuardTest extends TestCase
         $this->assertStringNotContainsString("schedule->command('watchlist:backtest-c19-proposed-selection-price-diagnose", $kernel);
     }
 
+
+    public function test_c19_tahap_5_quality_recovery_command_is_registered_not_scheduled_and_is_only(): void
+    {
+        $command = file_get_contents(base_path('app/Console/Commands/Watchlist/RunBacktestC19QualityRecoveryDiagnoseCommand.php'));
+        $service = file_get_contents(base_path('app/Application/Watchlist/Services/WatchlistBacktestC19QualityRecoveryDiagnosticService.php'));
+        $priceService = file_get_contents(base_path('app/Application/Watchlist/Services/WatchlistBacktestC19ProposedSelectionPriceDiagnosticService.php'));
+        $kernel = file_get_contents(base_path('app/Console/Kernel.php'));
+
+        $this->assertStringContainsString('watchlist:backtest-c19-quality-recovery-diagnose', $command);
+        $this->assertStringContainsString('RunBacktestC19QualityRecoveryDiagnoseCommand::class', $kernel);
+        $this->assertStringContainsString('IS-only quality recovery tuning diagnostic', $command);
+        $this->assertStringContainsString('C19_QUALITY_RECOVERY_TUNING_DIAGNOSTIC', $service);
+        $this->assertStringContainsString('IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC', $service);
+        $this->assertStringContainsString('Q05_DOWNSIDE_AWARE_SCORE_120', $priceService);
+        $this->assertStringContainsString('quality_profiles_use_price_outcome_for_selection', $service);
+        $this->assertStringContainsString('c19_catalog_implementation_deferred', $command);
+        $this->assertStringContainsString('oos_service_invoked', $command);
+        $this->assertStringContainsString('oos_repository_invoked', $command);
+        $this->assertStringContainsString('oos_executed', $command);
+        $this->assertStringContainsString('production_ready', $command);
+        $this->assertStringNotContainsString('watchlist:backtest-oos-proof', $command);
+        $this->assertStringNotContainsString('WatchlistBacktestOosProofService', $service);
+        $this->assertStringNotContainsString('WatchlistBacktestOosEvaluationRepository', $service);
+        $this->assertStringNotContainsString("schedule->command('watchlist:backtest-c19-quality-recovery-diagnose", $kernel);
+    }
+
     public function test_c19_phase_a_b_diagnostic_does_not_mutate_prior_catalogs_or_create_c19_catalog(): void
     {
         $service = file_get_contents(base_path('app/Application/Watchlist/Services/WatchlistBacktestC19SelectionModelRedesignAnalysisService.php'));

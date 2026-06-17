@@ -3444,3 +3444,27 @@ Run the IS-only diagnostic command twice in the supported operator environment, 
 ## Contract Append - 2026-06-15 C16 final operator validation
 
 C16 is now closed as `C16_GRID_FAILED_IS_QUALITY` after operator runtime validation. Seed and diagnose-batch passed, IS calibration was deterministic, and OOS/prod readiness remain locked because no valid IS candidate exists.
+
+## Contract Append - C19 Tahap 5 Quality Recovery Tuning Diagnostic
+
+C19 Tahap 5 adds an IS-only quality-recovery diagnostic command. It evaluates multiple selector-time quality profiles through the same C19 proposed-selection price diagnostic path and aggregates profile summaries into a decision artifact.
+
+Contract impact:
+
+```text
+WL-CONTRACT-008: expanded diagnostic artifact surface for C19 quality profile comparison.
+WL-CONTRACT-009: no-OOS boundary preserved by IS-only window guard and no OOS service/repository dependency.
+WL-CONTRACT-010: repeat proof still operator-required; Tahap 5 source does not claim deterministic runtime proof.
+WL-CONTRACT-013: artifact contract expanded with profile_summaries, best_profile_summary, baseline_summary, and recommended_next_step.
+WL-CONTRACT-015: remains NOT_READY because no catalog/promotion/production readiness is allowed from Tahap 5 alone.
+```
+
+Required evidence before any next candidate decision:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC19"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c19-quality-recovery-diagnose ... --overwrite
+```
+
+Catalog remains forbidden unless a separate later repeat IS proof confirms a quality-positive profile.

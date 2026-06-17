@@ -12,6 +12,41 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
     public const DEFAULT_SOURCE_CATALOG_CODE = WatchlistBacktestC17ParamGridCatalog::CATALOG_CODE;
     public const DEFAULT_OUTPUT_PATH = 'storage/app/watchlist/backtest/c19-proposed-selection-price-diagnostic-run-1.json';
     public const CANONICAL_SAMPLE_TARGET = 120;
+    public const DEFAULT_QUALITY_PROFILE = 'Q00_TAHAP_4_BASELINE';
+
+    public static function qualityProfiles(): array
+    {
+        return [
+            'Q00_TAHAP_4_BASELINE' => [
+                'description' => 'Baseline Tahap 4 selection; no additional quality recovery filter.',
+                'selector_input_only' => true,
+            ],
+            'Q01_STRICT_ENTRY_QUALITY' => [
+                'description' => 'Reject candidates still carrying C17 entry-quality floor failure before price evaluation.',
+                'selector_input_only' => true,
+            ],
+            'Q02_NO_SCORE_OVEREXTENSION_RECOVERY' => [
+                'description' => 'Reject candidates recovered only by allowing C17 score overextension failure.',
+                'selector_input_only' => true,
+            ],
+            'Q03_PULLBACK_ROC_DISCIPLINE' => [
+                'description' => 'Reject candidates with ROC5 pullback miss or ROC20 segment miss.',
+                'selector_input_only' => true,
+            ],
+            'Q04_LOW_ATR_NEG_ROC20_PRIORITY' => [
+                'description' => 'Prefer lower ATR and non-chasing ROC20 candidates using only pre-entry EOD metrics.',
+                'selector_input_only' => true,
+            ],
+            'Q05_DOWNSIDE_AWARE_SCORE_120' => [
+                'description' => 'Global downside-aware rerank to 120-125 candidates using quality score, risk, breakout, and penalty.',
+                'selector_input_only' => true,
+            ],
+            'Q06_MONTHLY_QUALITY_CAP_120' => [
+                'description' => 'Limit forced monthly coverage to best candidates first, then fill globally to sample target.',
+                'selector_input_only' => true,
+            ],
+        ];
+    }
 
     private MarketDataTradingCalendarReadService $calendar;
     private WatchlistBacktestParamGridRepository $paramGrid;
@@ -56,6 +91,13 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
         if ($paramIds === false) {
             return $this->blocked('WS_BT_C19_PRICE_PARAM_IDS_INVALID', 'param_ids must be a comma-separated list of positive integers.');
         }
+        $qualityProfile = strtoupper(trim((string) ($options['quality_profile'] ?? self::DEFAULT_QUALITY_PROFILE)));
+        if ($qualityProfile === '') {
+            $qualityProfile = self::DEFAULT_QUALITY_PROFILE;
+        }
+        if (! isset(self::qualityProfiles()[$qualityProfile])) {
+            return $this->blocked('WS_BT_C19_PRICE_QUALITY_PROFILE_INVALID', 'Unknown C19 quality profile: '.$qualityProfile);
+        }
 
         $calendar = $this->calendar->resolveTradingDates($fromDate, $toDate);
         if (! ($calendar['is_ready'] ?? false)) {
@@ -83,21 +125,33 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 return $this->blocked('WS_BT_C19_PRICE_ROW_FILTER_NO_MATCH', 'No source catalog rows matched the explicit param filter.');
             }
         }
+        $maxParams = $this->positiveIntOrNull($options['max_params'] ?? null);
+        if ($maxParams !== null) {
+            $rows = array_slice(array_values($rows), 0, $maxParams);
+        }
         $rowsByParamId = [];
         foreach ($rows as $row) {
             $rowsByParamId[(int) ($row['param_id'] ?? 0)] = $row;
         }
 
         $selectionOutput = (string) ($options['selection_output_path'] ?? ($outputPath.'.selection-analysis.json'));
-        $selectionResult = $this->selectionDiagnostic->execute($catalogCode, $fromDate, $toDate, $selectionOutput, [
-            'param_ids' => $paramIds,
-            'overwrite' => true,
-            'executed_at' => $options['executed_at'] ?? ($toDate.'T23:59:59+07:00'),
-        ]);
-        if (($selectionResult['status'] ?? null) !== 'PASS') {
-            return $this->blocked($selectionResult['reason_code'] ?? 'WS_BT_C19_SELECTION_DIAGNOSTIC_NOT_READY', 'C19 selection diagnostic did not produce a PASS artifact.', [
-                'selection_result' => $selectionResult,
+        $reuseSelection = ! empty($options['reuse_selection_artifact']) && is_file($selectionOutput);
+        $selectionResult = [
+            'status' => 'PASS',
+            'reason_code' => 'WS_BT_C19_SELECTION_DIAGNOSTIC_REUSED',
+            'artifact_path' => $selectionOutput,
+        ];
+        if (! $reuseSelection) {
+            $selectionResult = $this->selectionDiagnostic->execute($catalogCode, $fromDate, $toDate, $selectionOutput, [
+                'param_ids' => $paramIds,
+                'overwrite' => true,
+                'executed_at' => $options['executed_at'] ?? ($toDate.'T23:59:59+07:00'),
             ]);
+            if (($selectionResult['status'] ?? null) !== 'PASS') {
+                return $this->blocked($selectionResult['reason_code'] ?? 'WS_BT_C19_SELECTION_DIAGNOSTIC_NOT_READY', 'C19 selection diagnostic did not produce a PASS artifact.', [
+                    'selection_result' => $selectionResult,
+                ]);
+            }
         }
         $selectionArtifact = $this->readJson($selectionOutput);
         if ($selectionArtifact === null) {
@@ -125,7 +179,8 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 $fromDate,
                 $toDate,
                 $executedAt,
-                $outputPath
+                $outputPath,
+                $qualityProfile
             );
         }
 
@@ -140,6 +195,7 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'catalog_code' => $catalogCode,
                 'row_count' => count($diagnostics),
                 'policy_code' => 'WS',
+                'max_params' => $maxParams,
             ],
             'is_window' => [
                 'from' => $fromDate,
@@ -151,8 +207,15 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'artifact_hash' => $selectionArtifact['artifact_hash'] ?? ($selectionResult['artifact_hash'] ?? null),
                 'reason_code' => $selectionResult['reason_code'] ?? null,
                 'selector_simulation_from_scored_pool' => true,
+                'selection_artifact_reused' => $reuseSelection,
             ],
             'price_evaluation_model' => $this->canonicalEvaluationModel(),
+            'quality_recovery_profile' => [
+                'profile_code' => $qualityProfile,
+                'profile_definition' => self::qualityProfiles()[$qualityProfile],
+                'uses_price_outcome_for_selection' => false,
+                'diagnostic_only' => true,
+            ],
             'diagnostics' => $diagnostics,
             'cross_param_summary' => $summary,
             'c19_catalog_decision' => [
@@ -182,6 +245,7 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
             'scope' => 'IS_ONLY_PRICE_DIAGNOSTIC',
             'artifact_path' => $outputPath,
             'artifact_hash' => $artifact['artifact_hash'],
+            'quality_profile' => $qualityProfile,
             'diagnostic_param_count' => count($diagnostics),
             'max_proposed_recommended_count' => (int) ($summary['max_proposed_recommended_count'] ?? 0),
             'max_requested_pairs_count' => (int) ($summary['max_requested_pairs_count'] ?? 0),
@@ -206,9 +270,12 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
         string $fromDate,
         string $toDate,
         string $executedAt,
-        string $outputPath
+        string $outputPath,
+        string $qualityProfile = self::DEFAULT_QUALITY_PROFILE
     ): array {
-        $selectedItems = array_values(array_filter($selectionDiagnostic['proposed_path']['selected_items'] ?? [], 'is_array'));
+        $baseSelectedItems = array_values(array_filter($selectionDiagnostic['proposed_path']['selected_items'] ?? [], 'is_array'));
+        $profileSelection = $this->applyQualityProfile($baseSelectedItems, $qualityProfile, $paramset);
+        $selectedItems = $profileSelection['items'];
         $holdingDays = max(1, (int) ($paramset['backtest']['holding_days'] ?? 5));
         $strategyTradeDates = count($tradeDates) > $holdingDays
             ? array_slice($tradeDates, 0, count($tradeDates) - $holdingDays)
@@ -277,7 +344,10 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'current_recommended_count' => (int) ($selectionDiagnostic['current_path']['recommendation_output_count'] ?? 0),
                 'proposed_top_buffer_count' => (int) ($selectionDiagnostic['proposed_path']['top_count'] ?? 0),
                 'proposed_secondary_buffer_count' => (int) ($selectionDiagnostic['proposed_path']['secondary_count'] ?? 0),
+                'baseline_proposed_recommended_count' => count($baseSelectedItems),
                 'proposed_recommended_count' => count($selectedItems),
+                'quality_profile_code' => $qualityProfile,
+                'quality_profile_removed_count' => (int) ($profileSelection['removed_count'] ?? 0),
             ],
             'price_evaluation_counts' => [
                 'requested_pairs_count' => array_sum(array_map('count', $requiredMap)),
@@ -302,6 +372,15 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
             ],
             'monthly_evaluated_distribution' => $this->monthlyEvaluatedDistribution($selectedItems, $metrics['evaluated_trades'] ?? []),
             'reason_code_distribution' => $metrics['reason_code_distribution'] ?? [],
+            'quality_profile_diagnostic' => [
+                'profile_code' => $qualityProfile,
+                'profile_definition' => self::qualityProfiles()[$qualityProfile] ?? [],
+                'baseline_selected_count' => count($baseSelectedItems),
+                'profile_selected_count' => count($selectedItems),
+                'removed_count' => (int) ($profileSelection['removed_count'] ?? 0),
+                'removed_reason_counts' => $profileSelection['removed_reason_counts'] ?? [],
+                'uses_price_outcome_for_selection' => false,
+            ],
             'price_readiness' => [
                 'is_ready' => (bool) ($priceRead['is_ready'] ?? false),
                 'reason_code' => $priceRead['reason_code'] ?? null,
@@ -323,6 +402,189 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'catalog_deferred' => true,
             ],
         ];
+    }
+
+    private function applyQualityProfile(array $items, string $profile, array $paramset): array
+    {
+        $profile = strtoupper(trim($profile)) ?: self::DEFAULT_QUALITY_PROFILE;
+        $items = array_values(array_filter($items, 'is_array'));
+        if ($profile === self::DEFAULT_QUALITY_PROFILE) {
+            return ['items' => $items, 'removed_count' => 0, 'removed_reason_counts' => []];
+        }
+
+        $kept = [];
+        $removedReasons = [];
+        foreach ($items as $item) {
+            $reasons = $this->qualityProfileRejectReasons($item, $profile, $paramset);
+            if ($reasons === []) {
+                $kept[] = $item;
+                continue;
+            }
+            $this->addReasonCounts($removedReasons, $reasons);
+        }
+
+        if ($profile === 'Q05_DOWNSIDE_AWARE_SCORE_120') {
+            $kept = $this->rankQualityItems($kept);
+            $kept = array_slice($kept, 0, min(max(self::CANONICAL_SAMPLE_TARGET, 120) + 5, count($kept)));
+        } elseif ($profile === 'Q06_MONTHLY_QUALITY_CAP_120') {
+            $kept = $this->monthlyQualityCap($kept, 4, self::CANONICAL_SAMPLE_TARGET);
+        } else {
+            $kept = $this->rankQualityItems($kept);
+        }
+
+        return [
+            'items' => array_values($kept),
+            'removed_count' => max(0, count($items) - count($kept)),
+            'removed_reason_counts' => $this->topCounts($removedReasons, 20),
+        ];
+    }
+
+    private function qualityProfileRejectReasons(array $item, string $profile, array $paramset): array
+    {
+        $failures = array_values(array_map('strval', is_array($item['current_extension_failures'] ?? null) ? $item['current_extension_failures'] : []));
+        $metrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $score = $this->numericOrNull($item['score_total'] ?? null);
+        $quality = $this->numericOrNull($item['quality_score'] ?? null);
+        $penalty = $this->numericOrNull($item['penalty_total'] ?? null) ?? 0.0;
+        $reject = [];
+
+        if ($profile === 'Q01_STRICT_ENTRY_QUALITY') {
+            if ($this->hasReason($failures, 'WATCHLIST_C17_ENTRY_QUALITY_FLOOR_FAIL')) {
+                $reject[] = 'Q01_REJECT_ENTRY_QUALITY_FLOOR_FAIL';
+            }
+            if ($quality !== null && $quality < 0.60) {
+                $reject[] = 'Q01_REJECT_LOW_QUALITY_SCORE';
+            }
+        } elseif ($profile === 'Q02_NO_SCORE_OVEREXTENSION_RECOVERY') {
+            if ($this->hasReason($failures, 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL')) {
+                $reject[] = 'Q02_REJECT_SCORE_OVEREXTENSION_RECOVERY';
+            }
+            if ($score !== null && $score >= 0.85) {
+                $reject[] = 'Q02_REJECT_HIGH_SCORE_CHASE_ZONE';
+            }
+        } elseif ($profile === 'Q03_PULLBACK_ROC_DISCIPLINE') {
+            if ($this->hasReason($failures, 'WATCHLIST_C17_ROC5_CONTROLLED_PULLBACK_RANGE_FAIL')) {
+                $reject[] = 'Q03_REJECT_ROC5_PULLBACK_MISS';
+            }
+            if ($this->hasReason($failures, 'WATCHLIST_C17_ROC20_SEGMENT_RANGE_FAIL')) {
+                $reject[] = 'Q03_REJECT_ROC20_SEGMENT_MISS';
+            }
+        } elseif ($profile === 'Q04_LOW_ATR_NEG_ROC20_PRIORITY') {
+            $atr = $this->numericOrNull($metrics['atr14_pct'] ?? null);
+            $roc20 = $this->numericOrNull($metrics['roc20'] ?? null);
+            $maxAtr = $this->numericOrNull($paramset['risk']['max_atr14_pct'] ?? null) ?? 0.06;
+            if ($atr === null || $atr > min($maxAtr, 0.032)) {
+                $reject[] = 'Q04_REJECT_ATR_ABOVE_LOW_ATR_PRIORITY';
+            }
+            if ($roc20 === null || $roc20 > 0.030) {
+                $reject[] = 'Q04_REJECT_ROC20_CHASE_PRIORITY';
+            }
+            if ($penalty > 0.08) {
+                $reject[] = 'Q04_REJECT_TOO_MANY_RECOVERY_PENALTIES';
+            }
+        } elseif ($profile === 'Q05_DOWNSIDE_AWARE_SCORE_120') {
+            if ($quality !== null && $quality < 0.56) {
+                $reject[] = 'Q05_REJECT_LOW_QUALITY_SCORE';
+            }
+            if ($penalty > 0.10) {
+                $reject[] = 'Q05_REJECT_HIGH_PENALTY_TOTAL';
+            }
+        } elseif ($profile === 'Q06_MONTHLY_QUALITY_CAP_120') {
+            if ($quality !== null && $quality < 0.54) {
+                $reject[] = 'Q06_REJECT_LOW_QUALITY_SCORE';
+            }
+        }
+
+        return array_values(array_unique($reject));
+    }
+
+    private function rankQualityItems(array $items): array
+    {
+        usort($items, function (array $left, array $right): int {
+            foreach ([
+                ['quality_score', false],
+                ['penalty_total', true],
+                ['score_total', false],
+                ['trade_date', true],
+                ['ticker_id', true],
+                ['ticker_code', true],
+            ] as $sort) {
+                [$key, $ascending] = $sort;
+                $a = $left[$key] ?? '';
+                $b = $right[$key] ?? '';
+                if ($a == $b) {
+                    continue;
+                }
+                $cmp = $a <=> $b;
+                return $ascending ? $cmp : -$cmp;
+            }
+            return 0;
+        });
+        return array_values($items);
+    }
+
+    private function monthlyQualityCap(array $items, int $monthlyCap, int $target): array
+    {
+        $ranked = $this->rankQualityItems($items);
+        $selected = [];
+        $selectedKeys = [];
+        $monthlyCount = [];
+        foreach ($ranked as $item) {
+            $month = substr((string) ($item['trade_date'] ?? ''), 0, 7);
+            if ($month === '') {
+                continue;
+            }
+            if (($monthlyCount[$month] ?? 0) >= $monthlyCap) {
+                continue;
+            }
+            $key = $this->qualityItemKey($item);
+            $selected[] = $item;
+            $selectedKeys[$key] = true;
+            $monthlyCount[$month] = ($monthlyCount[$month] ?? 0) + 1;
+        }
+        foreach ($ranked as $item) {
+            if (count($selected) >= $target) {
+                break;
+            }
+            $key = $this->qualityItemKey($item);
+            if (isset($selectedKeys[$key])) {
+                continue;
+            }
+            $selected[] = $item;
+            $selectedKeys[$key] = true;
+        }
+        return array_values($selected);
+    }
+
+    private function qualityItemKey(array $item): string
+    {
+        return (string) ($item['trade_date'] ?? '').'|'.(string) ($item['ticker_id'] ?? '').'|'.(string) ($item['ticker_code'] ?? '');
+    }
+
+    private function addReasonCounts(array &$counts, array $reasons): void
+    {
+        foreach ($reasons as $reason) {
+            $reason = (string) $reason;
+            if ($reason === '') {
+                continue;
+            }
+            $counts[$reason] = ($counts[$reason] ?? 0) + 1;
+        }
+    }
+
+    private function topCounts(array $counts, int $limit): array
+    {
+        arsort($counts);
+        $out = [];
+        foreach (array_slice($counts, 0, $limit, true) as $reason => $count) {
+            $out[] = ['reason_code' => (string) $reason, 'count' => (int) $count];
+        }
+        return $out;
+    }
+
+    private function hasReason(array $reasons, string $needle): bool
+    {
+        return in_array($needle, $reasons, true);
     }
 
     private function proposalItemsToTrades(array $items, array $paramset): array
@@ -678,6 +940,7 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
             'C19_NOT_CATALOG_CHURN' => true,
             'C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED' => true,
             'C19_PROPOSED_SELECTION_PRICE_EVALUATED' => true,
+            'C19_QUALITY_RECOVERY_PROFILE_SUPPORTED' => true,
             'C19_CATALOG_IMPLEMENTATION_DEFERRED' => true,
             'C19_CATALOG_CODE' => 'NOT_CREATED',
             'C18_UNCHANGED' => true,
@@ -803,6 +1066,18 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
             $value[$key] = $this->normalize($item);
         }
         return $value;
+    }
+
+    private function positiveIntOrNull($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (! is_numeric($value)) {
+            return null;
+        }
+        $int = (int) $value;
+        return $int > 0 ? $int : null;
     }
 
     private function numericOrNull($value): ?float

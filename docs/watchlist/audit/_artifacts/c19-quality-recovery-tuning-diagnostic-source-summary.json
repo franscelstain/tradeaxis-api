@@ -1,0 +1,21 @@
+{
+  "artifact_type": "C19_QUALITY_RECOVERY_TUNING_DIAGNOSTIC_SOURCE_SUMMARY",
+  "status": "SOURCE_IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED",
+  "scope": "IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC",
+  "command": "watchlist:backtest-c19-quality-recovery-diagnose",
+  "quality_profiles": [
+    "Q00_TAHAP_4_BASELINE",
+    "Q01_STRICT_ENTRY_QUALITY",
+    "Q02_NO_SCORE_OVEREXTENSION_RECOVERY",
+    "Q03_PULLBACK_ROC_DISCIPLINE",
+    "Q04_LOW_ATR_NEG_ROC20_PRIORITY",
+    "Q05_DOWNSIDE_AWARE_SCORE_120",
+    "Q06_MONTHLY_QUALITY_CAP_120"
+  ],
+  "selection_inputs_only": true,
+  "uses_price_outcome_for_selection": false,
+  "catalog_created": false,
+  "oos_executed": false,
+  "production_ready": false,
+  "operator_validation_required": true
+}

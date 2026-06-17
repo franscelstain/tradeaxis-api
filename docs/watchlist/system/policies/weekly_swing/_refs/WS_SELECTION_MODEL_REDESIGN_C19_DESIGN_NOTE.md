@@ -187,3 +187,20 @@ C19_CATALOG_CODE=NOT_CREATED
 OOS_NOT_RUN=true
 production_ready=0
 ```
+
+## Tahap 5 Quality Recovery Tuning Note
+
+Tahap 4 proved evaluated sample recovery but all rows still had negative average return. Tahap 5 therefore introduces profile-based quality recovery diagnostics, not a catalog.
+
+Profiles are constrained to pre-price selector inputs:
+
+```text
+quality_score
+penalty_total
+score_total
+score_components
+score_metrics
+current_extension_failures
+```
+
+Profiles must not use future return, stop/target outcome, ticker blacklist, month blacklist, sector whitelist, OOS, or production/runtime mutation. The output is only valid as evidence for whether the next redesign should continue, not as an automatic catalog candidate.

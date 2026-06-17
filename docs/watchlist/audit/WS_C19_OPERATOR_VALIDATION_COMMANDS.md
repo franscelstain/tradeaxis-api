@@ -293,3 +293,103 @@ $run.diagnostics |
 ```
 
 Catalog remains forbidden until price-evaluated IS evidence is reviewed and repeatable.
+
+## 9. C19 Tahap 5 — Quality Recovery Tuning Diagnostic
+
+Run C19 tests:
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC19"
+```
+
+Run full Watchlist tests:
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist
+```
+
+Run Tahap 5 fast smoke diagnostic first. Do not run all profiles until this passes:
+
+```powershell
+php artisan watchlist:backtest-c19-quality-recovery-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --param-ids=148 `
+  --profile-codes=Q00_TAHAP_4_BASELINE,Q05_DOWNSIDE_AWARE_SCORE_120 `
+  --progress `
+  --output=storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-smoke-148.json `
+  --overwrite
+```
+
+Run focused Tahap 5 diagnostic after smoke PASS:
+
+```powershell
+php artisan watchlist:backtest-c19-quality-recovery-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --param-ids=148,149,150,152 `
+  --profile-codes=Q00_TAHAP_4_BASELINE,Q05_DOWNSIDE_AWARE_SCORE_120,Q06_MONTHLY_QUALITY_CAP_120 `
+  --progress `
+  --output=storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-focused.json `
+  --overwrite
+```
+
+Expected console markers:
+
+```text
+status=PASS
+reason_code=WS_BT_C19_QUALITY_RECOVERY_DIAGNOSTIC_READY
+scope=IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC
+profile_count=<integer>
+profile_scope=<FAST_DEFAULT|EXPLICIT|ALL_PROFILES_EXPLICIT>
+max_params=<integer-or-empty>
+best_profile_code=<profile>
+best_avg_ret_net_top=<float>
+best_evaluated_picks_count=<integer>
+profiles_with_sample_target_reached=<integer>
+profiles_with_quality_improvement=<integer>
+profiles_with_quality_target_reached=<integer>
+c19_catalog_implementation_deferred=1
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_executed=0
+production_ready=0
+```
+
+Artifact ranking query:
+
+```powershell
+$run = Get-Content storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-run-1.json | ConvertFrom-Json
+
+$run.profile_summaries |
+    Select-Object `
+        profile_code,
+        @{n='best_param';e={$_.best_param.param_id}},
+        @{n='row';e={$_.best_param.row_code}},
+        @{n='evaluated';e={$_.best_param.evaluated_picks_count}},
+        @{n='avg';e={[math]::Round($_.best_param.avg_ret_net_top * 100, 2)}},
+        @{n='median';e={[math]::Round($_.best_param.median_ret_net_top * 100, 2)}},
+        @{n='p25';e={[math]::Round($_.best_param.p25_ret_net_top * 100, 2)}},
+        @{n='win';e={[math]::Round($_.best_param.win_rate_top * 100, 2)}},
+        @{n='period_fail';e={$_.best_param.period_fail_count}},
+        @{n='sample_ok';e={$_.quality_gate.sample_target_reached}},
+        @{n='quality_ok';e={$_.quality_gate.quality_target_reached}} |
+    Format-Table -AutoSize
+```
+
+Pass criteria:
+
+- command exits with code `0`;
+- artifact type is `C19_QUALITY_RECOVERY_TUNING_DIAGNOSTIC`;
+- scope is `IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC`;
+- quality profiles use selector-time inputs only;
+- no OOS service/repository/table path is used;
+- `production_ready=0`;
+- C19 catalog remains `NOT_CREATED`.
+
+Decision rule:
+
+- If no profile reaches quality target, record best improvements as next redesign evidence only.
+- If a profile reaches quality target, run a separate repeat IS proof before any catalog discussion.
