@@ -204,3 +204,23 @@ current_extension_failures
 ```
 
 Profiles must not use future return, stop/target outcome, ticker blacklist, month blacklist, sector whitelist, OOS, or production/runtime mutation. The output is only valid as evidence for whether the next redesign should continue, not as an automatic catalog candidate.
+
+## C19 Tahap 5B design note — hybrid quality backfill
+
+Tahap 5A operator evidence showed that no-overextension filtering is the strongest quality signal, but strict no-overextension alone cannot preserve the canonical sample target. Tahap 5B therefore tests hybrid selection:
+
+```text
+quality core = Q02 no-overextension signal
+controlled backfill = downside-aware / low-ATR / low-penalty candidates
+sample target = diagnostic attempt to restore 120+ evaluated picks
+```
+
+This remains diagnostic-only. It does not authorize any catalog, OOS, broker action, or production readiness.
+
+Decision ranking is explicitly split so small-sample averages cannot be promoted:
+
+```text
+best_any_sample_profile_summary = diagnostic clue only
+best_sample_qualified_profile_summary = sample-safe decision candidate
+best_profile_summary = decision-safe aggregate profile
+```

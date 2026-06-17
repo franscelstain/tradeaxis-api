@@ -1,0 +1,40 @@
+{
+  "artifact_type": "C19_QUALITY_RECOVERY_TAHAP_5B_SOURCE_SUMMARY",
+  "status": "SOURCE_LEVEL_IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED",
+  "scope": "IS_ONLY_QUALITY_RECOVERY_DIAGNOSTIC",
+  "reason_code": "WS_BT_C19_TAHAP_5B_HYBRID_BACKFILL_SOURCE_READY",
+  "operator_evidence_driving_patch": {
+    "q02_param_148": {
+      "evaluated": 53,
+      "avg_pct": 0.00,
+      "median_pct": 0.55,
+      "win_rate_pct": 52.83,
+      "period_fail": 8
+    },
+    "q00_param_148": {
+      "evaluated": 124,
+      "avg_pct": -0.18,
+      "median_pct": -0.05,
+      "win_rate_pct": 43.55,
+      "period_fail": 13
+    }
+  },
+  "new_profiles": [
+    "Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120",
+    "Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL",
+    "Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL",
+    "Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125"
+  ],
+  "decision_ranking_repair": {
+    "best_any_sample_profile_summary": true,
+    "best_sample_qualified_profile_summary": true,
+    "tiny_sample_not_decision_evidence": true
+  },
+  "safety_boundaries": {
+    "C19_CATALOG_IMPLEMENTATION_DEFERRED": true,
+    "C19_CATALOG_CODE": "NOT_CREATED",
+    "OOS_NOT_RUN": true,
+    "production_ready": 0,
+    "quality_profiles_use_price_outcome_for_selection": false
+  }
+}

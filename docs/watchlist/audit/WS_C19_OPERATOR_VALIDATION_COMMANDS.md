@@ -393,3 +393,56 @@ Decision rule:
 
 - If no profile reaches quality target, record best improvements as next redesign evidence only.
 - If a profile reaches quality target, run a separate repeat IS proof before any catalog discussion.
+
+## 10. C19 Tahap 5B — Hybrid Quality Backfill Diagnostic
+
+Run tests after applying Tahap 5B patch:
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC19"
+vendor\bin\phpunit tests\Unit\Watchlist
+```
+
+Run the focused hybrid quality diagnostic first. Do not run OOS and do not create a catalog:
+
+```powershell
+php artisan watchlist:backtest-c19-quality-recovery-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --param-ids=148,149,150,152 `
+  --profile-codes=Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120,Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL,Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL,Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125 `
+  --progress `
+  --output=storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5b-focused.json `
+  --overwrite
+```
+
+Inspect decision-safe ranking:
+
+```powershell
+$run = Get-Content storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5b-focused.json | ConvertFrom-Json
+
+$run.profile_summaries |
+    Select-Object `
+        profile_code,
+        @{n='decision_param';e={$_.best_decision_param.param_id}},
+        @{n='sample_qualified_param';e={$_.best_sample_qualified_param.param_id}},
+        @{n='any_sample_param';e={$_.best_any_sample_param.param_id}},
+        @{n='evaluated';e={$_.best_param.evaluated_picks_count}},
+        @{n='core';e={$_.best_param.quality_profile_core_selected_count}},
+        @{n='backfill';e={$_.best_param.quality_profile_backfill_selected_count}},
+        @{n='avg';e={[math]::Round($_.best_param.avg_ret_net_top * 100, 2)}},
+        @{n='median';e={[math]::Round($_.best_param.median_ret_net_top * 100, 2)}},
+        @{n='p25';e={[math]::Round($_.best_param.p25_ret_net_top * 100, 2)}},
+        @{n='win';e={[math]::Round($_.best_param.win_rate_top * 100, 2)}},
+        @{n='quality_ok';e={$_.quality_gate.quality_target_reached}} |
+    Format-Table -AutoSize
+```
+
+Decision rule:
+
+```text
+If best_sample_qualified_profile exists and quality_ok=true -> continue only to repeat IS proof.
+If best_any_sample improves but sample-qualified quality_ok=false -> continue tuning; do not catalog.
+If only tiny sample looks good -> record as diagnostic clue only.
+```

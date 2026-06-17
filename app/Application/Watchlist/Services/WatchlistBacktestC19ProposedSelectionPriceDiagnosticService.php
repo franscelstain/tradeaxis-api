@@ -45,6 +45,26 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'description' => 'Limit forced monthly coverage to best candidates first, then fill globally to sample target.',
                 'selector_input_only' => true,
             ],
+            'Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120' => [
+                'description' => 'Use Q02 no-overextension candidates as quality core, then controlled downside-aware backfill to preserve sample.',
+                'selector_input_only' => true,
+                'hybrid_backfill' => true,
+            ],
+            'Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL' => [
+                'description' => 'Use Q02 core with monthly-flex backfill; do not force bad months to five picks unless ranked quality supports it.',
+                'selector_input_only' => true,
+                'hybrid_backfill' => true,
+            ],
+            'Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL' => [
+                'description' => 'Use Q04 low-ATR/ROC20 discipline as core and backfill only from no-overextension quality candidates.',
+                'selector_input_only' => true,
+                'hybrid_backfill' => true,
+            ],
+            'Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125' => [
+                'description' => 'Hybrid Q02/Q04 quality core with Q05-style backfill around 125 candidates; designed to test quality preservation near sample target.',
+                'selector_input_only' => true,
+                'hybrid_backfill' => true,
+            ],
         ];
     }
 
@@ -348,6 +368,8 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'proposed_recommended_count' => count($selectedItems),
                 'quality_profile_code' => $qualityProfile,
                 'quality_profile_removed_count' => (int) ($profileSelection['removed_count'] ?? 0),
+                'quality_profile_core_selected_count' => (int) ($profileSelection['stage_counts']['core_selected_count'] ?? 0),
+                'quality_profile_backfill_selected_count' => (int) ($profileSelection['stage_counts']['backfill_selected_count'] ?? 0),
             ],
             'price_evaluation_counts' => [
                 'requested_pairs_count' => array_sum(array_map('count', $requiredMap)),
@@ -379,6 +401,8 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                 'profile_selected_count' => count($selectedItems),
                 'removed_count' => (int) ($profileSelection['removed_count'] ?? 0),
                 'removed_reason_counts' => $profileSelection['removed_reason_counts'] ?? [],
+                'stage_counts' => $profileSelection['stage_counts'] ?? [],
+                'selection_lineage' => $profileSelection['selection_lineage'] ?? [],
                 'uses_price_outcome_for_selection' => false,
             ],
             'price_readiness' => [
@@ -409,7 +433,22 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
         $profile = strtoupper(trim($profile)) ?: self::DEFAULT_QUALITY_PROFILE;
         $items = array_values(array_filter($items, 'is_array'));
         if ($profile === self::DEFAULT_QUALITY_PROFILE) {
-            return ['items' => $items, 'removed_count' => 0, 'removed_reason_counts' => []];
+            return [
+                'items' => $this->tagQualityStage($items, 'baseline', $profile),
+                'removed_count' => 0,
+                'removed_reason_counts' => [],
+                'stage_counts' => [
+                    'baseline_selected_count' => count($items),
+                    'core_selected_count' => 0,
+                    'backfill_selected_count' => 0,
+                    'final_selected_count' => count($items),
+                ],
+                'selection_lineage' => ['baseline'],
+            ];
+        }
+
+        if ($this->isHybridBackfillProfile($profile)) {
+            return $this->applyHybridBackfillProfile($items, $profile, $paramset);
         }
 
         $kept = [];
@@ -431,12 +470,297 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
         } else {
             $kept = $this->rankQualityItems($kept);
         }
+        $kept = $this->tagQualityStage($kept, 'filtered', $profile);
 
         return [
             'items' => array_values($kept),
             'removed_count' => max(0, count($items) - count($kept)),
             'removed_reason_counts' => $this->topCounts($removedReasons, 20),
+            'stage_counts' => [
+                'baseline_selected_count' => count($items),
+                'core_selected_count' => count($kept),
+                'backfill_selected_count' => 0,
+                'final_selected_count' => count($kept),
+            ],
+            'selection_lineage' => ['single_filter'],
         ];
+    }
+
+    private function isHybridBackfillProfile(string $profile): bool
+    {
+        return in_array($profile, [
+            'Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120',
+            'Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL',
+            'Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL',
+            'Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125',
+        ], true);
+    }
+
+    private function applyHybridBackfillProfile(array $items, string $profile, array $paramset): array
+    {
+        $core = [];
+        $backfillPool = [];
+        $removedReasons = [];
+        foreach ($items as $item) {
+            if ($this->hybridCoreAccepts($item, $profile, $paramset)) {
+                $core[] = $item;
+                continue;
+            }
+            $reasons = $this->hybridBackfillRejectReasons($item, $profile, $paramset);
+            if ($reasons === []) {
+                $backfillPool[] = $item;
+                continue;
+            }
+            $this->addReasonCounts($removedReasons, $reasons);
+        }
+
+        $core = $this->rankQualityItems($core);
+        $backfillPool = $this->rankHybridBackfillItems($backfillPool, $profile);
+        $target = $this->hybridTargetCount($profile);
+        $selected = [];
+        $selectedKeys = [];
+        $coreSelected = 0;
+        $backfillSelected = 0;
+
+        foreach ($core as $item) {
+            if (count($selected) >= $target) {
+                break;
+            }
+            $key = $this->qualityItemKey($item);
+            if (isset($selectedKeys[$key])) {
+                continue;
+            }
+            $selected[] = $this->tagQualityStageItem($item, 'core', $profile);
+            $selectedKeys[$key] = true;
+            $coreSelected++;
+        }
+
+        if ($profile === 'Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL') {
+            $backfilled = $this->monthlyFlexBackfill($selected, $selectedKeys, $backfillPool, $target, 5);
+            $selected = $backfilled['selected'];
+            $selectedKeys = $backfilled['selected_keys'];
+            $backfillSelected = $backfilled['backfill_selected_count'];
+        } else {
+            foreach ($backfillPool as $item) {
+                if (count($selected) >= $target) {
+                    break;
+                }
+                $key = $this->qualityItemKey($item);
+                if (isset($selectedKeys[$key])) {
+                    continue;
+                }
+                $selected[] = $this->tagQualityStageItem($item, 'backfill', $profile);
+                $selectedKeys[$key] = true;
+                $backfillSelected++;
+            }
+        }
+
+        $selected = $this->rankQualityItems($selected);
+        return [
+            'items' => array_values($selected),
+            'removed_count' => max(0, count($items) - count($selected)),
+            'removed_reason_counts' => $this->topCounts($removedReasons, 20),
+            'stage_counts' => [
+                'baseline_selected_count' => count($items),
+                'core_pool_count' => count($core),
+                'backfill_pool_count' => count($backfillPool),
+                'core_selected_count' => $coreSelected,
+                'backfill_selected_count' => $backfillSelected,
+                'final_selected_count' => count($selected),
+                'target_selected_count' => $target,
+            ],
+            'selection_lineage' => [
+                'strict_quality_core',
+                'controlled_quality_backfill',
+                'price_outcome_not_used_for_selection',
+            ],
+        ];
+    }
+
+    private function hybridCoreAccepts(array $item, string $profile, array $paramset): bool
+    {
+        if ($profile === 'Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL') {
+            return $this->qualityProfileRejectReasons($item, 'Q04_LOW_ATR_NEG_ROC20_PRIORITY', $paramset) === [];
+        }
+        if ($profile === 'Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125') {
+            return $this->qualityProfileRejectReasons($item, 'Q02_NO_SCORE_OVEREXTENSION_RECOVERY', $paramset) === []
+                || $this->qualityProfileRejectReasons($item, 'Q04_LOW_ATR_NEG_ROC20_PRIORITY', $paramset) === [];
+        }
+        return $this->qualityProfileRejectReasons($item, 'Q02_NO_SCORE_OVEREXTENSION_RECOVERY', $paramset) === [];
+    }
+
+    private function hybridBackfillRejectReasons(array $item, string $profile, array $paramset): array
+    {
+        $failures = array_values(array_map('strval', is_array($item['current_extension_failures'] ?? null) ? $item['current_extension_failures'] : []));
+        $metrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $score = $this->numericOrNull($item['score_total'] ?? null);
+        $quality = $this->numericOrNull($item['quality_score'] ?? null);
+        $penalty = $this->numericOrNull($item['penalty_total'] ?? null) ?? 0.0;
+        $atr = $this->numericOrNull($metrics['atr14_pct'] ?? null);
+        $roc20 = $this->numericOrNull($metrics['roc20'] ?? null);
+        $reject = [];
+
+        if ($quality !== null && $quality < 0.535) {
+            $reject[] = 'Q5B_REJECT_BACKFILL_LOW_QUALITY_SCORE';
+        }
+        if ($penalty > 0.125) {
+            $reject[] = 'Q5B_REJECT_BACKFILL_HIGH_PENALTY_TOTAL';
+        }
+        if ($score !== null && $score >= 0.90) {
+            $reject[] = 'Q5B_REJECT_BACKFILL_EXTREME_SCORE_CHASE_ZONE';
+        }
+        if ($this->hasReason($failures, 'WATCHLIST_C17_ENTRY_QUALITY_FLOOR_FAIL') && $quality !== null && $quality < 0.575) {
+            $reject[] = 'Q5B_REJECT_BACKFILL_ENTRY_QUALITY_FAIL_WITH_LOW_QUALITY';
+        }
+
+        if ($profile === 'Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120') {
+            if ($this->hasReason($failures, 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL') && $penalty > 0.075) {
+                $reject[] = 'Q07_REJECT_HEAVY_SCORE_OVEREXTENSION_BACKFILL';
+            }
+            if ($atr !== null && $atr > 0.044) {
+                $reject[] = 'Q07_REJECT_HIGH_ATR_BACKFILL';
+            }
+        } elseif ($profile === 'Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL') {
+            if ($this->hasReason($failures, 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL') && $penalty > 0.085) {
+                $reject[] = 'Q08_REJECT_HEAVY_OVEREXTENSION_MONTHLY_BACKFILL';
+            }
+        } elseif ($profile === 'Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL') {
+            if ($this->hasReason($failures, 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL')) {
+                $reject[] = 'Q09_REJECT_SCORE_OVEREXTENSION_BACKFILL';
+            }
+            if ($atr !== null && $atr > 0.040) {
+                $reject[] = 'Q09_REJECT_HIGH_ATR_BACKFILL';
+            }
+            if ($roc20 !== null && $roc20 > 0.050) {
+                $reject[] = 'Q09_REJECT_ROC20_CHASE_BACKFILL';
+            }
+        } elseif ($profile === 'Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125') {
+            if ($penalty > 0.105) {
+                $reject[] = 'Q10_REJECT_HIGH_PENALTY_BACKFILL';
+            }
+            if ($this->hasReason($failures, 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL') && $score !== null && $score >= 0.875) {
+                $reject[] = 'Q10_REJECT_HIGH_SCORE_OVEREXTENSION_BACKFILL';
+            }
+        }
+
+        return array_values(array_unique($reject));
+    }
+
+    private function hybridTargetCount(string $profile): int
+    {
+        if ($profile === 'Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125') {
+            return 125;
+        }
+        if ($profile === 'Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL') {
+            return 132;
+        }
+        return 135;
+    }
+
+    private function rankHybridBackfillItems(array $items, string $profile): array
+    {
+        usort($items, function (array $left, array $right) use ($profile): int {
+            $leftScore = $this->hybridBackfillRankScore($left, $profile);
+            $rightScore = $this->hybridBackfillRankScore($right, $profile);
+            if ($leftScore != $rightScore) {
+                return $rightScore <=> $leftScore;
+            }
+            foreach ([
+                ['penalty_total', true],
+                ['quality_score', false],
+                ['score_total', false],
+                ['trade_date', true],
+                ['ticker_id', true],
+                ['ticker_code', true],
+            ] as $sort) {
+                [$key, $ascending] = $sort;
+                $a = $left[$key] ?? '';
+                $b = $right[$key] ?? '';
+                if ($a == $b) {
+                    continue;
+                }
+                $cmp = $a <=> $b;
+                return $ascending ? $cmp : -$cmp;
+            }
+            return 0;
+        });
+        return array_values($items);
+    }
+
+    private function hybridBackfillRankScore(array $item, string $profile): float
+    {
+        $metrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $failures = array_values(array_map('strval', is_array($item['current_extension_failures'] ?? null) ? $item['current_extension_failures'] : []));
+        $quality = $this->numericOrNull($item['quality_score'] ?? null) ?? 0.0;
+        $score = $this->numericOrNull($item['score_total'] ?? null) ?? 0.0;
+        $penalty = $this->numericOrNull($item['penalty_total'] ?? null) ?? 0.0;
+        $atr = $this->numericOrNull($metrics['atr14_pct'] ?? null);
+        $roc20 = $this->numericOrNull($metrics['roc20'] ?? null);
+        $rank = ($quality * 2.0) + ($score * 0.35) - ($penalty * 2.5);
+        if ($atr !== null) {
+            $rank -= max(0.0, $atr - 0.030) * 6.0;
+        }
+        if ($roc20 !== null && $roc20 > 0.030) {
+            $rank -= ($roc20 - 0.030) * 2.0;
+        }
+        if ($this->hasReason($failures, 'WATCHLIST_C17_SCORE_OVEREXTENSION_FAIL')) {
+            $rank -= $profile === 'Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125' ? 0.10 : 0.16;
+        }
+        if ($this->hasReason($failures, 'WATCHLIST_C17_ENTRY_QUALITY_FLOOR_FAIL')) {
+            $rank -= 0.12;
+        }
+        if ($this->hasReason($failures, 'WATCHLIST_C17_ROC5_CONTROLLED_PULLBACK_RANGE_FAIL')) {
+            $rank -= 0.05;
+        }
+        return $rank;
+    }
+
+    private function monthlyFlexBackfill(array $selected, array $selectedKeys, array $backfillPool, int $target, int $monthlyCap): array
+    {
+        $monthlyCount = [];
+        foreach ($selected as $item) {
+            $month = substr((string) ($item['trade_date'] ?? ''), 0, 7);
+            if ($month !== '') {
+                $monthlyCount[$month] = ($monthlyCount[$month] ?? 0) + 1;
+            }
+        }
+        $backfillSelected = 0;
+        foreach ($backfillPool as $item) {
+            if (count($selected) >= $target) {
+                break;
+            }
+            $month = substr((string) ($item['trade_date'] ?? ''), 0, 7);
+            if ($month !== '' && ($monthlyCount[$month] ?? 0) >= $monthlyCap) {
+                continue;
+            }
+            $key = $this->qualityItemKey($item);
+            if (isset($selectedKeys[$key])) {
+                continue;
+            }
+            $selected[] = $this->tagQualityStageItem($item, 'backfill', 'Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL');
+            $selectedKeys[$key] = true;
+            $monthlyCount[$month] = ($monthlyCount[$month] ?? 0) + 1;
+            $backfillSelected++;
+        }
+        return [
+            'selected' => $selected,
+            'selected_keys' => $selectedKeys,
+            'backfill_selected_count' => $backfillSelected,
+        ];
+    }
+
+    private function tagQualityStage(array $items, string $stage, string $profile): array
+    {
+        return array_map(function (array $item) use ($stage, $profile): array {
+            return $this->tagQualityStageItem($item, $stage, $profile);
+        }, $items);
+    }
+
+    private function tagQualityStageItem(array $item, string $stage, string $profile): array
+    {
+        $item['_c19_quality_stage'] = $stage;
+        $item['_c19_quality_profile'] = $profile;
+        return $item;
     }
 
     private function qualityProfileRejectReasons(array $item, string $profile, array $paramset): array
@@ -642,6 +966,8 @@ class WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
                     'proposed_plan_group' => (string) ($item['proposed_plan_group'] ?? ''),
                     'penalty_total' => $this->numericOrNull($item['penalty_total'] ?? null),
                     'penalties' => is_array($item['penalties'] ?? null) ? $item['penalties'] : [],
+                    'c19_quality_stage' => (string) ($item['_c19_quality_stage'] ?? ''),
+                    'c19_quality_profile' => (string) ($item['_c19_quality_profile'] ?? ''),
                 ],
                 'contract_flags' => [
                     'from_recommendation_layer' => true,

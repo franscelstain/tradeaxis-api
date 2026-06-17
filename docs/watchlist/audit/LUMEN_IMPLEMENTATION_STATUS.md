@@ -3381,3 +3381,53 @@ PHPUnit/runtime command = OPERATOR_VALIDATION_REQUIRED
 ```
 
 Tahap 5 must record only results that help the next decision. A profile that merely preserves sample but keeps negative return quality must be recorded as useful negative evidence, not promoted as catalog evidence.
+
+## Audit Append - C19 Tahap 5B Hybrid Quality Backfill Diagnostic
+
+C19 Tahap 5B has been implemented as a source-level diagnostic patch after Tahap 5A showed useful quality evidence but no quality-target PASS.
+
+Operator-provided Tahap 5A evidence that drives this patch:
+
+```text
+Q02_NO_SCORE_OVEREXTENSION_RECOVERY param 148: evaluated=53, avg=0.00%, median=+0.55%, p25=-1.92%, win=52.83%, period_fail=8
+Q00_TAHAP_4_BASELINE param 148: evaluated=124, avg=-0.18%, median=-0.05%, p25=-1.82%, win=43.55%, period_fail=13
+```
+
+Conclusion: no-overextension is a strong quality signal, but the strict quality pool is too small. Tahap 5B therefore adds hybrid profiles using a strict quality core plus controlled backfill, and repairs decision ranking so tiny-sample averages cannot be treated as best decision evidence.
+
+Changed source level:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC19ProposedSelectionPriceDiagnosticService.php
+app/Application/Watchlist/Services/WatchlistBacktestC19QualityRecoveryDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC19QualityRecoveryDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC19QualityRecoveryDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC19StaticGuardTest.php
+```
+
+New diagnostic profiles:
+
+```text
+Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120
+Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL
+Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL
+Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125
+```
+
+Boundary remains unchanged:
+
+```text
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+quality_profiles_use_price_outcome_for_selection=false
+```
+
+Runtime validation required:
+
+```text
+PHPUNIT_C19_FILTER=OPERATOR_VALIDATION_REQUIRED
+FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+C19_TAHAP_5B_FOCUSED_DIAGNOSTIC=OPERATOR_VALIDATION_REQUIRED
+```

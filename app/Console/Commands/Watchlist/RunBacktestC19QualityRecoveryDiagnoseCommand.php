@@ -74,6 +74,8 @@ class RunBacktestC19QualityRecoveryDiagnoseCommand extends Command
             'best_profile_code',
             'best_avg_ret_net_top',
             'best_evaluated_picks_count',
+            'best_sample_qualified_profile_code',
+            'best_any_sample_profile_code',
             'profiles_with_sample_target_reached',
             'profiles_with_quality_improvement',
             'profiles_with_quality_target_reached',

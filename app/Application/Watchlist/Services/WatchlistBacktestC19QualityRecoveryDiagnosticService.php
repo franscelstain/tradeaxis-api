@@ -113,6 +113,8 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'quality_gate_definition' => $this->qualityGateDefinition(),
             'profile_summaries' => $ranked,
             'best_profile_summary' => $ranked[0] ?? null,
+            'best_any_sample_profile_summary' => $this->bestAnySampleProfileSummary($profileRuns),
+            'best_sample_qualified_profile_summary' => $this->bestSampleQualifiedProfileSummary($profileRuns),
             'baseline_summary' => $baseline,
             'recommended_next_step' => $recommendedNext,
             'evidence_for_next_step_only' => $recommendedNext['evidence_for_next_step_only'] ?? [],
@@ -143,6 +145,8 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'best_profile_code' => (string) ($ranked[0]['profile_code'] ?? ''),
             'best_avg_ret_net_top' => $ranked[0]['best_param']['avg_ret_net_top'] ?? null,
             'best_evaluated_picks_count' => $ranked[0]['best_param']['evaluated_picks_count'] ?? null,
+            'best_sample_qualified_profile_code' => (string) (($this->bestSampleQualifiedProfileSummary($profileRuns)['profile_code'] ?? '')),
+            'best_any_sample_profile_code' => (string) (($this->bestAnySampleProfileSummary($profileRuns)['profile_code'] ?? '')),
             'profiles_with_sample_target_reached' => count(array_filter($ranked, function (array $summary): bool {
                 return ($summary['best_param']['evaluated_sample_target_reached'] ?? false) === true;
             })),
@@ -170,13 +174,20 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             $paramSummaries[] = $this->summarizeParam($diag);
         }
         $paramSummaries = $this->rankParamSummaries($paramSummaries);
+        $sampleQualified = $this->sampleQualifiedParamSummaries($paramSummaries);
+        $decisionParam = $this->decisionParamSummary($paramSummaries, $sampleQualified);
         return [
             'profile_code' => $profile,
             'profile_definition' => WatchlistBacktestC19ProposedSelectionPriceDiagnosticService::qualityProfiles()[$profile] ?? [],
             'artifact_path' => $path,
             'artifact_hash' => $result['artifact_hash'] ?? ($artifact['artifact_hash'] ?? null),
             'param_count' => count($paramSummaries),
-            'best_param' => $paramSummaries[0] ?? [],
+            'best_param' => $decisionParam,
+            'best_decision_param' => $decisionParam,
+            'best_any_sample_param' => $paramSummaries[0] ?? [],
+            'best_sample_qualified_param' => $sampleQualified[0] ?? null,
+            'sample_qualified_param_count' => count($sampleQualified),
+            'small_sample_best_is_not_decision_evidence' => ($sampleQualified === [] && (int) (($paramSummaries[0]['evaluated_picks_count'] ?? 0)) < 30),
             'param_summaries' => $paramSummaries,
             'price_diagnostic_summary' => [
                 'max_proposed_recommended_count' => $result['max_proposed_recommended_count'] ?? null,
@@ -208,6 +219,8 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'baseline_proposed_recommended_count' => (int) ($selection['baseline_proposed_recommended_count'] ?? $selection['proposed_recommended_count'] ?? 0),
             'proposed_recommended_count' => (int) ($selection['proposed_recommended_count'] ?? 0),
             'quality_profile_removed_count' => (int) ($selection['quality_profile_removed_count'] ?? 0),
+            'quality_profile_core_selected_count' => (int) ($selection['quality_profile_core_selected_count'] ?? 0),
+            'quality_profile_backfill_selected_count' => (int) ($selection['quality_profile_backfill_selected_count'] ?? 0),
             'requested_pairs_count' => (int) ($counts['requested_pairs_count'] ?? 0),
             'evaluated_picks_count' => $evaluated,
             'price_missing_count' => (int) ($counts['price_missing_count'] ?? 0),
@@ -225,6 +238,28 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'quality_target_reached' => $sampleReached && $avg !== null && $avg >= 0.0 && $median !== null && $median >= 0.0 && $win !== null && $win >= 0.45,
             'profile_removed_reason_counts' => $diag['quality_profile_diagnostic']['removed_reason_counts'] ?? [],
         ];
+    }
+
+    private function sampleQualifiedParamSummaries(array $summaries): array
+    {
+        $qualified = array_values(array_filter($summaries, function (array $summary): bool {
+            return ($summary['evaluated_sample_target_reached'] ?? false) === true;
+        }));
+        return $this->rankParamSummaries($qualified);
+    }
+
+    private function decisionParamSummary(array $summaries, array $sampleQualified): array
+    {
+        if ($sampleQualified !== []) {
+            return $sampleQualified[0];
+        }
+        $diagnosticFloor = array_values(array_filter($summaries, function (array $summary): bool {
+            return (int) ($summary['evaluated_picks_count'] ?? 0) >= 30;
+        }));
+        if ($diagnosticFloor !== []) {
+            return $this->rankParamSummaries($diagnosticFloor)[0];
+        }
+        return $summaries[0] ?? [];
     }
 
     private function rankParamSummaries(array $summaries): array
@@ -324,6 +359,67 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
         return $summaries[0] ?? [];
     }
 
+    private function bestAnySampleProfileSummary(array $summaries): ?array
+    {
+        $ranked = $summaries;
+        usort($ranked, function (array $left, array $right): int {
+            $l = $left['best_any_sample_param'] ?? $left['best_param'] ?? [];
+            $r = $right['best_any_sample_param'] ?? $right['best_param'] ?? [];
+            foreach ([
+                ['avg_ret_net_top', false],
+                ['median_ret_net_top', false],
+                ['win_rate_top', false],
+                ['p25_ret_net_top', false],
+                ['period_fail_count', true],
+                ['evaluated_picks_count', false],
+            ] as $sort) {
+                [$key, $ascending] = $sort;
+                $a = $l[$key] ?? ($ascending ? PHP_INT_MAX : -INF);
+                $b = $r[$key] ?? ($ascending ? PHP_INT_MAX : -INF);
+                if ($a == $b) {
+                    continue;
+                }
+                $cmp = $a <=> $b;
+                return $ascending ? $cmp : -$cmp;
+            }
+            return strcmp((string) ($left['profile_code'] ?? ''), (string) ($right['profile_code'] ?? ''));
+        });
+        return $ranked[0] ?? null;
+    }
+
+    private function bestSampleQualifiedProfileSummary(array $summaries): ?array
+    {
+        $qualified = array_values(array_filter($summaries, function (array $summary): bool {
+            return is_array($summary['best_sample_qualified_param'] ?? null);
+        }));
+        if ($qualified === []) {
+            return null;
+        }
+        usort($qualified, function (array $left, array $right): int {
+            $l = $left['best_sample_qualified_param'] ?? [];
+            $r = $right['best_sample_qualified_param'] ?? [];
+            foreach ([
+                ['quality_target_reached', false],
+                ['avg_ret_net_top', false],
+                ['median_ret_net_top', false],
+                ['win_rate_top', false],
+                ['p25_ret_net_top', false],
+                ['period_fail_count', true],
+            ] as $sort) {
+                [$key, $ascending] = $sort;
+                $a = $l[$key] ?? ($ascending ? PHP_INT_MAX : -INF);
+                $b = $r[$key] ?? ($ascending ? PHP_INT_MAX : -INF);
+                if ($a == $b) {
+                    continue;
+                }
+                $cmp = $a <=> $b;
+                return $ascending ? $cmp : -$cmp;
+            }
+            return strcmp((string) ($left['profile_code'] ?? ''), (string) ($right['profile_code'] ?? ''));
+        });
+        return $qualified[0] ?? null;
+    }
+
     private function recommendedNextStep(array $ranked, array $baseline): array
     {
         $best = $ranked[0] ?? [];
@@ -341,8 +437,12 @@ class WatchlistBacktestC19QualityRecoveryDiagnosticService
             'decision' => 'DO_NOT_CREATE_CATALOG_CONTINUE_QUALITY_REDESIGN',
             'profile_code' => $best['profile_code'] ?? null,
             'param_id' => $bestParam['param_id'] ?? null,
-            'reason' => 'No profile reached the quality target. Record only improvements that help the next redesign; do not promote a merely sample-complete profile.',
-            'evidence_for_next_step_only' => $best,
+            'reason' => 'No sample-qualified profile reached the quality target. Small-sample improvements are diagnostic clues only; do not promote a merely sample-complete or tiny-sample profile.',
+            'evidence_for_next_step_only' => [
+                'decision_profile' => $best,
+                'best_any_sample_profile' => $this->bestAnySampleProfileSummary($ranked),
+                'best_sample_qualified_profile' => $this->bestSampleQualifiedProfileSummary($ranked),
+            ],
         ];
     }
 

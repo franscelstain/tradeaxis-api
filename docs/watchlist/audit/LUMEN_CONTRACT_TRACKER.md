@@ -3468,3 +3468,41 @@ php artisan watchlist:backtest-c19-quality-recovery-diagnose ... --overwrite
 ```
 
 Catalog remains forbidden unless a separate later repeat IS proof confirms a quality-positive profile.
+
+## Audit Append - C19 Tahap 5B Hybrid Quality Backfill Contract
+
+Tahap 5B extends the C19 IS-only quality diagnostic without changing production Watchlist behavior.
+
+Contract markers:
+
+```text
+C19_TAHAP_5B_HYBRID_QUALITY_BACKFILL_DIAGNOSTIC=true
+C19_TAHAP_5B_DECISION_RANKING_REPAIRED=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Permitted implementation surface:
+
+```text
+WatchlistBacktestC19ProposedSelectionPriceDiagnosticService
+WatchlistBacktestC19QualityRecoveryDiagnosticService
+RunBacktestC19QualityRecoveryDiagnoseCommand
+```
+
+Forbidden changes remain:
+
+```text
+no C19 catalog class
+no C19 seed command
+no repository/factory catalog mapping
+no OOS service or repository invocation
+no ticker blacklist
+no month blacklist
+no sector whitelist
+no price-outcome based candidate selection
+```
+
+Tahap 5B profiles must use selector-time inputs only. Price data may only be consumed after candidates are frozen for canonical diagnostic evaluation.

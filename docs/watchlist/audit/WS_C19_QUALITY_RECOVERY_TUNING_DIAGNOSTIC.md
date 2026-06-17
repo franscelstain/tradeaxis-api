@@ -117,3 +117,79 @@ OOS_NOT_RUN=true
 production_ready=0
 C19_CATALOG_CODE=NOT_CREATED
 ```
+
+## Tahap 5B fastfix — hybrid quality backfill and decision ranking repair
+
+Operator evidence from Tahap 5A showed that Q02 (`NO_SCORE_OVEREXTENSION_RECOVERY`) is the strongest quality signal, but its useful sample is too small. Example evidence from focused diagnostics:
+
+```text
+Q02 param 148: evaluated=53, avg=0.00%, median=+0.55%, win=52.83%, period_fail=8
+Q00 param 148: evaluated=124, avg=-0.18%, median=-0.05%, win=43.55%, period_fail=13
+```
+
+This means Tahap 5B must not simply run more profiles. It must test hybrid selection:
+
+- strict no-overextension quality core;
+- controlled downside-aware backfill;
+- sample preservation target near 120+ evaluated picks;
+- no use of price outcome for pre-price candidate selection;
+- no ticker/month/sector blacklist;
+- no catalog creation.
+
+Tahap 5B also repairs aggregate decision ranking. A tiny sample such as `evaluated=1` may be shown as `best_any_sample_profile_summary` for diagnostic curiosity, but it must not become the primary decision profile. The artifact now separates:
+
+```text
+best_any_sample_profile_summary
+best_sample_qualified_profile_summary
+best_profile_summary / best_decision_param
+```
+
+The command output also includes:
+
+```text
+best_sample_qualified_profile_code
+best_any_sample_profile_code
+```
+
+### New Tahap 5B profiles
+
+```text
+Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120
+Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL
+Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL
+Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125
+```
+
+Each hybrid profile records selection-stage counts:
+
+```text
+quality_profile_core_selected_count
+quality_profile_backfill_selected_count
+quality_profile_diagnostic.stage_counts
+quality_profile_diagnostic.selection_lineage
+```
+
+### Recommended Tahap 5B focused run
+
+```powershell
+php artisan watchlist:backtest-c19-quality-recovery-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --param-ids=148,149,150,152 `
+  --profile-codes=Q07_NO_OVEREXTENSION_CORE_WITH_DOWNSIDE_BACKFILL_120,Q08_NO_OVEREXTENSION_CORE_WITH_MONTHLY_FLEX_BACKFILL,Q09_LOW_ATR_NEG_ROC20_CORE_WITH_NO_OVEREXTENSION_BACKFILL,Q10_HYBRID_Q02_Q04_Q05_BACKFILL_125 `
+  --progress `
+  --output=storage/app/watchlist/backtest/c19-quality-recovery-tuning-diagnostic-5b-focused.json `
+  --overwrite
+```
+
+Quality target remains diagnostic-only:
+
+```text
+evaluated_picks_count >= 120
+avg_ret_net_top >= 0
+median_ret_net_top >= 0
+win_rate_top >= 45%
+```
+
+If no sample-qualified profile reaches quality target, the next step remains redesign/tuning, not catalog and not OOS.
