@@ -183,13 +183,13 @@ The first operator rerun of v3 produced one failure in `WatchlistBacktestC19Sele
 Expected C19 filter result:
 
 ```text
-OK (5 tests, 70 assertions)
+OK (... tests, ... assertions)
 ```
 
 Expected full Watchlist result:
 
 ```text
-OK (377 tests, 9121 assertions)
+OK (... tests, ... assertions)
 ```
 
 Expected C19 v3.1 diagnostic markers:
@@ -205,3 +205,91 @@ oos_executed=0
 production_ready=0
 c19_catalog_implementation_deferred=1
 ```
+
+## 7. C19 Tahap 4 Price Diagnostic — Full Source Catalog
+
+```powershell
+php artisan watchlist:backtest-c19-proposed-selection-price-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --output=storage/app/watchlist/backtest/c19-proposed-selection-price-diagnostic-run-1.json `
+  --overwrite
+```
+
+Expected console markers:
+
+```text
+status=PASS
+reason_code=WS_BT_C19_PRICE_DIAGNOSTIC_READY
+scope=IS_ONLY_PRICE_DIAGNOSTIC
+diagnostic_param_count=12
+max_proposed_recommended_count=<integer>
+max_requested_pairs_count=<integer>
+max_evaluated_picks_count=<integer>
+max_price_missing_count=<integer>
+params_with_evaluated_sample_target_reached=<integer>
+c19_catalog_implementation_deferred=1
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_executed=0
+production_ready=0
+```
+
+Pass criteria:
+
+- command exits with code `0`;
+- artifact type is `C19_PROPOSED_SELECTION_PRICE_DIAGNOSTIC`;
+- scope is `IS_ONLY_PRICE_DIAGNOSTIC`;
+- proposed recommendations are converted into frozen trade candidates before price read;
+- price metrics are produced through the canonical runtime artifact/metrics services;
+- `oos_executed=0`;
+- `production_ready=0`;
+- C19 catalog remains `NOT_CREATED`.
+
+Fail criteria:
+
+- command exits non-zero;
+- output tries to run OOS;
+- output sets production readiness;
+- command seeds/promotes/creates C19 catalog;
+- canonical model changes from `ENTRY=NEXT_OPEN`, `EXIT=STOP_TP_OR_TIME`, `HOLD=5`, `FEE=IDR_FIXED`, `SLIP=0`, `GAP=OPEN`, `PX=IDX_BANDS`.
+
+## 8. C19 Tahap 4 Price Diagnostic — Focused Param 149/150
+
+```powershell
+php artisan watchlist:backtest-c19-proposed-selection-price-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --param-ids=149,150 `
+  --output=storage/app/watchlist/backtest/c19-proposed-selection-price-diagnostic-param-149-150.json `
+  --overwrite
+```
+
+Use this to validate the C18 deep-funnel reference rows after C19 proposed-selection recovery.
+
+Artifact inspection:
+
+```powershell
+$run = Get-Content storage/app/watchlist/backtest/c19-proposed-selection-price-diagnostic-run-1.json | ConvertFrom-Json
+
+$run.diagnostics |
+    Select-Object `
+        param_id,
+        row_code,
+        @{n='proposed';e={$_.selection_counts.proposed_recommended_count}},
+        @{n='requested_pairs';e={$_.price_evaluation_counts.requested_pairs_count}},
+        @{n='evaluated';e={$_.price_evaluation_counts.evaluated_picks_count}},
+        @{n='missing';e={$_.price_evaluation_counts.price_missing_count}},
+        @{n='avg';e={$_.return_metrics.avg_ret_net_top}},
+        @{n='median';e={$_.return_metrics.median_ret_net_top}},
+        @{n='p25';e={$_.return_metrics.p25_ret_net_top}},
+        @{n='win';e={$_.return_metrics.win_rate_top}},
+        @{n='month_win_min';e={$_.return_metrics.month_win_rate_min}},
+        @{n='month_avg_min';e={$_.return_metrics.month_avg_ret_net_min}} |
+    Sort-Object evaluated -Descending |
+    Format-Table -AutoSize
+```
+
+Catalog remains forbidden until price-evaluated IS evidence is reviewed and repeatable.

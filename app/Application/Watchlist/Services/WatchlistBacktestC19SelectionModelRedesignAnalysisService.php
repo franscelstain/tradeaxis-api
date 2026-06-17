@@ -299,6 +299,7 @@ class WatchlistBacktestC19SelectionModelRedesignAnalysisService
                 'secondary_count' => $proposal['secondary_count'],
                 'candidate_buffer_count' => $proposal['candidate_buffer_count'],
                 'recommended_count' => $proposal['recommended_count'],
+                'selected_items' => $proposal['selected_items'],
                 'estimated_sample_recovery_target' => self::CANONICAL_SAMPLE_TARGET,
                 'target_reached_by_diagnostic_only' => $proposal['recommended_count'] >= self::CANONICAL_SAMPLE_TARGET,
                 'price_evaluation_not_run' => true,
@@ -340,6 +341,9 @@ class WatchlistBacktestC19SelectionModelRedesignAnalysisService
                 'ticker_id' => (int) ($item['ticker_id'] ?? 0),
                 'ticker_code' => (string) ($item['ticker_code'] ?? ''),
                 'score_total' => $this->floatValue($item['score_total'] ?? 0.0),
+                'score_metrics' => is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [],
+                'score_components' => is_array($item['score_components'] ?? null) ? $item['score_components'] : [],
+                'factor_breakdown' => is_array($item['factor_breakdown'] ?? null) ? $item['factor_breakdown'] : [],
             ]);
         }
 
@@ -647,7 +651,31 @@ class WatchlistBacktestC19SelectionModelRedesignAnalysisService
             })),
             'candidate_buffer_count' => count($buffers),
             'recommended_count' => count($selected),
+            'selected_items' => array_map(function (array $buffer): array {
+                return $this->selectedProposalItem($buffer);
+            }, $selected),
             'monthly' => $monthly,
+        ];
+    }
+
+    private function selectedProposalItem(array $buffer): array
+    {
+        return [
+            'trade_date' => (string) ($buffer['trade_date'] ?? ''),
+            'month' => (string) ($buffer['month'] ?? ''),
+            'ticker_id' => (int) ($buffer['ticker_id'] ?? 0),
+            'ticker_code' => (string) ($buffer['ticker_code'] ?? ''),
+            'proposed_plan_group' => (string) ($buffer['proposed_plan_group'] ?? ''),
+            'proposed_rank' => (int) ($buffer['proposed_rank'] ?? 0),
+            'score_total' => $this->numericOrNull($buffer['score_total'] ?? null),
+            'quality_score' => $this->numericOrNull($buffer['quality_score'] ?? null),
+            'penalty_total' => $this->numericOrNull($buffer['penalty_total'] ?? null),
+            'trend_pass_count' => (int) ($buffer['trend_pass_count'] ?? 0),
+            'current_extension_failures' => array_values(array_map('strval', is_array($buffer['current_extension_failures'] ?? null) ? $buffer['current_extension_failures'] : [])),
+            'penalties' => is_array($buffer['penalties'] ?? null) ? $buffer['penalties'] : [],
+            'score_metrics' => is_array($buffer['score_metrics'] ?? null) ? $buffer['score_metrics'] : [],
+            'score_components' => is_array($buffer['score_components'] ?? null) ? $buffer['score_components'] : [],
+            'factor_breakdown' => is_array($buffer['factor_breakdown'] ?? null) ? $buffer['factor_breakdown'] : [],
         ];
     }
 

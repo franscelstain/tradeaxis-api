@@ -336,3 +336,44 @@ C19_CATALOG_CODE=NOT_CREATED
 ```
 
 C19 v3 can show whether a recovery buffer exists, but catalog creation still requires price-evaluated IS proof and two-run calibration. No OOS is allowed at this phase.
+
+## Tahap 4 Price Diagnostic Extension
+
+C19 Tahap 4 adds an IS-only diagnostic command that converts the selector simulation's proposed recommendations into frozen trade candidates and evaluates them through the existing published-price runtime artifact/metrics path.
+
+This stage answers a different question from selector simulation:
+
+```text
+Selector simulation question:
+Can scored candidates be recovered into proposed recommendations without opening unsafe gates?
+
+Tahap 4 question:
+Do those proposed recommendations survive canonical price evaluation from trade_date -> NEXT_OPEN entry -> STOP_TP_OR_TIME exit?
+```
+
+Tahap 4 does not change canonical evaluation, does not run OOS, does not create a catalog, and does not set production readiness.
+
+Implementation source:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC19ProposedSelectionPriceDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC19ProposedSelectionPriceDiagnoseCommand.php
+```
+
+Runtime source reused:
+
+```text
+WatchlistBacktestRuntimeArtifactService
+WatchlistBacktestMetricsService
+MarketDataPublishedEodSeriesReadService
+```
+
+Required status until further evidence:
+
+```text
+C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```

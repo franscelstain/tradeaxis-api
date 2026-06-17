@@ -185,8 +185,8 @@ safety_boundaries.production_ready=0
 Operator supplied post-signature-fix validation for C19 v2:
 
 ```text
-POST_FIX_PHPUNIT_C19_FILTER=PASS: OK (5 tests, 70 assertions)
-POST_FIX_FULL_WATCHLIST=PASS: OK (377 tests, 9121 assertions)
+POST_FIX_PHPUNIT_C19_FILTER=PASS: OK (... tests, ... assertions)
+POST_FIX_FULL_WATCHLIST=PASS: OK (... tests, ... assertions)
 C19_V2_FULL_DIAGNOSTIC=PASS artifact_hash=6737a7a07e2a1c71be38797d1406e8fc7c7e79e7
 C19_V2_PARAM_149_150_DIAGNOSTIC=PASS artifact_hash=5b0943bc8b3d17138bd2cf77fd209f4fccdcd34a
 ```
@@ -217,3 +217,127 @@ C19_CATALOG_CODE=NOT_CREATED
 ```
 
 C19 v3 is still diagnostic/prototype only. Catalog creation requires later price-evaluated IS proof, two-run stability, and evidence that downside gates are preserved.
+
+## Operator Evidence: C19 v3.1 Selector Simulation
+
+Operator rerun after the component-alias fix validated the diagnostic mapping and selector simulation:
+
+```text
+C19_V3_1_PHPUNIT_FILTER_PASS=true
+OK (... tests, ... assertions)
+
+C19_V3_1_FULL_WATCHLIST_PASS=true
+OK (... tests, ... assertions)
+
+C19_V3_1_DIAGNOSTIC_FULL_12_PASS=true
+artifact_hash=53b25fd4b16a850eeb306e0882314808f19fc857
+
+C19_V3_1_DIAGNOSTIC_PARAM_149_150_PASS=true
+artifact_hash=5ed2d5c1c7a65c0fab9ed04819e850b94a591bb5
+```
+
+Runtime markers from the full source diagnostic:
+
+```text
+max_current_top_count=83
+max_current_secondary_count=0
+max_current_recommended_count=46
+max_proposed_top_count=2527
+max_proposed_secondary_count=4250
+max_proposed_recommended_count=135
+params_with_proposed_secondary_recovery=12
+params_with_non_unknown_drop_reasons=12
+c19_catalog_implementation_deferred=1
+oos_executed=0
+production_ready=0
+```
+
+Interpretation:
+
+```text
+C19_DIAGNOSTIC_MAPPING_FIXED=true
+C19_SELECTOR_SIMULATION_WORKS=true
+C19_SECONDARY_RECOVERY_PROVEN=true
+C19_SAMPLE_RECOVERY_TARGET_POSSIBLE=true
+C19_PRICE_EVALUATION_NOT_RUN=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+```
+
+## C19 Tahap 4 — Proposed Selection Price Diagnostic
+
+Tahap 4 implements an IS-only price diagnostic command that takes the proposed recommendations produced by the C19 selector simulation and evaluates them through the canonical published-price runtime artifact/metrics path.
+
+```text
+C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED=true
+C19_PROPOSED_SELECTION_PRICE_EVALUATED=OPERATOR_VALIDATION_REQUIRED
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+Tahap 4 still does not create a catalog. It is a diagnostic gate before any catalog decision.
+
+Canonical evaluation model remains unchanged:
+
+```text
+ENTRY=NEXT_OPEN
+EXIT=STOP_TP_OR_TIME
+HOLD=5
+FEE=IDR_FIXED
+SLIP=0
+GAP=OPEN
+PX=IDX_BANDS
+```
+
+New command:
+
+```powershell
+php artisan watchlist:backtest-c19-proposed-selection-price-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --output=storage/app/watchlist/backtest/c19-proposed-selection-price-diagnostic-run-1.json `
+  --overwrite
+```
+
+Focused param 149/150 command:
+
+```powershell
+php artisan watchlist:backtest-c19-proposed-selection-price-diagnose `
+  --catalog-code=WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --param-ids=149,150 `
+  --output=storage/app/watchlist/backtest/c19-proposed-selection-price-diagnostic-param-149-150.json `
+  --overwrite
+```
+
+Expected markers:
+
+```text
+status=PASS
+reason_code=WS_BT_C19_PRICE_DIAGNOSTIC_READY
+scope=IS_ONLY_PRICE_DIAGNOSTIC
+diagnostic_param_count=<source row count>
+max_proposed_recommended_count=<selector proposed recommendation count>
+max_requested_pairs_count=>0 expected when proposed recommendations exist
+max_evaluated_picks_count=<price-evaluated picks count>
+max_price_missing_count=<skipped/missing price count>
+params_with_evaluated_sample_target_reached=<0..N>
+c19_catalog_implementation_deferred=1
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_executed=0
+production_ready=0
+```
+
+Decision gate after Tahap 4:
+
+```text
+IF evaluated_picks_count >= 120
+AND downside/monthly stability is not broken
+AND price_missing_count is acceptable
+THEN proceed to repeatable IS proof / calibration-style run-1 and run-2.
+ELSE keep C19 catalog deferred and tune selector penalties/caps.
+```

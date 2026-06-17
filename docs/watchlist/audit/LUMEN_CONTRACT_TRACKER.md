@@ -14,19 +14,19 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C19 STRATEGY MODEL REDESIGN ANALYSIS AND SELECTION DIAGNOSTIC`
+`WATCHLIST - C19 STRATEGY MODEL REDESIGN AND PRICE DIAGNOSTIC`
 
 Current status:
 
-`C19_STRATEGY_MODEL_REDESIGN / C19_NOT_CATALOG_CHURN / C19_SELECTION_MODEL_ANALYSIS_DONE / C19_DIAGNOSTIC_IMPLEMENTED / C19_V3_DIAGNOSTIC_MAPPING_FIXED / C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL / C19_CATALOG_IMPLEMENTATION_DEFERRED / C18_UNCHANGED / C01_TO_C18_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C19_STRATEGY_MODEL_REDESIGN / C19_NOT_CATALOG_CHURN / C19_SELECTION_MODEL_ANALYSIS_DONE / C19_DIAGNOSTIC_IMPLEMENTED / C19_V3_DIAGNOSTIC_MAPPING_FIXED / C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL / C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED / C19_CATALOG_IMPLEMENTATION_DEFERRED / C18_UNCHANGED / C01_TO_C18_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
 C19 contract status:
 
 - `WL-CONTRACT-008`: PASS AS ANALYSIS / CATALOG DEFERRED. C19 is a strategy model redesign diagnostic, not an immutable catalog iteration.
-- `WL-CONTRACT-009`: PARTIAL PASS / V3 VALIDATION REQUIRED. Operator supplied post-fix C19 PHPUnit and full Watchlist PASS output, then C19 v2 runtime diagnostic PASS output. C19 v2 was safe but diagnostically insufficient; v3 mapping/selector simulation now requires operator rerun.
+- `WL-CONTRACT-009`: PARTIAL PASS / TAHAP 4 VALIDATION REQUIRED. Operator supplied post-fix C19 PHPUnit/full Watchlist PASS output and v3.1 selector diagnostic PASS output. Tahap 4 price diagnostic is implemented and requires operator runtime validation.
 - `WL-CONTRACT-010`: PASS BY STATIC DESIGN. C19 diagnostic service/command does not invoke OOS service or repository and emits explicit zero OOS markers.
-- `WL-CONTRACT-011`: NOT_READY. No C19 catalog can be promoted because the current output is diagnostic/prototype only and has no canonical price-evaluated IS stability proof.
-- `WL-CONTRACT-013`: PASS AS FASE A/B DIAGNOSTIC. C19 adds source audit, selection redesign diagnostic/prototype command, tests, operator commands, result docs, and policy design note.
+- `WL-CONTRACT-011`: NOT_READY. No C19 catalog can be promoted because Tahap 4 is diagnostic only and still requires operator price-evaluated IS result review, repeatability, and downside/monthly stability proof.
+- `WL-CONTRACT-013`: PASS AS DIAGNOSTIC IMPLEMENTATION / OPERATOR VALIDATION REQUIRED. C19 adds source audit, selection redesign diagnostic/prototype command, Tahap 4 proposed-selection price diagnostic command, tests, operator commands, result docs, and policy design note.
 - `WL-CONTRACT-014`: PASS. C19 implementation status, contract tracker, analysis, diagnostic result, operator commands, policy note, and design artifact are synchronized.
 - `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked; C19 has no catalog, no OOS proof, no promotion.
 
@@ -43,6 +43,8 @@ C19_STRATEGY_MODEL_REDESIGN=true
 C19_NOT_CATALOG_CHURN=true
 C19_V3_DIAGNOSTIC_MAPPING_FIXED=true
 C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL=true
+C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED=true
+C19_PROPOSED_SELECTION_PRICE_EVALUATED=OPERATOR_VALIDATION_REQUIRED
 C19_CATALOG_IMPLEMENTATION_DEFERRED=true
 C19_CATALOG_CODE=NOT_CREATED
 C18_UNCHANGED=true
@@ -76,6 +78,8 @@ POST_FIX_FULL_WATCHLIST_PHPUNIT=PASS: OK (377 tests, 9121 assertions)
 C19_V2_SELECTION_DIAGNOSE=PASS_SAFE_BUT_MAPPING_INSUFFICIENT
 C19_V3_SELECTION_DIAGNOSE=OPERATOR_VALIDATION_REQUIRED
 C19_V3_1_COMPONENT_ALIAS_AND_FIXTURE_PATCH_APPLIED=true
+C19_TAHAP_4_PRICE_DIAGNOSTIC_IMPLEMENTED=true
+C19_TAHAP_4_PRICE_DIAGNOSTIC=OPERATOR_VALIDATION_REQUIRED
 C19_CATALOG_DECISION=DEFER_UNTIL_DIAGNOSTIC_AND_PRICE_EVALUATED_IS_PROOF
 ```
 

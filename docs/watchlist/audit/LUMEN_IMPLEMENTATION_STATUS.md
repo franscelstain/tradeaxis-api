@@ -15,11 +15,11 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C19 STRATEGY MODEL REDESIGN ANALYSIS AND SELECTION DIAGNOSTIC`
+`WATCHLIST - C19 STRATEGY MODEL REDESIGN AND PRICE DIAGNOSTIC`
 
 Current status:
 
-`C19_STRATEGY_MODEL_REDESIGN / C19_NOT_CATALOG_CHURN / C19_SELECTION_MODEL_ANALYSIS_DONE / C19_DIAGNOSTIC_IMPLEMENTED / C19_V3_DIAGNOSTIC_MAPPING_FIXED / C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL / C19_CATALOG_IMPLEMENTATION_DEFERRED / C18_UNCHANGED / C01_TO_C18_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C19_STRATEGY_MODEL_REDESIGN / C19_NOT_CATALOG_CHURN / C19_SELECTION_MODEL_ANALYSIS_DONE / C19_DIAGNOSTIC_IMPLEMENTED / C19_V3_DIAGNOSTIC_MAPPING_FIXED / C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL / C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED / C19_CATALOG_IMPLEMENTATION_DEFERRED / C18_UNCHANGED / C01_TO_C18_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
 C19 implementation result:
 
@@ -29,6 +29,9 @@ C19 implementation result:
 - added C19 service and static guard tests;
 - updated C19 v3 diagnostic mapping so current path uses CandidateUniverse/Scoring/PlanGrouping/Recommendation source shapes correctly;
 - added C19 v3 selector simulation from scored pool with controlled TOP/SECONDARY buffers;
+- added `WatchlistBacktestC19ProposedSelectionPriceDiagnosticService` for IS-only proposed-selection price evaluation;
+- added `RunBacktestC19ProposedSelectionPriceDiagnoseCommand` as `watchlist:backtest-c19-proposed-selection-price-diagnose`;
+- registered the C19 Tahap 4 price diagnostic command in Console Kernel;
 - created C19 selection redesign analysis/result/operator/design docs;
 - did not create C19 catalog, seeder, seed command, repository approval, or factory mapping;
 - did not mutate C18/C17/C16/C15/C14/C01-C07/R1/R2;
@@ -46,6 +49,8 @@ C17_EXTENSION_GUARDS_FOR_C19=eligible_for_penalty/ranking_prototype_after_scored
 MONTHLY_COVERAGE_AWARE_SELECTOR=diagnostic/prototype_only
 C19_V3_DIAGNOSTIC_MAPPING_FIXED=true
 C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL=true
+C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED=true
+C19_PROPOSED_SELECTION_PRICE_EVALUATED=OPERATOR_VALIDATION_REQUIRED
 C19_CATALOG_IMPLEMENTATION_DEFERRED=true
 C19_CATALOG_CODE=NOT_CREATED
 OOS_NOT_RUN=true
@@ -59,6 +64,7 @@ PHP_LINT_C19_CHANGED_FILES=PASS
 PHPUNIT_C19_FILTER=BLOCKED: missing PHP extensions dom, mbstring, xml, xmlwriter
 FULL_WATCHLIST_PHPUNIT=NOT_RUN: same PHPUnit extension blocker
 C19_V3_RUNTIME_DIAGNOSTIC=OPERATOR_VALIDATION_REQUIRED
+C19_TAHAP_4_PRICE_DIAGNOSTIC=OPERATOR_VALIDATION_REQUIRED
 ```
 
 Operator supplied validation after the initial C19 diagnostic patch:
@@ -81,11 +87,13 @@ C19_V3_1_COMPONENT_ALIAS_AND_FIXTURE_PATCH_APPLIED=true
 C19_V3_1_AGENT_SELF_CHECK=PASS: fake selector now returns proposed_secondary=2 and proposed_recommended=4 against current_recommended=2
 POST_V3_1_PHPUNIT_C19_FILTER=OPERATOR_VALIDATION_REQUIRED
 POST_V3_1_FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+C19_TAHAP_4_PRICE_DIAGNOSTIC_IMPLEMENTED=true
+C19_TAHAP_4_AGENT_SELF_CHECK=PASS: fake price diagnostic returns evaluated_picks_count=4, requested_pairs_count=12, price_missing_count=0, oos_executed=0, production_ready=0
 ```
 
 The warning fix only aligns test fake method signatures with `WatchlistScoringService::scoreCandidateUniverse(array $universe, array $paramset = [], string $tradeDate = '')` and `WatchlistPlanGroupingService::groupScoredOutput(array $scoredOutput, array $paramset = [], string $tradeDate = '')`. It does not change runtime model behavior, catalog state, OOS status, or production readiness.
 
-Operator must run C19 v3 validation with `docs/watchlist/audit/WS_C19_OPERATOR_VALIDATION_COMMANDS.md` before any C19 source-level runtime mode or immutable catalog decision.
+Operator must run C19 v3.1 validation and C19 Tahap 4 price diagnostic commands in `docs/watchlist/audit/WS_C19_OPERATOR_VALIDATION_COMMANDS.md` before any immutable catalog decision.
 
 ## PRIOR SESSION - C18 FINAL DIAGNOSTIC-FIRST FUNNEL AND MONTHLY COVERAGE RESULT
 

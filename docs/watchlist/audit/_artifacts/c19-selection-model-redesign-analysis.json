@@ -74,5 +74,31 @@
     "max_proposed_secondary_count": 2,
     "max_proposed_recommended_count": 4,
     "params_with_proposed_secondary_recovery": 1
+  },
+  "c19_tahap_4_price_diagnostic": {
+    "implemented": true,
+    "artifact_type": "C19_PROPOSED_SELECTION_PRICE_DIAGNOSTIC",
+    "command": "watchlist:backtest-c19-proposed-selection-price-diagnose",
+    "scope": "IS_ONLY_PRICE_DIAGNOSTIC",
+    "source": "C19 selector simulation selected_items from scored-pool proposed selection",
+    "runtime_services_reused": [
+      "MarketDataPublishedEodSeriesReadService",
+      "WatchlistBacktestRuntimeArtifactService",
+      "WatchlistBacktestMetricsService"
+    ],
+    "canonical_model": {
+      "ENTRY": "NEXT_OPEN",
+      "EXIT": "STOP_TP_OR_TIME",
+      "HOLD": 5,
+      "FEE": "IDR_FIXED",
+      "SLIP": 0,
+      "GAP": "OPEN",
+      "PX": "IDX_BANDS"
+    },
+    "catalog_implementation_deferred": true,
+    "catalog_code": "NOT_CREATED",
+    "oos_not_run": true,
+    "production_ready": 0,
+    "operator_validation_required": true
   }
 }

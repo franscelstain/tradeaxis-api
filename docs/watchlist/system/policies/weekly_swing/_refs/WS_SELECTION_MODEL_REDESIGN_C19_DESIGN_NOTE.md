@@ -138,3 +138,52 @@ C19_CATALOG_IMPLEMENTATION_DEFERRED=true
 C19 v3.1 fixes a diagnostic component-key alias gap. The selector simulation must resolve both canonical extension keys (`score_momentum`, `score_breakout`, `score_volume`, `score_risk`) and scored/test payload keys (`momentum`, `breakout`, `volume`, `risk`). Without this alias, valid borderline recovery candidates can be incorrectly treated as component-balance failures, causing proposed SECONDARY recovery to stay zero in the unit fixture.
 
 This patch does not create a catalog, does not run OOS, does not mutate C18 or earlier catalogs, and does not change the canonical evaluation model.
+
+## C19 Tahap 4 Price Diagnostic Note
+
+Tahap 4 adds price evaluation for proposed selection candidates while keeping the same diagnostic-only boundary.
+
+It evaluates this chain:
+
+```text
+C19 selector proposed recommendation
+-> frozen trade candidate
+-> ENTRY NEXT_OPEN
+-> EXIT STOP_TP_OR_TIME
+-> HOLD 5
+-> FEE IDR_FIXED
+-> SLIP 0
+-> GAP OPEN
+-> PX IDX_BANDS
+```
+
+Tahap 4 is allowed:
+
+```text
+use C19 proposed selector output
+freeze proposed recommendations before price read
+read targeted published EOD price series
+use WatchlistBacktestRuntimeArtifactService and WatchlistBacktestMetricsService
+report evaluated_picks_count, price_missing_count, returns, and monthly distribution
+```
+
+Tahap 4 is not allowed:
+
+```text
+create C19 catalog
+seed C19 param grid
+run OOS
+set production_ready=1
+change ENTRY/EXIT/HOLD/FEE/SLIP/GAP/PX
+turn Watchlist into broker/order execution
+```
+
+Status remains:
+
+```text
+C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED=true
+C19_CATALOG_IMPLEMENTATION_DEFERRED=true
+C19_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
