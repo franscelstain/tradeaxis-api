@@ -44,6 +44,7 @@ use App\Console\Commands\Watchlist\RunBacktestC18FunnelDiagnoseCommand;
 use App\Console\Commands\Watchlist\RunBacktestC19SelectionDiagnoseCommand;
 use App\Console\Commands\Watchlist\RunBacktestC19ProposedSelectionPriceDiagnoseCommand;
 use App\Console\Commands\Watchlist\RunBacktestC19QualityRecoveryDiagnoseCommand;
+use App\Console\Commands\Watchlist\RunBacktestC20RegimeTradeDateDiagnoseCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -75,6 +76,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC19SelectionDiagnoseCommand::class,
         RunBacktestC19ProposedSelectionPriceDiagnoseCommand::class,
         RunBacktestC19QualityRecoveryDiagnoseCommand::class,
+        RunBacktestC20RegimeTradeDateDiagnoseCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

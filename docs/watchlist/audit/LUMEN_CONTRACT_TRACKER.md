@@ -14,74 +14,103 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C19 STRATEGY MODEL REDESIGN AND PRICE DIAGNOSTIC`
+`WATCHLIST - C20 FINAL REGIME AND TRADE-DATE QUALITY GATE DIAGNOSTIC RESULT`
 
 Current status:
 
-`C19_STRATEGY_MODEL_REDESIGN / C19_NOT_CATALOG_CHURN / C19_SELECTION_MODEL_ANALYSIS_DONE / C19_DIAGNOSTIC_IMPLEMENTED / C19_V3_DIAGNOSTIC_MAPPING_FIXED / C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL / C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED / C19_CATALOG_IMPLEMENTATION_DEFERRED / C18_UNCHANGED / C01_TO_C18_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C20_SOURCE_IMPLEMENTED / C20_RUNTIME_VALIDATED / C20_DATE_GATE_NOT_ENOUGH / C20_REGIME_DATE_GATE_STRATEGY_FAILED / C20_CATALOG_CANDIDATE_FAILED / C20_CATALOG_CODE_NOT_CREATED / C20_STOP_TUNING / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C19_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
-C19 contract status:
+C20 final contract status:
 
-- `WL-CONTRACT-008`: PASS AS ANALYSIS / CATALOG DEFERRED. C19 is a strategy model redesign diagnostic, not an immutable catalog iteration.
-- `WL-CONTRACT-009`: PARTIAL PASS / TAHAP 4 VALIDATION REQUIRED. Operator supplied post-fix C19 PHPUnit/full Watchlist PASS output and v3.1 selector diagnostic PASS output. Tahap 4 price diagnostic is implemented and requires operator runtime validation.
-- `WL-CONTRACT-010`: PASS BY STATIC DESIGN. C19 diagnostic service/command does not invoke OOS service or repository and emits explicit zero OOS markers.
-- `WL-CONTRACT-011`: NOT_READY. No C19 catalog can be promoted because Tahap 4 is diagnostic only and still requires operator price-evaluated IS result review, repeatability, and downside/monthly stability proof.
-- `WL-CONTRACT-013`: PASS AS DIAGNOSTIC IMPLEMENTATION / OPERATOR VALIDATION REQUIRED. C19 adds source audit, selection redesign diagnostic/prototype command, Tahap 4 proposed-selection price diagnostic command, tests, operator commands, result docs, and policy design note.
-- `WL-CONTRACT-014`: PASS. C19 implementation status, contract tracker, analysis, diagnostic result, operator commands, policy note, and design artifact are synchronized.
-- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked; C19 has no catalog, no OOS proof, no promotion.
+- `WL-CONTRACT-008`: PASS AS DIAGNOSTIC / FAIL AS STRATEGY. C20 produced explainable profile summaries, date-gate reason counts, data availability, and final decision evidence, but no profile reached promising or quality-target gates.
+- `WL-CONTRACT-009`: PASS. Operator provided C20 PHPUnit, full Watchlist PHPUnit, focused profile runtime, 7-profile focused runtime, and 7-profile all-param runtime evidence.
+- `WL-CONTRACT-010`: PASS. C20 runtime evidence kept `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
+- `WL-CONTRACT-011`: NOT_READY / REJECTED. C20 cannot promote a paramset/catalog because `decision_status=C20_DATE_GATE_NOT_ENOUGH`, `profiles_with_promising_continue=0`, and `profiles_with_quality_target_reached=0`.
+- `WL-CONTRACT-013`: PASS. C20 service, command, tests, audit docs, operator command docs, policy design note, source summary, and final result summary are present.
+- `WL-CONTRACT-014`: PASS. Implementation status, contract tracker, C20 diagnostic result, operator commands, policy note, and artifact summaries are synchronized.
+- `WL-CONTRACT-015`: NOT_READY. Promotion and production readiness remain locked because C20 has no eligible catalog candidate and no OOS proof.
 
-C19 boundary commitments:
+C20 preserved boundaries:
 
 ```text
-watchlist_scope_only=true
-weekly_swing_policy_only=true
-recommendation_from_PLAN_only=true
-recommendation_can_exist_without_confirm=true
-confirm_eligibility_from_candidate_PLAN=true
-confirm_does_not_mutate_recommendation=true
-C19_STRATEGY_MODEL_REDESIGN=true
-C19_NOT_CATALOG_CHURN=true
-C19_V3_DIAGNOSTIC_MAPPING_FIXED=true
-C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL=true
-C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED=true
-C19_PROPOSED_SELECTION_PRICE_EVALUATED=OPERATOR_VALIDATION_REQUIRED
-C19_CATALOG_IMPLEMENTATION_DEFERRED=true
-C19_CATALOG_CODE=NOT_CREATED
-C18_UNCHANGED=true
-C01_TO_C18_IMMUTABLE=true
+IS_ONLY=true
 OOS_NOT_RUN=true
+production_ready=0
+C20_CATALOG_CODE=NOT_CREATED
+C20_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C19_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+```
+
+C20 gate-input contract:
+
+```text
+ALLOWED_INPUT=trade_date EOD regime/candidate features only
+FORBIDDEN_INPUT=future return, future exit reason, future high/low, future price path
+PRICE_USAGE=evaluation_only_after_gate_freeze
+NO_PICK_DAYS_ALLOWED=true
+```
+
+C20 validation evidence:
+
+```text
+PHPUNIT_C20=PASS: 6 tests, 84 assertions
+FULL_WATCHLIST_PHPUNIT=PASS: 391 tests, 9327 assertions
+C20_FOCUSED_4_PROFILE=PASS: artifact_hash=dac6ff71cee04be7b1c4ddcfd06a899808a89167
+C20_FOCUSED_7_PROFILE=PASS: artifact_hash=29a9743052de2b3164653a85a93e57e22a607dbe
+C20_ALL_PARAM_7_PROFILE=PASS: artifact_hash=8f8eec9913c107f22ec1f395eed9386da41756c0
+```
+
+C20 final decision:
+
+```text
+decision_status=C20_DATE_GATE_NOT_ENOUGH
+best_profile=C20_G03_VOLATILITY_RISK_OFF_FILTER
+best_profile_param_id=148
+best_profile_evaluated_picks_count=124
+best_profile_avg=-0.18%
+best_profile_median=-0.05%
+best_profile_win=43.55%
+best_profile_period_fail_count=13
+profiles_with_quality_improvement=4
+profiles_with_promising_continue=0
+profiles_with_quality_target_reached=0
+best_quality_target_profile=null
+catalog_allowed=false
+oos_allowed=false
 production_ready=0
 ```
 
-C19 source-path finding:
+C19 final result remains binding context:
 
 ```text
-SECONDARY_ALWAYS_ZERO_CAUSE=design_cutoff_guard_behavior_not_runtime_bug
-TOP_CUTOFF_LOCATION=WatchlistPlanGroupingService::groupScoredOutput
-C17_HARD_REJECT_LOCATION=WatchlistPlanGroupingService::candidateSelectionExtensionFailures / c17QualityFloorFailures
-RECOMMENDATION_DROP_LOCATION=WatchlistRecommendationService::recommendFromPlanOutput / dynamicTargetCount
-DV20_VOLUME_ATR_CANONICAL_SOURCE_GUARDS=remain_hard_reject
-C17_EXTENSION_DV20_VOLUME_ATR_ROC_SCORE_WINDOWS=penalty_candidate_for_C19_prototype
-MONTHLY_SELECTOR=coverage-aware ranking objective, not month blacklist
-C19_V3_MAPPING=PlanGrouping direct group arrays + Recommendation summary.recommended_count
-C19_V3_SELECTOR=starts from scored candidates, not collapsed TOP/SECONDARY
+C19_CATALOG_CANDIDATE_FAILED=true
+C19_CATALOG_CODE=NOT_CREATED
+C19_STOP_TUNING=true
+C19_DO_NOT_REPEAT_IS_PROOF=true
+C19_DO_NOT_RUN_OOS=true
+production_ready=0
 ```
 
-Required next validation:
+Required next contract work:
 
 ```text
-OPERATOR_PRE_FIX_PHPUNIT_C19_FILTER=PASS_WITH_SIGNATURE_WARNINGS: OK (5 tests, 70 assertions)
-OPERATOR_PRE_FIX_FULL_WATCHLIST=PASS_WITH_SIGNATURE_WARNINGS: OK (377 tests, 9121 assertions)
-C19_TEST_FAKE_SIGNATURE_WARNING_FIX_APPLIED=true
-POST_FIX_PHPUNIT_C19_FILTER=PASS: OK (5 tests, 70 assertions)
-POST_FIX_FULL_WATCHLIST_PHPUNIT=PASS: OK (377 tests, 9121 assertions)
-C19_V2_SELECTION_DIAGNOSE=PASS_SAFE_BUT_MAPPING_INSUFFICIENT
-C19_V3_SELECTION_DIAGNOSE=OPERATOR_VALIDATION_REQUIRED
-C19_V3_1_COMPONENT_ALIAS_AND_FIXTURE_PATCH_APPLIED=true
-C19_TAHAP_4_PRICE_DIAGNOSTIC_IMPLEMENTED=true
-C19_TAHAP_4_PRICE_DIAGNOSTIC=OPERATOR_VALIDATION_REQUIRED
-C19_CATALOG_DECISION=DEFER_UNTIL_DIAGNOSTIC_AND_PRICE_EVALUATED_IS_PROOF
+C21_ENTRY_EXIT_BEHAVIOR_DIAGNOSTIC_REQUIRED=true
+DO_NOT_TUNE_C20_THRESHOLDS=true
+DO_NOT_CREATE_C20_CATALOG=true
+DO_NOT_RUN_C20_OOS=true
+DO_NOT_SET_PRODUCTION_READY=true
 ```
+
+## PRIOR SESSION - C19 FINAL STRATEGY MODEL REDESIGN AND PRICE DIAGNOSTIC
+
+C19 closed as diagnostic success but catalog-candidate failure. Its final frontier evidence is carried into C20 only as baseline context, not as permission to reopen C19 tuning.
 
 ## PRIOR SESSION - C18 FINAL DIAGNOSTIC-FIRST FUNNEL AND MONTHLY COVERAGE RESULT
 

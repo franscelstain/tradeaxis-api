@@ -1,0 +1,100 @@
+{
+  "artifact_type": "C20_FINAL_DIAGNOSTIC_RESULT_SUMMARY",
+  "status": "RUNTIME_VALIDATED_DIAGNOSTIC_FAILED_STRATEGY",
+  "scope": "IS_ONLY_REGIME_TRADE_DATE_DIAGNOSTIC",
+  "generated_from": "operator_provided_console_output",
+  "source_catalog": {
+    "catalog_code": "WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06",
+    "policy_code": "WS"
+  },
+  "runtime_validation": {
+    "phpunit_c20": {
+      "status": "PASS",
+      "tests": 6,
+      "assertions": 84
+    },
+    "full_watchlist_phpunit": {
+      "status": "PASS",
+      "tests": 391,
+      "assertions": 9327
+    },
+    "focused_4_profile": {
+      "status": "PASS",
+      "artifact_path": "storage/app/watchlist/backtest/c20-regime-trade-date-diagnostic-focused.json",
+      "artifact_hash": "dac6ff71cee04be7b1c4ddcfd06a899808a89167",
+      "profile_count": 4,
+      "profile_scope": "EXPLICIT",
+      "profiles_with_quality_improvement": 1,
+      "profiles_with_promising_continue": 0,
+      "profiles_with_quality_target_reached": 0
+    },
+    "all_profile_focused_7": {
+      "status": "PASS",
+      "artifact_path": "storage/app/watchlist/backtest/c20-regime-trade-date-diagnostic-all-7-profile-focused.json",
+      "artifact_hash": "29a9743052de2b3164653a85a93e57e22a607dbe",
+      "profile_count": 7,
+      "profile_scope": "EXPLICIT",
+      "profiles_with_quality_improvement": 2,
+      "profiles_with_promising_continue": 0,
+      "profiles_with_quality_target_reached": 0
+    },
+    "all_param_7_profile": {
+      "status": "PASS",
+      "artifact_path": "storage/app/watchlist/backtest/c20-regime-trade-date-diagnostic-all-7-profile-all-param.json",
+      "artifact_hash": "8f8eec9913c107f22ec1f395eed9386da41756c0",
+      "profile_count": 7,
+      "profile_scope": "EXPLICIT",
+      "best_any_sample_profile_code": "C20_G03_VOLATILITY_RISK_OFF_FILTER",
+      "best_promising_sample_profile_code": "C20_G03_VOLATILITY_RISK_OFF_FILTER",
+      "best_sample_qualified_profile_code": "C20_G03_VOLATILITY_RISK_OFF_FILTER",
+      "best_quality_target_profile_code": null,
+      "profiles_with_quality_improvement": 4,
+      "profiles_with_promising_continue": 0,
+      "profiles_with_quality_target_reached": 0
+    }
+  },
+  "decision": {
+    "decision_status": "C20_DATE_GATE_NOT_ENOUGH",
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "next_step": "Stop C20 as diagnostic failed unless a new non-lookahead regime data source is added.",
+    "best_profile": {
+      "profile_code": "C20_G03_VOLATILITY_RISK_OFF_FILTER",
+      "param_id": 148,
+      "row_code": "03_SCORE_70_85_LOW_ATR_NEG_ROC20",
+      "evaluated_picks_count": 124,
+      "avg_ret_net_top": -0.0018095754889618039,
+      "median_ret_net_top": -0.0004998750312421895,
+      "win_rate_top": 0.43548387096774194,
+      "period_fail_count": 13
+    },
+    "best_quality_target_profile": null,
+    "small_sample_cannot_be_main_decision": true
+  },
+  "final_conclusion": {
+    "c20_diagnostic_runtime_pass": true,
+    "c20_7_profile_all_param_pass": true,
+    "c20_date_gate_not_enough": true,
+    "c20_regime_date_gate_strategy_failed": true,
+    "c20_catalog_candidate_failed": true,
+    "c20_stop_tuning": true,
+    "c20_catalog_code": "NOT_CREATED",
+    "oos_not_run": true,
+    "production_ready": 0
+  },
+  "safety_boundaries": {
+    "is_only": true,
+    "oos_executed": 0,
+    "production_ready": 0,
+    "c20_catalog_implementation_deferred": true,
+    "c20_catalog_code": "NOT_CREATED",
+    "no_promotion": true,
+    "no_oos": true,
+    "no_ticker_blacklist": true,
+    "no_month_blacklist": true,
+    "no_sector_whitelist": true,
+    "no_best_of_failed_binding": true,
+    "c01_to_c19_immutable": true,
+    "plan_recommendation_confirm_boundary_unchanged": true
+  }
+}

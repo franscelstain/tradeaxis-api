@@ -15,85 +15,128 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C19 STRATEGY MODEL REDESIGN AND PRICE DIAGNOSTIC`
+`WATCHLIST - C20 FINAL REGIME AND TRADE-DATE QUALITY GATE DIAGNOSTIC RESULT`
 
 Current status:
 
-`C19_STRATEGY_MODEL_REDESIGN / C19_NOT_CATALOG_CHURN / C19_SELECTION_MODEL_ANALYSIS_DONE / C19_DIAGNOSTIC_IMPLEMENTED / C19_V3_DIAGNOSTIC_MAPPING_FIXED / C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL / C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED / C19_CATALOG_IMPLEMENTATION_DEFERRED / C18_UNCHANGED / C01_TO_C18_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C20_SOURCE_IMPLEMENTED / C20_PHPUNIT_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C20_RUNTIME_VALIDATED / C20_DATE_GATE_NOT_ENOUGH / C20_REGIME_DATE_GATE_STRATEGY_FAILED / C20_CATALOG_CANDIDATE_FAILED / C20_CATALOG_CODE_NOT_CREATED / C20_STOP_TUNING / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C19_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
-C19 implementation result:
+C20 final source and runtime result:
 
-- added `WatchlistBacktestC19SelectionModelRedesignAnalysisService` as an IS-only diagnostic/prototype layer;
-- added `RunBacktestC19SelectionDiagnoseCommand` as `watchlist:backtest-c19-selection-diagnose`;
-- registered the command in Console Kernel;
-- added C19 service and static guard tests;
-- updated C19 v3 diagnostic mapping so current path uses CandidateUniverse/Scoring/PlanGrouping/Recommendation source shapes correctly;
-- added C19 v3 selector simulation from scored pool with controlled TOP/SECONDARY buffers;
-- added `WatchlistBacktestC19ProposedSelectionPriceDiagnosticService` for IS-only proposed-selection price evaluation;
-- added `RunBacktestC19ProposedSelectionPriceDiagnoseCommand` as `watchlist:backtest-c19-proposed-selection-price-diagnose`;
-- registered the C19 Tahap 4 price diagnostic command in Console Kernel;
-- created C19 selection redesign analysis/result/operator/design docs;
-- did not create C19 catalog, seeder, seed command, repository approval, or factory mapping;
-- did not mutate C18/C17/C16/C15/C14/C01-C07/R1/R2;
-- did not run OOS;
-- did not set `production_ready=1`.
+- `WatchlistBacktestC20RegimeTradeDateDiagnosticService` exists as an IS-only regime/trade-date gate diagnostic;
+- `RunBacktestC20RegimeTradeDateDiagnoseCommand` exists as `watchlist:backtest-c20-regime-trade-date-diagnose`;
+- C20 service/static guard tests exist and operator validation passed;
+- C20 uses C19 proposed selection output as source selection base, then gates `trade_date` before canonical price evaluation;
+- C20 allows no-pick days/weeks/months when the trade-date gate blocks weak regime dates;
+- C20 records data availability for IHSG proxy, sector proxy, breadth proxy, and candidate distribution;
+- C20 did not create a catalog, seeder, seed command, repository approval, or factory mapping;
+- C20 did not mutate C19/C18/C17/C16/C15/C14/C01-C07/R1/R2;
+- C20 did not run OOS and did not set `production_ready=1`.
 
-C19 source audit conclusion:
+Operator validation evidence:
 
 ```text
-PRIMARY_CODE_LEVEL_ROOT_CAUSE=selection_collapse_after_scored_pool
-SECONDARY_ZERO_CAUSE=design_cutoff_guard_behavior_not_runtime_bug
-COLLAPSE_LOCATION=WatchlistPlanGroupingService::candidateSelectionExtensionFailures + C17 hard quality floors + recommendation cap/filter
-CANDIDATE_UNIVERSE_CANONICAL_GATES=preserved_as_hard_reject
-C17_EXTENSION_GUARDS_FOR_C19=eligible_for_penalty/ranking_prototype_after_scored_pool
-MONTHLY_COVERAGE_AWARE_SELECTOR=diagnostic/prototype_only
-C19_V3_DIAGNOSTIC_MAPPING_FIXED=true
-C19_V3_SELECTOR_SIMULATION_FROM_SCORED_POOL=true
-C19_PRICE_EVALUATION_DIAGNOSTIC_IMPLEMENTED=true
-C19_PROPOSED_SELECTION_PRICE_EVALUATED=OPERATOR_VALIDATION_REQUIRED
-C19_CATALOG_IMPLEMENTATION_DEFERRED=true
-C19_CATALOG_CODE=NOT_CREATED
-OOS_NOT_RUN=true
+PHPUNIT_C20=PASS: OK (6 tests, 84 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (391 tests, 9327 assertions)
+
+C20_FOCUSED_4_PROFILE=PASS
+artifact_path=storage/app/watchlist/backtest/c20-regime-trade-date-diagnostic-focused.json
+artifact_hash=dac6ff71cee04be7b1c4ddcfd06a899808a89167
+profile_count=4
+profiles_with_quality_improvement=1
+profiles_with_promising_continue=0
+profiles_with_quality_target_reached=0
+
+C20_FOCUSED_7_PROFILE=PASS
+artifact_path=storage/app/watchlist/backtest/c20-regime-trade-date-diagnostic-all-7-profile-focused.json
+artifact_hash=29a9743052de2b3164653a85a93e57e22a607dbe
+profile_count=7
+profiles_with_quality_improvement=2
+profiles_with_promising_continue=0
+profiles_with_quality_target_reached=0
+
+C20_ALL_PARAM_7_PROFILE=PASS
+artifact_path=storage/app/watchlist/backtest/c20-regime-trade-date-diagnostic-all-7-profile-all-param.json
+artifact_hash=8f8eec9913c107f22ec1f395eed9386da41756c0
+profile_count=7
+profile_scope=EXPLICIT
+best_any_sample_profile_code=C20_G03_VOLATILITY_RISK_OFF_FILTER
+best_promising_sample_profile_code=C20_G03_VOLATILITY_RISK_OFF_FILTER
+best_sample_qualified_profile_code=C20_G03_VOLATILITY_RISK_OFF_FILTER
+best_quality_target_profile_code=
+profiles_with_quality_improvement=4
+profiles_with_promising_continue=0
+profiles_with_quality_target_reached=0
+c20_catalog_implementation_deferred=1
+oos_service_invoked=0
+oos_repository_invoked=0
+oos_executed=0
 production_ready=0
 ```
 
-Validation status in this environment:
+C20 final decision:
 
 ```text
-PHP_LINT_C19_CHANGED_FILES=PASS
-PHPUNIT_C19_FILTER=BLOCKED: missing PHP extensions dom, mbstring, xml, xmlwriter
-FULL_WATCHLIST_PHPUNIT=NOT_RUN: same PHPUnit extension blocker
-C19_V3_RUNTIME_DIAGNOSTIC=OPERATOR_VALIDATION_REQUIRED
-C19_TAHAP_4_PRICE_DIAGNOSTIC=OPERATOR_VALIDATION_REQUIRED
+decision_status=C20_DATE_GATE_NOT_ENOUGH
+catalog_allowed=false
+oos_allowed=false
+next_step=Stop C20 as diagnostic failed unless a new non-lookahead regime data source is added.
+best_profile=C20_G03_VOLATILITY_RISK_OFF_FILTER
+best_profile_param_id=148
+best_profile_row_code=03_SCORE_70_85_LOW_ATR_NEG_ROC20
+best_profile_evaluated_picks_count=124
+best_profile_avg_ret_net_top=-0.0018095754889618039
+best_profile_median_ret_net_top=-0.0004998750312421895
+best_profile_win_rate_top=0.43548387096774194
+best_profile_period_fail_count=13
+best_quality_target_profile=null
+small_sample_cannot_be_main_decision=true
 ```
 
-Operator supplied validation after the initial C19 diagnostic patch:
+C20 conclusion:
 
 ```text
-OPERATOR_PRE_FIX_PHPUNIT_C19_FILTER=PASS_WITH_SIGNATURE_WARNINGS: OK (5 tests, 70 assertions)
-OPERATOR_PRE_FIX_FULL_WATCHLIST=PASS_WITH_SIGNATURE_WARNINGS: OK (377 tests, 9121 assertions)
-C19_TEST_FAKE_SIGNATURE_WARNING_ROOT_CAUSE=missing optional string $tradeDate parameter in fake scoring/grouping service overrides
-C19_TEST_FAKE_SIGNATURE_WARNING_FIX_APPLIED=true
-POST_FIX_PHPUNIT_C19_FILTER=PASS: OK (5 tests, 70 assertions)
-POST_FIX_FULL_WATCHLIST_PHPUNIT=PASS: OK (377 tests, 9121 assertions)
-C19_V2_RUNTIME_DIAGNOSTIC=PASS_SAFE_BUT_MAPPING_INSUFFICIENT
-C19_V2_FULL_DIAGNOSTIC_ARTIFACT_HASH=6737a7a07e2a1c71be38797d1406e8fc7c7e79e7
-C19_V2_PARAM_149_150_DIAGNOSTIC_ARTIFACT_HASH=5b0943bc8b3d17138bd2cf77fd209f4fccdcd34a
-C19_V3_DIAGNOSTIC_MAPPING_FIX_APPLIED=true
-C19_V3_SELECTOR_SIMULATION_APPLIED=true
-C19_V3_VALIDATION=OPERATOR_VALIDATION_REQUIRED
-OPERATOR_V3_FIRST_RERUN=FAIL: proposed secondary stayed zero in fake fixture
-C19_V3_1_COMPONENT_ALIAS_AND_FIXTURE_PATCH_APPLIED=true
-C19_V3_1_AGENT_SELF_CHECK=PASS: fake selector now returns proposed_secondary=2 and proposed_recommended=4 against current_recommended=2
-POST_V3_1_PHPUNIT_C19_FILTER=OPERATOR_VALIDATION_REQUIRED
-POST_V3_1_FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
-C19_TAHAP_4_PRICE_DIAGNOSTIC_IMPLEMENTED=true
-C19_TAHAP_4_AGENT_SELF_CHECK=PASS: fake price diagnostic returns evaluated_picks_count=4, requested_pairs_count=12, price_missing_count=0, oos_executed=0, production_ready=0
+C20_SOURCE_IMPLEMENTED=true
+C20_RUNTIME_VALIDATION_REQUIRED=false
+C20_DIAGNOSTIC_RUNTIME_PASS=true
+C20_7_PROFILE_ALL_PARAM_PASS=true
+C20_DATE_GATE_NOT_ENOUGH=true
+C20_REGIME_DATE_GATE_STRATEGY_FAILED=true
+C20_CATALOG_CANDIDATE_FAILED=true
+C20_CATALOG_CODE=NOT_CREATED
+C20_STOP_TUNING=true
+C19_CATALOG_CANDIDATE_FAILED_PRESERVED=true
+C19_STOP_TUNING_PRESERVED=true
+C01_TO_C19_IMMUTABLE=true
+OOS_NOT_RUN=true
+production_ready=0
+NEXT_STEP=C21_ENTRY_EXIT_BEHAVIOR_DIAGNOSTIC_DESIGN
 ```
 
-The warning fix only aligns test fake method signatures with `WatchlistScoringService::scoreCandidateUniverse(array $universe, array $paramset = [], string $tradeDate = '')` and `WatchlistPlanGroupingService::groupScoredOutput(array $scoredOutput, array $paramset = [], string $tradeDate = '')`. It does not change runtime model behavior, catalog state, OOS status, or production readiness.
+C20 is closed as a useful diagnostic failure for the current regime/date gate hypothesis. The next work must not tune C20 thresholds, promote a C20 catalog, or run OOS. The next diagnostic direction is C21 entry/exit behavior, including `ENTRY=NEXT_OPEN`, stop/target/time exit behavior, gap handling, MFE/MAE, and D+1 to D+5 return path.
 
-Operator must run C19 v3.1 validation and C19 Tahap 4 price diagnostic commands in `docs/watchlist/audit/WS_C19_OPERATOR_VALIDATION_COMMANDS.md` before any immutable catalog decision.
+## PRIOR SESSION - C19 FINAL STRATEGY MODEL REDESIGN AND PRICE DIAGNOSTIC
+
+C19 is closed as diagnostic success but catalog-candidate failure. No C19 tuning, repeat IS proof, OOS, or catalog path is open.
+
+Final C19 evidence preserved:
+
+```text
+PHPUNIT_C19=PASS: OK (13 tests, 192 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (385 tests, 9243 assertions)
+C19_TAHAP_5C_FRONTIER_FOCUSED=PASS: artifact_hash=971d1186bff72e185db59dc1c223d423186a7ad4
+C19_TAHAP_5C_FRONTIER_ALL_PARAM=PASS: artifact_hash=18ae8b1f1dcfc5ddecc2279d3c9fd0ce69079e6d
+C19_SAMPLE_RECOVERY_SOLVED=true
+C19_PRICE_EVALUATION_CONFIRMED=true
+C19_QUALITY_SIGNAL_FOUND=true
+C19_QUALITY_CORE_SAMPLE_TOO_SMALL=true
+C19_SAMPLE_QUALIFIED_FRONTIER_QUALITY_FAILED=true
+C19_CATALOG_CANDIDATE_FAILED=true
+C19_CATALOG_CODE=NOT_CREATED
+C19_STOP_TUNING=true
+OOS_NOT_RUN=true
+production_ready=0
+```
 
 ## PRIOR SESSION - C18 FINAL DIAGNOSTIC-FIRST FUNNEL AND MONTHLY COVERAGE RESULT
 
