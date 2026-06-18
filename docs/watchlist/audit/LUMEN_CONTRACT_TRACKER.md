@@ -14,6 +14,170 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C24 C22 SHADOW GAP BRIDGE DIAGNOSTIC SOURCE IMPLEMENTATION`
+
+Current status:
+
+`C24_SOURCE_IMPLEMENTED / C24_PHPUNIT_FILTER_PASS / C23_FILTER_STILL_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C24_COMMAND_REGISTERED / C24_RUNTIME_VALIDATED / C24_GAP_BRIDGE_EXPLAINED / C24_C22_SHADOW_GAP_STILL_MATERIAL / C24_CATALOG_CODE_NOT_CREATED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C23_C22_SHADOW_GAP_NOT_ACCEPTABLE_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C23_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C24 current contract status:
+
+- `WL-CONTRACT-008`: PASS AS DIAGNOSTIC TRACEABILITY. C24 is traceable to C19 sample-quality failure, C20 date-gate insufficiency, C21 execution-behavior signal, C22 first-profit-capture shadow direction, and C23 non-lookahead rule candidate evidence.
+- `WL-CONTRACT-009`: PASS. C24 service/static guard filter, C23 regression filter, command registration, and C24 all-param runtime passed. C24 reads the frozen C23 artifact and does not use candidate or C22 benchmark returns for selection.
+- `WL-CONTRACT-010`: PASS. C24 source and runtime keep `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
+- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C24 cannot promote a catalog because the C22 shadow gap remains material, `C24_CATALOG_CODE=NOT_CREATED`, and no OOS proof exists.
+- `WL-CONTRACT-013`: PASS. C24 service, command, tests, static guards, audit doc, operator command doc, policy note, and source summary artifact are present.
+- `WL-CONTRACT-014`: PASS FOR C24 SOURCE/RUNTIME DOC SYNC. C24 source docs and trackers are synchronized with source-level test evidence and C24 runtime evidence.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because C24 has no catalog candidate and no OOS proof.
+
+C24 preserved boundaries:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C24_CATALOG_CODE=NOT_CREATED
+C24_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C23_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+```
+
+C24 artifact contract:
+
+```text
+INPUT_SOURCE=C23_ALL_PARAM_DIAGNOSTIC_ARTIFACT
+READS_C23_ARTIFACT_ONLY=true
+PRICE_USAGE=NO_NEW_PRICE_PATH_READ
+FUTURE_PATH_USED_FOR_SELECTION=false
+CANDIDATE_RET_USED_FOR_SELECTION=false
+C22_SHADOW_S06_USED_FOR_SELECTION=false
+CANONICAL_MODEL=ENTRY_NEXT_OPEN_EXIT_STOP_TP_OR_TIME_HOLD_5_FEE_IDR_FIXED_SLIP_0_GAP_OPEN_PX_IDX_BANDS
+OUTPUT_SURFACE=COMPACT_AGGREGATE_NO_PICK_RULE_ROWS_COPY
+```
+
+C24 validation evidence:
+
+```text
+PHP_LINT_C24_SERVICE=PASS: No syntax errors detected
+PHP_LINT_C24_COMMAND=PASS: No syntax errors detected
+PHPUNIT_C24_FILTER=PASS: OK (4 tests, 64 assertions)
+PHPUNIT_C23_FILTER_AFTER_C24=PASS: OK (6 tests, 490 assertions)
+FULL_WATCHLIST_PHPUNIT_AFTER_C24=PASS: OK (413 tests, 10356 assertions)
+C24_COMMAND_REGISTERED=PASS
+C24_ALL_PARAM_RUNTIME_PASS=true: artifact_hash=feabfbe720d39155a3d741e509cc69cade3ef31c
+C24_INPUT_C23_ARTIFACT_HASH=5b79103c74faa01e4ce01cabbad1a3b36cdf31aa
+C24_GAP_BRIDGE_EXPLAINED=true
+C24_C22_SHADOW_GAP_STILL_MATERIAL=true
+C24_DOMINANT_GAP_COMPONENT=no_rule_profit_signal_before_fallback
+```
+
+Required next contract work:
+
+```text
+DO_NOT_CREATE_C24_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_MUTATE_C01_TO_C23=true
+DO_NOT_SET_PRODUCTION_READY=true
+DO_NOT_CHANGE_CANONICAL_ENTRY_EXIT_MODEL=true
+NEXT_STEP=LATER_DIAGNOSTIC_ONLY_FOR_NEXT_OPEN_DELAY_AND_NO_SIGNAL_FALLBACK
+```
+
+## PRIOR SESSION - C23 FIRST PROFIT CAPTURE RULE CANDIDATE DIAGNOSTIC SOURCE IMPLEMENTATION
+
+Session:
+`WATCHLIST - C23 FIRST PROFIT CAPTURE RULE CANDIDATE DIAGNOSTIC SOURCE IMPLEMENTATION`
+
+Current status:
+
+`C23_SOURCE_IMPLEMENTED / C23_PHPUNIT_SERVICE_PASS / C23_STATIC_GUARD_PASS / C23_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C23_COMMAND_REGISTERED / C23_RUNTIME_VALIDATED / C23_FIRST_PROFIT_CAPTURE_RULE_SIGNAL_FOUND / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND / C23_C22_SHADOW_GAP_NOT_ACCEPTABLE / C23_CATALOG_CODE_NOT_CREATED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C22_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C23 current contract status:
+
+- `WL-CONTRACT-008`: PASS AS SOURCE-LEVEL DIAGNOSTIC TRACEABILITY. C23 is traceable to C19 sample-quality failure, C20 date-gate insufficiency, C21 execution-behavior signal, and C22 first-profit-capture shadow direction.
+- `WL-CONTRACT-009`: PASS. C23 service, static guard, C23 filter, full Watchlist PHPUnit, focused runtime, and all-param runtime passed after reusing the C19 selection artifact and raising memory for the large all-param artifact.
+- `WL-CONTRACT-010`: PASS FOR THIS SOURCE PATCH. C23 source and tests do not invoke OOS service/repository paths, and no runtime OOS command was run.
+- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C23 cannot promote a catalog because it is rule-candidate diagnostic only, `C23_CATALOG_CODE=NOT_CREATED`, and no OOS proof exists.
+- `WL-CONTRACT-013`: PASS. C23 service, command, tests, static guards, audit doc, operator command doc, policy note, and source summary artifact are present.
+- `WL-CONTRACT-014`: PARTIAL PASS. C23 source docs and trackers are synchronized with source-level test evidence; runtime result docs remain not applicable until the C23 diagnostic command is actually run.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because C23 has no catalog candidate and no OOS proof.
+
+C23 preserved boundaries:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C23_CATALOG_CODE=NOT_CREATED
+C23_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C22_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+```
+
+C23 price/path contract:
+
+```text
+SELECTION_SOURCE=C19_FIXED_SELECTION_DIAGNOSTIC_OUTPUT
+PRICE_USAGE=MEASUREMENT_ONLY_AFTER_SELECTION_FREEZE
+FUTURE_PATH_USED_FOR_SELECTION=false
+RULE_EXIT_USED_FOR_SELECTION=false
+RULE_RET_NET_USED_FOR_SELECTION=false
+C22_SHADOW_S06_USED_FOR_SELECTION=false
+CANONICAL_MODEL=ENTRY_NEXT_OPEN_EXIT_STOP_TP_OR_TIME_HOLD_5_FEE_IDR_FIXED_SLIP_0_GAP_OPEN_PX_IDX_BANDS
+NON_LOOKAHEAD_RULE=D1_CLOSE_TO_D2_OPEN_D2_CLOSE_TO_D3_OPEN_D3_CLOSE_TO_D4_OPEN
+```
+
+C23 validation evidence:
+
+```text
+PHPUNIT_C23_SERVICE=PASS: OK (3 tests, 426 assertions)
+PHPUNIT_C23_STATIC_GUARD=PASS: OK (3 tests, 61 assertions)
+PHPUNIT_C23_FILTER=PASS: OK (6 tests, 490 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (409 tests, 10292 assertions)
+C23_COMMAND_REGISTERED=PASS
+C23_FOCUSED_RUNTIME_PASS=true: artifact_hash=5e4c57c85f196749b269400316215c6a80f431b7
+C23_ALL_PARAM_RUNTIME_PASS=true: artifact_hash=5b79103c74faa01e4ce01cabbad1a3b36cdf31aa
+C23_FIRST_PROFIT_CAPTURE_RULE_SIGNAL_FOUND=true
+C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND=true
+C23_C22_SHADOW_GAP_ACCEPTABLE=false
+C23_PARAM_CONSISTENCY_FOUND=true
+C23_MONTH_STABILITY_SUFFICIENT=true
+```
+
+Required next contract work:
+
+```text
+RUN_C23_IS_ONLY_RUNTIME_ONLY_IF_RESULT_EVIDENCE_REQUIRED=true
+DO_NOT_CREATE_C23_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_MUTATE_C01_TO_C22=true
+DO_NOT_SET_PRODUCTION_READY=true
+DO_NOT_CHANGE_CANONICAL_ENTRY_EXIT_MODEL=true
+```
+
+## PRIOR SESSION - C22 FINAL EXIT CAPTURE SHADOW DIAGNOSTIC RESULT
+
+Session:
 `WATCHLIST - C22 FINAL EXIT CAPTURE SHADOW DIAGNOSTIC RESULT`
 
 Current status:

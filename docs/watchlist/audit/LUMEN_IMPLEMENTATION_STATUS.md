@@ -15,6 +15,311 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C24 C22 SHADOW GAP BRIDGE DIAGNOSTIC SOURCE IMPLEMENTATION`
+
+Current status:
+
+`C24_SOURCE_IMPLEMENTED / C24_PHPUNIT_FILTER_PASS / C23_FILTER_STILL_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C24_COMMAND_REGISTERED / C24_RUNTIME_VALIDATED / C24_GAP_BRIDGE_EXPLAINED / C24_C22_SHADOW_GAP_STILL_MATERIAL / C24_CATALOG_CODE_NOT_CREATED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C23_C22_SHADOW_GAP_NOT_ACCEPTABLE_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C23_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C24 source result:
+
+- `WatchlistBacktestC24C22ShadowGapBridgeDiagnosticService` exists as an IS-only C22 shadow gap bridge diagnostic;
+- `RunBacktestC24C22ShadowGapBridgeDiagnoseCommand` exists as `watchlist:backtest-c24-c22-shadow-gap-bridge-diagnose`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C24 reads the C23 all-param diagnostic artifact only;
+- C24 does not recompute C19 selection, does not read new future price paths, and does not mutate C01-C23;
+- C24 compares canonical, C23 R09, and C22 S06 benchmark summaries from the C23 artifact;
+- C24 writes a compact bridge artifact without copying C23 `pick_rule_rows`;
+- C24 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
+- C24 did not run OOS and did not set `production_ready=1`.
+
+C24 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC24C22ShadowGapBridgeDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC24C22ShadowGapBridgeDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC24C22ShadowGapBridgeDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC24StaticGuardTest.php
+docs/watchlist/audit/WS_C24_C22_SHADOW_GAP_BRIDGE_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C24_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c24-c22-shadow-gap-bridge-diagnostic-source-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_C22_SHADOW_GAP_BRIDGE_C24_DESIGN_NOTE.md
+```
+
+C24 validation actually run in this session:
+
+```text
+PHP_LINT_C24_SERVICE=PASS
+No syntax errors detected
+
+PHP_LINT_C24_COMMAND=PASS
+No syntax errors detected
+
+PHPUNIT_C24_FILTER=PASS
+OK (4 tests, 64 assertions)
+
+PHPUNIT_C23_FILTER_AFTER_C24=PASS
+OK (6 tests, 490 assertions)
+
+FULL_WATCHLIST_PHPUNIT_AFTER_C24=PASS
+OK (413 tests, 10356 assertions)
+
+C24_COMMAND_REGISTERED=PASS
+```
+
+C24 runtime evidence:
+
+```text
+C24_RUNTIME_COMMAND=php -d memory_limit=2048M artisan watchlist:backtest-c24-c22-shadow-gap-bridge-diagnose
+C24_ALL_PARAM_RUNTIME_PASS=true
+C24_ARTIFACT_PATH=storage/app/watchlist/backtest/c24-c22-shadow-gap-bridge-diagnostic-all-param.json
+C24_ARTIFACT_HASH=feabfbe720d39155a3d741e509cc69cade3ef31c
+C24_ARTIFACT_SIZE_BYTES=35555
+C24_INPUT_C23_ARTIFACT_HASH=5b79103c74faa01e4ce01cabbad1a3b36cdf31aa
+C24_CANDIDATE_PROFILE=C23_R09_EXIT_NEXT_OPEN_AFTER_D1_OR_D2_OR_D3_CLOSE_PROFIT_GT_0
+C24_EVALUATED_PICKS=1575
+```
+
+C24 all-param interpretation:
+
+```text
+candidate_avg_ret_net=-0.00021743307264814
+candidate_median_ret_net=-0.00049987503124219
+candidate_p25_ret_net=-0.021244659600659
+candidate_win_rate=0.47174603174603
+
+c22_shadow_s06_avg_ret_net=-0.00016239014891423
+c22_shadow_s06_median_ret_net=0.0042799597180262
+c22_shadow_s06_p25_ret_net=-0.0082526173206962
+c22_shadow_s06_win_rate=0.59619047619048
+
+avg_gap_vs_c22_s06=0.000055042923733914
+median_gap_vs_c22_s06=0.0047798347492684
+p25_gap_vs_c22_s06=0.012992042279963
+win_rate_gap_vs_c22_s06=0.12444444444444
+
+avg_capture_ratio_vs_c22_s06=0.98784365528006
+median_capture_ratio_vs_c22_s06=0.43032380598996
+p25_capture_ratio_vs_c22_s06=0.16167366271912
+win_rate_capture_ratio_vs_c22_s06=0.38940809968847
+rows_where_c22_beats_candidate_rate=0.35492063492063
+
+C24_DECISION_STATUS=C24_C22_SHADOW_GAP_STILL_MATERIAL
+C24_GAP_BRIDGE_EXPLAINED=true
+C24_DOMINANT_GAP_COMPONENT=no_rule_profit_signal_before_fallback
+```
+
+C24 dominant gap components:
+
+```text
+candidate_matches_or_beats_c22_count=1016
+next_open_delay_after_close_signal_count=264
+no_rule_profit_signal_before_fallback_count=295
+dominant_actual_gap_component=no_rule_profit_signal_before_fallback
+```
+
+C24 boundary status:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C24_CATALOG_CODE=NOT_CREATED
+C24_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C23_MUTATION=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+reads_c23_artifact_only=true
+future_path_price_used_for_selection=false
+candidate_ret_used_for_selection=false
+c22_shadow_s06_used_for_selection=false
+```
+
+C24 current conclusion:
+
+```text
+C24_C22_SHADOW_GAP_BRIDGE_DIAGNOSTIC_SOURCE_IMPLEMENTED=true
+C24_DIAGNOSTIC_RUNTIME_PASS=true
+C24_GAP_BRIDGE_EXPLAINED=true
+C24_C22_SHADOW_GAP_STILL_MATERIAL=true
+C24_CATALOG_IMPLEMENTATION_DEFERRED=true
+C24_CATALOG_CODE=NOT_CREATED
+C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED=true
+C23_C22_SHADOW_GAP_ACCEPTABLE=false
+C22_EXIT_CAPTURE_SIGNAL_FOUND_PRESERVED=true
+C21_EXECUTION_SIGNAL_FOUND_PRESERVED=true
+C20_DATE_GATE_NOT_ENOUGH_PRESERVED=true
+C19_CATALOG_CANDIDATE_FAILED_PRESERVED=true
+C01_TO_C23_IMMUTABLE=true
+OOS_NOT_RUN=true
+production_ready=0
+NEXT_STEP=LATER_DIAGNOSTIC_ONLY_FOR_NEXT_OPEN_DELAY_AND_NO_SIGNAL_FALLBACK
+```
+
+C24 is implemented and runtime validated as diagnostic evidence. It explains the remaining C22 shadow gap: C23 R09 nearly closes average return, but median, p25, and win-rate remain materially behind C22 S06 because of no-signal fallback and next-open delay cases. It does not unlock catalog creation, OOS, promotion, production readiness, C23 tuning, C22 tuning, or canonical execution-model mutation.
+
+## PRIOR SESSION - C23 FIRST PROFIT CAPTURE RULE CANDIDATE DIAGNOSTIC SOURCE IMPLEMENTATION
+
+Session:
+`WATCHLIST - C23 FIRST PROFIT CAPTURE RULE CANDIDATE DIAGNOSTIC SOURCE IMPLEMENTATION`
+
+Current status:
+
+`C23_SOURCE_IMPLEMENTED / C23_PHPUNIT_SERVICE_PASS / C23_STATIC_GUARD_PASS / C23_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C23_COMMAND_REGISTERED / C23_RUNTIME_VALIDATED / C23_FIRST_PROFIT_CAPTURE_RULE_SIGNAL_FOUND / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND / C23_C22_SHADOW_GAP_NOT_ACCEPTABLE / C23_CATALOG_CODE_NOT_CREATED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C22_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C23 source result:
+
+- `WatchlistBacktestC23FirstProfitCaptureRuleDiagnosticService` exists as an IS-only first-profit-capture rule candidate diagnostic;
+- `RunBacktestC23FirstProfitCaptureRuleDiagnoseCommand` exists as `watchlist:backtest-c23-first-profit-capture-rule-diagnose`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C23 reads fixed recommendation candidates from the C19 selection diagnostic path before reading D+1 through D+5 OHLC;
+- future path price is used only for measurement after ticker and trade_date are fixed;
+- C23 evaluates non-lookahead rule exits only: D1 close exits D2 open, D2 close exits D3 open, D3 close exits D4 open;
+- C22 `S06_FIRST_PROFITABLE_CLOSE_EXIT` is recomputed only as a benchmark, not as a selector or production rule;
+- C23 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
+- C23 did not mutate C01-C22;
+- C23 did not run OOS and did not set `production_ready=1`.
+
+C23 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC23FirstProfitCaptureRuleDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC23FirstProfitCaptureRuleDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC23FirstProfitCaptureRuleDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC23StaticGuardTest.php
+docs/watchlist/audit/WS_C23_FIRST_PROFIT_CAPTURE_RULE_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C23_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c23-first-profit-capture-rule-diagnostic-source-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_FIRST_PROFIT_CAPTURE_RULE_C23_DESIGN_NOTE.md
+```
+
+C23 validation actually run in this session:
+
+```text
+PHPUNIT_C23_SERVICE=PASS
+OK (3 tests, 426 assertions)
+
+PHPUNIT_C23_STATIC_GUARD=PASS
+OK (3 tests, 61 assertions)
+
+PHPUNIT_C23_FILTER=PASS
+OK (6 tests, 490 assertions)
+
+FULL_WATCHLIST_PHPUNIT=PASS
+OK (409 tests, 10292 assertions)
+
+C23_COMMAND_REGISTERED=PASS
+```
+
+C23 runtime evidence:
+
+```text
+C23_INITIAL_RUNTIME_ATTEMPTS=TIMEOUT_NO_ARTIFACT_BEFORE_REUSE_SELECTION_ARTIFACT
+C23_RUNTIME_TUNING=REUSE_C19_SELECTION_ARTIFACT
+C23_ALL_PARAM_RESOURCE_SETTING=php -d memory_limit=2048M
+C23_FOCUSED_RUNTIME_PASS=true
+C23_FOCUSED_ARTIFACT_HASH=5e4c57c85f196749b269400316215c6a80f431b7
+C23_FOCUSED_EVALUATED_PICKS=394
+C23_FOCUSED_PATH_MISSING=11
+C23_ALL_PARAM_RUNTIME_PASS=true
+C23_ALL_PARAM_ARTIFACT_HASH=5b79103c74faa01e4ce01cabbad1a3b36cdf31aa
+C23_ALL_PARAM_EVALUATED_PICKS=1575
+C23_ALL_PARAM_PATH_MISSING=45
+C23_ALL_PARAM_RULE_PROFILE_COUNT=19
+C23_ALL_PARAM_LOOKAHEAD_VIOLATIONS=0
+```
+
+C23 all-param interpretation:
+
+```text
+canonical_avg_ret_net=-0.0046903074630424
+canonical_median_ret_net=-0.0041104817284074
+canonical_p25_ret_net=-0.023750212591414
+canonical_win_rate=0.39238095238095
+
+c22_shadow_s06_avg_ret_net=-0.00016239014891423
+c22_shadow_s06_median_ret_net=0.0042799597180262
+c22_shadow_s06_p25_ret_net=-0.0082526173206962
+c22_shadow_s06_win_rate=0.59619047619048
+
+best_rule_profile_code_by_avg=C23_R09_EXIT_NEXT_OPEN_AFTER_D1_OR_D2_OR_D3_CLOSE_PROFIT_GT_0
+best_rule_profile_code_by_win_rate=C23_R09_EXIT_NEXT_OPEN_AFTER_D1_OR_D2_OR_D3_CLOSE_PROFIT_GT_0
+C23_R09_avg_ret_net=-0.000217
+C23_R09_win_rate=0.4717
+C23_R09_avg_delta_vs_canonical=0.004473
+C23_R09_median_delta_vs_canonical=0
+C23_R09_p25_delta_vs_canonical=0
+first_profit_capture_rule_signal_found=1
+c22_shadow_gap_acceptable=0
+non_lookahead_rule_candidate_found=1
+param_consistency_found=1
+month_stability_sufficient=1
+```
+
+C23 boundary status:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C23_CATALOG_CODE=NOT_CREATED
+C23_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C22_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+future_path_price_used_for_selection=false
+rule_exit_used_for_selection=false
+rule_ret_net_used_for_selection=false
+c22_shadow_s06_used_for_selection=false
+mfe_mae_used_for_selection=false
+```
+
+C23 current conclusion:
+
+```text
+C23_FIRST_PROFIT_CAPTURE_RULE_DIAGNOSTIC_SOURCE_IMPLEMENTED=true
+C23_RUNTIME_VALIDATION_REQUIRED=true
+C23_DIAGNOSTIC_RUNTIME_PASS=true
+C23_FIRST_PROFIT_CAPTURE_RULE_SIGNAL_FOUND=true
+C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND=true
+C23_C22_SHADOW_GAP_ACCEPTABLE=false
+C23_PARAM_CONSISTENCY_FOUND=true
+C23_MONTH_STABILITY_SUFFICIENT=true
+C23_CATALOG_IMPLEMENTATION_DEFERRED=true
+C23_CATALOG_CODE=NOT_CREATED
+C22_EXIT_CAPTURE_SIGNAL_FOUND_PRESERVED=true
+C21_EXECUTION_SIGNAL_FOUND_PRESERVED=true
+C20_DATE_GATE_NOT_ENOUGH_PRESERVED=true
+C19_CATALOG_CANDIDATE_FAILED_PRESERVED=true
+C01_TO_C22_IMMUTABLE=true
+OOS_NOT_RUN=true
+production_ready=0
+NEXT_STEP=C24_C22_SHADOW_GAP_BRIDGE_DIAGNOSTIC_ONLY
+```
+
+C23 is implemented and runtime validated as diagnostic evidence. It closes the non-lookahead rule consistency gap, but still fails the C22 shadow gap. It does not unlock catalog creation, OOS, promotion, production readiness, C22 tuning, C21 reopening, C20 reopening, C19 reopening, or canonical execution-model mutation.
+
+## PRIOR SESSION - C22 FINAL EXIT CAPTURE SHADOW DIAGNOSTIC RESULT
+
+Session:
 `WATCHLIST - C22 FINAL EXIT CAPTURE SHADOW DIAGNOSTIC RESULT`
 
 Current status:
