@@ -49,6 +49,7 @@ use App\Console\Commands\Watchlist\RunBacktestC21EntryExitBehaviorDiagnoseComman
 use App\Console\Commands\Watchlist\RunBacktestC22ExitCaptureShadowDiagnoseCommand;
 use App\Console\Commands\Watchlist\RunBacktestC23FirstProfitCaptureRuleDiagnoseCommand;
 use App\Console\Commands\Watchlist\RunBacktestC24C22ShadowGapBridgeDiagnoseCommand;
+use App\Console\Commands\Watchlist\RunBacktestC25NoSignalFallbackDelayDiagnoseCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -85,6 +86,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC22ExitCaptureShadowDiagnoseCommand::class,
         RunBacktestC23FirstProfitCaptureRuleDiagnoseCommand::class,
         RunBacktestC24C22ShadowGapBridgeDiagnoseCommand::class,
+        RunBacktestC25NoSignalFallbackDelayDiagnoseCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

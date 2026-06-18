@@ -1,0 +1,52 @@
+{
+  "artifact_type": "C25_NO_SIGNAL_FALLBACK_DELAY_DIAGNOSTIC_SOURCE_SUMMARY",
+  "status": "SOURCE_IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED",
+  "source_implemented": true,
+  "runtime_validated": false,
+  "phpunit_c25": "OPERATOR_VALIDATION_REQUIRED",
+  "full_watchlist_phpunit": "OPERATOR_VALIDATION_REQUIRED",
+  "syntax_validation": [
+    {
+      "command": "php -l app/Application/Watchlist/Services/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticService.php",
+      "status": "PASS"
+    },
+    {
+      "command": "php -l app/Console/Commands/Watchlist/RunBacktestC25NoSignalFallbackDelayDiagnoseCommand.php",
+      "status": "PASS"
+    },
+    {
+      "command": "php -l tests/Unit/Watchlist/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticServiceTest.php",
+      "status": "PASS"
+    },
+    {
+      "command": "php -l tests/Unit/Watchlist/WatchlistBacktestC25StaticGuardTest.php",
+      "status": "PASS"
+    },
+    {
+      "command": "php -l app/Console/Kernel.php",
+      "status": "PASS"
+    }
+  ],
+  "sandbox_phpunit_attempt": {
+    "command": "php vendor/bin/phpunit tests/Unit/Watchlist --filter \"WatchlistBacktestC25\"",
+    "status": "BLOCKED_ENVIRONMENT",
+    "reason": "PHPUnit requires dom, mbstring, xml, and xmlwriter extensions, which are unavailable in the sandbox."
+  },
+  "source_files": {
+    "service": "app/Application/Watchlist/Services/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticService.php",
+    "command": "app/Console/Commands/Watchlist/RunBacktestC25NoSignalFallbackDelayDiagnoseCommand.php",
+    "service_test": "tests/Unit/Watchlist/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticServiceTest.php",
+    "static_guard_test": "tests/Unit/Watchlist/WatchlistBacktestC25StaticGuardTest.php",
+    "audit_doc": "docs/watchlist/audit/WS_C25_NO_SIGNAL_FALLBACK_DELAY_DIAGNOSTIC.md",
+    "operator_commands": "docs/watchlist/audit/WS_C25_OPERATOR_VALIDATION_COMMANDS.md",
+    "policy_note": "docs/watchlist/system/policies/weekly_swing/_refs/WS_NO_SIGNAL_FALLBACK_DELAY_C25_DESIGN_NOTE.md"
+  },
+  "boundary_markers": {
+    "C25_CATALOG_IMPLEMENTATION_DEFERRED": true,
+    "C25_CATALOG_CODE": "NOT_CREATED",
+    "OOS_NOT_RUN": true,
+    "production_ready": 0,
+    "NO_C01_TO_C24_MUTATION": true,
+    "PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED": true
+  }
+}

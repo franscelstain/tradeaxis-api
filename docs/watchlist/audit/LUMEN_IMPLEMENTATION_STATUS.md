@@ -15,6 +15,91 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC SOURCE IMPLEMENTATION`
+
+Current status:
+
+`C25_SOURCE_IMPLEMENTED / C25_RUNTIME_VALIDATION_REQUIRED / C25_COMMAND_REGISTERED_SOURCE / C25_STATIC_GUARDS_ADDED / C25_OPERATOR_COMMANDS_DOCUMENTED / C25_CATALOG_CODE_NOT_CREATED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C24_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C25 source result:
+
+- `WatchlistBacktestC25NoSignalFallbackDelayDiagnosticService` exists as an IS-only no-signal fallback and next-open delay diagnostic;
+- `RunBacktestC25NoSignalFallbackDelayDiagnoseCommand` exists as `watchlist:backtest-c25-no-signal-fallback-delay-diagnose`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C25 reads the frozen C23 and C24 artifacts, with optional C21 derived MFE/MAE path evidence;
+- C25 does not recompute selection, does not select ticker/trade_date from future path, and does not mutate C01-C24;
+- C25 compares canonical, C22 S06, C23 R09, C23 R15, and C23 R16;
+- C25 writes a pick-level diagnostic artifact because no-signal and next-open delay decisions require row-level bucket evidence;
+- C25 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
+- C25 did not run OOS and did not set `production_ready=1`.
+
+C25 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC25NoSignalFallbackDelayDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC25StaticGuardTest.php
+docs/watchlist/audit/WS_C25_NO_SIGNAL_FALLBACK_DELAY_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C25_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c25-no-signal-fallback-delay-diagnostic-source-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_NO_SIGNAL_FALLBACK_DELAY_C25_DESIGN_NOTE.md
+```
+
+C25 validation in this source patch:
+
+```text
+PHP_LINT_C25_SERVICE=PASS
+PHP_LINT_C25_COMMAND=PASS
+PHP_LINT_C25_SERVICE_TEST=PASS
+PHP_LINT_C25_STATIC_GUARD_TEST=PASS
+PHP_LINT_KERNEL=PASS
+PHPUNIT_C25=OPERATOR_VALIDATION_REQUIRED
+FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+```
+
+Sandbox PHPUnit attempt was blocked by missing PHP extensions (`dom`, `mbstring`, `xml`, `xmlwriter`). No PHPUnit PASS or runtime PASS is claimed by this patch.
+
+C25 artifact/decision scope:
+
+```text
+artifact_type=C25_NO_SIGNAL_FALLBACK_DELAY_DIAGNOSTIC
+scope=IS_ONLY_NO_SIGNAL_FALLBACK_AND_NEXT_OPEN_DELAY_DIAGNOSTIC
+C25_CATALOG_CODE=NOT_CREATED
+C25_CATALOG_IMPLEMENTATION_DEFERRED=true
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+C25 data-availability contract:
+
+```text
+C23_ALL_PARAM_ARTIFACT_REQUIRED=true
+C24_GAP_BRIDGE_ARTIFACT_REQUIRED=true
+C21_PATH_ARTIFACT_OPTIONAL_FOR_DERIVED_MFE_MAE=true
+RAW_D1_TO_D5_OHLC_NOT_IN_C23_ARTIFACT=true
+D1_TO_D5_OHLC_AVAILABLE=false unless a later source adds raw OHLC path rows
+INTRADAY_SEQUENCE_KNOWN=false
+CONSERVATIVE_FILL_POLICY=STOP_FIRST_IF_TARGET_AND_STOP_SAME_DAILY_CANDLE
+```
+
+C25 preserves the C24 conclusion: C23 R09 almost closed average return but not median/p25/win-rate; dominant gap remains no-signal fallback and secondary gap remains next-open delay. C25 is the diagnostic step that tests whether those gaps can be realistically reduced before deciding whether C26 catalog-candidate diagnostic is justified.
+
+Required next operator work:
+
+```text
+RUN_PHPUNIT_C25_FILTER=true
+RUN_FULL_WATCHLIST_PHPUNIT=true
+RUN_C25_FOCUSED_DIAGNOSTIC=true
+RUN_C25_ALL_PARAM_DIAGNOSTIC=true
+DO_NOT_CREATE_C25_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_SET_PRODUCTION_READY=true
+```
+
+## PRIOR SESSION - C24 C22 SHADOW GAP BRIDGE DIAGNOSTIC SOURCE IMPLEMENTATION
+
+Session:
 `WATCHLIST - C24 C22 SHADOW GAP BRIDGE DIAGNOSTIC SOURCE IMPLEMENTATION`
 
 Current status:

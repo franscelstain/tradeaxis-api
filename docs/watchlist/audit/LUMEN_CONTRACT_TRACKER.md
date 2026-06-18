@@ -14,6 +14,89 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC SOURCE IMPLEMENTATION`
+
+Current status:
+
+`C25_SOURCE_IMPLEMENTED / C25_RUNTIME_VALIDATION_REQUIRED / C25_COMMAND_REGISTERED_SOURCE / C25_STATIC_GUARDS_ADDED / C25_OPERATOR_COMMANDS_DOCUMENTED / C25_CATALOG_CODE_NOT_CREATED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C24_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C25 current contract status:
+
+- `WL-CONTRACT-008`: PASS AS SOURCE-LEVEL DIAGNOSTIC TRACEABILITY. C25 is traceable to C19 sample-quality failure, C20 date-gate insufficiency, C21 execution-behavior signal, C22 first-profit-capture shadow direction, C23 non-lookahead rule-candidate evidence, and C24 gap-bridge evidence.
+- `WL-CONTRACT-009`: OPERATOR_VALIDATION_REQUIRED. C25 source, command, tests, and static guards were added; sandbox syntax checks passed, but PHPUnit and runtime command evidence must be produced by the operator.
+- `WL-CONTRACT-010`: PASS FOR SOURCE PATCH. C25 source and tests keep `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
+- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C25 cannot promote a catalog because it is diagnostic-only, `C25_CATALOG_CODE=NOT_CREATED`, and no OOS proof exists.
+- `WL-CONTRACT-013`: PASS FOR SOURCE SURFACE. C25 service, command, tests, static guards, audit doc, operator command doc, policy note, and source summary artifact are present.
+- `WL-CONTRACT-014`: PARTIAL PASS. Source docs and trackers are synchronized with source-level syntax evidence; runtime-result docs require operator command output.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because C25 has no catalog candidate and no OOS proof.
+
+C25 preserved boundaries:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C25_CATALOG_CODE=NOT_CREATED
+C25_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C24_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+NO_C24_REOPEN=true
+```
+
+C25 artifact contract:
+
+```text
+INPUT_SOURCE=C23_ALL_PARAM_ARTIFACT_AND_C24_GAP_BRIDGE_ARTIFACT
+OPTIONAL_SOURCE=C21_DERIVED_MFE_MAE_PATH_ARTIFACT
+PRICE_USAGE=MEASUREMENT_ONLY_AFTER_FIXED_PICKS
+FUTURE_PATH_USED_FOR_SELECTION=false
+PROFILE_RET_USED_FOR_SELECTION=false
+C22_SHADOW_S06_USED_FOR_SELECTION=false
+CANONICAL_MODEL=ENTRY_NEXT_OPEN_EXIT_STOP_TP_OR_TIME_HOLD_5_FEE_IDR_FIXED_SLIP_0_GAP_OPEN_PX_IDX_BANDS
+OUTPUT_SURFACE=PICK_LEVEL_BUCKET_AND_PROFILE_DIAGNOSTIC_ROWS
+```
+
+C25 source validation evidence:
+
+```text
+PHP_LINT_C25_SERVICE=PASS: No syntax errors detected
+PHP_LINT_C25_COMMAND=PASS: No syntax errors detected
+PHP_LINT_C25_SERVICE_TEST=PASS: No syntax errors detected
+PHP_LINT_C25_STATIC_GUARD_TEST=PASS: No syntax errors detected
+PHP_LINT_KERNEL=PASS: No syntax errors detected
+PHPUNIT_C25=OPERATOR_VALIDATION_REQUIRED
+FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+```
+
+Required next contract work:
+
+```text
+RUN_C25_PHPUNIT_FILTER=true
+RUN_FULL_WATCHLIST_PHPUNIT=true
+RUN_C25_FOCUSED_DIAGNOSTIC=true
+RUN_C25_ALL_PARAM_DIAGNOSTIC=true
+DO_NOT_CREATE_C25_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_MUTATE_C01_TO_C24=true
+DO_NOT_SET_PRODUCTION_READY=true
+DO_NOT_CHANGE_CANONICAL_ENTRY_EXIT_MODEL=true
+NEXT_STEP=C25_OPERATOR_VALIDATION_AND_RUNTIME_DIAGNOSTIC
+```
+
+## PRIOR SESSION - C24 C22 SHADOW GAP BRIDGE DIAGNOSTIC SOURCE IMPLEMENTATION
+
+Session:
 `WATCHLIST - C24 C22 SHADOW GAP BRIDGE DIAGNOSTIC SOURCE IMPLEMENTATION`
 
 Current status:
