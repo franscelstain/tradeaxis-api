@@ -14,6 +14,96 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C28 RULE REVISION TIEBREAK DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE`
+
+Current status:
+
+`C28_SOURCE_IMPLEMENTED / C28_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C28_FOCUSED_RUNTIME_PASS / C28_ALL_PARAM_RUNTIME_PASS / C28_REVISED_RAW_CANDIDATE_READY / C28_C29_OOS_PROOF_RECOMMENDED / C28_CATALOG_CODE_NOT_CREATED / C27_RAW_OHLC_VALIDATION_PASS_PRESERVED / C26_RAW_OHLC_VALIDATION_REQUIRED_RESOLVED / C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED_PRESERVED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C27_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C28 current contract status:
+
+- `WL-CONTRACT-008`: PASS AS RULE-REVISION TRACEABILITY. C28 is traceable to the C27 raw OHLC artifact and fixes the C27 weak bucket with an explicit predefined bucket tiebreak.
+- `WL-CONTRACT-009`: PASS FOR C28 DIAGNOSTIC. C28 source, command, tests, static guards, focused runtime, and all-param runtime have local evidence.
+- `WL-CONTRACT-010`: PASS. C28 source and runtime keep `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
+- `WL-CONTRACT-011`: READY ONLY FOR NEXT OOS PROOF, NOT PRODUCTION. C28 recommends C29 OOS proof but does not create a catalog, run OOS, or set production readiness.
+- `WL-CONTRACT-013`: PASS. C28 service, command, tests, static guards, audit doc, operator command doc, policy note, focused/all-param runtime artifacts, and source summary artifact are present.
+- `WL-CONTRACT-014`: PASS FOR C28 DOC SYNC. C28 docs and trackers are synchronized with PHPUnit, focused runtime, all-param runtime, candidate interpretation, and boundary evidence.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because no production catalog exists and C29 OOS proof has not run.
+
+C28 preserved boundaries:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C28_CATALOG_CODE=NOT_CREATED
+C28_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_C01_TO_C27_MUTATION=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+NO_C24_REOPEN=true
+NO_C25_REOPEN=true
+NO_C26_REOPEN=true
+NO_C27_REOPEN=true
+```
+
+C28 artifact contract:
+
+```text
+INPUT_SOURCE=C27_RAW_OHLC_VALIDATION_ARTIFACT
+PRIMARY_REVISED_CANDIDATE=C28_G05_BUCKET_TIEBREAK_R09_STABLE_G21_NO_SIGNAL_G16_DELAY
+STABLE_BUCKET_SOURCE=RAW_R09
+NO_SIGNAL_BUCKET_SOURCE=RAW_G21
+NEXT_OPEN_DELAY_BUCKET_SOURCE=RAW_G16
+RAW_OHLC_VALIDATION_PASS=true
+DERIVED_MFE_MAE_USED_FOR_EXECUTION=false
+FUTURE_PATH_PRICE_USED_FOR_SELECTION=false
+PROFILE_RET_NET_USED_FOR_SELECTION=false
+BEST_PROFILE_BINDING_ALLOWED=false
+```
+
+C28 validation evidence:
+
+```text
+PHPUNIT_C28=PASS: OK (5 tests, 90 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (435 tests, 10768 assertions)
+C28_FOCUSED_RUNTIME_PASS=true: artifact_hash=94805cfba218fab4baae0a0e25f427f688acb924
+C28_ALL_PARAM_RUNTIME_PASS=true: artifact_hash=64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd
+C28_ALL_PARAM_EVALUATED_PICKS=1575
+```
+
+C28 final decision:
+
+```text
+decision_status=C28_REVISED_RAW_CANDIDATE_READY_FOR_C29_OOS_PROOF
+c28_revised_candidate_ready=true
+c29_oos_proof_recommended=true
+candidate_param_pass_fail=12/0
+candidate_month_pass_fail=27/0
+candidate_bucket_pass_fail=3/0
+lookahead_violation_count=0
+catalog_allowed=false
+oos_allowed=false
+production_ready=0
+```
+
+Next required contract work:
+
+```text
+NEXT_STEP=C29_OOS_PROOF_WITH_C28_ARTIFACT_HASH_LOCK
+DO_NOT_CREATE_C28_CATALOG=true
+DO_NOT_MUTATE_C01_TO_C27=true
+ONLY_C29_MAY_RUN_OOS_PROOF=true
+```
+
+## PRIOR SESSION - C27 CATALOG CANDIDATE RAW OHLC VALIDATION IS-ONLY RUNTIME EVIDENCE
+
+Session:
 `WATCHLIST - C27 CATALOG CANDIDATE RAW OHLC VALIDATION IS-ONLY RUNTIME EVIDENCE`
 
 Current status:

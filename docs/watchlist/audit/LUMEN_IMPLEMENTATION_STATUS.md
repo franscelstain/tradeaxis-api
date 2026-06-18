@@ -15,6 +15,125 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C28 RULE REVISION TIEBREAK DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE`
+
+Current status:
+
+`C28_SOURCE_IMPLEMENTED / C28_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C28_FOCUSED_RUNTIME_PASS / C28_ALL_PARAM_RUNTIME_PASS / C28_REVISED_RAW_CANDIDATE_READY / C28_C29_OOS_PROOF_RECOMMENDED / C28_CATALOG_CODE_NOT_CREATED / C27_RAW_OHLC_VALIDATION_PASS_PRESERVED / C26_RAW_OHLC_VALIDATION_REQUIRED_RESOLVED / C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED_PRESERVED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C27_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C28 final source/runtime result:
+
+- `WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService` exists as an IS-only rule revision/tiebreak diagnostic service;
+- `RunBacktestC28RuleRevisionTiebreakDiagnoseCommand` exists as `watchlist:backtest-c28-rule-revision-tiebreak-diagnose`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C28 reads the frozen C27 raw OHLC artifact and does not read or recompute market data;
+- C28 tests explicit R09/G21/G13/G16 bucket tiebreak variants and selects only the predefined primary C28 profile for readiness;
+- C28 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
+- C28 did not run OOS and did not set `production_ready=1`.
+
+C28 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC28RuleRevisionTiebreakDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC28RuleRevisionTiebreakDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC28StaticGuardTest.php
+docs/watchlist/audit/WS_C28_RULE_REVISION_TIEBREAK_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C28_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c28-rule-revision-tiebreak-diagnostic-source-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_CATALOG_CANDIDATE_C28_RULE_REVISION_TIEBREAK_NOTE.md
+```
+
+C28 validation actually run:
+
+```text
+PHPUNIT_C28=PASS
+OK (5 tests, 90 assertions)
+
+FULL_WATCHLIST_PHPUNIT=PASS
+OK (435 tests, 10768 assertions)
+
+C28_FOCUSED_RUNTIME_PASS=true
+C28_FOCUSED_ARTIFACT_HASH=94805cfba218fab4baae0a0e25f427f688acb924
+C28_FOCUSED_EVALUATED_PICKS=395
+C28_FOCUSED_PARAM_PASS_FAIL=3/0
+C28_FOCUSED_MONTH_PASS_FAIL=26/1
+C28_FOCUSED_BUCKET_PASS_FAIL=3/0
+C28_FOCUSED_REVISED_CANDIDATE_READY=false
+
+C28_ALL_PARAM_RUNTIME_PASS=true
+C28_ARTIFACT_HASH=64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd
+C28_INPUT_C27_ARTIFACT_HASH=9bae5ed7227615d64765738b1ff83fa8b9232769
+C28_EVALUATED_PICKS=1575
+C28_RAW_OHLC_VALIDATION_PASS=true
+```
+
+C28 all-param decision:
+
+```text
+C28_DECISION_STATUS=C28_REVISED_RAW_CANDIDATE_READY_FOR_C29_OOS_PROOF
+C28_PRIMARY_PROFILE=C28_G05_BUCKET_TIEBREAK_R09_STABLE_G21_NO_SIGNAL_G16_DELAY
+C28_REVISED_CANDIDATE_READY=true
+C28_C29_OOS_PROOF_RECOMMENDED=true
+C28_LOOKAHEAD_VIOLATION_COUNT=0
+C28_PARAM_PASS_FAIL=12/0
+C28_MONTH_PASS_FAIL=27/0
+C28_BUCKET_PASS_FAIL=3/0
+```
+
+C28 all-param candidate metrics:
+
+```text
+CANDIDATE_AVG_RET_NET=0.0061941599395967
+CANDIDATE_MEDIAN_RET_NET=0.0058664259927798
+CANDIDATE_P25_RET_NET=-0.0065973510332174
+CANDIDATE_WIN_RATE=0.58603174603175
+CANDIDATE_AVG_DELTA_VS_R09=0.0064115930122448
+CANDIDATE_MEDIAN_DELTA_VS_R09=0.006366301024022
+CANDIDATE_P25_DELTA_VS_R09=0.014647308567441
+```
+
+C28 boundary status:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C28_CATALOG_CODE=NOT_CREATED
+C28_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_C01_TO_C27_MUTATION=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+NO_C24_REOPEN=true
+NO_C25_REOPEN=true
+NO_C26_REOPEN=true
+NO_C27_REOPEN=true
+```
+
+C28 current conclusion:
+
+```text
+C28_RULE_REVISION_TIEBREAK_SOURCE_IMPLEMENTED=true
+C28_RUNTIME_VALIDATION_REQUIRED=false
+C28_DIAGNOSTIC_RUNTIME_PASS=true
+C28_REVISED_CANDIDATE_READY=true
+C28_CATALOG_IMPLEMENTATION_DEFERRED=true
+C28_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+NEXT_STEP=C29_OOS_PROOF_WITH_C28_ARTIFACT_HASH_LOCK
+```
+
+C28 produces the first raw-OHLC-validated revised IS candidate that passes distribution, param, month, bucket, and lookahead gates. It does not unlock production readiness by itself; the next step is C29 OOS proof against the locked C28 artifact hash.
+
+## PRIOR SESSION - C27 CATALOG CANDIDATE RAW OHLC VALIDATION IS-ONLY RUNTIME EVIDENCE
+
+Session:
 `WATCHLIST - C27 CATALOG CANDIDATE RAW OHLC VALIDATION IS-ONLY RUNTIME EVIDENCE`
 
 Current status:
