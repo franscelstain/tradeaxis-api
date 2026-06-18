@@ -1,0 +1,113 @@
+{
+  "artifact_type": "C26_CATALOG_CANDIDATE_DIAGNOSTIC_FINAL_SUMMARY",
+  "status": "FINAL_DIAGNOSTIC_RUNTIME_PASS",
+  "source_implemented": true,
+  "runtime_validated": true,
+  "phpunit_c26": {
+    "status": "PASS",
+    "result": "OK (6 tests, 136 assertions)"
+  },
+  "full_watchlist_phpunit": {
+    "status": "PASS",
+    "result": "OK (425 tests, 10582 assertions)"
+  },
+  "focused_runtime": {
+    "status": "PASS",
+    "artifact_path": "storage/app/watchlist/backtest/c26-catalog-candidate-diagnostic-focused.json",
+    "artifact_hash": "b1897f7cf82e2fd56bf79ed1bf7edda5f2cb75f9",
+    "evaluated_picks_count": 394,
+    "path_missing_count": 45,
+    "diagnostic_profile_count": 12,
+    "g21_param_pass_count": 3,
+    "g21_param_fail_count": 0,
+    "g21_month_pass_count": 22,
+    "g21_month_fail_count": 5,
+    "g21_bucket_pass_count": 4,
+    "g21_bucket_fail_count": 0,
+    "raw_ohlc_validation_required": true,
+    "derived_mfe_mae_dependency_detected": true,
+    "g21_primary_candidate_ready": true,
+    "g13_defensive_candidate_ready": true,
+    "g16_next_open_delay_component_ready": true,
+    "c27_catalog_candidate_implementation_recommended": true,
+    "c27_requires_raw_ohlc_validation_first": true
+  },
+  "all_param_runtime": {
+    "status": "PASS",
+    "artifact_path": "storage/app/watchlist/backtest/c26-catalog-candidate-diagnostic-all-param.json",
+    "artifact_hash": "e31ee7fd9bfc0cfb05b88ce5ff6fcbc9111d4b56",
+    "input_c21_artifact_hash": "d6c6c72d51b40a0c852ce9bbc6a452c55920df13",
+    "input_c23_artifact_hash": "5b79103c74faa01e4ce01cabbad1a3b36cdf31aa",
+    "input_c24_artifact_hash": "feabfbe720d39155a3d741e509cc69cade3ef31c",
+    "input_c25_artifact_hash": "d464c5bcce398c5405b069ef277d696a10598288",
+    "evaluated_picks_count": 1575,
+    "path_missing_count": 45,
+    "diagnostic_profile_count": 17,
+    "g21_param_pass_count": 8,
+    "g21_param_fail_count": 4,
+    "g21_month_pass_count": 24,
+    "g21_month_fail_count": 3,
+    "g21_bucket_pass_count": 4,
+    "g21_bucket_fail_count": 0,
+    "lookahead_violation_count": 0,
+    "ambiguous_intraday_sequence_count": 0
+  },
+  "candidate_summary": {
+    "primary_candidate": {
+      "profile_code": "C25_G21_COMBINED_R09_INTRADAY_TARGET_1PCT_AND_NO_SIGNAL_D3_EXIT",
+      "avg_pct": 0.0045,
+      "median_pct": 0.9487,
+      "p25_pct": -0.4499,
+      "win_rate_pct": 63.17,
+      "lookahead_violation_count": 0,
+      "ambiguous_intraday_sequence_count": 0,
+      "preplanned_order_count": 906
+    },
+    "defensive_comparator": {
+      "profile_code": "C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT",
+      "avg_pct": -0.2257,
+      "median_pct": 0.4493,
+      "p25_pct": -0.05,
+      "win_rate_pct": 73.21
+    },
+    "next_open_delay_comparator": {
+      "profile_code": "C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT",
+      "avg_pct": -0.0789,
+      "median_pct": 0.9581,
+      "p25_pct": -1.7163,
+      "win_rate_pct": 57.59
+    },
+    "r09_baseline": {
+      "profile_code": "C25_G02_C23_R09_BASELINE_BRIDGE",
+      "avg_pct": -0.0217,
+      "median_pct": -0.05,
+      "p25_pct": -2.1245,
+      "win_rate_pct": 47.17
+    }
+  },
+  "decision": {
+    "decision_status": "C26_RAW_OHLC_VALIDATION_REQUIRED",
+    "g21_primary_candidate_ready": true,
+    "g13_defensive_candidate_ready": true,
+    "g16_next_open_delay_component_ready": true,
+    "raw_ohlc_validation_required": true,
+    "derived_mfe_mae_dependency_detected": true,
+    "c27_catalog_candidate_implementation_recommended": true,
+    "c27_requires_raw_ohlc_validation_first": true,
+    "exit_rule_path_still_viable": true,
+    "selection_quality_revisit_needed": false,
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "next_step": "C27_CATALOG_CANDIDATE_IMPLEMENTATION_WITH_RAW_OHLC_VALIDATION_FIRST_IS_ONLY"
+  },
+  "boundary_markers": {
+    "C26_CATALOG_IMPLEMENTATION_DEFERRED": true,
+    "C26_CATALOG_CODE": "NOT_CREATED",
+    "OOS_NOT_RUN": true,
+    "production_ready": 0,
+    "NO_C01_TO_C25_MUTATION": true,
+    "PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED": true,
+    "CANONICAL_MODEL_UNCHANGED": true,
+    "LOOKAHEAD_VIOLATION_COUNT": 0
+  }
+}

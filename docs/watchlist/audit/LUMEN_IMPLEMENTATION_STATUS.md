@@ -15,6 +15,258 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C27 CATALOG CANDIDATE RAW OHLC VALIDATION IS-ONLY RUNTIME EVIDENCE`
+
+Current status:
+
+`C27_SOURCE_IMPLEMENTED / C27_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C27_FOCUSED_RUNTIME_PASS / C27_ALL_PARAM_RUNTIME_PASS / C27_RAW_OHLC_VALIDATION_PASS / C27_DERIVED_MFE_MAE_DEPENDENCY_REMOVED / C27_G21_RAW_BEATS_R09 / C27_G21_RAW_CATALOG_CANDIDATE_NOT_READY / C27_C28_OOS_PROOF_NOT_RECOMMENDED / C27_CATALOG_CODE_NOT_CREATED / C26_RAW_OHLC_VALIDATION_REQUIRED_RESOLVED / C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED_PRESERVED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C26_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C27 final source/runtime result:
+
+- `WatchlistBacktestC27CatalogCandidateRawOhlcValidationService` exists as an IS-only raw-OHLC-first catalog-candidate validation service;
+- `RunBacktestC27CatalogCandidateRawOhlcValidateCommand` exists as `watchlist:backtest-c27-catalog-candidate-raw-ohlc-validate`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C27 reads frozen C26 and C21 artifacts, validates D1-D5 raw OHLC via published EOD series, and does not use derived MFE/MAE for execution;
+- C27 recomputes raw canonical, C22 S06 shadow, R09, G13, G16, and G21 candidate paths;
+- C27 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
+- C27 did not run OOS and did not set `production_ready=1`.
+
+C27 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC27CatalogCandidateRawOhlcValidationService.php
+app/Console/Commands/Watchlist/RunBacktestC27CatalogCandidateRawOhlcValidateCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC27CatalogCandidateRawOhlcValidationServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC27StaticGuardTest.php
+docs/watchlist/audit/WS_C27_CATALOG_CANDIDATE_RAW_OHLC_VALIDATION.md
+docs/watchlist/audit/WS_C27_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c27-catalog-candidate-raw-ohlc-validation-source-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_CATALOG_CANDIDATE_C27_RAW_OHLC_VALIDATION_NOTE.md
+```
+
+C27 validation actually run:
+
+```text
+PHPUNIT_C27=PASS
+OK (5 tests, 96 assertions)
+
+FULL_WATCHLIST_PHPUNIT=PASS
+OK (430 tests, 10678 assertions)
+
+C27_FOCUSED_RUNTIME_PASS=true
+C27_FOCUSED_ARTIFACT_HASH=ec42b7585e166f72ab57794a3de4667c5f0a04ac
+C27_FOCUSED_EVALUATED_PICKS=395
+C27_FOCUSED_RAW_OHLC_VALIDATED=395
+C27_FOCUSED_RAW_OHLC_MISSING=0
+C27_FOCUSED_RAW_OHLC_VALIDATION_PASS=true
+
+C27_ALL_PARAM_RUNTIME_PASS=true
+C27_ARTIFACT_HASH=9bae5ed7227615d64765738b1ff83fa8b9232769
+C27_INPUT_C21_ARTIFACT_HASH=d6c6c72d51b40a0c852ce9bbc6a452c55920df13
+C27_INPUT_C26_ARTIFACT_HASH=e31ee7fd9bfc0cfb05b88ce5ff6fcbc9111d4b56
+C27_EVALUATED_PICKS=1575
+C27_RAW_OHLC_VALIDATED=1575
+C27_RAW_OHLC_MISSING=0
+C27_RAW_OHLC_VALIDATION_PASS=true
+```
+
+C27 all-param decision:
+
+```text
+C27_DECISION_STATUS=C27_RAW_OHLC_VALIDATED_BUT_CANDIDATE_NOT_READY
+C27_RAW_OHLC_VALIDATION_PASS=true
+C27_DERIVED_MFE_MAE_DEPENDENCY_REMOVED=true
+C27_G21_RAW_BEATS_R09=true
+C27_G21_RAW_CATALOG_CANDIDATE_READY=false
+C27_G21_FAILURE_REASON_CODES=G21_BUCKET_STABILITY_WEAK
+C27_C28_OOS_PROOF_RECOMMENDED=false
+C27_LOOKAHEAD_VIOLATION_COUNT=0
+C27_AMBIGUOUS_INTRADAY_SEQUENCE_COUNT=0
+```
+
+C27 raw profile summary:
+
+```text
+RAW_R09_AVG=-0.00021743307264814
+RAW_R09_MEDIAN=-0.00049987503124219
+RAW_R09_P25=-0.021244659600659
+RAW_G21_AVG=0.0010363616567251
+RAW_G21_MEDIAN=0.010022550739163
+RAW_G21_P25=-0.0038892584821657
+RAW_G13_AVG=0.0014577651738231
+RAW_G16_AVG=0.001722767070267
+```
+
+C27 boundary status:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C27_CATALOG_CODE=NOT_CREATED
+C27_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_C01_TO_C26_MUTATION=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+NO_C24_REOPEN=true
+NO_C25_REOPEN=true
+NO_C26_REOPEN=true
+```
+
+C27 current conclusion:
+
+```text
+C27_CATALOG_CANDIDATE_RAW_OHLC_VALIDATION_SOURCE_IMPLEMENTED=true
+C27_RUNTIME_VALIDATION_REQUIRED=false
+C27_RAW_OHLC_RUNTIME_PASS=true
+C27_RAW_OHLC_VALIDATION_PASS=true
+C27_CATALOG_IMPLEMENTATION_DEFERRED=true
+C27_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+NEXT_STEP=C28_RULE_REVISION_OR_G13_G16_TIEBREAK_DIAGNOSTIC_IS_ONLY
+```
+
+C27 resolves C26's raw OHLC validation requirement but does not unlock OOS or production readiness. Raw G21 improves R09 in aggregate, median, and p25, but fails the C27 bucket stability gate because the `candidate_matches_or_beats_c22` bucket loses average return versus raw R09. The next step must remain IS-only.
+
+## PRIOR SESSION - C26 CATALOG CANDIDATE DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE
+
+Session:
+`WATCHLIST - C26 CATALOG CANDIDATE DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE`
+
+Current status:
+
+`C26_SOURCE_IMPLEMENTED / C26_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C26_FOCUSED_RUNTIME_PASS / C26_ALL_PARAM_RUNTIME_PASS / C26_RAW_OHLC_VALIDATION_REQUIRED / C26_G21_PRIMARY_CANDIDATE_READY / C26_G13_DEFENSIVE_CANDIDATE_READY / C26_G16_NEXT_OPEN_DELAY_COMPONENT_READY / C26_C27_RECOMMENDED_WITH_RAW_OHLC_VALIDATION_FIRST / C26_CATALOG_CODE_NOT_CREATED / C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED_PRESERVED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C25_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C26 final source/runtime result:
+
+- `WatchlistBacktestC26CatalogCandidateDiagnosticService` exists as an IS-only catalog-candidate readiness diagnostic;
+- `RunBacktestC26CatalogCandidateDiagnoseCommand` exists as `watchlist:backtest-c26-catalog-candidate-diagnose`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C26 reads frozen C25, C23, C24, and C21 artifacts and does not reconstruct missing runtime evidence;
+- C26 compares canonical, C22 S06, C23 R09/R15/R16, C25 G13/G16/G21;
+- C26 writes pick-level diagnostic rows, baseline summaries, candidate summary, param consistency, month stability, bucket stability, data quality, lookahead safety, and decision sections;
+- C26 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
+- C26 did not run OOS and did not set `production_ready=1`.
+
+C26 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC26CatalogCandidateDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC26CatalogCandidateDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC26CatalogCandidateDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC26StaticGuardTest.php
+docs/watchlist/audit/WS_C26_CATALOG_CANDIDATE_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C26_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c26-catalog-candidate-diagnostic-source-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_CATALOG_CANDIDATE_C26_DESIGN_NOTE.md
+```
+
+C26 validation actually run:
+
+```text
+PHPUNIT_C26=PASS
+OK (6 tests, 136 assertions)
+
+FULL_WATCHLIST_PHPUNIT=PASS
+OK (425 tests, 10582 assertions)
+
+C26_FOCUSED_RUNTIME_PASS=true
+C26_FOCUSED_ARTIFACT_HASH=b1897f7cf82e2fd56bf79ed1bf7edda5f2cb75f9
+C26_FOCUSED_EVALUATED_PICKS=394
+C26_FOCUSED_PATH_MISSING=45
+C26_FOCUSED_PROFILE_COUNT=12
+
+C26_ALL_PARAM_RUNTIME_PASS=true
+C26_ARTIFACT_HASH=e31ee7fd9bfc0cfb05b88ce5ff6fcbc9111d4b56
+C26_INPUT_C21_ARTIFACT_HASH=d6c6c72d51b40a0c852ce9bbc6a452c55920df13
+C26_INPUT_C23_ARTIFACT_HASH=5b79103c74faa01e4ce01cabbad1a3b36cdf31aa
+C26_INPUT_C24_ARTIFACT_HASH=feabfbe720d39155a3d741e509cc69cade3ef31c
+C26_INPUT_C25_ARTIFACT_HASH=d464c5bcce398c5405b069ef277d696a10598288
+C26_EVALUATED_PICKS=1575
+C26_PATH_MISSING=45
+C26_PROFILE_COUNT=17
+```
+
+C26 all-param decision:
+
+```text
+C26_DECISION_STATUS=C26_RAW_OHLC_VALIDATION_REQUIRED
+C26_PRIMARY_CANDIDATE=C25_G21_COMBINED_R09_INTRADAY_TARGET_1PCT_AND_NO_SIGNAL_D3_EXIT
+C26_DEFENSIVE_COMPARATOR=C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT
+C26_NEXT_OPEN_DELAY_COMPARATOR=C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT
+C26_G21_PRIMARY_CANDIDATE_READY=true
+C26_G13_DEFENSIVE_CANDIDATE_READY=true
+C26_G16_NEXT_OPEN_DELAY_COMPONENT_READY=true
+C26_RAW_OHLC_VALIDATION_REQUIRED=true
+C26_DERIVED_MFE_MAE_DEPENDENCY_DETECTED=true
+C26_C27_CATALOG_CANDIDATE_IMPLEMENTATION_RECOMMENDED=true
+C26_C27_REQUIRES_RAW_OHLC_VALIDATION_FIRST=true
+C26_EXIT_RULE_PATH_STILL_VIABLE=true
+C26_SELECTION_QUALITY_REVISIT_NEEDED=false
+C26_LOOKAHEAD_VIOLATION_COUNT=0
+C26_AMBIGUOUS_INTRADAY_SEQUENCE_COUNT=0
+```
+
+C26 stability:
+
+```text
+G21_PARAM_PASS_COUNT=8
+G21_PARAM_FAIL_COUNT=4
+G21_MONTH_PASS_COUNT=24
+G21_MONTH_FAIL_COUNT=3
+G21_BUCKET_PASS_COUNT=4
+G21_BUCKET_FAIL_COUNT=0
+```
+
+C26 boundary status:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C26_CATALOG_CODE=NOT_CREATED
+C26_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C25_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+NO_C24_REOPEN=true
+NO_C25_REOPEN=true
+```
+
+C26 current conclusion:
+
+```text
+C26_CATALOG_CANDIDATE_DIAGNOSTIC_SOURCE_IMPLEMENTED=true
+C26_RUNTIME_VALIDATION_REQUIRED=false
+C26_DIAGNOSTIC_RUNTIME_PASS=true
+C26_CATALOG_IMPLEMENTATION_DEFERRED=true
+C26_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+NEXT_STEP=C27_CATALOG_CANDIDATE_IMPLEMENTATION_WITH_RAW_OHLC_VALIDATION_FIRST_IS_ONLY
+```
+
+C26 validates that G21 is strong enough to proceed to C27 catalog-candidate implementation work, but only if C27 adds raw D1-D5 OHLC/high-low validation first. C26 itself remains diagnostic evidence and does not unlock OOS, promotion, production readiness, or catalog creation.
+
+## PRIOR SESSION - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC FINAL RUNTIME EVIDENCE
+
+Session:
 `WATCHLIST - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC FINAL RUNTIME EVIDENCE`
 
 Current status:

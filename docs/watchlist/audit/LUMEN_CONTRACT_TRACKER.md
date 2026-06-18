@@ -14,6 +14,193 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C27 CATALOG CANDIDATE RAW OHLC VALIDATION IS-ONLY RUNTIME EVIDENCE`
+
+Current status:
+
+`C27_SOURCE_IMPLEMENTED / C27_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C27_FOCUSED_RUNTIME_PASS / C27_ALL_PARAM_RUNTIME_PASS / C27_RAW_OHLC_VALIDATION_PASS / C27_DERIVED_MFE_MAE_DEPENDENCY_REMOVED / C27_G21_RAW_BEATS_R09 / C27_G21_RAW_CATALOG_CANDIDATE_NOT_READY / C27_C28_OOS_PROOF_NOT_RECOMMENDED / C27_CATALOG_CODE_NOT_CREATED / C26_RAW_OHLC_VALIDATION_REQUIRED_RESOLVED / C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED_PRESERVED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C26_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C27 current contract status:
+
+- `WL-CONTRACT-008`: PASS AS RAW-OHLC VALIDATION TRACEABILITY. C27 is traceable to C19 sample-quality failure, C20 date-gate insufficiency, C21 canonical path levels, C22 first-profit-capture shadow, C23 R09 rule behavior, C24 gap-bridge evidence, C25 G21/G13/G16 handoff, and C26 raw-OHLC-required decision.
+- `WL-CONTRACT-009`: PASS FOR C27 VALIDATION. C27 source, command, tests, static guards, focused runtime, and all-param runtime have local evidence.
+- `WL-CONTRACT-010`: PASS. C27 source and runtime keep `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
+- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C27 validates raw OHLC but does not recommend OOS because `g21_raw_catalog_candidate_ready=false` with `G21_BUCKET_STABILITY_WEAK`.
+- `WL-CONTRACT-013`: PASS. C27 service, command, tests, static guards, audit doc, operator command doc, policy note, focused/all-param runtime artifacts, and source summary artifact are present.
+- `WL-CONTRACT-014`: PASS FOR C27 DOC SYNC. C27 docs and trackers are synchronized with PHPUnit, focused runtime, all-param runtime, raw-OHLC interpretation, and boundary evidence.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because no production catalog exists, no OOS proof exists, and the raw G21 candidate failed the C27 readiness gate.
+
+C27 preserved boundaries:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C27_CATALOG_CODE=NOT_CREATED
+C27_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_C01_TO_C26_MUTATION=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+NO_C24_REOPEN=true
+NO_C25_REOPEN=true
+NO_C26_REOPEN=true
+```
+
+C27 artifact contract:
+
+```text
+INPUT_SOURCE=C26_ALL_PARAM_ARTIFACT
+SUPPORTING_SOURCE=C21_CANONICAL_PATH_ARTIFACT
+PRIMARY_RAW_CANDIDATE=C27_G05_RAW_C25_G21_PRIMARY_COMBO
+DEFENSIVE_RAW_COMPARATOR=C27_G03_RAW_C25_G13_TARGET_0_50PCT
+NEXT_OPEN_DELAY_RAW_COMPARATOR=C27_G04_RAW_C25_G16_TARGET_1_50PCT
+RAW_BASELINE=C27_G02_RAW_C23_R09_NEXT_OPEN_RULE
+RAW_OHLC_VALIDATION_PASS=true
+DERIVED_MFE_MAE_USED_FOR_EXECUTION=false
+FUTURE_PATH_PRICE_USED_FOR_SELECTION=false
+PROFILE_RET_NET_USED_FOR_SELECTION=false
+```
+
+C27 validation evidence:
+
+```text
+PHPUNIT_C27=PASS: OK (5 tests, 96 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (430 tests, 10678 assertions)
+C27_FOCUSED_RUNTIME_PASS=true: artifact_hash=ec42b7585e166f72ab57794a3de4667c5f0a04ac
+C27_ALL_PARAM_RUNTIME_PASS=true: artifact_hash=9bae5ed7227615d64765738b1ff83fa8b9232769
+C27_ALL_PARAM_EVALUATED_PICKS=1575
+C27_RAW_OHLC_VALIDATED=1575
+C27_RAW_OHLC_MISSING=0
+```
+
+C27 final decision:
+
+```text
+decision_status=C27_RAW_OHLC_VALIDATED_BUT_CANDIDATE_NOT_READY
+raw_ohlc_validation_pass=true
+derived_mfe_mae_dependency_removed=true
+g21_raw_beats_r09=true
+g21_raw_catalog_candidate_ready=false
+g21_failure_reason_codes=G21_BUCKET_STABILITY_WEAK
+c28_oos_proof_recommended=false
+catalog_allowed=false
+oos_allowed=false
+production_ready=0
+```
+
+Next required contract work:
+
+```text
+NEXT_STEP=C28_RULE_REVISION_OR_G13_G16_TIEBREAK_DIAGNOSTIC_IS_ONLY
+DO_NOT_CREATE_C27_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_MUTATE_C01_TO_C26=true
+```
+
+## PRIOR SESSION - C26 CATALOG CANDIDATE DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE
+
+Session:
+`WATCHLIST - C26 CATALOG CANDIDATE DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE`
+
+Current status:
+
+`C26_SOURCE_IMPLEMENTED / C26_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C26_FOCUSED_RUNTIME_PASS / C26_ALL_PARAM_RUNTIME_PASS / C26_RAW_OHLC_VALIDATION_REQUIRED / C26_G21_PRIMARY_CANDIDATE_READY / C26_G13_DEFENSIVE_CANDIDATE_READY / C26_G16_NEXT_OPEN_DELAY_COMPONENT_READY / C26_C27_RECOMMENDED_WITH_RAW_OHLC_VALIDATION_FIRST / C26_CATALOG_CODE_NOT_CREATED / C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED_PRESERVED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C25_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C26 current contract status:
+
+- `WL-CONTRACT-008`: PASS AS CATALOG-CANDIDATE DIAGNOSTIC TRACEABILITY. C26 is traceable to C19 sample-quality failure, C20 date-gate insufficiency, C21 execution-behavior signal, C22 first-profit-capture shadow direction, C23 non-lookahead rule-candidate evidence, C24 gap-bridge evidence, and C25 G21/G13/G16 candidate handoff.
+- `WL-CONTRACT-009`: PASS FOR C26 DIAGNOSTIC. C26 source, command, tests, static guards, focused runtime, and all-param runtime have local evidence. C26 still flags raw OHLC validation as required before C27 can implement catalog-candidate behavior.
+- `WL-CONTRACT-010`: PASS. C26 source and runtime keep `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
+- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C26 cannot promote a catalog because it is diagnostic-only, `C26_CATALOG_CODE=NOT_CREATED`, OOS remains not run, and raw OHLC validation must be added first in C27.
+- `WL-CONTRACT-013`: PASS. C26 service, command, tests, static guards, audit doc, operator command doc, policy note, focused/all-param runtime artifacts, and source summary artifact are present.
+- `WL-CONTRACT-014`: PASS FOR C26 DOC SYNC. C26 source docs and trackers are synchronized with PHPUnit, focused runtime, all-param runtime, candidate interpretation, raw-OHLC limitation, and boundary evidence.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because C26 has no production catalog, no OOS proof, and no raw OHLC-validated catalog candidate implementation.
+
+C26 preserved boundaries:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C26_CATALOG_CODE=NOT_CREATED
+C26_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C25_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+NO_C22_REOPEN=true
+NO_C23_REOPEN=true
+NO_C24_REOPEN=true
+NO_C25_REOPEN=true
+```
+
+C26 artifact contract:
+
+```text
+INPUT_SOURCE=C25_ALL_PARAM_ARTIFACT
+SUPPORTING_SOURCES=C21_PATH_ARTIFACT,C23_ALL_PARAM_ARTIFACT,C24_GAP_BRIDGE_ARTIFACT
+PRIMARY_CANDIDATE=C25_G21_COMBINED_R09_INTRADAY_TARGET_1PCT_AND_NO_SIGNAL_D3_EXIT
+DEFENSIVE_COMPARATOR=C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT
+NEXT_OPEN_DELAY_COMPARATOR=C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT
+DOWNSIDE_COMPARATORS=C23_R15,C23_R16
+C22_SHADOW_S06_USED_FOR_SELECTION=false
+FUTURE_PATH_PRICE_USED_FOR_SELECTION=false
+PROFILE_RET_NET_USED_FOR_SELECTION=false
+RAW_OHLC_VALIDATION_REQUIRED=true
+```
+
+C26 validation evidence:
+
+```text
+PHPUNIT_C26=PASS: OK (6 tests, 136 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (425 tests, 10582 assertions)
+C26_FOCUSED_RUNTIME_PASS=true: artifact_hash=b1897f7cf82e2fd56bf79ed1bf7edda5f2cb75f9
+C26_ALL_PARAM_RUNTIME_PASS=true: artifact_hash=e31ee7fd9bfc0cfb05b88ce5ff6fcbc9111d4b56
+C26_ALL_PARAM_EVALUATED_PICKS=1575
+C26_ALL_PARAM_PATH_MISSING=45
+C26_ALL_PARAM_PROFILE_COUNT=17
+```
+
+C26 final decision:
+
+```text
+decision_status=C26_RAW_OHLC_VALIDATION_REQUIRED
+g21_primary_candidate_ready=true
+g13_defensive_candidate_ready=true
+g16_next_open_delay_component_ready=true
+raw_ohlc_validation_required=true
+derived_mfe_mae_dependency_detected=true
+c27_catalog_candidate_implementation_recommended=true
+c27_requires_raw_ohlc_validation_first=true
+catalog_allowed=false
+oos_allowed=false
+production_ready=0
+```
+
+Next required contract work:
+
+```text
+NEXT_STEP=C27_CATALOG_CANDIDATE_IMPLEMENTATION_WITH_RAW_OHLC_VALIDATION_FIRST_IS_ONLY
+DO_NOT_CREATE_C26_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_MUTATE_C01_TO_C25=true
+```
+
+## PRIOR SESSION - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC FINAL RUNTIME EVIDENCE
+
+Session:
 `WATCHLIST - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC FINAL RUNTIME EVIDENCE`
 
 Current status:
