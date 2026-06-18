@@ -15,6 +15,270 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C22 EXIT CAPTURE SHADOW DIAGNOSTIC SOURCE IMPLEMENTATION`
+
+Current status:
+
+`C22_SOURCE_IMPLEMENTED / C22_RUNTIME_VALIDATION_REQUIRED / C22_CATALOG_CODE_NOT_CREATED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C21_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C22 source-level implementation result:
+
+- `WatchlistBacktestC22ExitCaptureShadowDiagnosticService` exists as an IS-only exit-capture shadow diagnostic;
+- `RunBacktestC22ExitCaptureShadowDiagnoseCommand` exists as `watchlist:backtest-c22-exit-capture-shadow-diagnose`;
+- the command is registered in `app/Console/Kernel.php`;
+- C22 service/static guard tests exist and require operator PHPUnit validation;
+- C22 reuses fixed recommendation candidates from the C19 selection diagnostic path before reading D+1 through D+5 OHLC;
+- future path price is used only for measurement after ticker and trade_date are fixed;
+- C22 compares canonical baseline against shadow exit profiles for fixed exits, first profitable close, profit lock, breakeven stop, trailing protection, closer targets, and stop-distance variants;
+- C22 writes canonical summary, per-shadow-profile summary, family summaries, data availability, decision flags, and safety boundaries;
+- C22 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
+- C22 did not mutate C01-C21;
+- C22 did not run OOS and did not set `production_ready=1`.
+
+C22 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC22ExitCaptureShadowDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC22ExitCaptureShadowDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC22ExitCaptureShadowDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC22StaticGuardTest.php
+docs/watchlist/audit/WS_C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C22_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c22-exit-capture-shadow-diagnostic-source-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_EXIT_CAPTURE_SHADOW_C22_DESIGN_NOTE.md
+```
+
+C22 implemented shadow profiles:
+
+```text
+C22_S00_CANONICAL_BASELINE
+C22_S01_EXIT_D1_CLOSE
+C22_S02_EXIT_D2_CLOSE
+C22_S03_EXIT_D3_CLOSE
+C22_S04_EXIT_D4_CLOSE
+C22_S05_EXIT_D5_CLOSE_ONLY
+C22_S06_FIRST_PROFITABLE_CLOSE_EXIT
+C22_S07_PROFIT_LOCK_AFTER_MFE_0_75PCT
+C22_S08_PROFIT_LOCK_AFTER_MFE_1_00PCT
+C22_S09_PROFIT_LOCK_AFTER_MFE_1_50PCT
+C22_S10_BREAKEVEN_AFTER_MFE_1_00PCT
+C22_S11_TRAILING_FROM_MFE_1_50PCT_GIVEBACK_0_75PCT
+C22_S12_TARGET_CLOSE_1_00PCT
+C22_S13_TARGET_CLOSE_1_50PCT
+C22_S14_TARGET_CLOSE_2_00PCT
+C22_S15_STOP_LOSS_1_50PCT_SHADOW
+C22_S16_STOP_LOSS_2_00PCT_SHADOW
+C22_S17_STOP_LOSS_2_50PCT_SHADOW
+```
+
+C22 source-level boundary status:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C22_CATALOG_CODE=NOT_CREATED
+C22_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C21_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+future_path_price_used_for_selection=false
+shadow_exit_used_for_selection=false
+shadow_ret_net_used_for_selection=false
+mfe_mae_used_for_selection=false
+```
+
+C22 validation requirement:
+
+```text
+PHPUNIT_C22=OPERATOR_VALIDATION_REQUIRED
+FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+C22_FOCUSED_RUNTIME_PASS=OPERATOR_VALIDATION_REQUIRED
+C22_ALL_PARAM_RUNTIME_PASS=OPERATOR_VALIDATION_REQUIRED
+C22_DIAGNOSTIC_RUNTIME_PASS=NOT_RUN
+C22_EXIT_CAPTURE_SIGNAL_FOUND=NOT_RUN
+```
+
+C22 conclusion at source level:
+
+```text
+C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC_SOURCE_IMPLEMENTED=true
+C22_RUNTIME_VALIDATION_REQUIRED=true
+C22_DIAGNOSTIC_RUNTIME_PASS=NOT_RUN
+C22_EXIT_CAPTURE_SIGNAL_FOUND=NOT_RUN
+C22_CATALOG_IMPLEMENTATION_DEFERRED=true
+C22_CATALOG_CODE=NOT_CREATED
+C21_EXECUTION_SIGNAL_FOUND_PRESERVED=true
+C20_DATE_GATE_NOT_ENOUGH_PRESERVED=true
+C19_CATALOG_CANDIDATE_FAILED_PRESERVED=true
+C01_TO_C21_IMMUTABLE=true
+OOS_NOT_RUN=true
+production_ready=0
+NEXT_STEP=RUN_C22_OPERATOR_VALIDATION
+```
+
+C22 is implemented as a diagnostic source path only. It does not unlock catalog creation, OOS, promotion, production readiness, C21 tuning, C20 reopening, C19 reopening, or canonical execution-model mutation.
+
+## PRIOR SESSION - C21 FINAL ENTRY/EXIT BEHAVIOR DIAGNOSTIC RESULT
+
+Current status:
+
+`C21_SOURCE_IMPLEMENTED / C21_PHPUNIT_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C21_RUNTIME_VALIDATED / C21_EXECUTION_SIGNAL_FOUND / C21_ENTRY_PROBLEM_REJECTED / C21_EXIT_PROBLEM_SUSPECTED / C21_STOP_PROBLEM_SUSPECTED / C21_HOLD_PERIOD_PROBLEM_SUSPECTED / C21_REGIME_EXPLANATION_NOT_SUPPORTED / C21_CATALOG_CODE_NOT_CREATED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C20_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C21 final source and runtime result:
+
+- `WatchlistBacktestC21EntryExitBehaviorDiagnosticService` exists as an IS-only entry/exit behavior diagnostic;
+- `RunBacktestC21EntryExitBehaviorDiagnoseCommand` exists as `watchlist:backtest-c21-entry-exit-behavior-diagnose`;
+- the command is registered in `app/Console/Kernel.php`;
+- C21 service/static guard tests exist and operator validation passed;
+- C21 reads fixed recommendation candidates from C19 selection diagnostic output before reading future path prices;
+- future OHLC path is used only for measurement after ticker and trade_date are fixed;
+- C21 computes signal close, next-open entry, D+1 through D+5 returns, MFE/MAE, stop/target timing, exit reason, gave-back-profit, never-profitable, entry-gap, and C20_G03 segmentation context;
+- C20 G03 is segmentation/explanation only and is not a filter, catalog gate, or production rule;
+- C21 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
+- C21 did not mutate C01-C20;
+- C21 did not run OOS and did not set `production_ready=1`.
+
+C21 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC21EntryExitBehaviorDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC21EntryExitBehaviorDiagnoseCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC21EntryExitBehaviorDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC21StaticGuardTest.php
+docs/watchlist/audit/WS_C21_ENTRY_EXIT_BEHAVIOR_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C21_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c21-entry-exit-behavior-diagnostic-source-summary.json
+docs/watchlist/audit/_artifacts/c21-final-diagnostic-result-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_ENTRY_EXIT_BEHAVIOR_C21_DESIGN_NOTE.md
+```
+
+Operator validation evidence:
+
+```text
+PHPUNIT_C21=PASS: OK (6 tests, 173 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (397 tests, 9500 assertions)
+
+C21_FOCUSED_RUNTIME_PASS=true
+artifact_path=storage/app/watchlist/backtest/c21-entry-exit-behavior-diagnostic-focused.json
+artifact_hash=d80111aa07a0cb20ec7b4e087be0d4e4c3191fa8
+profile_count=4
+profile_scope=EXPLICIT
+evaluated_picks_count=1576
+path_missing_count=44
+avg_entry_gap_pct=0.00029376446222333
+median_entry_gap_pct=0
+never_profitable_rate=0.24111675126904
+gave_back_profit_rate=0.52791878172589
+gap_open_loss_rate=0.2258883248731
+exit_stop_count=672
+exit_target_count=564
+exit_hold_count=340
+median_mfe_5d=0.012919645092204
+median_mae_5d=-0.018750732450486
+
+C21_ALL_PARAM_RUNTIME_PASS=true
+artifact_path=storage/app/watchlist/backtest/c21-entry-exit-behavior-diagnostic-all-param.json
+artifact_hash=d6c6c72d51b40a0c852ce9bbc6a452c55920df13
+profile_count=8
+profile_scope=EXPLICIT
+evaluated_picks_count=12600
+path_missing_count=360
+avg_entry_gap_pct=0.00096323026370276
+median_entry_gap_pct=0
+never_profitable_rate=0.22603174603175
+gave_back_profit_rate=0.55365079365079
+gap_open_loss_rate=0.23555555555556
+exit_stop_count=5824
+exit_target_count=4320
+exit_hold_count=2456
+median_mfe_5d=0.014354066985646
+median_mae_5d=-0.021739130434783
+```
+
+C21 final diagnostic decision:
+
+```text
+diagnostic_signal_found=1
+entry_problem_suspected=0
+exit_problem_suspected=1
+stop_problem_suspected=1
+hold_period_problem_suspected=1
+regime_explains_execution_problem=0
+```
+
+C21 interpretation:
+
+```text
+ENTRY_GAP_MAIN_PROBLEM=false
+EXIT_CAPTURE_PROBLEM=true
+STOP_BEHAVIOR_PROBLEM=true
+HOLD_PERIOD_PROBLEM=true
+C20_G03_REGIME_EXPLANATION=false
+```
+
+C21 source-level and runtime boundary status:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C21_CATALOG_CODE=NOT_CREATED
+C21_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C20_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+future_path_price_used_for_selection=false
+c20_g03_used_as_filter=false
+```
+
+C21 conclusion:
+
+```text
+C21_ENTRY_EXIT_BEHAVIOR_DIAGNOSTIC_SOURCE_IMPLEMENTED=true
+PHPUNIT_C21=PASS
+FULL_WATCHLIST_PHPUNIT=PASS
+C21_FOCUSED_RUNTIME_PASS=true
+C21_FOCUSED_ARTIFACT_HASH=d80111aa07a0cb20ec7b4e087be0d4e4c3191fa8
+C21_ALL_PARAM_RUNTIME_PASS=true
+C21_ALL_PARAM_ARTIFACT_HASH=d6c6c72d51b40a0c852ce9bbc6a452c55920df13
+C21_DIAGNOSTIC_RUNTIME_PASS=true
+C21_EXECUTION_SIGNAL_FOUND=true
+ENTRY_PROBLEM_SUSPECTED=false
+EXIT_PROBLEM_SUSPECTED=true
+STOP_PROBLEM_SUSPECTED=true
+HOLD_PERIOD_PROBLEM_SUSPECTED=true
+REGIME_EXPLAINS_EXECUTION_PROBLEM=false
+C21_CATALOG_IMPLEMENTATION_DEFERRED=true
+C21_CATALOG_CODE=NOT_CREATED
+C20_DATE_GATE_NOT_ENOUGH_PRESERVED=true
+C19_CATALOG_CANDIDATE_FAILED_PRESERVED=true
+C01_TO_C20_IMMUTABLE=true
+OOS_NOT_RUN=true
+production_ready=0
+NEXT_STEP=C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC
+```
+
+C21 is closed as a useful diagnostic success and catalog-candidate failure. The next work must not tune C21 into a catalog, run OOS, alter canonical entry/exit behavior, reopen C20, or promote C20_G03. The next diagnostic direction is C22 exit-capture shadow analysis using fixed recommendations only.
+
+## PRIOR SESSION - C20 FINAL REGIME AND TRADE-DATE QUALITY GATE DIAGNOSTIC RESULT
+
+Session:
 `WATCHLIST - C20 FINAL REGIME AND TRADE-DATE QUALITY GATE DIAGNOSTIC RESULT`
 
 Current status:

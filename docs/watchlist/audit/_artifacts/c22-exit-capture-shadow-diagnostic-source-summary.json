@@ -1,0 +1,43 @@
+{
+  "artifact_type": "C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC_SOURCE_SUMMARY",
+  "status": "SOURCE_IMPLEMENTED_RUNTIME_VALIDATION_REQUIRED",
+  "scope": "IS_ONLY_EXIT_CAPTURE_SHADOW_DIAGNOSTIC",
+  "source_implemented": true,
+  "runtime_validated": false,
+  "phpunit_c22": "OPERATOR_VALIDATION_REQUIRED",
+  "full_watchlist_phpunit": "OPERATOR_VALIDATION_REQUIRED",
+  "runtime_artifacts": {
+    "focused": "OPERATOR_VALIDATION_REQUIRED",
+    "all_param": "OPERATOR_VALIDATION_REQUIRED"
+  },
+  "source_components": {
+    "service": "app/Application/Watchlist/Services/WatchlistBacktestC22ExitCaptureShadowDiagnosticService.php",
+    "command": "app/Console/Commands/Watchlist/RunBacktestC22ExitCaptureShadowDiagnoseCommand.php",
+    "tests": [
+      "tests/Unit/Watchlist/WatchlistBacktestC22ExitCaptureShadowDiagnosticServiceTest.php",
+      "tests/Unit/Watchlist/WatchlistBacktestC22StaticGuardTest.php"
+    ],
+    "audit_doc": "docs/watchlist/audit/WS_C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC.md",
+    "operator_commands": "docs/watchlist/audit/WS_C22_OPERATOR_VALIDATION_COMMANDS.md",
+    "policy_note": "docs/watchlist/system/policies/weekly_swing/_refs/WS_EXIT_CAPTURE_SHADOW_C22_DESIGN_NOTE.md"
+  },
+  "preserved_evidence": {
+    "c19_final_status": "C19_CATALOG_CANDIDATE_FAILED",
+    "c20_final_status": "C20_DATE_GATE_NOT_ENOUGH",
+    "c21_final_status": "C21_EXECUTION_SIGNAL_FOUND",
+    "c21_all_param_artifact_hash": "d6c6c72d51b40a0c852ce9bbc6a452c55920df13"
+  },
+  "boundaries": {
+    "is_only": true,
+    "oos_not_run": true,
+    "production_ready": 0,
+    "c22_catalog_code": "NOT_CREATED",
+    "c22_catalog_implementation_deferred": true,
+    "no_c01_to_c21_mutation": true,
+    "no_c19_reopen": true,
+    "no_c20_reopen": true,
+    "no_c21_reopen": true,
+    "canonical_model_unchanged": true
+  },
+  "next_step": "RUN_C22_OPERATOR_VALIDATION"
+}

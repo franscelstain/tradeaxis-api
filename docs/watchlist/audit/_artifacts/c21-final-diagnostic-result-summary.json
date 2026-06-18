@@ -1,0 +1,119 @@
+{
+  "artifact_type": "C21_ENTRY_EXIT_BEHAVIOR_DIAGNOSTIC_SOURCE_AND_RUNTIME_SUMMARY",
+  "status": "RUNTIME_VALIDATED_DIAGNOSTIC_SIGNAL_FOUND",
+  "generated_at": "2026-06-18T00:00:00+07:00",
+  "source_catalog": {
+    "catalog_code": "WS_BT_GRID_DOWNSIDE_STABILITY_C17_2026_06",
+    "catalog_role": "C21 diagnostic source baseline only"
+  },
+  "source_evidence": {
+    "c19_final_status": "C19_CATALOG_CANDIDATE_FAILED",
+    "c20_final_status": "C20_DATE_GATE_NOT_ENOUGH",
+    "c20_all_param_7_profile_artifact_hash": "8f8eec9913c107f22ec1f395eed9386da41756c0"
+  },
+  "implemented_components": {
+    "service": "app/Application/Watchlist/Services/WatchlistBacktestC21EntryExitBehaviorDiagnosticService.php",
+    "command": "app/Console/Commands/Watchlist/RunBacktestC21EntryExitBehaviorDiagnoseCommand.php",
+    "kernel_registration": "app/Console/Kernel.php",
+    "service_test": "tests/Unit/Watchlist/WatchlistBacktestC21EntryExitBehaviorDiagnosticServiceTest.php",
+    "static_guard_test": "tests/Unit/Watchlist/WatchlistBacktestC21StaticGuardTest.php",
+    "audit_doc": "docs/watchlist/audit/WS_C21_ENTRY_EXIT_BEHAVIOR_DIAGNOSTIC.md",
+    "operator_commands_doc": "docs/watchlist/audit/WS_C21_OPERATOR_VALIDATION_COMMANDS.md",
+    "policy_design_note": "docs/watchlist/system/policies/weekly_swing/_refs/WS_ENTRY_EXIT_BEHAVIOR_C21_DESIGN_NOTE.md"
+  },
+  "diagnostic_profiles": [
+    "C21_P00_CANONICAL_PATH_BASELINE",
+    "C21_P01_ENTRY_GAP_BUCKET_ANALYSIS",
+    "C21_P02_MFE_MAE_PATH_ANALYSIS",
+    "C21_P03_EXIT_REASON_DISTRIBUTION",
+    "C21_P04_HOLD_DAY_RETURN_PATH",
+    "C21_P05_GAVE_BACK_PROFIT_ANALYSIS",
+    "C21_P06_NEVER_PROFITABLE_ANALYSIS",
+    "C21_P07_C20_G03_SEGMENTED_PATH_ANALYSIS"
+  ],
+  "artifact_schema_keys": [
+    "artifact_type",
+    "status",
+    "reason_code",
+    "scope",
+    "generated_at",
+    "source_catalog",
+    "source_evidence",
+    "data_availability",
+    "diagnostic_profiles",
+    "pick_path_rows",
+    "path_summary",
+    "entry_gap_summary",
+    "mfe_mae_summary",
+    "exit_reason_summary",
+    "hold_day_return_summary",
+    "gave_back_profit_summary",
+    "never_profitable_summary",
+    "c20_g03_segment_summary",
+    "decision",
+    "safety_boundaries"
+  ],
+  "runtime_validation": {
+    "phpunit_c21": "PASS: OK (6 tests, 173 assertions)",
+    "full_watchlist_phpunit": "PASS: OK (397 tests, 9500 assertions)",
+    "c21_focused_runtime_pass": true,
+    "c21_focused_artifact_hash": "d80111aa07a0cb20ec7b4e087be0d4e4c3191fa8",
+    "c21_focused_evaluated_picks_count": 1576,
+    "c21_focused_path_missing_count": 44,
+    "c21_all_param_runtime_pass": true,
+    "c21_all_param_artifact_hash": "d6c6c72d51b40a0c852ce9bbc6a452c55920df13",
+    "c21_all_param_evaluated_picks_count": 12600,
+    "c21_all_param_path_missing_count": 360,
+    "c21_diagnostic_runtime_pass": true
+  },
+  "final_diagnostic_decision": {
+    "decision_status": "C21_EXECUTION_SIGNAL_FOUND",
+    "diagnostic_signal_found": true,
+    "entry_problem_suspected": false,
+    "exit_problem_suspected": true,
+    "stop_problem_suspected": true,
+    "hold_period_problem_suspected": true,
+    "regime_explains_execution_problem": false,
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "next_step": "C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC"
+  },
+  "all_param_runtime_key_metrics": {
+    "avg_entry_gap_pct": 0.00096323026370276,
+    "median_entry_gap_pct": 0,
+    "never_profitable_rate": 0.22603174603175,
+    "gave_back_profit_rate": 0.55365079365079,
+    "gap_open_loss_rate": 0.23555555555556,
+    "exit_stop_count": 5824,
+    "exit_target_count": 4320,
+    "exit_hold_count": 2456,
+    "median_mfe_5d": 0.014354066985646,
+    "median_mae_5d": -0.021739130434783
+  },
+  "interpretation": {
+    "entry_gap_problem": "not_supported",
+    "exit_capture_problem": "supported",
+    "stop_behavior_problem": "supported",
+    "hold_period_problem": "supported",
+    "c20_g03_regime_explanation": "not_supported"
+  },
+  "safety_boundaries": {
+    "IS_ONLY": true,
+    "OOS_NOT_RUN": true,
+    "production_ready": 0,
+    "C21_CATALOG_CODE": "NOT_CREATED",
+    "C21_CATALOG_IMPLEMENTATION_DEFERRED": true,
+    "NO_PROMOTION": true,
+    "NO_OOS": true,
+    "NO_TICKER_BLACKLIST": true,
+    "NO_MONTH_BLACKLIST": true,
+    "NO_SECTOR_WHITELIST": true,
+    "NO_BEST_OF_FAILED_BINDING": true,
+    "NO_C01_TO_C20_MUTATION": true,
+    "PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED": true,
+    "NO_C19_REOPEN": true,
+    "NO_C20_REOPEN": true,
+    "future_path_price_used_for_selection": false,
+    "c20_g03_used_as_filter": false
+  }
+}

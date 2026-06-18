@@ -14,6 +14,175 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C22 EXIT CAPTURE SHADOW DIAGNOSTIC SOURCE IMPLEMENTATION`
+
+Current status:
+
+`C22_SOURCE_IMPLEMENTED / C22_RUNTIME_VALIDATION_REQUIRED / C22_CATALOG_CODE_NOT_CREATED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C21_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C22 current contract status:
+
+- `WL-CONTRACT-008`: PASS AS SOURCE DIAGNOSTIC TRACEABILITY. C22 is traceable to C19 sample-quality failure, C20 date-gate insufficiency, and C21 execution-behavior signal.
+- `WL-CONTRACT-009`: OPERATOR_VALIDATION_REQUIRED. C22 PHPUnit and full Watchlist regression must still be run by the operator.
+- `WL-CONTRACT-010`: PASS AT SOURCE GUARD LEVEL. C22 service/command exposes no OOS service/repository path and returns `oos_executed=0` markers.
+- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C22 cannot promote a catalog because it is shadow diagnostic only, `C22_CATALOG_CODE=NOT_CREATED`, and no OOS proof exists.
+- `WL-CONTRACT-013`: PASS AT SOURCE ARTIFACT SURFACE. C22 service, command, tests, static guards, audit doc, operator command doc, policy note, and source summary artifact are present.
+- `WL-CONTRACT-014`: PASS AT SOURCE DOC SYNC. Implementation status, contract tracker, C22 audit doc, operator command doc, policy note, and source summary are synchronized.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because C22 has no catalog candidate and no OOS proof.
+
+C22 preserved boundaries:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C22_CATALOG_CODE=NOT_CREATED
+C22_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C21_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+NO_C21_REOPEN=true
+```
+
+C22 price/path contract:
+
+```text
+SELECTION_SOURCE=C19_FIXED_SELECTION_DIAGNOSTIC_OUTPUT
+PRICE_USAGE=MEASUREMENT_ONLY_AFTER_SELECTION_FREEZE
+FUTURE_PATH_USED_FOR_SELECTION=false
+SHADOW_EXIT_USED_FOR_SELECTION=false
+SHADOW_RET_NET_USED_FOR_SELECTION=false
+MFE_MAE_USED_FOR_SELECTION=false
+CANONICAL_MODEL=ENTRY_NEXT_OPEN_EXIT_STOP_TP_OR_TIME_HOLD_5_FEE_IDR_FIXED_SLIP_0_GAP_OPEN_PX_IDX_BANDS
+```
+
+C22 validation requirement:
+
+```text
+PHPUNIT_C22=OPERATOR_VALIDATION_REQUIRED
+FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+C22_FOCUSED_RUNTIME_PASS=OPERATOR_VALIDATION_REQUIRED
+C22_ALL_PARAM_RUNTIME_PASS=OPERATOR_VALIDATION_REQUIRED
+C22_DIAGNOSTIC_RUNTIME_PASS=NOT_RUN
+C22_EXIT_CAPTURE_SIGNAL_FOUND=NOT_RUN
+```
+
+Required next contract work:
+
+```text
+RUN_C22_PHPUNIT=true
+RUN_FULL_WATCHLIST_PHPUNIT=true
+RUN_C22_FOCUSED_RUNTIME=true
+RUN_C22_ALL_PARAM_RUNTIME=true
+DO_NOT_CREATE_C22_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_MUTATE_C01_TO_C21=true
+DO_NOT_SET_PRODUCTION_READY=true
+DO_NOT_CHANGE_CANONICAL_ENTRY_EXIT_MODEL=true
+```
+
+## PRIOR SESSION - C21 FINAL ENTRY/EXIT BEHAVIOR DIAGNOSTIC RESULT
+
+Current status:
+
+`C21_SOURCE_IMPLEMENTED / C21_PHPUNIT_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C21_RUNTIME_VALIDATED / C21_EXECUTION_SIGNAL_FOUND / C21_ENTRY_PROBLEM_REJECTED / C21_EXIT_PROBLEM_SUSPECTED / C21_STOP_PROBLEM_SUSPECTED / C21_HOLD_PERIOD_PROBLEM_SUSPECTED / C21_REGIME_EXPLANATION_NOT_SUPPORTED / C21_CATALOG_CODE_NOT_CREATED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C20_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+
+C21 final contract status:
+
+- `WL-CONTRACT-008`: PASS AS DIAGNOSTIC / FAIL AS STRATEGY. C21 is traceable to C19 sample-quality failure and C20 date-gate failure, and produced an execution-behavior diagnostic signal without claiming strategy success.
+- `WL-CONTRACT-009`: PASS. Operator provided C21 PHPUnit, full Watchlist regression, focused runtime, and all-param runtime evidence.
+- `WL-CONTRACT-010`: PASS. C21 runtime evidence kept `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
+- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C21 cannot promote a catalog because it is diagnostic only, `C21_CATALOG_CODE=NOT_CREATED`, and no OOS proof exists.
+- `WL-CONTRACT-013`: PASS. C21 service, command, tests, static guards, audit doc, operator command doc, policy design note, source/runtime summary artifact, and final result summary artifact are present.
+- `WL-CONTRACT-014`: PASS. Implementation status, contract tracker, C21 audit doc, operator command doc, policy note, and artifact summaries are synchronized with operator evidence.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because C21 has no catalog candidate and no OOS proof.
+
+C21 preserved boundaries:
+
+```text
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C21_CATALOG_CODE=NOT_CREATED
+C21_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C20_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+NO_C19_REOPEN=true
+NO_C20_REOPEN=true
+```
+
+C21 price/path contract:
+
+```text
+SELECTION_SOURCE=C19_FIXED_SELECTION_DIAGNOSTIC_OUTPUT
+PRICE_USAGE=MEASUREMENT_ONLY_AFTER_SELECTION_FREEZE
+FUTURE_PATH_USED_FOR_SELECTION=false
+C20_G03_USED_AS_FILTER=false
+C20_G03_USAGE=SEGMENTATION_CONTEXT_ONLY
+CANONICAL_MODEL=ENTRY_NEXT_OPEN_EXIT_STOP_TP_OR_TIME_HOLD_5_FEE_IDR_FIXED_SLIP_0_GAP_OPEN_PX_IDX_BANDS
+```
+
+C21 validation evidence:
+
+```text
+PHPUNIT_C21=PASS: OK (6 tests, 173 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (397 tests, 9500 assertions)
+C21_FOCUSED_RUNTIME_PASS=true
+C21_FOCUSED_ARTIFACT_HASH=d80111aa07a0cb20ec7b4e087be0d4e4c3191fa8
+C21_ALL_PARAM_RUNTIME_PASS=true
+C21_ALL_PARAM_ARTIFACT_HASH=d6c6c72d51b40a0c852ce9bbc6a452c55920df13
+C21_DIAGNOSTIC_RUNTIME_PASS=true
+```
+
+C21 final decision:
+
+```text
+diagnostic_signal_found=1
+entry_problem_suspected=0
+exit_problem_suspected=1
+stop_problem_suspected=1
+hold_period_problem_suspected=1
+regime_explains_execution_problem=0
+```
+
+C21 final interpretation:
+
+```text
+ENTRY_GAP_MAIN_PROBLEM=false
+EXIT_CAPTURE_PROBLEM=true
+STOP_BEHAVIOR_PROBLEM=true
+HOLD_PERIOD_PROBLEM=true
+C20_G03_REGIME_EXPLANATION=false
+```
+
+Required next contract work:
+
+```text
+C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC_REQUIRED=true
+DO_NOT_CREATE_C21_CATALOG=true
+DO_NOT_RUN_OOS=true
+DO_NOT_MUTATE_C01_TO_C20=true
+DO_NOT_SET_PRODUCTION_READY=true
+DO_NOT_PROMOTE_C20_G03=true
+DO_NOT_CHANGE_CANONICAL_ENTRY_EXIT_MODEL=true
+```
+
+## PRIOR SESSION - C20 FINAL REGIME AND TRADE-DATE QUALITY GATE DIAGNOSTIC RESULT
+
+Session:
 `WATCHLIST - C20 FINAL REGIME AND TRADE-DATE QUALITY GATE DIAGNOSTIC RESULT`
 
 Current status:
