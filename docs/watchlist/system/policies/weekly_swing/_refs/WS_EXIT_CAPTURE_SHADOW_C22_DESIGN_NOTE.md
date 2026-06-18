@@ -1,6 +1,6 @@
 # WS Exit Capture Shadow C22 Design Note
 
-C22 is a diagnostic-only extension after C21. It measures hypothetical exit-capture behavior on fixed recommendations. It does not change Watchlist policy ownership, production execution, recommendation boundaries, confirm boundaries, or catalog eligibility.
+C22 is a diagnostic-only extension after C21. It measures hypothetical exit-capture behavior on fixed recommendations. It does not change Watchlist policy ownership, production execution, recommendation boundaries, confirm boundaries, catalog eligibility, or the canonical execution model.
 
 ## Context carried forward
 
@@ -20,9 +20,84 @@ exit_target_count=4320
 exit_hold_count=2456
 ```
 
+## Final C22 runtime result
+
+C22 runtime validation passed as a diagnostic:
+
+```text
+PHPUNIT_C22=PASS
+FULL_WATCHLIST_PHPUNIT=PASS
+C22_FOCUSED_RUNTIME_PASS=true
+C22_ALL_PARAM_RUNTIME_PASS=true
+C22_DIAGNOSTIC_RUNTIME_PASS=true
+C22_EXIT_CAPTURE_SIGNAL_FOUND=true
+C22_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
+```
+
+All-param artifact:
+
+```text
+artifact_path=storage/app/watchlist/backtest/c22-exit-capture-shadow-diagnostic-all-param.json
+artifact_hash=4e939d091a03ed49bbf460c0424ff1a018f98e72
+evaluated_picks_count=1575
+path_missing_count=45
+canonical_avg_ret_net=-0.0046903074630424
+canonical_median_ret_net=-0.0041104817284074
+canonical_p25_ret_net=-0.023750212591414
+canonical_win_rate=0.39238095238095
+canonical_gave_back_profit_rate=0.55365079365079
+```
+
+## Final C22 interpretation
+
+C22 found an exit-capture signal, but not a production rule.
+
+Strongest shadow direction:
+
+```text
+C22_S06_FIRST_PROFITABLE_CLOSE_EXIT:
+avg_ret_net=-0.016%
+median_ret_net=0.428%
+p25_ret_net=-0.825%
+win_rate=59.62%
+```
+
+Canonical baseline for comparison:
+
+```text
+C22_S00_CANONICAL_BASELINE:
+avg_ret_net=-0.469%
+median_ret_net=-0.411%
+p25_ret_net=-2.375%
+win_rate=39.24%
+```
+
+`C22_S06_FIRST_PROFITABLE_CLOSE_EXIT` is not a production rule because it is a shadow measurement of the first profitable close inside the future path. Its value is directional: it proves that profit capture is a promising design target.
+
+D1 close improved downside shape but is weak as a standalone rule:
+
+```text
+C22_S01_EXIT_D1_CLOSE:
+avg_ret_net=-0.059%
+median_ret_net=-0.050%
+p25_ret_net=-0.834%
+win_rate=35.94%
+```
+
+Breakeven and stop-distance standalone variants are rejected:
+
+```text
+C22_BREAKEVEN_STANDALONE_REJECTED=true
+C22_STOP_DISTANCE_STANDALONE_REJECTED=true
+```
+
+Reason: breakeven had a loss-control signal but damaged average return, win rate, and gave-back behavior. Stop-distance variants improved some loss-control/average components but damaged median, win rate, p25, or gave-back behavior enough to reject standalone use.
+
 ## Policy boundary
 
-C22 must preserve the canonical execution model:
+C22 preserves the canonical execution model:
 
 ```text
 ENTRY=NEXT_OPEN
@@ -53,22 +128,33 @@ running OOS
 setting production_ready
 ```
 
-## Allowed C22 output
+## C23 design direction
 
-C22 may output diagnostic booleans:
+C23 must not copy `C22_S06_FIRST_PROFITABLE_CLOSE_EXIT` directly. C23 must convert the shadow direction into a realizable non-lookahead rule candidate.
+
+Candidate family examples for C23:
 
 ```text
-exit_capture_signal_found
-early_exit_suspected_better
-profit_lock_suspected_better
-breakeven_suspected_better
-trailing_suspected_better
-target_distance_problem_suspected
-stop_distance_problem_suspected
-hold_compression_suspected_better
+exit next open after D1 close profit > 0
+exit next open after D1 close profit > 0.50%
+exit next open after D1 close profit > 1.00%
+exit next open after D1 or D2 close profit > threshold
+compress hold if no profit appears by D2/D3
+combine first-profit capture with D3 damage control
 ```
 
-These booleans can only guide C23 rule-candidate design. They cannot authorize production change.
+C23 must benchmark against both canonical baseline and C22 shadow S06:
+
+```text
+realizable_signal_day
+realizable_exit_day
+uses_same_day_close_signal
+exit_next_open
+lookahead_safe
+delta_vs_canonical
+delta_vs_c22_shadow_s06
+profit_capture_gap_vs_shadow_s06
+```
 
 ## Required lock flags
 
@@ -83,6 +169,8 @@ NO_C20_REOPEN=true
 NO_C21_REOPEN=true
 ```
 
-## Next direction
+## Final next direction
 
-If C22 runtime validation finds a robust exit-capture signal, the next step is C23 rule-candidate design with non-lookahead rule specification. If not, stop this diagnostic branch.
+```text
+NEXT_STEP=C23_FIRST_PROFIT_CAPTURE_RULE_CANDIDATE_DIAGNOSTIC
+```

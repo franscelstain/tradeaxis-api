@@ -15,22 +15,25 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C22 EXIT CAPTURE SHADOW DIAGNOSTIC SOURCE IMPLEMENTATION`
+`WATCHLIST - C22 FINAL EXIT CAPTURE SHADOW DIAGNOSTIC RESULT`
 
 Current status:
 
-`C22_SOURCE_IMPLEMENTED / C22_RUNTIME_VALIDATION_REQUIRED / C22_CATALOG_CODE_NOT_CREATED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C21_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C22_SOURCE_IMPLEMENTED / C22_PHPUNIT_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C22_RUNTIME_VALIDATED / C22_EXIT_CAPTURE_SIGNAL_FOUND / C22_FIRST_PROFIT_CAPTURE_DIRECTION_FOUND / C22_BREAKEVEN_STANDALONE_REJECTED / C22_STOP_DISTANCE_STANDALONE_REJECTED / C22_CATALOG_CODE_NOT_CREATED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C21_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
-C22 source-level implementation result:
+C22 final source and runtime result:
 
 - `WatchlistBacktestC22ExitCaptureShadowDiagnosticService` exists as an IS-only exit-capture shadow diagnostic;
 - `RunBacktestC22ExitCaptureShadowDiagnoseCommand` exists as `watchlist:backtest-c22-exit-capture-shadow-diagnose`;
 - the command is registered in `app/Console/Kernel.php`;
-- C22 service/static guard tests exist and require operator PHPUnit validation;
+- C22 service/static guard tests passed operator PHPUnit validation;
+- full Watchlist PHPUnit regression passed after C22;
 - C22 reuses fixed recommendation candidates from the C19 selection diagnostic path before reading D+1 through D+5 OHLC;
 - future path price is used only for measurement after ticker and trade_date are fixed;
 - C22 compares canonical baseline against shadow exit profiles for fixed exits, first profitable close, profit lock, breakeven stop, trailing protection, closer targets, and stop-distance variants;
-- C22 writes canonical summary, per-shadow-profile summary, family summaries, data availability, decision flags, and safety boundaries;
+- focused runtime and all-param runtime both passed;
+- C22 found an exit-capture signal, strongest around first-profit-capture shadow behavior;
+- breakeven and stop-distance standalone candidates were rejected as production directions despite showing partial loss-control signals;
 - C22 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
 - C22 did not mutate C01-C21;
 - C22 did not run OOS and did not set `production_ready=1`.
@@ -45,6 +48,7 @@ tests/Unit/Watchlist/WatchlistBacktestC22StaticGuardTest.php
 docs/watchlist/audit/WS_C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC.md
 docs/watchlist/audit/WS_C22_OPERATOR_VALIDATION_COMMANDS.md
 docs/watchlist/audit/_artifacts/c22-exit-capture-shadow-diagnostic-source-summary.json
+docs/watchlist/audit/_artifacts/c22-final-diagnostic-result-summary.json
 docs/watchlist/system/policies/weekly_swing/_refs/WS_EXIT_CAPTURE_SHADOW_C22_DESIGN_NOTE.md
 ```
 
@@ -71,7 +75,89 @@ C22_S16_STOP_LOSS_2_00PCT_SHADOW
 C22_S17_STOP_LOSS_2_50PCT_SHADOW
 ```
 
-C22 source-level boundary status:
+C22 PHPUnit evidence:
+
+```text
+PHPUNIT_C22=PASS
+OK (6 tests, 302 assertions)
+
+FULL_WATCHLIST_PHPUNIT=PASS
+OK (403 tests, 9802 assertions)
+```
+
+C22 focused runtime evidence:
+
+```text
+C22_FOCUSED_RUNTIME_PASS=true
+C22_FOCUSED_ARTIFACT_HASH=2831edfb89c884ccb86072d047e5950dcae463dd
+C22_FOCUSED_EVALUATED_PICKS=394
+C22_FOCUSED_PATH_MISSING=11
+C22_FOCUSED_EXIT_CAPTURE_SIGNAL_FOUND=true
+C22_FOCUSED_BEST_BY_GIVEBACK_REDUCTION=C22_S06_FIRST_PROFITABLE_CLOSE_EXIT
+C22_FOCUSED_OOS_EXECUTED=0
+C22_FOCUSED_PRODUCTION_READY=0
+```
+
+C22 all-param runtime evidence:
+
+```text
+C22_ALL_PARAM_RUNTIME_PASS=true
+C22_ALL_PARAM_ARTIFACT_HASH=4e939d091a03ed49bbf460c0424ff1a018f98e72
+C22_ALL_PARAM_EVALUATED_PICKS=1575
+C22_ALL_PARAM_PATH_MISSING=45
+C22_ALL_PARAM_CANONICAL_AVG_RET_NET=-0.0046903074630424
+C22_ALL_PARAM_CANONICAL_MEDIAN_RET_NET=-0.0041104817284074
+C22_ALL_PARAM_CANONICAL_P25_RET_NET=-0.023750212591414
+C22_ALL_PARAM_CANONICAL_WIN_RATE=0.39238095238095
+C22_ALL_PARAM_CANONICAL_GAVE_BACK_PROFIT_RATE=0.55365079365079
+C22_ALL_PARAM_BEST_BY_AVG=C22_S06_FIRST_PROFITABLE_CLOSE_EXIT
+C22_ALL_PARAM_BEST_BY_MEDIAN=C22_S01_EXIT_D1_CLOSE
+C22_ALL_PARAM_BEST_BY_P25=C22_S00_CANONICAL_BASELINE
+C22_ALL_PARAM_BEST_BY_WIN_RATE=C22_S06_FIRST_PROFITABLE_CLOSE_EXIT
+C22_ALL_PARAM_BEST_BY_GIVEBACK_REDUCTION=C22_S06_FIRST_PROFITABLE_CLOSE_EXIT
+C22_ALL_PARAM_EXIT_CAPTURE_SIGNAL_FOUND=true
+C22_ALL_PARAM_BREAKEVEN_SUSPECTED_BETTER=true
+C22_ALL_PARAM_STOP_DISTANCE_PROBLEM_SUSPECTED=true
+C22_ALL_PARAM_OOS_EXECUTED=0
+C22_ALL_PARAM_PRODUCTION_READY=0
+```
+
+C22 all-param interpretation:
+
+```text
+C22_S00_CANONICAL_BASELINE:
+avg_ret_net=-0.469%
+median_ret_net=-0.411%
+p25_ret_net=-2.375%
+win_rate=39.24%
+
+C22_S06_FIRST_PROFITABLE_CLOSE_EXIT:
+avg_ret_net=-0.016%
+median_ret_net=0.428%
+p25_ret_net=-0.825%
+win_rate=59.62%
+
+C22_S01_EXIT_D1_CLOSE:
+avg_ret_net=-0.059%
+median_ret_net=-0.050%
+p25_ret_net=-0.834%
+win_rate=35.94%
+```
+
+C22 standalone rejection notes:
+
+```text
+C22_BREAKEVEN_STANDALONE_REJECTED=true
+reason=Breakeven had loss_reduction_rate=32.126984126984126% but avg=-0.8693902820005997%, win_rate=7.492063492063492%, and gave_back_profit_rate=66.98412698412698%.
+
+C22_STOP_DISTANCE_STANDALONE_REJECTED=true
+reason=Stop variants improved some loss-control/avg components but damaged median, win rate, p25, or gave-back behavior enough to reject standalone use.
+
+C22_EARLY_EXIT_STANDALONE_WEAK=true
+reason=D1 close improved median/downside shape but did not provide enough win-rate/profit capture as a standalone rule.
+```
+
+C22 boundary status:
 
 ```text
 IS_ONLY=true
@@ -96,24 +182,14 @@ shadow_ret_net_used_for_selection=false
 mfe_mae_used_for_selection=false
 ```
 
-C22 validation requirement:
-
-```text
-PHPUNIT_C22=OPERATOR_VALIDATION_REQUIRED
-FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
-C22_FOCUSED_RUNTIME_PASS=OPERATOR_VALIDATION_REQUIRED
-C22_ALL_PARAM_RUNTIME_PASS=OPERATOR_VALIDATION_REQUIRED
-C22_DIAGNOSTIC_RUNTIME_PASS=NOT_RUN
-C22_EXIT_CAPTURE_SIGNAL_FOUND=NOT_RUN
-```
-
-C22 conclusion at source level:
+C22 final conclusion:
 
 ```text
 C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC_SOURCE_IMPLEMENTED=true
-C22_RUNTIME_VALIDATION_REQUIRED=true
-C22_DIAGNOSTIC_RUNTIME_PASS=NOT_RUN
-C22_EXIT_CAPTURE_SIGNAL_FOUND=NOT_RUN
+C22_RUNTIME_VALIDATION_REQUIRED=false
+C22_DIAGNOSTIC_RUNTIME_PASS=true
+C22_EXIT_CAPTURE_SIGNAL_FOUND=true
+C22_FIRST_PROFIT_CAPTURE_DIRECTION_FOUND=true
 C22_CATALOG_IMPLEMENTATION_DEFERRED=true
 C22_CATALOG_CODE=NOT_CREATED
 C21_EXECUTION_SIGNAL_FOUND_PRESERVED=true
@@ -122,10 +198,10 @@ C19_CATALOG_CANDIDATE_FAILED_PRESERVED=true
 C01_TO_C21_IMMUTABLE=true
 OOS_NOT_RUN=true
 production_ready=0
-NEXT_STEP=RUN_C22_OPERATOR_VALIDATION
+NEXT_STEP=C23_FIRST_PROFIT_CAPTURE_RULE_CANDIDATE_DIAGNOSTIC
 ```
 
-C22 is implemented as a diagnostic source path only. It does not unlock catalog creation, OOS, promotion, production readiness, C21 tuning, C20 reopening, C19 reopening, or canonical execution-model mutation.
+C22 is complete as a diagnostic. It does not unlock catalog creation, OOS, promotion, production readiness, C21 tuning, C20 reopening, C19 reopening, or canonical execution-model mutation.
 
 ## PRIOR SESSION - C21 FINAL ENTRY/EXIT BEHAVIOR DIAGNOSTIC RESULT
 

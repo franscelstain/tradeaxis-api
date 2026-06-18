@@ -1,14 +1,25 @@
 {
   "artifact_type": "C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC_SOURCE_SUMMARY",
-  "status": "SOURCE_IMPLEMENTED_RUNTIME_VALIDATION_REQUIRED",
+  "status": "SOURCE_IMPLEMENTED_RUNTIME_VALIDATED_FINAL_RECORDED",
   "scope": "IS_ONLY_EXIT_CAPTURE_SHADOW_DIAGNOSTIC",
   "source_implemented": true,
-  "runtime_validated": false,
-  "phpunit_c22": "OPERATOR_VALIDATION_REQUIRED",
-  "full_watchlist_phpunit": "OPERATOR_VALIDATION_REQUIRED",
+  "runtime_validated": true,
+  "phpunit_c22": "PASS",
+  "full_watchlist_phpunit": "PASS",
   "runtime_artifacts": {
-    "focused": "OPERATOR_VALIDATION_REQUIRED",
-    "all_param": "OPERATOR_VALIDATION_REQUIRED"
+    "focused": {
+      "status": "PASS",
+      "artifact_hash": "2831edfb89c884ccb86072d047e5950dcae463dd",
+      "evaluated_picks_count": 394,
+      "path_missing_count": 11
+    },
+    "all_param": {
+      "status": "PASS",
+      "artifact_hash": "4e939d091a03ed49bbf460c0424ff1a018f98e72",
+      "evaluated_picks_count": 1575,
+      "path_missing_count": 45,
+      "exit_capture_signal_found": true
+    }
   },
   "source_components": {
     "service": "app/Application/Watchlist/Services/WatchlistBacktestC22ExitCaptureShadowDiagnosticService.php",
@@ -39,5 +50,15 @@
     "no_c21_reopen": true,
     "canonical_model_unchanged": true
   },
-  "next_step": "RUN_C22_OPERATOR_VALIDATION"
+  "next_step": "C23_FIRST_PROFIT_CAPTURE_RULE_CANDIDATE_DIAGNOSTIC",
+  "final_result_summary": "docs/watchlist/audit/_artifacts/c22-final-diagnostic-result-summary.json",
+  "decision": {
+    "decision_status": "C22_EXIT_CAPTURE_SIGNAL_FOUND",
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "first_profit_capture_direction_found": true,
+    "breakeven_standalone_rejected": true,
+    "stop_distance_standalone_rejected": true,
+    "next_step": "C23_FIRST_PROFIT_CAPTURE_RULE_CANDIDATE_DIAGNOSTIC"
+  }
 }
