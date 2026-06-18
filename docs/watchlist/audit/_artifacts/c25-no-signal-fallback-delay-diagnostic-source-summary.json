@@ -1,45 +1,139 @@
 {
-  "artifact_type": "C25_NO_SIGNAL_FALLBACK_DELAY_DIAGNOSTIC_SOURCE_SUMMARY",
-  "status": "SOURCE_IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED",
+  "artifact_type": "C25_NO_SIGNAL_FALLBACK_DELAY_DIAGNOSTIC_FINAL_SUMMARY",
+  "status": "FINAL_DIAGNOSTIC_RUNTIME_PASS",
   "source_implemented": true,
-  "runtime_validated": false,
-  "phpunit_c25": "OPERATOR_VALIDATION_REQUIRED",
-  "full_watchlist_phpunit": "OPERATOR_VALIDATION_REQUIRED",
-  "syntax_validation": [
-    {
-      "command": "php -l app/Application/Watchlist/Services/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticService.php",
-      "status": "PASS"
-    },
-    {
-      "command": "php -l app/Console/Commands/Watchlist/RunBacktestC25NoSignalFallbackDelayDiagnoseCommand.php",
-      "status": "PASS"
-    },
-    {
-      "command": "php -l tests/Unit/Watchlist/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticServiceTest.php",
-      "status": "PASS"
-    },
-    {
-      "command": "php -l tests/Unit/Watchlist/WatchlistBacktestC25StaticGuardTest.php",
-      "status": "PASS"
-    },
-    {
-      "command": "php -l app/Console/Kernel.php",
-      "status": "PASS"
-    }
-  ],
-  "sandbox_phpunit_attempt": {
-    "command": "php vendor/bin/phpunit tests/Unit/Watchlist --filter \"WatchlistBacktestC25\"",
-    "status": "BLOCKED_ENVIRONMENT",
-    "reason": "PHPUnit requires dom, mbstring, xml, and xmlwriter extensions, which are unavailable in the sandbox."
+  "runtime_validated": true,
+  "phpunit_c25": {
+    "status": "PASS",
+    "result": "OK (6 tests, 90 assertions)"
   },
-  "source_files": {
-    "service": "app/Application/Watchlist/Services/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticService.php",
-    "command": "app/Console/Commands/Watchlist/RunBacktestC25NoSignalFallbackDelayDiagnoseCommand.php",
-    "service_test": "tests/Unit/Watchlist/WatchlistBacktestC25NoSignalFallbackDelayDiagnosticServiceTest.php",
-    "static_guard_test": "tests/Unit/Watchlist/WatchlistBacktestC25StaticGuardTest.php",
-    "audit_doc": "docs/watchlist/audit/WS_C25_NO_SIGNAL_FALLBACK_DELAY_DIAGNOSTIC.md",
-    "operator_commands": "docs/watchlist/audit/WS_C25_OPERATOR_VALIDATION_COMMANDS.md",
-    "policy_note": "docs/watchlist/system/policies/weekly_swing/_refs/WS_NO_SIGNAL_FALLBACK_DELAY_C25_DESIGN_NOTE.md"
+  "full_watchlist_phpunit": {
+    "status": "PASS",
+    "result": "OK (419 tests, 10446 assertions)"
+  },
+  "focused_runtime": {
+    "status": "PASS",
+    "artifact_path": "storage/app/watchlist/backtest/c25-no-signal-fallback-delay-diagnostic-focused.json",
+    "artifact_hash": "7bd6221bdd7993d9897a4d9bfaf23db22800f263",
+    "evaluated_picks_count": 394,
+    "path_missing_count": 45,
+    "diagnostic_profile_count": 12,
+    "no_signal_fallback_count": 68,
+    "next_open_delay_count": 66,
+    "no_signal_fallback_fix_found": true,
+    "next_open_delay_fix_found": true,
+    "distribution_balance_candidate_found": true,
+    "intraday_preplanned_order_candidate_found": true,
+    "exit_rule_path_still_viable": true,
+    "selection_quality_revisit_needed": false,
+    "c26_catalog_candidate_diagnostic_recommended": false
+  },
+  "all_param_runtime": {
+    "status": "PASS",
+    "artifact_path": "storage/app/watchlist/backtest/c25-no-signal-fallback-delay-diagnostic-all-param.json",
+    "artifact_hash": "d464c5bcce398c5405b069ef277d696a10598288",
+    "input_c23_artifact_hash": "5b79103c74faa01e4ce01cabbad1a3b36cdf31aa",
+    "input_c24_artifact_hash": "feabfbe720d39155a3d741e509cc69cade3ef31c",
+    "evaluated_picks_count": 1575,
+    "path_missing_count": 45,
+    "diagnostic_profile_count": 22,
+    "no_signal_fallback_count": 295,
+    "next_open_delay_count": 264,
+    "canonical_avg_ret_net": -0.0046903074630424,
+    "c22_s06_avg_ret_net": -0.00016239014891423,
+    "c23_r09_avg_ret_net": -0.00021743307264814,
+    "c23_r15_p25_ret_net": -0.0093088434012312,
+    "c23_r16_p25_ret_net": -0.0091951154943429,
+    "best_profile_code_by_avg": "C25_G05_NO_SIGNAL_FALLBACK_EXIT_D3_OPEN",
+    "best_profile_code_by_median": "C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT",
+    "best_profile_code_by_p25": "C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT",
+    "best_profile_code_by_distribution_balance": "C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT",
+    "best_no_signal_fallback_profile": "C25_G21_COMBINED_R09_INTRADAY_TARGET_1PCT_AND_NO_SIGNAL_D3_EXIT",
+    "best_next_open_delay_profile": "C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT"
+  },
+  "candidate_summary": {
+    "r09": {
+      "profile_code": "C25_G02_C23_R09_BASELINE_BRIDGE",
+      "avg_pct": -0.0217,
+      "median_pct": -0.05,
+      "p25_pct": -2.1245,
+      "win_rate_pct": 47.17
+    },
+    "g13_defensive_comparator": {
+      "profile_code": "C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT",
+      "avg_pct": -0.2257,
+      "median_pct": 0.4493,
+      "p25_pct": -0.05,
+      "win_rate_pct": 73.21,
+      "lookahead_violation_count": 0,
+      "ambiguous_intraday_sequence_count": 0,
+      "preplanned_order_count": 1124
+    },
+    "g16_next_open_delay_comparator": {
+      "profile_code": "C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT",
+      "avg_pct": -0.0789,
+      "median_pct": 0.9581,
+      "p25_pct": -1.7163,
+      "win_rate_pct": 57.59,
+      "lookahead_violation_count": 0,
+      "ambiguous_intraday_sequence_count": 0,
+      "preplanned_order_count": 766
+    },
+    "g21_primary_balanced_candidate": {
+      "profile_code": "C25_G21_COMBINED_R09_INTRADAY_TARGET_1PCT_AND_NO_SIGNAL_D3_EXIT",
+      "avg_pct": 0.0045,
+      "median_pct": 0.9487,
+      "p25_pct": -0.4499,
+      "win_rate_pct": 63.17,
+      "lookahead_violation_count": 0,
+      "ambiguous_intraday_sequence_count": 0,
+      "preplanned_order_count": 906,
+      "avg_positive_param_count": 7,
+      "param_count": 12
+    }
+  },
+  "data_availability": {
+    "c23_all_param_artifact_available": true,
+    "c24_all_param_artifact_available": true,
+    "c21_path_artifact_available": true,
+    "canonical_baseline_available": true,
+    "c22_shadow_s06_available_or_recomputable": true,
+    "c23_r09_rows_available": true,
+    "c23_r15_rows_available": true,
+    "c23_r16_rows_available": true,
+    "d1_to_d5_ohlc_available": false,
+    "d1_to_d5_close_return_available": true,
+    "derived_mfe_mae_available": true,
+    "next_open_after_close_signal_available": true,
+    "intraday_high_low_available": false,
+    "intraday_high_low_derived_from_c21_mfe_mae_available": true,
+    "market_calendar_continuity_available": true,
+    "published_price_availability_available": true,
+    "missing_companion_row_count": 0,
+    "notes": [
+      "C23 artifact does not carry raw D1-D5 open/high/low/close fields; C25 keeps OHLC fields null and uses C21 derived MFE/MAE when available.",
+      "Preplanned intraday profiles remain diagnostic approximations until a later candidate diagnostic validates raw OHLC/order-level data."
+    ]
+  },
+  "decision": {
+    "decision_status": "C25_GAP_FIX_CANDIDATE_FOUND",
+    "no_signal_fallback_fix_found": true,
+    "next_open_delay_fix_found": true,
+    "distribution_balance_candidate_found": true,
+    "intraday_preplanned_order_candidate_found": true,
+    "exit_rule_path_still_viable": true,
+    "selection_quality_revisit_needed": false,
+    "c26_catalog_candidate_diagnostic_recommended": true,
+    "primary_balanced_candidate": "C25_G21_COMBINED_R09_INTRADAY_TARGET_1PCT_AND_NO_SIGNAL_D3_EXIT",
+    "defensive_comparator": "C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT",
+    "next_open_delay_comparator": "C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT",
+    "downside_comparators": [
+      "C23_R15",
+      "C23_R16"
+    ],
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "next_step": "C26_CATALOG_CANDIDATE_DIAGNOSTIC_IS_ONLY"
   },
   "boundary_markers": {
     "C25_CATALOG_IMPLEMENTATION_DEFERRED": true,
@@ -47,6 +141,8 @@
     "OOS_NOT_RUN": true,
     "production_ready": 0,
     "NO_C01_TO_C24_MUTATION": true,
-    "PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED": true
+    "PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED": true,
+    "CANONICAL_MODEL_UNCHANGED": true,
+    "LOOKAHEAD_VIOLATION_COUNT": 0
   }
 }

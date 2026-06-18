@@ -15,13 +15,13 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC SOURCE IMPLEMENTATION`
+`WATCHLIST - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC FINAL RUNTIME EVIDENCE`
 
 Current status:
 
-`C25_SOURCE_IMPLEMENTED / C25_RUNTIME_VALIDATION_REQUIRED / C25_COMMAND_REGISTERED_SOURCE / C25_STATIC_GUARDS_ADDED / C25_OPERATOR_COMMANDS_DOCUMENTED / C25_CATALOG_CODE_NOT_CREATED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C24_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C25_SOURCE_IMPLEMENTED / C25_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C25_FOCUSED_RUNTIME_PASS / C25_ALL_PARAM_RUNTIME_PASS / C25_GAP_FIX_CANDIDATE_FOUND / C25_EXIT_RULE_PATH_STILL_VIABLE / C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED / C25_CATALOG_CODE_NOT_CREATED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C24_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
-C25 source result:
+C25 final source/runtime result:
 
 - `WatchlistBacktestC25NoSignalFallbackDelayDiagnosticService` exists as an IS-only no-signal fallback and next-open delay diagnostic;
 - `RunBacktestC25NoSignalFallbackDelayDiagnoseCommand` exists as `watchlist:backtest-c25-no-signal-fallback-delay-diagnose`;
@@ -29,7 +29,7 @@ C25 source result:
 - C25 reads the frozen C23 and C24 artifacts, with optional C21 derived MFE/MAE path evidence;
 - C25 does not recompute selection, does not select ticker/trade_date from future path, and does not mutate C01-C24;
 - C25 compares canonical, C22 S06, C23 R09, C23 R15, and C23 R16;
-- C25 writes a pick-level diagnostic artifact because no-signal and next-open delay decisions require row-level bucket evidence;
+- C25 writes pick-level diagnostic rows for no-signal fallback, next-open delay, preplanned intraday, and profile comparison evidence;
 - C25 did not create a catalog, seeder, seed command, repository approval, or factory catalog mapping;
 - C25 did not run OOS and did not set `production_ready=1`.
 
@@ -46,29 +46,87 @@ docs/watchlist/audit/_artifacts/c25-no-signal-fallback-delay-diagnostic-source-s
 docs/watchlist/system/policies/weekly_swing/_refs/WS_NO_SIGNAL_FALLBACK_DELAY_C25_DESIGN_NOTE.md
 ```
 
-C25 validation in this source patch:
+C25 validation actually run by operator:
 
 ```text
-PHP_LINT_C25_SERVICE=PASS
-PHP_LINT_C25_COMMAND=PASS
-PHP_LINT_C25_SERVICE_TEST=PASS
-PHP_LINT_C25_STATIC_GUARD_TEST=PASS
-PHP_LINT_KERNEL=PASS
-PHPUNIT_C25=OPERATOR_VALIDATION_REQUIRED
-FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+PHPUNIT_C25=PASS
+OK (6 tests, 90 assertions)
+
+FULL_WATCHLIST_PHPUNIT=PASS
+OK (419 tests, 10446 assertions)
+
+C25_FOCUSED_RUNTIME_PASS=true
+C25_FOCUSED_ARTIFACT_HASH=7bd6221bdd7993d9897a4d9bfaf23db22800f263
+C25_FOCUSED_EVALUATED_PICKS=394
+C25_FOCUSED_PATH_MISSING=45
+
+C25_ALL_PARAM_RUNTIME_PASS=true
+C25_ALL_PARAM_ARTIFACT_HASH=d464c5bcce398c5405b069ef277d696a10598288
+C25_INPUT_C23_ARTIFACT_HASH=5b79103c74faa01e4ce01cabbad1a3b36cdf31aa
+C25_INPUT_C24_ARTIFACT_HASH=feabfbe720d39155a3d741e509cc69cade3ef31c
+C25_ALL_PARAM_EVALUATED_PICKS=1575
+C25_ALL_PARAM_PATH_MISSING=45
+C25_ALL_PARAM_PROFILE_COUNT=22
 ```
 
-Sandbox PHPUnit attempt was blocked by missing PHP extensions (`dom`, `mbstring`, `xml`, `xmlwriter`). No PHPUnit PASS or runtime PASS is claimed by this patch.
-
-C25 artifact/decision scope:
+C25 final metrics:
 
 ```text
-artifact_type=C25_NO_SIGNAL_FALLBACK_DELAY_DIAGNOSTIC
-scope=IS_ONLY_NO_SIGNAL_FALLBACK_AND_NEXT_OPEN_DELAY_DIAGNOSTIC
-C25_CATALOG_CODE=NOT_CREATED
+canonical_avg_ret_net=-0.4690%
+c22_s06_avg_ret_net=-0.0162%
+c23_r09_avg_ret_net=-0.0217%
+c23_r09_median_ret_net=-0.0500%
+c23_r09_p25_ret_net=-2.1245%
+c23_r09_win_rate=47.17%
+
+no_signal_fallback_count=295
+next_open_delay_count=264
+```
+
+C25 candidate interpretation:
+
+```text
+PRIMARY_BALANCED_C26_CANDIDATE=C25_G21_COMBINED_R09_INTRADAY_TARGET_1PCT_AND_NO_SIGNAL_D3_EXIT
+G21_avg=+0.0045%
+G21_median=+0.9487%
+G21_p25=-0.4499%
+G21_win_rate=63.17%
+G21_lookahead_violation_count=0
+G21_ambiguous_intraday_sequence_count=0
+
+DEFENSIVE_COMPARATOR=C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT
+G13_avg=-0.2257%
+G13_median=+0.4493%
+G13_p25=-0.0500%
+G13_win_rate=73.21%
+G13_lookahead_violation_count=0
+G13_ambiguous_intraday_sequence_count=0
+
+NEXT_OPEN_DELAY_COMPARATOR=C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT
+G16_avg=-0.0789%
+G16_median=+0.9581%
+G16_p25=-1.7163%
+G16_win_rate=57.59%
+G16_lookahead_violation_count=0
+G16_ambiguous_intraday_sequence_count=0
+```
+
+C25 final decision:
+
+```text
+C25_NO_SIGNAL_FALLBACK_FIX_FOUND=true
+C25_NEXT_OPEN_DELAY_FIX_FOUND=true
+C25_DISTRIBUTION_BALANCE_CANDIDATE_FOUND=true
+C25_INTRADAY_PREPLANNED_ORDER_CANDIDATE_FOUND=true
+C25_EXIT_RULE_PATH_STILL_VIABLE=true
+C25_SELECTION_QUALITY_REVISIT_NEEDED=false
+C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED=true
 C25_CATALOG_IMPLEMENTATION_DEFERRED=true
+C25_CATALOG_CODE=NOT_CREATED
+C25_LOOKAHEAD_VIOLATION_COUNT=0
 OOS_NOT_RUN=true
 production_ready=0
+NEXT_STEP=C26_CATALOG_CANDIDATE_DIAGNOSTIC_IS_ONLY
 ```
 
 C25 data-availability contract:
@@ -78,23 +136,45 @@ C23_ALL_PARAM_ARTIFACT_REQUIRED=true
 C24_GAP_BRIDGE_ARTIFACT_REQUIRED=true
 C21_PATH_ARTIFACT_OPTIONAL_FOR_DERIVED_MFE_MAE=true
 RAW_D1_TO_D5_OHLC_NOT_IN_C23_ARTIFACT=true
-D1_TO_D5_OHLC_AVAILABLE=false unless a later source adds raw OHLC path rows
+D1_TO_D5_OHLC_AVAILABLE=false
+D1_TO_D5_CLOSE_RETURN_AVAILABLE=true
+DERIVED_MFE_MAE_AVAILABLE=true
+INTRADAY_HIGH_LOW_AVAILABLE=false
+INTRADAY_HIGH_LOW_DERIVED_FROM_C21_MFE_MAE_AVAILABLE=true
 INTRADAY_SEQUENCE_KNOWN=false
 CONSERVATIVE_FILL_POLICY=STOP_FIRST_IF_TARGET_AND_STOP_SAME_DAILY_CANDLE
 ```
 
-C25 preserves the C24 conclusion: C23 R09 almost closed average return but not median/p25/win-rate; dominant gap remains no-signal fallback and secondary gap remains next-open delay. C25 is the diagnostic step that tests whether those gaps can be realistically reduced before deciding whether C26 catalog-candidate diagnostic is justified.
-
-Required next operator work:
+C25 final boundary status:
 
 ```text
-RUN_PHPUNIT_C25_FILTER=true
-RUN_FULL_WATCHLIST_PHPUNIT=true
-RUN_C25_FOCUSED_DIAGNOSTIC=true
-RUN_C25_ALL_PARAM_DIAGNOSTIC=true
-DO_NOT_CREATE_C25_CATALOG=true
+IS_ONLY=true
+OOS_NOT_RUN=true
+production_ready=0
+C25_CATALOG_CODE=NOT_CREATED
+C25_CATALOG_IMPLEMENTATION_DEFERRED=true
+NO_PROMOTION=true
+NO_OOS=true
+NO_TICKER_BLACKLIST=true
+NO_MONTH_BLACKLIST=true
+NO_SECTOR_WHITELIST=true
+NO_BEST_OF_FAILED_BINDING=true
+NO_C01_TO_C24_MUTATION=true
+PLAN_RECOMMENDATION_CONFIRM_BOUNDARY_UNCHANGED=true
+CANONICAL_MODEL_UNCHANGED=true
+```
+
+Required next work:
+
+```text
+UPDATE_C25_FINAL_DOCS_DONE=true
+CREATE_C26_PROMPT=true
+RUN_C26_CATALOG_CANDIDATE_DIAGNOSTIC_IS_ONLY=true
 DO_NOT_RUN_OOS=true
+DO_NOT_CREATE_PRODUCTION_CATALOG=true
+DO_NOT_MUTATE_C01_TO_C25=true
 DO_NOT_SET_PRODUCTION_READY=true
+DO_NOT_CHANGE_CANONICAL_ENTRY_EXIT_MODEL=true
 ```
 
 ## PRIOR SESSION - C24 C22 SHADOW GAP BRIDGE DIAGNOSTIC SOURCE IMPLEMENTATION

@@ -14,21 +14,21 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC SOURCE IMPLEMENTATION`
+`WATCHLIST - C25 NO-SIGNAL FALLBACK AND NEXT-OPEN DELAY DIAGNOSTIC FINAL RUNTIME EVIDENCE`
 
 Current status:
 
-`C25_SOURCE_IMPLEMENTED / C25_RUNTIME_VALIDATION_REQUIRED / C25_COMMAND_REGISTERED_SOURCE / C25_STATIC_GUARDS_ADDED / C25_OPERATOR_COMMANDS_DOCUMENTED / C25_CATALOG_CODE_NOT_CREATED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C24_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
+`C25_SOURCE_IMPLEMENTED / C25_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C25_FOCUSED_RUNTIME_PASS / C25_ALL_PARAM_RUNTIME_PASS / C25_GAP_FIX_CANDIDATE_FOUND / C25_EXIT_RULE_PATH_STILL_VIABLE / C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED / C25_CATALOG_CODE_NOT_CREATED / C24_GAP_BRIDGE_EXPLAINED_PRESERVED / C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_PRESERVED / C22_EXIT_CAPTURE_SIGNAL_PRESERVED / C21_EXECUTION_SIGNAL_FOUND_PRESERVED / C20_DATE_GATE_NOT_ENOUGH_PRESERVED / C19_CATALOG_CANDIDATE_FAILED_PRESERVED / C01_TO_C24_IMMUTABLE / OOS_NOT_RUN / NOT_PRODUCTION_READY`.
 
 C25 current contract status:
 
-- `WL-CONTRACT-008`: PASS AS SOURCE-LEVEL DIAGNOSTIC TRACEABILITY. C25 is traceable to C19 sample-quality failure, C20 date-gate insufficiency, C21 execution-behavior signal, C22 first-profit-capture shadow direction, C23 non-lookahead rule-candidate evidence, and C24 gap-bridge evidence.
-- `WL-CONTRACT-009`: OPERATOR_VALIDATION_REQUIRED. C25 source, command, tests, and static guards were added; sandbox syntax checks passed, but PHPUnit and runtime command evidence must be produced by the operator.
-- `WL-CONTRACT-010`: PASS FOR SOURCE PATCH. C25 source and tests keep `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
-- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C25 cannot promote a catalog because it is diagnostic-only, `C25_CATALOG_CODE=NOT_CREATED`, and no OOS proof exists.
-- `WL-CONTRACT-013`: PASS FOR SOURCE SURFACE. C25 service, command, tests, static guards, audit doc, operator command doc, policy note, and source summary artifact are present.
-- `WL-CONTRACT-014`: PARTIAL PASS. Source docs and trackers are synchronized with source-level syntax evidence; runtime-result docs require operator command output.
-- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because C25 has no catalog candidate and no OOS proof.
+- `WL-CONTRACT-008`: PASS AS FINAL DIAGNOSTIC TRACEABILITY. C25 is traceable to C19 sample-quality failure, C20 date-gate insufficiency, C21 execution-behavior signal, C22 first-profit-capture shadow direction, C23 non-lookahead rule-candidate evidence, and C24 gap-bridge evidence.
+- `WL-CONTRACT-009`: PASS. C25 source, command, tests, static guards, focused runtime, and all-param runtime have operator evidence.
+- `WL-CONTRACT-010`: PASS. C25 source and runtime keep `oos_service_invoked=0`, `oos_repository_invoked=0`, and `oos_executed=0`.
+- `WL-CONTRACT-011`: NOT_READY / FORBIDDEN. C25 cannot promote a catalog because it is diagnostic-only, `C25_CATALOG_CODE=NOT_CREATED`, and no OOS proof exists. C25 only recommends C26 as an IS-only catalog-candidate diagnostic.
+- `WL-CONTRACT-013`: PASS. C25 service, command, tests, static guards, audit doc, operator command doc, policy note, and final summary artifact are present.
+- `WL-CONTRACT-014`: PASS FOR C25 SOURCE/RUNTIME DOC SYNC. C25 source docs and trackers are synchronized with PHPUnit, focused runtime, all-param runtime, candidate interpretation, and boundary evidence.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because no OOS proof exists and no catalog has been promoted.
 
 C25 preserved boundaries:
 
@@ -67,31 +67,60 @@ CANONICAL_MODEL=ENTRY_NEXT_OPEN_EXIT_STOP_TP_OR_TIME_HOLD_5_FEE_IDR_FIXED_SLIP_0
 OUTPUT_SURFACE=PICK_LEVEL_BUCKET_AND_PROFILE_DIAGNOSTIC_ROWS
 ```
 
-C25 source validation evidence:
+C25 validation evidence:
 
 ```text
-PHP_LINT_C25_SERVICE=PASS: No syntax errors detected
-PHP_LINT_C25_COMMAND=PASS: No syntax errors detected
-PHP_LINT_C25_SERVICE_TEST=PASS: No syntax errors detected
-PHP_LINT_C25_STATIC_GUARD_TEST=PASS: No syntax errors detected
-PHP_LINT_KERNEL=PASS: No syntax errors detected
-PHPUNIT_C25=OPERATOR_VALIDATION_REQUIRED
-FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+PHPUNIT_C25=PASS: OK (6 tests, 90 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (419 tests, 10446 assertions)
+C25_FOCUSED_RUNTIME_PASS=true: artifact_hash=7bd6221bdd7993d9897a4d9bfaf23db22800f263
+C25_ALL_PARAM_RUNTIME_PASS=true: artifact_hash=d464c5bcce398c5405b069ef277d696a10598288
+C25_ALL_PARAM_EVALUATED_PICKS=1575
+C25_ALL_PARAM_PATH_MISSING=45
+C25_ALL_PARAM_PROFILE_COUNT=22
+```
+
+C25 candidate handoff:
+
+```text
+PRIMARY_BALANCED_C26_CANDIDATE=C25_G21_COMBINED_R09_INTRADAY_TARGET_1PCT_AND_NO_SIGNAL_D3_EXIT
+G21_avg=+0.0045%
+G21_median=+0.9487%
+G21_p25=-0.4499%
+G21_win_rate=63.17%
+G21_lookahead_violation_count=0
+G21_ambiguous_intraday_sequence_count=0
+
+DEFENSIVE_COMPARATOR=C25_G13_PREPLANNED_INTRADAY_TARGET_0_50PCT
+NEXT_OPEN_DELAY_COMPARATOR=C25_G16_PREPLANNED_INTRADAY_TARGET_1_50PCT
+DOWNSIDE_COMPARATORS=C23_R15,C23_R16
+```
+
+C25 final decision:
+
+```text
+C25_NO_SIGNAL_FALLBACK_FIX_FOUND=true
+C25_NEXT_OPEN_DELAY_FIX_FOUND=true
+C25_DISTRIBUTION_BALANCE_CANDIDATE_FOUND=true
+C25_INTRADAY_PREPLANNED_ORDER_CANDIDATE_FOUND=true
+C25_EXIT_RULE_PATH_STILL_VIABLE=true
+C25_SELECTION_QUALITY_REVISIT_NEEDED=false
+C25_C26_CATALOG_CANDIDATE_DIAGNOSTIC_RECOMMENDED=true
+C25_CATALOG_CODE=NOT_CREATED
+OOS_NOT_RUN=true
+production_ready=0
 ```
 
 Required next contract work:
 
 ```text
-RUN_C25_PHPUNIT_FILTER=true
-RUN_FULL_WATCHLIST_PHPUNIT=true
-RUN_C25_FOCUSED_DIAGNOSTIC=true
-RUN_C25_ALL_PARAM_DIAGNOSTIC=true
-DO_NOT_CREATE_C25_CATALOG=true
+CREATE_C26_PROMPT=true
+RUN_C26_CATALOG_CANDIDATE_DIAGNOSTIC_IS_ONLY=true
+DO_NOT_CREATE_C25_OR_C26_PRODUCTION_CATALOG=true
 DO_NOT_RUN_OOS=true
-DO_NOT_MUTATE_C01_TO_C24=true
+DO_NOT_MUTATE_C01_TO_C25=true
 DO_NOT_SET_PRODUCTION_READY=true
 DO_NOT_CHANGE_CANONICAL_ENTRY_EXIT_MODEL=true
-NEXT_STEP=C25_OPERATOR_VALIDATION_AND_RUNTIME_DIAGNOSTIC
+NEXT_STEP=C26_CATALOG_CANDIDATE_DIAGNOSTIC_IS_ONLY
 ```
 
 ## PRIOR SESSION - C24 C22 SHADOW GAP BRIDGE DIAGNOSTIC SOURCE IMPLEMENTATION
