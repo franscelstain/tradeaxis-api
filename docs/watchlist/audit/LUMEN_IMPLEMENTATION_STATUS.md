@@ -15,6 +15,114 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C30 OOS FAILURE ATTRIBUTION & DATA COMPLETENESS DIAGNOSTIC`
+
+Current status:
+
+`C30_SOURCE_IMPLEMENTED / C30_COMMAND_REGISTERED / C30_TESTS_ADDED / C30_DOCS_FINAL_SYNCED / C30_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C30_RUNTIME_COMPLETED / C30_ATTRIBUTION_COMPLETED / C29_ARTIFACT_HASH_LOCK_PASS / C29_FAILED_STATUS_GUARD_PASS / MISSING_PATH_VS_ACTUAL_LOOKAHEAD_SPLIT_CONFIRMED / NO_ACTUAL_LOOKAHEAD_LEAK_FOUND / NO_SELECTION_LEAK_FOUND / MIXED_DATA_AND_STRATEGY_FAILURE / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C29_MUTATION / NOT_PRODUCTION_READY`.
+
+C30 source implementation result:
+
+- `WatchlistBacktestC30OosFailureAttributionService` exists as a failure-attribution diagnostic service for the locked C29 failed artifact;
+- `RunBacktestC30OosFailureAttributionCommand` exists as `watchlist:backtest-c30-oos-failure-attribution`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C30 reads `storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json` and validates the expected C29 stable artifact hash before attribution;
+- C30 blocks on missing C29 artifact, C29 hash mismatch, or unexpected non-failed C29 status;
+- C30 separates missing OHLC path/non-evaluable rows from actual lookahead/future-data leaks;
+- C30 detects selection leak flags if any C29 row uses future path price, profile return, or derived MFE/MAE as selection/execution input;
+- C30 computes clean metrics only from clean evaluable rows;
+- C30 produces bad month, source branch, and ticker failure attribution summaries;
+- C30 does not retune, reselect profiles, create best-of-OOS, create a production catalog, promote a candidate, or mutate PLAN/CONFIRM behavior;
+- `production_ready` remains `false/0`.
+
+C30 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC30OosFailureAttributionService.php
+app/Console/Commands/Watchlist/RunBacktestC30OosFailureAttributionCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC30OosFailureAttributionServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC30StaticGuardTest.php
+docs/watchlist/audit/WS_C30_OOS_FAILURE_ATTRIBUTION.md
+docs/watchlist/audit/WS_C30_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C30 locked source:
+
+```text
+INPUT_C29_ARTIFACT=storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json
+EXPECTED_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+EXPECTED_C29_STATUS=C29_OOS_PROOF_FAILED
+```
+
+C30 classification contract:
+
+```text
+MISSING_PATH_CONDITION=missing_path_data_flag=true OR raw_ohlc_validated_flag=false OR missing_path_reason_code is not null
+SELECTION_LEAK_CONDITION=future_path_price_used_for_selection=true OR profile_ret_net_used_for_selection=true OR derived_mfe_mae_used_for_execution=true
+ACTUAL_LOOKAHEAD_CONDITION=lookahead_safe=false AND NOT missing_path OR explicit future-data leak reason
+CLEAN_EVALUABLE_CONDITION=not missing_path AND not actual_lookahead AND not selection_leak AND numeric profile_ret_net
+```
+
+C30 final operator validation status:
+
+```text
+PHPUNIT_C30=PASS
+PHPUNIT_C30_RESULT=OK (16 tests, 104 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (464 tests, 11004 assertions)
+C30_RUNTIME=COMPLETED
+C30_FINAL_STATUS=C30_ATTRIBUTION_COMPLETED
+C30_ARTIFACT_PATH=storage/app/watchlist/backtest/c30-oos-failure-attribution.json
+C30_ARTIFACT_HASH=667b639951d6b566cc9b0fa6cf7dc278db92a8f0
+C30_ATTRIBUTION_VERDICT=MIXED_DATA_AND_STRATEGY_FAILURE
+EXPECTED_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+ACTUAL_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+C29_HASH_MATCH=1
+C29_STATUS=C29_OOS_PROOF_FAILED
+PRODUCTION_READY=0
+```
+
+C30 classification summary:
+
+```text
+total_oos_pick_rows=132
+reported_lookahead_violation_count=4
+actual_lookahead_violation_count=0
+selection_leak_count=0
+missing_path_count=4
+non_evaluable_pick_count=4
+clean_evaluable_pick_count=128
+```
+
+C30 boundary status:
+
+```text
+FAILURE_ATTRIBUTION_ONLY=true
+NO_RETUNE=true
+NO_PROFILE_RESELECTION=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C29_MUTATION=true
+production_ready=0
+```
+
+C30 next step:
+
+```text
+NEXT_STEP=C31_CONTROLLED_C29_GATE_RECLASSIFICATION_AND_DATA_COMPLETENESS_RERUN
+C31_NOT_TUNING=true
+C31_NOT_BEST_OF_OOS=true
+C31_MUST_SPLIT_LOOKAHEAD_GATE_FROM_DATA_COMPLETENESS_GATE=true
+C31_MUST_KEEP_C28_G05_LOCK=true
+C31_MUST_KEEP_PRODUCTION_READY_FALSE=true
+AFTER_C31=C32_BAD_MONTH_BRANCH_ROBUSTNESS_DIAGNOSTIC_FOR_G21_G16
+```
+
+## PRIOR SESSION - C29 OOS PROOF FOR LOCKED C28 G05 CANDIDATE
+
+Session:
 `WATCHLIST - C29 OOS PROOF FOR LOCKED C28 G05 CANDIDATE`
 
 Current status:

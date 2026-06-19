@@ -14,6 +14,93 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C30 OOS FAILURE ATTRIBUTION & DATA COMPLETENESS DIAGNOSTIC`
+
+Current status:
+
+`C30_SOURCE_IMPLEMENTED / C30_COMMAND_REGISTERED / C30_TESTS_ADDED / C30_DOCS_FINAL_SYNCED / C30_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C30_RUNTIME_COMPLETED / C30_ATTRIBUTION_COMPLETED / C29_ARTIFACT_HASH_LOCK_PASS / C29_FAILED_STATUS_GUARD_PASS / FAILURE_ATTRIBUTION_ONLY / MISSING_PATH_VS_ACTUAL_LOOKAHEAD_SPLIT_CONFIRMED / NO_ACTUAL_LOOKAHEAD_LEAK_FOUND / NO_SELECTION_LEAK_FOUND / MIXED_DATA_AND_STRATEGY_FAILURE / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C29_MUTATION / NOT_PRODUCTION_READY`.
+
+C30 current contract status:
+
+- `WL-CONTRACT-C30-001`: IMPLEMENTED. C30 is failure attribution only and does not retune, reselect, promote, or create a production catalog.
+- `WL-CONTRACT-C30-002`: IMPLEMENTED. C30 locks `storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json` by expected stable hash `c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9`.
+- `WL-CONTRACT-C30-003`: IMPLEMENTED. C30 blocks if the C29 artifact is missing, hash-mismatched, or not `C29_OOS_PROOF_FAILED`.
+- `WL-CONTRACT-C30-004`: IMPLEMENTED. C30 separates missing D1-D5 OHLC path/non-evaluable rows from actual lookahead/future-data leak rows.
+- `WL-CONTRACT-C30-005`: IMPLEMENTED. C30 detects selection leak flags from `future_path_price_used_for_selection`, `profile_ret_net_used_for_selection`, and `derived_mfe_mae_used_for_execution`.
+- `WL-CONTRACT-C30-006`: IMPLEMENTED. C30 computes clean metrics only from clean evaluable rows.
+- `WL-CONTRACT-C30-007`: IMPLEMENTED. C30 outputs bad month, source branch, ticker failure, missing path, actual lookahead, selection leak, diagnostics, and verdict sections.
+- `WL-CONTRACT-C30-008`: PASS. Operator validation executed: PHPUnit C30 `OK (16 tests, 104 assertions)`, full Watchlist PHPUnit `OK (464 tests, 11004 assertions)`, and C30 runtime completed with artifact hash `667b639951d6b566cc9b0fa6cf7dc278db92a8f0`.
+- `WL-CONTRACT-C30-009`: NOT_READY. `production_ready` remains false and C30 does not unlock production.
+
+C30 contract markers:
+
+```text
+FAILURE_ATTRIBUTION_ONLY=true
+C29_ARTIFACT_HASH_LOCK=true
+INPUT_C29_ARTIFACT=storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json
+EXPECTED_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+EXPECTED_C29_STATUS=C29_OOS_PROOF_FAILED
+NO_RETUNE=true
+NO_PROFILE_RESELECTION=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C29_MUTATION=true
+production_ready=0
+```
+
+C30 classification contract:
+
+```text
+MISSING_PATH_ROWS=missing_path_data_flag=true OR raw_ohlc_validated_flag=false OR missing_path_reason_code is not null
+SELECTION_LEAK_ROWS=future_path_price_used_for_selection=true OR profile_ret_net_used_for_selection=true OR derived_mfe_mae_used_for_execution=true
+ACTUAL_LOOKAHEAD_VIOLATION_ROWS=lookahead_safe=false AND NOT missing_path OR explicit future-data leak reason
+CLEAN_EVALUABLE_ROWS=not missing_path AND not actual_lookahead AND not selection_leak AND numeric profile_ret_net
+MISSING_PATH_MUST_NOT_BE_COUNTED_AS_ACTUAL_LOOKAHEAD_WITHOUT_EXPLICIT_LEAK_REASON=true
+```
+
+C30 output contract:
+
+```text
+COMMAND=watchlist:backtest-c30-oos-failure-attribution
+ARTIFACT_PATH=storage/app/watchlist/backtest/c30-oos-failure-attribution.json
+STATUSES=C30_ATTRIBUTION_COMPLETED,C30_BLOCKED_MISSING_C29_ARTIFACT,C30_BLOCKED_C29_HASH_MISMATCH,C30_BLOCKED_UNEXPECTED_C29_STATUS,C30_OPERATOR_VALIDATION_REQUIRED
+VERDICTS=DATA_COMPLETENESS_FAILURE_CONFIRMED,ACTUAL_LOOKAHEAD_LEAK_CONFIRMED,STRATEGY_ROBUSTNESS_FAILURE_CONFIRMED,MIXED_DATA_AND_STRATEGY_FAILURE,INSUFFICIENT_DIAGNOSTIC_DATA
+```
+
+C30 validation status:
+
+```text
+PHPUNIT_C30=PASS
+PHPUNIT_C30_RESULT=OK (16 tests, 104 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (464 tests, 11004 assertions)
+C30_RUNTIME=COMPLETED
+C30_FINAL_STATUS=C30_ATTRIBUTION_COMPLETED
+C30_ARTIFACT_HASH=667b639951d6b566cc9b0fa6cf7dc278db92a8f0
+C30_ATTRIBUTION_VERDICT=MIXED_DATA_AND_STRATEGY_FAILURE
+reported_lookahead_violation_count=4
+actual_lookahead_violation_count=0
+selection_leak_count=0
+missing_path_count=4
+non_evaluable_pick_count=4
+clean_evaluable_pick_count=128
+```
+
+Contract decision:
+
+```text
+C30_DOES_NOT_UNLOCK_PRODUCTION=true
+NEXT_STEP=C31_CONTROLLED_C29_GATE_RECLASSIFICATION_AND_DATA_COMPLETENESS_RERUN
+DO_NOT_TUNE_FROM_OOS=true
+DO_NOT_CREATE_BEST_OF_OOS=true
+DO_NOT_CREATE_PRODUCTION_CATALOG=true
+```
+
+## PRIOR SESSION - C29 OOS PROOF FOR LOCKED C28 G05 CANDIDATE
+
+Session:
 `WATCHLIST - C29 OOS PROOF FOR LOCKED C28 G05 CANDIDATE`
 
 Current status:
