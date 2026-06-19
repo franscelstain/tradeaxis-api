@@ -14,6 +14,98 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C29 OOS PROOF FOR LOCKED C28 G05 CANDIDATE`
+
+Current status:
+
+`C29_SOURCE_IMPLEMENTED / C29_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C29_RUNTIME_FAILED / C29_OOS_PROOF_FAILED / C28_ARTIFACT_HASH_LOCK_PASS / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C28_MUTATION / NOT_PRODUCTION_READY`.
+
+C29 current contract status:
+
+- `WL-CONTRACT-008`: PASS. C29 is traceable to the locked C28 all-param artifact and validates the expected C28 stable hash before OOS replay.
+- `WL-CONTRACT-009`: PASS. C29 PHPUnit filter was run by the operator and passed: `OK (13 tests, 132 assertions)`.
+- `WL-CONTRACT-010`: PASS. C29 is OOS proof only and does not create a production catalog or mutate production watchlist behavior.
+- `WL-CONTRACT-011`: FAILED AS OOS PROOF. C29 runtime executed against the locked C28 G05 candidate and returned `C29_OOS_PROOF_FAILED`.
+- `WL-CONTRACT-013`: PASS AS ARTIFACT CONTRACT. C29 output artifact exists and records C28 hash lock, candidate rule mapping, metrics, gate diagnostics, failed status, and `production_ready=false`.
+- `WL-CONTRACT-014`: PASS FOR DOC SYNC. C29 docs are updated with operator PHPUnit/runtime evidence and artifact hash.
+- `WL-CONTRACT-015`: NOT_READY. Production readiness remains locked because C29 failed OOS proof and did not create a production catalog.
+
+C29 contract markers:
+
+```text
+OOS_PROOF_ONLY=true
+C28_ARTIFACT_HASH_LOCK=true
+EXPECTED_C28_HASH=64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd
+ACTUAL_C28_HASH=64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd
+C28_HASH_MATCH=true
+CANDIDATE_PROFILE_CODE=C28_G05_BUCKET_TIEBREAK_R09_STABLE_G21_NO_SIGNAL_G16_DELAY
+NO_RETUNE=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C28_MUTATION=true
+production_ready=0
+```
+
+C29 artifact contract:
+
+```text
+ARTIFACT_PATH=storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json
+ARTIFACT_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+RUNTIME_STATUS=C29_OOS_PROOF_FAILED
+FAILED_GATE_MONTH_WIN_RATE=true
+FAILED_GATE_LOOKAHEAD=true
+```
+
+C29 validation status:
+
+```text
+PHPUNIT_C29=PASS: OK (13 tests, 132 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (448 tests, 10900 assertions)
+C29_RUNTIME=FAIL: status=C29_OOS_PROOF_FAILED
+C29_ARTIFACT_CREATED=true
+C29_FINAL_VERDICT=C29_OOS_PROOF_FAILED
+```
+
+C29 OOS evidence:
+
+```text
+evaluated_picks_count=128
+avg_ret_net=0.004431048028767
+median_ret_net=0.0052763819095477
+p25_ret_net=-0.0075615188321481
+win_rate=0.53125
+month_win_rate_min=0
+month_avg_ret_net_min=-0.040489877530617
+lookahead_violation_count=4
+```
+
+C29 failure classification:
+
+```text
+BAD_MONTHS=2025-06,2025-08,2026-03
+MISSING_PATH_ROWS=4
+MISSING_PATH_REASON_CODE=WS_BT_C29_D1_TO_D5_RAW_OHLC_PATH_MISSING
+FUTURE_PATH_PRICE_USED_FOR_SELECTION=false
+PROFILE_RET_NET_USED_FOR_SELECTION=false
+DERIVED_MFE_MAE_USED_FOR_EXECUTION=false
+```
+
+Contract decision:
+
+```text
+C29_DOES_NOT_UNLOCK_PRODUCTION=true
+C30_REQUIRED=true
+NEXT_STEP=C30_OOS_FAILURE_ATTRIBUTION_AND_DATA_COMPLETENESS_DIAGNOSTIC
+DO_NOT_TUNE_FROM_OOS=true
+DO_NOT_CREATE_BEST_OF_OOS=true
+DO_NOT_CREATE_PRODUCTION_CATALOG=true
+```
+
+## PRIOR SESSION - C28 RULE REVISION TIEBREAK DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE
+
+Session:
 `WATCHLIST - C28 RULE REVISION TIEBREAK DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE`
 
 Current status:

@@ -15,6 +15,155 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C29 OOS PROOF FOR LOCKED C28 G05 CANDIDATE`
+
+Current status:
+
+`C29_SOURCE_IMPLEMENTED / C29_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C29_RUNTIME_FAILED / C29_OOS_PROOF_FAILED / C28_ARTIFACT_HASH_LOCK_PASS / C28_G05_CANDIDATE_LOCK_PASS / MONTH_STABILITY_GATE_FAILED / LOOKAHEAD_GATE_FAILED_BY_MISSING_PATH_ROWS / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C28_MUTATION / NOT_PRODUCTION_READY`.
+
+C29 source implementation result:
+
+- `WatchlistBacktestC29OosProofService` exists as an OOS proof service for the locked C28 G05 candidate;
+- `RunBacktestC29OosProofCommand` exists as `watchlist:backtest-c29-oos-proof`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C29 reads the locked C28 all-param artifact and validates the stable C28 artifact hash before OOS replay;
+- C29 rejects missing C28 artifact, hash mismatch, missing candidate profile, unexpected rule mapping, and non-reserved OOS window;
+- C29 uses the fixed C28 G05 rule mapping only and does not reselect profiles from OOS metrics;
+- C29 does not create a catalog, seed command, seeder, repository approval, or factory production mapping;
+- C29 does not mutate PLAN/CONFIRM behavior and keeps `production_ready=0`.
+
+C29 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC29OosProofService.php
+app/Console/Commands/Watchlist/RunBacktestC29OosProofCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC29OosProofServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC29StaticGuardTest.php
+docs/watchlist/audit/WS_C29_OOS_PROOF.md
+docs/watchlist/audit/WS_C29_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C29 locked source:
+
+```text
+INPUT_C28_ARTIFACT=storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json
+EXPECTED_C28_HASH=64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd
+ACTUAL_C28_HASH=64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd
+C28_HASH_MATCH=true
+CANDIDATE_PROFILE_CODE=C28_G05_BUCKET_TIEBREAK_R09_STABLE_G21_NO_SIGNAL_G16_DELAY
+OOS_FROM=2025-05-22
+OOS_TO=2026-05-29
+```
+
+C29 fixed rule mapping:
+
+```text
+candidate_matches_or_beats_c22=RAW_R09
+no_rule_profit_signal_before_fallback=RAW_G21
+next_open_delay_after_close_signal=RAW_G16
+```
+
+C29 operator validation evidence:
+
+```text
+PHPUNIT_C29=PASS: OK (13 tests, 132 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (448 tests, 10900 assertions)
+C29_RUNTIME=FAIL
+RUNTIME_STATUS=C29_OOS_PROOF_FAILED
+RUNTIME_REASON_CODE=C29_OOS_PROOF_FAILED
+ARTIFACT_PATH=storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json
+ARTIFACT_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+PRODUCTION_READY=0
+```
+
+C29 OOS metrics:
+
+```text
+evaluated_picks_count=128
+avg_ret_net=0.004431048028767
+median_ret_net=0.0052763819095477
+p25_ret_net=-0.0075615188321481
+win_rate=0.53125
+month_win_rate_min=0
+month_avg_ret_net_min=-0.040489877530617
+lookahead_violation_count=4
+```
+
+C29 failed gates:
+
+```text
+WS_BT_C29_GATE_FAIL_MONTH_WIN_RATE_PASS=true
+WS_BT_C29_GATE_FAIL_LOOKAHEAD_PASS=true
+```
+
+Bad OOS months with `win_rate=0`:
+
+```text
+2025-06: evaluated_picks_count=10, avg_ret_net=-0.04048987753061734, win_rate=0
+2025-08: evaluated_picks_count=7, avg_ret_net=-0.0064012506567370005, win_rate=0
+2026-03: evaluated_picks_count=4, avg_ret_net=-0.006991928435556013, win_rate=0
+```
+
+Bad-month source branch breakdown:
+
+```text
+2025-06, G21, no_rule_profit_signal_before_fallback: 10 rows
+2025-06, R09: 2 rows
+2025-08, G16, next_open_delay_after_close_signal: 3 rows
+2025-08, G21, no_rule_profit_signal_before_fallback: 4 rows
+2025-08, R09: 2 rows
+2026-03, G16, next_open_delay_after_close_signal: 4 rows
+```
+
+Invalid path rows contributing to the C29 lookahead gate failure:
+
+```text
+2025-06-04 MICE param_id=151 selected_source_code=R09 missing_path_reason_code=WS_BT_C29_D1_TO_D5_RAW_OHLC_PATH_MISSING lookahead_safe=false
+2025-06-04 MICE param_id=152 selected_source_code=R09 missing_path_reason_code=WS_BT_C29_D1_TO_D5_RAW_OHLC_PATH_MISSING lookahead_safe=false
+2025-08-15 BBSI param_id=151 selected_source_code=R09 missing_path_reason_code=WS_BT_C29_D1_TO_D5_RAW_OHLC_PATH_MISSING lookahead_safe=false
+2025-08-15 BBSI param_id=152 selected_source_code=R09 missing_path_reason_code=WS_BT_C29_D1_TO_D5_RAW_OHLC_PATH_MISSING lookahead_safe=false
+```
+
+C29 leak classification note:
+
+```text
+future_path_price_used_for_selection=false
+profile_ret_net_used_for_selection=false
+derived_mfe_mae_used_for_execution=false
+```
+
+The four rows counted by the C29 lookahead gate are currently evidenced as missing raw OHLC D1-D5 path rows, not as proven future-return/profile-return/MFE-MAE selection leakage. C30 must split actual lookahead leak count from missing-path/non-evaluable row count before using this failure for strategy decisions.
+
+C29 boundary status:
+
+```text
+OOS_PROOF_ONLY=true
+NO_RETUNE=true
+NO_PROFILE_RESELECTION=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C28_MUTATION=true
+production_ready=0
+```
+
+C29 final conclusion:
+
+```text
+C29_SOURCE_IMPLEMENTED=true
+C29_PHPUNIT_C29_PASS=true
+C29_FULL_WATCHLIST_PHPUNIT_PASS=true
+C29_OOS_PROOF_RESULT=FAILED
+C29_FINAL_VERDICT=C29_OOS_PROOF_FAILED
+NEXT_STEP=C30_OOS_FAILURE_ATTRIBUTION_AND_DATA_COMPLETENESS_DIAGNOSTIC
+```
+
+C29 does not unlock production readiness. The next step is C30 OOS failure attribution / data-completeness / walk-forward robustness diagnostic. C30 must not tune directly from OOS, must not create a best-of-OOS profile, and must not promote a production catalog.
+
+## PRIOR SESSION - C28 RULE REVISION TIEBREAK DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE
+
+Session:
 `WATCHLIST - C28 RULE REVISION TIEBREAK DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE`
 
 Current status:

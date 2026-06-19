@@ -89,6 +89,73 @@ Tanpa evidence, klaim maksimal hanya `PARTIAL` atau `REVIEW_REQUIRED`.
 - Runtime proof harus berasal dari command/API nyata milik watchlist saat fitur tersebut sudah dibuat.
 - Jika hanya docs yang berubah, validasi minimal adalah file existence check, grep/check anti-overclaim, dan static guard docs bila tersedia.
 
+## C29 OOS Proof Governance Addendum
+
+C29 is governed as an OOS proof session only.
+
+Source artifact lock:
+
+```text
+INPUT_C28_ARTIFACT=storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json
+EXPECTED_C28_HASH=64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd
+ACTUAL_C28_HASH=64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd
+CANDIDATE_PROFILE_CODE=C28_G05_BUCKET_TIEBREAK_R09_STABLE_G21_NO_SIGNAL_G16_DELAY
+```
+
+Validation command:
+
+```text
+watchlist:backtest-c29-oos-proof
+```
+
+Output artifact:
+
+```text
+storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json
+artifact_hash=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+status=C29_OOS_PROOF_FAILED
+```
+
+Final C29 evidence rules:
+
+- C29 may claim OOS failure because the operator ran the runtime command against the locked C28 artifact and produced the C29 artifact.
+- C29 may not claim production readiness because the runtime result is `C29_OOS_PROOF_FAILED` and `production_ready=0`.
+- C29 may not use OOS metrics to retune, reselect a profile, or create a best-of-OOS binding.
+- C29 may not create or promote a production catalog.
+- C29 may not mutate C01-C28, R1/R2, or PLAN/CONFIRM behavior.
+- `production_ready` must remain `false/0` in source, artifact, docs, and final response.
+- The four C29 rows counted by the lookahead gate are documented as missing D1-D5 raw OHLC path rows; they must not be overclaimed as proven future-return selection leakage unless C30 proves it.
+
+Operator validation evidence:
+
+```text
+PHPUNIT_C29=PASS: OK (13 tests, 132 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (448 tests, 10900 assertions)
+C29_RUNTIME=FAIL: status=C29_OOS_PROOF_FAILED
+C29_ARTIFACT_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+```
+
+C30 governance requirement:
+
+```text
+NEXT_STEP=C30_OOS_FAILURE_ATTRIBUTION_AND_DATA_COMPLETENESS_DIAGNOSTIC
+DO_NOT_TUNE_FROM_OOS=true
+DO_NOT_CREATE_BEST_OF_OOS=true
+DO_NOT_PROMOTE_PRODUCTION_CATALOG=true
+SPLIT_ACTUAL_LOOKAHEAD_LEAK_FROM_MISSING_PATH_ROWS=true
+SPLIT_EVALUABLE_FROM_NON_EVALUABLE_ROWS=true
+```
+
+Operator validation rule:
+
+```text
+PHPUNIT_C29_PASS_REQUIRES_ACTUAL_COMMAND_OUTPUT=true
+FULL_WATCHLIST_PASS_REQUIRES_ACTUAL_COMMAND_OUTPUT=true
+C29_RUNTIME_PASS_REQUIRES_ACTUAL_ARTIFACT=true
+C29_RUNTIME_FAIL_REQUIRES_ACTUAL_ARTIFACT=true
+C29_RUNTIME_BLOCKED_REQUIRES_EXPLICIT_DIAGNOSTIC=true
+```
+
 ## Anti-Overclaim Rule
 
 Watchlist tidak boleh diklaim production-ready hanya karena dokumen selesai.
