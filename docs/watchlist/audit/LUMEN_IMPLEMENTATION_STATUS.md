@@ -15,11 +15,30 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C34 BAD MONTH ROBUSTNESS DIAGNOSTIC`
+`WATCHLIST - C36 IS-CONTROLLED REDESIGN CANDIDATE FORMATION`
 
 Current status:
 
-`C34_SOURCE_IMPLEMENTED / C34_COMMAND_REGISTERED / C34_TESTS_ADDED / C34_DOCS_SYNCED / C34_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C34_RUNTIME_COMPLETED / C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_COMPLETED / C33_ARTIFACT_HASH_LOCK_PASS / C32_ARTIFACT_HASH_LOCK_PASS / C33_DATA_PATH_REPLAY_PASS_REQUIRED / BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS / STRATEGY_ROBUSTNESS_REDESIGN_REQUIRED / NO_DB_READ / NO_DB_WRITE / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C33_MUTATION / NOT_PRODUCTION_READY`.
+`C36_SOURCE_IMPLEMENTED / C36_COMMAND_REGISTERED / C36_TESTS_ADDED / C36_DOCS_SYNCED / C36_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C36_RUNTIME_COMPLETED / C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED / C35_ARTIFACT_HASH_LOCK_PASS / C35_G21_AND_G16_WEAKNESS_CONFIRMED / C36_COMBINED_CANDIDATE_FORMED / BEST_IS_CANDIDATE_NOT_PRODUCTION / NO_OOS_TUNING / NO_OOS_PROOF / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PROMOTION / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C35_MUTATION / NOT_PRODUCTION_READY`.
+
+C36 final operator validation status:
+
+```text
+PHPUNIT_C36=PASS
+PHPUNIT_C36_RESULT=OK (15 tests, 203 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (544 tests, 11810 assertions)
+ARTISAN_C36_RUNTIME=COMPLETED
+C36_FINAL_STATUS=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED
+C36_ARTIFACT_PATH=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json
+C36_ARTIFACT_HASH=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
+C36_FILE_SHA1=A5D7E25594238C2743E5DB2E68657AE95BA8B927
+DIAGNOSTIC_CONCLUSION=C36_COMBINED_CANDIDATE_FORMED
+NEXT_STEP=C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK
+PRODUCTION_READY=0
+```
+
+## PRIOR SESSION - C34 BAD MONTH ROBUSTNESS DIAGNOSTIC
 
 C34 source implementation result:
 
@@ -5502,3 +5521,167 @@ oos_data_used_for_tuning=false
 ```
 
 C35 final decision: C35 confirms G21 weakness in IS and G16 delay-damage concentration in IS. C36 must form controlled redesign candidates from IS evidence only. C35 does not perform OOS tuning, OOS proof, best-of-OOS selection, production catalog creation, promotion, or PLAN/CONFIRM mutation.
+
+---
+
+## C36 — IS-Controlled Redesign Candidate Formation
+
+Status implementation: IMPLEMENTED and operator-validated.
+
+Status runtime:
+
+```text
+ARTISAN_C36_RUNTIME=COMPLETED
+C36_FINAL_STATUS=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED
+```
+
+Status PHPUnit:
+
+```text
+PHPUNIT_C36=PASS
+PHPUNIT_C36_RESULT=OK (15 tests, 203 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (544 tests, 11810 assertions)
+```
+
+Files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC36IsControlledRedesignCandidateFormationService.php
+app/Console/Commands/Watchlist/RunBacktestC36IsControlledRedesignCandidateFormationCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC36IsControlledRedesignCandidateFormationServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC36StaticGuardTest.php
+docs/watchlist/audit/WS_C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION.md
+docs/watchlist/audit/WS_C36_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Artifact:
+
+```text
+artifact_path=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json
+artifact_hash=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
+file_sha1=A5D7E25594238C2743E5DB2E68657AE95BA8B927
+```
+
+C35 source artifact lock:
+
+```text
+input_c35_artifact=storage/app/watchlist/backtest/c35-is-robustness-redesign-diagnostic.json
+expected_c35_hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+actual_c35_hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+c35_hash_match=true
+c35_status=C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC_COMPLETED
+c35_diagnostic_conclusion=C35_IS_G21_AND_G16_WEAKNESS_CONFIRMED
+```
+
+IS period:
+
+```text
+from=2023-01-02
+to=2025-05-21
+oos_reserved_from=2025-05-22
+oos_reserved_to=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+Source C35 summary:
+
+```text
+g21_rows=1770
+g16_rows=1320
+g21_weakness_confirmed=true
+g16_weakness_confirmed=true
+source_evidence=storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json
+```
+
+Candidate summary:
+
+```text
+total_candidates=7
+evaluated_candidates=4
+not_evaluable_candidates=3
+candidate_formed=true
+best_is_candidate_code=C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR
+best_is_candidate_is_not_production=true
+```
+
+Baseline summary:
+
+```text
+candidate_code=C36_BASELINE_C35_CURRENT_BRANCH_BEHAVIOR
+candidate_status=EVALUATED
+evaluated_rows=3090
+selected_rows=3090
+avg_ret_net=0.002764085805812881
+median_ret_net=0.007129587789325702
+p25_ret_net=-0.005819495309286108
+win_rate=0.5268608414239482
+month_win_rate_min=0.07894736842105263
+month_avg_ret_net_min=-0.012346978309652848
+bad_month_like_count=9
+loss_concentration=0.47313915857605177
+```
+
+Evaluated candidate result summary:
+
+```text
+C36_G21_NO_PROFIT_BRANCH_SUPPRESSION_GATE selected_rows=1320 avg_ret_net=0.011291069675265837 median_ret_net=0.015366845779139255 p25_ret_net=-0.0005000750112516877 win_rate=0.7196969696969697 bad_month_like_count=5
+C36_G16_KEEP_AS_COMPARATOR_NO_CHANGE selected_rows=1320 avg_ret_net=0.011291069675265837 median_ret_net=0.015366845779139255 p25_ret_net=-0.0005000750112516877 win_rate=0.7196969696969697 bad_month_like_count=5
+C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR selected_rows=1320 avg_ret_net=0.011291069675265837 median_ret_net=0.015366845779139255 p25_ret_net=-0.0005000750112516877 win_rate=0.7196969696969697 bad_month_like_count=5
+```
+
+Candidate comparison versus baseline:
+
+```text
+C36_G21_NO_PROFIT_BRANCH_SUPPRESSION_GATE delta_avg=0.008526983869452956 delta_median=0.008237257989813554 delta_p25=0.00531942029803442 delta_win_rate=0.19283612827302155 delta_bad_month_like_count=-4 delta_loss_concentration=-0.1928361282730215
+C36_G16_KEEP_AS_COMPARATOR_NO_CHANGE delta_avg=0.008526983869452956 delta_median=0.008237257989813554 delta_p25=0.00531942029803442 delta_win_rate=0.19283612827302155 delta_bad_month_like_count=-4 delta_loss_concentration=-0.1928361282730215
+C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR delta_avg=0.008526983869452956 delta_median=0.008237257989813554 delta_p25=0.00531942029803442 delta_win_rate=0.19283612827302155 delta_bad_month_like_count=-4 delta_loss_concentration=-0.1928361282730215
+```
+
+Not-evaluable candidates:
+
+```text
+C36_G21_EARLIER_NO_PROFIT_EXIT_D2_CLOSE_OR_D2_GUARD=C36_BLOCKED_G21_EARLIER_EXIT_PRICE_PATH_UNAVAILABLE
+C36_G21_BAD_MONTH_LIKE_REGIME_GATED_FALLBACK=C36_BLOCKED_REGIME_PRE_TRADE_FEATURE_UNAVAILABLE
+C36_G16_NEXT_OPEN_DELAY_DAMAGE_GATE=C36_BLOCKED_G16_DELAY_DAMAGE_PRE_TRADE_FIELD_UNAVAILABLE
+```
+
+Safety audit:
+
+```text
+candidate_safety_audit=PASS_FOR_ALL_7_CANDIDATES
+return_used_for_selection=false
+future_path_used_for_selection=false
+oos_data_used_for_tuning=false
+production_ready=false
+NO_OOS_TUNING=true
+NO_OOS_PROOF=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C35_MUTATION=true
+```
+
+Diagnostic conclusion:
+
+```text
+C36_COMBINED_CANDIDATE_FORMED
+```
+
+Next step recommendation:
+
+```text
+C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK
+```
+
+Production readiness:
+
+```text
+production_ready=false
+best_is_candidate_is_not_production=true
+OOS_PROOF_UNLOCKED=false
+PRODUCTION_ROLLOUT=false
+```
+
+C36 final decision: C36 successfully forms a controlled combined IS candidate by suppressing the weak G21 no-profit fallback branch and keeping G16 as comparator. This is not a production candidate and does not unlock OOS proof. C37 must validate the candidate with IS validation / anti-overfit checks before any OOS proof is allowed.

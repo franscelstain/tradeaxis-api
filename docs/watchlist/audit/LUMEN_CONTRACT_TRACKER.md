@@ -4965,3 +4965,102 @@ C35_HYP_BRANCH_CONCENTRATION_REQUIRES_IS_REGIME_FILTER=MODERATE_IS_SUPPORT
 ```
 
 C35 contract decision: PASS. C35 completed the IS-only robustness redesign diagnostic, kept OOS context-only, kept production readiness false, and recommends C36 IS-controlled redesign candidate formation.
+
+---
+
+## C36 Contract — IS-Controlled Redesign Candidate Formation
+
+C36 contract scope:
+
+```text
+CONTRACT_CODE=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION
+SOURCE_ARTIFACT=storage/app/watchlist/backtest/c35-is-robustness-redesign-diagnostic.json
+EXPECTED_C35_HASH=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+EXPECTED_C35_STATUS=C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC_COMPLETED
+EXPECTED_C35_CONCLUSION=C35_IS_G21_AND_G16_WEAKNESS_CONFIRMED
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json
+```
+
+Required C36 boundaries:
+
+```text
+IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION=true
+C35_ARTIFACT_HASH_LOCK=true
+C36_CANDIDATE_FROM_C35_HYPOTHESES=true
+NO_OOS_TUNING=true
+NO_OOS_PROOF=true
+NO_BEST_OF_OOS=true
+NO_PROFILE_RESELECTION_FROM_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C35_MUTATION=true
+CANDIDATE_IS_NOT_PRODUCTION=true
+production_ready=false
+oos_data_used_for_tuning=false
+return_used_for_selection=false
+future_path_used_for_selection=false
+```
+
+Candidate contract result:
+
+```text
+C36_BASELINE_C35_CURRENT_BRANCH_BEHAVIOR=EVALUATED
+C36_G21_EARLIER_NO_PROFIT_EXIT_D2_CLOSE_OR_D2_GUARD=NOT_EVALUABLE:C36_BLOCKED_G21_EARLIER_EXIT_PRICE_PATH_UNAVAILABLE
+C36_G21_NO_PROFIT_BRANCH_SUPPRESSION_GATE=EVALUATED:CANDIDATE_FORMED
+C36_G21_BAD_MONTH_LIKE_REGIME_GATED_FALLBACK=NOT_EVALUABLE:C36_BLOCKED_REGIME_PRE_TRADE_FEATURE_UNAVAILABLE
+C36_G16_NEXT_OPEN_DELAY_DAMAGE_GATE=NOT_EVALUABLE:C36_BLOCKED_G16_DELAY_DAMAGE_PRE_TRADE_FIELD_UNAVAILABLE
+C36_G16_KEEP_AS_COMPARATOR_NO_CHANGE=EVALUATED:CANDIDATE_FORMED
+C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR=EVALUATED:CANDIDATE_FORMED:BEST_IS_CANDIDATE_NOT_PRODUCTION
+```
+
+C36 output contract result:
+
+```text
+baseline_summary=present
+candidate_results=present
+candidate_comparison_table=present
+candidate_safety_audit=present
+not_evaluable_reasons=present
+is_bad_month_like_candidate_effect=present
+ticker_failure_cluster_after_candidate=present
+redesign_decision_notes=present
+```
+
+C36 validation status:
+
+```text
+C36_IMPLEMENTATION_STATUS=IMPLEMENTED
+PHPUNIT_C36=PASS:OK (15 tests, 203 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS:OK (544 tests, 11810 assertions)
+ARTISAN_C36_RUNTIME=COMPLETED
+C36_FINAL_STATUS=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED
+C36_ARTIFACT_HASH=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
+C36_FILE_SHA1=A5D7E25594238C2743E5DB2E68657AE95BA8B927
+```
+
+C35 lock result:
+
+```text
+expected_c35_hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+actual_c35_hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+c35_hash_match=true
+c35_status=C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC_COMPLETED
+c35_diagnostic_conclusion=C35_IS_G21_AND_G16_WEAKNESS_CONFIRMED
+```
+
+C36 candidate decision:
+
+```text
+total_candidates=7
+evaluated_candidates=4
+not_evaluable_candidates=3
+candidate_formed=true
+best_is_candidate_code=C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR
+best_is_candidate_is_not_production=true
+diagnostic_conclusion=C36_COMBINED_CANDIDATE_FORMED
+next_step_recommendation=C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK
+production_ready=false
+```
+
+C36 contract decision: PASS. C36 completed IS-controlled redesign candidate formation from C35 hypotheses and C28 IS evidence only. C36 forms a diagnostic combined IS candidate, but the candidate is not production-ready and does not unlock OOS proof. C37 IS validation / anti-overfit check is required before any OOS proof.

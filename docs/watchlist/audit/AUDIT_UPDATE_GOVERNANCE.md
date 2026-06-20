@@ -901,3 +901,114 @@ OOS_PROOF_UNLOCKED=false
 ```
 
 C35 confirms the robustness weakness is visible in IS evidence. G21 is the primary C36 redesign target, G16 is the secondary controlled redesign target, and bad-month-like regime filtering may be tested only from IS evidence. C36 must not run OOS proof until an IS-controlled candidate is valid.
+
+---
+
+## C36 Governance — Source Artifact Lock and Candidate Formation
+
+C36 source artifact rule:
+
+```text
+source_artifact=storage/app/watchlist/backtest/c35-is-robustness-redesign-diagnostic.json
+expected_c35_hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+actual_c35_hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+c35_hash_match=true
+expected_c35_file_sha1=733BE61DF96DBA0ECA450ECCF30A8C0CE8329A4B
+expected_c35_status=C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC_COMPLETED
+expected_c35_diagnostic_conclusion=C35_IS_G21_AND_G16_WEAKNESS_CONFIRMED
+```
+
+C36 validation command rule:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC36"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c36-is-controlled-redesign-candidate-formation --c35-artifact=storage/app/watchlist/backtest/c35-is-robustness-redesign-diagnostic.json --expected-c35-hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1 --from=2023-01-02 --to=2025-05-21 --output=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json --progress
+```
+
+C36 final validation result:
+
+```text
+PHPUNIT_C36=PASS
+PHPUNIT_C36_RESULT=OK (15 tests, 203 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (544 tests, 11810 assertions)
+ARTISAN_C36_RUNTIME=COMPLETED
+C36_FINAL_STATUS=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED
+```
+
+C36 output artifact rule:
+
+```text
+output_artifact=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json
+artifact_hash=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
+file_sha1=A5D7E25594238C2743E5DB2E68657AE95BA8B927
+production_ready=false
+```
+
+C36 evidence rules:
+
+```text
+Use only IS rows linked by C35.
+Candidate must come from C35 IS hypotheses.
+Return may be used only as post-selection evaluation evidence.
+Future path, MFE/MAE, realized return, OOS return, and OOS bad months must not select candidates.
+Missing pre-trade fields must produce NOT_EVALUABLE instead of invented rules.
+```
+
+C36 operator validation rule:
+
+```text
+Operator validation completed.
+Runtime/test proof is recorded with exact PHPUnit results, runtime status, artifact hash, and file SHA1.
+No PASS may be claimed for future reruns unless rerun output is explicitly available.
+```
+
+C36 IS-only candidate formation rule:
+
+```text
+IS_FROM=2023-01-02
+IS_TO=2025-05-21
+OOS_RESERVED_FROM=2025-05-22
+OOS_RESERVED_TO=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+C36 no-OOS-proof rule:
+
+```text
+NO_OOS_PROOF=true
+NO_OOS_TUNING=true
+NO_BEST_OF_OOS=true
+NO_PROFILE_RESELECTION_FROM_OOS=true
+OOS_PROOF_UNLOCKED=false
+```
+
+C36 no-production-readiness rule:
+
+```text
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+CANDIDATE_IS_NOT_PRODUCTION=true
+best_is_candidate_is_not_production=true
+production_ready=false
+```
+
+C36 final candidate decision:
+
+```text
+diagnostic_conclusion=C36_COMBINED_CANDIDATE_FORMED
+best_is_candidate_code=C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR
+candidate_formed=true
+production_ready=false
+```
+
+C36 next-step rule:
+
+```text
+NEXT_STEP=C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK
+NO_OOS_PROOF_BEFORE_C37_PASS=true
+```
+
+C36 governance decision: C36 is complete and operator-validated as IS-controlled candidate formation only. C36 does not make a production-ready decision and does not unlock OOS proof. C37 must run IS validation / anti-overfit checks on the C36 combined candidate before any OOS proof.

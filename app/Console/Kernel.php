@@ -60,6 +60,7 @@ use App\Console\Commands\Watchlist\RunBacktestC32DataPathAndBadMonthDiagnosticCo
 use App\Console\Commands\Watchlist\RunBacktestC33DataPathReplayProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestC34BadMonthRobustnessDiagnosticCommand;
 use App\Console\Commands\Watchlist\RunBacktestC35IsRobustnessRedesignDiagnosticCommand;
+use App\Console\Commands\Watchlist\RunBacktestC36IsControlledRedesignCandidateFormationCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -107,6 +108,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC33DataPathReplayProofCommand::class,
         RunBacktestC34BadMonthRobustnessDiagnosticCommand::class,
         RunBacktestC35IsRobustnessRedesignDiagnosticCommand::class,
+        RunBacktestC36IsControlledRedesignCandidateFormationCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
