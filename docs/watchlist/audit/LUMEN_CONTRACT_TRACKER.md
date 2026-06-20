@@ -14,6 +14,91 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C31 CONTROLLED GATE RECLASSIFICATION`
+
+Current status:
+
+`C31_SOURCE_IMPLEMENTED / C31_COMMAND_REGISTERED / C31_TESTS_ADDED / C31_DOCS_SYNCED / C31_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C31_RUNTIME_COMPLETED / C31_CONTROLLED_GATE_RECLASSIFICATION_COMPLETED / C29_ARTIFACT_HASH_LOCK_PASS / C30_ARTIFACT_HASH_LOCK_PASS / CONTROLLED_GATE_RECLASSIFICATION_ONLY / ACTUAL_LOOKAHEAD_GATE_SEPARATED_FROM_DATA_COMPLETENESS_GATE / MISSING_PATH_NOT_LOOKAHEAD_LEAK_CONFIRMED / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C30_MUTATION / NOT_PRODUCTION_READY`.
+
+C31 current contract status:
+
+- `WL-CONTRACT-C31-001`: IMPLEMENTED. C31 is controlled gate reclassification only and does not retune, reselect, promote, or create a production catalog.
+- `WL-CONTRACT-C31-002`: IMPLEMENTED. C31 locks `storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json` by expected stable hash `c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9`.
+- `WL-CONTRACT-C31-003`: IMPLEMENTED. C31 locks `storage/app/watchlist/backtest/c30-oos-failure-attribution.json` by expected stable hash `667b639951d6b566cc9b0fa6cf7dc278db92a8f0`.
+- `WL-CONTRACT-C31-004`: IMPLEMENTED. C31 blocks if C29/C30 artifacts are missing, hash-mismatched, status-mismatched, or if C30 verdict is unknown.
+- `WL-CONTRACT-C31-005`: IMPLEMENTED. C31 separates actual lookahead gate from data completeness gate.
+- `WL-CONTRACT-C31-006`: IMPLEMENTED. C31 keeps missing D1-D5 raw OHLC path rows under data completeness and does not overclaim them as actual lookahead leaks.
+- `WL-CONTRACT-C31-007`: IMPLEMENTED. C31 outputs reported lookahead, actual lookahead, selection leak, data completeness, month win-rate, clean month win-rate, and overall controlled OOS gates.
+- `WL-CONTRACT-C31-008`: PASS. Operator validation executed: PHPUnit C31 `OK (14 tests, 126 assertions)`, full Watchlist PHPUnit `OK (478 tests, 11130 assertions)`, and C31 runtime completed with stable artifact hash `4c6203621ed53ade368328a3aad567cbfc12f3a0`.
+- `WL-CONTRACT-C31-009`: NOT_READY. `production_ready` remains false and C31 does not unlock production.
+
+C31 contract markers:
+
+```text
+CONTROLLED_GATE_RECLASSIFICATION_ONLY=true
+INPUT_C29_ARTIFACT=storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json
+EXPECTED_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+EXPECTED_C29_STATUS=C29_OOS_PROOF_FAILED
+INPUT_C30_ARTIFACT=storage/app/watchlist/backtest/c30-oos-failure-attribution.json
+EXPECTED_C30_HASH=667b639951d6b566cc9b0fa6cf7dc278db92a8f0
+EXPECTED_C30_STATUS=C30_ATTRIBUTION_COMPLETED
+NO_RETUNE=true
+NO_PROFILE_RESELECTION=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C30_MUTATION=true
+production_ready=0
+```
+
+C31 separated gate contract:
+
+```text
+reported_lookahead_gate=FAIL if reported_lookahead_violation_count > 0
+actual_lookahead_gate=PASS if actual_lookahead_violation_count == 0
+selection_leak_gate=PASS if selection_leak_count == 0
+data_completeness_gate=FAIL if missing_path_count > 0 or non_evaluable_pick_count > 0
+month_win_rate_gate=FAIL if source month_win_rate_min == 0
+clean_month_win_rate_gate=FAIL if clean_month_win_rate_min == 0
+overall_controlled_oos_gate=FAIL if any required controlled gate fails
+```
+
+C31 validation status:
+
+```text
+PHPUNIT_C31=PASS
+PHPUNIT_C31_RESULT=OK (14 tests, 126 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (478 tests, 11130 assertions)
+C31_RUNTIME=COMPLETED
+C31_FINAL_STATUS=C31_CONTROLLED_GATE_RECLASSIFICATION_COMPLETED
+C31_ARTIFACT_HASH=4c6203621ed53ade368328a3aad567cbfc12f3a0
+C31_FILE_SHA1=B9EC57659113EFED3B99E9DC22235E44398A5DA2
+reported_lookahead_gate=FAIL
+actual_lookahead_gate=PASS
+selection_leak_gate=PASS
+data_completeness_gate=FAIL
+month_win_rate_gate=FAIL
+clean_month_win_rate_gate=FAIL
+overall_controlled_oos_gate=FAIL
+```
+
+Contract decision:
+
+```text
+C31_DOES_NOT_UNLOCK_PRODUCTION=true
+RECLASSIFICATION_CONCLUSION=C31_RECLASSIFICATION_CONFIRMED_MISSING_PATH_NOT_LOOKAHEAD_LEAK
+CONTROLLED_PROOF_STATUS=C31_CONTROLLED_OOS_PROOF_FAILED_DATA_COMPLETENESS_AND_ROBUSTNESS
+NEXT_STEP=C32_SPLIT_DATA_PATH_REMEDIATION_PROOF_AND_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC
+DO_NOT_TUNE_FROM_OOS=true
+DO_NOT_CREATE_BEST_OF_OOS=true
+DO_NOT_CREATE_PRODUCTION_CATALOG=true
+```
+
+## PRIOR SESSION - C30 OOS FAILURE ATTRIBUTION & DATA COMPLETENESS DIAGNOSTIC
+
+Session:
 `WATCHLIST - C30 OOS FAILURE ATTRIBUTION & DATA COMPLETENESS DIAGNOSTIC`
 
 Current status:

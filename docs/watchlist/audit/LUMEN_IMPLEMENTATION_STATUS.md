@@ -15,6 +15,82 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C31 CONTROLLED GATE RECLASSIFICATION`
+
+Current status:
+
+`C31_SOURCE_IMPLEMENTED / C31_COMMAND_REGISTERED / C31_TESTS_ADDED / C31_DOCS_SYNCED / C31_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C31_RUNTIME_COMPLETED / C31_CONTROLLED_GATE_RECLASSIFICATION_COMPLETED / C29_ARTIFACT_HASH_LOCK_PASS / C30_ARTIFACT_HASH_LOCK_PASS / ACTUAL_LOOKAHEAD_GATE_PASS / SELECTION_LEAK_GATE_PASS / DATA_COMPLETENESS_GATE_FAIL / MONTH_WIN_RATE_GATE_FAIL / CLEAN_MONTH_WIN_RATE_GATE_FAIL / CONTROLLED_OOS_GATE_FAIL / MISSING_PATH_NOT_LOOKAHEAD_LEAK_CONFIRMED / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C30_MUTATION / NOT_PRODUCTION_READY`.
+
+C31 source implementation result:
+
+- `WatchlistBacktestC31ControlledGateReclassificationService` exists as a controlled gate reclassification service for locked C29 and C30 artifacts;
+- `RunBacktestC31ControlledGateReclassificationCommand` exists as `watchlist:backtest-c31-controlled-gate-reclassification`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C31 reads `storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json` and validates expected stable hash `c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9`;
+- C31 reads `storage/app/watchlist/backtest/c30-oos-failure-attribution.json` and validates expected stable hash `667b639951d6b566cc9b0fa6cf7dc278db92a8f0`;
+- C31 blocks on missing C29/C30 artifact, hash mismatch, unexpected C29/C30 status, or unexpected C30 verdict;
+- C31 separates reported lookahead, actual lookahead, selection leak, data completeness, source month win-rate, clean month win-rate, and overall controlled OOS gates;
+- C31 does not retune, reselect profiles, create best-of-OOS, create a production catalog, promote a candidate, or mutate PLAN/CONFIRM behavior;
+- `production_ready` remains `false/0`.
+
+C31 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC31ControlledGateReclassificationService.php
+app/Console/Commands/Watchlist/RunBacktestC31ControlledGateReclassificationCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC31ControlledGateReclassificationServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC31StaticGuardTest.php
+docs/watchlist/audit/WS_C31_CONTROLLED_GATE_RECLASSIFICATION.md
+docs/watchlist/audit/WS_C31_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C31 final operator validation status:
+
+```text
+PHPUNIT_C31=PASS
+PHPUNIT_C31_RESULT=OK (14 tests, 126 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (478 tests, 11130 assertions)
+C31_RUNTIME=COMPLETED
+C31_FINAL_STATUS=C31_CONTROLLED_GATE_RECLASSIFICATION_COMPLETED
+C31_ARTIFACT_PATH=storage/app/watchlist/backtest/c31-controlled-gate-reclassification.json
+C31_ARTIFACT_HASH=4c6203621ed53ade368328a3aad567cbfc12f3a0
+C31_FILE_SHA1=B9EC57659113EFED3B99E9DC22235E44398A5DA2
+EXPECTED_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+ACTUAL_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+C29_HASH_MATCH=1
+C29_STATUS=C29_OOS_PROOF_FAILED
+EXPECTED_C30_HASH=667b639951d6b566cc9b0fa6cf7dc278db92a8f0
+ACTUAL_C30_HASH=667b639951d6b566cc9b0fa6cf7dc278db92a8f0
+C30_HASH_MATCH=1
+C30_STATUS=C30_ATTRIBUTION_COMPLETED
+C30_ATTRIBUTION_VERDICT=MIXED_DATA_AND_STRATEGY_FAILURE
+PRODUCTION_READY=0
+```
+
+C31 separated gate summary:
+
+```text
+reported_lookahead_gate=FAIL
+actual_lookahead_gate=PASS
+selection_leak_gate=PASS
+data_completeness_gate=FAIL
+month_win_rate_gate=FAIL
+clean_month_win_rate_gate=FAIL
+overall_controlled_oos_gate=FAIL
+```
+
+C31 final conclusion:
+
+```text
+RECLASSIFICATION_CONCLUSION=C31_RECLASSIFICATION_CONFIRMED_MISSING_PATH_NOT_LOOKAHEAD_LEAK
+CONTROLLED_PROOF_STATUS=C31_CONTROLLED_OOS_PROOF_FAILED_DATA_COMPLETENESS_AND_ROBUSTNESS
+NEXT_STEP=C32_SPLIT_DATA_PATH_REMEDIATION_PROOF_AND_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC
+```
+
+## PRIOR SESSION - C30 OOS FAILURE ATTRIBUTION & DATA COMPLETENESS DIAGNOSTIC
+
+Session:
 `WATCHLIST - C30 OOS FAILURE ATTRIBUTION & DATA COMPLETENESS DIAGNOSTIC`
 
 Current status:

@@ -55,6 +55,7 @@ use App\Console\Commands\Watchlist\RunBacktestC27CatalogCandidateRawOhlcValidate
 use App\Console\Commands\Watchlist\RunBacktestC28RuleRevisionTiebreakDiagnoseCommand;
 use App\Console\Commands\Watchlist\RunBacktestC29OosProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestC30OosFailureAttributionCommand;
+use App\Console\Commands\Watchlist\RunBacktestC31ControlledGateReclassificationCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -97,6 +98,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC28RuleRevisionTiebreakDiagnoseCommand::class,
         RunBacktestC29OosProofCommand::class,
         RunBacktestC30OosFailureAttributionCommand::class,
+        RunBacktestC31ControlledGateReclassificationCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
