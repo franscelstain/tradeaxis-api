@@ -14,6 +14,262 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C34 BAD MONTH ROBUSTNESS DIAGNOSTIC`
+
+Current status:
+
+`C34_SOURCE_IMPLEMENTED / C34_COMMAND_REGISTERED / C34_TESTS_ADDED / C34_DOCS_SYNCED / C34_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C34_RUNTIME_COMPLETED / C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_COMPLETED / C33_ARTIFACT_HASH_LOCK_PASS / C32_ARTIFACT_HASH_LOCK_PASS / BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_ONLY / FILE_ARTIFACT_DIAGNOSTIC_ONLY / BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS / STRATEGY_ROBUSTNESS_REDESIGN_REQUIRED / NO_DB_READ / NO_DB_WRITE / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C33_MUTATION / NOT_PRODUCTION_READY`.
+
+C34 current contract status:
+
+- `WL-CONTRACT-C34-001`: IMPLEMENTED. C34 is bad-month robustness diagnostic only and does not retune, reselect, promote, or create a production catalog.
+- `WL-CONTRACT-C34-002`: IMPLEMENTED. C34 locks `storage/app/watchlist/backtest/c33-data-path-replay-proof.json` by expected stable hash `84bb77871515643b203de644fd34b4c748d1b2af`.
+- `WL-CONTRACT-C34-003`: IMPLEMENTED. C34 validates the C32 artifact linked by C33 by expected stable hash `4bd92dfcf70dd0b02398d3ecf62d08c0356292ab`.
+- `WL-CONTRACT-C34-004`: IMPLEMENTED. C34 blocks if C33 is missing, hash-mismatched, incomplete, not data-path PASS, or if C32 bad-month scope is missing/mismatched.
+- `WL-CONTRACT-C34-005`: PASS. C34 confirms bad-month robustness failure remains after C33 data-path PASS: `2025-06`, `2025-08`, and `2026-03`.
+- `WL-CONTRACT-C34-006`: IMPLEMENTED. C34 classifies branch robustness scope as `G16` concentration review, `G21` robustness failure, and `R09` data-path-cleared review only.
+- `WL-CONTRACT-C34-007`: PASS. Operator validation executed: PHPUnit C34 `OK (13 tests, 119 assertions)`, full Watchlist PHPUnit `OK (518 tests, 11501 assertions)`, and C34 runtime completed with stable artifact hash `1dcf355095334796c2f4558823a1882e71e3ed30`.
+- `WL-CONTRACT-C34-008`: NOT_READY. `production_ready` remains false and C34 does not unlock full controlled OOS pass or production.
+
+C34 contract markers:
+
+```text
+BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_ONLY=true
+FILE_ARTIFACT_DIAGNOSTIC_ONLY=true
+INPUT_C33_ARTIFACT=storage/app/watchlist/backtest/c33-data-path-replay-proof.json
+EXPECTED_C33_HASH=84bb77871515643b203de644fd34b4c748d1b2af
+EXPECTED_C33_STATUS=C33_DATA_PATH_REPLAY_PROOF_COMPLETED
+EXPECTED_C33_CONCLUSION=C33_DATA_PATH_REPLAY_CONFIRMED_D1_TO_D5_RAW_OHLC_AVAILABLE
+EXPECTED_C33_REPLAY_STATUS=C33_DATA_PATH_REPLAY_PASS
+EXPECTED_C32_HASH=4bd92dfcf70dd0b02398d3ecf62d08c0356292ab
+EXPECTED_C32_BAD_MONTH_STATUS=C32_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_REQUIRED
+NO_MARKET_DATA_REPLAY=true
+NO_DB_READ=true
+NO_DB_WRITE=true
+NO_RETUNE=true
+NO_PROFILE_RESELECTION=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C33_MUTATION=true
+production_ready=0
+```
+
+C34 robustness diagnostic contract:
+
+```text
+bad_month_robustness_status=C34_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS
+bad_month_failure_count=3
+data_path_cleared_bad_month_count=2
+branch_robustness_flag_count=2
+aggregate_branch_weakness_count=1
+bad_months_requiring_review=2025-06,2025-08,2026-03
+branches_requiring_review=G16,G21
+strategy_robustness_redesign_required=true
+oos_tuning_allowed=false
+profile_reselection_allowed=false
+production_promotion_allowed=false
+production_ready=false
+```
+
+C34 validation status:
+
+```text
+PHPUNIT_C34=PASS
+PHPUNIT_C34_RESULT=OK (13 tests, 119 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (518 tests, 11501 assertions)
+C34_RUNTIME=COMPLETED
+C34_FINAL_STATUS=C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_COMPLETED
+C34_ARTIFACT_HASH=1dcf355095334796c2f4558823a1882e71e3ed30
+C34_FILE_SHA1=71897A94B665CAF2C5A632915FE5B48AE99726A2
+BAD_MONTH_ROBUSTNESS_STATUS=C34_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS
+STRATEGY_ROBUSTNESS_REDESIGN_REQUIRED=1
+DIAGNOSTIC_CONCLUSION=C34_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS
+```
+
+Contract decision:
+
+```text
+C34_DOES_NOT_UNLOCK_PRODUCTION=true
+NEXT_STEP=C35_IS_ONLY_ROBUSTNESS_REDESIGN_DIAGNOSTIC_NO_OOS_TUNING
+DO_NOT_TUNE_FROM_OOS=true
+DO_NOT_CREATE_BEST_OF_OOS=true
+DO_NOT_CREATE_PRODUCTION_CATALOG=true
+```
+
+## PRIOR SESSION - C33 DATA PATH REPLAY PROOF
+
+Session:
+`WATCHLIST - C33 DATA PATH REPLAY PROOF`
+
+Current status:
+
+`C33_SOURCE_IMPLEMENTED / C33_COMMAND_REGISTERED / C33_TESTS_ADDED / C33_DOCS_SYNCED / C33_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C33_RUNTIME_COMPLETED / C33_DATA_PATH_REPLAY_PROOF_COMPLETED / C32_ARTIFACT_HASH_LOCK_PASS / DATA_PATH_REPLAY_PASS / DATA_COMPLETENESS_GATE_AFTER_REPLAY_PASS / DATA_PATH_REPLAY_PROOF_ONLY / READ_ONLY_CURRENT_EOD_BARS_REPLAY_PROOF / NO_SOURCE_ACQUISITION / NO_BAR_INGEST / NO_EOD_BARS_WRITE / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C32_MUTATION / NOT_PRODUCTION_READY`.
+
+C33 current contract status:
+
+- `WL-CONTRACT-C33-001`: IMPLEMENTED. C33 is data-path replay proof only and does not retune, reselect, promote, or create a production catalog.
+- `WL-CONTRACT-C33-002`: IMPLEMENTED. C33 locks `storage/app/watchlist/backtest/c32-data-path-and-bad-month-diagnostic.json` by expected stable hash `4bd92dfcf70dd0b02398d3ecf62d08c0356292ab`.
+- `WL-CONTRACT-C33-003`: IMPLEMENTED. C33 blocks if C32 is missing, hash-mismatched, status-mismatched, conclusion-mismatched, data-path-status-mismatched, or has no replay scope.
+- `WL-CONTRACT-C33-004`: PASS. C33 replays the exact C32 missing-path scope and proves all four D1-D5 raw OHLC paths are available and canonical-readable.
+- `WL-CONTRACT-C33-005`: IMPLEMENTED. C33 reports read-only market-data boundaries: no source acquisition, no bar ingest, no source/master writes, and no `eod_bars` writes.
+- `WL-CONTRACT-C33-006`: IMPLEMENTED. C33 keeps actual lookahead fix and selection leak fix as not required, and keeps OOS tuning/profile reselection/production promotion forbidden.
+- `WL-CONTRACT-C33-007`: PASS. Operator validation executed: PHPUnit C33 `OK (15 tests, 145 assertions)`, full Watchlist PHPUnit `OK (505 tests, 11382 assertions)`, and C33 runtime completed with stable artifact hash `84bb77871515643b203de644fd34b4c748d1b2af`.
+- `WL-CONTRACT-C33-008`: NOT_READY. `production_ready` remains false and C33 does not unlock full controlled OOS pass or production.
+
+C33 contract markers:
+
+```text
+DATA_PATH_REPLAY_PROOF_ONLY=true
+READ_ONLY_CURRENT_EOD_BARS_REPLAY_PROOF=true
+INPUT_C32_ARTIFACT=storage/app/watchlist/backtest/c32-data-path-and-bad-month-diagnostic.json
+EXPECTED_C32_HASH=4bd92dfcf70dd0b02398d3ecf62d08c0356292ab
+EXPECTED_C32_STATUS=C32_DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_COMPLETED
+EXPECTED_C32_CONCLUSION=C32_SPLIT_CONFIRMED_DATA_PATH_REMEDIATION_AND_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_REQUIRED
+EXPECTED_C32_DATA_PATH_STATUS=C32_DATA_PATH_REMEDIATION_REQUIRED
+NO_SOURCE_ACQUISITION=true
+NO_BAR_INGEST=true
+NO_SOURCE_MASTER_WRITE=true
+NO_EOD_BARS_WRITE=true
+NO_RETUNE=true
+NO_PROFILE_RESELECTION=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C32_MUTATION=true
+production_ready=0
+```
+
+C33 replay proof contract:
+
+```text
+required_path_scope=D1_TO_D5_RAW_OHLC_PATH
+replay_row_count=4
+replay_pass_count=4
+replay_fail_count=0
+replay_blocked_count=0
+missing_path_date_count=0
+invalid_path_date_count=0
+data_path_replay_status=C33_DATA_PATH_REPLAY_PASS
+data_completeness_gate_after_replay=PASS
+actual_lookahead_fix_required=false
+selection_leak_fix_required=false
+oos_tuning_allowed=false
+profile_reselection_allowed=false
+production_promotion_allowed=false
+production_ready=false
+```
+
+C33 validation status:
+
+```text
+PHPUNIT_C33=PASS
+PHPUNIT_C33_RESULT=OK (15 tests, 145 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (505 tests, 11382 assertions)
+C33_RUNTIME=COMPLETED
+C33_FINAL_STATUS=C33_DATA_PATH_REPLAY_PROOF_COMPLETED
+C33_ARTIFACT_HASH=84bb77871515643b203de644fd34b4c748d1b2af
+C33_FILE_SHA1=1B0558C823732649DC7487154E5045BE86A160CC
+DATA_PATH_REPLAY_STATUS=C33_DATA_PATH_REPLAY_PASS
+DATA_COMPLETENESS_GATE_AFTER_REPLAY=PASS
+DIAGNOSTIC_CONCLUSION=C33_DATA_PATH_REPLAY_CONFIRMED_D1_TO_D5_RAW_OHLC_AVAILABLE
+```
+
+Contract decision:
+
+```text
+C33_DOES_NOT_UNLOCK_PRODUCTION=true
+NEXT_STEP=C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_AFTER_C33_NO_OOS_TUNING
+DO_NOT_TUNE_FROM_OOS=true
+DO_NOT_CREATE_BEST_OF_OOS=true
+DO_NOT_CREATE_PRODUCTION_CATALOG=true
+```
+
+## PRIOR SESSION - C32 DATA PATH AND BAD MONTH ROBUSTNESS DIAGNOSTIC
+
+Session:
+`WATCHLIST - C32 DATA PATH AND BAD MONTH ROBUSTNESS DIAGNOSTIC`
+
+Current status:
+
+`C32_SOURCE_IMPLEMENTED / C32_COMMAND_REGISTERED / C32_TESTS_ADDED / C32_DOCS_SYNCED / C32_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C32_RUNTIME_COMPLETED / C32_DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_COMPLETED / C31_ARTIFACT_HASH_LOCK_PASS / DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_ONLY / DATA_PATH_REMEDIATION_REQUIRED / BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_REQUIRED / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C31_MUTATION / NOT_PRODUCTION_READY`.
+
+C32 current contract status:
+
+- `WL-CONTRACT-C32-001`: IMPLEMENTED. C32 is data-path and bad-month diagnostic only and does not retune, reselect, promote, or create a production catalog.
+- `WL-CONTRACT-C32-002`: IMPLEMENTED. C32 locks `storage/app/watchlist/backtest/c31-controlled-gate-reclassification.json` by expected stable hash `4c6203621ed53ade368328a3aad567cbfc12f3a0`.
+- `WL-CONTRACT-C32-003`: IMPLEMENTED. C32 blocks if C31 is missing, hash-mismatched, status-mismatched, conclusion-mismatched, or proof-status-mismatched.
+- `WL-CONTRACT-C32-004`: IMPLEMENTED. C32 creates a concrete data-path remediation scope for the four missing D1-D5 raw OHLC rows.
+- `WL-CONTRACT-C32-005`: IMPLEMENTED. C32 separates data-path affected branch/month evidence from clean bad-month robustness evidence.
+- `WL-CONTRACT-C32-006`: IMPLEMENTED. C32 marks actual lookahead fix and selection leak fix as not required from the C31-controlled evidence.
+- `WL-CONTRACT-C32-007`: PASS. Operator validation executed: PHPUnit C32 `OK (12 tests, 107 assertions)`, full Watchlist PHPUnit `OK (490 tests, 11237 assertions)`, and C32 runtime completed with stable artifact hash `4bd92dfcf70dd0b02398d3ecf62d08c0356292ab`.
+- `WL-CONTRACT-C32-008`: NOT_READY. `production_ready` remains false and C32 does not unlock production.
+
+C32 contract markers:
+
+```text
+DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_ONLY=true
+INPUT_C31_ARTIFACT=storage/app/watchlist/backtest/c31-controlled-gate-reclassification.json
+EXPECTED_C31_HASH=4c6203621ed53ade368328a3aad567cbfc12f3a0
+EXPECTED_C31_STATUS=C31_CONTROLLED_GATE_RECLASSIFICATION_COMPLETED
+EXPECTED_C31_CONCLUSION=C31_RECLASSIFICATION_CONFIRMED_MISSING_PATH_NOT_LOOKAHEAD_LEAK
+EXPECTED_C31_PROOF_STATUS=C31_CONTROLLED_OOS_PROOF_FAILED_DATA_COMPLETENESS_AND_ROBUSTNESS
+NO_RETUNE=true
+NO_PROFILE_RESELECTION=true
+NO_BEST_OF_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C31_MUTATION=true
+production_ready=0
+```
+
+C32 diagnostic split contract:
+
+```text
+actual_lookahead_fix_required=false
+selection_leak_fix_required=false
+data_path_remediation_required=true
+bad_month_robustness_diagnostic_required=true
+oos_tuning_allowed=false
+profile_reselection_allowed=false
+production_promotion_allowed=false
+production_ready=false
+```
+
+C32 validation status:
+
+```text
+PHPUNIT_C32=PASS
+PHPUNIT_C32_RESULT=OK (12 tests, 107 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (490 tests, 11237 assertions)
+C32_RUNTIME=COMPLETED
+C32_FINAL_STATUS=C32_DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_COMPLETED
+C32_ARTIFACT_HASH=4bd92dfcf70dd0b02398d3ecf62d08c0356292ab
+C32_FILE_SHA1=49F4A138BEF5B18841119F255F39ACDC2F97445B
+DATA_PATH_REMEDIATION_STATUS=C32_DATA_PATH_REMEDIATION_REQUIRED
+BAD_MONTH_ROBUSTNESS_STATUS=C32_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_REQUIRED
+DIAGNOSTIC_CONCLUSION=C32_SPLIT_CONFIRMED_DATA_PATH_REMEDIATION_AND_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_REQUIRED
+```
+
+Contract decision:
+
+```text
+C32_DOES_NOT_UNLOCK_PRODUCTION=true
+NEXT_STEP=C33_DATA_PATH_REPLAY_PROOF_THEN_C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_NO_OOS_TUNING
+DO_NOT_TUNE_FROM_OOS=true
+DO_NOT_CREATE_BEST_OF_OOS=true
+DO_NOT_CREATE_PRODUCTION_CATALOG=true
+```
+
+## PRIOR SESSION - C31 CONTROLLED GATE RECLASSIFICATION
+
+Session:
 `WATCHLIST - C31 CONTROLLED GATE RECLASSIFICATION`
 
 Current status:
@@ -4605,3 +4861,107 @@ DO_NOT_CREATE_C19_CATALOG=true
 DO_NOT_RUN_C19_OOS=true
 DO_NOT_SET_PRODUCTION_READY=true
 ```
+
+---
+
+## C35 Contract — IS-Only Robustness Redesign Diagnostic
+
+C35 is an IS-only robustness redesign diagnostic after C34. It locks the C34 source artifact before reading IS evidence.
+
+Contract locks:
+
+```text
+input_c34_artifact=storage/app/watchlist/backtest/c34-bad-month-robustness-diagnostic.json
+expected_c34_hash=1dcf355095334796c2f4558823a1882e71e3ed30
+actual_c34_hash=1dcf355095334796c2f4558823a1882e71e3ed30
+c34_hash_match=true
+expected_c34_status=C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_COMPLETED
+actual_c34_status=C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_COMPLETED
+expected_c34_conclusion=C34_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS
+actual_c34_conclusion=C34_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS
+production_ready=false
+```
+
+Required boundaries:
+
+```text
+IS_ONLY_ROBUSTNESS_REDESIGN_DIAGNOSTIC=true
+C34_ARTIFACT_HASH_LOCK=true
+NO_OOS_TUNING=true
+NO_OOS_PROOF=true
+NO_BEST_OF_OOS=true
+NO_PROFILE_RESELECTION=true
+NO_CANDIDATE_RESELECTION=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C34_MUTATION=true
+production_ready=false
+oos_data_used_for_tuning=false
+```
+
+C34 bad months are context-only:
+
+```text
+bad_months_oos_for_context_only=2025-06,2025-08,2026-03
+```
+
+They must not be used for threshold tuning, candidate selection, profile selection, or production gating.
+
+Redesign hypotheses must come from IS evidence only. Valid support levels:
+
+```text
+STRONG_IS_SUPPORT
+MODERATE_IS_SUPPORT
+WEAK_IS_SUPPORT
+INSUFFICIENT_IS_SUPPORT
+```
+
+Current source-of-truth IS evidence source:
+
+```text
+storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json
+```
+
+C35 output artifact:
+
+```text
+storage/app/watchlist/backtest/c35-is-robustness-redesign-diagnostic.json
+artifact_hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+file_sha1=733BE61DF96DBA0ECA450ECCF30A8C0CE8329A4B
+```
+
+C35 validation status:
+
+```text
+PHPUNIT_C35=PASS
+PHPUNIT_C35_RESULT=OK (11 tests, 106 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (529 tests, 11607 assertions)
+ARTISAN_C35_RUNTIME=COMPLETED
+C35_FINAL_STATUS=C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC_COMPLETED
+```
+
+C35 diagnostic result:
+
+```text
+IS_EVIDENCE_TOTAL_ROWS=15750
+IS_EVIDENCE_G21_ROWS=1770
+IS_EVIDENCE_G16_ROWS=1320
+IS_MONTHS_COVERED=27
+G21_IS_WEAKNESS_CONFIRMED=true
+G16_IS_WEAKNESS_CONFIRMED=true
+DIAGNOSTIC_CONCLUSION=C35_IS_G21_AND_G16_WEAKNESS_CONFIRMED
+NEXT_STEP=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION
+```
+
+C35 hypotheses:
+
+```text
+C35_HYP_G21_NO_PROFIT_SIGNAL_BRANCH_WEAK=STRONG_IS_SUPPORT
+C35_HYP_G21_FALLBACK_EXIT_TOO_LATE=STRONG_IS_SUPPORT
+C35_HYP_G16_NEXT_OPEN_DELAY_GAP_DAMAGE=MODERATE_IS_SUPPORT
+C35_HYP_BRANCH_CONCENTRATION_REQUIRES_IS_REGIME_FILTER=MODERATE_IS_SUPPORT
+```
+
+C35 contract decision: PASS. C35 completed the IS-only robustness redesign diagnostic, kept OOS context-only, kept production readiness false, and recommends C36 IS-controlled redesign candidate formation.

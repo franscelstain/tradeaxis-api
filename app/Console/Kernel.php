@@ -56,6 +56,10 @@ use App\Console\Commands\Watchlist\RunBacktestC28RuleRevisionTiebreakDiagnoseCom
 use App\Console\Commands\Watchlist\RunBacktestC29OosProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestC30OosFailureAttributionCommand;
 use App\Console\Commands\Watchlist\RunBacktestC31ControlledGateReclassificationCommand;
+use App\Console\Commands\Watchlist\RunBacktestC32DataPathAndBadMonthDiagnosticCommand;
+use App\Console\Commands\Watchlist\RunBacktestC33DataPathReplayProofCommand;
+use App\Console\Commands\Watchlist\RunBacktestC34BadMonthRobustnessDiagnosticCommand;
+use App\Console\Commands\Watchlist\RunBacktestC35IsRobustnessRedesignDiagnosticCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -99,6 +103,10 @@ class Kernel extends ConsoleKernel
         RunBacktestC29OosProofCommand::class,
         RunBacktestC30OosFailureAttributionCommand::class,
         RunBacktestC31ControlledGateReclassificationCommand::class,
+        RunBacktestC32DataPathAndBadMonthDiagnosticCommand::class,
+        RunBacktestC33DataPathReplayProofCommand::class,
+        RunBacktestC34BadMonthRobustnessDiagnosticCommand::class,
+        RunBacktestC35IsRobustnessRedesignDiagnosticCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

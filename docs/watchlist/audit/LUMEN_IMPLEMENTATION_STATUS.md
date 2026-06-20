@@ -15,6 +15,279 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - C34 BAD MONTH ROBUSTNESS DIAGNOSTIC`
+
+Current status:
+
+`C34_SOURCE_IMPLEMENTED / C34_COMMAND_REGISTERED / C34_TESTS_ADDED / C34_DOCS_SYNCED / C34_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C34_RUNTIME_COMPLETED / C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_COMPLETED / C33_ARTIFACT_HASH_LOCK_PASS / C32_ARTIFACT_HASH_LOCK_PASS / C33_DATA_PATH_REPLAY_PASS_REQUIRED / BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS / STRATEGY_ROBUSTNESS_REDESIGN_REQUIRED / NO_DB_READ / NO_DB_WRITE / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C33_MUTATION / NOT_PRODUCTION_READY`.
+
+C34 source implementation result:
+
+- `WatchlistBacktestC34BadMonthRobustnessDiagnosticService` exists as a file-artifact-only bad-month robustness diagnostic service for locked C33/C32 artifacts;
+- `RunBacktestC34BadMonthRobustnessDiagnosticCommand` exists as `watchlist:backtest-c34-bad-month-robustness-diagnostic`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C34 reads `storage/app/watchlist/backtest/c33-data-path-replay-proof.json` and validates expected stable hash `84bb77871515643b203de644fd34b4c748d1b2af`;
+- C34 reads the C32 source artifact linked by C33 and validates expected stable hash `4bd92dfcf70dd0b02398d3ecf62d08c0356292ab`;
+- C34 blocks if C33 is missing, hash-mismatched, incomplete, not data-path PASS, or if C32 bad-month diagnostic scope is missing/mismatched;
+- C34 confirms clean bad-month robustness failures remain after C33 clears the data-path blocker;
+- C34 classifies bad months `2025-06`, `2025-08`, and `2026-03`, and branch rows `G16`, `G21`, and `R09`;
+- C34 does not query DB, replay market data, retune, reselect profiles, create best-of-OOS, create a production catalog, promote a candidate, or mutate PLAN/CONFIRM behavior;
+- `production_ready` remains `false/0`.
+
+C34 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC34BadMonthRobustnessDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC34BadMonthRobustnessDiagnosticCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC34BadMonthRobustnessDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC34StaticGuardTest.php
+docs/watchlist/audit/WS_C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C34_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C34 final operator validation status:
+
+```text
+PHPUNIT_C34=PASS
+PHPUNIT_C34_RESULT=OK (13 tests, 119 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (518 tests, 11501 assertions)
+C34_RUNTIME=COMPLETED
+C34_FINAL_STATUS=C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_COMPLETED
+C34_ARTIFACT_PATH=storage/app/watchlist/backtest/c34-bad-month-robustness-diagnostic.json
+C34_ARTIFACT_HASH=1dcf355095334796c2f4558823a1882e71e3ed30
+C34_FILE_SHA1=71897A94B665CAF2C5A632915FE5B48AE99726A2
+EXPECTED_C33_HASH=84bb77871515643b203de644fd34b4c748d1b2af
+ACTUAL_C33_HASH=84bb77871515643b203de644fd34b4c748d1b2af
+C33_HASH_MATCH=1
+C33_STATUS=C33_DATA_PATH_REPLAY_PROOF_COMPLETED
+C33_DATA_PATH_REPLAY_STATUS=C33_DATA_PATH_REPLAY_PASS
+EXPECTED_C32_HASH=4bd92dfcf70dd0b02398d3ecf62d08c0356292ab
+ACTUAL_C32_HASH=4bd92dfcf70dd0b02398d3ecf62d08c0356292ab
+C32_HASH_MATCH=1
+C32_STATUS=C32_DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_COMPLETED
+BAD_MONTH_ROBUSTNESS_STATUS=C34_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS
+BAD_MONTH_FAILURE_COUNT=3
+BRANCH_ROBUSTNESS_FLAG_COUNT=2
+STRATEGY_ROBUSTNESS_REDESIGN_REQUIRED=1
+DIAGNOSTIC_CONCLUSION=C34_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS
+NEXT_STEP=C35_IS_ONLY_ROBUSTNESS_REDESIGN_DIAGNOSTIC_NO_OOS_TUNING
+PRODUCTION_READY=0
+```
+
+C34 bad-month rows:
+
+```text
+2025-06 clean=10 missing_before_c33=2 data_path_cleared_by_c33=true win_rate=0 dominant_branch=G21 dominant_ticker=GWSA class=CLEAN_BAD_MONTH_ROBUSTNESS_FAILURE_AFTER_DATA_PATH_CLEARED severity=HIGH_RISK
+2025-08 clean=7 missing_before_c33=2 data_path_cleared_by_c33=true win_rate=0 dominant_branch=G21 dominant_ticker=SMKL class=CLEAN_BAD_MONTH_ROBUSTNESS_FAILURE_AFTER_DATA_PATH_CLEARED severity=HIGH_RISK
+2026-03 clean=4 missing_before_c33=0 data_path_cleared_by_c33=null win_rate=0 dominant_branch=G16 dominant_ticker=BINA class=CLEAN_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED severity=HIGH_RISK
+```
+
+C34 branch rows:
+
+```text
+G16 clean=18 missing_before_c33=0 avg=0.00737983091926925 win=0.6111111111111112 clean_bad_month_contribution=7 aggregate_weakness=false flag=true class=C34_BRANCH_BAD_MONTH_CONCENTRATION_REVIEW
+G21 clean=80 missing_before_c33=0 avg=-0.007043371221106404 win=0.3375 clean_bad_month_contribution=14 aggregate_weakness=true flag=true class=C34_BRANCH_ROBUSTNESS_FAILURE_CONFIRMED
+R09 clean=30 missing_before_c33=4 data_path_cleared_by_c33=true avg=0.03326022962746119 win=1 clean_bad_month_contribution=0 aggregate_weakness=false flag=false class=DATA_PATH_CLEARED_BRANCH_REVIEW_ONLY
+```
+
+C34 decision:
+
+```text
+data_path_blocker_cleared_by_c33=true
+bad_month_failure_count=3
+data_path_cleared_bad_month_count=2
+branch_robustness_flag_count=2
+aggregate_branch_weakness_count=1
+bad_months_requiring_review=2025-06,2025-08,2026-03
+branches_requiring_review=G16,G21
+strategy_robustness_redesign_required=true
+oos_tuning_allowed=false
+profile_reselection_allowed=false
+production_promotion_allowed=false
+production_ready=false
+```
+
+C34 confirms the remaining blocker is clean bad-month/branch robustness after C33 cleared the data-path proof. It does not declare full controlled OOS pass and does not unlock production readiness. The next implementation step is C35 IS-only robustness redesign diagnostic with no OOS tuning.
+
+## PRIOR SESSION - C33 DATA PATH REPLAY PROOF
+
+Session:
+`WATCHLIST - C33 DATA PATH REPLAY PROOF`
+
+Current status:
+
+`C33_SOURCE_IMPLEMENTED / C33_COMMAND_REGISTERED / C33_TESTS_ADDED / C33_DOCS_SYNCED / C33_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C33_RUNTIME_COMPLETED / C33_DATA_PATH_REPLAY_PROOF_COMPLETED / C32_ARTIFACT_HASH_LOCK_PASS / DATA_PATH_REPLAY_PASS / DATA_COMPLETENESS_GATE_AFTER_REPLAY_PASS / ACTUAL_LOOKAHEAD_FIX_NOT_REQUIRED / SELECTION_LEAK_FIX_NOT_REQUIRED / NO_SOURCE_ACQUISITION / NO_BAR_INGEST / NO_EOD_BARS_WRITE / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C32_MUTATION / NOT_PRODUCTION_READY`.
+
+C33 source implementation result:
+
+- `WatchlistBacktestC33DataPathReplayProofService` exists as a read-only data-path replay proof service for the locked C32 artifact;
+- `RunBacktestC33DataPathReplayProofCommand` exists as `watchlist:backtest-c33-data-path-replay-proof`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C33 reads `storage/app/watchlist/backtest/c32-data-path-and-bad-month-diagnostic.json` and validates expected stable hash `4bd92dfcf70dd0b02398d3ecf62d08c0356292ab`;
+- C33 blocks on missing C32 artifact, hash mismatch, unexpected C32 status, unexpected C32 conclusion, unexpected C32 data-path status, or empty replay scope;
+- C33 replays the four C32 missing D1-D5 raw OHLC path rows against exact market-calendar dates and current canonical `eod_bars`;
+- C33 proves all four replay rows pass with no missing or invalid D1-D5 raw OHLC path dates;
+- C33 does not acquire source data, ingest bars, write source/master data, write `eod_bars`, retune, reselect profiles, create best-of-OOS, create a production catalog, promote a candidate, or mutate PLAN/CONFIRM behavior;
+- `production_ready` remains `false/0`.
+
+C33 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC33DataPathReplayProofService.php
+app/Console/Commands/Watchlist/RunBacktestC33DataPathReplayProofCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC33DataPathReplayProofServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC33StaticGuardTest.php
+docs/watchlist/audit/WS_C33_DATA_PATH_REPLAY_PROOF.md
+docs/watchlist/audit/WS_C33_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C33 final operator validation status:
+
+```text
+PHPUNIT_C33=PASS
+PHPUNIT_C33_RESULT=OK (15 tests, 145 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (505 tests, 11382 assertions)
+C33_RUNTIME=COMPLETED
+C33_FINAL_STATUS=C33_DATA_PATH_REPLAY_PROOF_COMPLETED
+C33_ARTIFACT_PATH=storage/app/watchlist/backtest/c33-data-path-replay-proof.json
+C33_ARTIFACT_HASH=84bb77871515643b203de644fd34b4c748d1b2af
+C33_FILE_SHA1=1B0558C823732649DC7487154E5045BE86A160CC
+EXPECTED_C32_HASH=4bd92dfcf70dd0b02398d3ecf62d08c0356292ab
+ACTUAL_C32_HASH=4bd92dfcf70dd0b02398d3ecf62d08c0356292ab
+C32_HASH_MATCH=1
+C32_STATUS=C32_DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_COMPLETED
+DATA_PATH_REPLAY_STATUS=C33_DATA_PATH_REPLAY_PASS
+DATA_COMPLETENESS_GATE_AFTER_REPLAY=PASS
+REPLAY_ROW_COUNT=4
+REPLAY_PASS_COUNT=4
+REPLAY_FAIL_COUNT=0
+REPLAY_BLOCKED_COUNT=0
+DIAGNOSTIC_CONCLUSION=C33_DATA_PATH_REPLAY_CONFIRMED_D1_TO_D5_RAW_OHLC_AVAILABLE
+NEXT_STEP=C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_AFTER_C33_NO_OOS_TUNING
+PRODUCTION_READY=0
+```
+
+C33 replay scope:
+
+```text
+required_path_scope=D1_TO_D5_RAW_OHLC_PATH
+replay_row_count=4
+affected_trade_dates=2025-06-04,2025-08-15
+affected_entry_dates=2025-06-05,2025-08-19
+affected_tickers=BBSI,MICE
+affected_param_ids=151,152
+affected_source_codes=R09
+```
+
+C33 replay result:
+
+```text
+2025-06-04 MICE param_id=151 entry_date=2025-06-05 path_dates=2025-06-05,2025-06-10,2025-06-11,2025-06-12,2025-06-13 status=PASS
+2025-06-04 MICE param_id=152 entry_date=2025-06-05 path_dates=2025-06-05,2025-06-10,2025-06-11,2025-06-12,2025-06-13 status=PASS
+2025-08-15 BBSI param_id=151 entry_date=2025-08-19 path_dates=2025-08-19,2025-08-20,2025-08-21,2025-08-22,2025-08-25 status=PASS
+2025-08-15 BBSI param_id=152 entry_date=2025-08-19 path_dates=2025-08-19,2025-08-20,2025-08-21,2025-08-22,2025-08-25 status=PASS
+missing_path_date_count=0
+invalid_path_date_count=0
+```
+
+C33 decision:
+
+```text
+actual_lookahead_fix_required=false
+selection_leak_fix_required=false
+oos_tuning_allowed=false
+profile_reselection_allowed=false
+production_promotion_allowed=false
+production_ready=false
+```
+
+C33 clears only the data-path replay proof for C32's missing path scope. It does not declare full controlled OOS pass and does not unlock production readiness.
+
+## PRIOR SESSION - C32 DATA PATH AND BAD MONTH ROBUSTNESS DIAGNOSTIC
+
+Session:
+`WATCHLIST - C32 DATA PATH AND BAD MONTH ROBUSTNESS DIAGNOSTIC`
+
+Current status:
+
+`C32_SOURCE_IMPLEMENTED / C32_COMMAND_REGISTERED / C32_TESTS_ADDED / C32_DOCS_SYNCED / C32_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C32_RUNTIME_COMPLETED / C32_DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_COMPLETED / C31_ARTIFACT_HASH_LOCK_PASS / DATA_PATH_REMEDIATION_REQUIRED / BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_REQUIRED / ACTUAL_LOOKAHEAD_FIX_NOT_REQUIRED / SELECTION_LEAK_FIX_NOT_REQUIRED / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C31_MUTATION / NOT_PRODUCTION_READY`.
+
+C32 source implementation result:
+
+- `WatchlistBacktestC32DataPathAndBadMonthDiagnosticService` exists as a diagnostic split service for the locked C31 artifact;
+- `RunBacktestC32DataPathAndBadMonthDiagnosticCommand` exists as `watchlist:backtest-c32-data-path-and-bad-month-diagnostic`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C32 reads `storage/app/watchlist/backtest/c31-controlled-gate-reclassification.json` and validates expected stable hash `4c6203621ed53ade368328a3aad567cbfc12f3a0`;
+- C32 blocks on missing C31 artifact, hash mismatch, unexpected C31 status, unexpected C31 conclusion, or unexpected C31 controlled proof status;
+- C32 produces data-path remediation scope for the four missing D1-D5 raw OHLC path rows;
+- C32 produces bad-month and source-branch robustness diagnostic scope for `2025-06`, `2025-08`, `2026-03`, `G16`, `G21`, and `R09`;
+- C32 does not retune, reselect profiles, create best-of-OOS, create a production catalog, promote a candidate, or mutate PLAN/CONFIRM behavior;
+- `production_ready` remains `false/0`.
+
+C32 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC32DataPathAndBadMonthDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC32DataPathAndBadMonthDiagnosticCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC32DataPathAndBadMonthDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC32StaticGuardTest.php
+docs/watchlist/audit/WS_C32_DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C32_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C32 final operator validation status:
+
+```text
+PHPUNIT_C32=PASS
+PHPUNIT_C32_RESULT=OK (12 tests, 107 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (490 tests, 11237 assertions)
+C32_RUNTIME=COMPLETED
+C32_FINAL_STATUS=C32_DATA_PATH_AND_BAD_MONTH_DIAGNOSTIC_COMPLETED
+C32_ARTIFACT_PATH=storage/app/watchlist/backtest/c32-data-path-and-bad-month-diagnostic.json
+C32_ARTIFACT_HASH=4bd92dfcf70dd0b02398d3ecf62d08c0356292ab
+C32_FILE_SHA1=49F4A138BEF5B18841119F255F39ACDC2F97445B
+EXPECTED_C31_HASH=4c6203621ed53ade368328a3aad567cbfc12f3a0
+ACTUAL_C31_HASH=4c6203621ed53ade368328a3aad567cbfc12f3a0
+C31_HASH_MATCH=1
+C31_STATUS=C31_CONTROLLED_GATE_RECLASSIFICATION_COMPLETED
+DATA_PATH_REMEDIATION_STATUS=C32_DATA_PATH_REMEDIATION_REQUIRED
+BAD_MONTH_ROBUSTNESS_STATUS=C32_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_REQUIRED
+DIAGNOSTIC_CONCLUSION=C32_SPLIT_CONFIRMED_DATA_PATH_REMEDIATION_AND_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_REQUIRED
+NEXT_STEP=C33_DATA_PATH_REPLAY_PROOF_THEN_C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_NO_OOS_TUNING
+PRODUCTION_READY=0
+```
+
+C32 remediation scope:
+
+```text
+missing_path_count=4
+affected_trade_dates=2025-06-04,2025-08-15
+affected_entry_dates=2025-06-05,2025-08-19
+affected_tickers=BBSI,MICE
+affected_param_ids=151,152
+affected_source_codes=R09
+missing_path_reason=WS_BT_C29_D1_TO_D5_RAW_OHLC_PATH_MISSING count=4
+```
+
+C32 split decision:
+
+```text
+actual_lookahead_fix_required=false
+selection_leak_fix_required=false
+data_path_remediation_required=true
+bad_month_robustness_diagnostic_required=true
+oos_tuning_allowed=false
+profile_reselection_allowed=false
+production_promotion_allowed=false
+production_ready=false
+```
+
+## PRIOR SESSION - C31 CONTROLLED GATE RECLASSIFICATION
+
+Session:
 `WATCHLIST - C31 CONTROLLED GATE RECLASSIFICATION`
 
 Current status:
@@ -5070,3 +5343,162 @@ production_ready=0
 ```
 
 Next implementation direction is C20 regime/trade-date quality gate design. C19 does not unlock OOS proof, promotion, production readiness, or catalog creation.
+
+---
+
+## C35 — IS-Only Robustness Redesign Diagnostic
+
+Status implementation: IMPLEMENTED and operator-validated.
+
+Status runtime:
+
+```text
+ARTISAN_C35_RUNTIME=COMPLETED
+C35_FINAL_STATUS=C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC_COMPLETED
+```
+
+Status PHPUnit:
+
+```text
+PHPUNIT_C35=PASS
+PHPUNIT_C35_RESULT=OK (11 tests, 106 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (529 tests, 11607 assertions)
+```
+
+Files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC35IsRobustnessRedesignDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC35IsRobustnessRedesignDiagnosticCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC35IsRobustnessRedesignDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC35StaticGuardTest.php
+docs/watchlist/audit/WS_C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C35_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Artifact:
+
+```text
+artifact_path=storage/app/watchlist/backtest/c35-is-robustness-redesign-diagnostic.json
+artifact_hash=1ab43b0dcee6d41d11b2ab0ed904721836dee3b1
+file_sha1=733BE61DF96DBA0ECA450ECCF30A8C0CE8329A4B
+```
+
+C34 lock:
+
+```text
+input_c34_artifact=storage/app/watchlist/backtest/c34-bad-month-robustness-diagnostic.json
+expected_c34_hash=1dcf355095334796c2f4558823a1882e71e3ed30
+actual_c34_hash=1dcf355095334796c2f4558823a1882e71e3ed30
+c34_hash_match=true
+c34_status=C34_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC_COMPLETED
+c34_final_conclusion=C34_BAD_MONTH_ROBUSTNESS_FAILURE_CONFIRMED_AFTER_C33_DATA_PATH_PASS
+```
+
+Runtime output summary:
+
+```text
+status=C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC_COMPLETED
+reason_code=C35_IS_ROBUSTNESS_REDESIGN_DIAGNOSTIC_COMPLETED
+production_ready=0
+diagnostic_conclusion=C35_IS_G21_AND_G16_WEAKNESS_CONFIRMED
+next_step_recommendation=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION
+is_evidence_total_rows=15750
+is_evidence_g21_rows=1770
+is_evidence_g16_rows=1320
+```
+
+IS period:
+
+```text
+from=2023-01-02
+to=2025-05-21
+oos_reserved_from=2025-05-22
+oos_reserved_to=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+IS evidence summary:
+
+```text
+source=storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json
+total_rows=15750
+g21_rows=1770
+g16_rows=1320
+months_covered=27
+evidence_available=true
+```
+
+G21 IS summary:
+
+```text
+selected_source_code=G21
+bucket_code=no_rule_profit_signal_before_fallback
+count=1770
+avg_ret_net=-0.003595020808694389
+median_ret_net=-0.0005014793641241662
+p25_ret_net=-0.012856775520699408
+win_rate=0.38305084745762713
+month_win_rate_min=0
+month_avg_ret_net_min=-0.030795380692896064
+bad_month_like_count=17
+dominant_exit_reason=raw_damage_control_no_profit_d2_exit_d3_open
+dominant_failure_mode=G21_NO_PROFIT_FALLBACK_NEGATIVE_AVG_LOW_WIN_RATE
+is_weakness_confirmed=true
+```
+
+G16 IS summary:
+
+```text
+selected_source_code=G16
+bucket_code=next_open_delay_after_close_signal
+count=1320
+avg_ret_net=0.011291069675265837
+median_ret_net=0.015366845779139255
+p25_ret_net=-0.0005000750112516877
+win_rate=0.7196969696969697
+month_win_rate_min=0
+month_avg_ret_net_min=-0.009164590269622934
+bad_month_like_count=5
+dominant_exit_reason=raw_preplanned_intraday_target_hit
+dominant_delay_damage_mode=NEGATIVE_DELTA_VS_R09_CLUSTER
+dominant_failure_mode=G16_NEXT_OPEN_DELAY_DAMAGE_CLUSTER
+is_weakness_confirmed=true
+```
+
+IS bad-month-like summary:
+
+```text
+2023-03, 2023-09, 2024-04, 2024-05, 2024-06, 2024-09, 2024-10, 2024-12, 2025-02
+```
+
+Redesign hypotheses:
+
+```text
+C35_HYP_G21_NO_PROFIT_SIGNAL_BRANCH_WEAK=STRONG_IS_SUPPORT
+C35_HYP_G21_FALLBACK_EXIT_TOO_LATE=STRONG_IS_SUPPORT
+C35_HYP_G16_NEXT_OPEN_DELAY_GAP_DAMAGE=MODERATE_IS_SUPPORT
+C35_HYP_BRANCH_CONCENTRATION_REQUIRES_IS_REGIME_FILTER=MODERATE_IS_SUPPORT
+```
+
+Diagnostic conclusion:
+
+```text
+C35_IS_G21_AND_G16_WEAKNESS_CONFIRMED
+```
+
+Next step recommendation:
+
+```text
+C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION
+```
+
+Production readiness:
+
+```text
+production_ready=false
+oos_data_used_for_tuning=false
+```
+
+C35 final decision: C35 confirms G21 weakness in IS and G16 delay-damage concentration in IS. C36 must form controlled redesign candidates from IS evidence only. C35 does not perform OOS tuning, OOS proof, best-of-OOS selection, production catalog creation, promotion, or PLAN/CONFIRM mutation.
