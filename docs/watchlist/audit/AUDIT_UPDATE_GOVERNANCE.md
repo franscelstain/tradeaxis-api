@@ -2362,3 +2362,53 @@ C54_NEXT_STEP=C55_ROLLING_STABILITY_REDESIGN_CONTINUATION_IS_ONLY
 C54_MUST_NOT_RECOMMEND_OOS_PROOF=true
 production_ready=false
 ```
+
+
+## C55 Governance — Rolling Stability Redesign Continuation (IS Only)
+
+C55 governance requirements:
+
+```text
+SOURCE_ARTIFACT_LOCK=C54_C53_C52
+FILE_SHA1_LOCK=C54_C53_C52
+VALIDATION_COMMAND=watchlist:backtest-c55-rolling-stability-redesign-continuation-is-only
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c55-rolling-stability-redesign-continuation-is-only.json
+IS_ONLY_ROLLING_STABILITY_CONTINUATION_RULE=true
+NEAR_PASS_ATTRIBUTION_DIAGNOSTIC_ONLY_RULE=true
+FAILED_WINDOW_NO_EXCLUSION_RULE=true
+ADVERSE_MONTH_NO_EXCLUSION_RULE=true
+C54_C53_C52_LOCKED_LINEAGE_USAGE_RULE=true
+NO_OOS_TUNING_RULE=true
+NO_OOS_PROOF_RULE=true
+NO_PRODUCTION_READINESS_RULE=true
+CANDIDATE_NOT_PRODUCTION_RULE=true
+POWERSHELL_COMPATIBLE_JSON_RULE=true
+OPERATOR_VALIDATION_RULE=true
+NEXT_STEP_TO_C56_RULE=true
+```
+
+C55 artifacts must preserve lowercase snake_case safety boundary keys and must not contain duplicate keys after case-insensitive normalization. Runtime, PHPUnit, and artifact claims require operator evidence; otherwise the status must remain `OPERATOR_VALIDATION_REQUIRED` or `NOT_RUN`.
+
+C55 final operator validation governance lock:
+
+```text
+PHPUNIT_C55_PASS_REQUIRES_ACTUAL_COMMAND_OUTPUT=true
+FULL_WATCHLIST_PASS_REQUIRES_ACTUAL_COMMAND_OUTPUT=true
+C55_RUNTIME_COMPLETED_REQUIRES_ACTUAL_ARTIFACT=true
+C55_FINAL_OPERATOR_VALIDATION_RECORDED=true
+PHPUNIT_C55=PASS
+PHPUNIT_C55_RESULT=OK (9 tests, 293 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (786 tests, 15445 assertions)
+C55_RUNTIME=COMPLETED
+C55_ARTIFACT_HASH=a4145d6f356e678d0dadf95be5d356198ebfed79
+C55_FILE_SHA1=18875FCAD7FD7CDA6607BB09A60917E853E68D2B
+C55_DIAGNOSTIC_CONCLUSION=C55_ROLLING_STABILITY_GAP_REMAINS
+C55_NEXT_STEP=C56_ROLLING_STABILITY_REDESIGN_CONTINUATION_IS_ONLY
+C55_PRODUCTION_READY=false
+C55_DIRECT_OOS_PROOF_RECOMMENDED=false
+C55_OOS_PROOF_UNLOCKED=false
+```
+
+C55 governance decision: the implementation and runtime are completed, but the strategy remains not ready because no candidate passed full rolling validation or concentration validation. C56 must remain IS-only rolling stability redesign continuation unless a later completed pre-OOS lock review explicitly changes the path. C55 must not be used as OOS proof, production readiness evidence, or catalog promotion evidence.
+

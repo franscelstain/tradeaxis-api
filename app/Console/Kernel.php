@@ -79,6 +79,7 @@ use App\Console\Commands\Watchlist\RunBacktestC51ConcentrationDependencyRedesign
 use App\Console\Commands\Watchlist\RunBacktestC52ConcentrationDependencyRedesignContinuationCommand;
 use App\Console\Commands\Watchlist\RunBacktestC53IsEvidenceExpansionForC52RedesignCommand;
 use App\Console\Commands\Watchlist\RunBacktestC54RollingStabilityRedesignOrRecalibrationIsOnlyCommand;
+use App\Console\Commands\Watchlist\RunBacktestC55RollingStabilityRedesignContinuationIsOnlyCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -145,6 +146,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC52ConcentrationDependencyRedesignContinuationCommand::class,
         RunBacktestC53IsEvidenceExpansionForC52RedesignCommand::class,
         RunBacktestC54RollingStabilityRedesignOrRecalibrationIsOnlyCommand::class,
+        RunBacktestC55RollingStabilityRedesignContinuationIsOnlyCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
