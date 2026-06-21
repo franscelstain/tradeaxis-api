@@ -6712,3 +6712,77 @@ Contract:
 Validation:
 
 - Docs-only contract and prompt standards updated.
+
+## C58 contract — loss-cluster/concentration redesign continuation IS-only
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+- `WL-CONTRACT-C58-001`: C58 must run only on IS `2023-01-02..2025-05-21`; reserved OOS `2025-05-22..2026-05-29` must not be requested.
+- `WL-CONTRACT-C58-002`: C58 must lock C57 artifact hash `71230896c2121fcfedddf36dd54c9c03ad462b4d` and file SHA1 `50272917A107E304F8EEEB874DBC02A881DB0C31`.
+- `WL-CONTRACT-C58-003`: C58 must enforce the database dictionary read rule before DB-connected implementation assumptions are accepted.
+- `WL-CONTRACT-C58-004`: C58 must retain C57 regime completeness: `required_field_count=9`, `evaluable_field_count=9`, `missing_field_count=0`, `regime_fully_evaluable=true`.
+- `WL-CONTRACT-C58-005`: C58 must not repeat market-index reconstruction; mapping remains dictionary-locked to `market_benchmark_indicators.roc_20`, `market_benchmark_indicators.ma20_slope_pct`, `benchmark_code='IHSG'`, and `market_calendar.cal_date`.
+- `WL-CONTRACT-C58-006`: C58 must create controlled Track A, Track B, replay comparator, and hybrid candidates from C56/C57 lineage.
+- `WL-CONTRACT-C58-007`: C58 must compute concentration/loss-cluster metrics for every candidate.
+- `WL-CONTRACT-C58-008`: C58 must re-evaluate rolling, leave-one-month-out, regime robustness, material-difference, and anti-shared-core gates.
+- `WL-CONTRACT-C58-009`: C58 must keep `production_ready=false`, `direct_oos_proof_recommended=false`, and `oos_proof_unlocked=false`.
+- `WL-CONTRACT-C58-010`: If no candidate passes all IS gates, C58 must recommend an IS-only C59 continuation and identify the dominant blocker.
+
+Allowed C59 recommendations from C58:
+
+```text
+C59_PRE_LOCK_IS_REVIEW_FOR_C58_CANDIDATE_IS_ONLY
+C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
+C59_SAMPLE_RECOVERY_WITH_CONCENTRATION_GUARD_IS_ONLY
+C59_LOO_DEPENDENCY_REDESIGN_CONTINUATION_IS_ONLY
+C59_REGIME_ROBUSTNESS_REDESIGN_CONTINUATION_IS_ONLY
+C59_ROLLING_STABILITY_RECOVERY_IS_ONLY
+```
+
+Forbidden C58 outcomes:
+
+```text
+OOS proof unlocked
+Direct OOS proof recommended
+Production-ready claim
+Production catalog creation
+PLAN/CONFIRM mutation
+C01-C57 artifact mutation
+Gate relaxation
+Return/future-path/OOS-return selection
+Adverse-month, failed-window, ticker, or sector hard exclusion from failure attribution
+```
+
+
+### C58 final contract validation
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+- `WL-CONTRACT-C58-001`: PASS. Runtime stayed within IS `2023-01-02..2025-05-21`; OOS rows requested = `0`.
+- `WL-CONTRACT-C58-002`: PASS. C57 artifact hash and file SHA1 matched the locked values.
+- `WL-CONTRACT-C58-003`: PASS. Database dictionary read rule was recorded; missing dictionary coverage was not detected.
+- `WL-CONTRACT-C58-004`: PASS. C57 regime completeness was retained: required `9`, evaluable `9`, missing `0`, fully evaluable `true`.
+- `WL-CONTRACT-C58-005`: PASS. C58 did not repeat market-index reconstruction and retained C57 market-index reconstruction evidence.
+- `WL-CONTRACT-C58-006`: PASS. C58 generated 10 controlled candidates from replay comparator, Track A, Track B, and hybrid lineage.
+- `WL-CONTRACT-C58-007`: PASS. Concentration/loss-cluster metrics were computed for every candidate.
+- `WL-CONTRACT-C58-008`: PASS. Rolling, LOO, regime robustness, material-difference, and anti-shared-core gates were re-evaluated.
+- `WL-CONTRACT-C58-009`: PASS. `production_ready=false`, `direct_oos_proof_recommended=false`, and `oos_proof_unlocked=false`.
+- `WL-CONTRACT-C58-010`: PASS. No candidate passed all IS gates; C58 recommends `C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY`.
+
+Final C58 validation markers:
+
+```text
+PHPUNIT_C58=PASS OK (12 tests, 430 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (817 tests, 16397 assertions)
+C58_RUNTIME=COMPLETED
+C58_ARTIFACT_HASH=80d09de8053659bf01ce5b8b72d9e2d82cdf69dc
+C58_FILE_SHA1=FA6FE27604F6CDA664DCF90A251AF41672670700
+CANDIDATE_READY_FOR_C59_COUNT=0
+ROLLING_VALIDATION_PASS_CANDIDATE_COUNT=4
+CONCENTRATION_VALIDATION_PASS_CANDIDATE_COUNT=0
+LOSS_CLUSTER_PASS_CANDIDATE_COUNT=0
+LOO_VALIDATION_PASS_CANDIDATE_COUNT=0
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+DIAGNOSTIC_CONCLUSION=C58_LOSS_CLUSTER_GAP_REMAINS
+NEXT_STEP=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
+```

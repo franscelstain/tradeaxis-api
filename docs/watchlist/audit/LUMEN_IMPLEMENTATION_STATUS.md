@@ -7986,3 +7986,165 @@ Evidence:
 
 - Docs-only update.
 - Based on C57 final evidence where market-index reconstruction required correct mapping from `market_benchmark_indicators.roc_20` and `market_benchmark_indicators.ma20_slope_pct`.
+
+## C58 Loss-Cluster Concentration Redesign Continuation IS-Only
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+Run code: `C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY`
+
+C58 continues from locked C57 final evidence:
+
+```text
+C57_ARTIFACT=storage/app/watchlist/backtest/c57-regime-field-reconstruction-continuation-is-only.json
+C57_ARTIFACT_HASH=71230896c2121fcfedddf36dd54c9c03ad462b4d
+C57_FILE_SHA1=50272917A107E304F8EEEB874DBC02A881DB0C31
+C57_STATUS=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY_COMPLETED
+C57_NEXT_STEP=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY
+```
+
+C57 market-index/regime reconstruction remains solved and is carried forward, not repeated:
+
+```text
+required_field_count=9
+evaluable_field_count=9
+missing_field_count=0
+regime_fully_evaluable=true
+market_index_roc20_reconstructed=true
+market_index_ma20_slope_pct_reconstructed=true
+future_lookup_detected=false
+oos_rows_requested=0
+source_bias_validation_pass=true
+```
+
+C58 scope is only loss-cluster/concentration redesign plus re-evaluation of rolling, LOO, regime robustness, material-difference, and anti-shared-core gates.
+
+C58 adds:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC58LossClusterConcentrationRedesignContinuationIsOnlyService.php
+app/Console/Commands/Watchlist/RunBacktestC58LossClusterConcentrationRedesignContinuationIsOnlyCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC58LossClusterConcentrationRedesignContinuationIsOnlyServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC58StaticGuardTest.php
+docs/watchlist/audit/WS_C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY.md
+docs/watchlist/audit/WS_C58_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C58 updates:
+
+```text
+app/Console/Kernel.php
+docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md
+docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md
+docs/watchlist/audit/AUDIT_UPDATE_GOVERNANCE.md
+```
+
+C58 enforces the database dictionary read rule at runtime through `database_dictionary_read_summary`. The required dictionary paths are checked before C57 evidence is accepted. Missing dictionary coverage blocks the session.
+
+C58 remains IS-only. It does not unlock OOS proof, does not create production catalog, does not promote candidates, and keeps `production_ready=false`.
+
+Sandbox validation status:
+
+```text
+PHP_LINT_C58_SERVICE=PASS
+PHP_LINT_C58_COMMAND=PASS
+PHP_LINT_C58_TESTS=PASS
+PHPUNIT_C58=OPERATOR_VALIDATION_REQUIRED
+FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+REASON=container PHP missing dom, mbstring, xml, xmlwriter extensions
+```
+
+C58 sandbox direct-service smoke result:
+
+```text
+DIRECT_SERVICE_SMOKE=COMPLETED
+C58_STATUS=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
+C58_ARTIFACT_HASH=849b661b8d83149b5123106524468ad16b01d3be
+C58_DIAGNOSTIC_CONCLUSION=C58_LOSS_CLUSTER_GAP_REMAINS
+C58_NEXT_STEP=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
+CANDIDATE_READY_FOR_C59_COUNT=0
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+```
+
+C58 artisan runtime in sandbox:
+
+```text
+ARTISAN_C58_RUNTIME=OPERATOR_VALIDATION_REQUIRED
+REASON=ENV_UNSUPPORTED_PHP_VERSION; container PHP 8.4.16, project baseline requires PHP >= 7.3 and < 8.4
+```
+
+
+## C58 final operator validation — loss-cluster/concentration redesign continuation IS-only
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+Final validation evidence:
+
+```text
+PHPUNIT_C58=PASS OK (12 tests, 430 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (817 tests, 16397 assertions)
+C58_RUNTIME=COMPLETED
+C58_STATUS=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
+C58_REASON_CODE=C58_LOSS_CLUSTER_GAP_REMAINS
+C58_ARTIFACT=storage/app/watchlist/backtest/c58-loss-cluster-concentration-redesign-continuation-is-only.json
+C58_ARTIFACT_HASH=80d09de8053659bf01ce5b8b72d9e2d82cdf69dc
+C58_FILE_SHA1=FA6FE27604F6CDA664DCF90A251AF41672670700
+C57_HASH_MATCH=true
+C57_FILE_SHA1_MATCH=true
+```
+
+Database/source safety evidence:
+
+```text
+DATABASE_DICTIONARY_READ_REQUIRED=true
+DICTIONARY_MISSING_COVERAGE_DETECTED=false
+ASOF_SAFE=true
+FUTURE_LOOKUP_DETECTED=false
+OOS_ROWS_REQUESTED=0
+SOURCE_BIAS_VALIDATION_PASS=true
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_RETURN_USED_FOR_SELECTION=false
+```
+
+C57 regime reconstruction retained:
+
+```text
+REGIME_FULLY_EVALUABLE=true
+REQUIRED_FIELD_COUNT=9
+EVALUABLE_FIELD_COUNT=9
+MISSING_FIELD_COUNT=0
+MARKET_INDEX_ROC20_RECONSTRUCTED=true
+MARKET_INDEX_MA20_SLOPE_PCT_RECONSTRUCTED=true
+```
+
+Candidate/gate summary:
+
+```text
+CANDIDATE_COUNT=10
+CANDIDATE_READY_FOR_C59_COUNT=0
+ROLLING_VALIDATION_PASS_CANDIDATE_COUNT=4
+CONCENTRATION_VALIDATION_PASS_CANDIDATE_COUNT=0
+LOSS_CLUSTER_PASS_CANDIDATE_COUNT=0
+LOO_VALIDATION_PASS_CANDIDATE_COUNT=0
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+MATERIAL_SELECTION_DIFFERENCE_PASS_COUNT=8
+ANTI_SHARED_CORE_PASS_COUNT=8
+WEAKEST_REGIME_MODE=market_down_or_sideways_high_vol
+```
+
+Final decision:
+
+```text
+VALIDATION_COMPLETED=true
+DIAGNOSTIC_CONCLUSION=C58_LOSS_CLUSTER_GAP_REMAINS
+DECISION_REASON=loss_cluster_share_remains_above_strict_gate
+NEXT_STEP_RECOMMENDATION=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRODUCTION_READY=false
+```
+
+C58 is accepted as a valid IS-only diagnostic/redesign implementation. It does not unlock OOS, pre-OOS, production catalog, or PLAN/CONFIRM changes. The next step must remain IS-only because no candidate passed all strict gates.

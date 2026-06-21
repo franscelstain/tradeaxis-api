@@ -2661,3 +2661,80 @@ market_index_roc20 => market_benchmark_indicators.roc_20 where benchmark_code='I
 market_index_ma20_slope_pct => market_benchmark_indicators.ma20_slope_pct where benchmark_code='IHSG'
 market_calendar date key => cal_date
 ```
+
+## Governance Addendum — C58 IS-Only Loss-Cluster/Concentration Redesign
+
+C58 is governed as an IS-only continuation from final C57. It must not be treated as pre-OOS or production work.
+
+C58 inherits the C57 final finding:
+
+```text
+market-index/regime-field reconstruction solved
+loss-cluster/concentration blocker remains
+LOO dependency remains on primary candidates
+regime robustness remains without pass candidate
+```
+
+C58 must follow the database dictionary rule before any database-connected code path, schema assumption, or field mapping is introduced. The mandatory dictionary paths are:
+
+```text
+docs/market_data/db/MARKET_DATA_DICTIONARY.md
+docs/db/DATABASE_DICTIONARY_USAGE_RULE.md
+docs/market_data/db/Database_Schema_MariaDB.sql
+docs/market_data/db/Database_Schema_Contracts_MariaDB.md
+docs/market_data/db/DB_FIELDS_AND_METADATA.md
+docs/watchlist/system/db/WATCHLIST_DB_DICTIONARY.md
+```
+
+C58 must record dictionary compliance in the runtime artifact. Missing coverage must block the session or trigger dictionary update before coding continues.
+
+C58 may only use pre-trade-safe fields for candidate selection. C58 must not use returns, future path, OOS rows, OOS returns, adverse months, failed windows, failed tickers, or failed sectors as selection inputs.
+
+C58 may mark a candidate only as ready for C59/pre-lock IS review if every IS gate passes. It must not unlock OOS proof directly.
+
+If C58 finds no valid candidate, that is a valid result. The next step remains IS-only and must be chosen from evidence, not optimism.
+
+
+## Governance Closeout — C58 Final Operator Validation
+
+C58 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
+
+Final evidence:
+
+```text
+PHPUNIT_C58=PASS OK (12 tests, 430 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (817 tests, 16397 assertions)
+C58_RUNTIME=COMPLETED
+C58_STATUS=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
+C58_REASON_CODE=C58_LOSS_CLUSTER_GAP_REMAINS
+C58_ARTIFACT_HASH=80d09de8053659bf01ce5b8b72d9e2d82cdf69dc
+C58_FILE_SHA1=FA6FE27604F6CDA664DCF90A251AF41672670700
+```
+
+Final governance interpretation:
+
+- C58 satisfied its scoped implementation and validation requirements.
+- C58 remained IS-only.
+- C58 recorded database dictionary compliance.
+- C58 retained C57 market-index/regime reconstruction evidence.
+- C58 requested no OOS rows and detected no future lookup.
+- C58 did not use return fields, future path, or OOS return for selection.
+- C58 produced no candidate ready for C59/pre-lock review.
+- C58 does not unlock OOS proof.
+- C58 does not create or imply production readiness.
+
+Dominant blocker remains:
+
+```text
+C58_LOSS_CLUSTER_GAP_REMAINS
+DECISION_REASON=loss_cluster_share_remains_above_strict_gate
+WEAKEST_REGIME_MODE=market_down_or_sideways_high_vol
+```
+
+Governed next step:
+
+```text
+C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
+```
+
+C59 must remain IS-only unless a later operator-validated governance document explicitly unlocks a pre-OOS review. C59 must not use OOS returns, OOS bad months, future path, failed-window exclusion, ticker loser exclusion, or sector loser exclusion to manufacture a pass.
