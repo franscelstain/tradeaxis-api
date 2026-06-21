@@ -225,6 +225,69 @@ class WatchlistBacktestC52ConcentrationDependencyRedesignContinuationService
         }
     }
 
+    /**
+     * Read-only reconstruction seam for the next IS-only continuation step.
+     * This does not execute C52, write an artifact, or inspect the reserved OOS period.
+     */
+    public function reconstructLockedRowsForC54(
+        string $from = self::DEFAULT_FROM,
+        string $to = self::DEFAULT_TO,
+        array $options = []
+    ): array {
+        $notEvaluable = [];
+        $source = $this->loadSourceRows(
+            $from,
+            $to,
+            $options,
+            ['source_universe_summary' => ['source_evidence_artifact' => self::DEFAULT_SOURCE_EVIDENCE]],
+            $notEvaluable
+        );
+        $lineage = $this->lineageRows($source['rows'], $notEvaluable);
+        $c51Candidates = $this->redesignedCandidateRows($lineage);
+
+        return [
+            'source_rows' => $source['rows'],
+            'source_summary' => $source['summary'],
+            'lineage_rows' => $lineage,
+            'c51_candidate_rows' => $c51Candidates,
+            'c52_candidate_rows' => $this->c52CandidateRows($lineage, $c51Candidates),
+            'not_evaluable_reasons' => $notEvaluable,
+        ];
+    }
+
+    /**
+     * Reuse the locked C52 validation machinery for newly predeclared C54 rows.
+     * All returned metrics are evaluation-only and never feed candidate formation.
+     */
+    public function evaluateCandidateRowsForC54(
+        array $candidateRows,
+        array $sourceRows,
+        array $lineage,
+        array $c51Candidates,
+        bool $sectorEvaluable,
+        array &$notEvaluable
+    ): array {
+        $months = $this->uniqueMonths($sourceRows);
+        $rolling = $this->rollingValidationResults($candidateRows, $months);
+        $loo = $this->leaveOneMonthOutResults($candidateRows, $months);
+        $regime = $this->regimeRobustnessResults($candidateRows, $notEvaluable);
+
+        return [
+            'candidate_replay_results' => $this->c52ReplayResults($candidateRows, $months),
+            'concentration_dependency_validation_results' => $this->c52ConcentrationResults($candidateRows, $sectorEvaluable),
+            'branch_dependency_validation_results' => $this->c52DependencyResults($candidateRows, 'selected_source_code', 'branch'),
+            'bucket_dependency_validation_results' => $this->c52DependencyResults($candidateRows, 'bucket_code', 'bucket'),
+            'sector_dependency_validation_results' => $this->sectorDependencyResults($candidateRows, $sectorEvaluable),
+            'rolling_validation_results' => $rolling,
+            'rolling_validation_summary' => $this->rollingValidationSummary($rolling),
+            'leave_one_month_out_results' => $loo,
+            'leave_one_month_out_summary' => $this->leaveOneMonthOutSummary($loo),
+            'regime_robustness_validation_results' => $regime,
+            'regime_robustness_validation_summary' => $this->regimeRobustnessSummary($regime),
+            'material_difference_validation_results' => $this->c52MaterialDifference($candidateRows, $lineage, $c51Candidates),
+        ];
+    }
+
     private function c52BaseArtifact(string $c51, string $h51, string $c50, string $h50, string $c49, string $h49, string $from, string $to, string $createdAt): array
     {
         return [

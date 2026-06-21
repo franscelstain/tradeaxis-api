@@ -7375,3 +7375,76 @@ production_ready=false
 ```
 
 C52 confirms the C51 sector defect and repairs it with a 100% covered, as-of-safe join. Several candidates pass concentration after the repair, but none passes the complete readiness stack. C53 therefore remains IS-only evidence expansion; C52 does not open OOS proof.
+
+## C53 — IS Evidence Expansion for C52 Redesign
+
+```text
+C53_IMPLEMENTATION_STATUS=IMPLEMENTED_FINAL
+C53_PHPUNIT_STATUS=PASS
+C53_PHPUNIT_RESULT=OK (10 tests, 130 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (769 tests, 15038 assertions)
+C53_RUNTIME_STATUS=COMPLETED
+status=C53_IS_EVIDENCE_EXPANSION_FOR_C52_REDESIGN_COMPLETED
+artifact_path=storage/app/watchlist/backtest/c53-is-evidence-expansion-for-c52-redesign.json
+artifact_hash=6a1749d723e16b7efdb8aa1d7510388a9475d12c
+file_sha1=E35FEFB78B6F1931E54169BD8AABE286CB6F08C2
+```
+
+```text
+expected_c52_hash=5dbe51c9d18b175e65cddb60336baf43d6833b72
+actual_c52_hash=5dbe51c9d18b175e65cddb60336baf43d6833b72
+c52_hash_match=true
+expected_c52_file_sha1=DADE6518BFF3912D8A43D7C67073FB803F7CF878
+actual_c52_file_sha1=DADE6518BFF3912D8A43D7C67073FB803F7CF878
+c52_file_sha1_match=true
+review_cohort_candidate_count=14
+rolling_window_count=840
+rolling_quality_failure_count=0
+rolling_stability_failure_count=217
+rolling_coverage_failure_count=0
+candidate_full_rolling_pass_count=0
+loo_result_count=378
+candidate_loo_pass_count=0
+regime_fully_available_field_count=5/7
+candidate_regime_pass_count=13/14
+candidate_ready_for_c54_count=0
+primary_evidence_gap=ROLLING_STABILITY
+diagnostic_conclusion=C53_ROLLING_STABILITY_EVIDENCE_GAP_CONFIRMED
+next_step_recommendation=C54_ROLLING_STABILITY_REDESIGN_OR_RECALIBRATION_IS_ONLY
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+## C54 — Rolling Stability Redesign or Recalibration (IS Only)
+
+```text
+C54_IMPLEMENTATION_STATUS=IMPLEMENTED_FINAL
+C54_PHPUNIT_STATUS=PASS
+C54_PHPUNIT_RESULT=OK (8 tests, 114 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (777 tests, 15152 assertions)
+C54_RUNTIME_STATUS=COMPLETED
+status=C54_ROLLING_STABILITY_REDESIGN_OR_RECALIBRATION_IS_ONLY_COMPLETED
+artifact_path=storage/app/watchlist/backtest/c54-rolling-stability-redesign-or-recalibration-is-only.json
+artifact_hash=8c71a4352a1024dbe985e0f0bb6329f5e1545150
+file_sha1=75410BB1A30A32FFFF9661CAD6818C13E044F7E5
+SOURCE_ROWS=15750
+REDESIGNED_CANDIDATE_COUNT=11
+QUALITY_PASS_COUNT=11
+COVERAGE_PASS_COUNT=11
+FULL_IS_STABILITY_PASS_COUNT=0
+CONCENTRATION_PASS_COUNT=0
+FULL_ROLLING_PASS_COUNT=0
+LOO_PASS_COUNT=5
+REGIME_PASS_COUNT=3
+MATERIAL_DIFFERENCE_PASS_COUNT=8
+BEST_ROLLING_PASS_RATE=0.9833333333333333
+CANDIDATE_READY_FOR_C55_COUNT=0
+diagnostic_conclusion=C54_ROLLING_STABILITY_GAP_REMAINS
+next_step_recommendation=C55_ROLLING_STABILITY_REDESIGN_CONTINUATION_IS_ONLY
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
