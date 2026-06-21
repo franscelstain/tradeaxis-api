@@ -318,7 +318,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         ];
     }
 
-    private function loadSourceRows(string $from, string $to, array $options, array $c49, array &$notEvaluable): array
+    protected function loadSourceRows(string $from, string $to, array $options, array $c49, array &$notEvaluable): array
     {
         $sourcePath = null;
         if (array_key_exists('source_rows', $options)) {
@@ -367,7 +367,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         ]];
     }
 
-    private function lineageRows(array $rows, array &$notEvaluable): array
+    protected function lineageRows(array $rows, array &$notEvaluable): array
     {
         $g16 = $this->branchBucketRows($rows, 'G16', 'next_open_delay_after_close_signal');
         $g21 = $this->branchBucketRows($rows, 'G21', 'no_rule_profit_signal_before_fallback');
@@ -391,7 +391,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         ];
     }
 
-    private function redesignedCandidateRows(array $lineageRows): array
+    protected function redesignedCandidateRows(array $lineageRows): array
     {
         $months = $lineageRows['months'];
         $g16 = $lineageRows['g16'];
@@ -582,7 +582,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $out;
     }
 
-    private function rollingValidationResults(array $candidateRows, array $months): array
+    protected function rollingValidationResults(array $candidateRows, array $months): array
     {
         $windows = $this->rollingWindows($months);
         $out = [];
@@ -623,7 +623,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $out;
     }
 
-    private function rollingValidationSummary(array $results): array
+    protected function rollingValidationSummary(array $results): array
     {
         $out = [];
         foreach ($this->groupByField($results, 'candidate_code') as $candidate => $rows) {
@@ -645,7 +645,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return ['candidate_summaries' => $out, 'rolling_candidate_count' => count($out)];
     }
 
-    private function leaveOneMonthOutResults(array $candidateRows, array $months): array
+    protected function leaveOneMonthOutResults(array $candidateRows, array $months): array
     {
         $out = [];
         $baseMetrics = [];
@@ -682,7 +682,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $out;
     }
 
-    private function leaveOneMonthOutSummary(array $results): array
+    protected function leaveOneMonthOutSummary(array $results): array
     {
         $out = [];
         foreach ($this->groupByField($results, 'candidate_code') as $candidate => $rows) {
@@ -703,7 +703,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return ['candidate_summaries' => $out, 'loo_candidate_count' => count($out)];
     }
 
-    private function regimeRobustnessResults(array $candidateRows, array &$notEvaluable): array
+    protected function regimeRobustnessResults(array $candidateRows, array &$notEvaluable): array
     {
         $fields = ['market_index_roc20', 'market_index_ma20_slope_pct', 'sector_roc20', 'rs_20_vs_ihsg', 'rs_20_vs_sector', 'roc20', 'ma20_slope_pct'];
         $out = [];
@@ -742,7 +742,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $out;
     }
 
-    private function regimeRobustnessSummary(array $results): array
+    protected function regimeRobustnessSummary(array $results): array
     {
         $out = [];
         foreach ($this->groupByField($results, 'candidate_code') as $candidate => $rows) {
@@ -797,7 +797,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $out;
     }
 
-    private function sourceBiasCheck(array $rows, array $summary): array
+    protected function sourceBiasCheck(array $rows, array $summary): array
     {
         $requiredPreTrade = ['market_index_roc20', 'sector_roc20', 'rs_20_vs_ihsg', 'rs_20_vs_sector', 'roc20', 'ma20_slope_pct', 'atr14_pct', 'vol_ratio'];
         $missingPreTrade = 0;
@@ -1046,7 +1046,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return array_merge($base, $specific, ['profile_code' => $candidate, 'family_code' => $candidate]);
     }
 
-    private function loadPreTradeSources(array $rows, array $options): array
+    protected function loadPreTradeSources(array $rows, array $options): array
     {
         if (array_key_exists('pre_trade_source_rows', $options)) {
             $map = [];
@@ -1096,7 +1096,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return array_map(function (array $row) use ($sources): array { return array_merge($row, $sources[$this->joinKey($row)] ?? []); }, $rows);
     }
 
-    private function metrics(array $rows): array
+    protected function metrics(array $rows): array
     {
         $values = [];
         foreach ($rows as $row) {
@@ -1138,7 +1138,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $sorted[$index];
     }
 
-    private function concentrationSummary(array $rows): array
+    protected function concentrationSummary(array $rows): array
     {
         $lossRows = array_values(array_filter($rows, function (array $row): bool { return ($this->num($row['profile_ret_net'] ?? null) ?? 0.0) < 0.0; }));
         return [
@@ -1155,7 +1155,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         ];
     }
 
-    private function sectorConcentration(array $rows): ?float
+    protected function sectorConcentration(array $rows): ?float
     {
         if (count($rows) === 0) { return null; }
         $counts = [];
@@ -1171,7 +1171,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return max($counts) / count($rows);
     }
 
-    private function concentration(array $rows, string $field): ?float
+    protected function concentration(array $rows, string $field): ?float
     {
         if (count($rows) === 0) { return null; }
         $counts = [];
@@ -1179,7 +1179,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return max($counts) / count($rows);
     }
 
-    private function overlapShare(array $rows, array $other): ?float
+    protected function overlapShare(array $rows, array $other): ?float
     {
         if (count($rows) === 0) { return null; }
         $keys = [];
@@ -1189,21 +1189,21 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $shared / count($rows);
     }
 
-    private function intersectRows(array $rows, array $other): array
+    protected function intersectRows(array $rows, array $other): array
     {
         $keys = [];
         foreach ($other as $row) { $keys[$this->pickKey($row)] = true; }
         return array_values(array_filter($rows, function (array $row) use ($keys): bool { return isset($keys[$this->pickKey($row)]); }));
     }
 
-    private function diffRows(array $rows, array $other): array
+    protected function diffRows(array $rows, array $other): array
     {
         $keys = [];
         foreach ($other as $row) { $keys[$this->pickKey($row)] = true; }
         return array_values(array_filter($rows, function (array $row) use ($keys): bool { return ! isset($keys[$this->pickKey($row)]); }));
     }
 
-    private function selectMonthlyQuota(array $rows, array $months, int $quota, string $ranking): array
+    protected function selectMonthlyQuota(array $rows, array $months, int $quota, string $ranking): array
     {
         if ($quota <= 0) { return []; }
         $byMonth = $this->groupByMonth($rows);
@@ -1219,7 +1219,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $selected;
     }
 
-    private function selectWithExposureCap(array $rows, int $tickerCapPerMonth, int $sectorCapPerMonth): array
+    protected function selectWithExposureCap(array $rows, int $tickerCapPerMonth, int $sectorCapPerMonth): array
     {
         usort($rows, function (array $a, array $b): int { return strcmp($this->qualityKey($a, 'BALANCED').'|'.$this->metadataKey($a), $this->qualityKey($b, 'BALANCED').'|'.$this->metadataKey($b)); });
         $tickerCounts = []; $sectorCounts = []; $selected = [];
@@ -1319,7 +1319,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $out;
     }
 
-    private function scorecardByCandidate(array $scorecard, string $candidate): array
+    protected function scorecardByCandidate(array $scorecard, string $candidate): array
     {
         foreach ($scorecard as $row) { if (is_array($row) && ($row['candidate_code'] ?? null) === $candidate) { return $row; } }
         return [];
@@ -1353,7 +1353,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $out;
     }
 
-    private function groupByField(array $rows, string $field): array
+    protected function groupByField(array $rows, string $field): array
     {
         $out = [];
         foreach ($rows as $row) { $out[(string) ($row[$field] ?? 'UNKNOWN')][] = $row; }
@@ -1371,7 +1371,7 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return implode('|', [(string) ($row['trade_month'] ?? ''), (string) ($row['trade_date'] ?? ''), (string) ($row['ticker'] ?? ''), sprintf('%010d', (int) ($row['param_id'] ?? 0)), (string) ($row['row_code'] ?? '')]);
     }
 
-    private function joinKey(array $row): string
+    protected function joinKey(array $row): string
     {
         return (string) ($row['trade_date'] ?? '').'|'.(isset($row['ticker_id']) ? 'ID:'.$row['ticker_id'] : 'TICKER:'.strtoupper((string) ($row['ticker'] ?? '')));
     }
@@ -1392,18 +1392,18 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return $number === null ? '9|99999999999999999999' : '0|'.sprintf('%030.10f', 1000000000000000.0 - $number);
     }
 
-    private function uniqueMonths(array $rows): array { $values = []; foreach ($rows as $row) { $v = (string) ($row['trade_month'] ?? substr((string) ($row['trade_date'] ?? ''), 0, 7)); if ($v !== '') { $values[$v] = true; } } $out = array_keys($values); sort($out); return $out; }
-    private function uniqueDates(array $rows): array { $values = []; foreach ($rows as $row) { $v = (string) ($row['trade_date'] ?? ''); if ($v !== '') { $values[$v] = true; } } return array_keys($values); }
+    protected function uniqueMonths(array $rows): array { $values = []; foreach ($rows as $row) { $v = (string) ($row['trade_month'] ?? substr((string) ($row['trade_date'] ?? ''), 0, 7)); if ($v !== '') { $values[$v] = true; } } $out = array_keys($values); sort($out); return $out; }
+    protected function uniqueDates(array $rows): array { $values = []; foreach ($rows as $row) { $v = (string) ($row['trade_date'] ?? ''); if ($v !== '') { $values[$v] = true; } } return array_keys($values); }
     private function uniqueValues(array $rows, string $field): array { $values = []; foreach ($rows as $row) { $v = (string) ($row[$field] ?? ''); if ($v !== '') { $values[$v] = true; } } return array_keys($values); }
     private function uniqueSectorValues(array $rows): array { $values = []; foreach ($rows as $row) { $v = (string) ($row['sector_code'] ?? $row['sector_name'] ?? ''); if ($v !== '') { $values[$v] = true; } } return array_keys($values); }
     private function fieldsPresent(array $rows): array { $fields = []; foreach ($rows as $row) { foreach (array_keys($row) as $key) { $fields[$key] = true; } } $out = array_keys($fields); sort($out); return $out; }
     private function minValue(array $rows, string $field) { $values = []; foreach ($rows as $row) { if (is_numeric($row[$field] ?? null)) { $values[] = (float) $row[$field]; } } return count($values) > 0 ? min($values) : null; }
     private function maxValue(array $rows, string $field) { $values = []; foreach ($rows as $row) { if (is_numeric($row[$field] ?? null)) { $values[] = (float) $row[$field]; } } return count($values) > 0 ? max($values) : null; }
-    private function num($value): ?float { return is_numeric($value) ? (float) $value : null; }
-    private function strictFalse($value): bool { return $value === false || $value === 0 || $value === '0'; }
-    private function validPeriod(string $from, string $to): bool { return preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) === 1 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to) === 1 && strcmp($from, $to) <= 0; }
-    private function touchesOos(string $from, string $to): bool { return strcmp($to, self::OOS_RESERVED_FROM) >= 0 && strcmp($from, self::OOS_RESERVED_TO) <= 0; }
-    private function addNotEvaluable(array &$out, string $layer, string $slice, string $code, string $message): void { $out[] = ['validation_layer' => $layer, 'validation_slice' => $slice, 'reason_code' => $code, 'message' => $message]; }
+    protected function num($value): ?float { return is_numeric($value) ? (float) $value : null; }
+    protected function strictFalse($value): bool { return $value === false || $value === 0 || $value === '0'; }
+    protected function validPeriod(string $from, string $to): bool { return preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) === 1 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to) === 1 && strcmp($from, $to) <= 0; }
+    protected function touchesOos(string $from, string $to): bool { return strcmp($to, self::OOS_RESERVED_FROM) >= 0 && strcmp($from, self::OOS_RESERVED_TO) <= 0; }
+    protected function addNotEvaluable(array &$out, string $layer, string $slice, string $code, string $message): void { $out[] = ['validation_layer' => $layer, 'validation_slice' => $slice, 'reason_code' => $code, 'message' => $message]; }
 
     private function blocked(array $artifact, string $status, string $reason, string $message, string $output): array
     {
@@ -1459,5 +1459,5 @@ class WatchlistBacktestC51ConcentrationDependencyRedesignReviewService
         return ['ok' => true, 'reason_code' => null, 'message' => null];
     }
 
-    private function stableHash(array $payload): string { unset($payload['artifact_hash']); return sha1(json_encode($payload, JSON_UNESCAPED_SLASHES)); }
+    protected function stableHash(array $payload): string { unset($payload['artifact_hash']); return sha1(json_encode($payload, JSON_UNESCAPED_SLASHES)); }
 }

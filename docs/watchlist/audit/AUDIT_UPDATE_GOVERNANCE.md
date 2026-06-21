@@ -2255,3 +2255,56 @@ C51_NO_PRODUCTION_ROLLOUT_CONFIRMED=true
 C51_NO_C52_READY_CANDIDATE=true
 C51_NEXT_STEP=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
 ```
+
+## C52 Governance — Concentration Dependency Redesign Continuation
+
+C52 governance locks the stage to IS-only sector metadata reconstruction and a deterministic second-pass concentration/dependency redesign.
+
+```text
+SOURCE_ARTIFACT_LOCK=C51+C50+C49_STABLE_HASH
+VALIDATION_COMMAND=watchlist:backtest-c52-concentration-dependency-redesign-continuation
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c52-concentration-dependency-redesign-continuation.json
+IS_ONLY_REDESIGN_CONTINUATION=true
+IS_PERIOD=2023-01-02..2025-05-21
+OOS_RESERVED_PERIOD=2025-05-22..2026-05-29
+SECTOR_METADATA_ASOF_RECONSTRUCTION_REQUIRED=true
+SECTOR_CONCENTRATION_NOT_EVALUABLE_RULE=true
+C51_C50_C49_LOCKED_LINEAGE_USAGE_REQUIRED=true
+NO_OOS_TUNING=true
+NO_OOS_PROOF=true
+NO_OOS_PROOF_RERUN=true
+NO_PRODUCTION_READINESS=true
+CANDIDATE_NOT_PRODUCTION=true
+POWERSHELL_COMPATIBLE_JSON_REQUIRED=true
+OPERATOR_VALIDATION_REQUIRED=true
+```
+
+Sector governance:
+
+```text
+PRIMARY_SOURCE=eod_indicators.sector_code@exact_trade_date+ticker_id
+FALLBACK_SOURCE=ticker_sector_memberships@effective_from/effective_to
+NAME_SOURCE=market_data_sectors@sector_code
+NO_MAX_FUTURE_TRADE_DATE=true
+NO_FABRICATED_SECTOR=true
+SOURCE_CONFLICTS_MUST_BE_REPORTED=true
+MISSING_SECTOR_MUST_BE_NOT_EVALUABLE=true
+```
+
+Final governance outcome:
+
+```text
+C51_SECTOR_EVALUATION_DEFECT_CONFIRMED=true
+C52_SECTOR_METADATA_RECONSTRUCTION_PASS=true
+C52_SECTOR_JOIN_COVERAGE_RATE=1
+C52_SECTOR_UNIQUE_COUNT=11
+C52_CONCENTRATION_PASS_CANDIDATE_COUNT=14
+C52_SELECTED_CANDIDATE_COUNT=0
+C52_ANTI_OVERFIT_PASS=false
+C52_DIAGNOSTIC_CONCLUSION=C52_EVIDENCE_EXPANSION_REQUIRED
+C52_NEXT_STEP=C53_IS_EVIDENCE_EXPANSION_FOR_C52_REDESIGN
+C52_MUST_NOT_RECOMMEND_OOS_PROOF=true
+production_ready=false
+```
+
+C53 remains a pre-OOS IS stage. A C52 pass may recommend C53 IS validation/pre-OOS lock review, but never direct OOS proof.
