@@ -365,3 +365,18 @@ Compatibility exceptions remain allowed only where explicitly technical:
 - MariaDB `ENUM` -> SQLite `string`
 - MariaDB `JSON` -> SQLite `text`
 - MariaDB composite production primary keys may be mirrored with surrogate test IDs where existing integration tests depend on row insertion ergonomics.
+
+## Database Dictionary and Consumer Field Mapping Rule
+
+`docs/market_data/db/MARKET_DATA_DICTIONARY.md` is the operational dictionary for database-connected work. The physical schema contract in this file remains authoritative for persistence semantics, but agents and implementations must use the dictionary to resolve table purpose, field role, date key, identifier key, as-of lookup rule, and consumer-facing mappings before coding.
+
+Mandatory current mappings:
+
+```text
+market_index_roc20 => market_benchmark_indicators.roc_20 where benchmark_code='IHSG'
+market_index_ma20_slope_pct => market_benchmark_indicators.ma20_slope_pct where benchmark_code='IHSG'
+market_calendar date key => cal_date
+IHSG benchmark master => market_benchmarks.benchmark_code='IHSG' provider_symbol='^JKSE'
+```
+
+If a database-connected task finds a table/column/role missing from the dictionary, the task must update the dictionary or mark the work blocked before claiming implementation evidence.

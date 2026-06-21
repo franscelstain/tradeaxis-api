@@ -3,7 +3,7 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Backfill Lifecycle Benchmark Non-Blocking Recovery / 2026-06-09 Runtime Proof
+- Market Data Indicator Warmup Window Audit
 
 [SESSION_STATUS] LOCKED
 
@@ -4501,3 +4501,29 @@ Historical status: DONE for the 2026-05-01 source state; current canonical schem
 [CLAIM_BOUNDARY]
 - This refresh is an artifact/proof synchronization only; it does not change provider smoke command behavior.
 - Future provider-smoke proof must not claim PASS unless the current authoritative artifact contains `provider_smoke_status=PASS`, `reason_code=PROVIDER_SMOKE_OK`, valid HTTP/provider telemetry, and all non-destructive safety flags remain false.
+
+## Database Dictionary and Field Usage Governance
+
+Status: `DONE_DOCS_ONLY_DICTIONARY_CREATED`
+
+Last updated: 2026-06-22
+
+Related contract: `MARKET_DATA_DATABASE_DICTIONARY_REQUIRED_CONTRACT`
+
+Implementation:
+
+- Added `docs/market_data/db/MARKET_DATA_DICTIONARY.md` as the operational table/column/field-role dictionary.
+- Added `docs/db/DATABASE_DICTIONARY_USAGE_RULE.md` as shared governance for database-connected work.
+- Added `docs/market_data/db/README.md` as the DB docs index.
+- Cross-linked the dictionary from schema contracts and metadata docs.
+
+Final behavior:
+
+- Any future database-connected Market Data work must read the dictionary before implementation.
+- Field/table names must not be inferred from memory.
+- Missing dictionary coverage is a blocker or required dictionary update.
+
+Evidence:
+
+- Docs-only update.
+- Dictionary includes C57-proven mapping: `market_benchmark_indicators.roc_20 => market_index_roc20`, `market_benchmark_indicators.ma20_slope_pct => market_index_ma20_slope_pct`, and `market_calendar.cal_date` as calendar date key.
