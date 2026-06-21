@@ -45,3 +45,15 @@ Aturan scoring penting:
 - jika Layer C tidak aktif, seluruh item audit yang khusus code/app/runtime nyata harus diberi `N/A`, bukan `PARTIAL`;
 - jangan menurunkan nilai hanya karena service/controller/repository/payload runtime nyata memang belum ada pada ZIP guidance;
 - `PARTIAL` untuk real-app evidence hanya sah bila Layer C aktif tetapi buktinya belum lengkap atau belum sinkron.
+
+## Database Dictionary Requirement for Implementation Prompts
+
+Any implementation prompt that touches database-connected data must require the implementer to read and apply:
+
+```text
+docs/market_data/db/MARKET_DATA_DICTIONARY.md
+docs/db/DATABASE_DICTIONARY_USAGE_RULE.md
+docs/watchlist/system/db/WATCHLIST_DB_DICTIONARY.md
+```
+
+The implementation must explicitly confirm touched tables, date keys, identifier keys, field roles, as-of safety, and selection/evaluation boundaries before coding. Do not infer database field names from memory. Missing dictionary coverage is a blocker or a required docs update, not something to guess around.

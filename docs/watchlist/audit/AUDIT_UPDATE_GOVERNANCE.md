@@ -2478,7 +2478,7 @@ C57 must remain IS-only and must focus first on as-of-safe reconstruction of `ma
 ## Governance Addendum — C57 Regime Field Reconstruction Continuation IS Only
 
 GOVERNANCE_CODE=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
-STATUS=IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED
+STATUS=DONE_OPERATOR_VALIDATED
 PRODUCTION_READY=false
 
 ### Source artifact lock
@@ -2599,3 +2599,65 @@ C57 fix2 remains under the original IS-only boundary. The repair is limited to s
 - Use `market_benchmark_bars` only as bounded historical fallback.
 - Use `market_calendar.cal_date` when available.
 - Do not use OOS rows, OOS returns, future path, failed-window exclusion, adverse-month exclusion, production catalog, promotion, or PLAN/CONFIRM mutation.
+
+
+## Governance Addendum — C57 Final Operator Validation
+
+C57 final documentation update is based on operator-provided validation evidence after C57 fix2.
+
+Final validation evidence:
+
+```text
+PHPUNIT_C57=PASS OK (10 tests, 185 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (805 tests, 15967 assertions)
+ARTISAN_C57_RUNTIME=COMPLETED
+ARTIFACT_PATH=storage/app/watchlist/backtest/c57-regime-field-reconstruction-continuation-is-only.json
+ARTIFACT_HASH=71230896c2121fcfedddf36dd54c9c03ad462b4d
+ARTIFACT_FILE_SHA1=50272917A107E304F8EEEB874DBC02A881DB0C31
+```
+
+Final C57 governance interpretation:
+
+- C57 may be marked `DONE_OPERATOR_VALIDATED` for its scoped task.
+- C57 must still be marked `NOT_PRODUCTION_READY` for trading use.
+- C57 closes the market-index regime-field reconstruction gap.
+- C57 does not close concentration/loss-cluster or regime robustness gaps.
+- C57 must not unlock direct OOS proof.
+- C57 must route to `C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY`.
+
+C58 governance boundary inherited from C57:
+
+- C58 remains IS-only unless a later governance document explicitly unlocks a pre-OOS lock review.
+- C58 must not use OOS rows, OOS returns, OOS bad months, failed rolling windows, adverse months, ticker losers, or sector losers as tuning/selection input.
+- C58 must not create production catalog, promote a candidate, mutate PLAN/CONFIRM, or mutate C01-C57 artifacts.
+- C58 must focus on loss-cluster and concentration repair using pre-trade-safe logic only.
+
+## Database Dictionary Required Rule
+
+Every Watchlist session that touches database-connected data must read the database dictionary before implementation:
+
+```text
+docs/market_data/db/MARKET_DATA_DICTIONARY.md
+docs/db/DATABASE_DICTIONARY_USAGE_RULE.md
+docs/watchlist/system/db/WATCHLIST_DB_DICTIONARY.md
+```
+
+This rule applies to PLAN, CONFIRM, backtest, audit diagnostics, source reconstruction, regime reconstruction, sector metadata, market-index data, eligibility, and future features.
+
+Mandatory behavior:
+
+- Identify all tables touched.
+- Confirm date key and identifier key.
+- Confirm whether fields are pre-trade safe, evaluation-only, or forbidden for selection.
+- Never infer DB column names from memory.
+- Never use unbounded `MAX(trade_date)` for as-of lookup.
+- Never use OOS rows/returns/bad months for IS tuning or candidate selection.
+- If dictionary coverage is missing, update dictionary/governance or mark session blocked.
+
+C57-proven mapping:
+
+```text
+market_index_roc20 => market_benchmark_indicators.roc_20 where benchmark_code='IHSG'
+market_index_ma20_slope_pct => market_benchmark_indicators.ma20_slope_pct where benchmark_code='IHSG'
+market_calendar date key => cal_date
+```

@@ -128,3 +128,13 @@ WS_BT_GRID_<NEW_FOCUS>_C01_YYYY_MM
 ```
 
 Never mutate `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06` after its failed-IS runtime evidence.
+
+## Database Dictionary Requirement for DB-Connected Work
+
+For any Watchlist audit prompt that touches database-connected data, include and enforce this clause:
+
+```text
+Before implementation, read `docs/market_data/db/MARKET_DATA_DICTIONARY.md`, `docs/db/DATABASE_DICTIONARY_USAGE_RULE.md`, and the relevant schema/migration docs. Identify every table, date key, identifier key, field role, and as-of safety rule before coding. Do not infer database column names. If the dictionary is missing a table/field/role, update the dictionary or mark the task blocked before implementation.
+```
+
+This is mandatory for source reconstruction, market-index/regime fields, sector metadata, eligibility, PLAN/CONFIRM reads, backtests, diagnostics, and any future database-backed feature.

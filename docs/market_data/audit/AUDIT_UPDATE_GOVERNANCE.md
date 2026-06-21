@@ -1205,3 +1205,22 @@ Governance requirements:
 - Do not claim auto republication unless a correction/reseal/finalize path was actually executed and tested.
 - Already-readable affected dates must either complete the correction-current republication path with explicit correction lineage or remain blocked with `AFFECTED_PUBLICATION_REQUIRES_CORRECTION`; both outcomes must preserve current pointer safety.
 - `--resume --only-failed` retry success must document whether recovered rows were applied, unchanged, failed, or blocked.
+
+# Database Dictionary Required Rule
+
+Any Market Data task that reads, writes, transforms, audits, or interprets database-backed data must read these before implementation:
+
+```text
+docs/market_data/db/MARKET_DATA_DICTIONARY.md
+docs/db/DATABASE_DICTIONARY_USAGE_RULE.md
+```
+
+The task must identify each touched table, date key, identifier key, field role, and as-of safety rule. Do not infer column names from memory. If a field/table is absent from the dictionary, update the dictionary or mark the work blocked before coding or claiming evidence.
+
+Known hard mapping from C57:
+
+```text
+market_index_roc20 => market_benchmark_indicators.roc_20 where benchmark_code='IHSG'
+market_index_ma20_slope_pct => market_benchmark_indicators.ma20_slope_pct where benchmark_code='IHSG'
+market_calendar date key => cal_date
+```

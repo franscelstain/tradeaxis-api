@@ -313,3 +313,14 @@ Correction lifecycle replay fields are part of `md_replay_daily_metrics` and mus
 - `expected_correction_publication_switch`
 - `expected_baseline_publication_id`
 - `expected_candidate_publication_id`
+
+## Database Dictionary Cross-Reference
+
+For full table/column purpose, field role, date-key, identifier-key, and as-of usage rules, read:
+
+```text
+docs/market_data/db/MARKET_DATA_DICTIONARY.md
+docs/db/DATABASE_DICTIONARY_USAGE_RULE.md
+```
+
+This document remains the coverage-gate metadata addendum. It does not replace the operational database dictionary.

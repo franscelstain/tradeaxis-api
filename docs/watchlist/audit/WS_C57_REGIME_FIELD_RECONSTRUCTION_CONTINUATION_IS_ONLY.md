@@ -278,7 +278,9 @@ C57 must not recommend OOS proof directly.
 
 ## Runtime result
 
-Runtime in this container was not executed through Artisan because the container PHP runtime is unsupported by the repository guard:
+### Container limitation
+
+Runtime in the patch container was not executed through Artisan because the container PHP runtime is unsupported by the repository guard:
 
 - `ENV_UNSUPPORTED_PHP_VERSION`
 - Current container PHP: `8.4.16`
@@ -301,9 +303,28 @@ Expected output path:
 
 Artifact hash must be taken from a real operator runtime artifact only. Do not claim C57 PASS or runtime COMPLETED unless the validation commands are run successfully in the supported environment.
 
+### Operator runtime validation — final
+
+Operator validation was later executed in the supported project environment after C57 fix2. Final evidence:
+
+- C57 PHPUnit: `PASS — OK (10 tests, 185 assertions)`
+- Full Watchlist PHPUnit: `PASS — OK (805 tests, 15967 assertions)`
+- C57 runtime: `COMPLETED`
+- Runtime status: `C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY_COMPLETED`
+- Artifact path: `storage/app/watchlist/backtest/c57-regime-field-reconstruction-continuation-is-only.json`
+- Artifact stable hash: `71230896c2121fcfedddf36dd54c9c03ad462b4d`
+- Artifact file SHA1: `50272917A107E304F8EEEB874DBC02A881DB0C31`
+- Diagnostic conclusion: `C57_LOSS_CLUSTER_GAP_REMAINS`
+- Next step recommendation: `C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY`
+- `production_ready=false`
+- `direct_oos_proof_recommended=false`
+- `oos_proof_unlocked=false`
+
 ## Final status
 
-Implementation status: `IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED`
+Implementation status: `DONE_OPERATOR_VALIDATED`
+
+Runtime status: `C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY_COMPLETED`
 
 Production status: `production_ready=false`
 
@@ -326,3 +347,104 @@ Fix2 changes:
 - Keeps non-market regime-field coverage anchored to C56 when locked C28 diagnostic rows do not carry the reconstructed indicator fields.
 
 The fix remains IS-only, read-only, as-of-safe, and does not change OOS, production, catalog, PLAN/CONFIRM, or C01-C56 artifacts.
+
+
+## Final C57 evidence after fix2
+
+C57 fix2 resolved the remaining market-index regime-field reconstruction defect. The final runtime artifact records:
+
+```text
+market_index_source_discovery_attempted=true
+source_found=true
+selected_source_name=MARKET_BENCHMARK_INDICATORS
+selected_source_table=market_benchmark_indicators
+selected_identifier=IHSG
+required_date_count=300
+required_date_min=2023-03-15
+required_date_max=2025-05-14
+source_row_date_field_detected=trade_date
+source_row_min_date=2023-03-15
+source_row_max_date=2025-05-14
+asof_safe=true
+future_lookup_detected=false
+oos_rows_requested=0
+```
+
+Market-index reconstruction result:
+
+```text
+market_index_roc20 rows_required=15750 rows_reconstructed=15750 coverage_rate=1 reconstruction_pass=true
+market_index_ma20_slope_pct rows_required=15750 rows_reconstructed=15750 coverage_rate=1 reconstruction_pass=true
+```
+
+Regime field reconstruction result:
+
+```text
+required_field_count=9
+evaluable_field_count=9
+missing_field_count=0
+regime_field_coverage_min=1
+regime_fully_evaluable=true
+market_index_regime_fields_reconstructed=true
+market_index_roc20_reconstructed=true
+market_index_ma20_slope_pct_reconstructed=true
+reconstruction_pass=true
+failure_reason_codes=[]
+```
+
+Validation summaries after reconstruction:
+
+```text
+rolling_candidate_count=26
+candidate_full_rolling_pass_count=4
+rolling_stability_retained_after_regime_reconstruction=true
+loo_candidate_count=26
+candidate_loo_pass_count=2
+regime_candidate_count=10
+candidate_regime_pass_count=0
+regime_required_field_count=9
+regime_evaluable_field_count=9
+regime_fully_evaluable=true
+regime_robustness_validation_pass=false
+source_bias_validation_pass=true
+sector_metadata_reconstruction_pass=true
+source_reconstruction_no_max_trade_date=true
+market_index_reconstruction_no_max_trade_date=true
+future_lookup_detected=false
+oos_rows_requested=0
+return_used_for_selection=false
+future_path_used_for_selection=false
+oos_return_used_for_selection=false
+```
+
+Primary anchor concentration/loss-cluster status:
+
+```text
+C56_R21_ROLLING_STRESS_SMOOTHER_NO_WINDOW_EXCLUSION: max_bucket_share=0.5116279069767442 max_branch_share=0.4883720930232558 max_sector_share=0.13953488372093023 max_ticker_share=0.06976744186046512 loss_cluster_share=0.10810810810810811 concentration_validation_pass=false
+C56_R23_REGIME_COMPLETE_BALANCED_CANDIDATE: max_bucket_share=0.5061728395061729 max_branch_share=0.49382716049382713 max_sector_share=0.14814814814814814 max_ticker_share=0.07407407407407407 loss_cluster_share=0.11428571428571428 concentration_validation_pass=false
+C56_R09_R00_BRANCH_BUCKET_CAP_50_LOSS_CLUSTER_08: max_bucket_share=0.5357142857142857 max_branch_share=0.5357142857142857 loss_cluster_share=0.13043478260869565 concentration_validation_pass=false
+C56_R10_R01_BRANCH_BUCKET_CAP_50_LOSS_CLUSTER_08: max_bucket_share=0.5350877192982456 max_branch_share=0.5350877192982456 loss_cluster_share=0.1276595744680851 concentration_validation_pass=false
+C56_R13_R00_MONTHLY_EXPOSURE_EQUALIZER: max_bucket_share=0.5517241379310345 max_branch_share=0.5517241379310345 loss_cluster_share=0.12 concentration_validation_pass=false
+C56_R14_R01_MONTHLY_EXPOSURE_EQUALIZER: max_bucket_share=0.5508474576271186 max_branch_share=0.5508474576271186 loss_cluster_share=0.11764705882352941 concentration_validation_pass=false
+```
+
+C57 readiness decision:
+
+```text
+validation_completed=true
+candidate_ready_for_c58_count=0
+candidate_codes=[]
+c58_recommendation=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY
+decision_reason=concentration_or_loss_cluster_not_repaired
+diagnostic_conclusion=C57_LOSS_CLUSTER_GAP_REMAINS
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+Final interpretation:
+
+- The C56/C57 market-index regime-field blocker is closed.
+- C57 does not unlock OOS proof.
+- C57 is not production-ready.
+- The next work item is C58 loss-cluster/concentration redesign continuation, IS-only.

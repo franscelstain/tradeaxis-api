@@ -4269,3 +4269,23 @@ Historical status: LOCKED for the 2026-05-01 source state; current canonical con
 - ProductionValidationRuntimeProofStaticGuardTest -> OK (15 tests, 491 assertions).
 - ProductionSchedulerCronStaticGuardTest -> OK (5 tests, 107 assertions).
 - Full MarketData suite: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (635 tests, 9474 assertions), Time 00:35.061, Memory 48.00 MB.
+
+## MARKET_DATA_DATABASE_DICTIONARY_REQUIRED_CONTRACT
+
+Status: `DONE_DOCS_ONLY`
+
+Last updated: 2026-06-22
+
+Related implementation: `Database Dictionary and Field Usage Governance`
+
+Contract:
+
+- Database-connected Market Data work must read `docs/market_data/db/MARKET_DATA_DICTIONARY.md` and `docs/db/DATABASE_DICTIONARY_USAGE_RULE.md` before coding.
+- Each touched table must have table purpose, date key, identifier key, field role, and as-of safety understood before implementation.
+- Missing dictionary coverage must be resolved by updating the dictionary or marking the task blocked.
+- Column names must not be inferred from memory.
+- Current critical mappings are locked in the dictionary: benchmark `roc_20`, benchmark `ma20_slope_pct`, and `market_calendar.cal_date`.
+
+Validation:
+
+- Docs-only contract and dictionary created.

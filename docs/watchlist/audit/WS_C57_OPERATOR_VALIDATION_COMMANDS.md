@@ -436,3 +436,62 @@ Expected fix2 marker:
 - `market_index_roc20` should map from `roc_20` or fallback to benchmark bars.
 - `market_index_ma20_slope_pct` should map from `ma20_slope_pct` or fallback to benchmark bars.
 - C57 still must keep `production_ready=false`, `direct_oos_proof_recommended=false`, and `oos_proof_unlocked=false`.
+
+
+## 31. Final operator validation evidence after C57 fix2
+
+Actual operator validation was executed in the supported project environment.
+
+### PHPUnit C57
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC57"
+OK (10 tests, 185 assertions)
+```
+
+### Full Watchlist PHPUnit
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist
+OK (805 tests, 15967 assertions)
+```
+
+### C57 runtime
+
+```text
+status=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY_COMPLETED
+artifact_path=storage/app/watchlist/backtest/c57-regime-field-reconstruction-continuation-is-only.json
+artifact_hash=71230896c2121fcfedddf36dd54c9c03ad462b4d
+production_ready=0
+diagnostic_conclusion=C57_LOSS_CLUSTER_GAP_REMAINS
+next_step_recommendation=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY
+```
+
+### Artifact file SHA1
+
+```text
+SHA1=50272917A107E304F8EEEB874DBC02A881DB0C31
+```
+
+### Final market-index reconstruction marker
+
+```text
+selected_source_table=market_benchmark_indicators
+selected_identifier=IHSG
+required_date_count=300
+market_index_roc20 rows_reconstructed=15750 coverage_rate=1
+market_index_ma20_slope_pct rows_reconstructed=15750 coverage_rate=1
+regime_fully_evaluable=true
+reconstruction_pass=true
+```
+
+### Final readiness marker
+
+```text
+candidate_ready_for_c58_count=0
+c58_recommendation=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY
+decision_reason=concentration_or_loss_cluster_not_repaired
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```

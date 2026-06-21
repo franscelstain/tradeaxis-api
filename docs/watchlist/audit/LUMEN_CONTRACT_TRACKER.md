@@ -14,11 +14,11 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C55 ROLLING STABILITY REDESIGN CONTINUATION IS ONLY`
+`WATCHLIST - C57 REGIME FIELD RECONSTRUCTION CONTINUATION IS ONLY`
 
 Current status:
 
-`C55_SOURCE_IMPLEMENTED / C55_COMMAND_REGISTERED / C55_TESTS_ADDED / C55_DOCS_SYNCED / C55_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C55_RUNTIME_COMPLETED / C55_ROLLING_STABILITY_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED / C54_C53_C52_LOCKED_LINEAGE_PASS / NEAR_PASS_ATTRIBUTION_DIAGNOSTIC_ONLY_CONFIRMED / FAILED_WINDOW_EXCLUSION_FORBIDDEN / ADVERSE_MONTH_EXCLUSION_FORBIDDEN / NO_OOS_TUNING / NO_OOS_PROOF / NO_PRODUCTION_CATALOG / NOT_PRODUCTION_READY / C56_ROLLING_STABILITY_REDESIGN_CONTINUATION_IS_ONLY_REQUIRED`.
+`C57_SOURCE_IMPLEMENTED / C57_COMMAND_REGISTERED / C57_TESTS_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C57_RUNTIME_COMPLETED / C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY_COMPLETED / C56_C55_C54_C53_C52_LOCKED_LINEAGE_PASS / MARKET_INDEX_REGIME_FIELDS_RECONSTRUCTED / REGIME_FULLY_EVALUABLE / CONCENTRATION_LOSS_CLUSTER_GAP_REMAINS / NO_OOS_TUNING / NO_OOS_PROOF / NO_PRODUCTION_CATALOG / NOT_PRODUCTION_READY / C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY_REQUIRED`.
 
 C55 contract status:
 
@@ -6565,7 +6565,7 @@ production_ready=false
 ## C57 Contract — Regime Field Reconstruction Continuation IS Only
 
 - contract_code=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
-- status=IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED
+- status=DONE_OPERATOR_VALIDATED
 - production_ready=false
 
 ### Source artifact locks
@@ -6658,3 +6658,57 @@ C57 market-index reconstruction must support the concrete benchmark schema obser
 - calendar date fallback column: `cal_date` when `trade_date` is absent
 
 C57 must derive required dates from locked IS source rows, including C28 `pick_diagnostic_rows`, when runtime options do not inject `source_rows`. `required_date_count=0` is invalid when locked source rows are available.
+
+
+## C57 final contract validation
+
+C57 contract status after operator validation:
+
+- `WL-CONTRACT-C57-001`: PASS. C57 remains IS-only and performed no OOS tuning, OOS proof, production rollout, catalog promotion, PLAN/CONFIRM mutation, or C01-C56 artifact mutation.
+- `WL-CONTRACT-C57-002`: PASS. C56/C55/C54/C53/C52 artifact hash and file SHA1 locks matched the expected lineage.
+- `WL-CONTRACT-C57-003`: PASS. Market-index source discovery selected `market_benchmark_indicators` with identifier `IHSG` using read-only as-of-safe lookup.
+- `WL-CONTRACT-C57-004`: PASS. `market_index_roc20` was reconstructed `15750/15750` and `market_index_ma20_slope_pct` was reconstructed `15750/15750`.
+- `WL-CONTRACT-C57-005`: PASS. Regime fields are fully evaluable: `required_field_count=9`, `evaluable_field_count=9`, `regime_fully_evaluable=true`.
+- `WL-CONTRACT-C57-006`: PASS. Source bias validation remains pass with no `MAX(trade_date)`, no future lookup, no OOS rows, and no return/path/OOS-return selection.
+- `WL-CONTRACT-C57-007`: NOT_READY. Concentration/loss-cluster remains failed for all primary anchors and `candidate_ready_for_c58_count=0`.
+- `WL-CONTRACT-C57-008`: NOT_READY. Regime robustness is now fully evaluable but `candidate_regime_pass_count=0`.
+- `WL-CONTRACT-C57-009`: PASS. C57 recommends only the IS-only next step `C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY`.
+
+C57 final validation markers:
+
+```text
+PHPUNIT_C57=PASS OK (10 tests, 185 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (805 tests, 15967 assertions)
+C57_RUNTIME=COMPLETED
+C57_FINAL_STATUS=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY_COMPLETED
+C57_ARTIFACT_HASH=71230896c2121fcfedddf36dd54c9c03ad462b4d
+C57_FILE_SHA1=50272917A107E304F8EEEB874DBC02A881DB0C31
+DIAGNOSTIC_CONCLUSION=C57_LOSS_CLUSTER_GAP_REMAINS
+NEXT_STEP=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY
+PRODUCTION_READY=0
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+```
+
+## WATCHLIST_DB_DICTIONARY_REQUIRED_CONTRACT
+
+Status: `DONE_DOCS_ONLY`
+
+Last updated: 2026-06-22
+
+Related implementation: `DB Dictionary and Field Usage Governance`
+
+Contract:
+
+- Watchlist database-connected sessions must read:
+  - `docs/market_data/db/MARKET_DATA_DICTIONARY.md`
+  - `docs/db/DATABASE_DICTIONARY_USAGE_RULE.md`
+  - `docs/watchlist/system/db/WATCHLIST_DB_DICTIONARY.md`
+- Prompt generation must include the database dictionary requirement when touching any DB-backed data.
+- Implementations must identify touched tables, date keys, identifier keys, field roles, as-of safety, and selection/evaluation boundary before coding.
+- Missing dictionary coverage must block or trigger a dictionary update.
+- OOS rows/returns/bad months, future paths, and evaluation metrics remain forbidden as IS selection inputs.
+
+Validation:
+
+- Docs-only contract and prompt standards updated.

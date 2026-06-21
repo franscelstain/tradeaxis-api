@@ -45,3 +45,17 @@ Folder ini **tidak** mendefinisikan:
 - prosedur promosi paramset
 
 Hal-hal itu ada di [`../watchlist/`](../watchlist/README.md).
+
+## Shared Database Dictionary Usage Rule
+
+All database-connected work must read `docs/db/DATABASE_DICTIONARY_USAGE_RULE.md` and the module dictionary before implementation. For Market Data-backed features, the operational dictionary is:
+
+```text
+docs/market_data/db/MARKET_DATA_DICTIONARY.md
+```
+
+For Watchlist-owned tables and Market Data consumer rules, also read:
+
+```text
+docs/watchlist/system/db/WATCHLIST_DB_DICTIONARY.md
+```

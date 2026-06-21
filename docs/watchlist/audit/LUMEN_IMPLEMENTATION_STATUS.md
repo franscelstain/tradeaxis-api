@@ -7693,11 +7693,15 @@ production_ready=false
 
 ## C57 — Regime Field Reconstruction Continuation IS Only
 
-status_implementation=IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED
-status_runtime=NOT_RUN_ENV_UNSUPPORTED
-status_phpunit=NOT_RUN_MISSING_EXTENSIONS
+status_implementation=DONE_OPERATOR_VALIDATED
+status_runtime=COMPLETED
+status_phpunit=PASS
+phpunit_c57_result=OK (10 tests, 185 assertions)
+full_watchlist_phpunit=PASS
+full_watchlist_phpunit_result=OK (805 tests, 15967 assertions)
 artifact_path=storage/app/watchlist/backtest/c57-regime-field-reconstruction-continuation-is-only.json
-artifact_hash=OPERATOR_RUNTIME_REQUIRED
+artifact_hash=71230896c2121fcfedddf36dd54c9c03ad462b4d
+artifact_file_sha1=50272917A107E304F8EEEB874DBC02A881DB0C31
 production_ready=false
 
 ### Source lock validation targets
@@ -7705,8 +7709,8 @@ production_ready=false
 C56 artifact hash validation:
 
 - expected_c56_hash=f7edab247dc824dcd33a15f00575dd04f76f4786
-- actual_c56_hash=OPERATOR_RUNTIME_REQUIRED
-- c56_hash_match=OPERATOR_RUNTIME_REQUIRED
+- actual_c56_hash=f7edab247dc824dcd33a15f00575dd04f76f4786
+- c56_hash_match=true
 - c56_status=C56_ROLLING_STABILITY_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
 - c56_diagnostic_conclusion=C56_REGIME_FIELD_RECONSTRUCTION_GAP_REMAINS
 - c56_next_step_recommendation=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
@@ -7715,37 +7719,37 @@ C55 artifact hash/file validation:
 
 - expected_c55_hash=a4145d6f356e678d0dadf95be5d356198ebfed79
 - expected_c55_file_sha1=18875FCAD7FD7CDA6607BB09A60917E853E68D2B
-- actual_c55_hash=OPERATOR_RUNTIME_REQUIRED
-- actual_c55_file_sha1=OPERATOR_RUNTIME_REQUIRED
-- c55_hash_match=OPERATOR_RUNTIME_REQUIRED
-- c55_file_sha1_match=OPERATOR_RUNTIME_REQUIRED
+- actual_c55_hash=a4145d6f356e678d0dadf95be5d356198ebfed79
+- actual_c55_file_sha1=18875FCAD7FD7CDA6607BB09A60917E853E68D2B
+- c55_hash_match=true
+- c55_file_sha1_match=true
 
 C54 artifact hash/file validation:
 
 - expected_c54_hash=8c71a4352a1024dbe985e0f0bb6329f5e1545150
 - expected_c54_file_sha1=75410BB1A30A32FFFF9661CAD6818C13E044F7E5
-- actual_c54_hash=OPERATOR_RUNTIME_REQUIRED
-- actual_c54_file_sha1=OPERATOR_RUNTIME_REQUIRED
-- c54_hash_match=OPERATOR_RUNTIME_REQUIRED
-- c54_file_sha1_match=OPERATOR_RUNTIME_REQUIRED
+- actual_c54_hash=8c71a4352a1024dbe985e0f0bb6329f5e1545150
+- actual_c54_file_sha1=75410BB1A30A32FFFF9661CAD6818C13E044F7E5
+- c54_hash_match=true
+- c54_file_sha1_match=true
 
 C53 artifact hash/file validation:
 
 - expected_c53_hash=6a1749d723e16b7efdb8aa1d7510388a9475d12c
 - expected_c53_file_sha1=E35FEFB78B6F1931E54169BD8AABE286CB6F08C2
-- actual_c53_hash=OPERATOR_RUNTIME_REQUIRED
-- actual_c53_file_sha1=OPERATOR_RUNTIME_REQUIRED
-- c53_hash_match=OPERATOR_RUNTIME_REQUIRED
-- c53_file_sha1_match=OPERATOR_RUNTIME_REQUIRED
+- actual_c53_hash=6a1749d723e16b7efdb8aa1d7510388a9475d12c
+- actual_c53_file_sha1=E35FEFB78B6F1931E54169BD8AABE286CB6F08C2
+- c53_hash_match=true
+- c53_file_sha1_match=true
 
 C52 artifact hash/file validation:
 
 - expected_c52_hash=5dbe51c9d18b175e65cddb60336baf43d6833b72
 - expected_c52_file_sha1=DADE6518BFF3912D8A43D7C67073FB803F7CF878
-- actual_c52_hash=OPERATOR_RUNTIME_REQUIRED
-- actual_c52_file_sha1=OPERATOR_RUNTIME_REQUIRED
-- c52_hash_match=OPERATOR_RUNTIME_REQUIRED
-- c52_file_sha1_match=OPERATOR_RUNTIME_REQUIRED
+- actual_c52_hash=5dbe51c9d18b175e65cddb60336baf43d6833b72
+- actual_c52_file_sha1=DADE6518BFF3912D8A43D7C67073FB803F7CF878
+- c52_hash_match=true
+- c52_file_sha1_match=true
 
 ### C56 carry-forward result
 
@@ -7798,7 +7802,7 @@ Added docs:
 
 ### Market index source discovery result
 
-Runtime validation required. The implementation records discovery results for:
+Runtime validation completed. The artifact records discovery results for:
 
 - `market_benchmark_indicators`
 - `market_benchmark_bars`
@@ -7810,7 +7814,7 @@ Runtime validation required. The implementation records discovery results for:
 
 ### Market index reconstruction result
 
-Runtime validation required. C57 reconstructs:
+Runtime validation completed. C57 reconstructs:
 
 - `market_index_roc20`
 - `market_index_ma20_slope_pct`
@@ -7819,55 +7823,55 @@ Lookup is exact signal/trade date first, then previous published trading day bou
 
 ### Market index date coverage result
 
-Runtime validation required. Artifact layer: `market_index_date_coverage_results`.
+Runtime validation completed. Artifact layer: `market_index_date_coverage_results`.
 
 ### Market index as-of safety result
 
-Runtime validation required. Artifact layer: `market_index_asof_safety_results` with `max_trade_date_lookup_used=false`, `future_lookup_detected=false`, and `oos_rows_requested=0` required for pass.
+Runtime validation completed. Artifact layer: `market_index_asof_safety_results` with `max_trade_date_lookup_used=false`, `future_lookup_detected=false`, and `oos_rows_requested=0` required for pass.
 
 ### Regime field reconstruction result
 
-Runtime validation required. Artifact layer: `regime_field_reconstruction_summary`.
+Runtime validation completed. Artifact layer: `regime_field_reconstruction_summary`.
 
 ### Regime field coverage result
 
-Runtime validation required. Artifact layer: `regime_field_coverage_results`.
+Runtime validation completed. Artifact layer: `regime_field_coverage_results`.
 
 ### Source reconstruction result
 
-Runtime validation required. Artifact layer: `source_reconstruction_summary`.
+Runtime validation completed. Artifact layer: `source_reconstruction_summary`.
 
 ### Anchor candidate replay result
 
-Runtime validation required. C57 anchors are carried forward from C56 only. Comparator-only anchors must not become production candidates.
+Runtime validation completed. C57 anchors are carried forward from C56 only. Comparator-only anchors must not become production candidates.
 
 ### Concentration/dependency result
 
-Runtime validation required. C57 rechecks C56 anchor concentration/loss-cluster diagnostics after market-index reconstruction.
+Runtime validation completed. C57 rechecked C56 anchor concentration/loss-cluster diagnostics after market-index reconstruction.
 
 ### Rolling validation result
 
-Runtime validation required. C57 verifies whether C56 rolling stability is retained after regime reconstruction.
+Runtime validation completed. C57 verified that C56 rolling stability is retained after regime reconstruction.
 
 ### Leave-one-month-out result
 
-Runtime validation required. C57 carries forward and rechecks LOO diagnostics for the C56 anchors.
+Runtime validation completed. C57 carried forward and rechecked LOO diagnostics for the C56 anchors.
 
 ### Regime robustness result
 
-Runtime validation required. C57 can only mark regime robustness fully evaluable after all nine required regime fields pass coverage and as-of safety.
+Runtime validation completed. C57 marked regime robustness fully evaluable after all nine required regime fields passed coverage and as-of safety, but no candidate passed regime robustness.
 
 ### Material difference result
 
-Runtime validation required. C57 carries forward material difference / anti-shared-core checks.
+Runtime validation completed. C57 carried forward material difference / anti-shared-core checks.
 
 ### Source reconstruction bias result
 
-Runtime validation required. C57 keeps source reconstruction read-only, as-of-safe, and not selected from returns.
+Runtime validation completed. C57 kept source reconstruction read-only, as-of-safe, and not selected from returns.
 
 ### C58 readiness decision
 
-Runtime validation required. C57 must recommend one of:
+Runtime validation completed. C57 recommended:
 
 - `C58_IS_VALIDATION_AND_PRE_OOS_LOCK_REVIEW_FOR_C57_RECONSTRUCTION`
 - `C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY`
@@ -7881,7 +7885,7 @@ C57 must not recommend direct OOS proof.
 
 ### Next step recommendation
 
-Run C57 PHPUnit and runtime in the supported operator PHP environment. If market-index fields become fully reconstructable but concentration/loss-cluster remains failed, proceed to `C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY`. If market-index source is missing or coverage remains incomplete, proceed to `C58_MARKET_INDEX_EVIDENCE_EXPANSION_OR_SOURCE_RECONSTRUCTION_IS_ONLY`.
+C57 PHPUnit and runtime were run in the supported operator PHP environment. Market-index fields became fully reconstructable, while concentration/loss-cluster remained failed. Proceed to `C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY`.
 
 ### C57 fix2 implementation update
 
@@ -7904,3 +7908,81 @@ C57 fix2 therefore updates the reconstruction layer instead of treating this as 
 - Non-market regime fields fall back to C56 coverage if locked C28 diagnostic rows do not carry reconstructed indicator fields.
 
 Validation status after fix2 in this container: syntax check only. Operator must rerun C57 PHPUnit, full Watchlist PHPUnit, and C57 runtime in the project PHP environment.
+
+
+### C57 final operator validation result
+
+```text
+PHPUNIT_C57=PASS
+PHPUNIT_C57_RESULT=OK (10 tests, 185 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (805 tests, 15967 assertions)
+ARTISAN_C57_RUNTIME=COMPLETED
+ARTISAN_C57_RUNTIME_STATUS=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY_COMPLETED
+ARTIFACT_PATH=storage/app/watchlist/backtest/c57-regime-field-reconstruction-continuation-is-only.json
+ARTIFACT_HASH=71230896c2121fcfedddf36dd54c9c03ad462b4d
+ARTIFACT_FILE_SHA1=50272917A107E304F8EEEB874DBC02A881DB0C31
+
+C56_HASH_MATCH=true
+C55_HASH_MATCH=true
+C55_FILE_SHA1_MATCH=true
+C54_HASH_MATCH=true
+C54_FILE_SHA1_MATCH=true
+C53_HASH_MATCH=true
+C53_FILE_SHA1_MATCH=true
+C52_HASH_MATCH=true
+C52_FILE_SHA1_MATCH=true
+
+MARKET_INDEX_SOURCE_DISCOVERY_RESULT=PASS_MARKET_BENCHMARK_INDICATORS_IHSG_SELECTED
+MARKET_INDEX_REQUIRED_DATE_COUNT=300
+MARKET_INDEX_REQUIRED_DATE_MIN=2023-03-15
+MARKET_INDEX_REQUIRED_DATE_MAX=2025-05-14
+MARKET_INDEX_SOURCE_ROW_DATE_FIELD=trade_date
+MARKET_INDEX_ROC20_RECONSTRUCTION_RESULT=PASS_15750_OF_15750
+MARKET_INDEX_MA20_SLOPE_RECONSTRUCTION_RESULT=PASS_15750_OF_15750
+REGIME_FIELD_RECONSTRUCTION_RESULT=PASS
+REGIME_FIELD_COVERAGE_RESULT=9_OF_9_FULLY_EVALUABLE
+REGIME_FULLY_EVALUABLE=true
+REGIME_FIELD_COVERAGE_MIN=1
+
+ROLLING_VALIDATION_RESULT=RETAINED_C56_FULL_PASS_COUNT_4
+LEAVE_ONE_MONTH_OUT_RESULT=PASS_COUNT_2
+REGIME_ROBUSTNESS_RESULT=FULLY_EVALUABLE_BUT_PASS_COUNT_0
+SOURCE_RECONSTRUCTION_BIAS_RESULT=PASS
+CONCENTRATION_DEPENDENCY_RESULT=FAIL_ALL_PRIMARY_ANCHORS
+LOSS_CLUSTER_RESULT=GAP_REMAINS
+CANDIDATE_READY_FOR_C58_COUNT=0
+C58_READINESS_DECISION=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY
+DIAGNOSTIC_CONCLUSION=C57_LOSS_CLUSTER_GAP_REMAINS
+NEXT_STEP_RECOMMENDATION=C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRODUCTION_READY=false
+```
+
+Final C57 interpretation: C57 closed the market-index regime-field reconstruction blocker. It did not close concentration/loss-cluster or regime robustness. C57 does not unlock OOS proof and does not mark any candidate as production-ready.
+
+## DB Dictionary and Field Usage Governance
+
+Status: `DONE_DOCS_ONLY_DICTIONARY_CREATED`
+
+Last updated: 2026-06-22
+
+Related contract: `WATCHLIST_DB_DICTIONARY_REQUIRED_CONTRACT`
+
+Implementation:
+
+- Added `docs/watchlist/system/db/WATCHLIST_DB_DICTIONARY.md` for Watchlist-owned DB tables and Market Data consumer rules.
+- Added shared requirement to read `docs/market_data/db/MARKET_DATA_DICTIONARY.md` before any Watchlist session touches database-connected data.
+- Updated Watchlist audit and implementation prompt standards so future prompts must include the dictionary-reading clause.
+
+Final behavior:
+
+- Watchlist sessions touching PLAN, CONFIRM, backtest, diagnostics, source reconstruction, market-index/regime fields, sector metadata, or eligibility must read the database dictionary first.
+- Missing table/field/role coverage is a blocker or required dictionary update.
+- Selection/evaluation safety must be established before coding.
+
+Evidence:
+
+- Docs-only update.
+- Based on C57 final evidence where market-index reconstruction required correct mapping from `market_benchmark_indicators.roc_20` and `market_benchmark_indicators.ma20_slope_pct`.
