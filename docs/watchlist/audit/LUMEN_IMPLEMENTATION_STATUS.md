@@ -6567,3 +6567,232 @@ production_ready=false
 ```
 
 C42 final status: implemented and operator-validated. C42 explains the C40/C41 warning as structural March-2024 G21 metadata quota weakness, preserves C39 coverage/branch guards, does not form a new candidate, does not unlock OOS proof, and does not claim production readiness. Next step is C43 pre-trade field expansion diagnostic.
+
+## C43 — Pre-Trade Field Expansion Diagnostic
+
+```text
+C43_IMPLEMENTATION_STATUS=IMPLEMENTED
+C43_RUNTIME_STATUS=COMPLETED
+C43_PHPUNIT_STATUS=PASS — OK (13 tests, 106 assertions)
+C43_FULL_WATCHLIST_PHPUNIT_STATUS=PASS — OK (652 tests, 12966 assertions)
+artifact_path=storage/app/watchlist/backtest/c43-pre-trade-field-expansion-diagnostic.json
+artifact_hash=41a91ba0447dcf6c0493e1bb27bce6df08fd3490
+file_sha1=27816E62CBE7278108D0BC43C4C3E3F91BC749D7
+```
+
+Source C42 lock:
+
+```text
+expected_c42_hash=939e85f179b3bf5d2511730fafb4271cf7c2ca11
+actual_c42_hash=939e85f179b3bf5d2511730fafb4271cf7c2ca11
+c42_hash_match=true
+c42_status=C42_IS_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION_COMPLETED
+c42_diagnostic_conclusion=C42_NO_SAFE_REFINEMENT_FIELD_AVAILABLE
+```
+
+Diagnostic result:
+
+```text
+field_discovery_result=SAFE_SIGNAL_DATE_FIELDS_FOUND_IN_REPOSITORY_DATABASE
+timing_leakage_result=RETURN_NEXT_OPEN_AND_EXIT_PATH_EXCLUDED_FROM_SELECTION
+join_feasibility_result=EOD_INDICATOR_BAR_ELIGIBILITY_SECTOR_AND_IHSG_FIELDS_JOINABLE_AS_OF_SIGNAL_DATE
+refinement_readiness_result=C43_SAFE_PRE_TRADE_FIELDS_READY_FOR_C44_CANDIDATE_FORMATION
+guard_preservation_feasibility_result=C39_GUARDS_FEASIBLE_WITH_MONTHLY_G21_FLOOR_REQUIRES_C44_PROOF
+diagnostic_conclusion=C43_SAFE_PRE_TRADE_FIELDS_FOUND_FOR_C44_REFINEMENT
+next_step_recommendation=C44_IS_GUARD_REFINEMENT_CANDIDATE_FORMATION
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+C43 is not a candidate approval or OOS proof. Its warning-cluster return breakdown is post-selection diagnostic evidence only. C44 must form any actual refinement inside IS and preserve all C39 coverage and branch-diversification guards.
+
+## C44 — IS Guard Refinement Candidate Formation
+
+```text
+C44_IMPLEMENTATION_STATUS=IMPLEMENTED
+C44_PHPUNIT=PASS — OK (12 tests, 137 assertions)
+C44_FULL_WATCHLIST_PHPUNIT=PASS — OK (664 tests, 13103 assertions)
+C44_RUNTIME_STATUS=COMPLETED
+artifact_path=storage/app/watchlist/backtest/c44-is-guard-refinement-candidate-formation.json
+artifact_hash=606cd3109371b0d99419082daee18ff65f1cd99b
+file_sha1=4A9A7A915DD37278D9F44634C5D08006B310ED71
+```
+
+```text
+candidate_count=7
+advancement_gate_pass_count=3
+best_is_candidate_code=C44_G21_MARKET_EXTENSION_CONTROL_FIXED_MONTHLY_QUOTA
+selected_rows=1663
+avg_ret_net=0.009391538975024986
+p25_ret_net=-0.0005001850689258357
+month_avg_ret_net_min=-0.0031002649161361896
+bad_month_like_count=3
+march_2024_g21_avg_ret_net=0.008859834442950144
+months_covered=27
+zero_pick_months=0
+min_selected_rows_per_month=13
+top_branch_share=0.79374624173181
+diagnostic_conclusion=C44_GUARD_REFINEMENT_CANDIDATE_FORMED
+next_step=C45_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C44_REFINEMENT
+production_ready=false
+```
+
+## C45 - IS Validation and Anti-Overfit Check for C44 Refinement
+
+```text
+C45_IMPLEMENTATION_STATUS=IMPLEMENTED
+C45_PHPUNIT=PASS - OK (11 tests, 76 assertions)
+C45_FULL_WATCHLIST_PHPUNIT=PASS - OK (675 tests, 13179 assertions)
+C45_RUNTIME_STATUS=COMPLETED
+artifact_path=storage/app/watchlist/backtest/c45-is-validation-and-anti-overfit-check-for-c44-refinement.json
+artifact_hash=47970ba6e772bcf7fec68f306883f9f3d6cdd976
+file_sha1=CF7D7D78103B543814C1B84F29B33AEA3E4FAF78
+```
+
+Validation result:
+
+```text
+overall_anti_overfit_result=WARNING
+passed_layers=6
+warning_layers=3
+failed_layers=0
+full_is_result=PASS
+yearly_result=WARNING
+rolling_result=WARNING
+bad_month_like_stress_result=PASS
+non_bad_month_result=WARNING
+ticker_concentration_result=PASS
+branch_concentration_result=PASS
+month_coverage_result=PASS
+downside_stability_result=PASS
+rolling_slices=57
+rolling_pass=45
+rolling_warning=12
+rolling_fail=0
+```
+
+Achieved outcome:
+
+```text
+full_is_delta_avg_ret_net=+0.0004453772039743186
+full_is_delta_p10_ret_net=+0.0014328532206546469
+full_is_delta_month_avg_ret_net_min=+0.005767206176365093
+full_is_delta_bad_month_like_count=-3
+bad_month_stress_delta_avg_ret_net=+0.004050459823141623
+worst_rolling_delta_avg_ret_net=-0.0011491263561919643
+non_bad_month_delta_avg_ret_net=-0.0002410594293102246
+months_covered=27
+zero_pick_months=0
+min_selected_rows_per_month=13
+top_branch_share=0.79374624173181
+diagnostic_conclusion=C45_C44_REFINEMENT_WARNING_REQUIRES_REVIEW_BEFORE_OOS
+next_step=C46_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+C45 completed all validation layers with no material failure, but the small yearly, rolling, and non-bad-month drifts keep the result at WARNING. The candidate remains non-production and OOS remains locked pending C46 review or IS evidence expansion.
+
+## C46 - IS Review or Evidence Expansion Before OOS
+
+```text
+C46_IMPLEMENTATION_STATUS=IMPLEMENTED
+C46_PHPUNIT=PASS - OK (11 tests, 82 assertions)
+C46_FULL_WATCHLIST_PHPUNIT=PASS - OK (686 tests, 13261 assertions)
+C46_RUNTIME_STATUS=COMPLETED
+artifact_path=storage/app/watchlist/backtest/c46-is-review-or-evidence-expansion-before-oos.json
+artifact_hash=d531dd5b911f55d8824ac514ccc7600470a076bd
+file_sha1=59A80EA0BAE12034F42395EA0605536D9F9B2E5D
+```
+
+Review result:
+
+```text
+warning_review_result=C46_WARNING_BOUNDED_AND_EXPLAINED
+yearly_warning_review=PASS
+rolling_warning_review=PASS
+non_bad_month_warning_review=PASS
+corroborating_pass_review=PASS
+guard_and_safety_recheck=PASS
+prior_warning_gap_resolution=PASS
+rolling_warning_share=0.21052631578947367
+worst_rolling_avg_hard_fail_budget_share_used=0.22982527123839286
+worst_rolling_month_min_hard_fail_budget_share_used=0.02759686816451593
+warning_slices_with_bad_month_increase=0
+evidence_expansion_requirements=0
+```
+
+Decision:
+
+```text
+candidate_decision=C46_LOCKED_C44_REFINEMENT_APPROVED_FOR_ONE_SHOT_OOS_PROOF
+warning_acceptable_for_locked_oos_proof=true
+evidence_expansion_required=false
+direct_oos_proof_recommended=true
+oos_proof_unlocked=true
+oos_proof_executed=false
+candidate_reselected=false
+new_candidate_selected=false
+diagnostic_conclusion=C46_C45_WARNING_ACCEPTED_FOR_LOCKED_OOS_PROOF
+next_step=C47_OOS_PROOF_WITH_LOCKED_C44_REFINEMENT
+production_ready=false
+```
+
+C46 accepts the remaining C45 warnings because they are bounded, use less than one quarter of the existing C45 hard-fail budgets, add no bad months, and are outweighed by full-IS and bad-month robustness gains. This authorizes only a separate locked C47 OOS proof; no OOS result or production claim exists yet.
+
+## C47 - OOS Proof with Locked C44 Refinement
+
+```text
+C47_IMPLEMENTATION_STATUS=IMPLEMENTED
+C47_PHPUNIT=PASS - OK (12 tests, 75 assertions)
+C47_FULL_WATCHLIST_PHPUNIT=PASS - OK (698 tests, 13336 assertions)
+C47_RUNTIME_STATUS=COMPLETED
+artifact_path=storage/app/watchlist/backtest/c47-oos-proof-with-locked-c44-refinement.json
+artifact_hash=1c742e257847752def1f582dc24d6061a4c4e735
+file_sha1=351B0805F43D2B610B6826C4CDE1513B93FF2FE0
+```
+
+OOS result:
+
+```text
+status=C47_OOS_PROOF_FAILED
+evaluated_picks_count=85
+avg_ret_net=-0.006863279994262265
+median_ret_net=-0.0005005957088935833
+p25_ret_net=-0.017446232516167844
+p10_ret_net=-0.04048987753061734
+win_rate=0.3411764705882353
+month_win_rate_min=0
+month_avg_ret_net_min=-0.04048987753061734
+bad_month_like_count=7
+months_covered=11
+```
+
+Relative refinement effect and gate result:
+
+```text
+delta_avg_ret_net_vs_metadata_baseline=+0.0008290441378015446
+delta_win_rate_vs_metadata_baseline=+0.047058823529411764
+failed_checks=avg_pass,median_pass,month_win_rate_pass
+passed_checks=14
+failed_check_count=3
+overall_pass=false
+missing_path_count=0
+lookahead_violation_count=0
+market_index_roc20_missing_count=0
+```
+
+Decision:
+
+```text
+diagnostic_conclusion=C47_LOCKED_C44_REFINEMENT_OOS_PROOF_FAILED
+next_step=C48_OOS_FAILURE_ATTRIBUTION_FOR_C44_REFINEMENT
+oos_proof_executed=true
+oos_result_used_for_retuning=false
+oos_result_used_for_candidate_reselection=false
+production_ready=false
+```
+
+C47 proves that the C44 market-extension refinement improves the metadata comparator but does not generalize sufficiently in absolute OOS performance. The failure is not caused by missing path data, lookahead, source-lock mismatch, quota reconstruction, or market-field coverage. C48 must attribute the seven bad-like OOS months without retuning against this frozen OOS result.

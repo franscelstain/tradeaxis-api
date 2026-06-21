@@ -1,0 +1,114 @@
+# WS C44 — IS Guard Refinement Candidate Formation
+
+## Purpose
+
+C44 locks the completed C43 pre-trade field expansion artifact and forms controlled IS-only refinement candidates for the guarded C39 candidate. It does not run OOS proof, use OOS data for tuning, create a production catalog, promote a candidate, or mutate PLAN/CONFIRM or C01–C43 artifacts.
+
+```text
+input_c43_artifact=storage/app/watchlist/backtest/c43-pre-trade-field-expansion-diagnostic.json
+expected_c43_hash=41a91ba0447dcf6c0493e1bb27bce6df08fd3490
+expected_c43_file_sha1=27816E62CBE7278108D0BC43C4C3E3F91BC749D7
+expected_c43_status=C43_PRE_TRADE_FIELD_EXPANSION_DIAGNOSTIC_COMPLETED
+expected_c43_conclusion=C43_SAFE_PRE_TRADE_FIELDS_FOUND_FOR_C44_REFINEMENT
+```
+
+## Boundary and selection design
+
+C44 re-ranks the same monthly G21 quota rather than reducing it. Every candidate keeps all G16 rows and exactly 13 G21 rows per IS month. Candidate selection uses only C43-approved signal-date fields joined by `trade_date+ticker_id`. Return is used only after each rule has selected its rows.
+
+```text
+IS=2023-01-02..2025-05-21
+OOS_RESERVED=2025-05-22..2026-05-29
+months_required=27
+zero_pick_months_required=0
+minimum_selected_rows_per_month=13
+max_top_branch_share=0.80
+oos_data_used_for_tuning=false
+return_used_for_selection=false
+future_path_used_for_selection=false
+production_ready=false
+```
+
+## Candidate family
+
+The artifact evaluates one C39 baseline and six refinements:
+
+```text
+C44_BASELINE_C39_METADATA_G21_MONTHLY_QUOTA
+C44_G21_LIQUIDITY_QUALITY_FIXED_MONTHLY_QUOTA
+C44_G21_VOLATILITY_QUALITY_FIXED_MONTHLY_QUOTA
+C44_G21_RELATIVE_STRENGTH_FIXED_MONTHLY_QUOTA
+C44_G21_SECTOR_HEALTH_FIXED_MONTHLY_QUOTA
+C44_G21_MARKET_EXTENSION_CONTROL_FIXED_MONTHLY_QUOTA
+C44_G21_BALANCED_QUALITY_FIXED_MONTHLY_QUOTA
+```
+
+All seven candidates preserve the C39 coverage, minimum-month-row and branch-diversification guards. Three refinements pass the C44 advancement gate: volatility quality, market-extension control and balanced quality.
+
+## Best IS candidate result
+
+```text
+best_is_candidate_code=C44_G21_MARKET_EXTENSION_CONTROL_FIXED_MONTHLY_QUOTA
+selection_rule=prefer non-extended IHSG ROC20 dates, then signal metadata, inside fixed quota
+selected_rows=1663
+selected_g21_rows=343
+avg_ret_net=0.009391538975024986
+median_ret_net=0.014705146801380483
+p25_ret_net=-0.0005001850689258357
+p10_ret_net=-0.005358677518831202
+win_rate=0.6927239927841251
+month_win_rate_min=0.07894736842105263
+month_avg_ret_net_min=-0.0031002649161361896
+bad_month_like_count=3
+march_2024_avg_ret_net=0.009903680634953747
+march_2024_g21_avg_ret_net=0.008859834442950144
+march_2024_g21_win_rate=0.5384615384615384
+```
+
+Versus the locked C39 metadata-quota baseline:
+
+```text
+delta_avg_ret_net=+0.0004453772039743186
+delta_p25_ret_net=+0.000000015011106177086758
+delta_p10_ret_net=+0.0014328532206546469
+delta_win_rate=+0.0078171978352376
+delta_month_avg_ret_net_min=+0.005767206176365093
+delta_bad_month_like_count=-3
+delta_march_2024_avg_ret_net=+0.01783009430613997
+delta_march_2024_g21_avg_ret_net=+0.04526100862327841
+```
+
+## Guard preservation
+
+```text
+candidate_months_covered=27
+candidate_zero_pick_months=0
+candidate_min_selected_rows_per_month=13
+candidate_median_selected_rows_per_month=58
+candidate_top_branch_share=0.79374624173181
+candidate_g16_share=0.79374624173181
+candidate_g21_share=0.20625375826819
+c39_coverage_guard_preserved=true
+c39_branch_guard_preserved=true
+g21_not_suppressed_total=true
+```
+
+## Validation and final decision
+
+```text
+PHPUNIT_C44=PASS — OK (12 tests, 137 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS — OK (664 tests, 13103 assertions)
+ARTISAN_C44_RUNTIME=COMPLETED
+status=C44_IS_GUARD_REFINEMENT_CANDIDATE_FORMATION_COMPLETED
+artifact_path=storage/app/watchlist/backtest/c44-is-guard-refinement-candidate-formation.json
+artifact_hash=606cd3109371b0d99419082daee18ff65f1cd99b
+file_sha1=4A9A7A915DD37278D9F44634C5D08006B310ED71
+diagnostic_conclusion=C44_GUARD_REFINEMENT_CANDIDATE_FORMED
+next_step_recommendation=C45_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C44_REFINEMENT
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+C44 forms an IS candidate, not a production candidate. C45 must run temporal, rolling, yearly, normal-month, concentration and downside anti-overfit validation before any later decision.
+

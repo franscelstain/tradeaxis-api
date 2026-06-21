@@ -67,6 +67,11 @@ use App\Console\Commands\Watchlist\RunBacktestC39IsControlledRedesignWithCoverag
 use App\Console\Commands\Watchlist\RunBacktestC40IsValidationAntiOverfitCheckForC39GuardedCandidateCommand;
 use App\Console\Commands\Watchlist\RunBacktestC41IsReviewEvidenceExpansionBeforeOosCommand;
 use App\Console\Commands\Watchlist\RunBacktestC42IsRollingNormalMonthEvidenceExpansionCommand;
+use App\Console\Commands\Watchlist\RunBacktestC43PreTradeFieldExpansionDiagnosticCommand;
+use App\Console\Commands\Watchlist\RunBacktestC44IsGuardRefinementCandidateFormationCommand;
+use App\Console\Commands\Watchlist\RunBacktestC45IsValidationAntiOverfitCheckForC44RefinementCommand;
+use App\Console\Commands\Watchlist\RunBacktestC46IsReviewEvidenceExpansionBeforeOosCommand;
+use App\Console\Commands\Watchlist\RunBacktestC47OosProofWithLockedC44RefinementCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -121,6 +126,11 @@ class Kernel extends ConsoleKernel
         RunBacktestC40IsValidationAntiOverfitCheckForC39GuardedCandidateCommand::class,
         RunBacktestC41IsReviewEvidenceExpansionBeforeOosCommand::class,
         RunBacktestC42IsRollingNormalMonthEvidenceExpansionCommand::class,
+        RunBacktestC43PreTradeFieldExpansionDiagnosticCommand::class,
+        RunBacktestC44IsGuardRefinementCandidateFormationCommand::class,
+        RunBacktestC45IsValidationAntiOverfitCheckForC44RefinementCommand::class,
+        RunBacktestC46IsReviewEvidenceExpansionBeforeOosCommand::class,
+        RunBacktestC47OosProofWithLockedC44RefinementCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
