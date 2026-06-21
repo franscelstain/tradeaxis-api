@@ -7516,3 +7516,175 @@ direct_oos_proof_recommended=false
 oos_proof_unlocked=false
 production_ready=false
 ```
+
+## C56 — Rolling Stability Redesign Continuation (IS Only)
+
+```text
+C56_IMPLEMENTATION_STATUS=IMPLEMENTED
+C56_PHPUNIT_STATUS=PASS
+C56_PHPUNIT_RESULT=OK (9 tests, 337 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (795 tests, 15782 assertions)
+C56_RUNTIME_STATUS=COMPLETED
+C56_STATUS=C56_ROLLING_STABILITY_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
+artifact_path=storage/app/watchlist/backtest/c56-rolling-stability-redesign-continuation-is-only.json
+artifact_hash=f7edab247dc824dcd33a15f00575dd04f76f4786
+production_ready=false
+
+expected_c55_hash=a4145d6f356e678d0dadf95be5d356198ebfed79
+actual_c55_hash=a4145d6f356e678d0dadf95be5d356198ebfed79
+c55_hash_match=true
+expected_c55_file_sha1=18875FCAD7FD7CDA6607BB09A60917E853E68D2B
+actual_c55_file_sha1=18875FCAD7FD7CDA6607BB09A60917E853E68D2B
+c55_file_sha1_match=true
+
+expected_c54_hash=8c71a4352a1024dbe985e0f0bb6329f5e1545150
+actual_c54_hash=8c71a4352a1024dbe985e0f0bb6329f5e1545150
+c54_hash_match=true
+expected_c54_file_sha1=75410BB1A30A32FFFF9661CAD6818C13E044F7E5
+actual_c54_file_sha1=75410BB1A30A32FFFF9661CAD6818C13E044F7E5
+c54_file_sha1_match=true
+
+expected_c53_hash=6a1749d723e16b7efdb8aa1d7510388a9475d12c
+actual_c53_hash=6a1749d723e16b7efdb8aa1d7510388a9475d12c
+c53_hash_match=true
+expected_c53_file_sha1=E35FEFB78B6F1931E54169BD8AABE286CB6F08C2
+actual_c53_file_sha1=E35FEFB78B6F1931E54169BD8AABE286CB6F08C2
+c53_file_sha1_match=true
+
+expected_c52_hash=5dbe51c9d18b175e65cddb60336baf43d6833b72
+actual_c52_hash=5dbe51c9d18b175e65cddb60336baf43d6833b72
+c52_hash_match=true
+expected_c52_file_sha1=DADE6518BFF3912D8A43D7C67073FB803F7CF878
+actual_c52_file_sha1=DADE6518BFF3912D8A43D7C67073FB803F7CF878
+c52_file_sha1_match=true
+
+C55_HASH_FILE_VALIDATION=PASS
+C54_HASH_FILE_VALIDATION=PASS
+C53_HASH_FILE_VALIDATION=PASS
+C52_HASH_FILE_VALIDATION=PASS
+C55_ROOT_CAUSE_RESULT=CARRIED_FORWARD_CONFIRMED
+C55_ROLLING_GAP_RESULT=CARRIED_FORWARD_CONFIRMED
+C55_CONCENTRATION_LOSS_CLUSTER_GAP_RESULT=CARRIED_FORWARD_CONFIRMED
+C55_LOO_GAP_RESULT=CARRIED_FORWARD_CONFIRMED
+C55_REGIME_FIELD_GAP_RESULT=CARRIED_FORWARD_CONFIRMED
+C54_C53_C52_CARRY_FORWARD_RESULT=PASS
+NEAR_PASS_ROLLING_ATTRIBUTION_RESULT=AVAILABLE
+REGIME_FIELD_RECONSTRUCTION_RESULT=FAILED_NOT_FULLY_EVALUABLE
+SOURCE_RECONSTRUCTION_RESULT=PASS
+IS_REDESIGN_CONTINUATION_RESULT=COMPLETED_WITHOUT_READY_CANDIDATE
+BEST_REDESIGNED_CANDIDATE_RESULT=NOT_SELECTED_NO_CANDIDATE_READY
+CONCENTRATION_DEPENDENCY_RESULT=FAILED_ALL_CANDIDATES
+BRANCH_DEPENDENCY_RESULT=AVAILABLE
+BUCKET_DEPENDENCY_RESULT=AVAILABLE
+SECTOR_DEPENDENCY_RESULT=AVAILABLE
+TICKER_DEPENDENCY_RESULT=AVAILABLE
+MONTH_DEPENDENCY_RESULT=AVAILABLE
+ROLLING_VALIDATION_RESULT=PARTIAL_REPAIR_4_FULL_ROLLING_PASS_CANDIDATES
+LEAVE_ONE_MONTH_OUT_RESULT=2_CANDIDATES_PASS
+REGIME_ROBUSTNESS_RESULT=FAILED_0_PASS_NOT_FULLY_EVALUABLE
+MATERIAL_DIFFERENCE_RESULT=AVAILABLE
+SOURCE_RECONSTRUCTION_BIAS_RESULT=PASS
+C57_READINESS_DECISION=NOT_READY_FOR_PRE_OOS_LOCK_REVIEW
+NEXT_STEP_RECOMMENDATION=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
+```
+
+C56 completed as an IS-only continuation and produced a valid artifact. Technical validation is complete: focused C56 PHPUnit passed, full Watchlist PHPUnit passed, and runtime completed. All C55/C54/C53/C52 source artifact hash and file SHA1 locks match the expected values.
+
+C56 produced measurable improvement over C55 in rolling stability: `candidate_full_rolling_pass_count=4`, while C55 had zero full rolling-pass candidates. This is a partial strategy improvement, not a candidate unlock. `candidate_ready_for_c57_count=0` because all candidates still fail concentration/loss-cluster validation and regime robustness is not fully evaluable.
+
+Final C56 readiness facts:
+
+```text
+validation_completed=true
+candidate_ready_for_c57_count=0
+rolling_validation_pass_candidate_count=4
+concentration_validation_pass_candidate_count=0
+loss_cluster_pass_candidate_count=0
+candidate_loo_pass_count=2
+candidate_regime_pass_count=0
+regime_required_field_count=9
+regime_evaluable_field_count=7
+regime_missing_field_count=2
+regime_field_coverage_min=0
+regime_fully_evaluable=false
+market_index_regime_fields_reconstructed=false
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+Regime field reconstruction remains the blocking issue. These fields have zero coverage in the C56 artifact:
+
+```text
+market_index_roc20: rows_required=15750, rows_available=0, coverage_rate=0
+market_index_ma20_slope_pct: rows_required=15750, rows_available=0, coverage_rate=0
+```
+
+The remaining seven regime fields are fully available with 15750/15750 coverage:
+
+```text
+sector_roc20
+rs_20_vs_ihsg
+rs_20_vs_sector
+roc20
+ma20_slope_pct
+atr14_pct
+vol_ratio
+```
+
+Concentration/loss-cluster remains unresolved. Every C56 candidate fails concentration validation. The best structural candidates reduce branch/bucket/ticker/sector/month dependency but still exceed the C56 loss cluster target. Key examples:
+
+```text
+C56_R21_ROLLING_STRESS_SMOOTHER_NO_WINDOW_EXCLUSION:
+  max_ticker_share=0.06976744186046512
+  max_sector_share=0.13953488372093023
+  max_bucket_share=0.5116279069767442
+  max_branch_share=0.4883720930232558
+  max_month_share=0.06976744186046512
+  loss_cluster_share=0.10810810810810811
+  concentration_validation_pass=false
+
+C56_R23_REGIME_COMPLETE_BALANCED_CANDIDATE:
+  max_ticker_share=0.07407407407407407
+  max_sector_share=0.14814814814814814
+  max_bucket_share=0.5061728395061729
+  max_branch_share=0.49382716049382713
+  max_month_share=0.07407407407407407
+  loss_cluster_share=0.11428571428571428
+  concentration_validation_pass=false
+```
+
+Interpretation: C56 proves rolling stability is repairable, but branch/bucket balancing alone is insufficient. Loss-cluster control requires a dedicated next-pass design after regime field reconstruction is fixed or proven impossible.
+
+Recommended C57 anchors:
+
+```text
+C56_R21_ROLLING_STRESS_SMOOTHER_NO_WINDOW_EXCLUSION
+C56_R23_REGIME_COMPLETE_BALANCED_CANDIDATE
+C56_R09_R00_BRANCH_BUCKET_CAP_50_LOSS_CLUSTER_08
+C56_R10_R01_BRANCH_BUCKET_CAP_50_LOSS_CLUSTER_08
+C56_R13_R00_MONTHLY_EXPOSURE_EQUALIZER
+C56_R14_R01_MONTHLY_EXPOSURE_EQUALIZER
+```
+
+Comparator-only anchors must remain comparator-only and must not be selected as production or pre-OOS candidates:
+
+```text
+C56_R00_C55_R00_NEAR_PASS_REPLAY_COMPARATOR
+C56_R01_C55_R01_NEAR_PASS_REPLAY_COMPARATOR
+C56_R03_C55_R19_LOSS_CLUSTER_REPLAY_COMPARATOR
+C56_R04_C55_R20_C52_ANCHOR_COMPARATOR_ONLY
+```
+
+Final C56 decision:
+
+```text
+diagnostic_conclusion=C56_REGIME_FIELD_RECONSTRUCTION_GAP_REMAINS
+next_step_recommendation=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
+c57_decision_reason=regime_field_reconstruction_not_fully_evaluable
+candidate_ready_for_c57_count=0
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```

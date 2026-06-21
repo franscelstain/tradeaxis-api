@@ -2412,3 +2412,63 @@ C55_OOS_PROOF_UNLOCKED=false
 
 C55 governance decision: the implementation and runtime are completed, but the strategy remains not ready because no candidate passed full rolling validation or concentration validation. C56 must remain IS-only rolling stability redesign continuation unless a later completed pre-OOS lock review explicitly changes the path. C55 must not be used as OOS proof, production readiness evidence, or catalog promotion evidence.
 
+
+## C56 Governance — Rolling Stability Redesign Continuation (IS Only)
+
+C56 governance requirements:
+
+```text
+SOURCE_ARTIFACT_LOCK=C55_C54_C53_C52
+FILE_SHA1_LOCK=C55_C54_C53_C52
+VALIDATION_COMMAND=watchlist:backtest-c56-rolling-stability-redesign-continuation-is-only
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c56-rolling-stability-redesign-continuation-is-only.json
+IS_ONLY_ROLLING_STABILITY_CONTINUATION_RULE=true
+NEAR_PASS_ATTRIBUTION_DIAGNOSTIC_ONLY_RULE=true
+FAILED_WINDOW_NO_EXCLUSION_RULE=true
+ADVERSE_MONTH_NO_EXCLUSION_RULE=true
+C55_C54_C53_C52_LOCKED_LINEAGE_USAGE_RULE=true
+REGIME_FIELD_RECONSTRUCTION_ASOF_SAFE_RULE=true
+SOURCE_RECONSTRUCTION_NO_MAX_TRADE_DATE_RULE=true
+NO_OOS_TUNING_RULE=true
+NO_OOS_PROOF_RULE=true
+NO_PRODUCTION_READINESS_RULE=true
+CANDIDATE_NOT_PRODUCTION_RULE=true
+POWERSHELL_COMPATIBLE_JSON_RULE=true
+OPERATOR_VALIDATION_RULE=true
+NEXT_STEP_TO_C57_RULE=true
+```
+
+C56 artifacts must preserve lowercase snake_case safety boundary keys and must not contain duplicate keys after case-insensitive normalization. Runtime, PHPUnit, and artifact claims require operator evidence; otherwise the status must remain `OPERATOR_VALIDATION_REQUIRED` or `NOT_RUN`.
+
+
+### C56 Final Governance Decision
+
+C56 runtime and validation were completed by the operator. The C56 artifact is accepted as final IS-only diagnostic evidence, not as OOS proof, production readiness evidence, or catalog promotion evidence.
+
+```text
+C56_PHPUNIT_STATUS=PASS
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS
+C56_RUNTIME_STATUS=COMPLETED
+C56_ARTIFACT_PATH=storage/app/watchlist/backtest/c56-rolling-stability-redesign-continuation-is-only.json
+C56_ARTIFACT_HASH=f7edab247dc824dcd33a15f00575dd04f76f4786
+C56_SOURCE_LOCKS=C55_C54_C53_C52_HASH_AND_FILE_SHA1_PASS
+C56_BOUNDARY_STATUS=PASS
+C56_STRATEGY_STATUS=NOT_READY
+C56_PRODUCTION_READY=false
+C56_DIRECT_OOS_PROOF_RECOMMENDED=false
+C56_OOS_PROOF_UNLOCKED=false
+```
+
+Governance interpretation:
+
+```text
+ROLLING_STABILITY_REPAIR=PARTIAL_SUCCESS_4_FULL_ROLLING_PASS_CANDIDATES
+CONCENTRATION_REPAIR=FAILED_0_PASS
+LOSS_CLUSTER_REPAIR=FAILED_0_PASS
+LOO_REPAIR=PARTIAL_2_PASS
+REGIME_RECONSTRUCTION=FAILED_NOT_FULLY_EVALUABLE
+REGIME_MISSING_FIELDS=market_index_roc20,market_index_ma20_slope_pct
+C57_NEXT_STEP=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
+```
+
+C57 must remain IS-only and must focus first on as-of-safe reconstruction of `market_index_roc20` and `market_index_ma20_slope_pct`. C57 must not use OOS rows, OOS return, OOS bad months, future lookup, `MAX(trade_date)`, production catalog promotion, PLAN/CONFIRM mutation, or C01-C56 artifact mutation.
