@@ -74,6 +74,8 @@ use App\Console\Commands\Watchlist\RunBacktestC46IsReviewEvidenceExpansionBefore
 use App\Console\Commands\Watchlist\RunBacktestC47OosProofWithLockedC44RefinementCommand;
 use App\Console\Commands\Watchlist\RunBacktestC48OosFailureAttributionCommand;
 use App\Console\Commands\Watchlist\RunBacktestC49BroaderStrategyRedesignCommand;
+use App\Console\Commands\Watchlist\RunBacktestC50IsValidationAntiOverfitCheckCommand;
+use App\Console\Commands\Watchlist\RunBacktestC51ConcentrationDependencyRedesignReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -135,6 +137,8 @@ class Kernel extends ConsoleKernel
         RunBacktestC47OosProofWithLockedC44RefinementCommand::class,
         RunBacktestC48OosFailureAttributionCommand::class,
         RunBacktestC49BroaderStrategyRedesignCommand::class,
+        RunBacktestC50IsValidationAntiOverfitCheckCommand::class,
+        RunBacktestC51ConcentrationDependencyRedesignReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

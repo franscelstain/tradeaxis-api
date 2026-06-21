@@ -2034,3 +2034,224 @@ production_ready=false
 ```
 
 C49 is final as an IS broader strategy redesign step. It does not authorize production, does not prove OOS recovery, and does not open OOS proof. Governance next step is C50 IS validation and anti-overfit check for the C49 regime-aware redesign candidate.
+
+## C50 Governance - IS Validation and Anti-Overfit Check
+
+```text
+SOURCE_ARTIFACT_LOCK=C49
+EXPECTED_C49_HASH=9266ec2b59a6ea11c21b830cd9b769635afc91a8
+ACTUAL_C49_HASH=9266ec2b59a6ea11c21b830cd9b769635afc91a8
+C49_HASH_MATCH=true
+VALIDATION_COMMAND=php artisan watchlist:backtest-c50-is-validation-anti-overfit-check
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c50-is-validation-anti-overfit-check.json
+OUTPUT_ARTIFACT_HASH=1f2b919662a395444f43403e8f7f4d0b91e146aa
+IS_VALIDATION_ONLY_RULE=true
+C49_LOCKED_CANDIDATE_USAGE_RULE=true
+LOCKED_C49_CANDIDATE_REPLAY_ONLY_RULE=true
+NO_OOS_TUNING_RULE=true
+NO_OOS_PROOF_RULE=true
+NO_OOS_PROOF_RERUN_RULE=true
+NO_PRODUCTION_READINESS_RULE=true
+CANDIDATE_NOT_PRODUCTION_RULE=true
+NO_CANDIDATE_RESELECTION_FROM_OOS_RULE=true
+NO_PRODUCTION_CATALOG_RULE=true
+NO_PLAN_CONFIRM_MUTATION_RULE=true
+NO_C01_TO_C49_ARTIFACT_MUTATION_RULE=true
+RETURN_AND_PATH_EVALUATION_ONLY_RULE=true
+ARTIFACT_JSON_POWERSHELL_COMPATIBILITY_RULE=true
+OPERATOR_VALIDATION_RULE=Do not claim PHPUnit or Artisan PASS unless run in supported PHP environment.
+NEXT_STEP_TO_C51_RULE=C50 may recommend C51 pre-OOS lock review or IS evidence expansion only; it must not recommend OOS proof.
+```
+
+Final governance decision:
+
+```text
+STATUS=C50_IS_VALIDATION_COMPLETED
+PHPUNIT_STATUS=PASS
+PHPUNIT_RESULT=OK (12 tests, 218 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (735 tests, 13865 assertions)
+ARTISAN_RUNTIME_STATUS=COMPLETED
+POWERSHELL_CONVERTFROM_JSON=PASS
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c50-is-validation-anti-overfit-check.json
+ARTIFACT_HASH=1f2b919662a395444f43403e8f7f4d0b91e146aa
+C49_HASH_LOCK_VALID=true
+DIAGNOSTIC_CONCLUSION=C50_C49_PRIMARY_CANDIDATE_OVERFIT_RISK_IDENTIFIED
+NEXT_STEP_RECOMMENDATION=C51_CONCENTRATION_DEPENDENCY_REDESIGN_REVIEW
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+production_ready=false
+```
+
+C50 validation interpretation:
+
+```text
+F03_PRIMARY_CANDIDATE_PROMISING=true
+F03_ROLLING_VALIDATION_PASS=true
+F03_LOO_VALIDATION_PASS=true
+F03_REGIME_ROBUSTNESS_VALIDATION_PASS=true
+F03_MATERIAL_SELECTION_DIFFERENCE_PASS=true
+F03_SOURCE_BIAS_VALIDATION_PASS=true
+F03_CONCENTRATION_VALIDATION_PASS=false
+F03_ANTI_OVERFIT_PASS=false
+F03_PRIMARY_CANDIDATE_VALIDATION_PASS=false
+F03_OVERFIT_RISK_IDENTIFIED=true
+F03_ROOT_CAUSE=G16_BRANCH_AND_BUCKET_CONCENTRATION
+```
+
+C50 concentration evidence:
+
+```text
+F03_max_branch_share=0.9217877094972067
+F03_max_bucket_share=0.9217877094972067
+F03_G16_branch_row_count=1320
+F03_G16_branch_share=0.9217877094972067
+F03_G21_branch_row_count=112
+F03_G21_branch_share=0.0782122905027933
+F03_loss_cluster_share=0.12910798122065728
+```
+
+C51 governance handoff:
+
+```text
+NEXT_SESSION=C51_CONCENTRATION_DEPENDENCY_REDESIGN_REVIEW
+C51_IS_ONLY=true
+C51_NO_OOS_TUNING=true
+C51_NO_OOS_PROOF=true
+C51_NO_PRODUCTION_ROLLOUT=true
+C51_USE_F03_AS_PROMISING_BUT_OVER_CONCENTRATED_SOURCE=true
+C51_USE_F08_AS_DIVERSIFICATION_TEMPLATE=true
+C51_KEEP_F00_C44_AS_COMPARATOR_ONLY=true
+C51_REDUCE_G16_DOMINANCE=true
+C51_PRESERVE_MATERIAL_DIFFERENCE=true
+```
+
+C50 is final as an IS validation / anti-overfit step. It does not authorize production, does not prove OOS recovery, and does not open OOS proof.
+
+---
+
+## C51 Governance — Concentration Dependency Redesign Review
+
+C51 adds an IS-only governance layer after C50. C51 is allowed to form deterministic redesign candidates from locked C49/C50 lineage to review branch/bucket dependency, but it is not allowed to use OOS data or production actions.
+
+Source artifact lock rule:
+
+```text
+C50_INPUT_ARTIFACT=storage/app/watchlist/backtest/c50-is-validation-anti-overfit-check.json
+EXPECTED_C50_HASH=1f2b919662a395444f43403e8f7f4d0b91e146aa
+C49_INPUT_ARTIFACT=storage/app/watchlist/backtest/c49-broader-strategy-redesign.json
+EXPECTED_C49_HASH=9266ec2b59a6ea11c21b830cd9b769635afc91a8
+C50_HASH_LOCK_REQUIRED=true
+C49_HASH_LOCK_REQUIRED=true
+```
+
+Validation command rule:
+
+```text
+PHPUNIT_C51_COMMAND=vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestC51"
+FULL_WATCHLIST_PHPUNIT_COMMAND=vendor/bin/phpunit tests/Unit/Watchlist
+ARTISAN_C51_COMMAND=php artisan watchlist:backtest-c51-concentration-dependency-redesign-review ...
+DO_NOT_CLAIM_PASS_UNLESS_RUN=true
+```
+
+Output artifact rule:
+
+```text
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c51-concentration-dependency-redesign-review.json
+ARTIFACT_TYPE=C51_CONCENTRATION_DEPENDENCY_REDESIGN_REVIEW
+POWERSHELL_COMPATIBLE_JSON_REQUIRED=true
+NO_CASE_INSENSITIVE_DUPLICATE_KEYS=true
+```
+
+IS-only redesign rule:
+
+```text
+IS_PERIOD_FROM=2023-01-02
+IS_PERIOD_TO=2025-05-21
+OOS_RESERVED_FROM=2025-05-22
+OOS_RESERVED_TO=2026-05-29
+C51_MAY_USE_C49_C50_LOCKED_LINEAGE=true
+C51_MAY_CREATE_DETERMINISTIC_BRANCH_BUCKET_REDESIGN=true
+C51_MAY_EVALUATE_IS_RETURNS_AFTER_SELECTION=true
+C51_MUST_NOT_USE_RETURN_FOR_SELECTION=true
+C51_MUST_NOT_USE_FUTURE_PATH_FOR_SELECTION=true
+C51_MUST_NOT_USE_OOS_FOR_TUNING=true
+C51_MUST_NOT_RUN_OOS_PROOF=true
+```
+
+No production-readiness rule:
+
+```text
+production_ready=false
+candidate_is_not_production=true
+no_production_catalog=true
+no_promotion=true
+no_plan_confirm_mutation=true
+no_c01_to_c50_artifact_mutation=true
+```
+
+Next-step-to-C52 rule:
+
+```text
+C51_CAN_RECOMMEND=C52_IS_VALIDATION_AND_PRE_OOS_LOCK_REVIEW_FOR_C51_REDESIGN
+C51_CAN_RECOMMEND=C52_IS_EVIDENCE_EXPANSION_FOR_C51_REDESIGN
+C51_CAN_RECOMMEND=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
+C51_CAN_RECOMMEND=C52_SHARED_CORE_REVERSION_REDESIGN_REQUIRED
+C51_CAN_RECOMMEND=C52_REDESIGN_OR_RECALIBRATION_REQUIRED_IS_ONLY
+C51_MUST_NOT_RECOMMEND=OOS_PROOF
+```
+
+Final C51 governance result from operator validation:
+
+```text
+C51_IMPLEMENTATION_STATUS=IMPLEMENTED_FINAL
+C51_PHPUNIT_STATUS=PASS
+C51_PHPUNIT_RESULT=OK (14 tests, 378 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (749 tests, 14243 assertions)
+C51_ARTISAN_RUNTIME_STATUS=COMPLETED
+ARTIFACT_PATH=storage/app/watchlist/backtest/c51-concentration-dependency-redesign-review.json
+C51_ARTISAN_REPORTED_ARTIFACT_HASH=a786034b8e344207592e58efe262287102b0ef36
+C51_FILE_SHA1=0BFAD3BC9985602E1FE6318557754ECBE9A63F91
+status=C51_CONCENTRATION_DEPENDENCY_REDESIGN_COMPLETED
+diagnostic_conclusion=C51_REDESIGNED_CANDIDATE_OVERFIT_RISK_REMAINS
+next_step_recommendation=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
+production_ready=false
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+```
+
+C51 final readiness rule result:
+
+```text
+best_redesigned_candidate_code=null
+best_redesigned_profile_code=null
+best_redesigned_candidate_pass=false
+selected_candidate_count=0
+primary_dependency_reduced=false
+concentration_validation_pass=false
+rolling_validation_pass=false
+loo_validation_pass=false
+regime_robustness_validation_pass=false
+material_difference_validation_pass=false
+source_bias_validation_pass=true
+anti_overfit_pass=false
+c52_recommendation=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
+decision_reason=concentration_dependency_issue_remains
+diagnostic_conclusion=C51_REDESIGNED_CANDIDATE_OVERFIT_RISK_REMAINS
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+C51 governance interpretation:
+
+```text
+C51_TECHNICAL_GOVERNANCE_PASS=true
+C51_OPERATOR_VALIDATED=true
+C51_NO_OOS_TUNING_CONFIRMED=true
+C51_NO_OOS_PROOF_CONFIRMED=true
+C51_NO_PRODUCTION_ROLLOUT_CONFIRMED=true
+C51_NO_C52_READY_CANDIDATE=true
+C51_NEXT_STEP=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
+```

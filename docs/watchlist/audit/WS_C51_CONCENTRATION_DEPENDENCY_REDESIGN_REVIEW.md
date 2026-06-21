@@ -1,0 +1,377 @@
+# WS C51 Concentration Dependency Redesign Review
+
+## Purpose
+
+C51 is an IS-only concentration/dependency redesign review for the locked C49/C50 candidate lineage. It exists because C50 validated that the F03 primary candidate remained promising on quality, rolling validation, leave-one-month-out, regime robustness, source-bias, and material difference, but failed anti-overfit due to excessive G16 branch/bucket dependency.
+
+C51 is not OOS proof, not OOS tuning, not production rollout, not catalog promotion, and not a production-candidate selection step.
+
+## Locked inputs
+
+```text
+input_c50_artifact=storage/app/watchlist/backtest/c50-is-validation-anti-overfit-check.json
+expected_c50_hash=1f2b919662a395444f43403e8f7f4d0b91e146aa
+input_c49_artifact=storage/app/watchlist/backtest/c49-broader-strategy-redesign.json
+expected_c49_hash=9266ec2b59a6ea11c21b830cd9b769635afc91a8
+```
+
+C51 must block if the C50 hash, status, diagnostic conclusion, next-step recommendation, production flag, OOS proof flags, or F03 concentration failure are invalid. C51 must also block if the C49 hash lock fails.
+
+## C50 evidence summary
+
+```text
+c50_status=C50_IS_VALIDATION_COMPLETED
+c50_diagnostic_conclusion=C50_C49_PRIMARY_CANDIDATE_OVERFIT_RISK_IDENTIFIED
+c50_next_step_recommendation=C51_CONCENTRATION_DEPENDENCY_REDESIGN_REVIEW
+production_ready=false
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+```
+
+Primary F03 summary:
+
+```text
+candidate_code=C49_CANDIDATE_F03_REGIME_AWARE_MARKET_EXTENSION_CONTROL
+evaluated_picks_count=1432
+avg_ret_net=0.010333197127445102
+median_ret_net=0.015243101182654402
+win_rate=0.702513966480447
+rolling_validation_pass=true
+loo_validation_pass=true
+regime_robustness_validation_pass=true
+material_selection_difference_pass=true
+source_bias_validation_pass=true
+concentration_validation_pass=false
+anti_overfit_pass=false
+failure_reason=C50_CONCENTRATION_DEPENDENCY_FAIL
+```
+
+Defensive F08 summary:
+
+```text
+candidate_code=C49_CANDIDATE_F08_AGGRESSIVE_SHARED_CORE_ESCAPE_REDESIGN
+avg_ret_net=0.004239187464559288
+median_ret_net=0.00819327731092437
+win_rate=0.6406926406926406
+concentration_validation_pass=true
+failure_reason=C50_STABILITY_FAIL
+```
+
+F00/C44 comparator summary:
+
+```text
+candidate_code=C49_CANDIDATE_F00_C44_SHARED_CORE_COMPARATOR
+anti_overfit_pass=true
+material_selection_difference_pass=false
+role=comparator_only_not_redesign_candidate
+```
+
+## C50 root cause summary
+
+```text
+c50_root_cause=F03_G16_BRANCH_BUCKET_CONCENTRATION
+F03_max_branch_share=0.9217877094972067
+F03_max_bucket_share=0.9217877094972067
+F03_G16_branch_share=0.9217877094972067
+F03_G21_branch_share=0.0782122905027933
+F03_loss_cluster_share=0.12910798122065728
+F08_max_branch_share=0.5411255411255411
+F08_concentration_validation_pass=true
+```
+
+## C51 boundaries
+
+```text
+is_only_validation=true
+no_oos_tuning=true
+no_oos_proof=true
+no_oos_proof_rerun=true
+no_best_of_oos=true
+no_oos_winner=true
+no_oos_return_selection=true
+no_oos_bad_month_threshold_selection=true
+no_oos_ticker_sector_exclusion_rule=true
+no_candidate_reselection_from_oos=true
+no_profile_reselection_from_oos=true
+no_production_catalog=true
+no_promotion=true
+no_plan_confirm_mutation=true
+no_c01_to_c50_mutation=true
+no_c01_to_c50_artifact_mutation=true
+candidate_is_not_production=true
+production_ready=false
+```
+
+Return/path fields are evaluation-only after deterministic selection is already formed. They must not be used as selection input.
+
+Canonical execution model remains:
+
+```text
+ENTRY=NEXT_OPEN
+EXIT=STOP_TP_OR_TIME
+HOLD=5
+FEE=IDR_FIXED
+SLIP=0
+GAP=OPEN
+PX=IDX_BANDS
+```
+
+## IS-only redesign rule
+
+C51 reconstructs the IS source universe from C49/C50 locked lineage and available IS artifacts. Candidate generation uses deterministic row order and safe pre-trade fields. It does not use OOS return, realized return ranking, future path, MFE/MAE, or exit result to select rows.
+
+```text
+is_period_from=2023-01-02
+is_period_to=2025-05-21
+oos_reserved_from=2025-05-22
+oos_reserved_to=2026-05-29
+oos_data_used_for_tuning=false
+oos_return_used_for_selection=false
+oos_proof_executed=false
+```
+
+## Redesign candidate definitions
+
+Minimum C51 candidates implemented:
+
+```text
+C51_R00_C50_F03_LOCKED_PRIMARY_REPLAY
+C51_R01_F03_BRANCH_CAP_70
+C51_R02_F03_BRANCH_CAP_65
+C51_R03_F03_BUCKET_CAP_70
+C51_R04_F03_BUCKET_CAP_65
+C51_R05_F03_G16_DOWNSAMPLED_G21_BACKFILL
+C51_R06_F03_G16_DOWNSAMPLED_G21_G13_BACKFILL
+C51_R07_F03_F08_HYBRID_DIVERSIFIED_BRANCH_MIX
+C51_R08_F03_BRANCH_QUOTA_CONTROL
+C51_R09_F03_BUCKET_CONCENTRATION_CONTROL
+C51_R10_F03_LOSS_CLUSTER_CONTROL
+C51_R11_F03_F08_QUALITY_WEIGHTED_DIVERSIFIED_MIX
+C51_R12_F08_STABILITY_REPAIR_VARIANT
+C51_R13_C44_F00_ANCHOR_COMPARATOR_ONLY
+```
+
+R00 is replay/comparator only. R13 is anchor comparator only. Neither is selectable as a production candidate.
+
+## Validation layers
+
+C51 artifact includes these layers:
+
+```text
+c50_carry_forward_summary
+c50_root_cause_summary
+source_reconstruction_summary
+redesign_candidate_definitions
+candidate_replay_results
+concentration_dependency_validation_results
+branch_dependency_validation_results
+bucket_dependency_validation_results
+rolling_validation_results
+rolling_validation_summary
+leave_one_month_out_results
+leave_one_month_out_summary
+regime_robustness_validation_results
+regime_robustness_validation_summary
+material_difference_validation_results
+source_reconstruction_bias_check
+candidate_scorecard
+selected_c51_candidates_for_c52
+c52_readiness_decision
+candidate_safety_audit
+not_evaluable_reasons
+diagnostics
+```
+
+## Concentration/dependency validation
+
+C51 evaluates ticker, sector, bucket, branch, month, and loss-cluster concentration per candidate. Initial targets:
+
+```text
+max_branch_share <= 0.70 relaxed
+max_branch_share <= 0.65 stronger
+max_bucket_share <= 0.70 relaxed
+max_bucket_share <= 0.65 stronger
+max_sector_share <= 0.22
+max_ticker_share <= 0.08
+max_month_share <= 0.10
+loss_cluster_share <= 0.12 relaxed
+loss_cluster_share <= 0.10 stronger
+```
+
+Branch and bucket dependency slices include row count, share, average return, median return, win rate, loss share, and dependency flag.
+
+## Runtime result
+
+Final operator validation was run in the supported local environment.
+
+```text
+C51_IMPLEMENTATION_STATUS=IMPLEMENTED_FINAL
+C51_PHPUNIT_STATUS=PASS
+C51_PHPUNIT_RESULT=OK (14 tests, 378 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (749 tests, 14243 assertions)
+C51_ARTISAN_RUNTIME_STATUS=COMPLETED
+ARTIFACT_PATH=storage/app/watchlist/backtest/c51-concentration-dependency-redesign-review.json
+C51_ARTISAN_REPORTED_ARTIFACT_HASH=a786034b8e344207592e58efe262287102b0ef36
+C51_FILE_SHA1=0BFAD3BC9985602E1FE6318557754ECBE9A63F91
+status=C51_CONCENTRATION_DEPENDENCY_REDESIGN_COMPLETED
+diagnostic_conclusion=C51_REDESIGNED_CANDIDATE_OVERFIT_RISK_REMAINS
+next_step_recommendation=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
+production_ready=false
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+```
+
+## Source lock validation
+
+```text
+expected_c50_hash=1f2b919662a395444f43403e8f7f4d0b91e146aa
+actual_c50_hash=1f2b919662a395444f43403e8f7f4d0b91e146aa
+c50_hash_match=true
+c50_status=C50_IS_VALIDATION_COMPLETED
+c50_diagnostic_conclusion=C50_C49_PRIMARY_CANDIDATE_OVERFIT_RISK_IDENTIFIED
+c50_next_step_recommendation=C51_CONCENTRATION_DEPENDENCY_REDESIGN_REVIEW
+expected_c49_hash=9266ec2b59a6ea11c21b830cd9b769635afc91a8
+actual_c49_hash=9266ec2b59a6ea11c21b830cd9b769635afc91a8
+c49_hash_match=true
+```
+
+## C50 carry-forward and root cause
+
+```text
+c50_root_cause=F03_G16_BRANCH_BUCKET_CONCENTRATION
+primary_candidate_code=C49_CANDIDATE_F03_REGIME_AWARE_MARKET_EXTENSION_CONTROL
+primary_candidate_failure_reason_codes=C50_CONCENTRATION_DEPENDENCY_FAIL
+primary_max_branch_share=0.9217877094972067
+primary_max_bucket_share=0.9217877094972067
+primary_g16_share=0.9217877094972067
+primary_g21_share=0.0782122905027933
+primary_loss_cluster_share=0.12910798122065728
+defensive_candidate_code=C49_CANDIDATE_F08_AGGRESSIVE_SHARED_CORE_ESCAPE_REDESIGN
+defensive_max_branch_share=0.5411255411255411
+c44_comparator_code=C49_CANDIDATE_F00_C44_SHARED_CORE_COMPARATOR
+c44_material_difference_pass=false
+c50_concentration_failure_confirmed=true
+c50_anti_overfit_pass=false
+```
+
+## Source reconstruction bias check
+
+Final runtime source reconstruction:
+
+```text
+source_mode=C28_PICK_DIAGNOSTIC_ROWS
+source_rows_available=true
+source_is_rows=15750
+source_g16_rows=1320
+source_g21_rows=1770
+source_g13_rows=590
+source_months=27
+pre_trade_source_mode=DATABASE_AS_OF_SIGNAL_DATE_JOIN
+pre_trade_source_row_count=68726
+pre_trade_source_error=
+source_bias_validation_pass=true
+oos_data_used_for_tuning=false
+oos_return_used_for_selection=false
+return_used_for_selection=false
+future_path_used_for_selection=false
+```
+
+The source reconstruction layer is available and the pre-trade source join completed. C51 still records not-evaluable regime slices for fields that are not available in the reconstructed candidate row universe, especially market/sector regime fields.
+
+## Candidate scorecard interpretation
+
+The operator artifact confirms C51 reduced G16/bucket dominance across multiple redesign variants, but no candidate passed the complete readiness stack. The best redesigned candidate fields are empty, selected candidate count is zero, and the C52 decision keeps the workflow in concentration dependency redesign continuation.
+
+```text
+best_redesigned_candidate_code=null
+best_redesigned_profile_code=null
+best_redesigned_candidate_pass=false
+selected_candidate_count=0
+primary_dependency_reduced=false
+concentration_validation_pass=false
+rolling_validation_pass=false
+loo_validation_pass=false
+regime_robustness_validation_pass=false
+material_difference_validation_pass=false
+source_bias_validation_pass=true
+anti_overfit_pass=false
+c52_recommendation=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
+decision_reason=concentration_dependency_issue_remains
+diagnostic_conclusion=C51_REDESIGNED_CANDIDATE_OVERFIT_RISK_REMAINS
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+
+## Final operator interpretation
+
+C51 is technically valid and operator-validated, but the strategy result is not a pass. The C51 redesign variants reduce G16/bucket dominance mechanically, yet no redesigned candidate passed the full C52 readiness stack.
+
+Key observations:
+
+```text
+C51_R00_F03_REPLAY_max_branch_share=0.8450704225352113
+C51_R01_BRANCH_CAP_70_max_branch_share=0.6936274509803921
+C51_R05_G16_DOWNSAMPLED_G21_BACKFILL_max_branch_share=0.6004618937644342
+C51_R06_G16_DOWNSAMPLED_G21_G13_BACKFILL_max_branch_share=0.5295315682281059
+C51_R08_BRANCH_QUOTA_CONTROL_max_branch_share=0.49038461538461536
+C51_R10_LOSS_CLUSTER_CONTROL_loss_cluster_share=0.06896551724137931
+```
+
+However, concentration validation still failed for all candidates. The final artifact shows `max_sector_share=1` and `unique_sector_count=0` across candidate concentration output, which means the sector mapping/reconstruction layer is not yet valid enough to clear sector concentration. This should be treated as a C52 design input, not as permission to move to OOS proof.
+
+Branch quality interpretation:
+
+```text
+G16 remains the main profit engine.
+G21 works as a safer backfill but contributes much lower return.
+G13 diversification reduces dependency but often damages quality because its branch average return is negative in the C51 evidence.
+F08-style diversification helps concentration shape but still does not create a candidate that passes readiness.
+```
+
+C51 therefore ends as a diagnostic/redesign-review completion with overfit risk remaining.
+
+
+## Negative validation results
+
+C51 blocking guards were manually validated:
+
+```text
+wrong_c50_hash_status=C51_BLOCKED_C50_HASH_MISMATCH
+wrong_c50_hash_production_ready=false
+wrong_c50_hash_c50_hash_match=false
+
+oos_overlap_status=C51_BLOCKED_VALIDATION_PERIOD_TOUCHES_OOS_RESERVED
+oos_overlap_production_ready=false
+oos_overlap_next_step_recommendation=C52_REDESIGN_OR_RECALIBRATION_REQUIRED_IS_ONLY
+```
+
+## Final status
+
+```text
+C51_IMPLEMENTATION_STATUS=IMPLEMENTED_FINAL
+C51_PHPUNIT_STATUS=PASS
+C51_PHPUNIT_RESULT=OK (14 tests, 378 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (749 tests, 14243 assertions)
+C51_ARTISAN_RUNTIME_STATUS=COMPLETED
+ARTIFACT_PATH=storage/app/watchlist/backtest/c51-concentration-dependency-redesign-review.json
+C51_ARTISAN_REPORTED_ARTIFACT_HASH=a786034b8e344207592e58efe262287102b0ef36
+C51_FILE_SHA1=0BFAD3BC9985602E1FE6318557754ECBE9A63F91
+status=C51_CONCENTRATION_DEPENDENCY_REDESIGN_COMPLETED
+diagnostic_conclusion=C51_REDESIGNED_CANDIDATE_OVERFIT_RISK_REMAINS
+next_step_recommendation=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
+production_ready=false
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+```
+
+## Next step
+
+```text
+NEXT_STEP_RECOMMENDATION=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
+```
+
+C52 must remain IS-only. Its first job is not to prove OOS performance, but to fix/validate sector metadata reconstruction and run a second-pass branch/bucket redesign that reduces G16 dependency without destroying quality. C51 does not claim production readiness and does not claim OOS recovery.
