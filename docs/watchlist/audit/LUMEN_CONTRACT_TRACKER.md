@@ -6559,3 +6559,102 @@ direct_oos_proof_recommended=false
 oos_proof_unlocked=false
 production_ready=false
 ```
+
+---
+
+## C57 Contract — Regime Field Reconstruction Continuation IS Only
+
+- contract_code=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
+- status=IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED
+- production_ready=false
+
+### Source artifact locks
+
+- C56 artifact hash lock: `f7edab247dc824dcd33a15f00575dd04f76f4786`
+- C55 artifact hash lock: `a4145d6f356e678d0dadf95be5d356198ebfed79`
+- C55 file SHA1 lock: `18875FCAD7FD7CDA6607BB09A60917E853E68D2B`
+- C54 artifact hash lock: `8c71a4352a1024dbe985e0f0bb6329f5e1545150`
+- C54 file SHA1 lock: `75410BB1A30A32FFFF9661CAD6818C13E044F7E5`
+- C53 artifact hash lock: `6a1749d723e16b7efdb8aa1d7510388a9475d12c`
+- C53 file SHA1 lock: `E35FEFB78B6F1931E54169BD8AABE286CB6F08C2`
+- C52 artifact hash lock: `5dbe51c9d18b175e65cddb60336baf43d6833b72`
+- C52 file SHA1 lock: `DADE6518BFF3912D8A43D7C67073FB803F7CF878`
+
+### Locked lineage rule
+
+C57 may use only C56/C55/C54/C53/C52 as locked lineage. It must not mutate C01-C56 artifacts and must not retry or rerun prior OOS proof flows.
+
+### Market index source discovery contract
+
+Market index source discovery must be read-only and must record all attempted sources:
+
+- `market_benchmark_indicators`
+- `market_benchmark_bars`
+- ticker-backed `eod_indicators`
+- ticker-backed `eod_bars`
+- `market_calendar` previous trading-day fallback
+- published EOD read model if available
+- artifact fallback only if as-of-safe and IS-only
+
+### Market index reconstruction contract
+
+- Reconstruction must be as-of-safe.
+- Reconstruction must not use `MAX(trade_date)` as a latest-row selector.
+- Reconstruction must not use future lookup.
+- Reconstruction must not request OOS rows.
+- Reconstruction must use exact signal/trade date first, then previous published trading day not after the row date.
+- If indicators are missing, benchmark bars may be used to compute `market_index_roc20` and `market_index_ma20_slope_pct` from historical bars only.
+
+### Candidate contract
+
+- Anchor candidates must come from C56.
+- Comparator-only candidates must stay comparator-only.
+- Candidate is not production.
+- No production candidate may be declared.
+- Failed rolling windows must not become exclusion rules.
+- Adverse months must not become exclusion rules.
+- No ticker exclusion rule may be derived from failure attribution.
+- No sector exclusion rule may be derived from failure attribution.
+
+### OOS and production contract
+
+- no OOS tuning
+- no OOS proof
+- no OOS proof rerun
+- no best-of-OOS
+- no OOS winner
+- no candidate reselection from OOS
+- no profile reselection from OOS
+- no OOS return selection
+- no production catalog
+- no promotion
+- no PLAN/CONFIRM mutation
+- production_ready remains false
+- return/future path not used for selection
+- OOS data may not be used for selection/tuning/proof
+- C57 must not recommend OOS proof
+
+### Allowed C58 recommendations
+
+C57 may recommend only:
+
+- `C58_IS_VALIDATION_AND_PRE_OOS_LOCK_REVIEW_FOR_C57_RECONSTRUCTION`
+- `C58_LOSS_CLUSTER_CONCENTRATION_REDESIGN_CONTINUATION_IS_ONLY`
+- `C58_MARKET_INDEX_EVIDENCE_EXPANSION_OR_SOURCE_RECONSTRUCTION_IS_ONLY`
+- `C58_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY`
+- `C58_ROLLING_STABILITY_RECHECK_AFTER_REGIME_RECONSTRUCTION_IS_ONLY`
+- `C58_SHARED_CORE_REVERSION_REDESIGN_REQUIRED`
+- `C58_REDESIGN_OR_RECALIBRATION_REQUIRED_IS_ONLY`
+
+## C57 fix2 contract clarification
+
+C57 market-index reconstruction must support the concrete benchmark schema observed in the operator DB:
+
+- benchmark identifier column: `benchmark_code`
+- benchmark date column: `trade_date`
+- market-index ROC20 column: `roc_20`
+- market-index MA20 slope column: `ma20_slope_pct`
+- benchmark bars close fallback: `adjusted_close` or `close_price`
+- calendar date fallback column: `cal_date` when `trade_date` is absent
+
+C57 must derive required dates from locked IS source rows, including C28 `pick_diagnostic_rows`, when runtime options do not inject `source_rows`. `required_date_count=0` is invalid when locked source rows are available.

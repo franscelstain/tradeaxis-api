@@ -2472,3 +2472,130 @@ C57_NEXT_STEP=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
 ```
 
 C57 must remain IS-only and must focus first on as-of-safe reconstruction of `market_index_roc20` and `market_index_ma20_slope_pct`. C57 must not use OOS rows, OOS return, OOS bad months, future lookup, `MAX(trade_date)`, production catalog promotion, PLAN/CONFIRM mutation, or C01-C56 artifact mutation.
+
+---
+
+## Governance Addendum — C57 Regime Field Reconstruction Continuation IS Only
+
+GOVERNANCE_CODE=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
+STATUS=IMPLEMENTED_OPERATOR_VALIDATION_REQUIRED
+PRODUCTION_READY=false
+
+### Source artifact lock
+
+C57 must lock and validate C56 before any reconstruction:
+
+- `storage/app/watchlist/backtest/c56-rolling-stability-redesign-continuation-is-only.json`
+- expected artifact hash: `f7edab247dc824dcd33a15f00575dd04f76f4786`
+
+### File SHA1 locks
+
+C57 must validate file SHA1 for C55/C54/C53/C52:
+
+- C55: `18875FCAD7FD7CDA6607BB09A60917E853E68D2B`
+- C54: `75410BB1A30A32FFFF9661CAD6818C13E044F7E5`
+- C53: `E35FEFB78B6F1931E54169BD8AABE286CB6F08C2`
+- C52: `DADE6518BFF3912D8A43D7C67073FB803F7CF878`
+
+### Validation command
+
+C57 validation command:
+
+```powershell
+php artisan watchlist:backtest-c57-regime-field-reconstruction-continuation-is-only `
+  --c56-artifact=storage/app/watchlist/backtest/c56-rolling-stability-redesign-continuation-is-only.json `
+  --expected-c56-hash=f7edab247dc824dcd33a15f00575dd04f76f4786 `
+  --c55-artifact=storage/app/watchlist/backtest/c55-rolling-stability-redesign-continuation-is-only.json `
+  --expected-c55-hash=a4145d6f356e678d0dadf95be5d356198ebfed79 `
+  --expected-c55-file-sha1=18875FCAD7FD7CDA6607BB09A60917E853E68D2B `
+  --c54-artifact=storage/app/watchlist/backtest/c54-rolling-stability-redesign-or-recalibration-is-only.json `
+  --expected-c54-hash=8c71a4352a1024dbe985e0f0bb6329f5e1545150 `
+  --expected-c54-file-sha1=75410BB1A30A32FFFF9661CAD6818C13E044F7E5 `
+  --c53-artifact=storage/app/watchlist/backtest/c53-is-evidence-expansion-for-c52-redesign.json `
+  --expected-c53-hash=6a1749d723e16b7efdb8aa1d7510388a9475d12c `
+  --expected-c53-file-sha1=E35FEFB78B6F1931E54169BD8AABE286CB6F08C2 `
+  --c52-artifact=storage/app/watchlist/backtest/c52-concentration-dependency-redesign-continuation.json `
+  --expected-c52-hash=5dbe51c9d18b175e65cddb60336baf43d6833b72 `
+  --expected-c52-file-sha1=DADE6518BFF3912D8A43D7C67073FB803F7CF878 `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --output=storage/app/watchlist/backtest/c57-regime-field-reconstruction-continuation-is-only.json `
+  --progress
+```
+
+### Output artifact
+
+C57 output artifact:
+
+- `storage/app/watchlist/backtest/c57-regime-field-reconstruction-continuation-is-only.json`
+
+### IS-only regime reconstruction continuation rule
+
+C57 is an IS-only continuation. It is not OOS proof, not OOS tuning, not production rollout, not catalog promotion, and not a full redesign from scratch.
+
+### Locked lineage usage rule
+
+C57 must use C56/C55/C54/C53/C52 only as locked lineage. Any missing or mismatched lock must block or produce explicit diagnostic status.
+
+### Market index source discovery rule
+
+Discovery must be read-only and must record which source was found, selected, or rejected. Identifiers checked must include IHSG/JCI/COMPOSITE/JKSE variants.
+
+### Market index reconstruction as-of-safe rule
+
+Reconstruction must use row-bounded exact date or previous published trading day only. Future lookup fails validation.
+
+### Market index no MAX(trade_date) rule
+
+C57 must not choose the latest available row globally for a source row. Market-index lookup must be bounded by that row's signal/trade date.
+
+### Market index no future lookup rule
+
+If a source row is reconstructed from a market-index date after the row's signal/trade date, C57 must fail the reconstruction validation.
+
+### Market index no OOS rows rule
+
+C57 must not request OOS rows for reconstruction, tuning, selection, or proof.
+
+### Failed-window and adverse-month no-exclusion rules
+
+Failed windows and adverse months may be carried as diagnostics only. They must not become hard exclusion rules.
+
+### No OOS tuning rule
+
+OOS data, OOS returns, OOS bad months, OOS ticker losers, and OOS sector losers cannot be used for C57 selection or thresholding.
+
+### No OOS proof rule
+
+C57 must not run or recommend direct OOS proof.
+
+### No production-readiness rule
+
+`production_ready=false` must remain true at top level, in readiness decision, and in safety boundaries.
+
+### Candidate-not-production rule
+
+C57 candidates are anchors for IS diagnostics and C58 readiness only. No candidate is a production candidate.
+
+### PowerShell-compatible JSON rule
+
+Artifact JSON must use lowercase snake_case safety boundary keys and must not contain duplicate keys after case-insensitive normalization.
+
+### Operator validation rule
+
+If PHPUnit or runtime cannot be run in the current environment, record `OPERATOR_VALIDATION_REQUIRED`. Do not claim PASS from static implementation only.
+
+### Next-step-to-C58 rule
+
+C57 must route only to an IS-only C58 step: pre-OOS lock review, loss-cluster/concentration continuation, market-index evidence expansion, regime reconstruction continuation, rolling recheck, shared-core reversion redesign, or redesign/recalibration.
+
+## C57 fix2 governance clarification
+
+C57 fix2 remains under the original IS-only boundary. The repair is limited to source-row/date extraction and benchmark-field mapping:
+
+- Load C28 `pick_diagnostic_rows` through C56 locked source-evidence lineage.
+- Map benchmark ROC20 from `market_benchmark_indicators.roc_20`.
+- Map benchmark MA20 slope from `market_benchmark_indicators.ma20_slope_pct`.
+- Use `market_benchmark_bars` only as bounded historical fallback.
+- Use `market_calendar.cal_date` when available.
+- Do not use OOS rows, OOS returns, future path, failed-window exclusion, adverse-month exclusion, production catalog, promotion, or PLAN/CONFIRM mutation.
