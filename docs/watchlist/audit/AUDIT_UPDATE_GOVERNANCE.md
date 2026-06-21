@@ -1012,3 +1012,753 @@ NO_OOS_PROOF_BEFORE_C37_PASS=true
 ```
 
 C36 governance decision: C36 is complete and operator-validated as IS-controlled candidate formation only. C36 does not make a production-ready decision and does not unlock OOS proof. C37 must run IS validation / anti-overfit checks on the C36 combined candidate before any OOS proof.
+
+---
+
+## C37 Governance - IS Validation And Anti-Overfit Check
+
+C37 source artifact lock rule:
+
+```text
+source_artifact=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json
+expected_c36_hash=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
+actual_c36_hash=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
+c36_hash_match=true
+expected_c36_file_sha1=A5D7E25594238C2743E5DB2E68657AE95BA8B927
+expected_c36_status=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED
+expected_c36_diagnostic_conclusion=C36_COMBINED_CANDIDATE_FORMED
+```
+
+C37 validation command rule:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC37"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c37-is-validation-anti-overfit-check --c36-artifact=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json --expected-c36-hash=8bc5198cf3b79fc9b58c39fc19f319826406b4b1 --from=2023-01-02 --to=2025-05-21 --output=storage/app/watchlist/backtest/c37-is-validation-anti-overfit-check.json --progress
+```
+
+C37 final validation result:
+
+```text
+PHPUNIT_C37=PASS
+PHPUNIT_C37_RESULT=OK (17 tests, 343 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (561 tests, 12153 assertions)
+ARTISAN_C37_RUNTIME=COMPLETED
+C37_FINAL_STATUS=C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_COMPLETED
+```
+
+C37 output artifact rule:
+
+```text
+output_artifact=storage/app/watchlist/backtest/c37-is-validation-anti-overfit-check.json
+artifact_hash=5938e353296cb2188b6668093522d0b40d6cb9d2
+file_sha1=C17254C01D2405DE8F77999DD7131AEE0663A287
+production_ready=false
+```
+
+C37 evidence rules:
+
+```text
+Use only C36 candidate formation artifact plus C28/C35/C36 IS evidence.
+Candidate must come from C36 best candidate.
+Return may be used only as post-selection evaluation evidence.
+Future path, MFE/MAE, realized exit, profile return, OOS return, and OOS bad months must not select candidates or thresholds.
+Missing pre-trade fields must stay NOT_EVALUABLE instead of invented rules.
+```
+
+C37 IS-only validation rule:
+
+```text
+IS_FROM=2023-01-02
+IS_TO=2025-05-21
+OOS_RESERVED_FROM=2025-05-22
+OOS_RESERVED_TO=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+C37 anti-overfit validation rule:
+
+```text
+full_is_validation=required
+yearly_validation=required
+rolling_window_validation=required_if_month_count_sufficient
+bad_month_like_stress_validation=required
+non_bad_month_validation=required
+ticker_concentration_validation=required_if_ticker_available
+branch_concentration_validation=required
+month_coverage_validation=required
+downside_stability_validation=required
+```
+
+C37 no-OOS-proof rule:
+
+```text
+NO_OOS_PROOF=true
+NO_OOS_TUNING=true
+NO_BEST_OF_OOS=true
+NO_OOS_WINNER=true
+NO_PROFILE_RESELECTION_FROM_OOS=true
+OOS_PROOF_UNLOCKED=false
+```
+
+C37 no-production-readiness rule:
+
+```text
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C36_ARTIFACT_MUTATION=true
+CANDIDATE_IS_NOT_PRODUCTION=true
+production_ready=false
+```
+
+C37 final candidate decision:
+
+```text
+diagnostic_conclusion=C37_CANDIDATE_FAILED_ANTI_OVERFIT_CHECK
+best_is_candidate_code=C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR
+overall_anti_overfit_result=FAIL
+month_coverage_result=FAIL
+branch_concentration_result=WARNING
+production_ready=false
+```
+
+C37 next-step rule:
+
+```text
+NEXT_STEP=C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC
+NO_DIRECT_C38_OOS_PROOF=true
+NO_PRODUCTION_READY_CLAIM=true
+```
+
+C37 governance decision: C37 is complete and operator-validated as IS validation and anti-overfit check only. It does not run OOS proof, does not tune from OOS, does not create best-of-OOS, does not promote a catalog, and keeps `production_ready=false`. Because month coverage fails with one zero-pick IS month and branch concentration is warning, the next work is C38 IS redesign or evidence expansion diagnostic before any OOS proof.
+
+---
+
+## C38 Governance - IS Redesign Or Evidence Expansion Diagnostic
+
+C38 source artifact lock rule:
+
+```text
+source_artifact=storage/app/watchlist/backtest/c37-is-validation-anti-overfit-check.json
+expected_c37_hash=5938e353296cb2188b6668093522d0b40d6cb9d2
+actual_c37_hash=5938e353296cb2188b6668093522d0b40d6cb9d2
+c37_hash_match=true
+expected_c37_file_sha1=C17254C01D2405DE8F77999DD7131AEE0663A287
+expected_c37_status=C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_COMPLETED
+expected_c37_diagnostic_conclusion=C37_CANDIDATE_FAILED_ANTI_OVERFIT_CHECK
+expected_c37_next_step=C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC
+```
+
+C38 validation command rule:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC38"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c38-is-redesign-evidence-expansion-diagnostic --c37-artifact=storage/app/watchlist/backtest/c37-is-validation-anti-overfit-check.json --expected-c37-hash=5938e353296cb2188b6668093522d0b40d6cb9d2 --from=2023-01-02 --to=2025-05-21 --output=storage/app/watchlist/backtest/c38-is-redesign-evidence-expansion-diagnostic.json --progress
+```
+
+C38 final validation result:
+
+```text
+PHPUNIT_C38=PASS
+PHPUNIT_C38_RESULT=OK (15 tests, 137 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (576 tests, 12290 assertions)
+ARTISAN_C38_RUNTIME=COMPLETED
+C38_FINAL_STATUS=C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC_COMPLETED
+```
+
+C38 output artifact rule:
+
+```text
+output_artifact=storage/app/watchlist/backtest/c38-is-redesign-evidence-expansion-diagnostic.json
+artifact_hash=7fe69c9ee9797615df676b0fe0c7378b452da429
+file_sha1=74AF66E0170D4C6FF8AE3B7E45F8EC72D9774A7B
+production_ready=false
+```
+
+C38 evidence rules:
+
+```text
+Use only C37 validation artifact plus C28/C36 IS evidence referenced by the locked source chain.
+Return may be used only as post-selection diagnostic/evaluation evidence.
+Future path, MFE/MAE, realized exit, profile return, OOS return, and OOS bad months must not select candidates or thresholds.
+Missing pre-trade fields must stay evidence expansion requirements instead of invented production rules.
+No new candidate may be selected by C38.
+```
+
+C38 IS-only diagnostic rule:
+
+```text
+IS_FROM=2023-01-02
+IS_TO=2025-05-21
+OOS_RESERVED_FROM=2025-05-22
+OOS_RESERVED_TO=2026-05-29
+oos_data_used_for_tuning=false
+direct_oos_proof_recommended=false
+```
+
+C38 required diagnostics:
+
+```text
+month_coverage_failure_diagnostic=required
+branch_concentration_diagnostic=required
+rolling_warning_diagnostic=required
+not_evaluable_evidence_gap_diagnostic=required
+evidence_expansion_requirements=required
+redesign_hypotheses=required
+candidate_safety_audit=required
+```
+
+C38 no-OOS-proof rule:
+
+```text
+NO_OOS_PROOF=true
+NO_OOS_TUNING=true
+NO_BEST_OF_OOS=true
+NO_OOS_WINNER=true
+NO_PROFILE_RESELECTION_FROM_OOS=true
+OOS_PROOF_UNLOCKED=false
+```
+
+C38 no-production-readiness rule:
+
+```text
+NO_NEW_CANDIDATE_SELECTION=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C37_ARTIFACT_MUTATION=true
+production_ready=false
+```
+
+C38 final diagnostic decision:
+
+```text
+diagnostic_conclusion=C38_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS
+c37_overall_anti_overfit_result=FAIL
+zero_pick_months=2023-03
+branch_diversification_required=true
+rolling_stability_review_required=true
+evidence_expansion_required_before_new_candidate=true
+production_ready=false
+```
+
+C38 next-step rule:
+
+```text
+NEXT_STEP=C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS
+NO_DIRECT_OOS_PROOF=true
+NO_PRODUCTION_READY_CLAIM=true
+```
+
+C38 governance decision: C38 is complete and operator-validated as an IS-only redesign/evidence diagnostic. It confirms direct OOS proof is not allowed from the failed C37 candidate. The next work is C39 IS-controlled redesign with explicit month coverage and branch diversification guards, rolling stability review, and pre-trade evidence expansion before any OOS proof.
+
+---
+
+## C39 Governance - IS Controlled Redesign With Coverage And Branch Diversification Guards
+
+C39 source artifact lock rule:
+
+```text
+source_artifact=storage/app/watchlist/backtest/c38-is-redesign-evidence-expansion-diagnostic.json
+expected_c38_hash=7fe69c9ee9797615df676b0fe0c7378b452da429
+actual_c38_hash=7fe69c9ee9797615df676b0fe0c7378b452da429
+c38_hash_match=true
+expected_c38_file_sha1=74AF66E0170D4C6FF8AE3B7E45F8EC72D9774A7B
+expected_c38_status=C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC_COMPLETED
+expected_c38_diagnostic_conclusion=C38_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS
+expected_c38_next_step=C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS
+```
+
+C39 validation command rule:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC39"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c39-is-controlled-redesign-with-coverage-and-branch-diversification-guards --c38-artifact=storage/app/watchlist/backtest/c38-is-redesign-evidence-expansion-diagnostic.json --expected-c38-hash=7fe69c9ee9797615df676b0fe0c7378b452da429 --from=2023-01-02 --to=2025-05-21 --output=storage/app/watchlist/backtest/c39-is-controlled-redesign-with-coverage-and-branch-diversification-guards.json --progress --overwrite
+```
+
+C39 final validation result:
+
+```text
+PHPUNIT_C39=PASS
+PHPUNIT_C39_RESULT=OK (17 tests, 174 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (593 tests, 12464 assertions)
+ARTISAN_C39_RUNTIME=COMPLETED
+C39_FINAL_STATUS=C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS_COMPLETED
+```
+
+C39 output artifact rule:
+
+```text
+output_artifact=storage/app/watchlist/backtest/c39-is-controlled-redesign-with-coverage-and-branch-diversification-guards.json
+artifact_hash=504aaa061054ed2771ed08294d8a0570f08e18db
+file_sha1=B08233211E335C982E327D6A0C638428B906BFC9
+production_ready=false
+```
+
+C39 evidence rules:
+
+```text
+Use only C38 diagnostic artifact plus C28 IS evidence referenced by the locked source chain.
+Candidate selection may use branch, bucket, calendar, ticker, param_id, row_code, and C38 structural guard requirements.
+Return may be used only as post-selection IS evaluation evidence.
+Future path, MFE/MAE, realized exit, profile return, OOS return, and OOS bad months must not select candidates or thresholds.
+Missing pre-trade fields must stay NOT_EVALUABLE instead of invented production rules.
+```
+
+C39 IS-only candidate formation rule:
+
+```text
+IS_FROM=2023-01-02
+IS_TO=2025-05-21
+OOS_RESERVED_FROM=2025-05-22
+OOS_RESERVED_TO=2026-05-29
+oos_data_used_for_tuning=false
+direct_oos_proof_recommended=false
+```
+
+C39 guard rules:
+
+```text
+MONTH_COVERAGE_GUARD_REQUIRED=true
+BRANCH_DIVERSIFICATION_GUARD_REQUIRED=true
+baseline_months_required=27
+c38_zero_pick_months=2023-03
+max_top_branch_share=0.80
+metadata_monthly_g21_quota_per_month=13
+metadata_monthly_g21_quota_selected_rows=343
+selection_ordering_fields=trade_month,trade_date,ticker,param_id,row_code
+```
+
+C39 guarded candidate decision:
+
+```text
+candidate_formed=true
+best_is_candidate_code=C39_COVERAGE_AND_BRANCH_GUARD_G16_PLUS_METADATA_G21_MONTHLY_QUOTA
+best_candidate_zero_pick_month_count=0
+best_candidate_month_coverage_passed=true
+best_candidate_branch_diversification_passed=true
+best_candidate_top_branch_share=0.79374624173181
+best_is_candidate_is_not_production=true
+best_candidate_requires_C40_validation=true
+```
+
+C39 no-OOS-proof rule:
+
+```text
+NO_OOS_PROOF=true
+NO_OOS_TUNING=true
+NO_BEST_OF_OOS=true
+NO_OOS_WINNER=true
+NO_PROFILE_RESELECTION_FROM_OOS=true
+OOS_PROOF_UNLOCKED=false
+```
+
+C39 no-production-readiness rule:
+
+```text
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C38_ARTIFACT_MUTATION=true
+CANDIDATE_IS_NOT_PRODUCTION=true
+CANDIDATE_REQUIRES_C40_VALIDATION=true
+production_ready=false
+```
+
+C39 final diagnostic decision:
+
+```text
+diagnostic_conclusion=C39_GUARDED_IS_CANDIDATE_FORMED
+candidate_formed=true
+production_ready=false
+```
+
+C39 next-step rule:
+
+```text
+NEXT_STEP=C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE
+NO_DIRECT_OOS_PROOF=true
+NO_PRODUCTION_READY_CLAIM=true
+```
+
+C39 governance decision: C39 is complete and operator-validated as IS-controlled guarded candidate formation. It forms a non-production candidate that fixes month coverage and branch concentration blockers, but it does not run OOS proof and does not unlock production. C40 must validate the guarded candidate with IS validation and anti-overfit checks before any OOS proof.
+
+---
+
+## C40 Governance - IS Validation And Anti-Overfit Check For C39 Guarded Candidate
+
+C40 source artifact lock rule:
+
+```text
+source_artifact=storage/app/watchlist/backtest/c39-is-controlled-redesign-with-coverage-and-branch-diversification-guards.json
+expected_c39_hash=504aaa061054ed2771ed08294d8a0570f08e18db
+actual_c39_hash=504aaa061054ed2771ed08294d8a0570f08e18db
+c39_hash_match=true
+expected_c39_file_sha1=B08233211E335C982E327D6A0C638428B906BFC9
+expected_c39_status=C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS_COMPLETED
+expected_c39_diagnostic_conclusion=C39_GUARDED_IS_CANDIDATE_FORMED
+expected_c39_next_step=C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE
+```
+
+C40 validation command rule:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC40"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c40-is-validation-and-anti-overfit-check-for-c39-guarded-candidate --c39-artifact=storage/app/watchlist/backtest/c39-is-controlled-redesign-with-coverage-and-branch-diversification-guards.json --expected-c39-hash=504aaa061054ed2771ed08294d8a0570f08e18db --from=2023-01-02 --to=2025-05-21 --output=storage/app/watchlist/backtest/c40-is-validation-and-anti-overfit-check-for-c39-guarded-candidate.json --progress --overwrite
+```
+
+C40 final validation result:
+
+```text
+PHPUNIT_C40=PASS
+PHPUNIT_C40_RESULT=OK (16 tests, 176 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (609 tests, 12640 assertions)
+ARTISAN_C40_RUNTIME=COMPLETED
+C40_FINAL_STATUS=C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE_COMPLETED
+```
+
+C40 output artifact rule:
+
+```text
+output_artifact=storage/app/watchlist/backtest/c40-is-validation-and-anti-overfit-check-for-c39-guarded-candidate.json
+artifact_hash=0b40ee2464ed820d47ad0b83acbacd78b440d5bd
+file_sha1=306E01AD1274944991F1AFE6CFEBBDB3C0E06BFC
+production_ready=false
+```
+
+C40 evidence rules:
+
+```text
+Use only C39 guarded candidate artifact plus C28/C39 IS evidence referenced by the locked source chain.
+Candidate must come from the C39 best candidate.
+Return may be used only as post-selection validation evidence.
+Future path, MFE/MAE, realized exit, profile return, OOS return, and OOS bad months must not select candidates or thresholds.
+Missing pre-trade fields must stay NOT_EVALUABLE instead of invented rules.
+```
+
+C40 IS-only validation rule:
+
+```text
+IS_FROM=2023-01-02
+IS_TO=2025-05-21
+OOS_RESERVED_FROM=2025-05-22
+OOS_RESERVED_TO=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+C40 anti-overfit validation rule:
+
+```text
+full_is_validation=required
+yearly_validation=required
+rolling_window_validation=required_if_month_count_sufficient
+bad_month_like_stress_validation=required
+non_bad_month_validation=required
+ticker_concentration_validation=required_if_ticker_available
+branch_concentration_validation=required
+month_coverage_validation=required
+downside_stability_validation=required
+```
+
+C40 layer result:
+
+```text
+full_is_result=PASS
+yearly_validation_result=PASS
+rolling_validation_result=WARNING
+bad_month_stress_result=PASS
+normal_month_result=WARNING
+ticker_concentration_result=PASS
+branch_concentration_result=PASS
+month_coverage_result=PASS
+downside_stability_result=PASS
+overall_anti_overfit_result=WARNING
+failed_layers=0
+```
+
+C40 no-OOS-proof rule:
+
+```text
+NO_OOS_PROOF=true
+NO_OOS_TUNING=true
+NO_BEST_OF_OOS=true
+NO_OOS_WINNER=true
+NO_PROFILE_RESELECTION_FROM_OOS=true
+OOS_PROOF_UNLOCKED=false
+```
+
+C40 no-production-readiness rule:
+
+```text
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C39_ARTIFACT_MUTATION=true
+CANDIDATE_IS_NOT_PRODUCTION=true
+production_ready=false
+```
+
+C40 final candidate decision:
+
+```text
+diagnostic_conclusion=C40_CANDIDATE_WARNING_REQUIRES_REVIEW_BEFORE_OOS
+best_is_candidate_code=C39_COVERAGE_AND_BRANCH_GUARD_G16_PLUS_METADATA_G21_MONTHLY_QUOTA
+overall_anti_overfit_result=WARNING
+rolling_validation_result=WARNING
+normal_month_result=WARNING
+production_ready=false
+```
+
+C40 next-step rule:
+
+```text
+NEXT_STEP=C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS
+NO_DIRECT_OOS_PROOF=true
+NO_PRODUCTION_READY_CLAIM=true
+```
+
+C40 governance decision: C40 is complete and operator-validated as IS validation and anti-overfit check only. It fixes the prior C37 coverage/branch blockers but retains rolling and non-bad-month warnings, so it does not run or unlock direct OOS proof and keeps `production_ready=false`. The next work is C41 IS review or evidence expansion before OOS.
+
+---
+
+## C41 Governance - IS Review Or Evidence Expansion Before OOS
+
+C41 source artifact lock rule:
+
+```text
+source_artifact=storage/app/watchlist/backtest/c40-is-validation-and-anti-overfit-check-for-c39-guarded-candidate.json
+expected_c40_hash=0b40ee2464ed820d47ad0b83acbacd78b440d5bd
+actual_c40_hash=0b40ee2464ed820d47ad0b83acbacd78b440d5bd
+c40_hash_match=true
+expected_c40_file_sha1=306E01AD1274944991F1AFE6CFEBBDB3C0E06BFC
+expected_c40_status=C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE_COMPLETED
+expected_c40_diagnostic_conclusion=C40_CANDIDATE_WARNING_REQUIRES_REVIEW_BEFORE_OOS
+expected_c40_next_step=C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS
+```
+
+C41 validation command rule:
+
+```text
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC41"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c41-is-review-or-evidence-expansion-before-oos --c40-artifact=storage/app/watchlist/backtest/c40-is-validation-and-anti-overfit-check-for-c39-guarded-candidate.json --expected-c40-hash=0b40ee2464ed820d47ad0b83acbacd78b440d5bd --from=2023-01-02 --to=2025-05-21 --output=storage/app/watchlist/backtest/c41-is-review-or-evidence-expansion-before-oos.json --progress --overwrite
+```
+
+C41 final validation result:
+
+```text
+PHPUNIT_C41=PASS
+PHPUNIT_C41_RESULT=OK (18 tests, 123 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (627 tests, 12763 assertions)
+ARTISAN_C41_RUNTIME=COMPLETED
+C41_FINAL_STATUS=C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS_COMPLETED
+```
+
+C41 output artifact rule:
+
+```text
+output_artifact=storage/app/watchlist/backtest/c41-is-review-or-evidence-expansion-before-oos.json
+artifact_hash=fa3afd197cfe07d67d90edf87d69aec81310d791
+file_sha1=9B44AD084DBD7637E0794A8AF5085E3A846D9486
+production_ready=false
+```
+
+C41 evidence rules:
+
+```text
+Use only the locked C40 warning artifact and its IS evidence chain.
+Return may be used only as post-selection validation evidence from C40, not as a selector for C41.
+Future path, MFE/MAE, realized exit, profile return, OOS return, and OOS bad months must not select candidates or thresholds.
+C41 must not select a new candidate.
+Missing pre-trade fields must be surfaced as evidence expansion requirements instead of invented rules.
+```
+
+C41 IS-only review rule:
+
+```text
+IS_FROM=2023-01-02
+IS_TO=2025-05-21
+OOS_RESERVED_FROM=2025-05-22
+OOS_RESERVED_TO=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+C41 warning review rule:
+
+```text
+rolling_warning_windows=3
+rolling_warning_slices=2023-10_to_2024-03,2023-07_to_2024-03,2023-04_to_2024-03
+non_bad_month_warning=true
+failed_layers=0
+not_evaluable_layers=0
+```
+
+C41 guard preservation rule:
+
+```text
+month_coverage_result=PASS
+branch_concentration_result=PASS
+candidate_zero_pick_months=0
+candidate_months_covered=27
+candidate_top_branch_share=0.79374624173181
+prior_c37_coverage_branch_blocker_resolved=true
+```
+
+C41 evidence expansion rule:
+
+```text
+C41_REQ_ROLLING_WARNING_WINDOW_PRE_TRADE_SPLIT_REVIEW=REQUIRED_BEFORE_OOS
+C41_REQ_NON_BAD_MONTH_STABILITY_REVIEW=REQUIRED_BEFORE_OOS
+C41_REQ_G21_PRE_TRADE_QUALITY_FIELD_EXPANSION=REQUIRED_BEFORE_OOS
+C41_REQ_ROLLING_STABILITY_PRE_TRADE_SPLIT_FIELD_EXPANSION=REQUIRED_BEFORE_OOS
+C41_REQ_PRESERVE_C39_COVERAGE_BRANCH_GUARDS=PRESERVE
+```
+
+C41 no-OOS-proof rule:
+
+```text
+NO_OOS_PROOF=true
+NO_OOS_TUNING=true
+NO_BEST_OF_OOS=true
+NO_OOS_WINNER=true
+NO_PROFILE_RESELECTION_FROM_OOS=true
+OOS_PROOF_UNLOCKED=false
+```
+
+C41 no-production-readiness rule:
+
+```text
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C40_ARTIFACT_MUTATION=true
+NO_C41_CANDIDATE_RESELECTION=true
+CANDIDATE_IS_NOT_PRODUCTION=true
+production_ready=false
+```
+
+C41 final candidate decision:
+
+```text
+diagnostic_conclusion=C41_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS
+best_is_candidate_code=C39_COVERAGE_AND_BRANCH_GUARD_G16_PLUS_METADATA_G21_MONTHLY_QUOTA
+candidate_decision=C41_REQUIRES_EVIDENCE_EXPANSION_BEFORE_OOS
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+new_candidate_selected=false
+production_ready=false
+```
+
+C41 next-step rule:
+
+```text
+NEXT_STEP=C42_IS_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION_OR_GUARD_REFINEMENT
+NO_DIRECT_OOS_PROOF=true
+NO_PRODUCTION_READY_CLAIM=true
+```
+
+C41 governance decision: C41 is complete and operator-validated as an IS-only review/evidence expansion gate. It preserves the C39 coverage/branch guard fix, identifies the rolling/non-bad-month warning evidence requirements, and keeps OOS proof locked. The next work is C42 IS rolling/normal-month evidence expansion or guard refinement before any OOS proof.
+
+## C42 Governance — IS Rolling / Normal-Month Evidence Expansion
+
+C42 source artifact lock:
+
+```text
+C42_SOURCE_ARTIFACT_LOCK=C41
+INPUT_C41_ARTIFACT=storage/app/watchlist/backtest/c41-is-review-or-evidence-expansion-before-oos.json
+EXPECTED_C41_HASH=fa3afd197cfe07d67d90edf87d69aec81310d791
+HASH_MISMATCH_STATUS=C42_BLOCKED_C41_HASH_MISMATCH
+MISSING_ARTIFACT_STATUS=C42_BLOCKED_MISSING_C41_ARTIFACT
+```
+
+C42 validation command governance:
+
+```text
+PHPUNIT_C42_COMMAND=vendor/bin/phpunit tests/Unit/Watchlist --filter "WatchlistBacktestC42"
+FULL_WATCHLIST_PHPUNIT_COMMAND=vendor/bin/phpunit tests/Unit/Watchlist
+RUNTIME_COMMAND=php artisan watchlist:backtest-c42-is-rolling-normal-month-evidence-expansion
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c42-is-rolling-normal-month-evidence-expansion.json
+```
+
+C42 evidence rules:
+
+```text
+IS_ONLY_EVIDENCE_EXPANSION_RULE=true
+ROLLING_WARNING_REVIEW_RULE=true
+NORMAL_MONTH_WARNING_REVIEW_RULE=true
+PRE_TRADE_FIELD_AVAILABILITY_RULE=true
+GUARD_REFINEMENT_FEASIBILITY_RULE=true
+RETURN_ALLOWED_ONLY_FOR_POST_SELECTION_DIAGNOSTIC=true
+OOS_DATA_USED_FOR_TUNING=false
+```
+
+C42 no-OOS governance:
+
+```text
+NO_OOS_PROOF_RULE=true
+NO_BEST_OF_OOS_RULE=true
+NO_OOS_WINNER_RULE=true
+NO_PROFILE_RESELECTION_FROM_OOS_RULE=true
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+```
+
+C42 production-readiness governance:
+
+```text
+NO_PRODUCTION_READINESS_RULE=true
+NO_PRODUCTION_CATALOG_RULE=true
+NO_PROMOTION_RULE=true
+NO_PLAN_CONFIRM_MUTATION_RULE=true
+CANDIDATE_NOT_PRODUCTION_RULE=true
+production_ready=false
+```
+
+C42 operator validation rule:
+
+```text
+DO_NOT_CLAIM_PHPUNIT_PASS_IF_NOT_RUN=true
+DO_NOT_CLAIM_ARTISAN_RUNTIME_COMPLETED_IF_ENV_BLOCKED=true
+OPERATOR_VALIDATION_REQUIRED_WHEN_ENV_UNSUPPORTED=true
+```
+
+Final operator validation note:
+
+```text
+PHPUNIT_C42=PASS — OK (12 tests, 97 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS — OK (639 tests, 12860 assertions)
+ARTISAN_C42_RUNTIME=COMPLETED
+ARTIFACT_HASH=939e85f179b3bf5d2511730fafb4271cf7c2ca11
+FILE_SHA1=CBB44B864DD9B2071DE5B10C426F01ED2776525D
+PRODUCTION_READY=false
+```
+
+C42 decision governance:
+
+```text
+WARNING_EXPLAINED=true
+WARNING_ACCEPTABLE_FOR_DIRECT_OOS=false
+SAFE_REFINEMENT_FIELD_AVAILABLE=false
+SAFE_REFINEMENT_CANDIDATE_FORMED=false
+NEXT_STEP=C43_PRE_TRADE_FIELD_EXPANSION_DIAGNOSTIC
+```
+
+C42 to C43 rule:
+
+```text
+IF_WARNING_EXPLAINED_ACCEPTABLE_AND_NO_NEW_CANDIDATE=C43_OOS_PROOF_WITH_LOCKED_C39_CANDIDATE
+IF_REFINEMENT_CANDIDATE_FORMED=C43_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C42_REFINEMENT
+IF_WARNING_EXPLAINED_BUT_REFINEMENT_NEEDED=C43_IS_GUARD_REFINEMENT_CANDIDATE_FORMATION
+IF_WARNING_NOT_EXPLAINED=C43_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION_CONTINUATION
+IF_EVIDENCE_INSUFFICIENT=C43_PRE_TRADE_FIELD_EXPANSION_DIAGNOSTIC
+CURRENT_NEXT_STEP=C43_PRE_TRADE_FIELD_EXPANSION_DIAGNOSTIC
+```

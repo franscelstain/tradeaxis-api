@@ -61,6 +61,12 @@ use App\Console\Commands\Watchlist\RunBacktestC33DataPathReplayProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestC34BadMonthRobustnessDiagnosticCommand;
 use App\Console\Commands\Watchlist\RunBacktestC35IsRobustnessRedesignDiagnosticCommand;
 use App\Console\Commands\Watchlist\RunBacktestC36IsControlledRedesignCandidateFormationCommand;
+use App\Console\Commands\Watchlist\RunBacktestC37IsValidationAntiOverfitCheckCommand;
+use App\Console\Commands\Watchlist\RunBacktestC38IsRedesignEvidenceExpansionDiagnosticCommand;
+use App\Console\Commands\Watchlist\RunBacktestC39IsControlledRedesignWithCoverageBranchGuardsCommand;
+use App\Console\Commands\Watchlist\RunBacktestC40IsValidationAntiOverfitCheckForC39GuardedCandidateCommand;
+use App\Console\Commands\Watchlist\RunBacktestC41IsReviewEvidenceExpansionBeforeOosCommand;
+use App\Console\Commands\Watchlist\RunBacktestC42IsRollingNormalMonthEvidenceExpansionCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -109,6 +115,12 @@ class Kernel extends ConsoleKernel
         RunBacktestC34BadMonthRobustnessDiagnosticCommand::class,
         RunBacktestC35IsRobustnessRedesignDiagnosticCommand::class,
         RunBacktestC36IsControlledRedesignCandidateFormationCommand::class,
+        RunBacktestC37IsValidationAntiOverfitCheckCommand::class,
+        RunBacktestC38IsRedesignEvidenceExpansionDiagnosticCommand::class,
+        RunBacktestC39IsControlledRedesignWithCoverageBranchGuardsCommand::class,
+        RunBacktestC40IsValidationAntiOverfitCheckForC39GuardedCandidateCommand::class,
+        RunBacktestC41IsReviewEvidenceExpansionBeforeOosCommand::class,
+        RunBacktestC42IsRollingNormalMonthEvidenceExpansionCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

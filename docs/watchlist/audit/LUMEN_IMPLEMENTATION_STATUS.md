@@ -15,27 +15,36 @@ Behavioral owner tetap:
 ## ACTIVE SESSION
 
 Session:
-`WATCHLIST - C36 IS-CONTROLLED REDESIGN CANDIDATE FORMATION`
+`WATCHLIST - C41 IS REVIEW OR EVIDENCE EXPANSION BEFORE OOS`
 
 Current status:
 
-`C36_SOURCE_IMPLEMENTED / C36_COMMAND_REGISTERED / C36_TESTS_ADDED / C36_DOCS_SYNCED / C36_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C36_RUNTIME_COMPLETED / C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED / C35_ARTIFACT_HASH_LOCK_PASS / C35_G21_AND_G16_WEAKNESS_CONFIRMED / C36_COMBINED_CANDIDATE_FORMED / BEST_IS_CANDIDATE_NOT_PRODUCTION / NO_OOS_TUNING / NO_OOS_PROOF / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PROMOTION / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C35_MUTATION / NOT_PRODUCTION_READY`.
+`C41_SOURCE_IMPLEMENTED / C41_COMMAND_REGISTERED / C41_TESTS_ADDED / C41_DOCS_SYNCED / C41_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C41_RUNTIME_COMPLETED / C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS_COMPLETED / C40_ARTIFACT_HASH_LOCK_PASS / C40_WARNING_PATH_REVIEWED / C41_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS / ROLLING_WARNING_WINDOWS_REVIEWED / NON_BAD_MONTH_WARNING_REVIEWED / CARRY_FORWARD_EVIDENCE_GAPS_REVIEWED / C39_COVERAGE_BRANCH_GUARDS_PRESERVED / NO_OOS_TUNING / NO_OOS_PROOF / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PROMOTION / NO_C41_CANDIDATE_RESELECTION / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C40_ARTIFACT_MUTATION / NOT_PRODUCTION_READY`.
 
-C36 final operator validation status:
+C41 final operator validation status:
 
 ```text
-PHPUNIT_C36=PASS
-PHPUNIT_C36_RESULT=OK (15 tests, 203 assertions)
+PHPUNIT_C41=PASS
+PHPUNIT_C41_RESULT=OK (18 tests, 123 assertions)
 FULL_WATCHLIST_PHPUNIT=PASS
-FULL_WATCHLIST_PHPUNIT_RESULT=OK (544 tests, 11810 assertions)
-ARTISAN_C36_RUNTIME=COMPLETED
-C36_FINAL_STATUS=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED
-C36_ARTIFACT_PATH=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json
-C36_ARTIFACT_HASH=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
-C36_FILE_SHA1=A5D7E25594238C2743E5DB2E68657AE95BA8B927
-DIAGNOSTIC_CONCLUSION=C36_COMBINED_CANDIDATE_FORMED
-NEXT_STEP=C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (627 tests, 12763 assertions)
+ARTISAN_C41_RUNTIME=COMPLETED
+C41_FINAL_STATUS=C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS_COMPLETED
+C41_ARTIFACT_PATH=storage/app/watchlist/backtest/c41-is-review-or-evidence-expansion-before-oos.json
+C41_ARTIFACT_HASH=fa3afd197cfe07d67d90edf87d69aec81310d791
+C41_FILE_SHA1=9B44AD084DBD7637E0794A8AF5085E3A846D9486
+C40_ARTIFACT_HASH_LOCK=0b40ee2464ed820d47ad0b83acbacd78b440d5bd
+TARGET_CANDIDATE_CODE=C39_COVERAGE_AND_BRANCH_GUARD_G16_PLUS_METADATA_G21_MONTHLY_QUOTA
+C40_ANTI_OVERFIT_RESULT=WARNING
+C40_WARNING_LAYERS=2
+C41_ROLLING_WARNING_WINDOWS=3
+C41_NON_BAD_MONTH_WARNING=true
+C41_CARRY_FORWARD_GAP_COUNT=2
+C41_EVIDENCE_REQUIREMENTS_COUNT=5
+DIAGNOSTIC_CONCLUSION=C41_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS
+NEXT_STEP=C42_IS_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION_OR_GUARD_REFINEMENT
 PRODUCTION_READY=0
+OOS_PROOF_UNLOCKED=false
 ```
 
 ## PRIOR SESSION - C34 BAD MONTH ROBUSTNESS DIAGNOSTIC
@@ -5685,3 +5694,876 @@ PRODUCTION_ROLLOUT=false
 ```
 
 C36 final decision: C36 successfully forms a controlled combined IS candidate by suppressing the weak G21 no-profit fallback branch and keeping G16 as comparator. This is not a production candidate and does not unlock OOS proof. C37 must validate the candidate with IS validation / anti-overfit checks before any OOS proof is allowed.
+
+---
+
+## C37 - IS Validation And Anti-Overfit Check
+
+Status implementation: IMPLEMENTED and operator-validated.
+
+Status runtime:
+
+```text
+ARTISAN_C37_RUNTIME=COMPLETED
+C37_FINAL_STATUS=C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_COMPLETED
+```
+
+Status PHPUnit:
+
+```text
+PHPUNIT_C37=PASS
+PHPUNIT_C37_RESULT=OK (17 tests, 343 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (561 tests, 12153 assertions)
+```
+
+Files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC37IsValidationAntiOverfitCheckService.php
+app/Console/Commands/Watchlist/RunBacktestC37IsValidationAntiOverfitCheckCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC37IsValidationAntiOverfitCheckServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC37StaticGuardTest.php
+docs/watchlist/audit/WS_C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK.md
+docs/watchlist/audit/WS_C37_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Artifact:
+
+```text
+artifact_path=storage/app/watchlist/backtest/c37-is-validation-anti-overfit-check.json
+artifact_hash=5938e353296cb2188b6668093522d0b40d6cb9d2
+file_sha1=C17254C01D2405DE8F77999DD7131AEE0663A287
+```
+
+C36 source artifact lock:
+
+```text
+input_c36_artifact=storage/app/watchlist/backtest/c36-is-controlled-redesign-candidate-formation.json
+expected_c36_hash=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
+actual_c36_hash=8bc5198cf3b79fc9b58c39fc19f319826406b4b1
+c36_hash_match=true
+c36_status=C36_IS_CONTROLLED_REDESIGN_CANDIDATE_FORMATION_COMPLETED
+c36_diagnostic_conclusion=C36_COMBINED_CANDIDATE_FORMED
+```
+
+IS period:
+
+```text
+from=2023-01-02
+to=2025-05-21
+oos_reserved_from=2025-05-22
+oos_reserved_to=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+Source C36 summary:
+
+```text
+candidate_formed=true
+best_is_candidate_code=C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR
+best_is_candidate_is_not_production=true
+source_evidence=storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json
+g21_rows=1770
+g16_rows=1320
+```
+
+Validation target:
+
+```text
+baseline_candidate_code=C36_BASELINE_C35_CURRENT_BRANCH_BEHAVIOR
+target_candidate_code=C36_COMBINED_G21_REDESIGN_PLUS_G16_COMPARATOR
+target_candidate_is_not_production=true
+```
+
+Validation summary:
+
+```text
+total_validation_layers=9
+passed_layers=6
+warning_layers=2
+failed_layers=1
+not_evaluable_layers=0
+overall_anti_overfit_result=FAIL
+candidate_c37_decision=C37_CANDIDATE_REQUIRES_IS_REDESIGN_OR_EVIDENCE_EXPANSION
+candidate_c37_decision_reason=Candidate failed at least one material IS anti-overfit validation layer.
+```
+
+Layer result summary:
+
+```text
+full_is_result=PASS
+yearly_validation_result=PASS
+rolling_validation_result=WARNING
+bad_month_stress_result=PASS
+normal_month_result=PASS
+ticker_concentration_result=PASS
+branch_concentration_result=WARNING
+month_coverage_result=FAIL
+downside_stability_result=PASS
+```
+
+Full IS validation:
+
+```text
+selected_rows=1320
+avg_ret_net=0.011291069675265837
+median_ret_net=0.015366845779139255
+p25_ret_net=-0.0005000750112516877
+p10_ret_net=-0.004498875281179705
+win_rate=0.7196969696969697
+bad_month_like_count=5
+loss_concentration=0.2803030303030303
+delta_avg_ret_net_vs_baseline=0.008526983869452956
+delta_p25_ret_net_vs_baseline=0.00531942029803442
+delta_win_rate_vs_baseline=0.19283612827302155
+delta_bad_month_like_count_vs_baseline=-4
+```
+
+Key C37 findings:
+
+```text
+YEARLY_VALIDATION=PASS for 2023, 2024, and 2025_partial_to_2025_05_21
+ROLLING_VALIDATION=WARNING because one 6-month window (2024-06_to_2024-11) has weaker month_win_rate_min
+BAD_MONTH_STRESS=PASS
+NON_BAD_MONTH=PASS
+TICKER_CONCENTRATION=PASS
+BRANCH_CONCENTRATION=WARNING because candidate is 100% G16 after G21 suppression
+MONTH_COVERAGE=FAIL because candidate creates one zero-pick IS month
+DOWNSIDE_STABILITY=PASS
+```
+
+Not-evaluable reasons inherited from C36:
+
+```text
+C36_G21_EARLIER_NO_PROFIT_EXIT_D2_CLOSE_OR_D2_GUARD=C36_BLOCKED_G21_EARLIER_EXIT_PRICE_PATH_UNAVAILABLE
+C36_G21_BAD_MONTH_LIKE_REGIME_GATED_FALLBACK=C36_BLOCKED_REGIME_PRE_TRADE_FEATURE_UNAVAILABLE
+C36_G16_NEXT_OPEN_DELAY_DAMAGE_GATE=C36_BLOCKED_G16_DELAY_DAMAGE_PRE_TRADE_FIELD_UNAVAILABLE
+```
+
+Safety audit:
+
+```text
+return_used_for_selection=false
+future_path_used_for_selection=false
+profile_ret_net_used_for_selection=false
+future_path_price_used_for_selection=false
+derived_mfe_mae_used_for_execution=false
+oos_data_used_for_tuning=false
+no_oos_proof=true
+no_best_of_oos=true
+no_production_catalog=true
+no_candidate_promoted=true
+production_ready=false
+candidate_is_not_production=true
+```
+
+Diagnostic conclusion:
+
+```text
+C37_CANDIDATE_FAILED_ANTI_OVERFIT_CHECK
+```
+
+Next step recommendation:
+
+```text
+C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC
+```
+
+Production readiness:
+
+```text
+production_ready=false
+OOS_PROOF_UNLOCKED=false
+PRODUCTION_ROLLOUT=false
+```
+
+C37 final decision: C37 completed the requested IS validation and anti-overfit check. The candidate improves full IS, yearly IS, stress/non-stress, ticker, and downside metrics, but it fails month coverage because it creates one zero-pick IS month and carries a branch concentration warning. C37 therefore does not recommend direct C38 OOS proof and does not claim production readiness.
+
+---
+
+## C38 - IS Redesign Or Evidence Expansion Diagnostic
+
+Status implementation: IMPLEMENTED and operator-validated.
+
+Status runtime:
+
+```text
+ARTISAN_C38_RUNTIME=COMPLETED
+C38_FINAL_STATUS=C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC_COMPLETED
+```
+
+Status PHPUnit:
+
+```text
+PHPUNIT_C38=PASS
+PHPUNIT_C38_RESULT=OK (15 tests, 137 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (576 tests, 12290 assertions)
+```
+
+Files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC38IsRedesignEvidenceExpansionDiagnosticService.php
+app/Console/Commands/Watchlist/RunBacktestC38IsRedesignEvidenceExpansionDiagnosticCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC38IsRedesignEvidenceExpansionDiagnosticServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC38StaticGuardTest.php
+docs/watchlist/audit/WS_C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC.md
+docs/watchlist/audit/WS_C38_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Artifact:
+
+```text
+artifact_path=storage/app/watchlist/backtest/c38-is-redesign-evidence-expansion-diagnostic.json
+artifact_hash=7fe69c9ee9797615df676b0fe0c7378b452da429
+file_sha1=74AF66E0170D4C6FF8AE3B7E45F8EC72D9774A7B
+```
+
+C37 source artifact lock:
+
+```text
+input_c37_artifact=storage/app/watchlist/backtest/c37-is-validation-anti-overfit-check.json
+expected_c37_hash=5938e353296cb2188b6668093522d0b40d6cb9d2
+actual_c37_hash=5938e353296cb2188b6668093522d0b40d6cb9d2
+c37_hash_match=true
+c37_status=C37_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_COMPLETED
+c37_diagnostic_conclusion=C37_CANDIDATE_FAILED_ANTI_OVERFIT_CHECK
+c37_next_step=C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC
+```
+
+IS period:
+
+```text
+from=2023-01-02
+to=2025-05-21
+oos_reserved_from=2025-05-22
+oos_reserved_to=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+Source C37 summary:
+
+```text
+overall_anti_overfit_result=FAIL
+candidate_c37_decision=C37_CANDIDATE_REQUIRES_IS_REDESIGN_OR_EVIDENCE_EXPANSION
+failing_layers=month_coverage_result,overall_anti_overfit_result
+warning_layers=rolling_validation_result,branch_concentration_result
+source_evidence=storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json
+g21_rows=1770
+g16_rows=1320
+```
+
+Key C38 findings:
+
+```text
+MONTH_COVERAGE_DIAGNOSTIC=CONFIRMED_REDESIGN_REQUIRED
+ZERO_PICK_MONTHS=2023-03
+BRANCH_CONCENTRATION_DIAGNOSTIC=CONFIRMED_BRANCH_DIVERSIFICATION_REQUIRED
+CANDIDATE_TOP_BRANCH_SHARE=1.0
+CANDIDATE_G16_SHARE=1.0
+SUPPRESSED_G21_ROWS=1770
+ROLLING_WARNING_DIAGNOSTIC=CONFIRMED_ROLLING_STABILITY_REVIEW_REQUIRED
+ROLLING_WARNING_WINDOW=2024-06_to_2024-11
+NOT_EVALUABLE_PRE_TRADE_FIELD_BLOCKERS=confirmed
+```
+
+Evidence expansion requirements:
+
+```text
+C38_REQ_MONTH_COVERAGE_GUARD=HIGH
+C38_REQ_BRANCH_DIVERSIFICATION_GUARD=HIGH
+C38_REQ_ROLLING_STABILITY_EXPANSION=MEDIUM
+C38_REQ_PRE_TRADE_FIELD_EXPANSION_FOR_C36_BLOCKED_CANDIDATES=MEDIUM
+```
+
+Candidate safety audit:
+
+```text
+return_used_for_selection=false
+future_path_used_for_selection=false
+profile_ret_net_used_for_selection=false
+future_path_price_used_for_selection=false
+derived_mfe_mae_used_for_execution=false
+oos_data_used_for_tuning=false
+no_oos_proof=true
+no_best_of_oos=true
+no_production_catalog=true
+no_candidate_promoted=true
+no_new_candidate_selected=true
+production_ready=false
+```
+
+Diagnostic conclusion:
+
+```text
+C38_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS
+```
+
+Next step recommendation:
+
+```text
+C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS
+```
+
+Production readiness:
+
+```text
+production_ready=false
+OOS_PROOF_UNLOCKED=false
+PRODUCTION_ROLLOUT=false
+```
+
+C38 final decision: C38 confirms the C37 anti-overfit failure is actionable before any OOS proof. The failed C36 candidate needs an IS-controlled redesign with explicit month coverage and branch diversification guards, plus rolling-window review and pre-trade evidence expansion for blocked C36 alternatives. C38 does not select a new candidate, does not run OOS proof, and does not claim production readiness.
+
+---
+
+## C39 - IS Controlled Redesign With Coverage And Branch Diversification Guards
+
+Status implementation: IMPLEMENTED and operator-validated.
+
+Status runtime:
+
+```text
+ARTISAN_C39_RUNTIME=COMPLETED
+C39_FINAL_STATUS=C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS_COMPLETED
+```
+
+Status PHPUnit:
+
+```text
+PHPUNIT_C39=PASS
+PHPUNIT_C39_RESULT=OK (17 tests, 174 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (593 tests, 12464 assertions)
+```
+
+Files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC39IsControlledRedesignWithCoverageBranchGuardsService.php
+app/Console/Commands/Watchlist/RunBacktestC39IsControlledRedesignWithCoverageBranchGuardsCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC39IsControlledRedesignWithCoverageBranchGuardsServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC39StaticGuardTest.php
+docs/watchlist/audit/WS_C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS.md
+docs/watchlist/audit/WS_C39_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Artifact:
+
+```text
+artifact_path=storage/app/watchlist/backtest/c39-is-controlled-redesign-with-coverage-and-branch-diversification-guards.json
+artifact_hash=504aaa061054ed2771ed08294d8a0570f08e18db
+file_sha1=B08233211E335C982E327D6A0C638428B906BFC9
+```
+
+C38 source artifact lock:
+
+```text
+input_c38_artifact=storage/app/watchlist/backtest/c38-is-redesign-evidence-expansion-diagnostic.json
+expected_c38_hash=7fe69c9ee9797615df676b0fe0c7378b452da429
+actual_c38_hash=7fe69c9ee9797615df676b0fe0c7378b452da429
+c38_hash_match=true
+c38_status=C38_IS_REDESIGN_OR_EVIDENCE_EXPANSION_DIAGNOSTIC_COMPLETED
+c38_diagnostic_conclusion=C38_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS
+c38_next_step=C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS
+```
+
+IS period:
+
+```text
+from=2023-01-02
+to=2025-05-21
+oos_reserved_from=2025-05-22
+oos_reserved_to=2026-05-29
+oos_data_used_for_tuning=false
+```
+
+Guard configuration:
+
+```text
+baseline_months_required=27
+c38_zero_pick_months=2023-03
+max_top_branch_share=0.80
+metadata_monthly_g21_quota_per_month=13
+metadata_monthly_g21_quota_required_rows=330
+metadata_monthly_g21_quota_selected_rows=343
+selection_ordering_fields=trade_month,trade_date,ticker,param_id,row_code
+```
+
+Candidate summary:
+
+```text
+total_candidates=6
+evaluated_candidates=4
+not_evaluable_candidates=2
+candidate_formed=true
+best_is_candidate_code=C39_COVERAGE_AND_BRANCH_GUARD_G16_PLUS_METADATA_G21_MONTHLY_QUOTA
+best_is_candidate_is_not_production=true
+best_candidate_requires_C40_validation=true
+```
+
+Best candidate guard result:
+
+```text
+selected_rows=1663
+zero_pick_month_count=0
+month_coverage_passed=true
+branch_diversification_passed=true
+top_branch_share=0.79374624173181
+```
+
+Best candidate IS evaluation:
+
+```text
+avg_ret_net=0.008946161771050667
+p25_ret_net=-0.0005002000800320128
+win_rate=0.6849067949488875
+bad_month_like_count=6
+delta_avg_ret_net_vs_baseline=0.006182075965237786
+delta_p25_ret_net_vs_baseline=0.005319295229254095
+delta_win_rate_vs_baseline=0.15804595352493933
+delta_bad_month_like_count_vs_baseline=-3
+```
+
+Safety audit:
+
+```text
+return_used_for_selection=false
+future_path_used_for_selection=false
+profile_ret_net_used_for_selection=false
+future_path_price_used_for_selection=false
+derived_mfe_mae_used_for_execution=false
+oos_data_used_for_tuning=false
+no_oos_proof=true
+no_best_of_oos=true
+no_production_catalog=true
+no_candidate_promoted=true
+candidate_requires_C40_validation=true
+production_ready=false
+```
+
+Diagnostic conclusion:
+
+```text
+C39_GUARDED_IS_CANDIDATE_FORMED
+```
+
+Next step recommendation:
+
+```text
+C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE
+```
+
+Production readiness:
+
+```text
+production_ready=false
+OOS_PROOF_UNLOCKED=false
+PRODUCTION_ROLLOUT=false
+```
+
+C39 final decision: C39 forms a guarded IS candidate that resolves the C37 zero-pick month and branch concentration blocker under structural guards. The candidate is not production-ready and does not unlock OOS proof. C40 must run IS validation and anti-overfit checks on the guarded C39 candidate before any OOS proof.
+
+---
+
+## C40 - IS Validation And Anti-Overfit Check For C39 Guarded Candidate
+
+Status implementation: IMPLEMENTED and operator-validated.
+
+Status runtime:
+
+```text
+ARTISAN_C40_RUNTIME=COMPLETED
+C40_FINAL_STATUS=C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE_COMPLETED
+```
+
+Status PHPUnit:
+
+```text
+PHPUNIT_C40=PASS
+PHPUNIT_C40_RESULT=OK (16 tests, 176 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (609 tests, 12640 assertions)
+```
+
+Files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC40IsValidationAntiOverfitCheckForC39GuardedCandidateService.php
+app/Console/Commands/Watchlist/RunBacktestC40IsValidationAntiOverfitCheckForC39GuardedCandidateCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC40IsValidationAntiOverfitCheckForC39GuardedCandidateServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC40StaticGuardTest.php
+docs/watchlist/audit/WS_C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE.md
+docs/watchlist/audit/WS_C40_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Artifact:
+
+```text
+artifact_path=storage/app/watchlist/backtest/c40-is-validation-and-anti-overfit-check-for-c39-guarded-candidate.json
+artifact_hash=0b40ee2464ed820d47ad0b83acbacd78b440d5bd
+file_sha1=306E01AD1274944991F1AFE6CFEBBDB3C0E06BFC
+```
+
+C39 source artifact lock:
+
+```text
+input_c39_artifact=storage/app/watchlist/backtest/c39-is-controlled-redesign-with-coverage-and-branch-diversification-guards.json
+expected_c39_hash=504aaa061054ed2771ed08294d8a0570f08e18db
+actual_c39_hash=504aaa061054ed2771ed08294d8a0570f08e18db
+c39_hash_match=true
+c39_status=C39_IS_CONTROLLED_REDESIGN_WITH_COVERAGE_AND_BRANCH_DIVERSIFICATION_GUARDS_COMPLETED
+c39_diagnostic_conclusion=C39_GUARDED_IS_CANDIDATE_FORMED
+c39_next_step=C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE
+```
+
+Validation target:
+
+```text
+baseline_candidate_code=C39_BASELINE_C36_CURRENT_BRANCH_BEHAVIOR
+target_candidate_code=C39_COVERAGE_AND_BRANCH_GUARD_G16_PLUS_METADATA_G21_MONTHLY_QUOTA
+target_candidate_is_not_production=true
+```
+
+Validation summary:
+
+```text
+total_validation_layers=9
+passed_layers=7
+warning_layers=2
+failed_layers=0
+not_evaluable_layers=0
+overall_anti_overfit_result=WARNING
+candidate_c40_decision=C40_CANDIDATE_REQUIRES_REVIEW_BEFORE_OOS
+```
+
+Layer result summary:
+
+```text
+full_is_result=PASS
+yearly_validation_result=PASS
+rolling_validation_result=WARNING
+bad_month_stress_result=PASS
+normal_month_result=WARNING
+ticker_concentration_result=PASS
+branch_concentration_result=PASS
+month_coverage_result=PASS
+downside_stability_result=PASS
+```
+
+Guard blocker recheck:
+
+```text
+candidate_zero_pick_months=0
+candidate_months_covered=27
+candidate_top_branch_share=0.79374624173181
+candidate_g16_share=0.79374624173181
+candidate_g21_share=0.20625375826819
+month_coverage_result=PASS
+branch_concentration_result=PASS
+```
+
+Warning evidence:
+
+```text
+ROLLING_VALIDATION=WARNING for 2023-10_to_2024-03, 2023-07_to_2024-03, and 2023-04_to_2024-03
+NON_BAD_MONTH=WARNING because one non-bad-month slice has weaker month_avg_ret_net_min and +1 bad_month_like_count
+FAILED_LAYERS=0
+```
+
+Safety audit:
+
+```text
+return_used_for_selection=false
+future_path_used_for_selection=false
+profile_ret_net_used_for_selection=false
+future_path_price_used_for_selection=false
+derived_mfe_mae_used_for_execution=false
+oos_data_used_for_tuning=false
+no_oos_proof=true
+no_best_of_oos=true
+no_production_catalog=true
+no_candidate_promoted=true
+production_ready=false
+```
+
+Diagnostic conclusion:
+
+```text
+C40_CANDIDATE_WARNING_REQUIRES_REVIEW_BEFORE_OOS
+```
+
+Next step recommendation:
+
+```text
+C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS
+```
+
+Production readiness:
+
+```text
+production_ready=false
+OOS_PROOF_UNLOCKED=false
+PRODUCTION_ROLLOUT=false
+```
+
+C40 final decision: C40 validates the C39 guarded candidate as IS-only and confirms the C37 month coverage and branch concentration blockers are fixed. Because rolling and non-bad-month warnings remain, C40 does not unlock direct OOS proof and does not claim production readiness. C41 must review or expand IS evidence before any OOS proof.
+
+---
+
+## C41 - IS Review Or Evidence Expansion Before OOS
+
+Status implementation: IMPLEMENTED and operator-validated.
+
+Status runtime:
+
+```text
+ARTISAN_C41_RUNTIME=COMPLETED
+C41_FINAL_STATUS=C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS_COMPLETED
+```
+
+Status PHPUnit:
+
+```text
+PHPUNIT_C41=PASS
+PHPUNIT_C41_RESULT=OK (18 tests, 123 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (627 tests, 12763 assertions)
+```
+
+Files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC41IsReviewEvidenceExpansionBeforeOosService.php
+app/Console/Commands/Watchlist/RunBacktestC41IsReviewEvidenceExpansionBeforeOosCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC41IsReviewEvidenceExpansionBeforeOosServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC41StaticGuardTest.php
+docs/watchlist/audit/WS_C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS.md
+docs/watchlist/audit/WS_C41_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Artifact:
+
+```text
+artifact_path=storage/app/watchlist/backtest/c41-is-review-or-evidence-expansion-before-oos.json
+artifact_hash=fa3afd197cfe07d67d90edf87d69aec81310d791
+file_sha1=9B44AD084DBD7637E0794A8AF5085E3A846D9486
+```
+
+C40 source artifact lock:
+
+```text
+input_c40_artifact=storage/app/watchlist/backtest/c40-is-validation-and-anti-overfit-check-for-c39-guarded-candidate.json
+expected_c40_hash=0b40ee2464ed820d47ad0b83acbacd78b440d5bd
+actual_c40_hash=0b40ee2464ed820d47ad0b83acbacd78b440d5bd
+c40_hash_match=true
+c40_status=C40_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C39_GUARDED_CANDIDATE_COMPLETED
+c40_diagnostic_conclusion=C40_CANDIDATE_WARNING_REQUIRES_REVIEW_BEFORE_OOS
+c40_next_step=C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS
+```
+
+Review target:
+
+```text
+target_candidate_code=C39_COVERAGE_AND_BRANCH_GUARD_G16_PLUS_METADATA_G21_MONTHLY_QUOTA
+overall_anti_overfit_result=WARNING
+warning_layers=2
+failed_layers=0
+not_evaluable_layers=0
+candidate_c40_decision=C40_CANDIDATE_REQUIRES_REVIEW_BEFORE_OOS
+```
+
+Warning review:
+
+```text
+rolling_warning_windows=3
+rolling_warning_slices=2023-10_to_2024-03,2023-07_to_2024-03,2023-04_to_2024-03
+non_bad_month_warning=true
+non_bad_month_delta_month_avg_ret_net_min=-0.008026780276428322
+non_bad_month_delta_bad_month_like_count=1
+```
+
+Guard blocker recheck:
+
+```text
+candidate_zero_pick_months=0
+candidate_months_covered=27
+candidate_top_branch_share=0.79374624173181
+candidate_g16_share=0.79374624173181
+candidate_g21_share=0.20625375826819
+month_coverage_result=PASS
+branch_concentration_result=PASS
+prior_c37_coverage_branch_blocker_resolved=true
+```
+
+Evidence expansion requirements:
+
+```text
+C41_REQ_ROLLING_WARNING_WINDOW_PRE_TRADE_SPLIT_REVIEW=REQUIRED_BEFORE_OOS
+C41_REQ_NON_BAD_MONTH_STABILITY_REVIEW=REQUIRED_BEFORE_OOS
+C41_REQ_G21_PRE_TRADE_QUALITY_FIELD_EXPANSION=REQUIRED_BEFORE_OOS
+C41_REQ_ROLLING_STABILITY_PRE_TRADE_SPLIT_FIELD_EXPANSION=REQUIRED_BEFORE_OOS
+C41_REQ_PRESERVE_C39_COVERAGE_BRANCH_GUARDS=PRESERVE
+```
+
+Safety audit:
+
+```text
+return_used_for_selection=false
+future_path_used_for_selection=false
+profile_ret_net_used_for_selection=false
+future_path_price_used_for_selection=false
+derived_mfe_mae_used_for_execution=false
+oos_data_used_for_tuning=false
+no_oos_proof=true
+no_best_of_oos=true
+no_production_catalog=true
+no_candidate_promoted=true
+new_candidate_selected=false
+production_ready=false
+```
+
+Diagnostic conclusion:
+
+```text
+C41_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS
+```
+
+Next step recommendation:
+
+```text
+C42_IS_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION_OR_GUARD_REFINEMENT
+```
+
+Production readiness:
+
+```text
+production_ready=false
+OOS_PROOF_UNLOCKED=false
+PRODUCTION_ROLLOUT=false
+```
+
+C41 final decision: C41 locks C40 and confirms the remaining blocker is evidence quality, not a failed C40 candidate. It preserves the C39 coverage/branch guards, does not select a new candidate, does not run OOS proof, and does not claim production readiness. C42 must expand/review rolling and normal-month IS evidence or refine guards before any OOS proof.
+
+## C42 — IS Rolling / Normal-Month Evidence Expansion
+
+Status implementation:
+
+```text
+C42_IMPLEMENTATION_STATUS=IMPLEMENTED
+C42_PURPOSE=IS rolling / normal-month evidence expansion or guard refinement before OOS
+```
+
+Files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC42IsRollingNormalMonthEvidenceExpansionService.php
+app/Console/Commands/Watchlist/RunBacktestC42IsRollingNormalMonthEvidenceExpansionCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC42IsRollingNormalMonthEvidenceExpansionServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC42StaticGuardTest.php
+docs/watchlist/audit/WS_C42_IS_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION.md
+docs/watchlist/audit/WS_C42_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Final operator validation:
+
+```text
+PHPUNIT_C42=PASS
+PHPUNIT_C42_RESULT=OK (12 tests, 97 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (639 tests, 12860 assertions)
+ARTISAN_C42_RUNTIME=COMPLETED
+```
+
+Runtime C42 final:
+
+```text
+status=C42_IS_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION_COMPLETED
+reason_code=C42_IS_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION_COMPLETED
+artifact_path=storage/app/watchlist/backtest/c42-is-rolling-normal-month-evidence-expansion.json
+artifact_hash=939e85f179b3bf5d2511730fafb4271cf7c2ca11
+file_sha1=CBB44B864DD9B2071DE5B10C426F01ED2776525D
+production_ready=0
+```
+
+C41 artifact lock:
+
+```text
+input_c41_artifact=storage/app/watchlist/backtest/c41-is-review-or-evidence-expansion-before-oos.json
+expected_c41_hash=fa3afd197cfe07d67d90edf87d69aec81310d791
+actual_c41_hash=fa3afd197cfe07d67d90edf87d69aec81310d791
+c41_hash_match=true
+c41_status=C41_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS_COMPLETED
+c41_diagnostic_conclusion=C41_EVIDENCE_EXPANSION_REQUIRED_BEFORE_OOS
+c41_next_step_recommendation=C42_IS_ROLLING_NORMAL_MONTH_EVIDENCE_EXPANSION_OR_GUARD_REFINEMENT
+```
+
+Source C41 summary:
+
+```text
+target_candidate_code=C39_COVERAGE_AND_BRANCH_GUARD_G16_PLUS_METADATA_G21_MONTHLY_QUOTA
+overall_anti_overfit_result=WARNING
+warning_layers_count=2
+failed_layers_count=0
+rolling_warning_windows=3
+non_bad_month_warning=true
+guard_blockers_resolved=true
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+Warning explanation result:
+
+```text
+rolling_warning_explanation_result=C42_ROLLING_WARNING_EXPLAINED
+normal_month_warning_explanation_result=C42_NORMAL_MONTH_WARNING_EXPLAINED
+warning_interpretation=STRUCTURAL_METADATA_QUOTA_WEAKNESS
+suspected_warning_month=2024-03
+rolling_warning_explanation_code=C42_WARNING_CLUSTER_G21_METADATA_QUOTA_LOSS_MONTH
+normal_month_explanation_code=C42_NON_BAD_MONTH_WARNING_CLUSTER_G21_METADATA_QUOTA_LOSS_MONTH
+new_bad_like_months_created_by_candidate=2024-03
+```
+
+Guard preservation result:
+
+```text
+candidate_months_covered=27
+candidate_zero_pick_months=0
+candidate_min_selected_rows_per_month=13
+candidate_top_branch_share=0.79374624173181
+candidate_g16_share=0.79374624173181
+candidate_g21_share=0.20625375826819
+coverage_guard_preserved=true
+branch_guard_preserved=true
+c39_guard_preservation_result=PASS
+```
+
+Refinement candidate result:
+
+```text
+safe_refinement_field_available=false
+safe_refinement_candidate_formed=false
+refinement_candidate_results=[]
+feasibility_result=C42_NO_ADDITIONAL_SAFE_REFINEMENT_FIELD_AVAILABLE
+```
+
+Decision:
+
+```text
+c39_candidate_lock_decision=C42_NO_SAFE_REFINEMENT_FIELD_AVAILABLE
+c42_candidate_decision=C42_C39_CANDIDATE_REQUIRES_GUARD_REFINEMENT_BEFORE_OOS
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+requires_c43_is_validation=false
+requires_c43_oos_proof=false
+requires_c43_evidence_expansion=true
+requires_c43_pre_trade_field_expansion_diagnostic=true
+diagnostic_conclusion=C42_NO_SAFE_REFINEMENT_FIELD_AVAILABLE
+next_step_recommendation=C43_PRE_TRADE_FIELD_EXPANSION_DIAGNOSTIC
+production_ready=false
+```
+
+C42 final status: implemented and operator-validated. C42 explains the C40/C41 warning as structural March-2024 G21 metadata quota weakness, preserves C39 coverage/branch guards, does not form a new candidate, does not unlock OOS proof, and does not claim production readiness. Next step is C43 pre-trade field expansion diagnostic.
