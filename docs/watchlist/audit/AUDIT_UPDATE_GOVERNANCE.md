@@ -1952,3 +1952,85 @@ FILE_SHA1=351B0805F43D2B610B6826C4CDE1513B93FF2FE0
 NEXT_STEP=C48_OOS_FAILURE_ATTRIBUTION_FOR_C44_REFINEMENT
 production_ready=false
 ```
+
+## C48 Governance - OOS Failure Attribution Diagnostic
+
+```text
+SOURCE_ARTIFACT_LOCK=C47
+EXPECTED_C47_HASH=1c742e257847752def1f582dc24d6061a4c4e735
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c48-oos-failure-attribution.json
+VALIDATION_COMMAND=php artisan watchlist:backtest-c48-oos-failure-attribution
+OOS_FAILURE_ATTRIBUTION_ONLY_RULE=true
+OOS_DIAGNOSTIC_USAGE_RULE=OOS returns and path fields may be used only after locked C47 selection for attribution.
+NO_OOS_TUNING_RULE=true
+NO_OOS_PROOF_RERUN_RULE=true
+NO_PRODUCTION_READINESS_RULE=true
+CANDIDATE_NOT_PRODUCTION_RULE=true
+NO_CANDIDATE_RESELECTION_RULE=true
+NO_PRODUCTION_CATALOG_RULE=true
+NO_PLAN_CONFIRM_MUTATION_RULE=true
+OPERATOR_VALIDATION_RULE=Do not claim PHPUnit or Artisan PASS unless run in supported PHP environment.
+NEXT_STEP_TO_C49_RULE=C48 may recommend only C49 diagnostic/redesign, not OOS proof.
+```
+
+Current C48 governance decision:
+
+```text
+STATUS=C48_OOS_FAILURE_ATTRIBUTION_COMPLETED
+C48_PHPUNIT=PASS - OK (13 tests, 115 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS - OK (711 tests, 13451 assertions)
+C48_RUNTIME_STATUS=COMPLETED
+ARTIFACT_HASH=1d6ac8e56aa7449877f95fe4fdbb845810bfb5b7
+FILE_SHA1=EEA350AF2D8A42C881B78701C48A1E301230362C
+DIAGNOSTIC_CONCLUSION=C48_SHARED_CORE_SELECTION_FAILURE_IDENTIFIED
+NEXT_STEP=C49_BROADER_STRATEGY_REDESIGN
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+production_ready=false
+```
+
+C48 does not authorize production and does not say the OOS failure has been fixed.
+
+## C49 Governance - IS Broader Strategy Redesign
+
+```text
+SOURCE_ARTIFACT_LOCK=C48
+EXPECTED_C48_HASH=1d6ac8e56aa7449877f95fe4fdbb845810bfb5b7
+VALIDATION_COMMAND=php artisan watchlist:backtest-c49-broader-strategy-redesign
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c49-broader-strategy-redesign.json
+IS_BROADER_REDESIGN_ONLY_RULE=true
+C48_DIAGNOSTIC_USAGE_RULE=C48 may be used only as hypothesis source, not threshold/ticker/sector tuning input.
+NO_OOS_TUNING_RULE=true
+NO_OOS_PROOF_RULE=true
+NO_OOS_PROOF_RERUN_RULE=true
+NO_PRODUCTION_READINESS_RULE=true
+CANDIDATE_NOT_PRODUCTION_RULE=true
+NO_CANDIDATE_RESELECTION_FROM_OOS_RULE=true
+NO_PRODUCTION_CATALOG_RULE=true
+NO_PLAN_CONFIRM_MUTATION_RULE=true
+NO_C01_TO_C48_ARTIFACT_MUTATION_RULE=true
+RETURN_AND_PATH_EVALUATION_ONLY_RULE=true
+OPERATOR_VALIDATION_RULE=Do not claim PHPUnit or Artisan PASS unless run in supported PHP environment.
+NEXT_STEP_TO_C50_RULE=C49 may recommend only C50 IS validation/anti-overfit check or C50 IS evidence expansion.
+```
+
+Final governance decision:
+
+```text
+STATUS=C49_BROADER_STRATEGY_REDESIGN_COMPLETED
+PHPUNIT_STATUS=PASS — OK (12 tests, 196 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS — OK (723 tests, 13647 assertions)
+ARTISAN_RUNTIME_STATUS=COMPLETED
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c49-broader-strategy-redesign.json
+ARTIFACT_HASH=9266ec2b59a6ea11c21b830cd9b769635afc91a8
+C48_HASH_LOCK_VALID=true
+DIAGNOSTIC_CONCLUSION=C49_IS_REDESIGN_CANDIDATE_READY_FOR_C50_VALIDATION
+NEXT_STEP=C50_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C49_REDESIGN
+PRIMARY_C49_CANDIDATE=C49_CANDIDATE_F03_REGIME_AWARE_MARKET_EXTENSION_CONTROL
+DEFENSIVE_COMPARATOR=C49_CANDIDATE_F08_AGGRESSIVE_SHARED_CORE_ESCAPE_REDESIGN
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+production_ready=false
+```
+
+C49 is final as an IS broader strategy redesign step. It does not authorize production, does not prove OOS recovery, and does not open OOS proof. Governance next step is C50 IS validation and anti-overfit check for the C49 regime-aware redesign candidate.

@@ -1,0 +1,276 @@
+# WS C48 - OOS Failure Attribution for Locked C44 Refinement
+
+## Purpose
+
+C48 attributes why the locked C44 refinement failed the C47 OOS proof. It is a diagnostic layer only. It does not tune on OOS, rerun OOS proof, select a new candidate, lower gates, promote a catalog, or mutate PLAN/CONFIRM behavior.
+
+## Input C47 artifact
+
+```text
+input_c47_artifact=storage/app/watchlist/backtest/c47-oos-proof-with-locked-c44-refinement.json
+expected_c47_hash=1c742e257847752def1f582dc24d6061a4c4e735
+expected_c47_file_sha1=351B0805F43D2B610B6826C4CDE1513B93FF2FE0
+actual_c47_hash=1c742e257847752def1f582dc24d6061a4c4e735
+c47_hash_match=true
+c47_status=C47_OOS_PROOF_FAILED
+c47_diagnostic_conclusion=C47_LOCKED_C44_REFINEMENT_OOS_PROOF_FAILED
+c47_next_step_recommendation=C48_OOS_FAILURE_ATTRIBUTION_FOR_C44_REFINEMENT
+```
+
+## Boundary
+
+```text
+OOS_FAILURE_ATTRIBUTION_ONLY=true
+NO_OOS_TUNING=true
+NO_OOS_PROOF_RERUN=true
+NO_BEST_OF_OOS=true
+NO_OOS_WINNER=true
+NO_CANDIDATE_RESELECTION_FROM_OOS=true
+NO_PRODUCTION_CATALOG=true
+NO_PROMOTION=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_C01_TO_C47_ARTIFACT_MUTATION=true
+RETURN_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_DATA_USED_FOR_TUNING=false
+production_ready=false
+```
+
+Canonical execution model remains `ENTRY=NEXT_OPEN`, `EXIT=STOP_TP_OR_TIME`, `HOLD=5`, `FEE=IDR_FIXED`, `SLIP=0`, `GAP=OPEN`, `PX=IDX_BANDS`.
+
+## C47 source lock summary
+
+```text
+candidate_code=C44_G21_MARKET_EXTENSION_CONTROL_FIXED_MONTHLY_QUOTA
+monthly_g21_quota=13
+selection_rule=prefer non-extended IHSG ROC20 dates, then signal metadata, inside fixed quota
+oos_from=2025-05-22
+oos_to=2026-05-29
+evaluated_picks_count=85
+avg_ret_net=-0.006863279994262265
+median_ret_net=-0.0005005957088935833
+p25_ret_net=-0.017446232516167844
+p10_ret_net=-0.04048987753061734
+win_rate=0.3411764705882353
+month_win_rate_min=0
+month_avg_ret_net_min=-0.04048987753061734
+bad_month_like_count=7
+bad_like_oos_months=2025-06,2025-07,2025-08,2025-09,2025-10,2026-03,2026-05
+failed_gates=avg_pass,median_pass,month_win_rate_pass
+delta_avg_ret_net_vs_baseline=0.0008290441378015446
+delta_win_rate_vs_baseline=0.047058823529411764
+delta_bad_month_like_count_vs_baseline=0
+production_ready=false
+```
+
+Interpretation: C47 is mechanically valid and slightly better than the baseline, but absolute OOS performance remains negative and failed `avg_pass`, `median_pass`, and `month_win_rate_pass`.
+
+## OOS month failure attribution
+
+| Month | Target rows | Baseline rows | Target avg | Baseline avg | Target win rate | Target losses | Bad-like | Delta avg |
+|---|---:|---:|---:|---:|---:|---:|---|---:|
+| 2025-06 | 10 | 10 | -0.04048987753061734 | -0.04048987753061734 | 0 | 10 | true | 0 |
+| 2025-07 | 15 | 15 | -0.019853123567230627 | -0.019853123567230627 | 0.3333333333333333 | 10 | true | 0 |
+| 2025-08 | 7 | 7 | -0.006401250656737 | -0.006401250656737 | 0 | 7 | true | 0 |
+| 2025-09 | 4 | 4 | -0.007532054880297631 | -0.007532054880297631 | 0.25 | 3 | true | 0 |
+| 2025-10 | 8 | 8 | -0.0022352202335583753 | -0.0022352202335583753 | 0.5 | 4 | true | 0 |
+| 2025-11 | 12 | 12 | 0.005847715987083918 | 0.005847715987083918 | 0.5 | 6 | false | 0 |
+| 2025-12 | 13 | 13 | 0.007642364723505279 | 0.002221691514802885 | 0.46153846153846156 | 7 | false | 0.005420673208702394 |
+| 2026-01 | 6 | 6 | 0.006551119778781239 | 0.006551119778781239 | 0.8333333333333334 | 1 | false | 0 |
+| 2026-03 | 4 | 4 | -0.006991928435556013 | -0.006991928435556013 | 0 | 4 | true | 0 |
+| 2026-04 | 2 | 2 | 0.016637434227010774 | 0.016637434227010774 | 1 | 0 | false | 0 |
+| 2026-05 | 4 | 4 | -0.0005004103364759102 | -0.0005004103364759102 | 0 | 4 | true | 0 |
+
+Dominant bad-like cluster: `2025-06,2025-07,2025-08,2025-09,2025-10`. Worst month: `2025-06`.
+
+## Branch attribution - G16 vs G21
+
+| Branch | Rows | Avg | Median | Win rate | Losses | Loss share | Bad-like month contribution |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| G16 | 18 | 0.007379830919269251 | 0.0052763819095477385 | 0.6111111111111112 | 7 | 0.125 | 2 |
+| G21 | 67 | -0.010689787403867753 | -0.0005005957088935833 | 0.26865671641791045 | 49 | 0.875 | 6 |
+
+Dominant branch: `G21`. G21 carries most OOS loss share, so monthly quota 13 is flagged as fragility for a future IS-only hypothesis. This is not an OOS-tuned quota change.
+
+## Baseline-target overlap attribution
+
+```text
+target_pick_count=85
+baseline_pick_count=85
+overlap_pick_count=79
+target_only_pick_count=6
+baseline_only_pick_count=6
+overlap_share_of_target=0.9294117647058824
+overlap_share_of_baseline=0.9294117647058824
+target_only_avg_ret_net=0.017142485227970617
+baseline_only_avg_ret_net=0.005397693275782098
+overlap_avg_ret_net=-0.008686502669368563
+overlap_failure_label=C48_SHARED_CORE_SELECTION_DROVE_OOS_FAILURE
+```
+
+The target and baseline overlap is high. The overlap rows have negative average return, so the refinement did not materially escape the failing shared OOS core.
+
+## Ticker concentration attribution
+
+| Ticker | Rows | Avg | Win rate | Losses | Share of total losses |
+|---|---:|---:|---:|---:|---:|
+| GWSA | 10 | -0.04048987753061734 | 0 | 10 | 0.17857142857142858 |
+| WINR | 10 | -0.037527748335099885 | 0 | 10 | 0.17857142857142858 |
+| SAMF | 7 | -0.0005005957088935832 | 0 | 7 | 0.125 |
+| DVLA | 4 | -0.015836307877934743 | 0 | 4 | 0.07142857142857142 |
+| BINA | 4 | -0.006991928435556013 | 0 | 4 | 0.07142857142857142 |
+| ASJT | 4 | -0.0005004103364759102 | 0 | 4 | 0.07142857142857142 |
+| MDKI | 3 | -0.012842696966362937 | 0 | 3 | 0.05357142857142857 |
+| SMKL | 3 | -0.0004998750312421895 | 0 | 3 | 0.05357142857142857 |
+| WOMF | 4 | -0.00041366430291916436 | 0.25 | 3 | 0.05357142857142857 |
+| DMND | 2 | -0.017446232516167844 | 0 | 2 | 0.03571428571428571 |
+
+Ticker concentration failure: `true`. Top loss tickers: `GWSA,WINR,SAMF,DVLA,BINA`. Top cluster loss share: `0.625`.
+
+## Sector / bucket / metadata attribution
+
+C48 evaluates available fields from C47 rows. `bucket_code`, `selected_source_code`, `param_id`, and `row_code` are available. Sector/liquidity/volume/volatility/trend/relative-strength buckets are not available in the C47 OOS rows and are recorded under not-evaluable reasons.
+
+Sector/bucket failure result: `true`.
+
+## Market regime attribution
+
+| Regime field | Bucket | Rows | Avg | Win rate | Failure |
+|---|---|---:|---:|---:|---|
+| market_index_roc20 | market_index_roc20:missing | 18 | 0.007379830919269251 | 0.6111111111111112 | false |
+| market_index_roc20 | market_index_roc20:negative | 28 | -0.025861515202160363 | 0.14285714285714285 | true |
+| market_index_roc20 | market_index_roc20:non_negative | 39 | 0.00020273511798336313 | 0.358974358974359 | false |
+
+Market extension control insufficient: `true`. Regime shift versus IS is `not_evaluable` because complete IS/OOS comparable regime buckets are not available in the artifacts.
+
+## Entry / path attribution
+
+| Path field | Bucket | Rows | Avg | Win rate | Losses | Label |
+|---|---|---:|---:|---:|---:|---|
+| profile_exit_reason | raw_damage_control_no_profit_d2_exit_d3_open | 49 | -0.01960476946241712 | 0 | 49 | C48_PATH_BUCKET_NEGATIVE_AVG |
+| profile_exit_reason | raw_preplanned_intraday_target_gap_open_hit | 3 | 0.013884720805073724 | 1 | 0 | C48_PATH_BUCKET_EVALUATED |
+| profile_exit_reason | raw_preplanned_intraday_target_hit | 23 | 0.015184301514705735 | 1 | 0 | C48_PATH_BUCKET_EVALUATED |
+| profile_exit_reason | raw_r09_next_open_after_close_profit | 10 | -0.0013638193107307402 | 0.3 | 7 | C48_PATH_BUCKET_NEGATIVE_AVG |
+| profile_exit_day_offset | 1 | 10 | 0.016839534391138916 | 1 | 0 | C48_PATH_BUCKET_EVALUATED |
+| profile_exit_day_offset | 2 | 11 | 0.0038915191991494265 | 0.6363636363636364 | 4 | C48_PATH_BUCKET_EVALUATED |
+| profile_exit_day_offset | 3 | 51 | -0.018391640284867526 | 0.0392156862745098 | 49 | C48_PATH_BUCKET_NEGATIVE_AVG |
+| profile_exit_day_offset | 4 | 3 | -0.0004998750312421895 | 0 | 3 | C48_PATH_BUCKET_NEGATIVE_AVG |
+| profile_exit_day_offset | 5 | 10 | 0.014489242500764443 | 1 | 0 | C48_PATH_BUCKET_EVALUATED |
+| bucket_code | next_open_delay_after_close_signal | 18 | 0.007379830919269251 | 0.6111111111111112 | 7 | C48_PATH_BUCKET_EVALUATED |
+| bucket_code | no_rule_profit_signal_before_fallback | 67 | -0.010689787403867753 | 0.26865671641791045 | 49 | C48_PATH_BUCKET_NEGATIVE_AVG |
+
+Path diagnostics are marked `safe_for_selection=false` and `diagnostic_only=true`. Post-entry/path failure result: `true`.
+
+## IS vs OOS contrast
+
+| Metric | IS value | OOS value | Delta OOS vs IS | Interpretation |
+|---|---:|---:|---:|---|
+| avg_ret_net | 0.009391538975024986 | -0.006863279994262265 | -0.016254818969287252 | C48_OOS_DETERIORATED_VS_IS |
+| win_rate | 0.6927239927841251 | 0.3411764705882353 | -0.3515475221958898 | C48_OOS_DETERIORATED_VS_IS |
+| bad_month_like_count | 3 | 7 | 4 | C48_OOS_NOT_LOWER_THAN_IS |
+| month_avg_ret_net_min | -0.0031002649161361896 | -0.04048987753061734 | -0.03738961261448115 | C48_OOS_DETERIORATED_VS_IS |
+| month_win_rate_min | 0.07894736842105263 | 0 | -0.07894736842105263 | C48_OOS_DETERIORATED_VS_IS |
+| selected_rows | 1663 | 85 | -1578 | C48_OOS_DETERIORATED_VS_IS |
+
+Generalization failure: `true`.
+
+## Failure attribution summary
+
+```text
+failure_attribution_completed=true
+dominant_failure_source=shared_core_selection_and_oos_month_cluster
+dominant_failure_month_cluster=2025-06,2025-07,2025-08,2025-09,2025-10
+dominant_failure_branch=G21
+g21_quota_fragility=true
+g21_quota_too_high_diagnostic=true
+g16_core_failure_contribution=false
+market_extension_control_insufficient=true
+market_regime_failure=true
+ticker_concentration_failure=true
+sector_bucket_failure=true
+entry_gap_failure=false
+post_entry_path_failure=true
+selection_overlap_failure=true
+is_oos_generalization_failure=true
+```
+
+## C49 readiness decision
+
+```text
+decision_status=C48_FAILURE_ATTRIBUTION_COMPLETED_C49_BROADER_STRATEGY_REDESIGN_RECOMMENDED
+c49_recommendation=C49_BROADER_STRATEGY_REDESIGN
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+## Candidate safety audit
+
+C48 carries forward C47 safety: hash lock pass, no OOS tuning, fixed quota pass, selection reconstruction pass, no return/future path/lookahead selection violation, and non-production state.
+
+## Not-evaluable reasons
+
+- `sector_bucket_attribution` / `sector_code`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — sector_code is not available in C47 OOS rows.
+- `sector_bucket_attribution` / `sector_name`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — sector_name is not available in C47 OOS rows.
+- `sector_bucket_attribution` / `liquidity_bucket`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — liquidity_bucket is not available in C47 OOS rows.
+- `sector_bucket_attribution` / `volume_bucket`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — volume_bucket is not available in C47 OOS rows.
+- `sector_bucket_attribution` / `volatility_bucket`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — volatility_bucket is not available in C47 OOS rows.
+- `sector_bucket_attribution` / `trend_bucket`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — trend_bucket is not available in C47 OOS rows.
+- `sector_bucket_attribution` / `relative_strength_bucket`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — relative_strength_bucket is not available in C47 OOS rows.
+- `sector_bucket_attribution` / `market_extension_control_bucket`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — market_extension_control_bucket is not available in C47 OOS rows.
+- `sector_bucket_attribution` / `market_index_roc20_bucket`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — market_index_roc20_bucket is not available in C47 OOS rows.
+- `market_regime_attribution` / `market_index_ma20_slope_pct`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — market_index_ma20_slope_pct is not available in C47 OOS rows.
+- `market_regime_attribution` / `sector_roc20`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — sector_roc20 is not available in C47 OOS rows.
+- `market_regime_attribution` / `rs_20_vs_ihsg`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — rs_20_vs_ihsg is not available in C47 OOS rows.
+- `market_regime_attribution` / `rs_20_vs_sector`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — rs_20_vs_sector is not available in C47 OOS rows.
+- `market_regime_attribution` / `roc20`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — roc20 is not available in C47 OOS rows.
+- `market_regime_attribution` / `ma20_slope_pct`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — ma20_slope_pct is not available in C47 OOS rows.
+- `market_regime_attribution` / `atr14_pct`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — atr14_pct is not available in C47 OOS rows.
+- `market_regime_attribution` / `vol_ratio`: `C48_FIELD_NOT_AVAILABLE_FOR_OOS_ATTRIBUTION` — vol_ratio is not available in C47 OOS rows.
+- `entry_path_attribution` / `entry_gap`: `C48_PATH_ATTRIBUTION_NOT_EVALUABLE` — entry_gap is not available in C47 OOS rows.
+- `entry_path_attribution` / `next_open_damage`: `C48_PATH_ATTRIBUTION_NOT_EVALUABLE` — next_open_damage is not available in C47 OOS rows.
+- `entry_path_attribution` / `intraday_adverse_path`: `C48_PATH_ATTRIBUTION_NOT_EVALUABLE` — intraday_adverse_path is not available in C47 OOS rows.
+
+## Final operator validation evidence
+
+```text
+C48 PHPUnit: PASS — OK (13 tests, 115 assertions)
+Full Watchlist PHPUnit: PASS — OK (711 tests, 13451 assertions)
+Runtime C48: COMPLETED
+status=C48_OOS_FAILURE_ATTRIBUTION_COMPLETED
+artifact_path=storage/app/watchlist/backtest/c48-oos-failure-attribution.json
+artifact_hash_internal=1d6ac8e56aa7449877f95fe4fdbb845810bfb5b7
+file_sha1=EEA350AF2D8A42C881B78701C48A1E301230362C
+expected_c47_hash=1c742e257847752def1f582dc24d6061a4c4e735
+actual_c47_hash=1c742e257847752def1f582dc24d6061a4c4e735
+c47_hash_match=true
+c47_status=C47_OOS_PROOF_FAILED
+c47_diagnostic_conclusion=C47_LOCKED_C44_REFINEMENT_OOS_PROOF_FAILED
+diagnostic_conclusion=C48_SHARED_CORE_SELECTION_FAILURE_IDENTIFIED
+next_step_recommendation=C49_BROADER_STRATEGY_REDESIGN
+production_ready=false
+```
+
+## Artifact output
+
+```text
+artifact_path=storage/app/watchlist/backtest/c48-oos-failure-attribution.json
+artifact_hash=1d6ac8e56aa7449877f95fe4fdbb845810bfb5b7
+file_sha1=EEA350AF2D8A42C881B78701C48A1E301230362C
+status=C48_OOS_FAILURE_ATTRIBUTION_COMPLETED
+diagnostic_conclusion=C48_SHARED_CORE_SELECTION_FAILURE_IDENTIFIED
+next_step_recommendation=C49_BROADER_STRATEGY_REDESIGN
+production_ready=false
+```
+
+## Runtime/operator status
+
+```text
+PHPUNIT_C48=PASS - OK (13 tests, 115 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS - OK (711 tests, 13451 assertions)
+ARTISAN_C48_RUNTIME=COMPLETED
+RUNTIME_STATUS=C48_OOS_FAILURE_ATTRIBUTION_COMPLETED
+OPERATOR_VALIDATION_REQUIRED=false
+```
+
+Operator validation completed in the supported project environment. C48 remains diagnostic only, does not fix OOS, does not unlock OOS proof, and does not authorize production.

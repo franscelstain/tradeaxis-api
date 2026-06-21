@@ -6796,3 +6796,159 @@ production_ready=false
 ```
 
 C47 proves that the C44 market-extension refinement improves the metadata comparator but does not generalize sufficiently in absolute OOS performance. The failure is not caused by missing path data, lookahead, source-lock mismatch, quota reconstruction, or market-field coverage. C48 must attribute the seven bad-like OOS months without retuning against this frozen OOS result.
+
+## C48 - OOS Failure Attribution for Locked C44 Refinement
+
+```text
+C48_IMPLEMENTATION_STATUS=IMPLEMENTED
+C48_PHPUNIT=PASS - OK (13 tests, 115 assertions)
+C48_FULL_WATCHLIST_PHPUNIT=PASS - OK (711 tests, 13451 assertions)
+C48_RUNTIME_STATUS=COMPLETED
+artifact_path=storage/app/watchlist/backtest/c48-oos-failure-attribution.json
+artifact_hash=1d6ac8e56aa7449877f95fe4fdbb845810bfb5b7
+file_sha1=EEA350AF2D8A42C881B78701C48A1E301230362C
+```
+
+C48 carries forward the locked C47 failed OOS proof:
+
+```text
+expected_c47_hash=1c742e257847752def1f582dc24d6061a4c4e735
+actual_c47_hash=1c742e257847752def1f582dc24d6061a4c4e735
+c47_hash_match=true
+c47_status=C47_OOS_PROOF_FAILED
+c47_diagnostic_conclusion=C47_LOCKED_C44_REFINEMENT_OOS_PROOF_FAILED
+candidate_code=C44_G21_MARKET_EXTENSION_CONTROL_FIXED_MONTHLY_QUOTA
+monthly_g21_quota=13
+evaluated_picks_count=85
+avg_ret_net=-0.006863279994262265
+median_ret_net=-0.0005005957088935833
+p25_ret_net=-0.017446232516167844
+p10_ret_net=-0.04048987753061734
+win_rate=0.3411764705882353
+bad_month_like_count=7
+bad_like_oos_months=2025-06,2025-07,2025-08,2025-09,2025-10,2026-03,2026-05
+failed_gates=avg_pass,median_pass,month_win_rate_pass
+production_ready=false
+```
+
+Failure attribution result:
+
+```text
+failure_attribution_completed=true
+dominant_failure_source=shared_core_selection_and_oos_month_cluster
+dominant_failure_month_cluster=2025-06,2025-07,2025-08,2025-09,2025-10
+worst_oos_month=2025-06
+dominant_failure_branch=G21
+g21_quota_fragility=true
+market_extension_control_insufficient=true
+market_regime_failure=true
+ticker_concentration_failure=true
+sector_bucket_failure=true
+entry_gap_failure=false
+post_entry_path_failure=true
+selection_overlap_failure=true
+is_oos_generalization_failure=true
+baseline_target_overlap_share=0.9294117647058824
+overlap_avg_ret_net=-0.008686502669368563
+overlap_failure_label=C48_SHARED_CORE_SELECTION_DROVE_OOS_FAILURE
+diagnostic_conclusion=C48_SHARED_CORE_SELECTION_FAILURE_IDENTIFIED
+c49_readiness_decision=C48_FAILURE_ATTRIBUTION_COMPLETED_C49_BROADER_STRATEGY_REDESIGN_RECOMMENDED
+next_step_recommendation=C49_BROADER_STRATEGY_REDESIGN
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+C48 does not fix OOS and does not authorize production. It recommends C49 broader strategy redesign because the C44 refinement overlap with the baseline is high and the shared core remains negative in OOS.
+
+Final operator validation evidence:
+
+```text
+C48 PHPUnit: PASS — OK (13 tests, 115 assertions)
+Full Watchlist PHPUnit: PASS — OK (711 tests, 13451 assertions)
+Runtime C48: COMPLETED
+status=C48_OOS_FAILURE_ATTRIBUTION_COMPLETED
+artifact_hash_internal=1d6ac8e56aa7449877f95fe4fdbb845810bfb5b7
+file_sha1=EEA350AF2D8A42C881B78701C48A1E301230362C
+diagnostic_conclusion=C48_SHARED_CORE_SELECTION_FAILURE_IDENTIFIED
+next_step_recommendation=C49_BROADER_STRATEGY_REDESIGN
+production_ready=false
+```
+
+## C49 - IS Broader Strategy Redesign From C48 Failure Attribution
+
+```text
+C49_IMPLEMENTATION_STATUS=IMPLEMENTED
+C49_PHPUNIT=PASS — OK (12 tests, 196 assertions)
+C49_FULL_WATCHLIST_PHPUNIT=PASS — OK (723 tests, 13647 assertions)
+C49_RUNTIME_STATUS=COMPLETED
+status=C49_BROADER_STRATEGY_REDESIGN_COMPLETED
+reason_code=C49_BROADER_STRATEGY_REDESIGN_COMPLETED
+artifact_path=storage/app/watchlist/backtest/c49-broader-strategy-redesign.json
+artifact_hash=9266ec2b59a6ea11c21b830cd9b769635afc91a8
+production_ready=false
+```
+
+C49 source lock validation:
+
+```text
+input_c48_artifact=storage/app/watchlist/backtest/c48-oos-failure-attribution.json
+expected_c48_hash=1d6ac8e56aa7449877f95fe4fdbb845810bfb5b7
+actual_c48_hash=1d6ac8e56aa7449877f95fe4fdbb845810bfb5b7
+c48_hash_match=true
+c48_status=C48_OOS_FAILURE_ATTRIBUTION_COMPLETED
+c48_diagnostic_conclusion=C48_SHARED_CORE_SELECTION_FAILURE_IDENTIFIED
+c48_next_step_recommendation=C49_BROADER_STRATEGY_REDESIGN
+```
+
+C49 IS redesign result:
+
+```text
+IS_REDESIGN_RESULT=COMPLETED
+source_evidence_artifact=storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json
+source_rows_available=true
+source_mode=C28_PICK_DIAGNOSTIC_ROWS
+source_is_rows=15750
+source_g21_rows=1770
+source_g16_rows=1320
+source_g13_rows=590
+source_months=27
+pre_trade_source_mode=DATABASE_AS_OF_SIGNAL_DATE_JOIN
+pre_trade_source_row_count=482
+oos_data_used_for_tuning=false
+oos_return_used_for_selection=false
+return_used_for_selection=false
+future_path_used_for_selection=false
+```
+
+C49 redesign decision markers:
+
+```text
+SHARED_CORE_ESCAPE_RESULT=PASS
+MATERIAL_SELECTION_DIFFERENCE_RESULT=PASS
+G21_QUOTA_FRAGILITY_IS_RESULT=NOT_CONFIRMED_IN_IS
+REGIME_AWARE_REDESIGN_RESULT=PROMISING
+CONCENTRATION_GUARD_RESULT=NOT_PROMISING
+POST_ENTRY_PATH_RESULT=NOT_PROMISING
+PRIMARY_CANDIDATE_FOR_C50=C49_CANDIDATE_F03_REGIME_AWARE_MARKET_EXTENSION_CONTROL
+PRIMARY_PROFILE_CODE=C49_F03_REGIME_AWARE_MARKET_EXTENSION_CONTROL
+DEFENSIVE_COMPARATOR_FOR_C50=C49_CANDIDATE_F08_AGGRESSIVE_SHARED_CORE_ESCAPE_REDESIGN
+C50_READINESS_DECISION=C49_IS_REDESIGN_CANDIDATE_READY_FOR_C50_VALIDATION
+next_step_recommendation=C50_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C49_REDESIGN
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+C49 files added:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC49BroaderStrategyRedesignService.php
+app/Console/Commands/Watchlist/RunBacktestC49BroaderStrategyRedesignCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC49BroaderStrategyRedesignServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC49StaticGuardTest.php
+docs/watchlist/audit/WS_C49_BROADER_STRATEGY_REDESIGN.md
+docs/watchlist/audit/WS_C49_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C49 remains non-production and cannot recommend OOS proof. C49 completed the broader IS redesign task and selected a regime-aware candidate for C50 IS validation / anti-overfit check.
