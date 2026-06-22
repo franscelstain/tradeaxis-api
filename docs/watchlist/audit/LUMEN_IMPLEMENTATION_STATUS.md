@@ -8561,7 +8561,7 @@ Next governed step:
 
 ## C62 Implementation — Pre-Lock Review For C61 Signal Quality Candidates IS-Only
 
-Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION_NOT_PRODUCTION_READY`
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
 
 C62 has been implemented as an IS-only pre-lock review that starts from locked C61 evidence and preserves locked C60 lineage evidence.
 
@@ -8639,3 +8639,62 @@ php artisan watchlist:backtest-c62-pre-lock-review-for-c61-signal-quality-candid
   --overwrite `
   --progress
 ```
+
+
+---
+
+## C62 Final — Pre-Lock Review For C61 Signal Quality Candidates IS-Only
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+C62 is closed as an operator-validated IS-only success. It does not authorize production, OOS proof, pre-OOS execution, production catalog creation, or PLAN/CONFIRM mutation.
+
+Final validation evidence:
+
+```text
+PHPUNIT_C62=PASS OK (22 tests, 226 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (900 tests, 18098 assertions)
+C62_RUNTIME=COMPLETED
+C62_STATUS=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+C62_REASON_CODE=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+C62_ARTIFACT_HASH=e66b00ce95520c0b50ba31ab3b019b87dbd50049
+C62_FILE_SHA1=CA567A6DEE611797E1493D8E8B461B8A06ADEDD3
+C61_HASH_MATCH=true
+C61_FILE_SHA1_MATCH=true
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+Final hierarchy:
+
+```text
+PRIMARY_PRE_LOCK=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_PRE_LOCK=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+SIBLING_COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+CANDIDATE_READY_FOR_C63_COUNT=2
+C63_RECOMMENDATION=C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+```
+
+Final candidate interpretation:
+
+- `C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE` is the primary C63-ready candidate.
+- `C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION` is the backup C63-ready parent-diversifier candidate.
+- `C61_A01_B01_WEAK_REGIME_QUALITY_FIRST` remains sibling comparator only because it shares E02's parent and should not be promoted equally under shared-core control.
+- All three candidates retain `month_win_rate_min=0`; C62 documents this as adverse-month risk, not hidden month dependency.
+- E02 worst month is `2024-08`, B01 worst month is `2024-11`, both in `market_down_or_sideways_high_vol`.
+- Weak-regime survival remains positive, diversified, and not sample-collapsed.
+- Concentration and loss-cluster retention remain pass.
+- Source bias is documented but not high.
+- Safety/leakage audit passes with zero OOS rows requested and no return/future/OOS return selection.
+
+Governed next step:
+
+```text
+C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+```
+
+C63 must remain a review gate. It may decide whether pre-OOS/OOS-proof authorization can be opened in a later governed step, but C62 itself does not open OOS.

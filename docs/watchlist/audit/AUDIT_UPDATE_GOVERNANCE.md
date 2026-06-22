@@ -3005,12 +3005,12 @@ C61 does not authorize OOS proof, pre-OOS, production, or PLAN/CONFIRM mutation.
 
 ## Governance Update — C62 Pre-Lock Review For C61 Signal Quality Candidates IS-Only
 
-C62 is implemented and awaiting operator validation.
+C62 is closed as operator validated.
 
 Governance state:
 
 ```text
-STATUS=IMPLEMENTED_PENDING_OPERATOR_VALIDATION_NOT_PRODUCTION_READY
+STATUS=DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY
 SESSION=C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
 IS_ONLY=true
 C61_ARTIFACT_HASH_LOCK=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8
@@ -3056,3 +3056,70 @@ If C62 fails candidates: C63_IS_ONLY_REPAIR_CONTINUATION based on dominant block
 ```
 
 C62 does not authorize OOS proof, pre-OOS execution, production catalog creation, or PLAN/CONFIRM mutation.
+
+
+---
+
+## Governance Final — C62 Pre-Lock Review For C61 Signal Quality Candidates IS-Only
+
+C62 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
+
+Governance state:
+
+```text
+STATUS=DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY
+SESSION=C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
+IS_ONLY=true
+C62_STATUS=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+C62_REASON_CODE=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+C62_ARTIFACT_HASH=e66b00ce95520c0b50ba31ab3b019b87dbd50049
+C62_FILE_SHA1=CA567A6DEE611797E1493D8E8B461B8A06ADEDD3
+C61_HASH_MATCH=true
+C61_FILE_SHA1_MATCH=true
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+OOS_ROWS_REQUESTED=0
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_RETURN_USED_FOR_SELECTION=false
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+SAFETY_AND_LEAKAGE_PASS=true
+```
+
+Final hierarchy:
+
+```text
+PRIMARY_PRE_LOCK=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_PRE_LOCK=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+SIBLING_COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+CANDIDATE_READY_FOR_C63_COUNT=2
+C63_RECOMMENDATION=C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+```
+
+C62 governance interpretation:
+
+- C62 satisfied focused and full Watchlist PHPUnit validation.
+- C62 satisfied runtime lock validation for C61 and C60.
+- C62 remained IS-only.
+- C62 reviewed only the three C61-ready candidates.
+- C62 did not broadly redesign, open OOS, run pre-OOS, create production catalog, or mutate PLAN/CONFIRM.
+- C62 accepted E02 as primary C63-ready candidate.
+- C62 accepted B01 as backup C63-ready parent-diversifier candidate.
+- C62 kept A01 as sibling comparator only due shared-parent/shared-core hierarchy control.
+- C62 documented `month_win_rate_min=0`, bad-month exposure, and adverse weak-regime month risk.
+- C62 confirmed weak-regime survival in `market_down_or_sideways_high_vol` without sample collapse.
+- C62 confirmed concentration and loss-cluster retention.
+- C62 confirmed source bias as documented but not high.
+- C62 confirmed safety/leakage pass.
+
+Governed next step:
+
+```text
+C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+```
+
+C63 must remain an IS-only/pre-OOS-unlock review. C62 does not authorize direct OOS proof, production readiness, production catalog creation, or PLAN/CONFIRM mutation.

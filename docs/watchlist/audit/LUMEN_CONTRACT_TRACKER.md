@@ -7040,7 +7040,7 @@ C61 is accepted as an operator-validated IS-only success. It finds three candida
 
 ## C62 Contract — Pre-Lock Review For C61 Signal Quality Candidates IS-Only
 
-Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION_NOT_PRODUCTION_READY`
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
 
 - `WL-CONTRACT-C62-001`: IMPLEMENTED. C62 command is registered as `watchlist:backtest-c62-pre-lock-review-for-c61-signal-quality-candidates-is-only`.
 - `WL-CONTRACT-C62-002`: IMPLEMENTED. C62 validates locked C61 artifact hash `40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8` before runtime continuation.
@@ -7063,4 +7063,34 @@ Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION_NOT_PRODUCTION_READY`
 - `WL-CONTRACT-C62-019`: IMPLEMENTED. C62 keeps `production_ready=false`, `direct_oos_proof_recommended=false`, `oos_proof_unlocked=false`, and `pre_oos_unlocked=false`.
 - `WL-CONTRACT-C62-020`: IMPLEMENTED. C62 recommendation can only target C63/pre-OOS-unlock review IS-only if candidates pass; it cannot unlock OOS proof directly.
 
-Operator validation remains required before C62 can be marked final.
+Operator validation completed. C62 is final and remains not production-ready.
+
+
+Final C62 validation markers:
+
+```text
+PHPUNIT_C62=PASS OK (22 tests, 226 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (900 tests, 18098 assertions)
+C62_RUNTIME=COMPLETED
+C62_STATUS=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+C62_REASON_CODE=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+C62_ARTIFACT_HASH=e66b00ce95520c0b50ba31ab3b019b87dbd50049
+C62_FILE_SHA1=CA567A6DEE611797E1493D8E8B461B8A06ADEDD3
+C61_HASH_MATCH=true
+C61_FILE_SHA1_MATCH=true
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+PRIMARY_PRE_LOCK=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_PRE_LOCK=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+SIBLING_COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+CANDIDATE_READY_FOR_C63_COUNT=2
+C63_RECOMMENDATION=C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+C62 contract conclusion:
+
+C62 is accepted as an operator-validated IS-only pre-lock review. It passed all implemented C62 contracts, reviewed only the three C61-ready candidates, produced a hierarchy, promoted E02 as primary, retained B01 as parent-diversified backup, kept A01 as sibling comparator only, documented `month_win_rate_min=0` risk, and preserved safety/leakage restrictions. C62 does not unlock OOS proof, pre-OOS execution, production, or PLAN/CONFIRM mutation.

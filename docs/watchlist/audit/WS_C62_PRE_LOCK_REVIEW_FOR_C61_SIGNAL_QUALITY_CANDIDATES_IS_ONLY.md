@@ -1,6 +1,6 @@
 # WS C62 — Pre-Lock Review For C61 Signal Quality Candidates IS-Only
 
-Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION`
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
 
 C62 is an IS-only pre-lock review session. It starts from locked C61 evidence and retains C60 lineage evidence. It does not redesign broadly, does not run OOS, does not unlock OOS proof, does not create a production catalog, and does not mutate PLAN/CONFIRM.
 
@@ -115,3 +115,302 @@ bad-month removal
 weak-regime removal
 ticker/sector hard exclusion from failure attribution
 ```
+
+
+---
+
+## Final Operator Validation — 2026-06-22
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+C62 is accepted as an operator-validated IS-only pre-lock review. It passed focused C62 PHPUnit, full Watchlist PHPUnit, runtime lock validation, candidate hierarchy review, month/bad-month audit, weak-regime revalidation, concentration/loss-cluster retention review, source-bias review, and safety/leakage review.
+
+Final validation evidence:
+
+```text
+PHPUNIT_C62=PASS OK (22 tests, 226 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (900 tests, 18098 assertions)
+C62_RUNTIME=COMPLETED
+C62_STATUS=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+C62_REASON_CODE=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+C62_ARTIFACT_HASH=e66b00ce95520c0b50ba31ab3b019b87dbd50049
+C62_FILE_SHA1=CA567A6DEE611797E1493D8E8B461B8A06ADEDD3
+C61_HASH_MATCH=true
+C61_FILE_SHA1_MATCH=true
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+Final pre-lock decision:
+
+```text
+PRE_LOCK_STATUS=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
+PRE_LOCK_CANDIDATE_COUNT=2
+PRIMARY_PRE_LOCK_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_PRE_LOCK_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+SIBLING_COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+REJECTED_FROM_C63=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+CANDIDATE_READY_FOR_C63_COUNT=2
+C63_RECOMMENDATION=C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+```
+
+C62 decision reason:
+
+```text
+C62 passed strict IS-only pre-lock review for hierarchy candidates. E02 is primary; B01 is retained as parent-diversified backup; A01 is kept as sibling comparator because it shares the E02 parent.
+```
+
+## Final Candidate Scorecard
+
+### Primary pre-lock candidate — E02
+
+```text
+candidate_code=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+pre_lock_review_role=primary_pre_lock_candidate
+evaluated_picks_count=80
+avg_ret_net=0.0024192667485595848
+median_ret_net=0.0060736049509387486
+win_rate=0.5572650952205372
+month_win_rate_min=0
+bad_month_count=1
+zero_win_month_count=1
+worst_month=2024-08
+worst_month_pick_count=5
+worst_month_win_rate=0
+weak_regime_pick_count=28
+weak_regime_avg_ret_net=0.0017212795439995802
+weak_regime_median_ret_net=0.002413136314079545
+weak_regime_win_rate=0.5692650952205373
+weak_regime_month_coverage=14
+rolling_validation_pass=true
+loo_validation_pass=true
+month_dependency_pass=true
+bad_month_exposure_pass=true
+weak_regime_survival_pass=true
+concentration_validation_pass=true
+loss_cluster_validation_pass=true
+material_selection_difference_pass=true
+anti_shared_core_pass=true
+source_bias_validation_pass=true
+safety_and_leakage_pass=true
+pre_lock_review_pass=true
+candidate_ready_for_c63=true
+failure_reason_codes=[]
+```
+
+### Backup pre-lock candidate — B01
+
+```text
+candidate_code=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+pre_lock_review_role=backup_pre_lock_candidate_parent_diversifier
+evaluated_picks_count=80
+avg_ret_net=0.001964504958573553
+median_ret_net=0.005841473569527805
+win_rate=0.5354874418604652
+month_win_rate_min=0
+bad_month_count=1
+zero_win_month_count=1
+worst_month=2024-11
+worst_month_pick_count=4
+worst_month_win_rate=0
+weak_regime_pick_count=27
+weak_regime_avg_ret_net=0.001216638572845102
+weak_regime_median_ret_net=0.002117325316364164
+weak_regime_win_rate=0.5544874418604652
+weak_regime_month_coverage=14
+rolling_validation_pass=true
+loo_validation_pass=true
+month_dependency_pass=true
+bad_month_exposure_pass=true
+weak_regime_survival_pass=true
+concentration_validation_pass=true
+loss_cluster_validation_pass=true
+material_selection_difference_pass=true
+anti_shared_core_pass=true
+source_bias_validation_pass=true
+safety_and_leakage_pass=true
+pre_lock_review_pass=true
+candidate_ready_for_c63=true
+failure_reason_codes=[]
+```
+
+### Sibling comparator only — A01
+
+```text
+candidate_code=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+pre_lock_review_role=sibling_comparator_only
+evaluated_picks_count=80
+avg_ret_net=0.002272600081892918
+median_ret_net=0.005953604950938749
+win_rate=0.5502650952205372
+month_win_rate_min=0
+bad_month_count=1
+zero_win_month_count=1
+worst_month=2024-08
+worst_month_pick_count=4
+worst_month_win_rate=0
+weak_regime_pick_count=27
+weak_regime_avg_ret_net=0.00128127954399958
+weak_regime_median_ret_net=0.002173136314079545
+weak_regime_win_rate=0.5552650952205372
+weak_regime_month_coverage=14
+rolling_validation_pass=true
+loo_validation_pass=true
+month_dependency_pass=true
+bad_month_exposure_pass=true
+weak_regime_survival_pass=true
+concentration_validation_pass=true
+loss_cluster_validation_pass=true
+material_selection_difference_pass=true
+anti_shared_core_pass=true
+source_bias_validation_pass=true
+safety_and_leakage_pass=true
+pre_lock_review_pass=false
+candidate_ready_for_c63=false
+failure_reason_codes=[C62_SIBLING_SHARED_PARENT_HIERARCHY_COMPARATOR_ONLY]
+```
+
+A01 remains useful as a sibling comparator, but it is not promoted to C63 because E02 already covers the same parent lineage more strongly. Promoting A01 equally with E02 would weaken C62's shared-core control.
+
+## Final Month Dependency And Bad-Month Risk
+
+C62 does not ignore `month_win_rate_min=0`. The risk is explicitly accepted only as documented adverse-month risk because LOO and rolling validation still pass, month dependency is not detected, and weak-regime survival remains intact.
+
+```text
+E02_WORST_MONTH=2024-08
+E02_WORST_MONTH_PICK_COUNT=5
+E02_WORST_MONTH_WIN_RATE=0
+E02_WORST_MONTH_AVG_RET_NET=-0.0041
+E02_WORST_MONTH_REGIME=market_down_or_sideways_high_vol
+E02_MONTH_DEPENDENCY_DETECTED=false
+E02_MONTH_DEPENDENCY_PASS=true
+E02_BAD_MONTH_EXPOSURE_PASS=true
+
+B01_WORST_MONTH=2024-11
+B01_WORST_MONTH_PICK_COUNT=4
+B01_WORST_MONTH_WIN_RATE=0
+B01_WORST_MONTH_AVG_RET_NET=-0.0052
+B01_WORST_MONTH_REGIME=market_down_or_sideways_high_vol
+B01_MONTH_DEPENDENCY_DETECTED=false
+B01_MONTH_DEPENDENCY_PASS=true
+B01_BAD_MONTH_EXPOSURE_PASS=true
+
+A01_WORST_MONTH=2024-08
+A01_WORST_MONTH_PICK_COUNT=4
+A01_WORST_MONTH_WIN_RATE=0
+A01_WORST_MONTH_AVG_RET_NET=-0.0047
+A01_WORST_MONTH_REGIME=market_down_or_sideways_high_vol
+A01_MONTH_DEPENDENCY_DETECTED=false
+A01_MONTH_DEPENDENCY_PASS=true
+A01_BAD_MONTH_EXPOSURE_PASS=true
+```
+
+Bad months were not removed. Weak regimes were not removed. Ticker/sector hard exclusions were not used.
+
+## Final Weak-Regime Revalidation
+
+Weakest regime remains `market_down_or_sideways_high_vol` for all reviewed candidates. C62 confirms weak-regime survival without sample collapse.
+
+```text
+E02_WEAK_REGIME_PICK_COUNT=28
+E02_WEAK_REGIME_MONTH_COVERAGE=14
+E02_WEAK_REGIME_AVG_RET_NET=0.0017212795439995802
+E02_WEAK_REGIME_MEDIAN_RET_NET=0.002413136314079545
+E02_WEAK_REGIME_WIN_RATE=0.5692650952205373
+E02_WEAK_REGIME_BRANCH_COUNT=4
+E02_WEAK_REGIME_BUCKET_COUNT=4
+E02_WEAK_REGIME_TICKER_COUNT=21
+E02_SAMPLE_COLLAPSE_DETECTED=false
+
+B01_WEAK_REGIME_PICK_COUNT=27
+B01_WEAK_REGIME_MONTH_COVERAGE=14
+B01_WEAK_REGIME_AVG_RET_NET=0.001216638572845102
+B01_WEAK_REGIME_MEDIAN_RET_NET=0.002117325316364164
+B01_WEAK_REGIME_WIN_RATE=0.5544874418604652
+B01_WEAK_REGIME_BRANCH_COUNT=4
+B01_WEAK_REGIME_BUCKET_COUNT=4
+B01_WEAK_REGIME_TICKER_COUNT=22
+B01_SAMPLE_COLLAPSE_DETECTED=false
+```
+
+## Final Concentration And Loss-Cluster Retention
+
+C62 confirms concentration and loss-cluster retention versus C60.
+
+```text
+E02_MAX_TICKER_SHARE=0.075
+E02_MAX_SECTOR_SHARE=0.145
+E02_MAX_BUCKET_SHARE=0.44
+E02_MAX_BRANCH_SHARE=0.43
+E02_MAX_MONTH_SHARE=0.069
+E02_LOSS_CLUSTER_SHARE=0.079
+E02_LOSS_CLUSTER_COUNT=3
+E02_LOSS_CLUSTER_TRADE_COUNT=7
+E02_LOSS_CLUSTER_MONTH_COUNT=6
+E02_LOSS_CLUSTER_BRANCH_COUNT=4
+E02_LOSS_CLUSTER_BUCKET_COUNT=4
+E02_LOSS_CLUSTER_TICKER_COUNT=5
+
+B01_MAX_TICKER_SHARE=0.075
+B01_MAX_SECTOR_SHARE=0.145
+B01_MAX_BUCKET_SHARE=0.44
+B01_MAX_BRANCH_SHARE=0.44
+B01_MAX_MONTH_SHARE=0.07
+B01_LOSS_CLUSTER_SHARE=0.079
+B01_LOSS_CLUSTER_COUNT=3
+B01_LOSS_CLUSTER_TRADE_COUNT=7
+B01_LOSS_CLUSTER_MONTH_COUNT=6
+B01_LOSS_CLUSTER_BRANCH_COUNT=4
+B01_LOSS_CLUSTER_BUCKET_COUNT=4
+B01_LOSS_CLUSTER_TICKER_COUNT=5
+```
+
+## Final Source-Bias And Safety/Leakage Decision
+
+Source bias is documented but not high. E02 has low source-bias risk. B01 has documented moderate market/sector-confirmation source bias, so it remains backup/parent diversifier. A01 has documented shared-parent risk with E02, so it remains sibling comparator only.
+
+```text
+SOURCE_BIAS_DETECTED=true
+SOURCE_BIAS_REASON_CODES=[C62_A01_AND_E02_SHARE_PARENT_DOCUMENTED, C62_MARKET_SECTOR_CONFIRMATION_SOURCE_BIAS_DOCUMENTED_FOR_B01]
+SOURCE_BIAS_VALIDATION_PASS=true
+SOURCE_BIAS_RISK_LEVEL=DOCUMENTED_NOT_HIGH
+SOURCE_BIAS_RECOMMENDATION_IMPACT=E02 can be primary, B01 can be backup due parent diversity, A01 remains sibling comparator.
+```
+
+Safety/leakage final state:
+
+```text
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_RETURN_USED_FOR_SELECTION=false
+OOS_ROWS_REQUESTED=0
+FUTURE_LOOKUP_DETECTED=false
+ASOF_SAFE=true
+LATEST_SHORTCUT_USED=false
+MAX_DATE_SHORTCUT_USED=false
+ORDER_DESC_TRADE_DATE_SHORTCUT_USED=false
+OOS_DATE_QUERY_DETECTED=false
+PRODUCTION_CATALOG_CREATED=false
+PLAN_CONFIRM_MUTATED=false
+BAD_MONTH_REMOVED=false
+WEAK_REGIME_REMOVED=false
+HARD_TICKER_EXCLUSION_USED=false
+HARD_SECTOR_EXCLUSION_USED=false
+SAFETY_AND_LEAKAGE_PASS=true
+```
+
+## Final C62 Conclusion
+
+C62 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
+
+C62 allows only this governed next step:
+
+```text
+C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+```
+
+C62 does not authorize OOS proof, pre-OOS execution, production catalog creation, or PLAN/CONFIRM mutation.
