@@ -8657,8 +8657,8 @@ FULL_WATCHLIST_PHPUNIT=PASS OK (900 tests, 18098 assertions)
 C62_RUNTIME=COMPLETED
 C62_STATUS=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
 C62_REASON_CODE=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
-C62_ARTIFACT_HASH=e66b00ce95520c0b50ba31ab3b019b87dbd50049
-C62_FILE_SHA1=CA567A6DEE611797E1493D8E8B461B8A06ADEDD3
+C62_ARTIFACT_HASH=d3a089b9b986838764d517682035d76e0bb4112d
+C62_FILE_SHA1=8DF1649BC72233D119581A802F9E41BA9BEBF12E
 C61_HASH_MATCH=true
 C61_FILE_SHA1_MATCH=true
 C60_HASH_MATCH=true
@@ -8698,3 +8698,148 @@ C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
 ```
 
 C63 must remain a review gate. It may decide whether pre-OOS/OOS-proof authorization can be opened in a later governed step, but C62 itself does not open OOS.
+
+---
+
+## C63 Implementation — Pre-OOS Unlock Review IS-Only
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+C63 has been implemented as an IS-only pre-OOS unlock review gate from locked C62 evidence. It does not run OOS, does not read OOS rows, does not use OOS return for selection/ranking/tie-break, does not create a production catalog, and does not mutate PLAN/CONFIRM.
+
+Implementation files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC63PreOosUnlockReviewIsOnlyService.php
+app/Console/Commands/Watchlist/RunBacktestC63PreOosUnlockReviewIsOnlyCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC63PreOosUnlockReviewIsOnlyServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC63StaticGuardTest.php
+docs/watchlist/audit/WS_C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY.md
+docs/watchlist/audit/WS_C63_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C63 validates these locks before review:
+
+```text
+C62_ARTIFACT_HASH_LOCK=d3a089b9b986838764d517682035d76e0bb4112d
+C62_FILE_SHA1_LOCK=8DF1649BC72233D119581A802F9E41BA9BEBF12E
+C61_ARTIFACT_HASH_LOCK=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8
+C61_FILE_SHA1_LOCK=DEA3C807813DE81DB6776AB2C441C945D4E98EC6
+C60_ARTIFACT_HASH_LOCK=25a32ee9c4cb77ecc29103c86a1abf0826aea705
+C60_FILE_SHA1_LOCK=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F
+```
+
+C63 reviews only the locked C62 hierarchy:
+
+```text
+PRIMARY_UNLOCK_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_UNLOCK_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+SIBLING_COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+```
+
+C63 required audits implemented:
+
+- C62 artifact hash/file SHA1 lock validation.
+- C61 and C60 lineage lock validation.
+- Mandatory database dictionary read summary.
+- No OOS access / no future lookup / as-of safety summary.
+- C62 decision hierarchy replay.
+- `month_win_rate_min=0` review.
+- E02 worst month `2024-08` review.
+- B01 worst month `2024-11` review.
+- Documented bad-month unlock risk review.
+- Weak-regime unlock readiness for `market_down_or_sideways_high_vol`.
+- Concentration and loss-cluster unlock readiness.
+- Rolling and LOO unlock readiness.
+- Shared-core and source-bias final review.
+- Safety/leakage unlock audit.
+- C64 readiness recommendation without unlocking OOS/prod flags.
+
+C63 may recommend only `C64_PRE_OOS_OR_OOS_PROOF_EXECUTION` if all IS unlock gates pass. C63 itself keeps:
+
+```text
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+Operator must run:
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC63"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c63-pre-oos-unlock-review-is-only `
+  --c62-artifact=storage/app/watchlist/backtest/c62-pre-lock-review-for-c61-signal-quality-candidates-is-only.json `
+  --expected-c62-hash=d3a089b9b986838764d517682035d76e0bb4112d `
+  --expected-c62-file-sha1=8DF1649BC72233D119581A802F9E41BA9BEBF12E `
+  --c61-artifact=storage/app/watchlist/backtest/c61-signal-quality-rebuild-for-weak-regime-is-only.json `
+  --expected-c61-hash=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8 `
+  --expected-c61-file-sha1=DEA3C807813DE81DB6776AB2C441C945D4E98EC6 `
+  --c60-artifact=storage/app/watchlist/backtest/c60-regime-stress-and-loo-dependency-redesign-is-only.json `
+  --expected-c60-hash=25a32ee9c4cb77ecc29103c86a1abf0826aea705 `
+  --expected-c60-file-sha1=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --output=storage/app/watchlist/backtest/c63-pre-oos-unlock-review-is-only.json `
+  --overwrite `
+  --progress
+```
+
+
+---
+
+## C63 Final Operator Validation Evidence
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+```text
+PHPUNIT_C63=PASS OK (29 tests, 183 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (929 tests, 18281 assertions)
+C63_RUNTIME=COMPLETED
+C63_STATUS=C63_PRE_OOS_UNLOCK_REVIEW_APPROVED_PRIMARY_AND_BACKUP
+C63_REASON_CODE=C63_PRE_OOS_UNLOCK_REVIEW_APPROVED_PRIMARY_AND_BACKUP
+C63_ARTIFACT_HASH=e98f1386928b36ee367728ceeec4de4344e1f3be
+C63_FILE_SHA1=24C7EE585A165DA41E8FC22538A68145247C68B4
+C62_HASH_MATCH=true
+C62_FILE_SHA1_MATCH=true
+C61_HASH_MATCH=true
+C61_FILE_SHA1_MATCH=true
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+NEXT_STEP_RECOMMENDATION=C64_PRE_OOS_OR_OOS_PROOF_EXECUTION
+```
+
+Final C63 outcome:
+
+```text
+PRIMARY_UNLOCK_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_UNLOCK_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+CANDIDATE_READY_FOR_C64_COUNT=2
+UNLOCK_SCOPE=PRIMARY_AND_BACKUP_RECOMMENDED_FOR_C64_REVIEW
+```
+
+C63 accepted both E02 and B01 for C64 review execution only. A01 remains comparator-only due shared-parent/shared-core risk and is not C64-ready. C63 remained IS-only and did not open OOS, production catalog, OOS proof, pre-OOS execution, or PLAN/CONFIRM mutation.
+
+Documented risks carried into C64:
+
+```text
+E02_BAD_MONTH_RISK_LEVEL=MODERATE
+E02_WORST_MONTH=2024-08
+E02_WORST_MONTH_WIN_RATE=0
+E02_WORST_MONTH_AVG_RET_NET=-0.0041
+E02_WORST_MONTH_REGIME=market_down_or_sideways_high_vol
+
+B01_BAD_MONTH_RISK_LEVEL=MODERATE
+B01_WORST_MONTH=2024-11
+B01_WORST_MONTH_WIN_RATE=0
+B01_WORST_MONTH_AVG_RET_NET=-0.0052
+B01_WORST_MONTH_REGIME=market_down_or_sideways_high_vol
+```
+
+C64 must keep C63 selection locked and inspect OOS behavior without changing selection after seeing OOS data.

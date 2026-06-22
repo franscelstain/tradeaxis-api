@@ -3072,8 +3072,8 @@ SESSION=C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
 IS_ONLY=true
 C62_STATUS=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
 C62_REASON_CODE=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
-C62_ARTIFACT_HASH=e66b00ce95520c0b50ba31ab3b019b87dbd50049
-C62_FILE_SHA1=CA567A6DEE611797E1493D8E8B461B8A06ADEDD3
+C62_ARTIFACT_HASH=d3a089b9b986838764d517682035d76e0bb4112d
+C62_FILE_SHA1=8DF1649BC72233D119581A802F9E41BA9BEBF12E
 C61_HASH_MATCH=true
 C61_FILE_SHA1_MATCH=true
 C60_HASH_MATCH=true
@@ -3123,3 +3123,115 @@ C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
 ```
 
 C63 must remain an IS-only/pre-OOS-unlock review. C62 does not authorize direct OOS proof, production readiness, production catalog creation, or PLAN/CONFIRM mutation.
+
+---
+
+## Governance Update — C63 Pre-OOS Unlock Review IS-Only
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+C63 governance state:
+
+```text
+SESSION=C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+IS_ONLY=true
+SOURCE_C62_ARTIFACT=storage/app/watchlist/backtest/c62-pre-lock-review-for-c61-signal-quality-candidates-is-only.json
+C62_ARTIFACT_HASH_LOCK=d3a089b9b986838764d517682035d76e0bb4112d
+C62_FILE_SHA1_LOCK=8DF1649BC72233D119581A802F9E41BA9BEBF12E
+C61_ARTIFACT_HASH_LOCK=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8
+C61_FILE_SHA1_LOCK=DEA3C807813DE81DB6776AB2C441C945D4E98EC6
+C60_ARTIFACT_HASH_LOCK=25a32ee9c4cb77ecc29103c86a1abf0826aea705
+C60_FILE_SHA1_LOCK=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F
+OOS_ROWS_REQUESTED=0
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_RETURN_USED_FOR_SELECTION=false
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+C63 governed hierarchy:
+
+```text
+PRIMARY_UNLOCK_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_UNLOCK_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+SIBLING_COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+```
+
+C63 governance interpretation:
+
+- C63 starts only from locked C62 final evidence.
+- C63 validates C62, C61, and C60 locks before review.
+- C63 remains IS-only and cannot read OOS rows.
+- C63 cannot unlock OOS proof inside C63 runtime.
+- C63 cannot create a production catalog or mutate PLAN/CONFIRM.
+- C63 audits `month_win_rate_min=0`, E02 worst month `2024-08`, B01 worst month `2024-11`, bad-month risk, weak-regime readiness, concentration/loss-cluster readiness, rolling/LOO readiness, shared-core, source bias, and safety/leakage.
+- C63 keeps A01 as sibling comparator only unless shared-core risk is formally disproven; current implementation retains comparator-only hierarchy.
+- C63 may only recommend C64 pre-OOS/OOS proof execution review if all IS unlock gates pass.
+
+Governed next step after operator validation:
+
+```text
+C64_PRE_OOS_OR_OOS_PROOF_EXECUTION
+```
+
+C63 does not authorize production readiness, production catalog creation, direct OOS proof flags, or PLAN/CONFIRM mutation.
+
+
+---
+
+## Final Governance Evidence — C63
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+```text
+PHPUNIT_C63=PASS OK (29 tests, 183 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (929 tests, 18281 assertions)
+C63_RUNTIME=COMPLETED
+C63_STATUS=C63_PRE_OOS_UNLOCK_REVIEW_APPROVED_PRIMARY_AND_BACKUP
+C63_REASON_CODE=C63_PRE_OOS_UNLOCK_REVIEW_APPROVED_PRIMARY_AND_BACKUP
+C63_ARTIFACT_HASH=e98f1386928b36ee367728ceeec4de4344e1f3be
+C63_FILE_SHA1=24C7EE585A165DA41E8FC22538A68145247C68B4
+```
+
+C63 final governed decision:
+
+```text
+PRE_OOS_UNLOCK_APPROVED=true
+PRE_OOS_UNLOCK_CANDIDATE_COUNT=2
+PRIMARY_UNLOCK_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_UNLOCK_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+C64_RECOMMENDATION=C64_PRE_OOS_OR_OOS_PROOF_EXECUTION
+```
+
+Governance restrictions that remain active after C63:
+
+```text
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+OOS_PROVEN=false
+PRODUCTION_CATALOG_CREATED=false
+PLAN_CONFIRM_MUTATED=false
+```
+
+C64 governance requirements:
+
+- C64 is the first session allowed to read OOS rows.
+- C64 must keep the C63 selection locked before reading OOS.
+- E02 must remain the primary candidate.
+- B01 may be evaluated as backup parent-diversifier.
+- A01 remains comparator-only and must not be promoted due shared-parent/shared-core risk.
+- C64 must audit OOS bad-month behavior, weak-regime survival, concentration, loss-cluster, rolling/LOO-style stability where applicable, and safety/leakage.
+- C64 must not tune, rank, or mutate candidates after looking at OOS returns.
+- Passing C64 may support OOS-proof status only if OOS gates pass; it still must not mutate PLAN/CONFIRM without a later production authorization step.
+```
+
+C63 final governance conclusion:
+
+C63 is accepted. The system may proceed to `C64_PRE_OOS_OR_OOS_PROOF_EXECUTION` with locked C63 hierarchy and documented risk controls.

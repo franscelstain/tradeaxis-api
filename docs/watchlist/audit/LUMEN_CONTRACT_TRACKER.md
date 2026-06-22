@@ -7074,8 +7074,8 @@ FULL_WATCHLIST_PHPUNIT=PASS OK (900 tests, 18098 assertions)
 C62_RUNTIME=COMPLETED
 C62_STATUS=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
 C62_REASON_CODE=C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES
-C62_ARTIFACT_HASH=e66b00ce95520c0b50ba31ab3b019b87dbd50049
-C62_FILE_SHA1=CA567A6DEE611797E1493D8E8B461B8A06ADEDD3
+C62_ARTIFACT_HASH=d3a089b9b986838764d517682035d76e0bb4112d
+C62_FILE_SHA1=8DF1649BC72233D119581A802F9E41BA9BEBF12E
 C61_HASH_MATCH=true
 C61_FILE_SHA1_MATCH=true
 C60_HASH_MATCH=true
@@ -7094,3 +7094,64 @@ PRE_OOS_UNLOCKED=false
 C62 contract conclusion:
 
 C62 is accepted as an operator-validated IS-only pre-lock review. It passed all implemented C62 contracts, reviewed only the three C61-ready candidates, produced a hierarchy, promoted E02 as primary, retained B01 as parent-diversified backup, kept A01 as sibling comparator only, documented `month_win_rate_min=0` risk, and preserved safety/leakage restrictions. C62 does not unlock OOS proof, pre-OOS execution, production, or PLAN/CONFIRM mutation.
+
+---
+
+## C63 Contract — Pre-OOS Unlock Review IS-Only
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+- `WL-CONTRACT-C63-001`: IMPLEMENTED. C63 command is registered as `watchlist:backtest-c63-pre-oos-unlock-review-is-only`.
+- `WL-CONTRACT-C63-002`: IMPLEMENTED. C63 validates locked C62 artifact hash `d3a089b9b986838764d517682035d76e0bb4112d` before runtime continuation.
+- `WL-CONTRACT-C63-003`: IMPLEMENTED. C63 validates locked C62 file SHA1 `8DF1649BC72233D119581A802F9E41BA9BEBF12E` before runtime continuation.
+- `WL-CONTRACT-C63-004`: IMPLEMENTED. C63 validates locked C62 status/reason_code `C62_PRE_LOCK_REVIEW_PASSED_WITH_MULTIPLE_CANDIDATES`.
+- `WL-CONTRACT-C63-005`: IMPLEMENTED. C63 validates C62 `candidate_ready_for_c63_count=2`.
+- `WL-CONTRACT-C63-006`: IMPLEMENTED. C63 validates E02 primary, B01 backup, and A01 comparator-only hierarchy from C62.
+- `WL-CONTRACT-C63-007`: IMPLEMENTED. C63 validates locked C61 artifact hash and file SHA1 before review continuation.
+- `WL-CONTRACT-C63-008`: IMPLEMENTED. C63 validates locked C60 artifact hash and file SHA1 before review continuation.
+- `WL-CONTRACT-C63-009`: IMPLEMENTED. C63 remains IS-only for `2023-01-02..2025-05-21` and blocks OOS date overlap.
+- `WL-CONTRACT-C63-010`: IMPLEMENTED. C63 records the database dictionary read rule and as-of safety summary.
+- `WL-CONTRACT-C63-011`: IMPLEMENTED. C63 reviews only C62 hierarchy candidates and creates no new candidates.
+- `WL-CONTRACT-C63-012`: IMPLEMENTED. C63 audits `month_win_rate_min=0`, E02 worst month `2024-08`, and B01 worst month `2024-11`.
+- `WL-CONTRACT-C63-013`: IMPLEMENTED. C63 reviews bad-month unlock risk and keeps bad-month risk documented rather than removed.
+- `WL-CONTRACT-C63-014`: IMPLEMENTED. C63 reviews weak-regime unlock readiness and does not skip `market_down_or_sideways_high_vol`.
+- `WL-CONTRACT-C63-015`: IMPLEMENTED. C63 reviews rolling and LOO unlock readiness.
+- `WL-CONTRACT-C63-016`: IMPLEMENTED. C63 reviews concentration and loss-cluster unlock readiness.
+- `WL-CONTRACT-C63-017`: IMPLEMENTED. C63 reviews shared-core and source-bias unlock readiness.
+- `WL-CONTRACT-C63-018`: IMPLEMENTED. C63 does not use return fields, future path, or OOS returns for selection.
+- `WL-CONTRACT-C63-019`: IMPLEMENTED. C63 does not create a production catalog or mutate PLAN/CONFIRM.
+- `WL-CONTRACT-C63-020`: IMPLEMENTED. C63 keeps `production_ready=false`, `direct_oos_proof_recommended=false`, `oos_proof_unlocked=false`, and `pre_oos_unlocked=false` even if C64 is recommended.
+
+C63 contract conclusion: operator validation passed. C63 can only recommend C64 review; it cannot mark candidates OOS-proven or production-ready.
+
+
+Final C63 validation markers:
+
+```text
+PHPUNIT_C63=PASS OK (29 tests, 183 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (929 tests, 18281 assertions)
+C63_RUNTIME=COMPLETED
+C63_STATUS=C63_PRE_OOS_UNLOCK_REVIEW_APPROVED_PRIMARY_AND_BACKUP
+C63_REASON_CODE=C63_PRE_OOS_UNLOCK_REVIEW_APPROVED_PRIMARY_AND_BACKUP
+C63_ARTIFACT_HASH=e98f1386928b36ee367728ceeec4de4344e1f3be
+C63_FILE_SHA1=24C7EE585A165DA41E8FC22538A68145247C68B4
+C62_HASH_MATCH=true
+C62_FILE_SHA1_MATCH=true
+C61_HASH_MATCH=true
+C61_FILE_SHA1_MATCH=true
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+PRIMARY_UNLOCK_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_UNLOCK_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+CANDIDATE_READY_FOR_C64_COUNT=2
+C64_RECOMMENDATION=C64_PRE_OOS_OR_OOS_PROOF_EXECUTION
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+C63 contract conclusion:
+
+C63 is accepted as an operator-validated IS-only pre-OOS unlock review. All implemented C63 contracts passed. C63 approves primary+backup recommendation into C64 review execution only, keeps A01 as comparator-only, preserves all safety flags as false, and carries documented bad-month risk into C64.

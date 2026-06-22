@@ -87,6 +87,7 @@ use App\Console\Commands\Watchlist\RunBacktestC59LossClusterOrBranchBucketRedesi
 use App\Console\Commands\Watchlist\RunBacktestC60RegimeStressAndLooDependencyRedesignIsOnlyCommand;
 use App\Console\Commands\Watchlist\RunBacktestC61SignalQualityRebuildForWeakRegimeIsOnlyCommand;
 use App\Console\Commands\Watchlist\RunBacktestC62PreLockReviewForC61SignalQualityCandidatesIsOnlyCommand;
+use App\Console\Commands\Watchlist\RunBacktestC63PreOosUnlockReviewIsOnlyCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -161,6 +162,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC60RegimeStressAndLooDependencyRedesignIsOnlyCommand::class,
         RunBacktestC61SignalQualityRebuildForWeakRegimeIsOnlyCommand::class,
         RunBacktestC62PreLockReviewForC61SignalQualityCandidatesIsOnlyCommand::class,
+        RunBacktestC63PreOosUnlockReviewIsOnlyCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
