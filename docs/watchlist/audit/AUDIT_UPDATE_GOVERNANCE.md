@@ -3000,3 +3000,59 @@ C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
 C62 must remain IS-only/pre-lock review. It must audit the three C61-ready candidates for month dependency, bad-month fragility, `month_win_rate_min=0`, rolling/LOO consistency, source bias, anti-shared-core, sample collapse, concentration boundary, loss-cluster retention, and lineage lock integrity.
 
 C61 does not authorize OOS proof, pre-OOS, production, or PLAN/CONFIRM mutation.
+
+---
+
+## Governance Update — C62 Pre-Lock Review For C61 Signal Quality Candidates IS-Only
+
+C62 is implemented and awaiting operator validation.
+
+Governance state:
+
+```text
+STATUS=IMPLEMENTED_PENDING_OPERATOR_VALIDATION_NOT_PRODUCTION_READY
+SESSION=C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
+IS_ONLY=true
+C61_ARTIFACT_HASH_LOCK=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8
+C61_FILE_SHA1_LOCK=DEA3C807813DE81DB6776AB2C441C945D4E98EC6
+C60_ARTIFACT_HASH_LOCK=25a32ee9c4cb77ecc29103c86a1abf0826aea705
+C60_FILE_SHA1_LOCK=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F
+OOS_ROWS_REQUESTED=0
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_RETURN_USED_FOR_SELECTION=false
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+C62 may only review these C61-ready candidates:
+
+```text
+PRIMARY_UNDER_REVIEW=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+SIBLING_COMPARATOR_UNDER_REVIEW=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+PARENT_DIVERSIFIER_UNDER_REVIEW=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+```
+
+C62 governance interpretation:
+
+- C62 is IS-only pre-lock review.
+- C62 starts from locked C61 evidence and locked C60 lineage evidence.
+- C62 reviews only the three C61-ready candidates.
+- C62 does not broadly redesign candidates.
+- C62 does not run OOS or pre-OOS.
+- C62 does not unlock OOS proof or production readiness.
+- C62 audits `month_win_rate_min=0`, bad-month exposure, and month dependency.
+- C62 revalidates weak-regime survival, regime robustness, rolling/LOO stability, concentration, loss-cluster retention, material difference, anti-shared-core, source bias, and safety/leakage.
+- C62 must produce a candidate hierarchy and must not promote same-parent siblings equally if shared-core risk remains material.
+
+Governed next step after operator validation:
+
+```text
+If C62 passes candidates: C63_PRE_OOS_UNLOCK_REVIEW_IS_ONLY
+If C62 fails candidates: C63_IS_ONLY_REPAIR_CONTINUATION based on dominant blocker
+```
+
+C62 does not authorize OOS proof, pre-OOS execution, production catalog creation, or PLAN/CONFIRM mutation.

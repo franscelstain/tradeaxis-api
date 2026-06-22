@@ -7035,3 +7035,32 @@ NEXT_STEP=C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
 C61 contract conclusion:
 
 C61 is accepted as an operator-validated IS-only success. It finds three candidates ready for C62/pre-lock IS review, led by `C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE`. It does not unlock OOS proof or production.
+
+---
+
+## C62 Contract — Pre-Lock Review For C61 Signal Quality Candidates IS-Only
+
+Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION_NOT_PRODUCTION_READY`
+
+- `WL-CONTRACT-C62-001`: IMPLEMENTED. C62 command is registered as `watchlist:backtest-c62-pre-lock-review-for-c61-signal-quality-candidates-is-only`.
+- `WL-CONTRACT-C62-002`: IMPLEMENTED. C62 validates locked C61 artifact hash `40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8` before runtime continuation.
+- `WL-CONTRACT-C62-003`: IMPLEMENTED. C62 validates locked C61 file SHA1 `DEA3C807813DE81DB6776AB2C441C945D4E98EC6` before runtime continuation.
+- `WL-CONTRACT-C62-004`: IMPLEMENTED. C62 validates locked C60 artifact hash `25a32ee9c4cb77ecc29103c86a1abf0826aea705` before runtime continuation.
+- `WL-CONTRACT-C62-005`: IMPLEMENTED. C62 validates locked C60 file SHA1 `1FA933157B61ECB4554CE6C76B0F2B314F19DB0F` before runtime continuation.
+- `WL-CONTRACT-C62-006`: IMPLEMENTED. C62 remains IS-only for `2023-01-02..2025-05-21` and blocks OOS date overlap.
+- `WL-CONTRACT-C62-007`: IMPLEMENTED. C62 records the database dictionary read rule and as-of safety summary.
+- `WL-CONTRACT-C62-008`: IMPLEMENTED. C62 reviews only the three C61 candidates with `candidate_ready_for_c62=true`.
+- `WL-CONTRACT-C62-009`: IMPLEMENTED. C62 rejects C61 status mismatch and C61 ready-candidate-count mismatch.
+- `WL-CONTRACT-C62-010`: IMPLEMENTED. C62 audits `month_win_rate_min=0` and bad-month exposure.
+- `WL-CONTRACT-C62-011`: IMPLEMENTED. C62 revalidates weak-regime survival and does not skip `market_down_or_sideways_high_vol`.
+- `WL-CONTRACT-C62-012`: IMPLEMENTED. C62 revalidates regime robustness, rolling stability, and LOO stability.
+- `WL-CONTRACT-C62-013`: IMPLEMENTED. C62 revalidates concentration and loss-cluster retention.
+- `WL-CONTRACT-C62-014`: IMPLEMENTED. C62 rechecks material selection difference and anti-shared-core.
+- `WL-CONTRACT-C62-015`: IMPLEMENTED. C62 validates source-bias risk and applies candidate hierarchy.
+- `WL-CONTRACT-C62-016`: IMPLEMENTED. C62 does not remove bad months, weak regimes, tickers, or sectors to manufacture a pass.
+- `WL-CONTRACT-C62-017`: IMPLEMENTED. C62 does not use return fields, future path, or OOS returns for selection.
+- `WL-CONTRACT-C62-018`: IMPLEMENTED. C62 does not create a production catalog or mutate PLAN/CONFIRM.
+- `WL-CONTRACT-C62-019`: IMPLEMENTED. C62 keeps `production_ready=false`, `direct_oos_proof_recommended=false`, `oos_proof_unlocked=false`, and `pre_oos_unlocked=false`.
+- `WL-CONTRACT-C62-020`: IMPLEMENTED. C62 recommendation can only target C63/pre-OOS-unlock review IS-only if candidates pass; it cannot unlock OOS proof directly.
+
+Operator validation remains required before C62 can be marked final.

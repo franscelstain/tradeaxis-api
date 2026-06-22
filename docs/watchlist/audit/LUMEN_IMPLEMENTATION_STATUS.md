@@ -8556,3 +8556,86 @@ C62 audit note:
 Next governed step:
 
 `C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY`
+
+---
+
+## C62 Implementation — Pre-Lock Review For C61 Signal Quality Candidates IS-Only
+
+Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION_NOT_PRODUCTION_READY`
+
+C62 has been implemented as an IS-only pre-lock review that starts from locked C61 evidence and preserves locked C60 lineage evidence.
+
+Implemented files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC62PreLockReviewForC61SignalQualityCandidatesIsOnlyService.php
+app/Console/Commands/Watchlist/RunBacktestC62PreLockReviewForC61SignalQualityCandidatesIsOnlyCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC62PreLockReviewForC61SignalQualityCandidatesIsOnlyServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC62StaticGuardTest.php
+docs/watchlist/audit/WS_C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY.md
+docs/watchlist/audit/WS_C62_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C62 governance boundaries:
+
+```text
+IS_ONLY=true
+C61_ARTIFACT_HASH_LOCK=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8
+C61_FILE_SHA1_LOCK=DEA3C807813DE81DB6776AB2C441C945D4E98EC6
+C60_ARTIFACT_HASH_LOCK=25a32ee9c4cb77ecc29103c86a1abf0826aea705
+C60_FILE_SHA1_LOCK=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F
+OOS_ROWS_REQUESTED=0
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_RETURN_USED_FOR_SELECTION=false
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+C62 reviews only these three C61-ready candidates:
+
+```text
+C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+```
+
+C62 required audits implemented:
+
+- C61 artifact hash and file SHA1 lock validation.
+- C60 artifact hash and file SHA1 lineage validation.
+- Mandatory database dictionary read summary.
+- No OOS access / no future lookup / as-of safety summary.
+- `month_win_rate_min=0` audit.
+- Bad-month exposure audit.
+- Weak-regime survival revalidation for `market_down_or_sideways_high_vol`.
+- Regime robustness revalidation.
+- Concentration and loss-cluster retention revalidation.
+- Rolling and LOO recheck.
+- Material selection difference and anti-shared-core recheck.
+- Source-bias validation.
+- Candidate hierarchy decision.
+
+C62 does not run OOS and does not authorize production. If C62 passes candidates, the only allowed next recommendation is C63/pre-OOS-unlock review IS-only.
+
+Operator must run:
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC62"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c62-pre-lock-review-for-c61-signal-quality-candidates-is-only `
+  --c61-artifact=storage/app/watchlist/backtest/c61-signal-quality-rebuild-for-weak-regime-is-only.json `
+  --expected-c61-hash=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8 `
+  --expected-c61-file-sha1=DEA3C807813DE81DB6776AB2C441C945D4E98EC6 `
+  --c60-artifact=storage/app/watchlist/backtest/c60-regime-stress-and-loo-dependency-redesign-is-only.json `
+  --expected-c60-hash=25a32ee9c4cb77ecc29103c86a1abf0826aea705 `
+  --expected-c60-file-sha1=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F `
+  --from=2023-01-02 `
+  --to=2025-05-21 `
+  --output=storage/app/watchlist/backtest/c62-pre-lock-review-for-c61-signal-quality-candidates-is-only.json `
+  --overwrite `
+  --progress
+```
