@@ -89,6 +89,7 @@ use App\Console\Commands\Watchlist\RunBacktestC61SignalQualityRebuildForWeakRegi
 use App\Console\Commands\Watchlist\RunBacktestC62PreLockReviewForC61SignalQualityCandidatesIsOnlyCommand;
 use App\Console\Commands\Watchlist\RunBacktestC63PreOosUnlockReviewIsOnlyCommand;
 use App\Console\Commands\Watchlist\RunBacktestC64PreOosOrOosProofExecutionCommand;
+use App\Console\Commands\Watchlist\RunBacktestC65ProductionPreLockReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -165,6 +166,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC62PreLockReviewForC61SignalQualityCandidatesIsOnlyCommand::class,
         RunBacktestC63PreOosUnlockReviewIsOnlyCommand::class,
         RunBacktestC64PreOosOrOosProofExecutionCommand::class,
+        RunBacktestC65ProductionPreLockReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

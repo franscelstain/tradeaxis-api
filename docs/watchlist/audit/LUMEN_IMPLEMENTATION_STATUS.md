@@ -8971,3 +8971,130 @@ B01_OOS_BAD_MONTH_DECISION=PASS_WITH_DOCUMENTED_RISK
 All C64 proof tracks passed for E02 and B01: bad-month, weak-regime, rolling, concentration, loss-cluster, source-bias, shared-core, and safety/leakage. Safety remained clean: selection was frozen before OOS, no OOS read occurred before freeze, selection and parameters were unchanged after OOS, no future lookup/latest shortcut/MAX date shortcut was used, no production catalog was created, and PLAN/CONFIRM was not mutated.
 
 C64 is accepted as locked-selection OOS proof for primary+backup. It does not mark production-ready. Next step is `C65_PRODUCTION_PRE_LOCK_REVIEW`.
+
+---
+
+## C65 Production Pre-Lock Review
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+C65 implements `watchlist:backtest-c65-production-pre-lock-review` as a production pre-lock review from locked C64 evidence. It validates C64 artifact hash `767d860956e0f27eeedccdc30f73aa1d0e5a415b`, C64 file SHA1 `032C7BA7435799D83CC06EEDBC463A9AF2B123B3`, and C60 -> C61 -> C62 -> C63 -> C64 lineage locks before any pre-lock decision.
+
+C65 keeps the C64 hierarchy frozen:
+
+```text
+PRIMARY=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+```
+
+C65 does not redesign, retune, run parameter search, rerank with OOS, promote A01, create/activate production catalog, deploy production, or mutate PLAN/CONFIRM. It keeps `production_ready=false`, `production_catalog_allowed=false`, and `production_deployment_allowed=false`.
+
+C65 records bad-month risk and weak-regime risk as documented risks. C65 may only recommend `C66_PRODUCTION_LOCK_REVIEW` if all production pre-lock gates pass.
+
+
+---
+
+## Final Operator Validation Evidence — C65
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED / C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP / READY_FOR_C66_PRODUCTION_LOCK_REVIEW / NOT_PRODUCTION_READY`
+
+Operator validation was executed on the local repository after the C65 status-logic hotfix. Focused C65 PHPUnit and full Watchlist PHPUnit both passed, then the official C65 runtime command generated the final C65 artifact.
+
+```text
+FOCUSED_C65_PHPUNIT=PASS
+FOCUSED_C65_PHPUNIT_RESULT=OK (28 tests, 193 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (1024 tests, 18664 assertions)
+C65_RUNTIME=COMPLETED
+C65_RUN_CODE=C65_PRODUCTION_PRE_LOCK_REVIEW
+C65_FINAL_STATUS=C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C65_REASON_CODE=C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C65_ARTIFACT_PATH=storage/app/watchlist/backtest/c65-production-pre-lock-review.json
+C65_ARTIFACT_HASH=f08da5acc87ccbe0d88c39423c4321496230b01b
+C65_FILE_SHA1=115201C1F44C7C420ABA3251435F21B870EF9AE6
+PRODUCTION_READY=false
+PRODUCTION_PRELOCK_REVIEW_EXECUTED=true
+PRODUCTION_PRELOCK_REVIEW_PASS=true
+PRODUCTION_CATALOG_ALLOWED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+```
+
+Source lock and lineage validation completed successfully:
+
+```text
+C64_HASH_MATCH=true
+C64_FILE_SHA1_MATCH=true
+C63_HASH_MATCH=true
+C63_FILE_SHA1_MATCH=true
+C62_HASH_MATCH=true
+C62_FILE_SHA1_MATCH=true
+C61_HASH_MATCH=true
+C61_FILE_SHA1_MATCH=true
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+```
+
+Production pre-lock decision:
+
+```text
+PRODUCTION_PRELOCK_VALIDATION_COMPLETED=true
+PRODUCTION_PRELOCK_STATUS=C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+PRODUCTION_PRELOCK_REVIEW_PASS=true
+PRIMARY_PRODUCTION_PRELOCK_PASS=true
+BACKUP_PRODUCTION_PRELOCK_PASS=true
+PRIMARY_CANDIDATE_CODE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_CANDIDATE_CODE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY_CANDIDATE_CODE=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+PRODUCTION_PRELOCK_PASS_SCOPE=PRIMARY_AND_BACKUP
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_ALLOWED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+```
+
+C66 readiness decision:
+
+```text
+C66_VALIDATION_COMPLETED=true
+CANDIDATE_READY_FOR_C66_COUNT=2
+CANDIDATE_READY_FOR_C66_CODES=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE,C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+C66_RECOMMENDATION=C66_PRODUCTION_LOCK_REVIEW
+C66_DECISION_REASON=C65 production pre-lock review passed. Next step is C66 production lock review only.
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_ALLOWED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+```
+
+Failure attribution and cleanup note:
+
+```text
+DOMINANT_BLOCKER=NONE
+FAILURE_REASON_CODES={}
+A01_COMPARATOR_ONLY_NOT_FAILURE_FOR_PRELOCK_SCOPE=true
+REPAIR_RECOMMENDATION=C66_PRODUCTION_LOCK_REVIEW
+C64_LEGACY_REPAIR_RECOMMENDATION=C65_OOS_FAILURE_ATTRIBUTION_IS_ONLY
+C64_LEGACY_REPAIR_RECOMMENDATION_NON_BLOCKING=true
+NORMALIZED_REPAIR_RECOMMENDATION=NOT_REQUIRED
+C65_FAILURE_REPAIR_REQUIRED=false
+```
+
+Production mutation safety remained clean:
+
+```text
+PRODUCTION_CATALOG_CREATED=false
+PRODUCTION_CATALOG_ACTIVATED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATED=false
+SELECTION_CHANGED_AFTER_C64=false
+PARAMETER_CHANGED_AFTER_C64=false
+NEW_CANDIDATE_CREATED=false
+OOS_REUSED_FOR_RANKING=false
+LATEST_SHORTCUT_USED=false
+DATE_DESC_SHORTCUT_USED=false
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+PRODUCTION_MUTATION_SAFETY_PASS=true
+```
+
+Final C65 conclusion: C65 is accepted as production pre-lock review for primary E02 and backup B01. A01 remains comparator-only and is not promoted. C65 does not declare production-ready and does not authorize production catalog creation, activation, deployment, or PLAN/CONFIRM mutation. The only allowed next step is `C66_PRODUCTION_LOCK_REVIEW`.

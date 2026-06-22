@@ -7209,3 +7209,53 @@ PRODUCTION_READY=false
 C64 contract final conclusion:
 
 All C64 implemented contracts are operator-validated. The C63 hierarchy remained locked, lineage locks C60-C63 matched, the reserved OOS period was used, E02 and B01 passed OOS proof gates, A01 remained comparator-only, and production/PLAN/CONFIRM mutation remained prohibited. The next allowed contract is `C65_PRODUCTION_PRE_LOCK_REVIEW`.
+
+---
+
+## C65 Contract — Production Pre-Lock Review
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+- `WL-CONTRACT-C65-001`: IMPLEMENTED. C65 command registered as `watchlist:backtest-c65-production-pre-lock-review`.
+- `WL-CONTRACT-C65-002`: IMPLEMENTED. C65 validates locked C64 artifact hash and file SHA1 before runtime continuation.
+- `WL-CONTRACT-C65-003`: IMPLEMENTED. C65 validates C64 status/reason_code `C64_OOS_PROOF_PASSED_PRIMARY_AND_BACKUP`.
+- `WL-CONTRACT-C65-004`: IMPLEMENTED. C65 validates C64 `oos_proof_pass=true` and `candidate_ready_for_c65_count=2`.
+- `WL-CONTRACT-C65-005`: IMPLEMENTED. C65 validates C63/C62/C61/C60 lineage locks and readiness/safety fields.
+- `WL-CONTRACT-C65-006`: IMPLEMENTED. C65 freezes candidate scope from C64 locked decision: E02 primary, B01 backup, A01 comparator-only.
+- `WL-CONTRACT-C65-007`: IMPLEMENTED. C65 prevents A01 promotion and prevents OOS-based reranking/retuning.
+- `WL-CONTRACT-C65-008`: IMPLEMENTED. C65 creates C64 OOS proof replay summary from artifact, not from a new winner search.
+- `WL-CONTRACT-C65-009`: IMPLEMENTED. C65 carries bad-month risk as documented `PASS_WITH_DOCUMENTED_RISK`.
+- `WL-CONTRACT-C65-010`: IMPLEMENTED. C65 carries weak-regime risk for `market_down_or_sideways_high_vol` as documented risk.
+- `WL-CONTRACT-C65-011`: IMPLEMENTED. C65 validates concentration, loss-cluster, rolling, source-bias, shared-core, and safety/leakage governance.
+- `WL-CONTRACT-C65-012`: IMPLEMENTED. C65 keeps `production_ready=false`, `production_catalog_allowed=false`, and `production_deployment_allowed=false`.
+- `WL-CONTRACT-C65-013`: IMPLEMENTED. C65 does not create or activate production catalog and does not mutate PLAN/CONFIRM.
+- `WL-CONTRACT-C65-014`: IMPLEMENTED. C65 normalizes the C64 legacy repair recommendation as non-blocking when `dominant_blocker=NONE` and `oos_proof_pass=true`.
+- `WL-CONTRACT-C65-015`: IMPLEMENTED. C65 only recommends `C66_PRODUCTION_LOCK_REVIEW` after all production pre-lock gates pass.
+
+C65 contract conclusion: implementation is present and awaits operator validation. C65 is not production-ready by itself.
+
+
+---
+
+## C65 Contract Final Operator Validation
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+```text
+PHPUNIT_C65=PASS
+PHPUNIT_C65_RESULT=OK (28 tests, 193 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (1024 tests, 18664 assertions)
+C65_RUNTIME=COMPLETED
+C65_FINAL_STATUS=C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C65_REASON_CODE=C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C65_ARTIFACT_HASH=f08da5acc87ccbe0d88c39423c4321496230b01b
+C65_FILE_SHA1=115201C1F44C7C420ABA3251435F21B870EF9AE6
+CANDIDATE_READY_FOR_C66_COUNT=2
+C66_RECOMMENDATION=C66_PRODUCTION_LOCK_REVIEW
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_ALLOWED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+```
+
+C65 contract conclusion: operator validation passed. C65 locks the production pre-lock review result for E02 primary and B01 backup, keeps A01 comparator-only, keeps all production mutation gates closed, and only authorizes `C66_PRODUCTION_LOCK_REVIEW` as the next review step. C65 is not production-ready by itself.

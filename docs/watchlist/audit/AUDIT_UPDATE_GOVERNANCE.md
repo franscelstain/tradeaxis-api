@@ -3318,3 +3318,74 @@ WEAK_REGIME_REMOVED=false
 ```
 
 C64 does not authorize deployment or production catalog mutation. The only governed next step is `C65_PRODUCTION_PRE_LOCK_REVIEW`. C65 must review production pre-lock readiness and must not treat C64 alone as production approval.
+
+---
+
+## Governance Update — C65
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+C65 is governed as production pre-lock review only. It starts from locked C64 final evidence and validates production pre-lock readiness for E02 primary and B01 backup while keeping A01 comparator-only.
+
+Governed restrictions:
+
+```text
+NO_REDESIGN=true
+NO_RETUNE=true
+NO_PARAMETER_SEARCH=true
+NO_OOS_BASED_RERANKING=true
+A01_PROMOTED=false
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_ALLOWED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_CATALOG_CREATED=false
+PRODUCTION_CATALOG_ACTIVATED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATED=false
+```
+
+Bad-month risk and weak-regime risk must remain documented and cannot be hidden or downgraded to risk-free. The C64 cleanup note for `repair_recommendation=C65_OOS_FAILURE_ATTRIBUTION_IS_ONLY` is non-blocking only when C64 has `dominant_blocker=NONE` and `oos_proof_pass=true`.
+
+If C65 passes, the only governed next step is `C66_PRODUCTION_LOCK_REVIEW`. Passing C65 does not authorize production deployment or production catalog activation.
+
+
+---
+
+## Governance Finalization — C65
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+C65 governance final operator evidence:
+
+```text
+PHPUNIT_C65=PASS: OK (28 tests, 193 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (1024 tests, 18664 assertions)
+C65_RUNTIME=COMPLETED
+C65_FINAL_STATUS=C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C65_ARTIFACT_HASH=f08da5acc87ccbe0d88c39423c4321496230b01b
+C65_FILE_SHA1=115201C1F44C7C420ABA3251435F21B870EF9AE6
+C66_RECOMMENDATION=C66_PRODUCTION_LOCK_REVIEW
+```
+
+C65 governance remains constrained:
+
+```text
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_ALLOWED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_CATALOG_CREATED=false
+PRODUCTION_CATALOG_ACTIVATED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATED=false
+SELECTION_CHANGED_AFTER_C64=false
+PARAMETER_CHANGED_AFTER_C64=false
+NEW_CANDIDATE_CREATED=false
+OOS_REUSED_FOR_RANKING=false
+LATEST_SHORTCUT_USED=false
+DATE_DESC_SHORTCUT_USED=false
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+```
+
+C65 final governance decision: C65 may only advance to `C66_PRODUCTION_LOCK_REVIEW`. It must not be described as production-ready and must not be used to create, activate, or deploy a production catalog.
