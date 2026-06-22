@@ -6786,3 +6786,252 @@ REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
 DIAGNOSTIC_CONCLUSION=C58_LOSS_CLUSTER_GAP_REMAINS
 NEXT_STEP=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
 ```
+
+## C59 contract — loss-cluster or branch/bucket redesign continuation IS-only
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+- `WL-CONTRACT-C59-001`: C59 must run only on IS `2023-01-02..2025-05-21`; reserved OOS `2025-05-22..2026-05-29` must not be requested.
+- `WL-CONTRACT-C59-002`: C59 must lock C58 artifact hash `80d09de8053659bf01ce5b8b72d9e2d82cdf69dc` and file SHA1 `FA6FE27604F6CDA664DCF90A251AF41672670700`.
+- `WL-CONTRACT-C59-003`: C59 must enforce the database dictionary read rule before DB-connected assumptions are accepted.
+- `WL-CONTRACT-C59-004`: C59 must retain C57 regime completeness through C58 lock: `required_field_count=9`, `evaluable_field_count=9`, `missing_field_count=0`, `regime_fully_evaluable=true`.
+- `WL-CONTRACT-C59-005`: C59 must not repeat market-index reconstruction; mappings remain dictionary-locked to `market_benchmark_indicators.roc_20`, `market_benchmark_indicators.ma20_slope_pct`, `benchmark_code='IHSG'`, and `market_calendar.cal_date`.
+- `WL-CONTRACT-C59-006`: C59 must include the C58 blocker summary and start from C58 candidate lineage.
+- `WL-CONTRACT-C59-007`: C59 must create controlled replay, Track A, Track B, Track C, Track D, and hybrid candidates.
+- `WL-CONTRACT-C59-008`: C59 must compute loss-cluster metrics for every candidate.
+- `WL-CONTRACT-C59-009`: C59 must compute concentration metrics for every candidate.
+- `WL-CONTRACT-C59-010`: C59 must re-evaluate rolling, leave-one-month-out, regime robustness, sample recovery, material-difference, and anti-shared-core gates.
+- `WL-CONTRACT-C59-011`: C59 must not use return fields, future path, OOS rows, or OOS returns for selection.
+- `WL-CONTRACT-C59-012`: C59 must not use adverse-month exclusion, failed-window exclusion, ticker hard exclusion, or sector hard exclusion from failure attribution.
+- `WL-CONTRACT-C59-013`: Replay comparators must not be promoted.
+- `WL-CONTRACT-C59-014`: C59 must keep `production_ready=false`, `direct_oos_proof_recommended=false`, and `oos_proof_unlocked=false`.
+- `WL-CONTRACT-C59-015`: If no candidate passes all IS gates, C59 must recommend an IS-only C60 continuation and identify the dominant blocker.
+
+Allowed C60 recommendations from C59:
+
+```text
+C60_PRE_LOCK_IS_REVIEW_FOR_C59_CANDIDATE_IS_ONLY
+C60_SAMPLE_RECOVERY_WITH_LOSS_CLUSTER_GUARD_IS_ONLY
+C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY
+C60_CANDIDATE_FAMILY_RESET_WITH_STRICT_GUARDS_IS_ONLY
+C60_SAMPLE_RECOVERY_WITH_BRANCH_BUCKET_GUARD_IS_ONLY
+C60_ROLLING_STABILITY_RECOVERY_IS_ONLY
+```
+
+Forbidden C59 outcomes:
+
+```text
+OOS proof unlocked
+Direct OOS proof recommended
+Production-ready claim
+Production catalog creation
+PLAN/CONFIRM mutation
+C01-C58 artifact mutation
+Gate relaxation
+Return/future-path/OOS-return selection
+Adverse-month, failed-window, ticker, or sector hard exclusion from failure attribution
+Replay comparator promotion
+```
+
+Sandbox C59 contract smoke evidence:
+
+```text
+C59_STATUS=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
+C59_DIAGNOSTIC_CONCLUSION=C59_REGIME_ROBUSTNESS_GAP_REMAINS
+C59_NEXT_STEP=C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY
+CANDIDATE_READY_FOR_C60_COUNT=0
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+```
+
+
+## C59 contract final validation
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+- `WL-CONTRACT-C59-001`: PASS. Runtime stayed in IS `2023-01-02..2025-05-21`; OOS rows requested `0`.
+- `WL-CONTRACT-C59-002`: PASS. C58 artifact hash and file SHA1 matched the locked expected values.
+- `WL-CONTRACT-C59-003`: PASS. Database dictionary read rule was recorded; missing coverage was not detected.
+- `WL-CONTRACT-C59-004`: PASS. C57 regime completeness was retained through the C58 lock: required `9`, evaluable `9`, missing `0`.
+- `WL-CONTRACT-C59-005`: PASS. C59 did not repeat market-index reconstruction.
+- `WL-CONTRACT-C59-006`: PASS. C59 included the C58 blocker summary and used C58 candidate lineage.
+- `WL-CONTRACT-C59-007`: PASS. C59 created replay, Track A, Track B, Track C, Track D, and hybrid candidates.
+- `WL-CONTRACT-C59-008`: PASS. Loss-cluster metrics were computed for every candidate.
+- `WL-CONTRACT-C59-009`: PASS. Concentration metrics were computed for every candidate.
+- `WL-CONTRACT-C59-010`: PASS. Rolling, LOO, regime robustness, sample recovery, material-difference, and anti-shared-core gates were re-evaluated.
+- `WL-CONTRACT-C59-011`: PASS. Return fields, future path, OOS rows, and OOS returns were not used for selection.
+- `WL-CONTRACT-C59-012`: PASS. C59 did not use adverse-month exclusion, failed-window exclusion, ticker hard exclusion, or sector hard exclusion from failure attribution.
+- `WL-CONTRACT-C59-013`: PASS. Replay comparators were not promoted.
+- `WL-CONTRACT-C59-014`: PASS. `production_ready=false`, `direct_oos_proof_recommended=false`, and `oos_proof_unlocked=false`.
+- `WL-CONTRACT-C59-015`: PASS. No candidate passed all IS gates; C59 recommends `C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY` and identifies regime robustness as the dominant blocker.
+
+Final C59 validation markers:
+
+```text
+PHPUNIT_C59=PASS OK (33 tests, 1101 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (850 tests, 17498 assertions)
+C59_RUNTIME=COMPLETED
+C59_ARTIFACT_HASH=7ebd6f74bc90ffac358b410244d90b3c7c3c5456
+CANDIDATE_READY_FOR_C60_COUNT=0
+ROLLING_VALIDATION_PASS_CANDIDATE_COUNT=5
+CONCENTRATION_VALIDATION_PASS_CANDIDATE_COUNT=9
+LOSS_CLUSTER_PASS_CANDIDATE_COUNT=5
+LOO_VALIDATION_PASS_CANDIDATE_COUNT=2
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+SAMPLE_RECOVERY_PASS_CANDIDATE_COUNT=11
+DIAGNOSTIC_CONCLUSION=C59_REGIME_ROBUSTNESS_GAP_REMAINS
+NEXT_STEP=C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY
+```
+
+---
+
+## C60 Contract Tracker — Regime Stress and LOO Dependency Redesign IS-Only
+
+Contract code:
+
+`C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY`
+
+Contract status: implemented, IS-only, operator validation required.
+
+Required locked input:
+
+- C59 artifact: `storage/app/watchlist/backtest/c59-loss-cluster-or-branch-bucket-redesign-continuation-is-only.json`
+- expected C59 lock: `7ebd6f74bc90ffac358b410244d90b3c7c3c5456`
+
+Safety contract:
+
+- no OOS proof
+- no OOS rows
+- no future lookup
+- no return/future path used for selection
+- no production catalog
+- no PLAN/CONFIRM mutation
+- no gate relaxation
+- no bad-month deletion
+- no weak-regime removal
+- no hard ticker/sector exclusion from failure attribution
+- no replay comparator promotion
+- database dictionary read rule mandatory
+
+Artifact contract:
+
+- path: `storage/app/watchlist/backtest/c60-regime-stress-and-loo-dependency-redesign-is-only.json`
+- artifact hash: `4d3ae77bd79b73392cea17b8ca7b0720d950f55b`
+- status: `C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY_COMPLETED`
+- reason: `C60_WEAK_REGIME_RETURN_SURVIVAL_GAP_REMAINS`
+
+Gate result summary:
+
+- candidate ready for C61: 0
+- concentration validation pass: 10
+- regime-aware concentration pass: 10
+- loss-cluster validation pass: 10
+- LOO validation pass: 7
+- rolling validation pass: 4
+- weak-regime sample recovery pass: 9
+- weak-regime survival pass: 0
+- regime robustness pass: 0
+
+Contract conclusion:
+
+C60 does not unlock OOS. C61 remains IS-only and should rebuild signal quality for `market_down_or_sideways_high_vol`.
+
+---
+
+## C60 contract final validation
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+- `WL-CONTRACT-C60-001`: PASS. Runtime stayed in IS `2023-01-02..2025-05-21`; OOS rows requested `0`.
+- `WL-CONTRACT-C60-002`: PASS. C59 lock matched the documented final hash `7ebd6f74bc90ffac358b410244d90b3c7c3c5456`; C60 also recorded stable/payload hash `55c78da17a6e551f30493ce8d1531640ffba4f67`.
+- `WL-CONTRACT-C60-003`: PASS. Database dictionary read rule was recorded; missing coverage was not detected.
+- `WL-CONTRACT-C60-004`: PASS. C57 regime reconstruction remained retained through the C59 lock: required `9`, evaluable `9`, missing `0`.
+- `WL-CONTRACT-C60-005`: PASS. C60 did not repeat market-index reconstruction.
+- `WL-CONTRACT-C60-006`: PASS. C60 included the C59 blocker summary and C59 improvement-retention summary.
+- `WL-CONTRACT-C60-007`: PASS. C60 created replay, weak-regime survival, regime-aware branch/bucket, LOO breaker, weak-regime sample recovery, and hybrid retention candidates.
+- `WL-CONTRACT-C60-008`: PASS. Regime stress metrics were computed for every candidate.
+- `WL-CONTRACT-C60-009`: PASS. Regime-aware concentration metrics were computed for every candidate.
+- `WL-CONTRACT-C60-010`: PASS. Loss-cluster retention metrics were computed for every candidate.
+- `WL-CONTRACT-C60-011`: PASS. Rolling, LOO, regime robustness, sample recovery, weak-regime sample recovery, material-difference, and anti-shared-core gates were re-evaluated.
+- `WL-CONTRACT-C60-012`: PASS. Return fields, future path, OOS rows, and OOS returns were not used for selection.
+- `WL-CONTRACT-C60-013`: PASS. C60 did not use adverse-month exclusion, weak-regime skip, bad-month removal, ticker hard exclusion, or sector hard exclusion from failure attribution.
+- `WL-CONTRACT-C60-014`: PASS. Replay comparators were not promoted.
+- `WL-CONTRACT-C60-015`: PASS. `production_ready=false`, `direct_oos_proof_recommended=false`, and `oos_proof_unlocked=false` are present at top-level and in `c61_readiness_decision`.
+- `WL-CONTRACT-C60-016`: PASS. No candidate passed all IS gates; C60 recommends `C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY` and identifies weak-regime return survival as the dominant blocker.
+
+Final C60 validation markers:
+
+```text
+PHPUNIT_C60=PASS OK (13 tests, 165 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (863 tests, 17663 assertions)
+C60_RUNTIME=COMPLETED
+C60_ARTIFACT_HASH=25a32ee9c4cb77ecc29103c86a1abf0826aea705
+C60_FILE_SHA1=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F
+CANDIDATE_READY_FOR_C61_COUNT=0
+ROLLING_VALIDATION_PASS_CANDIDATE_COUNT=4
+CONCENTRATION_VALIDATION_PASS_CANDIDATE_COUNT=10
+REGIME_AWARE_CONCENTRATION_PASS_CANDIDATE_COUNT=10
+LOSS_CLUSTER_PASS_CANDIDATE_COUNT=10
+LOO_VALIDATION_PASS_CANDIDATE_COUNT=7
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+WEAK_REGIME_SAMPLE_RECOVERY_PASS_CANDIDATE_COUNT=9
+WEAK_REGIME_SURVIVAL_PASS_CANDIDATE_COUNT=0
+DIAGNOSTIC_CONCLUSION=C60_WEAK_REGIME_RETURN_SURVIVAL_GAP_REMAINS
+NEXT_STEP=C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY
+```
+
+---
+
+## C61 Contract — Signal Quality Rebuild For Weak Regime IS-Only
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+- `WL-CONTRACT-C61-001`: PASS. C61 command is registered as `watchlist:backtest-c61-signal-quality-rebuild-for-weak-regime-is-only`.
+- `WL-CONTRACT-C61-002`: PASS. C61 validates locked C60 artifact hash `25a32ee9c4cb77ecc29103c86a1abf0826aea705` before runtime continuation.
+- `WL-CONTRACT-C61-003`: PASS. C61 validates locked C60 file SHA1 `1FA933157B61ECB4554CE6C76B0F2B314F19DB0F` before runtime continuation.
+- `WL-CONTRACT-C61-004`: PASS. C61 remained IS-only for `2023-01-02..2025-05-21` and did not request OOS rows.
+- `WL-CONTRACT-C61-005`: PASS. C61 records the database dictionary read rule and as-of safety summary.
+- `WL-CONTRACT-C61-006`: PASS. C61 retains C57 regime reconstruction as solved and does not repeat market-index reconstruction.
+- `WL-CONTRACT-C61-007`: PASS. C61 carries forward C60 blocker summary and C60 improvement-retention summary.
+- `WL-CONTRACT-C61-008`: PASS. C61 generates weak-regime signal-quality rebuild candidates.
+- `WL-CONTRACT-C61-009`: PASS. C61 generates market/sector confirmation candidates.
+- `WL-CONTRACT-C61-010`: PASS. C61 generates weak-regime risk-quality proxy candidates.
+- `WL-CONTRACT-C61-011`: PASS. C61 generates weak-regime entry timing quality candidates.
+- `WL-CONTRACT-C61-012`: PASS. C61 generates hybrid C60-improvement-retention candidates.
+- `WL-CONTRACT-C61-013`: PASS. C61 computes weak-regime signal-quality metrics for every candidate.
+- `WL-CONTRACT-C61-014`: PASS. C61 computes weak-regime return survival and regime robustness for every candidate.
+- `WL-CONTRACT-C61-015`: PASS. C61 computes regime-aware concentration and loss-cluster retention for every candidate.
+- `WL-CONTRACT-C61-016`: PASS. C61 computes rolling, LOO, sample recovery, material-difference, anti-shared-core, and source-bias validation.
+- `WL-CONTRACT-C61-017`: PASS. C61 does not use return fields, future path, or OOS returns for selection.
+- `WL-CONTRACT-C61-018`: PASS. C61 does not skip `market_down_or_sideways_high_vol`.
+- `WL-CONTRACT-C61-019`: PASS. C61 does not remove bad months, adverse regimes, or use ticker/sector hard exclusion from failure attribution.
+- `WL-CONTRACT-C61-020`: PASS. C61 does not promote replay comparators.
+- `WL-CONTRACT-C61-021`: PASS. C61 keeps `production_ready=false`, `direct_oos_proof_recommended=false`, and `oos_proof_unlocked=false`.
+- `WL-CONTRACT-C61-022`: PASS. C61 marks candidates ready only for C62/pre-lock review, not OOS proof.
+
+Final C61 validation markers:
+
+```text
+PHPUNIT_C61=PASS OK (15 tests, 206 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (878 tests, 17872 assertions)
+C61_RUNTIME=COMPLETED
+C61_STATUS=C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY_COMPLETED
+C61_REASON_CODE=C61_WEAK_REGIME_SIGNAL_QUALITY_REBUILD_FOUND_C62_REVIEW_CANDIDATE
+C61_ARTIFACT_HASH=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8
+C61_FILE_SHA1=DEA3C807813DE81DB6776AB2C441C945D4E98EC6
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+CANDIDATE_READY_FOR_C62_COUNT=3
+PRIMARY_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_CANDIDATE=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+DIVERSIFICATION_COMPARATOR=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+NEXT_STEP=C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
+```
+
+C61 contract conclusion:
+
+C61 is accepted as an operator-validated IS-only success. It finds three candidates ready for C62/pre-lock IS review, led by `C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE`. It does not unlock OOS proof or production.

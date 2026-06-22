@@ -83,6 +83,9 @@ use App\Console\Commands\Watchlist\RunBacktestC55RollingStabilityRedesignContinu
 use App\Console\Commands\Watchlist\RunBacktestC56RollingStabilityRedesignContinuationIsOnlyCommand;
 use App\Console\Commands\Watchlist\RunBacktestC57RegimeFieldReconstructionContinuationIsOnlyCommand;
 use App\Console\Commands\Watchlist\RunBacktestC58LossClusterConcentrationRedesignContinuationIsOnlyCommand;
+use App\Console\Commands\Watchlist\RunBacktestC59LossClusterOrBranchBucketRedesignContinuationIsOnlyCommand;
+use App\Console\Commands\Watchlist\RunBacktestC60RegimeStressAndLooDependencyRedesignIsOnlyCommand;
+use App\Console\Commands\Watchlist\RunBacktestC61SignalQualityRebuildForWeakRegimeIsOnlyCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -153,6 +156,9 @@ class Kernel extends ConsoleKernel
         RunBacktestC56RollingStabilityRedesignContinuationIsOnlyCommand::class,
         RunBacktestC57RegimeFieldReconstructionContinuationIsOnlyCommand::class,
         RunBacktestC58LossClusterConcentrationRedesignContinuationIsOnlyCommand::class,
+        RunBacktestC59LossClusterOrBranchBucketRedesignContinuationIsOnlyCommand::class,
+        RunBacktestC60RegimeStressAndLooDependencyRedesignIsOnlyCommand::class,
+        RunBacktestC61SignalQualityRebuildForWeakRegimeIsOnlyCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

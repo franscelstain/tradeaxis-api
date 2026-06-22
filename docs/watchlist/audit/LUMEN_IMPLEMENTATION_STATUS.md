@@ -8148,3 +8148,411 @@ PRODUCTION_READY=false
 ```
 
 C58 is accepted as a valid IS-only diagnostic/redesign implementation. It does not unlock OOS, pre-OOS, production catalog, or PLAN/CONFIRM changes. The next step must remain IS-only because no candidate passed all strict gates.
+
+## C59 implementation — loss-cluster or branch/bucket redesign continuation IS-only
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+C59 adds an IS-only continuation from locked C58 evidence. It targets the blockers left by C58:
+
+```text
+loss_cluster_share above strict gate
+branch/bucket concentration dependency
+leave-one-month-out dependency
+single-month dependency
+weakest regime = market_down_or_sideways_high_vol
+regime robustness pass count = 0
+```
+
+Implemented files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC59LossClusterOrBranchBucketRedesignContinuationIsOnlyService.php
+app/Console/Commands/Watchlist/RunBacktestC59LossClusterOrBranchBucketRedesignContinuationIsOnlyCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC59LossClusterOrBranchBucketRedesignContinuationIsOnlyServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC59StaticGuardTest.php
+docs/watchlist/audit/WS_C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY.md
+docs/watchlist/audit/WS_C59_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+Updated files:
+
+```text
+app/Console/Kernel.php
+docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md
+docs/watchlist/audit/LUMEN_CONTRACT_TRACKER.md
+docs/watchlist/audit/AUDIT_UPDATE_GOVERNANCE.md
+```
+
+C59 locked input:
+
+```text
+C58_ARTIFACT=storage/app/watchlist/backtest/c58-loss-cluster-concentration-redesign-continuation-is-only.json
+C58_ARTIFACT_HASH=80d09de8053659bf01ce5b8b72d9e2d82cdf69dc
+C58_FILE_SHA1=FA6FE27604F6CDA664DCF90A251AF41672670700
+```
+
+C59 enforces the database dictionary read rule and records it in `database_dictionary_read_summary`. It blocks missing dictionary coverage, future lookup detection, and OOS row requests.
+
+C57 market-index/regime reconstruction remains solved and is retained through the C58 lock. C59 does not repeat market-index reconstruction.
+
+C59 candidates include replay comparators, Track A loss-cluster-first, Track B branch/bucket-first, Track C regime-stress survival, Track D LOO dependency breaker, and hybrid candidates. Replay comparators are non-promotable.
+
+Sandbox validation status:
+
+```text
+PHP_LINT_C59_SERVICE=PASS
+PHP_LINT_C59_COMMAND=PASS
+PHP_LINT_C59_TESTS=PASS
+PHPUNIT_C59=OPERATOR_VALIDATION_REQUIRED
+FULL_WATCHLIST_PHPUNIT=OPERATOR_VALIDATION_REQUIRED
+REASON=container PHP missing dom, mbstring, xml, xmlwriter extensions
+```
+
+C59 sandbox direct-service smoke result:
+
+```text
+DIRECT_SERVICE_SMOKE=COMPLETED
+C59_STATUS=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
+C59_ARTIFACT=storage/app/watchlist/backtest/c59-loss-cluster-or-branch-bucket-redesign-continuation-is-only.json
+C59_ARTIFACT_HASH=55c78da17a6e551f30493ce8d1531640ffba4f67
+C59_FILE_SHA1=0C681F913561566CAD95E6741C97D33A48FD4BDE
+C59_DIAGNOSTIC_CONCLUSION=C59_REGIME_ROBUSTNESS_GAP_REMAINS
+C59_NEXT_STEP=C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY
+C58_HASH_MATCH=true
+C58_FILE_SHA1_MATCH=true
+CANDIDATE_COUNT=14
+CANDIDATE_READY_FOR_C60_COUNT=0
+ROLLING_VALIDATION_PASS_CANDIDATE_COUNT=5
+CONCENTRATION_VALIDATION_PASS_CANDIDATE_COUNT=9
+LOSS_CLUSTER_PASS_CANDIDATE_COUNT=5
+LOO_VALIDATION_PASS_CANDIDATE_COUNT=2
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+SAMPLE_RECOVERY_PASS_CANDIDATE_COUNT=11
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+```
+
+Interpretation: C59 improves loss-cluster and branch/bucket pass counts on some controlled IS candidates, but no candidate is C60-ready because regime robustness remains blocked. Weakest regime remains `market_down_or_sideways_high_vol`. OOS proof remains locked.
+
+Additional sandbox runtime note:
+
+```text
+ARTISAN_C59_RUNTIME=OPERATOR_VALIDATION_REQUIRED
+REASON=ENV_UNSUPPORTED_PHP_VERSION; container PHP 8.4.16, project baseline requires PHP >= 7.3 and < 8.4
+```
+
+
+## C59 final operator validation closeout
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+Operator validation evidence:
+
+```text
+PHPUNIT_C59=PASS OK (33 tests, 1101 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (850 tests, 17498 assertions)
+C59_RUNTIME=COMPLETED
+C59_STATUS=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
+C59_REASON_CODE=C59_REGIME_ROBUSTNESS_GAP_REMAINS
+C59_ARTIFACT_HASH=7ebd6f74bc90ffac358b410244d90b3c7c3c5456
+C58_HASH_MATCH=true
+C58_FILE_SHA1_MATCH=true
+```
+
+C59 final gate evidence:
+
+```text
+CANDIDATE_COUNT=14
+CANDIDATE_READY_FOR_C60_COUNT=0
+ROLLING_VALIDATION_PASS_CANDIDATE_COUNT=5
+CONCENTRATION_VALIDATION_PASS_CANDIDATE_COUNT=9
+LOSS_CLUSTER_PASS_CANDIDATE_COUNT=5
+LOO_VALIDATION_PASS_CANDIDATE_COUNT=2
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+SAMPLE_RECOVERY_PASS_CANDIDATE_COUNT=11
+```
+
+C59 final safety evidence:
+
+```text
+DATABASE_DICTIONARY_READ_REQUIRED=true
+DICTIONARY_MISSING_COVERAGE_DETECTED=false
+ASOF_SAFE=true
+FUTURE_LOOKUP_DETECTED=false
+OOS_ROWS_REQUESTED=0
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_RETURN_USED_FOR_SELECTION=false
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+```
+
+C59 final interpretation:
+
+- C59 materially improved loss-cluster and branch/bucket concentration versus C58.
+- C59 partially improved LOO, but most candidates still show single-month dependency.
+- Regime robustness remains the hard blocker with `0/14` pass candidates.
+- Weakest regime remains `market_down_or_sideways_high_vol`.
+- No candidate is ready for C60/pre-lock review.
+- OOS remains locked and production readiness remains false.
+
+Governed next step:
+
+```text
+C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY
+```
+
+---
+
+## C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY — Final Implementation Update
+
+Status: implemented in code and local service artifact generated.
+
+C60 remains IS-only and starts from locked C59 evidence:
+
+- `storage/app/watchlist/backtest/c59-loss-cluster-or-branch-bucket-redesign-continuation-is-only.json`
+- operator/documented expected C59 hash: `7ebd6f74bc90ffac358b410244d90b3c7c3c5456`
+- uploaded C59 JSON stable/payload hash observed by C60: `55c78da17a6e551f30493ce8d1531640ffba4f67`
+- documented C59 hash observed by C60: `7ebd6f74bc90ffac358b410244d90b3c7c3c5456`
+
+Implemented files:
+
+- `app/Application/Watchlist/Services/WatchlistBacktestC60RegimeStressAndLooDependencyRedesignIsOnlyService.php`
+- `app/Console/Commands/Watchlist/RunBacktestC60RegimeStressAndLooDependencyRedesignIsOnlyCommand.php`
+- `tests/Unit/Watchlist/WatchlistBacktestC60RegimeStressAndLooDependencyRedesignIsOnlyServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestC60StaticGuardTest.php`
+- `docs/watchlist/audit/WS_C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY.md`
+- `docs/watchlist/audit/WS_C60_OPERATOR_VALIDATION_COMMANDS.md`
+
+Updated:
+
+- `app/Console/Kernel.php`
+
+Generated artifact:
+
+- `storage/app/watchlist/backtest/c60-regime-stress-and-loo-dependency-redesign-is-only.json`
+- `C60_ARTIFACT_HASH=4d3ae77bd79b73392cea17b8ca7b0720d950f55b`
+
+Local service execution result:
+
+- `status=C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY_COMPLETED`
+- `reason_code=C60_WEAK_REGIME_RETURN_SURVIVAL_GAP_REMAINS`
+- `c59_hash_match=true`
+- `production_ready=false`
+- `direct_oos_proof_recommended=false`
+- `oos_proof_unlocked=false`
+- `candidate_ready_for_c61_count=0`
+- `concentration_validation_pass_candidate_count=10`
+- `regime_aware_concentration_pass_candidate_count=10`
+- `loss_cluster_pass_candidate_count=10`
+- `loo_validation_pass_candidate_count=7`
+- `rolling_validation_pass_candidate_count=4`
+- `weak_regime_sample_recovery_pass_candidate_count=9`
+- `weak_regime_survival_pass_candidate_count=0`
+- `regime_robustness_pass_candidate_count=0`
+
+Conclusion:
+
+C60 improved structure around concentration, loss-cluster retention, LOO dependency, and weak-regime sample recovery, but no candidate proves `market_down_or_sideways_high_vol` return survival. No candidate is ready for OOS or production.
+
+Next recommendation:
+
+`C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY`
+
+Operator validation still required in the supported project PHP baseline because this sandbox cannot run PHPUnit or artisan normally:
+
+- PHPUnit blocked by missing PHP extensions: `dom`, `mbstring`, `xml`, `xmlwriter`
+- Artisan blocked by sandbox PHP version guard: current PHP `8.4.16`, project requires `<8.4`
+
+---
+
+## C60 final operator validation closeout
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+Final operator validation evidence:
+
+```text
+PHPUNIT_C60=PASS OK (13 tests, 165 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (863 tests, 17663 assertions)
+C60_RUNTIME=COMPLETED
+C60_STATUS=C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY_COMPLETED
+C60_REASON_CODE=C60_WEAK_REGIME_RETURN_SURVIVAL_GAP_REMAINS
+C60_ARTIFACT_HASH=25a32ee9c4cb77ecc29103c86a1abf0826aea705
+C60_FILE_SHA1=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F
+C59_HASH_MATCH=true
+EXPECTED_C59_HASH=7ebd6f74bc90ffac358b410244d90b3c7c3c5456
+ACTUAL_C59_HASH=7ebd6f74bc90ffac358b410244d90b3c7c3c5456
+ACTUAL_C59_STABLE_HASH=55c78da17a6e551f30493ce8d1531640ffba4f67
+```
+
+Final C60 gate evidence:
+
+```text
+CANDIDATE_READY_FOR_C61_COUNT=0
+ROLLING_VALIDATION_PASS_CANDIDATE_COUNT=4
+CONCENTRATION_VALIDATION_PASS_CANDIDATE_COUNT=10
+REGIME_AWARE_CONCENTRATION_PASS_CANDIDATE_COUNT=10
+LOSS_CLUSTER_PASS_CANDIDATE_COUNT=10
+LOO_VALIDATION_PASS_CANDIDATE_COUNT=7
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+WEAK_REGIME_SAMPLE_RECOVERY_PASS_CANDIDATE_COUNT=9
+WEAK_REGIME_SURVIVAL_PASS_CANDIDATE_COUNT=0
+```
+
+Final C60 safety evidence:
+
+```text
+DATABASE_DICTIONARY_READ_REQUIRED=true
+DICTIONARY_MISSING_COVERAGE_DETECTED=false
+ASOF_SAFE=true
+FUTURE_LOOKUP_DETECTED=false
+OOS_ROWS_REQUESTED=0
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+TOP_LEVEL_PRODUCTION_READY=false
+TOP_LEVEL_DIRECT_OOS_PROOF_RECOMMENDED=false
+TOP_LEVEL_OOS_PROOF_UNLOCKED=false
+C61_DIRECT_OOS_PROOF_RECOMMENDED=false
+C61_OOS_PROOF_UNLOCKED=false
+C61_PRODUCTION_READY=false
+```
+
+C60 final interpretation:
+
+- C60 satisfied its scoped implementation and operator validation requirements.
+- C60 remained IS-only and requested no OOS rows.
+- C60 retained C59 concentration and loss-cluster improvements.
+- C60 improved LOO validation and weak-regime sample recovery.
+- C60 kept `market_down_or_sideways_high_vol` evaluated; the weak regime was not skipped or deleted.
+- Regime robustness remains the hard blocker with `0` pass candidates.
+- Weak-regime return survival remains below gate with `0` pass candidates.
+- No candidate is ready for C61/pre-lock review, OOS, pre-OOS, or production.
+- Direct OOS proof remains locked.
+
+Governed next step:
+
+```text
+C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY
+```
+
+---
+
+## C61 Signal Quality Rebuild For Weak Regime IS-Only
+
+Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
+
+Session code:
+
+`C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY`
+
+Scope:
+
+- IS-only: `2023-01-02..2025-05-21`
+- OOS reserved: `2025-05-22..2026-05-29`
+- Starts from locked C60 artifact hash `25a32ee9c4cb77ecc29103c86a1abf0826aea705`
+- Starts from locked C60 file SHA1 `1FA933157B61ECB4554CE6C76B0F2B314F19DB0F`
+- No OOS proof
+- No OOS rows
+- No production catalog
+- No PLAN/CONFIRM mutation
+
+Implemented files:
+
+- `app/Application/Watchlist/Services/WatchlistBacktestC61SignalQualityRebuildForWeakRegimeIsOnlyService.php`
+- `app/Console/Commands/Watchlist/RunBacktestC61SignalQualityRebuildForWeakRegimeIsOnlyCommand.php`
+- `tests/Unit/Watchlist/WatchlistBacktestC61SignalQualityRebuildForWeakRegimeIsOnlyServiceTest.php`
+- `tests/Unit/Watchlist/WatchlistBacktestC61StaticGuardTest.php`
+- `docs/watchlist/audit/WS_C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY.md`
+- `docs/watchlist/audit/WS_C61_OPERATOR_VALIDATION_COMMANDS.md`
+
+Kernel registration:
+
+- `RunBacktestC61SignalQualityRebuildForWeakRegimeIsOnlyCommand::class`
+
+Final operator validation:
+
+```text
+PHPUNIT_C61=PASS OK (15 tests, 206 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (878 tests, 17872 assertions)
+C61_RUNTIME=COMPLETED
+C61_STATUS=C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY_COMPLETED
+C61_REASON_CODE=C61_WEAK_REGIME_SIGNAL_QUALITY_REBUILD_FOUND_C62_REVIEW_CANDIDATE
+C61_ARTIFACT_HASH=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8
+C61_FILE_SHA1=DEA3C807813DE81DB6776AB2C441C945D4E98EC6
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+CANDIDATE_READY_FOR_C62_COUNT=3
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+NEXT_STEP=C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
+```
+
+Ready-for-C62 candidates:
+
+```text
+PRIMARY=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+DIVERSIFICATION_COMPARATOR=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+```
+
+Primary candidate final evidence:
+
+```text
+candidate_code=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+parent_candidate_code=C60_B01_H01_PER_REGIME_BRANCH_BUCKET_QUOTA
+lineage_track=Track E - Hybrid C60 improvement retention
+evaluated_picks_count=80
+avg_ret_net=0.0024192667485595848
+median_ret_net=0.0060736049509387486
+win_rate=0.5572650952205372
+loss_cluster_share=0.079
+weak_regime_pick_count=28
+weak_regime_avg_ret_net=0.0017212795439995802
+weak_regime_median_ret_net=0.002413136314079545
+weak_regime_win_rate=0.5692650952205373
+weak_regime_month_coverage=14
+weak_regime_survival_pass=true
+rolling_validation_pass=true
+loo_validation_pass=true
+regime_robustness_validation_pass=true
+regime_aware_concentration_pass=true
+concentration_validation_pass=true
+loss_cluster_validation_pass=true
+sample_recovery_pass=true
+weak_regime_sample_recovery_pass=true
+material_selection_difference_pass=true
+anti_shared_core_pass=true
+overall_is_redesign_pass=true
+candidate_ready_for_c62=true
+failure_reason_codes={}
+```
+
+C61 final interpretation:
+
+- C61 satisfied its scoped implementation and operator validation requirements.
+- C61 remained IS-only and requested no OOS rows.
+- C60 artifact hash and C60 file SHA1 locks matched.
+- C57 regime reconstruction remains solved and was not repeated.
+- C58/C59/C60 structural improvements were retained as prerequisites.
+- C61 repaired the dominant C60 blocker at IS level for three candidates: weak-regime signal quality and weak-regime return survival in `market_down_or_sideways_high_vol`.
+- Weak regime was not skipped, deleted, or collapsed: ready candidates still hold `27..28` weak-regime picks, `14` months coverage, `4` branches, `4` buckets, and `21..22` weak-regime tickers.
+- Signal-quality selection did not use realized return, future path, or OOS return fields.
+- Concentration and loss-cluster improvements were retained.
+- No replay comparator was promoted.
+- No candidate is production-ready.
+- No direct OOS proof is unlocked.
+
+C62 audit note:
+
+- All three C62-ready candidates still have `month_win_rate_min=0`.
+- C62 must decide whether this is acceptable adverse-month noise or hidden bad-month/month-dependency fragility.
+
+Next governed step:
+
+`C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY`

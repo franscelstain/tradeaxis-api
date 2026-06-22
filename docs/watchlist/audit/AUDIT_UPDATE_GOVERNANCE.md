@@ -2738,3 +2738,265 @@ C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
 ```
 
 C59 must remain IS-only unless a later operator-validated governance document explicitly unlocks a pre-OOS review. C59 must not use OOS returns, OOS bad months, future path, failed-window exclusion, ticker loser exclusion, or sector loser exclusion to manufacture a pass.
+
+## Governance Addendum — C59 IS-Only Loss-Cluster or Branch/Bucket Redesign
+
+C59 is governed as an IS-only continuation from final C58. It must not be treated as pre-OOS or production work.
+
+C59 inherits the final C58 finding:
+
+```text
+loss_cluster_share remains above strict gate
+branch/bucket concentration remains insufficient
+LOO validation fails across C58 candidates
+regime robustness fails across C58 candidates
+weakest regime remains market_down_or_sideways_high_vol
+candidate_ready_for_c59_count=0
+```
+
+C57 market-index/regime reconstruction remains solved and fully evaluable. C59 must not redo that reconstruction; it may only reuse the C57/C58 evidence as locked prerequisite.
+
+C59 must follow the database dictionary rule before any database-connected code path, schema assumption, or field mapping is introduced. The mandatory dictionary paths are:
+
+```text
+docs/market_data/db/MARKET_DATA_DICTIONARY.md
+docs/db/DATABASE_DICTIONARY_USAGE_RULE.md
+docs/market_data/db/Database_Schema_MariaDB.sql
+docs/market_data/db/Database_Schema_Contracts_MariaDB.md
+docs/market_data/db/DB_FIELDS_AND_METADATA.md
+docs/watchlist/system/db/WATCHLIST_DB_DICTIONARY.md
+```
+
+C59 must record dictionary compliance in the runtime artifact. Missing coverage, future lookup detection, or OOS row request must block the session.
+
+C59 may only use pre-trade-safe fields for candidate selection. C59 must not use returns, future path, OOS rows, OOS returns, adverse months, failed windows, failed tickers, or failed sectors as selection inputs.
+
+C59 may mark a candidate only as ready for C60/pre-lock IS review if every IS gate passes. It must not unlock OOS proof directly.
+
+If C59 finds no valid candidate, that is a valid result. The next step remains IS-only and must be chosen from evidence, not optimism.
+
+Sandbox C59 direct-service result:
+
+```text
+C59_IMPLEMENTED=true
+C59_OPERATOR_VALIDATION_REQUIRED=true
+C59_DIAGNOSTIC_CONCLUSION=C59_REGIME_ROBUSTNESS_GAP_REMAINS
+C59_NEXT_STEP=C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY
+C59_PRODUCTION_READY=false
+C59_OOS_UNLOCKED=false
+```
+
+
+## Governance Closeout — C59 Final Operator Validation
+
+C59 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
+
+Final evidence:
+
+```text
+PHPUNIT_C59=PASS OK (33 tests, 1101 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (850 tests, 17498 assertions)
+C59_RUNTIME=COMPLETED
+C59_STATUS=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY_COMPLETED
+C59_REASON_CODE=C59_REGIME_ROBUSTNESS_GAP_REMAINS
+C59_ARTIFACT_HASH=7ebd6f74bc90ffac358b410244d90b3c7c3c5456
+C58_HASH_MATCH=true
+C58_FILE_SHA1_MATCH=true
+```
+
+Final governance interpretation:
+
+- C59 satisfied its scoped implementation and validation requirements.
+- C59 remained IS-only.
+- C59 recorded database dictionary compliance.
+- C59 requested no OOS rows and detected no future lookup.
+- C59 did not use return fields, future path, or OOS return for selection.
+- C59 improved loss-cluster and branch/bucket concentration versus C58, but it did not solve all IS gates.
+- C59 produced no candidate ready for C60/pre-lock review.
+- C59 does not unlock OOS proof.
+- C59 does not create or imply production readiness.
+
+Dominant blocker now:
+
+```text
+C59_REGIME_ROBUSTNESS_GAP_REMAINS
+DECISION_REASON=weakest_regime_market_down_or_sideways_high_vol_remains_unrepaired
+WEAKEST_REGIME_MODE=market_down_or_sideways_high_vol
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+```
+
+Governed next step:
+
+```text
+C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY
+```
+
+C60 must remain IS-only unless a later operator-validated governance document explicitly unlocks a pre-OOS review. C60 must not use OOS returns, OOS bad months, future path, failed-window exclusion, ticker loser exclusion, or sector loser exclusion to manufacture a pass.
+
+---
+
+## Audit Governance Update — C60
+
+C60 audit entries are append-only.
+
+Session:
+
+`C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY`
+
+Governance requirements satisfied in implementation:
+
+- C60 is IS-only.
+- C60 uses locked C59 evidence.
+- C57 regime reconstruction is retained and not repeated.
+- C58/C59 loss-cluster and concentration improvements are treated as prerequisites.
+- Database dictionary read rule is mandatory and recorded in the artifact.
+- Market-index mapping remains dictionary-locked.
+- OOS rows are not requested.
+- Future lookup is not detected.
+- Return/future path is not used for selection.
+- `market_down_or_sideways_high_vol` is not skipped.
+- Bad months and adverse regimes are not removed.
+- Ticker/sector hard exclusions are not used.
+- Replay comparators cannot be promoted.
+- Production readiness is false.
+- Direct OOS proof is not recommended.
+
+Generated local artifact:
+
+`storage/app/watchlist/backtest/c60-regime-stress-and-loo-dependency-redesign-is-only.json`
+
+`C60_ARTIFACT_HASH=4d3ae77bd79b73392cea17b8ca7b0720d950f55b`
+
+Final C60 diagnostic conclusion:
+
+`C60_WEAK_REGIME_RETURN_SURVIVAL_GAP_REMAINS`
+
+Next governed step:
+
+`C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY`
+
+Do not open OOS before a future IS/pre-lock review proves all strict gates.
+
+---
+
+## Governance Closeout — C60 Final Operator Validation
+
+C60 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
+
+Final evidence:
+
+```text
+PHPUNIT_C60=PASS OK (13 tests, 165 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (863 tests, 17663 assertions)
+C60_RUNTIME=COMPLETED
+C60_STATUS=C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY_COMPLETED
+C60_REASON_CODE=C60_WEAK_REGIME_RETURN_SURVIVAL_GAP_REMAINS
+C60_ARTIFACT_HASH=25a32ee9c4cb77ecc29103c86a1abf0826aea705
+C60_FILE_SHA1=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F
+C59_HASH_MATCH=true
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+```
+
+Final governance interpretation:
+
+- C60 satisfied its scoped implementation and validation requirements.
+- C60 remained IS-only.
+- C60 recorded database dictionary compliance.
+- C60 requested no OOS rows and detected no future lookup.
+- C60 did not use return fields, future path, or OOS return for selection.
+- C60 retained C59 concentration/loss-cluster improvements and improved LOO/sample recovery evidence.
+- C60 did not solve weak-regime return survival for `market_down_or_sideways_high_vol`.
+- C60 produced no candidate ready for C61/pre-lock review.
+- C60 does not unlock OOS proof.
+- C60 does not create or imply production readiness.
+
+Dominant blocker now:
+
+```text
+C60_WEAK_REGIME_RETURN_SURVIVAL_GAP_REMAINS
+DECISION_REASON=weak_regime_sample_and_concentration_improved_but_return_survival_still_below_gate
+WEAKEST_REGIME_MODE=market_down_or_sideways_high_vol
+REGIME_ROBUSTNESS_PASS_CANDIDATE_COUNT=0
+WEAK_REGIME_SURVIVAL_PASS_CANDIDATE_COUNT=0
+```
+
+Governed next step:
+
+```text
+C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY
+```
+
+C61 must remain IS-only unless a future operator-validated governance update explicitly unlocks a pre-OOS review. C61 must not use OOS returns, OOS bad months, future path, weak-regime deletion, failed-window exclusion, ticker loser exclusion, or sector loser exclusion to manufacture a pass.
+
+---
+
+## Governance Update — C61 Signal Quality Rebuild For Weak Regime IS-Only
+
+C61 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
+
+Governance state:
+
+```text
+STATUS=DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY
+SESSION=C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY
+IS_ONLY=true
+C60_ARTIFACT_HASH_LOCK=25a32ee9c4cb77ecc29103c86a1abf0826aea705
+C60_FILE_SHA1_LOCK=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F
+C61_ARTIFACT_HASH=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8
+C61_FILE_SHA1=DEA3C807813DE81DB6776AB2C441C945D4E98EC6
+OOS_ROWS_REQUESTED=0
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+FUTURE_PATH_USED_FOR_SELECTION=false
+OOS_RETURN_USED_FOR_SELECTION=false
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+```
+
+Final validation evidence:
+
+```text
+PHPUNIT_C61=PASS OK (15 tests, 206 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (878 tests, 17872 assertions)
+C61_RUNTIME=COMPLETED
+C61_STATUS=C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY_COMPLETED
+C61_REASON_CODE=C61_WEAK_REGIME_SIGNAL_QUALITY_REBUILD_FOUND_C62_REVIEW_CANDIDATE
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+CANDIDATE_READY_FOR_C62_COUNT=3
+C62_RECOMMENDATION=C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
+```
+
+C61 governance interpretation:
+
+- C61 satisfied implementation and operator-validation requirements.
+- C61 remained IS-only.
+- C61 started from locked C60 evidence.
+- C61 retained C57 regime reconstruction and C58/C59/C60 structural improvements.
+- C61 improved weak-regime signal quality and return survival for three candidates without skipping `market_down_or_sideways_high_vol`.
+- C61 did not remove bad months or adverse regimes.
+- C61 did not use realized return, future path, or OOS return fields for selection.
+- C61 did not use ticker/sector hard exclusions from failure attribution.
+- C61 did not promote replay comparators.
+- C61 did not unlock OOS proof or production readiness.
+
+Ready-for-C62 candidates:
+
+```text
+PRIMARY=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+DIVERSIFICATION_COMPARATOR=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+```
+
+Governed next step:
+
+```text
+C62_PRE_LOCK_REVIEW_FOR_C61_SIGNAL_QUALITY_CANDIDATES_IS_ONLY
+```
+
+C62 must remain IS-only/pre-lock review. It must audit the three C61-ready candidates for month dependency, bad-month fragility, `month_win_rate_min=0`, rolling/LOO consistency, source bias, anti-shared-core, sample collapse, concentration boundary, loss-cluster retention, and lineage lock integrity.
+
+C61 does not authorize OOS proof, pre-OOS, production, or PLAN/CONFIRM mutation.
