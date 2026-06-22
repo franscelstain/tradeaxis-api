@@ -3235,3 +3235,86 @@ C64 governance requirements:
 C63 final governance conclusion:
 
 C63 is accepted. The system may proceed to `C64_PRE_OOS_OR_OOS_PROOF_EXECUTION` with locked C63 hierarchy and documented risk controls.
+
+---
+
+## Governance Update — C64
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+C64 is governed as locked-selection OOS proof execution. It is the first step allowed to evaluate the reserved OOS period, but it must keep C63 hierarchy frozen before OOS access.
+
+Governed candidate hierarchy:
+
+```text
+PRIMARY_OOS_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_OOS_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+```
+
+Governance requirements implemented:
+
+- validate C63 artifact hash and file SHA1 lock.
+- validate C62/C61/C60 lineage locks.
+- record database dictionary read rule before proof execution.
+- freeze selection before OOS proof access.
+- use exact OOS period `2025-05-22..2026-05-29`.
+- do not create new candidates.
+- do not retune, rerank, or change selection after OOS.
+- do not promote A01.
+- do not create production catalog.
+- do not mutate PLAN/CONFIRM.
+- do not remove bad months or weak regime.
+- do not use hard ticker/sector exclusions from OOS failure attribution.
+- keep `production_ready=false` regardless pass/fail.
+
+If C64 passes, next step may only be:
+
+```text
+C65_PRODUCTION_PRE_LOCK_REVIEW
+```
+
+If C64 fails, next step must be evidence-based failure attribution/repair and not production.
+
+
+---
+
+## Governance Finalization — C64
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+C64 passed locked-selection OOS proof for the governed primary+backup scope.
+
+```text
+C64_STATUS=C64_OOS_PROOF_PASSED_PRIMARY_AND_BACKUP
+C64_ARTIFACT_HASH=767d860956e0f27eeedccdc30f73aa1d0e5a415b
+C64_FILE_SHA1=032C7BA7435799D83CC06EEDBC463A9AF2B123B3
+OOS_PROOF_PASS=true
+OOS_PASS_SCOPE=PRIMARY_AND_BACKUP
+CANDIDATE_READY_FOR_C65_COUNT=2
+C65_RECOMMENDATION=C65_PRODUCTION_PRE_LOCK_REVIEW
+PRODUCTION_READY=false
+```
+
+Governed continuation scope:
+
+```text
+PRIMARY_READY_FOR_C65=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_READY_FOR_C65=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+```
+
+Governance restrictions still active after C64:
+
+```text
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_CREATED=false
+PLAN_CONFIRM_MUTATED=false
+SELECTION_CHANGED_AFTER_OOS=false
+PARAMETER_CHANGED_AFTER_OOS=false
+A01_PROMOTED=false
+BAD_MONTH_REMOVED=false
+WEAK_REGIME_REMOVED=false
+```
+
+C64 does not authorize deployment or production catalog mutation. The only governed next step is `C65_PRODUCTION_PRE_LOCK_REVIEW`. C65 must review production pre-lock readiness and must not treat C64 alone as production approval.

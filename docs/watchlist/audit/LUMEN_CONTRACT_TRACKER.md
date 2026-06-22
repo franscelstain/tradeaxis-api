@@ -7155,3 +7155,57 @@ PRE_OOS_UNLOCKED=false
 C63 contract conclusion:
 
 C63 is accepted as an operator-validated IS-only pre-OOS unlock review. All implemented C63 contracts passed. C63 approves primary+backup recommendation into C64 review execution only, keeps A01 as comparator-only, preserves all safety flags as false, and carries documented bad-month risk into C64.
+
+---
+
+## C64 Contract — Locked-Selection OOS Proof Execution
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+- `WL-CONTRACT-C64-001`: IMPLEMENTED. C64 command is registered as `watchlist:backtest-c64-pre-oos-or-oos-proof-execution`.
+- `WL-CONTRACT-C64-002`: IMPLEMENTED. C64 validates locked C63 artifact hash `e98f1386928b36ee367728ceeec4de4344e1f3be` before runtime continuation.
+- `WL-CONTRACT-C64-003`: IMPLEMENTED. C64 validates locked C63 file SHA1 `24C7EE585A165DA41E8FC22538A68145247C68B4` before runtime continuation.
+- `WL-CONTRACT-C64-004`: IMPLEMENTED. C64 validates C63 status/reason_code `C63_PRE_OOS_UNLOCK_REVIEW_APPROVED_PRIMARY_AND_BACKUP`.
+- `WL-CONTRACT-C64-005`: IMPLEMENTED. C64 validates C63 `candidate_ready_for_c64_count=2`.
+- `WL-CONTRACT-C64-006`: IMPLEMENTED. C64 validates E02 primary, B01 backup, and A01 comparator-only hierarchy from C63.
+- `WL-CONTRACT-C64-007`: IMPLEMENTED. C64 validates locked C62 lineage hash and file SHA1 before OOS proof execution.
+- `WL-CONTRACT-C64-008`: IMPLEMENTED. C64 validates locked C61 lineage hash and file SHA1 before OOS proof execution.
+- `WL-CONTRACT-C64-009`: IMPLEMENTED. C64 validates locked C60 lineage hash and file SHA1 before OOS proof execution.
+- `WL-CONTRACT-C64-010`: IMPLEMENTED. C64 records the database dictionary read rule and as-of safety summary.
+- `WL-CONTRACT-C64-011`: IMPLEMENTED. C64 freezes selection from C63 hierarchy before OOS proof execution.
+- `WL-CONTRACT-C64-012`: IMPLEMENTED. C64 uses the exact reserved OOS period `2025-05-22..2026-05-29`.
+- `WL-CONTRACT-C64-013`: IMPLEMENTED. C64 evaluates E02 as primary OOS candidate and B01 as backup OOS candidate.
+- `WL-CONTRACT-C64-014`: IMPLEMENTED. C64 evaluates A01 only as comparator diagnostics and prevents promotion.
+- `WL-CONTRACT-C64-015`: IMPLEMENTED. C64 audits OOS bad-month behavior and documented bad-month risk.
+- `WL-CONTRACT-C64-016`: IMPLEMENTED. C64 audits OOS weak-regime survival in `market_down_or_sideways_high_vol`.
+- `WL-CONTRACT-C64-017`: IMPLEMENTED. C64 audits OOS rolling and month-dependency behavior.
+- `WL-CONTRACT-C64-018`: IMPLEMENTED. C64 audits OOS concentration and loss-cluster behavior.
+- `WL-CONTRACT-C64-019`: IMPLEMENTED. C64 audits OOS shared-core and source-bias behavior.
+- `WL-CONTRACT-C64-020`: IMPLEMENTED. C64 keeps `production_ready=false`, does not create production catalog, and does not mutate PLAN/CONFIRM.
+
+C64 contract conclusion: operator validation passed. C64 recommends C65 production pre-lock review because primary E02 and backup B01 passed locked-selection OOS proof gates. C64 remains non-production and cannot declare production-ready by itself.
+
+
+Final C64 validation markers:
+
+```text
+PHPUNIT_C64=PASS OK (67 tests, 190 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (996 tests, 18471 assertions)
+C64_RUNTIME=COMPLETED
+C64_STATUS=C64_OOS_PROOF_PASSED_PRIMARY_AND_BACKUP
+C64_REASON_CODE=C64_OOS_PROOF_PASSED_PRIMARY_AND_BACKUP
+C64_ARTIFACT_HASH=767d860956e0f27eeedccdc30f73aa1d0e5a415b
+C64_FILE_SHA1=032C7BA7435799D83CC06EEDBC463A9AF2B123B3
+OOS_PROOF_PASS=true
+OOS_PASS_SCOPE=PRIMARY_AND_BACKUP
+PRIMARY_READY_FOR_C65=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_READY_FOR_C65=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+A01_COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+CANDIDATE_READY_FOR_C65_COUNT=2
+C65_RECOMMENDATION=C65_PRODUCTION_PRE_LOCK_REVIEW
+PRODUCTION_READY=false
+```
+
+C64 contract final conclusion:
+
+All C64 implemented contracts are operator-validated. The C63 hierarchy remained locked, lineage locks C60-C63 matched, the reserved OOS period was used, E02 and B01 passed OOS proof gates, A01 remained comparator-only, and production/PLAN/CONFIRM mutation remained prohibited. The next allowed contract is `C65_PRODUCTION_PRE_LOCK_REVIEW`.

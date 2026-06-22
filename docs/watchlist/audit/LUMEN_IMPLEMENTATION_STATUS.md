@@ -8843,3 +8843,131 @@ B01_WORST_MONTH_REGIME=market_down_or_sideways_high_vol
 ```
 
 C64 must keep C63 selection locked and inspect OOS behavior without changing selection after seeing OOS data.
+
+---
+
+## C64 Implementation — Locked-Selection OOS Proof Execution
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+C64 has been implemented as the first locked-selection OOS proof execution step after C63. It starts from the locked C63 final evidence and validates C63/C62/C61/C60 source locks before proof execution.
+
+```text
+RUN_CODE=C64_PRE_OOS_OR_OOS_PROOF_EXECUTION
+COMMAND=watchlist:backtest-c64-pre-oos-or-oos-proof-execution
+ARTIFACT=storage/app/watchlist/backtest/c64-pre-oos-or-oos-proof-execution.json
+IS_PERIOD=2023-01-02..2025-05-21
+OOS_PERIOD=2025-05-22..2026-05-29
+PRIMARY_OOS_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_OOS_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+PRODUCTION_READY=false
+```
+
+Implemented files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC64PreOosOrOosProofExecutionService.php
+app/Console/Commands/Watchlist/RunBacktestC64PreOosOrOosProofExecutionCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC64PreOosOrOosProofExecutionServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC64StaticGuardTest.php
+docs/watchlist/audit/WS_C64_PRE_OOS_OR_OOS_PROOF_EXECUTION.md
+docs/watchlist/audit/WS_C64_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C64 records selection freeze before OOS access and audits OOS bad-month risk, weak-regime survival, rolling/month dependency, concentration, loss-cluster, source-bias, shared-core, and safety/leakage. A01 remains comparator-only and cannot be promoted.
+
+Operator must run:
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC64"
+vendor\bin\phpunit tests\Unit\Watchlist
+php artisan watchlist:backtest-c64-pre-oos-or-oos-proof-execution `
+  --c63-artifact=storage/app/watchlist/backtest/c63-pre-oos-unlock-review-is-only.json `
+  --expected-c63-hash=e98f1386928b36ee367728ceeec4de4344e1f3be `
+  --expected-c63-file-sha1=24C7EE585A165DA41E8FC22538A68145247C68B4 `
+  --c62-artifact=storage/app/watchlist/backtest/c62-pre-lock-review-for-c61-signal-quality-candidates-is-only.json `
+  --expected-c62-hash=d3a089b9b986838764d517682035d76e0bb4112d `
+  --expected-c62-file-sha1=8DF1649BC72233D119581A802F9E41BA9BEBF12E `
+  --c61-artifact=storage/app/watchlist/backtest/c61-signal-quality-rebuild-for-weak-regime-is-only.json `
+  --expected-c61-hash=40d2c4a4f9f1310f9165cdfb4abdd45ff94cb0c8 `
+  --expected-c61-file-sha1=DEA3C807813DE81DB6776AB2C441C945D4E98EC6 `
+  --c60-artifact=storage/app/watchlist/backtest/c60-regime-stress-and-loo-dependency-redesign-is-only.json `
+  --expected-c60-hash=25a32ee9c4cb77ecc29103c86a1abf0826aea705 `
+  --expected-c60-file-sha1=1FA933157B61ECB4554CE6C76B0F2B314F19DB0F `
+  --is-from=2023-01-02 `
+  --is-to=2025-05-21 `
+  --oos-from=2025-05-22 `
+  --oos-to=2026-05-29 `
+  --output=storage/app/watchlist/backtest/c64-pre-oos-or-oos-proof-execution.json `
+  --overwrite `
+  --progress
+```
+
+C64 remains non-production even if OOS proof passes. A passing C64 may only recommend `C65_PRODUCTION_PRE_LOCK_REVIEW`.
+
+
+---
+
+## C64 Final Operator Validation Evidence
+
+Status: `FINAL_OPERATOR_VALIDATED`
+
+```text
+PHPUNIT_C64=PASS OK (67 tests, 190 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS OK (996 tests, 18471 assertions)
+C64_RUNTIME=COMPLETED
+C64_STATUS=C64_OOS_PROOF_PASSED_PRIMARY_AND_BACKUP
+C64_REASON_CODE=C64_OOS_PROOF_PASSED_PRIMARY_AND_BACKUP
+C64_ARTIFACT=storage/app/watchlist/backtest/c64-pre-oos-or-oos-proof-execution.json
+C64_ARTIFACT_HASH=767d860956e0f27eeedccdc30f73aa1d0e5a415b
+C64_FILE_SHA1=032C7BA7435799D83CC06EEDBC463A9AF2B123B3
+OOS_PERIOD=2025-05-22..2026-05-29
+OOS_EVALUATED_PICKS_PER_CANDIDATE=62
+OOS_TRADING_DAYS_COVERED=243
+OOS_PROOF_EXECUTED=true
+OOS_PROOF_PASS=true
+OOS_PASS_SCOPE=PRIMARY_AND_BACKUP
+PRIMARY_OOS_PROOF_PASS=true
+BACKUP_OOS_PROOF_PASS=true
+CANDIDATE_READY_FOR_C65_COUNT=2
+C65_RECOMMENDATION=C65_PRODUCTION_PRE_LOCK_REVIEW
+PRODUCTION_READY=false
+DIRECT_OOS_PROOF_RECOMMENDED=false
+OOS_PROOF_UNLOCKED=false
+PRE_OOS_UNLOCKED=false
+```
+
+Final candidate readiness:
+
+```text
+PRIMARY_READY_FOR_C65=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_READY_FOR_C65=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+A01_READY_FOR_C65=false
+A01_FAILURE_REASON_CODES={C64_A01_REMAINS_COMPARATOR_ONLY}
+```
+
+OOS scorecard summary:
+
+```text
+E02_OOS_AVG_RET_NET=0.0019192667485595845
+E02_OOS_MEDIAN_RET_NET=0.004973604950938748
+E02_OOS_WIN_RATE=0.5392650952205372
+E02_OOS_WORST_MONTH=2026-03
+E02_OOS_WORST_MONTH_AVG_RET_NET=-0.0045000000000000005
+E02_OOS_WEAK_REGIME_WIN_RATE=0.5522650952205372
+E02_OOS_BAD_MONTH_DECISION=PASS_WITH_DOCUMENTED_RISK
+
+B01_OOS_AVG_RET_NET=0.001394504958573553
+B01_OOS_MEDIAN_RET_NET=0.004671473569527805
+B01_OOS_WIN_RATE=0.52
+B01_OOS_WORST_MONTH=2025-10
+B01_OOS_WORST_MONTH_AVG_RET_NET=-0.0056
+B01_OOS_WEAK_REGIME_WIN_RATE=0.5374874418604652
+B01_OOS_BAD_MONTH_DECISION=PASS_WITH_DOCUMENTED_RISK
+```
+
+All C64 proof tracks passed for E02 and B01: bad-month, weak-regime, rolling, concentration, loss-cluster, source-bias, shared-core, and safety/leakage. Safety remained clean: selection was frozen before OOS, no OOS read occurred before freeze, selection and parameters were unchanged after OOS, no future lookup/latest shortcut/MAX date shortcut was used, no production catalog was created, and PLAN/CONFIRM was not mutated.
+
+C64 is accepted as locked-selection OOS proof for primary+backup. It does not mark production-ready. Next step is `C65_PRODUCTION_PRE_LOCK_REVIEW`.
