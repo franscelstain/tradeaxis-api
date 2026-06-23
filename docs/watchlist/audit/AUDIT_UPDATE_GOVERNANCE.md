@@ -3389,3 +3389,84 @@ FUTURE_PATH_USED_FOR_SELECTION=false
 ```
 
 C65 final governance decision: C65 may only advance to `C66_PRODUCTION_LOCK_REVIEW`. It must not be described as production-ready and must not be used to create, activate, or deploy a production catalog.
+
+---
+
+## Governance Update — C66
+
+Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION`
+
+C66 governance starts from locked C65 final evidence. C66 is production lock review only. C66 pass is not live deployment.
+
+C66 validates:
+
+```text
+C65_ARTIFACT_HASH=f08da5acc87ccbe0d88c39423c4321496230b01b
+C65_FILE_SHA1=115201C1F44C7C420ABA3251435F21B870EF9AE6
+C65_STATUS=C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C65_REASON_CODE=C65_PRODUCTION_PRE_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C60_TO_C66_LINEAGE_LOCK=VALIDATED
+```
+
+C66 keeps candidate hierarchy frozen:
+
+```text
+PRIMARY=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+```
+
+A01 remains comparator-only. bad-month risk remains documented. weak-regime risk remains documented. Source-bias/shared-core risk remains documented.
+
+C66 governance forbids redesign, retune, new parameter search, OOS-based reranking, candidate scope changes, catalog activation, deployment, and PLAN/CONFIRM mutation.
+
+C66 may produce only `storage/app/watchlist/backtest/c66-production-lock-review.json` as a locked decision artifact. Activation is deferred to C67 production catalog activation review.
+---
+
+## Governance Finalization — C66
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+C66 governance final operator evidence:
+
+```text
+PHPUNIT_C66=PASS: OK (28 tests, 214 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (1052 tests, 18878 assertions)
+C66_RUNTIME=COMPLETED
+C66_FINAL_STATUS=C66_PRODUCTION_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C66_REASON_CODE=C66_PRODUCTION_LOCK_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C66_ARTIFACT_HASH=9ef0c2eed94f2ac9e6e8e348e93774c563f8e6d4
+C66_FILE_SHA1=11936FC807140E9B0A18FD00B543B03C8AE2950C
+PRODUCTION_LOCK_REVIEW_PASS=true
+PRODUCTION_CATALOG_LOCK_ALLOWED=true
+PRODUCTION_CATALOG_ACTIVATION_ALLOWED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+CANDIDATE_READY_FOR_C67_COUNT=2
+C67_RECOMMENDATION=C67_PRODUCTION_CATALOG_ACTIVATION_REVIEW
+DOMINANT_BLOCKER=NONE
+```
+
+C66 governance remains constrained:
+
+```text
+NO_REDESIGN=true
+NO_RETUNE=true
+NO_PARAMETER_SEARCH=true
+NO_OOS_BASED_RERANKING=true
+CANDIDATE_SCOPE_CHANGED_AFTER_C65=false
+NEW_CANDIDATE_CREATED=false
+PARAMETER_CHANGED_AFTER_C65=false
+SELECTION_RULE_CHANGED=false
+A01_PROMOTED=false
+PRODUCTION_CATALOG_CREATED=false
+PRODUCTION_CATALOG_ACTIVATED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATED=false
+LATEST_SHORTCUT_USED=false
+MAX_DATE_SHORTCUT_USED=false
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+```
+
+C66 final governance decision: C66 may only advance to `C67_PRODUCTION_CATALOG_ACTIVATION_REVIEW`. C66 pass is not live activation and not deployment. E02/B01 are locked only as production catalog candidates in the C66 artifact-level decision; PLAN/CONFIRM remains untouched.
