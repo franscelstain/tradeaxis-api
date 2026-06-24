@@ -98,6 +98,7 @@ use App\Console\Commands\Watchlist\RunBacktestC70ProductionDeploymentExecutionRe
 use App\Console\Commands\Watchlist\RunBacktestC71ShadowReadOrDryRunRuntimeValidationCommand;
 use App\Console\Commands\Watchlist\RunBacktestC72ControlledOptInRuntimeBridgeValidationCommand;
 use App\Console\Commands\Watchlist\RunBacktestC73ControlledParallelRunNonMutatingPlanConfirmBridgeValidationCommand;
+use App\Console\Commands\Watchlist\RunBacktestC74ControlledOperatorReviewedRolloutGateOrDeploymentReadinessReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -183,6 +184,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC71ShadowReadOrDryRunRuntimeValidationCommand::class,
         RunBacktestC72ControlledOptInRuntimeBridgeValidationCommand::class,
         RunBacktestC73ControlledParallelRunNonMutatingPlanConfirmBridgeValidationCommand::class,
+        RunBacktestC74ControlledOperatorReviewedRolloutGateOrDeploymentReadinessReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

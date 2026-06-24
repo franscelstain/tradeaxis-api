@@ -9883,3 +9883,106 @@ C74_RECOMMENDATION=C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_R
 ```
 
 Final C73 conclusion: accepted. C73 only authorizes readiness for C74 controlled operator-reviewed rollout gate / deployment readiness review. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM default runtime catalog consumption.
+
+---
+
+## C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW — Implementation Append
+
+Status: implemented as isolated non-live readiness gate.
+
+C74 is controlled operator-reviewed rollout gate / deployment readiness review.
+
+C74 starts from locked C73 final evidence.
+
+C73 controlled parallel-run non-mutating PLAN/CONFIRM bridge validation passed primary + backup.
+
+C73 lock expected by C74:
+
+```text
+C73_ARTIFACT_HASH=34f1f84a4261da7ce1cb9d17a1bf33dfb1458281
+C73_ARTIFACT_FILE_SHA1=BF18CAA2654D5A7DE5419DE5DAF42E0B55D73CC9
+```
+
+E02 is primary rollout gate candidate: `C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE`.
+
+B01 is backup rollout gate candidate: `C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION`.
+
+A01 is comparator-only and cannot be promoted: `C61_A01_B01_WEAK_REGIME_QUALITY_FIRST`.
+
+C74 validates C73 artifact hash and file SHA1.
+
+C74 validates C73 readiness through nested `c74_readiness_decision.*` path.
+
+C74 validates C73 → C60 lineage.
+
+C74 does not redesign, retune, run parameter search, use OOS to rerank, use parallel-run delta to rerank, or change candidate scope.
+
+C74 may create operator review checklist, rollback readiness proof, emergency disable proof, and C75 readiness decision.
+
+C74 does not wire activated catalog to PLAN/CONFIRM live, does not deploy live production, does not mutate PLAN/CONFIRM, and does not change PLAN/CONFIRM output.
+
+C74 keeps `production_catalog_runtime_wired=false`, `controlled_opt_in_runtime_bridge_active=false`, `controlled_parallel_run_active=false`, `controlled_rollout_active=false`, `production_deployment_allowed=false`, `production_deployment_executed=false`, `plan_confirm_mutation_allowed=false`, `plan_confirm_mutated=false`, `plan_confirm_runtime_reads_activated_catalog=false`, `live_plan_confirm_rollout_allowed=false`, and `live_plan_confirm_rollout_executed=false`.
+
+C74 carries bad-month risk as documented risk, weak-regime risk as documented risk, and source-bias/shared-core risk as documented risk.
+
+C65 cleanup note remains non-blocking.
+
+C74 may only recommend C75 controlled operator-approved rollout execution review if all rollout gate/readiness gates pass.
+
+C74 pass is not full production deployment and C74 pass is not PLAN/CONFIRM live rollout.
+
+## C74 Final Operator Evidence Append — 2026-06-24
+
+C74 final operator validation completed and accepted.
+
+```text
+FOCUSED_PHPUNIT_C74=OK (40 tests, 227 assertions)
+FULL_WATCHLIST_PHPUNIT=OK (1245 tests, 20920 assertions)
+C74_RUNTIME_STATUS=C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C74_RUNTIME_REASON_CODE=C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C74_ARTIFACT_HASH=2e02737a212cf9043d5937f5354a3c31541dc22f
+C74_FILE_SHA1=C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187
+```
+
+C74 validated the locked C73 source artifact and file SHA1.
+
+```text
+EXPECTED_C73_HASH=34f1f84a4261da7ce1cb9d17a1bf33dfb1458281
+ACTUAL_C73_HASH=34f1f84a4261da7ce1cb9d17a1bf33dfb1458281
+C73_HASH_MATCH=true
+EXPECTED_C73_FILE_SHA1=BF18CAA2654D5A7DE5419DE5DAF42E0B55D73CC9
+ACTUAL_C73_FILE_SHA1=BF18CAA2654D5A7DE5419DE5DAF42E0B55D73CC9
+C73_FILE_SHA1_MATCH=true
+C73_SOURCE_LINEAGE_CHECKED=true
+C73_SOURCE_LINEAGE_MATCH=true
+```
+
+C74 safety fields remained non-live and non-mutating.
+
+```text
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=false
+CONTROLLED_PARALLEL_RUN_ACTIVE=false
+CONTROLLED_ROLLOUT_ACTIVE=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+```
+
+C75 readiness was created as readiness-only.
+
+```text
+C75_CANDIDATE_READY_FOR_C75_COUNT=2
+C75_CANDIDATE_CODES=[C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE, C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION]
+C75_RECOMMENDATION=C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW
+```
+
+Negative operator-review proof passed: runtime without `--operator-reviewed` rejected with `C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING`; temporary negative artifact was removed.
+
+Final C74 conclusion: accepted. C74 only authorizes readiness for C75 controlled operator-approved rollout execution review / controlled wiring execution review. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM default runtime catalog consumption.
+

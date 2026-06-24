@@ -3924,3 +3924,51 @@ C74_RECOMMENDATION=C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_R
 ```
 
 Final C73 conclusion: accepted. C73 only authorizes readiness for C74 controlled operator-reviewed rollout gate / deployment readiness review. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM default runtime catalog consumption.
+
+---
+
+## C74 Audit Governance Append
+
+C74 is controlled operator-reviewed rollout gate / deployment readiness review.
+
+C74 starts from locked C73 final evidence and must validate C73 artifact hash and file SHA1 before any pass result.
+
+C74 validates C73 readiness through nested `c74_readiness_decision.*` path and validates C73 → C60 lineage.
+
+C74 keeps E02 as primary rollout gate candidate, B01 as backup rollout gate candidate, and A01 as comparator-only. A01 cannot be promoted or used as runtime fallback.
+
+C74 does not redesign, retune, run parameter search, use OOS to rerank, use parallel-run delta to rerank, change candidate scope, wire activated catalog to PLAN/CONFIRM live, deploy live production, mutate PLAN/CONFIRM, or change PLAN/CONFIRM output.
+
+C74 is allowed to create only operator review checklist, rollback readiness proof, emergency disable proof, C73 proof carry-forward, fallback behavior proof, delta governance proof, and C75 readiness decision.
+
+C74 must keep `production_catalog_runtime_wired=false`, `controlled_opt_in_runtime_bridge_active=false`, `controlled_parallel_run_active=false`, `controlled_rollout_active=false`, `production_deployment_allowed=false`, `production_deployment_executed=false`, `plan_confirm_mutation_allowed=false`, `plan_confirm_mutated=false`, `plan_confirm_runtime_reads_activated_catalog=false`, `live_plan_confirm_rollout_allowed=false`, and `live_plan_confirm_rollout_executed=false`.
+
+C74 carries bad-month risk, weak-regime risk, and source-bias/shared-core risk as documented risk. C65 cleanup note remains non-blocking.
+
+C74 may only recommend C75 controlled operator-approved rollout execution review if all rollout gate/readiness gates pass.
+
+C74 pass is not full production deployment. C74 pass is not PLAN/CONFIRM live rollout.
+
+## C74 Final Audit Governance Evidence Append — 2026-06-24
+
+C74 audit governance final evidence is accepted.
+
+```text
+Focused PHPUnit C74: OK (40 tests, 227 assertions)
+Full Watchlist PHPUnit: OK (1245 tests, 20920 assertions)
+Runtime status: C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
+Runtime reason_code: C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
+Artifact hash: 2e02737a212cf9043d5937f5354a3c31541dc22f
+File SHA1: C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187
+```
+
+Governance retained C73 lock matching, C73 nested readiness validation, C73 → C60 lineage validation, E02 primary candidate lock, B01 backup candidate lock, and A01 comparator-only lock.
+
+Governance retained default-off/non-live/non-mutating safety: no production deployment, no PLAN/CONFIRM mutation, no activated catalog default runtime read, no live rollout, and no runtime catalog wiring.
+
+Governance retained operator review requirement: missing `--operator-reviewed` rejects with `C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING`.
+
+Governance retained C75 as deferred controlled operator-approved rollout execution review / controlled wiring execution review only.
+
+Final governance conclusion: C74 accepted. C74 pass is not full production deployment and not PLAN/CONFIRM live rollout.
+

@@ -7742,3 +7742,59 @@ C74_RECOMMENDATION=C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_R
 ```
 
 Final C73 conclusion: accepted. C73 only authorizes readiness for C74 controlled operator-reviewed rollout gate / deployment readiness review. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM default runtime catalog consumption.
+
+---
+
+## C74 Contract Append
+
+Contract: `C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW`.
+
+Command: `watchlist:backtest-c74-controlled-operator-reviewed-rollout-gate-or-deployment-readiness-review`.
+
+Artifact: `storage/app/watchlist/backtest/c74-controlled-operator-reviewed-rollout-gate-or-deployment-readiness-review.json`.
+
+C74 source lock: C73 expected artifact hash `34f1f84a4261da7ce1cb9d17a1bf33dfb1458281`; C73 expected file SHA1 `BF18CAA2654D5A7DE5419DE5DAF42E0B55D73CC9`.
+
+C74 validates nested C73 readiness through `c74_readiness_decision.*`, not top-level aliases.
+
+C74 validates C73 → C60 lineage.
+
+Candidates remain frozen: E02 primary, B01 backup, A01 comparator-only.
+
+A01 cannot be promoted and cannot be used as runtime fallback.
+
+Feature flags remain default OFF. C74 requires `--operator-reviewed`. Kill switch protection remains available.
+
+Rollback and emergency disable readiness are documented for C75 review only.
+
+Parallel-run delta is advisory only and cannot select, retune, rerank, mutate, rollout, or deploy.
+
+Safety fields remain false: `production_catalog_runtime_wired`, `controlled_opt_in_runtime_bridge_active`, `controlled_parallel_run_active`, `controlled_rollout_active`, `production_deployment_allowed`, `production_deployment_executed`, `plan_confirm_mutation_allowed`, `plan_confirm_mutated`, `plan_confirm_runtime_reads_activated_catalog`, `live_plan_confirm_rollout_allowed`, `live_plan_confirm_rollout_executed`.
+
+C74 pass can only recommend `C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW`; it is not full production deployment and not PLAN/CONFIRM live rollout.
+
+## C74 Final Contract Evidence Append — 2026-06-24
+
+C74 contract evidence is accepted.
+
+```text
+Focused PHPUnit C74: OK (40 tests, 227 assertions)
+Full Watchlist PHPUnit: OK (1245 tests, 20920 assertions)
+Runtime status: C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
+Runtime reason_code: C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
+Artifact hash: 2e02737a212cf9043d5937f5354a3c31541dc22f
+File SHA1: C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187
+```
+
+C74 source lock contract passed: expected C73 hash/SHA1 matched actual C73 hash/SHA1, C73 source lineage was checked, and C73 source lineage matched.
+
+C74 readiness contract passed with `controlled_operator_reviewed_rollout_gate_validation_allowed=true` and `controlled_operator_reviewed_rollout_gate_validation_pass=true`.
+
+C74 safety contract remained locked false for production runtime wiring, controlled opt-in active state, controlled parallel-run active state, controlled rollout active state, production deployment allowed/executed, PLAN/CONFIRM mutation allowed/executed, PLAN/CONFIRM default catalog read, and live PLAN/CONFIRM rollout allowed/executed.
+
+C74 C75 handoff contract: C75 readiness count is 2 for E02 primary and B01 backup, with recommendation `C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW`.
+
+Negative operator-review contract passed: without `--operator-reviewed`, C74 rejects with `C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING` and does not create C75 readiness.
+
+Final contract conclusion: C74 is readiness-only and does not authorize full production deployment, PLAN/CONFIRM live rollout, PLAN/CONFIRM mutation, or PLAN/CONFIRM default runtime catalog consumption.
+
