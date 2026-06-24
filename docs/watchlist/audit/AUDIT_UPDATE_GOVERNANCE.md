@@ -3470,3 +3470,64 @@ RETURN_FIELDS_USED_FOR_SELECTION=false
 ```
 
 C66 final governance decision: C66 may only advance to `C67_PRODUCTION_CATALOG_ACTIVATION_REVIEW`. C66 pass is not live activation and not deployment. E02/B01 are locked only as production catalog candidates in the C66 artifact-level decision; PLAN/CONFIRM remains untouched.
+
+## C67 Audit Governance Update
+
+C67 is production catalog activation review. C67 may create only an activation review decision artifact and may only recommend C68 production catalog activation execution review when all gates pass. C67 does not execute live production catalog activation, does not deploy production, and does not mutate PLAN/CONFIRM. C67 preserves C66 locked hierarchy: E02 primary, B01 backup, and A01 remains comparator-only. bad-month risk remains documented. weak-regime risk remains documented. source-bias/shared-core risk remains documented. activation execution is deferred to C68. C67 pass is not live activation. C67 pass is not live deployment.
+
+
+## C68 Audit Governance
+
+C68 update is append-only. It must not redesign, retune, run parameter search, rerun OOS as search, use OOS to rerank, change candidate scope, promote A01, deploy production, wire PLAN/CONFIRM, or mutate PLAN/CONFIRM. It must retain bad-month documented risk, weak-regime documented risk, source-bias/shared-core risk, and the C65 cleanup note as non-blocking.
+
+---
+
+## Governance Finalization — C68
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+C68 final operator evidence:
+
+```text
+PHPUNIT_C68=PASS: OK (22 tests, 241 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (1093 tests, 19331 assertions)
+C68_RUNTIME=COMPLETED
+C68_FINAL_STATUS=C68_PRODUCTION_CATALOG_ACTIVATION_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C68_REASON_CODE=C68_PRODUCTION_CATALOG_ACTIVATION_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C68_ARTIFACT_HASH=54145854758e22115e4b65a297e4c157d94c638d
+C68_FILE_SHA1=209E3225F37015DA348EC2DA9A0D6A3FFCC6E4F7
+NEXT_STEP_RECOMMENDATION=C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW
+```
+
+C68 final governance constraints remain active:
+
+```text
+NO_REDESIGN=true
+NO_RETUNE=true
+NO_PARAMETER_SEARCH=true
+NO_OOS_BASED_RERANKING=true
+CANDIDATE_SCOPE_CHANGED_AFTER_C67=false
+NEW_CANDIDATE_CREATED=false
+SELECTION_RULE_CHANGED=false
+PARAMETER_CHANGED=false
+A01_PROMOTED=false
+BAD_MONTH_RISK_RETAINED=true
+WEAK_REGIME_RISK_RETAINED=true
+SOURCE_BIAS_SHARED_CORE_RISK_RETAINED=true
+PRODUCTION_CATALOG_ACTIVATION_EXECUTION_PERFORMED=true
+PRODUCTION_CATALOG_ACTIVATED=true
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LATEST_SHORTCUT_USED=false
+MAX_DATE_SHORTCUT_USED=false
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+DATABASE_DICTIONARY_RULE_COMPLIED=true
+```
+
+C68 governance final decision: accepted. C68 activation means controlled artifact/record activation only. It is not production deployment, not live PLAN/CONFIRM rollout, and not runtime wiring. C69 must handle deployment prep/bridge review separately before any runtime consumer can read the activated catalog.
+

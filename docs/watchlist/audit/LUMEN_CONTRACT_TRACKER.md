@@ -7311,3 +7311,80 @@ DOMINANT_BLOCKER=NONE
 ```
 
 C66 contract conclusion: operator validation passed. C66 locks E02 as primary production catalog candidate and B01 as backup production catalog candidate at artifact-decision level only. A01 remains comparator-only and cannot be promoted. C66 does not authorize production catalog activation, production deployment, or PLAN/CONFIRM mutation. The only allowed next contract is `C67_PRODUCTION_CATALOG_ACTIVATION_REVIEW`.
+
+## C67 Contract Tracker
+
+- C67 is production catalog activation review.
+- C67 starts from locked C66 final evidence.
+- C66 production lock passed primary + backup.
+- E02 is primary activation review candidate.
+- B01 is backup activation review candidate.
+- A01 remains comparator-only and cannot be promoted.
+- C67 validates C66 artifact hash and file SHA1.
+- C67 validates C60 -> C67 lineage.
+- C67 does not redesign.
+- C67 does not retune.
+- C67 does not run parameter search.
+- C67 does not use OOS to rerank.
+- C67 does not change candidate scope.
+- C67 does not execute live production catalog activation.
+- C67 does not deploy production.
+- C67 does not mutate PLAN/CONFIRM.
+- C67 may create only an activation review decision artifact.
+- C67 keeps production_catalog_activation_execution_allowed=false.
+- C67 keeps production_deployment_allowed=false.
+- C67 keeps plan_confirm_mutation_allowed=false.
+- bad-month risk remains documented.
+- weak-regime risk remains documented.
+- source-bias/shared-core risk remains documented.
+- C65 cleanup note remains non-blocking.
+- activation execution is deferred to C68.
+- C67 pass is not live activation.
+- C67 pass is not live deployment.
+
+
+## C68 Contract Tracker
+
+C68 contract: production catalog activation execution review only. Input lock is C67 artifact hash 5e3ba8ac20c810a36a7928ad1f201c82143ac72f and file SHA1 CB98A7B5B4B5F0CCCEDEF0C7B5BDC8CB3FE940E6. Output artifact is storage/app/watchlist/backtest/c68-production-catalog-activation-execution-review.json. Controlled activation record is not runtime consumable by PLAN/CONFIRM. production_catalog_runtime_wired=false, production_deployment_allowed=false, production_deployment_executed=false, plan_confirm_mutation_allowed=false, plan_confirm_mutated=false.
+
+---
+
+## C68 Contract Final Operator Validation
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+```text
+PHPUNIT_C68=PASS
+PHPUNIT_C68_RESULT=OK (22 tests, 241 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (1093 tests, 19331 assertions)
+C68_RUNTIME=COMPLETED
+C68_FINAL_STATUS=C68_PRODUCTION_CATALOG_ACTIVATION_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C68_REASON_CODE=C68_PRODUCTION_CATALOG_ACTIVATION_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C68_ARTIFACT_HASH=54145854758e22115e4b65a297e4c157d94c638d
+C68_FILE_SHA1=209E3225F37015DA348EC2DA9A0D6A3FFCC6E4F7
+```
+
+Contract validation result:
+
+```text
+C68_CONTRACT_ACCEPTED=true
+C67_TO_C60_LINEAGE_LOCK_VALID=true
+CANDIDATE_SCOPE_FREEZE_VALID=true
+PRIMARY_E02_ACTIVATION_EXECUTION_PASS=true
+BACKUP_B01_ACTIVATION_EXECUTION_PASS=true
+A01_REMAINS_COMPARATOR_ONLY=true
+A01_PROMOTED=false
+CONTROLLED_ACTIVATION_RECORD_CREATED=true
+CONTROLLED_ACTIVATION_RECORD_RUNTIME_CONSUMABLE=false
+CONTROLLED_ACTIVATION_RECORD_WIRED_TO_PLAN_CONFIRM=false
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+```
+
+C68 contract conclusion: operator validation passed. C68 creates only a controlled production catalog activation execution artifact/record for E02 primary and B01 backup. It does not authorize live runtime wiring, production deployment, or PLAN/CONFIRM mutation. The only allowed next contract is `C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW`.
+
