@@ -7388,3 +7388,63 @@ PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
 
 C68 contract conclusion: operator validation passed. C68 creates only a controlled production catalog activation execution artifact/record for E02 primary and B01 backup. It does not authorize live runtime wiring, production deployment, or PLAN/CONFIRM mutation. The only allowed next contract is `C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW`.
 
+
+---
+
+## C69 Production Deployment Prep / Bridge Review Contract
+
+C69 contract is non-runtime bridge readiness only. E02 remains primary deployment bridge candidate, B01 remains backup deployment bridge candidate, and A01 remains comparator-only and cannot be promoted.
+
+C69 validates the current PLAN/CONFIRM runtime path and proposes a future C70 bridge behind feature flag `watchlist.production_catalog_bridge.enabled` and kill switch `watchlist.production_catalog_bridge.kill_switch`. Default is OFF. Rollback source is current PLAN/CONFIRM behavior.
+
+C69 pass is not production deployment and not PLAN/CONFIRM rollout.
+
+---
+
+## C69 Contract Final Operator Validation
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+```text
+PHPUNIT_C69=PASS
+PHPUNIT_C69_RESULT=OK (26 tests, 318 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (1119 tests, 19649 assertions)
+C69_RUNTIME=COMPLETED
+C69_FINAL_STATUS=C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C69_REASON_CODE=C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C69_ARTIFACT_HASH=10ee362ab56b94db8eed04133d56704918cce853
+C69_FILE_SHA1=75824CD4A816D8EE640835C0F97EBD03C9292345
+```
+
+Contract validation result:
+
+```text
+C69_CONTRACT_ACCEPTED=true
+C68_TO_C60_LINEAGE_LOCK_VALID=true
+PRIMARY_E02_BRIDGE_PREP_PASS=true
+BACKUP_B01_BRIDGE_PREP_PASS=true
+A01_REMAINS_COMPARATOR_ONLY=true
+A01_PROMOTED=false
+BRIDGE_CONTRACT_REVIEW_PASS=true
+PLAN_CONFIRM_WIRING_READINESS_PASS=true
+FEATURE_FLAG_KILL_SWITCH_REVIEW_PASS=true
+ROLLBACK_PLAN_PASS=true
+SMOKE_TEST_PLAN_PASS=true
+SHADOW_READ_DRY_RUN_PLAN_PASS=true
+BAD_MONTH_RISK_RETAINED=true
+WEAK_REGIME_RISK_RETAINED=true
+SOURCE_BIAS_SHARED_CORE_RISK_RETAINED=true
+PRODUCTION_DEPLOYMENT_PREP_ALLOWED=true
+PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW_ALLOWED=true
+PLAN_CONFIRM_WIRING_PREP_ALLOWED=true
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+```
+
+C69 contract conclusion: operator validation passed. C69 authorizes only controlled non-runtime bridge/prep readiness for C70 review. It does not authorize live deployment, PLAN/CONFIRM mutation, or runtime catalog consumption. The only allowed next contract is `C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW`.
+

@@ -93,6 +93,7 @@ use App\Console\Commands\Watchlist\RunBacktestC65ProductionPreLockReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC66ProductionLockReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC67ProductionCatalogActivationReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC68ProductionCatalogActivationExecutionReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC69ProductionDeploymentPrepOrBridgeReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -173,6 +174,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC66ProductionLockReviewCommand::class,
         RunBacktestC67ProductionCatalogActivationReviewCommand::class,
         RunBacktestC68ProductionCatalogActivationExecutionReviewCommand::class,
+        RunBacktestC69ProductionDeploymentPrepOrBridgeReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
