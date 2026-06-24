@@ -7529,3 +7529,216 @@ C71_RECOMMENDATION=C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION
 ```
 
 C70 contract conclusion: operator validation passed. C70 authorizes only readiness for C71 shadow-read/dry-run runtime validation. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM runtime catalog consumption.
+
+
+## C71 Shadow-Read / Dry-Run Runtime Validation Contract
+
+C71 contract is isolated shadow-read / dry-run runtime validation only. It validates the locked controlled production catalog can be read and evaluated safely in a non-live validation path. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM runtime catalog consumption.
+
+C71 locks the C70 final artifact, validates C70 readiness through nested `c71_readiness_decision.*`, validates C70 → C60 lineage, keeps E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C71 pass means readiness for `C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION` only.
+
+## C71 Contract Final Operator Validation
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+```text
+PHPUNIT_C71=PASS
+PHPUNIT_C71_RESULT=OK (22 tests, 275 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (1163 tests, 20178 assertions)
+C71_RUNTIME=COMPLETED
+C71_FINAL_STATUS=C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C71_REASON_CODE=C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C71_ARTIFACT_HASH=dee0b4e6a5a17dcb7c99eccf6f54832f88aefa1f
+C71_FILE_SHA1=4F2D3C8AE01F3EB0CE60D820FA78BDBD2CA2ABDB
+```
+
+Contract validation result:
+
+```text
+C71_CONTRACT_ACCEPTED=true
+C70_LOCK_VALID=true
+C69_TO_C60_LINEAGE_LOCK_VALID=true
+PRIMARY_E02_SHADOW_READ_DRY_RUN_RUNTIME_VALIDATION_PASS=true
+BACKUP_B01_SHADOW_READ_DRY_RUN_RUNTIME_VALIDATION_PASS=true
+A01_REMAINS_COMPARATOR_ONLY=true
+A01_PROMOTED=false
+A01_USED_AS_RUNTIME_FALLBACK=false
+DEFAULT_OFF_FEATURE_FLAGS_PASS=true
+KILL_SWITCH_FORCE_DISABLE_PROVEN=true
+SHADOW_READ_PROOF_PASS=true
+DRY_RUN_PROOF_PASS=true
+BASELINE_PLAN_CONFIRM_HASH_UNCHANGED_PASS=true
+PLAN_CONFIRM_OUTPUT_NON_MUTATION_PASS=true
+FALLBACK_BEHAVIOR_RUNTIME_VALIDATION_PASS=true
+AUDIT_OBSERVABILITY_PROOF_PASS=true
+BAD_MONTH_RISK_RETAINED=true
+WEAK_REGIME_RISK_RETAINED=true
+SOURCE_BIAS_SHARED_CORE_RISK_RETAINED=true
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+SHADOW_READ_RUNTIME_ACTIVE=false
+DRY_RUN_RUNTIME_ACTIVE=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+C72_RECOMMENDATION=C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION
+```
+
+C71 contract conclusion: operator validation passed. C71 authorizes only readiness for C72 controlled opt-in runtime bridge validation. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM runtime catalog consumption.
+
+
+## C72 Contract — Controlled Opt-In Runtime Bridge Validation
+
+Status: `OPERATOR_VALIDATED_ACCEPTED`
+
+C72 contract is controlled opt-in runtime bridge validation only. It validates that the activated production catalog can be read through an explicit opt-in, default-off, kill-switch protected, auditable, non-mutating bridge proof in an isolated validation path.
+
+C72 locks C71 final evidence, validates nested `c72_readiness_decision.*`, validates C71 → C60 lineage, keeps E02 as primary, B01 as backup, and A01 as comparator-only. C72 does not authorize live production deployment, PLAN/CONFIRM mutation, PLAN/CONFIRM output changes, or PLAN/CONFIRM runtime catalog consumption.
+
+```text
+C72_CONTROLLED_OPT_IN_REQUIRED=true
+C72_FEATURE_FLAG_DEFAULT_OFF=true
+C72_CONTROLLED_OPT_IN_FEATURE_FLAG_DEFAULT_OFF=true
+C72_KILL_SWITCH_REQUIRED=true
+C72_BASELINE_PLAN_CONFIRM_NON_MUTATION_REQUIRED=true
+C72_FALLBACK_BEHAVIOR_REQUIRED=true
+C72_AUDIT_OBSERVABILITY_REQUIRED=true
+A01_PROMOTED=false
+A01_USED_AS_RUNTIME_FALLBACK=false
+BAD_MONTH_RISK_RETAINED=true
+WEAK_REGIME_RISK_RETAINED=true
+SOURCE_BIAS_SHARED_CORE_RISK_RETAINED=true
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+```
+
+C72 pass means readiness for `C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION` only.
+
+## C72 Contract Final Validation — Operator Evidence 2026-06-24
+
+Status: `CONTRACT_ACCEPTED`
+
+```text
+PHPUNIT_C72=PASS
+PHPUNIT_C72_RESULT=OK (23 tests, 246 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (1186 tests, 20424 assertions)
+C72_RUNTIME=COMPLETED
+C72_FINAL_STATUS=C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C72_REASON_CODE=C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C72_ARTIFACT_HASH=df3ee58a47572900d42b91d8348f0d6ea9ad1965
+C72_ARTIFACT_FILE_SHA1=1ADF2C81797140A7A756B7A4EB02815AF1CBE75E
+```
+
+Contract validation result:
+
+```text
+C72_CONTRACT_ACCEPTED=true
+C71_LOCK_VALID=true
+C71_FILE_SHA1_VALID=true
+C71_TO_C60_LINEAGE_LOCK_VALID=true
+DATABASE_DICTIONARY_RULE_COMPLIED=true
+PRIMARY_E02_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_PASS=true
+BACKUP_B01_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_PASS=true
+A01_REMAINS_COMPARATOR_ONLY=true
+A01_PROMOTED=false
+A01_USED_AS_RUNTIME_FALLBACK=false
+DEFAULT_OFF_FEATURE_FLAGS_PASS=true
+EXPLICIT_OPT_IN_REQUIRED_PASS=true
+KILL_SWITCH_FORCE_DISABLE_PROVEN=true
+CONTROLLED_BRIDGE_READ_PROOF_PASS=true
+BASELINE_PLAN_CONFIRM_HASH_UNCHANGED_PASS=true
+PLAN_CONFIRM_OUTPUT_NON_MUTATION_PASS=true
+FALLBACK_BEHAVIOR_RUNTIME_BRIDGE_VALIDATION_PASS=true
+AUDIT_OBSERVABILITY_PROOF_PASS=true
+BAD_MONTH_RISK_RETAINED=true
+WEAK_REGIME_RISK_RETAINED=true
+SOURCE_BIAS_SHARED_CORE_RISK_RETAINED=true
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+C73_RECOMMENDATION=C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION
+```
+
+C72 contract conclusion: operator validation passed. C72 authorizes only readiness for C73 controlled parallel-run non-mutating PLAN/CONFIRM bridge validation. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM runtime catalog consumption by default.
+
+
+---
+
+## C73 Contract Tracker Append
+
+Contract: `C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION`.
+
+Command: `watchlist:backtest-c73-controlled-parallel-run-non-mutating-plan-confirm-bridge-validation`.
+
+Artifact: `storage/app/watchlist/backtest/c73-controlled-parallel-run-non-mutating-plan-confirm-bridge-validation.json`.
+
+C73 source lock: C72 expected artifact hash `df3ee58a47572900d42b91d8348f0d6ea9ad1965`; C72 expected file SHA1 `1ADF2C81797140A7A756B7A4EB02815AF1CBE75E`.
+
+C73 validates nested C72 readiness through `c73_readiness_decision.*`, not top-level aliases.
+
+C73 validates C72 → C60 lineage.
+
+Candidates remain frozen: E02 primary, B01 backup, A01 comparator-only.
+
+A01 cannot be promoted and cannot be used as runtime fallback.
+
+Feature flags remain default OFF. C73 requires `--controlled-parallel-run`. Kill switch protection remains available.
+
+Parallel-run output is written only to the C73 artifact and does not mutate live PLAN/CONFIRM.
+
+Parallel-run delta is advisory only and cannot select, retune, rerank, mutate, rollout, or deploy.
+
+Safety fields remain false: `production_catalog_runtime_wired`, `controlled_opt_in_runtime_bridge_active`, `controlled_parallel_run_active`, `production_deployment_allowed`, `production_deployment_executed`, `plan_confirm_mutation_allowed`, `plan_confirm_mutated`, `plan_confirm_runtime_reads_activated_catalog`, `live_plan_confirm_rollout_allowed`, `live_plan_confirm_rollout_executed`.
+
+C73 pass can only recommend `C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW`; it is not full production deployment and not PLAN/CONFIRM rollout.
+
+## C73 Final Operator Evidence Append
+
+C73 final evidence is locked to the operator run below:
+
+```text
+FOCUSED_PHPUNIT_C73=PASS: OK (19 tests, 269 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (1205 tests, 20693 assertions)
+C73_RUNTIME_STATUS=C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C73_RUNTIME_REASON_CODE=C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C73_ARTIFACT_HASH=34f1f84a4261da7ce1cb9d17a1bf33dfb1458281
+C73_ARTIFACT_FILE_SHA1=BF18CAA2654D5A7DE5419DE5DAF42E0B55D73CC9
+C72_ARTIFACT_HASH=df3ee58a47572900d42b91d8348f0d6ea9ad1965
+C72_ARTIFACT_FILE_SHA1=1ADF2C81797140A7A756B7A4EB02815AF1CBE75E
+C72_HASH_MATCH=true
+C72_FILE_SHA1_MATCH=true
+C72_SOURCE_LINEAGE_MATCH=true
+C73_VALIDATION_ALLOWED=true
+C73_VALIDATION_PASS=true
+C73_PRODUCTION_CATALOG_RUNTIME_WIRED=false
+C73_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=false
+C73_CONTROLLED_PARALLEL_RUN_ACTIVE=false
+C73_PRODUCTION_DEPLOYMENT_ALLOWED=false
+C73_PRODUCTION_DEPLOYMENT_EXECUTED=false
+C73_PLAN_CONFIRM_MUTATION_ALLOWED=false
+C73_PLAN_CONFIRM_MUTATED=false
+C73_PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+C73_LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+C73_LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+C74_CANDIDATE_READY_FOR_C74_COUNT=2
+C74_RECOMMENDATION=C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW
+```
+
+Final C73 conclusion: accepted. C73 only authorizes readiness for C74 controlled operator-reviewed rollout gate / deployment readiness review. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM default runtime catalog consumption.

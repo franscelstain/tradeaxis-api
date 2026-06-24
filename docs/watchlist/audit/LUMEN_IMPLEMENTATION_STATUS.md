@@ -9577,3 +9577,309 @@ C71_RECOMMENDATION=C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION
 ```
 
 Final C70 conclusion: C70 is accepted as controlled non-live production deployment execution review. It does not execute live production deployment, does not mutate PLAN/CONFIRM, does not wire the activated catalog into PLAN/CONFIRM runtime, and does not change PLAN/CONFIRM output. The only valid next step is `C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION`.
+
+
+## C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION
+
+C71 is isolated shadow-read / dry-run runtime validation.
+C71 starts from locked C70 final evidence.
+C70 controlled deployment execution review passed primary + backup.
+E02 is primary shadow-read/dry-run runtime validation candidate.
+B01 is backup shadow-read/dry-run runtime validation candidate.
+A01 is comparator-only and cannot be promoted.
+C71 validates C70 artifact hash and file SHA1.
+C71 validates C70 readiness through nested `c71_readiness_decision.*` path.
+C71 validates C70 → C60 lineage.
+C71 does not redesign.
+C71 does not retune.
+C71 does not run parameter search.
+C71 does not use OOS to rerank.
+C71 does not change candidate scope.
+C71 may create isolated shadow-read proof.
+C71 may create isolated dry-run proof.
+C71 may create baseline PLAN/CONFIRM non-mutation proof.
+C71 may create fallback behavior proof.
+C71 does not wire activated catalog to PLAN/CONFIRM live.
+C71 does not deploy live production.
+C71 does not mutate PLAN/CONFIRM.
+C71 does not change PLAN/CONFIRM output.
+C71 keeps `production_catalog_runtime_wired=false`.
+C71 keeps `shadow_read_runtime_active=false`.
+C71 keeps `dry_run_runtime_active=false`.
+C71 keeps `production_deployment_allowed=false`.
+C71 keeps `production_deployment_executed=false`.
+C71 keeps `plan_confirm_mutation_allowed=false`.
+C71 keeps `plan_confirm_mutated=false`.
+C71 keeps `plan_confirm_runtime_reads_activated_catalog=false`.
+C71 keeps `live_plan_confirm_rollout_allowed=false`.
+C71 keeps `live_plan_confirm_rollout_executed=false`.
+C71 carries bad-month risk as documented risk.
+C71 carries weak-regime risk as documented risk.
+C71 carries source-bias/shared-core risk as documented risk.
+C65 cleanup note remains non-blocking.
+C71 pass is not full production deployment.
+C71 pass is not PLAN/CONFIRM rollout.
+
+---
+
+## C71 Final Operator Evidence
+
+Source of truth for this final update: operator validation output from local repository `D:\Laravel\watchlist\tradeaxis-api` after applying C71.
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+```text
+PHPUNIT_C71=PASS
+PHPUNIT_C71_RESULT=OK (22 tests, 275 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (1163 tests, 20178 assertions)
+C71_RUNTIME=COMPLETED
+C71_FINAL_STATUS=C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C71_REASON_CODE=C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C71_ARTIFACT_PATH=storage/app/watchlist/backtest/c71-shadow-read-or-dry-run-runtime-validation.json
+C71_ARTIFACT_HASH=dee0b4e6a5a17dcb7c99eccf6f54832f88aefa1f
+C71_FILE_SHA1=4F2D3C8AE01F3EB0CE60D820FA78BDBD2CA2ABDB
+```
+
+C71 runtime decision:
+
+```text
+RUN_CODE=C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION
+SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_EXECUTED=true
+SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_PASS=true
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+SHADOW_READ_RUNTIME_ACTIVE=false
+DRY_RUN_RUNTIME_ACTIVE=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+```
+
+C71 candidate scorecard result:
+
+```text
+PRIMARY_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+PRIMARY_ROLE=primary_shadow_read_or_dry_run_runtime_validation_candidate
+PRIMARY_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_PASS=true
+PRIMARY_READY_FOR_C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION=true
+
+BACKUP_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+BACKUP_ROLE=backup_shadow_read_or_dry_run_runtime_validation_candidate
+BACKUP_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_PASS=true
+BACKUP_READY_FOR_C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION=true
+
+COMPARATOR_ONLY_CANDIDATE=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+COMPARATOR_ONLY_ROLE=comparator_only
+COMPARATOR_ONLY_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION_PASS=false
+A01_PROMOTED=false
+A01_USED_AS_RUNTIME_FALLBACK=false
+```
+
+C72 readiness decision:
+
+```text
+C72_VALIDATION_COMPLETED=true
+CANDIDATE_READY_FOR_C72_COUNT=2
+CANDIDATE_READY_FOR_C72_CODES=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE,C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+C72_RECOMMENDATION=C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION
+C72_DECISION_REASON=C71 passed isolated shadow-read/dry-run validation only.
+C72_DIAGNOSTIC_CONCLUSION=READY_FOR_C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION
+```
+
+Final C71 conclusion: C71 is accepted as isolated shadow-read / dry-run runtime validation for E02 primary and B01 backup. A01 remains comparator-only. C71 does not execute live production deployment, does not mutate PLAN/CONFIRM, does not wire the activated catalog into PLAN/CONFIRM runtime, and does not change PLAN/CONFIRM output. The only valid next step is `C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION`.
+
+
+## C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION Implementation — Current Session
+
+Status: `OPERATOR_VALIDATED_ACCEPTED`
+
+C72 is controlled opt-in runtime bridge validation. C72 starts from locked C71 final evidence and validates C71 artifact hash/file SHA1, nested `c72_readiness_decision.*`, C71 → C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C72 implementation adds an isolated non-live controlled opt-in runtime bridge validation service, command, contract, context, tests, and audit docs. It does not deploy live production, does not mutate PLAN/CONFIRM, does not change PLAN/CONFIRM output, and does not wire activated catalog into the PLAN/CONFIRM default runtime path.
+
+```text
+C72_COMMAND=watchlist:backtest-c72-controlled-opt-in-runtime-bridge-validation
+C72_ARTIFACT_PATH=storage/app/watchlist/backtest/c72-controlled-opt-in-runtime-bridge-validation.json
+C71_LOCK_HASH=dee0b4e6a5a17dcb7c99eccf6f54832f88aefa1f
+C71_FILE_SHA1=4F2D3C8AE01F3EB0CE60D820FA78BDBD2CA2ABDB
+PRIMARY_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY_CANDIDATE=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+```
+
+C72 may only recommend `C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION` if all controlled opt-in gates pass. C72 pass is not full production deployment and is not PLAN/CONFIRM rollout.
+
+## C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION Final Operator Evidence — 2026-06-24
+
+Status: `OPERATOR_VALIDATED_ACCEPTED`
+
+```text
+FOCUSED_PHPUNIT_C72=PASS
+FOCUSED_PHPUNIT_C72_RESULT=OK (23 tests, 246 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (1186 tests, 20424 assertions)
+C72_RUNTIME=PASS
+C72_FINAL_STATUS=C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C72_REASON_CODE=C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C72_ARTIFACT_HASH=df3ee58a47572900d42b91d8348f0d6ea9ad1965
+C72_ARTIFACT_FILE_SHA1=1ADF2C81797140A7A756B7A4EB02815AF1CBE75E
+```
+
+C72 final validation markers:
+
+```text
+C71_HASH_MATCH=true
+C71_FILE_SHA1_MATCH=true
+C71_SOURCE_LINEAGE_MATCH=true
+DATABASE_DICTIONARY_RULE_COMPLIED=true
+C71_LOCK_VALIDATION_COMPLETED=true
+C72_READINESS_NESTED_PATH_VALIDATED=true
+LINEAGE_VALIDATION_COMPLETED=true
+CANDIDATE_SCOPE_FREEZE_COMPLETED=true
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_EXECUTED=true
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_ALLOWED=true
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_PASS=true
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION_PASS_SCOPE=PRIMARY_AND_BACKUP
+PRIMARY_BRIDGE_READINESS_PASS=true
+BACKUP_BRIDGE_READINESS_PASS=true
+A01_REMAINS_COMPARATOR_ONLY=true
+DEFAULT_OFF_FEATURE_FLAG_PASS=true
+EXPLICIT_OPT_IN_REQUIRED_PASS=true
+KILL_SWITCH_RUNTIME_BRIDGE_VALIDATION_PASS=true
+CONTROLLED_BRIDGE_READ_EXECUTION_PROOF_PASS=true
+PLAN_CONFIRM_OUTPUT_NON_MUTATION_PASS=true
+BASELINE_PLAN_CONFIRM_HASH_UNCHANGED=true
+FALLBACK_BEHAVIOR_RUNTIME_BRIDGE_VALIDATION_PASS=true
+PRODUCTION_MUTATION_SAFETY_PASS=true
+DOCUMENTATION_GOVERNANCE_PASS=true
+```
+
+C72 final safety boundary:
+
+```text
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+SELECTION_CHANGED_AFTER_C72=false
+PARAMETER_CHANGED_AFTER_C72=false
+NEW_CANDIDATE_CREATED=false
+OOS_REUSED_FOR_RANKING=false
+LATEST_SHORTCUT_USED=false
+MAX_DATE_SHORTCUT_USED=false
+FUTURE_LOOKUP_DETECTED=false
+RETURN_FIELDS_USED_FOR_SELECTION=false
+```
+
+C73 readiness decision:
+
+```text
+C73_CANDIDATE_READY_FOR_C73_COUNT=2
+C73_CANDIDATE_CODES=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE,C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+C73_RECOMMENDATION=C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION
+C73_DIAGNOSTIC_CONCLUSION=READY_FOR_C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION
+```
+
+Final C72 conclusion: C72 is accepted. The result is readiness for C73 controlled parallel-run non-mutating PLAN/CONFIRM bridge validation only. C72 is not live production deployment and is not PLAN/CONFIRM rollout.
+
+
+---
+
+## C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION — Implementation Append
+
+Status: implemented as isolated non-live validation path.
+
+C73 is controlled parallel-run non-mutating PLAN/CONFIRM bridge validation.
+
+C73 starts from locked C72 final evidence.
+
+C72 controlled opt-in runtime bridge validation passed primary + backup.
+
+C72 lock expected by C73:
+
+```text
+C72_ARTIFACT_HASH=df3ee58a47572900d42b91d8348f0d6ea9ad1965
+C72_ARTIFACT_FILE_SHA1=1ADF2C81797140A7A756B7A4EB02815AF1CBE75E
+```
+
+E02 is primary controlled parallel-run candidate: `C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE`.
+
+B01 is backup controlled parallel-run candidate: `C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION`.
+
+A01 is comparator-only and cannot be promoted: `C61_A01_B01_WEAK_REGIME_QUALITY_FIRST`.
+
+C73 validates C72 artifact hash and file SHA1.
+
+C73 validates C72 readiness through nested `c73_readiness_decision.*` path.
+
+C73 validates C72 → C60 lineage.
+
+C73 does not redesign, retune, run parameter search, use OOS to rerank, or change candidate scope.
+
+C73 may create isolated controlled parallel-run proof, PLAN/CONFIRM baseline-vs-bridge comparison proof, parallel-run delta report, baseline PLAN/CONFIRM non-mutation proof, and fallback behavior proof.
+
+C73 does not wire activated catalog to PLAN/CONFIRM live, does not deploy live production, does not mutate PLAN/CONFIRM, and does not change PLAN/CONFIRM output.
+
+C73 keeps `production_catalog_runtime_wired=false`, `controlled_opt_in_runtime_bridge_active=false`, `controlled_parallel_run_active=false`, `production_deployment_allowed=false`, `production_deployment_executed=false`, `plan_confirm_mutation_allowed=false`, `plan_confirm_mutated=false`, `plan_confirm_runtime_reads_activated_catalog=false`, `live_plan_confirm_rollout_allowed=false`, and `live_plan_confirm_rollout_executed=false`.
+
+C73 carries bad-month risk as documented risk, weak-regime risk as documented risk, and source-bias/shared-core risk as documented risk.
+
+C65 cleanup note remains non-blocking.
+
+C73 may only recommend C74 controlled operator-reviewed rollout gate / deployment readiness review if all controlled parallel-run gates pass.
+
+C73 pass is not full production deployment and C73 pass is not PLAN/CONFIRM rollout.
+
+## C73 Final Operator Evidence Append
+
+C73 final evidence is locked to the operator run below:
+
+```text
+FOCUSED_PHPUNIT_C73=PASS: OK (19 tests, 269 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (1205 tests, 20693 assertions)
+C73_RUNTIME_STATUS=C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C73_RUNTIME_REASON_CODE=C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION_PASSED_PRIMARY_AND_BACKUP
+C73_ARTIFACT_HASH=34f1f84a4261da7ce1cb9d17a1bf33dfb1458281
+C73_ARTIFACT_FILE_SHA1=BF18CAA2654D5A7DE5419DE5DAF42E0B55D73CC9
+C72_ARTIFACT_HASH=df3ee58a47572900d42b91d8348f0d6ea9ad1965
+C72_ARTIFACT_FILE_SHA1=1ADF2C81797140A7A756B7A4EB02815AF1CBE75E
+C72_HASH_MATCH=true
+C72_FILE_SHA1_MATCH=true
+C72_SOURCE_LINEAGE_MATCH=true
+C73_VALIDATION_ALLOWED=true
+C73_VALIDATION_PASS=true
+C73_PRODUCTION_CATALOG_RUNTIME_WIRED=false
+C73_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=false
+C73_CONTROLLED_PARALLEL_RUN_ACTIVE=false
+C73_PRODUCTION_DEPLOYMENT_ALLOWED=false
+C73_PRODUCTION_DEPLOYMENT_EXECUTED=false
+C73_PLAN_CONFIRM_MUTATION_ALLOWED=false
+C73_PLAN_CONFIRM_MUTATED=false
+C73_PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+C73_LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+C73_LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+C74_CANDIDATE_READY_FOR_C74_COUNT=2
+C74_RECOMMENDATION=C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW
+```
+
+Final C73 conclusion: accepted. C73 only authorizes readiness for C74 controlled operator-reviewed rollout gate / deployment readiness review. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM default runtime catalog consumption.
