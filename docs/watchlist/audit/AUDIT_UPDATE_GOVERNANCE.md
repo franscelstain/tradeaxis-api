@@ -3554,8 +3554,8 @@ FULL_WATCHLIST_PHPUNIT=PASS: OK (1119 tests, 19649 assertions)
 C69_RUNTIME=COMPLETED
 C69_FINAL_STATUS=C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW_PASSED_PRIMARY_AND_BACKUP
 C69_REASON_CODE=C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW_PASSED_PRIMARY_AND_BACKUP
-C69_ARTIFACT_HASH=10ee362ab56b94db8eed04133d56704918cce853
-C69_FILE_SHA1=75824CD4A816D8EE640835C0F97EBD03C9292345
+C69_ARTIFACT_HASH=477a279a1f35cfafb811f5984e7a329f72d3f08e
+C69_FILE_SHA1=82BAF5F192AF0C4680303F7A0409D0EA446A8192
 NEXT_STEP_RECOMMENDATION=C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW
 ```
 
@@ -3592,3 +3592,92 @@ DATABASE_DICTIONARY_RULE_COMPLIED=true
 
 C69 governance final decision: accepted. C69 is a production deployment prep / bridge review only. It does not execute production deployment, does not wire the activated catalog into PLAN/CONFIRM, and does not mutate PLAN/CONFIRM. C70 must review deployment execution separately before any runtime consumer can read the activated catalog.
 
+
+## C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW Governance
+
+C70 is controlled production deployment execution review.
+C70 starts from locked C69 final evidence.
+E02 is primary controlled deployment execution candidate.
+B01 is backup controlled deployment execution candidate.
+A01 is comparator-only and cannot be promoted.
+C70 validates C69 artifact hash and file SHA1.
+C70 validates C69 readiness through nested `c70_readiness_decision.*` path.
+C70 validates C69 → C60 lineage.
+C70 does not redesign.
+C70 does not retune.
+C70 does not run parameter search.
+C70 does not use OOS to rerank.
+C70 does not change candidate scope.
+C70 does not wire activated catalog to PLAN/CONFIRM live.
+C70 does not deploy live production.
+C70 does not mutate PLAN/CONFIRM.
+C70 does not change PLAN/CONFIRM output.
+C70 keeps `production_catalog_runtime_wired=false`.
+C70 keeps `production_deployment_allowed=false`.
+C70 keeps `production_deployment_executed=false`.
+C70 keeps `plan_confirm_mutation_allowed=false`.
+C70 keeps `plan_confirm_mutated=false`.
+C70 keeps `plan_confirm_runtime_reads_activated_catalog=false`.
+C70 keeps `live_plan_confirm_rollout_allowed=false`.
+C70 keeps `live_plan_confirm_rollout_executed=false`.
+C70 carries bad-month risk as documented risk.
+C70 carries weak-regime risk as documented risk.
+C70 carries source-bias/shared-core risk as documented risk.
+C65 cleanup note remains non-blocking.
+C70 pass is not full production deployment.
+C70 pass is not PLAN/CONFIRM rollout.
+
+## C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW Governance — Final Operator Evidence
+
+Source of truth for this governance update: `tradeaxis-api_C70.zip`.
+
+C70 final operator evidence:
+
+```text
+ROOT_ALIGNMENT_NOTE_FILE_PRESENT=false
+OLD_C69_LOCK_REFERENCES_PRESENT=false
+PHPUNIT_C70=PASS: OK (22 tests, 254 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (1141 tests, 19903 assertions)
+C70_RUNTIME=COMPLETED
+C70_FINAL_STATUS=C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C70_REASON_CODE=C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C70_ARTIFACT_HASH=d148bfa0e277387a4d2a1348904117bc8772bce2
+C70_FILE_SHA1=436657CCA085C88B425A2BD402AD425C810D477B
+C69_ARTIFACT_HASH=477a279a1f35cfafb811f5984e7a329f72d3f08e
+C69_FILE_SHA1=82BAF5F192AF0C4680303F7A0409D0EA446A8192
+C69_HASH_MATCH=true
+C69_FILE_SHA1_MATCH=true
+NEXT_STEP_RECOMMENDATION=C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION
+```
+
+C70 final governance constraints remain active:
+
+```text
+NO_LIVE_PRODUCTION_DEPLOYMENT=true
+NO_PLAN_CONFIRM_MUTATION=true
+NO_PLAN_CONFIRM_OUTPUT_CHANGE=true
+NO_RUNTIME_CATALOG_WIRING=true
+NO_REDESIGN=true
+NO_RETUNE=true
+NO_PARAMETER_SEARCH=true
+NO_OOS_BASED_RERANKING=true
+CANDIDATE_SCOPE_CHANGED_AFTER_C69=false
+NEW_CANDIDATE_CREATED=false
+SELECTION_RULE_CHANGED=false
+PARAMETER_CHANGED=false
+A01_PROMOTED=false
+BAD_MONTH_RISK_RETAINED=true
+WEAK_REGIME_RISK_RETAINED=true
+SOURCE_BIAS_SHARED_CORE_RISK_RETAINED=true
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+```
+
+C70 governance final decision: accepted. C70 is a controlled non-live production deployment execution review only. It does not execute production deployment, does not wire the activated catalog into PLAN/CONFIRM, does not mutate PLAN/CONFIRM, and does not change PLAN/CONFIRM output. The only valid next step is `C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION`.
