@@ -129,10 +129,10 @@ C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PAS
 Runtime C74 reason_code:
 C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
 
-Runtime C74 artifact_hash:
+Superseded pre-alignment runtime C74 artifact_hash:
 2e02737a212cf9043d5937f5354a3c31541dc22f
 
-Runtime C74 file SHA1:
+Superseded pre-alignment runtime C74 file SHA1:
 C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187
 ```
 
@@ -148,3 +148,21 @@ Final cleanup result:
 storage/app/watchlist/backtest/c74-no-operator-review-test.json removed
 ```
 
+
+
+---
+
+## Final C74 alignment result used by C75/C76
+
+The earlier C74 hash block above is retained only as superseded historical/pre-alignment evidence.
+
+Use this active C74 lock for C75/C76 handoff:
+
+```text
+C74_ALIGNED_ARTIFACT_HASH=8958e1fcec798fbd364642864b0a9d0c21bd8f93
+C74_ALIGNED_FILE_SHA1=D4C2EF90B533BED11F6902E75141BE5774E947BE
+C74_ALIGNED_SOURCE_LINEAGE_MATCH=true
+C74_ALIGNED_READY_FOR_C75=true
+```
+
+Any C75 or C76 command examples must use the aligned C74 lock above and must not use the superseded historical C74 hash as the active expected lock.

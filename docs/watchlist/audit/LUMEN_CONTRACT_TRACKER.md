@@ -7782,8 +7782,8 @@ Focused PHPUnit C74: OK (40 tests, 227 assertions)
 Full Watchlist PHPUnit: OK (1245 tests, 20920 assertions)
 Runtime status: C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
 Runtime reason_code: C74_CONTROLLED_OPERATOR_REVIEWED_ROLLOUT_GATE_OR_DEPLOYMENT_READINESS_REVIEW_PASSED_PRIMARY_AND_BACKUP
-Artifact hash: 2e02737a212cf9043d5937f5354a3c31541dc22f
-File SHA1: C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187
+Superseded pre-alignment artifact hash: 2e02737a212cf9043d5937f5354a3c31541dc22f
+Superseded pre-alignment file SHA1: C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187
 ```
 
 C74 source lock contract passed: expected C73 hash/SHA1 matched actual C73 hash/SHA1, C73 source lineage was checked, and C73 source lineage matched.
@@ -7798,3 +7798,123 @@ Negative operator-review contract passed: without `--operator-reviewed`, C74 rej
 
 Final contract conclusion: C74 is readiness-only and does not authorize full production deployment, PLAN/CONFIRM live rollout, PLAN/CONFIRM mutation, or PLAN/CONFIRM default runtime catalog consumption.
 
+---
+
+## C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW
+
+C75 is controlled operator-approved rollout execution review / controlled wiring execution review.
+
+C75 starts from locked C74 final evidence. C74 controlled operator-reviewed rollout gate passed primary + backup.
+
+C75 validates the aligned C74 artifact hash and file SHA1: artifact hash `8958e1fcec798fbd364642864b0a9d0c21bd8f93`, file SHA1 `D4C2EF90B533BED11F6902E75141BE5774E947BE`. The earlier C74 hash `2e02737a212cf9043d5937f5354a3c31541dc22f` / `C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187` is superseded historical/pre-alignment evidence only.
+
+C75 validates C74 readiness through nested `c75_readiness_decision.*` path and validates C74 → C60 lineage.
+
+E02 is primary controlled execution review candidate. B01 is backup controlled execution review candidate. A01 is comparator-only and cannot be promoted.
+
+C75 requires --operator-approved and requires non-empty --approval-reference.
+
+C75 does not redesign, does not retune, does not run parameter search, does not use OOS to rerank, does not use parallel-run delta to rerank, does not use controlled wiring result to rerank, and does not change candidate scope.
+
+C75 may create controlled operator-approved execution review proof, explicit controlled wiring context proof, rollback/emergency disable proof, and next-session readiness decision.
+
+C75 does not wire activated catalog to PLAN/CONFIRM live default runtime. C75 does not deploy live production. C75 does not mutate PLAN/CONFIRM. C75 does not change PLAN/CONFIRM output.
+
+C75 keeps `production_catalog_runtime_wired=false`, `controlled_opt_in_runtime_bridge_active=false`, `controlled_parallel_run_active=false`, `controlled_rollout_active=false`, `controlled_wiring_context_persisted_to_live_runtime=false`, `production_deployment_allowed=false`, `production_deployment_executed=false`, `plan_confirm_mutation_allowed=false`, `plan_confirm_mutated=false`, `plan_confirm_runtime_reads_activated_catalog=false`, `live_plan_confirm_rollout_allowed=false`, and `live_plan_confirm_rollout_executed=false`.
+
+C75 carries bad-month risk as documented risk, weak-regime risk as documented risk, and source-bias/shared-core risk as documented risk. C65 cleanup note remains non-blocking.
+
+C75 may only recommend C76 controlled runtime opt-in pilot / shadow rollout preparation review if all execution/wiring gates pass. C75 pass is not full production deployment. C75 pass is not PLAN/CONFIRM live rollout.
+
+
+---
+
+## C75 Final Contract Evidence Append — 2026-06-24
+
+C75 final operator evidence is accepted and locked to the aligned C74 artifact.
+
+```text
+FOCUSED_PHPUNIT_C75=OK (18 tests, 203 assertions)
+FULL_WATCHLIST_PHPUNIT=OK (1263 tests, 21123 assertions)
+C75_RUNTIME_STATUS=C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C75_RUNTIME_REASON_CODE=C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C75_ARTIFACT_HASH=cd1346cd05ab5471a947fcb5304e0f347a4881eb
+C75_FILE_SHA1=668043836BA1DB8FF50EC69DF0560988E633CF75
+C74_LOCK_USED_BY_C75_ARTIFACT_HASH=8958e1fcec798fbd364642864b0a9d0c21bd8f93
+C74_LOCK_USED_BY_C75_FILE_SHA1=D4C2EF90B533BED11F6902E75141BE5774E947BE
+C75_C74_HASH_MATCH=true
+C75_C74_FILE_SHA1_MATCH=true
+C75_SOURCE_LINEAGE_MATCH=true
+C75_FINAL_LOCK_SAFE_FOR_C76=true
+```
+
+C75 controlled operator-approved rollout execution review and controlled wiring execution review passed for E02 primary and B01 backup.
+
+```text
+CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_ALLOWED=true
+CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_PASS=true
+CONTROLLED_WIRING_EXECUTION_REVIEW_ALLOWED=true
+CONTROLLED_WIRING_EXECUTION_REVIEW_PASS=true
+NEXT_CANDIDATE_READY_FOR_NEXT_CONTROLLED_PILOT_COUNT=2
+NEXT_RECOMMENDATION=C76_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PREPARATION_REVIEW
+```
+
+C75 remained non-live and non-mutating.
+
+```text
+PRODUCTION_READY=false
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=false
+CONTROLLED_PARALLEL_RUN_ACTIVE=false
+CONTROLLED_ROLLOUT_ACTIVE=false
+CONTROLLED_WIRING_CONTEXT_PERSISTED_TO_LIVE_RUNTIME=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=false
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
+```
+
+Negative operator approval evidence passed.
+
+```text
+C75_NEGATIVE_WITHOUT_OPERATOR_APPROVED=PASS
+C75_NEGATIVE_WITHOUT_OPERATOR_APPROVAL_STATUS=C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+C75_NEGATIVE_WITHOUT_APPROVAL_REFERENCE=PASS
+C75_NEGATIVE_WITHOUT_APPROVAL_REFERENCE_STATUS=C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+C75_NEGATIVE_TEMP_ARTIFACTS_REMOVED=true
+```
+
+The historical C74 hash `2e02737a212cf9043d5937f5354a3c31541dc22f` and file SHA1 `C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187` are superseded/pre-alignment only. They are not active C75/C76 locks. The active C76 source lock is the C75 artifact hash/SHA1 recorded in this append.
+
+Final C75 conclusion: accepted. C75 only authorizes readiness for C76 controlled runtime opt-in pilot / shadow rollout preparation review. C75 is not full production deployment, not PLAN/CONFIRM live rollout, not PLAN/CONFIRM mutation, and not default runtime catalog consumption.
+
+---
+
+## C76_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PREPARATION_REVIEW
+
+C76 contract adds `WatchlistBacktestC76ControlledRuntimeOptInPilotOrShadowRolloutPreparationReviewService`, command `watchlist:backtest-c76-controlled-runtime-opt-in-pilot-or-shadow-rollout-preparation-review`, isolated controlled runtime opt-in pilot preparation contract/context, and isolated controlled shadow rollout preparation contract/context.
+
+C76 is controlled runtime opt-in pilot / shadow rollout preparation review. C76 starts from locked C75 final evidence. C75 controlled operator-approved execution/wiring review passed primary + backup.
+
+C76 validates C75 artifact hash and file SHA1, validates C75 readiness through nested `next_readiness_decision.*` path, and validates C75 -> C60 lineage.
+
+E02 is primary controlled pilot/shadow preparation candidate. B01 is backup controlled pilot/shadow preparation candidate. A01 is comparator-only and cannot be promoted.
+
+C76 requires --operator-approved and requires non-empty --approval-reference.
+
+C76 does not redesign, does not retune, does not run parameter search, does not use OOS to rerank, does not use parallel-run delta to rerank, does not use controlled wiring result to rerank, does not use pilot/shadow preparation result to rerank, and does not change candidate scope.
+
+C76 may create controlled runtime opt-in pilot preparation proof, controlled shadow rollout preparation proof, explicit controlled pilot/shadow context proof, rollback/emergency disable proof, and next-session readiness decision.
+
+C76 does not wire activated catalog to PLAN/CONFIRM live default runtime. C76 does not deploy live production. C76 does not mutate PLAN/CONFIRM. C76 does not change PLAN/CONFIRM output.
+
+C76 keeps `production_catalog_runtime_wired=false`, `controlled_opt_in_runtime_bridge_active=false`, `controlled_parallel_run_active=false`, `controlled_rollout_active=false`, `controlled_pilot_context_persisted_to_live_runtime=false`, `controlled_shadow_context_persisted_to_live_runtime=false`, `production_deployment_allowed=false`, `production_deployment_executed=false`, `plan_confirm_mutation_allowed=false`, `plan_confirm_mutated=false`, `plan_confirm_runtime_reads_activated_catalog=false`, `live_plan_confirm_rollout_allowed=false`, and `live_plan_confirm_rollout_executed=false`.
+
+C76 carries bad-month risk as documented risk. C76 carries weak-regime risk as documented risk. C76 carries source-bias/shared-core risk as documented risk. C65 cleanup note remains non-blocking.
+
+C76 may only recommend C77 controlled runtime opt-in pilot / shadow rollout execution review if all preparation gates pass.
+
+C76 pass is not full production deployment. C76 pass is not PLAN/CONFIRM live rollout. C76 pass is not runtime bridge activation.
