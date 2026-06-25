@@ -7918,3 +7918,12 @@ C76 carries bad-month risk as documented risk. C76 carries weak-regime risk as d
 C76 may only recommend C77 controlled runtime opt-in pilot / shadow rollout execution review if all preparation gates pass.
 
 C76 pass is not full production deployment. C76 pass is not PLAN/CONFIRM live rollout. C76 pass is not runtime bridge activation.
+## C77_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_EXECUTION_REVIEW
+
+C77 contract adds `WatchlistBacktestC77ControlledRuntimeOptInPilotOrShadowRolloutExecutionReviewService`, command `watchlist:backtest-c77-controlled-runtime-opt-in-pilot-or-shadow-rollout-execution-review`, isolated controlled runtime opt-in pilot execution review contract/context, and isolated controlled shadow rollout execution review contract/context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, and PLAN/CONFIRM-safe.
+
+C77 validates locked C76 final evidence, nested C76 readiness, C76 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C77 pass can only recommend `C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.

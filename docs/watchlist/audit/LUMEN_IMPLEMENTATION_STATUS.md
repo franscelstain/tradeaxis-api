@@ -10108,3 +10108,16 @@ C76 carries bad-month risk as documented risk. C76 carries weak-regime risk as d
 C76 may only recommend C77 controlled runtime opt-in pilot / shadow rollout execution review if all preparation gates pass.
 
 C76 pass is not full production deployment. C76 pass is not PLAN/CONFIRM live rollout. C76 pass is not runtime bridge activation.
+## C77_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_EXECUTION_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C77 starts from locked C76 final evidence and validates C76 artifact hash `40f1bc516ddbb127ab6f62433059cb99ff2ae2de` plus file SHA1 `115929AD40A739E9BE1D5A1A58DAA4FECB394ACD`.
+C77 validates C76 readiness only through nested `next_readiness_decision.*`.
+C77 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C77 requires `--operator-approved` and non-empty `--approval-reference`.
+C77 produces an isolated execution-review artifact only.
+C77 does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
