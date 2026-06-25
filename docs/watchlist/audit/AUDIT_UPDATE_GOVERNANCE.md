@@ -4116,3 +4116,60 @@ Allowed next recommendation only if all C77 gates pass:
 ```text
 C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
 ```
+
+---
+
+## C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
+
+Append-only audit update: C78 controlled limited runtime opt-in pilot / shadow rollout observation review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C77 artifact hash and file SHA1 must match.
+C77 readiness must be read from nested next_readiness_decision.*.
+C77 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Observation review result is advisory and non-mutating.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C78 gates pass:
+
+```text
+C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW
+```
+
+---
+
+## C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW
+
+Append-only audit update: C79 controlled limited runtime opt-in pilot / shadow rollout observation result review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C78 artifact hash and file SHA1 must match.
+C78 readiness must be read from nested next_readiness_decision.*.
+C78 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Observation result review result is advisory and non-mutating.
+Progress summary and planned next summary are artifact-only.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C79 gates pass:
+
+```text
+C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
+```

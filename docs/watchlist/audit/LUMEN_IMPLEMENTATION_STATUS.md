@@ -10121,3 +10121,38 @@ C77 produces an isolated execution-review artifact only.
 C77 does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
 
 NEXT_RECOMMENDATION_IF_PASS=C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
+
+---
+
+## C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C78 starts from locked C77 final evidence and validates C77 artifact hash `d827547d6d40a73785d4c2409b2913f60db42115` plus file SHA1 `8C296276DD4D278206366953F975AFD5F7E328DE`.
+C78 validates C77 readiness only through nested `next_readiness_decision.*`.
+C78 validates C77 -> C60 lineage, including C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C78 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C78 requires `--operator-approved` and non-empty `--approval-reference`.
+C78 produces an isolated observation-review artifact only.
+C78 does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW
+
+---
+
+## C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C79 starts from locked C78 final evidence and validates C78 artifact hash `989826f1620bea4592e3543d4908670192fab7f0` plus file SHA1 `6C6EE121EB7B5F86E19532D24115139F5915CBF3`.
+C79 validates C78 readiness only through nested `next_readiness_decision.*`.
+C79 validates C78 -> C60 lineage, including C78 -> C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C79 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C79 requires `--operator-approved` and non-empty `--approval-reference`.
+C79 produces an isolated observation-result-review artifact only.
+C79 records progress summary and planned next summary in the artifact.
+C79 does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW

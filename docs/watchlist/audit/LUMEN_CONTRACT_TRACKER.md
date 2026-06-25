@@ -7927,3 +7927,27 @@ The contract is operator-approved, approval-reference-required, explicit-context
 C77 validates locked C76 final evidence, nested C76 readiness, C76 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
 
 C77 pass can only recommend `C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
+
+C78 contract adds `WatchlistBacktestC78ControlledLimitedRuntimeOptInPilotOrShadowRolloutObservationReviewService`, command `watchlist:backtest-c78-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-observation-review`, isolated controlled limited runtime opt-in pilot observation review contract/context, and isolated controlled limited shadow rollout observation review contract/context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, and PLAN/CONFIRM-safe.
+
+C78 validates locked C77 final evidence, nested C77 readiness, C77 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C78 pass can only recommend `C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW
+
+C79 contract adds `WatchlistBacktestC79ControlledLimitedRuntimeOptInPilotOrShadowRolloutObservationResultReviewService`, command `watchlist:backtest-c79-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-observation-result-review`, isolated controlled limited runtime opt-in pilot observation result review contract/context, and isolated controlled limited shadow rollout observation result review contract/context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, and PLAN/CONFIRM-safe.
+
+C79 validates locked C78 final evidence, nested C78 readiness, C78 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C79 pass can only recommend `C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
