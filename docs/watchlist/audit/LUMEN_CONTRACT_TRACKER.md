@@ -7951,3 +7951,15 @@ The contract is operator-approved, approval-reference-required, explicit-context
 C79 validates locked C78 final evidence, nested C78 readiness, C78 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
 
 C79 pass can only recommend `C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
+
+C80 contract adds `WatchlistBacktestC80ControlledLimitedRuntimeOptInPilotOrShadowRolloutOperatorGoNoGoReviewService`, command `watchlist:backtest-c80-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-operator-go-no-go-review`, isolated controlled limited operator go/no-go review contract, and isolated explicit operator go/no-go context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, and PLAN/CONFIRM-safe.
+
+C80 validates locked C79 final evidence, nested C79 readiness, C79 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C80 pass records artifact-only operator GO for primary and backup and can only recommend `C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.

@@ -4173,3 +4173,32 @@ Allowed next recommendation only if all C79 gates pass:
 ```text
 C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
 ```
+
+---
+
+## C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
+
+Append-only audit update: C80 controlled limited runtime opt-in pilot / shadow rollout operator go/no-go review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C79 artifact hash and file SHA1 must match.
+C79 readiness must be read from nested next_readiness_decision.*.
+C79 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Operator GO/NO-GO decision is advisory and non-mutating.
+GO does not mean production deployment.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C80 gates pass:
+
+```text
+C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+```

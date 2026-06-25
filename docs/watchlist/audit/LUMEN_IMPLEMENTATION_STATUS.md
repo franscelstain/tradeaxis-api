@@ -10156,3 +10156,20 @@ C79 records progress summary and planned next summary in the artifact.
 C79 does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
 
 NEXT_RECOMMENDATION_IF_PASS=C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
+
+---
+
+## C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C80 starts from locked C79 final evidence and validates C79 artifact hash `0ad7924e75a4627475600567fc6f6ad839a83961` plus file SHA1 `94A900AFD592C2756E2D8165B043F25191F1ACAF`.
+C80 validates C79 readiness only through nested `next_readiness_decision.*`.
+C80 validates C79 -> C60 lineage, including C79 -> C78 -> C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C80 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C80 requires `--operator-approved` and non-empty `--approval-reference`.
+C80 records operator GO/NO-GO as an isolated artifact decision only.
+C80 GO means continue to C81 finalization review; it does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
