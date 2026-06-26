@@ -4261,3 +4261,33 @@ Allowed next recommendation only if all C82 gates pass:
 ```text
 C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW
 ```
+
+---
+
+## C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW
+
+Append-only audit update: C83 controlled limited runtime opt-in pilot / shadow rollout activation authorization review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C82 artifact hash and file SHA1 must match.
+C82 readiness must be read from nested next_readiness_decision.*.
+C82 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Activation authorization is advisory and artifact-only.
+Activation authorization does not mean activation execution.
+Activation authorization does not mean production deployment.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C83 gates pass:
+
+```text
+C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW
+```

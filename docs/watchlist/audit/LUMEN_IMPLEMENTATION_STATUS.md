@@ -10207,3 +10207,20 @@ C82 clears the pre-activation boundary as an isolated artifact decision only.
 C82 boundary clearance means continue to C83 activation authorization review; it does not authorize activation, deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
 
 NEXT_RECOMMENDATION_IF_PASS=C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW
+
+---
+
+## C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C83 starts from locked C82 final evidence and validates C82 artifact hash `1c78f08cc78abe4800cde96b892932ad6b8df725` plus file SHA1 `24D91E58F7F9FAADE95F6DABF985F430C48C05E2`.
+C83 validates C82 readiness only through nested `next_readiness_decision.*`.
+C83 validates C82 -> C60 lineage, including C82 -> C81 -> C80 -> C79 -> C78 -> C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C83 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C83 requires `--operator-approved` and non-empty `--approval-reference`.
+C83 records activation authorization as an isolated artifact decision only.
+C83 activation authorization means continue to C84 activation execution review; it does not execute activation, deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW

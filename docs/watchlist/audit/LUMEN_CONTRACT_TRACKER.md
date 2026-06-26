@@ -7987,3 +7987,15 @@ The contract is operator-approved, approval-reference-required, explicit-context
 C82 validates locked C81 final evidence, nested C81 readiness, C81 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
 
 C82 pass records artifact-only pre-activation boundary clearance for primary and backup and can only recommend `C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW`; it is not activation authorization, not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW
+
+C83 contract adds `WatchlistBacktestC83ControlledLimitedRuntimeOptInPilotOrShadowRolloutActivationAuthorizationReviewService`, command `watchlist:backtest-c83-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-activation-authorization-review`, isolated controlled limited activation authorization review contract, and isolated explicit activation authorization context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, activation-execution-safe, and PLAN/CONFIRM-safe.
+
+C83 validates locked C82 final evidence, nested C82 readiness, C82 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C83 pass records artifact-only activation authorization for primary and backup and can only recommend `C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW`; it is not activation execution, not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
