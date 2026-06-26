@@ -4202,3 +4202,62 @@ Allowed next recommendation only if all C80 gates pass:
 ```text
 C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
 ```
+
+---
+
+## C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+
+Append-only audit update: C81 controlled limited runtime opt-in pilot / shadow rollout GO decision finalization review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C80 artifact hash and file SHA1 must match.
+C80 readiness must be read from nested next_readiness_decision.*.
+C80 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Finalized GO decision is advisory and non-mutating.
+Finalized GO does not mean production deployment.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C81 gates pass:
+
+```text
+C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW
+```
+
+---
+
+## C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW
+
+Append-only audit update: C82 controlled limited runtime opt-in pilot / shadow rollout pre-activation boundary review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C81 artifact hash and file SHA1 must match.
+C81 readiness must be read from nested next_readiness_decision.*.
+C81 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Pre-activation boundary clearance is advisory and non-mutating.
+Boundary clearance does not mean activation authorization.
+Boundary clearance does not mean production deployment.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C82 gates pass:
+
+```text
+C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW
+```

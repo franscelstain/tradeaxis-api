@@ -105,6 +105,8 @@ use App\Console\Commands\Watchlist\RunBacktestC77ControlledRuntimeOptInPilotOrSh
 use App\Console\Commands\Watchlist\RunBacktestC78ControlledLimitedRuntimeOptInPilotOrShadowRolloutObservationReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC79ControlledLimitedRuntimeOptInPilotOrShadowRolloutObservationResultReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC80ControlledLimitedRuntimeOptInPilotOrShadowRolloutOperatorGoNoGoReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC81ControlledLimitedRuntimeOptInPilotOrShadowRolloutGoDecisionFinalizationReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC82ControlledLimitedRuntimeOptInPilotOrShadowRolloutPreActivationBoundaryReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -197,6 +199,8 @@ class Kernel extends ConsoleKernel
         RunBacktestC78ControlledLimitedRuntimeOptInPilotOrShadowRolloutObservationReviewCommand::class,
         RunBacktestC79ControlledLimitedRuntimeOptInPilotOrShadowRolloutObservationResultReviewCommand::class,
         RunBacktestC80ControlledLimitedRuntimeOptInPilotOrShadowRolloutOperatorGoNoGoReviewCommand::class,
+        RunBacktestC81ControlledLimitedRuntimeOptInPilotOrShadowRolloutGoDecisionFinalizationReviewCommand::class,
+        RunBacktestC82ControlledLimitedRuntimeOptInPilotOrShadowRolloutPreActivationBoundaryReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

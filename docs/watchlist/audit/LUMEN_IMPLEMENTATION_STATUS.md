@@ -10173,3 +10173,37 @@ C80 records operator GO/NO-GO as an isolated artifact decision only.
 C80 GO means continue to C81 finalization review; it does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
 
 NEXT_RECOMMENDATION_IF_PASS=C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+
+---
+
+## C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C81 starts from locked C80 final evidence and validates C80 artifact hash `76270e9ebce21b101629de62aa48262d1d1a6492` plus file SHA1 `BD51FF78572E886E38D72BC2AA2FFA23A9D2C619`.
+C81 validates C80 readiness only through nested `next_readiness_decision.*`.
+C81 validates C80 -> C60 lineage, including C80 -> C79 -> C78 -> C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C81 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C81 requires `--operator-approved` and non-empty `--approval-reference`.
+C81 finalizes the C80 operator GO as an isolated artifact decision only.
+C81 finalized GO means continue to C82 pre-activation boundary review; it does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW
+
+---
+
+## C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C82 starts from locked C81 final evidence and validates C81 artifact hash `45e1abfb6ba0ddc6ddf2b0494527cf8706172f18` plus file SHA1 `588753D1F62EBCDB318A5969ACE4165CD83D98BD`.
+C82 validates C81 readiness only through nested `next_readiness_decision.*`.
+C82 validates C81 -> C60 lineage, including C81 -> C80 -> C79 -> C78 -> C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C82 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C82 requires `--operator-approved` and non-empty `--approval-reference`.
+C82 clears the pre-activation boundary as an isolated artifact decision only.
+C82 boundary clearance means continue to C83 activation authorization review; it does not authorize activation, deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW

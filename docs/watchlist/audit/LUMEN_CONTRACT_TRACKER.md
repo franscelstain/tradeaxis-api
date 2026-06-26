@@ -7963,3 +7963,27 @@ The contract is operator-approved, approval-reference-required, explicit-context
 C80 validates locked C79 final evidence, nested C79 readiness, C79 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
 
 C80 pass records artifact-only operator GO for primary and backup and can only recommend `C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+
+C81 contract adds `WatchlistBacktestC81ControlledLimitedRuntimeOptInPilotOrShadowRolloutGoDecisionFinalizationReviewService`, command `watchlist:backtest-c81-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-go-decision-finalization-review`, isolated controlled limited GO decision finalization review contract, and isolated explicit GO decision finalization context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, and PLAN/CONFIRM-safe.
+
+C81 validates locked C80 final evidence, nested C80 readiness, C80 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C81 pass records artifact-only finalized GO for primary and backup and can only recommend `C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW
+
+C82 contract adds `WatchlistBacktestC82ControlledLimitedRuntimeOptInPilotOrShadowRolloutPreActivationBoundaryReviewService`, command `watchlist:backtest-c82-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-pre-activation-boundary-review`, isolated controlled limited pre-activation boundary review contract, and isolated explicit pre-activation boundary context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, activation-authorization-safe, and PLAN/CONFIRM-safe.
+
+C82 validates locked C81 final evidence, nested C81 readiness, C81 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C82 pass records artifact-only pre-activation boundary clearance for primary and backup and can only recommend `C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW`; it is not activation authorization, not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
