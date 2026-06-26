@@ -8047,3 +8047,49 @@ The contract is operator-approved, approval-reference-required, explicit-context
 C87 validates locked C86 final evidence, nested C86 readiness, C86 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
 
 C87 pass records artifact-only post-activation operator GO for primary and backup and can only recommend `C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW
+
+C88 contract adds `WatchlistBacktestC88ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationGoDecisionFinalizationReviewService`, command `watchlist:backtest-c88-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-go-decision-finalization-review`, isolated controlled limited post-activation GO decision finalization review contract, and isolated explicit post-activation GO decision finalization context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, post-activation-completion-boundary-safe, and PLAN/CONFIRM-safe.
+
+C88 validates locked C87 final evidence, nested C87 readiness, C87 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C88 pass records artifact-only finalized post-activation GO for primary and backup and can only recommend `C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW
+
+C89 contract adds `WatchlistBacktestC89ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationCompletionBoundaryReviewService`, command `watchlist:backtest-c89-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-completion-boundary-review`, isolated controlled limited post-activation completion boundary review contract, and isolated explicit post-activation completion boundary context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, post-activation-handoff-readiness-safe, and PLAN/CONFIRM-safe.
+
+C89 validates locked C88 final evidence, nested C88 readiness, C88 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C89 clears post-activation completion boundary only.
+C89 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C89 does not deploy live production.
+C89 does not mutate PLAN/CONFIRM.
+C89 does not change PLAN/CONFIRM output.
+C89 keeps production_catalog_runtime_wired=false.
+C89 keeps controlled_opt_in_runtime_bridge_active=false.
+C89 keeps controlled_parallel_run_active=false.
+C89 keeps controlled_rollout_active=false.
+C89 keeps post_activation_completion_boundary_context_persisted_to_live_runtime=false.
+C89 keeps production_deployment_allowed=false.
+C89 keeps production_deployment_executed=false.
+C89 keeps plan_confirm_mutation_allowed=false.
+C89 keeps plan_confirm_mutated=false.
+C89 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C89 keeps live_plan_confirm_rollout_allowed=false.
+C89 keeps live_plan_confirm_rollout_executed=false.
+
+C89 pass records artifact-only post-activation completion boundary clearance for primary and backup and can only recommend `C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+C89 post-activation completion boundary means continue to C90 post-activation handoff readiness review only.
+C89 post-activation completion boundary record is not production deployment.
+C89 post-activation completion boundary record is not PLAN/CONFIRM live rollout.
+C89 post-activation completion boundary record is not runtime bridge activation.
