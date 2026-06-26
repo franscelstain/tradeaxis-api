@@ -10224,3 +10224,71 @@ C83 records activation authorization as an isolated artifact decision only.
 C83 activation authorization means continue to C84 activation execution review; it does not execute activation, deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
 
 NEXT_RECOMMENDATION_IF_PASS=C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW
+
+---
+
+## C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C84 starts from locked C83 final evidence and validates C83 artifact hash `2927dea9624be20ea493c9e449b57879e0ea5da7` plus file SHA1 `E90EA61673FB7820988507670F547CD6F02D6A5F`.
+C84 validates C83 readiness only through nested `next_readiness_decision.*`.
+C84 validates C83 -> C60 lineage, including C83 -> C82 -> C81 -> C80 -> C79 -> C78 -> C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C84 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C84 requires `--operator-approved` and non-empty `--approval-reference`.
+C84 creates the controlled activation execution record as an isolated artifact decision only.
+C84 activation execution means continue to C85 post-activation observation review; it does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C85_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_REVIEW
+
+---
+
+## C85_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C85 starts from locked C84 final evidence and validates C84 artifact hash `54f39e02202b597c0e353cfec602215a1f41251b` plus file SHA1 `CEAF5D69D61D15A7220CA5A843DCF3CB1DDB5255`.
+C85 validates C84 readiness only through nested `next_readiness_decision.*`.
+C85 validates C84 -> C60 lineage, including C84 -> C83 -> C82 -> C81 -> C80 -> C79 -> C78 -> C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C85 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C85 requires `--operator-approved` and non-empty `--approval-reference`.
+C85 observes the controlled activation execution record as an isolated artifact decision only.
+C85 post-activation observation means continue to C86 post-activation observation result review; it does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW
+
+---
+
+## C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C86 starts from locked C85 final evidence and validates C85 artifact hash `80aa0fc1a0ea662870c373706e8fc15b7bb03396` plus file SHA1 `80C9596AC8AD714DE161BDA17AECE4734667E645`.
+C86 validates C85 readiness only through nested `next_readiness_decision.*`.
+C86 validates C85 -> C60 lineage, including C85 -> C84 -> C83 -> C82 -> C81 -> C80 -> C79 -> C78 -> C77 -> C76 -> C75 -> C74 -> C73 -> C72 locks.
+C86 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C86 requires `--operator-approved` and non-empty `--approval-reference`.
+C86 reviews the post-activation observation result as an isolated artifact decision only.
+C86 post-activation observation result means continue to C87 post-activation operator go/no-go review; it does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+
+---
+
+## C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+
+Status: IMPLEMENTED FOR OPERATOR VALIDATION.
+
+C87 starts from locked C86 final evidence and validates C86 artifact hash `2ec7b0acddcf0ed09d1988c555cc32165e6c972f` plus file SHA1 `D0F261827F286FFE502927D7C3704D7A79B4FD6E`.
+C87 validates C86 readiness only through nested `next_readiness_decision.*`.
+C87 validates C86 -> C60 lineage, including C86 -> C85 -> C84 -> C83 -> C82 -> C81 -> C80 -> C79 -> C78 -> C77 -> C76 -> C75 -> C74 -> C73 locks.
+C87 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C87 requires `--operator-approved` and non-empty `--approval-reference`.
+C87 records post-activation operator GO as an isolated artifact decision only.
+C87 post-activation operator GO means continue to C88 post-activation go decision finalization review; it does not deploy live production, mutate PLAN/CONFIRM, wire activated catalog to the default runtime, activate runtime bridge, activate controlled parallel-run, or activate controlled rollout.
+
+NEXT_RECOMMENDATION_IF_PASS=C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW

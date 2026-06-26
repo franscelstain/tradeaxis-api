@@ -108,6 +108,10 @@ use App\Console\Commands\Watchlist\RunBacktestC80ControlledLimitedRuntimeOptInPi
 use App\Console\Commands\Watchlist\RunBacktestC81ControlledLimitedRuntimeOptInPilotOrShadowRolloutGoDecisionFinalizationReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC82ControlledLimitedRuntimeOptInPilotOrShadowRolloutPreActivationBoundaryReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC83ControlledLimitedRuntimeOptInPilotOrShadowRolloutActivationAuthorizationReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC84ControlledLimitedRuntimeOptInPilotOrShadowRolloutActivationExecutionReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC85ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationObservationReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC86ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationObservationResultReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC87ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationOperatorGoNoGoReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -203,6 +207,10 @@ class Kernel extends ConsoleKernel
         RunBacktestC81ControlledLimitedRuntimeOptInPilotOrShadowRolloutGoDecisionFinalizationReviewCommand::class,
         RunBacktestC82ControlledLimitedRuntimeOptInPilotOrShadowRolloutPreActivationBoundaryReviewCommand::class,
         RunBacktestC83ControlledLimitedRuntimeOptInPilotOrShadowRolloutActivationAuthorizationReviewCommand::class,
+        RunBacktestC84ControlledLimitedRuntimeOptInPilotOrShadowRolloutActivationExecutionReviewCommand::class,
+        RunBacktestC85ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationObservationReviewCommand::class,
+        RunBacktestC86ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationObservationResultReviewCommand::class,
+        RunBacktestC87ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationOperatorGoNoGoReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

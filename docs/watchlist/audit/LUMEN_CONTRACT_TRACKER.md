@@ -7999,3 +7999,51 @@ The contract is operator-approved, approval-reference-required, explicit-context
 C83 validates locked C82 final evidence, nested C82 readiness, C82 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
 
 C83 pass records artifact-only activation authorization for primary and backup and can only recommend `C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW`; it is not activation execution, not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW
+
+C84 contract adds `WatchlistBacktestC84ControlledLimitedRuntimeOptInPilotOrShadowRolloutActivationExecutionReviewService`, command `watchlist:backtest-c84-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-activation-execution-review`, isolated controlled limited activation execution review contract, and isolated explicit activation execution context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, post-activation-observation-safe, and PLAN/CONFIRM-safe.
+
+C84 validates locked C83 final evidence, nested C83 readiness, C83 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C84 pass records artifact-only controlled activation execution for primary and backup and can only recommend `C85_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C85_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_REVIEW
+
+C85 contract adds `WatchlistBacktestC85ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationObservationReviewService`, command `watchlist:backtest-c85-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-observation-review`, isolated controlled limited post-activation observation review contract, and isolated explicit post-activation observation context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, post-activation-observation-result-safe, and PLAN/CONFIRM-safe.
+
+C85 validates locked C84 final evidence, nested C84 readiness, C84 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C85 pass records artifact-only post-activation observation for primary and backup and can only recommend `C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW
+
+C86 contract adds `WatchlistBacktestC86ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationObservationResultReviewService`, command `watchlist:backtest-c86-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-observation-result-review`, isolated controlled limited post-activation observation result review contract, and isolated explicit post-activation observation result context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, post-activation-operator-go-no-go-safe, and PLAN/CONFIRM-safe.
+
+C86 validates locked C85 final evidence, nested C85 readiness, C85 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C86 pass records artifact-only post-activation observation result review for primary and backup and can only recommend `C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+
+---
+
+## C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+
+C87 contract adds `WatchlistBacktestC87ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationOperatorGoNoGoReviewService`, command `watchlist:backtest-c87-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-operator-go-no-go-review`, isolated controlled limited post-activation operator go/no-go review contract, and isolated explicit post-activation operator go/no-go context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, post-activation-go-decision-finalization-safe, and PLAN/CONFIRM-safe.
+
+C87 validates locked C86 final evidence, nested C86 readiness, C86 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C87 pass records artifact-only post-activation operator GO for primary and backup and can only recommend `C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.

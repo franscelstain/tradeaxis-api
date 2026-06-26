@@ -4291,3 +4291,119 @@ Allowed next recommendation only if all C83 gates pass:
 ```text
 C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW
 ```
+
+---
+
+## C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_EXECUTION_REVIEW
+
+Append-only audit update: C84 controlled limited runtime opt-in pilot / shadow rollout activation execution review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C83 artifact hash and file SHA1 must match.
+C83 readiness must be read from nested next_readiness_decision.*.
+C83 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Activation execution is controlled-record-only and artifact-only.
+Activation execution does not mean production deployment.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C84 gates pass:
+
+```text
+C85_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_REVIEW
+```
+
+---
+
+## C85_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_REVIEW
+
+Append-only audit update: C85 controlled limited runtime opt-in pilot / shadow rollout post-activation observation review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C84 artifact hash and file SHA1 must match.
+C84 readiness must be read from nested next_readiness_decision.*.
+C84 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Post-activation observation is controlled-record-only and artifact-only.
+Post-activation observation does not mean production deployment.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C85 gates pass:
+
+```text
+C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW
+```
+
+---
+
+## C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW
+
+Append-only audit update: C86 controlled limited runtime opt-in pilot / shadow rollout post-activation observation result review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C85 artifact hash and file SHA1 must match.
+C85 readiness must be read from nested next_readiness_decision.*.
+C85 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Post-activation observation result review is controlled-record-only and artifact-only.
+Post-activation observation result review does not mean production deployment.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C86 gates pass:
+
+```text
+C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+---
+
+## C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+
+Append-only audit update: C87 controlled limited runtime opt-in pilot / shadow rollout post-activation operator go/no-go review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C86 artifact hash and file SHA1 must match.
+C86 readiness must be read from nested next_readiness_decision.*.
+C86 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Post-activation operator GO/NO-GO is controlled-record-only and artifact-only.
+Post-activation operator GO does not mean production deployment.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+No production deployment is executed.
+No runtime bridge, controlled parallel-run, or controlled rollout is activated.
+```
+
+Allowed next recommendation only if all C87 gates pass:
+
+```text
+C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW
+```
