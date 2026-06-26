@@ -8093,3 +8093,76 @@ C89 post-activation completion boundary means continue to C90 post-activation ha
 C89 post-activation completion boundary record is not production deployment.
 C89 post-activation completion boundary record is not PLAN/CONFIRM live rollout.
 C89 post-activation completion boundary record is not runtime bridge activation.
+
+---
+
+## C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW
+
+C90 contract adds `WatchlistBacktestC90ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationHandoffReadinessReviewService`, command `watchlist:backtest-c90-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-handoff-readiness-review`, isolated controlled limited post-activation handoff readiness review contract, and isolated explicit post-activation handoff readiness context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, post-activation-handoff-finalization-safe, and PLAN/CONFIRM-safe.
+
+C90 validates locked C89 final evidence, nested C89 readiness, C89 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C90 marks post-activation handoff package ready only.
+C90 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C90 does not deploy live production.
+C90 does not mutate PLAN/CONFIRM.
+C90 does not change PLAN/CONFIRM output.
+C90 keeps production_catalog_runtime_wired=false.
+C90 keeps controlled_opt_in_runtime_bridge_active=false.
+C90 keeps controlled_parallel_run_active=false.
+C90 keeps controlled_rollout_active=false.
+C90 keeps post_activation_handoff_readiness_context_persisted_to_live_runtime=false.
+C90 keeps production_deployment_allowed=false.
+C90 keeps production_deployment_executed=false.
+C90 keeps plan_confirm_mutation_allowed=false.
+C90 keeps plan_confirm_mutated=false.
+C90 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C90 keeps live_plan_confirm_rollout_allowed=false.
+C90 keeps live_plan_confirm_rollout_executed=false.
+
+C90 pass records artifact-only post-activation handoff readiness for primary and backup and can only recommend `C91_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_FINALIZATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+C90 post-activation handoff readiness means continue to C91 post-activation handoff finalization review only.
+C90 post-activation handoff readiness record is not production deployment.
+C90 post-activation handoff readiness record is not PLAN/CONFIRM live rollout.
+C90 post-activation handoff readiness record is not runtime bridge activation.
+
+---
+
+## C91_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_FINALIZATION_REVIEW
+
+C91 contract adds `WatchlistBacktestC91ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationHandoffFinalizationReviewService`, command `watchlist:backtest-c91-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-handoff-finalization-review`, isolated controlled limited post-activation handoff finalization review contract, and isolated explicit post-activation handoff finalization context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, rollback-ready, emergency-disable-ready, audit-complete, observability-ready, non-live-default, post-activation-handoff-completion-boundary-safe, and PLAN/CONFIRM-safe.
+
+C91 validates C90 artifact hash and file SHA1.
+C91 validates C90 readiness through nested next_readiness_decision.* path.
+C91 validates C90 -> C60 lineage.
+C91 validates locked C90 final evidence, nested C90 readiness, C90 -> C60 lineage, E02 primary, B01 backup, and A01 comparator-only.
+
+C91 requires --operator-approved.
+C91 requires non-empty --approval-reference.
+C91 finalizes post-activation handoff package only.
+C91 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C91 does not deploy live production.
+C91 does not mutate PLAN/CONFIRM.
+C91 does not change PLAN/CONFIRM output.
+C91 keeps production_catalog_runtime_wired=false.
+C91 keeps controlled_opt_in_runtime_bridge_active=false.
+C91 keeps controlled_parallel_run_active=false.
+C91 keeps controlled_rollout_active=false.
+C91 keeps post_activation_handoff_finalization_context_persisted_to_live_runtime=false.
+C91 keeps production_deployment_allowed=false.
+C91 keeps production_deployment_executed=false.
+C91 keeps plan_confirm_mutation_allowed=false.
+C91 keeps plan_confirm_mutated=false.
+C91 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C91 keeps live_plan_confirm_rollout_allowed=false.
+C91 keeps live_plan_confirm_rollout_executed=false.
+
+C91 pass records artifact-only post-activation handoff finalization for primary and backup and can only recommend `C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_COMPLETION_BOUNDARY_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+C91 post-activation handoff finalization means continue to C92 post-activation handoff completion boundary review only.
+C91 post-activation handoff finalization record is not production deployment.
+C91 post-activation handoff finalization record is not PLAN/CONFIRM live rollout.
+C91 post-activation handoff finalization record is not runtime bridge activation.
