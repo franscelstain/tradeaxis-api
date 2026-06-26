@@ -1,6 +1,6 @@
 # WS_C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW
 
-Status: IMPLEMENTED FOR OPERATOR VALIDATION
+Status: C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_FINALIZED_GO_PRIMARY_AND_BACKUP
 
 C88 is controlled limited runtime opt-in pilot / shadow rollout post-activation GO decision finalization review.
 C88 starts from locked C87 final evidence.
@@ -92,3 +92,52 @@ C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_CO
 ```
 
 This recommendation is post-activation completion boundary review readiness only.
+
+## Final Operator Evidence — 2026-06-27
+
+C88 final evidence is recorded from operator validation and locked runtime artifact inspection. This evidence is documentation-only and does not change runtime artifacts, services, commands, tests, configuration, PLAN/CONFIRM behavior, runtime bridge state, controlled rollout state, or production deployment state.
+
+```text
+FOCUSED_PHPUNIT_C88=OK (12 tests, 137 assertions)
+FULL_WATCHLIST_PHPUNIT_C88=OK (1436 tests, 23148 assertions)
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c88-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-go-decision-finalization-review.json
+RUNTIME_STATUS=C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_FINALIZED_GO_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_FINALIZED_GO_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=f0f296e4e3e608780c9a2095acff7f70cf61e7bb
+ARTIFACT_FILE_SHA1=9CB05635B380E32FE3E9AABFD65262E5754BEAE2
+SOURCE_LOCK=C87
+EXPECTED_C87_HASH=4c319158e1e90bc7e491636361551ed212848c5d
+ACTUAL_C87_HASH=4c319158e1e90bc7e491636361551ed212848c5d
+C87_HASH_MATCH=1
+EXPECTED_C87_FILE_SHA1=EBEA22AD5E07792D0D5EE6F71A317966EFF546D8
+ACTUAL_C87_FILE_SHA1=EBEA22AD5E07792D0D5EE6F71A317966EFF546D8
+C87_FILE_SHA1_MATCH=1
+NEXT_RECOMMENDATION=C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW
+```
+
+Final non-live and non-mutating safety boundary:
+
+```text
+production_catalog_runtime_wired=false
+controlled_opt_in_runtime_bridge_active=false
+controlled_parallel_run_active=false
+controlled_rollout_active=false
+production_deployment_allowed=false
+production_deployment_executed=false
+plan_confirm_mutation_allowed=false
+plan_confirm_mutated=false
+plan_confirm_runtime_reads_activated_catalog=false
+live_plan_confirm_rollout_allowed=false
+live_plan_confirm_rollout_executed=false
+```
+
+Negative approval gate evidence:
+
+```text
+WITHOUT_OPERATOR_APPROVED_STATUS=C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+WITHOUT_APPROVAL_REFERENCE_STATUS=C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE_RESULT=PASS
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+```
+
+C88 remains non-live, non-mutating, non-production, and PLAN/CONFIRM unchanged. C88 preserves E02 as primary, B01 as backup, and A01 as comparator-only.

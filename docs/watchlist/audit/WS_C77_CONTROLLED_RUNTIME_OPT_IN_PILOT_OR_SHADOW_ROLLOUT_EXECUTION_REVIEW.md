@@ -1,6 +1,6 @@
 # WS_C77_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_EXECUTION_REVIEW
 
-Status: IMPLEMENTED FOR OPERATOR VALIDATION
+Status: C77_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
 
 C77 is controlled runtime opt-in pilot / shadow rollout execution review.
 C77 starts from locked C76 final evidence.
@@ -97,3 +97,52 @@ C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
 ```
 
 This recommendation is observation-review readiness only.
+
+## Final Operator Evidence — 2026-06-27
+
+C77 final evidence is recorded from operator validation and locked runtime artifact inspection. This evidence is documentation-only and does not change runtime artifacts, services, commands, tests, configuration, PLAN/CONFIRM behavior, runtime bridge state, controlled rollout state, or production deployment state.
+
+```text
+FOCUSED_PHPUNIT_C77=OK (20 tests, 233 assertions)
+FULL_WATCHLIST_PHPUNIT_C77=OK (1303 tests, 21569 assertions)
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c77-controlled-runtime-opt-in-pilot-or-shadow-rollout-execution-review.json
+RUNTIME_STATUS=C77_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C77_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_EXECUTION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=d827547d6d40a73785d4c2409b2913f60db42115
+ARTIFACT_FILE_SHA1=8C296276DD4D278206366953F975AFD5F7E328DE
+SOURCE_LOCK=C76
+EXPECTED_C76_HASH=40f1bc516ddbb127ab6f62433059cb99ff2ae2de
+ACTUAL_C76_HASH=40f1bc516ddbb127ab6f62433059cb99ff2ae2de
+C76_HASH_MATCH=1
+EXPECTED_C76_FILE_SHA1=115929AD40A739E9BE1D5A1A58DAA4FECB394ACD
+ACTUAL_C76_FILE_SHA1=115929AD40A739E9BE1D5A1A58DAA4FECB394ACD
+C76_FILE_SHA1_MATCH=1
+NEXT_RECOMMENDATION=C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
+```
+
+Final non-live and non-mutating safety boundary:
+
+```text
+production_catalog_runtime_wired=false
+controlled_opt_in_runtime_bridge_active=false
+controlled_parallel_run_active=false
+controlled_rollout_active=false
+production_deployment_allowed=false
+production_deployment_executed=false
+plan_confirm_mutation_allowed=false
+plan_confirm_mutated=false
+plan_confirm_runtime_reads_activated_catalog=false
+live_plan_confirm_rollout_allowed=false
+live_plan_confirm_rollout_executed=false
+```
+
+Negative approval gate evidence:
+
+```text
+WITHOUT_OPERATOR_APPROVED_STATUS=C77_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_EXECUTION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+WITHOUT_APPROVAL_REFERENCE_STATUS=C77_CONTROLLED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_EXECUTION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE_RESULT=PASS
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+```
+
+C77 remains non-live, non-mutating, non-production, and PLAN/CONFIRM unchanged. C77 preserves E02 as primary, B01 as backup, and A01 as comparator-only.

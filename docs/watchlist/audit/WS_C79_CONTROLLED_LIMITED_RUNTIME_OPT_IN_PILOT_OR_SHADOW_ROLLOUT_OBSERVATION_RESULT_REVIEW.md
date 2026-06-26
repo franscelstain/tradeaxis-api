@@ -1,6 +1,6 @@
 # WS_C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW
 
-Status: IMPLEMENTED FOR OPERATOR VALIDATION
+Status: C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW_PASSED_PRIMARY_AND_BACKUP
 
 C79 is controlled limited runtime opt-in pilot / shadow rollout observation result review.
 C79 starts from locked C78 final evidence.
@@ -94,3 +94,52 @@ C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_
 ```
 
 This recommendation is operator go/no-go review readiness only.
+
+## Final Operator Evidence — 2026-06-27
+
+C79 final evidence is recorded from operator validation and locked runtime artifact inspection. This evidence is documentation-only and does not change runtime artifacts, services, commands, tests, configuration, PLAN/CONFIRM behavior, runtime bridge state, controlled rollout state, or production deployment state.
+
+```text
+FOCUSED_PHPUNIT_C79=OK (12 tests, 145 assertions)
+FULL_WATCHLIST_PHPUNIT_C79=OK (1328 tests, 21865 assertions)
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c79-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-observation-result-review.json
+RUNTIME_STATUS=C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW_PASSED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW_PASSED_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=0ad7924e75a4627475600567fc6f6ad839a83961
+ARTIFACT_FILE_SHA1=94A900AFD592C2756E2D8165B043F25191F1ACAF
+SOURCE_LOCK=C78
+EXPECTED_C78_HASH=989826f1620bea4592e3543d4908670192fab7f0
+ACTUAL_C78_HASH=989826f1620bea4592e3543d4908670192fab7f0
+C78_HASH_MATCH=1
+EXPECTED_C78_FILE_SHA1=6C6EE121EB7B5F86E19532D24115139F5915CBF3
+ACTUAL_C78_FILE_SHA1=6C6EE121EB7B5F86E19532D24115139F5915CBF3
+C78_FILE_SHA1_MATCH=1
+NEXT_RECOMMENDATION=C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
+```
+
+Final non-live and non-mutating safety boundary:
+
+```text
+production_catalog_runtime_wired=false
+controlled_opt_in_runtime_bridge_active=false
+controlled_parallel_run_active=false
+controlled_rollout_active=false
+production_deployment_allowed=false
+production_deployment_executed=false
+plan_confirm_mutation_allowed=false
+plan_confirm_mutated=false
+plan_confirm_runtime_reads_activated_catalog=false
+live_plan_confirm_rollout_allowed=false
+live_plan_confirm_rollout_executed=false
+```
+
+Negative approval gate evidence:
+
+```text
+WITHOUT_OPERATOR_APPROVED_STATUS=C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+WITHOUT_APPROVAL_REFERENCE_STATUS=C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE_RESULT=PASS
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+```
+
+C79 remains non-live, non-mutating, non-production, and PLAN/CONFIRM unchanged. C79 preserves E02 as primary, B01 as backup, and A01 as comparator-only.

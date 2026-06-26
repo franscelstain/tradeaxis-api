@@ -1,6 +1,6 @@
 # WS_C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW
 
-Status: IMPLEMENTED FOR OPERATOR VALIDATION
+Status: C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
 
 C82 is controlled limited runtime opt-in pilot / shadow rollout pre-activation boundary review.
 C82 starts from locked C81 final evidence.
@@ -95,3 +95,52 @@ C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORI
 ```
 
 This recommendation is activation authorization review readiness only.
+
+## Final Operator Evidence — 2026-06-27
+
+C82 final evidence is recorded from operator validation and locked runtime artifact inspection. This evidence is documentation-only and does not change runtime artifacts, services, commands, tests, configuration, PLAN/CONFIRM behavior, runtime bridge state, controlled rollout state, or production deployment state.
+
+```text
+FOCUSED_PHPUNIT_C82=OK (12 tests, 145 assertions)
+FULL_WATCHLIST_PHPUNIT_C82=OK (1364 tests, 22290 assertions)
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c82-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-pre-activation-boundary-review.json
+RUNTIME_STATUS=C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=1c78f08cc78abe4800cde96b892932ad6b8df725
+ARTIFACT_FILE_SHA1=24D91E58F7F9FAADE95F6DABF985F430C48C05E2
+SOURCE_LOCK=C81
+EXPECTED_C81_HASH=45e1abfb6ba0ddc6ddf2b0494527cf8706172f18
+ACTUAL_C81_HASH=45e1abfb6ba0ddc6ddf2b0494527cf8706172f18
+C81_HASH_MATCH=1
+EXPECTED_C81_FILE_SHA1=588753D1F62EBCDB318A5969ACE4165CD83D98BD
+ACTUAL_C81_FILE_SHA1=588753D1F62EBCDB318A5969ACE4165CD83D98BD
+C81_FILE_SHA1_MATCH=1
+NEXT_RECOMMENDATION=C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_ACTIVATION_AUTHORIZATION_REVIEW
+```
+
+Final non-live and non-mutating safety boundary:
+
+```text
+production_catalog_runtime_wired=false
+controlled_opt_in_runtime_bridge_active=false
+controlled_parallel_run_active=false
+controlled_rollout_active=false
+production_deployment_allowed=false
+production_deployment_executed=false
+plan_confirm_mutation_allowed=false
+plan_confirm_mutated=false
+plan_confirm_runtime_reads_activated_catalog=false
+live_plan_confirm_rollout_allowed=false
+live_plan_confirm_rollout_executed=false
+```
+
+Negative approval gate evidence:
+
+```text
+WITHOUT_OPERATOR_APPROVED_STATUS=C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+WITHOUT_APPROVAL_REFERENCE_STATUS=C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_PRE_ACTIVATION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE_RESULT=PASS
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+```
+
+C82 remains non-live, non-mutating, non-production, and PLAN/CONFIRM unchanged. C82 preserves E02 as primary, B01 as backup, and A01 as comparator-only.

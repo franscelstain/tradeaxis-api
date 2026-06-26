@@ -1,6 +1,6 @@
 # WS_C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW
 
-Status: IMPLEMENTED FOR OPERATOR VALIDATION
+Status: C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
 
 C89 is controlled limited runtime opt-in pilot / shadow rollout post-activation completion boundary review.
 C89 starts from locked C88 final evidence.
@@ -92,3 +92,52 @@ C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HA
 ```
 
 This recommendation is post-activation handoff readiness review only.
+
+## Final Operator Evidence — 2026-06-27
+
+C89 final evidence is recorded from operator validation and locked runtime artifact inspection. This evidence is documentation-only and does not change runtime artifacts, services, commands, tests, configuration, PLAN/CONFIRM behavior, runtime bridge state, controlled rollout state, or production deployment state.
+
+```text
+FOCUSED_PHPUNIT_C89=OK (12 tests, 138 assertions)
+FULL_WATCHLIST_PHPUNIT_C89=OK (1448 tests, 23286 assertions)
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c89-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-completion-boundary-review.json
+RUNTIME_STATUS=C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=11ce5f21fcc027171d8073babc51212565859631
+ARTIFACT_FILE_SHA1=1D709D0D06F465F1F2033D4FD15DA489A5245C78
+SOURCE_LOCK=C88
+EXPECTED_C88_HASH=f0f296e4e3e608780c9a2095acff7f70cf61e7bb
+ACTUAL_C88_HASH=f0f296e4e3e608780c9a2095acff7f70cf61e7bb
+C88_HASH_MATCH=1
+EXPECTED_C88_FILE_SHA1=9CB05635B380E32FE3E9AABFD65262E5754BEAE2
+ACTUAL_C88_FILE_SHA1=9CB05635B380E32FE3E9AABFD65262E5754BEAE2
+C88_FILE_SHA1_MATCH=1
+NEXT_RECOMMENDATION=C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW
+```
+
+Final non-live and non-mutating safety boundary:
+
+```text
+production_catalog_runtime_wired=false
+controlled_opt_in_runtime_bridge_active=false
+controlled_parallel_run_active=false
+controlled_rollout_active=false
+production_deployment_allowed=false
+production_deployment_executed=false
+plan_confirm_mutation_allowed=false
+plan_confirm_mutated=false
+plan_confirm_runtime_reads_activated_catalog=false
+live_plan_confirm_rollout_allowed=false
+live_plan_confirm_rollout_executed=false
+```
+
+Negative approval gate evidence:
+
+```text
+WITHOUT_OPERATOR_APPROVED_STATUS=C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+WITHOUT_APPROVAL_REFERENCE_STATUS=C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE_RESULT=PASS
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+```
+
+C89 remains non-live, non-mutating, non-production, and PLAN/CONFIRM unchanged. C89 preserves E02 as primary, B01 as backup, and A01 as comparator-only.

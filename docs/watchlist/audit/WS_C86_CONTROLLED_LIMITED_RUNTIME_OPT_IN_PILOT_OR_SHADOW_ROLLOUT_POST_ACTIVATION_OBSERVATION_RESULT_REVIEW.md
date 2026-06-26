@@ -1,6 +1,6 @@
 # WS_C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW
 
-Status: IMPLEMENTED FOR OPERATOR VALIDATION
+Status: C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASSED_RESULT_REVIEWED_PRIMARY_AND_BACKUP
 
 C86 is controlled limited runtime opt-in pilot / shadow rollout post-activation observation result review.
 C86 starts from locked C85 final evidence.
@@ -92,3 +92,52 @@ C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OP
 ```
 
 This recommendation is post-activation operator go/no-go review readiness only.
+
+## Final Operator Evidence — 2026-06-27
+
+C86 final evidence is recorded from operator validation and locked runtime artifact inspection. This evidence is documentation-only and does not change runtime artifacts, services, commands, tests, configuration, PLAN/CONFIRM behavior, runtime bridge state, controlled rollout state, or production deployment state.
+
+```text
+FOCUSED_PHPUNIT_C86=OK (12 tests, 144 assertions)
+FULL_WATCHLIST_PHPUNIT_C86=OK (1412 tests, 22873 assertions)
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c86-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-observation-result-review.json
+RUNTIME_STATUS=C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASSED_RESULT_REVIEWED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASSED_RESULT_REVIEWED_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=2ec7b0acddcf0ed09d1988c555cc32165e6c972f
+ARTIFACT_FILE_SHA1=D0F261827F286FFE502927D7C3704D7A79B4FD6E
+SOURCE_LOCK=C85
+EXPECTED_C85_HASH=80aa0fc1a0ea662870c373706e8fc15b7bb03396
+ACTUAL_C85_HASH=80aa0fc1a0ea662870c373706e8fc15b7bb03396
+C85_HASH_MATCH=1
+EXPECTED_C85_FILE_SHA1=80C9596AC8AD714DE161BDA17AECE4734667E645
+ACTUAL_C85_FILE_SHA1=80C9596AC8AD714DE161BDA17AECE4734667E645
+C85_FILE_SHA1_MATCH=1
+NEXT_RECOMMENDATION=C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+Final non-live and non-mutating safety boundary:
+
+```text
+production_catalog_runtime_wired=false
+controlled_opt_in_runtime_bridge_active=false
+controlled_parallel_run_active=false
+controlled_rollout_active=false
+production_deployment_allowed=false
+production_deployment_executed=false
+plan_confirm_mutation_allowed=false
+plan_confirm_mutated=false
+plan_confirm_runtime_reads_activated_catalog=false
+live_plan_confirm_rollout_allowed=false
+live_plan_confirm_rollout_executed=false
+```
+
+Negative approval gate evidence:
+
+```text
+WITHOUT_OPERATOR_APPROVED_STATUS=C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+WITHOUT_APPROVAL_REFERENCE_STATUS=C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE_RESULT=PASS
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+```
+
+C86 remains non-live, non-mutating, non-production, and PLAN/CONFIRM unchanged. C86 preserves E02 as primary, B01 as backup, and A01 as comparator-only.

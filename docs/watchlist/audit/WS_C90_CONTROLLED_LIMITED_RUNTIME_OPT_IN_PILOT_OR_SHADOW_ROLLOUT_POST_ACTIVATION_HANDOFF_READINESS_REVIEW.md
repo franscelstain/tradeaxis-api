@@ -1,6 +1,6 @@
 # WS_C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW
 
-Status: IMPLEMENTED FOR OPERATOR VALIDATION
+Status: C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW_PASSED_HANDOFF_READY_PRIMARY_AND_BACKUP
 
 C90 is controlled limited runtime opt-in pilot / shadow rollout post-activation handoff readiness review.
 C90 starts from locked C89 final evidence.
@@ -92,3 +92,52 @@ C91_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HA
 ```
 
 This recommendation is post-activation handoff finalization review only.
+
+## Final Operator Evidence — 2026-06-27
+
+C90 final evidence is recorded from operator validation and locked runtime artifact inspection. This evidence is documentation-only and does not change runtime artifacts, services, commands, tests, configuration, PLAN/CONFIRM behavior, runtime bridge state, controlled rollout state, or production deployment state.
+
+```text
+FOCUSED_PHPUNIT_C90=OK (12 tests, 139 assertions)
+FULL_WATCHLIST_PHPUNIT_C90=OK (1460 tests, 23425 assertions)
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c90-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-handoff-readiness-review.json
+RUNTIME_STATUS=C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW_PASSED_HANDOFF_READY_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW_PASSED_HANDOFF_READY_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=a5e4bf444348c4d2e639ff1532ad2ac4b814d4af
+ARTIFACT_FILE_SHA1=30E924E65D9BE18BA9C55E37869424879C3EB41F
+SOURCE_LOCK=C89
+EXPECTED_C89_HASH=11ce5f21fcc027171d8073babc51212565859631
+ACTUAL_C89_HASH=11ce5f21fcc027171d8073babc51212565859631
+C89_HASH_MATCH=1
+EXPECTED_C89_FILE_SHA1=1D709D0D06F465F1F2033D4FD15DA489A5245C78
+ACTUAL_C89_FILE_SHA1=1D709D0D06F465F1F2033D4FD15DA489A5245C78
+C89_FILE_SHA1_MATCH=1
+NEXT_RECOMMENDATION=C91_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_FINALIZATION_REVIEW
+```
+
+Final non-live and non-mutating safety boundary:
+
+```text
+production_catalog_runtime_wired=false
+controlled_opt_in_runtime_bridge_active=false
+controlled_parallel_run_active=false
+controlled_rollout_active=false
+production_deployment_allowed=false
+production_deployment_executed=false
+plan_confirm_mutation_allowed=false
+plan_confirm_mutated=false
+plan_confirm_runtime_reads_activated_catalog=false
+live_plan_confirm_rollout_allowed=false
+live_plan_confirm_rollout_executed=false
+```
+
+Negative approval gate evidence:
+
+```text
+WITHOUT_OPERATOR_APPROVED_STATUS=C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+WITHOUT_APPROVAL_REFERENCE_STATUS=C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_READINESS_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE_RESULT=PASS
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+```
+
+C90 remains non-live, non-mutating, non-production, and PLAN/CONFIRM unchanged. C90 preserves E02 as primary, B01 as backup, and A01 as comparator-only.

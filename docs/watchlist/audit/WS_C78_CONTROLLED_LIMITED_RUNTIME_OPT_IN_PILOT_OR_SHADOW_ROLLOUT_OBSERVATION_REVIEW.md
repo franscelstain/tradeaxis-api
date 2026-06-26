@@ -1,6 +1,6 @@
 # WS_C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW
 
-Status: IMPLEMENTED FOR OPERATOR VALIDATION
+Status: C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW_PASSED_PRIMARY_AND_BACKUP
 
 C78 is controlled limited runtime opt-in pilot / shadow rollout observation review.
 C78 starts from locked C77 final evidence.
@@ -98,3 +98,52 @@ C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT
 ```
 
 This recommendation is observation-result-review readiness only.
+
+## Final Operator Evidence — 2026-06-27
+
+C78 final evidence is recorded from operator validation and locked runtime artifact inspection. This evidence is documentation-only and does not change runtime artifacts, services, commands, tests, configuration, PLAN/CONFIRM behavior, runtime bridge state, controlled rollout state, or production deployment state.
+
+```text
+FOCUSED_PHPUNIT_C78=OK (13 tests, 151 assertions)
+FULL_WATCHLIST_PHPUNIT_C78=OK (1316 tests, 21720 assertions)
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c78-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-observation-review.json
+RUNTIME_STATUS=C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW_PASSED_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=989826f1620bea4592e3543d4908670192fab7f0
+ARTIFACT_FILE_SHA1=6C6EE121EB7B5F86E19532D24115139F5915CBF3
+SOURCE_LOCK=C77
+EXPECTED_C77_HASH=d827547d6d40a73785d4c2409b2913f60db42115
+ACTUAL_C77_HASH=d827547d6d40a73785d4c2409b2913f60db42115
+C77_HASH_MATCH=1
+EXPECTED_C77_FILE_SHA1=8C296276DD4D278206366953F975AFD5F7E328DE
+ACTUAL_C77_FILE_SHA1=8C296276DD4D278206366953F975AFD5F7E328DE
+C77_FILE_SHA1_MATCH=1
+NEXT_RECOMMENDATION=C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_RESULT_REVIEW
+```
+
+Final non-live and non-mutating safety boundary:
+
+```text
+production_catalog_runtime_wired=false
+controlled_opt_in_runtime_bridge_active=false
+controlled_parallel_run_active=false
+controlled_rollout_active=false
+production_deployment_allowed=false
+production_deployment_executed=false
+plan_confirm_mutation_allowed=false
+plan_confirm_mutated=false
+plan_confirm_runtime_reads_activated_catalog=false
+live_plan_confirm_rollout_allowed=false
+live_plan_confirm_rollout_executed=false
+```
+
+Negative approval gate evidence:
+
+```text
+WITHOUT_OPERATOR_APPROVED_STATUS=C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+WITHOUT_APPROVAL_REFERENCE_STATUS=C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE_RESULT=PASS
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+```
+
+C78 remains non-live, non-mutating, non-production, and PLAN/CONFIRM unchanged. C78 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
