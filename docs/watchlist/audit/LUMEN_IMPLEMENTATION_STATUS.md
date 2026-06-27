@@ -10843,3 +10843,63 @@ TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
 SAFETY_BOUNDARY=NON_LIVE_NON_MUTATING_NON_PRODUCTION_PLAN_CONFIRM_UNCHANGED
 NEXT_RECOMMENDATION=C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_COMPLETION_REVIEW
 ```
+
+## C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_COMPLETION_REVIEW
+
+Status: C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETED_PRIMARY_AND_BACKUP.
+
+C95 starts from locked C94 final evidence and validates C94 artifact hash `2a17baceb2e899f93fd1d658bd6a7b020ef9b252` plus file SHA1 `0D81162ED0DF53DC434B2131E34106F7203119D6`.
+C95 validates C94 audit archive state.
+C95 validates C94 next recommendation to C95.
+C95 preserves E02 as primary, B01 as backup, and A01 as comparator-only.
+
+C95 requires `--operator-approved` and non-empty `--approval-reference`.
+C95 confirms no temporary negative test artifact remains.
+C95 records post-activation audit archive completion only.
+C95 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C95 does not deploy live production.
+C95 does not mutate PLAN/CONFIRM.
+C95 does not change PLAN/CONFIRM output.
+C95 keeps production_ready=false.
+C95 keeps production_catalog_runtime_wired=false.
+C95 keeps controlled_opt_in_runtime_bridge_active=false.
+C95 keeps controlled_parallel_run_active=false.
+C95 keeps controlled_rollout_active=false.
+C95 keeps post_activation_audit_archive_context_persisted_to_live_runtime=false.
+C95 keeps post_activation_audit_archive_completion_context_persisted_to_live_runtime=false.
+C95 keeps production_deployment_allowed=false.
+C95 keeps production_deployment_executed=false.
+C95 keeps plan_confirm_mutation_allowed=false.
+C95 keeps plan_confirm_mutated=false.
+C95 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C95 keeps live_plan_confirm_rollout_allowed=false.
+C95 keeps live_plan_confirm_rollout_executed=false.
+C95 keeps pilot_runtime_active=false.
+C95 keeps shadow_runtime_active=false.
+C95 keeps runtime_bridge_active=false.
+C95 post-activation audit archive completion means continue to C96 audit archive closure seal review only.
+C95 post-activation audit archive completion record is not production deployment.
+C95 post-activation audit archive completion record is not PLAN/CONFIRM live rollout.
+C95 post-activation audit archive completion record is not runtime bridge activation.
+
+NEXT_RECOMMENDATION_IF_PASS=C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_CLOSURE_SEAL_REVIEW
+
+### C95 Implementation Session Evidence - 2026-06-27
+
+```text
+FOCUSED_PHPUNIT_C95=OK (48 tests, 230 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C95=OK (1648 tests, 24447 assertions)
+RUNTIME_STATUS=C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETED_PRIMARY_AND_BACKUP
+ARTIFACT_HASH=a8923e58e35126741226eab29cc07c88a2a721f8
+ARTIFACT_FILE_SHA1=AEF14CC999F8050DADC8E451E9116C59FD1C2534
+SOURCE_LOCK=C94
+C94_HASH_MATCH=1
+C94_FILE_SHA1_MATCH=1
+TEMPORARY_NEGATIVE_ARTIFACTS_REMAINING=0
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP_CONFIRMED=1
+NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+SAFETY_BOUNDARY=NON_LIVE_NON_MUTATING_NON_PRODUCTION_PLAN_CONFIRM_UNCHANGED
+NEXT_RECOMMENDATION=C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_CLOSURE_SEAL_REVIEW
+```

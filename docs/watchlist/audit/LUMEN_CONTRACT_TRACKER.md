@@ -8703,3 +8703,69 @@ C94_NEXT_CONTRACT=C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_
 ```
 
 C94 contract evidence is documentation-only; no C60-C93 runtime artifact, service, command, test, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, or production deployment behavior is changed by this tracker update.
+
+## C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_COMPLETION_REVIEW
+
+C95 contract adds `WatchlistBacktestC95ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationAuditArchiveCompletionReviewService`, command `watchlist:backtest-c95-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-completion-review`, and isolated controlled limited post-activation audit archive completion review artifact context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, audit-complete, non-live-default, post-activation-audit-archive-closure-seal-safe, and PLAN/CONFIRM-safe.
+
+C95 validates C94 artifact hash and file SHA1.
+C95 validates C94 audit archive state.
+C95 validates C94 next recommendation to C95.
+C95 validates locked C94 final evidence, C94 audit archive state, E02 primary, B01 backup, and A01 comparator-only.
+
+C95 requires --operator-approved.
+C95 requires non-empty --approval-reference.
+C95 confirms no temporary negative test artifact remains.
+C95 records post-activation audit archive completion only.
+C95 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C95 does not deploy live production.
+C95 does not mutate PLAN/CONFIRM.
+C95 does not change PLAN/CONFIRM output.
+C95 keeps production_ready=false.
+C95 keeps production_catalog_runtime_wired=false.
+C95 keeps controlled_opt_in_runtime_bridge_active=false.
+C95 keeps controlled_parallel_run_active=false.
+C95 keeps controlled_rollout_active=false.
+C95 keeps post_activation_audit_archive_context_persisted_to_live_runtime=false.
+C95 keeps post_activation_audit_archive_completion_context_persisted_to_live_runtime=false.
+C95 keeps production_deployment_allowed=false.
+C95 keeps production_deployment_executed=false.
+C95 keeps plan_confirm_mutation_allowed=false.
+C95 keeps plan_confirm_mutated=false.
+C95 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C95 keeps live_plan_confirm_rollout_allowed=false.
+C95 keeps live_plan_confirm_rollout_executed=false.
+C95 keeps pilot_runtime_active=false.
+C95 keeps shadow_runtime_active=false.
+C95 keeps runtime_bridge_active=false.
+
+C95 pass records artifact-only post-activation audit archive completion for primary and backup and can only recommend `C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_CLOSURE_SEAL_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+C95 post-activation audit archive completion means continue to C96 audit archive closure seal review only.
+C95 post-activation audit archive completion record is not production deployment.
+C95 post-activation audit archive completion record is not PLAN/CONFIRM live rollout.
+C95 post-activation audit archive completion record is not runtime bridge activation.
+
+Final implementation contract evidence - 2026-06-27:
+
+```text
+C95_CONTRACT_STATUS=PASSED
+C95_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c95-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-completion-review.json
+C95_RUNTIME_STATUS=C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETED_PRIMARY_AND_BACKUP
+C95_ARTIFACT_HASH=a8923e58e35126741226eab29cc07c88a2a721f8
+C95_ARTIFACT_FILE_SHA1=AEF14CC999F8050DADC8E451E9116C59FD1C2534
+C95_SOURCE_LOCK=C94
+EXPECTED_C94_HASH=2a17baceb2e899f93fd1d658bd6a7b020ef9b252
+ACTUAL_C94_HASH=2a17baceb2e899f93fd1d658bd6a7b020ef9b252
+C94_HASH_MATCH=1
+EXPECTED_C94_FILE_SHA1=0D81162ED0DF53DC434B2131E34106F7203119D6
+ACTUAL_C94_FILE_SHA1=0D81162ED0DF53DC434B2131E34106F7203119D6
+C94_FILE_SHA1_MATCH=1
+C95_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C95_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+C95_SAFETY_BOUNDARY=NON_LIVE_NON_MUTATING_NON_PRODUCTION_PLAN_CONFIRM_UNCHANGED
+C95_NEXT_CONTRACT=C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_CLOSURE_SEAL_REVIEW
+```
+
+C95 contract evidence is documentation-only; no C60-C94 runtime artifact, service, command, test, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, or production deployment behavior is changed by this tracker update.
