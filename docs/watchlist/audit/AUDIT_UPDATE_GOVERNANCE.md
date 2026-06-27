@@ -5030,3 +5030,78 @@ NEXT_RECOMMENDATION=C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 ```
 
 C91 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C91 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
+
+## C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+
+Append-only audit update: C92 controlled limited runtime opt-in pilot / shadow rollout post-activation handoff completion boundary review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C92 validates C91 artifact hash and file SHA1.
+C92 validates C91 readiness through nested next_readiness_decision.* path.
+C92 validates C91 -> C60 lineage.
+C91 artifact hash and file SHA1 must match.
+C91 readiness must be read from nested next_readiness_decision.*.
+C91 -> C60 lineage must remain locked.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+C92 clears post-activation handoff completion boundary only.
+Post-activation handoff completion boundary review is controlled-record-only and artifact-only.
+Post-activation handoff completion boundary does not mean production deployment.
+C92 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C92 does not deploy live production.
+C92 does not mutate PLAN/CONFIRM.
+C92 does not change PLAN/CONFIRM output.
+C92 keeps production_ready=false.
+C92 keeps production_catalog_runtime_wired=false.
+C92 keeps controlled_opt_in_runtime_bridge_active=false.
+C92 keeps controlled_parallel_run_active=false.
+C92 keeps controlled_rollout_active=false.
+C92 keeps post_activation_handoff_completion_boundary_context_persisted_to_live_runtime=false.
+C92 keeps production_deployment_allowed=false.
+C92 keeps production_deployment_executed=false.
+C92 keeps plan_confirm_mutation_allowed=false.
+C92 keeps plan_confirm_mutated=false.
+C92 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C92 keeps live_plan_confirm_rollout_allowed=false.
+C92 keeps live_plan_confirm_rollout_executed=false.
+C92 post-activation handoff completion boundary means continue to C93 post-activation handoff closure seal review only.
+C92 post-activation handoff completion boundary record is not production deployment.
+C92 post-activation handoff completion boundary record is not PLAN/CONFIRM live rollout.
+C92 post-activation handoff completion boundary record is not runtime bridge activation.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+```
+
+C92 implementation keeps the audit update per catalog item. It does not rewrite C77-C91 sections.
+
+## C92 Final Operator Evidence Append — 2026-06-27
+
+C92 final operator evidence is appended per catalog item. This append records operator local PHPUnit, runtime validation, negative approval gate validation, and cleanup validation. It is documentation-only.
+
+```text
+RUN_CODE=C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+FOCUSED_PHPUNIT=OK (35 tests, 175 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C92=OK (1507 tests, 23740 assertions)
+RUNTIME_STATUS=C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c92-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-handoff-completion-boundary-review.json
+ARTIFACT_HASH=21ea44188d303fb3208d1d1bff864ee86aa247e5
+ARTIFACT_FILE_SHA1=81B5F1502258E1419BAA7E302BCB6CBABE49A822
+SOURCE_LOCK=C91
+EXPECTED_C91_HASH=17731873369cf69b5083b2f80b15101de71851f2
+ACTUAL_C91_HASH=17731873369cf69b5083b2f80b15101de71851f2
+C91_HASH_MATCH=1
+EXPECTED_C91_FILE_SHA1=D6306D0EB132FEEA5535B99AD4A4BA9099D80DF6
+ACTUAL_C91_FILE_SHA1=D6306D0EB132FEEA5535B99AD4A4BA9099D80DF6
+C91_FILE_SHA1_MATCH=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVED=C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+SAFETY_BOUNDARY=NON_LIVE_NON_MUTATING_NON_PRODUCTION_PLAN_CONFIRM_UNCHANGED
+NEXT_RECOMMENDATION=C93_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_CLOSURE_SEAL_REVIEW
+```
+
+C92 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C92 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
