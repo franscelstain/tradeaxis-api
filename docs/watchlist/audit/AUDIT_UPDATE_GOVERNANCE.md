@@ -5187,3 +5187,85 @@ NEXT_RECOMMENDATION=C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 ```
 
 C93 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C93 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
+
+## C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_REVIEW
+
+Append-only audit update: C94 controlled limited runtime opt-in pilot / shadow rollout post-activation audit archive review is implemented as non-live artifact validation.
+
+Governance locks:
+
+```text
+C94 validates C93 artifact hash and file SHA1.
+C94 validates C93 closure seal state.
+C93 artifact hash and file SHA1 must match.
+C93 closure_sealed must remain true.
+C93 post_activation_handoff_closure_sealed must remain true.
+C93 primary_candidate_closure_sealed must remain true.
+C93 backup_candidate_closure_sealed must remain true.
+C93 comparator_candidate_closure_sealed must remain false.
+C93 a01_remains_comparator_only must remain true.
+E02 remains primary.
+B01 remains backup.
+A01 remains comparator-only and cannot be promoted.
+Operator approval and approval reference are required.
+Temporary negative test artifacts must be absent before pass.
+C94 records post-activation audit archive only.
+Post-activation audit archive review is controlled-record-only and artifact-only.
+Post-activation audit archive does not mean production deployment.
+C94 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C94 does not deploy live production.
+C94 does not mutate PLAN/CONFIRM.
+C94 does not change PLAN/CONFIRM output.
+C94 keeps production_ready=false.
+C94 keeps production_catalog_runtime_wired=false.
+C94 keeps controlled_opt_in_runtime_bridge_active=false.
+C94 keeps controlled_parallel_run_active=false.
+C94 keeps controlled_rollout_active=false.
+C94 keeps post_activation_audit_archive_context_persisted_to_live_runtime=false.
+C94 keeps production_deployment_allowed=false.
+C94 keeps production_deployment_executed=false.
+C94 keeps plan_confirm_mutation_allowed=false.
+C94 keeps plan_confirm_mutated=false.
+C94 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C94 keeps live_plan_confirm_rollout_allowed=false.
+C94 keeps live_plan_confirm_rollout_executed=false.
+C94 keeps pilot_runtime_active=false.
+C94 keeps shadow_runtime_active=false.
+C94 keeps runtime_bridge_active=false.
+C94 post-activation audit archive means continue to C95 audit archive completion review only.
+C94 post-activation audit archive record is not production deployment.
+C94 post-activation audit archive record is not PLAN/CONFIRM live rollout.
+C94 post-activation audit archive record is not runtime bridge activation.
+No PLAN/CONFIRM default runtime catalog read is enabled.
+```
+
+C94 implementation keeps the audit update per catalog item. It does not rewrite C77-C93 sections.
+
+## C94 Final Implementation Evidence Append - 2026-06-27
+
+C94 final implementation evidence is appended per catalog item. This append records local PHPUnit, runtime validation, negative approval gate validation, and cleanup validation. It is documentation-only.
+
+```text
+RUN_CODE=C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_REVIEW
+FOCUSED_PHPUNIT=OK (45 tests, 222 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C94=OK (1600 tests, 24217 assertions)
+RUNTIME_STATUS=C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_REVIEW_PASSED_AUDIT_ARCHIVED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_REVIEW_PASSED_AUDIT_ARCHIVED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c94-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-review.json
+ARTIFACT_HASH=2a17baceb2e899f93fd1d658bd6a7b020ef9b252
+ARTIFACT_FILE_SHA1=0D81162ED0DF53DC434B2131E34106F7203119D6
+SOURCE_LOCK=C93
+EXPECTED_C93_HASH=bd19ac672c30ea183fc46534acd6e976515c3453
+ACTUAL_C93_HASH=bd19ac672c30ea183fc46534acd6e976515c3453
+C93_HASH_MATCH=1
+EXPECTED_C93_FILE_SHA1=F71799E201B9C71A79094D81AFF786FCACDF9E1D
+ACTUAL_C93_FILE_SHA1=F71799E201B9C71A79094D81AFF786FCACDF9E1D
+C93_FILE_SHA1_MATCH=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVED=C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+SAFETY_BOUNDARY=NON_LIVE_NON_MUTATING_NON_PRODUCTION_PLAN_CONFIRM_UNCHANGED
+NEXT_RECOMMENDATION=C95_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_COMPLETION_REVIEW
+```
+
+C94 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C94 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
