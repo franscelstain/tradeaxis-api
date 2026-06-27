@@ -8573,3 +8573,68 @@ C92_NEXT_CONTRACT=C93_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_
 ```
 
 C92 contract evidence is documentation-only; no C60-C91 runtime artifact, service, command, test, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, or production deployment behavior is changed by this tracker update.
+
+## C93_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_CLOSURE_SEAL_REVIEW
+
+C93 contract adds `WatchlistBacktestC93ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationHandoffClosureSealReviewService`, command `watchlist:backtest-c93-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-handoff-closure-seal-review`, and isolated controlled limited post-activation handoff closure seal review artifact context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, audit-complete, non-live-default, post-activation-audit-archive-safe, and PLAN/CONFIRM-safe.
+
+C93 validates C92 artifact hash and file SHA1.
+C93 validates C92 completion boundary state.
+C93 validates C92 next recommendation to C93.
+C93 validates locked C92 final evidence, C92 completion boundary state, E02 primary, B01 backup, and A01 comparator-only.
+
+C93 requires --operator-approved.
+C93 requires non-empty --approval-reference.
+C93 confirms no temporary negative test artifact remains.
+C93 seals post-activation handoff closure only.
+C93 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C93 does not deploy live production.
+C93 does not mutate PLAN/CONFIRM.
+C93 does not change PLAN/CONFIRM output.
+C93 keeps production_ready=false.
+C93 keeps production_catalog_runtime_wired=false.
+C93 keeps controlled_opt_in_runtime_bridge_active=false.
+C93 keeps controlled_parallel_run_active=false.
+C93 keeps controlled_rollout_active=false.
+C93 keeps post_activation_handoff_closure_seal_context_persisted_to_live_runtime=false.
+C93 keeps production_deployment_allowed=false.
+C93 keeps production_deployment_executed=false.
+C93 keeps plan_confirm_mutation_allowed=false.
+C93 keeps plan_confirm_mutated=false.
+C93 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C93 keeps live_plan_confirm_rollout_allowed=false.
+C93 keeps live_plan_confirm_rollout_executed=false.
+C93 keeps pilot_runtime_active=false.
+C93 keeps shadow_runtime_active=false.
+C93 keeps runtime_bridge_active=false.
+
+C93 pass records artifact-only post-activation handoff closure seal for primary and backup and can only recommend `C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+C93 post-activation handoff closure seal means continue to C94 post-activation audit archive review only.
+C93 post-activation handoff closure seal record is not production deployment.
+C93 post-activation handoff closure seal record is not PLAN/CONFIRM live rollout.
+C93 post-activation handoff closure seal record is not runtime bridge activation.
+
+Final implementation contract evidence - 2026-06-27:
+
+```text
+C93_CONTRACT_STATUS=PASSED
+C93_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c93-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-handoff-closure-seal-review.json
+C93_RUNTIME_STATUS=C93_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_CLOSURE_SEAL_REVIEW_PASSED_CLOSURE_SEALED_PRIMARY_AND_BACKUP
+C93_ARTIFACT_HASH=bd19ac672c30ea183fc46534acd6e976515c3453
+C93_ARTIFACT_FILE_SHA1=F71799E201B9C71A79094D81AFF786FCACDF9E1D
+C93_SOURCE_LOCK=C92
+EXPECTED_C92_HASH=21ea44188d303fb3208d1d1bff864ee86aa247e5
+ACTUAL_C92_HASH=21ea44188d303fb3208d1d1bff864ee86aa247e5
+C92_HASH_MATCH=1
+EXPECTED_C92_FILE_SHA1=81B5F1502258E1419BAA7E302BCB6CBABE49A822
+ACTUAL_C92_FILE_SHA1=81B5F1502258E1419BAA7E302BCB6CBABE49A822
+C92_FILE_SHA1_MATCH=1
+C93_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C93_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+C93_SAFETY_BOUNDARY=NON_LIVE_NON_MUTATING_NON_PRODUCTION_PLAN_CONFIRM_UNCHANGED
+C93_NEXT_CONTRACT=C94_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_REVIEW
+```
+
+C93 contract evidence is documentation-only; no C60-C92 runtime artifact, service, command, test, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, or production deployment behavior is changed by this tracker update.
