@@ -8769,3 +8769,253 @@ C95_NEXT_CONTRACT=C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_
 ```
 
 C95 contract evidence is documentation-only; no C60-C94 runtime artifact, service, command, test, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, or production deployment behavior is changed by this tracker update.
+
+## C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_CLOSURE_SEAL_REVIEW
+
+C96 contract adds `WatchlistBacktestC96ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationAuditArchiveClosureSealReviewService`, command `watchlist:backtest-c96-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-closure-seal-review`, and isolated controlled limited post-activation audit archive closure seal review artifact context.
+
+The contract is operator-approved, approval-reference-required, explicit-context-only, default-off, kill-switch protected, audit-complete, non-live-default, post-activation-audit-archive-finalization-safe, and PLAN/CONFIRM-safe.
+
+C96 validates C95 artifact hash and file SHA1.
+C96 validates C95 audit archive completion state.
+C96 validates C95 next recommendation to C96.
+C96 validates locked C95 final evidence, C95 audit archive completion state, E02 primary, B01 backup, and A01 comparator-only.
+
+C96 requires --operator-approved.
+C96 requires non-empty --approval-reference.
+C96 confirms no temporary negative test artifact remains.
+C96 records post-activation audit archive closure seal only.
+C96 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C96 does not deploy live production.
+C96 does not mutate PLAN/CONFIRM.
+C96 does not change PLAN/CONFIRM output.
+C96 keeps production_ready=false.
+C96 keeps production_catalog_runtime_wired=false.
+C96 keeps controlled_opt_in_runtime_bridge_active=false.
+C96 keeps controlled_parallel_run_active=false.
+C96 keeps controlled_rollout_active=false.
+C96 keeps post_activation_audit_archive_context_persisted_to_live_runtime=false.
+C96 keeps post_activation_audit_archive_completion_context_persisted_to_live_runtime=false.
+C96 keeps post_activation_audit_archive_closure_seal_context_persisted_to_live_runtime=false.
+C96 keeps production_deployment_allowed=false.
+C96 keeps production_deployment_executed=false.
+C96 keeps plan_confirm_mutation_allowed=false.
+C96 keeps plan_confirm_mutated=false.
+C96 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C96 keeps live_plan_confirm_rollout_allowed=false.
+C96 keeps live_plan_confirm_rollout_executed=false.
+C96 keeps pilot_runtime_active=false.
+C96 keeps shadow_runtime_active=false.
+C96 keeps runtime_bridge_active=false.
+
+C96 pass records artifact-only post-activation audit archive closure seal for primary and backup and can only recommend `C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, and not runtime bridge activation.
+C96 post-activation audit archive closure seal means continue to C97 audit archive finalization review only.
+C96 post-activation audit archive closure seal record is not production deployment.
+C96 post-activation audit archive closure seal record is not PLAN/CONFIRM live rollout.
+C96 post-activation audit archive closure seal record is not runtime bridge activation.
+
+Final implementation contract evidence - 2026-06-27:
+
+```text
+C96_CONTRACT_STATUS=PASSED
+C96_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c96-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-closure-seal-review.json
+C96_RUNTIME_STATUS=C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_CLOSURE_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_CLOSURE_SEALED_PRIMARY_AND_BACKUP
+C96_ARTIFACT_HASH=970152d11467ea83c80eca83081d6ae81beec38b
+C96_ARTIFACT_FILE_SHA1=CCD6B92B52745B928C48BF349BC7004E755B1EB6
+C96_SOURCE_LOCK=C95
+EXPECTED_C95_HASH=a8923e58e35126741226eab29cc07c88a2a721f8
+ACTUAL_C95_HASH=a8923e58e35126741226eab29cc07c88a2a721f8
+C95_HASH_MATCH=1
+EXPECTED_C95_FILE_SHA1=AEF14CC999F8050DADC8E451E9116C59FD1C2534
+ACTUAL_C95_FILE_SHA1=AEF14CC999F8050DADC8E451E9116C59FD1C2534
+C95_FILE_SHA1_MATCH=1
+C96_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C96_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+C96_SAFETY_BOUNDARY=NON_LIVE_NON_MUTATING_NON_PRODUCTION_PLAN_CONFIRM_UNCHANGED
+C96_NEXT_CONTRACT=C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW
+```
+
+C96 contract evidence is documentation-only; no C60-C95 runtime artifact, service, command, test, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, or production deployment behavior is changed by this tracker update.
+
+## C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW
+
+C97 contract locks C96 audit archive closure seal as the only source input.
+
+```text
+C97_SOURCE_LOCK=C96
+C97_EXPECTED_C96_ARTIFACT=storage/app/watchlist/backtest/c96-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-closure-seal-review.json
+C97_EXPECTED_C96_HASH=970152d11467ea83c80eca83081d6ae81beec38b
+C97_EXPECTED_C96_FILE_SHA1=CCD6B92B52745B928C48BF349BC7004E755B1EB6
+C97_EXPECTED_C96_STATUS=C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_CLOSURE_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_CLOSURE_SEALED_PRIMARY_AND_BACKUP
+C97_EXPECTED_C96_REASON_CODE=C96_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_CLOSURE_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_CLOSURE_SEALED_PRIMARY_AND_BACKUP
+C97_EXPECTED_C96_NEXT_RECOMMENDATION=C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW
+C97_NEXT_CONTRACT=C98_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_REVIEW
+```
+
+C97 validates C96 artifact hash and file SHA1.
+C97 validates C96 audit archive closure seal state.
+C97 requires --operator-approved.
+C97 requires non-empty --approval-reference.
+C97 confirms no temporary negative test artifact remains.
+C97 records audit archive finalization only.
+C97 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C97 does not deploy live production.
+C97 does not mutate PLAN/CONFIRM.
+C97 does not change PLAN/CONFIRM output.
+C97 does not activate pilot runtime.
+C97 does not activate shadow runtime.
+C97 does not activate runtime bridge.
+C97 does not activate weekly swing watchlist runtime.
+C97 does not create weekly swing live output.
+C97 keeps production_ready=false.
+C97 keeps production_catalog_runtime_wired=false.
+C97 keeps controlled_opt_in_runtime_bridge_active=false.
+C97 keeps controlled_parallel_run_active=false.
+C97 keeps controlled_rollout_active=false.
+C97 keeps audit_archive_finalization_context_persisted_to_live_runtime=false.
+C97 keeps production_deployment_allowed=false.
+C97 keeps production_deployment_executed=false.
+C97 keeps plan_confirm_mutation_allowed=false.
+C97 keeps plan_confirm_mutated=false.
+C97 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C97 keeps live_plan_confirm_rollout_allowed=false.
+C97 keeps live_plan_confirm_rollout_executed=false.
+C97 keeps pilot_runtime_active=false.
+C97 keeps shadow_runtime_active=false.
+C97 keeps runtime_bridge_active=false.
+C97 keeps weekly_swing_watchlist_runtime_active=false.
+C97 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C97 keeps weekly_swing_watchlist_live_output_enabled=false.
+C97 audit archive finalization means continue to C98 weekly swing watchlist non-live rehearsal review only.
+C97 audit archive finalization record is not production deployment.
+C97 audit archive finalization record is not PLAN/CONFIRM live rollout.
+C97 audit archive finalization record is not runtime bridge activation.
+C97 audit archive finalization record is not weekly swing live output.
+
+C97 pass records artifact-only audit archive finalization for primary and backup and can only recommend `C98_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, not runtime bridge activation, and not weekly swing live output.
+
+Final operator contract evidence - 2026-06-27:
+
+```text
+C97_CONTRACT_STATUS=PASSED
+C97_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c97-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-finalization-review.json
+C97_RUNTIME_STATUS=C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW_PASSED_AUDIT_ARCHIVE_FINALIZED_PRIMARY_AND_BACKUP
+C97_FOCUSED_PHPUNIT=OK (55 tests, 294 assertions)
+C97_FULL_WATCHLIST_PHPUNIT_POST_C97=OK (1752 tests, 24977 assertions)
+C97_ARTIFACT_HASH=5898b6eaa0b537006ba249339c21b5038c8cb6fc
+C97_ARTIFACT_FILE_SHA1=620FF85234701FD72FC40BB661F068308751C2E4
+C97_SOURCE_LOCK=C96
+EXPECTED_C96_HASH=970152d11467ea83c80eca83081d6ae81beec38b
+ACTUAL_C96_HASH=970152d11467ea83c80eca83081d6ae81beec38b
+C96_HASH_MATCH=1
+EXPECTED_C96_FILE_SHA1=CCD6B92B52745B928C48BF349BC7004E755B1EB6
+ACTUAL_C96_FILE_SHA1=CCD6B92B52745B928C48BF349BC7004E755B1EB6
+C96_FILE_SHA1_MATCH=1
+C97_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C97_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=PASS_NO_NO_TEST_JSON_REMAINING
+C97_SAFETY_BOUNDARY=NON_LIVE_NON_MUTATING_NON_PRODUCTION_WEEKLY_LIVE_OUTPUT_DISABLED_PLAN_CONFIRM_UNCHANGED
+C97_NEXT_CONTRACT=C98_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_REVIEW
+```
+
+C97 contract evidence is documentation-only; no C60-C96 runtime artifact, service, command, test, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, or production deployment behavior is changed by this tracker update.
+
+## C98_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_REVIEW
+
+C98 contract locks C97 audit archive finalization as the only source input.
+
+```text
+C98_SOURCE_LOCK=C97
+C98_EXPECTED_C97_ARTIFACT=storage/app/watchlist/backtest/c97-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-finalization-review.json
+C98_EXPECTED_C97_HASH=5898b6eaa0b537006ba249339c21b5038c8cb6fc
+C98_EXPECTED_C97_FILE_SHA1=620FF85234701FD72FC40BB661F068308751C2E4
+C98_EXPECTED_C97_STATUS=C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW_PASSED_AUDIT_ARCHIVE_FINALIZED_PRIMARY_AND_BACKUP
+C98_EXPECTED_C97_REASON_CODE=C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW_PASSED_AUDIT_ARCHIVE_FINALIZED_PRIMARY_AND_BACKUP
+C98_EXPECTED_C97_NEXT_RECOMMENDATION=C98_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_REVIEW
+C98_NEXT_CONTRACT=C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW
+```
+
+C98 validates C97 artifact hash and file SHA1.
+C98 validates C97 audit archive finalization state.
+C98 requires --operator-approved.
+C98 requires non-empty --approval-reference.
+C98 confirms no temporary negative test artifact remains.
+C98 records weekly swing watchlist non-live rehearsal review only.
+C98 creates artifact-only non-live rehearsal manifest.
+C98 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C98 does not deploy live production.
+C98 does not mutate PLAN/CONFIRM.
+C98 does not change PLAN/CONFIRM output.
+C98 does not activate pilot runtime.
+C98 does not activate shadow runtime.
+C98 does not activate runtime bridge.
+C98 does not activate weekly swing watchlist runtime.
+C98 does not create weekly swing live output.
+C98 does not generate official weekly swing recommendation.
+C98 does not publish weekly swing output.
+C98 keeps production_ready=false.
+C98 keeps production_catalog_runtime_wired=false.
+C98 keeps controlled_opt_in_runtime_bridge_active=false.
+C98 keeps controlled_parallel_run_active=false.
+C98 keeps controlled_rollout_active=false.
+C98 keeps weekly_swing_watchlist_rehearsal_context_persisted_to_live_runtime=false.
+C98 keeps production_deployment_allowed=false.
+C98 keeps production_deployment_executed=false.
+C98 keeps plan_confirm_mutation_allowed=false.
+C98 keeps plan_confirm_mutated=false.
+C98 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C98 keeps live_plan_confirm_rollout_allowed=false.
+C98 keeps live_plan_confirm_rollout_executed=false.
+C98 keeps pilot_runtime_active=false.
+C98 keeps shadow_runtime_active=false.
+C98 keeps runtime_bridge_active=false.
+C98 keeps weekly_swing_watchlist_runtime_active=false.
+C98 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C98 keeps weekly_swing_watchlist_live_output_enabled=false.
+C98 keeps weekly_swing_watchlist_official_output_generated=false.
+C98 keeps weekly_swing_watchlist_official_output_published=false.
+C98 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+C98 weekly swing watchlist non-live rehearsal review means continue to C99 weekly swing watchlist non-live rehearsal execution review only.
+C98 weekly swing watchlist non-live rehearsal review is not production deployment.
+C98 weekly swing watchlist non-live rehearsal review is not PLAN/CONFIRM live rollout.
+C98 weekly swing watchlist non-live rehearsal review is not runtime bridge activation.
+C98 weekly swing watchlist non-live rehearsal review is not weekly swing live output.
+
+C98 pass records artifact-only weekly swing watchlist non-live rehearsal readiness for primary and backup and can only recommend `C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, not runtime bridge activation, and not weekly swing live output.
+
+Initial implementation contract evidence - 2026-06-28:
+
+```text
+C98_CONTRACT_STATUS=IMPLEMENTED_PENDING_RUNTIME_EVIDENCE
+C98_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c98-weekly-swing-watchlist-non-live-rehearsal-review.json
+C98_SOURCE_LOCK=C97
+EXPECTED_C97_HASH=5898b6eaa0b537006ba249339c21b5038c8cb6fc
+EXPECTED_C97_FILE_SHA1=620FF85234701FD72FC40BB661F068308751C2E4
+C98_NEXT_CONTRACT=C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW
+```
+
+C98 contract evidence is artifact-only; no C60-C97 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+Final operator contract evidence - 2026-06-28:
+
+```text
+C98_CONTRACT_STATUS=PASSED
+C98_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c98-weekly-swing-watchlist-non-live-rehearsal-review.json
+C98_RUNTIME_STATUS=C98_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_REVIEW_PASSED_NON_LIVE_REHEARSAL_READY_PRIMARY_AND_BACKUP
+C98_FOCUSED_PHPUNIT=OK (53 tests, 328 assertions)
+C98_FULL_WATCHLIST_PHPUNIT_POST_C98=OK (1805 tests, 25305 assertions)
+C98_ARTIFACT_HASH=269eb05141a2acf28925fdef51df9263955b0143
+C98_ARTIFACT_FILE_SHA1=762BAFFCFCB104E10C9D8C6F6CCBD4E990766702
+C98_SOURCE_LOCK=C97
+EXPECTED_C97_HASH=5898b6eaa0b537006ba249339c21b5038c8cb6fc
+ACTUAL_C97_HASH=5898b6eaa0b537006ba249339c21b5038c8cb6fc
+C97_HASH_MATCH=1
+EXPECTED_C97_FILE_SHA1=620FF85234701FD72FC40BB661F068308751C2E4
+ACTUAL_C97_FILE_SHA1=620FF85234701FD72FC40BB661F068308751C2E4
+C97_FILE_SHA1_MATCH=1
+C98_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C98_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+C98_SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_WEEKLY_REHEARSAL_READY_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+C98_NEXT_CONTRACT=C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW
+```
+
+C98 final contract evidence is artifact-only; no C60-C97 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
