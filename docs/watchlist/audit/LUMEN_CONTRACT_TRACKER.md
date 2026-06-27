@@ -9019,3 +9019,105 @@ C98_NEXT_CONTRACT=C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW
 ```
 
 C98 final contract evidence is artifact-only; no C60-C97 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+## C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW
+
+C99 contract locks C98 weekly swing watchlist non-live rehearsal readiness as the only source input.
+
+```text
+C99_SOURCE_LOCK=C98
+C99_EXPECTED_C98_ARTIFACT=storage/app/watchlist/backtest/c98-weekly-swing-watchlist-non-live-rehearsal-review.json
+C99_EXPECTED_C98_HASH=269eb05141a2acf28925fdef51df9263955b0143
+C99_EXPECTED_C98_FILE_SHA1=762BAFFCFCB104E10C9D8C6F6CCBD4E990766702
+C99_EXPECTED_C98_STATUS=C98_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_REVIEW_PASSED_NON_LIVE_REHEARSAL_READY_PRIMARY_AND_BACKUP
+C99_EXPECTED_C98_REASON_CODE=C98_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_REVIEW_PASSED_NON_LIVE_REHEARSAL_READY_PRIMARY_AND_BACKUP
+C99_EXPECTED_C98_NEXT_RECOMMENDATION=C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW
+C99_NEXT_CONTRACT=C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW
+```
+
+C99 validates C98 artifact hash and file SHA1.
+C99 validates C98 weekly swing watchlist non-live rehearsal ready state.
+C99 requires --operator-approved.
+C99 requires non-empty --approval-reference.
+C99 confirms no temporary negative test artifact remains.
+C99 records weekly swing watchlist non-live rehearsal execution review only.
+C99 creates artifact-only non-live rehearsal execution manifest.
+C99 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C99 does not deploy live production.
+C99 does not mutate PLAN/CONFIRM.
+C99 does not change PLAN/CONFIRM output.
+C99 does not activate pilot runtime.
+C99 does not activate shadow runtime.
+C99 does not activate runtime bridge.
+C99 does not activate weekly swing watchlist runtime.
+C99 does not create weekly swing live output.
+C99 does not generate official weekly swing recommendation.
+C99 does not publish weekly swing output.
+C99 keeps production_ready=false.
+C99 keeps production_catalog_runtime_wired=false.
+C99 keeps controlled_opt_in_runtime_bridge_active=false.
+C99 keeps controlled_parallel_run_active=false.
+C99 keeps controlled_rollout_active=false.
+C99 keeps weekly_swing_watchlist_rehearsal_context_persisted_to_live_runtime=false.
+C99 keeps weekly_swing_watchlist_non_live_rehearsal_execution_context_persisted_to_live_runtime=false.
+C99 keeps production_deployment_allowed=false.
+C99 keeps production_deployment_executed=false.
+C99 keeps plan_confirm_mutation_allowed=false.
+C99 keeps plan_confirm_mutated=false.
+C99 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C99 keeps live_plan_confirm_rollout_allowed=false.
+C99 keeps live_plan_confirm_rollout_executed=false.
+C99 keeps pilot_runtime_active=false.
+C99 keeps shadow_runtime_active=false.
+C99 keeps runtime_bridge_active=false.
+C99 keeps weekly_swing_watchlist_runtime_active=false.
+C99 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C99 keeps weekly_swing_watchlist_live_output_enabled=false.
+C99 keeps weekly_swing_watchlist_official_output_generated=false.
+C99 keeps weekly_swing_watchlist_official_output_published=false.
+C99 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+C99 weekly swing watchlist non-live rehearsal execution review means continue to C100 weekly swing watchlist non-live rehearsal result review only.
+C99 weekly swing watchlist non-live rehearsal execution review is not production deployment.
+C99 weekly swing watchlist non-live rehearsal execution review is not PLAN/CONFIRM live rollout.
+C99 weekly swing watchlist non-live rehearsal execution review is not runtime bridge activation.
+C99 weekly swing watchlist non-live rehearsal execution review is not weekly swing live output.
+
+C99 pass records artifact-only weekly swing watchlist non-live rehearsal execution for primary and backup and can only recommend `C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, not runtime bridge activation, and not weekly swing live output.
+
+Initial implementation contract evidence - 2026-06-28:
+
+```text
+C99_CONTRACT_STATUS=IMPLEMENTED_PENDING_RUNTIME_EVIDENCE
+C99_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c99-weekly-swing-watchlist-non-live-rehearsal-execution-review.json
+C99_SOURCE_LOCK=C98
+EXPECTED_C98_HASH=269eb05141a2acf28925fdef51df9263955b0143
+EXPECTED_C98_FILE_SHA1=762BAFFCFCB104E10C9D8C6F6CCBD4E990766702
+C99_NEXT_CONTRACT=C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW
+```
+
+C99 contract evidence is artifact-only; no C60-C98 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+Final operator contract evidence - 2026-06-28:
+
+```text
+C99_CONTRACT_STATUS=PASSED
+C99_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c99-weekly-swing-watchlist-non-live-rehearsal-execution-review.json
+C99_RUNTIME_STATUS=C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW_PASSED_NON_LIVE_REHEARSAL_EXECUTED_PRIMARY_AND_BACKUP
+C99_FOCUSED_PHPUNIT=OK (56 tests, 333 assertions)
+C99_FULL_WATCHLIST_PHPUNIT_POST_C99=OK (1861 tests, 25638 assertions)
+C99_ARTIFACT_HASH=33d63c80f88c00e704b54d923ac511492994d34c
+C99_ARTIFACT_FILE_SHA1=0C43E16B1C6FB6338343DD12BCA5E04A43BDBB41
+C99_SOURCE_LOCK=C98
+EXPECTED_C98_HASH=269eb05141a2acf28925fdef51df9263955b0143
+ACTUAL_C98_HASH=269eb05141a2acf28925fdef51df9263955b0143
+C98_HASH_MATCH=1
+EXPECTED_C98_FILE_SHA1=762BAFFCFCB104E10C9D8C6F6CCBD4E990766702
+ACTUAL_C98_FILE_SHA1=762BAFFCFCB104E10C9D8C6F6CCBD4E990766702
+C98_FILE_SHA1_MATCH=1
+C99_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C99_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+C99_SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_WEEKLY_REHEARSAL_EXECUTED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+C99_NEXT_CONTRACT=C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW
+```
+
+C99 final contract evidence is artifact-only; no C60-C98 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.

@@ -123,6 +123,7 @@ use App\Console\Commands\Watchlist\RunBacktestC95ControlledLimitedRuntimeOptInPi
 use App\Console\Commands\Watchlist\RunBacktestC96ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationAuditArchiveClosureSealReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC97ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationAuditArchiveFinalizationReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC98WeeklySwingWatchlistNonLiveRehearsalReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC99WeeklySwingWatchlistNonLiveRehearsalExecutionReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -233,6 +234,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC96ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationAuditArchiveClosureSealReviewCommand::class,
         RunBacktestC97ControlledLimitedRuntimeOptInPilotOrShadowRolloutPostActivationAuditArchiveFinalizationReviewCommand::class,
         RunBacktestC98WeeklySwingWatchlistNonLiveRehearsalReviewCommand::class,
+        RunBacktestC99WeeklySwingWatchlistNonLiveRehearsalExecutionReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
