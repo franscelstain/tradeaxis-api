@@ -91,7 +91,7 @@ class ApiBackfillRangeAcquisitionService
             $windowTelemetry[] = $windowTelemetryEntry;
             $sourceAcquisitionCheckpoints = array_merge(
                 $sourceAcquisitionCheckpoints,
-                $this->buildWindowCheckpoints($batchId, $window, $effectiveTickerCodes, $windowRows, $windowTelemetryEntry)
+                $this->buildWindowCheckpoints($batchId, $window, $effectiveTickerCodes, $windowRows, $windowTelemetryEntry, $requestedStart, $requestedEnd)
             );
         }
 
@@ -181,16 +181,22 @@ class ApiBackfillRangeAcquisitionService
         return $result;
     }
 
-    private function buildWindowCheckpoints($batchId, array $window, array $tickerCodes, array $windowRows, array $telemetry)
+    private function buildWindowCheckpoints($batchId, array $window, array $tickerCodes, array $windowRows, array $telemetry, $requestedStart = null, $requestedEnd = null)
     {
+        $checkpointRequestedDates = $this->requestedDatesForCheckpointWindow(array_keys($windowRows), $window, $requestedStart, $requestedEnd);
         $returnedTickers = [];
         $returnedRowCounts = [];
-        foreach ($windowRows as $dateRows) {
+        $returnedTradeDatesByTicker = [];
+        foreach ($windowRows as $date => $dateRows) {
             foreach ((array) $dateRows as $row) {
                 if (($row['ticker_code'] ?? null) !== null && $row['ticker_code'] !== '') {
                     $tickerKey = strtoupper((string) $row['ticker_code']);
+                    $rowDate = (string) ($row['trade_date'] ?? $date);
                     $returnedTickers[$tickerKey] = true;
                     $returnedRowCounts[$tickerKey] = ($returnedRowCounts[$tickerKey] ?? 0) + 1;
+                    if ($rowDate !== '') {
+                        $returnedTradeDatesByTicker[$tickerKey][$rowDate] = true;
+                    }
                 }
             }
         }
@@ -241,12 +247,18 @@ class ApiBackfillRangeAcquisitionService
             $tickerCode = (string) $tickerCode;
             $tickerKey = strtoupper($tickerCode);
             $checkpointKey = $this->checkpointKey($window['start'], $window['end'], $tickerCode);
-            $state = isset($returnedTickers[$tickerKey]) ? 'SUCCESS' : 'FAILED';
+            $returnedTradeDates = isset($returnedTradeDatesByTicker[$tickerKey])
+                ? array_keys($returnedTradeDatesByTicker[$tickerKey])
+                : [];
+            sort($returnedTradeDates);
+            $missingRequestedTradeDates = $this->missingRequestedTradeDates($checkpointRequestedDates, $returnedTradeDates);
+            $hasDateLevelMissing = $missingRequestedTradeDates !== [];
+            $state = isset($returnedTickers[$tickerKey]) && ! $hasDateLevelMissing ? 'SUCCESS' : 'FAILED';
             $failureContext = $failedTickerContextsByCheckpointKey[$checkpointKey] ?? ($failedTickerContexts[$tickerKey] ?? []);
             $reasonCode = null;
             if ($state === 'FAILED') {
                 $reasonCode = $failureContext['final_reason_code']
-                    ?? (isset($failedTickers[$tickerKey]) ? ($telemetry['final_reason_code'] ?? 'RUN_SOURCE_PARTIAL_RESPONSE') : 'RUN_SOURCE_NO_VALID_DATA');
+                    ?? ($hasDateLevelMissing ? 'RUN_SOURCE_MISSING_REQUESTED_DATE_ROW' : (isset($failedTickers[$tickerKey]) ? ($telemetry['final_reason_code'] ?? 'RUN_SOURCE_PARTIAL_RESPONSE') : 'RUN_SOURCE_NO_VALID_DATA'));
             }
             $httpStatus = $state === 'FAILED'
                 ? (array_key_exists('http_status', $failureContext) ? $failureContext['http_status'] : (array_key_exists('final_http_status', $failureContext) ? $failureContext['final_http_status'] : null))
@@ -261,8 +273,9 @@ class ApiBackfillRangeAcquisitionService
                 ? ($failureContext['sanitized_url'] ?? ($failureContext['url'] ?? null))
                 : null;
             $failureScope = $state === 'FAILED'
-                ? ($failureContext['failure_scope'] ?? 'ticker')
+                ? ($failureContext['failure_scope'] ?? ($hasDateLevelMissing ? 'ticker_requested_date' : 'ticker'))
                 : null;
+            $lastReturnedTradeDate = $returnedTradeDates !== [] ? end($returnedTradeDates) : null;
 
             $rows[$checkpointKey] = [
                 'source_acquisition_batch_id' => $batchId,
@@ -283,12 +296,63 @@ class ApiBackfillRangeAcquisitionService
                 'sanitized_url' => $sanitizedUrl,
                 'failure_scope' => $failureScope,
                 'rows_count' => (int) ($returnedRowCounts[$tickerKey] ?? 0),
+                'requested_trade_dates' => $checkpointRequestedDates,
+                'returned_trade_dates' => $returnedTradeDates,
+                'missing_trade_dates' => $missingRequestedTradeDates,
+                'requested_end_row_present' => $requestedEnd !== null && $requestedEnd !== ''
+                    ? in_array((string) $requestedEnd, $returnedTradeDates, true)
+                    : null,
+                'last_returned_trade_date' => $lastReturnedTradeDate,
+                'date_level_status' => $missingRequestedTradeDates === [] ? 'PASS' : 'FAIL',
+                'date_level_reason_code' => $missingRequestedTradeDates === [] ? null : 'RUN_SOURCE_MISSING_REQUESTED_DATE_ROW',
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
         }
 
         return $rows;
+    }
+
+    private function requestedDatesForCheckpointWindow(array $dates, array $window, $requestedStart, $requestedEnd)
+    {
+        if ($requestedStart === null || $requestedStart === '' || $requestedEnd === null || $requestedEnd === '') {
+            return [];
+        }
+
+        $requested = [];
+        foreach ($dates as $date) {
+            $date = (string) $date;
+            if (strcmp($date, (string) $window['start']) < 0 || strcmp($date, (string) $window['end']) > 0) {
+                continue;
+            }
+            if (strcmp($date, (string) $requestedStart) < 0 || strcmp($date, (string) $requestedEnd) > 0) {
+                continue;
+            }
+
+            $requested[] = $date;
+        }
+
+        $requested = array_values(array_unique($requested));
+        sort($requested);
+
+        return $requested;
+    }
+
+    private function missingRequestedTradeDates(array $requestedTradeDates, array $returnedTradeDates)
+    {
+        if ($requestedTradeDates === []) {
+            return [];
+        }
+
+        $returnedSet = array_fill_keys($returnedTradeDates, true);
+        $missing = [];
+        foreach ($requestedTradeDates as $date) {
+            if (! isset($returnedSet[$date])) {
+                $missing[] = $date;
+            }
+        }
+
+        return $missing;
     }
 
     private function buildRetryBlockedTelemetry($batchId, array $window, array $tickerCodes, array $requestContext, SourceAcquisitionException $e)

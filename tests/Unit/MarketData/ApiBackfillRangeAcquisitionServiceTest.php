@@ -222,6 +222,111 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
         $this->assertStringContainsString('WBSA.JK', $checkpoint['sanitized_url']);
     }
 
+
+    public function test_checkpoint_fails_when_ticker_has_warmup_row_but_missing_requested_trade_date()
+    {
+        $this->bindMarketDataConfig($this->config(90));
+
+        $adapter = new PublicApiEodBarsAdapter(function () {
+            return $this->oneBarResponse();
+        });
+
+        $service = new ApiBackfillRangeAcquisitionService($adapter);
+        $result = $service->acquire(
+            '2026-05-01',
+            '2026-05-04',
+            '2026-05-04',
+            ['2026-05-01', '2026-05-04'],
+            ['MISS']
+        );
+
+        $checkpoint = $result['source_acquisition_checkpoints']['2026-05-01|2026-05-04|MISS'];
+
+        $this->assertSame('FAILED', $checkpoint['state']);
+        $this->assertSame('RUN_SOURCE_MISSING_REQUESTED_DATE_ROW', $checkpoint['reason_code']);
+        $this->assertSame('ticker_requested_date', $checkpoint['failure_scope']);
+        $this->assertSame(['2026-05-04'], $checkpoint['requested_trade_dates']);
+        $this->assertSame(['2026-05-01'], $checkpoint['returned_trade_dates']);
+        $this->assertSame(['2026-05-04'], $checkpoint['missing_trade_dates']);
+        $this->assertFalse($checkpoint['requested_end_row_present']);
+        $this->assertSame('2026-05-01', $checkpoint['last_returned_trade_date']);
+        $this->assertSame('FAIL', $checkpoint['date_level_status']);
+        $this->assertSame('RUN_SOURCE_MISSING_REQUESTED_DATE_ROW', $checkpoint['date_level_reason_code']);
+        $this->assertSame(1, $checkpoint['rows_count']);
+        $this->assertSame('FAILED', $result['date_telemetry']['2026-05-04']['source_acquisition_state']);
+    }
+
+    public function test_resume_only_failed_retries_requested_date_missing_checkpoint()
+    {
+        $this->bindMarketDataConfig($this->config(90));
+
+        $requestedUrls = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+            $requestedUrls[] = $url;
+
+            return [
+                'status' => 200,
+                'body' => json_encode([
+                    'chart' => [
+                        'result' => [[
+                            'meta' => ['exchangeTimezoneName' => 'Asia/Jakarta'],
+                            'timestamp' => [1777827600],
+                            'indicators' => [
+                                'quote' => [[
+                                    'open' => [101],
+                                    'high' => [111],
+                                    'low' => [100],
+                                    'close' => [109],
+                                    'volume' => [100001],
+                                ]],
+                                'adjclose' => [['adjclose' => [109]]],
+                            ],
+                        ]],
+                    ],
+                ]),
+            ];
+        });
+
+        $checkpoint = [
+            '2026-05-01|2026-05-04|BBCA' => [
+                'window_start' => '2026-05-01',
+                'window_end' => '2026-05-04',
+                'ticker_code' => 'BBCA',
+                'state' => 'SUCCESS',
+            ],
+            '2026-05-01|2026-05-04|MISS' => [
+                'window_start' => '2026-05-01',
+                'window_end' => '2026-05-04',
+                'ticker_code' => 'MISS',
+                'state' => 'FAILED',
+                'reason_code' => 'RUN_SOURCE_MISSING_REQUESTED_DATE_ROW',
+                'missing_trade_dates' => ['2026-05-04'],
+            ],
+        ];
+
+        $service = new ApiBackfillRangeAcquisitionService($adapter);
+        $result = $service->acquire(
+            '2026-05-01',
+            '2026-05-04',
+            '2026-05-04',
+            ['2026-05-01', '2026-05-04'],
+            ['BBCA', 'MISS'],
+            [
+                'resume' => true,
+                'only_failed' => true,
+                'source_acquisition_checkpoint' => $checkpoint,
+            ]
+        );
+
+        $this->assertCount(1, $requestedUrls);
+        $this->assertStringContainsString('MISS.JK', $requestedUrls[0]);
+        $this->assertSame(1, $result['skipped_checkpoint_count']);
+        $this->assertArrayNotHasKey('2026-05-01|2026-05-04|BBCA', $result['source_acquisition_checkpoints']);
+        $this->assertSame('SUCCESS', $result['source_acquisition_checkpoints']['2026-05-01|2026-05-04|MISS']['state']);
+        $this->assertSame(['2026-05-04'], $result['source_acquisition_checkpoints']['2026-05-01|2026-05-04|MISS']['requested_trade_dates']);
+        $this->assertSame([], $result['source_acquisition_checkpoints']['2026-05-01|2026-05-04|MISS']['missing_trade_dates']);
+    }
+
     public function test_resume_only_failed_requests_failed_tickers_only()
     {
         $this->bindMarketDataConfig($this->config(90));
