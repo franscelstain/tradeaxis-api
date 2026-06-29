@@ -6073,3 +6073,55 @@ NEXT_RECOMMENDATION=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READI
 ```
 
 C103 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C103 records weekly swing watchlist non-live rehearsal completion boundary cleared only. C103 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
+
+## C104 Initial Implementation Evidence Append - 2026-06-30
+
+C104 initial implementation evidence is appended per catalog item. This append records the locked source and expected next recommendation. Runtime evidence is appended after local validation.
+
+```text
+RUN_CODE=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW
+SOURCE_LOCK=C103
+EXPECTED_C103_HASH=60954783fd524694581bd1b4cdb47a71bdcd7bcb
+EXPECTED_C103_FILE_SHA1=F61E6BAF148D974CEE483D45164E0D5F6BD51376
+EXPECTED_C103_STATUS=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+EXPECTED_C103_NEXT_RECOMMENDATION=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW
+NEXT_RECOMMENDATION=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW
+```
+
+C104 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C104 records weekly swing watchlist non-live rehearsal handoff readiness only. C104 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
+
+## C104 Final Operator Evidence Append - 2026-06-30
+
+C104 final operator evidence is appended per catalog item. This append records local PHPUnit, runtime validation, C103 hash/file SHA1 lock validation, negative approval gate validation, temporary negative artifact cleanup validation, and final non-live weekly swing rehearsal handoff readiness validation.
+
+```text
+RUN_CODE=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW
+FOCUSED_PHPUNIT_C104=OK (65 tests, 391 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C104=OK (2173 tests, 27520 assertions)
+RUNTIME_STATUS=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW_PASSED_HANDOFF_READY_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW_PASSED_HANDOFF_READY_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c104-weekly-swing-watchlist-non-live-rehearsal-handoff-readiness-review.json
+ARTIFACT_HASH=9949422cda0ff224c7b441cdd0dd02bfb6c694a4
+ARTIFACT_FILE_SHA1=08F7A41BDB04E4B40562C855230FDC170E8A2335
+SOURCE_LOCK=C103
+EXPECTED_C103_HASH=60954783fd524694581bd1b4cdb47a71bdcd7bcb
+ACTUAL_C103_HASH=60954783fd524694581bd1b4cdb47a71bdcd7bcb
+C103_HASH_MATCH=1
+EXPECTED_C103_FILE_SHA1=F61E6BAF148D974CEE483D45164E0D5F6BD51376
+ACTUAL_C103_FILE_SHA1=F61E6BAF148D974CEE483D45164E0D5F6BD51376
+C103_FILE_SHA1_MATCH=1
+HANDOFF_READY=1
+COMPLETION_BOUNDARY_CLEARED=1
+BOUNDARY_GO_DECISION=BOUNDARY_CLEARED_GO
+OPERATOR_GO_DECISION=GO
+TEMPORARY_NEGATIVE_ARTIFACTS_REMAINING=0
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP_CONFIRMED=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_HANDOFF_READY_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+NEXT_RECOMMENDATION=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW
+```
+
+C104 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C104 records weekly swing watchlist non-live rehearsal handoff readiness only. C104 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
