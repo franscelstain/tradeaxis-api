@@ -127,6 +127,7 @@ use App\Console\Commands\Watchlist\RunBacktestC99WeeklySwingWatchlistNonLiveRehe
 use App\Console\Commands\Watchlist\RunBacktestC100WeeklySwingWatchlistNonLiveRehearsalResultReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC101WeeklySwingWatchlistNonLiveRehearsalOperatorGoNoGoReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC102WeeklySwingWatchlistNonLiveRehearsalGoDecisionFinalizationReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC103WeeklySwingWatchlistNonLiveRehearsalCompletionBoundaryReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -241,6 +242,7 @@ class Kernel extends ConsoleKernel
         RunBacktestC100WeeklySwingWatchlistNonLiveRehearsalResultReviewCommand::class,
         RunBacktestC101WeeklySwingWatchlistNonLiveRehearsalOperatorGoNoGoReviewCommand::class,
         RunBacktestC102WeeklySwingWatchlistNonLiveRehearsalGoDecisionFinalizationReviewCommand::class,
+        RunBacktestC103WeeklySwingWatchlistNonLiveRehearsalCompletionBoundaryReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

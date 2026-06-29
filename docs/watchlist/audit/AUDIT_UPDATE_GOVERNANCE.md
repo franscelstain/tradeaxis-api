@@ -6024,3 +6024,52 @@ NEXT_RECOMMENDATION=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BO
 ```
 
 C102 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C102 records weekly swing watchlist non-live rehearsal finalized GO only. C102 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
+
+## C103 Initial Implementation Evidence Append - 2026-06-30
+
+C103 initial implementation evidence is appended per catalog item. This append records the locked source and expected next recommendation. Runtime evidence is appended after local validation.
+
+```text
+RUN_CODE=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BOUNDARY_REVIEW
+SOURCE_LOCK=C102
+EXPECTED_C102_HASH=e9e246048d14dcedda262a35fce9d52b64b052c0
+EXPECTED_C102_FILE_SHA1=DD731AFB11D2EA513EEF6795BF03D2F404670FB6
+EXPECTED_C102_STATUS=C102_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_GO_DECISION_FINALIZATION_REVIEW_PASSED_FINALIZED_GO_PRIMARY_AND_BACKUP
+EXPECTED_C102_NEXT_RECOMMENDATION=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BOUNDARY_REVIEW
+NEXT_RECOMMENDATION=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW
+```
+
+C103 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C103 records weekly swing watchlist non-live rehearsal completion boundary cleared only. C103 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
+
+## C103 Final Operator Evidence Append - 2026-06-30
+
+C103 final operator evidence is appended per catalog item. This append records local PHPUnit, runtime validation, C102 hash/file SHA1 lock validation, negative approval gate validation, temporary negative artifact cleanup validation, and final non-live weekly swing rehearsal completion boundary validation.
+
+```text
+RUN_CODE=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BOUNDARY_REVIEW
+FOCUSED_PHPUNIT_C103=OK (63 tests, 390 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C103=OK (2108 tests, 27129 assertions)
+RUNTIME_STATUS=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c103-weekly-swing-watchlist-non-live-rehearsal-completion-boundary-review.json
+ARTIFACT_HASH=60954783fd524694581bd1b4cdb47a71bdcd7bcb
+ARTIFACT_FILE_SHA1=F61E6BAF148D974CEE483D45164E0D5F6BD51376
+SOURCE_LOCK=C102
+EXPECTED_C102_HASH=e9e246048d14dcedda262a35fce9d52b64b052c0
+ACTUAL_C102_HASH=e9e246048d14dcedda262a35fce9d52b64b052c0
+C102_HASH_MATCH=1
+EXPECTED_C102_FILE_SHA1=DD731AFB11D2EA513EEF6795BF03D2F404670FB6
+ACTUAL_C102_FILE_SHA1=DD731AFB11D2EA513EEF6795BF03D2F404670FB6
+C102_FILE_SHA1_MATCH=1
+COMPLETION_BOUNDARY_CLEARED=1
+BOUNDARY_GO_DECISION=BOUNDARY_CLEARED_GO
+OPERATOR_GO_DECISION=GO
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C103_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_COMPLETION_BOUNDARY_CLEARED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+NEXT_RECOMMENDATION=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW
+```
+
+C103 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C103 records weekly swing watchlist non-live rehearsal completion boundary cleared only. C103 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
