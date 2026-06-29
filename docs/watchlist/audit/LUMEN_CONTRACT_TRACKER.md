@@ -9121,3 +9121,214 @@ C99_NEXT_CONTRACT=C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW
 ```
 
 C99 final contract evidence is artifact-only; no C60-C98 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+## C100 Contract Tracker - 2026-06-28
+
+C100 contract locks C99 weekly swing watchlist non-live rehearsal execution as the only source input.
+
+```text
+C100_SOURCE_LOCK=C99
+C100_EXPECTED_C99_ARTIFACT=storage/app/watchlist/backtest/c99-weekly-swing-watchlist-non-live-rehearsal-execution-review.json
+C100_EXPECTED_C99_HASH=33d63c80f88c00e704b54d923ac511492994d34c
+C100_EXPECTED_C99_FILE_SHA1=0C43E16B1C6FB6338343DD12BCA5E04A43BDBB41
+C100_EXPECTED_C99_STATUS=C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW_PASSED_NON_LIVE_REHEARSAL_EXECUTED_PRIMARY_AND_BACKUP
+C100_EXPECTED_C99_REASON_CODE=C99_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_EXECUTION_REVIEW_PASSED_NON_LIVE_REHEARSAL_EXECUTED_PRIMARY_AND_BACKUP
+C100_EXPECTED_C99_NEXT_RECOMMENDATION=C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW
+C100_NEXT_CONTRACT=C101_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C100 validates C99 artifact hash and file SHA1.
+C100 validates C99 weekly swing watchlist non-live rehearsal execution state.
+C100 requires --operator-approved.
+C100 requires non-empty --approval-reference.
+C100 confirms no temporary negative test artifact remains.
+C100 records weekly swing watchlist non-live rehearsal result review only.
+C100 creates artifact-only non-live rehearsal result review manifest.
+C100 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C100 does not deploy live production.
+C100 does not mutate PLAN/CONFIRM.
+C100 does not change PLAN/CONFIRM output.
+C100 does not activate pilot runtime.
+C100 does not activate shadow runtime.
+C100 does not activate runtime bridge.
+C100 does not activate weekly swing watchlist runtime.
+C100 does not create weekly swing live output.
+C100 does not generate official weekly swing recommendation.
+C100 does not publish weekly swing output.
+C100 keeps production_ready=false.
+C100 keeps production_catalog_runtime_wired=false.
+C100 keeps controlled_opt_in_runtime_bridge_active=false.
+C100 keeps controlled_parallel_run_active=false.
+C100 keeps controlled_rollout_active=false.
+C100 keeps weekly_swing_watchlist_rehearsal_context_persisted_to_live_runtime=false.
+C100 keeps weekly_swing_watchlist_non_live_rehearsal_execution_context_persisted_to_live_runtime=false.
+C100 keeps weekly_swing_watchlist_non_live_rehearsal_result_review_context_persisted_to_live_runtime=false.
+C100 keeps production_deployment_allowed=false.
+C100 keeps production_deployment_executed=false.
+C100 keeps plan_confirm_mutation_allowed=false.
+C100 keeps plan_confirm_mutated=false.
+C100 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C100 keeps live_plan_confirm_rollout_allowed=false.
+C100 keeps live_plan_confirm_rollout_executed=false.
+C100 keeps pilot_runtime_active=false.
+C100 keeps shadow_runtime_active=false.
+C100 keeps runtime_bridge_active=false.
+C100 keeps weekly_swing_watchlist_runtime_active=false.
+C100 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C100 keeps weekly_swing_watchlist_live_output_enabled=false.
+C100 keeps weekly_swing_watchlist_official_output_generated=false.
+C100 keeps weekly_swing_watchlist_official_output_published=false.
+C100 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+C100 weekly swing watchlist non-live rehearsal result review means continue to C101 weekly swing watchlist non-live rehearsal operator go/no-go review only.
+C100 weekly swing watchlist non-live rehearsal result review is not production deployment.
+C100 weekly swing watchlist non-live rehearsal result review is not PLAN/CONFIRM live rollout.
+C100 weekly swing watchlist non-live rehearsal result review is not runtime bridge activation.
+C100 weekly swing watchlist non-live rehearsal result review is not weekly swing live output.
+
+C100 pass records artifact-only weekly swing watchlist non-live rehearsal result review for primary and backup and can only recommend `C101_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_OPERATOR_GO_NO_GO_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, not runtime bridge activation, and not weekly swing live output.
+
+Initial implementation contract evidence - 2026-06-28:
+
+```text
+C100_CONTRACT_STATUS=IMPLEMENTED_PENDING_RUNTIME_EVIDENCE
+C100_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c100-weekly-swing-watchlist-non-live-rehearsal-result-review.json
+C100_SOURCE_LOCK=C99
+EXPECTED_C99_HASH=33d63c80f88c00e704b54d923ac511492994d34c
+EXPECTED_C99_FILE_SHA1=0C43E16B1C6FB6338343DD12BCA5E04A43BDBB41
+C100_NEXT_CONTRACT=C101_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C100 contract evidence is artifact-only; no C60-C99 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+Final operator contract evidence - 2026-06-28:
+
+```text
+C100_CONTRACT_STATUS=PASSED
+C100_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c100-weekly-swing-watchlist-non-live-rehearsal-result-review.json
+C100_RUNTIME_STATUS=C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW_PASSED_NON_LIVE_REHEARSAL_RESULT_REVIEWED_PRIMARY_AND_BACKUP
+C100_FOCUSED_PHPUNIT=OK (59 tests, 343 assertions)
+C100_FULL_WATCHLIST_PHPUNIT_POST_C100=OK (1920 tests, 25981 assertions)
+C100_ARTIFACT_HASH=3b4467db23914686eea465ecf11601e7dfd3a9e6
+C100_ARTIFACT_FILE_SHA1=E66CD7902FBE0454BFC30CED7695020E925B597E
+C100_SOURCE_LOCK=C99
+EXPECTED_C99_HASH=33d63c80f88c00e704b54d923ac511492994d34c
+ACTUAL_C99_HASH=33d63c80f88c00e704b54d923ac511492994d34c
+C99_HASH_MATCH=1
+EXPECTED_C99_FILE_SHA1=0C43E16B1C6FB6338343DD12BCA5E04A43BDBB41
+ACTUAL_C99_FILE_SHA1=0C43E16B1C6FB6338343DD12BCA5E04A43BDBB41
+C99_FILE_SHA1_MATCH=1
+C100_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C100_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+C100_SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_WEEKLY_REHEARSAL_RESULT_REVIEWED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+C100_NEXT_CONTRACT=C101_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C100 final contract evidence is artifact-only; no C60-C99 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+## C101 Contract Tracker - 2026-06-28
+
+C101 contract locks C100 weekly swing watchlist non-live rehearsal result review as the only source input.
+
+```text
+C101_SOURCE_LOCK=C100
+C101_EXPECTED_C100_ARTIFACT=storage/app/watchlist/backtest/c100-weekly-swing-watchlist-non-live-rehearsal-result-review.json
+C101_EXPECTED_C100_HASH=3b4467db23914686eea465ecf11601e7dfd3a9e6
+C101_EXPECTED_C100_FILE_SHA1=E66CD7902FBE0454BFC30CED7695020E925B597E
+C101_EXPECTED_C100_STATUS=C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW_PASSED_NON_LIVE_REHEARSAL_RESULT_REVIEWED_PRIMARY_AND_BACKUP
+C101_EXPECTED_C100_REASON_CODE=C100_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_RESULT_REVIEW_PASSED_NON_LIVE_REHEARSAL_RESULT_REVIEWED_PRIMARY_AND_BACKUP
+C101_EXPECTED_C100_NEXT_RECOMMENDATION=C101_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_OPERATOR_GO_NO_GO_REVIEW
+C101_NEXT_CONTRACT=C102_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C101 validates C100 artifact hash and file SHA1.
+C101 validates C100 weekly swing watchlist non-live rehearsal result review state.
+C101 requires --operator-approved.
+C101 requires non-empty --approval-reference.
+C101 confirms no temporary negative test artifact remains.
+C101 records weekly swing watchlist non-live rehearsal operator go/no-go review only.
+C101 records operator GO for E02 and B01 only.
+C101 creates artifact-only non-live rehearsal operator go/no-go manifest.
+C101 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C101 does not deploy live production.
+C101 does not mutate PLAN/CONFIRM.
+C101 does not change PLAN/CONFIRM output.
+C101 does not activate pilot runtime.
+C101 does not activate shadow runtime.
+C101 does not activate runtime bridge.
+C101 does not activate weekly swing watchlist runtime.
+C101 does not create weekly swing live output.
+C101 does not generate official weekly swing recommendation.
+C101 does not publish weekly swing output.
+C101 keeps production_ready=false.
+C101 keeps production_catalog_runtime_wired=false.
+C101 keeps controlled_opt_in_runtime_bridge_active=false.
+C101 keeps controlled_parallel_run_active=false.
+C101 keeps controlled_rollout_active=false.
+C101 keeps weekly_swing_watchlist_rehearsal_context_persisted_to_live_runtime=false.
+C101 keeps weekly_swing_watchlist_non_live_rehearsal_execution_context_persisted_to_live_runtime=false.
+C101 keeps weekly_swing_watchlist_non_live_rehearsal_result_review_context_persisted_to_live_runtime=false.
+C101 keeps weekly_swing_watchlist_non_live_rehearsal_operator_go_no_go_context_persisted_to_live_runtime=false.
+C101 keeps operator_go_no_go_context_persisted_to_live_runtime=false.
+C101 keeps production_deployment_allowed=false.
+C101 keeps production_deployment_executed=false.
+C101 keeps plan_confirm_mutation_allowed=false.
+C101 keeps plan_confirm_mutated=false.
+C101 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C101 keeps live_plan_confirm_rollout_allowed=false.
+C101 keeps live_plan_confirm_rollout_executed=false.
+C101 keeps pilot_runtime_active=false.
+C101 keeps shadow_runtime_active=false.
+C101 keeps runtime_bridge_active=false.
+C101 keeps weekly_swing_watchlist_runtime_active=false.
+C101 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C101 keeps weekly_swing_watchlist_live_output_enabled=false.
+C101 keeps weekly_swing_watchlist_official_output_generated=false.
+C101 keeps weekly_swing_watchlist_official_output_published=false.
+C101 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+C101 weekly swing watchlist non-live rehearsal operator go/no-go review means continue to C102 weekly swing watchlist non-live rehearsal go decision finalization review only.
+C101 GO is not production deployment.
+C101 GO is not PLAN/CONFIRM live rollout.
+C101 GO is not runtime bridge activation.
+C101 GO is not weekly swing live output.
+
+C101 pass records artifact-only operator GO for primary and backup and can only recommend `C102_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_GO_DECISION_FINALIZATION_REVIEW`; it is not full production deployment, not PLAN/CONFIRM live rollout, not runtime bridge activation, and not weekly swing live output.
+
+Initial implementation contract evidence - 2026-06-28:
+
+```text
+C101_CONTRACT_STATUS=IMPLEMENTED_PENDING_RUNTIME_EVIDENCE
+C101_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c101-weekly-swing-watchlist-non-live-rehearsal-operator-go-no-go-review.json
+C101_SOURCE_LOCK=C100
+EXPECTED_C100_HASH=3b4467db23914686eea465ecf11601e7dfd3a9e6
+EXPECTED_C100_FILE_SHA1=E66CD7902FBE0454BFC30CED7695020E925B597E
+C101_NEXT_CONTRACT=C102_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C101 contract evidence is artifact-only; no C60-C100 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+Final operator contract evidence - 2026-06-28:
+
+```text
+C101_CONTRACT_STATUS=PASSED
+C101_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c101-weekly-swing-watchlist-non-live-rehearsal-operator-go-no-go-review.json
+C101_RUNTIME_STATUS=C101_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP
+C101_FOCUSED_PHPUNIT=OK (64 tests, 374 assertions)
+C101_FULL_WATCHLIST_PHPUNIT_POST_C101=OK (1984 tests, 26355 assertions)
+C101_ARTIFACT_HASH=f8a339760d94d230e184dc6f6b3016731ba72379
+C101_ARTIFACT_FILE_SHA1=B12CF95D02172659B51B215E567D0B31C6F891F7
+C101_SOURCE_LOCK=C100
+EXPECTED_C100_HASH=3b4467db23914686eea465ecf11601e7dfd3a9e6
+ACTUAL_C100_HASH=3b4467db23914686eea465ecf11601e7dfd3a9e6
+C100_HASH_MATCH=1
+EXPECTED_C100_FILE_SHA1=E66CD7902FBE0454BFC30CED7695020E925B597E
+ACTUAL_C100_FILE_SHA1=E66CD7902FBE0454BFC30CED7695020E925B597E
+C100_FILE_SHA1_MATCH=1
+OPERATOR_GO_DECISION=GO
+OPERATOR_GO_DECISION_CONFIRMED=1
+C101_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C101_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+C101_SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_OPERATOR_GO_RECORDED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+C101_NEXT_CONTRACT=C102_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C101 final contract evidence is artifact-only; no C60-C100 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
