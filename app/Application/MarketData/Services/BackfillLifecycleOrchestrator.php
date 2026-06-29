@@ -3168,6 +3168,7 @@ class BackfillLifecycleOrchestrator
                 }
             }
         }
+        $dateLevelMissingRows = $this->dateLevelMissingFailuresFromCheckpoints($acquired['source_acquisition_checkpoints'] ?? []);
         $reasonCode = $this->diagnosticReasonCode($summary, $failures, $acquired['source_acquisition_checkpoints'] ?? []);
 
         return [
@@ -3195,6 +3196,10 @@ class BackfillLifecycleOrchestrator
             'failed_checkpoint_skipped' => (int) ($summary['failed_checkpoint_skipped'] ?? $acquired['failed_checkpoint_skipped'] ?? 0),
             'skipped_failed_checkpoint_count' => (int) ($summary['skipped_failed_checkpoint_count'] ?? $acquired['skipped_failed_checkpoint_count'] ?? 0),
             'skipped_failed_checkpoint_reasons' => $summary['skipped_failed_checkpoint_reasons'] ?? ($acquired['skipped_failed_checkpoint_reasons'] ?? []),
+            'date_level_missing_requested_row_count' => count($dateLevelMissingRows),
+            'date_level_missing_requested_ticker_count' => count($this->uniqueTickerCodesFromFailureRows($dateLevelMissingRows)),
+            'date_level_missing_requested_trade_date_count' => count($this->uniqueMissingTradeDatesFromFailureRows($dateLevelMissingRows)),
+            'date_level_missing_requested_rows_sample' => array_slice($dateLevelMissingRows, 0, 25),
             'failures_sample' => $failures,
             'reason_code' => $reasonCode,
             'created_at' => Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
@@ -3216,6 +3221,12 @@ class BackfillLifecycleOrchestrator
                 'reason_code' => $row['reason_code'] ?? null,
                 'http_status' => $row['http_status'] ?? null,
                 'failure_scope' => $row['failure_scope'] ?? 'ticker',
+                'requested_trade_dates' => $row['requested_trade_dates'] ?? [],
+                'returned_trade_dates' => $row['returned_trade_dates'] ?? [],
+                'missing_trade_dates' => $row['missing_trade_dates'] ?? [],
+                'last_returned_trade_date' => $row['last_returned_trade_date'] ?? null,
+                'date_level_status' => $row['date_level_status'] ?? null,
+                'date_level_reason_code' => $row['date_level_reason_code'] ?? null,
                 'error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($row['error_sample'] ?? null)),
                 'provider_error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($row['provider_error_sample'] ?? null)),
                 'sanitized_url' => $this->redactDiagnosticString($row['sanitized_url'] ?? null),
@@ -3223,6 +3234,63 @@ class BackfillLifecycleOrchestrator
         }
 
         return $failures;
+    }
+
+    private function dateLevelMissingFailuresFromCheckpoints(array $checkpointRows)
+    {
+        $rows = [];
+        foreach ($checkpointRows as $row) {
+            if (! is_array($row) || ($row['date_level_status'] ?? null) !== 'FAIL') {
+                continue;
+            }
+
+            $missingTradeDates = array_values((array) ($row['missing_trade_dates'] ?? []));
+            if ($missingTradeDates === []) {
+                continue;
+            }
+
+            $rows[] = [
+                'ticker_code' => $row['ticker_code'] ?? null,
+                'window_start' => $row['window_start'] ?? null,
+                'window_end' => $row['window_end'] ?? null,
+                'reason_code' => $row['date_level_reason_code'] ?? ($row['reason_code'] ?? 'RUN_SOURCE_MISSING_REQUESTED_DATE_ROW'),
+                'requested_trade_dates' => array_values((array) ($row['requested_trade_dates'] ?? [])),
+                'returned_trade_dates' => array_values((array) ($row['returned_trade_dates'] ?? [])),
+                'missing_trade_dates' => $missingTradeDates,
+                'last_returned_trade_date' => $row['last_returned_trade_date'] ?? null,
+                'rows_count' => (int) ($row['rows_count'] ?? 0),
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function uniqueTickerCodesFromFailureRows(array $rows)
+    {
+        $codes = [];
+        foreach ($rows as $row) {
+            $code = strtoupper(trim((string) ($row['ticker_code'] ?? '')));
+            if ($code !== '') {
+                $codes[$code] = true;
+            }
+        }
+
+        return array_keys($codes);
+    }
+
+    private function uniqueMissingTradeDatesFromFailureRows(array $rows)
+    {
+        $dates = [];
+        foreach ($rows as $row) {
+            foreach ((array) ($row['missing_trade_dates'] ?? []) as $date) {
+                $date = (string) $date;
+                if ($date !== '') {
+                    $dates[$date] = true;
+                }
+            }
+        }
+
+        return array_keys($dates);
     }
 
     private function buildSourceDiagnosticFromSummary(array $summary, array $context)
@@ -3588,6 +3656,12 @@ class BackfillLifecycleOrchestrator
                 'failure_scope' => $row['failure_scope'] ?? null,
                 'attempt_count' => (int) ($row['attempt_count'] ?? 0),
                 'rows_count' => (int) ($row['rows_count'] ?? 0),
+                'requested_trade_dates' => $row['requested_trade_dates'] ?? [],
+                'returned_trade_dates' => $row['returned_trade_dates'] ?? [],
+                'missing_trade_dates' => $row['missing_trade_dates'] ?? [],
+                'last_returned_trade_date' => $row['last_returned_trade_date'] ?? null,
+                'date_level_status' => $row['date_level_status'] ?? null,
+                'date_level_reason_code' => $row['date_level_reason_code'] ?? null,
                 'sanitized_url' => $this->redactDiagnosticString($row['sanitized_url'] ?? null),
                 'error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($row['error_sample'] ?? null)),
                 'provider_error_sample' => $this->truncateDiagnosticString($this->redactDiagnosticString($row['provider_error_sample'] ?? null)),
