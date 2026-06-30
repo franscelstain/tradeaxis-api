@@ -6178,3 +6178,200 @@ NEXT_RECOMMENDATION=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPL
 ```
 
 C105 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C105 records weekly swing watchlist non-live rehearsal handoff finalization only. C105 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
+
+## C106 Initial Implementation Evidence Append - 2026-06-30
+
+C106 initial implementation evidence is appended per catalog item. This append records the locked source and expected next recommendation. Runtime evidence is appended after local validation.
+
+```text
+RUN_CODE=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+SOURCE_LOCK=C105
+EXPECTED_C105_HASH=dd53320a0cdaaa2d0c19773a331baa3cae6e29eb
+EXPECTED_C105_FILE_SHA1=E2DA749D416094BCE061A38CD6A24C9E34F753CA
+EXPECTED_C105_STATUS=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW_PASSED_HANDOFF_FINALIZED_PRIMARY_AND_BACKUP
+EXPECTED_C105_NEXT_RECOMMENDATION=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+NEXT_RECOMMENDATION=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW
+```
+
+C106 validates C105 artifact hash and file SHA1.
+C106 validates C105 weekly swing watchlist non-live rehearsal handoff finalization state.
+C106 requires --operator-approved.
+C106 requires non-empty --approval-reference.
+C106 confirms no temporary negative test artifact remains.
+C106 clears weekly swing watchlist non-live rehearsal handoff completion boundary only.
+C106 clears handoff completion boundary for E02 and B01 only.
+C106 creates artifact-only non-live rehearsal handoff completion boundary manifest.
+C106 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C106 does not deploy live production.
+C106 does not mutate PLAN/CONFIRM.
+C106 does not change PLAN/CONFIRM output.
+C106 does not activate pilot runtime.
+C106 does not activate shadow runtime.
+C106 does not activate runtime bridge.
+C106 does not activate weekly swing watchlist runtime.
+C106 does not create weekly swing live output.
+C106 does not generate official weekly swing recommendation.
+C106 does not publish weekly swing output.
+C106 keeps production_ready=false.
+C106 keeps production_catalog_runtime_wired=false.
+C106 keeps controlled_opt_in_runtime_bridge_active=false.
+C106 keeps controlled_parallel_run_active=false.
+C106 keeps controlled_rollout_active=false.
+C106 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_completion_boundary_context_persisted_to_live_runtime=false.
+C106 keeps handoff_completion_boundary_context_persisted_to_live_runtime=false.
+C106 keeps production_deployment_allowed=false.
+C106 keeps production_deployment_executed=false.
+C106 keeps plan_confirm_mutation_allowed=false.
+C106 keeps plan_confirm_mutated=false.
+C106 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C106 keeps live_plan_confirm_rollout_allowed=false.
+C106 keeps live_plan_confirm_rollout_executed=false.
+C106 keeps pilot_runtime_active=false.
+C106 keeps shadow_runtime_active=false.
+C106 keeps runtime_bridge_active=false.
+C106 keeps weekly_swing_watchlist_runtime_active=false.
+C106 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C106 keeps weekly_swing_watchlist_live_output_enabled=false.
+C106 keeps weekly_swing_watchlist_official_output_generated=false.
+C106 keeps weekly_swing_watchlist_official_output_published=false.
+C106 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+C106 weekly swing watchlist non-live rehearsal handoff completion boundary review means continue to C107 weekly swing watchlist non-live rehearsal handoff closure seal review only.
+C106 handoff completion boundary record is not production deployment.
+C106 handoff completion boundary record is not PLAN/CONFIRM live rollout.
+C106 handoff completion boundary record is not runtime bridge activation.
+C106 handoff completion boundary record is not weekly swing live output.
+
+## C106 Final Operator Evidence Append - 2026-06-30
+
+C106 final operator evidence is appended per catalog item. This append records local PHPUnit, runtime validation, C105 hash/file SHA1 lock validation, negative approval gate validation, temporary negative artifact cleanup validation, and final non-live weekly swing rehearsal handoff completion boundary validation.
+
+```text
+RUN_CODE=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+FOCUSED_PHPUNIT_C106=OK (65 tests, 338 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C106=OK (2298 tests, 28181 assertions)
+RUNTIME_STATUS=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c106-weekly-swing-watchlist-non-live-rehearsal-handoff-completion-boundary-review.json
+ARTIFACT_HASH=49b2a80cbd714a62418bcf452776514df2ee19ea
+ARTIFACT_FILE_SHA1=B2AA8A78A7A320D8F616EAEE6AA5362B63FFA2BD
+SOURCE_LOCK=C105
+EXPECTED_C105_HASH=dd53320a0cdaaa2d0c19773a331baa3cae6e29eb
+ACTUAL_C105_HASH=dd53320a0cdaaa2d0c19773a331baa3cae6e29eb
+C105_HASH_MATCH=1
+EXPECTED_C105_FILE_SHA1=E2DA749D416094BCE061A38CD6A24C9E34F753CA
+ACTUAL_C105_FILE_SHA1=E2DA749D416094BCE061A38CD6A24C9E34F753CA
+C105_FILE_SHA1_MATCH=1
+HANDOFF_FINALIZED=1
+HANDOFF_READY=1
+HANDOFF_COMPLETION_BOUNDARY_CLEARED=1
+BOUNDARY_GO_DECISION=BOUNDARY_CLEARED_GO
+OPERATOR_GO_DECISION=GO
+TEMPORARY_NEGATIVE_ARTIFACTS_REMAINING=0
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP_CONFIRMED=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_HANDOFF_COMPLETION_BOUNDARY_CLEARED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+NEXT_RECOMMENDATION=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW
+```
+
+C106 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C106 records weekly swing watchlist non-live rehearsal handoff completion boundary clearance only. C106 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
+
+## C107 Initial Implementation Evidence Append - 2026-06-30
+
+C107 initial implementation evidence is appended per catalog item. This append records the locked source and expected next recommendation. Runtime evidence is appended after local validation.
+
+```text
+RUN_CODE=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW
+SOURCE_LOCK=C106
+EXPECTED_C106_HASH=49b2a80cbd714a62418bcf452776514df2ee19ea
+EXPECTED_C106_FILE_SHA1=B2AA8A78A7A320D8F616EAEE6AA5362B63FFA2BD
+EXPECTED_C106_STATUS=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+EXPECTED_C106_NEXT_RECOMMENDATION=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW
+NEXT_RECOMMENDATION=C108_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_REVIEW
+```
+
+C107 validates C106 artifact hash and file SHA1.
+C107 validates C106 weekly swing watchlist non-live rehearsal handoff completion boundary state.
+C107 requires --operator-approved.
+C107 requires non-empty --approval-reference.
+C107 confirms no temporary negative test artifact remains.
+C107 seals weekly swing watchlist non-live rehearsal handoff closure only.
+C107 seals handoff closure for E02 and B01 only.
+C107 creates artifact-only non-live rehearsal handoff closure seal manifest.
+C107 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C107 does not deploy live production.
+C107 does not mutate PLAN/CONFIRM.
+C107 does not change PLAN/CONFIRM output.
+C107 does not activate pilot runtime.
+C107 does not activate shadow runtime.
+C107 does not activate runtime bridge.
+C107 does not activate weekly swing watchlist runtime.
+C107 does not create weekly swing live output.
+C107 does not generate official weekly swing recommendation.
+C107 does not publish weekly swing output.
+C107 keeps production_ready=false.
+C107 keeps production_catalog_runtime_wired=false.
+C107 keeps controlled_opt_in_runtime_bridge_active=false.
+C107 keeps controlled_parallel_run_active=false.
+C107 keeps controlled_rollout_active=false.
+C107 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_closure_seal_context_persisted_to_live_runtime=false.
+C107 keeps handoff_closure_seal_context_persisted_to_live_runtime=false.
+C107 keeps production_deployment_allowed=false.
+C107 keeps production_deployment_executed=false.
+C107 keeps plan_confirm_mutation_allowed=false.
+C107 keeps plan_confirm_mutated=false.
+C107 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C107 keeps live_plan_confirm_rollout_allowed=false.
+C107 keeps live_plan_confirm_rollout_executed=false.
+C107 keeps pilot_runtime_active=false.
+C107 keeps shadow_runtime_active=false.
+C107 keeps runtime_bridge_active=false.
+C107 keeps weekly_swing_watchlist_runtime_active=false.
+C107 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C107 keeps weekly_swing_watchlist_live_output_enabled=false.
+C107 keeps weekly_swing_watchlist_official_output_generated=false.
+C107 keeps weekly_swing_watchlist_official_output_published=false.
+C107 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+C107 weekly swing watchlist non-live rehearsal handoff closure seal review means continue to C108 weekly swing watchlist non-live rehearsal handoff audit archive review only.
+C107 handoff closure seal record is not production deployment.
+C107 handoff closure seal record is not PLAN/CONFIRM live rollout.
+C107 handoff closure seal record is not runtime bridge activation.
+C107 handoff closure seal record is not weekly swing live output.
+
+## C107 Final Operator Evidence Append - 2026-06-30
+
+C107 final operator evidence is appended per catalog item. This append records local PHPUnit, runtime validation, C106 hash/file SHA1 lock validation, negative approval gate validation, temporary negative artifact cleanup validation, and final non-live weekly swing rehearsal handoff closure seal validation.
+
+```text
+RUN_CODE=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW
+FOCUSED_PHPUNIT_C107=OK (68 tests, 349 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C107=OK (2366 tests, 28530 assertions)
+RUNTIME_STATUS=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW_PASSED_CLOSURE_SEALED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW_PASSED_CLOSURE_SEALED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c107-weekly-swing-watchlist-non-live-rehearsal-handoff-closure-seal-review.json
+ARTIFACT_HASH=dd9edfc84044eeaa78f83b3fe4980e86ad9be62f
+ARTIFACT_FILE_SHA1=002EAEC0989CA23C7CE713345AEA7CAE8C6622E8
+SOURCE_LOCK=C106
+EXPECTED_C106_HASH=49b2a80cbd714a62418bcf452776514df2ee19ea
+ACTUAL_C106_HASH=49b2a80cbd714a62418bcf452776514df2ee19ea
+C106_HASH_MATCH=1
+EXPECTED_C106_FILE_SHA1=B2AA8A78A7A320D8F616EAEE6AA5362B63FFA2BD
+ACTUAL_C106_FILE_SHA1=B2AA8A78A7A320D8F616EAEE6AA5362B63FFA2BD
+C106_FILE_SHA1_MATCH=1
+HANDOFF_COMPLETION_BOUNDARY_CLEARED=1
+HANDOFF_CLOSURE_SEALED=1
+BOUNDARY_GO_DECISION=BOUNDARY_CLEARED_GO
+OPERATOR_GO_DECISION=GO
+TEMPORARY_NEGATIVE_ARTIFACTS_REMAINING=0
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP_CONFIRMED=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C107_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_CLOSURE_SEAL_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_HANDOFF_CLOSURE_SEALED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+NEXT_RECOMMENDATION=C108_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_REVIEW
+```
+
+C107 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C107 records weekly swing watchlist non-live rehearsal handoff closure seal only. C107 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
