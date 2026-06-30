@@ -10353,3 +10353,75 @@ NEXT_AFTER_C112_IF_OPERATOR_CONTINUES_PRODUCTION_READINESS_PATH=C113_WEEKLY_SWIN
 ```
 
 C111 remains the final close of the non-live audit archive. C112 only records a new production-phase approval for readiness review and does not cancel, reopen, weaken, or continue the C111 final-closed audit archive state.
+
+## C113 / PR-01 Weekly Swing Watchlist Production Readiness Review Contract - 2026-06-30
+
+C113 contract scope is PR-01 weekly swing watchlist production readiness review only.
+C113 validates C112 artifact hash and file SHA1.
+C113 validates C112 production phase approval for readiness review only.
+C113 keeps C111 terminal/final-closed for the non-live handoff audit archive chain.
+C113 keeps C112 as a separate post-C111 production phase transition gate.
+C113 is not audit archive continuation.
+C113 does not reopen C111 final closure.
+C113 requires --operator-approved.
+C113 requires non-empty --approval-reference.
+C113 confirms no temporary negative test artifact remains.
+C113 creates production readiness review manifest as artifact-only.
+C113 creates production readiness checklist as artifact-only.
+C113 keeps A01 comparator-only and does not promote A01.
+C113 does not deploy live production.
+C113 does not wire production runtime.
+C113 does not mutate PLAN/CONFIRM.
+C113 does not activate controlled rollout.
+C113 does not activate pilot runtime.
+C113 does not activate shadow runtime.
+C113 does not activate runtime bridge.
+C113 does not activate weekly swing watchlist runtime.
+C113 does not create weekly swing live output.
+C113 does not generate official weekly swing recommendation.
+C113 does not publish weekly swing output.
+C113 keeps production_ready=false.
+C113 keeps production_catalog_runtime_wired=false.
+C113 keeps production_runtime_wiring_allowed=false.
+C113 keeps production_runtime_wiring_executed=false.
+C113 keeps production_deployment_allowed=false.
+C113 keeps production_deployment_executed=false.
+C113 keeps plan_confirm_mutation_allowed=false.
+C113 keeps plan_confirm_mutated=false.
+C113 keeps production_readiness_context_persisted_to_live_runtime=false.
+C113 production readiness review means proceed to C114 controlled production runtime wiring readiness review only.
+C113 production readiness record is not an official weekly swing stock recommendation.
+
+```text
+C113_CONTRACT_STATUS=FINAL_OPERATOR_VALIDATED
+C113_PHASE_LABEL=PR-01 / C113_WEEKLY_SWING_WATCHLIST_PRODUCTION_READINESS_REVIEW
+C113_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c113-weekly-swing-watchlist-production-readiness-review.json
+C113_SOURCE_LOCK=C112
+FOCUSED_PHPUNIT_C113=OK (100 tests, 383 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C113=OK (2833 tests, 30711 assertions)
+CONVERT_FROM_JSON=PASS
+EXPECTED_C112_ARTIFACT=storage/app/watchlist/backtest/c112-weekly-swing-watchlist-production-phase-approval-review.json
+EXPECTED_C112_HASH=5c6b4bb2cd7751e4b8b838e31f0a6aecdad67e04
+EXPECTED_C112_FILE_SHA1=9DAE4191A2243A660963BF5D9709B6E79F7E1998
+EXPECTED_C112_STATUS=C112_WEEKLY_SWING_WATCHLIST_PRODUCTION_PHASE_APPROVAL_REVIEW_PASSED_PRODUCTION_PHASE_APPROVED_FOR_READINESS_REVIEW_PRIMARY_AND_BACKUP
+EXPECTED_C112_REASON_CODE=C112_WEEKLY_SWING_WATCHLIST_PRODUCTION_PHASE_APPROVAL_REVIEW_PASSED_PRODUCTION_PHASE_APPROVED_FOR_READINESS_REVIEW_PRIMARY_AND_BACKUP
+EXPECTED_C112_NEXT_RECOMMENDATION=C113_WEEKLY_SWING_WATCHLIST_PRODUCTION_READINESS_REVIEW
+C113_NEXT_CONTRACT=C114_WEEKLY_SWING_WATCHLIST_PRODUCTION_RUNTIME_WIRING_READINESS_REVIEW
+C113_ARTIFACT_HASH=8eb4d4853c6e8618d7506da61d228c4a9c8b722a
+C113_FILE_SHA1=2D4A23E44CF14024447F6BF749749C3592CFF194
+PRODUCTION_READY=0
+PRODUCTION_CATALOG_RUNTIME_WIRED=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+PRODUCTION_DEPLOYMENT_ALLOWED=0
+PRODUCTION_DEPLOYMENT_EXECUTED=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+PRODUCTION_READINESS_CONTEXT_PERSISTED_TO_LIVE_RUNTIME=0
+```
+
+C113 contract does not permit production deployment, production runtime wiring execution, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, or catalog selection change.
