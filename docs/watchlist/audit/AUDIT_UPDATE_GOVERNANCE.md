@@ -6125,3 +6125,56 @@ NEXT_RECOMMENDATION=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINAL
 ```
 
 C104 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C104 records weekly swing watchlist non-live rehearsal handoff readiness only. C104 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
+
+## C105 Initial Implementation Evidence Append - 2026-06-30
+
+C105 initial implementation evidence is appended per catalog item. This append records the locked source and expected next recommendation. Runtime evidence is appended after local validation.
+
+```text
+RUN_CODE=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW
+SOURCE_LOCK=C104
+EXPECTED_C104_HASH=9949422cda0ff224c7b441cdd0dd02bfb6c694a4
+EXPECTED_C104_FILE_SHA1=08F7A41BDB04E4B40562C855230FDC170E8A2335
+EXPECTED_C104_STATUS=C104_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_READINESS_REVIEW_PASSED_HANDOFF_READY_PRIMARY_AND_BACKUP
+EXPECTED_C104_NEXT_RECOMMENDATION=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW
+NEXT_RECOMMENDATION=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+```
+
+C105 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C105 records weekly swing watchlist non-live rehearsal handoff finalization only. C105 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
+
+## C105 Final Operator Evidence Append - 2026-06-30
+
+C105 final operator evidence is appended per catalog item. This append records local PHPUnit, runtime validation, C104 hash/file SHA1 lock validation, negative approval gate validation, temporary negative artifact cleanup validation, and final non-live weekly swing rehearsal handoff finalization validation.
+
+```text
+RUN_CODE=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW
+FOCUSED_PHPUNIT_C105=OK (60 tests, 323 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C105=OK (2233 tests, 27843 assertions)
+RUNTIME_STATUS=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW_PASSED_HANDOFF_FINALIZED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW_PASSED_HANDOFF_FINALIZED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c105-weekly-swing-watchlist-non-live-rehearsal-handoff-finalization-review.json
+ARTIFACT_HASH=dd53320a0cdaaa2d0c19773a331baa3cae6e29eb
+ARTIFACT_FILE_SHA1=E2DA749D416094BCE061A38CD6A24C9E34F753CA
+SOURCE_LOCK=C104
+EXPECTED_C104_HASH=9949422cda0ff224c7b441cdd0dd02bfb6c694a4
+ACTUAL_C104_HASH=9949422cda0ff224c7b441cdd0dd02bfb6c694a4
+C104_HASH_MATCH=1
+EXPECTED_C104_FILE_SHA1=08F7A41BDB04E4B40562C855230FDC170E8A2335
+ACTUAL_C104_FILE_SHA1=08F7A41BDB04E4B40562C855230FDC170E8A2335
+C104_FILE_SHA1_MATCH=1
+HANDOFF_READY=1
+HANDOFF_FINALIZED=1
+COMPLETION_BOUNDARY_CLEARED=1
+BOUNDARY_GO_DECISION=BOUNDARY_CLEARED_GO
+OPERATOR_GO_DECISION=GO
+TEMPORARY_NEGATIVE_ARTIFACTS_REMAINING=0
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP_CONFIRMED=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C105_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_FINALIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_HANDOFF_FINALIZED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+NEXT_RECOMMENDATION=C106_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+```
+
+C105 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C105 records weekly swing watchlist non-live rehearsal handoff finalization only. C105 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, pilot/shadow runtime, controlled rollout activation, weekly swing live output, official weekly swing recommendation, production deployment, or PLAN/CONFIRM mutation.
