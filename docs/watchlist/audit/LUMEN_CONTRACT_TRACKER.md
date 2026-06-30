@@ -10011,3 +10011,77 @@ C108_NEXT_CONTRACT=C109_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_
 ```
 
 C108 final contract evidence is artifact-only; no C60-C107 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+## C109 Contract - Weekly Swing Watchlist Non-Live Rehearsal Handoff Audit Archive Completion Review
+
+```text
+CONTRACT_CODE=C109_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW
+CONTRACT_STATUS=PASSED
+SOURCE_LOCK=C108
+C108_ARTIFACT_PATH=storage/app/watchlist/backtest/c108-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-review.json
+EXPECTED_C108_ARTIFACT_HASH=e7b6f6f94a40d1fe825bc0224b686d11e7510e94
+EXPECTED_C108_FILE_SHA1=591BF25C2A1E7678B2C9335ECBEF1938BDAF990C
+EXPECTED_C108_STATUS=C108_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_REVIEW_PASSED_AUDIT_ARCHIVED_PRIMARY_AND_BACKUP
+EXPECTED_C108_REASON_CODE=C108_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_REVIEW_PASSED_AUDIT_ARCHIVED_PRIMARY_AND_BACKUP
+EXPECTED_C108_NEXT_RECOMMENDATION=C109_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c109-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-review.json
+NEXT_RECOMMENDATION_IF_PASS=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+```
+
+C109 contract is artifact-only, non-live, and audit-safe.
+C109 pass means the weekly swing watchlist non-live rehearsal handoff audit archive completion package is ready for E02 primary and B01 backup in artifact-only audit context.
+C109 pass does not mean production deployment ready.
+C109 pass does not mean production runtime wired.
+C109 pass does not allow PLAN/CONFIRM mutation.
+C109 pass does not allow live rollout.
+C109 pass does not activate controlled rollout.
+C109 pass does not activate runtime bridge.
+C109 pass does not activate pilot runtime.
+C109 pass does not activate shadow runtime.
+C109 pass does not enable weekly swing live output.
+C109 pass does not generate official weekly swing recommendation.
+C109 pass does not publish weekly swing output.
+C109 keeps A01 comparator-only.
+C109 documentation hygiene guard preserves scoped C108_EXPECTED_C107_FILE_SHA1 and EXPECTED_C107_FILE_SHA1 keys when those keys belong to different contexts.
+
+Initial implementation contract evidence - 2026-06-30:
+
+```text
+C109_CONTRACT_STATUS=IMPLEMENTED_PENDING_RUNTIME_EVIDENCE
+C109_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c109-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-review.json
+C109_SOURCE_LOCK=C108
+EXPECTED_C108_HASH=e7b6f6f94a40d1fe825bc0224b686d11e7510e94
+EXPECTED_C108_FILE_SHA1=591BF25C2A1E7678B2C9335ECBEF1938BDAF990C
+C109_NEXT_CONTRACT=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+```
+
+C109 contract evidence is artifact-only; no C60-C108 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+Final operator contract evidence - 2026-06-30:
+
+```text
+C109_CONTRACT_STATUS=PASSED
+C109_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c109-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-review.json
+C109_RUNTIME_STATUS=C109_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_READY_PRIMARY_AND_BACKUP
+C109_FOCUSED_PHPUNIT=OK (76 tests, 368 assertions)
+C109_FULL_WATCHLIST_PHPUNIT_POST_C109=OK (2511 tests, 29262 assertions)
+C109_ARTIFACT_HASH=43aa1b1299cd19f6dd1a91c0b68c7a716027905b
+C109_ARTIFACT_FILE_SHA1=FC3A0F67BFEBC28131F0D3403C62AC68BEB945CB
+C109_SOURCE_LOCK=C108
+EXPECTED_C108_HASH=e7b6f6f94a40d1fe825bc0224b686d11e7510e94
+ACTUAL_C108_HASH=e7b6f6f94a40d1fe825bc0224b686d11e7510e94
+C108_HASH_MATCH=1
+EXPECTED_C108_FILE_SHA1=591BF25C2A1E7678B2C9335ECBEF1938BDAF990C
+ACTUAL_C108_FILE_SHA1=591BF25C2A1E7678B2C9335ECBEF1938BDAF990C
+C108_FILE_SHA1_MATCH=1
+HANDOFF_AUDIT_ARCHIVED=1
+HANDOFF_AUDIT_ARCHIVE_COMPLETION_READY=1
+AUDIT_ARCHIVE_COMPLETION_READY=1
+COMPLETION_MANIFEST_CREATED=1
+C109_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C109_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+C109_SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_HANDOFF_AUDIT_ARCHIVE_COMPLETION_READY_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+C109_NEXT_CONTRACT=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+```
+
+C109 final contract evidence is artifact-only; no C60-C108 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
