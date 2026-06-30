@@ -1,0 +1,160 @@
+# WS_C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+
+Status: C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_SEALED_PRIMARY_AND_BACKUP
+
+C110 is weekly swing watchlist non-live rehearsal handoff audit archive completion seal review.
+C110 locks C109 weekly swing watchlist non-live rehearsal handoff audit archive completion review as the only source input.
+
+E02 is primary non-live rehearsal handoff audit archive completion seal candidate.
+B01 is backup non-live rehearsal handoff audit archive completion seal candidate.
+A01 remains comparator-only and is not promoted.
+
+## Source Lock
+
+```text
+RUN_CODE=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+SOURCE_LOCK=C109
+EXPECTED_C109_ARTIFACT=storage/app/watchlist/backtest/c109-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-review.json
+EXPECTED_C109_HASH=43aa1b1299cd19f6dd1a91c0b68c7a716027905b
+EXPECTED_C109_FILE_SHA1=FC3A0F67BFEBC28131F0D3403C62AC68BEB945CB
+EXPECTED_C109_STATUS=C109_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_READY_PRIMARY_AND_BACKUP
+EXPECTED_C109_REASON_CODE=C109_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_READY_PRIMARY_AND_BACKUP
+EXPECTED_C109_NEXT_RECOMMENDATION=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+NEXT_RECOMMENDATION_IF_PASS=C111_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c110-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-seal-review.json
+```
+
+## Required Checks
+
+C110 validates C109 artifact hash and file SHA1.
+C110 validates C109 weekly swing watchlist non-live rehearsal handoff audit archive completion ready state.
+C110 validates C104-C109 handoff lineage is carried forward as sealed-complete.
+C110 requires --operator-approved.
+C110 requires non-empty --approval-reference.
+C110 confirms no temporary negative test artifact remains.
+C110 seals weekly swing watchlist non-live rehearsal handoff audit archive completion only.
+C110 marks handoff audit archive completion sealed for E02 and B01 only.
+C110 keeps A01 comparator-only and does not promote A01.
+C110 creates artifact-only non-live rehearsal handoff audit archive completion seal manifest.
+C110 does not run OOS rerank.
+C110 does not rebuild signal quality.
+C110 does not change candidate selection.
+C110 does not rerank candidate.
+C110 does not retune strategy.
+C110 does not change scoring logic.
+C110 does not change catalog selection.
+C110 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C110 does not deploy live production.
+C110 does not mutate PLAN/CONFIRM.
+C110 does not change PLAN/CONFIRM output.
+C110 does not activate controlled rollout.
+C110 does not activate pilot runtime.
+C110 does not activate shadow runtime.
+C110 does not activate runtime bridge.
+C110 does not activate weekly swing watchlist runtime.
+C110 does not create weekly swing live output.
+C110 does not generate official weekly swing recommendation.
+C110 does not publish weekly swing output.
+C110 keeps production_ready=false.
+C110 keeps production_catalog_runtime_wired=false.
+C110 keeps controlled_opt_in_runtime_bridge_active=false.
+C110 keeps controlled_parallel_run_active=false.
+C110 keeps controlled_rollout_active=false.
+C110 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_audit_archive_context_persisted_to_live_runtime=false.
+C110 keeps handoff_audit_archive_context_persisted_to_live_runtime=false.
+C110 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_audit_archive_completion_context_persisted_to_live_runtime=false.
+C110 keeps handoff_audit_archive_completion_context_persisted_to_live_runtime=false.
+C110 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_audit_archive_completion_seal_context_persisted_to_live_runtime=false.
+C110 keeps handoff_audit_archive_completion_seal_context_persisted_to_live_runtime=false.
+C110 keeps production_deployment_allowed=false.
+C110 keeps production_deployment_executed=false.
+C110 keeps plan_confirm_mutation_allowed=false.
+C110 keeps plan_confirm_mutated=false.
+C110 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C110 keeps live_plan_confirm_rollout_allowed=false.
+C110 keeps live_plan_confirm_rollout_executed=false.
+C110 keeps pilot_runtime_active=false.
+C110 keeps shadow_runtime_active=false.
+C110 keeps runtime_bridge_active=false.
+C110 keeps weekly_swing_watchlist_runtime_active=false.
+C110 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C110 keeps weekly_swing_watchlist_live_output_enabled=false.
+C110 keeps weekly_swing_watchlist_official_output_generated=false.
+C110 keeps weekly_swing_watchlist_official_output_published=false.
+C110 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+
+## Documentation Hygiene Guard
+
+C110 documentation hygiene guard preserves scoped C109_EXPECTED_C108_FILE_SHA1 and EXPECTED_C108_FILE_SHA1 keys when those keys belong to different sections or contexts.
+C110 does not rewrite C98-C109 sections.
+C110 does not alter C109 artifact hash or file SHA1.
+C110 does not regenerate C60-C109 artifacts.
+
+## Boundary
+
+C110 target is achieved when locked C109 handoff audit archive completion evidence is validated, C104-C109 handoff lineage is sealed-complete, the non-live rehearsal handoff audit archive completion package is sealed for E02 and B01, A01 remains comparator-only, temporary negative artifacts are absent, and no production mutation is observed.
+
+C110 weekly swing watchlist non-live rehearsal handoff audit archive completion seal review means continue to C111 weekly swing watchlist non-live rehearsal handoff audit archive final closure review only.
+C110 handoff audit archive completion record is not production deployment.
+C110 handoff audit archive completion record is not PLAN/CONFIRM live rollout.
+C110 handoff audit archive completion record is not runtime bridge activation.
+C110 handoff audit archive completion record is not weekly swing live output.
+C110 handoff audit archive completion record is not official weekly swing stock recommendation.
+
+## Runtime Evidence
+
+Runtime evidence appended after local validation.
+
+```text
+FOCUSED_PHPUNIT_C110=OK (82 tests, 395 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C110=OK (2593 tests, 29657 assertions)
+RUNTIME_STATUS=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_SEALED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_SEALED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c110-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-seal-review.json
+ARTIFACT_HASH=17352f926bcf9138be62c9f43a81551f89de0cc7
+ARTIFACT_FILE_SHA1=407DB31435BF42C48FD0C7419B7BEBCA138DB127
+SOURCE_LOCK=C109
+EXPECTED_C109_HASH=43aa1b1299cd19f6dd1a91c0b68c7a716027905b
+ACTUAL_C109_HASH=43aa1b1299cd19f6dd1a91c0b68c7a716027905b
+C109_HASH_MATCH=1
+EXPECTED_C109_FILE_SHA1=FC3A0F67BFEBC28131F0D3403C62AC68BEB945CB
+ACTUAL_C109_FILE_SHA1=FC3A0F67BFEBC28131F0D3403C62AC68BEB945CB
+C109_FILE_SHA1_MATCH=1
+HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED=1
+AUDIT_ARCHIVE_COMPLETION_SEALED=1
+COMPLETION_SEAL_MANIFEST_CREATED=1
+PRIMARY_CANDIDATE_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED=1
+BACKUP_CANDIDATE_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED=1
+COMPARATOR_CANDIDATE_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+TEMPORARY_NEGATIVE_ARTIFACTS_REMAINING=0
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP_CONFIRMED=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+PRODUCTION_READY=0
+PRODUCTION_CATALOG_RUNTIME_WIRED=0
+CONTROLLED_OPT_IN_RUNTIME_BRIDGE_ACTIVE=0
+CONTROLLED_PARALLEL_RUN_ACTIVE=0
+CONTROLLED_ROLLOUT_ACTIVE=0
+PRODUCTION_DEPLOYMENT_ALLOWED=0
+PRODUCTION_DEPLOYMENT_EXECUTED=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_ALLOWED=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+PILOT_RUNTIME_ACTIVE=0
+SHADOW_RUNTIME_ACTIVE=0
+RUNTIME_BRIDGE_ACTIVE=0
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=0
+WEEKLY_SWING_WATCHLIST_PLAN_CONFIRM_MUTATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_CONTEXT_PERSISTED_TO_LIVE_RUNTIME=0
+SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+NEXT_RECOMMENDATION=C111_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW
+```

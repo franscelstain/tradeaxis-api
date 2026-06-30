@@ -10085,3 +10085,271 @@ C109_NEXT_CONTRACT=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_
 ```
 
 C109 final contract evidence is artifact-only; no C60-C108 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+## C110 Contract - Weekly Swing Watchlist Non-Live Rehearsal Handoff Audit Archive Completion Seal Review
+
+```text
+CONTRACT_CODE=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+CONTRACT_SCOPE=ARTIFACT_ONLY_NON_LIVE_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+SOURCE_LOCK=C109
+EXPECTED_C109_ARTIFACT=storage/app/watchlist/backtest/c109-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-review.json
+EXPECTED_C109_HASH=43aa1b1299cd19f6dd1a91c0b68c7a716027905b
+EXPECTED_C109_FILE_SHA1=FC3A0F67BFEBC28131F0D3403C62AC68BEB945CB
+EXPECTED_C109_STATUS=C109_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_READY_PRIMARY_AND_BACKUP
+EXPECTED_C109_REASON_CODE=C109_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_READY_PRIMARY_AND_BACKUP
+EXPECTED_C109_NEXT_RECOMMENDATION=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+C110_NEXT_CONTRACT=C111_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW
+```
+
+C110 validates C109 artifact hash and file SHA1.
+C110 validates C109 weekly swing watchlist non-live rehearsal handoff audit archive completion ready state.
+C110 validates C104-C109 handoff lineage is carried forward as sealed-complete.
+C110 requires --operator-approved.
+C110 requires non-empty --approval-reference.
+C110 confirms no temporary negative test artifact remains.
+C110 seals weekly swing watchlist non-live rehearsal handoff audit archive completion only.
+C110 marks handoff audit archive completion sealed for E02 and B01 only.
+C110 keeps A01 comparator-only and does not promote A01.
+C110 creates artifact-only non-live rehearsal handoff audit archive completion seal manifest.
+C110 does not run OOS rerank.
+C110 does not rebuild signal quality.
+C110 does not change candidate selection.
+C110 does not rerank candidate.
+C110 does not retune strategy.
+C110 does not change scoring logic.
+C110 does not change catalog selection.
+C110 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C110 does not deploy live production.
+C110 does not mutate PLAN/CONFIRM.
+C110 does not change PLAN/CONFIRM output.
+C110 does not activate controlled rollout.
+C110 does not activate pilot runtime.
+C110 does not activate shadow runtime.
+C110 does not activate runtime bridge.
+C110 does not activate weekly swing watchlist runtime.
+C110 does not create weekly swing live output.
+C110 does not generate official weekly swing recommendation.
+C110 does not publish weekly swing output.
+C110 keeps production_ready=false.
+C110 keeps production_catalog_runtime_wired=false.
+C110 keeps controlled_opt_in_runtime_bridge_active=false.
+C110 keeps controlled_parallel_run_active=false.
+C110 keeps controlled_rollout_active=false.
+C110 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_audit_archive_context_persisted_to_live_runtime=false.
+C110 keeps handoff_audit_archive_context_persisted_to_live_runtime=false.
+C110 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_audit_archive_completion_context_persisted_to_live_runtime=false.
+C110 keeps handoff_audit_archive_completion_context_persisted_to_live_runtime=false.
+C110 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_audit_archive_completion_seal_context_persisted_to_live_runtime=false.
+C110 keeps handoff_audit_archive_completion_seal_context_persisted_to_live_runtime=false.
+C110 keeps production_deployment_allowed=false.
+C110 keeps production_deployment_executed=false.
+C110 keeps plan_confirm_mutation_allowed=false.
+C110 keeps plan_confirm_mutated=false.
+C110 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C110 keeps live_plan_confirm_rollout_allowed=false.
+C110 keeps live_plan_confirm_rollout_executed=false.
+C110 keeps pilot_runtime_active=false.
+C110 keeps shadow_runtime_active=false.
+C110 keeps runtime_bridge_active=false.
+C110 keeps weekly_swing_watchlist_runtime_active=false.
+C110 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C110 keeps weekly_swing_watchlist_live_output_enabled=false.
+C110 keeps weekly_swing_watchlist_official_output_generated=false.
+C110 keeps weekly_swing_watchlist_official_output_published=false.
+C110 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+C110 weekly swing watchlist non-live rehearsal handoff audit archive completion seal review means continue to C111 weekly swing watchlist non-live rehearsal handoff audit archive final closure review only.
+C110 handoff audit archive completion record is not production deployment.
+C110 handoff audit archive completion record is not PLAN/CONFIRM live rollout.
+C110 handoff audit archive completion record is not runtime bridge activation.
+C110 handoff audit archive completion record is not weekly swing live output.
+
+Initial contract evidence - 2026-06-30:
+
+```text
+C110_CONTRACT_STATUS=IMPLEMENTED_PENDING_RUNTIME_EVIDENCE
+C110_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c110-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-seal-review.json
+C110_SOURCE_LOCK=C109
+C110_NEXT_CONTRACT=C111_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW
+```
+
+C110 contract evidence is artifact-only; no C60-C109 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+Final operator contract evidence - 2026-06-30:
+
+```text
+C110_CONTRACT_STATUS=PASSED
+C110_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c110-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-completion-seal-review.json
+C110_RUNTIME_STATUS=C110_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_SEALED_PRIMARY_AND_BACKUP
+C110_FOCUSED_PHPUNIT=OK (82 tests, 395 assertions)
+C110_FULL_WATCHLIST_PHPUNIT_POST_C110=OK (2593 tests, 29657 assertions)
+C110_ARTIFACT_HASH=17352f926bcf9138be62c9f43a81551f89de0cc7
+C110_ARTIFACT_FILE_SHA1=407DB31435BF42C48FD0C7419B7BEBCA138DB127
+C110_SOURCE_LOCK=C109
+EXPECTED_C109_HASH=43aa1b1299cd19f6dd1a91c0b68c7a716027905b
+ACTUAL_C109_HASH=43aa1b1299cd19f6dd1a91c0b68c7a716027905b
+C109_HASH_MATCH=1
+EXPECTED_C109_FILE_SHA1=FC3A0F67BFEBC28131F0D3403C62AC68BEB945CB
+ACTUAL_C109_FILE_SHA1=FC3A0F67BFEBC28131F0D3403C62AC68BEB945CB
+C109_FILE_SHA1_MATCH=1
+HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED=1
+AUDIT_ARCHIVE_COMPLETION_SEALED=1
+COMPLETION_SEAL_MANIFEST_CREATED=1
+C110_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C110_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+C110_SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+C110_NEXT_CONTRACT=C111_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW
+```
+
+C110 final contract evidence is artifact-only; no C60-C109 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+## C111 Weekly Swing Watchlist Non-Live Rehearsal Handoff Audit Archive Final Closure Review Contract - 2026-06-30
+
+C111 contract adds `WatchlistBacktestC111WeeklySwingWatchlistNonLiveRehearsalHandoffAuditArchiveFinalClosureReviewService`, command `watchlist:backtest-c111-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-final-closure-review`, and isolated non-live handoff audit archive final closure artifact context.
+C111 validates C110 artifact hash and file SHA1.
+C111 validates C110 weekly swing watchlist non-live rehearsal handoff audit archive completion seal state.
+C111 validates C104-C110 handoff lineage is carried forward as final-closed.
+C111 requires --operator-approved.
+C111 requires non-empty --approval-reference.
+C111 confirms no temporary negative test artifact remains.
+C111 final closes weekly swing watchlist non-live rehearsal handoff audit archive only.
+C111 marks handoff audit archive final closed for E02 and B01 only.
+C111 keeps A01 comparator-only and does not promote A01.
+C111 creates artifact-only non-live rehearsal handoff audit archive final closure manifest.
+C111 keeps weekly_swing_watchlist_non_live_rehearsal_handoff_audit_archive_final_closure_context_persisted_to_live_runtime=false.
+C111 keeps handoff_audit_archive_final_closure_context_persisted_to_live_runtime=false.
+C111 weekly swing watchlist non-live rehearsal handoff audit archive final closure review means the non-live audit archive package is closed; it is not a production deployment or live rollout.
+C111 handoff audit archive final closure record is not production deployment.
+C111 handoff audit archive final closure record is not PLAN/CONFIRM live rollout.
+C111 handoff audit archive final closure record is not runtime bridge activation.
+C111 handoff audit archive final closure record is not weekly swing live output.
+
+```text
+C111_CONTRACT_STATUS=IMPLEMENTED_PENDING_RUNTIME_EVIDENCE
+C111_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c111-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-final-closure-review.json
+C111_SOURCE_LOCK=C110
+EXPECTED_C110_HASH=17352f926bcf9138be62c9f43a81551f89de0cc7
+EXPECTED_C110_FILE_SHA1=407DB31435BF42C48FD0C7419B7BEBCA138DB127
+C111_NEXT_CONTRACT=NO_NEXT_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_REVIEW_REQUIRED
+```
+
+C111 contract evidence is artifact-only; no C60-C110 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+Final operator contract evidence - 2026-06-30:
+
+```text
+C111_CONTRACT_STATUS=PASSED
+C111_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c111-weekly-swing-watchlist-non-live-rehearsal-handoff-audit-archive-final-closure-review.json
+C111_RUNTIME_STATUS=C111_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW_PASSED_AUDIT_ARCHIVE_FINAL_CLOSED_PRIMARY_AND_BACKUP
+C111_FOCUSED_PHPUNIT=OK (92 tests, 427 assertions)
+C111_FULL_WATCHLIST_PHPUNIT_POST_C111=OK (2685 tests, 30084 assertions)
+C111_ARTIFACT_HASH=8f7c8b81eb401bfdd70f62f90779db63fc4af56d
+C111_ARTIFACT_FILE_SHA1=D58C10185970C9344F6EB3818A5A31C75C876842
+C111_SOURCE_LOCK=C110
+EXPECTED_C110_HASH=17352f926bcf9138be62c9f43a81551f89de0cc7
+ACTUAL_C110_HASH=17352f926bcf9138be62c9f43a81551f89de0cc7
+C110_HASH_MATCH=1
+EXPECTED_C110_FILE_SHA1=407DB31435BF42C48FD0C7419B7BEBCA138DB127
+ACTUAL_C110_FILE_SHA1=407DB31435BF42C48FD0C7419B7BEBCA138DB127
+C110_FILE_SHA1_MATCH=1
+HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSED=1
+AUDIT_ARCHIVE_FINAL_CLOSED=1
+FINAL_CLOSURE_MANIFEST_CREATED=1
+C111_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+C111_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+C111_SAFETY_BOUNDARY=NON_LIVE_ARTIFACT_ONLY_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+C111_NEXT_CONTRACT=NO_NEXT_WEEKLY_SWING_WATCHLIST_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_REVIEW_REQUIRED
+```
+
+C111 final contract evidence is artifact-only; no C60-C110 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+## C112 Weekly Swing Watchlist Production Phase Approval Review Contract - 2026-06-30
+
+C112 contract adds `WatchlistBacktestC112WeeklySwingWatchlistProductionPhaseApprovalReviewService`, command `watchlist:backtest-c112-weekly-swing-watchlist-production-phase-approval-review`, and isolated new-production-phase approval artifact context.
+C112 validates C111 artifact hash and file SHA1.
+C112 validates C111 weekly swing watchlist non-live rehearsal handoff audit archive final closure state.
+C112 requires new --operator-approved.
+C112 requires non-empty new --approval-reference.
+C112 opens weekly swing watchlist production phase for readiness review only.
+C112 grants production phase approval for E02 and B01 only.
+C112 keeps A01 comparator-only and does not promote A01.
+C112 does not deploy live production.
+C112 does not wire production runtime.
+C112 does not mutate PLAN/CONFIRM.
+C112 does not change PLAN/CONFIRM output.
+C112 does not create weekly swing live output.
+C112 does not generate official weekly swing recommendation.
+C112 keeps production_ready=false.
+C112 keeps production_catalog_runtime_wired=false.
+C112 keeps production_runtime_wiring_allowed=false.
+C112 keeps production_runtime_wiring_executed=false.
+C112 keeps production_deployment_allowed=false.
+C112 keeps production_deployment_executed=false.
+C112 keeps weekly_swing_watchlist_production_phase_approval_context_persisted_to_live_runtime=false.
+C112 keeps production_phase_approval_context_persisted_to_live_runtime=false.
+C112 production phase approval review means proceed to C113 production readiness review only; it is not production deployment or live rollout.
+C112 production phase approval record is not an official weekly swing stock recommendation.
+
+```text
+C112_CONTRACT_STATUS=IMPLEMENTED_PENDING_RUNTIME_EVIDENCE
+C112_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c112-weekly-swing-watchlist-production-phase-approval-review.json
+C112_SOURCE_LOCK=C111
+EXPECTED_C111_HASH=8f7c8b81eb401bfdd70f62f90779db63fc4af56d
+EXPECTED_C111_FILE_SHA1=D58C10185970C9344F6EB3818A5A31C75C876842
+C112_NEXT_CONTRACT=C113_WEEKLY_SWING_WATCHLIST_PRODUCTION_READINESS_REVIEW
+```
+
+C112 contract evidence is artifact-only; no C60-C111 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+Final operator contract evidence - 2026-06-30:
+
+```text
+C112_CONTRACT_STATUS=PASSED
+C112_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c112-weekly-swing-watchlist-production-phase-approval-review.json
+C112_RUNTIME_STATUS=C112_WEEKLY_SWING_WATCHLIST_PRODUCTION_PHASE_APPROVAL_REVIEW_PASSED_PRODUCTION_PHASE_APPROVED_FOR_READINESS_REVIEW_PRIMARY_AND_BACKUP
+C112_FOCUSED_PHPUNIT=OK (48 tests, 244 assertions)
+C112_FULL_WATCHLIST_PHPUNIT_POST_C112=OK (2733 tests, 30328 assertions)
+C112_ARTIFACT_HASH=5c6b4bb2cd7751e4b8b838e31f0a6aecdad67e04
+C112_ARTIFACT_FILE_SHA1=9DAE4191A2243A660963BF5D9709B6E79F7E1998
+C112_SOURCE_LOCK=C111
+EXPECTED_C111_HASH=8f7c8b81eb401bfdd70f62f90779db63fc4af56d
+ACTUAL_C111_HASH=8f7c8b81eb401bfdd70f62f90779db63fc4af56d
+C111_HASH_MATCH=1
+EXPECTED_C111_FILE_SHA1=D58C10185970C9344F6EB3818A5A31C75C876842
+ACTUAL_C111_FILE_SHA1=D58C10185970C9344F6EB3818A5A31C75C876842
+C111_FILE_SHA1_MATCH=1
+PRODUCTION_PHASE_APPROVAL_GRANTED=1
+PRODUCTION_READINESS_REVIEW_ALLOWED=1
+C112_NEGATIVE_APPROVAL_GATE=PASS_REJECTED_NEW_PRODUCTION_APPROVAL_MISSING
+C112_TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_OUTPUT
+C112_SAFETY_BOUNDARY=NEW_PRODUCTION_PHASE_APPROVED_FOR_READINESS_REVIEW_ONLY_PRODUCTION_RUNTIME_WIRING_DISABLED_DEPLOYMENT_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+C112_NEXT_CONTRACT=C113_WEEKLY_SWING_WATCHLIST_PRODUCTION_READINESS_REVIEW
+```
+
+C112 final contract evidence is artifact-only; no C60-C111 runtime artifact, configuration, PLAN/CONFIRM behavior, runtime bridge, controlled rollout, weekly live output, official weekly swing recommendation, or production deployment behavior is changed by this tracker update.
+
+## C111/C112 Boundary Clarification - 2026-06-30
+
+This contract boundary clarification records that C111 is the terminal final-closure point for the weekly swing watchlist non-live rehearsal handoff audit archive chain. C112 is a separate post-C111 production-phase transition gate and must not be interpreted as another audit archive continuation.
+
+```text
+C111_NON_LIVE_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSED=1
+C111_NON_LIVE_AUDIT_ARCHIVE_TERMINAL=1
+C111_NO_NEXT_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_REVIEW_REQUIRED=1
+C112_SEPARATE_POST_C111_PRODUCTION_PHASE_TRANSITION_GATE=1
+C112_NOT_AUDIT_ARCHIVE_CONTINUATION=1
+C112_DOES_NOT_REOPEN_C111_FINAL_CLOSURE=1
+C112_DOES_NOT_EXTEND_NON_LIVE_AUDIT_ARCHIVE_REVIEW=1
+C112_PRODUCTION_PHASE_APPROVAL_IS_READINESS_ENTRY_ONLY=1
+C112_PRODUCTION_READY=0
+C112_PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+C112_PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+C112_PRODUCTION_DEPLOYMENT_ALLOWED=0
+C112_PRODUCTION_DEPLOYMENT_EXECUTED=0
+C112_PLAN_CONFIRM_MUTATION_ALLOWED=0
+C112_WEEKLY_SWING_LIVE_OUTPUT_ENABLED=0
+C112_OFFICIAL_WEEKLY_SWING_RECOMMENDATION_GENERATED=0
+NEXT_AFTER_C111_NON_LIVE_AUDIT_ARCHIVE=STOP_OR_SEPARATE_PRODUCTION_PHASE_TRANSITION_GATE_ONLY
+NEXT_AFTER_C112_IF_OPERATOR_CONTINUES_PRODUCTION_READINESS_PATH=C113_WEEKLY_SWING_WATCHLIST_PRODUCTION_READINESS_REVIEW
+```
+
+C111 remains the final close of the non-live audit archive. C112 only records a new production-phase approval for readiness review and does not cancel, reopen, weaken, or continue the C111 final-closed audit archive state.
