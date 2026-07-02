@@ -138,6 +138,12 @@ use App\Console\Commands\Watchlist\RunBacktestC110WeeklySwingWatchlistNonLiveReh
 use App\Console\Commands\Watchlist\RunBacktestC111WeeklySwingWatchlistNonLiveRehearsalHandoffAuditArchiveFinalClosureReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC112WeeklySwingWatchlistProductionPhaseApprovalReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC113WeeklySwingWatchlistProductionReadinessReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC114WeeklySwingWatchlistProductionRuntimeWiringReadinessReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC115WeeklySwingWatchlistControlledRuntimeWiringExecutionApprovalReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC116WeeklySwingWatchlistControlledRuntimeWiringExecutionReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC117WeeklySwingWatchlistControlledRuntimeWiringObservationReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC118WeeklySwingWatchlistControlledRuntimeWiringObservationResultReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC119WeeklySwingWatchlistControlledRuntimeWiringOperatorGoNoGoReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -263,6 +269,12 @@ class Kernel extends ConsoleKernel
         RunBacktestC111WeeklySwingWatchlistNonLiveRehearsalHandoffAuditArchiveFinalClosureReviewCommand::class,
         RunBacktestC112WeeklySwingWatchlistProductionPhaseApprovalReviewCommand::class,
         RunBacktestC113WeeklySwingWatchlistProductionReadinessReviewCommand::class,
+        RunBacktestC114WeeklySwingWatchlistProductionRuntimeWiringReadinessReviewCommand::class,
+        RunBacktestC115WeeklySwingWatchlistControlledRuntimeWiringExecutionApprovalReviewCommand::class,
+        RunBacktestC116WeeklySwingWatchlistControlledRuntimeWiringExecutionReviewCommand::class,
+        RunBacktestC117WeeklySwingWatchlistControlledRuntimeWiringObservationReviewCommand::class,
+        RunBacktestC118WeeklySwingWatchlistControlledRuntimeWiringObservationResultReviewCommand::class,
+        RunBacktestC119WeeklySwingWatchlistControlledRuntimeWiringOperatorGoNoGoReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
