@@ -1,0 +1,129 @@
+# WS_C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW
+
+Status: C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW_PASSED_AUDIT_ARCHIVED_PRIMARY_AND_BACKUP
+
+C126 is weekly swing watchlist controlled runtime wiring handoff audit archive review.
+C126 locks C125 weekly swing watchlist controlled runtime wiring handoff closure seal review as the only source input.
+
+E02 is primary controlled runtime wiring handoff audit archived candidate.
+B01 is backup controlled runtime wiring handoff audit archived candidate.
+A01 remains comparator-only and is not promoted.
+
+## Source Lock
+
+```text
+RUN_CODE=C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW
+SOURCE_LOCK=C125
+EXPECTED_C125_ARTIFACT=storage/app/watchlist/backtest/c125-weekly-swing-watchlist-controlled-runtime-wiring-handoff-closure-seal-review.json
+EXPECTED_C125_HASH=38850d8848a0df52b7b804625c21f285f841c2f1
+EXPECTED_C125_FILE_SHA1=359325C7B236F178E4C37BAFCAC21D3E42C37447
+EXPECTED_C125_STATUS=C125_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_CLOSURE_SEAL_REVIEW_PASSED_CLOSURE_SEALED_PRIMARY_AND_BACKUP
+EXPECTED_C125_REASON_CODE=C125_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_CLOSURE_SEAL_REVIEW_PASSED_CLOSURE_SEALED_PRIMARY_AND_BACKUP
+EXPECTED_C125_PHASE_LABEL=PR-13 / C125_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_CLOSURE_SEAL_REVIEW
+EXPECTED_C125_NEXT_RECOMMENDATION=C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW
+NEXT_RECOMMENDATION_IF_PASS=C127_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c126-weekly-swing-watchlist-controlled-runtime-wiring-handoff-audit-archive-review.json
+```
+
+## Required Checks
+
+C126 validates C125 artifact hash and file SHA1.
+C126 validates C125 phase label and ConvertFrom-Json compatibility.
+C126 validates C125 weekly swing watchlist controlled runtime wiring handoff closure seal state.
+C126 requires --operator-approved.
+C126 requires non-empty --approval-reference.
+C126 requires --handoff-audit-archive-confirmed.
+C126 confirms no temporary negative test artifact remains.
+C126 archives weekly swing watchlist controlled runtime wiring handoff audit trail only.
+C126 archives handoff audit trail for E02 and B01 only.
+C126 creates artifact-only controlled runtime wiring handoff audit archive manifest.
+C126 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C126 does not deploy live production.
+C126 does not mutate PLAN/CONFIRM.
+C126 does not change PLAN/CONFIRM output.
+C126 does not activate pilot runtime.
+C126 does not activate shadow runtime.
+C126 does not activate runtime bridge.
+C126 does not activate weekly swing watchlist runtime.
+C126 does not create weekly swing live output.
+C126 does not generate official weekly swing recommendation.
+C126 does not publish weekly swing output.
+C126 keeps production_ready=false.
+C126 keeps production_catalog_runtime_wired=false.
+C126 keeps production_runtime_wiring_allowed=false.
+C126 keeps production_runtime_wiring_executed=false.
+C126 keeps controlled_opt_in_runtime_bridge_active=false.
+C126 keeps controlled_parallel_run_active=false.
+C126 keeps controlled_rollout_active=false.
+C126 keeps weekly_swing_watchlist_controlled_runtime_wiring_handoff_audit_archive_context_persisted_to_live_runtime=false.
+C126 keeps controlled_runtime_wiring_handoff_audit_archive_context_persisted_to_live_runtime=false.
+C126 keeps handoff_audit_archive_context_persisted_to_live_runtime=false.
+C126 keeps production_deployment_allowed=false.
+C126 keeps production_deployment_executed=false.
+C126 keeps plan_confirm_mutation_allowed=false.
+C126 keeps plan_confirm_mutated=false.
+C126 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C126 keeps live_plan_confirm_rollout_allowed=false.
+C126 keeps live_plan_confirm_rollout_executed=false.
+C126 keeps pilot_runtime_active=false.
+C126 keeps shadow_runtime_active=false.
+C126 keeps runtime_bridge_active=false.
+C126 keeps weekly_swing_watchlist_runtime_active=false.
+C126 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C126 keeps weekly_swing_watchlist_live_output_enabled=false.
+C126 keeps weekly_swing_watchlist_official_output_generated=false.
+C126 keeps weekly_swing_watchlist_official_output_published=false.
+C126 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+
+## Boundary
+
+C126 target is achieved when locked C125 handoff closure seal evidence is validated, the controlled runtime wiring handoff audit trail is archived for E02 and B01, A01 remains comparator-only, temporary negative artifacts are absent, and no production mutation is observed.
+
+C126 weekly swing watchlist controlled runtime wiring handoff audit archive review means continue to C127 weekly swing watchlist controlled runtime wiring handoff audit archive completion review only.
+C126 handoff audit archive record is not production deployment.
+C126 handoff audit archive record is not PLAN/CONFIRM live rollout.
+C126 handoff audit archive record is not runtime bridge activation.
+C126 handoff audit archive record is not weekly swing live output.
+
+## Runtime Evidence
+
+Runtime evidence appended after local validation.
+
+```text
+FOCUSED_PHPUNIT_C126=OK (86 tests, 350 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C126=OK (4172 tests, 35701 assertions)
+RUNTIME_STATUS=C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW_PASSED_AUDIT_ARCHIVED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW_PASSED_AUDIT_ARCHIVED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c126-weekly-swing-watchlist-controlled-runtime-wiring-handoff-audit-archive-review.json
+ARTIFACT_HASH=3f990d65414dd754ac4cd7a257ade44d52c89b67
+ARTIFACT_FILE_SHA1=16B4F020A06459B46CD5ECDAAEDAC1DC2829561E
+SOURCE_LOCK=C125
+EXPECTED_C125_HASH=38850d8848a0df52b7b804625c21f285f841c2f1
+ACTUAL_C125_HASH=38850d8848a0df52b7b804625c21f285f841c2f1
+C125_HASH_MATCH=1
+EXPECTED_C125_FILE_SHA1=359325C7B236F178E4C37BAFCAC21D3E42C37447
+ACTUAL_C125_FILE_SHA1=359325C7B236F178E4C37BAFCAC21D3E42C37447
+C125_FILE_SHA1_MATCH=1
+C125_CONVERT_FROM_JSON_PASS=1
+C125_PHASE_LABEL_MATCH=1
+HANDOFF_CLOSURE_SEALED=1
+HANDOFF_CLOSURE_SEAL_CONFIRMED=1
+HANDOFF_CLOSURE_SEAL_GO_DECISION=HANDOFF_CLOSURE_SEALED_GO
+HANDOFF_AUDIT_ARCHIVED=1
+HANDOFF_AUDIT_ARCHIVE_CONFIRMED=1
+HANDOFF_AUDIT_ARCHIVE_GO_DECISION=HANDOFF_AUDIT_ARCHIVED_GO
+AUDIT_ARCHIVED=1
+ARCHIVE_MANIFEST_CREATED=1
+READY_FOR_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW=1
+BOUNDARY_GO_DECISION=BOUNDARY_CLEARED_GO
+OPERATOR_GO_DECISION=GO
+TEMPORARY_NEGATIVE_ARTIFACTS_REMAINING=0
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP_CONFIRMED=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_HANDOFF_AUDIT_ARCHIVE_CONFIRMATION=C126_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_REVIEW_REJECTED_AUDIT_ARCHIVE_NOT_CONFIRMED
+NEGATIVE_APPROVAL_GATE=PASS_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C126_TEST_ARTIFACTS_REMAINING
+SAFETY_BOUNDARY=CONTROLLED_RUNTIME_WIRING_ARTIFACT_ONLY_HANDOFF_AUDIT_ARCHIVED_PRODUCTION_DISABLED_PLAN_CONFIRM_UNCHANGED_WEEKLY_LIVE_OUTPUT_DISABLED
+NEXT_RECOMMENDATION=C127_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW
+```

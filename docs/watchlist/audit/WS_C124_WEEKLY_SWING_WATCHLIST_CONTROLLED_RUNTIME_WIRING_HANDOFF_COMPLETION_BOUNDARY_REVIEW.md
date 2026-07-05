@@ -1,0 +1,135 @@
+# WS_C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+
+Status: C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+
+Phase label: PR-12 / C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+
+C124 is weekly swing watchlist controlled runtime wiring handoff completion boundary review.
+C124 locks C123 weekly swing watchlist controlled runtime wiring handoff finalization review as the only source input.
+C124 validates C123 artifact hash and file SHA1.
+C124 validates C123 phase label and ConvertFrom-Json compatibility.
+C124 validates C123 handoff_finalized=1, handoff_finalization_confirmed=1, and HANDOFF_FINALIZED_GO.
+C124 requires --operator-approved.
+C124 requires non-empty --approval-reference.
+C124 requires --handoff-completion-boundary-confirmed.
+C124 confirms no temporary negative test artifact remains.
+C124 clears controlled runtime wiring handoff completion boundary for E02 and B01 only.
+C124 keeps A01 comparator-only and does not promote A01.
+C124 creates artifact-only controlled runtime wiring handoff completion boundary manifest.
+C124 records handoff_completion_boundary_cleared=1 as artifact-only evidence.
+C124 records handoff_completion_boundary_confirmed=1 as artifact-only evidence.
+C124 records handoff_completion_boundary_go_decision=HANDOFF_COMPLETION_BOUNDARY_CLEARED_GO as artifact-only evidence.
+C124 is not production deployment.
+C124 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C124 does not mutate PLAN/CONFIRM.
+C124 does not activate pilot runtime, shadow runtime, runtime bridge, controlled rollout, or weekly swing watchlist runtime.
+C124 does not create weekly swing live output, official recommendation, or published recommendation.
+
+E02 remains the primary controlled runtime wiring handoff completion boundary cleared candidate.
+B01 remains the backup controlled runtime wiring handoff completion boundary cleared candidate.
+A01 remains comparator-only and is not promoted.
+
+## Source Lock
+
+```text
+RUN_CODE=C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+PHASE_LABEL=PR-12 / C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+SOURCE_LOCK=C123
+EXPECTED_C123_ARTIFACT=storage/app/watchlist/backtest/c123-weekly-swing-watchlist-controlled-runtime-wiring-handoff-finalization-review.json
+EXPECTED_C123_HASH=802f76794be7b4478ece5e9587c7d5e8635ff88d
+EXPECTED_C123_FILE_SHA1=9880DB3FDDCBFBA7FA325E8956F523A850605B4D
+EXPECTED_C123_STATUS=C123_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_FINALIZATION_REVIEW_PASSED_HANDOFF_FINALIZED_PRIMARY_AND_BACKUP
+EXPECTED_C123_REASON_CODE=C123_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_FINALIZATION_REVIEW_PASSED_HANDOFF_FINALIZED_PRIMARY_AND_BACKUP
+EXPECTED_C123_NEXT_RECOMMENDATION=C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+EXPECTED_C123_PHASE_LABEL=PR-11 / C123_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_FINALIZATION_REVIEW
+NEXT_RECOMMENDATION_IF_PASS=C125_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_CLOSURE_SEAL_REVIEW
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c124-weekly-swing-watchlist-controlled-runtime-wiring-handoff-completion-boundary-review.json
+```
+
+## Required Checks
+
+C124 validates C123 artifact hash and file SHA1.
+C124 confirms C123 ConvertFrom-Json compatibility and rejects case-insensitive duplicate top-level JSON keys.
+C124 validates C123 weekly swing watchlist controlled runtime wiring handoff finalization state.
+C124 validates C123 readiness for controlled runtime wiring handoff completion boundary review.
+C124 clears handoff completion boundary for E02 and B01 only.
+C124 keeps A01 comparator-only and does not promote A01.
+C124 keeps production_ready=false.
+C124 keeps production_catalog_runtime_wired=false.
+C124 keeps production_runtime_wiring_allowed=false.
+C124 keeps production_runtime_wiring_executed=false.
+C124 keeps controlled_opt_in_runtime_bridge_active=false.
+C124 keeps controlled_parallel_run_active=false.
+C124 keeps controlled_rollout_active=false.
+C124 keeps weekly_swing_watchlist_controlled_runtime_wiring_handoff_completion_boundary_context_persisted_to_live_runtime=false.
+C124 keeps controlled_runtime_wiring_handoff_completion_boundary_context_persisted_to_live_runtime=false.
+C124 keeps handoff_completion_boundary_context_persisted_to_live_runtime=false.
+C124 keeps production_deployment_allowed=false.
+C124 keeps production_deployment_executed=false.
+C124 keeps plan_confirm_mutation_allowed=false.
+C124 keeps plan_confirm_mutated=false.
+C124 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C124 keeps live_plan_confirm_rollout_allowed=false.
+C124 keeps live_plan_confirm_rollout_executed=false.
+C124 keeps pilot_runtime_active=false.
+C124 keeps shadow_runtime_active=false.
+C124 keeps runtime_bridge_active=false.
+C124 keeps weekly_swing_watchlist_runtime_active=false.
+C124 keeps weekly_swing_watchlist_live_output_enabled=false.
+C124 keeps weekly_swing_watchlist_official_output_generated=false.
+C124 keeps weekly_swing_watchlist_official_output_published=false.
+C124 keeps weekly_swing_watchlist_live_recommendation_generated=false.
+
+## Boundary
+
+C124 target is achieved when locked C123 handoff finalization evidence is validated, the controlled runtime wiring handoff completion boundary is cleared for E02 and B01, A01 remains comparator-only, temporary negative artifacts are absent, and no production mutation is observed.
+
+C124 weekly swing watchlist controlled runtime wiring handoff completion boundary review means continue to C125 weekly swing watchlist controlled runtime wiring handoff closure seal review only.
+C124 handoff completion boundary record is not production deployment.
+C124 handoff completion boundary record is not PLAN/CONFIRM live rollout.
+C124 handoff completion boundary record is not runtime bridge activation.
+C124 handoff completion boundary record is not weekly swing live output.
+C124 handoff completion boundary record is not an official weekly swing stock recommendation.
+
+## Runtime Evidence - 2026-07-04
+
+```text
+FOCUSED_PHPUNIT_C124=OK (79 tests, 316 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C124=OK (4002 tests, 35018 assertions)
+C124_RUNTIME_STATUS=C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+C124_RUNTIME_REASON_CODE=C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c124-weekly-swing-watchlist-controlled-runtime-wiring-handoff-completion-boundary-review.json
+C124_ARTIFACT_HASH=7c1079c3a5242cee7fbaa3a3a4afad1c100f50d1
+C124_FILE_SHA1=8E8A5E878BA6B51E7FA99B754383171F13497ABD
+C123_HASH_MATCH=1
+C123_FILE_SHA1_MATCH=1
+C123_CONVERT_FROM_JSON_PASS=1
+C123_PHASE_LABEL_MATCH=1
+HANDOFF_FINALIZED=1
+HANDOFF_COMPLETION_BOUNDARY_CLEARED=1
+HANDOFF_COMPLETION_BOUNDARY_CONFIRMED=1
+HANDOFF_COMPLETION_BOUNDARY_GO_DECISION=HANDOFF_COMPLETION_BOUNDARY_CLEARED_GO
+READY_FOR_CONTROLLED_RUNTIME_WIRING_HANDOFF_CLOSURE_SEAL_REVIEW=1
+TEMPORARY_NEGATIVE_ARTIFACTS_REMAINING=0
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP_CONFIRMED=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_HANDOFF_COMPLETION_BOUNDARY_CONFIRMATION=C124_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_REVIEW_REJECTED_HANDOFF_COMPLETION_BOUNDARY_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C124_TEST_ARTIFACTS_REMAINING
+PRODUCTION_READY=0
+PRODUCTION_CATALOG_RUNTIME_WIRED=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+RUNTIME_BRIDGE_ACTIVE=0
+CONTROLLED_ROLLOUT_ACTIVE=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+CONTROLLED_RUNTIME_WIRING_HANDOFF_COMPLETION_BOUNDARY_CONTEXT_PERSISTED_TO_LIVE_RUNTIME=0
+NEXT_RECOMMENDATION=C125_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_CLOSURE_SEAL_REVIEW
+```
+
+C124 final evidence must remain artifact-only. C124 must not modify C60-C123 artifacts, change production config defaults, activate production runtime bridge, mutate PLAN/CONFIRM, create weekly swing live output, generate official weekly swing recommendation, or publish weekly swing output.

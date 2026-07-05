@@ -1,0 +1,101 @@
+# WS_C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+
+Status: C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_SEALED_PRIMARY_AND_BACKUP
+
+C128 is weekly swing watchlist controlled runtime wiring handoff audit archive completion seal review.
+C128 locks C127 weekly swing watchlist controlled runtime wiring handoff audit archive completion review as the only source input.
+
+E02 remains primary controlled runtime wiring handoff audit archive completion sealed candidate.
+B01 remains backup controlled runtime wiring handoff audit archive completion sealed candidate.
+A01 remains comparator-only and is not promoted.
+
+## Source Lock
+
+```text
+RUN_CODE=C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+PHASE_LABEL=PR-16 / C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+SOURCE_LOCK=C127
+EXPECTED_C127_ARTIFACT=storage/app/watchlist/backtest/c127-weekly-swing-watchlist-controlled-runtime-wiring-handoff-audit-archive-completion-review.json
+EXPECTED_C127_HASH=fc9d9204da55658d1416e24bd9be20381a1bbc54
+EXPECTED_C127_FILE_SHA1=6AE20CACBA644E8863FEA16FD4003BE1C775DA54
+EXPECTED_C127_STATUS=C127_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_READY_PRIMARY_AND_BACKUP
+EXPECTED_C127_PHASE_LABEL=PR-15 / C127_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_REVIEW
+EXPECTED_C127_NEXT_RECOMMENDATION=C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW
+NEXT_RECOMMENDATION_IF_PASS=C129_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW
+OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c128-weekly-swing-watchlist-controlled-runtime-wiring-handoff-audit-archive-completion-seal-review.json
+```
+
+## Required Checks
+
+C128 validates C127 artifact hash, file SHA1, phase label, and ConvertFrom-Json compatibility.
+C128 validates C127 controlled runtime wiring handoff audit archive completion state.
+C128 requires --operator-approved.
+C128 requires non-empty --approval-reference.
+C128 requires --handoff-audit-archive-completion-seal-confirmed.
+C128 confirms no temporary negative test artifact remains.
+C128 seals handoff audit archive completion for E02 and B01 only.
+C128 keeps A01 comparator-only and does not promote A01.
+C128 creates artifact-only controlled runtime wiring handoff audit archive completion seal manifest.
+C128 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C128 does not deploy live production.
+C128 does not mutate PLAN/CONFIRM.
+C128 does not change PLAN/CONFIRM output.
+C128 does not activate pilot runtime.
+C128 does not activate shadow runtime.
+C128 does not activate runtime bridge.
+C128 does not activate weekly swing watchlist runtime.
+C128 does not create weekly swing live output.
+C128 does not generate official weekly swing recommendation.
+C128 does not publish weekly swing output.
+
+## Boundary
+
+C128 target is achieved when locked C127 handoff audit archive completion evidence is validated, the controlled runtime wiring handoff audit archive completion package is sealed for E02 and B01, A01 remains comparator-only, temporary negative artifacts are absent, and no production mutation is observed.
+
+C128 weekly swing watchlist controlled runtime wiring handoff audit archive completion seal review means continue to C129 weekly swing watchlist controlled runtime wiring handoff audit archive final closure review only.
+C128 handoff audit archive completion seal record is not production deployment.
+C128 handoff audit archive completion seal record is not PLAN/CONFIRM live rollout.
+C128 handoff audit archive completion seal record is not runtime bridge activation.
+C128 handoff audit archive completion seal record is not weekly swing live output.
+
+## Runtime Evidence
+
+```text
+FOCUSED_PHPUNIT_C128=OK (98 tests, 361 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C128=OK (4359 tests, 36427 assertions)
+RUNTIME_STATUS=C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_SEALED_PRIMARY_AND_BACKUP
+RUNTIME_REASON_CODE=C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_PASSED_AUDIT_ARCHIVE_COMPLETION_SEALED_PRIMARY_AND_BACKUP
+RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c128-weekly-swing-watchlist-controlled-runtime-wiring-handoff-audit-archive-completion-seal-review.json
+ARTIFACT_HASH=6ef4c4f7868f71fa3855c3db3a2e1372af201f68
+ARTIFACT_FILE_SHA1=33C094BFA0FF23952E68EB0E45A7C9AE092F9A82
+SOURCE_LOCK=C127
+EXPECTED_C127_HASH=fc9d9204da55658d1416e24bd9be20381a1bbc54
+ACTUAL_C127_HASH=fc9d9204da55658d1416e24bd9be20381a1bbc54
+C127_HASH_MATCH=1
+EXPECTED_C127_FILE_SHA1=6AE20CACBA644E8863FEA16FD4003BE1C775DA54
+ACTUAL_C127_FILE_SHA1=6AE20CACBA644E8863FEA16FD4003BE1C775DA54
+C127_FILE_SHA1_MATCH=1
+C127_CONVERT_FROM_JSON_PASS=1
+HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED=1
+HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_CONFIRMED=1
+HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_GO_DECISION=HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEALED_GO
+READY_FOR_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_CONFIRMATION=C128_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_REVIEW_REJECTED_AUDIT_ARCHIVE_COMPLETION_SEAL_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C128_TEST_ARTIFACTS_REMAINING
+PRODUCTION_READY=0
+PRODUCTION_CATALOG_RUNTIME_WIRED=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+RUNTIME_BRIDGE_ACTIVE=0
+CONTROLLED_ROLLOUT_ACTIVE=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_COMPLETION_SEAL_CONTEXT_PERSISTED_TO_LIVE_RUNTIME=0
+NEXT_RECOMMENDATION=C129_WEEKLY_SWING_WATCHLIST_CONTROLLED_RUNTIME_WIRING_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_REVIEW
+```
