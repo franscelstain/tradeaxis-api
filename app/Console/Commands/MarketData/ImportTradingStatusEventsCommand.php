@@ -10,7 +10,7 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
 {
     protected $signature = 'market-data:events:import-trading-status {input_file?} {--source_name=} {--dry-run} {--apply}';
 
-    protected $description = 'Validate or import source-backed trading status, UMA, and suspension events from CSV.';
+    protected $description = 'Validate or import source-backed trading status events from canonical event_type_code CSV.';
 
     public function handle()
     {
@@ -58,7 +58,7 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
             $this->error('status=BLOCKED');
             $this->line('reason_code=COMMAND_EXECUTION_FAILED');
             $this->line('error=CSV validation failed.');
-            $this->renderSummary($inputFile, $parsed['row_count'], count($validated['valid_rows']), 0, $errorCount, $apply, $validated['status_codes']);
+            $this->renderSummary($inputFile, $parsed['row_count'], count($validated['valid_rows']), 0, $errorCount, $apply, $validated['event_type_codes']);
             foreach (array_slice($validated['errors'], 0, 25) as $error) {
                 $this->line('validation_error='.$error);
             }
@@ -79,7 +79,7 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
 
         $this->info('status='.($apply ? 'APPLIED' : 'DRY_RUN'));
         $this->line('reason_code='.($apply ? 'COMMAND_APPLY_CONFIRMED' : 'COMMAND_DRY_RUN_ONLY'));
-        $this->renderSummary($inputFile, $parsed['row_count'], count($validated['valid_rows']), $upsertedCount, 0, $apply, $validated['status_codes']);
+        $this->renderSummary($inputFile, $parsed['row_count'], count($validated['valid_rows']), $upsertedCount, 0, $apply, $validated['event_type_codes']);
         $this->line('next_action='.($apply ? 'Run existing lifecycle/promote flow for affected trade dates to stamp event-risk context into current publications.' : 'Re-run with --apply after reviewing validation output.'));
 
         return 0;
@@ -124,9 +124,15 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
             throw new \RuntimeException('CSV file is empty.');
         }
 
-        foreach (['ticker_code', 'trade_date', 'status_code'] as $requiredHeader) {
+        foreach (['ticker_code', 'trade_date', 'event_type_code'] as $requiredHeader) {
             if (! in_array($requiredHeader, $headers, true)) {
                 throw new \RuntimeException('CSV header must include '.$requiredHeader.'.');
+            }
+        }
+
+        foreach (['status_code', 'is_suspended', 'is_uma', 'status_effect', 'event_risk_scope', 'coverage_exclusion_flag', 'coverage_policy', 'expected_bar_policy'] as $deprecatedHeader) {
+            if (in_array($deprecatedHeader, $headers, true)) {
+                throw new \RuntimeException('CSV header must not include deprecated trading-status semantic column '.$deprecatedHeader.'. Use event_type_code only.');
             }
         }
 
@@ -145,6 +151,8 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
             return $this->normalizeCode($row['ticker_code'] ?? '');
         }, $rows))));
         $tickerIdsByCode = app(TickerMasterRepository::class)->resolveTickerIdsByCodes($tickerCodes);
+        $allowedEventTypeCodes = app(EventRiskSourceRepository::class)->tradingStatusEventTypeCodes();
+        $allowedEventTypeCodeMap = array_fill_keys($allowedEventTypeCodes, true);
         $now = date('Y-m-d H:i:s');
         $seen = [];
 
@@ -152,12 +160,10 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
             $line = (int) ($row['_line'] ?? 0);
             $tickerCode = $this->normalizeCode($row['ticker_code'] ?? '');
             $tradeDate = trim((string) ($row['trade_date'] ?? ''));
-            $statusCode = $this->normalizeCode($row['status_code'] ?? '');
+            $eventTypeCode = $this->normalizeCode($row['event_type_code'] ?? '');
             $sourceName = trim((string) ($row['source_name'] ?? $sourceNameDefault));
             $sourceRef = trim((string) ($row['source_ref'] ?? ''));
             $notes = trim((string) ($row['notes'] ?? ''));
-            $suspended = $this->nullableBool($row['is_suspended'] ?? '');
-            $uma = $this->nullableBool($row['is_uma'] ?? '');
 
             if ($tickerCode === '') {
                 $errors[] = 'line '.$line.': ticker_code is required.';
@@ -174,8 +180,13 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
                 continue;
             }
 
-            if ($statusCode === '') {
-                $errors[] = 'line '.$line.': status_code is required.';
+            if ($eventTypeCode === '') {
+                $errors[] = 'line '.$line.': event_type_code is required.';
+                continue;
+            }
+
+            if (! isset($allowedEventTypeCodeMap[$eventTypeCode])) {
+                $errors[] = 'line '.$line.': event_type_code '.$eventTypeCode.' is not registered in market_data_trading_status_event_types.';
                 continue;
             }
 
@@ -184,37 +195,9 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
                 continue;
             }
 
-            if (! $suspended['valid']) {
-                $errors[] = 'line '.$line.': is_suspended must be true/false/1/0/yes/no when provided.';
-                continue;
-            }
-
-            if (! $uma['valid']) {
-                $errors[] = 'line '.$line.': is_uma must be true/false/1/0/yes/no when provided.';
-                continue;
-            }
-
-            $isSuspended = $suspended['value'];
-            $isUma = $uma['value'];
-
-            if ($this->isGlobalNormalStatusCode($statusCode)) {
-                $isSuspended = $isSuspended === null ? 0 : $isSuspended;
-                $isUma = $isUma === null ? 0 : $isUma;
-            } elseif ($isSuspended === null && $this->isSuspensionEndStatusCode($statusCode)) {
-                $isSuspended = 0;
-            }
-
-            if ($isSuspended === null && $this->isSuspensionStartStatusCode($statusCode)) {
-                $isSuspended = 1;
-            }
-
-            if ($isUma === null && strpos($statusCode, 'UMA') !== false) {
-                $isUma = 1;
-            }
-
-            $identity = $tickerCode.'|'.$tradeDate.'|'.$statusCode.'|'.$sourceName;
+            $identity = $tickerCode.'|'.$tradeDate.'|'.$eventTypeCode.'|'.$sourceName;
             if (isset($seen[$identity])) {
-                $errors[] = 'line '.$line.': duplicate ticker_code/trade_date/status_code/source_name in CSV.';
+                $errors[] = 'line '.$line.': duplicate ticker_code/trade_date/event_type_code/source_name in CSV.';
                 continue;
             }
             $seen[$identity] = true;
@@ -223,9 +206,7 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
                 'ticker_id' => (int) $tickerIdsByCode[$tickerCode],
                 'ticker_code' => $tickerCode,
                 'trade_date' => $tradeDate,
-                'status_code' => $statusCode,
-                'is_suspended' => $isSuspended,
-                'is_uma' => $isUma,
+                'event_type_code' => $eventTypeCode,
                 'source_name' => $sourceName,
                 'source_ref' => $sourceRef !== '' ? substr($sourceRef, 0, 255) : null,
                 'notes' => $notes !== '' ? substr($notes, 0, 255) : null,
@@ -237,15 +218,15 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
         return [
             'valid_rows' => $validRows,
             'errors' => $errors,
-            'status_codes' => array_values(array_unique(array_map(function ($row) {
-                return $row['status_code'];
+            'event_type_codes' => array_values(array_unique(array_map(function ($row) {
+                return $row['event_type_code'];
             }, $validRows))),
         ];
     }
 
-    private function renderSummary($inputFile, $rowCount, $validCount, $upsertedCount, $errorCount, $apply, array $statusCodes)
+    private function renderSummary($inputFile, $rowCount, $validCount, $upsertedCount, $errorCount, $apply, array $eventTypeCodes)
     {
-        sort($statusCodes);
+        sort($eventTypeCodes);
 
         $this->line('input_file='.$this->normalizeOptionalPathForDisplay($inputFile));
         $this->line('source_name='.(string) ($this->option('source_name') ?: config('market_data.event_risk.trading_status_source_name', 'manual_trading_status_csv')));
@@ -254,26 +235,7 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
         $this->line('valid_row_count='.(int) $validCount);
         $this->line('upserted_count='.(int) $upsertedCount);
         $this->line('error_count='.(int) $errorCount);
-        $this->line('status_codes='.implode(',', $statusCodes));
-    }
-
-    private function nullableBool($value)
-    {
-        $value = strtolower(trim((string) $value));
-
-        if ($value === '') {
-            return ['valid' => true, 'value' => null];
-        }
-
-        if (in_array($value, ['1', 'true', 'yes', 'y'], true)) {
-            return ['valid' => true, 'value' => 1];
-        }
-
-        if (in_array($value, ['0', 'false', 'no', 'n'], true)) {
-            return ['valid' => true, 'value' => 0];
-        }
-
-        return ['valid' => false, 'value' => null];
+        $this->line('event_type_codes='.implode(',', $eventTypeCodes));
     }
 
     private function normalizeHeader($header)
@@ -287,34 +249,6 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
         $code = preg_replace('/[^A-Z0-9]+/', '_', $code);
 
         return trim((string) $code, '_');
-    }
-
-    private function isGlobalNormalStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        return in_array($statusCode, ['ACTIVE', 'NORMAL', 'OPEN', 'REGULAR', 'RESUMED', 'RESUME_TRADING'], true);
-    }
-
-    private function isSuspensionStartStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        return (strpos($statusCode, 'SUSPEND') !== false || strpos($statusCode, 'HALT') !== false)
-            && ! $this->isSuspensionEndStatusCode($statusCode);
-    }
-
-    private function isSuspensionEndStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        foreach (['UNSUSPEND', 'RESUME', 'SUSPENSION_LIFTED', 'SUSPEND_LIFTED', 'LIFTED_SUSPENSION'] as $needle) {
-            if (strpos($statusCode, $needle) !== false) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function isEmptyCsvLine(array $line)

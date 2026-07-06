@@ -272,6 +272,8 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('IMPORT_ONLY_ACCEPTED', 'IMPORT_PROMOTE', 'Import-only request accepted; data may be ingested but not promoted.', 'INFO', 1),
 ('IMPORT_ONLY_COMPLETED', 'IMPORT_PROMOTE', 'Import-only ingest completed with traceable candidate/import context.', 'INFO', 1),
 ('IMPORT_ONLY_NOT_PROMOTED', 'IMPORT_PROMOTE', 'Import-only run completed without readable publication or pointer switch.', 'INFO', 1),
+('IMPORT_ONLY_COMPLETED_NOT_PROMOTED', 'IMPORT_PROMOTE', 'Import-only run was closed as completed non-readable candidate and still requires explicit promote.', 'INFO', 1),
+('STALE_ACTIVE_RUN_CANCELLED', 'RUN', 'Stale active run was cancelled because it no longer represented an active process.', 'WARN', 1),
 ('IMPORT_PROMOTE_BOUNDARY_VERIFIED', 'IMPORT_PROMOTE', 'Import/promote boundary was verified.', 'INFO', 1),
 ('IMPORT_PROMOTE_BOUNDARY_VIOLATION', 'IMPORT_PROMOTE', 'Import/promote boundary violation detected.', 'HARD', 1),
 ('REQUEST_MODE_MISSING', 'IMPORT_PROMOTE', 'Request mode is missing from a run context that requires explicit intent.', 'HARD', 1),

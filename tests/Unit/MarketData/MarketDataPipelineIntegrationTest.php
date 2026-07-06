@@ -4221,13 +4221,14 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
 
         $this->assertSame('INGEST_BARS', $run->stage);
-        $this->assertSame('RUNNING', $run->lifecycle_state);
+        $this->assertSame('COMPLETED', $run->lifecycle_state);
         $this->assertNull($run->terminal_status);
         $this->assertSame('NOT_READABLE', $run->publishability_state);
         $this->assertNull($run->coverage_gate_state);
         $this->assertNull($run->bars_batch_hash);
         $this->assertNull($run->sealed_at);
-        $this->assertNull($run->final_reason_code);
+        $this->assertSame('IMPORT_ONLY_COMPLETED_NOT_PROMOTED', $run->final_reason_code);
+        $this->assertNotNull($run->finished_at);
         $this->assertSame(1, (int) $run->bars_rows_written);
 
         $this->assertNotNull($publication);
@@ -4245,6 +4246,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
                 ->where('run_id', $run->run_id)
                 ->where('stage', 'INGEST_BARS')
                 ->where('event_type', 'STAGE_COMPLETED')
+                ->exists()
+        );
+
+        $this->assertTrue(
+            DB::table('eod_run_events')
+                ->where('run_id', $run->run_id)
+                ->where('stage', 'INGEST_BARS')
+                ->where('event_type', 'IMPORT_ONLY_COMPLETED_NOT_PROMOTED')
+                ->where('reason_code', 'IMPORT_ONLY_COMPLETED_NOT_PROMOTED')
                 ->exists()
         );
 
@@ -4699,6 +4709,97 @@ class MarketDataPipelineIntegrationTest extends TestCase
     private function makeBackfillServiceWithApiFetcher(callable $fetcher): MarketDataBackfillService
     {
         return new MarketDataBackfillService(new App\Infrastructure\Persistence\MarketData\MarketCalendarRepository(), $this->makePipelineWithApiFetcher($fetcher));
+    }
+
+    public function test_stale_running_import_only_run_is_cancelled_before_new_owning_run_is_created(): void
+    {
+        config()->set('market_data.pipeline.active_run_stale_minutes', 60);
+        $old = Carbon::now(config('market_data.platform.timezone'))->subHours(2);
+
+        DB::table('eod_runs')->insert([
+            'run_id' => 901,
+            'trade_date_requested' => '2026-03-21',
+            'trade_date_effective' => null,
+            'lifecycle_state' => 'RUNNING',
+            'terminal_status' => null,
+            'quality_gate_state' => 'PENDING',
+            'publishability_state' => 'NOT_READABLE',
+            'stage' => 'INGEST_BARS',
+            'source' => 'manual_file',
+            'request_mode' => 'import_only',
+            'source_name' => null,
+            'source_provider' => null,
+            'source_input_file' => null,
+            'source_timeout_seconds' => null,
+            'source_retry_max' => null,
+            'source_attempt_count' => null,
+            'source_success_after_retry' => null,
+            'source_retry_exhausted' => null,
+            'source_final_http_status' => null,
+            'source_final_reason_code' => null,
+            'source_file_hash' => null,
+            'source_file_hash_algorithm' => null,
+            'source_file_size_bytes' => null,
+            'source_file_row_count' => null,
+            'coverage_universe_count' => null,
+            'coverage_available_count' => null,
+            'coverage_missing_count' => null,
+            'coverage_ratio' => null,
+            'coverage_min_threshold' => null,
+            'coverage_gate_state' => null,
+            'coverage_threshold_mode' => null,
+            'coverage_universe_basis' => null,
+            'coverage_contract_version' => null,
+            'coverage_missing_sample_json' => null,
+            'bars_rows_written' => null,
+            'indicators_rows_written' => null,
+            'eligibility_rows_written' => null,
+            'invalid_bar_count' => null,
+            'invalid_indicator_count' => null,
+            'hard_reject_count' => null,
+            'warning_count' => null,
+            'notes' => 'request_mode=import_only',
+            'bars_batch_hash' => null,
+            'indicators_batch_hash' => null,
+            'eligibility_batch_hash' => null,
+            'config_version' => 'v1',
+            'config_hash' => null,
+            'config_snapshot_ref' => null,
+            'supersedes_run_id' => null,
+            'publication_id' => null,
+            'publication_version' => null,
+            'is_current_publication' => 0,
+            'correction_id' => null,
+            'promote_mode' => null,
+            'publish_target' => null,
+            'final_reason_code' => null,
+            'sealed_at' => null,
+            'sealed_by' => null,
+            'seal_note' => null,
+            'started_at' => $old,
+            'finished_at' => null,
+            'created_at' => $old,
+            'updated_at' => $old,
+        ]);
+
+        $repository = new EodRunRepository();
+        $newRun = $repository->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'import_only');
+        $staleRun = DB::table('eod_runs')->where('run_id', 901)->first();
+
+        $this->assertNotSame(901, (int) $newRun->run_id);
+        $this->assertSame('PENDING', $newRun->lifecycle_state);
+        $this->assertSame('CANCELLED', $staleRun->lifecycle_state);
+        $this->assertNull($staleRun->terminal_status);
+        $this->assertSame('NOT_READABLE', $staleRun->publishability_state);
+        $this->assertSame('STALE_ACTIVE_RUN_CANCELLED', $staleRun->final_reason_code);
+        $this->assertNotNull($staleRun->finished_at);
+        $this->assertTrue(
+            DB::table('eod_run_events')
+                ->where('run_id', 901)
+                ->where('event_type', 'STALE_ACTIVE_RUN_CANCELLED')
+                ->where('reason_code', 'STALE_ACTIVE_RUN_CANCELLED')
+                ->exists()
+        );
     }
 
     private function makePipeline(): MarketDataPipelineService

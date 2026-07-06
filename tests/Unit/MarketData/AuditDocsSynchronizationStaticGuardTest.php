@@ -26,7 +26,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $trackerActiveSession = $this->activeSessionName($tracker);
 
         $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Market Data Indicator Warmup Window Audit', $statusActiveSession);
+        $this->assertSame('Trading Status Source Model Semantic Simplification', $statusActiveSession);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
         $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
 
@@ -170,7 +170,7 @@ $this->assertStringContainsString('replay_id=2', $status.$tracker);
         $activeSession = $this->activeSessionName($status);
         $this->assertStringContainsString($activeSession, $implementationEntry);
         $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('MARKET_DATA_INDICATOR_WARMUP_WINDOW_CONTRACT', $contractEntry);
+        $this->assertStringContainsString('MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_CONTRACT', $contractEntry);
 
         $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
         $trackerContracts = $this->canonicalContractsFromTracker($tracker);
@@ -361,7 +361,7 @@ public function test_market_benchmark_indicator_extension_final_lock_is_recorded
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(351, $registryCodes);
+        $this->assertCount(353, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

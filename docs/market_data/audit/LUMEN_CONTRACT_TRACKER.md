@@ -3,12 +3,27 @@
 ## ACTIVE SESSION
 
 ACTIVE SESSION:
-- Market Data Indicator Warmup Window Audit
+- Trading Status Source Model Semantic Simplification
 
 [SESSION_STATUS] COMPLETED
 
 [CURRENT_SOURCE_LOCK]
 
+- MARKET_DATA_TRADING_STATUS_SOURCE_MODEL=SIMPLIFIED_CANONICAL_EVENT_TYPE_DICTIONARY; source events store only `event_type_code` plus source metadata.
+- MARKET_DATA_TRADING_STATUS_SOURCE_TABLE_COLUMNS=NO_STATUS_CODE_NO_STATUS_EFFECT_NO_EVENT_RISK_SCOPE_NO_COVERAGE_EXCLUSION_FLAG_NO_IS_SUSPENDED_NO_IS_UMA_IN_EVENT_TABLE.
+- MARKET_DATA_TRADING_STATUS_EVENT_TYPES=SUSPENDED_SUSPENSION_OBSERVED_UNSUSPENDED_SPECIAL_MONITORING_START_SPECIAL_MONITORING_END_UMA.
+- MARKET_DATA_TRADING_STATUS_EXPECTED_BAR_POLICY=BAR_REQUIRED_BAR_NOT_REQUIRED_BAR_REQUIRED_WITH_RISK.
+- MARKET_DATA_TRADING_STATUS_LONG_SUSPENSION_RULE=LONG_SUSPENSION_GT_6M_MAPS_TO_SUSPENSION_OBSERVED_NOT_SUSPENDED_START.
+- MARKET_DATA_TRADING_STATUS_BAR_NOT_REQUIRED_RULE=SUSPENDED_AND_SUSPENSION_OBSERVED_DO_NOT_COUNT_AS_MISSING_EOD_BAR.
+- MARKET_DATA_TRADING_STATUS_IMPORT_CSV=ticker_code_trade_date_event_type_code_optional_source_name_source_ref_notes; legacy semantic headers are blocked.
+- MARKET_DATA_TRADING_STATUS_ACTIVE_RULE=ACTIVE_IS_RESOLVED_STATE_NOT_SOURCE_EVENT; absence of source data must not fabricate ACTIVE or expected-bar policy rows.
+- MARKET_DATA_EOD_INDICATORS_TRADING_STATUS_PROJECTION=RUNTIME_PROVEN_LOCKED_CANONICAL_SINGLE_PRIMARY_CODE_NO_ACTIVE_NO_COMPOSITE; no-source/no-risk projects NULL, exact UNSUSPENDED remains UNSUSPENDED, and composite context moves to event_risk_reasons.
+- MARKET_DATA_EOD_INDICATORS_TRADING_STATUS_CODE_CANONICAL_ONLY=LOCKED_ALLOWED_SPECIAL_MONITORING_END_SPECIAL_MONITORING_START_SUSPENDED_SUSPENSION_OBSERVED_UMA_UNSUSPENDED_OR_NULL.
+- MARKET_DATA_EOD_INDICATORS_LEGACY_TRADING_STATUS_PROJECTION_COUNT=0; legacy `ACTIVE`, `SPECIAL_MONITORING`, `SPECIAL_MONITORING_EXIT`, and comma-composite `trading_status_code` values are fully removed from current `eod_indicators` after operator recompute.
+- MARKET_DATA_EOD_INDICATORS_RECOMPUTE_CURRENT_RANGE_PROOF=PASSED_2023_01_02_TO_2026_06_29_FROM_EXISTING_CURRENT_BARS_NO_SOURCE_OR_BAR_WRITES.
+- FULL_MARKET_DATA_PHPUNIT_AFTER_EOD_INDICATORS_TRADING_STATUS_PROJECTION_NORMALIZATION=PASSED (648 tests, 9577 assertions).
+- MARKET_DATA_BACKFILL_2026_06_29_FINAL=PASSED run_id=37961; publication_id=38228; 872/887 coverage, ratio=0.983089, coverage PASS, promote PROMOTED, evidence EXPORTED, fixture GENERATED, replay VERIFIED, readable READABLE.
+- FULL_MARKET_DATA_PHPUNIT_AFTER_TRADING_STATUS_NON_EXCLUSION_CLEAR=PASSED (651 tests, 9627 assertions).
 - MARKET_DATA_INDICATOR_RECOMPUTE_EVIDENCE_NOOP_FIX=RESOLVED_RUNTIME_PROVEN; unchanged correction-current recompute preserves the prior current publication and exports correction evidence instead of failing run evidence with EVIDENCE_PUBLICATION_NOT_FOUND.
 - FULL_MARKET_DATA_PHPUNIT_AFTER_RECOMPUTE_COMMAND=PASSED (640 tests, 9539 assertions) after evidence no-op fix and final documentation sync baseline.
 - FULL_MARKET_DATA_PHPUNIT_LATEST_DOCS_REVIEW_2026_06_08=PASSED (641 tests, 9547 assertions) via `vendor\bin\phpunit`.
@@ -44,16 +59,16 @@ ACTIVE SESSION:
 - MARKET_DATA_MISSING_TICKER_PARTIAL_SOURCE_ACQUISITION_RULE=ANY_FAILED_TICKER_OR_PARTIAL_WINDOW_BLOCKS_BEFORE_IMPORT_PROMOTE_CORRECTION
 - MARKET_DATA_MISSING_TICKER_PARTIAL_SOURCE_ACQUISITION_OUTPUT=STATUS_BLOCKED_STAGE_SOURCE_ACQUISITION_DIAGNOSTIC_ONLY_NO_RUN_ID
 - MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_STATUS=DONE_RESOLVER_IMPORT_GUARD_STATIC_FULL_MARKETDATA_PHPUNIT_PASS
-- MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_RULE=INDEPENDENT_SUSPENSION_AND_SPECIAL_MONITORING_STATE_UNTIL_SOURCE_BACKED_CLEAR_EVENT
-- MARKET_DATA_TRADING_STATUS_SUSPENSION_CLEAR_CODES=ACTIVE_NORMAL_OPEN_REGULAR_RESUMED_RESUME_TRADING_UNSUSPENDED_SUSPENSION_LIFTED
-- MARKET_DATA_TRADING_STATUS_SPECIAL_MONITORING_CLEAR_CODES=SPECIAL_MONITORING_EXIT_SPECIAL_MONITORING_REMOVED_REMOVED_FROM_SPECIAL_MONITORING
-- MARKET_DATA_TRADING_STATUS_EXACT_EVENT_RULE=UMA_AND_CORPORATE_ACTION_REMAIN_EXACT_DATE_CONTEXT
+- MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_RULE=CANONICAL_EVENT_TYPE_DICTIONARY_CONTROLS_EXPECTED_BAR_AND_RISK; SUSPENDED_OR_SUSPENSION_OBSERVED_UNTIL_UNSUSPENDED_SPECIAL_MONITORING_START_UNTIL_END_UMA_EXACT_DATE
+- MARKET_DATA_TRADING_STATUS_SUSPENSION_CLEAR_CODES=UNSUSPENDED_ONLY
+- MARKET_DATA_TRADING_STATUS_SPECIAL_MONITORING_CLEAR_CODES=SPECIAL_MONITORING_END_ONLY
+- MARKET_DATA_TRADING_STATUS_EXACT_EVENT_RULE=UMA_AND_CORPORATE_ACTION_REMAIN_EXACT_DATE_EVENT_RISK_CONTEXT; UMA_HAS_NO_END_PAIR
 - MARKET_DATA_MISSING_TICKER_LIFECYCLE_BACKFILL_STATUS=DONE_COMMAND_HELP_PLAN_BACKFILL_STATIC_AUDIT_PHPUNIT_PASS
 - MARKET_DATA_MISSING_TICKER_BACKFILL_COMMAND=market-data:backfill:missing-tickers
 - MARKET_DATA_MISSING_TICKER_BACKFILL_SCOPE=ONLY_CURRENT_EOD_BAR_GAPS_BY_TICKER_MASTER_UNIVERSE
 - MARKET_DATA_MISSING_TICKER_BACKFILL_CANDIDATE_RULE=CURRENT_BARS_PLUS_MISSING_API_ROWS_THEN_FULL_LIFECYCLE_PROMOTE_EVIDENCE_REPLAY
 - MARKET_DATA_EVENT_RISK_SOURCE_CONTEXT_STATUS=DONE_SCHEMA_IMPORT_COMPUTE_HASH_HISTORY_READ_MODEL_CARRY_FORWARD_STATE_FULL_MARKETDATA_PHPUNIT_PASS
-- MARKET_DATA_EVENT_RISK_SOURCE_TABLES=market_data_corporate_actions,market_data_trading_status_events
+- MARKET_DATA_EVENT_RISK_SOURCE_TABLES=market_data_corporate_actions,market_data_trading_status_event_types,market_data_trading_status_events
 - MARKET_DATA_EVENT_RISK_IMPORT_COMMANDS=market-data:events:import-corporate-actions,market-data:events:import-trading-status
 - MARKET_DATA_EVENT_RISK_NULL_RULE=NO_SOURCE_NULL_EXPLICIT_NON_RISK_ZERO_RISK_SOURCE_ONE
 - MARKET_DATA_EVENT_RISK_PUBLICATION_RULE=SOURCE_IMPORT_ONLY_RECOMPUTE_PROMOTE_REQUIRED_FOR_CURRENT_PUBLICATIONS
@@ -138,6 +153,41 @@ ACTIVE SESSION:
 ---
 
 ## CURRENT WORKING CONTRACT
+
+- MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_CONTRACT -> LOCKED
+
+  [LAST_UPDATED] 2026-07-05
+
+  [RELATED_IMPLEMENTATION] Trading Status Source Model Semantic Simplification
+
+  [DEFINED]
+  - Trading-status source truth is `event_type_code` plus source/audit metadata only.
+  - Canonical event types are `SUSPENDED`, `SUSPENSION_OBSERVED`, `UNSUSPENDED`, `SPECIAL_MONITORING_START`, `SPECIAL_MONITORING_END`, and `UMA`.
+  - `SUSPENSION_OBSERVED` is the canonical event for long-suspension snapshot/source observation; it is not a suspension-start transition.
+  - `expected_bar_policy` controls whether an EOD bar is required: `BAR_REQUIRED`, `BAR_NOT_REQUIRED`, or `BAR_REQUIRED_WITH_RISK`.
+
+  [ENFORCED]
+  - Operators do not import `expected_bar_policy`, `risk_family`, transition, carry-forward, or clear fields in daily CSV files.
+  - `SUSPENDED` and `SUSPENSION_OBSERVED` both resolve to `BAR_NOT_REQUIRED`, so they do not increase missing-bar coverage counts.
+  - `UNSUSPENDED` clears suspension and returns the ticker to `BAR_REQUIRED` from the effective date.
+  - `UMA` remains exact-date risk context; `SPECIAL_MONITORING_START` carries forward until `SPECIAL_MONITORING_END`.
+  - `ACTIVE` is a resolved state only and is never a source event.
+  - `eod_indicators.trading_status_code` is a single canonical primary projection, not a legacy resolved-state/composite string; no-source/no-risk rows project NULL.
+
+  [VALIDATED]
+  - Operator-local projection proof supplied: `EventRiskSourceRepositoryTest.php` OK (8 tests, 43 assertions), `IndicatorVectorServiceTest.php` OK (9 tests, 80 assertions), `MarketDataWatchlistReadModelTest.php` OK (3 tests, 41 assertions), and `MarketDataSqliteSchemaSyncTest.php` OK (5 tests, 306 assertions).
+  - Operator-local audit/static proof supplied: audit-doc guard trio passed, StaticGuard passed OK (229 tests, 5872 assertions), and full `tests/Unit/MarketData` passed OK (648 tests, 9577 assertions).
+  - Runtime recompute proof supplied: current-indicator recompute from existing current bars passed across 2023-01-02 through 2026-06-29 via successful batches, with `failed_count=0`, `skipped_count=0`, `all_passed=1`, `coverage_gate_state=PASS`, and all source/bar write flags false.
+  - DB canonical validation supplied: legacy `trading_status_code` projection count is zero globally; invalid non-null `trading_status_code` values are absent.
+
+  [FINAL_RULE]
+  - Trading status source rows must remain canonical and non-duplicative. Expected-bar behavior is dictionary-owned; bar-not-required tickers are removed from the coverage denominator before missing-bar calculation. Indicator projection must not emit legacy `ACTIVE`, `SPECIAL_MONITORING`, `SPECIAL_MONITORING_EXIT`, or comma-composite status codes after recompute.
+  - `trading_status_code` is limited to `SPECIAL_MONITORING_END`, `SPECIAL_MONITORING_START`, `SUSPENDED`, `SUSPENSION_OBSERVED`, `UMA`, `UNSUSPENDED`, or NULL. Independent risk context can keep `event_risk_flag=1` on clear-event rows and is represented in `event_risk_reasons`, not by composite `trading_status_code`.
+
+  [LOCK_CONDITION]
+  - SATISFIED. Targeted projection tests, audit/static guards, full MarketData PHPUnit, recompute-current runtime proof, and final DB canonical validation all passed.
+
+---
 
 - MARKET_DATA_INDICATOR_WARMUP_WINDOW_CONTRACT -> LOCKED
 
@@ -408,53 +458,74 @@ ACTIVE SESSION:
   - Missing-ticker lifecycle mutation requires complete source acquisition for the requested missing ticker set. Partial provider acquisition must stop as source-acquisition `BLOCKED` with diagnostics and no import/promote/correction mutation.
 
 
-- MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_CONTRACT -> LOCKED
 
-  [LAST_UPDATED] 2026-06-04
 
-  [RELATED_IMPLEMENTATION] Market Data Trading Status Carry-Forward State
+- MARKET_DATA_TRADING_STATUS_NON_EXCLUSION_AND_LONG_SUSPENSION_COVERAGE_CONTRACT -> SUPERSEDED_BY_TRADING_STATUS_SOURCE_MODEL_SIMPLIFICATION
 
-  [REVIEW_STATUS] LOCAL_RESOLVER_IMPORT_GUARD_STATIC_FULL_MARKETDATA_PHPUNIT_PASS
+  [LAST_UPDATED] 2026-07-02
+
+  [RELATED_IMPLEMENTATION] Trading Status Source Model Semantic Simplification
+
+  [REVIEW_STATUS] SUPERSEDED_BY_CANONICAL_EVENT_TYPE_DICTIONARY_SOURCE_MODEL
+
+  [DEFINED]
+  - This legacy contract is retained as historical evidence only.
+  - Current trading-status source truth is now `MARKET_DATA_TRADING_STATUS_SOURCE_MODEL_SIMPLIFIED_CANONICAL_EVENT_TYPE_DICTIONARY` with `SUSPENSION_OBSERVED` for long-suspension snapshot observations.
+  - Source events must use only canonical `event_type_code` values: `SUSPENDED`, `SUSPENSION_OBSERVED`, `UNSUSPENDED`, `SPECIAL_MONITORING_START`, `SPECIAL_MONITORING_END`, and `UMA`.
+  - `coverage_exclusion_flag`, `event_risk_scope`, `status_effect`, `status_code`, `is_suspended`, and `is_uma` are no longer source-event table columns.
+  - Long-suspension source labels must map into canonical `SUSPENSION_OBSERVED`; halt/suspend-start source labels map into canonical `SUSPENDED`. Neither may introduce a new source-event semantic column or new boolean flag.
+
+  [ENFORCED]
+  - Expected-bar requirement semantics are owned only by `market_data_trading_status_event_types.expected_bar_policy`.
+  - `SUSPENDED` and `SUSPENSION_OBSERVED` both resolve to `BAR_NOT_REQUIRED`; neither should be counted as missing EOD bars.
+  - `UNSUSPENDED` clears only suspension.
+  - `SPECIAL_MONITORING_START` / `SPECIAL_MONITORING_END` are `BAR_REQUIRED_WITH_RISK` / `BAR_REQUIRED` state transitions and are not bar-not-required coverage exclusions.
+  - `UMA` is exact-date `BAR_REQUIRED_WITH_RISK` context and has no end pair.
+  - `ACTIVE` is not imported as a source event; it is only a resolved state when no active source-backed risk remains.
+
+  [VALIDATED]
+  - Superseding patch: `docs/market_data/patches/TRADING_STATUS_SOURCE_MODEL_SIMPLIFICATION_2026_07_02.md`.
+  - Canonical import sample: `docs/market_data/examples/trading_status_daily.csv`.
+
+- MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_CONTRACT_HISTORICAL_SUMMARY -> SUPERSEDED_BY_TRADING_STATUS_SOURCE_MODEL_SIMPLIFICATION
+
+  [LAST_UPDATED] 2026-07-02
+
+  [RELATED_IMPLEMENTATION] Trading Status Source Model Semantic Simplification
+
+  [REVIEW_STATUS] CANONICAL_EVENT_TYPE_DICTIONARY_SOURCE_MODEL_SYNTAX_PASS
 
   [HISTORY]
   - 2026-06-04 -> Contract opened after the operator clarified that suspension and special-monitoring states remain active until a source-backed clear event appears.
-  - 2026-06-04 -> Resolver and import inference were updated so stateful trading statuses no longer behave as exact-date-only rows.
-  - 2026-06-04 -> Contract locked after syntax, repository, and import-command targeted proof passed.
+  - 2026-07-02 -> Contract simplified: status semantics moved out of source rows into `market_data_trading_status_event_types`; `ACTIVE` and legacy boolean/status-effect columns are no longer source-event inputs.
 
   [DEFINED]
-- Trading status source rows are an event stream for stateful statuses.
-- Suspension state starts from `SUSPENDED`, `SUSPEND`, halt-style suspension codes, or `is_suspended=1`.
-- Suspension state remains active for later trade dates until a source-backed clear/normal row such as `ACTIVE`, `NORMAL`, `OPEN`, `REGULAR`, `RESUMED`, `RESUME_TRADING`, `UNSUSPENDED`, or suspension-lifted code appears.
-- Special-monitoring state starts from `SPECIAL_MONITORING`, `SPECIAL_NOTATION`, `NOTASI_KHUSUS`, or `WATCHLIST`.
-- Special-monitoring state remains active until an exit/removed code such as `SPECIAL_MONITORING_EXIT`, `SPECIAL_MONITORING_REMOVED`, `REMOVED_FROM_SPECIAL_MONITORING`, `WATCHLIST_EXIT`, or `WATCHLIST_REMOVED` appears.
-- Suspension and special-monitoring state are independent; a normal trading row clears suspension but does not clear special monitoring.
-  - UMA and corporate actions remain exact-date event context unless a later contract explicitly defines a persistent UMA range.
+  - Trading-status source rows are an event stream, not a current-state table.
+  - Canonical source event types are limited to `SUSPENDED`, `SUSPENSION_OBSERVED`, `UNSUSPENDED`, `SPECIAL_MONITORING_START`, `SPECIAL_MONITORING_END`, and `UMA`.
+  - `SUSPENDED` starts suspension state; `SUSPENSION_OBSERVED` records an active suspension snapshot; both carry forward until `UNSUSPENDED`.
+  - `UNSUSPENDED` clears suspension only.
+  - `SPECIAL_MONITORING_START` starts special-monitoring event-risk state and carries forward until `SPECIAL_MONITORING_END`.
+  - `SPECIAL_MONITORING_END` clears special-monitoring only.
+  - `UMA` is exact-date event-risk context only and has no carry-forward/end pair.
+  - Absence of source rows must not fabricate `ACTIVE`, include, exclude, or no-risk rows.
 
   [IMPLEMENTED]
-  - Implemented in `EventRiskSourceRepository::resolveEventRiskContextForTickerIds`.
-  - Import inference hardening is implemented in `ImportTradingStatusEventsCommand`.
-  - Existing indicator compute, hash/seal/history, and watchlist read plumbing continue to consume the resolved event-risk context without bypass.
+  - Implemented in `EventRiskSourceRepository::resolveEventRiskContextForTickerIds` using `market_data_trading_status_event_types`.
+  - Implemented in `ImportTradingStatusEventsCommand` by requiring `event_type_code` and blocking legacy semantic headers.
+  - Existing indicator compute, hash/seal/history, and watchlist read plumbing continue to consume resolved projection fields without reading duplicated source-event columns.
 
   [ENFORCED]
-- Absence of source rows still leaves event-risk context NULL.
-- Prior source-backed suspension/special-monitoring rows carry forward until the matching recognized source-backed clear event is present.
-- Clear/normal rows are non-risk only when no independent risk state remains active.
-- `UNSUSPENDED` / resume / lifted codes are not inferred as `is_suspended=1` even though they contain the word `SUSPEND`.
-  - Source import does not mutate current readable publication pointers; affected ranges from state start through clear/current require the existing lifecycle/promote/reseal flow before current indicators change.
+  - Source import does not mutate current readable publication pointers.
+  - Affected ranges from state start through clear/current require the existing lifecycle/promote/reseal flow before current indicators change.
+  - Projection fields such as `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons` are derived outputs, not source input columns.
 
   [VALIDATED]
   - Operator-local syntax proof: `php -l app\Infrastructure\Persistence\MarketData\EventRiskSourceRepository.php` -> no syntax errors.
   - Operator-local syntax proof: `php -l app\Console\Commands\MarketData\ImportTradingStatusEventsCommand.php` -> no syntax errors.
   - Canonical validation scope: `tests/Unit/MarketData`.
-  - Operator-local repository proof: `vendor\bin\phpunit tests\Unit\MarketData\EventRiskSourceRepositoryTest.php` -> OK (4 tests, 52 assertions).
-  - Operator-local trading-status import proof: `vendor\bin\phpunit tests\Unit\MarketData\ImportTradingStatusEventsCommandTest.php` -> OK (4 tests, 25 assertions).
-  - Operator-local event-risk/read-model regression proof: `IndicatorVectorServiceTest.php` -> OK (9 tests, 80 assertions), `MarketDataWatchlistReadModelTest.php` -> OK (3 tests, 41 assertions), and `MarketDataSqliteSchemaSyncTest.php` -> OK (5 tests, 296 assertions).
-  - Operator-local StaticGuard proof: `vendor\bin\phpunit tests\Unit\MarketData --filter "StaticGuard"` -> OK (227 tests, 5777 assertions).
-  - Operator-local audit/ops proof: `AuditDocsSynchronizationStaticGuardTest.php` -> OK (11 tests, 608 assertions), `ConfigEnvGovernanceCleanupStaticGuardTest.php` -> OK (10 tests, 124 assertions), `OpsEnvironmentBaselineStaticGuardTest.php` -> OK (8 tests, 107 assertions), `OperationalReadinessStaticGuardTest.php` -> OK (10 tests, 250 assertions), `OpsCommandSurfaceRuntimeMatrixStaticGuardTest.php` -> OK (6 tests, 128 assertions), and `ProductionValidationRuntimeProofStaticGuardTest.php` -> OK (15 tests, 491 assertions).
-  - Full MarketData proof after trading-status carry-forward state: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (616 tests, 9331 assertions).
 
   [FINAL_RULE]
-  - Stateful trading-status context must be resolved from source-backed event history, not exact target-date rows alone. Suspension and special-monitoring risks persist independently into later computed publications until the matching recognized source-backed clear event closes each state.
+  - Stateful trading-status context must be resolved from canonical source-backed event history and the event-type dictionary. The source-event table must stay minimal and must not reintroduce `status_code`, `status_effect`, `event_risk_scope`, `coverage_exclusion_flag`, `is_suspended`, `is_uma`, or `ACTIVE` as source event data.
 
 
 - MARKET_DATA_MISSING_TICKER_LIFECYCLE_BACKFILL_CONTRACT -> LOCKED
@@ -526,10 +597,10 @@ ACTIVE SESSION:
 
   [DEFINED]
   - Market-data may expose corporate-action, trading-status, UMA, suspend, and event-risk context as upstream publication-bound indicator context.
-  - Source tables are `market_data_corporate_actions` and `market_data_trading_status_events`.
+  - Source tables are `market_data_corporate_actions`, `market_data_trading_status_event_types`, and `market_data_trading_status_events`.
   - Publication-bound indicator fields are `corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`.
   - No source row means event-risk fields remain NULL. Missing source data must not be converted into a fake safe/non-risk value.
-  - Explicit non-risk trading status source rows may stamp `event_risk_flag=0`; corporate-action, UMA, suspend, or risky status source rows stamp `event_risk_flag=1` with reasons.
+  - Trading-status source rows store only canonical `event_type_code`; resolved projection fields are derived from the event-type dictionary. No source row means event-risk fields remain NULL.
   - Market-data still must not produce watchlist score, rank, buy/sell decision, target, stop, take-profit, or portfolio P/L.
 
   [IMPLEMENTED]
@@ -539,8 +610,8 @@ ACTIVE SESSION:
 
   [ENFORCED]
   - Import commands are dry-run by default and require `--apply` for writes.
-  - Import commands validate required headers, ticker master existence, valid date values, duplicate identities, source names, and boolean flags before upsert.
-  - Source upserts are idempotent by ticker/date/type/source identity for corporate actions and ticker/date/status/source identity for trading status.
+  - Import commands validate required headers, ticker master existence, valid date values, duplicate identities, source names, and canonical event type codes before upsert.
+  - Source upserts are idempotent by ticker/date/type/source identity for corporate actions and ticker/date/event_type/source identity for trading status.
   - Event-risk fields participate in indicator current/history copy, promotion, publication hash/seal input, publication manifest column contract, and watchlist read output.
   - Source imports do not mutate current readable publication pointers. Affected dates must be recomputed/promoted through the existing lifecycle before the new context becomes official current-readable market-data.
 
@@ -556,7 +627,7 @@ ACTIVE SESSION:
   - Operator-local full MarketData proof after event-risk source context: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (609 tests, 9229 assertions).
 
   [FINAL_RULE]
-  - LOCKED for the event-risk source context surface. Corporate-action/trading-status/UMA/suspend/event-risk data is source-backed nullable market-data context; no source row means NULL, explicit non-risk source rows may stamp zero, risk source rows stamp flags/reasons, and source import requires the existing lifecycle/promote/reseal flow before affected dates become official current-readable publications.
+  - LOCKED for the event-risk source context surface. Corporate-action/trading-status/UMA/suspend/event-risk data is source-backed nullable market-data context; no source row means NULL, trading-status semantics are resolved from `market_data_trading_status_event_types`, and source import requires the existing lifecycle/promote/reseal flow before affected dates become official current-readable publications.
 
   [NEXT_ACTION]
   - Import official source CSVs when available, then run the existing lifecycle/promote flow for affected dates and rerun evidence/replay for any current publication whose event-risk context changes.
@@ -4289,3 +4360,72 @@ Contract:
 Validation:
 
 - Docs-only contract and dictionary created.
+
+---
+
+## IMPORT_ONLY_COMPLETED_NON_READABLE_RUN_CLOSURE_CONTRACT
+
+Status: `LOCKED_LOCAL_MARKETDATA_PHPUNIT_PASS`
+
+Last updated: 2026-07-05
+
+Related implementation: `2026-07-05 - IMPORT-ONLY RUN CLOSURE + STALE ACTIVE RUN RECOVERY`
+
+[CONTRACT]
+- `eod_runs.lifecycle_state=RUNNING` must mean a process is actively executing.
+- Successful `request_mode=import_only` ingest must not remain `RUNNING` after command/service return.
+- Successful import-only ingest must close as `COMPLETED`, keep `terminal_status=NULL`, keep `publishability_state=NOT_READABLE`, keep `is_current_publication=0`, and write `final_reason_code=IMPORT_ONLY_COMPLETED_NOT_PROMOTED`.
+- Import-only closure must not append `RUN_FINALIZED` and must not imply consumer-readable publishability.
+
+[ENFORCEMENT]
+- `MarketDataPipelineService::completeIngest()` closes import-only success through `EodRunRepository::completeImportOnly()`.
+- `MarketDataPipelineService::completeIngestWithAcquiredRows()` closes import-only success through the same repository method.
+- `MarketDataPipelineService::completeRecoveredRowsPartial()` closes recovered-row import-only success through the same repository method.
+- `Import_Promote_Separation_Contract.md` and schema semantics now state that `RUNNING` is not a “not promoted yet” marker.
+
+[VALIDATION_STATUS]
+- Static/syntax validation passed in sandbox.
+- Operator-local targeted validation PASS:
+  - `MarketDataPipelineServiceTest.php --filter "complete_ingest"` -> OK (5 tests, 6 assertions).
+  - `MarketDataPipelineServiceTest.php --filter "recovered_rows_partial"` -> OK (1 test, 2 assertions).
+  - `MarketDataPipelineIntegrationTest.php --filter "import_only"` -> OK (2 tests, 29 assertions).
+  - `ImportPromoteSeparationStaticGuardTest.php` -> OK (6 tests, 147 assertions).
+  - `LoggingTraceabilityReasonCodesStaticGuardTest.php` -> OK (7 tests, 134 assertions).
+  - `AuditDocsSynchronizationStaticGuardTest.php --filter "test_reason_code_registry_and_seed_are_synchronized"` -> OK (1 test, 4 assertions).
+- Operator-local full MarketData validation PASS: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (649 tests, 9598 assertions).
+
+[GAP]
+- None for this contract scope.
+
+---
+
+## STALE_ACTIVE_RUN_RECOVERY_CONTRACT
+
+Status: `LOCKED_LOCAL_MARKETDATA_PHPUNIT_PASS`
+
+Last updated: 2026-07-05
+
+Related implementation: `2026-07-05 - IMPORT-ONLY RUN CLOSURE + STALE ACTIVE RUN RECOVERY`
+
+[CONTRACT]
+- Active owner lookup must not silently reuse an old `PENDING/RUNNING/FINALIZING` run that no longer represents an active process.
+- Stale active rows for the same requested date/source/request mode must be closed safely before a new owning run is created or reused.
+- Stale recovery must never create readable publication state, switch current pointers, or mark terminal success.
+
+[ENFORCEMENT]
+- `EodRunRepository::getOrCreateOwningRun()` calls stale-active cleanup before selecting active owner rows.
+- Stale threshold is configured by `MARKET_DATA_ACTIVE_RUN_STALE_MINUTES`, default `1440` minutes.
+- Stale rows close as `CANCELLED`, `terminal_status=NULL`, `publishability_state=NOT_READABLE`, `final_reason_code=STALE_ACTIVE_RUN_CANCELLED`, with reason-coded event `STALE_ACTIVE_RUN_CANCELLED`.
+
+[VALIDATION_STATUS]
+- Added DB-backed integration coverage for stale `RUNNING` cancellation before new owner creation.
+- Static/syntax validation passed in sandbox.
+- Operator-local targeted validation PASS:
+  - `MarketDataPipelineIntegrationTest.php --filter "stale_running"` -> OK (1 test, 8 assertions).
+  - `ImportPromoteSeparationStaticGuardTest.php` -> OK (6 tests, 147 assertions).
+  - `LoggingTraceabilityReasonCodesStaticGuardTest.php` -> OK (7 tests, 134 assertions).
+  - `AuditDocsSynchronizationStaticGuardTest.php --filter "test_reason_code_registry_and_seed_are_synchronized"` -> OK (1 test, 4 assertions).
+- Operator-local full MarketData validation PASS: `vendor\bin\phpunit tests\Unit\MarketData` -> OK (649 tests, 9598 assertions).
+
+[GAP]
+- None for this contract scope.

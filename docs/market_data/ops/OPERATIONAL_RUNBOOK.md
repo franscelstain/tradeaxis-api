@@ -80,7 +80,7 @@ Scheduler proof is not live provider proof. Do not claim provider/API readiness 
 
 | Command | Purpose | Required input | Safe default | Key output | Reason code / next action | Docs / proof |
 |---|---|---|---|---|---|---|
-| `market-data:daily` | Import-only daily sequence | `--requested_date` or `--latest`, `--source_mode`, optional `--input_file`, `--output_dir` | Import-only; no readable publish claim | `run_id`, `request_mode=import_only`, `import_status`, `promote_status=NOT_PROMOTED`, source summary | If no valid source, stop and export evidence; next action is fix source or rerun import | command surface, import/promote, fail-safe |
+| `market-data:daily` | Import-only daily sequence | `--requested_date` or `--latest`, `--source_mode`, optional `--input_file`, `--output_dir` | Import-only; no readable publish claim; successful run closes as `COMPLETED/NULL/NOT_READABLE` | `run_id`, `request_mode=import_only`, `import_status`, `promote_status=NOT_PROMOTED`, source summary | If no valid source, stop and export evidence; next action is fix source or rerun import | command surface, import/promote, fail-safe |
 | `market-data:eod-bars:ingest` | Acquire/canonicalize EOD bars | requested date/source/run context; optional explicit `--request_mode=full_publish` for stage-chain publish proof | stage-only | row counts, source context, invalid count, request mode | If zero valid rows, stop; next action is source fix | fail-safe, source resilience |
 | `market-data:eod-indicators:compute` | Compute deterministic indicators | requested date/source/run context | stage-only | stage status, hash context | If input artifact missing, stop and inspect run evidence | hash/seal |
 | `market-data:eod-indicators:recompute-current` | Recompute indicators from existing current readable bars | start/end date, force reason | `--dry-run`; normal run creates correction-current publication | per-date correction/run/publication summary; source/bar/import flags false | If it fails, previous current publication remains current; inspect correction/run evidence | current indicator recompute |
@@ -98,7 +98,7 @@ Scheduler proof is not live provider proof. Do not claim provider/API readiness 
 | `market-data:sector-indexes:import-bars` | Import source-backed sector index OHLC bars | CSV with `sector_index_code`, `trade_date`, `open`, `high`, `low`, `close`; optional `adj_close`, `volume` | dry-run unless `--apply` | row counts, valid rows, upsert count, benchmark codes, validation errors | Fix unknown sector index codes/OHLC ranges before apply; run the existing lifecycle/promote flow for affected dates after apply | sector rotation |
 | `market-data:sectors:import-memberships` | Import source-backed ticker-sector membership | CSV with `ticker_code`, `sector_code`, `effective_from`; optional `effective_to`, `source_name`, `source_ref` | dry-run unless `--apply` | row counts, valid rows, upsert count, validation errors | Fix unknown tickers/sector codes/date ranges before apply; run the existing lifecycle/promote flow for affected dates after apply | sector context |
 | `market-data:events:import-corporate-actions` | Import source-backed corporate action context | CSV with `ticker_code`, `action_date`, `action_type`; optional `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, action types, validation errors | Fix unknown tickers/date/type errors before apply; run the existing lifecycle/promote flow for affected dates after apply | event-risk context |
-| `market-data:events:import-trading-status` | Import source-backed trading status, UMA, suspension, and special-monitoring context | CSV with `ticker_code`, `trade_date`, `status_code`; optional `is_suspended`, `is_uma`, `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, status codes, validation errors | Fix unknown tickers/date/status errors before apply; suspension and special monitoring carry forward until clear/exit status; run the existing lifecycle/promote flow for the affected range from state start through clear/current after apply | event-risk context |
+| `market-data:events:import-trading-status` | Import source-backed trading status events | CSV with `ticker_code`, `trade_date`, `event_type_code`; optional `source_name`, `source_ref`, `notes`; sample `docs/market_data/examples/trading_status_daily.csv`; legacy semantic headers are blocked | dry-run unless `--apply` | row counts, valid rows, upsert count, event type codes, validation errors | Fix unknown tickers/date/event-type errors before apply; event semantics come only from `market_data_trading_status_event_types`; run the existing lifecycle/promote flow for the affected range after apply | event-risk context |
 | `market-data:replay:verify` | Verify executed run against fixture package | `run_id`, `fixture_path` | deterministic proof | replay id/status/mismatch reason | Mismatch blocks acceptance; next action is compare fixture/output and fix root cause | replay |
 | `market-data:replay:smoke` | Run built-in replay cases | `run_id` | deterministic smoke suite | valid/broken/missing/reason mismatch cases | Any failed case blocks readiness claim | replay |
 | `market-data:replay:backfill` | Replay verification over date range | start/end date, fixture case/root | deterministic range proof | case summaries | Failed case must be reason-coded and investigated | replay/backfill |
@@ -163,8 +163,13 @@ promoted=false
 pointer_switched=false
 source_mode=<api|manual_file>
 accepted_row_count=<n>
-reason_code=<registered code if any>
+reason_code=IMPORT_ONLY_COMPLETED_NOT_PROMOTED
+lifecycle_state=COMPLETED
+terminal_status=<NULL>
+publishability_state=NOT_READABLE
 ```
+
+`RUNNING` after command exit is not valid for a completed import-only run. If a prior active run exceeds `MARKET_DATA_ACTIVE_RUN_STALE_MINUTES`, it is closed as `CANCELLED/NOT_READABLE` with `STALE_ACTIVE_RUN_CANCELLED` before a new owning run is created or reused.
 
 Pass criteria:
 
@@ -271,6 +276,27 @@ Provider failure handling:
 | no valid data | FAILED/HELD + NOT_READABLE | no valid data family | Fix source; do not publish empty output |
 
 Provider retry must be bounded. Infinite retry is forbidden.
+
+
+
+## Trading-status coverage-exclusion triage
+
+Use this procedure when a lifecycle/backfill run is held because requested-date API rows are missing and the missing set includes tickers with trading-status history.
+
+1. Read final `run_summary.json` for the final `run_id` and record `publication_id`, `coverage_expected_count`, `coverage_available_count`, `coverage_missing_count`, `coverage_ratio`, `coverage_gate_state`, `promote_status`, and `publishability_state`.
+2. Run publication-specific status diagnostics for the same `publication_id` and split the universe into:
+   - effective suspended / coverage-exclusion tickers;
+   - event-risk non-exclusion tickers;
+   - residual provider missing tickers.
+3. Apply the canonical event-type rules from `market_data_trading_status_event_types`:
+   - `SUSPENDED` excludes coverage and carries forward until `UNSUSPENDED`.
+   - `UNSUSPENDED` clears only the active suspension state.
+   - `SPECIAL_MONITORING_START` carries event-risk context but does not exclude coverage.
+   - `SPECIAL_MONITORING_END` clears only the active special-monitoring state.
+   - `UMA` is exact-date event-risk context and has no carry-forward pair.
+   - `ACTIVE` is not imported as a source event; it is only a resolved state when no risk state remains active.
+4. Rerun the normal lifecycle with evidence and replay.
+5. Treat final `run_summary.json` plus publication-specific debug output as the authoritative result. Do not use stale failed rows in a reused `source_acquisition_checkpoint.json` as final residual coverage evidence.
 
 ## 7. Coverage, hash, seal, finalize, pointer sequence
 

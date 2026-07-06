@@ -172,12 +172,12 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertSame('CORPORATE_ACTION:DIVIDEND,UMA', $row['event_risk_reasons']);
     }
 
-    public function test_event_risk_context_survives_invalid_indicator_rows_without_faking_absence()
+    public function test_event_risk_context_survives_invalid_indicator_rows_without_faking_active_absence()
     {
         $service = new IndicatorVectorService();
         $config = $this->config();
         $config['event_risk_context'] = [
-            'trading_status_code' => 'ACTIVE',
+            'trading_status_code' => 'UNSUSPENDED',
             'is_suspended' => 0,
             'is_uma' => 0,
             'event_risk_flag' => 0,
@@ -187,7 +187,7 @@ class IndicatorVectorServiceTest extends TestCase
 
         $this->assertSame(0, $row['is_valid']);
         $this->assertSame('IND_INSUFFICIENT_HISTORY', $row['invalid_reason_code']);
-        $this->assertSame('ACTIVE', $row['trading_status_code']);
+        $this->assertSame('UNSUSPENDED', $row['trading_status_code']);
         $this->assertSame(0, $row['is_suspended']);
         $this->assertSame(0, $row['is_uma']);
         $this->assertSame(0, $row['event_risk_flag']);

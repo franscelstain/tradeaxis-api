@@ -290,6 +290,8 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `IMPORT_ONLY_ACCEPTED` | IMPORT_PROMOTE | INFO | Import-only request accepted; data may be ingested but not promoted. |
 | `IMPORT_ONLY_COMPLETED` | IMPORT_PROMOTE | INFO | Import-only ingest completed with traceable candidate/import context. |
 | `IMPORT_ONLY_NOT_PROMOTED` | IMPORT_PROMOTE | INFO | Import-only run completed without readable publication or pointer switch. |
+| `IMPORT_ONLY_COMPLETED_NOT_PROMOTED` | IMPORT_PROMOTE | INFO | Import-only run was closed as completed non-readable candidate and still requires explicit promote. |
+| `STALE_ACTIVE_RUN_CANCELLED` | RUN | WARN | Stale active run was cancelled because it no longer represented an active process. |
 | `IMPORT_PROMOTE_BOUNDARY_VERIFIED` | IMPORT_PROMOTE | INFO | Import/promote boundary was verified. |
 | `IMPORT_PROMOTE_BOUNDARY_VIOLATION` | IMPORT_PROMOTE | HARD | Import/promote boundary violation detected. |
 | `REQUEST_MODE_MISSING` | IMPORT_PROMOTE | HARD | Request mode is missing from a run context that requires explicit intent. |

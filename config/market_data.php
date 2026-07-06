@@ -13,6 +13,7 @@ return [
     'pipeline' => [
         'daily_enabled' => (bool) env('MARKET_DATA_DAILY_ENABLED', false),
         'default_source_mode' => env('MARKET_DATA_DEFAULT_SOURCE_MODE', 'api'),
+        'active_run_stale_minutes' => (int) env('MARKET_DATA_ACTIVE_RUN_STALE_MINUTES', 1440),
     ],
     'scheduler' => [
         'output_path' => env('MARKET_DATA_SCHEDULER_OUTPUT_PATH', 'storage/logs/market-data-scheduler.log'),
@@ -111,6 +112,7 @@ return [
     'event_risk' => [
         'corporate_actions_table' => env('MARKET_DATA_CORPORATE_ACTIONS_TABLE', 'market_data_corporate_actions'),
         'trading_status_events_table' => env('MARKET_DATA_TRADING_STATUS_EVENTS_TABLE', 'market_data_trading_status_events'),
+        'trading_status_event_types_table' => env('MARKET_DATA_TRADING_STATUS_EVENT_TYPES_TABLE', 'market_data_trading_status_event_types'),
         'corporate_action_source_name' => env('MARKET_DATA_CORPORATE_ACTION_SOURCE_NAME', 'manual_corporate_action_csv'),
         'trading_status_source_name' => env('MARKET_DATA_TRADING_STATUS_SOURCE_NAME', 'manual_trading_status_csv'),
     ],

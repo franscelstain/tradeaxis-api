@@ -34,6 +34,7 @@ class ImportPromoteSeparationStaticGuardTest extends TestCase
     public function test_import_only_path_cannot_enter_publish_side_effects(): void
     {
         $pipeline = file_get_contents($this->projectPath('app/Application/MarketData/Services/MarketDataPipelineService.php'));
+        $runs = file_get_contents($this->projectPath('app/Infrastructure/Persistence/MarketData/EodRunRepository.php'));
 
         foreach ([
             'assertAllowedRequestMode',
@@ -43,6 +44,7 @@ class ImportPromoteSeparationStaticGuardTest extends TestCase
             'IMPORT_ONLY_ACCEPTED',
             'IMPORT_ONLY_COMPLETED',
             'IMPORT_ONLY_NOT_PROMOTED',
+            'IMPORT_ONLY_COMPLETED_NOT_PROMOTED',
             'IMPORT_READABLE_STATE_BLOCKED',
             'IMPORT_PUBLICATION_CURRENT_BLOCKED',
             'IMPORT_POINTER_WRITE_BLOCKED',
@@ -52,6 +54,17 @@ class ImportPromoteSeparationStaticGuardTest extends TestCase
             'pointer_switched',
         ] as $needle) {
             $this->assertStringContainsString($needle, $pipeline);
+        }
+
+        foreach ([
+            'STALE_ACTIVE_RUN_CANCELLED',
+            'active_run_stale_minutes',
+            'lifecycle_state',
+            'CANCELLED',
+            'publishability_state',
+            'NOT_READABLE',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $runs);
         }
 
         $this->assertStringContainsString("return $".'this->executeStageSequence($requestedDate, $sourceMode, $correctionId, [', $pipeline);
@@ -120,6 +133,8 @@ class ImportPromoteSeparationStaticGuardTest extends TestCase
             'IMPORT_ONLY_ACCEPTED',
             'IMPORT_ONLY_COMPLETED',
             'IMPORT_ONLY_NOT_PROMOTED',
+            'IMPORT_ONLY_COMPLETED_NOT_PROMOTED',
+            'STALE_ACTIVE_RUN_CANCELLED',
             'REQUEST_MODE_INVALID',
             'REQUEST_MODE_IMPORT_BLOCKED_FROM_PROMOTE',
             'IMPORT_POINTER_WRITE_BLOCKED',
