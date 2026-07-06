@@ -134,23 +134,45 @@ trait UsesMarketDataSqlite
             $table->index(['action_type', 'action_date'], 'idx_md_corp_action_type_date');
         });
 
+        $schema->create('market_data_trading_status_event_types', function (Blueprint $table) {
+            $table->string('event_type_code', 64)->primary();
+            $table->string('risk_family', 64);
+            $table->string('transition_type', 32);
+            $table->string('expected_bar_policy', 32);
+            $table->boolean('carries_forward')->default(false);
+            $table->string('clears_risk_family', 64)->nullable();
+            $table->string('description', 255)->nullable();
+            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+
+            $table->index(['risk_family', 'transition_type'], 'idx_md_status_types_family_transition');
+            $table->index(['expected_bar_policy'], 'idx_md_status_types_expected_bar_policy');
+        });
+
+        DB::table('market_data_trading_status_event_types')->insert([
+            ['event_type_code' => 'SUSPENDED', 'risk_family' => 'SUSPENSION', 'transition_type' => 'START', 'expected_bar_policy' => 'BAR_NOT_REQUIRED', 'carries_forward' => 1, 'clears_risk_family' => null, 'description' => 'IDX suspends ticker trading.', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['event_type_code' => 'SUSPENSION_OBSERVED', 'risk_family' => 'SUSPENSION', 'transition_type' => 'OBSERVED', 'expected_bar_policy' => 'BAR_NOT_REQUIRED', 'carries_forward' => 1, 'clears_risk_family' => null, 'description' => 'Source snapshot shows ticker is still suspended, including IDX long-suspension lists; this is not a suspension start date.', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['event_type_code' => 'UNSUSPENDED', 'risk_family' => 'SUSPENSION', 'transition_type' => 'END', 'expected_bar_policy' => 'BAR_REQUIRED', 'carries_forward' => 0, 'clears_risk_family' => 'SUSPENSION', 'description' => 'IDX reopens ticker trading.', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['event_type_code' => 'SPECIAL_MONITORING_START', 'risk_family' => 'SPECIAL_MONITORING', 'transition_type' => 'START', 'expected_bar_policy' => 'BAR_REQUIRED_WITH_RISK', 'carries_forward' => 1, 'clears_risk_family' => null, 'description' => 'Ticker enters special monitoring.', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['event_type_code' => 'SPECIAL_MONITORING_END', 'risk_family' => 'SPECIAL_MONITORING', 'transition_type' => 'END', 'expected_bar_policy' => 'BAR_REQUIRED', 'carries_forward' => 0, 'clears_risk_family' => 'SPECIAL_MONITORING', 'description' => 'Ticker exits special monitoring.', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['event_type_code' => 'UMA', 'risk_family' => 'UMA', 'transition_type' => 'POINT_IN_TIME', 'expected_bar_policy' => 'BAR_REQUIRED_WITH_RISK', 'carries_forward' => 0, 'clears_risk_family' => null, 'description' => 'Unusual Market Activity notice.', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+        ]);
+
         $schema->create('market_data_trading_status_events', function (Blueprint $table) {
             $table->bigIncrements('trading_status_id');
             $table->unsignedBigInteger('ticker_id');
             $table->string('ticker_code', 16);
             $table->date('trade_date');
-            $table->string('status_code', 64);
-            $table->boolean('is_suspended')->nullable();
-            $table->boolean('is_uma')->nullable();
+            $table->string('event_type_code', 64);
             $table->string('source_name', 64)->default('manual_trading_status_csv');
             $table->string('source_ref', 255)->nullable();
             $table->string('notes', 255)->nullable();
             $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
 
-            $table->unique(['ticker_id', 'trade_date', 'status_code', 'source_name'], 'uq_md_trading_status_ticker_date_code_source');
+            $table->unique(['ticker_id', 'trade_date', 'event_type_code', 'source_name'], 'uq_md_trading_status_ticker_date_type_source');
             $table->index(['trade_date', 'ticker_id'], 'idx_md_trading_status_date_ticker');
-            $table->index(['status_code', 'trade_date'], 'idx_md_trading_status_code_date');
+            $table->index(['event_type_code', 'trade_date'], 'idx_md_trading_status_event_type_date');
         });
 
         $schema->create('market_benchmarks', function (Blueprint $table) {

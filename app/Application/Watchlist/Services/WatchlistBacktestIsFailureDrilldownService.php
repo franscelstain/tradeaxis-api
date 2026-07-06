@@ -417,7 +417,7 @@ class WatchlistBacktestIsFailureDrilldownService
                 ['score_metrics', 'corporate_action_types'],
             ]);
             $trade['corporate_action_types'] = $corporateActionTypes;
-            $trade['trading_status_code'] = $this->stringOrNull($this->firstAvailable($trade, [
+            $trade['trading_status_code'] = WatchlistTradingStatusSnapshotNormalizer::normalize($this->firstAvailable($trade, [
                 ['trading_status_code'],
                 ['score_metrics', 'trading_status_code'],
             ]));

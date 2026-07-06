@@ -6,6 +6,53 @@ use Illuminate\Support\Facades\DB;
 
 class EventRiskSourceRepository
 {
+    private const DEFAULT_TRADING_STATUS_EVENT_TYPES = [
+        'SUSPENDED' => [
+            'risk_family' => 'SUSPENSION',
+            'transition_type' => 'START',
+            'expected_bar_policy' => 'BAR_NOT_REQUIRED',
+            'carries_forward' => 1,
+            'clears_risk_family' => null,
+        ],
+        'SUSPENSION_OBSERVED' => [
+            'risk_family' => 'SUSPENSION',
+            'transition_type' => 'OBSERVED',
+            'expected_bar_policy' => 'BAR_NOT_REQUIRED',
+            'carries_forward' => 1,
+            'clears_risk_family' => null,
+        ],
+        'UNSUSPENDED' => [
+            'risk_family' => 'SUSPENSION',
+            'transition_type' => 'END',
+            'expected_bar_policy' => 'BAR_REQUIRED',
+            'carries_forward' => 0,
+            'clears_risk_family' => 'SUSPENSION',
+        ],
+        'SPECIAL_MONITORING_START' => [
+            'risk_family' => 'SPECIAL_MONITORING',
+            'transition_type' => 'START',
+            'expected_bar_policy' => 'BAR_REQUIRED_WITH_RISK',
+            'carries_forward' => 1,
+            'clears_risk_family' => null,
+        ],
+        'SPECIAL_MONITORING_END' => [
+            'risk_family' => 'SPECIAL_MONITORING',
+            'transition_type' => 'END',
+            'expected_bar_policy' => 'BAR_REQUIRED',
+            'carries_forward' => 0,
+            'clears_risk_family' => 'SPECIAL_MONITORING',
+        ],
+        'UMA' => [
+            'risk_family' => 'UMA',
+            'transition_type' => 'POINT_IN_TIME',
+            'expected_bar_policy' => 'BAR_REQUIRED_WITH_RISK',
+            'carries_forward' => 0,
+            'clears_risk_family' => null,
+        ],
+    ];
+
+    private ?array $tradingStatusEventTypes = null;
+
     public function suspendedTickerIdsAsOf(array $tickerIds, $tradeDate): array
     {
         $contexts = $this->resolveEventRiskContextForTickerIds($tickerIds, $tradeDate);
@@ -59,36 +106,45 @@ class EventRiskSourceRepository
         }
 
         $tradingStatuses = DB::table($this->tradingStatusesTable())
-            ->select('ticker_id', 'trade_date', 'status_code', 'is_suspended', 'is_uma')
+            ->select(['ticker_id', 'trade_date', 'event_type_code'])
             ->whereIn('ticker_id', $tickerIds)
             ->where('trade_date', '<=', $tradeDate)
             ->orderBy('ticker_id')
             ->orderBy('trade_date')
-            ->orderBy('status_code')
+            ->orderBy('event_type_code')
             ->get();
 
         $carryForwardStates = [];
 
         foreach ($tradingStatuses as $row) {
             $tickerId = (int) $row->ticker_id;
-            $statusCode = $this->normalizeCode($row->status_code);
+            $eventTypeCode = $this->normalizeCode($row->event_type_code);
+            $eventType = $this->tradingStatusEventType($eventTypeCode);
+
+            if ($eventType === null) {
+                continue;
+            }
 
             if ((string) $row->trade_date === (string) $tradeDate) {
                 $context = $contexts[$tickerId] ?? $this->emptyContext();
-                $context = $this->applyTradingStatusRowToContext($context, $row, $statusCode);
+                $context = $this->applyTradingStatusEventToContext($context, $eventTypeCode, $eventType, true);
                 $contexts[$tickerId] = $context;
             }
 
             $carryForwardStates[$tickerId] = $this->applyCarryForwardTransition(
-                $carryForwardStates[$tickerId] ?? $this->emptyCarryForwardState(),
+                $carryForwardStates[$tickerId] ?? [],
                 $row,
-                $statusCode
+                $eventTypeCode,
+                $eventType
             );
         }
 
         foreach ($carryForwardStates as $tickerId => $state) {
             $context = $contexts[$tickerId] ?? $this->emptyContext();
-            $context = $this->applyCarryForwardStateToContext($context, $state);
+
+            foreach ($state as $eventTypeCode => $eventType) {
+                $context = $this->applyTradingStatusEventToContext($context, $eventTypeCode, $eventType, false);
+            }
 
             if (! empty($context['_trading_status_codes']) || $context['is_suspended'] !== null || $context['is_uma'] !== null) {
                 $contexts[$tickerId] = $context;
@@ -128,24 +184,35 @@ class EventRiskSourceRepository
     public function upsertTradingStatusEvent(array $row): bool
     {
         $now = $row['updated_at'] ?? date('Y-m-d H:i:s');
+        $eventTypeCode = $this->normalizeCode($row['event_type_code'] ?? '');
+
+        if ($this->tradingStatusEventType($eventTypeCode) === null) {
+            throw new \InvalidArgumentException('Unknown trading status event_type_code: '.$eventTypeCode);
+        }
 
         return DB::table($this->tradingStatusesTable())->updateOrInsert(
             [
                 'ticker_id' => (int) $row['ticker_id'],
                 'trade_date' => $row['trade_date'],
-                'status_code' => $this->normalizeCode($row['status_code']),
+                'event_type_code' => $eventTypeCode,
                 'source_name' => $row['source_name'],
             ],
             [
                 'ticker_code' => $this->normalizeCode($row['ticker_code']),
-                'is_suspended' => $row['is_suspended'],
-                'is_uma' => $row['is_uma'],
                 'source_ref' => $row['source_ref'] ?? null,
                 'notes' => $row['notes'] ?? null,
                 'created_at' => $row['created_at'] ?? $now,
                 'updated_at' => $now,
             ]
         );
+    }
+
+    public function tradingStatusEventTypeCodes(): array
+    {
+        $codes = array_keys($this->tradingStatusEventTypes());
+        sort($codes);
+
+        return $codes;
     }
 
     private function emptyContext(): array
@@ -160,6 +227,7 @@ class EventRiskSourceRepository
             'event_risk_reasons' => null,
             '_corporate_action_types' => [],
             '_trading_status_codes' => [],
+            '_trading_status_exact_codes' => [],
             '_event_risk_reasons' => [],
         ];
     }
@@ -168,151 +236,91 @@ class EventRiskSourceRepository
     {
         $corporateActionTypes = array_keys($context['_corporate_action_types']);
         $tradingStatusCodes = array_keys($context['_trading_status_codes']);
+        $exactTradingStatusCodes = array_keys($context['_trading_status_exact_codes']);
         $eventRiskReasons = array_keys($context['_event_risk_reasons']);
 
         sort($corporateActionTypes);
         sort($tradingStatusCodes);
+        sort($exactTradingStatusCodes);
         sort($eventRiskReasons);
 
         $context['corporate_action_types'] = ! empty($corporateActionTypes) ? implode(',', $corporateActionTypes) : null;
-        $context['trading_status_code'] = ! empty($tradingStatusCodes) ? implode(',', $tradingStatusCodes) : null;
+        $context['trading_status_code'] = $this->primaryTradingStatusCode($tradingStatusCodes, $exactTradingStatusCodes);
         $context['event_risk_reasons'] = ! empty($eventRiskReasons) ? implode(',', $eventRiskReasons) : null;
+
+        if (! empty($tradingStatusCodes)) {
+            $context['is_suspended'] = $context['is_suspended'] !== null ? $context['is_suspended'] : 0;
+            $context['is_uma'] = $context['is_uma'] !== null ? $context['is_uma'] : 0;
+        }
 
         if ($context['event_risk_flag'] === null && (! empty($tradingStatusCodes) || $context['is_suspended'] !== null || $context['is_uma'] !== null)) {
             $context['event_risk_flag'] = 0;
         }
 
-        unset($context['_corporate_action_types'], $context['_trading_status_codes'], $context['_event_risk_reasons']);
+        unset($context['_corporate_action_types'], $context['_trading_status_codes'], $context['_trading_status_exact_codes'], $context['_event_risk_reasons']);
 
         return $context;
     }
 
-    private function applyTradingStatusRowToContext(array $context, $row, string $statusCode): array
+    private function primaryTradingStatusCode(array $tradingStatusCodes, array $exactTradingStatusCodes): ?string
     {
-        if ($statusCode !== '') {
-            $context['_trading_status_codes'][$statusCode] = true;
-            if ($this->isRiskyStatusCode($statusCode)) {
-                $context['event_risk_flag'] = 1;
-                $context['_event_risk_reasons']['TRADING_STATUS:'.$statusCode] = true;
+        if (empty($tradingStatusCodes)) {
+            return null;
+        }
+
+        $priority = [
+            'SUSPENDED',
+            'SUSPENSION_OBSERVED',
+            'UNSUSPENDED',
+            'SPECIAL_MONITORING_START',
+            'SPECIAL_MONITORING_END',
+            'UMA',
+        ];
+
+        $exactSet = array_fill_keys($exactTradingStatusCodes, true);
+        foreach ($priority as $code) {
+            if (isset($exactSet[$code])) {
+                return $code;
             }
         }
 
-        if ($this->isGlobalNormalStatusCode($statusCode)) {
-            $context['is_suspended'] = 0;
-            $context['is_uma'] = 0;
-        } elseif ($this->isSuspensionEndStatusCode($statusCode)) {
-            $context['is_suspended'] = 0;
+        $statusSet = array_fill_keys($tradingStatusCodes, true);
+        foreach ($priority as $code) {
+            if (isset($statusSet[$code])) {
+                return $code;
+            }
         }
 
-        if ($row->is_suspended !== null) {
-            $context['is_suspended'] = (int) $row->is_suspended === 1 ? 1 : 0;
-        } elseif ($this->isSuspensionStartStatusCode($statusCode)) {
-            $context['is_suspended'] = 1;
+        sort($tradingStatusCodes);
+
+        return $tradingStatusCodes[0] ?? null;
+    }
+
+    private function applyTradingStatusEventToContext(array $context, string $eventTypeCode, array $eventType, bool $isExactDateEvent = false): array
+    {
+        $context['_trading_status_codes'][$eventTypeCode] = true;
+
+        if ($isExactDateEvent) {
+            $context['_trading_status_exact_codes'][$eventTypeCode] = true;
         }
 
-        if ($context['is_suspended'] === 1) {
-            $context['event_risk_flag'] = 1;
-            $context['_event_risk_reasons']['SUSPENDED'] = true;
+        if ($eventType['risk_family'] === 'SUSPENSION') {
+            $context['is_suspended'] = in_array($eventType['transition_type'], ['START', 'OBSERVED'], true) ? 1 : 0;
         }
 
-        if ($row->is_uma !== null) {
-            $context['is_uma'] = (int) $row->is_uma === 1 ? 1 : 0;
-        } elseif (strpos($statusCode, 'UMA') !== false) {
+        if ($eventTypeCode === 'UMA') {
             $context['is_uma'] = 1;
         }
 
-        if ($context['is_uma'] === 1) {
+        if (in_array($eventType['expected_bar_policy'] ?? 'BAR_REQUIRED', ['BAR_NOT_REQUIRED', 'BAR_REQUIRED_WITH_RISK'], true)) {
             $context['event_risk_flag'] = 1;
-            $context['_event_risk_reasons']['UMA'] = true;
-        }
+            $context['_event_risk_reasons']['TRADING_STATUS:'.$eventTypeCode] = true;
 
-        return $context;
-    }
-
-    private function applyCarryForwardTransition(array $state, $row, string $statusCode): array
-    {
-        if ($statusCode === '') {
-            return $state;
-        }
-
-        if ($this->isGlobalNormalStatusCode($statusCode)) {
-            $state['suspension'] = null;
-            $state['normal'] = $this->carryForwardStateRow($row, $statusCode, 0, 0);
-
-            return $state;
-        }
-
-        if ($this->isSuspensionEndStatusCode($statusCode)) {
-            $state['suspension'] = null;
-            $state['normal'] = $this->carryForwardStateRow($row, $statusCode, 0, null);
-
-            return $state;
-        }
-
-        if ($this->isSpecialMonitoringEndStatusCode($statusCode)) {
-            $state['special_monitoring'] = null;
-            $state['normal'] = $this->carryForwardStateRow($row, $statusCode, null, null);
-
-            return $state;
-        }
-
-        if ((int) $row->is_suspended === 1 || $this->isSuspensionStartStatusCode($statusCode)) {
-            $state['suspension'] = $this->carryForwardStateRow($row, $statusCode, 1, null);
-            $state['normal'] = null;
-        }
-
-        if ($this->isSpecialMonitoringStartStatusCode($statusCode)) {
-            $state['special_monitoring'] = $this->carryForwardStateRow($row, $statusCode, null, null);
-            $state['normal'] = null;
-        }
-
-        return $state;
-    }
-
-    private function applyCarryForwardStateToContext(array $context, array $state): array
-    {
-        $hasRiskState = false;
-
-        if ($state['normal'] !== null) {
-            $context = $this->applyTradingStatusStateToContext($context, $state['normal']);
-        }
-
-        foreach (['suspension', 'special_monitoring'] as $stateKey) {
-            if ($state[$stateKey] === null) {
-                continue;
-            }
-
-            $context = $this->applyTradingStatusStateToContext($context, $state[$stateKey]);
-            $hasRiskState = true;
-        }
-
-        return $context;
-    }
-
-    private function applyTradingStatusStateToContext(array $context, array $state): array
-    {
-        $statusCode = $state['status_code'];
-
-        if ($statusCode !== '') {
-            $context['_trading_status_codes'][$statusCode] = true;
-            if ($this->isRiskyStatusCode($statusCode)) {
-                $context['event_risk_flag'] = 1;
-                $context['_event_risk_reasons']['TRADING_STATUS:'.$statusCode] = true;
-            }
-        }
-
-        if ($state['is_suspended'] !== null) {
-            $context['is_suspended'] = (int) $state['is_suspended'] === 1 ? 1 : 0;
-            if ((int) $state['is_suspended'] === 1) {
-                $context['event_risk_flag'] = 1;
+            if ($eventType['risk_family'] === 'SUSPENSION') {
                 $context['_event_risk_reasons']['SUSPENDED'] = true;
             }
-        }
 
-        if ($state['is_uma'] !== null) {
-            $context['is_uma'] = (int) $state['is_uma'] === 1 ? 1 : 0;
-            if ((int) $state['is_uma'] === 1) {
-                $context['event_risk_flag'] = 1;
+            if ($eventTypeCode === 'UMA') {
                 $context['_event_risk_reasons']['UMA'] = true;
             }
         }
@@ -320,107 +328,123 @@ class EventRiskSourceRepository
         return $context;
     }
 
-    private function emptyCarryForwardState(): array
+    private function applyCarryForwardTransition(array $state, $row, string $eventTypeCode, array $eventType): array
     {
-        return [
-            'suspension' => null,
-            'special_monitoring' => null,
-            'normal' => null,
-        ];
+        if ($eventType['transition_type'] === 'END' && $eventType['clears_risk_family'] !== null) {
+            foreach ($state as $activeEventTypeCode => $activeEventType) {
+                if ($activeEventType['risk_family'] === $eventType['clears_risk_family']) {
+                    unset($state[$activeEventTypeCode]);
+                }
+            }
+
+            return $state;
+        }
+
+        if ((int) $eventType['carries_forward'] === 1) {
+            foreach ($state as $activeEventTypeCode => $activeEventType) {
+                if ($activeEventType['risk_family'] === $eventType['risk_family']) {
+                    unset($state[$activeEventTypeCode]);
+                }
+            }
+
+            $state[$eventTypeCode] = $eventType;
+        }
+
+        ksort($state);
+
+        return $state;
     }
 
-    private function carryForwardStateRow($row, string $statusCode, $isSuspended, $isUma): array
+    private function tradingStatusEventType(string $eventTypeCode): ?array
     {
-        return [
-            'trade_date' => (string) $row->trade_date,
-            'status_code' => $statusCode,
-            'is_suspended' => $row->is_suspended !== null ? (int) $row->is_suspended : $isSuspended,
-            'is_uma' => $row->is_uma !== null ? (int) $row->is_uma : $isUma,
-        ];
+        $eventTypes = $this->tradingStatusEventTypes();
+
+        return $eventTypes[$eventTypeCode] ?? null;
     }
 
-    private function isRiskyStatusCode($statusCode): bool
+    private function tradingStatusEventTypes(): array
     {
-        $statusCode = $this->normalizeCode($statusCode);
+        if ($this->tradingStatusEventTypes !== null) {
+            return $this->tradingStatusEventTypes;
+        }
 
-        if ($statusCode === '' || $this->isNormalStatusCode($statusCode)) {
+        $eventTypes = self::DEFAULT_TRADING_STATUS_EVENT_TYPES;
+
+        try {
+            $policyColumn = $this->hasColumn($this->tradingStatusEventTypesTable(), 'expected_bar_policy')
+                ? 'expected_bar_policy'
+                : 'coverage_policy';
+
+            $rows = DB::table($this->tradingStatusEventTypesTable())
+                ->select(['event_type_code', 'risk_family', 'transition_type', $policyColumn, 'carries_forward', 'clears_risk_family'])
+                ->orderBy('event_type_code')
+                ->get();
+
+            if (count($rows) > 0) {
+                $eventTypes = [];
+                foreach ($rows as $row) {
+                    $eventTypes[$this->normalizeCode($row->event_type_code)] = [
+                        'risk_family' => $this->normalizeCode($row->risk_family),
+                        'transition_type' => $this->normalizeCode($row->transition_type),
+                        'expected_bar_policy' => $this->normalizeExpectedBarPolicy($row->{$policyColumn}),
+                        'carries_forward' => (int) $row->carries_forward === 1 ? 1 : 0,
+                        'clears_risk_family' => $row->clears_risk_family !== null && trim((string) $row->clears_risk_family) !== ''
+                            ? $this->normalizeCode($row->clears_risk_family)
+                            : null,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            $eventTypes = self::DEFAULT_TRADING_STATUS_EVENT_TYPES;
+        }
+
+        $this->tradingStatusEventTypes = $eventTypes;
+
+        return $this->tradingStatusEventTypes;
+    }
+
+
+    private function normalizeExpectedBarPolicy($value): string
+    {
+        $policy = $this->normalizeCode($value);
+
+        if ($policy === 'EXCLUDE') {
+            return 'BAR_NOT_REQUIRED';
+        }
+
+        if ($policy === 'INCLUDE_WITH_RISK') {
+            return 'BAR_REQUIRED_WITH_RISK';
+        }
+
+        if ($policy === 'INCLUDE') {
+            return 'BAR_REQUIRED';
+        }
+
+        if (in_array($policy, ['BAR_REQUIRED', 'BAR_NOT_REQUIRED', 'BAR_REQUIRED_WITH_RISK'], true)) {
+            return $policy;
+        }
+
+        return 'BAR_REQUIRED';
+    }
+
+    private function hasColumn(string $tableName, string $columnName): bool
+    {
+        try {
+            $driver = DB::connection()->getDriverName();
+
+            if ($driver === 'mysql') {
+                $rows = DB::select(
+                    'SELECT COUNT(*) as aggregate FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+                    [$tableName, $columnName]
+                );
+
+                return isset($rows[0]) && (int) $rows[0]->aggregate > 0;
+            }
+
+            return \Illuminate\Support\Facades\Schema::hasColumn($tableName, $columnName);
+        } catch (\Throwable $e) {
             return false;
         }
-
-        foreach (['SUSPEND', 'SUSPENDED', 'UMA', 'HALT', 'HALTED', 'SPECIAL_MONITORING', 'SPECIAL_NOTATION', 'NOTASI_KHUSUS', 'WATCHLIST'] as $needle) {
-            if (strpos($statusCode, $needle) !== false) {
-                return true;
-            }
-        }
-
-        return true;
-    }
-
-    private function isNormalStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        return $this->isGlobalNormalStatusCode($statusCode)
-            || $this->isSuspensionEndStatusCode($statusCode)
-            || $this->isSpecialMonitoringEndStatusCode($statusCode);
-    }
-
-    private function isGlobalNormalStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        return in_array($statusCode, ['ACTIVE', 'NORMAL', 'OPEN', 'REGULAR', 'RESUMED', 'RESUME_TRADING'], true);
-    }
-
-    private function isSuspensionStartStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        return (strpos($statusCode, 'SUSPEND') !== false || strpos($statusCode, 'HALT') !== false)
-            && ! $this->isSuspensionEndStatusCode($statusCode);
-    }
-
-    private function isSuspensionEndStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        foreach (['UNSUSPEND', 'RESUME', 'SUSPENSION_LIFTED', 'SUSPEND_LIFTED', 'LIFTED_SUSPENSION'] as $needle) {
-            if (strpos($statusCode, $needle) !== false) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isSpecialMonitoringStartStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        if ($this->isSpecialMonitoringEndStatusCode($statusCode)) {
-            return false;
-        }
-
-        foreach (['SPECIAL_MONITORING', 'SPECIAL_NOTATION', 'NOTASI_KHUSUS', 'WATCHLIST'] as $needle) {
-            if (strpos($statusCode, $needle) !== false) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isSpecialMonitoringEndStatusCode(string $statusCode): bool
-    {
-        $statusCode = $this->normalizeCode($statusCode);
-
-        foreach (['SPECIAL_MONITORING_EXIT', 'SPECIAL_MONITORING_REMOVED', 'REMOVED_FROM_SPECIAL_MONITORING', 'WATCHLIST_EXIT', 'WATCHLIST_REMOVED', 'SPECIAL_NOTATION_EXIT', 'SPECIAL_NOTATION_REMOVED', 'NOTASI_KHUSUS_EXIT', 'NOTASI_KHUSUS_REMOVED'] as $needle) {
-            if (strpos($statusCode, $needle) !== false) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function normalizeCode($value): string
@@ -439,5 +463,10 @@ class EventRiskSourceRepository
     private function tradingStatusesTable(): string
     {
         return config('market_data.event_risk.trading_status_events_table', 'market_data_trading_status_events');
+    }
+
+    private function tradingStatusEventTypesTable(): string
+    {
+        return config('market_data.event_risk.trading_status_event_types_table', 'market_data_trading_status_event_types');
     }
 }

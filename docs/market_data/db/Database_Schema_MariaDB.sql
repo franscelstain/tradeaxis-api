@@ -122,23 +122,36 @@ CREATE TABLE IF NOT EXISTS market_data_corporate_actions (
   KEY idx_md_corp_action_type_date (action_type, action_date)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS market_data_trading_status_event_types (
+  event_type_code VARCHAR(64) NOT NULL,
+  risk_family VARCHAR(64) NOT NULL,
+  transition_type VARCHAR(32) NOT NULL,
+  expected_bar_policy VARCHAR(32) NOT NULL,
+  carries_forward TINYINT(1) NOT NULL DEFAULT 0,
+  clears_risk_family VARCHAR(64) NULL,
+  description VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (event_type_code),
+  KEY idx_md_status_types_family_transition (risk_family, transition_type),
+  KEY idx_md_status_types_expected_bar_policy (expected_bar_policy)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS market_data_trading_status_events (
   trading_status_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   ticker_id BIGINT UNSIGNED NOT NULL,
   ticker_code VARCHAR(16) NOT NULL,
   trade_date DATE NOT NULL,
-  status_code VARCHAR(64) NOT NULL,
-  is_suspended TINYINT(1) NULL,
-  is_uma TINYINT(1) NULL,
+  event_type_code VARCHAR(64) NOT NULL,
   source_name VARCHAR(64) NOT NULL DEFAULT 'manual_trading_status_csv',
   source_ref VARCHAR(255) NULL,
   notes VARCHAR(255) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (trading_status_id),
-  UNIQUE KEY uq_md_trading_status_ticker_date_code_source (ticker_id, trade_date, status_code, source_name),
+  UNIQUE KEY uq_md_trading_status_ticker_date_type_source (ticker_id, trade_date, event_type_code, source_name),
   KEY idx_md_trading_status_date_ticker (trade_date, ticker_id),
-  KEY idx_md_trading_status_code_date (status_code, trade_date)
+  KEY idx_md_trading_status_event_type_date (event_type_code, trade_date)
 ) ENGINE=InnoDB;
 
 -- =========================================================
@@ -495,13 +508,14 @@ CREATE TABLE IF NOT EXISTS eod_runs (
 ) ENGINE=InnoDB;
 
 -- LOCKED SEMANTICS
--- 1. lifecycle_state tracks execution progression.
--- 2. terminal_status tracks consumer-facing terminal outcome.
--- 3. quality_gate_state tracks gate evaluation.
--- 4. publishability_state tracks readability.
--- 5. These meanings must remain distinct; do not collapse them back into one overloaded status.
--- 6. terminal_status may remain NULL until finalization resolves outcome.
--- 7. publishability_state='READABLE' must never coexist with missing required seal/publication semantics.
+-- 1. lifecycle_state tracks execution progression, not publish/readability outcome.
+-- 2. RUNNING means an active process is currently executing; import-only completion must close as COMPLETED/NOT_READABLE.
+-- 3. terminal_status tracks consumer-facing terminal outcome.
+-- 4. quality_gate_state tracks gate evaluation.
+-- 5. publishability_state tracks readability.
+-- 6. These meanings must remain distinct; do not collapse them back into one overloaded status.
+-- 7. terminal_status may remain NULL until finalization resolves outcome.
+-- 8. publishability_state='READABLE' must never coexist with missing required seal/publication semantics.
 
 -- =========================================================
 -- Append-only run event trail

@@ -277,6 +277,18 @@ class MarketDataPipelineService
                             'pointer_switched' => false,
                         ]
                     );
+
+                    $run = $this->runs->completeImportOnly(
+                        $run,
+                        $input->stage,
+                        'IMPORT_ONLY_COMPLETED_NOT_PROMOTED',
+                        [
+                            'requested_date' => $input->requestedDate,
+                            'source_mode' => $input->sourceMode,
+                            'publication_id' => (int) $result['publication_id'],
+                            'publication_version' => (int) $result['publication_version'],
+                        ]
+                    );
                 }
 
                 return $run;
@@ -389,6 +401,21 @@ class MarketDataPipelineService
 
                 $this->assertImportOnlyDidNotPromote($run, $input, $result);
 
+                if ($input->requestMode === 'import_only') {
+                    $run = $this->runs->completeImportOnly(
+                        $run,
+                        $input->stage,
+                        'IMPORT_ONLY_COMPLETED_NOT_PROMOTED',
+                        [
+                            'requested_date' => $input->requestedDate,
+                            'source_mode' => $input->sourceMode,
+                            'publication_id' => (int) $result['publication_id'],
+                            'publication_version' => (int) $result['publication_version'],
+                            'recovered_row_apply_state' => $result['recovered_row_apply_state'] ?? null,
+                        ]
+                    );
+                }
+
                 return $run;
             });
         } catch (\Throwable $e) {
@@ -489,6 +516,18 @@ class MarketDataPipelineService
                             'promote_status' => 'NOT_PROMOTED',
                             'promoted' => false,
                             'pointer_switched' => false,
+                        ]
+                    );
+
+                    $run = $this->runs->completeImportOnly(
+                        $run,
+                        $input->stage,
+                        'IMPORT_ONLY_COMPLETED_NOT_PROMOTED',
+                        [
+                            'requested_date' => $input->requestedDate,
+                            'source_mode' => $input->sourceMode,
+                            'publication_id' => (int) $result['publication_id'],
+                            'publication_version' => (int) $result['publication_version'],
                         ]
                     );
                 }

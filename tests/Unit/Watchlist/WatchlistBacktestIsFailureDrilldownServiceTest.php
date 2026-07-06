@@ -106,6 +106,9 @@ class WatchlistBacktestIsFailureDrilldownServiceTest extends TestCase
         $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['trading_status_code']['status']);
         $this->assertSame('AVAILABLE_IN_RUNTIME_EVIDENCE', $artifact['runtime_field_availability_summary']['event_risk_reasons']['status']);
         $this->assertSame('DERIVED_FROM_RUNTIME_EVIDENCE', $artifact['event_risk_flag_summary']['fields']['corporate_action_types']['status']);
+        $tradingStatusBuckets = array_column($artifact['event_risk_flag_summary']['fields']['trading_status_code']['summary'], 'bucket');
+        $this->assertContains('UNSUSPENDED', $tradingStatusBuckets);
+        $this->assertNotContains('ACTIVE', $tradingStatusBuckets);
         $this->assertArrayHasKey('bo_near_below_pct_hit_miss', $artifact['breakout_extension_bucket_summary']);
         $this->assertArrayHasKey('directional_finding', $artifact['score_component_effectiveness_summary']['components']['score_momentum']);
 

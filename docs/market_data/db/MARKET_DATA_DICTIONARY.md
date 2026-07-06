@@ -46,7 +46,8 @@ These mappings are mandatory for database-connected work. Do not infer alternate
 | `market_data_sectors` | IDX-IC sector taxonomy and sector-index mapping such as IDXTECHNO/IDXFINANCE. | `sector_code` | `sector_code` | `effective_from/effective_to` | Pre-trade safe when membership/sector state is resolved as-of date. |
 | `ticker_sector_memberships` | Historical ticker-to-sector membership as of trade date. Required for sector reconstruction. | `membership_id` | `ticker_id + sector_code` | `effective_from/effective_to` | Pre-trade safe if date-bounded; no fabricated sector fallback. |
 | `market_data_corporate_actions` | Source-backed corporate action events by ticker/date/type. | `corporate_action_id` | `ticker_id/ticker_code` | `action_date` | Pre-trade safe only if source row is known as-of date; not future action leakage. |
-| `market_data_trading_status_events` | Source-backed trading status events such as suspension, UMA, special monitoring, active/exit states. | `trading_status_id` | `ticker_id/ticker_code` | `trade_date` | Pre-trade safe when status is known/carry-forward as-of date. |
+| `market_data_trading_status_event_types` | Canonical dictionary for trading-status event semantics, risk families, transition rules, and expected-bar policy. | `event_type_code` | `event_type_code` | n/a | Pre-trade safe configuration when seeded/locked. |
+| `market_data_trading_status_events` | Source-backed trading status events such as suspension, UMA, and special monitoring start/end states. | `trading_status_id` | `ticker_id/ticker_code` | `trade_date` | Pre-trade safe when event is known/carry-forward as-of date. |
 | `market_benchmarks` | Benchmark/index master. IHSG maps to Yahoo ^JKSE; sector benchmarks map to IDX sector provider symbols. | `benchmark_id` | `benchmark_code` | `n/a` | Pre-trade safe master mapping; IHSG is market index identifier. |
 | `market_benchmark_bars` | Benchmark/index OHLCV rows outside equity ticker universe. Correct source for IHSG/sector index bars. | `benchmark_bar_id` | `benchmark_code` | `trade_date` | Pre-trade safe for benchmark OHLC if trade_date <= signal/asof date. |
 | `market_benchmark_indicators` | Derived benchmark/index indicators. Correct source for IHSG roc_20 and ma20_slope_pct used by Watchlist market-index regime fields. | `benchmark_indicator_id` | `benchmark_code` | `trade_date` | Pre-trade safe for benchmark indicators if trade_date <= signal/asof date. |
@@ -175,28 +176,69 @@ These mappings are mandatory for database-connected work. Do not infer alternate
 | `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
 | `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
 
+### `market_data_trading_status_event_types`
+
+- Purpose: Canonical dictionary for source-backed trading-status event semantics. Daily imports must not repeat semantic fields; this table defines the risk family, transition type, expected-bar policy, carry-forward behavior, and clearing behavior for each allowed `event_type_code`.
+- Primary/identity key: `event_type_code`
+- Identifier key: `event_type_code`
+- Date/as-of key: n/a
+- Selection safety: Pre-trade safe configuration once seeded and locked.
+
+| Column | Type / contract | Field role |
+|---|---|---|
+| `event_type_code` | `VARCHAR(64) NOT NULL` | canonical event identity |
+| `risk_family` | `VARCHAR(64) NOT NULL` | semantic family: `SUSPENSION`, `SPECIAL_MONITORING`, `UMA` |
+| `transition_type` | `VARCHAR(32) NOT NULL` | `START`, `OBSERVED`, `END`, or `POINT_IN_TIME` |
+| `expected_bar_policy` | `VARCHAR(32) NOT NULL` | `BAR_NOT_REQUIRED`, `BAR_REQUIRED`, or `BAR_REQUIRED_WITH_RISK` |
+| `carries_forward` | `TINYINT(1) NOT NULL DEFAULT 0` | whether the event remains active until a matching end event |
+| `clears_risk_family` | `VARCHAR(64) NULL` | risk family cleared by an end event |
+| `description` | `VARCHAR(255) NULL` | human-readable contract note |
+| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
+| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
+
+#### Canonical trading-status event types
+
+| `event_type_code` | Risk family | Transition | Expected-bar policy | Carry-forward | Clears |
+|---|---|---|---|---:|---|
+| `SUSPENDED` | `SUSPENSION` | `START` | `BAR_NOT_REQUIRED` | 1 |  |
+| `SUSPENSION_OBSERVED` | `SUSPENSION` | `OBSERVED` | `BAR_NOT_REQUIRED` | 1 |  |
+| `UNSUSPENDED` | `SUSPENSION` | `END` | `BAR_REQUIRED` | 0 | `SUSPENSION` |
+| `SPECIAL_MONITORING_START` | `SPECIAL_MONITORING` | `START` | `BAR_REQUIRED_WITH_RISK` | 1 |  |
+| `SPECIAL_MONITORING_END` | `SPECIAL_MONITORING` | `END` | `BAR_REQUIRED` | 0 | `SPECIAL_MONITORING` |
+| `UMA` | `UMA` | `POINT_IN_TIME` | `BAR_REQUIRED_WITH_RISK` | 0 |  |
+
 ### `market_data_trading_status_events`
 
-- Purpose: Source-backed trading status events such as suspension, UMA, special monitoring, active/exit states.
+- Purpose: Source-backed trading status event table. The table stores only the actual event identity and source metadata. It does not store duplicated semantic columns such as `status_code`, `status_effect`, `event_risk_scope`, `coverage_exclusion_flag`, `is_suspended`, or `is_uma`.
 - Primary/identity key: `trading_status_id`
 - Identifier key: `ticker_id/ticker_code`
 - Date/as-of key: `trade_date`
-- Selection safety: Pre-trade safe when status is known/carry-forward as-of date.
+- Selection safety: Pre-trade safe when the source event is known/carry-forward as-of date.
 
 | Column | Type / contract | Field role |
 |---|---|---|
 | `trading_status_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
 | `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
 | `ticker_code` | `VARCHAR(16) NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `status_code` | `VARCHAR(64) NOT NULL` | data field |
-| `is_suspended` | `TINYINT(1) NULL` | data field |
-| `is_uma` | `TINYINT(1) NULL` | data field |
-| `source_name` | `VARCHAR(64) NOT NULL DEFAULT 'manual_trading_status_csv'` | data field |
-| `source_ref` | `VARCHAR(255) NULL` | data field |
-| `notes` | `VARCHAR(255) NULL` | data field |
-| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
-| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
+| `trade_date` | `DATE NOT NULL` | source event effective date |
+| `event_type_code` | `VARCHAR(64) NOT NULL` | canonical event type; references dictionary semantics |
+| `source_name` | `VARCHAR(64) NOT NULL DEFAULT 'manual_trading_status_csv'` | source/audit identity |
+| `source_ref` | `VARCHAR(255) NULL` | source/audit reference |
+| `notes` | `VARCHAR(255) NULL` | source/audit note |
+| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
+| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
+
+#### Trading status semantic rules
+
+- Operators import only actual source-backed events: `SUSPENDED`, `SUSPENSION_OBSERVED`, `UNSUSPENDED`, `SPECIAL_MONITORING_START`, `SPECIAL_MONITORING_END`, and `UMA`.
+- `SUSPENDED` is a suspension-start transition and resolves to `BAR_NOT_REQUIRED` until `UNSUSPENDED` appears.
+- `SUSPENSION_OBSERVED` is a source/snapshot observation that suspension is active, including long-suspension lists; it resolves to `BAR_NOT_REQUIRED` but is not a suspension-start transition.
+- `UNSUSPENDED` clears only the active suspension state.
+- `SPECIAL_MONITORING_START` carries forward as event-risk context and does not exclude coverage.
+- `SPECIAL_MONITORING_END` clears only the active special-monitoring state.
+- `UMA` is exact-date event-risk context and has no start/end pair.
+- `ACTIVE` is not a source event type. It is a resolved state that exists only when no risk state remains active.
+- Absence of source data must never be converted into a fabricated `ACTIVE`, `BAR_REQUIRED`, `BAR_REQUIRED_WITH_RISK`, or `BAR_NOT_REQUIRED` row.
 
 ### `market_benchmarks`
 
@@ -422,6 +464,8 @@ These mappings are mandatory for database-connected work. Do not infer alternate
 | `stage` | `ENUM('INGEST_BARS','PUBLISH_BARS','COMPUTE_INDICATORS','BUILD_ELIGIBILITY','HASH','SEAL','FINALIZE') NOT NULL` | data field |
 | `source` | `VARCHAR(32) NOT NULL` | data field |
 | `request_mode` | `VARCHAR(32) NULL` | data field |
+
+Dictionary note: `lifecycle_state=RUNNING` is reserved for an active executing process. Successful `request_mode=import_only` closure must use `COMPLETED + terminal_status=NULL + publishability_state=NOT_READABLE`, not `RUNNING`.
 | `source_name` | `VARCHAR(64) NULL` | data field |
 | `source_provider` | `VARCHAR(64) NULL` | data field |
 | `source_input_file` | `VARCHAR(255) NULL` | data field |

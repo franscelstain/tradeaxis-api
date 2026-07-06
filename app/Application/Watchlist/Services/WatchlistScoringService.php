@@ -533,7 +533,7 @@ class WatchlistScoringService
                 'sector_rs_20_vs_ihsg' => $this->metricOrNull($gateMetrics['sector_rs_20_vs_ihsg'] ?? $indicators['sector_rs_20_vs_ihsg'] ?? $candidate['sector_rs_20_vs_ihsg'] ?? null),
                 'corporate_action_flag' => $this->corporateActionFlagOrNull($gateMetrics['corporate_action_flag'] ?? $indicators['corporate_action_flag'] ?? $candidate['corporate_action_flag'] ?? null, $corporateActionTypes),
                 'corporate_action_types' => $corporateActionTypes,
-                'trading_status_code' => $this->stringOrNull($gateMetrics['trading_status_code'] ?? $indicators['trading_status_code'] ?? $candidate['trading_status_code'] ?? null),
+                'trading_status_code' => WatchlistTradingStatusSnapshotNormalizer::normalize($gateMetrics['trading_status_code'] ?? $indicators['trading_status_code'] ?? $candidate['trading_status_code'] ?? null),
                 'is_suspended' => $this->flagOrNull($gateMetrics['is_suspended'] ?? $indicators['is_suspended'] ?? $candidate['is_suspended'] ?? null),
                 'is_uma' => $this->flagOrNull($gateMetrics['is_uma'] ?? $indicators['is_uma'] ?? $candidate['is_uma'] ?? null),
                 'event_risk_flag' => $this->flagOrNull($gateMetrics['event_risk_flag'] ?? $indicators['event_risk_flag'] ?? $candidate['event_risk_flag'] ?? null),

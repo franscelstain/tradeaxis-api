@@ -689,7 +689,7 @@ class WatchlistBacktestStrategyService
         $corporateActionTypes = $this->stringOrNull($source['corporate_action_types'] ?? $planReference['corporate_action_types'] ?? null);
         $metrics['corporate_action_flag'] = $this->corporateActionFlagOrNull($source['corporate_action_flag'] ?? $planReference['corporate_action_flag'] ?? null, $corporateActionTypes);
         $metrics['corporate_action_types'] = $corporateActionTypes;
-        $metrics['trading_status_code'] = $this->stringOrNull($source['trading_status_code'] ?? $planReference['trading_status_code'] ?? null);
+        $metrics['trading_status_code'] = WatchlistTradingStatusSnapshotNormalizer::normalize($source['trading_status_code'] ?? $planReference['trading_status_code'] ?? null);
         $metrics['is_suspended'] = $this->flagOrNull($source['is_suspended'] ?? $planReference['is_suspended'] ?? null);
         $metrics['is_uma'] = $this->flagOrNull($source['is_uma'] ?? $planReference['is_uma'] ?? null);
         $metrics['event_risk_flag'] = $this->flagOrNull($source['event_risk_flag'] ?? $planReference['event_risk_flag'] ?? null);

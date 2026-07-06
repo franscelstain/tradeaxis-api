@@ -304,8 +304,10 @@ class WatchlistBacktestC43PreTradeFieldExpansionDiagnosticService
             ['eligibility_status', 'eligibility', 'eod_eligibility', 'eligibility_status', true],
             ['suspension_status', 'event_risk', 'eod_indicators', 'is_suspended', true],
             ['uma_status', 'event_risk', 'eod_indicators', 'is_uma', true],
+            ['trading_status_event_type', 'event_risk', 'eod_indicators', 'trading_status_code', true],
             ['corporate_action_flag', 'event_risk', 'eod_indicators', 'corporate_action_flag', true],
             ['event_risk_flag', 'event_risk', 'eod_indicators', 'event_risk_flag', true],
+            ['event_risk_reason_codes', 'event_risk', 'eod_indicators', 'event_risk_reasons', true],
             ['liquidity_bucket', 'derived_pre_trade', 'eod_indicators.dv20_idr', 'dv20_idr', true],
             ['volume_bucket', 'derived_pre_trade', 'eod_indicators.vol_ratio', 'vol_ratio', true],
             ['volatility_bucket', 'derived_pre_trade', 'eod_indicators.atr14_pct', 'atr14_pct', true],
@@ -408,7 +410,8 @@ class WatchlistBacktestC43PreTradeFieldExpansionDiagnosticService
             $select = [
                 'i.trade_date', 'i.ticker_id', 'i.sector_code', 'i.dv20_idr', 'i.atr14_pct', 'i.vol_ratio', 'i.roc20', 'i.hh20', 'i.ma20', 'i.ma50',
                 'i.close_to_hh20_pct', 'i.close_vs_ma20_pct', 'i.close_vs_ma50_pct', 'i.ma20_slope_pct', 'i.rs_20_vs_ihsg',
-                'i.sector_roc20', 'i.rs_20_vs_sector', 'i.corporate_action_flag', 'i.is_suspended', 'i.is_uma', 'i.event_risk_flag',
+                'i.sector_roc20', 'i.rs_20_vs_sector', 'i.corporate_action_flag', 'i.trading_status_code',
+                'i.is_suspended', 'i.is_uma', 'i.event_risk_flag', 'i.event_risk_reasons',
                 'b.open as signal_open', 'b.high as signal_high', 'b.low as signal_low', 'b.close as signal_close', 'b.volume as signal_volume',
                 'e.eligible as eligibility_status', 's.sector_name',
             ];
@@ -743,7 +746,8 @@ class WatchlistBacktestC43PreTradeFieldExpansionDiagnosticService
             'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc20', 'close_to_hh20_pct', 'close_to_ma20_pct', 'close_to_ma50_pct',
             'ma20_slope_pct', 'rs_20_vs_ihsg', 'rs_20_vs_sector', 'sector_roc20', 'sector_code', 'sector_name',
             'market_index_roc20', 'market_index_ma20_slope_pct', 'eligibility_status', 'suspension_status', 'uma_status',
-            'corporate_action_flag', 'event_risk_flag', 'liquidity_bucket', 'volume_bucket', 'volatility_bucket', 'trend_bucket', 'relative_strength_bucket',
+            'trading_status_event_type', 'corporate_action_flag', 'event_risk_flag', 'event_risk_reason_codes',
+            'liquidity_bucket', 'volume_bucket', 'volatility_bucket', 'trend_bucket', 'relative_strength_bucket',
         ];
         $safe = [];
         $blocked = [];
@@ -943,6 +947,9 @@ class WatchlistBacktestC43PreTradeFieldExpansionDiagnosticService
         if ($field === 'eligibility_status') {
             return $row['eligibility_status'] ?? $row['eligible'] ?? null;
         }
+        if ($field === 'trading_status_event_type') {
+            return WatchlistTradingStatusSnapshotNormalizer::normalize($row[$sourceKey] ?? $row['trading_status_code'] ?? null);
+        }
         return $row[$sourceKey] ?? $row[$field] ?? null;
     }
 
@@ -951,7 +958,7 @@ class WatchlistBacktestC43PreTradeFieldExpansionDiagnosticService
         if (! $this->hasValue($value)) {
             return null;
         }
-        if (in_array($field, ['sector_code', 'sector_name', 'eligibility_status', 'suspension_status', 'uma_status', 'corporate_action_flag', 'event_risk_flag'], true)) {
+        if (in_array($field, ['sector_code', 'sector_name', 'eligibility_status', 'suspension_status', 'uma_status', 'trading_status_event_type', 'corporate_action_flag', 'event_risk_flag', 'event_risk_reason_codes'], true)) {
             if (is_bool($value) || $value === 0 || $value === 1 || $value === '0' || $value === '1') {
                 return ((bool) $value) ? 'TRUE' : 'FALSE';
             }

@@ -34,7 +34,10 @@ Allowed:
 - write imported/canonical/candidate artifact context
 - create non-current candidate publication context when required by existing artifact design
 - append reason-coded events
+- close successful import-only ingest as `lifecycle_state=COMPLETED`, `terminal_status=NULL`, and `publishability_state=NOT_READABLE`
 - return `import_status=COMPLETED` and `promote_status=NOT_PROMOTED`
+
+A successful import-only run must not remain `RUNNING` after the import process returns. `RUNNING` is reserved for an active process; “not promoted yet” is represented by `COMPLETED + terminal_status=NULL + NOT_READABLE + final_reason_code=IMPORT_ONLY_COMPLETED_NOT_PROMOTED`.
 
 Forbidden:
 

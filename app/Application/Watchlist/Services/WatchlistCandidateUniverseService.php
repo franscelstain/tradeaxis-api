@@ -239,7 +239,7 @@ class WatchlistCandidateUniverseService
                 'sector_rs_20_vs_ihsg' => $this->metricOrNull($indicators['sector_rs_20_vs_ihsg'] ?? $candidate['sector_rs_20_vs_ihsg'] ?? null),
                 'corporate_action_flag' => $this->corporateActionFlagOrNull($indicators['corporate_action_flag'] ?? $candidate['corporate_action_flag'] ?? null, $corporateActionTypes),
                 'corporate_action_types' => $corporateActionTypes,
-                'trading_status_code' => $this->stringOrNull($indicators['trading_status_code'] ?? $candidate['trading_status_code'] ?? null),
+                'trading_status_code' => WatchlistTradingStatusSnapshotNormalizer::normalize($indicators['trading_status_code'] ?? $candidate['trading_status_code'] ?? null),
                 'is_suspended' => $this->flagOrNull($indicators['is_suspended'] ?? $candidate['is_suspended'] ?? null),
                 'is_uma' => $this->flagOrNull($indicators['is_uma'] ?? $candidate['is_uma'] ?? null),
                 'event_risk_flag' => $this->flagOrNull($indicators['event_risk_flag'] ?? $candidate['event_risk_flag'] ?? null),

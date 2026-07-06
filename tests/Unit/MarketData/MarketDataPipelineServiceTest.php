@@ -246,6 +246,16 @@ class MarketDataPipelineServiceTest extends TestCase
                 && strpos($notes, 'source_name=LOCAL_FILE') !== false
                 && strpos($notes, 'source_input_file=manual-2026-03-24.csv') !== false;
         }))->andReturn($run);
+        $runs->shouldReceive('completeImportOnly')
+            ->once()
+            ->with($run, 'INGEST_BARS', 'IMPORT_ONLY_COMPLETED_NOT_PROMOTED', m::on(function ($payload) {
+                return is_array($payload)
+                    && ($payload['requested_date'] ?? null) === '2026-03-24'
+                    && ($payload['source_mode'] ?? null) === 'manual_file'
+                    && ($payload['publication_id'] ?? null) === 44
+                    && ($payload['publication_version'] ?? null) === 1;
+            }))
+            ->andReturn($run);
 
         $sourceRows = [['ticker_code' => 'BBCA', 'trade_date' => '2026-03-24']];
         $bars->shouldReceive('acquireSourceRows')->once()->with('2026-03-24', 'manual_file')->andReturn($sourceRows);
@@ -412,6 +422,16 @@ class MarketDataPipelineServiceTest extends TestCase
                     && strpos((string) ($telemetry['notes'] ?? ''), 'source_attempt_count=2') !== false
                     && strpos((string) ($telemetry['notes'] ?? ''), 'source_success_after_retry=yes') !== false
                     && strpos((string) ($telemetry['notes'] ?? ''), 'source_final_http_status=200') !== false;
+            }))
+            ->andReturn($run);
+        $runs->shouldReceive('completeImportOnly')
+            ->once()
+            ->with($run, 'INGEST_BARS', 'IMPORT_ONLY_COMPLETED_NOT_PROMOTED', m::on(function ($payload) {
+                return is_array($payload)
+                    && ($payload['requested_date'] ?? null) === '2026-04-05'
+                    && ($payload['source_mode'] ?? null) === 'api'
+                    && ($payload['publication_id'] ?? null) === 44
+                    && ($payload['publication_version'] ?? null) === 6;
             }))
             ->andReturn($run);
 
@@ -1488,6 +1508,17 @@ class MarketDataPipelineServiceTest extends TestCase
 
                 return $run;
             });
+        $runs->shouldReceive('completeImportOnly')
+            ->once()
+            ->with($run, 'INGEST_BARS', 'IMPORT_ONLY_COMPLETED_NOT_PROMOTED', m::on(function ($payload) {
+                return is_array($payload)
+                    && ($payload['requested_date'] ?? null) === '2026-05-01'
+                    && ($payload['source_mode'] ?? null) === 'api'
+                    && ($payload['publication_id'] ?? null) === 900
+                    && ($payload['publication_version'] ?? null) === 1
+                    && ($payload['recovered_row_apply_state'] ?? null) === 'APPLIED';
+            }))
+            ->andReturn($run);
 
         $publications->shouldReceive('findCorrectionBaselinePublicationForTradeDate')
             ->once()

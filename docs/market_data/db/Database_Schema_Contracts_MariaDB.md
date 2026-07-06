@@ -85,12 +85,12 @@ Must support:
 ### 5c. Corporate action and trading status source context
 Must support:
 - source-backed corporate action rows by `(ticker_id, action_date, action_type, source_name)`
-- source-backed trading status rows by `(ticker_id, trade_date, status_code, source_name)`
+- source-backed trading status rows by `(ticker_id, trade_date, event_type_code, source_name)` with semantics resolved through `market_data_trading_status_event_types`
 - explicit source name/reference fields for operator CSV or future audited providers
 - nullable `eod_indicators.corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`
 - `NULL` event-risk indicator fields when no source row/state exists for the ticker/date
-- source-backed `event_risk_flag=0` only when an explicit source row/state says the status is non-risk such as `ACTIVE`, `NORMAL`, `UNSUSPENDED`, or special-monitoring exit and no independent risk state remains active
-- source-backed carry-forward state for suspension and special monitoring until the matching recognized clear/exit row appears
+- source-backed `event_risk_flag=0` only when an explicit source row/state says no event risk remains; non-exclusion rows may clear coverage exclusion while special-monitoring/UMA event-risk context can still remain active
+- source-backed semantic coverage state where `SUSPENDED` excludes coverage until `UNSUSPENDED`; `SPECIAL_MONITORING_START` / `SPECIAL_MONITORING_END` manage special-monitoring event risk; `UMA` remains exact-date event risk; `ACTIVE` is not stored as a source event
 - no fabricated no-risk values from absence of corporate-action/trading-status source data
 
 ### 6. Runs
@@ -199,11 +199,11 @@ The schema must distinguish, semantically and preferably physically, at minimum:
 ### A. Lifecycle state
 Execution progression state, for example:
 - `PENDING`
-- `RUNNING`
+- `RUNNING` — active process currently executing only, not a proxy for “not promoted yet”
 - `FINALIZING`
-- `COMPLETED`
+- `COMPLETED` — stage/run work closed; terminal status may still be `NULL` for import-only non-readable candidates
 - `FAILED`
-- `CANCELLED`
+- `CANCELLED` — stale/interrupted active run was closed without readable side effects
 
 ### B. Terminal status
 Consumer-facing terminal outcome:

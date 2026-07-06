@@ -34,9 +34,9 @@ class ImportTradingStatusEventsCommandTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_dry_run_validates_trading_status_csv_without_writing_rows(): void
+    public function test_dry_run_validates_canonical_trading_status_csv_without_writing_rows(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,status_code,is_suspended,is_uma,source_ref\nBBCA,2026-05-19,UMA,0,1,idx\n");
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,source_ref\nBBCA,2026-05-19,UMA,idx\n");
 
         $tester = $this->executeCommand(['input_file' => $this->csvPath]);
         $display = $tester->getDisplay();
@@ -49,9 +49,9 @@ class ImportTradingStatusEventsCommandTest extends TestCase
         $this->assertSame(0, DB::table('market_data_trading_status_events')->count());
     }
 
-    public function test_apply_imports_trading_status_csv_and_infers_suspend_flag(): void
+    public function test_apply_imports_suspended_event_without_denormalized_boolean_columns(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,status_code,is_suspended,is_uma,source_ref\nBBCA,2026-05-19,suspended,,0,idx\n");
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,source_ref\nBBCA,2026-05-19,suspended,idx\n");
 
         $tester = $this->executeCommand([
             'input_file' => $this->csvPath,
@@ -63,19 +63,21 @@ class ImportTradingStatusEventsCommandTest extends TestCase
         $this->assertStringContainsString('status=APPLIED', $display);
         $this->assertStringContainsString('reason_code=COMMAND_APPLY_CONFIRMED', $display);
         $this->assertStringContainsString('upserted_count=1', $display);
+        $this->assertStringContainsString('event_type_codes=SUSPENDED', $display);
 
         $row = DB::table('market_data_trading_status_events')->where('ticker_id', 1)->first();
 
         $this->assertSame('2026-05-19', $row->trade_date);
-        $this->assertSame('SUSPENDED', $row->status_code);
-        $this->assertSame(1, (int) $row->is_suspended);
-        $this->assertSame(0, (int) $row->is_uma);
+        $this->assertSame('SUSPENDED', $row->event_type_code);
         $this->assertSame('manual_trading_status_csv', $row->source_name);
+        $this->assertFalse(property_exists($row, 'status_code'));
+        $this->assertFalse(property_exists($row, 'is_suspended'));
+        $this->assertFalse(property_exists($row, 'is_uma'));
     }
 
-    public function test_apply_imports_unsuspension_without_inferring_suspend_flag(): void
+    public function test_apply_imports_unsuspended_event_type(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,status_code,is_suspended,is_uma,source_ref\nBBCA,2026-05-20,unsuspended,,,idx\n");
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,source_ref\nBBCA,2026-05-20,unsuspended,idx\n");
 
         $tester = $this->executeCommand([
             'input_file' => $this->csvPath,
@@ -85,18 +87,32 @@ class ImportTradingStatusEventsCommandTest extends TestCase
 
         $this->assertSame(0, $tester->getStatusCode());
         $this->assertStringContainsString('status=APPLIED', $display);
-        $this->assertStringContainsString('status_codes=UNSUSPENDED', $display);
+        $this->assertStringContainsString('event_type_codes=UNSUSPENDED', $display);
 
         $row = DB::table('market_data_trading_status_events')->where('ticker_id', 1)->first();
 
-        $this->assertSame('UNSUSPENDED', $row->status_code);
-        $this->assertSame(0, (int) $row->is_suspended);
-        $this->assertNull($row->is_uma);
+        $this->assertSame('UNSUSPENDED', $row->event_type_code);
     }
 
-    public function test_invalid_boolean_blocks_trading_status_apply(): void
+    public function test_apply_imports_special_monitoring_start_as_canonical_event_type(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,status_code,is_suspended,is_uma\nBBCA,2026-05-19,UMA,maybe,1\n");
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,source_ref\nBBCA,2026-05-21,special monitoring start,idx\n");
+
+        $tester = $this->executeCommand([
+            'input_file' => $this->csvPath,
+            '--apply' => true,
+        ]);
+
+        $this->assertSame(0, $tester->getStatusCode());
+
+        $row = DB::table('market_data_trading_status_events')->where('ticker_id', 1)->first();
+
+        $this->assertSame('SPECIAL_MONITORING_START', $row->event_type_code);
+    }
+
+    public function test_deprecated_boolean_headers_block_trading_status_apply(): void
+    {
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,is_suspended\nBBCA,2026-05-19,UMA,1\n");
 
         $tester = $this->executeCommand([
             'input_file' => $this->csvPath,
@@ -106,8 +122,23 @@ class ImportTradingStatusEventsCommandTest extends TestCase
 
         $this->assertSame(1, $tester->getStatusCode());
         $this->assertStringContainsString('status=BLOCKED', $display);
-        $this->assertStringContainsString('validation_error=line 2: is_suspended must be true/false/1/0/yes/no when provided.', $display);
+        $this->assertStringContainsString('CSV header must not include deprecated trading-status semantic column is_suspended. Use event_type_code only.', $display);
         $this->assertSame(0, DB::table('market_data_trading_status_events')->count());
+    }
+
+    public function test_unknown_event_type_code_blocks_apply(): void
+    {
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code\nBBCA,2026-05-19,ACTIVE\n");
+
+        $tester = $this->executeCommand([
+            'input_file' => $this->csvPath,
+            '--apply' => true,
+        ]);
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('event_type_code ACTIVE is not registered in market_data_trading_status_event_types', $display);
     }
 
     private function executeCommand(array $input): CommandTester

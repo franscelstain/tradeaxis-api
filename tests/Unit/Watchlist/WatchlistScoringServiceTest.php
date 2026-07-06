@@ -233,6 +233,7 @@ class WatchlistScoringServiceTest extends TestCase
         foreach (['corporate_action_flag', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'] as $field) {
             $this->assertArrayHasKey($field, $metrics);
         }
+        $this->assertSame('UNSUSPENDED', $metrics['trading_status_code']);
         $this->assertSame(-0.010, $metrics['roc5']);
         $this->assertArrayHasKey('score_components', $result['items'][0]);
         $this->assertArrayHasKey('factor_breakdown', $result['items'][0]);
@@ -279,6 +280,7 @@ class WatchlistScoringServiceTest extends TestCase
         foreach (['corporate_action_flag', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'] as $field) {
             $this->assertArrayHasKey($field, $metrics);
         }
+        $this->assertSame('UNSUSPENDED', $metrics['trading_status_code']);
         $this->assertSame(-0.010, $metrics['roc5']);
         $this->assertArrayHasKey('score_components', $result['items'][0]);
         $this->assertArrayHasKey('factor_breakdown', $result['items'][0]);

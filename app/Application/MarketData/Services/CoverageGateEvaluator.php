@@ -76,10 +76,10 @@ class CoverageGateEvaluator
             );
         }
 
-        $universe = $this->filterSuspendedUniverseRows(
-            $this->tickerMasterRepository->getUniverseForTradeDate($tradeDate),
-            $tradeDate
-        );
+        $rawUniverse = $this->tickerMasterRepository->getUniverseForTradeDate($tradeDate);
+        $coverageUniverseCount = count($rawUniverse);
+        $universe = $this->filterSuspendedUniverseRows($rawUniverse, $tradeDate);
+        $coverageBarNotRequiredCount = max(0, $coverageUniverseCount - count($universe));
 
         $universeByTickerId = [];
         foreach ($universe as $row) {
@@ -95,6 +95,7 @@ class CoverageGateEvaluator
         }
 
         $expectedUniverseCount = count($universeByTickerId);
+        $coverageBarRequiredCount = $expectedUniverseCount;
 
         if ($expectedUniverseCount === 0) {
             return $this->notEvaluableResult(
@@ -110,6 +111,9 @@ class CoverageGateEvaluator
                     'coverage_gate_enabled' => true,
                     'coverage_zero_universe_blocked' => $blockedOnZeroUniverse,
                     'canonical_bar_evidence_required' => true,
+                    'coverage_universe_count' => $coverageUniverseCount,
+                    'coverage_bar_not_required_count' => $coverageBarNotRequiredCount,
+                    'coverage_bar_required_count' => 0,
                 ]
             );
         }
@@ -151,6 +155,9 @@ class CoverageGateEvaluator
 
         return [
             'expected_universe_count' => $expectedUniverseCount,
+            'coverage_universe_count' => $coverageUniverseCount,
+            'coverage_bar_not_required_count' => $coverageBarNotRequiredCount,
+            'coverage_bar_required_count' => $coverageBarRequiredCount,
             'available_eod_count' => $availableEodCount,
             'missing_eod_count' => $missingEodCount,
             'coverage_ratio' => $coverageRatio,
@@ -196,6 +203,9 @@ class CoverageGateEvaluator
     ) {
         return $policy + [
             'expected_universe_count' => 0,
+            'coverage_universe_count' => 0,
+            'coverage_bar_not_required_count' => 0,
+            'coverage_bar_required_count' => 0,
             'available_eod_count' => 0,
             'missing_eod_count' => 0,
             'coverage_ratio' => null,

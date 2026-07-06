@@ -99,6 +99,8 @@ class WatchlistBacktestC43PreTradeFieldExpansionDiagnosticServiceTest extends Te
         }
         $this->assertSame('SAFE_PRE_TRADE_SELECTION_FIELD', $matrix['trade_date']['field_classification']);
         $this->assertSame('SAFE_PRE_TRADE_JOINABLE_FIELD', $matrix['dv20_idr']['field_classification']);
+        $this->assertSame('SAFE_PRE_TRADE_JOINABLE_FIELD', $matrix['trading_status_event_type']['field_classification']);
+        $this->assertSame('SAFE_PRE_TRADE_JOINABLE_FIELD', $matrix['event_risk_reason_codes']['field_classification']);
         $this->assertSame('DIAGNOSTIC_ONLY_EVALUATION_FIELD', $matrix['profile_code']['field_classification']);
         $this->assertSame('UNSAFE_FUTURE_OR_RETURN_FIELD', $matrix['profile_ret_net']['field_classification']);
         $this->assertSame('UNSAFE_NEXT_OPEN_OR_EXECUTION_FIELD', $matrix['entry_open']['field_classification']);
@@ -129,6 +131,8 @@ class WatchlistBacktestC43PreTradeFieldExpansionDiagnosticServiceTest extends Te
         $this->assertTrue($rows['dv20_idr']['required_join_keys_available']);
         $this->assertTrue($rows['dv20_idr']['as_of_date_safe']);
         $this->assertEquals(1.0, $rows['dv20_idr']['coverage_pct']);
+        $this->assertSame('SAFE_PRE_TRADE_JOINABLE_FIELD', $rows['trading_status_event_type']['field_classification']);
+        $this->assertEquals(1.0, $rows['trading_status_event_type']['coverage_pct']);
         $this->assertSame('SAFE_PRE_TRADE_JOINABLE_FIELD', $rows['rs_20_vs_ihsg']['field_classification']);
     }
 
@@ -238,7 +242,9 @@ class WatchlistBacktestC43PreTradeFieldExpansionDiagnosticServiceTest extends Te
                 'rs_20_vs_sector' => 0.02, 'sector_roc20' => 0.03, 'sector_code' => $i % 2 ? 'A' : 'G',
                 'sector_name' => $i % 2 ? 'Energy' : 'Financials', 'market_index_roc20' => 0.02,
                 'market_index_ma20_slope_pct' => 0.01, 'eligibility_status' => 1, 'is_suspended' => 0,
-                'is_uma' => 0, 'corporate_action_flag' => 0, 'event_risk_flag' => 0,
+                'is_uma' => 0, 'trading_status_code' => $i % 2 ? 'SPECIAL_MONITORING_START' : 'UNSUSPENDED',
+                'corporate_action_flag' => 0, 'event_risk_flag' => $i % 2 ? 1 : 0,
+                'event_risk_reasons' => $i % 2 ? 'TRADING_STATUS:SPECIAL_MONITORING_START' : null,
             ];
         }
         return $out;

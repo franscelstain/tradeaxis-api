@@ -233,20 +233,53 @@ Required constraint/index:
 - index `(action_date, ticker_id)`
 - index `(action_type, action_date)`
 
+### `market_data_trading_status_event_types`
+
+Runtime owner: canonical dictionary for trading-status event semantics. Operators do not input `expected_bar_policy`, `risk_family`, or transition flags in daily CSV files; they input only `event_type_code`, and this dictionary determines the derived coverage/risk behavior.
+Repository: `EventRiskSourceRepository`.
+
+Canonical event type catalog:
+- `SUSPENDED`: `risk_family=SUSPENSION`, `transition_type=START`, `expected_bar_policy=BAR_NOT_REQUIRED`, `carries_forward=1`.
+- `SUSPENSION_OBSERVED`: `risk_family=SUSPENSION`, `transition_type=OBSERVED`, `expected_bar_policy=BAR_NOT_REQUIRED`, `carries_forward=1`; used for source/snapshot proof that suspension is active, including long-suspension lists.
+- `UNSUSPENDED`: `risk_family=SUSPENSION`, `transition_type=END`, `expected_bar_policy=BAR_REQUIRED`, `clears_risk_family=SUSPENSION`.
+- `SPECIAL_MONITORING_START`: `risk_family=SPECIAL_MONITORING`, `transition_type=START`, `expected_bar_policy=BAR_REQUIRED_WITH_RISK`, `carries_forward=1`.
+- `SPECIAL_MONITORING_END`: `risk_family=SPECIAL_MONITORING`, `transition_type=END`, `expected_bar_policy=BAR_REQUIRED`, `clears_risk_family=SPECIAL_MONITORING`.
+- `UMA`: `risk_family=UMA`, `transition_type=POINT_IN_TIME`, `expected_bar_policy=BAR_REQUIRED_WITH_RISK`, `carries_forward=0`.
+
+Required fields:
+- `event_type_code`
+- `risk_family`
+- `transition_type`
+- `expected_bar_policy`
+- `carries_forward`
+- `clears_risk_family`
+- `description`
+- `created_at`
+- `updated_at`
+
+Required constraint/index:
+- primary key `event_type_code`
+- index `(risk_family, transition_type)`
+- index `(expected_bar_policy)`
+
 ### `market_data_trading_status_events`
 
-Runtime owner: source-backed trading status, UMA, suspend, and special-monitoring context used to populate nullable `eod_indicators.trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`. Suspension and special-monitoring rows are interpreted as independent stateful events that carry forward until matching source-backed clear/exit rows; UMA remains exact-date context.
+Runtime owner: source-backed trading status event rows. This table stores only actual source events: ticker, date, canonical `event_type_code`, and source/audit metadata. It intentionally does not store denormalized semantic columns such as `status_code`, `status_effect`, `event_risk_scope`, `coverage_exclusion_flag`, `is_suspended`, or `is_uma`; those meanings are resolved from `market_data_trading_status_event_types`.
 Repository: `EventRiskSourceRepository`.
 Import command: `market-data:events:import-trading-status`.
+
+Daily import CSV contract:
+- required: `ticker_code`, `trade_date`, `event_type_code`
+- optional: `source_name`, `source_ref`, `notes`
+- sample file: `docs/market_data/examples/trading_status_daily.csv`
+- forbidden legacy headers: `status_code`, `is_suspended`, `is_uma`, `status_effect`, `event_risk_scope`, `coverage_exclusion_flag`, `expected_bar_policy`
 
 Required fields:
 - `trading_status_id`
 - `ticker_id`
 - `ticker_code`
 - `trade_date`
-- `status_code`
-- `is_suspended`
-- `is_uma`
+- `event_type_code`
 - `source_name`
 - `source_ref`
 - `notes`
@@ -255,9 +288,9 @@ Required fields:
 
 Required constraint/index:
 - primary key `trading_status_id`
-- unique key `(ticker_id, trade_date, status_code, source_name)`
+- unique key `(ticker_id, trade_date, event_type_code, source_name)`
 - index `(trade_date, ticker_id)`
-- index `(status_code, trade_date)`
+- index `(event_type_code, trade_date)`
 
 ### `md_session_snapshots`
 

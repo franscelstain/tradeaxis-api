@@ -13,6 +13,8 @@ class EodRunRepository
     public function getOrCreateOwningRun($requestedDate, $sourceMode, $stage, $supersedesRunId = null, $requestMode = null)
     {
         return DB::transaction(function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId, $requestMode) {
+            $this->cancelStaleActiveRuns($requestedDate, $sourceMode, $requestMode);
+
             $activeRun = EodRun::query()
                 ->where('trade_date_requested', $requestedDate)
                 ->where('source', $sourceMode)
@@ -356,6 +358,43 @@ class EodRunRepository
         return $run->fresh();
     }
 
+    public function completeImportOnly(EodRun $run, $stage, $reasonCode = 'IMPORT_ONLY_COMPLETED_NOT_PROMOTED', array $payload = [])
+    {
+        $safePayload = array_merge([
+            'run_id' => (int) $run->run_id,
+            'stage' => $stage,
+            'reason_code' => $reasonCode,
+            'request_mode' => 'import_only',
+            'import_status' => 'COMPLETED',
+            'promote_status' => 'NOT_PROMOTED',
+            'promoted' => false,
+            'pointer_switched' => false,
+        ], $payload);
+
+        $this->appendEvent(
+            $run,
+            $stage,
+            'IMPORT_ONLY_COMPLETED_NOT_PROMOTED',
+            'INFO',
+            'Import-only run closed as completed non-readable candidate; promote remains explicit.',
+            $reasonCode,
+            $safePayload
+        );
+
+        $now = Carbon::now(config('market_data.platform.timezone'));
+        $run->stage = $stage;
+        $run->lifecycle_state = 'COMPLETED';
+        $run->terminal_status = null;
+        $run->publishability_state = 'NOT_READABLE';
+        $run->is_current_publication = 0;
+        $run->final_reason_code = $reasonCode;
+        $run->finished_at = $now;
+        $run->updated_at = $now;
+        $run->save();
+
+        return $run->fresh();
+    }
+
     public function updateTelemetry(EodRun $run, array $telemetry)
     {
         $telemetry = $this->normalizeTelemetry($telemetry);
@@ -412,6 +451,69 @@ class EodRunRepository
             ]);
     }
 
+
+    private function cancelStaleActiveRuns($requestedDate, $sourceMode, $requestMode = null): void
+    {
+        $staleMinutes = (int) config('market_data.pipeline.active_run_stale_minutes', 1440);
+
+        if ($staleMinutes <= 0) {
+            return;
+        }
+
+        $now = Carbon::now(config('market_data.platform.timezone'));
+        $cutoff = $now->copy()->subMinutes($staleMinutes);
+
+        $query = EodRun::query()
+            ->where('trade_date_requested', $requestedDate)
+            ->where('source', $sourceMode)
+            ->whereIn('lifecycle_state', ['PENDING', 'RUNNING', 'FINALIZING'])
+            ->whereNull('finished_at')
+            ->where('updated_at', '<', $cutoff)
+            ->where(function ($query) use ($requestMode) {
+                if ($requestMode === null || trim((string) $requestMode) === '') {
+                    $query->whereNull('request_mode')->orWhere('request_mode', '');
+                    return;
+                }
+
+                $query->where('request_mode', $requestMode)
+                    ->orWhereNull('request_mode')
+                    ->orWhere('request_mode', '');
+            })
+            ->orderBy('run_id')
+            ->lockForUpdate();
+
+        foreach ($query->get() as $staleRun) {
+            $previousState = (string) ($staleRun->lifecycle_state ?? '');
+            $previousUpdatedAt = $staleRun->updated_at ? (string) $staleRun->updated_at : null;
+
+            $this->appendEvent(
+                $staleRun,
+                $staleRun->stage ?: 'INGEST_BARS',
+                'STALE_ACTIVE_RUN_CANCELLED',
+                'WARN',
+                'Stale active run cancelled before creating or reusing an owning run.',
+                'STALE_ACTIVE_RUN_CANCELLED',
+                [
+                    'run_id' => (int) $staleRun->run_id,
+                    'trade_date_requested' => $requestedDate,
+                    'source_mode' => $sourceMode,
+                    'request_mode' => $requestMode,
+                    'previous_lifecycle_state' => $previousState,
+                    'previous_updated_at' => $previousUpdatedAt,
+                    'stale_after_minutes' => $staleMinutes,
+                    'cutoff_at' => (string) $cutoff,
+                ]
+            );
+
+            $staleRun->lifecycle_state = 'CANCELLED';
+            $staleRun->terminal_status = null;
+            $staleRun->publishability_state = 'NOT_READABLE';
+            $staleRun->final_reason_code = 'STALE_ACTIVE_RUN_CANCELLED';
+            $staleRun->finished_at = $now;
+            $staleRun->updated_at = $now;
+            $staleRun->save();
+        }
+    }
 
     private function normalizeTelemetry(array $telemetry)
     {

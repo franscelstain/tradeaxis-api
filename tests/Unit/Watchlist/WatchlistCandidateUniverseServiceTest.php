@@ -179,6 +179,7 @@ class WatchlistCandidateUniverseServiceTest extends TestCase
         foreach (['corporate_action_flag', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'] as $field) {
             $this->assertArrayHasKey($field, $metrics);
         }
+        $this->assertSame('UNSUSPENDED', $metrics['trading_status_code']);
         $this->assertSame(-0.010, $metrics['roc5']);
     }
 
@@ -223,6 +224,7 @@ class WatchlistCandidateUniverseServiceTest extends TestCase
         foreach (['corporate_action_flag', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'] as $field) {
             $this->assertArrayHasKey($field, $metrics);
         }
+        $this->assertSame('UNSUSPENDED', $metrics['trading_status_code']);
         $this->assertSame(-0.010, $metrics['roc5']);
     }
 

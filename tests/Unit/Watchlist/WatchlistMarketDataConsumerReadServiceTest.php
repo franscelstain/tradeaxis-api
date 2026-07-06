@@ -46,6 +46,9 @@ class WatchlistMarketDataConsumerReadServiceTest extends TestCase
         $this->assertSame('WATCHLIST_MARKET_DATA_READY', $result['reason_code']);
         $this->assertSame('current_readable_publication_pointer', $result['source_contract']['resolution_mode']);
         $this->assertTrue($result['source_contract']['forbids_raw_staging_latest_max_date_bypass']);
+        $this->assertTrue($result['source_contract']['forbids_raw_trading_status_event_join']);
+        $this->assertSame('published_indicator_snapshot', $result['source_contract']['event_risk_snapshot_source']);
+        $this->assertSame('market_data_trading_status_event_types.event_type_code_snapshot', $result['source_contract']['trading_status_code_semantics']);
         $this->assertSame(2, $result['publication_id']);
         $this->assertSame(3, $result['run_id']);
         $this->assertSame(1, $result['candidate_count']);
@@ -126,6 +129,7 @@ class WatchlistMarketDataConsumerReadServiceTest extends TestCase
         $this->assertContains('WATCHLIST_INDICATOR_INVALID', $result['excluded_rows'][0]['reason_codes']);
         $this->assertContains('WATCHLIST_INDICATOR_INVALID_REASON_PRESENT', $result['excluded_rows'][0]['reason_codes']);
         $this->assertContains('WATCHLIST_REQUIRED_FIELD_MISSING:ma50', $result['excluded_rows'][0]['reason_codes']);
+        $this->assertSame('UNSUSPENDED', $result['candidates'][0]['indicators']['trading_status_code']);
     }
 
     private function marketDataPayloadRow(string $tickerCode): array
@@ -152,6 +156,7 @@ class WatchlistMarketDataConsumerReadServiceTest extends TestCase
             'close_vs_ma50_pct' => 4.6,
             'ma20_slope_pct' => 1.2,
             'rs_20_vs_ihsg' => 3.4,
+            'trading_status_code' => 'ACTIVE',
             'indicator_set_version' => 'v1',
             'source_name' => 'API_FREE',
         ];

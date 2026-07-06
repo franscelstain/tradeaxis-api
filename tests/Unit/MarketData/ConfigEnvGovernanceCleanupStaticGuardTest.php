@@ -189,9 +189,9 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
 
         $this->assertStringContainsString("ACTIVE SESSION:
-- Market Data Indicator Warmup Window Audit", $status);
+- Trading Status Source Model Semantic Simplification", $status);
         $this->assertStringContainsString("ACTIVE SESSION:
-- Market Data Indicator Warmup Window Audit", $tracker);
+- Trading Status Source Model Semantic Simplification", $tracker);
         $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
