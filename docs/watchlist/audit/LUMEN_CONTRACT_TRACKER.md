@@ -11913,3 +11913,1105 @@ C133_NEXT_CONTRACT=C134_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATIO
 ```
 
 C133 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C132 artifact mutation.
+
+## C134 / PR-22 Weekly Swing Watchlist Production Live Runtime Activation Observation Result Review Contract - 2026-07-14
+
+C134 contract scope is PR-22 weekly swing watchlist production live runtime activation observation result review only.
+C134 validates C133 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C134 validates C133 production/live runtime activation observation review state.
+C134 requires --operator-approved.
+C134 requires non-empty --approval-reference.
+C134 confirms no temporary negative test artifact remains.
+C134 records production/live activation observation result review completion for E02 and B01 only.
+C134 keeps A01 comparator-only and does not promote A01.
+C134 creates artifact-only production/live runtime activation observation result manifest.
+C134 keeps production_ready=false.
+C134 keeps production_runtime_wiring_allowed=false.
+C134 keeps production_runtime_wiring_executed=false.
+C134 keeps runtime_bridge_active=false.
+C134 keeps plan_confirm_mutation_allowed=false.
+C134 keeps plan_confirm_mutated=false.
+C134 keeps weekly_swing_watchlist_live_output_enabled=false.
+C134 weekly swing watchlist production live runtime activation observation result review means continue to C135 production live runtime activation operator go/no-go review only.
+C134 activation observation result review record is not production deployment.
+C134 activation observation result review record is not PLAN/CONFIRM live rollout.
+C134 activation observation result review record is not runtime bridge activation.
+C134 activation observation result review record is not weekly swing live output.
+C134 activation observation result review record is not an official weekly swing stock recommendation.
+
+```text
+C134_CONTRACT_STATUS=C134_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASSED_READY_FOR_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C134_PHASE_LABEL=PR-22 / C134_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW
+C134_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c134-weekly-swing-watchlist-production-live-runtime-activation-observation-result-review.json
+C134_SOURCE_LOCK=C133
+FOCUSED_PHPUNIT_C134=OK (27 tests, 174 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C134=OK (4584 tests, 37585 assertions)
+EXPECTED_C133_HASH=225cdb28fecb555d87897b3dad0638a3aea562b3
+EXPECTED_C133_FILE_SHA1=C8A2E1BEB7EA86C9280A42F1D617D5DACB78ADD8
+C134_RUNTIME_STATUS=C134_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASSED_READY_FOR_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C134_ARTIFACT_HASH=ada066cc599d749e050b5efd61073ccad1e64b74
+C134_FILE_SHA1=AE7C013A1B5CC0DFC5968C4FC99B2E1DDFF88F3E
+C133_HASH_MATCH=1
+C133_FILE_SHA1_MATCH=1
+C133_CONVERT_FROM_JSON_PASS=1
+C133_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C134_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C134_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C134_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C134_NEXT_CONTRACT=C135_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C134 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C133 artifact mutation.
+
+## C135 / PR-23 Weekly Swing Watchlist Production Live Runtime Activation Operator Go/No-Go Review Contract - 2026-07-14
+
+C135 contract scope is PR-23 weekly swing watchlist production live runtime activation operator GO/NO-GO review only.
+C135 validates C134 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C135 validates C134 production/live runtime activation observation result review state.
+C135 requires --operator-approved.
+C135 requires non-empty --approval-reference.
+C135 requires --operator-go-decision-confirmed.
+C135 confirms no temporary negative test artifact remains.
+C135 records operator GO for E02 and B01 only.
+C135 keeps A01 comparator-only and does not promote A01.
+C135 creates artifact-only production/live runtime activation operator GO/NO-GO manifest.
+C135 keeps production_ready=false.
+C135 keeps production_runtime_wiring_allowed=false.
+C135 keeps production_runtime_wiring_executed=false.
+C135 keeps runtime_bridge_active=false.
+C135 keeps plan_confirm_mutation_allowed=false.
+C135 keeps plan_confirm_mutated=false.
+C135 keeps weekly_swing_watchlist_live_output_enabled=false.
+C135 weekly swing watchlist production live runtime activation operator GO/NO-GO review means continue to C136 production live runtime activation GO decision finalization review only.
+C135 operator GO record is not production deployment.
+C135 operator GO record is not PLAN/CONFIRM live rollout.
+C135 operator GO record is not runtime bridge activation.
+C135 operator GO record is not weekly swing live output.
+C135 operator GO record is not an official weekly swing stock recommendation.
+
+```text
+C135_CONTRACT_STATUS=C135_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP
+C135_PHASE_LABEL=PR-23 / C135_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+C135_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c135-weekly-swing-watchlist-production-live-runtime-activation-operator-go-no-go-review.json
+C135_SOURCE_LOCK=C134
+FOCUSED_PHPUNIT_C135=OK (30 tests, 192 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C135=OK (4614 tests, 37777 assertions)
+EXPECTED_C134_HASH=ada066cc599d749e050b5efd61073ccad1e64b74
+EXPECTED_C134_FILE_SHA1=AE7C013A1B5CC0DFC5968C4FC99B2E1DDFF88F3E
+C135_RUNTIME_STATUS=C135_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP
+C135_ARTIFACT_HASH=a1573ce8ba1543ce8a98c08c17eefe519e4ca710
+C135_FILE_SHA1=B283F81F0F10AD0CB46BE3C1BFF2A4ABFA27B1A2
+C134_HASH_MATCH=1
+C134_FILE_SHA1_MATCH=1
+C134_CONVERT_FROM_JSON_PASS=1
+C134_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+OPERATOR_GO_DECISION=GO
+OPERATOR_GO_DECISION_CONFIRMED=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C135_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C135_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_GO_DECISION_CONFIRMATION=C135_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_REJECTED_GO_DECISION_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C135_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C135_NEXT_CONTRACT=C136_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C135 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C134 artifact mutation.
+
+## C136 / PR-24 Weekly Swing Watchlist Production Live Runtime Activation GO Decision Finalization Review Contract - 2026-07-14
+
+C136 contract scope is PR-24 weekly swing watchlist production live runtime activation GO decision finalization review only.
+C136 validates C135 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C136 validates C135 production/live runtime activation operator GO/NO-GO review state.
+C136 requires --operator-approved.
+C136 requires non-empty --approval-reference.
+C136 requires --go-decision-finalization-confirmed.
+C136 confirms no temporary negative test artifact remains.
+C136 records finalized GO for E02 and B01 only.
+C136 keeps A01 comparator-only and does not promote A01.
+C136 creates artifact-only production/live runtime activation GO decision finalization manifest.
+C136 keeps production_ready=false.
+C136 keeps production_runtime_wiring_allowed=false.
+C136 keeps production_runtime_wiring_executed=false.
+C136 keeps runtime_bridge_active=false.
+C136 keeps plan_confirm_mutation_allowed=false.
+C136 keeps plan_confirm_mutated=false.
+C136 keeps weekly_swing_watchlist_live_output_enabled=false.
+C136 weekly swing watchlist production live runtime activation GO decision finalization review means continue to C137 production live runtime activation pre-activation boundary review only.
+C136 finalized GO record is not production deployment.
+C136 finalized GO record is not PLAN/CONFIRM live rollout.
+C136 finalized GO record is not runtime bridge activation.
+C136 finalized GO record is not weekly swing live output.
+C136 finalized GO record is not an official weekly swing stock recommendation.
+
+```text
+C136_CONTRACT_STATUS=C136_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_FINALIZED_GO_PRIMARY_AND_BACKUP
+C136_PHASE_LABEL=PR-24 / C136_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW
+C136_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c136-weekly-swing-watchlist-production-live-runtime-activation-go-decision-finalization-review.json
+C136_SOURCE_LOCK=C135
+FOCUSED_PHPUNIT_C136=OK (41 tests, 214 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C136=OK (4655 tests, 37991 assertions)
+EXPECTED_C135_HASH=a1573ce8ba1543ce8a98c08c17eefe519e4ca710
+EXPECTED_C135_FILE_SHA1=B283F81F0F10AD0CB46BE3C1BFF2A4ABFA27B1A2
+C136_RUNTIME_STATUS=C136_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_FINALIZED_GO_PRIMARY_AND_BACKUP
+C136_ARTIFACT_HASH=38eee6c7216fd94421c65be129ba50c4a93fd1d1
+C136_FILE_SHA1=1B395D673F04AE8A7FD62527259DA2CFBA8244AF
+C135_HASH_MATCH=1
+C135_FILE_SHA1_MATCH=1
+C135_CONVERT_FROM_JSON_PASS=1
+C135_ACTIVATION_OPERATOR_GO_NO_GO_VALID=1
+OPERATOR_GO_DECISION=GO
+OPERATOR_GO_DECISION_CONFIRMED=1
+GO_DECISION_FINALIZED=1
+GO_DECISION_FINALIZATION_CONFIRMED=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C136_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C136_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_GO_DECISION_FINALIZATION_CONFIRMATION=C136_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_REJECTED_GO_DECISION_FINALIZATION_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C136_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C136_NEXT_CONTRACT=C137_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW
+```
+
+C136 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C135 artifact mutation.
+
+## C137 / PR-25 Weekly Swing Watchlist Production Live Runtime Activation Pre-Activation Boundary Review Contract - 2026-07-14
+
+C137 contract scope is PR-25 weekly swing watchlist production live runtime activation pre-activation boundary review only.
+C137 validates C136 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C137 validates C136 production/live runtime activation GO decision finalization state.
+C137 requires --operator-approved.
+C137 requires non-empty --approval-reference.
+C137 requires --pre-activation-boundary-confirmed.
+C137 confirms no temporary negative test artifact remains.
+C137 records pre-activation boundary clearance for E02 and B01 only.
+C137 keeps A01 comparator-only and does not promote A01.
+C137 creates artifact-only production/live runtime activation pre-activation boundary manifest.
+C137 keeps activation_authorized=false.
+C137 keeps production_ready=false.
+C137 keeps production_runtime_wiring_allowed=false.
+C137 keeps production_runtime_wiring_executed=false.
+C137 keeps runtime_bridge_active=false.
+C137 keeps plan_confirm_mutation_allowed=false.
+C137 keeps plan_confirm_mutated=false.
+C137 keeps weekly_swing_watchlist_live_output_enabled=false.
+C137 weekly swing watchlist production live runtime activation pre-activation boundary review means continue to C138 production live runtime activation authorization review only.
+C137 boundary clearance is not activation authorization.
+C137 boundary clearance is not production deployment.
+C137 boundary clearance is not PLAN/CONFIRM live rollout.
+C137 boundary clearance is not runtime bridge activation.
+C137 boundary clearance is not weekly swing live output.
+C137 boundary clearance is not an official weekly swing stock recommendation.
+
+```text
+C137_CONTRACT_STATUS=C137_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+C137_PHASE_LABEL=PR-25 / C137_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW
+C137_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c137-weekly-swing-watchlist-production-live-runtime-activation-pre-activation-boundary-review.json
+C137_SOURCE_LOCK=C136
+FOCUSED_PHPUNIT_C137=OK (43 tests, 221 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C137=OK (4698 tests, 38212 assertions)
+EXPECTED_C136_HASH=38eee6c7216fd94421c65be129ba50c4a93fd1d1
+EXPECTED_C136_FILE_SHA1=1B395D673F04AE8A7FD62527259DA2CFBA8244AF
+C137_RUNTIME_STATUS=C137_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+C137_ARTIFACT_HASH=da4f273d8b60a5cc07e0950a59a8673ac9ad8e1d
+C137_FILE_SHA1=F1599D92D69EBC4AB820B61CB8C0F421A9C7EFB9
+C136_HASH_MATCH=1
+C136_FILE_SHA1_MATCH=1
+C136_CONVERT_FROM_JSON_PASS=1
+C136_GO_DECISION_FINALIZATION_VALID=1
+PRE_ACTIVATION_BOUNDARY_CONFIRMED=1
+PRE_ACTIVATION_BOUNDARY_CLEARED=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C137_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C137_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_PRE_ACTIVATION_BOUNDARY_CONFIRMATION=C137_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_REJECTED_PRE_ACTIVATION_BOUNDARY_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C137_TEST_ARTIFACTS_REMAINING
+ACTIVATION_AUTHORIZED=0
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C137_NEXT_CONTRACT=C138_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW
+```
+
+C137 contract does not permit activation authorization, production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C136 artifact mutation.
+
+## C138 / PR-26 Weekly Swing Watchlist Production Live Runtime Activation Authorization Review Contract - 2026-07-14
+
+C138 contract scope is PR-26 weekly swing watchlist production live runtime activation authorization review only.
+C138 validates C137 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C138 validates C137 production/live runtime activation pre-activation boundary state.
+C138 requires --operator-approved.
+C138 requires non-empty --approval-reference.
+C138 requires --activation-authorization-confirmed.
+C138 confirms no temporary negative test artifact remains.
+C138 records activation authorization for E02 and B01 only.
+C138 keeps A01 comparator-only and does not promote A01.
+C138 creates artifact-only production/live runtime activation authorization manifest.
+C138 sets activation_authorized=true as authorization evidence only.
+C138 keeps production_ready=false.
+C138 keeps production_runtime_wiring_allowed=false.
+C138 keeps production_runtime_wiring_executed=false.
+C138 keeps production_live_runtime_activation_executed=false.
+C138 keeps runtime_bridge_active=false.
+C138 keeps plan_confirm_mutation_allowed=false.
+C138 keeps plan_confirm_mutated=false.
+C138 keeps weekly_swing_watchlist_live_output_enabled=false.
+C138 weekly swing watchlist production live runtime activation authorization review means continue to C139 production live runtime activation execution review only.
+C138 authorization is not activation execution.
+C138 authorization is not production deployment.
+C138 authorization is not PLAN/CONFIRM live rollout.
+C138 authorization is not runtime bridge activation.
+C138 authorization is not weekly swing live output.
+C138 authorization is not an official weekly swing stock recommendation.
+
+```text
+C138_CONTRACT_STATUS=C138_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_PASSED_AUTHORIZED_PRIMARY_AND_BACKUP
+C138_PHASE_LABEL=PR-26 / C138_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW
+C138_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c138-weekly-swing-watchlist-production-live-runtime-activation-authorization-review.json
+C138_SOURCE_LOCK=C137
+FOCUSED_PHPUNIT_C138=OK (46 tests, 230 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C138=OK (4744 tests, 38442 assertions)
+EXPECTED_C137_HASH=da4f273d8b60a5cc07e0950a59a8673ac9ad8e1d
+EXPECTED_C137_FILE_SHA1=F1599D92D69EBC4AB820B61CB8C0F421A9C7EFB9
+C138_RUNTIME_STATUS=C138_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_PASSED_AUTHORIZED_PRIMARY_AND_BACKUP
+C138_ARTIFACT_HASH=e3954d308b8540bbf7d10ce716848ee816383201
+C138_FILE_SHA1=1FDC5A1BCF18AD32204FCACCDE6EFDD3747D28D0
+C137_HASH_MATCH=1
+C137_FILE_SHA1_MATCH=1
+C137_CONVERT_FROM_JSON_PASS=1
+C137_PRE_ACTIVATION_BOUNDARY_VALID=1
+ACTIVATION_AUTHORIZATION_CONFIRMED=1
+ACTIVATION_AUTHORIZED=1
+PRIMARY_CANDIDATE_ACTIVATION_AUTHORIZED=1
+BACKUP_CANDIDATE_ACTIVATION_AUTHORIZED=1
+COMPARATOR_CANDIDATE_ACTIVATION_AUTHORIZED=0
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C138_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C138_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_ACTIVATION_AUTHORIZATION_CONFIRMATION=C138_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_REJECTED_ACTIVATION_AUTHORIZATION_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C138_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C138_NEXT_CONTRACT=C139_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW
+```
+
+C138 contract does not permit activation execution, production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C137 artifact mutation.
+
+## C139 / PR-27 Weekly Swing Watchlist Production Live Runtime Activation Execution Review Contract - 2026-07-14
+
+C139 contract scope is PR-27 weekly swing watchlist production live runtime activation execution review only.
+C139 validates C138 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C139 validates C138 production/live runtime activation authorization state.
+C139 requires --operator-approved.
+C139 requires non-empty --approval-reference.
+C139 requires --production-live-runtime-activation-execution-confirmed.
+C139 confirms no temporary negative test artifact remains.
+C139 records activation execution review for E02 and B01 only.
+C139 keeps A01 comparator-only and does not promote A01.
+C139 creates artifact-only production/live runtime activation execution review manifest.
+C139 keeps production_ready=false.
+C139 keeps production_runtime_wiring_allowed=false.
+C139 keeps production_runtime_wiring_executed=false.
+C139 keeps production_live_runtime_activation_executed=false.
+C139 keeps runtime_bridge_active=false.
+C139 keeps plan_confirm_mutation_allowed=false.
+C139 keeps plan_confirm_mutated=false.
+C139 keeps weekly_swing_watchlist_live_output_enabled=false.
+C139 weekly swing watchlist production live runtime activation execution review means continue to C140 production live runtime activation observation review only.
+C139 execution review is not production deployment.
+C139 execution review is not PLAN/CONFIRM live rollout.
+C139 execution review is not runtime bridge activation.
+C139 execution review is not weekly swing live output.
+C139 execution review is not an official weekly swing stock recommendation.
+
+```text
+C139_CONTRACT_STATUS=C139_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_PASSED_READY_FOR_ACTIVATION_OBSERVATION_REVIEW_PRIMARY_AND_BACKUP
+C139_PHASE_LABEL=PR-27 / C139_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW
+C139_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c139-weekly-swing-watchlist-production-live-runtime-activation-execution-review.json
+C139_SOURCE_LOCK=C138
+FOCUSED_PHPUNIT_C139=OK (45 tests, 180 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C139=OK (4789 tests, 38622 assertions)
+EXPECTED_C138_HASH=e3954d308b8540bbf7d10ce716848ee816383201
+EXPECTED_C138_FILE_SHA1=1FDC5A1BCF18AD32204FCACCDE6EFDD3747D28D0
+C139_RUNTIME_STATUS=C139_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_PASSED_READY_FOR_ACTIVATION_OBSERVATION_REVIEW_PRIMARY_AND_BACKUP
+C139_ARTIFACT_HASH=2b2e648433b2bf1e502246d879e7c5e5d943fba7
+C139_FILE_SHA1=EDE1BC52EFDCF750304E31BB04677FD63912D296
+C138_HASH_MATCH=1
+C138_FILE_SHA1_MATCH=1
+C138_CONVERT_FROM_JSON_PASS=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZED=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C139_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C139_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_ACTIVATION_EXECUTION_CONFIRMATION=C139_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_REJECTED_ACTIVATION_EXECUTION_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C139_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C139_NEXT_CONTRACT=C140_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW
+```
+
+C139 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C138 artifact mutation.
+
+## C140 / PR-28 Weekly Swing Watchlist Production Live Runtime Activation Observation Review Contract - 2026-07-14
+
+C140 contract scope is PR-28 weekly swing watchlist production live runtime activation observation review only.
+C140 validates C139 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C140 validates C139 production/live runtime activation execution review state.
+C140 requires --operator-approved.
+C140 requires non-empty --approval-reference.
+C140 confirms no temporary negative test artifact remains.
+C140 records activation observation review for E02 and B01 only.
+C140 keeps A01 comparator-only and does not promote A01.
+C140 creates artifact-only production/live runtime activation observation review manifest.
+C140 keeps production_ready=false.
+C140 keeps production_runtime_wiring_allowed=false.
+C140 keeps production_runtime_wiring_executed=false.
+C140 keeps production_live_runtime_activation_executed=false.
+C140 keeps runtime_bridge_active=false.
+C140 keeps plan_confirm_mutation_allowed=false.
+C140 keeps plan_confirm_mutated=false.
+C140 keeps weekly_swing_watchlist_live_output_enabled=false.
+C140 weekly swing watchlist production live runtime activation observation review means continue to C141 production live runtime activation observation result review only.
+C140 observation review is not production deployment.
+C140 observation review is not PLAN/CONFIRM live rollout.
+C140 observation review is not runtime bridge activation.
+C140 observation review is not weekly swing live output.
+C140 observation review is not an official weekly swing stock recommendation.
+
+```text
+C140_CONTRACT_STATUS=C140_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_PASSED_READY_FOR_ACTIVATION_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C140_PHASE_LABEL=PR-28 / C140_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW
+C140_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c140-weekly-swing-watchlist-production-live-runtime-activation-observation-review.json
+C140_SOURCE_LOCK=C139
+FOCUSED_PHPUNIT_C140=OK (41 tests, 185 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C140=OK (4830 tests, 38807 assertions)
+EXPECTED_C139_HASH=2b2e648433b2bf1e502246d879e7c5e5d943fba7
+EXPECTED_C139_FILE_SHA1=EDE1BC52EFDCF750304E31BB04677FD63912D296
+C140_RUNTIME_STATUS=C140_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_PASSED_READY_FOR_ACTIVATION_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C140_ARTIFACT_HASH=e1a428c007dbe40d438e34a15c74d57a58cf5449
+C140_FILE_SHA1=91EA2C44BB6E8742F55203589BFCFB7E1088DD6B
+C139_HASH_MATCH=1
+C139_FILE_SHA1_MATCH=1
+C139_CONVERT_FROM_JSON_PASS=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZED=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C140_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C140_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C140_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C140_NEXT_CONTRACT=C141_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW
+```
+
+C140 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C139 artifact mutation.
+
+## C141 / PR-29 Weekly Swing Watchlist Production Live Runtime Activation Observation Result Review Contract - 2026-07-14
+
+C141 contract scope is PR-29 weekly swing watchlist production live runtime activation observation result review only.
+C141 validates C140 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C141 validates C140 production/live runtime activation observation review state.
+C141 carries forward C139 execution review, C138 authorization, and the C137-C129 activation readiness lineage.
+C141 requires --operator-approved.
+C141 requires non-empty --approval-reference.
+C141 confirms no temporary negative test artifact remains.
+C141 records activation observation result review for E02 and B01 only.
+C141 keeps A01 comparator-only and does not promote A01.
+C141 creates artifact-only production/live runtime activation observation result review manifest.
+C141 keeps production_ready=false.
+C141 keeps production_runtime_wiring_allowed=false.
+C141 keeps production_runtime_wiring_executed=false.
+C141 keeps production_live_runtime_activation_executed=false.
+C141 keeps runtime_bridge_active=false.
+C141 keeps plan_confirm_mutation_allowed=false.
+C141 keeps plan_confirm_mutated=false.
+C141 keeps weekly_swing_watchlist_live_output_enabled=false.
+C141 weekly swing watchlist production live runtime activation observation result review means continue to C142 production live runtime activation operator go/no-go review only.
+C141 observation result review is not production deployment.
+C141 observation result review is not PLAN/CONFIRM live rollout.
+C141 observation result review is not runtime bridge activation.
+C141 observation result review is not weekly swing live output.
+C141 observation result review is not an official weekly swing stock recommendation.
+
+```text
+C141_CONTRACT_STATUS=C141_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASSED_READY_FOR_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C141_PHASE_LABEL=PR-29 / C141_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW
+C141_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c141-weekly-swing-watchlist-production-live-runtime-activation-observation-result-review.json
+C141_SOURCE_LOCK=C140
+FOCUSED_PHPUNIT_C141=OK (44 tests, 197 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C141=OK (4874 tests, 39004 assertions)
+EXPECTED_C140_HASH=e1a428c007dbe40d438e34a15c74d57a58cf5449
+EXPECTED_C140_FILE_SHA1=91EA2C44BB6E8742F55203589BFCFB7E1088DD6B
+C141_RUNTIME_STATUS=C141_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASSED_READY_FOR_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C141_ARTIFACT_HASH=ea7c4be969c2faf9e4990a135503829b8f6d6518
+C141_FILE_SHA1=D9102B54D8719B40266AC8D4E9A0DF5B5BA5EB74
+C140_HASH_MATCH=1
+C140_FILE_SHA1_MATCH=1
+C140_CONVERT_FROM_JSON_PASS=1
+C140_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZED=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C141_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C141_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C141_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C141_NEXT_CONTRACT=C142_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C141 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C140 artifact mutation.
+
+## C142 / PR-30 Weekly Swing Watchlist Production Live Runtime Activation Operator Go/No-Go Review Contract - 2026-07-14
+
+C142 contract scope is PR-30 weekly swing watchlist production live runtime activation operator GO/NO-GO review only.
+C142 validates C141 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C142 validates C141 production/live runtime activation observation result review state.
+C142 carries forward C140 observation review, C139 execution review, C138 authorization, and the C137-C129 activation readiness lineage.
+C142 requires --operator-approved.
+C142 requires non-empty --approval-reference.
+C142 requires explicit --operator-go-decision-confirmed.
+C142 confirms no temporary negative test artifact remains.
+C142 records operator GO for E02 and B01 only.
+C142 keeps A01 comparator-only and does not promote A01.
+C142 creates artifact-only production/live runtime activation operator GO/NO-GO manifest.
+C142 keeps production_ready=false.
+C142 keeps production_runtime_wiring_allowed=false.
+C142 keeps production_runtime_wiring_executed=false.
+C142 keeps production_live_runtime_activation_executed=false.
+C142 keeps runtime_bridge_active=false.
+C142 keeps plan_confirm_mutation_allowed=false.
+C142 keeps plan_confirm_mutated=false.
+C142 keeps weekly_swing_watchlist_live_output_enabled=false.
+C142 weekly swing watchlist production live runtime activation operator GO/NO-GO review means continue to C143 production live runtime activation GO decision finalization review only.
+C142 operator GO/NO-GO review is not production deployment.
+C142 operator GO/NO-GO review is not PLAN/CONFIRM live rollout.
+C142 operator GO/NO-GO review is not runtime bridge activation.
+C142 operator GO/NO-GO review is not weekly swing live output.
+C142 operator GO/NO-GO review is not an official weekly swing stock recommendation.
+
+```text
+C142_CONTRACT_STATUS=C142_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP
+C142_PHASE_LABEL=PR-30 / C142_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+C142_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c142-weekly-swing-watchlist-production-live-runtime-activation-operator-go-no-go-review.json
+C142_SOURCE_LOCK=C141
+FOCUSED_PHPUNIT_C142=OK (48 tests, 217 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C142=OK (4922 tests, 39221 assertions)
+EXPECTED_C141_HASH=ea7c4be969c2faf9e4990a135503829b8f6d6518
+EXPECTED_C141_FILE_SHA1=D9102B54D8719B40266AC8D4E9A0DF5B5BA5EB74
+C142_RUNTIME_STATUS=C142_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP
+C142_ARTIFACT_HASH=18821ce6df6043bd31ba2d8add49062c6c811e3e
+C142_FILE_SHA1=3D82D0647F20144FA98F46AA800D2777E33F7880
+C141_HASH_MATCH=1
+C141_FILE_SHA1_MATCH=1
+C141_CONVERT_FROM_JSON_PASS=1
+C141_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+C140_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZED=1
+OPERATOR_GO_DECISION=GO
+OPERATOR_GO_DECISION_CONFIRMED=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C142_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C142_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_GO_DECISION_CONFIRMATION=C142_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_REJECTED_GO_DECISION_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C142_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C142_NEXT_CONTRACT=C143_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C142 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C141 artifact mutation.
+
+## C143 / PR-31 Weekly Swing Watchlist Production Live Runtime Activation GO Decision Finalization Review Contract - 2026-07-14
+
+C143 contract scope is PR-31 weekly swing watchlist production live runtime activation GO decision finalization review only.
+C143 validates C142 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C143 validates C142 production/live runtime activation operator GO/NO-GO review state.
+C143 carries forward C141 observation result review, C140 observation review, C139 execution review, C138 authorization, and the C137-C129 activation readiness lineage.
+C143 requires --operator-approved.
+C143 requires non-empty --approval-reference.
+C143 requires explicit --go-decision-finalization-confirmed.
+C143 confirms no temporary negative test artifact remains.
+C143 finalizes operator GO for E02 and B01 only.
+C143 keeps A01 comparator-only and does not promote A01.
+C143 creates artifact-only production/live runtime activation GO decision finalization evidence.
+C143 keeps production_ready=false.
+C143 keeps production_runtime_wiring_allowed=false.
+C143 keeps production_runtime_wiring_executed=false.
+C143 keeps production_live_runtime_activation_executed=false.
+C143 keeps runtime_bridge_active=false.
+C143 keeps plan_confirm_mutation_allowed=false.
+C143 keeps plan_confirm_mutated=false.
+C143 keeps weekly_swing_watchlist_live_output_enabled=false.
+C143 weekly swing watchlist production live runtime activation GO decision finalization review means continue to C144 production live runtime activation pre-activation boundary review only.
+C143 GO decision finalization review is not production deployment.
+C143 GO decision finalization review is not PLAN/CONFIRM live rollout.
+C143 GO decision finalization review is not runtime bridge activation.
+C143 GO decision finalization review is not weekly swing live output.
+C143 GO decision finalization review is not an official weekly swing stock recommendation.
+
+```text
+C143_CONTRACT_STATUS=C143_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_FINALIZED_GO_PRIMARY_AND_BACKUP
+C143_PHASE_LABEL=PR-31 / C143_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW
+C143_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c143-weekly-swing-watchlist-production-live-runtime-activation-go-decision-finalization-review.json
+C143_SOURCE_LOCK=C142
+FOCUSED_PHPUNIT_C143=OK (63 tests, 247 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C143=OK (4985 tests, 39468 assertions)
+EXPECTED_C142_HASH=18821ce6df6043bd31ba2d8add49062c6c811e3e
+EXPECTED_C142_FILE_SHA1=3D82D0647F20144FA98F46AA800D2777E33F7880
+C143_RUNTIME_STATUS=C143_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_FINALIZED_GO_PRIMARY_AND_BACKUP
+C143_ARTIFACT_HASH=804b6020e73e24e7dac0a9ecbbe116ff5ee95808
+C143_FILE_SHA1=F0645B69E7F22C1FACEEA235ED0256777558752F
+C142_HASH_MATCH=1
+C142_FILE_SHA1_MATCH=1
+C142_CONVERT_FROM_JSON_PASS=1
+C142_ACTIVATION_OPERATOR_GO_NO_GO_VALID=1
+C141_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+C140_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZED=1
+OPERATOR_GO_DECISION=GO
+OPERATOR_GO_DECISION_CONFIRMED=1
+GO_DECISION_FINALIZED=1
+GO_DECISION_FINALIZATION_CONFIRMED=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_PASS=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C143_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C143_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_GO_DECISION_FINALIZATION_CONFIRMATION=C143_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_GO_DECISION_FINALIZATION_REVIEW_REJECTED_GO_DECISION_FINALIZATION_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C143_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C143_NEXT_CONTRACT=C144_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW
+```
+
+C143 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C142 artifact mutation.
+
+## C144 / PR-32 Weekly Swing Watchlist Production Live Runtime Activation Pre-Activation Boundary Review Contract - 2026-07-15
+
+C144 contract scope is PR-32 weekly swing watchlist production live runtime activation pre-activation boundary review only.
+C144 validates C143 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C144 validates C143 production/live runtime activation GO decision finalization state.
+C144 carries forward C142 operator GO/NO-GO, C141 observation result review, C140 observation review, C139 execution review, C138 authorization, and the C137-C129 activation readiness lineage.
+C144 requires --operator-approved.
+C144 requires non-empty --approval-reference.
+C144 requires explicit --pre-activation-boundary-confirmed.
+C144 confirms no temporary negative test artifact remains.
+C144 clears the boundary for E02 and B01 only.
+C144 keeps A01 comparator-only and does not promote A01.
+C144 creates artifact-only production/live runtime activation pre-activation boundary evidence.
+C144 keeps activation_authorized=false for this authorization step.
+C144 keeps production_ready=false.
+C144 keeps production_runtime_wiring_allowed=false.
+C144 keeps production_runtime_wiring_executed=false.
+C144 keeps production_live_runtime_activation_executed=false.
+C144 keeps runtime_bridge_active=false.
+C144 keeps plan_confirm_mutation_allowed=false.
+C144 keeps plan_confirm_mutated=false.
+C144 keeps weekly_swing_watchlist_live_output_enabled=false.
+C144 weekly swing watchlist production live runtime activation pre-activation boundary review means continue to C145 production live runtime activation authorization review only.
+C144 pre-activation boundary review is not production deployment.
+C144 pre-activation boundary review is not PLAN/CONFIRM live rollout.
+C144 pre-activation boundary review is not runtime bridge activation.
+C144 pre-activation boundary review is not weekly swing live output.
+C144 pre-activation boundary review is not an official weekly swing stock recommendation.
+
+```text
+C144_CONTRACT_STATUS=C144_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+C144_PHASE_LABEL=PR-32 / C144_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW
+C144_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c144-weekly-swing-watchlist-production-live-runtime-activation-pre-activation-boundary-review.json
+C144_SOURCE_LOCK=C143
+FOCUSED_PHPUNIT_C144=OK (67 tests, 260 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C144=OK (5052 tests, 39728 assertions)
+EXPECTED_C143_HASH=804b6020e73e24e7dac0a9ecbbe116ff5ee95808
+EXPECTED_C143_FILE_SHA1=F0645B69E7F22C1FACEEA235ED0256777558752F
+C144_RUNTIME_STATUS=C144_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP
+C144_ARTIFACT_HASH=68d5bb7d096b09d1defa3a655313ff0a7f658e84
+C144_FILE_SHA1=FBC618728E9A8B49A5FBD5CE273EF2159705C816
+C143_HASH_MATCH=1
+C143_FILE_SHA1_MATCH=1
+C143_CONVERT_FROM_JSON_PASS=1
+C143_GO_DECISION_FINALIZATION_VALID=1
+C142_ACTIVATION_OPERATOR_GO_NO_GO_VALID=1
+C141_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+C140_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+PRE_ACTIVATION_BOUNDARY_CONFIRMED=1
+PRE_ACTIVATION_BOUNDARY_CLEARED=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C144_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C144_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_PRE_ACTIVATION_BOUNDARY_CONFIRMATION=C144_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_PRE_ACTIVATION_BOUNDARY_REVIEW_REJECTED_PRE_ACTIVATION_BOUNDARY_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C144_TEST_ARTIFACTS_REMAINING
+ACTIVATION_AUTHORIZED=0
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C144_NEXT_CONTRACT=C145_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW
+```
+
+C144 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C143 artifact mutation.
+
+## C145 / PR-33 Weekly Swing Watchlist Production Live Runtime Activation Authorization Review Contract - 2026-07-15
+
+C145 contract scope is PR-33 weekly swing watchlist production live runtime activation authorization review only.
+C145 validates C144 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C145 validates C144 production/live runtime activation pre-activation boundary state.
+C145 carries forward C143 GO decision finalization, C142 operator GO/NO-GO, C141 observation result review, C140 observation review, C139 execution review, C138 authorization, and the C137-C129 activation readiness lineage.
+C145 requires --operator-approved.
+C145 requires non-empty --approval-reference.
+C145 requires explicit --activation-authorization-confirmed.
+C145 confirms no temporary negative test artifact remains.
+C145 authorizes activation for E02 and B01 only.
+C145 keeps A01 comparator-only and does not promote A01.
+C145 creates artifact-only production/live runtime activation authorization evidence.
+C145 keeps production_ready=false.
+C145 keeps production_runtime_wiring_allowed=false.
+C145 keeps production_runtime_wiring_executed=false.
+C145 keeps production_live_runtime_activation_executed=false.
+C145 keeps runtime_bridge_active=false.
+C145 keeps plan_confirm_mutation_allowed=false.
+C145 keeps plan_confirm_mutated=false.
+C145 keeps weekly_swing_watchlist_live_output_enabled=false.
+C145 weekly swing watchlist production live runtime activation authorization review means continue to C146 production live runtime activation execution review only.
+C145 authorization review is not production deployment.
+C145 authorization review is not PLAN/CONFIRM live rollout.
+C145 authorization review is not runtime bridge activation.
+C145 authorization review is not weekly swing live output.
+C145 authorization review is not an official weekly swing stock recommendation.
+
+```text
+C145_CONTRACT_STATUS=C145_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_PASSED_AUTHORIZED_PRIMARY_AND_BACKUP
+C145_PHASE_LABEL=PR-33 / C145_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW
+C145_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c145-weekly-swing-watchlist-production-live-runtime-activation-authorization-review.json
+C145_SOURCE_LOCK=C144
+FOCUSED_PHPUNIT_C145=OK (69 tests, 269 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C145=OK (5121 tests, 39997 assertions)
+EXPECTED_C144_HASH=68d5bb7d096b09d1defa3a655313ff0a7f658e84
+EXPECTED_C144_FILE_SHA1=FBC618728E9A8B49A5FBD5CE273EF2159705C816
+C145_RUNTIME_STATUS=C145_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_PASSED_AUTHORIZED_PRIMARY_AND_BACKUP
+C145_ARTIFACT_HASH=abdca67093a73670414ea0691792a5fe8f028ac5
+C145_FILE_SHA1=6CA397B20E075F21E7A2BD7870E74FF3E95BF460
+C144_HASH_MATCH=1
+C144_FILE_SHA1_MATCH=1
+C144_CONVERT_FROM_JSON_PASS=1
+C144_PRE_ACTIVATION_BOUNDARY_VALID=1
+C143_GO_DECISION_FINALIZATION_VALID=1
+C142_ACTIVATION_OPERATOR_GO_NO_GO_VALID=1
+C141_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+C140_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZATION_CONFIRMED=1
+ACTIVATION_AUTHORIZED=1
+PRIMARY_CANDIDATE_ACTIVATION_AUTHORIZED=1
+BACKUP_CANDIDATE_ACTIVATION_AUTHORIZED=1
+COMPARATOR_CANDIDATE_ACTIVATION_AUTHORIZED=0
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C145_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C145_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_ACTIVATION_AUTHORIZATION_CONFIRMATION=C145_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_AUTHORIZATION_REVIEW_REJECTED_ACTIVATION_AUTHORIZATION_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C145_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C145_NEXT_CONTRACT=C146_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW
+```
+
+C145 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C144 artifact mutation.
+
+## C146 / PR-34 Weekly Swing Watchlist Production Live Runtime Activation Execution Review Contract - 2026-07-15
+
+C146 contract scope is PR-34 weekly swing watchlist production live runtime activation execution review only.
+C146 validates C145 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C146 validates C145 production/live runtime activation authorization state.
+C146 carries forward C144 pre-activation boundary, C143 GO decision finalization, C142 operator GO/NO-GO, C141 observation result review, C140 observation review, C139 execution review, C138 authorization, and the C137-C129 activation readiness lineage.
+C146 requires --operator-approved.
+C146 requires non-empty --approval-reference.
+C146 requires explicit --production-live-runtime-activation-execution-confirmed.
+C146 confirms no temporary negative test artifact remains.
+C146 records activation execution review readiness for E02 and B01 only.
+C146 keeps A01 comparator-only and does not promote A01.
+C146 creates artifact-only production/live runtime activation execution review evidence.
+C146 keeps production_ready=false.
+C146 keeps production_runtime_wiring_allowed=false.
+C146 keeps production_runtime_wiring_executed=false.
+C146 keeps production_live_runtime_activation_executed=false.
+C146 keeps runtime_bridge_active=false.
+C146 keeps plan_confirm_mutation_allowed=false.
+C146 keeps plan_confirm_mutated=false.
+C146 keeps weekly_swing_watchlist_live_output_enabled=false.
+C146 weekly swing watchlist production live runtime activation execution review means continue to C147 production live runtime activation observation review only.
+C146 execution review is not production deployment.
+C146 execution review is not PLAN/CONFIRM live rollout.
+C146 execution review is not runtime bridge activation.
+C146 execution review is not weekly swing live output.
+C146 execution review is not an official weekly swing stock recommendation.
+
+```text
+C146_CONTRACT_STATUS=C146_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_PASSED_READY_FOR_ACTIVATION_OBSERVATION_REVIEW_PRIMARY_AND_BACKUP
+C146_PHASE_LABEL=PR-34 / C146_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW
+C146_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c146-weekly-swing-watchlist-production-live-runtime-activation-execution-review.json
+C146_SOURCE_LOCK=C145
+FOCUSED_PHPUNIT_C146=OK (70 tests, 224 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C146=OK (5191 tests, 40221 assertions)
+EXPECTED_C145_HASH=abdca67093a73670414ea0691792a5fe8f028ac5
+EXPECTED_C145_FILE_SHA1=6CA397B20E075F21E7A2BD7870E74FF3E95BF460
+C146_RUNTIME_STATUS=C146_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_PASSED_READY_FOR_ACTIVATION_OBSERVATION_REVIEW_PRIMARY_AND_BACKUP
+C146_ARTIFACT_HASH=ff6549aa99b2488ce52184dd818190b124e480ce
+C146_FILE_SHA1=1291AADFB2CC7691D868AD86604731C2F6F5D9F2
+C145_HASH_MATCH=1
+C145_FILE_SHA1_MATCH=1
+C145_CONVERT_FROM_JSON_PASS=1
+C145_ACTIVATION_AUTHORIZATION_VALID=1
+C144_PRE_ACTIVATION_BOUNDARY_VALID=1
+C143_GO_DECISION_FINALIZATION_VALID=1
+C142_ACTIVATION_OPERATOR_GO_NO_GO_VALID=1
+C141_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+C140_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZED=1
+PRIMARY_CANDIDATE_ACTIVATION_AUTHORIZED=1
+BACKUP_CANDIDATE_ACTIVATION_AUTHORIZED=1
+COMPARATOR_CANDIDATE_ACTIVATION_AUTHORIZED=0
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C146_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C146_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_ACTIVATION_EXECUTION_CONFIRMATION=C146_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTION_REVIEW_REJECTED_ACTIVATION_EXECUTION_NOT_CONFIRMED
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C146_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C146_NEXT_CONTRACT=C147_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW
+```
+
+C146 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C145 artifact mutation.
+
+## C147 / PR-35 Weekly Swing Watchlist Production Live Runtime Activation Observation Review Contract - 2026-07-15
+
+C147 contract scope is PR-35 weekly swing watchlist production live runtime activation observation review only.
+C147 validates C146 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C147 validates C146 production/live runtime activation execution review state.
+C147 carries forward C145 authorization, C144 pre-activation boundary, C143 GO decision finalization, C142 operator GO/NO-GO, C141 observation result review, C140 observation review, C139 execution review, C138 authorization, and the C137-C129 activation readiness lineage.
+C147 requires --operator-approved.
+C147 requires non-empty --approval-reference.
+C147 confirms no temporary negative test artifact remains.
+C147 records activation observation review readiness for E02 and B01 only.
+C147 keeps A01 comparator-only and does not promote A01.
+C147 creates artifact-only production/live runtime activation observation review evidence.
+C147 keeps production_ready=false.
+C147 keeps production_runtime_wiring_allowed=false.
+C147 keeps production_runtime_wiring_executed=false.
+C147 keeps production_live_runtime_activation_executed=false.
+C147 keeps runtime_bridge_active=false.
+C147 keeps plan_confirm_mutation_allowed=false.
+C147 keeps plan_confirm_mutated=false.
+C147 keeps weekly_swing_watchlist_live_output_enabled=false.
+C147 weekly swing watchlist production live runtime activation observation review means continue to C148 production live runtime activation observation result review only.
+C147 observation review is not production deployment.
+C147 observation review is not PLAN/CONFIRM live rollout.
+C147 observation review is not runtime bridge activation.
+C147 observation review is not weekly swing live output.
+C147 observation review is not an official weekly swing stock recommendation.
+
+```text
+C147_CONTRACT_STATUS=C147_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_PASSED_READY_FOR_ACTIVATION_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C147_PHASE_LABEL=PR-35 / C147_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW
+C147_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c147-weekly-swing-watchlist-production-live-runtime-activation-observation-review.json
+C147_SOURCE_LOCK=C146
+FOCUSED_PHPUNIT_C147=OK (70 tests, 237 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C147=OK (5261 tests, 40458 assertions)
+EXPECTED_C146_HASH=ff6549aa99b2488ce52184dd818190b124e480ce
+EXPECTED_C146_FILE_SHA1=1291AADFB2CC7691D868AD86604731C2F6F5D9F2
+C147_RUNTIME_STATUS=C147_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_PASSED_READY_FOR_ACTIVATION_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C147_ARTIFACT_HASH=42bbc885078b0557d49b38a7377444969ad171c2
+C147_FILE_SHA1=A1CFE8CC09856A552156AC9365EDF55F9D41A5BD
+C146_HASH_MATCH=1
+C146_FILE_SHA1_MATCH=1
+C146_CONVERT_FROM_JSON_PASS=1
+C146_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C145_ACTIVATION_AUTHORIZATION_VALID=1
+C144_PRE_ACTIVATION_BOUNDARY_VALID=1
+C143_GO_DECISION_FINALIZATION_VALID=1
+C142_ACTIVATION_OPERATOR_GO_NO_GO_VALID=1
+C141_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+C140_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZED=1
+PRIMARY_CANDIDATE_ACTIVATION_AUTHORIZED=1
+BACKUP_CANDIDATE_ACTIVATION_AUTHORIZED=1
+COMPARATOR_CANDIDATE_ACTIVATION_AUTHORIZED=0
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C147_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C147_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C147_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C147_NEXT_CONTRACT=C148_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW
+```
+
+C147 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C146 artifact mutation.
+
+## C148 / PR-36 Weekly Swing Watchlist Production Live Runtime Activation Observation Result Review Contract - 2026-07-15
+
+C148 contract scope is PR-36 weekly swing watchlist production live runtime activation observation result review only.
+C148 validates C147 artifact hash, file SHA1, phase label, next recommendation, and ConvertFrom-Json compatibility.
+C148 validates C147 production/live runtime activation observation review state.
+C148 carries forward C146 execution review, C145 authorization, C144 pre-activation boundary, C143 GO decision finalization, C142 operator GO/NO-GO, C141 observation result review, C140 observation review, C139 execution review, C138 authorization, and the C137-C129 activation readiness lineage.
+C148 requires --operator-approved.
+C148 requires non-empty --approval-reference.
+C148 confirms no temporary negative test artifact remains.
+C148 records activation observation result review readiness for E02 and B01 only.
+C148 keeps A01 comparator-only and does not promote A01.
+C148 creates artifact-only production/live runtime activation observation result review evidence.
+C148 keeps production_ready=false.
+C148 keeps production_runtime_wiring_allowed=false.
+C148 keeps production_runtime_wiring_executed=false.
+C148 keeps production_live_runtime_activation_executed=false.
+C148 keeps runtime_bridge_active=false.
+C148 keeps plan_confirm_mutation_allowed=false.
+C148 keeps plan_confirm_mutated=false.
+C148 keeps weekly_swing_watchlist_live_output_enabled=false.
+C148 weekly swing watchlist production live runtime activation observation result review means continue to C149 production live runtime activation operator GO/NO-GO review only.
+C148 observation result review is not production deployment.
+C148 observation result review is not PLAN/CONFIRM live rollout.
+C148 observation result review is not runtime bridge activation.
+C148 observation result review is not weekly swing live output.
+C148 observation result review is not an official weekly swing stock recommendation.
+
+```text
+C148_CONTRACT_STATUS=C148_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_PASSED_READY_FOR_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C148_PHASE_LABEL=PR-36 / C148_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW
+C148_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c148-weekly-swing-watchlist-production-live-runtime-activation-observation-result-review.json
+C148_SOURCE_LOCK=C147
+FOCUSED_PHPUNIT_C148=OK (75 tests, 252 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C148=OK (5336 tests, 40710 assertions)
+C148_ARTIFACT_HASH=d5420447a0b5994791e51f65318dcc46c75ec156
+C148_FILE_SHA1=9EF227B2B7944B2406D15235DC6C84264466B81F
+C147_HASH_MATCH=1
+C147_FILE_SHA1_MATCH=1
+C147_CONVERT_FROM_JSON_PASS=1
+C147_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C146_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C145_ACTIVATION_AUTHORIZATION_VALID=1
+C144_PRE_ACTIVATION_BOUNDARY_VALID=1
+C143_GO_DECISION_FINALIZATION_VALID=1
+C142_ACTIVATION_OPERATOR_GO_NO_GO_VALID=1
+C141_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+C140_ACTIVATION_OBSERVATION_REVIEW_VALID=1
+C139_ACTIVATION_EXECUTION_REVIEW_VALID=1
+C138_ACTIVATION_AUTHORIZATION_VALID=1
+ACTIVATION_AUTHORIZED=1
+PRIMARY_CANDIDATE_ACTIVATION_AUTHORIZED=1
+BACKUP_CANDIDATE_ACTIVATION_AUTHORIZED=1
+COMPARATOR_CANDIDATE_ACTIVATION_AUTHORIZED=0
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_ALLOWED_NEXT=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C148_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_WITHOUT_APPROVAL_REFERENCE=C148_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OBSERVATION_RESULT_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C148_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+PRODUCTION_READY=0
+PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C148_NEXT_CONTRACT=C149_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C148 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C147 artifact mutation.
+
+## C149 Weekly Swing Watchlist Production Live Runtime Activation Operator GO/NO-GO Contract
+
+C149 contract converts the activation path from repeated reviews into an explicit operator decision branch.
+C149 accepts GO, NO_GO, or HOLD only.
+C149 GO means the next contract is C150 final activation execution.
+C149 NO_GO means production/live activation is closed.
+C149 HOLD means production/live activation is deferred with evidence preserved.
+C149 itself remains artifact-only and non-mutating.
+
+```text
+C149_CONTRACT_STATUS=C149_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_C150_FINAL_ACTIVATION_EXECUTION
+C149_OPERATOR_DECISION=GO
+C149_ARTIFACT=storage/app/watchlist/backtest/c149-weekly-swing-watchlist-production-live-runtime-activation-operator-go-no-go-review.json
+C149_ARTIFACT_HASH=311898597454a6a1984f4ed84473ad52ba6859fb
+C149_FILE_SHA1=3B14776D36FBC922782B332BDC55CE90B50188E5
+C148_LOCK_VALID=1
+C148_ACTIVATION_OBSERVATION_RESULT_REVIEW_VALID=1
+READY_FOR_PRODUCTION_LIVE_RUNTIME_ACTIVATION_FINAL_EXECUTION=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_FINAL_EXECUTION_ALLOWED_NEXT=1
+HOLD_BRANCH_STATUS=C149_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_COMPLETED_HOLD_PRODUCTION_LIVE_RUNTIME_ACTIVATION_DEFERRED
+NO_GO_BRANCH_STATUS=C149_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_OPERATOR_GO_NO_GO_REVIEW_COMPLETED_NO_GO_PRODUCTION_LIVE_RUNTIME_ACTIVATION_STOPPED
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=0
+RUNTIME_BRIDGE_ACTIVE=0
+PLAN_CONFIRM_MUTATED=0
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+C149_NEXT_CONTRACT=C150_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_FINAL_EXECUTION
+```
+
+C149 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C148 artifact mutation.
