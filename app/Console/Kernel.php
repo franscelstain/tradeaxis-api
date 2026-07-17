@@ -201,6 +201,10 @@ use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProduction
 use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionResultReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionOperatorGoNoGoReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionGoDecisionFinalizationReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC162WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionHandoffReadinessReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC162WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionHandoffFinalizationReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC162WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionHandoffCompletionBoundaryReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC162WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionHandoffClosureSealReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -389,6 +393,10 @@ class Kernel extends ConsoleKernel
         RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionResultReviewCommand::class,
         RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionOperatorGoNoGoReviewCommand::class,
         RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionGoDecisionFinalizationReviewCommand::class,
+        RunBacktestC162WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionHandoffReadinessReviewCommand::class,
+        RunBacktestC162WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionHandoffFinalizationReviewCommand::class,
+        RunBacktestC162WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionHandoffCompletionBoundaryReviewCommand::class,
+        RunBacktestC162WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionHandoffClosureSealReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

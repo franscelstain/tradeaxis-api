@@ -2568,7 +2568,7 @@ Historical baselines remain valid and are not downgraded:
 Current C01 IS failure drilldown contract evidence:
 
 - R1/R2/C01 identities remain immutable historical evidence and are not renamed, mutated, reinterpreted, or promoted;
-- C01 two-run artifacts remain deterministic by file SHA1 equality `04f6c664a0c9006c16542a8380034a0a633041dc` and canonical artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
+- C01 two-run artifacts remain deterministic by file SHA1 equality `04f6c664a0c9006c16242a8380034a0a633041dc` and canonical artifact hash `c8505ce5a9045629234a685984d9138b3990c775`;
 - C01 runtime quality remains failed with `is_valid_param_count=0`, `is_failed_param_count=8`, no best IS binding, and failure classes `WS_BT_EVAL_DOWNSIDE_FAIL`, `WS_BT_EVAL_ROBUST_RETURN_FAIL`, `WS_BT_EVAL_STABILITY_FAIL`;
 - expanded the IS-only diagnostic command/service to generate deeper C01 failure drilldown artifacts without OOS service/repository dependency;
 - current workspace contains C01 drilldown run 1 and run 2 with identical file SHA1 `a34f6efaca2fdd16a052637a5e455013b60244cd`;
@@ -4528,8 +4528,8 @@ C01 catalog_version=C01
 C01 catalog_count=8
 C01 catalog_hash=604ac98f6f193a4c317d4f25582deada84682846
 C01 IS artifact_hash=c8505ce5a9045629234a685984d9138b3990c775
-C01 IS file SHA1 run 1=04F6C664A0C9006C16542A8380034A0A633041DC
-C01 IS file SHA1 run 2=04F6C664A0C9006C16542A8380034A0A633041DC
+C01 IS file SHA1 run 1=04F6C664A0C9006C16242A8380034A0A633041DC
+C01 IS file SHA1 run 2=04F6C664A0C9006C16242A8380034A0A633041DC
 C01 valid IS rows=0
 C01 failed IS rows=8
 C01 failure classes=WS_BT_EVAL_DOWNSIDE_FAIL,WS_BT_EVAL_ROBUST_RETURN_FAIL,WS_BT_EVAL_STABILITY_FAIL
@@ -13865,7 +13865,7 @@ LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
 C160_NEXT_CONTRACT=C161_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_BOUNDARY_REVIEW
 ```
 
-C160 PLAN/CONFIRM GO decision finalization review contract closes the C160 PLAN/CONFIRM topic. The next topic number advances to C161 only for completion boundary review; it still does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C160 operator artifact mutation.
+C160 PLAN/CONFIRM GO decision finalization review contract closes the C160 PLAN/CONFIRM topic. The next topic stage advances to C161 only for completion boundary review; it still does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C160 operator artifact mutation.
 
 ## C161 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Boundary Review Contract
 
@@ -14069,3 +14069,182 @@ C161_NEXT_CONTRACT=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONF
 ```
 
 C161 PLAN/CONFIRM completion GO decision finalization review contract completes the C161 topic and permits C162 PLAN/CONFIRM completion handoff readiness review next only after the locked C161 operator GO/NO-GO artifact is verified. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C161 operator artifact mutation.
+
+## C162 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Handoff Readiness Review Contract
+
+C162 PLAN/CONFIRM completion handoff readiness review contract locks the C161 completion GO decision finalization artifact by artifact hash and file SHA1.
+C162 PLAN/CONFIRM completion handoff readiness review requires operator approval, handoff-readiness confirmation, C161-topic-complete confirmation, PLAN/CONFIRM-completion-closed confirmation, PLAN/CONFIRM-unchanged confirmation, no-live-rollout confirmation, free-publication lock confirmation, and a non-empty approval reference.
+C162 PLAN/CONFIRM completion handoff readiness review marks E02 primary and B01 backup handoff-ready.
+C162 PLAN/CONFIRM completion handoff readiness review may only recommend C162 PLAN/CONFIRM completion handoff finalization review next.
+C162 PLAN/CONFIRM completion handoff readiness review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, unlock unrestricted publication, or promote A01.
+
+```text
+C162_CONTRACT_TOPIC=C162_PLAN_CONFIRM_COMPLETION_HANDOFF_READINESS
+C162_CONTRACT_STAGE=PLAN_CONFIRM_COMPLETION_HANDOFF_READINESS_REVIEW
+C162_CONTRACT_STATUS=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_HANDOFF_READINESS_REVIEW_PASSED_HANDOFF_READY_PRIMARY_AND_BACKUP_READY_FOR_HANDOFF_FINALIZATION_REVIEW
+C162_PLAN_CONFIRM_COMPLETION_HANDOFF_READINESS_ARTIFACT=storage/app/watchlist/backtest/c162-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-handoff-readiness-review.json
+C162_PLAN_CONFIRM_COMPLETION_HANDOFF_READINESS_ARTIFACT_HASH=69a0d4384511782cd6e65eb25543275694a2b02a
+C162_PLAN_CONFIRM_COMPLETION_HANDOFF_READINESS_FILE_SHA1=D48FF62967B413BA244AA502EE2F57F526AD2C10
+C161_PLAN_CONFIRM_COMPLETION_GO_DECISION_FINALIZATION_ARTIFACT_HASH=9409df354fc360554d502b4787878c770e806d45
+C161_PLAN_CONFIRM_COMPLETION_GO_DECISION_FINALIZATION_FILE_SHA1=06441C61A6A4B1F4BFE4C8398CD0BB4ED1C552EF
+CONTROLLED_COMPLETION_HASH=e9862d9e7738d0558f107d978f329f97f14b3520
+CONTROLLED_COMPLETION_FILE_SHA1=AB9FC9F714339B78D68132222AC8C398BE7EE1B3
+CONTROLLED_COMPLETION_RECORD_COUNT=2
+FOCUSED_PHPUNIT_C162_PLAN_CONFIRM_COMPLETION_HANDOFF_READINESS_REVIEW=OK (32 tests, 130 assertions)
+HANDOFF_READY=1
+HANDOFF_READINESS_CONFIRMED=1
+HANDOFF_READINESS_GO_DECISION=HANDOFF_READY_GO
+C161_TOPIC_COMPLETE_CONFIRMED=1
+PLAN_CONFIRM_COMPLETION_CLOSED_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION_REVIEW=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION_REVIEW=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION_REVIEW=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C162_NEXT_CONTRACT=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION_REVIEW
+```
+
+C162 PLAN/CONFIRM completion handoff readiness review contract permits C162 PLAN/CONFIRM completion handoff finalization review next only after the locked C161 finalization artifact is verified. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C161 finalization artifact mutation.
+
+## C162 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Handoff Finalization Review Contract
+
+C162 PLAN/CONFIRM completion handoff finalization review contract locks the C162 handoff readiness artifact.
+C162 PLAN/CONFIRM completion handoff finalization review requires operator approval, handoff-finalization confirmation, C162-handoff-readiness-complete confirmation, handoff-ready confirmation, PLAN/CONFIRM-unchanged confirmation, no-live-rollout confirmation, free-publication lock confirmation, and a non-empty approval reference.
+C162 PLAN/CONFIRM completion handoff finalization review may only recommend C162 PLAN/CONFIRM completion handoff completion boundary review next.
+C162 PLAN/CONFIRM completion handoff finalization review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C162_CONTRACT_TOPIC=C162_PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION
+C162_CONTRACT_STAGE=PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION_REVIEW
+C162_CONTRACT_STATUS=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION_REVIEW_PASSED_HANDOFF_FINALIZED_PRIMARY_AND_BACKUP_READY_FOR_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+C162_HANDOFF_FINALIZATION_ARTIFACT=storage/app/watchlist/backtest/c162-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-handoff-finalization-review.json
+C162_HANDOFF_FINALIZATION_ARTIFACT_HASH=59f78ba6da2c7302246a79e412c27e025ef545c3
+C162_HANDOFF_FINALIZATION_FILE_SHA1=E7F8D7441F028E5498D4CC8DCC0E24E25FB47FCB
+C162_HANDOFF_READINESS_ARTIFACT=storage/app/watchlist/backtest/c162-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-handoff-readiness-review.json
+C162_HANDOFF_READINESS_ARTIFACT_HASH=69a0d4384511782cd6e65eb25543275694a2b02a
+C162_HANDOFF_READINESS_FILE_SHA1=D48FF62967B413BA244AA502EE2F57F526AD2C10
+FOCUSED_PHPUNIT_C162_PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION_REVIEW=OK (28 tests, 127 assertions)
+C162_HANDOFF_READINESS_LOCK_VALID=1
+C162_PLAN_CONFIRM_COMPLETION_HANDOFF_READINESS_VALID=1
+HANDOFF_READY=1
+HANDOFF_FINALIZED=1
+HANDOFF_FINALIZATION_CONFIRMED=1
+HANDOFF_FINALIZATION_GO_DECISION=HANDOFF_FINALIZED_GO
+C162_HANDOFF_READINESS_COMPLETE_CONFIRMED=1
+HANDOFF_READY_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY_REVIEW=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY_REVIEW=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY_REVIEW=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C162_NEXT_CONTRACT=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+```
+
+C162 PLAN/CONFIRM completion handoff finalization review contract permits C162 PLAN/CONFIRM completion handoff completion boundary review next only after the locked C162 handoff readiness artifact is verified and handoff finalization is explicitly confirmed. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C162 handoff readiness artifact mutation.
+
+## C162 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Handoff Completion Boundary Review Contract
+
+C162 PLAN/CONFIRM completion handoff completion boundary review contract locks the C162 handoff finalization artifact.
+C162 PLAN/CONFIRM completion handoff completion boundary review requires operator approval, handoff-completion-boundary confirmation, C162-handoff-finalization-complete confirmation, handoff-finalized confirmation, PLAN/CONFIRM-unchanged confirmation, no-live-rollout confirmation, free-publication lock confirmation, and a non-empty approval reference.
+C162 PLAN/CONFIRM completion handoff completion boundary review may only recommend C162 PLAN/CONFIRM completion handoff closure seal review next.
+C162 PLAN/CONFIRM completion handoff completion boundary review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C162_CONTRACT_TOPIC=C162_PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY
+C162_CONTRACT_STAGE=PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY_REVIEW
+C162_CONTRACT_STATUS=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_PRIMARY_AND_BACKUP_READY_FOR_HANDOFF_CLOSURE_SEAL_REVIEW
+C162_HANDOFF_COMPLETION_BOUNDARY_ARTIFACT=storage/app/watchlist/backtest/c162-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-handoff-completion-boundary-review.json
+C162_HANDOFF_COMPLETION_BOUNDARY_ARTIFACT_HASH=a99616c2d7e136afa3e55ba6760a405229a9eb94
+C162_HANDOFF_COMPLETION_BOUNDARY_FILE_SHA1=83DE7DBACB14DA28A48DBB14626DEB6A4773A4B0
+C162_HANDOFF_FINALIZATION_ARTIFACT=storage/app/watchlist/backtest/c162-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-handoff-finalization-review.json
+C162_HANDOFF_FINALIZATION_ARTIFACT_HASH=59f78ba6da2c7302246a79e412c27e025ef545c3
+C162_HANDOFF_FINALIZATION_FILE_SHA1=E7F8D7441F028E5498D4CC8DCC0E24E25FB47FCB
+FOCUSED_PHPUNIT_C162_PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY_REVIEW=OK (28 tests, 128 assertions)
+C162_HANDOFF_FINALIZATION_LOCK_VALID=1
+C162_PLAN_CONFIRM_COMPLETION_HANDOFF_FINALIZATION_VALID=1
+HANDOFF_READY=1
+HANDOFF_FINALIZED=1
+HANDOFF_COMPLETION_BOUNDARY_CLEARED=1
+HANDOFF_COMPLETION_BOUNDARY_CONFIRMED=1
+HANDOFF_COMPLETION_BOUNDARY_GO_DECISION=HANDOFF_COMPLETION_BOUNDARY_CLEARED_GO
+C162_HANDOFF_FINALIZATION_COMPLETE_CONFIRMED=1
+HANDOFF_FINALIZED_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_CLOSURE_SEAL_REVIEW=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_CLOSURE_SEAL_REVIEW=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_CLOSURE_SEAL_REVIEW=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C162_NEXT_CONTRACT=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_HANDOFF_CLOSURE_SEAL_REVIEW
+```
+
+C162 PLAN/CONFIRM completion handoff completion boundary review contract permits C162 PLAN/CONFIRM completion handoff closure seal review next only after the locked C162 handoff finalization artifact is verified and the handoff completion boundary is explicitly cleared. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C162 handoff finalization artifact mutation.
+
+## C162 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Handoff Closure Seal Review Contract
+
+C162 PLAN/CONFIRM completion handoff closure seal review contract locks the C162 handoff completion boundary artifact.
+C162 PLAN/CONFIRM completion handoff closure seal review requires operator approval, handoff-closure-seal confirmation, C162-handoff-completion-boundary-complete confirmation, handoff-completion-boundary-cleared confirmation, PLAN/CONFIRM-unchanged confirmation, no-live-rollout confirmation, free-publication lock confirmation, and a non-empty approval reference.
+C162 PLAN/CONFIRM completion handoff closure seal review may only recommend C162 PLAN/CONFIRM completion handoff audit archive review next.
+C162 PLAN/CONFIRM completion handoff closure seal review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C162_CONTRACT_TOPIC=C162_PLAN_CONFIRM_COMPLETION_HANDOFF_CLOSURE_SEAL
+C162_CONTRACT_STAGE=PLAN_CONFIRM_COMPLETION_HANDOFF_CLOSURE_SEAL_REVIEW
+C162_CONTRACT_STATUS=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_HANDOFF_CLOSURE_SEAL_REVIEW_PASSED_CLOSURE_SEALED_PRIMARY_AND_BACKUP_READY_FOR_HANDOFF_AUDIT_ARCHIVE_REVIEW
+C162_HANDOFF_CLOSURE_SEAL_ARTIFACT=storage/app/watchlist/backtest/c162-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-handoff-closure-seal-review.json
+C162_HANDOFF_CLOSURE_SEAL_ARTIFACT_HASH=4af51e55bf265dc7a6e60dcedf7ebb9b63efeba3
+C162_HANDOFF_CLOSURE_SEAL_FILE_SHA1=7A75F138EF5DC73B3A58379DCF7173EC4EAABEC7
+C162_HANDOFF_COMPLETION_BOUNDARY_ARTIFACT=storage/app/watchlist/backtest/c162-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-handoff-completion-boundary-review.json
+C162_HANDOFF_COMPLETION_BOUNDARY_ARTIFACT_HASH=a99616c2d7e136afa3e55ba6760a405229a9eb94
+C162_HANDOFF_COMPLETION_BOUNDARY_FILE_SHA1=83DE7DBACB14DA28A48DBB14626DEB6A4773A4B0
+FOCUSED_PHPUNIT_C162_PLAN_CONFIRM_COMPLETION_HANDOFF_CLOSURE_SEAL_REVIEW=OK (28 tests, 129 assertions)
+C162_HANDOFF_COMPLETION_BOUNDARY_LOCK_VALID=1
+C162_PLAN_CONFIRM_COMPLETION_HANDOFF_COMPLETION_BOUNDARY_VALID=1
+HANDOFF_READY=1
+HANDOFF_FINALIZED=1
+HANDOFF_COMPLETION_BOUNDARY_CLEARED=1
+HANDOFF_CLOSURE_SEALED=1
+HANDOFF_CLOSURE_SEAL_CONFIRMED=1
+HANDOFF_CLOSURE_SEAL_GO_DECISION=HANDOFF_CLOSURE_SEALED_GO
+C162_HANDOFF_COMPLETION_BOUNDARY_COMPLETE_CONFIRMED=1
+HANDOFF_COMPLETION_BOUNDARY_CLEARED_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_AUDIT_ARCHIVE_REVIEW=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_AUDIT_ARCHIVE_REVIEW=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_HANDOFF_AUDIT_ARCHIVE_REVIEW=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C162_NEXT_CONTRACT=C162_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_HANDOFF_AUDIT_ARCHIVE_REVIEW
+```
+
+C162 PLAN/CONFIRM completion handoff closure seal review contract permits C162 PLAN/CONFIRM completion handoff audit archive review next only after the locked C162 handoff completion boundary artifact is verified and the closure seal is explicitly confirmed. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C162 handoff completion boundary artifact mutation.
