@@ -13015,3 +13015,977 @@ C149_NEXT_CONTRACT=C150_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATIO
 ```
 
 C149 contract does not permit production deployment, PLAN/CONFIRM mutation, live rollout, runtime bridge activation, pilot/shadow runtime activation, weekly swing official output generation, weekly swing official output publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C148 artifact mutation.
+
+## C150 Weekly Swing Watchlist Production Live Runtime Activation Final Execution Contract
+
+C150 contract executes the production/live runtime activation state after C149 operator GO.
+C150 requires explicit operator approval, activation reference, runtime bridge enablement, live output enablement, rollback confirmation, and kill-switch confirmation.
+C150 activates the runtime bridge and weekly swing live output in the runtime state.
+C150 does not generate or publish the official weekly swing recommendation list.
+C150 does not mutate PLAN/CONFIRM.
+
+```text
+C150_CONTRACT_STATUS=C150_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_FINAL_EXECUTION_PASSED_LIVE_RUNTIME_BRIDGE_ACTIVE_PRIMARY_AND_BACKUP
+C150_ARTIFACT=storage/app/watchlist/backtest/c150-weekly-swing-watchlist-production-live-runtime-activation-final-execution.json
+C150_ARTIFACT_HASH=0b3b5e57011d8d98fcd38c004fb8d94fb33ca9ad
+C150_FILE_SHA1=E25A4E0DF40F9E01E6B3270F2AE2C5FF1CF0A500
+C150_RUNTIME_STATE=storage/app/watchlist/runtime/weekly-swing-watchlist-production-live-runtime-activation-state.json
+C150_RUNTIME_STATE_HASH=00cb935a8252efe340d5f6ec6ea6966d9645cff7
+C150_RUNTIME_STATE_FILE_SHA1=17E41FFC5C6EE00CCCB4DF555A22EF192F2FCCF4
+C149_LOCK_VALID=1
+C149_OPERATOR_GO_NO_GO_VALID=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=1
+PRODUCTION_READY=1
+PRODUCTION_CATALOG_RUNTIME_WIRED=1
+PRODUCTION_RUNTIME_WIRING_EXECUTED=1
+RUNTIME_BRIDGE_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=1
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C150_NEXT_CONTRACT=C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW
+```
+
+C150 contract permits runtime activation state execution only. It does not permit PLAN/CONFIRM mutation, official recommendation generation, publication, candidate rerank, A01 promotion, scoring mutation, or C60-C149 artifact mutation.
+
+## C151 Weekly Swing Watchlist Production Live Runtime Activation Post-Execution Observation Review Contract
+
+C151 contract observes the locked C150 runtime activation state.
+C151 requires the C150 artifact lock and C150 runtime state lock to match before recording post-execution observation evidence.
+C151 confirms runtime bridge active, weekly swing live output enabled, official output still deferred, and PLAN/CONFIRM unchanged.
+C151 does not execute runtime activation and does not permit output generation or publication.
+
+```text
+C151_CONTRACT_STATUS=C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_PASSED_RUNTIME_ACTIVE_READY_FOR_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C151_ARTIFACT=storage/app/watchlist/backtest/c151-weekly-swing-watchlist-production-live-runtime-activation-post-execution-observation-review.json
+C151_ARTIFACT_HASH=55f06c57436ead483bea22626552b7e500d53120
+C151_FILE_SHA1=198B10144A6ADC5447478E36347CD8DAD6136E16
+C150_LOCK_VALID=1
+C150_FINAL_EXECUTION_VALID=1
+RUNTIME_STATE_LOCK_VALID=1
+RUNTIME_STATE_OBSERVATION_VALID=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=1
+RUNTIME_BRIDGE_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=1
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C151_NEXT_CONTRACT=C152_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_RESULT_REVIEW
+```
+
+C151 contract permits observation evidence only. It does not permit another runtime bridge activation, PLAN/CONFIRM mutation, official recommendation generation, publication, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C150 artifact mutation.
+
+## C152 Weekly Swing Watchlist Production Live Runtime Activation Post-Execution Observation Result Review Contract
+
+C152 contract summarizes the locked C151 post-execution observation result.
+C152 requires C151 artifact hash, file SHA1, phase label, status, next recommendation, and ConvertFrom-Json compatibility to pass.
+C152 carries forward the C151 observation that runtime bridge is active, weekly swing live output is enabled, official output remains deferred, publication remains deferred, and PLAN/CONFIRM remains unchanged.
+C152 may only recommend the next controlled output-generation boundary review.
+C152 does not generate official output, does not publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C152_CONTRACT_STATUS=C152_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_RESULT_REVIEW_PASSED_RUNTIME_STABLE_READY_FOR_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_PRIMARY_AND_BACKUP
+C152_ARTIFACT=storage/app/watchlist/backtest/c152-weekly-swing-watchlist-production-live-runtime-activation-post-execution-observation-result-review.json
+C152_ARTIFACT_HASH=85545acd1ea21a0efae6439ccb037b5c4ed34273
+C152_FILE_SHA1=FB866FEC13B1BE9D00E9D9CA50D494EC835EED14
+FOCUSED_PHPUNIT_C152=OK (24 tests, 81 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C152=ATTEMPTED_FAIL_ORDER_DEPENDENT_C114_DETERMINISM
+C114_DETERMINISM_ISOLATED=OK (1 test, 1 assertion)
+C151_LOCK_VALID=1
+C151_POST_EXECUTION_OBSERVATION_REVIEW_VALID=1
+C150_FINAL_EXECUTION_VALID=1
+RUNTIME_STATE_LOCK_VALID=1
+RUNTIME_STATE_OBSERVATION_VALID=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=1
+RUNTIME_BRIDGE_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=1
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION_ALLOWED=1
+READY_FOR_WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_REVIEW=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_ALLOWED_NEXT=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C152_NEXT_CONTRACT=C153_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_REVIEW
+```
+
+C152 contract permits a next controlled output-generation boundary review only. It does not permit direct publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C151 artifact mutation.
+
+## C153 Weekly Swing Watchlist Production Live Runtime Controlled Output Generation Boundary Review Contract
+
+C153 contract locks the C152 observation-result review and records the controlled output-generation boundary review.
+C153 requires C152 artifact hash, file SHA1, phase label, status, next recommendation, and ConvertFrom-Json compatibility to pass.
+C153 may only recommend controlled output-generation execution next.
+C153 does not generate official output, does not publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C153_CONTRACT_STATUS=C153_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_REVIEW_PASSED_READY_FOR_CONTROLLED_OUTPUT_GENERATION_EXECUTION_PRIMARY_AND_BACKUP
+C153_ARTIFACT=storage/app/watchlist/backtest/c153-weekly-swing-watchlist-production-live-runtime-controlled-output-generation-boundary-review.json
+C153_ARTIFACT_HASH=51bdfbcbb34ce49a185122f0df932451fd914a78
+C153_FILE_SHA1=9B8A640C6C7C9DD1947AB4C69706C76F44793B43
+FOCUSED_PHPUNIT_C153=OK (25 tests, 78 assertions)
+C152_LOCK_VALID=1
+C152_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_READY=1
+RUNTIME_BRIDGE_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=1
+READY_FOR_WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTION=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_ALLOWED_NEXT=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C153_NEXT_CONTRACT=C154_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_EXECUTION
+```
+
+C153 contract permits controlled output-generation execution review/execution next only. It does not permit direct publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C152 artifact mutation.
+
+## C154 Weekly Swing Watchlist Production Live Runtime Controlled Output Generation Execution Contract
+
+C154 contract locks the C153 boundary review and executes controlled output generation.
+C154 requires C153 artifact hash, file SHA1, phase label, status, next recommendation, and ConvertFrom-Json compatibility to pass.
+C154 requires operator approval plus controlled-output, no-publication, and PLAN/CONFIRM unchanged confirmations.
+C154 may create the controlled output artifact only.
+C154 may only recommend controlled output-generation result review next.
+C154 does not publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C154_CONTRACT_STATUS=C154_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_EXECUTION_PASSED_CONTROLLED_OUTPUT_GENERATED_NOT_PUBLISHED_PRIMARY_AND_BACKUP
+C154_ARTIFACT=storage/app/watchlist/backtest/c154-weekly-swing-watchlist-production-live-runtime-controlled-output-generation-execution.json
+C154_ARTIFACT_HASH=cd321cbbbbc1fa3902da5928a61741e80c8bd437
+C154_FILE_SHA1=82C8C90E04A7B7C5208BC37E40CAC8B02673CACB
+CONTROLLED_OUTPUT_ARTIFACT=storage/app/watchlist/output/c154-weekly-swing-watchlist-controlled-output.json
+CONTROLLED_OUTPUT_HASH=a1ca6b200993e4c70c7dccfa62ace43ffb2f7c4e
+CONTROLLED_OUTPUT_FILE_SHA1=AFCA465B7567AFA37034388B257F5F5808B17E5F
+CONTROLLED_OUTPUT_RECORD_COUNT=2
+FOCUSED_PHPUNIT_C154=OK (33 tests, 107 assertions)
+C153_LOCK_VALID=1
+C153_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_VALID=1
+RUNTIME_BRIDGE_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=1
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C154_NEXT_CONTRACT=C155_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_RESULT_REVIEW
+```
+
+C154 contract permits controlled output-generation result review next only. It does not permit direct publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, or C60-C153 artifact mutation.
+
+## C155 Weekly Swing Watchlist Production Live Runtime Controlled Output Generation Result Review Contract
+
+C155 contract locks the C154 audit artifact and the controlled output artifact.
+C155 requires C154 artifact hash, C154 file SHA1, controlled output hash, controlled output file SHA1, phase label, status, next recommendation, and ConvertFrom-Json compatibility to pass.
+C155 requires operator approval plus result-review, no-publication, and PLAN/CONFIRM unchanged confirmations.
+C155 may only recommend controlled output-generation operator go/no-go review next.
+C155 does not publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C155_CONTRACT_STATUS=C155_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_RESULT_REVIEW_PASSED_READY_FOR_CONTROLLED_OUTPUT_GENERATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C155_ARTIFACT=storage/app/watchlist/backtest/c155-weekly-swing-watchlist-production-live-runtime-controlled-output-generation-result-review.json
+C155_ARTIFACT_HASH=6fa40eafa588299db84b465202ea060a310d0d12
+C155_FILE_SHA1=637A4D7EAE383CDCD8804040384367439847B16D
+CONTROLLED_OUTPUT_ARTIFACT=storage/app/watchlist/output/c154-weekly-swing-watchlist-controlled-output.json
+CONTROLLED_OUTPUT_HASH=a1ca6b200993e4c70c7dccfa62ace43ffb2f7c4e
+CONTROLLED_OUTPUT_FILE_SHA1=AFCA465B7567AFA37034388B257F5F5808B17E5F
+CONTROLLED_OUTPUT_RECORD_COUNT=2
+FOCUSED_PHPUNIT_C155=OK (22 tests, 94 assertions)
+C154_LOCK_VALID=1
+C154_CONTROLLED_OUTPUT_GENERATION_EXECUTION_VALID=1
+CONTROLLED_OUTPUT_LOCK_VALID=1
+CONTROLLED_OUTPUT_INTEGRITY_VALID=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_RESULT_REVIEWED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=1
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C155_NEXT_CONTRACT=C156_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C155 contract permits controlled output-generation operator go/no-go review next only. It does not permit direct publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C154 artifact mutation, or controlled output artifact mutation.
+
+## C156 Weekly Swing Watchlist Production Live Runtime Controlled Output Generation Operator Go/No-Go Review Contract
+
+C156 contract locks the C155 result review and records an operator GO, NO_GO, or HOLD decision.
+C156 requires C155 artifact hash, file SHA1, phase label, status, next recommendation, and ConvertFrom-Json compatibility to pass.
+C156 requires operator approval, explicit operator decision, decision confirmation, and decision reason.
+C156 GO may only recommend controlled output-generation go decision finalization review next.
+C156 does not publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C156_CONTRACT_STATUS=C156_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_CONTROLLED_OUTPUT_GENERATION_GO_DECISION_FINALIZATION_REVIEW
+C156_ARTIFACT=storage/app/watchlist/backtest/c156-weekly-swing-watchlist-production-live-runtime-controlled-output-generation-operator-go-no-go-review.json
+C156_ARTIFACT_HASH=f36edcf84b291dd58119caf4e003c00ced404311
+C156_FILE_SHA1=A7165F0FB30111B313783A1FD3DE77992BD39E99
+OPERATOR_DECISION=GO
+FOCUSED_PHPUNIT_C156=OK (26 tests, 139 assertions)
+C155_LOCK_VALID=1
+C155_CONTROLLED_OUTPUT_GENERATION_RESULT_REVIEW_VALID=1
+CONTROLLED_OUTPUT_LOCK_VALID=1
+CONTROLLED_OUTPUT_INTEGRITY_VALID=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_RESULT_REVIEWED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=1
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C156_NEXT_CONTRACT=C157_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C156 contract permits controlled output-generation go decision finalization review next only after GO. It does not permit direct publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C155 artifact mutation, or controlled output artifact mutation.
+
+## C157 Weekly Swing Watchlist Production Live Runtime Controlled Output Generation Go Decision Finalization Review Contract
+
+C157 contract locks the C156 operator GO artifact and finalizes GO for controlled output generation.
+C157 requires C156 artifact hash, file SHA1, phase label, status, next recommendation, and ConvertFrom-Json compatibility to pass.
+C157 requires operator approval plus GO finalization, no-publication, and PLAN/CONFIRM unchanged confirmations.
+C157 may only recommend controlled output publication boundary review next.
+C157 does not publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C157_CONTRACT_STATUS=C157_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_GO_FINALIZED_READY_FOR_CONTROLLED_OUTPUT_PUBLICATION_BOUNDARY_REVIEW_PRIMARY_AND_BACKUP
+C157_ARTIFACT=storage/app/watchlist/backtest/c157-weekly-swing-watchlist-production-live-runtime-controlled-output-generation-go-decision-finalization-review.json
+C157_ARTIFACT_HASH=36f8aadb64d1994bde030efcfec985c7fd0df411
+C157_FILE_SHA1=E3B40E1080F3C3CCE5E39E0A660E38937F25A68B
+OPERATOR_GO_DECISION=GO
+GO_DECISION_FINALIZED=1
+FOCUSED_PHPUNIT_C157=OK (32 tests, 133 assertions)
+C156_LOCK_VALID=1
+C156_OPERATOR_GO_NO_GO_REVIEW_VALID=1
+CONTROLLED_OUTPUT_LOCK_VALID=1
+CONTROLLED_OUTPUT_INTEGRITY_VALID=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_RESULT_REVIEWED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=1
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C157_NEXT_CONTRACT=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_BOUNDARY_REVIEW
+```
+
+C157 contract permits controlled output publication boundary review next only after GO finalization. It does not permit direct publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C156 artifact mutation, or controlled output artifact mutation.
+
+## C158 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Boundary Review Contract
+
+C158 boundary contract locks the C157 GO finalization artifact.
+C158 boundary requires C157 artifact hash, file SHA1, phase label, status, next recommendation, and ConvertFrom-Json compatibility to pass.
+C158 boundary requires operator approval plus publication-boundary, controlled-publication-only, and PLAN/CONFIRM unchanged confirmations.
+C158 boundary may only recommend the same-topic C158 controlled output publication execution stage next.
+C158 boundary does not publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C158_CONTRACT_TOPIC=C158_CONTROLLED_OUTPUT_PUBLICATION
+C158_CONTRACT_STAGE=BOUNDARY_REVIEW
+C158_CONTRACT_STATUS=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_BOUNDARY_REVIEW_PASSED_READY_FOR_CONTROLLED_OUTPUT_PUBLICATION_EXECUTION_PRIMARY_AND_BACKUP
+C158_BOUNDARY_ARTIFACT=storage/app/watchlist/backtest/c158-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-boundary-review.json
+C158_BOUNDARY_ARTIFACT_HASH=f17826dd8eb388491be7ef94d18600647dbccc85
+C158_BOUNDARY_FILE_SHA1=B61A0522835494811E3306ABDFE37639D5ED56C8
+FOCUSED_PHPUNIT_C158_BOUNDARY=OK (28 tests, 119 assertions)
+C157_LOCK_VALID=1
+C157_GO_DECISION_FINALIZATION_VALID=1
+CONTROLLED_OUTPUT_LOCK_VALID=1
+CONTROLLED_OUTPUT_INTEGRITY_VALID=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED_NEXT=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C158_NEXT_CONTRACT=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_EXECUTION
+```
+
+C158 boundary contract permits same-topic controlled output publication execution next only. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C157 artifact mutation, or controlled output artifact mutation.
+
+## C158 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Execution Contract
+
+C158 execution contract locks the C158 boundary artifact and the C154 controlled output artifact.
+C158 execution requires operator approval plus controlled-publication execution, controlled-publication-only, and PLAN/CONFIRM unchanged confirmations.
+C158 execution may create only the C158 controlled publication artifact.
+C158 execution may only recommend the same-topic C158 controlled output publication result review next.
+C158 execution does not free-publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C158_CONTRACT_TOPIC=C158_CONTROLLED_OUTPUT_PUBLICATION
+C158_CONTRACT_STAGE=EXECUTION
+C158_CONTRACT_STATUS=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_EXECUTION_PASSED_CONTROLLED_PUBLICATION_EXECUTED_READY_FOR_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C158_EXECUTION_ARTIFACT=storage/app/watchlist/backtest/c158-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-execution.json
+C158_EXECUTION_ARTIFACT_HASH=fec3b624eb3e912b1302165b1def8fe0a4669a87
+C158_EXECUTION_FILE_SHA1=242830E193C2D54A4C7A233A68D04F90412AEE7D
+CONTROLLED_PUBLICATION_ARTIFACT=storage/app/watchlist/output/c158-weekly-swing-watchlist-controlled-publication.json
+CONTROLLED_PUBLICATION_HASH=df064c7290ff4c3bfd0c7a8412d39299049c01d5
+CONTROLLED_PUBLICATION_FILE_SHA1=D87AB8CD1564BE8B266B8A68011470272D49EE60
+CONTROLLED_PUBLICATION_RECORD_COUNT=2
+FOCUSED_PHPUNIT_C158_EXECUTION=OK (24 tests, 128 assertions)
+C158_BOUNDARY_LOCK_VALID=1
+C158_PUBLICATION_BOUNDARY_VALID=1
+CONTROLLED_OUTPUT_LOCK_VALID=1
+CONTROLLED_OUTPUT_INTEGRITY_VALID=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLISHED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C158_NEXT_CONTRACT=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_RESULT_REVIEW
+```
+
+C158 execution contract permits same-topic controlled output publication result review next only. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C158 boundary artifact mutation, or controlled output artifact mutation.
+
+## C158 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Result Review Contract
+
+C158 result review contract locks the C158 execution artifact and the controlled publication artifact.
+C158 result review requires operator approval plus result-review, controlled-publication-result, controlled-publication-only, and PLAN/CONFIRM unchanged confirmations.
+C158 result review may only validate controlled publication evidence.
+C158 result review may only recommend the same-topic C158 controlled output publication operator go/no-go review next.
+C158 result review does not free-publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C158_CONTRACT_TOPIC=C158_CONTROLLED_OUTPUT_PUBLICATION
+C158_CONTRACT_STAGE=RESULT_REVIEW
+C158_CONTRACT_STATUS=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_RESULT_REVIEW_PASSED_READY_FOR_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C158_RESULT_REVIEW_ARTIFACT=storage/app/watchlist/backtest/c158-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-result-review.json
+C158_RESULT_REVIEW_ARTIFACT_HASH=2912bf54b34ee23b4413a179072d3e670f92e719
+C158_RESULT_REVIEW_FILE_SHA1=C601A8598D83D61FB84F0AAB3DED9AD8E36AD59B
+CONTROLLED_PUBLICATION_ARTIFACT=storage/app/watchlist/output/c158-weekly-swing-watchlist-controlled-publication.json
+CONTROLLED_PUBLICATION_HASH=df064c7290ff4c3bfd0c7a8412d39299049c01d5
+CONTROLLED_PUBLICATION_FILE_SHA1=D87AB8CD1564BE8B266B8A68011470272D49EE60
+CONTROLLED_PUBLICATION_RECORD_COUNT=2
+FOCUSED_PHPUNIT_C158_RESULT_REVIEW=OK (23 tests, 108 assertions)
+C158_EXECUTION_LOCK_VALID=1
+C158_PUBLICATION_EXECUTION_VALID=1
+CONTROLLED_PUBLICATION_LOCK_VALID=1
+CONTROLLED_PUBLICATION_INTEGRITY_VALID=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_RESULT_REVIEWED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLISHED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C158_NEXT_CONTRACT=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C158 result review contract permits same-topic controlled output publication operator go/no-go review next only. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C158 execution artifact mutation, or controlled publication artifact mutation.
+
+## C158 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Operator Go/No-Go Review Contract
+
+C158 operator go/no-go review contract locks the C158 result review artifact.
+C158 operator go/no-go review requires operator approval, explicit decision, decision confirmation, and decision reason.
+C158 operator go/no-go review GO may only recommend the same-topic C158 controlled output publication go decision finalization review next.
+C158 operator go/no-go review does not free-publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C158_CONTRACT_TOPIC=C158_CONTROLLED_OUTPUT_PUBLICATION
+C158_CONTRACT_STAGE=OPERATOR_GO_NO_GO_REVIEW
+C158_CONTRACT_STATUS=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_CONTROLLED_OUTPUT_PUBLICATION_GO_DECISION_FINALIZATION_REVIEW
+C158_OPERATOR_GO_NO_GO_ARTIFACT=storage/app/watchlist/backtest/c158-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-operator-go-no-go-review.json
+C158_OPERATOR_GO_NO_GO_ARTIFACT_HASH=14fc284651d7d5f07d1941300b382c2d7071fea3
+C158_OPERATOR_GO_NO_GO_FILE_SHA1=66EDD8CC51F5C5F9C29889354A94A01FC0501B21
+C158_RESULT_REVIEW_ARTIFACT=storage/app/watchlist/backtest/c158-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-result-review.json
+C158_RESULT_REVIEW_ARTIFACT_HASH=2912bf54b34ee23b4413a179072d3e670f92e719
+C158_RESULT_REVIEW_FILE_SHA1=C601A8598D83D61FB84F0AAB3DED9AD8E36AD59B
+FOCUSED_PHPUNIT_C158_OPERATOR_GO_NO_GO=OK (26 tests, 125 assertions)
+C158_RESULT_REVIEW_LOCK_VALID=1
+C158_CONTROLLED_OUTPUT_PUBLICATION_RESULT_REVIEW_VALID=1
+OPERATOR_DECISION=GO
+OPERATOR_DECISION_RECORDED=1
+OPERATOR_DECISION_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_RESULT_REVIEWED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLISHED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C158_NEXT_CONTRACT=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C158 operator go/no-go contract permits same-topic controlled output publication go decision finalization review next only after GO. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C158 result review artifact mutation, or controlled publication artifact mutation.
+
+## C158 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Go Decision Finalization Review Contract
+
+C158 go decision finalization contract locks the C158 operator GO/NO-GO artifact.
+C158 go decision finalization requires operator approval plus GO finalization, controlled-publication finalization, free-publication lock, and PLAN/CONFIRM unchanged confirmations.
+C158 go decision finalization may only finalize controlled publication GO and recommend C159 post-publication observation next.
+C158 go decision finalization does not free-publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C158_CONTRACT_TOPIC=C158_CONTROLLED_OUTPUT_PUBLICATION
+C158_CONTRACT_STAGE=GO_DECISION_FINALIZATION_REVIEW
+C158_CONTRACT_STATUS=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_GO_FINALIZED_READY_FOR_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_REVIEW_PRIMARY_AND_BACKUP
+C158_GO_DECISION_FINALIZATION_ARTIFACT=storage/app/watchlist/backtest/c158-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-go-decision-finalization-review.json
+C158_GO_DECISION_FINALIZATION_ARTIFACT_HASH=d8e4bfc3f906f3bc613f9aae1e03a27a67f9241b
+C158_GO_DECISION_FINALIZATION_FILE_SHA1=D732BDF92A76DC25434C2DECC539CD26181C8F21
+C158_OPERATOR_GO_NO_GO_ARTIFACT=storage/app/watchlist/backtest/c158-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-operator-go-no-go-review.json
+C158_OPERATOR_GO_NO_GO_ARTIFACT_HASH=14fc284651d7d5f07d1941300b382c2d7071fea3
+C158_OPERATOR_GO_NO_GO_FILE_SHA1=66EDD8CC51F5C5F9C29889354A94A01FC0501B21
+FOCUSED_PHPUNIT_C158_GO_DECISION_FINALIZATION=OK (34 tests, 132 assertions)
+C158_OPERATOR_GO_NO_GO_LOCK_VALID=1
+C158_OPERATOR_GO_NO_GO_REVIEW_VALID=1
+OPERATOR_DECISION=GO
+GO_DECISION_FINALIZED=1
+CONTROLLED_PUBLICATION_FINALIZATION_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_RESULT_REVIEWED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLISHED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C158_NEXT_CONTRACT=C159_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_REVIEW
+```
+
+C158 go decision finalization contract permits C159 controlled output publication post-publication observation review next only after GO is finalized. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C158 operator artifact mutation, or controlled publication artifact mutation.
+
+## C159 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Post-Publication Observation Review Contract
+
+C159 post-publication observation contract locks the C158 GO decision finalization artifact and the controlled publication artifact.
+C159 post-publication observation requires operator approval plus post-publication observation, controlled-publication observation, free-publication lock, and PLAN/CONFIRM unchanged confirmations.
+C159 post-publication observation may only recommend the same-topic C159 observation result review next.
+C159 post-publication observation does not free-publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C159_CONTRACT_TOPIC=C159_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION
+C159_CONTRACT_STAGE=POST_PUBLICATION_OBSERVATION_REVIEW
+C159_CONTRACT_STATUS=C159_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_REVIEW_PASSED_CONTROLLED_PUBLICATION_OBSERVED_READY_FOR_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C159_POST_PUBLICATION_OBSERVATION_ARTIFACT=storage/app/watchlist/backtest/c159-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-post-publication-observation-review.json
+C159_POST_PUBLICATION_OBSERVATION_ARTIFACT_HASH=4f4897570d35a4b572c7158c7e48e860b146aa86
+C159_POST_PUBLICATION_OBSERVATION_FILE_SHA1=BD6A087B386CC4C170A30E8606533453CC20FA43
+C158_GO_DECISION_FINALIZATION_ARTIFACT=storage/app/watchlist/backtest/c158-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-go-decision-finalization-review.json
+C158_GO_DECISION_FINALIZATION_ARTIFACT_HASH=d8e4bfc3f906f3bc613f9aae1e03a27a67f9241b
+C158_GO_DECISION_FINALIZATION_FILE_SHA1=D732BDF92A76DC25434C2DECC539CD26181C8F21
+CONTROLLED_PUBLICATION_ARTIFACT=storage/app/watchlist/output/c158-weekly-swing-watchlist-controlled-publication.json
+CONTROLLED_PUBLICATION_ARTIFACT_HASH=df064c7290ff4c3bfd0c7a8412d39299049c01d5
+CONTROLLED_PUBLICATION_FILE_SHA1=D87AB8CD1564BE8B266B8A68011470272D49EE60
+FOCUSED_PHPUNIT_C159_POST_PUBLICATION_OBSERVATION=OK (34 tests, 102 assertions)
+C158_FINALIZATION_LOCK_VALID=1
+C158_GO_DECISION_FINALIZATION_VALID=1
+CONTROLLED_PUBLICATION_LOCK_VALID=1
+CONTROLLED_PUBLICATION_INTEGRITY_VALID=1
+POST_PUBLICATION_OBSERVATION_CONFIRMED=1
+CONTROLLED_PUBLICATION_OBSERVATION_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_OBSERVED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_OBSERVATION_STABLE=1
+PRIMARY_CANDIDATE_OBSERVED_IN_CONTROLLED_PUBLICATION=1
+BACKUP_CANDIDATE_OBSERVED_IN_CONTROLLED_PUBLICATION=1
+COMPARATOR_CANDIDATE_OBSERVED_IN_CONTROLLED_PUBLICATION=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C159_NEXT_CONTRACT=C159_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW
+```
+
+C159 post-publication observation contract permits same-topic C159 controlled output publication post-publication observation result review next only after controlled publication is observed as stable. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C158 artifact mutation, or controlled publication artifact mutation.
+
+## C159 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Post-Publication Observation Result Review Contract
+
+C159 post-publication observation result review contract locks the C159 observation artifact and the controlled publication artifact.
+C159 post-publication observation result review requires operator approval plus result-review, controlled-publication observation result, free-publication lock, and PLAN/CONFIRM unchanged confirmations.
+C159 post-publication observation result review may only recommend the same-topic C159 observation operator GO/NO-GO review next.
+C159 post-publication observation result review does not free-publish output, does not unlock unrestricted publication, and does not mutate PLAN/CONFIRM.
+
+```text
+C159_CONTRACT_TOPIC=C159_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION
+C159_CONTRACT_STAGE=POST_PUBLICATION_OBSERVATION_RESULT_REVIEW
+C159_CONTRACT_STATUS=C159_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_PASSED_READY_FOR_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C159_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_ARTIFACT=storage/app/watchlist/backtest/c159-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-post-publication-observation-result-review.json
+C159_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_ARTIFACT_HASH=bdd708cbe69713e100daa869388eca188eecc2c2
+C159_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_FILE_SHA1=26546D7BBD9525582D61A90A383823F508CF3E54
+C159_POST_PUBLICATION_OBSERVATION_ARTIFACT=storage/app/watchlist/backtest/c159-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-post-publication-observation-review.json
+C159_POST_PUBLICATION_OBSERVATION_ARTIFACT_HASH=4f4897570d35a4b572c7158c7e48e860b146aa86
+C159_POST_PUBLICATION_OBSERVATION_FILE_SHA1=BD6A087B386CC4C170A30E8606533453CC20FA43
+CONTROLLED_PUBLICATION_ARTIFACT=storage/app/watchlist/output/c158-weekly-swing-watchlist-controlled-publication.json
+CONTROLLED_PUBLICATION_ARTIFACT_HASH=df064c7290ff4c3bfd0c7a8412d39299049c01d5
+CONTROLLED_PUBLICATION_FILE_SHA1=D87AB8CD1564BE8B266B8A68011470272D49EE60
+FOCUSED_PHPUNIT_C159_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW=OK (23 tests, 85 assertions)
+C159_OBSERVATION_LOCK_VALID=1
+C159_POST_PUBLICATION_OBSERVATION_REVIEW_VALID=1
+CONTROLLED_PUBLICATION_LOCK_VALID=1
+CONTROLLED_PUBLICATION_INTEGRITY_VALID=1
+POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_CONFIRMED=1
+CONTROLLED_PUBLICATION_OBSERVATION_RESULT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_OBSERVED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_OBSERVATION_STABLE=1
+PRIMARY_CANDIDATE_OBSERVATION_RESULT_REVIEWED=1
+BACKUP_CANDIDATE_OBSERVATION_RESULT_REVIEWED=1
+COMPARATOR_CANDIDATE_OBSERVATION_RESULT_REVIEWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C159_NEXT_CONTRACT=C159_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C159 post-publication observation result review contract permits same-topic C159 controlled output publication post-publication observation operator GO/NO-GO review next only after controlled publication observation is reviewed as stable. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C159 observation artifact mutation, or controlled publication artifact mutation.
+
+## C159 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Post-Publication Observation Operator GO/NO-GO Review Contract
+
+C159 post-publication observation operator GO/NO-GO review contract locks the C159 result review artifact.
+C159 post-publication observation operator GO/NO-GO review requires operator approval, a valid GO/NO_GO/HOLD decision, explicit confirmation, a non-empty decision reason, and a non-empty approval reference.
+C159 post-publication observation operator GO/NO-GO review may only recommend the same-topic C159 observation GO decision finalization review next when the operator decision is GO.
+C159 post-publication observation operator GO/NO-GO review must not free-publish output, unlock unrestricted publication, or mutate PLAN/CONFIRM.
+
+```text
+C159_CONTRACT_TOPIC=C159_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION
+C159_CONTRACT_STAGE=POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW
+C159_CONTRACT_STATUS=C159_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW
+C159_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_ARTIFACT=storage/app/watchlist/backtest/c159-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-post-publication-observation-operator-go-no-go-review.json
+C159_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_ARTIFACT_HASH=e6c1daae25cfd45950c9c7849b1277cc2099e557
+C159_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_FILE_SHA1=DEA4167C95413F45DA8E7F6F16816BD178987F78
+C159_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_ARTIFACT=storage/app/watchlist/backtest/c159-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-post-publication-observation-result-review.json
+C159_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_ARTIFACT_HASH=bdd708cbe69713e100daa869388eca188eecc2c2
+C159_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_FILE_SHA1=26546D7BBD9525582D61A90A383823F508CF3E54
+FOCUSED_PHPUNIT_C159_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO=OK (26 tests, 125 assertions)
+C159_RESULT_REVIEW_LOCK_VALID=1
+C159_POST_PUBLICATION_OBSERVATION_RESULT_REVIEW_VALID=1
+OPERATOR_DECISION=GO
+OPERATOR_DECISION_RECORDED=1
+OPERATOR_DECISION_CONFIRMED=1
+READY_FOR_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW=1
+PRIMARY_CANDIDATE_READY_FOR_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW=1
+BACKUP_CANDIDATE_READY_FOR_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW=1
+COMPARATOR_CANDIDATE_READY_FOR_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+C159_NEXT_CONTRACT=C159_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C159 post-publication observation operator GO/NO-GO review contract permits same-topic C159 controlled output publication post-publication observation GO decision finalization review next only after an explicit operator GO decision. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C159 result review artifact mutation, or controlled publication artifact mutation.
+
+## C159 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Post-Publication Observation GO Decision Finalization Review Contract
+
+C159 post-publication observation GO decision finalization contract locks the C159 operator GO/NO-GO artifact.
+C159 post-publication observation GO decision finalization requires operator approval, GO finalization confirmation, post-publication observation finalization confirmation, free-publication lock confirmation, PLAN/CONFIRM unchanged confirmation, and a non-empty approval reference.
+C159 post-publication observation GO decision finalization may only recommend C160 PLAN/CONFIRM boundary review after the C159 topic is closed.
+C159 post-publication observation GO decision finalization must not free-publish output, unlock unrestricted publication, or mutate PLAN/CONFIRM.
+
+```text
+C159_CONTRACT_TOPIC=C159_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION
+C159_CONTRACT_STAGE=POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW
+C159_CONTRACT_STATUS=C159_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_GO_FINALIZED_POST_PUBLICATION_OBSERVATION_CLOSED_READY_FOR_PLAN_CONFIRM_BOUNDARY_REVIEW_PRIMARY_AND_BACKUP
+C159_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_ARTIFACT=storage/app/watchlist/backtest/c159-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-post-publication-observation-go-decision-finalization-review.json
+C159_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_ARTIFACT_HASH=1c497836fc6932909c06e62e324f806b07676ab1
+C159_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_FILE_SHA1=97D00F48AA0D68853BAA46C36DCC571CFF3CB01F
+C159_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_ARTIFACT=storage/app/watchlist/backtest/c159-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-post-publication-observation-operator-go-no-go-review.json
+C159_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_ARTIFACT_HASH=e6c1daae25cfd45950c9c7849b1277cc2099e557
+C159_POST_PUBLICATION_OBSERVATION_OPERATOR_GO_NO_GO_FILE_SHA1=DEA4167C95413F45DA8E7F6F16816BD178987F78
+FOCUSED_PHPUNIT_C159_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION=OK (34 tests, 134 assertions)
+C159_OPERATOR_GO_NO_GO_LOCK_VALID=1
+C159_OPERATOR_GO_NO_GO_REVIEW_VALID=1
+OPERATOR_DECISION=GO
+GO_DECISION_FINALIZED=1
+POST_PUBLICATION_OBSERVATION_CLOSED=1
+C159_TOPIC_COMPLETE_AFTER_FINALIZATION=1
+READY_FOR_PLAN_CONFIRM_BOUNDARY_REVIEW=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_BOUNDARY_REVIEW=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_BOUNDARY_REVIEW=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_BOUNDARY_REVIEW=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C159_NEXT_CONTRACT=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_BOUNDARY_REVIEW
+```
+
+C159 post-publication observation GO decision finalization contract permits C160 PLAN/CONFIRM boundary review next only after C159 finalization closes the post-publication observation topic. It does not permit direct free publication, unrestricted publication, PLAN/CONFIRM mutation, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, catalog selection change, C60-C159 operator artifact mutation, or controlled publication artifact mutation.
+
+## C160 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Boundary Review Contract
+
+C160 PLAN/CONFIRM boundary review contract locks the C159 GO decision finalization artifact.
+C160 PLAN/CONFIRM boundary review requires operator approval, PLAN/CONFIRM boundary confirmation, controlled PLAN/CONFIRM-only confirmation, PLAN/CONFIRM unchanged confirmation, and a non-empty approval reference.
+C160 PLAN/CONFIRM boundary review may only recommend same-topic C160 PLAN/CONFIRM execution next.
+C160 PLAN/CONFIRM boundary review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, enable live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C160_CONTRACT_TOPIC=C160_PLAN_CONFIRM
+C160_CONTRACT_STAGE=PLAN_CONFIRM_BOUNDARY_REVIEW
+C160_CONTRACT_STATUS=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_BOUNDARY_REVIEW_PASSED_READY_FOR_PLAN_CONFIRM_EXECUTION_PRIMARY_AND_BACKUP
+C160_PLAN_CONFIRM_BOUNDARY_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-boundary-review.json
+C160_PLAN_CONFIRM_BOUNDARY_ARTIFACT_HASH=b9ca7ca795c2d3a75ad2910263d5a7b3c249bab9
+C160_PLAN_CONFIRM_BOUNDARY_FILE_SHA1=D5C708775E5E6DEC644ACD54DEBBEDD370329004
+C159_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_ARTIFACT=storage/app/watchlist/backtest/c159-weekly-swing-watchlist-production-live-runtime-controlled-output-publication-post-publication-observation-go-decision-finalization-review.json
+C159_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_ARTIFACT_HASH=1c497836fc6932909c06e62e324f806b07676ab1
+C159_POST_PUBLICATION_OBSERVATION_GO_DECISION_FINALIZATION_FILE_SHA1=97D00F48AA0D68853BAA46C36DCC571CFF3CB01F
+FOCUSED_PHPUNIT_C160_PLAN_CONFIRM_BOUNDARY=OK (37 tests, 127 assertions)
+C159_FINALIZATION_LOCK_VALID=1
+C159_GO_DECISION_FINALIZATION_VALID=1
+C159_TOPIC_COMPLETE_AFTER_FINALIZATION=1
+PLAN_CONFIRM_BOUNDARY_CONFIRMED=1
+CONTROLLED_PLAN_CONFIRM_ONLY_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+READY_FOR_PLAN_CONFIRM_EXECUTION=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_EXECUTION=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_EXECUTION=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_EXECUTION=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C160_NEXT_CONTRACT=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_EXECUTION
+```
+
+C160 PLAN/CONFIRM boundary review contract permits same-topic C160 PLAN/CONFIRM execution next only after the boundary locks C159 finalization and confirms PLAN/CONFIRM remains unchanged. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C60-C159 artifact mutation.
+
+## C160 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Execution Contract
+
+C160 PLAN/CONFIRM execution contract locks the C160 boundary artifact and the C158 controlled publication artifact.
+C160 PLAN/CONFIRM execution requires operator approval, PLAN/CONFIRM execution confirmation, controlled PLAN/CONFIRM-only confirmation, PLAN/CONFIRM unchanged confirmation, no-live-rollout confirmation, and a non-empty approval reference.
+C160 PLAN/CONFIRM execution may only recommend same-topic C160 PLAN/CONFIRM result review next.
+C160 PLAN/CONFIRM execution must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C160_CONTRACT_TOPIC=C160_PLAN_CONFIRM
+C160_CONTRACT_STAGE=EXECUTION
+C160_CONTRACT_STATUS=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_EXECUTION_PASSED_CONTROLLED_PLAN_CONFIRM_EXECUTED_READY_FOR_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C160_PLAN_CONFIRM_EXECUTION_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-execution.json
+C160_PLAN_CONFIRM_EXECUTION_ARTIFACT_HASH=8937d98bf09e440ab527b812051779a2eda8a89c
+C160_PLAN_CONFIRM_EXECUTION_FILE_SHA1=B7388BB99473BB12725AEE345E97C774E9D2618A
+CONTROLLED_PLAN_CONFIRM_ARTIFACT=storage/app/watchlist/output/c160-weekly-swing-watchlist-controlled-plan-confirm.json
+CONTROLLED_PLAN_CONFIRM_HASH=10164115c468c66c1d8cced1e29985698c66f056
+CONTROLLED_PLAN_CONFIRM_FILE_SHA1=A696DDD288CAAD469CA02B61D155EB4EE3A8F71B
+C160_PLAN_CONFIRM_BOUNDARY_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-boundary-review.json
+C160_PLAN_CONFIRM_BOUNDARY_ARTIFACT_HASH=b9ca7ca795c2d3a75ad2910263d5a7b3c249bab9
+C160_PLAN_CONFIRM_BOUNDARY_FILE_SHA1=D5C708775E5E6DEC644ACD54DEBBEDD370329004
+CONTROLLED_PUBLICATION_ARTIFACT=storage/app/watchlist/output/c158-weekly-swing-watchlist-controlled-publication.json
+CONTROLLED_PUBLICATION_ARTIFACT_HASH=df064c7290ff4c3bfd0c7a8412d39299049c01d5
+CONTROLLED_PUBLICATION_FILE_SHA1=D87AB8CD1564BE8B266B8A68011470272D49EE60
+FOCUSED_PHPUNIT_C160_PLAN_CONFIRM_EXECUTION=OK (22 tests, 115 assertions)
+C160_BOUNDARY_LOCK_VALID=1
+C160_PLAN_CONFIRM_BOUNDARY_VALID=1
+CONTROLLED_PUBLICATION_LOCK_VALID=1
+CONTROLLED_PUBLICATION_INTEGRITY_VALID=1
+PLAN_CONFIRM_EXECUTION_CONFIRMED=1
+CONTROLLED_PLAN_CONFIRM_ONLY_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_PLAN_CONFIRM_CONTROLLED_EXECUTION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_PLAN_CONFIRM_CONTROLLED_ARTIFACT_CREATED=1
+PRIMARY_CANDIDATE_PLAN_CONFIRM_CONTROLLED_EXECUTED=1
+BACKUP_CANDIDATE_PLAN_CONFIRM_CONTROLLED_EXECUTED=1
+COMPARATOR_CANDIDATE_PLAN_CONFIRM_CONTROLLED_EXECUTED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C160_NEXT_CONTRACT=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_RESULT_REVIEW
+```
+
+C160 PLAN/CONFIRM execution contract permits same-topic C160 PLAN/CONFIRM result review next only after controlled PLAN/CONFIRM evidence is created. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, C60-C160 boundary artifact mutation, or controlled publication artifact mutation.
+
+## C160 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Result Review Contract
+
+C160 PLAN/CONFIRM result review contract locks the C160 execution artifact and the controlled PLAN/CONFIRM artifact.
+C160 PLAN/CONFIRM result review requires operator approval, result review confirmation, controlled PLAN/CONFIRM result confirmation, controlled PLAN/CONFIRM-only confirmation, PLAN/CONFIRM unchanged confirmation, no-live-rollout confirmation, and a non-empty approval reference.
+C160 PLAN/CONFIRM result review may only recommend same-topic C160 PLAN/CONFIRM operator GO/NO-GO review next.
+C160 PLAN/CONFIRM result review must not record the operator decision yet, mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C160_CONTRACT_TOPIC=C160_PLAN_CONFIRM
+C160_CONTRACT_STAGE=RESULT_REVIEW
+C160_CONTRACT_STATUS=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_RESULT_REVIEW_PASSED_READY_FOR_PLAN_CONFIRM_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C160_PLAN_CONFIRM_RESULT_REVIEW_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-result-review.json
+C160_PLAN_CONFIRM_RESULT_REVIEW_ARTIFACT_HASH=4ad5a1e9529ccce8af597161b5d0f0009bb8ab95
+C160_PLAN_CONFIRM_RESULT_REVIEW_FILE_SHA1=CFA28027EF6328B61191B314512C1018835A43A4
+C160_PLAN_CONFIRM_EXECUTION_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-execution.json
+C160_PLAN_CONFIRM_EXECUTION_ARTIFACT_HASH=8937d98bf09e440ab527b812051779a2eda8a89c
+C160_PLAN_CONFIRM_EXECUTION_FILE_SHA1=B7388BB99473BB12725AEE345E97C774E9D2618A
+CONTROLLED_PLAN_CONFIRM_ARTIFACT=storage/app/watchlist/output/c160-weekly-swing-watchlist-controlled-plan-confirm.json
+CONTROLLED_PLAN_CONFIRM_HASH=10164115c468c66c1d8cced1e29985698c66f056
+CONTROLLED_PLAN_CONFIRM_FILE_SHA1=A696DDD288CAAD469CA02B61D155EB4EE3A8F71B
+FOCUSED_PHPUNIT_C160_PLAN_CONFIRM_RESULT_REVIEW=OK (22 tests, 96 assertions)
+C160_EXECUTION_LOCK_VALID=1
+C160_PLAN_CONFIRM_EXECUTION_VALID=1
+CONTROLLED_PLAN_CONFIRM_LOCK_VALID=1
+CONTROLLED_PLAN_CONFIRM_INTEGRITY_VALID=1
+RESULT_REVIEW_CONFIRMED=1
+CONTROLLED_PLAN_CONFIRM_RESULT_CONFIRMED=1
+CONTROLLED_PLAN_CONFIRM_ONLY_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_PLAN_CONFIRM_RESULT_REVIEWED=1
+WEEKLY_SWING_WATCHLIST_PLAN_CONFIRM_RESULT_REVIEW_MANIFEST_CREATED=1
+PRIMARY_CANDIDATE_PLAN_CONFIRM_RESULT_REVIEWED=1
+BACKUP_CANDIDATE_PLAN_CONFIRM_RESULT_REVIEWED=1
+COMPARATOR_CANDIDATE_PLAN_CONFIRM_RESULT_REVIEWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C160_NEXT_CONTRACT=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C160 PLAN/CONFIRM result review contract permits same-topic C160 PLAN/CONFIRM operator GO/NO-GO review next only after controlled PLAN/CONFIRM evidence is reviewed. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, operator decision finalization, candidate rerank, A01 promotion, scoring mutation, C60-C160 execution artifact mutation, or controlled PLAN/CONFIRM artifact mutation.
+
+## C160 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Operator GO/NO-GO Review Contract
+
+C160 PLAN/CONFIRM operator GO/NO-GO review contract locks the C160 result review artifact by artifact hash and file SHA1.
+C160 PLAN/CONFIRM operator GO/NO-GO review requires operator approval, a non-empty approval reference, an operator decision of `GO`, `NO_GO`, or `HOLD`, operator decision confirmation, and a non-empty decision reason.
+C160 PLAN/CONFIRM operator GO/NO-GO review may only recommend same-topic C160 PLAN/CONFIRM go decision finalization review next when the recorded operator decision is `GO`.
+C160 PLAN/CONFIRM operator GO/NO-GO review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C160_CONTRACT_TOPIC=C160_PLAN_CONFIRM
+C160_CONTRACT_STAGE=PLAN_CONFIRM_OPERATOR_GO_NO_GO_REVIEW
+C160_CONTRACT_STATUS=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_PLAN_CONFIRM_GO_DECISION_FINALIZATION_REVIEW
+C160_PLAN_CONFIRM_OPERATOR_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-operator-go-no-go-review.json
+C160_PLAN_CONFIRM_OPERATOR_ARTIFACT_HASH=7f5f64e6e44973096161a4a4b42b52a725f6f863
+C160_PLAN_CONFIRM_OPERATOR_FILE_SHA1=E91456245220FC28FC980D03AE35739E39257B59
+C160_PLAN_CONFIRM_RESULT_REVIEW_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-result-review.json
+C160_PLAN_CONFIRM_RESULT_REVIEW_ARTIFACT_HASH=4ad5a1e9529ccce8af597161b5d0f0009bb8ab95
+C160_PLAN_CONFIRM_RESULT_REVIEW_FILE_SHA1=CFA28027EF6328B61191B314512C1018835A43A4
+FOCUSED_PHPUNIT_C160_PLAN_CONFIRM_OPERATOR_GO_NO_GO_REVIEW=OK (26 tests, 129 assertions)
+OPERATOR_DECISION=GO
+OPERATOR_DECISION_RECORDED=1
+OPERATOR_DECISION_CONFIRMED=1
+C160_RESULT_REVIEW_LOCK_VALID=1
+C160_PLAN_CONFIRM_RESULT_REVIEW_VALID=1
+CONTROLLED_PLAN_CONFIRM_LOCK_VALID=1
+CONTROLLED_PLAN_CONFIRM_INTEGRITY_VALID=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_GO_DECISION_FINALIZATION_REVIEW=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_GO_DECISION_FINALIZATION_REVIEW=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_GO_DECISION_FINALIZATION_REVIEW=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C160_NEXT_CONTRACT=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C160 PLAN/CONFIRM operator GO/NO-GO review contract permits same-topic C160 PLAN/CONFIRM go decision finalization review next because the recorded operator decision is `GO`. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C160 result review artifact mutation.
+
+## C160 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM GO Decision Finalization Review Contract
+
+C160 PLAN/CONFIRM GO decision finalization review contract locks the C160 operator GO/NO-GO artifact by artifact hash and file SHA1.
+C160 PLAN/CONFIRM GO decision finalization review requires operator approval, GO decision finalization confirmation, PLAN/CONFIRM finalization confirmation, PLAN/CONFIRM unchanged confirmation, no-live-rollout confirmation, free-publication lock confirmation, and a non-empty approval reference.
+C160 PLAN/CONFIRM GO decision finalization review closes the C160 topic and may only recommend C161 PLAN/CONFIRM completion boundary review next.
+C160 PLAN/CONFIRM GO decision finalization review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C160_CONTRACT_TOPIC=C160_PLAN_CONFIRM
+C160_CONTRACT_STAGE=PLAN_CONFIRM_GO_DECISION_FINALIZATION_REVIEW
+C160_CONTRACT_STATUS=C160_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_GO_DECISION_FINALIZATION_REVIEW_PASSED_GO_FINALIZED_PLAN_CONFIRM_CLOSED_READY_FOR_COMPLETION_BOUNDARY_REVIEW_PRIMARY_AND_BACKUP
+C160_PLAN_CONFIRM_GO_DECISION_FINALIZATION_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-go-decision-finalization-review.json
+C160_PLAN_CONFIRM_GO_DECISION_FINALIZATION_ARTIFACT_HASH=f6d2ca065099a5f07d7e6f53a3263b7b75293b2c
+C160_PLAN_CONFIRM_GO_DECISION_FINALIZATION_FILE_SHA1=B7F94670FC798F62B129AF76D87C1EAE9813B241
+C160_PLAN_CONFIRM_OPERATOR_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-operator-go-no-go-review.json
+C160_PLAN_CONFIRM_OPERATOR_ARTIFACT_HASH=7f5f64e6e44973096161a4a4b42b52a725f6f863
+C160_PLAN_CONFIRM_OPERATOR_FILE_SHA1=E91456245220FC28FC980D03AE35739E39257B59
+FOCUSED_PHPUNIT_C160_PLAN_CONFIRM_GO_DECISION_FINALIZATION_REVIEW=OK (34 tests, 138 assertions)
+OPERATOR_DECISION=GO
+GO_DECISION_FINALIZED=1
+PLAN_CONFIRM_CLOSED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+C160_TOPIC_COMPLETE_AFTER_FINALIZATION=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_BOUNDARY_REVIEW=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_BOUNDARY_REVIEW=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_BOUNDARY_REVIEW=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C160_NEXT_CONTRACT=C161_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_BOUNDARY_REVIEW
+```
+
+C160 PLAN/CONFIRM GO decision finalization review contract closes the C160 PLAN/CONFIRM topic. The next topic number advances to C161 only for completion boundary review; it still does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C160 operator artifact mutation.
+
+## C161 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Boundary Review Contract
+
+C161 PLAN/CONFIRM completion boundary review contract locks the C160 GO decision finalization artifact by artifact hash and file SHA1.
+C161 PLAN/CONFIRM completion boundary review requires operator approval, completion-boundary confirmation, C160-topic-complete confirmation, PLAN/CONFIRM-closed confirmation, PLAN/CONFIRM-unchanged confirmation, no-live-rollout confirmation, free-publication lock confirmation, and a non-empty approval reference.
+C161 PLAN/CONFIRM completion boundary review may only recommend same-topic C161 PLAN/CONFIRM completion execution next.
+C161 PLAN/CONFIRM completion boundary review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C161_CONTRACT_TOPIC=C161_PLAN_CONFIRM_COMPLETION
+C161_CONTRACT_STAGE=PLAN_CONFIRM_COMPLETION_BOUNDARY_REVIEW
+C161_CONTRACT_STATUS=C161_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_READY_FOR_COMPLETION_EXECUTION_PRIMARY_AND_BACKUP
+C161_PLAN_CONFIRM_COMPLETION_BOUNDARY_ARTIFACT=storage/app/watchlist/backtest/c161-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-boundary-review.json
+C161_PLAN_CONFIRM_COMPLETION_BOUNDARY_ARTIFACT_HASH=fe92324430bbad2f9caa74538976a9225a4a2807
+C161_PLAN_CONFIRM_COMPLETION_BOUNDARY_FILE_SHA1=8BEEA9838E6C22646331A151A38404A7FE2E4CC5
+C160_PLAN_CONFIRM_GO_DECISION_FINALIZATION_ARTIFACT=storage/app/watchlist/backtest/c160-weekly-swing-watchlist-production-live-runtime-plan-confirm-go-decision-finalization-review.json
+C160_PLAN_CONFIRM_GO_DECISION_FINALIZATION_ARTIFACT_HASH=f6d2ca065099a5f07d7e6f53a3263b7b75293b2c
+C160_PLAN_CONFIRM_GO_DECISION_FINALIZATION_FILE_SHA1=B7F94670FC798F62B129AF76D87C1EAE9813B241
+FOCUSED_PHPUNIT_C161_PLAN_CONFIRM_COMPLETION_BOUNDARY_REVIEW=OK (33 tests, 133 assertions)
+COMPLETION_BOUNDARY_CLEARED=1
+COMPLETION_BOUNDARY_CONFIRMED=1
+C160_TOPIC_COMPLETE_CONFIRMED=1
+PLAN_CONFIRM_CLOSED_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+READY_FOR_PLAN_CONFIRM_COMPLETION_EXECUTION=1
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_EXECUTION=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_EXECUTION=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_EXECUTION=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C161_NEXT_CONTRACT=C161_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_EXECUTION
+```
+
+C161 PLAN/CONFIRM completion boundary review contract permits same-topic C161 PLAN/CONFIRM completion execution next only after the locked C160 finalization artifact is verified. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C160 finalization artifact mutation.
+
+## C161 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Execution Contract
+
+C161 PLAN/CONFIRM completion execution contract locks the C161 completion boundary artifact by artifact hash and file SHA1.
+C161 PLAN/CONFIRM completion execution requires operator approval, completion-execution confirmation, controlled-completion-only confirmation, PLAN/CONFIRM-unchanged confirmation, no-live-rollout confirmation, free-publication lock confirmation, and a non-empty approval reference.
+C161 PLAN/CONFIRM completion execution may only write the controlled completion artifact and may only recommend same-topic C161 PLAN/CONFIRM completion result review next.
+C161 PLAN/CONFIRM completion execution must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C161_CONTRACT_TOPIC=C161_PLAN_CONFIRM_COMPLETION
+C161_CONTRACT_STAGE=PLAN_CONFIRM_COMPLETION_EXECUTION
+C161_CONTRACT_STATUS=C161_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_EXECUTION_PASSED_CONTROLLED_COMPLETION_EXECUTED_READY_FOR_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C161_PLAN_CONFIRM_COMPLETION_EXECUTION_ARTIFACT=storage/app/watchlist/backtest/c161-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-execution.json
+C161_PLAN_CONFIRM_COMPLETION_EXECUTION_ARTIFACT_HASH=6df2b8f868fef76a0320aa18e0706bcf8dd5cc4f
+C161_PLAN_CONFIRM_COMPLETION_EXECUTION_FILE_SHA1=BB9845B704FAD0B7C280182B206F6301BA34562C
+C161_PLAN_CONFIRM_COMPLETION_BOUNDARY_ARTIFACT=storage/app/watchlist/backtest/c161-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-boundary-review.json
+C161_PLAN_CONFIRM_COMPLETION_BOUNDARY_ARTIFACT_HASH=fe92324430bbad2f9caa74538976a9225a4a2807
+C161_PLAN_CONFIRM_COMPLETION_BOUNDARY_FILE_SHA1=8BEEA9838E6C22646331A151A38404A7FE2E4CC5
+CONTROLLED_PLAN_CONFIRM_COMPLETION_ARTIFACT=storage/app/watchlist/output/c161-weekly-swing-watchlist-controlled-plan-confirm-completion.json
+CONTROLLED_PLAN_CONFIRM_COMPLETION_HASH=e9862d9e7738d0558f107d978f329f97f14b3520
+CONTROLLED_PLAN_CONFIRM_COMPLETION_FILE_SHA1=AB9FC9F714339B78D68132222AC8C398BE7EE1B3
+FOCUSED_PHPUNIT_C161_PLAN_CONFIRM_COMPLETION_EXECUTION=OK (30 tests, 128 assertions)
+CONTROLLED_COMPLETION_RECORD_COUNT=2
+COMPLETION_EXECUTION_CONFIRMED=1
+CONTROLLED_COMPLETION_ONLY_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PRIMARY_CANDIDATE_COMPLETION_CONTROLLED_EXECUTED=1
+BACKUP_CANDIDATE_COMPLETION_CONTROLLED_EXECUTED=1
+COMPARATOR_CANDIDATE_COMPLETION_CONTROLLED_EXECUTED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C161_NEXT_CONTRACT=C161_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_RESULT_REVIEW
+```
+
+C161 PLAN/CONFIRM completion execution contract permits same-topic C161 PLAN/CONFIRM completion result review next only after the controlled completion artifact is created and locked. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C161 boundary artifact mutation.
+
+## C161 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Result Review Contract
+
+C161 PLAN/CONFIRM completion result review contract locks the C161 completion execution artifact and controlled completion artifact by artifact hash and file SHA1.
+C161 PLAN/CONFIRM completion result review requires operator approval, result-review confirmation, controlled-completion-result confirmation, controlled-completion-only confirmation, PLAN/CONFIRM-unchanged confirmation, no-live-rollout confirmation, free-publication lock confirmation, and a non-empty approval reference.
+C161 PLAN/CONFIRM completion result review may only recommend same-topic C161 PLAN/CONFIRM completion operator GO/NO-GO review next.
+C161 PLAN/CONFIRM completion result review must not mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, free-publish output, or unlock unrestricted publication.
+
+```text
+C161_CONTRACT_TOPIC=C161_PLAN_CONFIRM_COMPLETION
+C161_CONTRACT_STAGE=PLAN_CONFIRM_COMPLETION_RESULT_REVIEW
+C161_CONTRACT_STATUS=C161_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_RESULT_REVIEW_PASSED_READY_FOR_PLAN_CONFIRM_COMPLETION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C161_PLAN_CONFIRM_COMPLETION_RESULT_REVIEW_ARTIFACT=storage/app/watchlist/backtest/c161-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-result-review.json
+C161_PLAN_CONFIRM_COMPLETION_RESULT_REVIEW_ARTIFACT_HASH=1ccb2bc315cbf66c091f25310ff83f33394cd492
+C161_PLAN_CONFIRM_COMPLETION_RESULT_REVIEW_FILE_SHA1=884CFDB9AC48FF5DA0603147CAE880BF4C934B58
+C161_PLAN_CONFIRM_COMPLETION_EXECUTION_ARTIFACT_HASH=6df2b8f868fef76a0320aa18e0706bcf8dd5cc4f
+C161_PLAN_CONFIRM_COMPLETION_EXECUTION_FILE_SHA1=BB9845B704FAD0B7C280182B206F6301BA34562C
+CONTROLLED_PLAN_CONFIRM_COMPLETION_HASH=e9862d9e7738d0558f107d978f329f97f14b3520
+CONTROLLED_PLAN_CONFIRM_COMPLETION_FILE_SHA1=AB9FC9F714339B78D68132222AC8C398BE7EE1B3
+FOCUSED_PHPUNIT_C161_PLAN_CONFIRM_COMPLETION_RESULT_REVIEW=OK (21 tests, 86 assertions)
+RESULT_REVIEW_CONFIRMED=1
+CONTROLLED_COMPLETION_RESULT_CONFIRMED=1
+CONTROLLED_COMPLETION_ONLY_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+NO_LIVE_PLAN_CONFIRM_ROLLOUT_CONFIRMED=1
+FREE_PUBLICATION_LOCKED_CONFIRMED=1
+PRIMARY_CANDIDATE_COMPLETION_RESULT_REVIEWED=1
+BACKUP_CANDIDATE_COMPLETION_RESULT_REVIEWED=1
+COMPARATOR_CANDIDATE_COMPLETION_RESULT_REVIEWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+C161_NEXT_CONTRACT=C161_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C161 PLAN/CONFIRM completion result review contract permits same-topic C161 PLAN/CONFIRM completion operator GO/NO-GO review next only after controlled completion evidence is reviewed. It does not permit free publication, unrestricted publication, PLAN/CONFIRM mutation, activated-catalog runtime read by PLAN/CONFIRM, live PLAN/CONFIRM rollout, candidate rerank, A01 promotion, scoring mutation, or C161 execution artifact mutation.

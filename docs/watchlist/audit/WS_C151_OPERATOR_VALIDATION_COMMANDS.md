@@ -1,0 +1,80 @@
+# C151 Operator Validation Commands
+
+## Positive Runtime Command
+
+```powershell
+php artisan watchlist:backtest-c151-weekly-swing-watchlist-production-live-runtime-activation-post-execution-observation-review `
+  --c150-artifact=storage/app/watchlist/backtest/c150-weekly-swing-watchlist-production-live-runtime-activation-final-execution.json `
+  --expected-c150-hash=0b3b5e57011d8d98fcd38c004fb8d94fb33ca9ad `
+  --expected-c150-file-sha1=E25A4E0DF40F9E01E6B3270F2AE2C5FF1CF0A500 `
+  --runtime-state=storage/app/watchlist/runtime/weekly-swing-watchlist-production-live-runtime-activation-state.json `
+  --expected-runtime-state-hash=00cb935a8252efe340d5f6ec6ea6966d9645cff7 `
+  --expected-runtime-state-file-sha1=17E41FFC5C6EE00CCCB4DF555A22EF192F2FCCF4 `
+  --approval-reference=C151_OPERATOR_APPROVED_POST_EXECUTION_OBSERVATION_REVIEW `
+  --output=storage/app/watchlist/backtest/c151-weekly-swing-watchlist-production-live-runtime-activation-post-execution-observation-review.json `
+  --operator-approved `
+  --overwrite `
+  --progress
+```
+
+## Negative Gates
+
+```powershell
+php artisan watchlist:backtest-c151-weekly-swing-watchlist-production-live-runtime-activation-post-execution-observation-review `
+  --approval-reference=C151_OPERATOR_APPROVED_POST_EXECUTION_OBSERVATION_REVIEW `
+  --output=storage/app/watchlist/backtest/c151-no-operator-test.json `
+  --overwrite
+```
+
+Expected rejection:
+
+```text
+C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+```
+
+```powershell
+php artisan watchlist:backtest-c151-weekly-swing-watchlist-production-live-runtime-activation-post-execution-observation-review `
+  --expected-runtime-state-hash=bad-runtime-hash `
+  --approval-reference=C151_OPERATOR_APPROVED_POST_EXECUTION_OBSERVATION_REVIEW `
+  --operator-approved `
+  --output=storage/app/watchlist/backtest/c151-runtime-state-mismatch-test.json `
+  --overwrite
+```
+
+Expected rejection:
+
+```text
+C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_REJECTED_RUNTIME_STATE_LOCK_MISMATCH
+```
+
+## Observed Runtime Evidence
+
+```text
+POSITIVE_RUNTIME_STATUS=C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_PASSED_RUNTIME_ACTIVE_READY_FOR_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+POSITIVE_RUNTIME_ARTIFACT=storage/app/watchlist/backtest/c151-weekly-swing-watchlist-production-live-runtime-activation-post-execution-observation-review.json
+POSITIVE_RUNTIME_ARTIFACT_HASH=55f06c57436ead483bea22626552b7e500d53120
+POSITIVE_RUNTIME_FILE_SHA1=198B10144A6ADC5447478E36347CD8DAD6136E16
+POSITIVE_RUNTIME_EXIT_CODE=0
+FOCUSED_PHPUNIT_C151=OK (28 tests, 87 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C151=OK (5426 tests, 41130 assertions)
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL_EXIT_CODE=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL_STATUS=C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_RUNTIME_STATE_LOCK_MISMATCH_EXIT_CODE=1
+NEGATIVE_RUNTIME_STATE_LOCK_MISMATCH_STATUS=C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_REJECTED_RUNTIME_STATE_LOCK_MISMATCH
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C151_TEST_ARTIFACTS_REMAINING
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=1
+PRODUCTION_READY=1
+PRODUCTION_CATALOG_RUNTIME_WIRED=1
+PRODUCTION_RUNTIME_WIRING_EXECUTED=1
+RUNTIME_BRIDGE_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=1
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+NEXT_RECOMMENDATION=C152_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_RESULT_REVIEW
+```
