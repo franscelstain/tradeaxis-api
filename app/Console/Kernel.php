@@ -199,6 +199,8 @@ use App\Console\Commands\Watchlist\RunBacktestC160WeeklySwingWatchlistProduction
 use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionBoundaryReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionExecutionCommand;
 use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionResultReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionOperatorGoNoGoReviewCommand;
+use App\Console\Commands\Watchlist\RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionGoDecisionFinalizationReviewCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -385,6 +387,8 @@ class Kernel extends ConsoleKernel
         RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionBoundaryReviewCommand::class,
         RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionExecutionCommand::class,
         RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionResultReviewCommand::class,
+        RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionOperatorGoNoGoReviewCommand::class,
+        RunBacktestC161WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionGoDecisionFinalizationReviewCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,
