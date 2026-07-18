@@ -1,0 +1,46 @@
+# C163 Post-Handoff Activation Approval Operator Validation Commands
+
+Run the positive C163 activation approval gate:
+
+```bash
+php artisan watchlist:backtest-c163-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-post-handoff-activation-approval-review \
+  --operator-approved \
+  --post-handoff-activation-approval-confirmed \
+  --c163-post-handoff-activation-readiness-complete-confirmed \
+  --post-handoff-activation-readiness-confirmed \
+  --plan-confirm-unchanged-confirmed \
+  --no-live-plan-confirm-rollout-confirmed \
+  --free-publication-locked-confirmed \
+  --approval-reference=C163_OPERATOR_APPROVED_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_APPROVAL_REVIEW \
+  --overwrite \
+  --progress
+```
+
+Verify implementation and artifact:
+
+```bash
+php -l app/Application/Watchlist/Services/WatchlistBacktestC163WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionPostHandoffActivationApprovalReviewService.php
+php -l app/Console/Commands/Watchlist/RunBacktestC163WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionPostHandoffActivationApprovalReviewCommand.php
+php -l tests/Unit/Watchlist/WatchlistBacktestC163WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionPostHandoffActivationApprovalReviewTest.php
+vendor/bin/phpunit tests/Unit/Watchlist/WatchlistBacktestC163WeeklySwingWatchlistProductionLiveRuntimePlanConfirmCompletionPostHandoffActivationApprovalReviewTest.php
+powershell -Command "(Get-FileHash -Algorithm SHA1 -Path 'storage/app/watchlist/backtest/c163-weekly-swing-watchlist-production-live-runtime-plan-confirm-completion-post-handoff-activation-approval-review.json').Hash"
+```
+
+Expected positive result:
+
+```text
+STATUS=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_APPROVAL_REVIEW_PASSED_READY_FOR_POST_HANDOFF_ACTIVATION_EXECUTION_REVIEW_PRIMARY_AND_BACKUP
+C163_ARTIFACT_HASH=9bcccdf3949205a5ab1a003d3767566cc4a5c004
+C163_FILE_SHA1=A21BFA483E2B5BDDA74A40ACF2B7A51549A9B0CE
+NEXT_RECOMMENDATION=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_EXECUTION_REVIEW
+```
+
+Expected negative gates:
+
+```text
+MISSING_OPERATOR_APPROVAL=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_APPROVAL_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+MISSING_POST_HANDOFF_ACTIVATION_APPROVAL_CONFIRMATION=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_APPROVAL_REVIEW_REJECTED_POST_HANDOFF_ACTIVATION_APPROVAL_CONFIRMATION_MISSING
+C163_POST_HANDOFF_ACTIVATION_READINESS_HASH_MISMATCH=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_APPROVAL_REVIEW_REJECTED_C163_POST_HANDOFF_ACTIVATION_READINESS_ARTIFACT_LOCK_MISMATCH
+```
+
+Do not use C163 activation approval output as free publication approval, unrestricted publication approval, PLAN/CONFIRM mutation approval, or live rollout execution.
