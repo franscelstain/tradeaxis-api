@@ -380,6 +380,87 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame(4, $telemetry['returned_row_count']);
     }
 
+    public function test_yahoo_empty_chart_series_is_classified_as_no_valid_data()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 0, 0));
+
+        $adapter = new PublicApiEodBarsAdapter(function () {
+            return [
+                'status' => 200,
+                'body' => $this->yahooEmptyChartSeriesBody('DUCK.JK'),
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBars('2026-07-13', 'api', ['DUCK']);
+            $this->fail('Expected empty Yahoo chart series to be blocked as no valid data.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+
+            $this->assertSame('RUN_SOURCE_NO_VALID_DATA', $e->reasonCode());
+            $this->assertSame('FAILED', $context['source_final_status']);
+            $this->assertSame(1, $context['missing_ticker_count']);
+            $this->assertSame(['DUCK'], $context['failed_ticker_codes']);
+            $this->assertStringContainsString('"quote":[{}]', $context['response_body_sample']);
+        }
+    }
+
+    public function test_yahoo_range_empty_chart_series_is_per_ticker_partial_failure()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 0, 0));
+
+        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+            if (strpos($url, 'DUCK.JK') !== false) {
+                return [
+                    'status' => 200,
+                    'body' => $this->yahooEmptyChartSeriesBody('DUCK.JK'),
+                ];
+            }
+
+            return [
+                'status' => 200,
+                'body' => $this->yahooOneBarBody(),
+            ];
+        });
+
+        $rowsByDate = $adapter->fetchOrLoadEodBarsRange(
+            '2026-05-01',
+            '2026-05-07',
+            'api',
+            ['BBCA', 'DUCK'],
+            ['2026-05-01'],
+            ['source_acquisition_batch_id' => 'API_20260501_20260507_001']
+        );
+        $telemetry = $adapter->consumeLastAcquisitionTelemetry();
+
+        $this->assertCount(1, $rowsByDate['2026-05-01']);
+        $this->assertSame('BBCA', $rowsByDate['2026-05-01'][0]['ticker_code']);
+        $this->assertSame('PARTIAL_SUCCESS', $telemetry['source_acquisition_state']);
+        $this->assertSame('RUN_SOURCE_NO_VALID_DATA', $telemetry['final_reason_code']);
+        $this->assertSame(1, $telemetry['failed_ticker_count']);
+        $this->assertSame(['DUCK'], $telemetry['failed_ticker_codes']);
+        $this->assertSame(200, $telemetry['http_status']);
+        $this->assertStringContainsString('"quote":[{}]', $telemetry['provider_error_sample']);
+    }
+
     public function test_api_adapter_caps_rate_limit_retry_budget_to_locked_maximum()
     {
         $this->bindMarketDataConfig($this->config([
@@ -771,6 +852,54 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame(1, $telemetry['failed_ticker_count']);
         $this->assertContains('BAD', $telemetry['failed_ticker_codes']);
         $this->assertSame(400, $telemetry['final_http_status']);
+    }
+
+    private function yahooEmptyChartSeriesBody($symbol)
+    {
+        return json_encode([
+            'chart' => [
+                'result' => [[
+                    'meta' => [
+                        'symbol' => $symbol,
+                        'instrumentType' => 'MUTUALFUND',
+                        'exchangeTimezoneName' => 'Asia/Jakarta',
+                        'validRanges' => ['1mo', '3mo', '6mo', 'ytd', '1y', '2y', '5y', '10y', 'max'],
+                    ],
+                    'indicators' => [
+                        'quote' => [(object) []],
+                        'adjclose' => [(object) []],
+                    ],
+                ]],
+                'error' => null,
+            ],
+        ]);
+    }
+
+    private function yahooOneBarBody()
+    {
+        return json_encode([
+            'chart' => [
+                'result' => [[
+                    'meta' => [
+                        'exchangeTimezoneName' => 'Asia/Jakarta',
+                    ],
+                    'timestamp' => [1777568400],
+                    'indicators' => [
+                        'quote' => [[
+                            'open' => [100],
+                            'high' => [110],
+                            'low' => [99],
+                            'close' => [108],
+                            'volume' => [100000],
+                        ]],
+                        'adjclose' => [[
+                            'adjclose' => [108],
+                        ]],
+                    ],
+                ]],
+                'error' => null,
+            ],
+        ]);
     }
 
     private function config(array $apiSource = [], $retryMax = 3, $backoffMs = 0)

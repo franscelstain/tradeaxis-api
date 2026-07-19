@@ -222,6 +222,31 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
         $this->assertStringContainsString('WBSA.JK', $checkpoint['sanitized_url']);
     }
 
+    public function test_empty_yahoo_chart_series_checkpoint_is_ticker_no_valid_data()
+    {
+        $this->bindMarketDataConfig($this->config(90));
+
+        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+            if (strpos($url, 'DUCK.JK') !== false) {
+                return $this->emptyYahooChartSeriesResponse();
+            }
+
+            return $this->oneBarResponse();
+        });
+
+        $service = new ApiBackfillRangeAcquisitionService($adapter);
+        $result = $service->acquire('2026-05-01', '2026-05-01', '2026-05-07', ['2026-05-01'], ['BBCA', 'DUCK']);
+        $checkpoint = $result['source_acquisition_checkpoints']['2026-05-01|2026-05-07|DUCK'];
+
+        $this->assertSame('PARTIAL_SUCCESS', $result['window_telemetry'][0]['source_acquisition_state']);
+        $this->assertSame('RUN_SOURCE_NO_VALID_DATA', $result['window_telemetry'][0]['final_reason_code']);
+        $this->assertSame('FAILED', $checkpoint['state']);
+        $this->assertSame('RUN_SOURCE_NO_VALID_DATA', $checkpoint['reason_code']);
+        $this->assertSame(200, $checkpoint['http_status']);
+        $this->assertSame('ticker', $checkpoint['failure_scope']);
+        $this->assertStringContainsString('"quote":[{}]', $checkpoint['provider_error_sample']);
+    }
+
 
     public function test_checkpoint_fails_when_ticker_has_warmup_row_but_missing_requested_trade_date()
     {
@@ -530,6 +555,29 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
         return [
             'status' => 200,
             'body' => json_encode($payload),
+        ];
+    }
+
+    private function emptyYahooChartSeriesResponse()
+    {
+        return [
+            'status' => 200,
+            'body' => json_encode([
+                'chart' => [
+                    'result' => [[
+                        'meta' => [
+                            'symbol' => 'DUCK.JK',
+                            'instrumentType' => 'MUTUALFUND',
+                            'exchangeTimezoneName' => 'Asia/Jakarta',
+                        ],
+                        'indicators' => [
+                            'quote' => [(object) []],
+                            'adjclose' => [(object) []],
+                        ],
+                    ]],
+                    'error' => null,
+                ],
+            ]),
         ];
     }
 

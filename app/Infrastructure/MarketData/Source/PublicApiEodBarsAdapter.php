@@ -946,6 +946,10 @@ class PublicApiEodBarsAdapter
         $timestamps = data_get($result, 'timestamp');
         $quote = data_get($result, 'indicators.quote.0');
         if (! is_array($timestamps) || ! is_array($quote)) {
+            if ($this->isYahooEmptyChartSeries($timestamps, $quote)) {
+                throw new SourceAcquisitionException('Yahoo Finance chart payload contains no price series for requested range.', 'RUN_SOURCE_NO_VALID_DATA');
+            }
+
             throw new SourceAcquisitionException('Yahoo Finance chart payload is missing timestamp/quote data.', 'RUN_SOURCE_RESPONSE_CHANGED');
         }
 
@@ -994,6 +998,36 @@ class PublicApiEodBarsAdapter
             'rows' => $rows,
             'invalid_ohlcv_skipped' => $invalidOhlcvSkipped,
         ];
+    }
+
+    private function isYahooEmptyChartSeries($timestamps, $quote)
+    {
+        if (is_array($timestamps)) {
+            foreach ($timestamps as $timestamp) {
+                if (is_numeric($timestamp)) {
+                    return false;
+                }
+            }
+        }
+
+        if (! is_array($quote)) {
+            return false;
+        }
+
+        foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
+            if (! array_key_exists($field, $quote)) {
+                continue;
+            }
+
+            $values = is_array($quote[$field]) ? $quote[$field] : [$quote[$field]];
+            foreach ($values as $value) {
+                if ($value !== null && $value !== '') {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private function isValidYahooOhlcvRow(array $row)
