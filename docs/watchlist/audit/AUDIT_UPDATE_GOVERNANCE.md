@@ -772,7 +772,7 @@ Final readiness may only be claimed after all of the following are true:
 
 ## Initial Governance Baseline
 
-Session: `WATCHLIST — AUDIT GOVERNANCE + LUMEN TRACKER FOUNDATION`
+Session: `WATCHLIST â€” AUDIT GOVERNANCE + LUMEN TRACKER FOUNDATION`
 
 Status: `DONE` for governance foundation only.
 
@@ -789,7 +789,7 @@ Watchlist implementation status remains `FOUNDATION_STARTED / NOT_IMPLEMENTED / 
 
 ---
 
-## C35 Governance — IS-Only Robustness Redesign Diagnostic
+## C35 Governance â€” IS-Only Robustness Redesign Diagnostic
 
 C35 must begin by locking the C34 artifact hash. If the C34 artifact is missing, unreadable, hash-mismatched, status-unexpected, conclusion-unexpected, or production-ready, C35 must write a blocked artifact and stop.
 
@@ -904,7 +904,7 @@ C35 confirms the robustness weakness is visible in IS evidence. G21 is the prima
 
 ---
 
-## C36 Governance — Source Artifact Lock and Candidate Formation
+## C36 Governance â€” Source Artifact Lock and Candidate Formation
 
 C36 source artifact rule:
 
@@ -1668,7 +1668,7 @@ NO_PRODUCTION_READY_CLAIM=true
 
 C41 governance decision: C41 is complete and operator-validated as an IS-only review/evidence expansion gate. It preserves the C39 coverage/branch guard fix, identifies the rolling/non-bad-month warning evidence requirements, and keeps OOS proof locked. The next work is C42 IS rolling/normal-month evidence expansion or guard refinement before any OOS proof.
 
-## C42 Governance — IS Rolling / Normal-Month Evidence Expansion
+## C42 Governance â€” IS Rolling / Normal-Month Evidence Expansion
 
 C42 source artifact lock:
 
@@ -1734,8 +1734,8 @@ OPERATOR_VALIDATION_REQUIRED_WHEN_ENV_UNSUPPORTED=true
 Final operator validation note:
 
 ```text
-PHPUNIT_C42=PASS — OK (12 tests, 97 assertions)
-FULL_WATCHLIST_PHPUNIT=PASS — OK (639 tests, 12860 assertions)
+PHPUNIT_C42=PASS â€” OK (12 tests, 97 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS â€” OK (639 tests, 12860 assertions)
 ARTISAN_C42_RUNTIME=COMPLETED
 ARTIFACT_HASH=939e85f179b3bf5d2511730fafb4271cf7c2ca11
 FILE_SHA1=CBB44B864DD9B2071DE5B10C426F01ED2776525D
@@ -1763,7 +1763,7 @@ IF_EVIDENCE_INSUFFICIENT=C43_PRE_TRADE_FIELD_EXPANSION_DIAGNOSTIC
 CURRENT_NEXT_STEP=C43_PRE_TRADE_FIELD_EXPANSION_DIAGNOSTIC
 ```
 
-## C43 Governance — Pre-Trade Field Expansion Diagnostic
+## C43 Governance â€” Pre-Trade Field Expansion Diagnostic
 
 ```text
 SOURCE_ARTIFACT_LOCK=C42
@@ -1808,15 +1808,15 @@ production_ready=false
 C43 final operator validation:
 
 ```text
-PHPUNIT_C43=PASS — OK (13 tests, 106 assertions)
-FULL_WATCHLIST_PHPUNIT=PASS — OK (652 tests, 12966 assertions)
+PHPUNIT_C43=PASS â€” OK (13 tests, 106 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS â€” OK (652 tests, 12966 assertions)
 ARTISAN_C43_RUNTIME=COMPLETED
 ARTIFACT_HASH=41a91ba0447dcf6c0493e1bb27bce6df08fd3490
 FILE_SHA1=27816E62CBE7278108D0BC43C4C3E3F91BC749D7
 production_ready=false
 ```
 
-## C44 Governance — IS Guard Refinement Candidate Formation
+## C44 Governance â€” IS Guard Refinement Candidate Formation
 
 ```text
 SOURCE_ARTIFACT_LOCK=C43
@@ -1836,8 +1836,8 @@ NEXT_STEP_IF_FORMED=C45_IS_VALIDATION_AND_ANTI_OVERFIT_CHECK_FOR_C44_REFINEMENT
 ```
 
 ```text
-PHPUNIT_C44=PASS — OK (12 tests, 137 assertions)
-FULL_WATCHLIST_PHPUNIT=PASS — OK (664 tests, 13103 assertions)
+PHPUNIT_C44=PASS â€” OK (12 tests, 137 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS â€” OK (664 tests, 13103 assertions)
 ARTISAN_C44_RUNTIME=COMPLETED
 ARTIFACT_HASH=606cd3109371b0d99419082daee18ff65f1cd99b
 FILE_SHA1=4A9A7A915DD37278D9F44634C5D08006B310ED71
@@ -2018,8 +2018,8 @@ Final governance decision:
 
 ```text
 STATUS=C49_BROADER_STRATEGY_REDESIGN_COMPLETED
-PHPUNIT_STATUS=PASS — OK (12 tests, 196 assertions)
-FULL_WATCHLIST_PHPUNIT_STATUS=PASS — OK (723 tests, 13647 assertions)
+PHPUNIT_STATUS=PASS â€” OK (12 tests, 196 assertions)
+FULL_WATCHLIST_PHPUNIT_STATUS=PASS â€” OK (723 tests, 13647 assertions)
 ARTISAN_RUNTIME_STATUS=COMPLETED
 OUTPUT_ARTIFACT=storage/app/watchlist/backtest/c49-broader-strategy-redesign.json
 ARTIFACT_HASH=9266ec2b59a6ea11c21b830cd9b769635afc91a8
@@ -2130,7 +2130,7 @@ C50 is final as an IS validation / anti-overfit step. It does not authorize prod
 
 ---
 
-## C51 Governance — Concentration Dependency Redesign Review
+## C51 Governance â€” Concentration Dependency Redesign Review
 
 C51 adds an IS-only governance layer after C50. C51 is allowed to form deterministic redesign candidates from locked C49/C50 lineage to review branch/bucket dependency, but it is not allowed to use OOS data or production actions.
 
@@ -2256,7 +2256,7 @@ C51_NO_C52_READY_CANDIDATE=true
 C51_NEXT_STEP=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
 ```
 
-## C52 Governance — Concentration Dependency Redesign Continuation
+## C52 Governance â€” Concentration Dependency Redesign Continuation
 
 C52 governance locks the stage to IS-only sector metadata reconstruction and a deterministic second-pass concentration/dependency redesign.
 
@@ -2309,7 +2309,7 @@ production_ready=false
 
 C53 remains a pre-OOS IS stage. A C52 pass may recommend C53 IS validation/pre-OOS lock review, but never direct OOS proof.
 
-## C53 Governance — IS Evidence Expansion for C52 Redesign
+## C53 Governance â€” IS Evidence Expansion for C52 Redesign
 
 ```text
 SOURCE_ARTIFACT_LOCK=C52_STABLE_HASH_AND_FILE_SHA1
@@ -2339,7 +2339,7 @@ C53_NEXT_STEP=C54_ROLLING_STABILITY_REDESIGN_OR_RECALIBRATION_IS_ONLY
 production_ready=false
 ```
 
-## C54 Governance — Rolling Stability Redesign or Recalibration (IS Only)
+## C54 Governance â€” Rolling Stability Redesign or Recalibration (IS Only)
 
 ```text
 C53_AND_C52_HASH_FILE_LOCK_REQUIRED=true
@@ -2364,7 +2364,7 @@ production_ready=false
 ```
 
 
-## C55 Governance — Rolling Stability Redesign Continuation (IS Only)
+## C55 Governance â€” Rolling Stability Redesign Continuation (IS Only)
 
 C55 governance requirements:
 
@@ -2413,7 +2413,7 @@ C55_OOS_PROOF_UNLOCKED=false
 C55 governance decision: the implementation and runtime are completed, but the strategy remains not ready because no candidate passed full rolling validation or concentration validation. C56 must remain IS-only rolling stability redesign continuation unless a later completed pre-OOS lock review explicitly changes the path. C55 must not be used as OOS proof, production readiness evidence, or catalog promotion evidence.
 
 
-## C56 Governance — Rolling Stability Redesign Continuation (IS Only)
+## C56 Governance â€” Rolling Stability Redesign Continuation (IS Only)
 
 C56 governance requirements:
 
@@ -2475,7 +2475,7 @@ C57 must remain IS-only and must focus first on as-of-safe reconstruction of `ma
 
 ---
 
-## Governance Addendum — C57 Regime Field Reconstruction Continuation IS Only
+## Governance Addendum â€” C57 Regime Field Reconstruction Continuation IS Only
 
 GOVERNANCE_CODE=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
 STATUS=DONE_OPERATOR_VALIDATED
@@ -2601,7 +2601,7 @@ C57 fix2 remains under the original IS-only boundary. The repair is limited to s
 - Do not use OOS rows, OOS returns, future path, failed-window exclusion, adverse-month exclusion, production catalog, promotion, or PLAN/CONFIRM mutation.
 
 
-## Governance Addendum — C57 Final Operator Validation
+## Governance Addendum â€” C57 Final Operator Validation
 
 C57 final documentation update is based on operator-provided validation evidence after C57 fix2.
 
@@ -2662,7 +2662,7 @@ market_index_ma20_slope_pct => market_benchmark_indicators.ma20_slope_pct where 
 market_calendar date key => cal_date
 ```
 
-## Governance Addendum — C58 IS-Only Loss-Cluster/Concentration Redesign
+## Governance Addendum â€” C58 IS-Only Loss-Cluster/Concentration Redesign
 
 C58 is governed as an IS-only continuation from final C57. It must not be treated as pre-OOS or production work.
 
@@ -2695,7 +2695,7 @@ C58 may mark a candidate only as ready for C59/pre-lock IS review if every IS ga
 If C58 finds no valid candidate, that is a valid result. The next step remains IS-only and must be chosen from evidence, not optimism.
 
 
-## Governance Closeout — C58 Final Operator Validation
+## Governance Closeout â€” C58 Final Operator Validation
 
 C58 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
 
@@ -2739,7 +2739,7 @@ C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
 
 C59 must remain IS-only unless a later operator-validated governance document explicitly unlocks a pre-OOS review. C59 must not use OOS returns, OOS bad months, future path, failed-window exclusion, ticker loser exclusion, or sector loser exclusion to manufacture a pass.
 
-## Governance Addendum — C59 IS-Only Loss-Cluster or Branch/Bucket Redesign
+## Governance Addendum â€” C59 IS-Only Loss-Cluster or Branch/Bucket Redesign
 
 C59 is governed as an IS-only continuation from final C58. It must not be treated as pre-OOS or production work.
 
@@ -2787,7 +2787,7 @@ C59_OOS_UNLOCKED=false
 ```
 
 
-## Governance Closeout — C59 Final Operator Validation
+## Governance Closeout â€” C59 Final Operator Validation
 
 C59 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
 
@@ -2835,7 +2835,7 @@ C60 must remain IS-only unless a later operator-validated governance document ex
 
 ---
 
-## Audit Governance Update — C60
+## Audit Governance Update â€” C60
 
 C60 audit entries are append-only.
 
@@ -2879,7 +2879,7 @@ Do not open OOS before a future IS/pre-lock review proves all strict gates.
 
 ---
 
-## Governance Closeout — C60 Final Operator Validation
+## Governance Closeout â€” C60 Final Operator Validation
 
 C60 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
 
@@ -2932,7 +2932,7 @@ C61 must remain IS-only unless a future operator-validated governance update exp
 
 ---
 
-## Governance Update — C61 Signal Quality Rebuild For Weak Regime IS-Only
+## Governance Update â€” C61 Signal Quality Rebuild For Weak Regime IS-Only
 
 C61 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
 
@@ -3003,7 +3003,7 @@ C61 does not authorize OOS proof, pre-OOS, production, or PLAN/CONFIRM mutation.
 
 ---
 
-## Governance Update — C62 Pre-Lock Review For C61 Signal Quality Candidates IS-Only
+## Governance Update â€” C62 Pre-Lock Review For C61 Signal Quality Candidates IS-Only
 
 C62 is closed as operator validated.
 
@@ -3060,7 +3060,7 @@ C62 does not authorize OOS proof, pre-OOS execution, production catalog creation
 
 ---
 
-## Governance Final — C62 Pre-Lock Review For C61 Signal Quality Candidates IS-Only
+## Governance Final â€” C62 Pre-Lock Review For C61 Signal Quality Candidates IS-Only
 
 C62 is closed as `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`.
 
@@ -3126,7 +3126,7 @@ C63 must remain an IS-only/pre-OOS-unlock review. C62 does not authorize direct 
 
 ---
 
-## Governance Update — C63 Pre-OOS Unlock Review IS-Only
+## Governance Update â€” C63 Pre-OOS Unlock Review IS-Only
 
 Status: `FINAL_OPERATOR_VALIDATED`
 
@@ -3183,7 +3183,7 @@ C63 does not authorize production readiness, production catalog creation, direct
 
 ---
 
-## Final Governance Evidence — C63
+## Final Governance Evidence â€” C63
 
 Status: `FINAL_OPERATOR_VALIDATED`
 
@@ -3238,7 +3238,7 @@ C63 is accepted. The system may proceed to `C64_PRE_OOS_OR_OOS_PROOF_EXECUTION` 
 
 ---
 
-## Governance Update — C64
+## Governance Update â€” C64
 
 Status: `FINAL_OPERATOR_VALIDATED`
 
@@ -3279,7 +3279,7 @@ If C64 fails, next step must be evidence-based failure attribution/repair and no
 
 ---
 
-## Governance Finalization — C64
+## Governance Finalization â€” C64
 
 Status: `FINAL_OPERATOR_VALIDATED`
 
@@ -3321,7 +3321,7 @@ C64 does not authorize deployment or production catalog mutation. The only gover
 
 ---
 
-## Governance Update — C65
+## Governance Update â€” C65
 
 Status: `IMPLEMENTED_OPERATOR_VALIDATED`
 
@@ -3351,7 +3351,7 @@ If C65 passes, the only governed next step is `C66_PRODUCTION_LOCK_REVIEW`. Pass
 
 ---
 
-## Governance Finalization — C65
+## Governance Finalization â€” C65
 
 Status: `IMPLEMENTED_OPERATOR_VALIDATED`
 
@@ -3392,7 +3392,7 @@ C65 final governance decision: C65 may only advance to `C66_PRODUCTION_LOCK_REVI
 
 ---
 
-## Governance Update — C66
+## Governance Update â€” C66
 
 Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION`
 
@@ -3423,7 +3423,7 @@ C66 governance forbids redesign, retune, new parameter search, OOS-based reranki
 C66 may produce only `storage/app/watchlist/backtest/c66-production-lock-review.json` as a locked decision artifact. Activation is deferred to C67 production catalog activation review.
 ---
 
-## Governance Finalization — C66
+## Governance Finalization â€” C66
 
 Status: `IMPLEMENTED_OPERATOR_VALIDATED`
 
@@ -3482,7 +3482,7 @@ C68 update is append-only. It must not redesign, retune, run parameter search, r
 
 ---
 
-## Governance Finalization — C68
+## Governance Finalization â€” C68
 
 Status: `IMPLEMENTED_OPERATOR_VALIDATED`
 
@@ -3542,7 +3542,7 @@ C69 must retain bad-month risk, weak-regime risk, source-bias/shared-core risk, 
 
 ---
 
-## Governance Finalization — C69
+## Governance Finalization â€” C69
 
 Status: `IMPLEMENTED_OPERATOR_VALIDATED`
 
@@ -3602,7 +3602,7 @@ B01 is backup controlled deployment execution candidate.
 A01 is comparator-only and cannot be promoted.
 C70 validates C69 artifact hash and file SHA1.
 C70 validates C69 readiness through nested `c70_readiness_decision.*` path.
-C70 validates C69 → C60 lineage.
+C70 validates C69 â†’ C60 lineage.
 C70 does not redesign.
 C70 does not retune.
 C70 does not run parameter search.
@@ -3627,7 +3627,7 @@ C65 cleanup note remains non-blocking.
 C70 pass is not full production deployment.
 C70 pass is not PLAN/CONFIRM rollout.
 
-## C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW Governance — Final Operator Evidence
+## C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW Governance â€” Final Operator Evidence
 
 Source of truth for this governance update: `tradeaxis-api_C70.zip`.
 
@@ -3689,7 +3689,7 @@ C71 governance is append-only and non-live. C71 may only validate isolated shado
 
 C71 keeps E02 primary, B01 backup, and A01 comparator-only. Bad-month risk, weak-regime risk, and source-bias/shared-core risk remain documented governance constraints.
 
-## C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION Governance — Final Operator Evidence
+## C71_SHADOW_READ_OR_DRY_RUN_RUNTIME_VALIDATION Governance â€” Final Operator Evidence
 
 C71 final operator evidence:
 
@@ -3749,7 +3749,7 @@ RETURN_FIELDS_USED_FOR_SELECTION=false
 C71 governance final decision: accepted. C71 validates isolated shadow-read / dry-run runtime behavior only. It does not execute production deployment, does not wire the activated catalog into PLAN/CONFIRM, does not mutate PLAN/CONFIRM, and does not change PLAN/CONFIRM output. The only valid next step is `C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION`.
 
 
-## C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION Governance — Current Session
+## C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION Governance â€” Current Session
 
 C72 governance constraints:
 
@@ -3794,7 +3794,7 @@ RETURN_FIELDS_USED_FOR_SELECTION=false
 
 C72 governance decision is accepted after focused C72 PHPUnit, full Watchlist PHPUnit, runtime artifact execution, and final artifact SHA1 evidence were supplied. C72 may only advance to `C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION` and cannot be interpreted as live production deployment or PLAN/CONFIRM rollout.
 
-## C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION Governance Final — Operator Evidence 2026-06-24
+## C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION Governance Final â€” Operator Evidence 2026-06-24
 
 Governance status: `ACCEPTED`
 
@@ -3875,7 +3875,7 @@ C73 is controlled parallel-run non-mutating PLAN/CONFIRM bridge validation.
 
 C73 starts from locked C72 final evidence and must validate C72 artifact hash and file SHA1 before any pass result.
 
-C73 validates C72 readiness through nested `c73_readiness_decision.*` path and validates C72 → C60 lineage.
+C73 validates C72 readiness through nested `c73_readiness_decision.*` path and validates C72 â†’ C60 lineage.
 
 C73 keeps E02 as primary controlled parallel-run candidate, B01 as backup controlled parallel-run candidate, and A01 as comparator-only. A01 cannot be promoted or used as runtime fallback.
 
@@ -3933,7 +3933,7 @@ C74 is controlled operator-reviewed rollout gate / deployment readiness review.
 
 C74 starts from locked C73 final evidence and must validate C73 artifact hash and file SHA1 before any pass result.
 
-C74 validates C73 readiness through nested `c74_readiness_decision.*` path and validates C73 → C60 lineage.
+C74 validates C73 readiness through nested `c74_readiness_decision.*` path and validates C73 â†’ C60 lineage.
 
 C74 keeps E02 as primary rollout gate candidate, B01 as backup rollout gate candidate, and A01 as comparator-only. A01 cannot be promoted or used as runtime fallback.
 
@@ -3949,7 +3949,7 @@ C74 may only recommend C75 controlled operator-approved rollout execution review
 
 C74 pass is not full production deployment. C74 pass is not PLAN/CONFIRM live rollout.
 
-## C74 Final Audit Governance Evidence Append — 2026-06-24
+## C74 Final Audit Governance Evidence Append â€” 2026-06-24
 
 C74 audit governance final evidence is accepted.
 
@@ -3962,7 +3962,7 @@ Superseded pre-alignment artifact hash: 2e02737a212cf9043d5937f5354a3c31541dc22f
 Superseded pre-alignment file SHA1: C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187
 ```
 
-Governance retained C73 lock matching, C73 nested readiness validation, C73 → C60 lineage validation, E02 primary candidate lock, B01 backup candidate lock, and A01 comparator-only lock.
+Governance retained C73 lock matching, C73 nested readiness validation, C73 â†’ C60 lineage validation, E02 primary candidate lock, B01 backup candidate lock, and A01 comparator-only lock.
 
 Governance retained default-off/non-live/non-mutating safety: no production deployment, no PLAN/CONFIRM mutation, no activated catalog default runtime read, no live rollout, and no runtime catalog wiring.
 
@@ -3982,7 +3982,7 @@ C75 starts from locked C74 final evidence. C74 controlled operator-reviewed roll
 
 C75 validates the aligned C74 artifact hash and file SHA1: artifact hash `8958e1fcec798fbd364642864b0a9d0c21bd8f93`, file SHA1 `D4C2EF90B533BED11F6902E75141BE5774E947BE`. The earlier C74 hash `2e02737a212cf9043d5937f5354a3c31541dc22f` / `C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187` is superseded historical/pre-alignment evidence only.
 
-C75 validates C74 readiness through nested `c75_readiness_decision.*` path and validates C74 → C60 lineage.
+C75 validates C74 readiness through nested `c75_readiness_decision.*` path and validates C74 â†’ C60 lineage.
 
 E02 is primary controlled execution review candidate. B01 is backup controlled execution review candidate. A01 is comparator-only and cannot be promoted.
 
@@ -4003,7 +4003,7 @@ C75 may only recommend C76 controlled runtime opt-in pilot / shadow rollout prep
 
 ---
 
-## C75 Final Audit Governance Evidence Append — 2026-06-24
+## C75 Final Audit Governance Evidence Append â€” 2026-06-24
 
 C75 final operator evidence is accepted and locked to the aligned C74 artifact.
 
@@ -4596,7 +4596,7 @@ Allowed next recommendation only if all C91 gates pass:
 C92_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_HANDOFF_COMPLETION_BOUNDARY_REVIEW
 ```
 
-## C77 Final Operator Evidence Append — 2026-06-27
+## C77 Final Operator Evidence Append â€” 2026-06-27
 
 C77 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4625,7 +4625,7 @@ NEXT_RECOMMENDATION=C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C77 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C77 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C78 Final Operator Evidence Append — 2026-06-27
+## C78 Final Operator Evidence Append â€” 2026-06-27
 
 C78 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4654,7 +4654,7 @@ NEXT_RECOMMENDATION=C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C78 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C78 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C79 Final Operator Evidence Append — 2026-06-27
+## C79 Final Operator Evidence Append â€” 2026-06-27
 
 C79 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4683,7 +4683,7 @@ NEXT_RECOMMENDATION=C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C79 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C79 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C80 Final Operator Evidence Append — 2026-06-27
+## C80 Final Operator Evidence Append â€” 2026-06-27
 
 C80 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4712,7 +4712,7 @@ NEXT_RECOMMENDATION=C81_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C80 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C80 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C81 Final Operator Evidence Append — 2026-06-27
+## C81 Final Operator Evidence Append â€” 2026-06-27
 
 C81 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4741,7 +4741,7 @@ NEXT_RECOMMENDATION=C82_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C81 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C81 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C82 Final Operator Evidence Append — 2026-06-27
+## C82 Final Operator Evidence Append â€” 2026-06-27
 
 C82 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4770,7 +4770,7 @@ NEXT_RECOMMENDATION=C83_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C82 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C82 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C83 Final Operator Evidence Append — 2026-06-27
+## C83 Final Operator Evidence Append â€” 2026-06-27
 
 C83 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4799,7 +4799,7 @@ NEXT_RECOMMENDATION=C84_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C83 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C83 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C84 Final Operator Evidence Append — 2026-06-27
+## C84 Final Operator Evidence Append â€” 2026-06-27
 
 C84 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4828,7 +4828,7 @@ NEXT_RECOMMENDATION=C85_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C84 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C84 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C85 Final Operator Evidence Append — 2026-06-27
+## C85 Final Operator Evidence Append â€” 2026-06-27
 
 C85 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4857,7 +4857,7 @@ NEXT_RECOMMENDATION=C86_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C85 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C85 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C86 Final Operator Evidence Append — 2026-06-27
+## C86 Final Operator Evidence Append â€” 2026-06-27
 
 C86 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4886,7 +4886,7 @@ NEXT_RECOMMENDATION=C87_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C86 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C86 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C87 Final Operator Evidence Append — 2026-06-27
+## C87 Final Operator Evidence Append â€” 2026-06-27
 
 C87 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4915,7 +4915,7 @@ NEXT_RECOMMENDATION=C88_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C87 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C87 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C88 Final Operator Evidence Append — 2026-06-27
+## C88 Final Operator Evidence Append â€” 2026-06-27
 
 C88 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4944,7 +4944,7 @@ NEXT_RECOMMENDATION=C89_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C88 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C88 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C89 Final Operator Evidence Append — 2026-06-27
+## C89 Final Operator Evidence Append â€” 2026-06-27
 
 C89 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -4973,7 +4973,7 @@ NEXT_RECOMMENDATION=C90_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C89 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C89 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C90 Final Operator Evidence Append — 2026-06-27
+## C90 Final Operator Evidence Append â€” 2026-06-27
 
 C90 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -5002,7 +5002,7 @@ NEXT_RECOMMENDATION=C91_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOU
 
 C90 keeps E02 as primary, B01 as backup, and A01 as comparator-only. C90 does not enable PLAN/CONFIRM default runtime catalog reads, runtime bridge activation, controlled rollout activation, production deployment, or PLAN/CONFIRM mutation.
 
-## C91 Final Operator Evidence Append — 2026-06-27
+## C91 Final Operator Evidence Append â€” 2026-06-27
 
 C91 final operator evidence is appended per catalog item. This append records operator validation only and is documentation-only.
 
@@ -5077,7 +5077,7 @@ No PLAN/CONFIRM default runtime catalog read is enabled.
 
 C92 implementation keeps the audit update per catalog item. It does not rewrite C77-C91 sections.
 
-## C92 Final Operator Evidence Append — 2026-06-27
+## C92 Final Operator Evidence Append â€” 2026-06-27
 
 C92 final operator evidence is appended per catalog item. This append records operator local PHPUnit, runtime validation, negative approval gate validation, and cleanup validation. It is documentation-only.
 
@@ -11903,3 +11903,253 @@ NEXT_RECOMMENDATION=C165_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CON
 ```
 
 C165 remains the active topic; the next governed stage is same-topic operator GO/NO-GO review.
+
+## C165 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Operator GO/NO-GO Review Governance
+
+C165 operator governance accepts only `GO`, `NO_GO`, or `HOLD` against the immutable result-review lock. Every completed decision must preserve E02/B01 scope, A01 comparator-only status, kill switch, rollback, production-configuration immutability, and free-publication lock.
+The official `GO` authorizes only same-topic GO decision finalization. It does not itself finalize C165 or execute any runtime, function, configuration, ranking, tuning, or publication action.
+
+```text
+C165_GOVERNANCE_TOPIC=C165_PLAN_CONFIRM_CONTROLLED_ROLLOUT
+C165_GOVERNANCE_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
+C165_GOVERNANCE_STATUS=C165_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_GO_DECISION_FINALIZATION_REVIEW
+C165_OPERATOR_ARTIFACT_HASH=48cd9784bb9df5ceef8b47ca970996398d104f54
+C165_OPERATOR_FILE_SHA1=5457B6DDA328EF4FD1B0157E5857968D01965381
+C165_RESULT_REVIEW_ARTIFACT_HASH=a30b5b0eeab344e0d0283cb4164fd2a27b234802
+C165_RESULT_REVIEW_FILE_SHA1=664A639A2C8338F407BB0B34B9648733A0F6C94E
+FOCUSED_PHPUNIT_C165_PLAN_CONFIRM_CONTROLLED_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW=OK (33 tests, 106 assertions)
+FULL_PHPUNIT_FILTER_C165=OK (136 tests, 432 assertions)
+OPERATOR_DECISION=GO
+OPERATOR_GO_DECISION=1
+GO_DECISION_FINALIZED=0
+C165_TOPIC_COMPLETE=0
+C165_RESULT_REVIEW_LOCK_VALID=1
+CONTROLLED_ROLLOUT_RESULT_VALID=1
+NEW_ROLLOUT_EXECUTED_BY_OPERATOR_REVIEW=0
+WATCHLIST_FUNCTION_INVOKED_BY_OPERATOR_REVIEW=0
+PRODUCTION_CONFIG_MUTATED=0
+UNRESTRICTED_ROLLOUT_ALLOWED=0
+KILL_SWITCH_CONFIRMED=1
+ROLLBACK_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+NEXT_RECOMMENDATION=C165_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C165 remains the active topic; finalization must lock the operator artifact before closure is considered.
+
+## C165 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout GO Decision Finalization Review Governance
+
+C165 finalization governance permits closure only from the immutable operator `GO` artifact. It requires confirmation that controlled rollout remains active for observation, kill switch and rollback remain available, production configuration remains unchanged, and free/unrestricted publication remains locked.
+Finalization closes C165 without invoking the watchlist function or executing another rollout. The next governed work is the distinct C166 post-rollout observation topic, which measures the active runtime result before further progression.
+
+```text
+C165_GOVERNANCE_TOPIC=C165_PLAN_CONFIRM_CONTROLLED_ROLLOUT
+C165_GOVERNANCE_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+C165_GOVERNANCE_STATUS=C165_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW_PASSED_GO_FINALIZED_CONTROLLED_ROLLOUT_CLOSED_READY_FOR_POST_ROLLOUT_OBSERVATION_REVIEW_PRIMARY_AND_BACKUP
+C165_FINALIZATION_ARTIFACT_HASH=618a09a64ba295aee023edc8131452782e184a9f
+C165_FINALIZATION_FILE_SHA1=8EBDA0F4267597ED04F7AB798A1B1A227ACE4B9A
+C165_OPERATOR_ARTIFACT_HASH=48cd9784bb9df5ceef8b47ca970996398d104f54
+C165_OPERATOR_FILE_SHA1=5457B6DDA328EF4FD1B0157E5857968D01965381
+FOCUSED_PHPUNIT_C165_PLAN_CONFIRM_CONTROLLED_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW=OK (33 tests, 95 assertions)
+FULL_PHPUNIT_FILTER_C165=OK (169 tests, 527 assertions)
+GO_DECISION_FINALIZED=1
+CONTROLLED_ROLLOUT_TOPIC_CLOSED=1
+C165_TOPIC_COMPLETE=1
+C166_POST_ROLLOUT_OBSERVATION_REQUIRED_NEXT=1
+C165_OPERATOR_ARTIFACT_LOCK_VALID=1
+CONTROLLED_ROLLOUT_ACTIVE_FOR_OBSERVATION=1
+NEW_ROLLOUT_EXECUTED_BY_FINALIZATION=0
+WATCHLIST_FUNCTION_INVOKED_BY_FINALIZATION=0
+PRODUCTION_CONFIG_MUTATED=0
+UNRESTRICTED_ROLLOUT_ALLOWED=0
+KILL_SWITCH_CONFIRMED=1
+ROLLBACK_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+NEXT_RECOMMENDATION=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW
+```
+
+C165 is closed. Governance may now move to C166 post-rollout observation without repeating the C165 completion sequence.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation Review Governance
+
+C166 governance opens post-rollout observation only from the immutable C165 finalization and active rollout-state locks. The official observation confirms the existing E02/B01 controlled scope, A01 comparator-only status, kill switch, rollback, production-configuration immutability, and free-publication lock.
+The observation is a read-only control-plane snapshot. Governance does not treat it as evidence of market outcome, price performance, or recommendation quality, and it authorizes only same-topic result review.
+
+```text
+C166_GOVERNANCE_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_GOVERNANCE_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW
+C166_GOVERNANCE_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW_PASSED_CONTROLLED_ROLLOUT_OBSERVED_READY_FOR_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C166_OBSERVATION_ARTIFACT_HASH=9ffec96e1a08e927c5ad14445d6e6d038528a7f2
+C166_OBSERVATION_FILE_SHA1=D9AF66D1488F3BA14134820647E8C1A288C75525
+C165_FINALIZATION_ARTIFACT_HASH=618a09a64ba295aee023edc8131452782e184a9f
+C165_FINALIZATION_FILE_SHA1=8EBDA0F4267597ED04F7AB798A1B1A227ACE4B9A
+C165_ROLLOUT_STATE_HASH=3a8350955f6a1396f5225af3fddcfa31fa622904
+C165_ROLLOUT_STATE_FILE_SHA1=4B58D3A17B56136CF02BE1635FB2F16F12831722
+FOCUSED_PHPUNIT_C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW=OK (41 tests, 100 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (43 tests, 123 assertions)
+C166_TOPIC_COMPLETE=0
+CONTROLLED_ROLLOUT_OBSERVATION_STABLE=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+PRICE_PERFORMANCE_EVALUATED=0
+RECOMMENDATION_QUALITY_EVALUATED=0
+NEW_ROLLOUT_EXECUTED_BY_OBSERVATION=0
+WATCHLIST_FUNCTION_INVOKED_BY_OBSERVATION_REVIEW=0
+PRODUCTION_CONFIG_MUTATED=0
+UNRESTRICTED_ROLLOUT_ALLOWED=0
+KILL_SWITCH_CONFIRMED=1
+ROLLBACK_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+NEXT_RECOMMENDATION=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW
+```
+
+C166 remains the active topic; governance proceeds next to the locked observation result review without repeating C165 or advancing to C167.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation Result Review Governance
+
+C166 result-review governance permits progression only from the immutable post-rollout observation lock. It validates control-plane stability, E02/B01 scope, A01 comparator-only status, kill switch, rollback, unchanged production configuration, and free-publication lock.
+The result is not market-performance evidence. Governance requires an explicit non-inference confirmation and authorizes only same-topic operator GO/NO-GO review.
+
+```text
+C166_GOVERNANCE_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_GOVERNANCE_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW
+C166_GOVERNANCE_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW_PASSED_READY_FOR_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C166_RESULT_REVIEW_ARTIFACT_HASH=1dbd61b08afb2d45918cc66a16c782983cfd6666
+C166_RESULT_REVIEW_FILE_SHA1=2555E1C7612C066FBF60342D0235AE399CB23253
+C166_OBSERVATION_ARTIFACT_HASH=9ffec96e1a08e927c5ad14445d6e6d038528a7f2
+C166_OBSERVATION_FILE_SHA1=D9AF66D1488F3BA14134820647E8C1A288C75525
+FOCUSED_PHPUNIT_C166_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW=OK (47 tests, 127 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (90 tests, 250 assertions)
+C166_TOPIC_COMPLETE=0
+POST_ROLLOUT_OBSERVATION_RESULT_VALID=1
+CONTROL_PLANE_OBSERVATION_RESULT_STABLE=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+PRICE_PERFORMANCE_EVALUATED=0
+RECOMMENDATION_QUALITY_EVALUATED=0
+MARKET_METRICS_INFERRED_BY_RESULT_REVIEW=0
+NEW_ROLLOUT_EXECUTED_BY_RESULT_REVIEW=0
+WATCHLIST_FUNCTION_INVOKED_BY_RESULT_REVIEW=0
+PRODUCTION_CONFIG_MUTATED=0
+UNRESTRICTED_ROLLOUT_ALLOWED=0
+KILL_SWITCH_CONFIRMED=1
+ROLLBACK_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+NEXT_RECOMMENDATION=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C166 remains the active topic; the next governed stage is same-topic operator GO/NO-GO review, not C167.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation Operator GO/NO-GO Review Governance
+
+C166 operator governance accepts only `GO`, `NO_GO`, or `HOLD` against the immutable result-review lock. Every completed decision preserves E02/B01 scope, A01 comparator-only status, kill switch, rollback, production-configuration immutability, free-publication lock, and non-inference of unavailable market metrics.
+The official `GO` authorizes only same-topic GO decision finalization. It does not itself finalize C166 or execute any runtime, function, configuration, ranking, tuning, metric-inference, or publication action.
+
+```text
+C166_GOVERNANCE_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_GOVERNANCE_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW
+C166_GOVERNANCE_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_GO_DECISION_FINALIZATION_REVIEW
+C166_OPERATOR_ARTIFACT_HASH=20b00b9c2c53e33eee4f1501e8fddc7c8c379dda
+C166_OPERATOR_FILE_SHA1=3158EDB0120527909C12A557C36C2EC28C91B209
+C166_RESULT_REVIEW_ARTIFACT_HASH=1dbd61b08afb2d45918cc66a16c782983cfd6666
+C166_RESULT_REVIEW_FILE_SHA1=2555E1C7612C066FBF60342D0235AE399CB23253
+FOCUSED_PHPUNIT_C166_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW=OK (35 tests, 121 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (125 tests, 371 assertions)
+OPERATOR_DECISION=GO
+OPERATOR_GO_DECISION=1
+GO_DECISION_FINALIZED=0
+C166_TOPIC_COMPLETE=0
+POST_ROLLOUT_OBSERVATION_RESULT_VALID=1
+CONTROL_PLANE_OBSERVATION_RESULT_STABLE=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+MARKET_METRICS_INFERRED_BY_OPERATOR_REVIEW=0
+NEW_ROLLOUT_EXECUTED_BY_OPERATOR_REVIEW=0
+WATCHLIST_FUNCTION_INVOKED_BY_OPERATOR_REVIEW=0
+PRODUCTION_CONFIG_MUTATED=0
+UNRESTRICTED_ROLLOUT_ALLOWED=0
+KILL_SWITCH_CONFIRMED=1
+ROLLBACK_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+NEXT_RECOMMENDATION=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C166 remains active; governance must lock the operator GO artifact before finalization is considered.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation GO Decision Finalization Review Governance
+
+C166 finalization governance permits closure only from the immutable operator `GO` artifact. It requires confirmation that the control-plane result is valid, unavailable market metrics remain uninferred, candidate scope and safety controls remain intact, production configuration remains unchanged, and free publication remains locked.
+Finalization closes C166 without invoking the watchlist function or executing any runtime action. The next governed work is the distinct C167 controlled rollout completion boundary topic.
+
+```text
+C166_GOVERNANCE_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_GOVERNANCE_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW
+C166_GOVERNANCE_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_GO_FINALIZED_POST_ROLLOUT_OBSERVATION_CLOSED_READY_FOR_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW_PRIMARY_AND_BACKUP
+C166_FINALIZATION_ARTIFACT_HASH=299eb7f2978b8755351d28bb299249f0cb0d818f
+C166_FINALIZATION_FILE_SHA1=3E2CF7C226756EFD9F3AADBDDCAE3BD133D174BA
+C166_OPERATOR_ARTIFACT_HASH=20b00b9c2c53e33eee4f1501e8fddc7c8c379dda
+C166_OPERATOR_FILE_SHA1=3158EDB0120527909C12A557C36C2EC28C91B209
+FOCUSED_PHPUNIT_C166_POST_ROLLOUT_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW=OK (42 tests, 118 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (167 tests, 489 assertions)
+GO_DECISION_FINALIZED=1
+POST_ROLLOUT_OBSERVATION_TOPIC_CLOSED=1
+C166_TOPIC_COMPLETE=1
+C167_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REQUIRED_NEXT=1
+POST_ROLLOUT_OBSERVATION_RESULT_VALID=1
+CONTROL_PLANE_OBSERVATION_RESULT_STABLE=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+MARKET_METRICS_INFERRED_BY_FINALIZATION=0
+NEW_ROLLOUT_EXECUTED_BY_FINALIZATION=0
+WATCHLIST_FUNCTION_INVOKED_BY_FINALIZATION=0
+PRODUCTION_CONFIG_MUTATED=0
+UNRESTRICTED_ROLLOUT_ALLOWED=0
+KILL_SWITCH_CONFIRMED=1
+ROLLBACK_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+NEXT_RECOMMENDATION=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW
+```
+
+C166 is closed. Governance may now move to the new C167 completion boundary without repeating the C166 observation sequence.
+
+## C167 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Completion Boundary Governance
+
+C167 governance permits the completion topic to open only from the immutable C166 finalization lock. The boundary must distinguish the already-executed controlled rollout from prohibited new actions: no new rollout, mutation, catalog read, watchlist-function invocation, production-configuration change, metric inference, or publication is allowed.
+
+```text
+C167_GOVERNANCE_TOPIC=C167_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION
+C167_GOVERNANCE_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW
+C167_GOVERNANCE_STATUS=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW_PASSED_READY_FOR_CONTROLLED_ROLLOUT_COMPLETION_EXECUTION_PRIMARY_AND_BACKUP
+C167_BOUNDARY_ARTIFACT_HASH=5b1a5efc91cfc56b8b98cadb5802f275cf417394
+C167_BOUNDARY_FILE_SHA1=075A32EBEF7CAF03B5671C9B7BF9BF85A24F8CEF
+C166_FINALIZATION_ARTIFACT_HASH=299eb7f2978b8755351d28bb299249f0cb0d818f
+C166_FINALIZATION_FILE_SHA1=3E2CF7C226756EFD9F3AADBDDCAE3BD133D174BA
+FULL_PHPUNIT_FILTER_C167=OK (8 tests, 55 assertions)
+CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_OPEN=1
+C167_TOPIC_COMPLETE=0
+NEW_ROLLOUT_EXECUTED=0
+NEW_PLAN_CONFIRM_MUTATION_EXECUTED=0
+NEW_CATALOG_READ_EXECUTED=0
+WATCHLIST_FUNCTION_INVOKED_BY_BOUNDARY=0
+PRODUCTION_CONFIG_MUTATED=0
+FREE_PUBLICATION_ALLOWED=0
+UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+NEXT_RECOMMENDATION=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_EXECUTION
+```
+
+C167 governance remains active. The next governed action is same-topic completion execution from the locked C167 boundary artifact.

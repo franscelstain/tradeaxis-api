@@ -1456,8 +1456,8 @@ C17 final strategy-quality verdict:
 C17_GRID_FAILED_IS_QUALITY=true
 reason_code=WS_BT_C17_NO_VALID_IS_CANDIDATE
 best_is_binding=null
-OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter
-PROMOTION_ELIGIBILITY=NOT_ELIGIBLE — OOS proof missing
+OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF â€” no valid IS parameter
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE â€” OOS proof missing
 PRODUCTION_READY=false
 ```
 
@@ -2465,7 +2465,7 @@ C04_REQUIRED
 
 C04 must be a new catalog identity and must change the candidate-selection axis using only runtime-supported fields. It must not mutate R1/R2/C01/C02/C03, must not add unsupported sector filters, must not loosen quality gates, and must not run OOS unless a valid IS candidate is first proven.
 
-## PRIOR SESSION — C02 DOWNSIDE STABILITY OPERATOR FORENSIC FINALIZATION SESSION
+## PRIOR SESSION â€” C02 DOWNSIDE STABILITY OPERATOR FORENSIC FINALIZATION SESSION
 
 Session:
 `WATCHLIST - C02 DOWNSIDE STABILITY OPERATOR FORENSIC FINALIZATION SESSION`
@@ -2532,24 +2532,24 @@ Contract impact:
 C02 OOS-proof eligibility:
 
 ```text
-NOT_ELIGIBLE_FOR_OOS_PROOF — C02 has zero valid IS candidates and no frozen best-IS binding.
+NOT_ELIGIBLE_FOR_OOS_PROOF â€” C02 has zero valid IS candidates and no frozen best-IS binding.
 ```
 
 Promotion eligibility:
 
 ```text
-NOT_ELIGIBLE — C02 failed strategy quality and OOS proof is missing.
+NOT_ELIGIBLE â€” C02 failed strategy quality and OOS proof is missing.
 ```
 
 Required next contract work:
 
 ```text
-WATCHLIST — C03 IS QUALITY CATALOG DESIGN AND IMPLEMENTATION SESSION
+WATCHLIST â€” C03 IS QUALITY CATALOG DESIGN AND IMPLEMENTATION SESSION
 ```
 
 The next contract work must design a new C03 catalog from C02 forensic metrics. It must preserve R1/R2/C01/C02 as immutable evidence, keep OOS unread, avoid best-of-failed selection, and avoid production-ready claims.
 
-## PRIOR SESSION — C01 DIAGNOSTIC PAYLOAD EXPANSION
+## PRIOR SESSION â€” C01 DIAGNOSTIC PAYLOAD EXPANSION
 
 Session:
 `WATCHLIST - C01 IS FAILURE DRILLDOWN PAYLOAD EXPANSION SESSION`
@@ -2606,7 +2606,7 @@ Priority contract status:
 - `WL-CONTRACT-014`: DONE for C01 drilldown docs synchronization scope;
 - `WL-CONTRACT-015`: `PARTIAL / NOT_READY`.
 
-No contract is `LOCKED`. C01 OOS-proof eligibility is `NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter`. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
+No contract is `LOCKED`. C01 OOS-proof eligibility is `NOT_ELIGIBLE_FOR_OOS_PROOF â€” no valid IS parameter`. Promotion remains `NOT_ELIGIBLE â€” OOS proof missing`.
 
 ## Status Rules
 
@@ -2647,7 +2647,7 @@ No contract may move to `LOCKED` only because documentation exists.
 
 ---
 
-## WL-CONTRACT-001 — MARKET-DATA PUBLICATION READ CONTRACT
+## WL-CONTRACT-001 â€” MARKET-DATA PUBLICATION READ CONTRACT
 
 Contract ID:
 `WL-CONTRACT-001`
@@ -2685,7 +2685,7 @@ Tests:
 - upstream reference: `tests/Unit/MarketData/MarketDataWatchlistReadModelTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -2703,11 +2703,11 @@ Acceptance criteria:
 - Static guard covers the no-bypass constraint.
 
 Last update:
-`2026-05-28 — WATCHLIST — CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
+`2026-05-28 â€” WATCHLIST â€” CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-002 — NO RAW MARKET-DATA BYPASS
+## WL-CONTRACT-002 â€” NO RAW MARKET-DATA BYPASS
 
 Contract ID:
 `WL-CONTRACT-002`
@@ -2739,7 +2739,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistCandidateUniverseServiceTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -2754,11 +2754,11 @@ Acceptance criteria:
 - Any future repository/API/command must preserve this boundary or update the guard.
 
 Last update:
-`2026-05-28 — WATCHLIST — CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
+`2026-05-28 â€” WATCHLIST â€” CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-003 — NO MAX-DATE / LATEST SHORTCUT
+## WL-CONTRACT-003 â€” NO MAX-DATE / LATEST SHORTCUT
 
 Contract ID:
 `WL-CONTRACT-003`
@@ -2787,7 +2787,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistCandidateUniverseStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -2803,11 +2803,11 @@ Acceptance criteria:
 - Any future backtest/recommendation/API code must use the same resolved publication/effective date contract.
 
 Last update:
-`2026-05-28 — WATCHLIST — CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
+`2026-05-28 â€” WATCHLIST â€” CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-004 — INDICATOR VALIDITY CONTRACT
+## WL-CONTRACT-004 â€” INDICATOR VALIDITY CONTRACT
 
 Contract ID:
 `WL-CONTRACT-004`
@@ -2836,7 +2836,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistMarketDataConsumerReadModelStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -2852,11 +2852,11 @@ Acceptance criteria:
 - Invalid candidate rows are excluded with reason-coded evidence.
 
 Last update:
-`2026-05-28 — WATCHLIST — CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
+`2026-05-28 â€” WATCHLIST â€” CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-005 — ELIGIBILITY CONTRACT
+## WL-CONTRACT-005 â€” ELIGIBILITY CONTRACT
 
 Contract ID:
 `WL-CONTRACT-005`
@@ -2885,7 +2885,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistMarketDataConsumerReadModelStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -2900,11 +2900,11 @@ Acceptance criteria:
 - Eligibility reason state remains traceable for downstream scoring/recommendation work.
 
 Last update:
-`2026-05-28 — WATCHLIST — MARKET-DATA CONSUMER READ MODEL EXECUTION SESSION`
+`2026-05-28 â€” WATCHLIST â€” MARKET-DATA CONSUMER READ MODEL EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-006 — SCORING DETERMINISM CONTRACT
+## WL-CONTRACT-006 â€” SCORING DETERMINISM CONTRACT
 
 Contract ID:
 `WL-CONTRACT-006`
@@ -2938,7 +2938,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -2957,11 +2957,11 @@ Acceptance criteria:
 - Tests cover deterministic scoring output and deterministic PLAN grouping output.
 
 Last update:
-`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`2026-06-05 â€” WATCHLIST â€” PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-007 — PARAMSET TRACEABILITY CONTRACT
+## WL-CONTRACT-007 â€” PARAMSET TRACEABILITY CONTRACT
 
 Contract ID:
 `WL-CONTRACT-007`
@@ -2998,7 +2998,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistRecommendationStaticGuardTest.php`
 
 Runtime proof:
-`LOCAL_RUNTIME_PROOF_PASS — final command artifacts carry resolved canonical eval thresholds, effective dynamic coverage threshold, policy/paramset snapshot, and deterministic hash; broader promotion/persistence governance remains outside this scope.`
+`LOCAL_RUNTIME_PROOF_PASS â€” final command artifacts carry resolved canonical eval thresholds, effective dynamic coverage threshold, policy/paramset snapshot, and deterministic hash; broader promotion/persistence governance remains outside this scope.`
 
 Current gaps:
 
@@ -3024,11 +3024,11 @@ Acceptance criteria:
 - Artifact output records policy/paramset identity and hash when runtime artifacts are introduced.
 
 Last update:
-`2026-06-09 — WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
+`2026-06-09 â€” WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
 
 ---
 
-## WL-CONTRACT-008 — SIGNAL EXPLAINABILITY CONTRACT
+## WL-CONTRACT-008 â€” SIGNAL EXPLAINABILITY CONTRACT
 
 Contract ID:
 `WL-CONTRACT-008`
@@ -3084,7 +3084,7 @@ Tests:
 - `tests/Unit/MarketData/MarketDataPublishedEodSeriesReadModelTest.php`
 
 Runtime proof:
-`LOCAL_RUNTIME_PROOF_PASS — official command diagnostics and artifacts explain publication lineage, zero-volume non-tradable entry/exit behavior, skipped evaluations, metrics, and validation state.`
+`LOCAL_RUNTIME_PROOF_PASS â€” official command diagnostics and artifacts explain publication lineage, zero-volume non-tradable entry/exit behavior, skipped evaluations, metrics, and validation state.`
 
 Current gaps:
 
@@ -3108,11 +3108,11 @@ Acceptance criteria:
 - Output includes enough factor breakdown to audit why a ticker is included, watched, avoided, or rejected.
 
 Last update:
-`2026-06-09 — WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
+`2026-06-09 â€” WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
 
 ---
 
-## WL-CONTRACT-009 — BACKTEST NO-LOOKAHEAD CONTRACT
+## WL-CONTRACT-009 â€” BACKTEST NO-LOOKAHEAD CONTRACT
 
 Contract ID:
 `WL-CONTRACT-009`
@@ -3155,7 +3155,7 @@ Tests:
 - `tests/Unit/MarketData/MarketDataPublishedEodSeriesReadModelTest.php`
 
 Runtime proof:
-`LOCAL_RUNTIME_PROOF_PASS — strategy output is frozen before future-price reads, exact-date readable publications are used, future prices remain evaluation-only, and the final operator replay passed.`
+`LOCAL_RUNTIME_PROOF_PASS â€” strategy output is frozen before future-price reads, exact-date readable publications are used, future prices remain evaluation-only, and the final operator replay passed.`
 
 Current gaps:
 
@@ -3174,11 +3174,11 @@ Acceptance criteria:
 - Tests include lookahead guard cases.
 
 Last update:
-`2026-06-09 — WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
+`2026-06-09 â€” WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
 
 ---
 
-## WL-CONTRACT-010 — BACKTEST REPRODUCIBILITY CONTRACT
+## WL-CONTRACT-010 â€” BACKTEST REPRODUCIBILITY CONTRACT
 
 Contract ID:
 `WL-CONTRACT-010`
@@ -3220,7 +3220,7 @@ Tests:
 - `tests/Unit/MarketData/MarketDataPublishedEodSeriesReadModelTest.php`
 
 Runtime proof:
-`LOCAL_RUNTIME_PROOF_PASS — two final official command runs with identical canonical inputs produced canonical artifact hash `0eaa353d20df901c4f372c0000951408578bf302` in both runs.`
+`LOCAL_RUNTIME_PROOF_PASS â€” two final official command runs with identical canonical inputs produced canonical artifact hash `0eaa353d20df901c4f372c0000951408578bf302` in both runs.`
 
 Current gaps:
 
@@ -3240,11 +3240,11 @@ Acceptance criteria:
 - Replayed result matches expected metrics and output contract.
 
 Last update:
-`2026-06-09 — WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
+`2026-06-09 â€” WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
 
 ---
 
-## WL-CONTRACT-011 — RISK GATE CONTRACT
+## WL-CONTRACT-011 â€” RISK GATE CONTRACT
 
 Contract ID:
 `WL-CONTRACT-011`
@@ -3278,7 +3278,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistScoringStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -3300,11 +3300,11 @@ Acceptance criteria:
 - Production PLAN universe and future backtest universe can compare pass/fail + reason using canonical fields.
 
 Last update:
-`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`2026-06-05 â€” WATCHLIST â€” PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-012 — PORTFOLIO AWARENESS BOUNDARY
+## WL-CONTRACT-012 â€” PORTFOLIO AWARENESS BOUNDARY
 
 Contract ID:
 `WL-CONTRACT-012`
@@ -3347,7 +3347,7 @@ Last update:
 
 ---
 
-## WL-CONTRACT-013 — AUDIT ARTIFACT CONTRACT
+## WL-CONTRACT-013 â€” AUDIT ARTIFACT CONTRACT
 
 Contract ID:
 `WL-CONTRACT-013`
@@ -3389,7 +3389,7 @@ Tests:
 - `tests/Unit/MarketData/MarketDataPublishedEodSeriesReadModelTest.php`
 
 Runtime proof:
-`LOCAL_RUNTIME_PROOF_PASS — two official JSON artifacts were exported with calendar, price, publication, paramset, metrics, diagnostics, validation, and deterministic canonical hash evidence.`
+`LOCAL_RUNTIME_PROOF_PASS â€” two official JSON artifacts were exported with calendar, price, publication, paramset, metrics, diagnostics, validation, and deterministic canonical hash evidence.`
 
 Current gaps:
 
@@ -3407,11 +3407,11 @@ Acceptance criteria:
 - Artifact records publication, paramset, universe, result, reason code/factor output, and validation status.
 
 Last update:
-`2026-06-09 — WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
+`2026-06-09 â€” WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
 
 ---
 
-## WL-CONTRACT-014 — DOCS SYNC CONTRACT
+## WL-CONTRACT-014 â€” DOCS SYNC CONTRACT
 
 Contract ID:
 `WL-CONTRACT-014`
@@ -3474,7 +3474,7 @@ Tests:
 - `tests/Unit/MarketData/MarketDataPublishedEodSeriesReadModelTest.php`
 
 Runtime proof:
-`PASS — implementation status and contract tracker now record final PHPUnit, command, canonical hash, dynamic coverage, threshold, zero-volume diagnostic, remaining OOS gap, and `NOT_PRODUCTION_READY` status.`
+`PASS â€” implementation status and contract tracker now record final PHPUnit, command, canonical hash, dynamic coverage, threshold, zero-volume diagnostic, remaining OOS gap, and `NOT_PRODUCTION_READY` status.`
 
 Current gaps:
 
@@ -3501,11 +3501,11 @@ Acceptance criteria:
 - Tracker contracts reflect actual code/test/runtime status without overclaim.
 
 Last update:
-`2026-06-09 — WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
+`2026-06-09 â€” WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
 
 ---
 
-## WL-CONTRACT-015 — PRODUCTION READINESS CONTRACT
+## WL-CONTRACT-015 â€” PRODUCTION READINESS CONTRACT
 
 Contract ID:
 `WL-CONTRACT-015`
@@ -3562,7 +3562,7 @@ Tests:
 - `tests/Unit/MarketData/MarketDataPublishedEodSeriesReadModelTest.php`
 
 Runtime proof:
-`PARTIAL — published-price runtime proof, final PHPUnit, deterministic JSON artifacts, threshold binding, coverage, and zero-volume diagnostics pass; walk-forward/OOS and production operating proof remain unavailable.`
+`PARTIAL â€” published-price runtime proof, final PHPUnit, deterministic JSON artifacts, threshold binding, coverage, and zero-volume diagnostics pass; walk-forward/OOS and production operating proof remain unavailable.`
 
 Current gaps:
 
@@ -3597,11 +3597,11 @@ Acceptance criteria:
 - Docs sync complete.
 
 Last update:
-`2026-06-09 — WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
+`2026-06-09 â€” WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF FINAL CLOSURE`
 
 ---
 
-## WL-CONTRACT-016 — PLAN GROUPING DETERMINISM CONTRACT
+## WL-CONTRACT-016 â€” PLAN GROUPING DETERMINISM CONTRACT
 
 Contract ID:
 `WL-CONTRACT-016`
@@ -3630,7 +3630,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistPlanGroupingStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -3649,11 +3649,11 @@ Acceptance criteria:
 - Overflow from TOP_PICKS and SECONDARY follows deterministic threshold/limit rules.
 
 Last update:
-`2026-06-05 — WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+`2026-06-05 â€” WATCHLIST â€” PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-017 — PLAN GROUP BOUNDARY CONTRACT
+## WL-CONTRACT-017 â€” PLAN GROUP BOUNDARY CONTRACT
 
 Contract ID:
 `WL-CONTRACT-017`
@@ -3694,7 +3694,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -3713,11 +3713,11 @@ Acceptance criteria:
 - Confirm overlay binds to candidate PLAN without mutating recommendation membership, rank, score, label, or hash.
 
 Last update:
-`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+`2026-06-05 â€” WATCHLIST â€” CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-018 — RECOMMENDATION PLAN-SOURCE CONTRACT
+## WL-CONTRACT-018 â€” RECOMMENDATION PLAN-SOURCE CONTRACT
 
 Contract ID:
 `WL-CONTRACT-018`
@@ -3754,7 +3754,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -3772,11 +3772,11 @@ Acceptance criteria:
 - Recommendation metadata preserves source PLAN trade date, publication, run, policy, and paramset identity.
 
 Last update:
-`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+`2026-06-05 â€” WATCHLIST â€” CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
 
 ---
 
-## WL-CONTRACT-019 — RECOMMENDATION DETERMINISM AND EMPTY-SET CONTRACT
+## WL-CONTRACT-019 â€” RECOMMENDATION DETERMINISM AND EMPTY-SET CONTRACT
 
 Contract ID:
 `WL-CONTRACT-019`
@@ -3811,7 +3811,7 @@ Tests:
 - `tests/Unit/Watchlist/WatchlistBacktestStrategyStaticGuardTest.php`
 
 Runtime proof:
-`NOT_STARTED` — no watchlist command/API exists yet.
+`NOT_STARTED` â€” no watchlist command/API exists yet.
 
 Current gaps:
 
@@ -3828,13 +3828,13 @@ Acceptance criteria:
 - Capital-aware replay is deterministic for identical explicit capital input.
 
 Last update:
-`2026-06-05 — WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+`2026-06-05 â€” WATCHLIST â€” CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
 
 
-## Phase 7 Local Validation Update — 2026-06-08
+## Phase 7 Local Validation Update â€” 2026-06-08
 
 Session:
-`WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+`WATCHLIST â€” BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
 
 Status:
 `PHASE_7_BACKTEST_STRATEGY_ENGINE_FOUNDATION_DONE / NOT_PRODUCTION_READY`.
@@ -3865,10 +3865,10 @@ No Phase 7 contract is moved to `LOCKED` because command/API runtime proof, pers
 
 
 
-## Runtime Artifact and Metrics Contract Update — 2026-06-08
+## Runtime Artifact and Metrics Contract Update â€” 2026-06-08
 
 Session:
-`WATCHLIST — BACKTEST RUNTIME ARTIFACT AND METRICS EXECUTION SESSION`
+`WATCHLIST â€” BACKTEST RUNTIME ARTIFACT AND METRICS EXECUTION SESSION`
 
 Status:
 `DONE for runtime artifact and metrics foundation unit/static scope / NOT_PRODUCTION_READY`.
@@ -3902,7 +3902,7 @@ Internal diagnostics added for backtest artifact/metrics scope only:
 
 No contract is moved to `LOCKED` because command/API runtime proof, production persisted artifact/log evidence, production schema, and walk-forward/OOS proof are still missing.
 
-## Runtime Artifact and Metrics Local Validation Update — 2026-06-09
+## Runtime Artifact and Metrics Local Validation Update â€” 2026-06-09
 
 Status:
 `DONE for runtime artifact and metrics foundation unit/static scope / LOCAL_PHPUNIT_PASS / NOT_PRODUCTION_READY`.
@@ -3931,7 +3931,7 @@ Contract impact:
 
 Next session must target:
 
-`WATCHLIST — WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
+`WATCHLIST â€” WEEKLY SWING C01 FAILURE DIAGNOSTIC AND NEXT SEMANTIC CATALOG DESIGN SESSION`
 
 Priority contracts:
 
@@ -3968,10 +3968,10 @@ If the same focus continues, use WS_BT_GRID_DOWNSIDE_STABILITY_C02_2026_06.
 If focus changes, use WS_BT_GRID_<NEW_FOCUS>_C01_YYYY_MM.
 ```
 
-## Published Price Runtime Contract Update — 2026-06-09
+## Published Price Runtime Contract Update â€” 2026-06-09
 
 Session:
-`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+`WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
 
 Evidence:
 
@@ -4007,10 +4007,10 @@ No contract is promoted to `LOCKED`.
 
 
 
-## Published Price Runtime Proof and Closure Contract Update — 2026-06-09
+## Published Price Runtime Proof and Closure Contract Update â€” 2026-06-09
 
 Session:
-`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+`WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
 
 Operator evidence:
 
@@ -4059,10 +4059,10 @@ Next required work inside the same session:
 5. prove the two new canonical artifact hashes are equal;
 6. only then close this session and select walk-forward/OOS as the next session.
 
-## Published Price Runtime Proof Final Contract Closure — 2026-06-09
+## Published Price Runtime Proof Final Contract Closure â€” 2026-06-09
 
 Session:
-`WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+`WATCHLIST â€” BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
 
 Final session status:
 `DONE for published price series runtime proof scope / LOCAL_RUNTIME_PROOF_PASS / NOT_PRODUCTION_READY`.
@@ -4115,12 +4115,12 @@ No contract is promoted to `LOCKED`. The completed published-price runtime proof
 Earlier statements in this tracker that current closure/coverage PHPUnit or command reruns are still required are historical and superseded by this final closure section.
 
 Next required session:
-`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`.
+`WATCHLIST â€” WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`.
 
-## Walk-Forward/OOS Unit-Static Contract Update — 2026-06-09
+## Walk-Forward/OOS Unit-Static Contract Update â€” 2026-06-09
 
 Session:
-`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+`WATCHLIST â€” WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
 
 Status:
 `DONE for walk-forward/OOS implementation unit-static scope / LOCAL_SMOKE_PASS / OFFICIAL_RUNTIME_PROOF_BLOCKED / NOT_PRODUCTION_READY`.
@@ -4161,14 +4161,14 @@ The controlled smoke does not satisfy official runtime proof. Therefore:
 ```text
 LOCAL_OOS_PROOF_PASS: not claimed
 OOS_ACCEPTANCE_FAIL: not claimed because OOS runtime did not execute
-Promotion eligibility: NOT_ELIGIBLE — OOS proof missing
+Promotion eligibility: NOT_ELIGIBLE â€” OOS proof missing
 Production ready: NO
 ```
 
 No contract is promoted to `LOCKED`.
 
 
-## OOS Runtime Gap-Closure Contract Update — 2026-06-09
+## OOS Runtime Gap-Closure Contract Update â€” 2026-06-09
 
 Status:
 `DONE for OOS runtime gap-closure implementation unit/static scope / OPERATOR_RERUN_REQUIRED / NOT_PRODUCTION_READY`.
@@ -4194,9 +4194,9 @@ single baseline valid IS candidates: 0
 OOS: not executed
 ```
 
-No contract is promoted to `LOCKED`. Promotion remains `NOT_ELIGIBLE — corrected OOS proof missing`.
+No contract is promoted to `LOCKED`. Promotion remains `NOT_ELIGIBLE â€” corrected OOS proof missing`.
 
-## OOS Post-Deployment Regression Contract Correction — 2026-06-10
+## OOS Post-Deployment Regression Contract Correction â€” 2026-06-10
 
 Operator execution proved the 24-row canonical database seed and param-grid catalog tests pass, then exposed three parity regressions: stale static-guard cardinality `18`, missing strategy bootstrap ATR/RR defaults, and runtime metadata not rebound onto returned strategy payloads before freeze.
 
@@ -4210,10 +4210,10 @@ Contract impact:
 - `WL-CONTRACT-014`: owner contract, implementation guidance, tests, and trackers are synchronized.
 - `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY` pending supported operator PHPUnit and OOS rerun.
 
-No contract is promoted to `LOCKED`. Promotion remains `NOT_ELIGIBLE — corrected OOS proof missing`.
+No contract is promoted to `LOCKED`. Promotion remains `NOT_ELIGIBLE â€” corrected OOS proof missing`.
 
 
-## OOS Grid Cross-Field Paramset Contract Correction — 2026-06-10
+## OOS Grid Cross-Field Paramset Contract Correction â€” 2026-06-10
 
 Operator full-window execution proved the memory-safe runtime and 24-row grid load, but aggregate IS failures included `WATCHLIST_BACKTEST_SOURCE_NOT_READY`. The cause was a row-projection defect: strict `max_atr14_pct` values were merged with a wider default ideal ATR band.
 
@@ -4228,10 +4228,10 @@ Contract impact:
 
 No metric acceptance threshold was weakened. No best-of-failed selection or promotion is allowed.
 
-## Execution-Price Corrected Full-Range R1 IS Contract Result — 2026-06-10
+## Execution-Price Corrected Full-Range R1 IS Contract Result â€” 2026-06-10
 
 Session:
-`WATCHLIST — WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
+`WATCHLIST â€” WALK-FORWARD AND OUT-OF-SAMPLE PROOF EXECUTION SESSION`
 
 Final status:
 `FULL_IS_CALIBRATION_EXECUTED / R1_GRID_FAILED_IS_QUALITY / OOS_NOT_EXECUTED / NOT_PRODUCTION_READY`.
@@ -4268,15 +4268,15 @@ Canonical artifact hash: f4ec8464f08515b31d7d26636851acea930307d6
 - `WL-CONTRACT-014`: final R1 result, validation, artifact hash, and next-session boundary are synchronized.
 - `WL-CONTRACT-015`: remains `PARTIAL / NOT_READY`.
 
-No contract is promoted to `LOCKED`. No acceptance gate was weakened. No OOS data was used for R1 selection. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
+No contract is promoted to `LOCKED`. No acceptance gate was weakened. No OOS data was used for R1 selection. Promotion remains `NOT_ELIGIBLE â€” OOS proof missing`.
 
 Next required work:
-`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`.
+`WATCHLIST â€” WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION SESSION`.
 
-## R2 Entry-Quality Calibration Contract Update — 2026-06-10
+## R2 Entry-Quality Calibration Contract Update â€” 2026-06-10
 
 Session:
-`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
+`WATCHLIST â€” WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
 
 Status:
 `DONE for R2 implementation unit-static scope / OPERATOR_R2_IS_RERUN_REQUIRED / OOS_NOT_READ / NOT_PRODUCTION_READY`.
@@ -4318,13 +4318,13 @@ PDO database driver=unavailable
 OOS read/execution=NOT PERFORMED
 ```
 
-No contract is promoted to `LOCKED`. OOS-proof eligibility cannot be determined until the supported R2 IS run establishes either a valid frozen binding or an explicit no-valid-candidate result. Promotion remains `NOT_ELIGIBLE — OOS proof missing`.
+No contract is promoted to `LOCKED`. OOS-proof eligibility cannot be determined until the supported R2 IS run establishes either a valid frozen binding or an explicit no-valid-candidate result. Promotion remains `NOT_ELIGIBLE â€” OOS proof missing`.
 
 
-## R2 Entry-Quality Calibration Final Contract Result — 2026-06-10
+## R2 Entry-Quality Calibration Final Contract Result â€” 2026-06-10
 
 Session:
-`WATCHLIST — WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
+`WATCHLIST â€” WEEKLY SWING R2 ENTRY-QUALITY CALIBRATION EXECUTION SESSION`
 
 Final status:
 `LOCAL_R2_IS_CALIBRATION_EXECUTED / R2_GRID_FAILED_IS_QUALITY / OOS_NOT_READ / NOT_PRODUCTION_READY`.
@@ -4375,8 +4375,8 @@ No contract is promoted to `LOCKED`. No acceptance gate was weakened. No OOS dat
 Final eligibility:
 
 ```text
-OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF — no valid R2 IS parameter
-PROMOTION_ELIGIBILITY=NOT_ELIGIBLE — OOS proof missing
+OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF â€” no valid R2 IS parameter
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE â€” OOS proof missing
 PRODUCTION_READY=false
 ```
 
@@ -4393,7 +4393,7 @@ WS_BT_GRID_<FOCUS>_C##_YYYY_MM
 Recommended next work:
 
 ```text
-WATCHLIST — WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION
+WATCHLIST â€” WEEKLY SWING IS FAILURE DIAGNOSTIC AND DOWNSIDE/STABILITY C01 CATALOG DESIGN SESSION
 ```
 
 Recommended catalog identity if the diagnostic justifies a new catalog:
@@ -4590,8 +4590,8 @@ Reference note:
 Final eligibility:
 
 ```text
-OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF — no valid IS parameter
-PROMOTION_ELIGIBILITY=NOT_ELIGIBLE — OOS proof missing
+OOS_PROOF_ELIGIBILITY=NOT_ELIGIBLE_FOR_OOS_PROOF â€” no valid IS parameter
+PROMOTION_ELIGIBILITY=NOT_ELIGIBLE â€” OOS proof missing
 PRODUCTION_READY=false
 ```
 
@@ -4637,7 +4637,7 @@ No runtime C01 drilldown PASS, OOS PASS, promotion, or production-readiness clai
 ### Required next contract work
 
 ```text
-WATCHLIST — C01 IS FAILURE DRILLDOWN OPERATOR RUNTIME EXECUTION SESSION
+WATCHLIST â€” C01 IS FAILURE DRILLDOWN OPERATOR RUNTIME EXECUTION SESSION
 ```
 
 Run two IS-only diagnostic command executions, compare canonical artifact hash and file SHA1, confirm no OOS leakage, and only then decide whether diagnostic payload is sufficient for C02 or whether feature-level payload enrichment is required first.
@@ -4675,7 +4675,7 @@ No OOS proof, promotion, production readiness, or next catalog design is unlocke
 ### Required next contract work
 
 ```text
-WATCHLIST — C01 IS FAILURE DRILLDOWN OPERATOR TWO-RUN PROOF SESSION
+WATCHLIST â€” C01 IS FAILURE DRILLDOWN OPERATOR TWO-RUN PROOF SESSION
 ```
 
 Run the IS-only diagnostic command twice in the supported operator environment, compare canonical artifact hash and file SHA1, confirm no OOS leakage, and keep `NEXT_CATALOG_NOT_DESIGNED` unless the runtime payload is enriched enough to support a specific next semantic catalog decision.
@@ -4812,7 +4812,7 @@ DO_NOT_SET_PRODUCTION_READY=true
 
 ---
 
-## C35 Contract — IS-Only Robustness Redesign Diagnostic
+## C35 Contract â€” IS-Only Robustness Redesign Diagnostic
 
 C35 is an IS-only robustness redesign diagnostic after C34. It locks the C34 source artifact before reading IS evidence.
 
@@ -4916,7 +4916,7 @@ C35 contract decision: PASS. C35 completed the IS-only robustness redesign diagn
 
 ---
 
-## C36 Contract — IS-Controlled Redesign Candidate Formation
+## C36 Contract â€” IS-Controlled Redesign Candidate Formation
 
 C36 contract scope:
 
@@ -5571,7 +5571,7 @@ production_ready=false
 
 C41 contract decision: REQUIRED EVIDENCE EXPANSION before OOS. C41 completed an IS-only review of the locked C40 warning artifact and did not use OOS tuning or run OOS proof. The candidate still has no failed C40 layers and its C39 coverage/branch guards remain valid, but rolling and non-bad-month warnings plus carry-forward pre-trade evidence gaps remain. C41 does not unlock direct OOS proof, does not reselect a candidate, does not promote a catalog, and keeps `production_ready=false`.
 
-## C42 Contract — IS Rolling / Normal-Month Evidence Expansion
+## C42 Contract â€” IS Rolling / Normal-Month Evidence Expansion
 
 C42 source lock contract:
 
@@ -5670,7 +5670,7 @@ FILE_SHA1=CBB44B864DD9B2071DE5B10C426F01ED2776525D
 PRODUCTION_READY=false
 ```
 
-## C43 Contract — IS Pre-Trade Field Expansion Diagnostic
+## C43 Contract â€” IS Pre-Trade Field Expansion Diagnostic
 
 ```text
 CONTRACT_CODE=C43_PRE_TRADE_FIELD_EXPANSION_DIAGNOSTIC
@@ -5729,15 +5729,15 @@ production_ready=false
 C43 validation status contract:
 
 ```text
-PHPUNIT_C43=PASS — OK (13 tests, 106 assertions)
-FULL_WATCHLIST_PHPUNIT=PASS — OK (652 tests, 12966 assertions)
+PHPUNIT_C43=PASS â€” OK (13 tests, 106 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS â€” OK (652 tests, 12966 assertions)
 ARTISAN_C43_RUNTIME=COMPLETED
 ARTIFACT_HASH=41a91ba0447dcf6c0493e1bb27bce6df08fd3490
 FILE_SHA1=27816E62CBE7278108D0BC43C4C3E3F91BC749D7
 PRODUCTION_READY=false
 ```
 
-## C44 Contract — IS Guard Refinement Candidate Formation
+## C44 Contract â€” IS Guard Refinement Candidate Formation
 
 ```text
 INPUT_C43_HASH_LOCK=41a91ba0447dcf6c0493e1bb27bce6df08fd3490
@@ -6004,8 +6004,8 @@ Final operator validation status:
 
 ```text
 C49_IMPLEMENTATION_STATUS=IMPLEMENTED
-C49_PHPUNIT=PASS — OK (12 tests, 196 assertions)
-FULL_WATCHLIST_PHPUNIT=PASS — OK (723 tests, 13647 assertions)
+C49_PHPUNIT=PASS â€” OK (12 tests, 196 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS â€” OK (723 tests, 13647 assertions)
 C49_RUNTIME_STATUS=COMPLETED
 C49_ARTIFACT_PATH=storage/app/watchlist/backtest/c49-broader-strategy-redesign.json
 C49_ARTIFACT_HASH=9266ec2b59a6ea11c21b830cd9b769635afc91a8
@@ -6143,7 +6143,7 @@ C51_MUST_NOT_USE_OOS_RETURN_FOR_SELECTION=true
 C51_MUST_NOT_OPEN_OOS_PROOF=true
 ```
 
-## C52 Contract — Sector Reconstruction and Second-Pass Concentration Redesign
+## C52 Contract â€” Sector Reconstruction and Second-Pass Concentration Redesign
 
 ```text
 CONTRACT=C52_IS_ONLY_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
@@ -6201,7 +6201,7 @@ OOS_PROOF_UNLOCKED=false
 production_ready=false
 ```
 
-## C53 Contract — IS Evidence Expansion for C52 Redesign
+## C53 Contract â€” IS Evidence Expansion for C52 Redesign
 
 ```text
 C52_ARTIFACT_HASH_LOCK=true
@@ -6242,7 +6242,7 @@ C53_MUST_NOT_RECOMMEND_OOS_PROOF=true
 
 ---
 
-## C51 Contract — IS-only Concentration/Dependency Redesign Review
+## C51 Contract â€” IS-only Concentration/Dependency Redesign Review
 
 ```text
 C51_CONTRACT_STATUS=IMPLEMENTED_OPERATOR_VALIDATED
@@ -6379,7 +6379,7 @@ C51_NEXT_STEP=C52_CONCENTRATION_DEPENDENCY_REDESIGN_CONTINUATION
 C51_MUST_NOT_OPEN_OOS_PROOF=true
 ```
 
-## C54 Contract — Rolling Stability Redesign or Recalibration (IS Only)
+## C54 Contract â€” Rolling Stability Redesign or Recalibration (IS Only)
 
 ```text
 SOURCE_ARTIFACT_LOCK=C53_AND_C52_STABLE_HASH_AND_FILE_SHA1
@@ -6405,7 +6405,7 @@ production_ready=false
 ```
 
 
-## C55 Contract — Rolling Stability Redesign Continuation (IS Only)
+## C55 Contract â€” Rolling Stability Redesign Continuation (IS Only)
 
 C55 adds the following contract surface:
 
@@ -6462,7 +6462,7 @@ PRODUCTION_READY=false
 ```
 
 
-## C56 Contract — Rolling Stability Redesign Continuation (IS Only)
+## C56 Contract â€” Rolling Stability Redesign Continuation (IS Only)
 
 C56 adds the following contract surface:
 
@@ -6562,7 +6562,7 @@ production_ready=false
 
 ---
 
-## C57 Contract — Regime Field Reconstruction Continuation IS Only
+## C57 Contract â€” Regime Field Reconstruction Continuation IS Only
 
 - contract_code=C57_REGIME_FIELD_RECONSTRUCTION_CONTINUATION_IS_ONLY
 - status=DONE_OPERATOR_VALIDATED
@@ -6713,7 +6713,7 @@ Validation:
 
 - Docs-only contract and prompt standards updated.
 
-## C58 contract — loss-cluster/concentration redesign continuation IS-only
+## C58 contract â€” loss-cluster/concentration redesign continuation IS-only
 
 Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
 
@@ -6787,7 +6787,7 @@ DIAGNOSTIC_CONCLUSION=C58_LOSS_CLUSTER_GAP_REMAINS
 NEXT_STEP=C59_LOSS_CLUSTER_OR_BRANCH_BUCKET_REDESIGN_CONTINUATION_IS_ONLY
 ```
 
-## C59 contract — loss-cluster or branch/bucket redesign continuation IS-only
+## C59 contract â€” loss-cluster or branch/bucket redesign continuation IS-only
 
 Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
 
@@ -6886,7 +6886,7 @@ NEXT_STEP=C60_REGIME_STRESS_AND_LOO_DEPENDENCY_REDESIGN_IS_ONLY
 
 ---
 
-## C60 Contract Tracker — Regime Stress and LOO Dependency Redesign IS-Only
+## C60 Contract Tracker â€” Regime Stress and LOO Dependency Redesign IS-Only
 
 Contract code:
 
@@ -6983,7 +6983,7 @@ NEXT_STEP=C61_SIGNAL_QUALITY_REBUILD_FOR_WEAK_REGIME_IS_ONLY
 
 ---
 
-## C61 Contract — Signal Quality Rebuild For Weak Regime IS-Only
+## C61 Contract â€” Signal Quality Rebuild For Weak Regime IS-Only
 
 Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
 
@@ -7038,7 +7038,7 @@ C61 is accepted as an operator-validated IS-only success. It finds three candida
 
 ---
 
-## C62 Contract — Pre-Lock Review For C61 Signal Quality Candidates IS-Only
+## C62 Contract â€” Pre-Lock Review For C61 Signal Quality Candidates IS-Only
 
 Status: `DONE_OPERATOR_VALIDATED_NOT_PRODUCTION_READY`
 
@@ -7097,7 +7097,7 @@ C62 is accepted as an operator-validated IS-only pre-lock review. It passed all 
 
 ---
 
-## C63 Contract — Pre-OOS Unlock Review IS-Only
+## C63 Contract â€” Pre-OOS Unlock Review IS-Only
 
 Status: `FINAL_OPERATOR_VALIDATED`
 
@@ -7158,7 +7158,7 @@ C63 is accepted as an operator-validated IS-only pre-OOS unlock review. All impl
 
 ---
 
-## C64 Contract — Locked-Selection OOS Proof Execution
+## C64 Contract â€” Locked-Selection OOS Proof Execution
 
 Status: `FINAL_OPERATOR_VALIDATED`
 
@@ -7212,7 +7212,7 @@ All C64 implemented contracts are operator-validated. The C63 hierarchy remained
 
 ---
 
-## C65 Contract — Production Pre-Lock Review
+## C65 Contract â€” Production Pre-Lock Review
 
 Status: `IMPLEMENTED_OPERATOR_VALIDATED`
 
@@ -7262,7 +7262,7 @@ C65 contract conclusion: operator validation passed. C65 locks the production pr
 
 ---
 
-## C66 Contract — Production Lock Review
+## C66 Contract â€” Production Lock Review
 
 Status: `IMPLEMENTED_PENDING_OPERATOR_VALIDATION`
 
@@ -7458,7 +7458,7 @@ B01 is backup controlled deployment execution candidate.
 A01 is comparator-only and cannot be promoted.
 C70 validates C69 artifact hash and file SHA1.
 C70 validates C69 readiness through nested `c70_readiness_decision.*` path.
-C70 validates C69 → C60 lineage.
+C70 validates C69 â†’ C60 lineage.
 C70 does not redesign.
 C70 does not retune.
 C70 does not run parameter search.
@@ -7483,7 +7483,7 @@ C65 cleanup note remains non-blocking.
 C70 pass is not full production deployment.
 C70 pass is not PLAN/CONFIRM rollout.
 
-## C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW Contract — Final Operator Evidence
+## C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW Contract â€” Final Operator Evidence
 
 Source of truth for this contract update: `tradeaxis-api_C70.zip`.
 
@@ -7535,7 +7535,7 @@ C70 contract conclusion: operator validation passed. C70 authorizes only readine
 
 C71 contract is isolated shadow-read / dry-run runtime validation only. It validates the locked controlled production catalog can be read and evaluated safely in a non-live validation path. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM runtime catalog consumption.
 
-C71 locks the C70 final artifact, validates C70 readiness through nested `c71_readiness_decision.*`, validates C70 → C60 lineage, keeps E02 as primary, B01 as backup, and A01 as comparator-only.
+C71 locks the C70 final artifact, validates C70 readiness through nested `c71_readiness_decision.*`, validates C70 â†’ C60 lineage, keeps E02 as primary, B01 as backup, and A01 as comparator-only.
 
 C71 pass means readiness for `C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION` only.
 
@@ -7593,13 +7593,13 @@ C72_RECOMMENDATION=C72_CONTROLLED_OPT_IN_RUNTIME_BRIDGE_VALIDATION
 C71 contract conclusion: operator validation passed. C71 authorizes only readiness for C72 controlled opt-in runtime bridge validation. It does not authorize live production deployment, PLAN/CONFIRM mutation, or PLAN/CONFIRM runtime catalog consumption.
 
 
-## C72 Contract — Controlled Opt-In Runtime Bridge Validation
+## C72 Contract â€” Controlled Opt-In Runtime Bridge Validation
 
 Status: `OPERATOR_VALIDATED_ACCEPTED`
 
 C72 contract is controlled opt-in runtime bridge validation only. It validates that the activated production catalog can be read through an explicit opt-in, default-off, kill-switch protected, auditable, non-mutating bridge proof in an isolated validation path.
 
-C72 locks C71 final evidence, validates nested `c72_readiness_decision.*`, validates C71 → C60 lineage, keeps E02 as primary, B01 as backup, and A01 as comparator-only. C72 does not authorize live production deployment, PLAN/CONFIRM mutation, PLAN/CONFIRM output changes, or PLAN/CONFIRM runtime catalog consumption.
+C72 locks C71 final evidence, validates nested `c72_readiness_decision.*`, validates C71 â†’ C60 lineage, keeps E02 as primary, B01 as backup, and A01 as comparator-only. C72 does not authorize live production deployment, PLAN/CONFIRM mutation, PLAN/CONFIRM output changes, or PLAN/CONFIRM runtime catalog consumption.
 
 ```text
 C72_CONTROLLED_OPT_IN_REQUIRED=true
@@ -7624,7 +7624,7 @@ LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=false
 
 C72 pass means readiness for `C73_CONTROLLED_PARALLEL_RUN_NON_MUTATING_PLAN_CONFIRM_BRIDGE_VALIDATION` only.
 
-## C72 Contract Final Validation — Operator Evidence 2026-06-24
+## C72 Contract Final Validation â€” Operator Evidence 2026-06-24
 
 Status: `CONTRACT_ACCEPTED`
 
@@ -7693,7 +7693,7 @@ C73 source lock: C72 expected artifact hash `df3ee58a47572900d42b91d8348f0d6ea9a
 
 C73 validates nested C72 readiness through `c73_readiness_decision.*`, not top-level aliases.
 
-C73 validates C72 → C60 lineage.
+C73 validates C72 â†’ C60 lineage.
 
 Candidates remain frozen: E02 primary, B01 backup, A01 comparator-only.
 
@@ -7757,7 +7757,7 @@ C74 source lock: C73 expected artifact hash `34f1f84a4261da7ce1cb9d17a1bf33dfb14
 
 C74 validates nested C73 readiness through `c74_readiness_decision.*`, not top-level aliases.
 
-C74 validates C73 → C60 lineage.
+C74 validates C73 â†’ C60 lineage.
 
 Candidates remain frozen: E02 primary, B01 backup, A01 comparator-only.
 
@@ -7773,7 +7773,7 @@ Safety fields remain false: `production_catalog_runtime_wired`, `controlled_opt_
 
 C74 pass can only recommend `C75_CONTROLLED_OPERATOR_APPROVED_ROLLOUT_EXECUTION_REVIEW_OR_CONTROLLED_WIRING_EXECUTION_REVIEW`; it is not full production deployment and not PLAN/CONFIRM live rollout.
 
-## C74 Final Contract Evidence Append — 2026-06-24
+## C74 Final Contract Evidence Append â€” 2026-06-24
 
 C74 contract evidence is accepted.
 
@@ -7808,7 +7808,7 @@ C75 starts from locked C74 final evidence. C74 controlled operator-reviewed roll
 
 C75 validates the aligned C74 artifact hash and file SHA1: artifact hash `8958e1fcec798fbd364642864b0a9d0c21bd8f93`, file SHA1 `D4C2EF90B533BED11F6902E75141BE5774E947BE`. The earlier C74 hash `2e02737a212cf9043d5937f5354a3c31541dc22f` / `C7FCA9797AFF0B2B3CD4B37E587DC646F01C2187` is superseded historical/pre-alignment evidence only.
 
-C75 validates C74 readiness through nested `c75_readiness_decision.*` path and validates C74 → C60 lineage.
+C75 validates C74 readiness through nested `c75_readiness_decision.*` path and validates C74 â†’ C60 lineage.
 
 E02 is primary controlled execution review candidate. B01 is backup controlled execution review candidate. A01 is comparator-only and cannot be promoted.
 
@@ -7829,7 +7829,7 @@ C75 may only recommend C76 controlled runtime opt-in pilot / shadow rollout prep
 
 ---
 
-## C75 Final Contract Evidence Append — 2026-06-24
+## C75 Final Contract Evidence Append â€” 2026-06-24
 
 C75 final operator evidence is accepted and locked to the aligned C74 artifact.
 
@@ -7930,7 +7930,7 @@ C77 pass can only recommend `C78_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHAD
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C77_CONTRACT_STATUS=PASSED
@@ -7965,7 +7965,7 @@ C78 pass can only recommend `C79_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHAD
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C78_CONTRACT_STATUS=PASSED
@@ -8000,7 +8000,7 @@ C79 pass can only recommend `C80_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHAD
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C79_CONTRACT_STATUS=PASSED
@@ -8035,7 +8035,7 @@ C80 pass records artifact-only operator GO for primary and backup and can only r
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C80_CONTRACT_STATUS=PASSED
@@ -8070,7 +8070,7 @@ C81 pass records artifact-only finalized GO for primary and backup and can only 
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C81_CONTRACT_STATUS=PASSED
@@ -8105,7 +8105,7 @@ C82 pass records artifact-only pre-activation boundary clearance for primary and
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C82_CONTRACT_STATUS=PASSED
@@ -8140,7 +8140,7 @@ C83 pass records artifact-only activation authorization for primary and backup a
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C83_CONTRACT_STATUS=PASSED
@@ -8175,7 +8175,7 @@ C84 pass records artifact-only controlled activation execution for primary and b
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C84_CONTRACT_STATUS=PASSED
@@ -8210,7 +8210,7 @@ C85 pass records artifact-only post-activation observation for primary and backu
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C85_CONTRACT_STATUS=PASSED
@@ -8245,7 +8245,7 @@ C86 pass records artifact-only post-activation observation result review for pri
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C86_CONTRACT_STATUS=PASSED
@@ -8280,7 +8280,7 @@ C87 pass records artifact-only post-activation operator GO for primary and backu
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C87_CONTRACT_STATUS=PASSED
@@ -8315,7 +8315,7 @@ C88 pass records artifact-only finalized post-activation GO for primary and back
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C88_CONTRACT_STATUS=PASSED
@@ -8372,7 +8372,7 @@ C89 post-activation completion boundary record is not runtime bridge activation.
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C89_CONTRACT_STATUS=PASSED
@@ -8429,7 +8429,7 @@ C90 post-activation handoff readiness record is not runtime bridge activation.
 
 ---
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C90_CONTRACT_STATUS=PASSED
@@ -8489,7 +8489,7 @@ C91 post-activation handoff finalization record is not production deployment.
 C91 post-activation handoff finalization record is not PLAN/CONFIRM live rollout.
 C91 post-activation handoff finalization record is not runtime bridge activation.
 
-Final contract evidence — 2026-06-27:
+Final contract evidence â€” 2026-06-27:
 
 ```text
 C91_CONTRACT_STATUS=PASSED
@@ -8551,7 +8551,7 @@ C92 post-activation handoff completion boundary record is not production deploym
 C92 post-activation handoff completion boundary record is not PLAN/CONFIRM live rollout.
 C92 post-activation handoff completion boundary record is not runtime bridge activation.
 
-Final operator contract evidence — 2026-06-27:
+Final operator contract evidence â€” 2026-06-27:
 
 ```text
 C92_CONTRACT_STATUS=FINAL_OPERATOR_VALIDATED
@@ -15051,3 +15051,226 @@ C165_NEXT_CONTRACT=C165_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONF
 ```
 
 C165 remains in progress; result review does not advance the C-number.
+
+## C165 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Operator GO/NO-GO Review Contract
+
+C165 operator review requires the exact locked result-review hash and file SHA1, an explicit operator decision and reason, and confirmations for result lock, controlled result, candidate scope, kill switch, rollback, unchanged production configuration, and free-publication lock.
+`GO` may open same-topic GO decision finalization. `NO_GO` must stop progression, and `HOLD` must defer progression. None of the decisions may finalize C165, invoke the watchlist function, run another rollout, mutate configuration, promote A01, or publish output.
+
+```text
+C165_CONTRACT_TOPIC=C165_PLAN_CONFIRM_CONTROLLED_ROLLOUT
+C165_CONTRACT_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW
+C165_CONTRACT_STATUS=C165_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_GO_DECISION_FINALIZATION_REVIEW
+C165_OPERATOR_ARTIFACT_HASH=48cd9784bb9df5ceef8b47ca970996398d104f54
+C165_OPERATOR_FILE_SHA1=5457B6DDA328EF4FD1B0157E5857968D01965381
+C165_RESULT_REVIEW_ARTIFACT_HASH=a30b5b0eeab344e0d0283cb4164fd2a27b234802
+C165_RESULT_REVIEW_FILE_SHA1=664A639A2C8338F407BB0B34B9648733A0F6C94E
+FOCUSED_PHPUNIT_C165_PLAN_CONFIRM_CONTROLLED_ROLLOUT_OPERATOR_GO_NO_GO_REVIEW=OK (33 tests, 106 assertions)
+FULL_PHPUNIT_FILTER_C165=OK (136 tests, 432 assertions)
+OPERATOR_DECISION=GO
+GO_DECISION_FINALIZED=0
+C165_TOPIC_COMPLETE=0
+C165_RESULT_REVIEW_LOCK_VALID=1
+CONTROLLED_ROLLOUT_RESULT_VALID=1
+OPERATOR_REVIEW_ARTIFACT_ONLY=1
+NEW_ROLLOUT_EXECUTED=0
+WATCHLIST_FUNCTION_INVOKED_BY_OPERATOR_REVIEW=0
+PRODUCTION_CONFIG_MUTATED=0
+FREE_PUBLICATION_ALLOWED=0
+UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+C165_NEXT_CONTRACT=C165_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C165 remains in progress; operator GO does not advance the C-number or close the topic.
+
+## C165 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout GO Decision Finalization Review Contract
+
+C165 finalization requires the exact operator GO hash and file SHA1 plus explicit finalization, topic closure, operator lock, controlled-result, kill-switch, rollback, configuration, publication, and next-observation confirmations.
+A passing finalization closes C165 and may open only the distinct C166 post-rollout observation topic. It must preserve the active controlled rollout for observation while executing no new rollout, function call, mutation, publication, rerank, retune, or A01 promotion.
+
+```text
+C165_CONTRACT_TOPIC=C165_PLAN_CONFIRM_CONTROLLED_ROLLOUT
+C165_CONTRACT_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW
+C165_CONTRACT_STATUS=C165_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW_PASSED_GO_FINALIZED_CONTROLLED_ROLLOUT_CLOSED_READY_FOR_POST_ROLLOUT_OBSERVATION_REVIEW_PRIMARY_AND_BACKUP
+C165_FINALIZATION_ARTIFACT_HASH=618a09a64ba295aee023edc8131452782e184a9f
+C165_FINALIZATION_FILE_SHA1=8EBDA0F4267597ED04F7AB798A1B1A227ACE4B9A
+C165_OPERATOR_ARTIFACT_HASH=48cd9784bb9df5ceef8b47ca970996398d104f54
+C165_OPERATOR_FILE_SHA1=5457B6DDA328EF4FD1B0157E5857968D01965381
+FOCUSED_PHPUNIT_C165_PLAN_CONFIRM_CONTROLLED_ROLLOUT_GO_DECISION_FINALIZATION_REVIEW=OK (33 tests, 95 assertions)
+FULL_PHPUNIT_FILTER_C165=OK (169 tests, 527 assertions)
+GO_DECISION_FINALIZED=1
+CONTROLLED_ROLLOUT_TOPIC_CLOSED=1
+C165_TOPIC_COMPLETE=1
+C166_MAY_START=1
+FINALIZATION_ARTIFACT_ONLY=1
+NEW_ROLLOUT_EXECUTED=0
+WATCHLIST_FUNCTION_INVOKED_BY_FINALIZATION=0
+PRODUCTION_CONFIG_MUTATED=0
+FREE_PUBLICATION_ALLOWED=0
+UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+C165_NEXT_CONTRACT=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW
+```
+
+C165 is complete. C166 is a distinct runtime-observation topic, not another C165 completion sub-stage.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation Review Contract
+
+C166 observation requires exact locks for the C165 GO finalization artifact and active controlled-rollout state, plus confirmations for observation scope, candidate scope, kill switch, rollback, unchanged production configuration, and free-publication lock.
+The contract permits only a read-only control-plane snapshot. It rejects new rollout execution, PLAN/CONFIRM mutation, catalog reads, function invocation, A01 promotion, candidate reranking, strategy retuning, production configuration mutation, and any free or unrestricted publication. It also forbids presenting unavailable market outcome, price performance, or recommendation quality metrics as observed facts.
+
+```text
+C166_CONTRACT_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_CONTRACT_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW
+C166_CONTRACT_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW_PASSED_CONTROLLED_ROLLOUT_OBSERVED_READY_FOR_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+C166_OBSERVATION_ARTIFACT_HASH=9ffec96e1a08e927c5ad14445d6e6d038528a7f2
+C166_OBSERVATION_FILE_SHA1=D9AF66D1488F3BA14134820647E8C1A288C75525
+C165_FINALIZATION_ARTIFACT_HASH=618a09a64ba295aee023edc8131452782e184a9f
+C165_FINALIZATION_FILE_SHA1=8EBDA0F4267597ED04F7AB798A1B1A227ACE4B9A
+C165_ROLLOUT_STATE_HASH=3a8350955f6a1396f5225af3fddcfa31fa622904
+C165_ROLLOUT_STATE_FILE_SHA1=4B58D3A17B56136CF02BE1635FB2F16F12831722
+FOCUSED_PHPUNIT_C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW=OK (41 tests, 100 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (43 tests, 123 assertions)
+C166_TOPIC_COMPLETE=0
+OBSERVATION_REVIEW_ARTIFACT_ONLY=1
+OBSERVATION_BASIS=LOCKED_CONTROL_PLANE_RUNTIME_STATE_SNAPSHOT
+CONTROLLED_ROLLOUT_ACTIVE=1
+CONTROLLED_ROLLOUT_ONLY=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+PRICE_PERFORMANCE_EVALUATED=0
+RECOMMENDATION_QUALITY_EVALUATED=0
+NEW_ROLLOUT_EXECUTED=0
+WATCHLIST_FUNCTION_INVOKED_BY_OBSERVATION_REVIEW=0
+PRODUCTION_CONFIG_MUTATED=0
+FREE_PUBLICATION_ALLOWED=0
+UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+C166_NEXT_CONTRACT=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW
+```
+
+C166 remains in progress; the observation review does not advance the C-number.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation Result Review Contract
+
+C166 result review requires the exact observation artifact hash and file SHA1 plus explicit confirmations for result review, observation result, source lock, control-plane snapshot, candidate scope, kill switch, rollback, unchanged production configuration, free-publication lock, and non-inference of unavailable market metrics.
+The reviewer is read-only. It rejects new rollout execution, PLAN/CONFIRM mutation, catalog reads, watchlist function invocation, A01 promotion, candidate reranking, strategy retuning, configuration mutation, free publication, or any market-performance claim unsupported by the locked snapshot.
+
+```text
+C166_CONTRACT_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_CONTRACT_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW
+C166_CONTRACT_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW_PASSED_READY_FOR_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW_PRIMARY_AND_BACKUP
+C166_RESULT_REVIEW_ARTIFACT_HASH=1dbd61b08afb2d45918cc66a16c782983cfd6666
+C166_RESULT_REVIEW_FILE_SHA1=2555E1C7612C066FBF60342D0235AE399CB23253
+C166_OBSERVATION_ARTIFACT_HASH=9ffec96e1a08e927c5ad14445d6e6d038528a7f2
+C166_OBSERVATION_FILE_SHA1=D9AF66D1488F3BA14134820647E8C1A288C75525
+FOCUSED_PHPUNIT_C166_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW=OK (47 tests, 127 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (90 tests, 250 assertions)
+C166_TOPIC_COMPLETE=0
+RESULT_REVIEW_ARTIFACT_ONLY=1
+POST_ROLLOUT_OBSERVATION_RESULT_VALID=1
+CONTROL_PLANE_OBSERVATION_RESULT_STABLE=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+MARKET_METRICS_INFERRED_BY_RESULT_REVIEW=0
+NEW_ROLLOUT_EXECUTED=0
+WATCHLIST_FUNCTION_INVOKED_BY_RESULT_REVIEW=0
+PRODUCTION_CONFIG_MUTATED=0
+FREE_PUBLICATION_ALLOWED=0
+UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+C166_NEXT_CONTRACT=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW
+```
+
+C166 remains in progress; result review does not advance the C-number or finalize a GO decision.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation Operator GO/NO-GO Review Contract
+
+C166 operator review requires the exact result-review artifact hash and file SHA1, an explicit `GO`, `NO_GO`, or `HOLD` decision, a non-empty reason, and confirmations for result lock, observation result, control-plane scope, non-inference of market metrics, candidates, kill switch, rollback, unchanged production configuration, and free-publication lock.
+`GO` opens only same-topic finalization. `NO_GO` stops progression and `HOLD` defers progression. No decision may finalize C166, invoke the function, execute runtime actions, mutate configuration, promote A01, infer unavailable metrics, or publish output.
+
+```text
+C166_CONTRACT_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_CONTRACT_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW
+C166_CONTRACT_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW_PASSED_GO_PRIMARY_AND_BACKUP_READY_FOR_GO_DECISION_FINALIZATION_REVIEW
+C166_OPERATOR_ARTIFACT_HASH=20b00b9c2c53e33eee4f1501e8fddc7c8c379dda
+C166_OPERATOR_FILE_SHA1=3158EDB0120527909C12A557C36C2EC28C91B209
+C166_RESULT_REVIEW_ARTIFACT_HASH=1dbd61b08afb2d45918cc66a16c782983cfd6666
+C166_RESULT_REVIEW_FILE_SHA1=2555E1C7612C066FBF60342D0235AE399CB23253
+FOCUSED_PHPUNIT_C166_POST_ROLLOUT_OBSERVATION_OPERATOR_GO_NO_GO_REVIEW=OK (35 tests, 121 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (125 tests, 371 assertions)
+OPERATOR_DECISION=GO
+GO_DECISION_FINALIZED=0
+C166_TOPIC_COMPLETE=0
+OPERATOR_REVIEW_ARTIFACT_ONLY=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+MARKET_METRICS_INFERRED_BY_OPERATOR_REVIEW=0
+NEW_ROLLOUT_EXECUTED=0
+WATCHLIST_FUNCTION_INVOKED_BY_OPERATOR_REVIEW=0
+PRODUCTION_CONFIG_MUTATED=0
+FREE_PUBLICATION_ALLOWED=0
+UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+C166_NEXT_CONTRACT=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW
+```
+
+C166 remains in progress; operator `GO` does not advance the C-number or close the topic.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation GO Decision Finalization Review Contract
+
+C166 finalization requires the exact operator GO artifact hash and file SHA1 plus explicit confirmations for finalization, topic closure, operator lock, observation result, control-plane scope, non-inference of market metrics, candidate scope, kill switch, rollback, unchanged production configuration, free-publication lock, and the next completion boundary.
+A passing finalization closes C166 and opens only the distinct C167 controlled rollout completion boundary. It must execute no runtime action, function call, metric inference, publication, rerank, retune, A01 promotion, or configuration mutation.
+
+```text
+C166_CONTRACT_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_CONTRACT_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW
+C166_CONTRACT_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW_PASSED_GO_FINALIZED_POST_ROLLOUT_OBSERVATION_CLOSED_READY_FOR_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW_PRIMARY_AND_BACKUP
+C166_FINALIZATION_ARTIFACT_HASH=299eb7f2978b8755351d28bb299249f0cb0d818f
+C166_FINALIZATION_FILE_SHA1=3E2CF7C226756EFD9F3AADBDDCAE3BD133D174BA
+C166_OPERATOR_ARTIFACT_HASH=20b00b9c2c53e33eee4f1501e8fddc7c8c379dda
+C166_OPERATOR_FILE_SHA1=3158EDB0120527909C12A557C36C2EC28C91B209
+FOCUSED_PHPUNIT_C166_POST_ROLLOUT_OBSERVATION_GO_DECISION_FINALIZATION_REVIEW=OK (42 tests, 118 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (167 tests, 489 assertions)
+GO_DECISION_FINALIZED=1
+POST_ROLLOUT_OBSERVATION_TOPIC_CLOSED=1
+C166_TOPIC_COMPLETE=1
+C167_MAY_START=1
+FINALIZATION_ARTIFACT_ONLY=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+MARKET_METRICS_INFERRED_BY_FINALIZATION=0
+NEW_ROLLOUT_EXECUTED=0
+WATCHLIST_FUNCTION_INVOKED_BY_FINALIZATION=0
+PRODUCTION_CONFIG_MUTATED=0
+FREE_PUBLICATION_ALLOWED=0
+UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+C166_NEXT_CONTRACT=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW
+```
+
+C166 is complete. C167 is a new completion-boundary topic, not another C166 observation sub-stage.
+
+## C167 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Completion Boundary Contract
+
+C167 requires the exact C166 finalization artifact hash and file SHA1, operator approval, a complete rollout evidence chain, non-inference of unavailable market metrics, the fixed E02/B01/A01 scope, kill switch, rollback, unchanged production configuration, and the free-publication lock. A passing boundary opens only same-topic completion execution.
+
+```text
+C167_CONTRACT_TOPIC=C167_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION
+C167_CONTRACT_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW
+C167_CONTRACT_STATUS=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW_PASSED_READY_FOR_CONTROLLED_ROLLOUT_COMPLETION_EXECUTION_PRIMARY_AND_BACKUP
+C167_BOUNDARY_ARTIFACT_HASH=5b1a5efc91cfc56b8b98cadb5802f275cf417394
+C167_BOUNDARY_FILE_SHA1=075A32EBEF7CAF03B5671C9B7BF9BF85A24F8CEF
+C166_FINALIZATION_ARTIFACT_HASH=299eb7f2978b8755351d28bb299249f0cb0d818f
+C166_FINALIZATION_FILE_SHA1=3E2CF7C226756EFD9F3AADBDDCAE3BD133D174BA
+FULL_PHPUNIT_FILTER_C167=OK (8 tests, 55 assertions)
+C166_TOPIC_COMPLETE=1
+C167_TOPIC_COMPLETE=0
+BOUNDARY_ARTIFACT_ONLY=1
+NEW_ROLLOUT_EXECUTED=0
+WATCHLIST_FUNCTION_INVOKED_BY_BOUNDARY=0
+PRODUCTION_CONFIG_MUTATED=0
+FREE_PUBLICATION_ALLOWED=0
+UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+C167_NEXT_CONTRACT=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_EXECUTION
+```
+
+C167 remains in progress; boundary clearance does not advance the C-number or complete the topic.
