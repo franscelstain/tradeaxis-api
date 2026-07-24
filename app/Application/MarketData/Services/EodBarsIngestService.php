@@ -369,6 +369,14 @@ class EodBarsIngestService
             $priorCurrentPublication ? $priorCurrentPublication->publication_id : null
         );
 
+        if ($useHistory) {
+            $this->artifacts->ensureBarsHistoryFromCurrentTradeDate(
+                $requestedDate,
+                $candidatePublication->publication_id,
+                $run->run_id
+            );
+        }
+
         $validRows = array_map(function (array $row) use ($candidatePublication) {
             $row['publication_id'] = $candidatePublication->publication_id;
 

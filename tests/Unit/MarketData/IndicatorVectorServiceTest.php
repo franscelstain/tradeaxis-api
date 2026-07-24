@@ -141,10 +141,29 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertSame(0, $row['is_valid']);
         $this->assertSame('IND_INSUFFICIENT_HISTORY', $row['invalid_reason_code']);
         $this->assertNull($row['dv20_idr']);
-        $this->assertNull($row['roc5']);
+        $this->assertNotNull($row['roc5']);
         $this->assertNull($row['roc10']);
         $this->assertNull($row['ll20']);
         $this->assertNull($row['range_position_20_pct']);
+    }
+
+    public function test_short_history_calculates_each_field_as_soon_as_its_own_warmup_is_met()
+    {
+        $service = new IndicatorVectorService();
+        $row = $service->buildRow(101, array_slice($this->bars(), 0, 20), '2026-04-20', 55, 9001, '2026-04-20 18:00:00', $this->config());
+
+        $this->assertSame(0, $row['is_valid']);
+        $this->assertSame('IND_INSUFFICIENT_HISTORY', $row['invalid_reason_code']);
+        $this->assertNotNull($row['roc5']);
+        $this->assertNotNull($row['roc10']);
+        $this->assertNull($row['roc20']);
+        $this->assertNotNull($row['dv20_idr']);
+        $this->assertNotNull($row['atr14_pct']);
+        $this->assertNotNull($row['hh20']);
+        $this->assertNotNull($row['ll20']);
+        $this->assertNotNull($row['ma20']);
+        $this->assertNull($row['ma20_slope_pct']);
+        $this->assertNull($row['ma50']);
     }
 
     public function test_event_risk_context_is_source_backed_and_stamped_into_valid_rows()

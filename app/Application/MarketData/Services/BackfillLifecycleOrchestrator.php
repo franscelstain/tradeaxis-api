@@ -1813,8 +1813,17 @@ class BackfillLifecycleOrchestrator
             }
         }
 
+        $currentBars = $this->artifactRepository()->loadBarsForTradeDate($requestedDate, null);
+        $unmappedTickerIds = array_values(array_diff(
+            array_map('intval', array_keys($currentBars)),
+            array_map('intval', array_keys($universeCodeById))
+        ));
+        if ($unmappedTickerIds !== []) {
+            $universeCodeById += $this->tickers->resolveTickerCodesByIds($unmappedTickerIds);
+        }
+
         $rowsByCode = [];
-        foreach ($this->artifactRepository()->loadBarsForTradeDate($requestedDate, null) as $tickerId => $row) {
+        foreach ($currentBars as $tickerId => $row) {
             $tickerId = (int) $tickerId;
             if (! isset($universeCodeById[$tickerId])) {
                 continue;
