@@ -118,6 +118,61 @@ class BackfillMissingTickerLifecycleTest extends TestCase
         $this->assertArrayNotHasKey('canonical_source', $rows[1]);
     }
 
+    public function test_candidate_rows_preserve_current_bars_outside_coverage_universe(): void
+    {
+        [$orchestrator, , $tickers, , , , , , , $artifacts] = $this->makeOrchestrator();
+
+        $artifacts->shouldReceive('loadBarsForTradeDate')->once()->with('2026-01-02', null)->andReturn([
+            1 => [
+                'trade_date' => '2026-01-02',
+                'ticker_id' => 1,
+                'open' => '100.000000',
+                'high' => '110.000000',
+                'low' => '99.000000',
+                'close' => '105.000000',
+                'volume' => 1000,
+                'adj_close' => '105.000000',
+                'source' => 'YAHOO',
+                'created_at' => '2026-01-02 18:00:00',
+            ],
+            3 => [
+                'trade_date' => '2026-01-02',
+                'ticker_id' => 3,
+                'open' => '50.000000',
+                'high' => '50.000000',
+                'low' => '50.000000',
+                'close' => '50.000000',
+                'volume' => 0,
+                'adj_close' => '50.000000',
+                'source' => 'YAHOO',
+                'created_at' => '2026-01-02 18:00:00',
+            ],
+        ]);
+        $tickers->shouldReceive('resolveTickerCodesByIds')->once()->with([3])->andReturn([3 => 'CCC']);
+
+        $method = new ReflectionMethod($orchestrator, 'buildMissingTickerCandidateRows');
+        $method->setAccessible(true);
+
+        $rows = $method->invoke($orchestrator, '2026-01-02', [[
+            'ticker_code' => 'BBB',
+            'trade_date' => '2026-01-02',
+            'open' => 50,
+            'high' => 55,
+            'low' => 49,
+            'close' => 54,
+            'volume' => 500,
+            'adj_close' => 54,
+            'source_name' => 'YAHOO_FINANCE',
+        ]], ['BBB'], [
+            ['ticker_id' => 1, 'ticker_code' => 'AAA'],
+            ['ticker_id' => 2, 'ticker_code' => 'BBB'],
+        ]);
+
+        $this->assertSame(['AAA', 'BBB', 'CCC'], array_column($rows, 'ticker_code'));
+        $this->assertSame(0, (int) $rows[2]['volume']);
+        $this->assertSame('current:2026-01-02:CCC', $rows[2]['source_row_ref']);
+    }
+
     public function test_ticker_filter_preserves_full_current_universe_in_candidate_rows(): void
     {
         [$orchestrator, $calendar, $tickers, $acquisition, $pipeline, , , , , $artifacts] = $this->makeOrchestrator();

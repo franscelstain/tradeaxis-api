@@ -84,6 +84,7 @@ class OutOfOrderImportImpactStaticGuardTest extends TestCase
         $this->assertStringContainsString('buildBarsMutationSummary($tradeDate, $publicationId, $validRows, $useHistory, false)', $partialUpsert);
         $this->assertStringContainsString('ingestRecoveredRowsPartial', $ingest);
         $this->assertStringContainsString('upsertBarsPartial', $ingest);
+        $this->assertStringContainsString('ensureBarsHistoryFromCurrentTradeDate', $ingest);
         $this->assertStringContainsString('applyRecoveredRowsPartial', $pipeline);
         $this->assertStringContainsString('applyOnlyFailedRecoveredRows', $orchestrator);
         $this->assertStringNotContainsString('importDailyFromAcquiredRows($tradeDate, $sourceMode, $rows', $orchestrator);

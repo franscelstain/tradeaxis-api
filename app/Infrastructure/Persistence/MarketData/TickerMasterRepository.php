@@ -36,6 +36,37 @@ class TickerMasterRepository
             ->all();
     }
 
+    public function resolveTickerCodesByIds(array $tickerIds)
+    {
+        $normalized = collect($tickerIds)
+            ->filter(function ($tickerId) {
+                return (int) $tickerId > 0;
+            })
+            ->map(function ($tickerId) {
+                return (int) $tickerId;
+            })
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($normalized)) {
+            return [];
+        }
+
+        $table = config('market_data.tickers.table');
+        $codeColumn = config('market_data.tickers.code_column');
+        $idColumn = config('market_data.tickers.id_column');
+
+        return DB::table($table)
+            ->select([$idColumn, $codeColumn])
+            ->whereIn($idColumn, $normalized)
+            ->get()
+            ->mapWithKeys(function ($row) use ($idColumn, $codeColumn) {
+                return [(int) $row->{$idColumn} => Str::upper(trim($row->{$codeColumn}))];
+            })
+            ->all();
+    }
+
     public function getUniverseForTradeDate($tradeDate)
     {
         $table = config('market_data.tickers.table');

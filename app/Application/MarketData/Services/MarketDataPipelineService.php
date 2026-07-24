@@ -215,8 +215,8 @@ class MarketDataPipelineService
                     $sourceAcquisitionTelemetry,
                     $priorCurrent
                 );
-                $result = $this->withImpactReprocessExecution($run, $input, $result);
                 $benchmarkResult = $this->ingestBenchmarkNonBlocking($input->requestedDate, $input->sourceMode);
+                $result = $this->withImpactReprocessExecution($run, $input, $result);
 
                 $sourceAcquisition = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
@@ -457,8 +457,8 @@ class MarketDataPipelineService
                     $sourceAcquisition,
                     $priorCurrent
                 );
-                $result = $this->withImpactReprocessExecution($run, $input, $result);
                 $benchmarkResult = $this->ingestBenchmarkNonBlocking($input->requestedDate, $input->sourceMode);
+                $result = $this->withImpactReprocessExecution($run, $input, $result);
                 $sourceAcquisitionResult = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
                     : [];

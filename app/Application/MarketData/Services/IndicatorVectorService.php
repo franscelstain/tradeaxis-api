@@ -49,9 +49,7 @@ class IndicatorVectorService
             'sector_rs_20_vs_ihsg' => null,
         ] + $this->eventRiskValues($config);
 
-        if (! $invalidReason) {
-            $values = $this->calculateIndicators($bars, $index, $config);
-        }
+        $values = $this->calculateIndicators($bars, $index, $config);
 
         return [
             'trade_date' => $requestedDate,
@@ -133,52 +131,16 @@ class IndicatorVectorService
         $hhWindow = (int) $config['hh_window_days'];
 
         $currentBar = $bars[$index];
-        $dvBars = array_slice($bars, $index - $dvWindow + 1, $dvWindow);
-        $turnovers = array_map(function ($bar) use ($lotSize) {
-            return ((float) $bar['close']) * ((float) $bar['volume']) * $lotSize;
-        }, $dvBars);
-
-        $trValues = [];
-        for ($i = 1; $i <= $index; $i++) {
-            $bar = $bars[$i];
-            $prev = $bars[$i - 1];
-            $trValues[$i] = max(
-                (float) $bar['high'] - (float) $bar['low'],
-                abs((float) $bar['high'] - (float) $prev['close']),
-                abs((float) $bar['low'] - (float) $prev['close'])
-            );
-        }
-
-        $atr = null;
-        if (isset($trValues[$atrWindow])) {
-            $seedSlice = [];
-            for ($i = 1; $i <= $atrWindow; $i++) {
-                $seedSlice[] = $trValues[$i];
-            }
-            $atr = array_sum($seedSlice) / $atrWindow;
-            for ($i = $atrWindow + 1; $i <= $index; $i++) {
-                $atr = (($atr * ($atrWindow - 1)) + $trValues[$i]) / $atrWindow;
-            }
-        }
-
         $priceBasisCurrent = $this->priceBasis($currentBar, $config);
-        $priorVolBars = array_slice($bars, $index - $volLookback, $volLookback);
-        $priorVolAverage = array_sum(array_map(function ($bar) {
-            return (float) $bar['volume'];
-        }, $priorVolBars)) / $volLookback;
-
-        $rocBaseBar = $bars[$index - $rocLookback];
-        $hhBars = array_slice($bars, $index - $hhWindow + 1, $hhWindow);
-        $hh20 = round(max(array_map(function ($bar) {
-            return (float) $bar['high'];
-        }, $hhBars)), 4);
-        $ll20 = round(min(array_map(function ($bar) {
-            return (float) $bar['low'];
-        }, $hhBars)), 4);
+        $dv20Idr = $this->averageTurnover($bars, $index, $dvWindow, $lotSize, $config);
+        $atr = $this->wilderAtr($bars, $index, $atrWindow, $config);
+        $priorVolAverage = $this->priorVolumeAverage($bars, $index, $volLookback);
+        $hh20 = $this->windowExtreme($bars, $index, $hhWindow, 'high', 'max');
+        $ll20 = $this->windowExtreme($bars, $index, $hhWindow, 'low', 'min');
         $ma20 = $this->movingAverage($bars, $index, 20, $config);
         $ma50 = $this->movingAverage($bars, $index, 50, $config);
-        $ma20Past = $index >= 5 ? $this->movingAverage($bars, $index - 5, 20, $config) : null;
-        $roc20 = $this->priceBasis($rocBaseBar, $config) > 0 ? round(($priceBasisCurrent / $this->priceBasis($rocBaseBar, $config)) - 1, 10) : null;
+        $ma20Past = $this->movingAverage($bars, $index - 5, 20, $config);
+        $roc20 = $this->roc($bars, $index, $rocLookback, $config);
         $benchmarkRoc20Pct = array_key_exists('benchmark_roc20_pct', $config) && $config['benchmark_roc20_pct'] !== null
             ? (float) $config['benchmark_roc20_pct']
             : null;
@@ -188,9 +150,14 @@ class IndicatorVectorService
         $equityRoc20Pct = $roc20 !== null ? $roc20 * 100 : null;
 
         return [
-            'dv20_idr' => round(array_sum($turnovers) / $dvWindow, 2),
+            'dv20_idr' => $dv20Idr,
             'atr14_pct' => $atr !== null && $priceBasisCurrent > 0 ? round($atr / $priceBasisCurrent, 10) : null,
-            'vol_ratio' => $priorVolAverage > 0 ? round(((float) $currentBar['volume']) / $priorVolAverage, 10) : null,
+            'vol_ratio' => $priorVolAverage !== null
+                && $priorVolAverage > 0
+                && array_key_exists('volume', $currentBar)
+                && $currentBar['volume'] !== null
+                    ? round(((float) $currentBar['volume']) / $priorVolAverage, 10)
+                    : null,
             'sector_code' => $this->normalizeSectorCode($config['sector_code'] ?? null),
             'roc5' => $this->roc($bars, $index, 5, $config),
             'roc10' => $this->roc($bars, $index, 10, $config),
@@ -213,13 +180,129 @@ class IndicatorVectorService
         ] + $this->eventRiskValues($config);
     }
 
-    private function movingAverage(array $bars, $index, $window, array $config)
+    private function averageTurnover(array $bars, $index, $window, $lotSize, array $config)
     {
-        if (($index + 1) < $window) {
+        if ($index < 0 || ($index + 1) < $window) {
             return null;
         }
 
         $slice = array_slice($bars, $index - $window + 1, $window);
+        if (count($slice) !== $window) {
+            return null;
+        }
+
+        $turnovers = [];
+        foreach ($slice as $bar) {
+            if (! array_key_exists('volume', $bar) || $bar['volume'] === null) {
+                return null;
+            }
+
+            $price = $this->priceBasis($bar, $config);
+            if ($price <= 0) {
+                return null;
+            }
+
+            $turnovers[] = $price * (float) $bar['volume'] * $lotSize;
+        }
+
+        return round(array_sum($turnovers) / $window, 2);
+    }
+
+    private function wilderAtr(array $bars, $index, $window, array $config)
+    {
+        if ($index < $window) {
+            return null;
+        }
+
+        $trValues = [];
+        for ($i = 1; $i <= $index; $i++) {
+            if (! isset($bars[$i], $bars[$i - 1])) {
+                return null;
+            }
+
+            $bar = $bars[$i];
+            $previousClose = $this->priceBasis($bars[$i - 1], $config);
+            foreach (['high', 'low'] as $field) {
+                if (! array_key_exists($field, $bar) || $bar[$field] === null) {
+                    return null;
+                }
+            }
+
+            $high = (float) $bar['high'];
+            $low = (float) $bar['low'];
+            if ($high <= 0 || $low <= 0 || $previousClose <= 0) {
+                return null;
+            }
+
+            $trValues[$i] = max(
+                $high - $low,
+                abs($high - $previousClose),
+                abs($low - $previousClose)
+            );
+        }
+
+        $atr = array_sum(array_slice($trValues, 0, $window, true)) / $window;
+        for ($i = $window + 1; $i <= $index; $i++) {
+            $atr = (($atr * ($window - 1)) + $trValues[$i]) / $window;
+        }
+
+        return $atr;
+    }
+
+    private function priorVolumeAverage(array $bars, $index, $lookback)
+    {
+        if ($index < $lookback) {
+            return null;
+        }
+
+        $slice = array_slice($bars, $index - $lookback, $lookback);
+        if (count($slice) !== $lookback) {
+            return null;
+        }
+
+        $volumes = [];
+        foreach ($slice as $bar) {
+            if (! array_key_exists('volume', $bar) || $bar['volume'] === null) {
+                return null;
+            }
+            $volumes[] = (float) $bar['volume'];
+        }
+
+        return array_sum($volumes) / $lookback;
+    }
+
+    private function windowExtreme(array $bars, $index, $window, $field, $mode)
+    {
+        if ($index < 0 || ($index + 1) < $window) {
+            return null;
+        }
+
+        $slice = array_slice($bars, $index - $window + 1, $window);
+        if (count($slice) !== $window) {
+            return null;
+        }
+
+        $values = [];
+        foreach ($slice as $bar) {
+            if (! array_key_exists($field, $bar) || $bar[$field] === null || (float) $bar[$field] <= 0) {
+                return null;
+            }
+            $values[] = (float) $bar[$field];
+        }
+
+        return round($mode === 'min' ? min($values) : max($values), 4);
+    }
+
+    private function movingAverage(array $bars, $index, $window, array $config)
+    {
+        if ($index < 0 || ($index + 1) < $window) {
+            return null;
+        }
+
+        $slice = array_slice($bars, $index - $window + 1, $window);
+        if (count($slice) !== $window) {
+            return null;
+        }
         $values = [];
 
         foreach ($slice as $bar) {
