@@ -385,6 +385,7 @@
       ]
     },
     "display_caps": {
+      "value": {},
       "origin": "MAN",
       "status": "ACTIVE",
       "bt_target": false,

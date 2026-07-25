@@ -135,7 +135,7 @@ trait SeedsConsumerReadModelFixture
             'indicator_set_version' => 'v1',
             'sector_code' => 'G',
             'dv20_idr' => '123456789000.00',
-            'atr14_pct' => '2.1000000000',
+            'atr14_pct' => '0.0210000000',
             'vol_ratio' => '1.5000000000',
             'roc5' => '0.0180000000',
             'roc10' => '0.0310000000',

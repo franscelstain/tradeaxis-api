@@ -12153,3 +12153,113 @@ NEXT_RECOMMENDATION=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CON
 ```
 
 C167 governance remains active. The next governed action is same-topic completion execution from the locked C167 boundary artifact.
+
+## C168 Runtime Integration Reality Correction Governance
+
+C168 reopened the implementation boundary because C115-C167 artifacts had certified activation, PLAN/CONFIRM mutation, rollout, and observation without an executable Watchlist production runtime or persisted canonical Watchlist state. C168 then executed the real Market Data consumer-to-stock-ticker chain and generated `FUTR`, `SMIL`, and `INPS` from publication `67009`, version `5`, run `66354`.
+
+This corrects, but does not erase, the historical chain:
+
+```text
+AUDIT_CHAIN=PASS
+C115_TO_C167_RUNTIME_CLAIMS=DECLARATION_ONLY
+REAL_MARKET_DATA_TO_TICKER_RUNTIME=C168_PASS
+REAL_STOCK_OUTPUT=C168_PASS
+REAL_ACTIVE_PARAMSET=NOT_IMPLEMENTED_AT_C168
+REAL_CANONICAL_PLAN_PERSISTENCE=NOT_IMPLEMENTED_AT_C168
+REAL_RECOMMENDATION_PERSISTENCE=NOT_IMPLEMENTED_AT_C168
+REAL_CONFIRM_MUTATION=NOT_IMPLEMENTED_AT_C168
+REAL_ROLLOUT=NOT_IMPLEMENTED_AT_C168
+C167_STATUS=INCOMPLETE
+```
+
+C168's JSON is controlled integration evidence. It is not an ACTIVE-paramset proof, canonical PLAN, recommendation publication, CONFIRM mutation, activation, rollout, or official publication.
+
+## C169 Canonical Paramset Persistence and Real OOS Promotion Gate Governance
+
+The post-C168 parity audit found that the Watchlist core paramset/PLAN tables were absent and the official `watchlist_bt_oos_eval_ws` table contained zero rows. It also found that C64's OOS-looking scorecard is synthesized by `oosScorecardFor()` from IS/default scenario inputs and fixed sample values; it does not read the official OOS table. Governance therefore rejects C61/C64 E02/B01 declarations as canonical promotion proof.
+
+C169 has now executed these real actions:
+
+```text
+C169_GOVERNANCE_TOPIC=C169_CANONICAL_PARAMSET_PERSISTENCE_AND_REAL_OOS_PROMOTION_GATE_REMEDIATION
+C169_CORE_SCHEMA_MIGRATED=1
+C169_CORE_TABLE_COUNT=5
+C169_IMMUTABILITY_TRIGGER_COUNT=4
+C169_PARAMSET_VALIDATOR_EXECUTED=1
+C169_EXACT_BT_GRID_BINDING_VALIDATED=1
+C169_DRAFT_PARAM_SET_ID=1
+C169_DRAFT_STATUS=DRAFT
+C169_BT_PARAM_ID=1
+C169_OFFICIAL_IS_EVAL_ROW_COUNT=186
+C169_OFFICIAL_OOS_EVAL_ROW_COUNT=0
+C169_PROMOTION_GATE_EXECUTED=1
+C169_PROMOTION_STATUS=BLOCKED
+C169_PROMOTION_REASON=WS_PARAMSET_PROMOTION_OOS_PROOF_MISSING
+C169_ACTIVE_PARAMSET_COUNT=0
+C169_PLAN_RUN_COUNT=0
+C169_PLAN_ITEM_COUNT=0
+C169_PRODUCTION_READY=0
+```
+
+The BLOCKED promotion is the expected successful control result. Governance must not convert missing proof into an approval checkpoint.
+
+The next governed session is:
+
+```text
+C170_WEEKLY_SWING_CANONICAL_IS_STRATEGY_AND_REAL_OOS_PROOF_REMEDIATION
+```
+
+C170 must reproduce and remediate the real IS failures under IS-only, predeclared rules; lock one IS-passing immutable candidate before reading OOS; run the official OOS path; and persist the exact OOS row. If no official OOS row passes, the session stops without promotion.
+
+After an exact passing proof exists, the continuation order is immutable DRAFT-to-ACTIVE promotion, canonical PLAN persistence, recommendation persistence from PLAN, CONFIRM, activation, controlled rollout, and observation. Each is a separate executed boundary; none may be inferred from the earlier artifact chain.
+
+## C170 Canonical IS Strategy and Real OOS Proof Remediation Governance
+
+C170 began from the C169 sequence but did not reach OOS. Full document and runtime parity review found that C28 G05 selected its R09/G21/G16 route from a bucket calculated from the evaluated D1-D5 path. The original C28/C29 lookahead check covered the selected exit timing but omitted the timing of the router decision.
+
+The implementation now fails closed:
+
+```text
+C170_GOVERNANCE_TOPIC=C170_CANONICAL_IS_STRATEGY_AND_REAL_OOS_PROOF_REMEDIATION
+C28_G05_EVALUATED_PICK_COUNT=1575
+C28_G05_FUTURE_DERIVED_ROUTE_COUNT=1575
+C28_G05_LOOKAHEAD_VIOLATION_COUNT=1575
+C28_G05_EXECUTION_TIME_ROUTE_AVAILABILITY_PASS=0
+C28_G05_CANDIDATE_READY=0
+C29_OOS_PROOF_RECOMMENDED=0
+C29_GUARD_STATUS=C29_BLOCKED_INVALID_C28_SOURCE
+C29_GUARD_REASON=WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN
+C29_OOS_RUNTIME_INVOKED=0
+C170_NEW_OFFICIAL_OOS_ROW_INSERTED=0
+C170_PARAMSET_PROMOTED=0
+```
+
+C170 additionally found:
+
+```text
+OFFICIAL_PICKS_ROW_COUNT=0
+OFFICIAL_UNIVERSE_ROW_COUNT=0
+OFFICIAL_CUTOFF_ROW_COUNT=0
+OFFICIAL_OOS_ROW_COUNT=0
+SUPPORT_TABLE_EVAL_IDENTITY_PRESENT=0
+```
+
+Promotion now requires picks, universe, and cutoffs tied to the exact IS `eval_id`. Until the schema and canonical persistence path provide those rows, governance rejects aggregate-only IS/OOS evidence.
+
+The prior C28 candidate-ready and C29 OOS-proof markers are superseded for production use. Historical metrics remain trace evidence only.
+
+C30-C64 are downstream of the invalid C29 branch and remain diagnostic history only. C65-C167 execution/rollout claims remain declaration-only under the C168 correction.
+
+```text
+C170_STATUS=IMPLEMENTED_FAIL_CLOSED
+ACTIVE_PARAMSET_COUNT=0
+PLAN_RUN_COUNT=0
+RECOMMENDATION_PERSISTENCE_EXECUTED=0
+CONFIRM_MUTATED=0
+CONTROLLED_ROLLOUT_EXECUTED=0
+WATCHLIST_PRODUCTION_READY=0
+NEXT_SESSION=C171_WEEKLY_SWING_VERSIONED_OFFICIAL_BACKTEST_EVIDENCE_AND_EXECUTABLE_IS_STRATEGY_REMEDIATION
+```
+
+C171 must add exact support-evidence identity and persistence, then find one execution-eligible IS candidate under predeclared rules. OOS remains forbidden until every canonical IS and evidence gate passes.

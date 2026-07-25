@@ -311,6 +311,7 @@
       ]
     },
     "display_caps": {
+      "value": {},
       "origin": "MAN",
       "status": "ACTIVE",
       "bt_target": false,
@@ -386,7 +387,7 @@
   },
   "eval": {
     "min_trades_oos": {
-      "value": 0,
+      "value": 40,
       "origin": "DET",
       "status": "ACTIVE",
       "bt_target": false,
@@ -397,7 +398,7 @@
       ]
     },
     "min_trades": {
-      "value": 0,
+      "value": 120,
       "origin": "DET",
       "status": "ACTIVE",
       "bt_target": false,

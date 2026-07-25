@@ -1,5 +1,32 @@
 # WS C28 Rule Revision Tiebreak Diagnostic
 
+## C170 Runtime-Eligibility Correction (2026-07-24)
+
+The original C28 statistical comparison remains historical IS diagnostic evidence, but its candidate-readiness conclusion is superseded.
+
+`C28_G05` chooses R09/G21/G16 from `bucket_code`. That bucket is calculated by comparing C22/R09 behavior over the evaluated D1-D5 price path. It is therefore not available before entry or when the execution route must be fixed. An individually non-lookahead exit does not make an ex-post rule router non-lookahead.
+
+The corrected executable status is:
+
+```text
+C28_G05_STATISTICAL_DIAGNOSTIC=PASS
+C28_G05_EXECUTION_TIME_ROUTE_AVAILABILITY=FAIL
+C28_G05_LOOKAHEAD_VIOLATION_COUNT=1575
+C28_G05_FUTURE_DERIVED_ROUTE_COUNT=1575
+C28_REVISED_CANDIDATE_READY=false
+C29_OOS_PROOF_RECOMMENDED=false
+REASON=WS_BT_C28_FUTURE_DERIVED_BUCKET_ROUTE
+```
+
+C170 revalidation artifact:
+
+```text
+storage/app/watchlist/backtest/c170-c28-g05-execution-route-revalidation.json
+artifact_hash=1ef90eea6d196db0584ca8ff8da77064a8405e89
+```
+
+Any older `C28_REVISED_CANDIDATE_READY=true` marker is retained only as a historical record and must not be used for catalog creation, OOS proof, or promotion.
+
 C28 is closed as an IS-only rule revision/tiebreak diagnostic. It reads the C27 raw OHLC artifact, tests explicit bucket-level rule revisions, and does not create a production catalog or run OOS.
 
 ## Why C28 Exists

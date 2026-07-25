@@ -35,6 +35,12 @@ class WatchlistCandidateUniverseService
     public function buildCandidateUniverseForTradeDate(string $tradeDate, array $paramset = []): array
     {
         $source = $this->readModel->getCandidateUniverseForTradeDate($tradeDate);
+
+        return $this->buildCandidateUniverseFromConsumerPayload($source, $tradeDate, $paramset);
+    }
+
+    public function buildCandidateUniverseFromConsumerPayload(array $source, string $tradeDate, array $paramset = []): array
+    {
         $resolvedParamset = $this->resolveParamset($paramset);
         $payload = $this->basePayload($source, $resolvedParamset, $tradeDate);
 

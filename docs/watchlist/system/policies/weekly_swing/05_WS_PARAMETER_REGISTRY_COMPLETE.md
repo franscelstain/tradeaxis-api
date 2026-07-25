@@ -332,11 +332,12 @@ Untuk Weekly Swing, namespace parameter bersifat tunggal dan canonical. Code waj
   - Kapan diubah: setelah recalibration BT atau perubahan indikator momentum.
   - Cara ubah: update paramset (BT/MAN) + contract tests.
 
-- `setup.bo_trigger_mode` (enum: `HH20` | `NEAR_HH20` | `OFF`) — mode trigger breakout.
+- `setup.bo_trigger_mode` (enum: `CLOSE_GT_HH20` | `HH20` | `NEAR_HH20` | `OFF`) — mode trigger breakout.
   - Origin: DET
   - Alasan: definisi breakout wajib tunggal agar scoring konsisten.
   - Kapan diubah: bila definisi breakout policy diubah.
   - Cara ubah: ubah di paramset + contract tests.
+  - Nilai canonical bootstrap saat ini: `CLOSE_GT_HH20`. Mode lain adalah mode yang diizinkan kontrak, bukan status ACTIVE.
 
 - `setup.bo_near_below_pct` (0..1) — toleransi “near breakout” (di bawah HH).
   - Origin: MAN/BT

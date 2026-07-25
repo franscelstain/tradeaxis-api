@@ -23,18 +23,23 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticServiceTest extends Test
         $this->assertSame('IS_ONLY_RULE_REVISION_TIEBREAK_DIAGNOSTIC', $result['scope']);
         $this->assertSame(3, $result['evaluated_picks_count']);
         $this->assertSame(1, $result['raw_ohlc_validation_pass']);
-        $this->assertSame(1, $result['c28_revised_candidate_ready']);
-        $this->assertSame(1, $result['c29_oos_proof_recommended']);
+        $this->assertSame(0, $result['c28_revised_candidate_ready']);
+        $this->assertSame(0, $result['c29_oos_proof_recommended']);
         $this->assertSame(0, $result['oos_executed']);
         $this->assertSame(0, $result['production_ready']);
 
         $artifact = json_decode((string) file_get_contents($outputPath), true);
         $this->assertSame('C28_RULE_REVISION_TIEBREAK_DIAGNOSTIC', $artifact['artifact_type']);
         $this->assertSame('PASS', $artifact['status']);
-        $this->assertSame('C28_REVISED_RAW_CANDIDATE_READY_FOR_C29_OOS_PROOF', $artifact['decision']['decision_status']);
+        $this->assertSame('C28_REVISED_RAW_CANDIDATE_NOT_READY', $artifact['decision']['decision_status']);
         $this->assertSame(WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService::PRIMARY_PROFILE, $artifact['candidate_profile_code']);
-        $this->assertTrue($artifact['candidate_readiness_summary']['c28_revised_candidate_ready']);
-        $this->assertTrue($artifact['candidate_readiness_summary']['c29_oos_proof_recommended']);
+        $this->assertFalse($artifact['candidate_readiness_summary']['c28_revised_candidate_ready']);
+        $this->assertFalse($artifact['candidate_readiness_summary']['c29_oos_proof_recommended']);
+        $this->assertFalse($artifact['candidate_readiness_summary']['execution_time_route_availability_pass']);
+        $this->assertContains(
+            'FUTURE_DERIVED_BUCKET_ROUTE_NOT_EXECUTABLE',
+            $artifact['candidate_readiness_summary']['failure_reason_codes']
+        );
         $this->assertTrue($artifact['candidate_readiness_summary']['candidate_bucket_stability_pass']);
         $this->assertFalse($artifact['decision']['catalog_allowed']);
         $this->assertFalse($artifact['decision']['oos_allowed']);
@@ -43,7 +48,8 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticServiceTest extends Test
         $this->assertFalse($artifact['safety_boundaries']['best_profile_binding_allowed']);
         $this->assertTrue($artifact['safety_boundaries']['raw_ohlc_used_for_execution']);
         $this->assertFalse($artifact['safety_boundaries']['derived_mfe_mae_used_for_execution']);
-        $this->assertFalse($artifact['safety_boundaries']['future_path_price_used_for_selection']);
+        $this->assertTrue($artifact['safety_boundaries']['future_path_price_used_for_selection']);
+        $this->assertTrue($artifact['safety_boundaries']['future_path_price_used_for_rule_routing']);
         $this->assertSame('NEXT_OPEN', $artifact['price_evaluation_model']['ENTRY']);
         $this->assertSame('STOP_TP_OR_TIME', $artifact['price_evaluation_model']['EXIT']);
 
@@ -54,7 +60,11 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticServiceTest extends Test
         $this->assertSame('R09', $primaryRows[0]['selected_source_code']);
         $this->assertSame('G21', $primaryRows[1]['selected_source_code']);
         $this->assertSame('G16', $primaryRows[2]['selected_source_code']);
-        $this->assertFalse($primaryRows[0]['future_path_price_used_for_selection']);
+        $this->assertTrue($primaryRows[0]['future_path_price_used_for_selection']);
+        $this->assertTrue($primaryRows[0]['future_path_price_used_for_rule_routing']);
+        $this->assertFalse($primaryRows[0]['route_decision_available_before_entry']);
+        $this->assertFalse($primaryRows[0]['lookahead_safe']);
+        $this->assertSame('WS_BT_C28_FUTURE_DERIVED_BUCKET_ROUTE', $primaryRows[0]['lookahead_violation_reason']);
         $this->assertFalse($primaryRows[0]['profile_ret_net_used_for_selection']);
         $this->assertFalse($primaryRows[0]['derived_mfe_mae_used_for_execution']);
 

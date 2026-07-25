@@ -285,6 +285,17 @@ class WatchlistBacktestC29OosProofService
                 'candidate_profile_code' => $candidateProfileCode,
             ];
         }
+        if (! $this->executionRouteAvailableBeforeFuturePath($decoded, $candidateProfileCode)) {
+            return [
+                'ready' => false,
+                'reason_code' => 'WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN',
+                'message' => 'C28 G05 chooses R09/G21/G16 from a bucket derived from the evaluated D1-D5 path. The route is unavailable at execution time, so OOS proof is forbidden.',
+                'actual_c28_hash' => $actualHash,
+                'candidate_profile_code' => $candidateProfileCode,
+                'future_path_price_used_for_rule_routing' => true,
+                'oos_runtime_invoked' => false,
+            ];
+        }
         if (($decoded['candidate_readiness_summary']['c28_revised_candidate_ready'] ?? false) !== true
             || ($decoded['candidate_readiness_summary']['c29_oos_proof_recommended'] ?? false) !== true) {
             return [
@@ -335,6 +346,27 @@ class WatchlistBacktestC29OosProofService
         }
 
         return true;
+    }
+
+    private function executionRouteAvailableBeforeFuturePath(array $c28, string $candidateProfileCode): bool
+    {
+        if (($c28['candidate_readiness_summary']['execution_time_route_availability_pass'] ?? false) !== true) {
+            return false;
+        }
+
+        $candidateRows = 0;
+        foreach (($c28['pick_diagnostic_rows'] ?? []) as $row) {
+            if (! is_array($row) || ($row['profile_code'] ?? null) !== $candidateProfileCode) {
+                continue;
+            }
+            $candidateRows++;
+            if (($row['route_decision_available_before_entry'] ?? false) !== true
+                || ($row['future_path_price_used_for_rule_routing'] ?? true) !== false) {
+                return false;
+            }
+        }
+
+        return $candidateRows > 0;
     }
 
     private function buildOosRawRows(array $c28): array
@@ -690,6 +722,7 @@ class WatchlistBacktestC29OosProofService
             'hash_pass' => (bool) ($source['hash_pass'] ?? false),
             'candidate_found_pass' => true,
             'rule_match_pass' => true,
+            'execution_route_pass' => true,
             'min_picks_pass' => ((int) ($metrics['evaluated_picks_count'] ?? 0)) >= 40,
             'avg_pass' => $this->num($metrics['avg_ret_net'] ?? null) !== null && (float) $metrics['avg_ret_net'] > 0,
             'median_pass' => $this->num($metrics['median_ret_net'] ?? null) !== null && (float) $metrics['median_ret_net'] >= 0,
@@ -740,6 +773,7 @@ class WatchlistBacktestC29OosProofService
                 'hash_pass' => null,
                 'candidate_found_pass' => null,
                 'rule_match_pass' => null,
+                'execution_route_pass' => null,
                 'min_picks_pass' => null,
                 'avg_pass' => null,
                 'median_pass' => null,
@@ -758,6 +792,7 @@ class WatchlistBacktestC29OosProofService
                 'NO_PRODUCTION_CATALOG' => true,
                 'NO_PROMOTION' => true,
                 'NO_PLAN_CONFIRM_MUTATION' => true,
+                'FUTURE_DERIVED_RULE_ROUTING_FORBIDDEN' => true,
                 'NO_C01_TO_C28_MUTATION' => true,
                 'production_ready' => false,
                 'future_path_price_used_for_selection' => false,
@@ -776,6 +811,7 @@ class WatchlistBacktestC29OosProofService
             'hash_pass' => $actualC28Hash === null ? false : $actualC28Hash === $expectedC28Hash,
             'candidate_found_pass' => $reasonCode === 'WS_BT_C29_C28_CANDIDATE_NOT_FOUND' ? false : null,
             'rule_match_pass' => $reasonCode === 'WS_BT_C29_C28_RULE_MAPPING_MISMATCH' ? false : null,
+            'execution_route_pass' => $reasonCode === 'WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN' ? false : null,
             'overall_pass' => false,
         ]);
         $artifact['diagnostics'][] = [

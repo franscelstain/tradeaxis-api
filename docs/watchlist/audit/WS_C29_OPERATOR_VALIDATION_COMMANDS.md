@@ -1,5 +1,18 @@
 # WS C29 Operator Validation Commands
 
+## C170 Correction
+
+C29 must now fail closed before reading OOS for C28 G05:
+
+```text
+status=C29_BLOCKED_INVALID_C28_SOURCE
+reason_code=WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN
+c28_hash_match=1
+production_ready=0
+```
+
+The historical command and metrics below are retained as trace evidence, not as valid OOS proof.
+
 C29 validation must be run only against the locked C28 G05 candidate and the reserved OOS window.
 
 Do not claim PASS until the commands below are actually run in the operator/CI PHP baseline.
@@ -177,4 +190,3 @@ C29 final marker:
 C29_FINAL_VERDICT=C29_OOS_PROOF_FAILED
 NEXT_STEP=C30_OOS_FAILURE_ATTRIBUTION_AND_DATA_COMPLETENESS_DIAGNOSTIC
 ```
-

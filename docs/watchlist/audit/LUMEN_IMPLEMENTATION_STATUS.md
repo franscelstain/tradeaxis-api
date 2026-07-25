@@ -12,6 +12,96 @@ Behavioral owner tetap:
 4. `docs/watchlist/system/implementation/weekly_swing/**` untuk translation guidance
 5. `docs/watchlist/audit/**` untuk audit guardrail dan status tracking
 
+## ACTIVE SESSION
+
+Session:
+`WATCHLIST - C170 WEEKLY SWING CANONICAL IS STRATEGY AND REAL OOS PROOF REMEDIATION`
+
+Current status:
+
+`C170_C28_G05_FUTURE_ROUTE_REJECTED / C29_BLOCKED_BEFORE_OOS / OFFICIAL_SUPPORT_EVIDENCE_EMPTY_AND_UNVERSIONED / PROMOTION_GATE_STRENGTHENED / NO_IS_CANDIDATE_LOCK / NO_NEW_OOS / NO_PROMOTION / NO_ACTIVE_PARAMSET / NO_PLAN / NOT_PRODUCTION_READY`.
+
+```text
+C170_STATUS=C170_CANONICAL_IS_STRATEGY_AND_REAL_OOS_PROOF_REMEDIATION_IMPLEMENTED_FAIL_CLOSED
+PARAM_SET_ID=1
+PARAM_SET_STATUS=DRAFT
+PARAM_SET_HASH=b7f3c207b989c55c93f8f61b1fcceea2c343a151
+BT_PARAM_GRID_ROW_COUNT=156
+WATCHLIST_BT_EVAL_ROW_COUNT=186
+WATCHLIST_BT_PICKS_WS_ROW_COUNT=0
+WATCHLIST_BT_UNIVERSE_WS_ROW_COUNT=0
+WATCHLIST_BT_CUTOFFS_WS_ROW_COUNT=0
+WATCHLIST_BT_OOS_EVAL_WS_ROW_COUNT=0
+SUPPORT_EVIDENCE_EVAL_IDENTITY_PRESENT=0
+C28_G05_EVALUATED_PICK_COUNT=1575
+C28_G05_FUTURE_DERIVED_ROUTE_COUNT=1575
+C28_G05_LOOKAHEAD_VIOLATION_COUNT=1575
+C28_G05_EXECUTION_TIME_ROUTE_AVAILABILITY_PASS=0
+C28_G05_CANONICAL_ABSOLUTE_MONTH_GATE_PASS_COUNT=0
+C28_G05_CANDIDATE_READY=0
+C29_OOS_PROOF_RECOMMENDED=0
+C29_GUARD_STATUS=C29_BLOCKED_INVALID_C28_SOURCE
+C29_GUARD_REASON=WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN
+C29_OOS_RUNTIME_INVOKED=0
+C30_TO_C64_PRODUCTION_EVIDENCE=INVALID_UPSTREAM_C29
+C65_TO_C167_RUNTIME_CLAIMS=DECLARATION_ONLY
+C170_C28_ARTIFACT_HASH=1ef90eea6d196db0584ca8ff8da77064a8405e89
+C170_C29_BLOCK_ARTIFACT_HASH=55cda589a69a204078a631ffe74a8f60b15e080d
+PROMOTION_OFFICIAL_SUPPORT_EVIDENCE_GATE_IMPLEMENTED=1
+PROMOTION_UNVERSIONED_SCHEMA_REASON=WS_PARAMSET_PROMOTION_OFFICIAL_EVIDENCE_SCHEMA_UNVERSIONED
+PARAMSET_DRAFT_COUNT=1
+PARAMSET_ACTIVE_COUNT=0
+PLAN_RUN_COUNT=0
+PLAN_ITEM_COUNT=0
+PRODUCTION_RUNTIME_ACTIVATED=0
+PLAN_PERSISTENCE_EXECUTED=0
+RECOMMENDATION_PERSISTENCE_EXECUTED=0
+CONFIRM_MUTATED=0
+CONTROLLED_ROLLOUT_EXECUTED=0
+OFFICIAL_OUTPUT_PUBLISHED=0
+WATCHLIST_PRODUCTION_READY=NO
+```
+
+C170 corrected the planned continuation before any new OOS read. C28 G05 had selected R09/G21/G16 using a D1-D5 outcome bucket, so its rule route was unavailable at execution time. The corrected C28 runtime reports 1,575 routing violations and no OOS-ready candidate. C29 now stops with `WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN`.
+
+C170 also strengthened the real DRAFT-to-ACTIVE gate. Aggregate IS/OOS rows are no longer sufficient: official picks, universe, and cutoffs must be tied to the exact IS `eval_id`. The live support tables are empty and unversioned, so no promotion, PLAN, recommendation, CONFIRM, or rollout was executed.
+
+Final validation passed: `PHPUNIT_C170_FOCUSED=OK (42 tests, 309 assertions)` and `PHPUNIT_WATCHLIST_FULL=OK (7066 tests, 47680 assertions)`.
+
+Implementation and validation evidence:
+
+- `app/Application/Watchlist/Services/WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService.php`
+- `app/Application/Watchlist/Services/WatchlistBacktestC29OosProofService.php`
+- `app/Application/Watchlist/Services/WeeklySwingParamsetPromotionService.php`
+- `storage/app/watchlist/backtest/c170-c28-g05-execution-route-revalidation.json`
+- `storage/app/watchlist/backtest/c170-c29-future-route-blocked.json`
+- `docs/watchlist/audit/WS_C170_WEEKLY_SWING_CANONICAL_IS_STRATEGY_AND_REAL_OOS_PROOF_REMEDIATION.md`
+- `docs/watchlist/audit/WS_C170_OPERATOR_VALIDATION_COMMANDS.md`
+
+C168 remains the prior controlled runtime proof: Market Data publication `67009`/version `5`/run `66354` produced `FUTR,SMIL,INPS` at `storage/app/watchlist/runtime/c168-weekly-swing-watchlist-2026-07-23.json`. That file is not a canonical persisted PLAN, recommendation publication, or activation proof.
+
+Canonical continuation order:
+
+1. `C171_WEEKLY_SWING_VERSIONED_OFFICIAL_BACKTEST_EVIDENCE_AND_EXECUTABLE_IS_STRATEGY_REMEDIATION`;
+2. lock one execution-eligible candidate only after all canonical IS gates and six-table evidence pass;
+3. run OOS only for that unchanged candidate and persist the exact official row;
+4. promote the same immutable DRAFT only after exact persisted passing proof exists;
+5. persist PLAN, recommendation, CONFIRM, activation, rollout, and observation as separate executed sessions.
+
+Historical trace anchors retained with valid UTF-8:
+
+- `WATCHLIST — MARKET-DATA CONSUMER READ MODEL EXECUTION SESSION`
+- `WATCHLIST — CANDIDATE UNIVERSE + LIQUIDITY/RISK FILTER EXECUTION SESSION`
+- `WATCHLIST — SCORING ENGINE FOUNDATION EXECUTION SESSION`
+- `WATCHLIST — PLAN GROUPING + TOP_PICKS / SECONDARY SELECTION EXECUTION SESSION`
+- `WATCHLIST — CONFIRM OVERLAY FOUNDATION EXECUTION SESSION`
+- `WATCHLIST — BACKTEST STRATEGY ENGINE FOUNDATION EXECUTION SESSION`
+- `WATCHLIST — BACKTEST PUBLISHED PRICE SERIES RUNTIME PROOF EXECUTION SESSION`
+- `Phase 3 — Scoring Engine Foundation`
+- `Phase 4 — PLAN Grouping + TOP_PICKS/SECONDARY`
+
+Watchlist Production Ready: `NO`.
+
 
 ## C55 Rolling Stability Redesign Continuation (IS Only)
 
@@ -84,7 +174,7 @@ OOS_PROOF_UNLOCKED=false
 
 C55 is technically completed and validated by operator PHPUnit/runtime evidence, but strategy validation remains incomplete. No C55 candidate is ready for C56 pre-OOS lock review because rolling validation full-pass count and concentration pass count are both zero. C55 did not use OOS data, did not run OOS proof, did not create a production catalog, did not promote a candidate, and did not mutate PLAN/CONFIRM behavior or C01-C54 artifacts.
 
-## ACTIVE SESSION
+## PRIOR SESSION - C55 ROLLING STABILITY REDESIGN CONTINUATION
 
 Session:
 `WATCHLIST - C55 ROLLING STABILITY REDESIGN CONTINUATION IS ONLY`
@@ -567,12 +657,14 @@ AFTER_C31=C32_BAD_MONTH_BRANCH_ROBUSTNESS_DIAGNOSTIC_FOR_G21_G16
 
 ## PRIOR SESSION - C29 OOS PROOF FOR LOCKED C28 G05 CANDIDATE
 
+> C170 correction: this historical run is not an admissible OOS proof. G05 selected its rule branch from a future-derived D1-D5 bucket. Metrics below are retained as diagnostic history only.
+
 Session:
 `WATCHLIST - C29 OOS PROOF FOR LOCKED C28 G05 CANDIDATE`
 
 Current status:
 
-`C29_SOURCE_IMPLEMENTED / C29_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C29_RUNTIME_FAILED / C29_OOS_PROOF_FAILED / C28_ARTIFACT_HASH_LOCK_PASS / C28_G05_CANDIDATE_LOCK_PASS / MONTH_STABILITY_GATE_FAILED / LOOKAHEAD_GATE_FAILED_BY_MISSING_PATH_ROWS / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C28_MUTATION / NOT_PRODUCTION_READY`.
+`HISTORICAL_SUPERSEDED_BY_C170 / C29_RUNTIME_INVALID_AS_OOS_PROOF / FUTURE_DERIVED_RULE_ROUTING / NO_OFFICIAL_OOS_ROW / NOT_PRODUCTION_READY`.
 
 C29 source implementation result:
 
@@ -680,12 +772,13 @@ Invalid path rows contributing to the C29 lookahead gate failure:
 C29 leak classification note:
 
 ```text
-future_path_price_used_for_selection=false
+future_path_price_used_for_selection=true
+future_path_price_used_for_rule_routing=true
 profile_ret_net_used_for_selection=false
 derived_mfe_mae_used_for_execution=false
 ```
 
-The four rows counted by the C29 lookahead gate are currently evidenced as missing raw OHLC D1-D5 path rows, not as proven future-return/profile-return/MFE-MAE selection leakage. C30 must split actual lookahead leak count from missing-path/non-evaluable row count before using this failure for strategy decisions.
+The historical four-row check covered missing raw OHLC paths only. C170 proved a separate 1,575-row router leak: the branch itself is selected from a future-derived bucket.
 
 C29 boundary status:
 
@@ -707,14 +800,16 @@ C29 final conclusion:
 C29_SOURCE_IMPLEMENTED=true
 C29_PHPUNIT_C29_PASS=true
 C29_FULL_WATCHLIST_PHPUNIT_PASS=true
-C29_OOS_PROOF_RESULT=FAILED
-C29_FINAL_VERDICT=C29_OOS_PROOF_FAILED
-NEXT_STEP=C30_OOS_FAILURE_ATTRIBUTION_AND_DATA_COMPLETENESS_DIAGNOSTIC
+C29_OOS_PROOF_RESULT=INVALID_FUTURE_DERIVED_ROUTE
+C29_FINAL_VERDICT=NOT_ADMISSIBLE_AS_OFFICIAL_OOS_PROOF
+NEXT_STEP=C171_VERSIONED_OFFICIAL_EVIDENCE_AND_EXECUTABLE_IS_STRATEGY
 ```
 
-C29 does not unlock production readiness. The next step is C30 OOS failure attribution / data-completeness / walk-forward robustness diagnostic. C30 must not tune directly from OOS, must not create a best-of-OOS profile, and must not promote a production catalog.
+C29 does not unlock production readiness. C170 supersedes the historical C30 handoff for production purposes; the governed next work is C171.
 
 ## PRIOR SESSION - C28 RULE REVISION TIEBREAK DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE
+
+> C170 correction: C28 metrics remain IS diagnostics, but the G05 candidate-ready conclusion is superseded because its rule router uses a future-derived bucket.
 
 Session:
 `WATCHLIST - C28 RULE REVISION TIEBREAK DIAGNOSTIC IS-ONLY RUNTIME EVIDENCE`
@@ -773,11 +868,12 @@ C28_RAW_OHLC_VALIDATION_PASS=true
 C28 all-param decision:
 
 ```text
-C28_DECISION_STATUS=C28_REVISED_RAW_CANDIDATE_READY_FOR_C29_OOS_PROOF
+C28_DECISION_STATUS=C28_REVISED_RAW_CANDIDATE_NOT_EXECUTION_ELIGIBLE
 C28_PRIMARY_PROFILE=C28_G05_BUCKET_TIEBREAK_R09_STABLE_G21_NO_SIGNAL_G16_DELAY
-C28_REVISED_CANDIDATE_READY=true
-C28_C29_OOS_PROOF_RECOMMENDED=true
-C28_LOOKAHEAD_VIOLATION_COUNT=0
+C28_REVISED_CANDIDATE_READY=false
+C28_C29_OOS_PROOF_RECOMMENDED=false
+C28_LOOKAHEAD_VIOLATION_COUNT=1575
+C28_FUTURE_DERIVED_ROUTE_COUNT=1575
 C28_PARAM_PASS_FAIL=12/0
 C28_MONTH_PASS_FAIL=27/0
 C28_BUCKET_PASS_FAIL=3/0
@@ -823,15 +919,15 @@ C28 current conclusion:
 C28_RULE_REVISION_TIEBREAK_SOURCE_IMPLEMENTED=true
 C28_RUNTIME_VALIDATION_REQUIRED=false
 C28_DIAGNOSTIC_RUNTIME_PASS=true
-C28_REVISED_CANDIDATE_READY=true
+C28_REVISED_CANDIDATE_READY=false
 C28_CATALOG_IMPLEMENTATION_DEFERRED=true
 C28_CATALOG_CODE=NOT_CREATED
 OOS_NOT_RUN=true
 production_ready=0
-NEXT_STEP=C29_OOS_PROOF_WITH_C28_ARTIFACT_HASH_LOCK
+NEXT_STEP=C171_EXECUTABLE_IS_STRATEGY_REMEDIATION
 ```
 
-C28 produces the first raw-OHLC-validated revised IS candidate that passes distribution, param, month, bucket, and lookahead gates. It does not unlock production readiness by itself; the next step is C29 OOS proof against the locked C28 artifact hash.
+C28 produced favorable relative IS diagnostics, but C170 proved that G05 fails execution-time route availability and absolute canonical month gates. It cannot enter OOS.
 
 ## PRIOR SESSION - C27 CATALOG CANDIDATE RAW OHLC VALIDATION IS-ONLY RUNTIME EVIDENCE
 

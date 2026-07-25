@@ -1,5 +1,9 @@
 # WS Catalog Candidate C28 Rule Revision Tiebreak Note
 
+## C170 Superseding Correction
+
+The bucket tiebreak is not execution-eligible. `bucket_code` is derived by comparing C22/R09 results over the evaluated D1-D5 path, so the R09/G21/G16 router cannot be fixed before entry. The original readiness markers below are superseded by the corrected result in this file.
+
 C28 follows C27's raw OHLC validation result and stays IS-only.
 
 ## Boundary
@@ -36,9 +40,12 @@ candidate_distribution_beats_r09=true
 candidate_param_stability_pass=true
 candidate_month_stability_pass=true
 candidate_bucket_stability_pass=true
-lookahead_safety_pass=true
-c28_revised_candidate_ready=true
-c29_oos_proof_recommended=true
+lookahead_safety_pass=false
+execution_time_route_availability_pass=false
+future_derived_route_count=1575
+lookahead_violation_count=1575
+c28_revised_candidate_ready=false
+c29_oos_proof_recommended=false
 ```
 
 The primary candidate all-param metrics:
@@ -58,7 +65,7 @@ bucket_pass_fail=3/0
 ## Next Step
 
 ```text
-NEXT_STEP=C29_OOS_PROOF_WITH_C28_ARTIFACT_HASH_LOCK
+NEXT_STEP=C171_EXECUTABLE_IS_STRATEGY_REMEDIATION
 ```
 
-C29 may run OOS proof only against the locked C28 artifact hash. C28 itself does not create or seed a catalog.
+C29 must not run for G05. A later candidate may enter OOS only when all routing inputs are available at their documented execution timestamp and every canonical IS/evidence gate passes.

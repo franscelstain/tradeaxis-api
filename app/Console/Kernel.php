@@ -232,6 +232,9 @@ use App\Console\Commands\Watchlist\RunBacktestC166WeeklySwingWatchlistProduction
 use App\Console\Commands\Watchlist\RunBacktestC166WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutPostRolloutObservationOperatorGoNoGoReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC166WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutPostRolloutObservationGoDecisionFinalizationReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC167WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutCompletionBoundaryReviewCommand;
+use App\Console\Commands\Watchlist\GenerateWeeklySwingWatchlistCommand;
+use App\Console\Commands\Watchlist\ImportWeeklySwingParamsetDraftCommand;
+use App\Console\Commands\Watchlist\PromoteWeeklySwingParamsetCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC02ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC03ParamGridCommand;
@@ -451,6 +454,9 @@ class Kernel extends ConsoleKernel
         RunBacktestC166WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutPostRolloutObservationOperatorGoNoGoReviewCommand::class,
         RunBacktestC166WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutPostRolloutObservationGoDecisionFinalizationReviewCommand::class,
         RunBacktestC167WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutCompletionBoundaryReviewCommand::class,
+        GenerateWeeklySwingWatchlistCommand::class,
+        ImportWeeklySwingParamsetDraftCommand::class,
+        PromoteWeeklySwingParamsetCommand::class,
         SeedBacktestParamGridCommand::class,
         SeedBacktestR2ParamGridCommand::class,
         SeedBacktestC01ParamGridCommand::class,

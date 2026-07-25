@@ -2,9 +2,23 @@
 
 Status: `WATCHLIST_DB_REFERENCE_WITH_MARKET_DATA_CONSUMER_RULES`
 
-Last updated: 2026-06-22
+Last updated: 2026-07-24
 
 This document describes Watchlist-owned tables and how Watchlist must consume Market Data tables. For all Market Data producer fields, read `docs/market_data/db/MARKET_DATA_DICTIONARY.md` first.
+
+## Executable Schema Status
+
+Migration `2026_07_24_000001_create_watchlist_runtime_paramset_and_plan_schema.php` has been executed on the local runtime database and owns these currently implemented core tables:
+
+- `watchlist_fail_codes`;
+- `watchlist_reason_codes`;
+- `watchlist_param_sets`;
+- `watchlist_plan_runs`;
+- `watchlist_plan_items`.
+
+The migration also installs four MySQL append-only guards for PLAN runs/items. The current runtime state contains one DRAFT Weekly Swing paramset, zero ACTIVE paramsets, zero PLAN runs, and zero PLAN items.
+
+The CONFIRM tables listed below remain normative target schema and are not created by the C169 migration. Recommendation persistence has no owner-approved physical table contract yet, so no recommendation table is inferred or created.
 
 ## Mandatory Market Data Consumer Rule
 
@@ -180,3 +194,5 @@ The Watchlist backtest tables are migration-owned in `database/migrations/2026_0
 | `watchlist_bt_picks_ws` | Backtest pick rows including return evaluation. | `ret_net` is evaluation-only and forbidden for source/selection reconstruction. |
 | `watchlist_bt_universe_ws` | Backtest universe/eligibility cache. | Pre-trade safe only for as-of fields; no future path. |
 | `watchlist_bt_cutoffs_ws` | Backtest score cutoff cache. | Valid only for locked IS catalog logic. |
+
+C170 parity note: these three support tables currently contain zero rows and their deployed schema does not contain `eval_id`. Until C171 adds that exact-evaluation identity and the canonical runtime persists rows against it, they do not satisfy the official artifact manifest and cannot support paramset promotion.

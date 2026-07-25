@@ -4,6 +4,8 @@
 
 Dokumen ini adalah owner normatif untuk shape JSON paramset Weekly Swing.
 
+Implementation sync 2026-07-24: the active support example and validator fixtures now include the required `grouping.display_caps.value` object and use the canonical bootstrap evaluation floors `eval.min_trades.value = 120` and `eval.min_trades_oos.value = 40`. The example filename is retained for compatibility; persistence status is still DRAFT until the official promotion procedure passes.
+
 ## Scope
 
 Dokumen ini mengunci:

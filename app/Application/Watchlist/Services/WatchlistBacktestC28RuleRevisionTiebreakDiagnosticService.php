@@ -177,7 +177,7 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
         $paramConsistency = $this->groupStabilitySummary($candidateRows, 'param_id', 'param_consistency');
         $monthStability = $this->groupStabilitySummary($candidateRows, 'trade_month', 'month_stability');
         $bucketStability = $this->groupStabilitySummary($candidateRows, 'bucket_code', 'bucket_stability');
-        $lookaheadSafety = $this->lookaheadSafetySummary($pickRows);
+        $lookaheadSafety = $this->lookaheadSafetySummary($candidateRows);
         $candidateSummary = $this->candidateSummary($candidateProfile, $profileSummary);
         $readiness = $this->readinessSummary($candidateSummary, $dataQuality, $paramConsistency, $monthStability, $bucketStability, $lookaheadSafety);
         $decision = $this->decision($readiness);
@@ -210,7 +210,9 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
             'lookahead_safety_summary' => $lookaheadSafety,
             'candidate_readiness_summary' => $readiness,
             'decision' => $decision,
-            'safety_boundaries' => $this->safetyBoundaries(),
+            'safety_boundaries' => $this->safetyBoundaries(
+                $this->routeUsesFuturePath((string) ($profiles[$candidateProfile]['source'] ?? ''))
+            ),
         ];
         $artifact['artifact_hash'] = $this->stableHash($artifact);
 
@@ -255,6 +257,9 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
             'candidate_bucket_pass_count' => $bucketStability['bucket_stability_pass_count'] ?? 0,
             'candidate_bucket_fail_count' => $bucketStability['bucket_stability_fail_count'] ?? 0,
             'lookahead_violation_count' => $lookaheadSafety['lookahead_violation_count'] ?? 0,
+            'future_derived_route_count' => $lookaheadSafety['future_derived_route_count'] ?? 0,
+            'execution_time_route_availability_pass' => ($readiness['execution_time_route_availability_pass'] ?? false) ? 1 : 0,
+            'candidate_failure_reason_codes' => implode(',', $readiness['failure_reason_codes'] ?? []),
             'c28_revised_candidate_ready' => $readiness['c28_revised_candidate_ready'] ? 1 : 0,
             'c29_oos_proof_recommended' => $readiness['c29_oos_proof_recommended'] ? 1 : 0,
             'c28_catalog_implementation_deferred' => 1,
@@ -269,8 +274,11 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
     private function profileRow(string $profileCode, array $raw): array
     {
         $profile = self::diagnosticProfiles()[$profileCode] ?? self::diagnosticProfiles()[self::PRIMARY_PROFILE];
-        $selection = $this->selectExit($profile['source'] ?? 'r09', $raw);
+        $profileSource = (string) ($profile['source'] ?? 'r09');
+        $selection = $this->selectExit($profileSource, $raw);
         $exit = $selection['exit'];
+        $futureDerivedRoute = $this->routeUsesFuturePath($profileSource);
+        $exitLookaheadSafe = (bool) ($exit['lookahead_safe'] ?? false);
         $ret = $this->num($exit['ret_net'] ?? null);
         $r09Ret = $this->num($raw['r09']['ret_net'] ?? null);
         $g21Ret = $this->num($raw['g21']['ret_net'] ?? null);
@@ -310,12 +318,19 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
             'loss_reduced_vs_r09_flag' => $r09Ret !== null && $r09Ret < 0 && $ret !== null && $ret > $r09Ret,
             'p25_protection_source' => $selection['selected_source_code'],
             'raw_ohlc_validated_flag' => (bool) ($raw['raw_ohlc_validated_flag'] ?? false),
-            'lookahead_safe' => (bool) ($exit['lookahead_safe'] ?? false),
-            'lookahead_violation_reason' => $exit['lookahead_violation_reason'] ?? null,
+            'lookahead_safe' => $exitLookaheadSafe && ! $futureDerivedRoute,
+            'lookahead_violation_reason' => $futureDerivedRoute
+                ? 'WS_BT_C28_FUTURE_DERIVED_BUCKET_ROUTE'
+                : ($exit['lookahead_violation_reason'] ?? null),
+            'route_decision_available_before_entry' => ! $futureDerivedRoute,
+            'route_decision_available_at' => $futureDerivedRoute
+                ? 'AFTER_D1_TO_D5_PATH_EVALUATION'
+                : 'PREDECLARED_BEFORE_PATH_EVALUATION',
+            'future_path_price_used_for_rule_routing' => $futureDerivedRoute,
             'missing_path_data_flag' => (bool) ($raw['missing_path_data_flag'] ?? false) || (bool) ($exit['missing_path_data_flag'] ?? false),
             'missing_path_reason_code' => $raw['missing_path_reason_code'] ?? ($exit['missing_path_reason_code'] ?? null),
             'derived_mfe_mae_used_for_execution' => false,
-            'future_path_price_used_for_selection' => false,
+            'future_path_price_used_for_selection' => $futureDerivedRoute,
             'profile_ret_net_used_for_selection' => false,
             'oos_executed' => false,
             'production_ready' => 0,
@@ -396,6 +411,17 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
             'selected_source_reason' => 'source_unknown',
             'exit' => $this->missingExit('WS_BT_C28_SOURCE_EXIT_MISSING'),
         ];
+    }
+
+    private function routeUsesFuturePath(string $source): bool
+    {
+        return in_array($source, [
+            'g21_problem_buckets_else_r09',
+            'r09_stable_g21_no_signal_g16_delay',
+            'r09_stable_g13_no_signal_g16_delay',
+            'g13_global_g21_no_signal',
+            'g16_global_g21_no_signal',
+        ], true);
     }
 
     private function rawRows(array $c27, array $paramIds): array
@@ -570,10 +596,16 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
             }
         }
 
+        $futureDerivedRoutes = count(array_filter($rows, function (array $row): bool {
+            return ($row['future_path_price_used_for_rule_routing'] ?? false) === true;
+        }));
+
         return [
             'lookahead_violation_count' => $violations,
             'missing_path_count' => $missing,
-            'lookahead_safe' => $violations === 0,
+            'future_derived_route_count' => $futureDerivedRoutes,
+            'execution_time_route_availability_pass' => $futureDerivedRoutes === 0,
+            'lookahead_safe' => $violations === 0 && $futureDerivedRoutes === 0,
             'preplanned_order_threshold_fixed_before_path_evaluation' => true,
             'close_signal_same_day_exit_allowed' => false,
             'close_signal_next_open_rule_checks' => [
@@ -581,7 +613,8 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
                 'd2_close_signal_min_exit_day' => 3,
                 'd3_close_signal_min_exit_day' => 4,
             ],
-            'future_path_price_used_for_selection' => false,
+            'future_path_price_used_for_selection' => $futureDerivedRoutes > 0,
+            'future_path_price_used_for_rule_routing' => $futureDerivedRoutes > 0,
             'profile_ret_net_used_for_selection' => false,
             'derived_mfe_mae_used_for_execution' => false,
         ];
@@ -605,8 +638,10 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
             && (int) ($month['month_stability_fail_count'] ?? 0) === 0;
         $bucketOk = (int) ($bucket['bucket_stability_pass_count'] ?? 0) > 0
             && (int) ($bucket['bucket_stability_fail_count'] ?? 0) === 0;
+        $routeAvailabilityOk = (bool) ($lookahead['execution_time_route_availability_pass'] ?? false);
         $lookaheadOk = (int) ($lookahead['lookahead_violation_count'] ?? 0) === 0
-            && (int) ($lookahead['missing_path_count'] ?? 0) === 0;
+            && (int) ($lookahead['missing_path_count'] ?? 0) === 0
+            && $routeAvailabilityOk;
         $explicitRule = (bool) ($candidate['candidate_rule_is_explicit_bucket_tiebreak'] ?? false);
         $ready = $qualityOk && $distributionOk && $paramOk && $monthOk && $bucketOk && $lookaheadOk && $explicitRule;
 
@@ -629,6 +664,9 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
         if (! $lookaheadOk) {
             $failures[] = 'LOOKAHEAD_OR_PATH_SAFETY_WEAK';
         }
+        if (! $routeAvailabilityOk) {
+            $failures[] = 'FUTURE_DERIVED_BUCKET_ROUTE_NOT_EXECUTABLE';
+        }
         if (! $explicitRule) {
             $failures[] = 'CANDIDATE_RULE_NOT_EXPLICIT_PRIMARY_TIEBREAK';
         }
@@ -641,6 +679,7 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
             'candidate_month_stability_pass' => $monthOk,
             'candidate_bucket_stability_pass' => $bucketOk,
             'lookahead_safety_pass' => $lookaheadOk,
+            'execution_time_route_availability_pass' => $routeAvailabilityOk,
             'explicit_bucket_tiebreak_rule' => $explicitRule,
             'c28_revised_candidate_ready' => $ready,
             'failure_reason_codes' => $failures,
@@ -687,7 +726,7 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
         ];
     }
 
-    private function safetyBoundaries(): array
+    private function safetyBoundaries(bool $futureDerivedRoute = true): array
     {
         return [
             'IS_ONLY' => true,
@@ -712,7 +751,9 @@ class WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService
             'canonical_model_unchanged' => $this->canonicalEvaluationModel(),
             'raw_ohlc_used_for_execution' => true,
             'derived_mfe_mae_used_for_execution' => false,
-            'future_path_price_used_for_selection' => false,
+            'future_path_price_used_for_selection' => $futureDerivedRoute,
+            'future_path_price_used_for_rule_routing' => $futureDerivedRoute,
+            'execution_time_route_availability_pass' => ! $futureDerivedRoute,
             'profile_ret_net_used_for_selection' => false,
             'diagnostic_profiles_used_as_production_rule' => false,
             'best_profile_binding_allowed' => false,

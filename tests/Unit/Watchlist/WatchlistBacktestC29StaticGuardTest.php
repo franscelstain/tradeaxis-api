@@ -51,6 +51,9 @@ class WatchlistBacktestC29StaticGuardTest extends TestCase
         $this->assertStringContainsString('profile_ret_net_used_for_selection', $service);
         $this->assertStringContainsString('derived_mfe_mae_used_for_execution', $service);
         $this->assertStringContainsString('oos_return_used_for_profile_selection', $service);
+        $this->assertStringContainsString('WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN', $service);
+        $this->assertStringContainsString('FUTURE_DERIVED_RULE_ROUTING_FORBIDDEN', $service);
+        $this->assertStringContainsString('executionRouteAvailableBeforeFuturePath', $service);
         $this->assertStringNotContainsString('best_profile_code_by_avg', $service);
         $this->assertStringNotContainsString('best_profile_code_by_median', $service);
         $this->assertStringNotContainsString('best_profile_code_by_p25', $service);

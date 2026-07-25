@@ -103,7 +103,7 @@ class WatchlistBacktestC29OosProofServiceTest extends TestCase
         $this->cleanup($c28Path, $outputPath);
     }
 
-    public function test_it_passes_with_valid_C28_G05_and_oos_proof_artifact_is_written(): void
+    public function test_it_blocks_G05_before_oos_when_rule_route_depends_on_future_path(): void
     {
         [$c28Path, $outputPath] = $this->tempPaths('pass');
         $artifact = $this->c28Artifact();
@@ -123,29 +123,55 @@ class WatchlistBacktestC29OosProofServiceTest extends TestCase
             ]
         );
 
-        $this->assertSame('C29_OOS_PROOF_PASSED_NOT_PRODUCTION_READY', $result['status']);
-        $this->assertSame(45, $result['evaluated_picks_count']);
-        $this->assertSame(0, $result['lookahead_violation_count']);
+        $this->assertSame('C29_BLOCKED_INVALID_C28_SOURCE', $result['status']);
+        $this->assertSame('WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN', $result['reason_code']);
         $this->assertSame(0, $result['production_ready']);
 
         $out = json_decode((string) file_get_contents($outputPath), true);
-        $this->assertSame('C29_OOS_PROOF_PASSED_NOT_PRODUCTION_READY', $out['status']);
+        $this->assertSame('C29_BLOCKED_INVALID_C28_SOURCE', $out['status']);
         $this->assertSame('C29_OOS_PROOF_C28_G05', $out['run_code']);
         $this->assertSame(['from' => '2025-05-22', 'to' => '2026-05-29'], $out['oos_window']);
         $this->assertFalse($out['production_ready']);
-        $this->assertTrue($out['gate']['overall_pass']);
+        $this->assertFalse($out['gate']['overall_pass']);
+        $this->assertFalse($out['gate']['execution_route_pass']);
         $this->assertSame('RAW_R09', $out['candidate_rule']['candidate_matches_or_beats_c22']);
         $this->assertSame('RAW_G21', $out['candidate_rule']['no_rule_profit_signal_before_fallback']);
         $this->assertSame('RAW_G16', $out['candidate_rule']['next_open_delay_after_close_signal']);
         $this->assertArrayNotHasKey('best_profile_binding_allowed', $out['safety_boundaries']);
-        $this->assertFalse($out['safety_boundaries']['future_path_price_used_for_selection']);
-        $this->assertFalse($out['safety_boundaries']['profile_ret_net_used_for_selection']);
-        $this->assertFalse($out['safety_boundaries']['derived_mfe_mae_used_for_execution']);
-        $this->assertSame(0, $out['lookahead_violation_count']);
+        $this->assertTrue($out['safety_boundaries']['FUTURE_DERIVED_RULE_ROUTING_FORBIDDEN']);
+        $this->assertSame([], $out['oos_pick_rows'] ?? []);
         $this->cleanup($c28Path, $outputPath);
     }
 
-    public function test_production_ready_remains_false_when_oos_gate_passes(): void
+    public function test_it_fails_closed_when_legacy_C28_artifact_has_no_route_availability_proof(): void
+    {
+        [$c28Path, $outputPath] = $this->tempPaths('legacy-route-metadata-missing');
+        $artifact = $this->c28Artifact();
+        unset($artifact['candidate_readiness_summary']['execution_time_route_availability_pass']);
+        foreach ($artifact['pick_diagnostic_rows'] as &$row) {
+            unset($row['route_decision_available_before_entry'], $row['future_path_price_used_for_rule_routing']);
+        }
+        unset($row);
+        $artifact['artifact_hash'] = $this->stableHash($artifact);
+        file_put_contents($c28Path, json_encode($artifact, JSON_UNESCAPED_SLASHES)."\n");
+
+        $result = (new WatchlistBacktestC29OosProofService())->execute(
+            $c28Path,
+            $artifact['artifact_hash'],
+            WatchlistBacktestC29OosProofService::CANDIDATE_PROFILE,
+            WatchlistBacktestC29OosProofService::OOS_FROM,
+            WatchlistBacktestC29OosProofService::OOS_TO,
+            $outputPath,
+            ['overwrite' => true, 'oos_raw_rows_fixture' => $this->oosRawRows(45, 0.01)]
+        );
+
+        $this->assertSame('C29_BLOCKED_INVALID_C28_SOURCE', $result['status']);
+        $this->assertSame('WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN', $result['reason_code']);
+        $this->assertSame(0, $result['production_ready']);
+        $this->cleanup($c28Path, $outputPath);
+    }
+
+    public function test_production_ready_remains_false_when_future_route_guard_blocks(): void
     {
         [$c28Path, $outputPath] = $this->tempPaths('production-ready');
         $artifact = $this->c28Artifact();
@@ -163,9 +189,8 @@ class WatchlistBacktestC29OosProofServiceTest extends TestCase
 
         $out = json_decode((string) file_get_contents($outputPath), true);
         $this->assertFalse($out['production_ready']);
-        foreach ($out['oos_pick_rows'] as $row) {
-            $this->assertSame(0, $row['production_ready']);
-        }
+        $this->assertSame('C29_BLOCKED_INVALID_C28_SOURCE', $out['status']);
+        $this->assertSame([], $out['oos_pick_rows'] ?? []);
         $this->cleanup($c28Path, $outputPath);
     }
 
@@ -180,7 +205,7 @@ class WatchlistBacktestC29OosProofServiceTest extends TestCase
         $this->assertStringNotContainsString('best_profile_code_by_p25', $service);
     }
 
-    public function test_lookahead_guard_stays_zero_for_valid_fixture(): void
+    public function test_lookahead_guard_rejects_future_derived_route_before_fixture_evaluation(): void
     {
         [$c28Path, $outputPath] = $this->tempPaths('lookahead');
         $artifact = $this->c28Artifact();
@@ -196,9 +221,10 @@ class WatchlistBacktestC29OosProofServiceTest extends TestCase
             ['overwrite' => true, 'oos_raw_rows_fixture' => $this->oosRawRows(45, 0.01)]
         );
 
-        $this->assertSame(0, $result['lookahead_violation_count']);
+        $this->assertSame('WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN', $result['reason_code']);
         $out = json_decode((string) file_get_contents($outputPath), true);
-        $this->assertTrue($out['gate']['lookahead_pass']);
+        $this->assertFalse($out['gate']['execution_route_pass']);
+        $this->assertFalse($out['gate']['overall_pass']);
         $this->cleanup($c28Path, $outputPath);
     }
 
@@ -223,6 +249,7 @@ class WatchlistBacktestC29OosProofServiceTest extends TestCase
             'candidate_readiness_summary' => [
                 'c28_revised_candidate_ready' => true,
                 'c29_oos_proof_recommended' => true,
+                'execution_time_route_availability_pass' => false,
             ],
             'pick_diagnostic_rows' => [
                 $this->c28Pick(145, 'candidate_matches_or_beats_c22', 'R09'),
@@ -244,6 +271,8 @@ class WatchlistBacktestC29OosProofServiceTest extends TestCase
             'profile_code' => WatchlistBacktestC29OosProofService::CANDIDATE_PROFILE,
             'bucket_code' => $bucket,
             'selected_source_code' => $source,
+            'route_decision_available_before_entry' => false,
+            'future_path_price_used_for_rule_routing' => true,
         ];
     }
 

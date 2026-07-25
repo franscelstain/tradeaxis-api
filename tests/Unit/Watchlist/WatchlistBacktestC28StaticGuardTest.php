@@ -37,7 +37,10 @@ class WatchlistBacktestC28StaticGuardTest extends TestCase
         $this->assertStringContainsString("'NO_C27_REOPEN' => true", $service);
         $this->assertStringContainsString("'catalog_allowed' => false", $service);
         $this->assertStringContainsString("'oos_allowed' => false", $service);
-        $this->assertStringContainsString("'future_path_price_used_for_selection' => false", $service);
+        $this->assertStringContainsString("'future_path_price_used_for_selection' => \$futureDerivedRoute", $service);
+        $this->assertStringContainsString("'future_path_price_used_for_rule_routing' => \$futureDerivedRoute", $service);
+        $this->assertStringContainsString('FUTURE_DERIVED_BUCKET_ROUTE_NOT_EXECUTABLE', $service);
+        $this->assertStringContainsString('WS_BT_C28_FUTURE_DERIVED_BUCKET_ROUTE', $service);
         $this->assertStringContainsString("'profile_ret_net_used_for_selection' => false", $service);
         $this->assertStringContainsString("'derived_mfe_mae_used_for_execution' => false", $service);
         $this->assertStringContainsString("'best_profile_binding_allowed' => false", $service);

@@ -1,5 +1,20 @@
 # WS C28 Operator Validation Commands
 
+## C170 Correction
+
+The prior ready-for-C29 expectation is superseded. The corrected service must report:
+
+```text
+lookahead_violation_count=1575
+future_derived_route_count=1575
+execution_time_route_availability_pass=0
+candidate_failure_reason_codes=LOOKAHEAD_OR_PATH_SAFETY_WEAK,FUTURE_DERIVED_BUCKET_ROUTE_NOT_EXECUTABLE
+c28_revised_candidate_ready=0
+c29_oos_proof_recommended=0
+```
+
+Use `storage/app/watchlist/backtest/c170-c28-g05-execution-route-revalidation.json` as the correction artifact. Do not use the historical C28 artifact to start OOS.
+
 C28 validation is complete for source, PHPUnit, focused runtime, and all-param runtime.
 
 C28 remains IS-only. Do not run OOS, do not create a C28 catalog, and do not change canonical execution rules.

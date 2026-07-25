@@ -1,5 +1,29 @@
 # WS C29 OOS Proof
 
+## C170 Validity Correction (2026-07-24)
+
+The historical C29 JSON is not an admissible OOS proof. Before calculating its OOS metrics, C29 recomputed the future-derived C22/R09 gap bucket from the OOS D1-D5 path and then selected R09, G21, or G16 from that bucket. This makes the rule route unavailable at execution time and leaks OOS path information into rule selection.
+
+The corrected service now blocks before any OOS runtime read:
+
+```text
+status=C29_BLOCKED_INVALID_C28_SOURCE
+reason_code=WS_BT_C29_FUTURE_DERIVED_ROUTE_FORBIDDEN
+execution_route_pass=false
+overall_pass=false
+oos_runtime_invoked=false
+production_ready=0
+```
+
+Correction artifact:
+
+```text
+storage/app/watchlist/backtest/c170-c29-future-route-blocked.json
+artifact_hash=55cda589a69a204078a631ffe74a8f60b15e080d
+```
+
+The previously reported OOS metrics remain historical diagnostic numbers only. They must not be inserted into `watchlist_bt_oos_eval_ws` and cannot authorize promotion.
+
 C29 is an OOS proof for the locked C28 G05 candidate. It is not a tuning session, not catalog promotion, and not production rollout.
 
 ## Purpose
