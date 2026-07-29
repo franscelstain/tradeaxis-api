@@ -240,6 +240,19 @@ use App\Console\Commands\Watchlist\PersistBacktestC171LowPriceExecutionQualityDr
 use App\Console\Commands\Watchlist\PersistBacktestC171FinalBoundedRemediationDraftCatalogCommand;
 use App\Console\Commands\Watchlist\SealBacktestC171FinalFailedNotReadyClosureCommand;
 use App\Console\Commands\Watchlist\RunBacktestC171ComparativeOfficialIsFailureDiagnosticCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingNewStrategyR01ResearchDiagnosticCommand;
+use App\Console\Commands\Watchlist\PersistWeeklySwingNewStrategyR02DraftCatalogCommand;
+use App\Console\Commands\Watchlist\PersistWeeklySwingNewStrategyR02RemediationDraftCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingNewStrategyR02OfficialIsCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingTailRiskS01DiagnosticCommand;
+use App\Console\Commands\Watchlist\PersistWeeklySwingTailRiskS01DraftCatalogCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingTailRiskS01OfficialIsCommand;
+use App\Console\Commands\Watchlist\PersistWeeklySwingTailRiskS01RemediationDraftCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingPriceQualityP01DiagnosticCommand;
+use App\Console\Commands\Watchlist\PersistWeeklySwingPriceQualityP01DraftCatalogCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingPriceQualityP01OfficialIsCommand;
+use App\Console\Commands\Watchlist\PersistWeeklySwingPriceQualityP01RemediationDraftCommand;
+use App\Console\Commands\Watchlist\PersistWeeklySwingPriceQualityP01IdentityRepairDraftCommand;
 use App\Console\Commands\Watchlist\ImportWeeklySwingParamsetDraftCommand;
 use App\Console\Commands\Watchlist\PromoteWeeklySwingParamsetCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
@@ -471,6 +484,19 @@ class Kernel extends ConsoleKernel
         PersistBacktestC171FinalBoundedRemediationDraftCatalogCommand::class,
         SealBacktestC171FinalFailedNotReadyClosureCommand::class,
         RunBacktestC171ComparativeOfficialIsFailureDiagnosticCommand::class,
+        RunWeeklySwingNewStrategyR01ResearchDiagnosticCommand::class,
+        PersistWeeklySwingNewStrategyR02DraftCatalogCommand::class,
+        PersistWeeklySwingNewStrategyR02RemediationDraftCommand::class,
+        RunWeeklySwingNewStrategyR02OfficialIsCommand::class,
+        RunWeeklySwingTailRiskS01DiagnosticCommand::class,
+        PersistWeeklySwingTailRiskS01DraftCatalogCommand::class,
+        RunWeeklySwingTailRiskS01OfficialIsCommand::class,
+        PersistWeeklySwingTailRiskS01RemediationDraftCommand::class,
+        RunWeeklySwingPriceQualityP01DiagnosticCommand::class,
+        PersistWeeklySwingPriceQualityP01DraftCatalogCommand::class,
+        RunWeeklySwingPriceQualityP01OfficialIsCommand::class,
+        PersistWeeklySwingPriceQualityP01RemediationDraftCommand::class,
+        PersistWeeklySwingPriceQualityP01IdentityRepairDraftCommand::class,
         ImportWeeklySwingParamsetDraftCommand::class,
         PromoteWeeklySwingParamsetCommand::class,
         SeedBacktestParamGridCommand::class,

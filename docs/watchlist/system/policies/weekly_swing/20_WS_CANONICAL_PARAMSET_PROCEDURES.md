@@ -119,7 +119,7 @@ Jika SQL artifact berbeda dari dokumen ini, dokumen ini selalu menang dan SQL ar
 
 Tidak ada paramset yang boleh dianggap canonically promoted atau canonically active bila status tersebut tidak dapat ditelusuri ke preconditions, validation gates, status transitions, dan postconditions yang ditetapkan secara normatif di dokumen ini.
 
-## C171 identity requirement before OOS and promotion
+## Versioned identity requirement before OOS and promotion
 
 Before an IS candidate may be handed to OOS, the following identity must be exact:
 
@@ -141,7 +141,36 @@ watchlist_param_sets.implementation_hash
 watchlist_bt_eval.implementation_hash
 ```
 
-Before DRAFT-to-ACTIVE promotion, C172 OOS evidence must carry those same hashes plus the exact IS `evidence_manifest_hash`. Any mismatch is fail-closed and cannot be repaired by changing only an artifact or tracker entry.
+Before DRAFT-to-ACTIVE promotion, official OOS evidence for the exact
+IS-passing strategy scope must carry those same hashes plus the exact IS
+`evidence_manifest_hash`. Any mismatch is fail-closed and cannot be repaired by
+changing only an artifact or tracker entry.
+
+The historical C171-to-C172 label does not override a sealed C171 failure.
+After `C171_FAILED_NOT_READY_NO_FURTHER_REMEDIATION`, C172 remains forbidden for
+that closed topic. A separately approved new-strategy scope must use its own
+versioned IS/OOS identity and still satisfy every invariant in this section.
+
+The R02 scope demonstrates this separation. Its optional
+`research_selection` and `research_execution` sections are part of the
+canonical params hash, while the distinct exit model is part of
+`eval_model/eval_model_hash`. Eval `211` failed one canonical IS gate after the
+only allowed remediation, so its DRAFT remains non-promotable and no official
+OOS identity may be created from it.
+
+The separate S01 scope also remains non-promotable. Its initial evals `212-214`
+failed unchanged canonical IS gates, and its only remediation eval `215`
+failed both monthly win-rate and monthly-average floors. Therefore no S01 IS
+binding may be handed to OOS and paramsets `20-22` or `24` cannot become
+`ACTIVE`. A tracker or artifact entry cannot override this failed gate result.
+
+The separate P01 scope is also non-promotable. Initial evals `216-217` failed
+canonical stability gates. Eval `218` is not a valid final identity because
+its generic model label omitted the P01 remediation exit semantics.
+Identity-corrected eval `219` carries exact
+`EXIT=SEQ_TP05_PCL1NO_TIME` identity and failed median, P25, monthly win-rate,
+and monthly-average gates. Therefore paramsets `25-28` cannot be handed to
+OOS or promoted to `ACTIVE`; no further P01 remediation is allowed.
 
 
 ### Paramset provenance identity

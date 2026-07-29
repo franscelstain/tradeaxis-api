@@ -1,0 +1,118 @@
+# Weekly Swing Tail Risk S01 Candidate and Remediation Lock
+
+## Scope lock
+
+```text
+SCOPE=WS_TAIL_RISK_S01
+SEPARATE_FROM_R02=1
+SOURCE_EVAL_ID=211
+SOURCE_PARAM_SET_ID=19
+SOURCE_PARAMS_HASH=e50a62ac2dbf1f3e9517f8e2d44f072c7d42eb1f
+DIAGNOSTIC_ARTIFACT_HASH=f13e0d2fe4fddd6c16bd4878bfc75d898713e72d
+MAX_INITIAL_CANDIDATES=3
+MAX_REMEDIATION_ROUNDS=1
+CANONICAL_GATES_CHANGED=0
+OOS_USED=0
+```
+
+S01 was locked after the final R02 closure and before any S01 DRAFT or Official
+IS execution. Realized returns were used only for read-only diagnostic
+attribution. Candidate selection may use exact decision-time evidence only.
+
+## Initial candidate lock
+
+```text
+CATALOG_CODE=WS_BT_GRID_TAIL_RISK_S01_2026_07
+CATALOG_VERSION=S01
+CATALOG_COUNT=3
+CATALOG_HASH=cfbcef8b02539e0b90ed8a5f0c38f409edbdf0b4
+```
+
+### H1: market-regime guard
+
+```text
+ROW_CODE=S01_H1_IHSG_NON_WEAK_GUARD
+BASE_SELECTION=SIGNAL_ROC20_10_TO_15
+ADDED_IDEA=EXCLUDE_EXACT_SIGNAL_DATE_IHSG_WEAK
+MISSING_BENCHMARK_CONTEXT=FAIL_CLOSED
+PARAM_SET_ID=20
+BT_PARAM_ID=174
+PARAMS_HASH=dde1467e62dd6c586ad7234479d5ae23794a759a
+```
+
+### H2: tick-risk guard
+
+```text
+ROW_CODE=S01_H2_TICK_RISK_LT_1P5_GUARD
+BASE_SELECTION=SIGNAL_ROC20_10_TO_15
+ADDED_IDEA=SIGNAL_TICK_RISK_EXPANSION_LT_0.015
+MISSING_TICK_RISK_CONTEXT=FAIL_CLOSED
+PARAM_SET_ID=21
+BT_PARAM_ID=175
+PARAMS_HASH=25eea47ff1d30f91eb46a1813361fcecc0539c68
+```
+
+### H3: loss-containment execution
+
+```text
+ROW_CODE=S01_H3_DAILY_CLOSE_LOSS_CONTAINMENT
+BASE_SELECTION=SIGNAL_ROC20_10_TO_15
+PREPLANNED_TARGET=ENTRY_PLUS_0.50_PERCENT_NORMALIZED_IDX_TICK
+LOSS_CLOSE_THRESHOLD=-0.03
+LOSS_SIGNAL_DAYS=D1_D2_D3
+LOSS_SIGNAL_EXIT=NEXT_TRADING_DAY_OPEN
+FALLBACK_EXIT=D5_CLOSE
+PARAM_SET_ID=22
+BT_PARAM_ID=176
+PARAMS_HASH=f264e8a599775302e2082ae5935de5507e0df905
+```
+
+All execution routes are chronological. A close on Dn cannot execute before
+the open of D(n+1), and no later target result may choose an earlier route.
+
+## Single remediation lock
+
+Initial evals `212-214` all failed at least one canonical IS gate. H1 was
+chosen as the one remediation basis because it had the best average, win rate,
+worst-month average, and failed-period count without any OOS read.
+
+```text
+REMEDIATION_COUNT=1
+MAX_REMEDIATION_COUNT=1
+SOURCE_ROW=S01_H1_IHSG_NON_WEAK_GUARD
+SOURCE_PARAM_SET_ID=20
+SOURCE_EVAL_ID=212
+SOURCE_ARTIFACT_HASH=0e1823c01c48f64072f9d07347cad0e7f304c4d1
+CATALOG_CODE=WS_BT_GRID_TAIL_RISK_S01_REMEDIATION_2026_07
+CATALOG_VERSION=S01M1
+CATALOG_HASH=6ff1031b7cb5e7023d079cf22f72e35b9ac38b2e
+ROW_CODE=S01_M1_H1_NON_WEAK_LOSS_CLOSE_NEG1_NEXT_OPEN
+PARAM_SET_ID=24
+BT_PARAM_ID=177
+PARAMS_HASH=7c4d8c3d10ed808dd7be022805311fd6f33778bc
+SELECTION_CHANGED_FROM_H1=0
+LOSS_CLOSE_THRESHOLD=-0.01
+LOSS_SIGNAL_DAYS=D1_D2_D3
+LOSS_SIGNAL_EXIT=NEXT_TRADING_DAY_OPEN
+FIXED_BEFORE_REMEDIATION_OFFICIAL_IS=1
+FUTURE_DERIVED_ROUTE_USED=0
+```
+
+## Final closure
+
+Eval `215` passed trade count, coverage, average, median, and P25, but failed
+the unchanged monthly win-rate and monthly-average floors.
+
+```text
+S01_FINAL_STATUS=FAILED_NOT_READY_CLOSED
+CANONICAL_IS_GATES_PASS=0
+REMEDIATION_ROUNDS_REMAINING=0
+OFFICIAL_OOS_ALLOWED=0
+PROMOTION_ALLOWED=0
+PLAN_ALLOWED=0
+PRODUCTION_READY=0
+```
+
+No second S01 remediation, ticker/month blacklist, gate weakening, best-of-
+failed binding, OOS run, promotion, PLAN, CONFIRM, activation, or rollout is
+allowed. A later attempt must be a separately named, newly preregistered scope.

@@ -14,8 +14,46 @@ class WeeklySwingParamsetRuntimeAdapter
         }
 
         $runtime = $this->adaptScoringContract($runtime);
+        $runtime = $this->adaptResearchExecutionContract($runtime);
 
         return $this->adaptGroupingContract($runtime);
+    }
+
+    private function adaptResearchExecutionContract(array $runtime): array
+    {
+        if (! array_key_exists('research_execution', $runtime)) {
+            return $runtime;
+        }
+        $expected = WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::researchExecution();
+        $s01LossContainment = WatchlistBacktestTailRiskS01ParamGridCatalog::lossContainmentExecution();
+        $s01Remediation =
+            WatchlistBacktestTailRiskS01RemediationParamGridCatalog::researchExecution();
+        $p01Remediation =
+            WatchlistBacktestPriceQualityP01RemediationParamGridCatalog
+                ::researchExecution();
+        $backtest = is_array($runtime['backtest'] ?? null) ? $runtime['backtest'] : [];
+        if ($runtime['research_execution'] == $expected) {
+            $backtest['exit_model'] = 'WS_R02_SEQUENTIAL_TARGET_0P5_PROFIT_NEXT_OPEN_TIME';
+            $backtest['research_execution'] = $expected;
+        } elseif ($runtime['research_execution'] == $s01LossContainment) {
+            $backtest['exit_model'] = 'WS_S01_SEQUENTIAL_TARGET_0P5_PROFIT_OR_LOSS_NEXT_OPEN_TIME';
+            $backtest['research_execution'] = $s01LossContainment;
+        } elseif ($runtime['research_execution'] == $s01Remediation) {
+            $backtest['exit_model'] =
+                'WS_S01M1_SEQUENTIAL_TARGET_0P5_PROFIT_OR_LOSS_NEG1_NEXT_OPEN_TIME';
+            $backtest['research_execution'] = $s01Remediation;
+        } elseif ($runtime['research_execution'] == $p01Remediation) {
+            $backtest['exit_model'] =
+                'WS_S01M1_SEQUENTIAL_TARGET_0P5_PROFIT_OR_LOSS_NEG1_NEXT_OPEN_TIME';
+            $backtest['research_execution'] = $p01Remediation;
+        } else {
+            throw new \RuntimeException(
+                'WS_NEW_STRATEGY_RESEARCH_EXECUTION_INVALID: the execution contract is not an approved immutable research rule.'
+            );
+        }
+        $runtime['backtest'] = $backtest;
+
+        return $runtime;
     }
 
     private function adaptScoringContract(array $runtime): array

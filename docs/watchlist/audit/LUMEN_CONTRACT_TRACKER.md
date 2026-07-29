@@ -14,6 +14,254 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - WS PRICE QUALITY P01 DIAGNOSTIC, TWO CANDIDATES, SINGLE REMEDIATION, IDENTITY REPAIR, AND FAILED/NOT-READY CLOSURE`
+
+Current status:
+
+`TWO_OF_THREE_PREDECLARED_THRESHOLDS_AUTHORIZED / TWO_INITIAL_OFFICIAL_IS_FAILURES / ONE_REMEDIATION_USED / IDENTITY_ONLY_REPAIR_RERUN / AUTHORITATIVE_EVAL_219_FAILED_FOUR_GATES / OOS_UNREAD / P01_CLOSED / NOT_PRODUCTION_READY`.
+
+P01 contract status:
+
+- `WL-CONTRACT-WSP01-001`: PASS_SOURCE. P01 is separate from C171, R02, and
+  S01 and uses eval 212 only as an immutable diagnostic anchor.
+- `WL-CONTRACT-WSP01-002`: PASS_OPERATOR. Thresholds 50, 100, and 200 were
+  locked before diagnostic runtime; no later threshold was introduced.
+- `WL-CONTRACT-WSP01-003`: PASS_OPERATOR. Diagnostic artifact
+  `3e12d95c1a39673859aa95831c84017ca4b298c7` authorized only floors 50 and
+  100; floor 200 was not persisted.
+- `WL-CONTRACT-WSP01-004`: PASS_OPERATOR. DRAFT paramsets 25-26 and BT params
+  178-179 persisted under catalog hash
+  `e91085d64706ef9a0f296a42ea30e750f831217d`.
+- `WL-CONTRACT-WSP01-005`: FAIL_QUALITY_CLOSED. Initial eval 216 failed the
+  monthly-average floor; eval 217 failed monthly win-rate and monthly-average.
+- `WL-CONTRACT-WSP01-006`: PASS_SOURCE. Selection uses exact signal-date close,
+  ROC20, and IHSG regime; missing context fails closed.
+- `WL-CONTRACT-WSP01-007`: PASS_SOURCE. Exactly one remediation retained C1
+  selection and added only a fixed `-1%` D1-D3 close-loss next-open rule.
+- `WL-CONTRACT-WSP01-008`: PASS_IDENTITY_REPAIR. Eval 218 exposed a generic
+  execution-model label. Paramset 28 corrected only identity mapping; strategy
+  semantics and remediation count did not change.
+- `WL-CONTRACT-WSP01-009`: PASS_OPERATOR. Authoritative eval 219 carries model
+  `SEQ_TP05_PCL1NO_TIME`, exact params/evidence hashes, and reproduced eval 218
+  metrics exactly.
+- `WL-CONTRACT-WSP01-010`: FAIL_QUALITY_CLOSED. Eval 219 failed median, P25,
+  monthly win-rate, and monthly-average gates; 11 periods failed.
+- `WL-CONTRACT-WSP01-011`: PASS_BOUNDARY. No OOS service, repository, or table
+  read occurred; no promotion, ACTIVE paramset, PLAN, or production activation
+  occurred.
+- `WL-CONTRACT-WSP01-012`: PASS_OPERATOR. Focused P01 passed 10 tests / 154
+  assertions, S01 regression 5 / 46, R02 regression 7 / 56, and full Watchlist
+  regression 7,161 / 48,725.
+
+```text
+WSP01_INITIAL_CANDIDATE_COUNT=2
+WSP01_INITIAL_PASSING_CANDIDATE_COUNT=0
+WSP01_REMEDIATION_ROUNDS_USED=1
+WSP01_REMEDIATION_ROUNDS_REMAINING=0
+WSP01_INVALID_IDENTITY_EVAL_ID=218
+WSP01_AUTHORITATIVE_REMEDIATION_EVAL_ID=219
+WSP01_AUTHORITATIVE_ARTIFACT_HASH=521b74201b95f91e2e811e0b8e1bd9b2b9fe1758
+WSP01_CANONICAL_GATES_CHANGED=0
+WSP01_FUTURE_DERIVED_ROUTE_USED=0
+WSP01_OOS_TABLE_READ=0
+WSP01_OOS_ALLOWED=0
+WSP01_PROMOTION_ALLOWED=0
+WSP01_PLAN_ALLOWED=0
+WSP01_PRODUCTION_READY=0
+WSP01_FINAL_STATUS=FAILED_NOT_READY_CLOSED
+```
+
+Watchlist Production Ready: `NO`.
+
+
+## PRIOR SESSION - WS TAIL RISK S01 CLOSURE
+
+Session:
+`WATCHLIST - WS TAIL RISK S01 THREE CANDIDATES, SINGLE REMEDIATION, AND FAILED/NOT-READY CLOSURE`
+
+Current status:
+
+`THREE_PREDECLARED_ONE_IDEA_CANDIDATES_FAILED_OFFICIAL_IS / ONE_ALLOWED_REMEDIATION_FAILED_MONTHLY_WIN_RATE_AND_MONTHLY_AVERAGE / OOS_ZERO / S01_CLOSED / NOT_PRODUCTION_READY`.
+
+S01 contract status:
+
+- `WL-CONTRACT-WSS01-001`: PASS_SOURCE. S01 uses a separate scope identity and
+  immutable R02 eval `211`; R02 remains closed.
+- `WL-CONTRACT-WSS01-002`: PASS_OPERATOR. Read-only diagnostic artifact hash
+  `f13e0d2fe4fddd6c16bd4878bfc75d898713e72d` verified decision-time lineage,
+  unchanged database boundaries, and zero OOS access.
+- `WL-CONTRACT-WSS01-003`: PASS_SOURCE. Exactly three hypotheses and one idea
+  per initial candidate were locked before persistence and Official IS.
+- `WL-CONTRACT-WSS01-004`: PASS_OPERATOR. DRAFT paramsets `20-22` and BT params
+  `174-176` persisted under catalog hash
+  `cfbcef8b02539e0b90ed8a5f0c38f409edbdf0b4`.
+- `WL-CONTRACT-WSS01-005`: PASS_OPERATOR. Initial Official IS evals `212-214`
+  used only `2023-01-02..2025-05-21`, persisted versioned support evidence,
+  and all failed unchanged canonical gates.
+- `WL-CONTRACT-WSS01-006`: PASS_SOURCE. Selection uses exact signal-date
+  features only; missing IHSG/tick-risk context fails closed.
+- `WL-CONTRACT-WSS01-007`: PASS_SOURCE. H3 and remediation loss signals execute
+  at the next trading-day open; all routes are chronological and no
+  future-derived route is used.
+- `WL-CONTRACT-WSS01-008`: PASS_SOURCE. Exactly one remediation retained H1
+  selection and added a fixed `-1%` D1-D3 close-loss containment rule.
+- `WL-CONTRACT-WSS01-009`: PASS_OPERATOR. Remediation DRAFT paramset `24`, BT
+  param `177`, and params hash
+  `7c4d8c3d10ed808dd7be022805311fd6f33778bc` persisted immutably.
+- `WL-CONTRACT-WSS01-010`: PASS_OPERATOR. Remediation Official IS eval `215`
+  passed trade count, coverage, positive average, non-negative median, and P25
+  downside gates.
+- `WL-CONTRACT-WSS01-011`: FAIL_QUALITY_CLOSED. Eval `215` failed monthly
+  win-rate (`0.4`) and monthly-average (`-0.01807863294738592`) floors.
+- `WL-CONTRACT-WSS01-012`: PASS_BOUNDARY. Official OOS rows remain zero; no
+  promotion, ACTIVE paramset, PLAN, or production activation occurred.
+- `WL-CONTRACT-WSS01-013`: PASS_OPERATOR. S01 diagnostic PHPUnit passed 2
+  tests / 22 assertions, focused S01 passed 5 / 46, R02 regression passed
+  7 / 56, and full Watchlist regression passed 7,151 / 48,571.
+
+```text
+WSS01_INITIAL_CANDIDATE_COUNT=3
+WSS01_INITIAL_PASSING_CANDIDATE_COUNT=0
+WSS01_REMEDIATION_ROUNDS_USED=1
+WSS01_REMEDIATION_ROUNDS_REMAINING=0
+WSS01_REMEDIATION_EVAL_ID=215
+WSS01_REMEDIATION_ARTIFACT_HASH=716c35b5e2cd59c8f6a2b8f9ddf94eb975cf8c21
+WSS01_CANONICAL_GATES_CHANGED=0
+WSS01_FUTURE_DERIVED_ROUTE_USED=0
+WSS01_OOS_ALLOWED=0
+WSS01_PROMOTION_ALLOWED=0
+WSS01_PLAN_ALLOWED=0
+WSS01_PRODUCTION_READY=0
+WSS01_FINAL_STATUS=FAILED_NOT_READY_CLOSED
+```
+
+Watchlist Production Ready: `NO`.
+
+
+## PRIOR SESSION - WS NEW STRATEGY R02 MINIMAL CANDIDATES AND CLOSURE
+
+Session:
+`WATCHLIST - WS NEW STRATEGY R02 MINIMAL CANDIDATES, SINGLE REMEDIATION, AND FAILED/NOT-READY CLOSURE`
+
+Current status:
+
+`THREE_PREDECLARED_ONE_IDEA_CANDIDATES_FAILED_OFFICIAL_IS / ONE_ALLOWED_REMEDIATION_EXECUTED / SIX_OF_SEVEN_CANONICAL_GATES_PASS / MONTHLY_AVERAGE_GATE_FAIL / OOS_ZERO / R02_CLOSED / NOT_PRODUCTION_READY`.
+
+R02 contract status:
+
+- `WL-CONTRACT-WSR02-001`: PASS_SOURCE. Exactly three initial candidates were
+  locked before Official IS, one per supported R01 hypothesis.
+- `WL-CONTRACT-WSR02-002`: PASS_OPERATOR. Initial DRAFT paramsets `15-17`
+  persisted under catalog hash `09ff6665630396eafa857fefa1647a8a997a52e4`.
+- `WL-CONTRACT-WSR02-003`: PASS_OPERATOR. Official IS evals `208-210` used the
+  canonical `2023-01-02..2025-05-21` window and all three failed unchanged
+  canonical gates.
+- `WL-CONTRACT-WSR02-004`: PASS_SOURCE. No initial candidate used return,
+  exit outcome, ticker blacklist, month blacklist, or OOS to route selection.
+- `WL-CONTRACT-WSR02-005`: PASS_SOURCE. Exactly one remediation was locked,
+  using H2 selection unchanged and one fixed sequential profit-capture exit.
+- `WL-CONTRACT-WSR02-006`: PASS_SOURCE. Remediation target and next-open
+  signal route are fixed before entry; no future-path bucket or later target
+  result selects the route.
+- `WL-CONTRACT-WSR02-007`: PASS_OPERATOR. Remediation DRAFT paramset `19`,
+  grid `173`, and params hash
+  `e50a62ac2dbf1f3e9517f8e2d44f072c7d42eb1f` persisted immutably.
+- `WL-CONTRACT-WSR02-008`: PASS_OPERATOR. Remediation Official IS eval `211`
+  persisted `323` picks, `401982` universe rows, and `508` cutoff rows with
+  exact evidence hashes.
+- `WL-CONTRACT-WSR02-009`: PASS_OPERATOR. Remediation passed trade count,
+  coverage, positive average, non-negative median, P25 downside, and monthly
+  win-rate gates.
+- `WL-CONTRACT-WSR02-010`: FAIL_QUALITY_CLOSED. Worst-month average was
+  `-0.04507202296434394` against the unchanged `-0.01` floor; four monthly
+  periods failed.
+- `WL-CONTRACT-WSR02-011`: PASS_BOUNDARY. Official OOS row count remained
+  zero; no paramset promotion, ACTIVE paramset, or PLAN run occurred.
+- `WL-CONTRACT-WSR02-012`: PASS_OPERATOR. Focused R02 PHPUnit passed 7 tests /
+  56 assertions and full Watchlist regression passed 7,144 tests / 48,503
+  assertions.
+
+```text
+WSR02_INITIAL_CANDIDATE_COUNT=3
+WSR02_INITIAL_PASSING_CANDIDATE_COUNT=0
+WSR02_REMEDIATION_ROUNDS_USED=1
+WSR02_REMEDIATION_ROUNDS_REMAINING=0
+WSR02_REMEDIATION_EVAL_ID=211
+WSR02_REMEDIATION_ARTIFACT_HASH=fbf336b8dc5b2a0e798eceb70075b256f711d4c3
+WSR02_CANONICAL_GATES_CHANGED=0
+WSR02_FUTURE_DERIVED_ROUTE_USED=0
+WSR02_OOS_ALLOWED=0
+WSR02_PROMOTION_ALLOWED=0
+WSR02_PLAN_ALLOWED=0
+WSR02_PRODUCTION_READY=0
+WSR02_FINAL_STATUS=FAILED_NOT_READY_CLOSED
+```
+
+Watchlist Production Ready: `NO`.
+
+
+## PRIOR SESSION - WS NEW STRATEGY R01 RESEARCH HYPOTHESIS AND DIAGNOSTIC EVIDENCE
+
+Session:
+`WATCHLIST - WS NEW STRATEGY R01 RESEARCH HYPOTHESIS AND DIAGNOSTIC EVIDENCE`
+
+Current status:
+
+`SEPARATE_NEW_STRATEGY_RESEARCH / C171_FINAL_CLOSURE_VERIFIED / THREE_PRE_REGISTERED_HYPOTHESES_SUPPORTED_WITH_H1_P25_WARNING / IMMUTABLE_SIGNAL_FEATURE_LINEAGE_PASS / READ_ONLY_DIAGNOSTIC_REPLAY_PARITY_PASS / DATABASE_BOUNDARY_UNCHANGED / NO_DRAFT / NO_IS / NO_OOS / NOT_PRODUCTION_READY`.
+
+R01 contract status:
+
+- `WL-CONTRACT-WSR01-001`: PASS_SOURCE. R01 is a separate strategy-research
+  scope; it does not reopen C171 and does not claim C172/OOS permission.
+- `WL-CONTRACT-WSR01-002`: PASS_SOURCE. Source identity is fixed to
+  `eval_id=204`, `param_set_id=11`, `param_id=166`, paramset hash
+  `c93bae2b761028d6b236f368d5b19bb4f498715a`, and manifest hash
+  `604bfbe9698fbb8ec3c74e3fa6e10f9335f66d1d`.
+- `WL-CONTRACT-WSR01-003`: PASS_SOURCE. R01 verifies the official database
+  manifest before interpretation.
+- `WL-CONTRACT-WSR01-004`: PASS_SOURCE. Equity decision-time features are
+  joined through exact signal `publication_id + run_id + trade_date +
+  ticker_id` against immutable indicator history.
+- `WL-CONTRACT-WSR01-005`: PASS_SOURCE. Official picks are replayed with current
+  readable published prices and must match persisted return to six decimals
+  plus entry publication lineage.
+- `WL-CONTRACT-WSR01-006`: PASS_SOURCE. Exactly three hypotheses are
+  pre-registered: breakout quality, momentum persistence, and market regime.
+- `WL-CONTRACT-WSR01-007`: PASS_SOURCE. Return, actual gap, fill, and exit
+  outcome are diagnostic-only and cannot route a future candidate.
+- `WL-CONTRACT-WSR01-008`: PASS_SOURCE. R01 cannot create a DRAFT, invoke
+  official IS/OOS, read OOS, promote, create PLAN, mutate CONFIRM, or activate
+  production.
+- `WL-CONTRACT-WSR01-009`: PASS_OPERATOR. Runtime completed with 1,308/1,308
+  official-pick return and entry-lineage parity, zero mismatches, full
+  signal/benchmark feature coverage, and unchanged database boundary counts.
+- `WL-CONTRACT-WSR01-010`: PASS_OPERATOR. Three hypotheses are supported for
+  minimal candidate design. H1 carries a P25 regression warning; H2 support is
+  from ROC20 contrast; H3 has the strongest robust contrast.
+- `WL-CONTRACT-WSR01-011`: PASS_OPERATOR. Focused R01 PHPUnit passed 3 tests /
+  35 assertions and C171 regression passed 63 tests / 695 assertions.
+- `WL-CONTRACT-WSR01-012`: PASS_OPERATOR. Full Watchlist regression passed
+  7,137 tests / 48,447 assertions.
+
+```text
+WSR01_MAX_HYPOTHESES=3
+WSR01_MAX_FUTURE_CANDIDATES=3
+WSR01_MAX_REMEDIATION_ROUNDS=1
+WSR01_CANONICAL_GATES_CHANGED=0
+WSR01_OOS_BEFORE_IS_PASS_ALLOWED=0
+WSR01_RUNTIME_ARTIFACT_HASH=a38e59f6d1422b7823a428ca4f6b724a3fa1a0e7
+WSR01_RUNTIME_FILE_SHA1=BF76FB76388D6E0C81230B12B1DD4E934BBBE59A
+WSR01_SUPPORTED_HYPOTHESIS_COUNT=3
+WSR01_OFFICIAL_PICK_REPLAY_MISMATCH_COUNT=0
+WSR01_PRODUCTION_READY=0
+```
+
+Watchlist Production Ready: `NO`.
+
+
+## PRIOR SESSION - C171 COMPARATIVE OFFICIAL IS FAILURE DIAGNOSTIC AND R2 HYPOTHESIS LOCK
+
+Session:
 `WATCHLIST - C171 COMPARATIVE OFFICIAL IS FAILURE DIAGNOSTIC AND R2 HYPOTHESIS LOCK`
 
 Current status:
@@ -15668,4 +15916,3 @@ C171_FINAL_CLOSURE_SUMMARY_IDENTITY_FAIL_CLOSED_REQUIRED=1
 C171_FINAL_CLOSURE_SUMMARY_REWRITE_REQUIRED=0
 C171_FINAL_CLOSURE_DATABASE_MUTATION_ALLOWED=0
 ```
-

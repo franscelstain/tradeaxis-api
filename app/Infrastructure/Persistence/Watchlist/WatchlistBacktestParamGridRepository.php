@@ -17,6 +17,12 @@ use App\Application\Watchlist\Services\WatchlistBacktestC17ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC171RemediationParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestNewStrategyR02ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestNewStrategyR02RemediationParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestPriceQualityP01ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestPriceQualityP01RemediationParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestTailRiskS01ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestTailRiskS01RemediationParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestR2ParamGridCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -249,7 +255,16 @@ class WatchlistBacktestParamGridRepository
             }
 
             $this->assertParameterInvariants($row);
-            $parameterHash = $this->stableHash(array_intersect_key($row, array_flip(self::PARAMETER_COLUMNS)));
+            $parameterPayload = array_intersect_key($row, array_flip(self::PARAMETER_COLUMNS));
+            if (in_array((string) $row['catalog_code'], [
+                WatchlistBacktestTailRiskS01ParamGridCatalog::CATALOG_CODE,
+                WatchlistBacktestPriceQualityP01ParamGridCatalog::CATALOG_CODE,
+            ], true)) {
+                // S01/P01 rows can intentionally share grid columns while carrying
+                // distinct immutable selection/execution contracts in the paramset.
+                $parameterPayload['selection_contract_row_code'] = $rowCode;
+            }
+            $parameterHash = $this->stableHash($parameterPayload);
             if (isset($parameterPayloads[$parameterHash])) {
                 throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: duplicate canonical parameter combination inside catalog.');
             }
@@ -342,6 +357,36 @@ class WatchlistBacktestParamGridRepository
                 WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog::CATALOG_VERSION,
                 WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog::hash(),
                 WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestNewStrategyR02ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestNewStrategyR02ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestNewStrategyR02ParamGridCatalog::hash(),
+                WatchlistBacktestNewStrategyR02ParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::hash(),
+                WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestPriceQualityP01ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestPriceQualityP01ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestPriceQualityP01ParamGridCatalog::hash(),
+                WatchlistBacktestPriceQualityP01ParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestPriceQualityP01RemediationParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestPriceQualityP01RemediationParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestPriceQualityP01RemediationParamGridCatalog::hash(),
+                WatchlistBacktestPriceQualityP01RemediationParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestTailRiskS01ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestTailRiskS01ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestTailRiskS01ParamGridCatalog::hash(),
+                WatchlistBacktestTailRiskS01ParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestTailRiskS01RemediationParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestTailRiskS01RemediationParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestTailRiskS01RemediationParamGridCatalog::hash(),
+                WatchlistBacktestTailRiskS01RemediationParamGridCatalog::CATALOG_COUNT,
             ],
         ];
         if (! isset($known[$code])) {

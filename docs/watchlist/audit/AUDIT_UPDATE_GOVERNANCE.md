@@ -1,5 +1,114 @@
 # Watchlist Audit Update Governance
 
+## WS Price Quality P01 Governance Addendum
+
+P01 is a separate post-S01 scope and has consumed its one-hypothesis,
+three-predeclared-threshold, and one-remediation allowances.
+
+```text
+P01_PREDECLARED_THRESHOLDS=50,100,200
+P01_PERSISTED_INITIAL_CANDIDATES=2
+P01_INITIAL_OFFICIAL_IS_EVAL_IDS=216,217
+P01_INITIAL_PASSING_CANDIDATE_COUNT=0
+P01_REMEDIATION_COUNT=1
+P01_MAX_REMEDIATION_COUNT=1
+P01_INVALID_IDENTITY_EVAL_ID=218
+P01_IDENTITY_REPAIR_CHANGED_STRATEGY=0
+P01_AUTHORITATIVE_REMEDIATION_EVAL_ID=219
+P01_AUTHORITATIVE_REMEDIATION_CANONICAL_IS_GATES_PASS=0
+P01_OOS_TABLE_READ=0
+P01_STATUS=FAILED_NOT_READY_CLOSED
+```
+
+Eval 218 remains immutable but is invalid for final decision because its
+generic model label did not encode the P01 loss-exit contract. Eval 219 is the
+authoritative identity-corrected rerun and reproduced the same metrics. The
+identity repair is not a second remediation.
+
+P01 may not be patched again, handed to OOS, promoted, or rescued through a
+new price threshold, blacklist, or gate weakening. Future work requires a new
+name and preregistered scope.
+
+## WS Tail Risk S01 Governance Addendum
+
+S01 is separate from closed R02 and consumed its own three-candidate allowance
+and single-remediation allowance.
+
+```text
+S01_SOURCE_EVAL_ID=211
+S01_INITIAL_CANDIDATE_COUNT=3
+S01_INITIAL_OFFICIAL_IS_EVAL_IDS=212,213,214
+S01_INITIAL_PASSING_CANDIDATE_COUNT=0
+S01_REMEDIATION_COUNT=1
+S01_MAX_REMEDIATION_COUNT=1
+S01_REMEDIATION_OFFICIAL_IS_EVAL_ID=215
+S01_REMEDIATION_CANONICAL_IS_GATES_PASS=0
+S01_OOS_ROW_COUNT=0
+S01_STATUS=FAILED_NOT_READY_CLOSED
+```
+
+The remediation is retained as immutable failed-quality evidence because its
+H1 selection and sequential loss-containment route were fixed before Official
+IS. It may not be promoted, patched again, sent to OOS, or rescued through a
+ticker/month blacklist or gate weakening.
+
+Future work must use a separately named and preregistered strategy scope.
+Closed S01 evidence may be read for bounded diagnostics, but OOS remains
+forbidden until an immutable candidate passes every unchanged canonical IS
+gate.
+
+## WS New Strategy R02 Governance Addendum
+
+R02 consumed the three-candidate allowance and the one-remediation allowance
+from R01.
+
+```text
+R02_INITIAL_CANDIDATE_COUNT=3
+R02_INITIAL_OFFICIAL_IS_EVAL_IDS=208,209,210
+R02_INITIAL_PASSING_CANDIDATE_COUNT=0
+R02_REMEDIATION_COUNT=1
+R02_MAX_REMEDIATION_COUNT=1
+R02_REMEDIATION_OFFICIAL_IS_EVAL_ID=211
+R02_REMEDIATION_CANONICAL_IS_GATES_PASS=0
+R02_OOS_ROW_COUNT=0
+R02_STATUS=FAILED_NOT_READY_CLOSED
+```
+
+The remediation may be retained as failed-quality evidence because its route
+is fixed before entry and its Official IS support rows are persisted. It may
+not be promoted, patched with a second remediation, handed to OOS, or rescued
+with ticker/month blacklists or a lowered monthly-average gate.
+
+Any later work must start as a separately named and preregistered strategy
+scope. It must not present itself as R02 continuation and must not inspect OOS
+until an immutable candidate passes every unchanged canonical IS gate.
+
+## WS New Strategy R01 Governance Addendum
+
+R01 is governed as a separate, read-only post-C171 research hypothesis and
+diagnostic evidence session.
+
+```text
+R01_SOURCE_EVAL_ID=204
+R01_SOURCE_PARAM_SET_ID=11
+R01_MAX_HYPOTHESES=3
+R01_MAX_FUTURE_CANDIDATES=3
+R01_MAX_REMEDIATION_ROUNDS=1
+C171_REOPEN_ALLOWED=0
+C172_OOS_ALLOWED=0
+```
+
+R01 may use outcome fields only after selection for diagnostic attribution.
+Future candidate selection may use only decision-time fields whose exact
+signal-date lineage is proven. R01 may not create or mutate a paramset, execute
+official IS or OOS, read the OOS table, promote, create PLAN, persist
+recommendations, mutate CONFIRM, or make a production-readiness claim.
+
+R02 may be recommended only when the official R01 artifact marks at least one
+pre-registered hypothesis as
+`SUPPORTED_FOR_MINIMAL_CANDIDATE_DESIGN`. Each R02 candidate must carry one
+primary idea, preserve every canonical gate, and remain IS-only.
+
 ## Purpose
 
 Dokumen ini mengunci cara update audit, status, dan contract tracker untuk domain `watchlist` agar pengembangan tidak berjalan tanpa jejak, tidak overclaim, dan tetap tunduk pada owner docs yang benar.

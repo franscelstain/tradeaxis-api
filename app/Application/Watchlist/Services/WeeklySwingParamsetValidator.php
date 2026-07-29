@@ -11,6 +11,11 @@ class WeeklySwingParamsetValidator
         'eval', 'hash_contract', 'volume',
     ];
 
+    private const OPTIONAL_ROOT_KEYS = [
+        'research_selection',
+        'research_execution',
+    ];
+
     private const SECTION_KEYS = [
         'data_contract' => ['required_sources', 'required_fields', 'disabled_fields'],
         'data_readiness' => [
@@ -114,6 +119,8 @@ class WeeklySwingParamsetValidator
         $this->validateSections($payload, $errors);
         $this->validateFixedContracts($payload, $errors);
         $this->validateCrossFieldContracts($payload, $errors);
+        $this->validateResearchSelection($payload, $errors);
+        $this->validateResearchExecution($payload, $errors);
 
         $canonical = $this->normalizeForHash($payload);
 
@@ -133,7 +140,7 @@ class WeeklySwingParamsetValidator
                 $this->error($errors, 'WS_PARAMSET_REQUIRED_KEY_MISSING', $key);
             }
         }
-        foreach (array_diff($actual, self::ROOT_KEYS) as $key) {
+        foreach (array_diff($actual, array_merge(self::ROOT_KEYS, self::OPTIONAL_ROOT_KEYS)) as $key) {
             $this->error($errors, 'WS_PARAMSET_UNKNOWN_KEY', (string) $key);
         }
 
@@ -353,6 +360,185 @@ class WeeklySwingParamsetValidator
         if ($minMonthWinRate !== null && ($minMonthWinRate < 0 || $minMonthWinRate > 1)) {
             $this->error($errors, 'WS_PARAMSET_EVAL_GATE_INVALID', 'eval.min_month_win_rate_min.value');
         }
+    }
+
+    private function validateResearchSelection(array $payload, array &$errors): void
+    {
+        if (! array_key_exists('research_selection', $payload)) {
+            return;
+        }
+        $selection = $payload['research_selection'];
+        if (! is_array($selection)) {
+            $this->error($errors, 'WS_PARAMSET_RESEARCH_SELECTION_INVALID', 'research_selection');
+            return;
+        }
+        $required = [
+            'schema_version', 'hypothesis_code', 'rule_code',
+            'signal_date_only', 'oos_used', 'thresholds',
+        ];
+        if (! $this->sameKeys($selection, $required)) {
+            $this->error($errors, 'WS_PARAMSET_RESEARCH_SELECTION_INVALID', 'research_selection.keys');
+        }
+        if (($selection['schema_version'] ?? null) !== 'WS_NEW_STRATEGY_RESEARCH_SELECTION_V1'
+            || ($selection['signal_date_only'] ?? null) !== true
+            || ($selection['oos_used'] ?? null) !== false
+            || ! is_array($selection['thresholds'] ?? null)) {
+            $this->error($errors, 'WS_PARAMSET_RESEARCH_SELECTION_INVALID', 'research_selection.contract');
+            return;
+        }
+
+        $hypothesis = (string) ($selection['hypothesis_code'] ?? '');
+        $rule = (string) ($selection['rule_code'] ?? '');
+        $thresholds = $selection['thresholds'];
+        if ($hypothesis === 'H1_BREAKOUT_QUALITY_CONFIRMATION'
+            && $rule === 'SIGNAL_CLOSE_TO_HH20_0_TO_2_PCT'
+            && $this->sameKeys($thresholds, ['min_close_to_hh20_pct', 'max_close_to_hh20_pct'])
+            && $this->exactNumber($thresholds['min_close_to_hh20_pct'] ?? null, 0.0)
+            && $this->exactNumber($thresholds['max_close_to_hh20_pct'] ?? null, 0.02)) {
+            return;
+        }
+        if ($hypothesis === 'H2_MOMENTUM_PERSISTENCE'
+            && $rule === 'SIGNAL_ROC20_10_TO_15_PCT'
+            && $this->sameKeys($thresholds, ['min_roc20', 'max_roc20'])
+            && $this->exactNumber($thresholds['min_roc20'] ?? null, 0.10)
+            && $this->exactNumber($thresholds['max_roc20'] ?? null, 0.15)) {
+            return;
+        }
+        if ($hypothesis === 'H3_MARKET_REGIME_COMPATIBILITY'
+            && $rule === 'SIGNAL_IHSG_MIXED_REGIME_ONLY'
+            && $this->sameKeys($thresholds, ['benchmark_code', 'allowed_regimes'])
+            && ($thresholds['benchmark_code'] ?? null) === 'IHSG'
+            && ($thresholds['allowed_regimes'] ?? null) === ['MIXED']) {
+            return;
+        }
+        if ($hypothesis === WatchlistBacktestTailRiskS01ParamGridCatalog::H1_ROW_CODE
+            && $rule === 'SIGNAL_ROC20_10_TO_15_AND_IHSG_NON_WEAK'
+            && $this->sameKeys($thresholds, [
+                'min_roc20', 'max_roc20', 'benchmark_code', 'allowed_regimes',
+            ])
+            && $this->exactNumber($thresholds['min_roc20'] ?? null, 0.10)
+            && $this->exactNumber($thresholds['max_roc20'] ?? null, 0.15)
+            && ($thresholds['benchmark_code'] ?? null) === 'IHSG'
+            && ($thresholds['allowed_regimes'] ?? null) === ['STRONG', 'MIXED']) {
+            return;
+        }
+        if ($hypothesis === WatchlistBacktestTailRiskS01ParamGridCatalog::H2_ROW_CODE
+            && $rule === 'SIGNAL_ROC20_10_TO_15_AND_TICK_RISK_LT_1P5'
+            && $this->sameKeys($thresholds, [
+                'min_roc20', 'max_roc20', 'max_signal_tick_risk_expansion_pct',
+            ])
+            && $this->exactNumber($thresholds['min_roc20'] ?? null, 0.10)
+            && $this->exactNumber($thresholds['max_roc20'] ?? null, 0.15)
+            && $this->exactNumber(
+                $thresholds['max_signal_tick_risk_expansion_pct'] ?? null,
+                0.015
+            )) {
+            return;
+        }
+        if ($hypothesis === WatchlistBacktestTailRiskS01ParamGridCatalog::H3_ROW_CODE
+            && $rule === 'SIGNAL_ROC20_10_TO_15_BASELINE_FOR_LOSS_CONTAINMENT'
+            && $this->sameKeys($thresholds, ['min_roc20', 'max_roc20'])
+            && $this->exactNumber($thresholds['min_roc20'] ?? null, 0.10)
+            && $this->exactNumber($thresholds['max_roc20'] ?? null, 0.15)) {
+            return;
+        }
+        if (WatchlistBacktestPriceQualityP01ParamGridCatalog::isKnownRow($hypothesis)
+            && $rule === WatchlistBacktestPriceQualityP01ParamGridCatalog::RULE_CODE
+            && $this->sameKeys($thresholds, [
+                'min_roc20', 'max_roc20', 'benchmark_code', 'allowed_regimes',
+                'min_signal_close_price',
+            ])
+            && $this->exactNumber($thresholds['min_roc20'] ?? null, 0.10)
+            && $this->exactNumber($thresholds['max_roc20'] ?? null, 0.15)
+            && ($thresholds['benchmark_code'] ?? null) === 'IHSG'
+            && ($thresholds['allowed_regimes'] ?? null) === ['STRONG', 'MIXED']
+            && $this->exactNumber(
+                $thresholds['min_signal_close_price'] ?? null,
+                (float) WatchlistBacktestPriceQualityP01ParamGridCatalog
+                    ::minimumSignalClosePriceForRow($hypothesis)
+            )) {
+            return;
+        }
+
+        $this->error($errors, 'WS_PARAMSET_RESEARCH_SELECTION_INVALID', 'research_selection.thresholds');
+    }
+
+    private function validateResearchExecution(array $payload, array &$errors): void
+    {
+        if (! array_key_exists('research_execution', $payload)) {
+            return;
+        }
+        $execution = $payload['research_execution'];
+        $required = [
+            'schema_version',
+            'remediation_code',
+            'rule_code',
+            'fixed_before_entry',
+            'preplanned_target_pct',
+            'profit_close_threshold_pct',
+            'profit_signal_day_offsets',
+            'profit_signal_exit',
+            'fallback_exit',
+            'canonical_stop_used',
+            'raw_tradable_ohlcv_required',
+            'future_derived_route_used',
+            'oos_used',
+        ];
+        if (! is_array($execution)) {
+            $this->error($errors, 'WS_PARAMSET_RESEARCH_EXECUTION_INVALID', 'research_execution');
+            return;
+        }
+        $r02Execution = WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::researchExecution();
+        if ($execution == $r02Execution) {
+            return;
+        }
+        $s01Execution = WatchlistBacktestTailRiskS01ParamGridCatalog::lossContainmentExecution();
+        if ($execution == $s01Execution) {
+            return;
+        }
+        $s01RemediationExecution =
+            WatchlistBacktestTailRiskS01RemediationParamGridCatalog::researchExecution();
+        if ($execution == $s01RemediationExecution) {
+            return;
+        }
+        $p01RemediationExecution =
+            WatchlistBacktestPriceQualityP01RemediationParamGridCatalog
+                ::researchExecution();
+        if ($execution == $p01RemediationExecution) {
+            return;
+        }
+        if (! $this->sameKeys($execution, $required)
+            || ($execution['schema_version'] ?? null) !== 'WS_NEW_STRATEGY_RESEARCH_EXECUTION_V1'
+            || ($execution['remediation_code'] ?? null) !== 'R02_M1_SINGLE_ALLOWED_REMEDIATION'
+            || ($execution['rule_code'] ?? null)
+                !== 'SEQUENTIAL_TARGET_0P5_PROFIT_CLOSE_NEXT_OPEN_D5_CLOSE'
+            || ($execution['fixed_before_entry'] ?? null) !== true
+            || ! $this->exactNumber($execution['preplanned_target_pct'] ?? null, 0.005)
+            || ! $this->exactNumber($execution['profit_close_threshold_pct'] ?? null, 0.0)
+            || ($execution['profit_signal_day_offsets'] ?? null) !== [1, 2, 3]
+            || ($execution['profit_signal_exit'] ?? null) !== 'NEXT_TRADING_DAY_OPEN'
+            || ($execution['fallback_exit'] ?? null) !== 'D5_CLOSE'
+            || ($execution['canonical_stop_used'] ?? null) !== false
+            || ($execution['raw_tradable_ohlcv_required'] ?? null) !== true
+            || ($execution['future_derived_route_used'] ?? null) !== false
+            || ($execution['oos_used'] ?? null) !== false) {
+            $this->error($errors, 'WS_PARAMSET_RESEARCH_EXECUTION_INVALID', 'research_execution');
+        }
+    }
+
+    private function exactNumber($actual, float $expected): bool
+    {
+        return (is_int($actual) || is_float($actual))
+            && abs((float) $actual - $expected) <= 0.000000001;
+    }
+
+    private function sameKeys(array $payload, array $expected): bool
+    {
+        $actual = array_keys($payload);
+        sort($actual, SORT_STRING);
+        sort($expected, SORT_STRING);
+
+        return $actual === $expected;
     }
 
     private function value(array $payload, string $path)

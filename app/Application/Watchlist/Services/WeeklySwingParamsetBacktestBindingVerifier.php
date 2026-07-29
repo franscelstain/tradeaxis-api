@@ -44,6 +44,12 @@ class WeeklySwingParamsetBacktestBindingVerifier
         if (in_array($catalogCode, [
             WatchlistBacktestC171RemediationParamGridCatalog::CATALOG_CODE,
             WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestNewStrategyR02ParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestPriceQualityP01ParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestPriceQualityP01RemediationParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestTailRiskS01ParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestTailRiskS01RemediationParamGridCatalog::CATALOG_CODE,
         ], true)) {
             $fieldMap = array_merge($fieldMap, [
                 'max_dv20_idr' => 'liquidity.max_dv20_idr',

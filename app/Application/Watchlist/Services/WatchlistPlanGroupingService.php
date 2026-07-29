@@ -2,6 +2,8 @@
 
 namespace App\Application\Watchlist\Services;
 
+use App\Infrastructure\Persistence\MarketData\MarketBenchmarkReadRepository;
+
 class WatchlistPlanGroupingService
 {
     public const DEFAULT_PARAMSET = [
@@ -47,10 +49,15 @@ class WatchlistPlanGroupingService
     ];
 
     private WatchlistScoringService $scoringService;
+    private MarketBenchmarkReadRepository $benchmarkRepository;
 
-    public function __construct(WatchlistScoringService $scoringService = null)
+    public function __construct(
+        WatchlistScoringService $scoringService = null,
+        MarketBenchmarkReadRepository $benchmarkRepository = null
+    )
     {
         $this->scoringService = $scoringService ?: new WatchlistScoringService();
+        $this->benchmarkRepository = $benchmarkRepository ?: new MarketBenchmarkReadRepository();
     }
 
     public function groupForTradeDate(string $tradeDate, array $paramset = []): array
@@ -87,8 +94,23 @@ class WatchlistPlanGroupingService
             return $payload;
         }
 
+        $researchContext = $this->resolveResearchSelectionContext($resolvedParamset, $tradeDate);
+        $payload['research_selection_context'] = $researchContext;
+        if (! ($researchContext['ready'] ?? false)) {
+            $payload['ready'] = false;
+            $payload['is_ready'] = false;
+            $payload['reason_code'] = (string) ($researchContext['reason_code'] ?? 'WATCHLIST_R02_RESEARCH_SELECTION_CONTEXT_NOT_READY');
+            $payload['plan_grouping_reason_code'] = $payload['reason_code'];
+
+            return $payload;
+        }
+
+        $scoredItems = $this->decorateResearchSelectionContext(
+            is_array($scoredOutput['items'] ?? null) ? $scoredOutput['items'] : [],
+            $researchContext
+        );
         $items = $this->deduplicateBestItems($this->collectEligibleItems(
-            $scoredOutput['items'] ?? [],
+            $scoredItems,
             $payload,
             $resolvedParamset
         ));
@@ -217,6 +239,11 @@ class WatchlistPlanGroupingService
                 'excluded_count' => 0,
             ],
             'paramset_errors' => [],
+            'research_selection_context' => [
+                'ready' => true,
+                'reason_code' => 'WATCHLIST_RESEARCH_SELECTION_NOT_APPLICABLE',
+                'enabled' => false,
+            ],
         ];
     }
 
@@ -237,7 +264,10 @@ class WatchlistPlanGroupingService
                 continue;
             }
 
-            $qualityReasonCodes = $this->candidateSelectionExtensionFailures($item, $paramset);
+            $qualityReasonCodes = array_values(array_unique(array_merge(
+                $this->candidateSelectionExtensionFailures($item, $paramset),
+                $this->researchSelectionFailures($item, $paramset)
+            )));
             if ($qualityReasonCodes !== []) {
                 $floorReasonCode = end($qualityReasonCodes) ?: 'WATCHLIST_ENTRY_QUALITY_FLOOR_FAIL';
                 $payload['excluded'][] = $this->avoidItem(
@@ -251,6 +281,215 @@ class WatchlistPlanGroupingService
         }
 
         return $this->sortItems($eligible);
+    }
+
+    private function resolveResearchSelectionContext(array $paramset, string $tradeDate): array
+    {
+        $selection = $paramset['research_selection'] ?? null;
+        if (! is_array($selection)) {
+            return [
+                'ready' => true,
+                'reason_code' => 'WATCHLIST_RESEARCH_SELECTION_NOT_APPLICABLE',
+                'enabled' => false,
+            ];
+        }
+
+        $ruleCode = (string) ($selection['rule_code'] ?? '');
+        $context = [
+            'ready' => true,
+            'reason_code' => 'WATCHLIST_R02_RESEARCH_SELECTION_CONTEXT_READY',
+            'enabled' => true,
+            'hypothesis_code' => (string) ($selection['hypothesis_code'] ?? ''),
+            'rule_code' => $ruleCode,
+            'signal_date_only' => ($selection['signal_date_only'] ?? false) === true,
+            'oos_used' => ($selection['oos_used'] ?? true) === true,
+            'trade_date' => $tradeDate,
+        ];
+        if ($context['signal_date_only'] !== true || $context['oos_used'] !== false) {
+            return array_merge($context, [
+                'ready' => false,
+                'reason_code' => 'WATCHLIST_R02_RESEARCH_SELECTION_CONTRACT_INVALID',
+            ]);
+        }
+        if (! in_array($ruleCode, [
+            'SIGNAL_IHSG_MIXED_REGIME_ONLY',
+            'SIGNAL_ROC20_10_TO_15_AND_IHSG_NON_WEAK',
+            WatchlistBacktestPriceQualityP01ParamGridCatalog::RULE_CODE,
+        ], true)) {
+            return $context;
+        }
+
+        $benchmarkCode = (string) ($selection['thresholds']['benchmark_code'] ?? '');
+        $benchmark = $tradeDate === '' || $benchmarkCode === ''
+            ? null
+            : $this->benchmarkRepository->getBenchmarkContext($benchmarkCode, $tradeDate);
+        if (! is_array($benchmark)
+            || (string) ($benchmark['trade_date'] ?? '') !== $tradeDate
+            || ($benchmark['is_valid'] ?? false) !== true
+            || ! is_numeric($benchmark['roc_20'] ?? null)
+            || ! is_numeric($benchmark['ma20_slope_pct'] ?? null)) {
+            return array_merge($context, [
+                'ready' => false,
+                'reason_code' => 'WATCHLIST_R02_SIGNAL_DATE_BENCHMARK_CONTEXT_NOT_READY',
+                'benchmark_code' => $benchmarkCode,
+                'benchmark' => $benchmark,
+            ]);
+        }
+
+        $roc20 = (float) $benchmark['roc_20'];
+        $slope = (float) $benchmark['ma20_slope_pct'];
+
+        return array_merge($context, [
+            'benchmark_code' => $benchmarkCode,
+            'benchmark_trade_date' => (string) $benchmark['trade_date'],
+            'benchmark_indicator_set_version' => (string) ($benchmark['indicator_set_version'] ?? ''),
+            'market_index_roc20' => $roc20,
+            'market_index_ma20_slope_pct' => $slope,
+            'market_regime' => $this->researchMarketRegime($roc20, $slope),
+        ]);
+    }
+
+    private function decorateResearchSelectionContext(array $items, array $context): array
+    {
+        if (($context['enabled'] ?? false) !== true
+            || ! in_array((string) ($context['rule_code'] ?? ''), [
+                'SIGNAL_IHSG_MIXED_REGIME_ONLY',
+                'SIGNAL_ROC20_10_TO_15_AND_IHSG_NON_WEAK',
+                WatchlistBacktestPriceQualityP01ParamGridCatalog::RULE_CODE,
+            ], true)) {
+            return $items;
+        }
+        foreach ($items as &$item) {
+            $metrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+            $metrics['market_index_roc20'] = $context['market_index_roc20'] ?? null;
+            $metrics['market_index_ma20_slope_pct'] = $context['market_index_ma20_slope_pct'] ?? null;
+            $metrics['market_regime'] = $context['market_regime'] ?? null;
+            $metrics['market_indicator_set_version'] = $context['benchmark_indicator_set_version'] ?? null;
+            $item['score_metrics'] = $metrics;
+            $item['market_regime'] = $context['market_regime'] ?? null;
+        }
+        unset($item);
+
+        return $items;
+    }
+
+    private function researchSelectionFailures(array $item, array $paramset): array
+    {
+        $selection = $paramset['research_selection'] ?? null;
+        if (! is_array($selection)) {
+            return [];
+        }
+        $ruleCode = (string) ($selection['rule_code'] ?? '');
+        $thresholds = is_array($selection['thresholds'] ?? null) ? $selection['thresholds'] : [];
+        $metrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+        $momentum = is_array($item['factor_breakdown']['momentum'] ?? null)
+            ? $item['factor_breakdown']['momentum']
+            : [];
+        $breakout = is_array($item['factor_breakdown']['breakout'] ?? null)
+            ? $item['factor_breakdown']['breakout']
+            : [];
+
+        if ($ruleCode === 'SIGNAL_CLOSE_TO_HH20_0_TO_2_PCT') {
+            $value = $this->fractionOrNull($breakout['close_to_hh20_pct'] ?? $metrics['close_to_hh20_pct'] ?? null);
+            $min = $this->numericOrNull($thresholds['min_close_to_hh20_pct'] ?? null);
+            $max = $this->numericOrNull($thresholds['max_close_to_hh20_pct'] ?? null);
+            return $value !== null && $min !== null && $max !== null && $value >= $min && $value <= $max
+                ? []
+                : ['WATCHLIST_R02_H1_BREAKOUT_QUALITY_FAIL'];
+        }
+        if ($ruleCode === 'SIGNAL_ROC20_10_TO_15_PCT') {
+            $value = $this->fractionOrNull($momentum['roc20'] ?? $metrics['roc20'] ?? null);
+            $min = $this->numericOrNull($thresholds['min_roc20'] ?? null);
+            $max = $this->numericOrNull($thresholds['max_roc20'] ?? null);
+            return $value !== null && $min !== null && $max !== null && $value >= $min && $value <= $max
+                ? []
+                : ['WATCHLIST_R02_H2_MOMENTUM_PERSISTENCE_FAIL'];
+        }
+        if ($ruleCode === 'SIGNAL_IHSG_MIXED_REGIME_ONLY') {
+            $allowed = is_array($thresholds['allowed_regimes'] ?? null)
+                ? array_values(array_map('strval', $thresholds['allowed_regimes']))
+                : [];
+            $regime = (string) ($metrics['market_regime'] ?? $item['market_regime'] ?? '');
+            return in_array($regime, $allowed, true)
+                ? []
+                : ['WATCHLIST_R02_H3_MARKET_REGIME_COMPATIBILITY_FAIL'];
+        }
+        if ($ruleCode === 'SIGNAL_ROC20_10_TO_15_AND_IHSG_NON_WEAK') {
+            $roc20 = $this->fractionOrNull($momentum['roc20'] ?? $metrics['roc20'] ?? null);
+            $min = $this->numericOrNull($thresholds['min_roc20'] ?? null);
+            $max = $this->numericOrNull($thresholds['max_roc20'] ?? null);
+            $allowed = is_array($thresholds['allowed_regimes'] ?? null)
+                ? array_values(array_map('strval', $thresholds['allowed_regimes']))
+                : [];
+            $regime = (string) ($metrics['market_regime'] ?? $item['market_regime'] ?? '');
+            return $roc20 !== null && $min !== null && $max !== null
+                && $roc20 >= $min && $roc20 <= $max
+                && in_array($regime, $allowed, true)
+                ? []
+                : ['WATCHLIST_S01_H1_IHSG_NON_WEAK_GUARD_FAIL'];
+        }
+        if ($ruleCode === WatchlistBacktestPriceQualityP01ParamGridCatalog::RULE_CODE) {
+            $roc20 = $this->fractionOrNull($momentum['roc20'] ?? $metrics['roc20'] ?? null);
+            $signalClose = $this->numericOrNull(
+                $metrics['signal_close_price']
+                    ?? $item['signal_close_price']
+                    ?? $item['close_price']
+                    ?? null
+            );
+            $min = $this->numericOrNull($thresholds['min_roc20'] ?? null);
+            $max = $this->numericOrNull($thresholds['max_roc20'] ?? null);
+            $minSignalClose = $this->numericOrNull(
+                $thresholds['min_signal_close_price'] ?? null
+            );
+            $allowed = is_array($thresholds['allowed_regimes'] ?? null)
+                ? array_values(array_map('strval', $thresholds['allowed_regimes']))
+                : [];
+            $regime = (string) ($metrics['market_regime'] ?? $item['market_regime'] ?? '');
+            return $roc20 !== null && $signalClose !== null
+                && $min !== null && $max !== null && $minSignalClose !== null
+                && $roc20 >= $min && $roc20 <= $max
+                && in_array($regime, $allowed, true)
+                && $signalClose >= $minSignalClose
+                ? []
+                : ['WATCHLIST_P01_MIN_SIGNAL_PRICE_QUALITY_FAIL'];
+        }
+        if ($ruleCode === 'SIGNAL_ROC20_10_TO_15_AND_TICK_RISK_LT_1P5') {
+            $roc20 = $this->fractionOrNull($momentum['roc20'] ?? $metrics['roc20'] ?? null);
+            $tickRisk = $this->fractionOrNull($metrics['signal_tick_risk_expansion_pct'] ?? null);
+            $min = $this->numericOrNull($thresholds['min_roc20'] ?? null);
+            $max = $this->numericOrNull($thresholds['max_roc20'] ?? null);
+            $maxTickRisk = $this->numericOrNull(
+                $thresholds['max_signal_tick_risk_expansion_pct'] ?? null
+            );
+            return $roc20 !== null && $tickRisk !== null
+                && $min !== null && $max !== null && $maxTickRisk !== null
+                && $roc20 >= $min && $roc20 <= $max && $tickRisk < $maxTickRisk
+                ? []
+                : ['WATCHLIST_S01_H2_TICK_RISK_GUARD_FAIL'];
+        }
+        if ($ruleCode === 'SIGNAL_ROC20_10_TO_15_BASELINE_FOR_LOSS_CONTAINMENT') {
+            $roc20 = $this->fractionOrNull($momentum['roc20'] ?? $metrics['roc20'] ?? null);
+            $min = $this->numericOrNull($thresholds['min_roc20'] ?? null);
+            $max = $this->numericOrNull($thresholds['max_roc20'] ?? null);
+            return $roc20 !== null && $min !== null && $max !== null
+                && $roc20 >= $min && $roc20 <= $max
+                ? []
+                : ['WATCHLIST_S01_H3_BASELINE_SELECTION_FAIL'];
+        }
+
+        return ['WATCHLIST_R02_RESEARCH_SELECTION_RULE_UNKNOWN'];
+    }
+
+    private function researchMarketRegime(float $roc20, float $slope): string
+    {
+        if ($roc20 >= 0.0 && $slope >= 0.0) {
+            return 'STRONG';
+        }
+        if ($roc20 < 0.0 && $slope < 0.0) {
+            return 'WEAK';
+        }
+
+        return 'MIXED';
     }
 
     private function deduplicateBestItems(array $items): array

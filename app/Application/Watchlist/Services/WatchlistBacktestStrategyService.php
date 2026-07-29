@@ -301,6 +301,10 @@ class WatchlistBacktestStrategyService
                     'vol_ratio' => $metrics['vol_ratio'] ?? $item['vol_ratio'] ?? null,
                     'signal_close_price' => $metrics['signal_close_price'] ?? $item['signal_close_price'] ?? $item['close_price'] ?? null,
                     'signal_tick_risk_expansion_pct' => $metrics['signal_tick_risk_expansion_pct'] ?? $item['signal_tick_risk_expansion_pct'] ?? null,
+                    'market_index_roc20' => $metrics['market_index_roc20'] ?? null,
+                    'market_index_ma20_slope_pct' => $metrics['market_index_ma20_slope_pct'] ?? null,
+                    'market_regime' => $metrics['market_regime'] ?? $item['market_regime'] ?? null,
+                    'research_selection_rule_code' => $paramset['research_selection']['rule_code'] ?? null,
                     'reason_code' => $reasonCodes[0] ?? null,
                     'reason_codes' => $reasonCodes,
                     'plan_group' => (string) $group,
@@ -649,6 +653,10 @@ class WatchlistBacktestStrategyService
             'vol_ratio' => $scoreMetrics['vol_ratio'] ?? null,
             'roc20' => $scoreMetrics['roc20'] ?? null,
             'close_to_hh20_pct' => $scoreMetrics['close_to_hh20_pct'] ?? null,
+            'market_index_roc20' => $scoreMetrics['market_index_roc20'] ?? null,
+            'market_index_ma20_slope_pct' => $scoreMetrics['market_index_ma20_slope_pct'] ?? null,
+            'market_regime' => $scoreMetrics['market_regime'] ?? null,
+            'research_selection_rule_code' => $paramset['research_selection']['rule_code'] ?? null,
             'sector_code' => $scoreMetrics['sector_code'] ?? null,
             'atr14_pct' => $this->floatOrNull($planReference['atr14_pct'] ?? ($scoreMetrics['atr14_pct'] ?? null)),
             'stop_price' => $this->floatOrNull($planReference['stop_price'] ?? null),
@@ -1024,6 +1032,8 @@ class WatchlistBacktestStrategyService
             'sector_roc20',
             'rs_20_vs_sector',
             'sector_rs_20_vs_ihsg',
+            'market_index_roc20',
+            'market_index_ma20_slope_pct',
         ];
         $metrics = [];
         foreach ($numericFields as $field) {
@@ -1038,6 +1048,8 @@ class WatchlistBacktestStrategyService
         $metrics['is_uma'] = $this->flagOrNull($source['is_uma'] ?? $planReference['is_uma'] ?? null);
         $metrics['event_risk_flag'] = $this->flagOrNull($source['event_risk_flag'] ?? $planReference['event_risk_flag'] ?? null);
         $metrics['event_risk_reasons'] = $this->stringOrNull($source['event_risk_reasons'] ?? $planReference['event_risk_reasons'] ?? null);
+        $metrics['market_regime'] = $this->stringOrNull($source['market_regime'] ?? $planReference['market_regime'] ?? null);
+        $metrics['market_indicator_set_version'] = $this->stringOrNull($source['market_indicator_set_version'] ?? null);
 
         $sectorCode = $this->stringOrNull($source['sector_code'] ?? $planReference['sector_code'] ?? $planItem['sector_code'] ?? null);
         $metrics['sector_code'] = $sectorCode === null ? null : strtoupper($sectorCode);
@@ -1182,9 +1194,32 @@ class WatchlistBacktestStrategyService
     {
         $backtest = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
         $slip = rtrim(rtrim(number_format((float) ($backtest['slippage_entry_pct'] ?? 0.0), 6, '.', ''), '0'), '.');
+        $exit = 'STOP_TP_OR_TIME';
+        if (($backtest['exit_model'] ?? null) === 'WS_R02_SEQUENTIAL_TARGET_0P5_PROFIT_NEXT_OPEN_TIME'
+            && ($backtest['research_execution'] ?? null)
+                === WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::researchExecution()) {
+            $exit = 'SEQ_TP05_OR_PCNO_OR_TIME';
+        } elseif (($backtest['exit_model'] ?? null)
+                === 'WS_S01_SEQUENTIAL_TARGET_0P5_PROFIT_OR_LOSS_NEXT_OPEN_TIME'
+            && ($backtest['research_execution'] ?? null)
+                === WatchlistBacktestTailRiskS01ParamGridCatalog::lossContainmentExecution()) {
+            $exit = 'SEQ_TP05_OR_PCLNO_OR_TIME';
+        } elseif (($backtest['exit_model'] ?? null)
+                === 'WS_S01M1_SEQUENTIAL_TARGET_0P5_PROFIT_OR_LOSS_NEG1_NEXT_OPEN_TIME'
+            && ($backtest['research_execution'] ?? null)
+                === WatchlistBacktestTailRiskS01RemediationParamGridCatalog::researchExecution()) {
+            $exit = 'SEQ_TP05_PCL1NO_TIME';
+        } elseif (($backtest['exit_model'] ?? null)
+                === 'WS_S01M1_SEQUENTIAL_TARGET_0P5_PROFIT_OR_LOSS_NEG1_NEXT_OPEN_TIME'
+            && ($backtest['research_execution'] ?? null)
+                === WatchlistBacktestPriceQualityP01RemediationParamGridCatalog
+                    ::researchExecution()) {
+            $exit = 'SEQ_TP05_PCL1NO_TIME';
+        }
 
         return sprintf(
-            'ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=%d;FEE=%s;SLIP=%s;GAP=OPEN;PX=IDX_BANDS',
+            'ENTRY=NEXT_OPEN;EXIT=%s;HOLD=%d;FEE=%s;SLIP=%s;GAP=OPEN;PX=IDX_BANDS',
+            $exit,
             (int) ($backtest['holding_days'] ?? 5),
             (string) ($backtest['fee_model'] ?? 'IDR_FIXED'),
             $slip === '' ? '0' : $slip

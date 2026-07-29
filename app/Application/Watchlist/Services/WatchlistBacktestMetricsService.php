@@ -247,6 +247,34 @@ class WatchlistBacktestMetricsService
                 'available_holding_days' => count($exitDates),
             ]);
         }
+        $r02Sequential = ($backtest['exit_model'] ?? null)
+                === 'WS_R02_SEQUENTIAL_TARGET_0P5_PROFIT_NEXT_OPEN_TIME'
+            && ($backtest['research_execution'] ?? null)
+                === WatchlistBacktestNewStrategyR02RemediationParamGridCatalog::researchExecution();
+        $s01LossContainment = ($backtest['exit_model'] ?? null)
+                === 'WS_S01_SEQUENTIAL_TARGET_0P5_PROFIT_OR_LOSS_NEXT_OPEN_TIME'
+            && ($backtest['research_execution'] ?? null)
+                === WatchlistBacktestTailRiskS01ParamGridCatalog::lossContainmentExecution();
+        $s01Remediation = ($backtest['exit_model'] ?? null)
+                === 'WS_S01M1_SEQUENTIAL_TARGET_0P5_PROFIT_OR_LOSS_NEG1_NEXT_OPEN_TIME'
+            && ($backtest['research_execution'] ?? null)
+                === WatchlistBacktestTailRiskS01RemediationParamGridCatalog::researchExecution();
+        if ($r02Sequential || $s01LossContainment || $s01Remediation) {
+            return $this->evaluateR02SequentialProfitCapture(
+                $trade,
+                $publishedPriceSeriesByTicker,
+                $exitDates,
+                $entryDate,
+                $entryBar,
+                $entryPrice,
+                $entryPriceSource,
+                $entryVolume,
+                $entryFallbackReason,
+                $backtest,
+                $minTradableVolume,
+                $tradableBarRule
+            );
+        }
 
         $levels = $this->targetStopLevels($entryPrice, $trade, $paramset);
         $exitPrice = null;
@@ -466,6 +494,271 @@ class WatchlistBacktestMetricsService
             'atr14_pct' => $levels['atr14_pct'],
             'stop_atr_mult' => $levels['stop_atr_mult'],
             'min_rr' => $levels['min_rr'],
+            'entry_volume' => $entryVolume,
+            'exit_volume' => $this->intOrNull($exitBar['volume'] ?? null),
+            'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
+            'tradable_bar_rule' => $tradableBarRule,
+            'min_tradable_volume' => $minTradableVolume,
+            'entry_publication_id' => $entryBar['publication_id'] ?? null,
+            'entry_publication_version' => $entryBar['publication_version'] ?? null,
+            'entry_run_id' => $entryBar['run_id'] ?? null,
+            'exit_publication_id' => $exitBar['publication_id'] ?? null,
+            'exit_publication_version' => $exitBar['publication_version'] ?? null,
+            'exit_run_id' => $exitBar['run_id'] ?? null,
+            'source_name' => $entryBar['source_name'] ?? null,
+            'quantity' => $quantity,
+            'entry_effective_price' => $entryEffective,
+            'exit_effective_price' => $exitEffective,
+            'gross_buy_idr' => $grossBuy,
+            'gross_sell_idr' => $grossSell,
+            'net_pnl_idr' => $netPnl,
+            'ret_gross' => $retGross,
+            'ret_net' => $retNet,
+            'is_win' => $retNet > 0,
+            'reason_codes' => $this->uniqueReasonCodes(array_merge($reasonCodes, [$exitReasonCode])),
+        ];
+    }
+
+    private function evaluateR02SequentialProfitCapture(
+        array $trade,
+        array $publishedPriceSeriesByTicker,
+        array $exitDates,
+        string $entryDate,
+        array $entryBar,
+        float $entryPrice,
+        string $entryPriceSource,
+        ?int $entryVolume,
+        ?string $entryFallbackReason,
+        array $backtest,
+        int $minTradableVolume,
+        string $tradableBarRule
+    ): array {
+        $ticker = $this->tickerCode($trade);
+        $tradeDate = (string) ($trade['trade_date'] ?? '');
+        $execution = $backtest['research_execution'];
+        $targetPct = (float) $execution['preplanned_target_pct'];
+        $profitThreshold = (float) $execution['profit_close_threshold_pct'];
+        $signalOffsets = $execution['profit_signal_day_offsets'];
+        $lossThreshold = is_numeric($execution['loss_close_threshold_pct'] ?? null)
+            ? (float) $execution['loss_close_threshold_pct']
+            : null;
+        $lossSignalOffsets = is_array($execution['loss_signal_day_offsets'] ?? null)
+            ? $execution['loss_signal_day_offsets']
+            : [];
+        $targetTriggerPrice = $this->normalizeTargetTriggerPrice($entryPrice * (1.0 + $targetPct));
+        if ($targetTriggerPrice === null || $targetTriggerPrice <= $entryPrice) {
+            return $this->skippedEvaluation($trade, 'BT_SKIP_NON_EXECUTABLE_PRICE_EXIT', [
+                'entry_trade_date' => $entryDate,
+                'message' => 'R02 remediation target cannot be normalized to an executable IDX price.',
+            ]);
+        }
+
+        $pendingProfitSignal = false;
+        $profitSignalDate = null;
+        $profitSignalDayOffset = null;
+        $pendingLossSignal = false;
+        $lossSignalDate = null;
+        $lossSignalDayOffset = null;
+        $ignoredNonTradableExitDates = [];
+        $exitPrice = null;
+        $exitDate = null;
+        $exitReasonCode = null;
+        $fillRule = null;
+        $gapDetected = false;
+        $exitBar = null;
+        $reasonCodes = $entryFallbackReason === null ? [] : [$entryFallbackReason];
+
+        foreach ($exitDates as $index => $date) {
+            $dayOffset = $index + 1;
+            $bar = $this->publishedBar($publishedPriceSeriesByTicker, $ticker, $date);
+            if ($bar === null) {
+                if ($pendingProfitSignal || $pendingLossSignal || $index === count($exitDates) - 1) {
+                    return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_EXIT', [
+                        'exit_trade_date' => $date,
+                        'research_exit_model' => $backtest['exit_model'],
+                        'profit_signal_date' => $profitSignalDate,
+                        'loss_signal_date' => $lossSignalDate,
+                    ]);
+                }
+                continue;
+            }
+
+            $barVolume = $this->intOrNull($bar['volume'] ?? null);
+            if (! $this->isTradableVolume($barVolume, $minTradableVolume)) {
+                $ignoredNonTradableExitDates[] = $date;
+                if ($pendingProfitSignal || $pendingLossSignal || $index === count($exitDates) - 1) {
+                    return $this->skippedEvaluation($trade, 'BT_SKIP_NO_TRADABLE_EXIT', [
+                        'exit_trade_date' => $date,
+                        'exit_volume' => $barVolume,
+                        'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
+                        'tradable_bar_rule' => $tradableBarRule,
+                        'min_tradable_volume' => $minTradableVolume,
+                        'research_exit_model' => $backtest['exit_model'],
+                        'profit_signal_date' => $profitSignalDate,
+                        'loss_signal_date' => $lossSignalDate,
+                    ]);
+                }
+                continue;
+            }
+
+            $invalidPriceFields = $this->invalidExecutableOhlcFields($bar);
+            if ($invalidPriceFields !== []) {
+                return $this->skippedEvaluation($trade, 'BT_SKIP_NON_EXECUTABLE_PRICE_EXIT', [
+                    'exit_trade_date' => $date,
+                    'exit_volume' => $barVolume,
+                    'invalid_price_fields' => $invalidPriceFields,
+                    'research_exit_model' => $backtest['exit_model'],
+                ]);
+            }
+            $open = $this->floatOrNull($bar['open'] ?? null);
+            $high = $this->floatOrNull($bar['high'] ?? null);
+            $close = $this->floatOrNull($bar['close'] ?? null);
+            if ($open === null || $open <= 0 || $high === null || $close === null || $close <= 0) {
+                return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_EXIT', [
+                    'exit_trade_date' => $date,
+                    'exit_volume' => $barVolume,
+                    'research_exit_model' => $backtest['exit_model'],
+                ]);
+            }
+
+            // A close signal is only actionable at the following trading-day
+            // open. No later path result chooses between exit routes.
+            if ($pendingProfitSignal) {
+                $exitPrice = $open;
+                $exitDate = $date;
+                $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_R02_PROFIT_NEXT_OPEN';
+                $fillRule = 'PRIOR_CLOSE_PROFIT_SIGNAL_NEXT_TRADING_DAY_OPEN';
+                $gapDetected = false;
+                $exitBar = $bar;
+                break;
+            }
+            if ($pendingLossSignal) {
+                $exitPrice = $open;
+                $exitDate = $date;
+                $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_S01_LOSS_NEXT_OPEN';
+                $fillRule = 'PRIOR_CLOSE_LOSS_SIGNAL_NEXT_TRADING_DAY_OPEN';
+                $gapDetected = false;
+                $exitBar = $bar;
+                break;
+            }
+            if ($open >= $targetTriggerPrice) {
+                $exitPrice = $open;
+                $exitDate = $date;
+                $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_TARGET';
+                $fillRule = 'R02_PREPLANNED_TARGET_GAP_AT_OPEN';
+                $gapDetected = true;
+                $exitBar = $bar;
+                $reasonCodes[] = 'BT_GAP_THROUGH_TARGET_AT_OPEN';
+                break;
+            }
+            if ($high >= $targetTriggerPrice) {
+                $exitPrice = $targetTriggerPrice;
+                $exitDate = $date;
+                $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_TARGET';
+                $fillRule = 'R02_PREPLANNED_TARGET_AT_NORMALIZED_TRIGGER';
+                $exitBar = $bar;
+                break;
+            }
+
+            if (in_array($dayOffset, $signalOffsets, true)
+                && (($close - $entryPrice) / $entryPrice) > $profitThreshold) {
+                $pendingProfitSignal = true;
+                $profitSignalDate = $date;
+                $profitSignalDayOffset = $dayOffset;
+            } elseif ($lossThreshold !== null
+                && in_array($dayOffset, $lossSignalOffsets, true)
+                && (($close - $entryPrice) / $entryPrice) <= $lossThreshold) {
+                $pendingLossSignal = true;
+                $lossSignalDate = $date;
+                $lossSignalDayOffset = $dayOffset;
+            }
+            if ($index === count($exitDates) - 1) {
+                $exitPrice = $close;
+                $exitDate = $date;
+                $exitReasonCode = 'WATCHLIST_BACKTEST_EXIT_HOLD_EXPIRED';
+                $fillRule = 'R02_TIME_EXIT_AT_D5_CLOSE';
+                $exitBar = $bar;
+            }
+        }
+
+        if ($exitPrice === null || $exitDate === null || $exitReasonCode === null || $exitBar === null) {
+            return $this->skippedEvaluation($trade, 'BT_SKIP_MISSING_OHLC_EXIT', [
+                'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
+                'research_exit_model' => $backtest['exit_model'],
+            ]);
+        }
+
+        $notionalIdr = $this->floatOrNull($backtest['notional_idr'] ?? null) ?? 10000000.0;
+        $lotSize = max(1, $this->intOrNull($backtest['lot_size'] ?? null) ?? 100);
+        $feeBuy = $this->floatOrNull($backtest['fee_buy_idr'] ?? null) ?? 2500.0;
+        $feeSell = $this->floatOrNull($backtest['fee_sell_idr'] ?? null) ?? 2500.0;
+        $slippageEntryPct = $this->floatOrNull($backtest['slippage_entry_pct'] ?? null) ?? 0.0;
+        $slippageExitPct = $this->floatOrNull($backtest['slippage_exit_pct'] ?? null) ?? 0.0;
+        $entryEffective = $entryPrice * (1 + $slippageEntryPct);
+        $exitEffective = $exitPrice * (1 - $slippageExitPct);
+        $lots = (int) floor($notionalIdr / ($entryEffective * $lotSize));
+        if ($lots < 1) {
+            return $this->skippedEvaluation($trade, 'BT_SKIP_NOT_ENOUGH_NOTIONAL', [
+                'entry_trade_date' => $entryDate,
+                'entry_price' => $entryPrice,
+                'entry_volume' => $entryVolume,
+                'notional_idr' => $notionalIdr,
+            ]);
+        }
+
+        $quantity = $lots * $lotSize;
+        $grossBuy = $entryEffective * $quantity;
+        $grossSell = $exitEffective * $quantity;
+        $netPnl = $grossSell - $grossBuy - $feeBuy - $feeSell;
+        $retGross = ($grossSell - $grossBuy) / $grossBuy;
+        $retNet = $netPnl / ($grossBuy + $feeBuy);
+
+        return [
+            'trade_date' => $tradeDate,
+            'ticker_id' => $trade['ticker_id'] ?? null,
+            'ticker' => $ticker,
+            'bucket_code' => $trade['bucket_code'] ?? null,
+            'metrics_ready' => true,
+            'reason_code' => 'WATCHLIST_BACKTEST_EVALUATION_READY',
+            'entry_trade_date' => $entryDate,
+            'exit_trade_date' => $exitDate,
+            'exit_reason_code' => $exitReasonCode,
+            'entry_price' => $entryPrice,
+            'entry_price_source' => $entryPriceSource,
+            'exit_price' => $exitPrice,
+            'executed_price' => $exitPrice,
+            'trigger_price' => $exitReasonCode === 'WATCHLIST_BACKTEST_EXIT_TARGET'
+                ? $targetTriggerPrice
+                : null,
+            'fill_rule' => $fillRule,
+            'gap_detected' => $gapDetected,
+            'gap_fill_rule' => self::GAP_FILL_RULE,
+            'source_price_mode' => self::SOURCE_PRICE_MODE,
+            'price_fraction_rule' => self::PRICE_FRACTION_RULE,
+            'price_fraction_reference' => self::PRICE_FRACTION_REFERENCE,
+            'price_normalization_rule' => self::PRICE_NORMALIZATION_RULE,
+            'stop_price' => null,
+            'target_price' => $entryPrice * (1.0 + $targetPct),
+            'stop_trigger_price' => null,
+            'target_trigger_price' => $targetTriggerPrice,
+            'target_stop_source' => 'R02_PREPLANNED_SEQUENTIAL_PROFIT_CAPTURE',
+            'atr14_pct' => $this->floatOrNull($trade['atr14_pct'] ?? null),
+            'stop_atr_mult' => null,
+            'min_rr' => null,
+            'research_exit_model' => $backtest['exit_model'],
+            'research_remediation_code' => $execution['remediation_code'],
+            'profit_signal_date' => $profitSignalDate,
+            'profit_signal_day_offset' => $profitSignalDayOffset,
+            'profit_signal_exit_day_offset' => $profitSignalDayOffset === null
+                ? null
+                : $profitSignalDayOffset + 1,
+            'loss_signal_date' => $lossSignalDate,
+            'loss_signal_day_offset' => $lossSignalDayOffset,
+            'loss_signal_exit_day_offset' => $lossSignalDayOffset === null
+                ? null
+                : $lossSignalDayOffset + 1,
+            'lookahead_safe' => true,
+            'future_derived_route_used' => false,
             'entry_volume' => $entryVolume,
             'exit_volume' => $this->intOrNull($exitBar['volume'] ?? null),
             'ignored_non_tradable_exit_dates' => $ignoredNonTradableExitDates,
