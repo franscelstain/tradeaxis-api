@@ -361,7 +361,7 @@ public function test_market_benchmark_indicator_extension_final_lock_is_recorded
         sort($registryCodes);
         sort($seedCodes);
 
-        $this->assertCount(353, $registryCodes);
+        $this->assertCount(356, $registryCodes);
         $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
     }
 

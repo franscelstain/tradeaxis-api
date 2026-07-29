@@ -113,6 +113,7 @@ return [
         'corporate_actions_table' => env('MARKET_DATA_CORPORATE_ACTIONS_TABLE', 'market_data_corporate_actions'),
         'trading_status_events_table' => env('MARKET_DATA_TRADING_STATUS_EVENTS_TABLE', 'market_data_trading_status_events'),
         'trading_status_event_types_table' => env('MARKET_DATA_TRADING_STATUS_EVENT_TYPES_TABLE', 'market_data_trading_status_event_types'),
+        'corporate_action_types_table' => env('MARKET_DATA_CORPORATE_ACTION_TYPES_TABLE', 'market_data_corporate_action_types'),
         'corporate_action_source_name' => env('MARKET_DATA_CORPORATE_ACTION_SOURCE_NAME', 'manual_corporate_action_csv'),
         'trading_status_source_name' => env('MARKET_DATA_TRADING_STATUS_SOURCE_NAME', 'manual_trading_status_csv'),
     ],

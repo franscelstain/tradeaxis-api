@@ -51,7 +51,55 @@ class EventRiskSourceRepository
         ],
     ];
 
+    /**
+     * Fallback taxonomy used when the dictionary table is unavailable.
+     *
+     * Owner contract: docs/market_data/registry/Corporate_Action_Type_Registry_LOCKED.md
+     */
+    private const DEFAULT_CORPORATE_ACTION_TYPES = [
+        // Share unit redefined: historical price and volume are in different units.
+        'STOCK_SPLIT' => ['price_continuity_impact' => 'SCALED', 'volume_continuity_impact' => 'SCALED'],
+        'REVERSE_STOCK_SPLIT' => ['price_continuity_impact' => 'SCALED', 'volume_continuity_impact' => 'SCALED'],
+        'BONUS_SHARE' => ['price_continuity_impact' => 'SCALED', 'volume_continuity_impact' => 'SCALED'],
+        'STOCK_DIVIDEND' => ['price_continuity_impact' => 'SCALED', 'volume_continuity_impact' => 'SCALED'],
+        'MERGER' => ['price_continuity_impact' => 'SCALED', 'volume_continuity_impact' => 'SCALED'],
+
+        // Price series rescaled, share unit unchanged.
+        'RIGHTS_ISSUE' => ['price_continuity_impact' => 'SCALED', 'volume_continuity_impact' => 'NONE'],
+        'CASH_DIVIDEND' => ['price_continuity_impact' => 'GAP_UNKNOWN_MAGNITUDE', 'volume_continuity_impact' => 'NONE'],
+
+        // Dilution only: new shares issued at the existing unit, no ex-price adjustment.
+        'PRIVATE_PLACEMENT' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'NON_PREEMPTIVE_RIGHTS_ISSUE' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'WARRANT' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'WARRANT_EXERCISE' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'MANDATORY_CONVERTIBLE_BOND' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'ESOP_MSOP' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+
+        // Lifecycle and identity events: no continuity to break.
+        'IPO' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'DELISTING' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'PARTIAL_DELISTING' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'PARTIAL_RELISTING' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'CAPITAL_DEFICIENCY' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'TICKER_CODE_CHANGE' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+        'COMPANY_NAME_CHANGE' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+    ];
+
+    /**
+     * Fail-safe impact for an action type that has no dictionary row.
+     *
+     * An unmapped corporate action is an unknown, not a safe one. Treating it as
+     * non-breaking would silently publish contaminated arithmetic.
+     */
+    private const UNMAPPED_CORPORATE_ACTION_IMPACT = [
+        'price_continuity_impact' => 'SCALED',
+        'volume_continuity_impact' => 'SCALED',
+    ];
+
     private ?array $tradingStatusEventTypes = null;
+
+    private ?array $corporateActionTypes = null;
 
     public function suspendedTickerIdsAsOf(array $tickerIds, $tradeDate): array
     {
@@ -158,6 +206,152 @@ class EventRiskSourceRepository
         ksort($contexts);
 
         return $contexts;
+    }
+
+    /**
+     * Resolve corporate actions whose price/volume discontinuity may still poison an
+     * indicator window ending on the last date of $tradingDates.
+     *
+     * Owner contract: docs/market_data/registry/Indicator_Registry_Baseline_LOCKED.md
+     * (Amendment 2026-07-29 - Corporate action window contamination)
+     *
+     * $tradingDates must be the ascending canonical trading-day sequence ending on the
+     * requested date. Depth is expressed in trading days back from that date, where the
+     * requested date itself is depth 0. An indicator with contamination horizon W is
+     * contaminated by an entry when depth < W.
+     *
+     * Actions carrying no price and no volume impact are omitted: they cannot contaminate
+     * anything, so returning them would only create noise in the audit trail.
+     *
+     * @return array<int, array<int, array>> keyed by ticker_id
+     */
+    public function resolveCorporateActionContaminationForTickerIds(array $tickerIds, array $tradingDates): array
+    {
+        $tickerIds = array_values(array_unique(array_map('intval', $tickerIds)));
+        $tickerIds = array_values(array_filter($tickerIds, function ($tickerId) {
+            return $tickerId > 0;
+        }));
+
+        $tradingDates = array_values(array_map('strval', $tradingDates));
+
+        if (empty($tickerIds) || empty($tradingDates)) {
+            return [];
+        }
+
+        $windowStart = $tradingDates[0];
+        $windowEnd = $tradingDates[count($tradingDates) - 1];
+
+        $rows = DB::table($this->corporateActionsTable())
+            ->select(['ticker_id', 'action_date', 'action_type'])
+            ->whereIn('ticker_id', $tickerIds)
+            ->where('action_date', '>=', $windowStart)
+            ->where('action_date', '<=', $windowEnd)
+            ->orderBy('ticker_id')
+            ->orderBy('action_date')
+            ->orderBy('action_type')
+            ->get();
+
+        $types = $this->corporateActionTypes();
+        $contamination = [];
+
+        foreach ($rows as $row) {
+            $actionTypeCode = $this->normalizeCode($row->action_type);
+
+            if ($actionTypeCode === '') {
+                continue;
+            }
+
+            $depth = $this->tradingDayDepth($tradingDates, (string) $row->action_date);
+
+            if ($depth === null) {
+                continue;
+            }
+
+            $isUnmapped = ! isset($types[$actionTypeCode]);
+            $impact = $isUnmapped ? self::UNMAPPED_CORPORATE_ACTION_IMPACT : $types[$actionTypeCode];
+
+            $breaksPrice = $impact['price_continuity_impact'] !== 'NONE';
+            $breaksVolume = $impact['volume_continuity_impact'] !== 'NONE';
+
+            if (! $breaksPrice && ! $breaksVolume) {
+                continue;
+            }
+
+            $contamination[(int) $row->ticker_id][] = [
+                'action_type_code' => $actionTypeCode,
+                'action_date' => (string) $row->action_date,
+                'depth' => $depth,
+                'breaks_price_continuity' => $breaksPrice,
+                'breaks_volume_continuity' => $breaksVolume,
+                'is_unmapped_type' => $isUnmapped,
+            ];
+        }
+
+        ksort($contamination);
+
+        return $contamination;
+    }
+
+    public function corporateActionTypes(): array
+    {
+        if ($this->corporateActionTypes !== null) {
+            return $this->corporateActionTypes;
+        }
+
+        $types = self::DEFAULT_CORPORATE_ACTION_TYPES;
+
+        try {
+            $rows = DB::table($this->corporateActionTypesTable())
+                ->select(['action_type_code', 'price_continuity_impact', 'volume_continuity_impact'])
+                ->orderBy('action_type_code')
+                ->get();
+
+            if (count($rows) > 0) {
+                $types = [];
+                foreach ($rows as $row) {
+                    $types[$this->normalizeCode($row->action_type_code)] = [
+                        'price_continuity_impact' => $this->normalizeContinuityImpact($row->price_continuity_impact),
+                        'volume_continuity_impact' => $this->normalizeContinuityImpact($row->volume_continuity_impact),
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            $types = self::DEFAULT_CORPORATE_ACTION_TYPES;
+        }
+
+        $this->corporateActionTypes = $types;
+
+        return $this->corporateActionTypes;
+    }
+
+    /**
+     * Trading days back from the end of the window, requested date being depth 0.
+     *
+     * An action dated on a non-trading day takes effect on the first trading day on or
+     * after it, so the lookup resolves forward rather than requiring an exact match.
+     * Returns null when the action falls after the window end, which keeps future-dated
+     * actions from influencing the current row.
+     */
+    private function tradingDayDepth(array $tradingDates, string $actionDate): ?int
+    {
+        $lastIndex = count($tradingDates) - 1;
+
+        for ($index = 0; $index <= $lastIndex; $index++) {
+            if ($tradingDates[$index] >= $actionDate) {
+                return $lastIndex - $index;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeContinuityImpact($value): string
+    {
+        $impact = $this->normalizeCode($value);
+
+        return in_array($impact, ['NONE', 'SCALED', 'GAP_UNKNOWN_MAGNITUDE'], true)
+            ? $impact
+            : 'SCALED';
     }
 
     public function upsertCorporateAction(array $row): bool
@@ -468,5 +662,10 @@ class EventRiskSourceRepository
     private function tradingStatusEventTypesTable(): string
     {
         return config('market_data.event_risk.trading_status_event_types_table', 'market_data_trading_status_event_types');
+    }
+
+    private function corporateActionTypesTable(): string
+    {
+        return config('market_data.event_risk.corporate_action_types_table', 'market_data_corporate_action_types');
     }
 }

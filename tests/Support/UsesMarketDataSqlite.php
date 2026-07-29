@@ -134,6 +134,51 @@ trait UsesMarketDataSqlite
             $table->index(['action_type', 'action_date'], 'idx_md_corp_action_type_date');
         });
 
+        $schema->create('market_data_corporate_action_types', function (Blueprint $table) {
+            $table->string('action_type_code', 64)->primary();
+            $table->string('price_continuity_impact', 32);
+            $table->string('volume_continuity_impact', 32);
+            $table->boolean('share_count_changes')->default(false);
+            $table->string('description', 255)->nullable();
+            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+        });
+
+        $now = date('Y-m-d H:i:s');
+
+        DB::table('market_data_corporate_action_types')->insert(array_map(function ($row) use ($now) {
+            return [
+                'action_type_code' => $row[0],
+                'price_continuity_impact' => $row[1],
+                'volume_continuity_impact' => $row[2],
+                'share_count_changes' => $row[3],
+                'description' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }, [
+            ['STOCK_SPLIT', 'SCALED', 'SCALED', 1],
+            ['REVERSE_STOCK_SPLIT', 'SCALED', 'SCALED', 1],
+            ['BONUS_SHARE', 'SCALED', 'SCALED', 1],
+            ['STOCK_DIVIDEND', 'SCALED', 'SCALED', 1],
+            ['MERGER', 'SCALED', 'SCALED', 1],
+            ['RIGHTS_ISSUE', 'SCALED', 'NONE', 1],
+            ['CASH_DIVIDEND', 'GAP_UNKNOWN_MAGNITUDE', 'NONE', 0],
+            ['PRIVATE_PLACEMENT', 'NONE', 'NONE', 1],
+            ['NON_PREEMPTIVE_RIGHTS_ISSUE', 'NONE', 'NONE', 1],
+            ['WARRANT', 'NONE', 'NONE', 1],
+            ['WARRANT_EXERCISE', 'NONE', 'NONE', 1],
+            ['MANDATORY_CONVERTIBLE_BOND', 'NONE', 'NONE', 1],
+            ['ESOP_MSOP', 'NONE', 'NONE', 1],
+            ['IPO', 'NONE', 'NONE', 0],
+            ['DELISTING', 'NONE', 'NONE', 0],
+            ['PARTIAL_DELISTING', 'NONE', 'NONE', 0],
+            ['PARTIAL_RELISTING', 'NONE', 'NONE', 0],
+            ['CAPITAL_DEFICIENCY', 'NONE', 'NONE', 0],
+            ['TICKER_CODE_CHANGE', 'NONE', 'NONE', 0],
+            ['COMPANY_NAME_CHANGE', 'NONE', 'NONE', 0],
+        ]));
+
         $schema->create('market_data_trading_status_event_types', function (Blueprint $table) {
             $table->string('event_type_code', 64)->primary();
             $table->string('risk_family', 64);
@@ -513,6 +558,7 @@ trait UsesMarketDataSqlite
             $table->integer('run_id');
             $table->integer('publication_id');
             $table->dateTime('created_at');
+            $table->string('corporate_action_window_reasons', 255)->nullable();
 
             $table->primary(['trade_date', 'ticker_id']);
             $table->index(['ticker_id', 'trade_date'], 'idx_eod_indicators_ticker_date');
@@ -768,6 +814,7 @@ trait UsesMarketDataSqlite
             $table->string('event_risk_reasons', 255)->nullable();
             $table->integer('run_id')->nullable();
             $table->dateTime('created_at');
+            $table->string('corporate_action_window_reasons', 255)->nullable();
 
             $table->primary(['publication_id', 'trade_date', 'ticker_id']);
             $table->index(['trade_date'], 'idx_indicators_history_trade_date');

@@ -5,6 +5,7 @@ namespace App\Application\MarketData\Services;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
+use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\SectorClassificationRepository;
 use Carbon\Carbon;
 
@@ -16,8 +17,9 @@ class EodIndicatorsComputeService
     private $benchmarkIndicators;
     private $sectors;
     private $eventRisks;
+    private $calendar;
 
-    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null, EventRiskSourceRepository $eventRisks = null)
+    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null, EventRiskSourceRepository $eventRisks = null, MarketCalendarRepository $calendar = null)
     {
         $this->artifacts = $artifacts;
         $this->publications = $publications;
@@ -25,6 +27,7 @@ class EodIndicatorsComputeService
         $this->benchmarkIndicators = $benchmarkIndicators;
         $this->sectors = $sectors;
         $this->eventRisks = $eventRisks;
+        $this->calendar = $calendar ?: new MarketCalendarRepository();
     }
 
     public function compute($run, $requestedDate, $correctionMode = false)
@@ -64,13 +67,16 @@ class EodIndicatorsComputeService
             55
         );
 
-        $barsByTicker = $this->artifacts->loadBarsWindow($requestedDate, $windowDays + 5, $useHistory ? $candidatePublication->publication_id : null);
+        $barLoadWindow = $windowDays + 5;
+
+        $barsByTicker = $this->artifacts->loadBarsWindow($requestedDate, $barLoadWindow, $useHistory ? $candidatePublication->publication_id : null);
         $sectorContextsByTicker = $this->sectors !== null
             ? $this->sectors->resolveSectorContextForTickerIds(array_keys($barsByTicker), $requestedDate)
             : [];
         $eventRiskContextsByTicker = $this->eventRisks !== null
             ? $this->eventRisks->resolveEventRiskContextForTickerIds(array_keys($barsByTicker), $requestedDate)
             : [];
+        $contaminationByTicker = $this->resolveCorporateActionContamination(array_keys($barsByTicker), $requestedDate, $barLoadWindow);
         $sectorBenchmarkRoc20s = [];
 
         if ($this->benchmarkIndicators !== null && ! empty($sectorContextsByTicker)) {
@@ -92,6 +98,7 @@ class EodIndicatorsComputeService
                 ? $sectorBenchmarkRoc20s[$sectorIndexCode]
                 : null;
             $eventRiskContext = $eventRiskContextsByTicker[(int) $tickerId] ?? null;
+            $contamination = $contaminationByTicker[(int) $tickerId] ?? [];
 
             $row = $this->vectors->buildRow(
                 (int) $tickerId,
@@ -100,7 +107,7 @@ class EodIndicatorsComputeService
                 $candidatePublication->publication_id,
                 $run->run_id,
                 $now,
-                $this->vectorConfig($benchmarkRoc20, $sectorContext, $sectorRoc20, $eventRiskContext)
+                $this->vectorConfig($benchmarkRoc20, $sectorContext, $sectorRoc20, $eventRiskContext, $contamination, $barLoadWindow)
             );
             if (! $row) {
                 continue;
@@ -124,13 +131,42 @@ class EodIndicatorsComputeService
         ] + $benchmarkResult;
     }
 
-    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null)
+    /**
+     * Corporate actions that may still poison an indicator window ending on the requested date.
+     *
+     * The lookback matches the loaded bar window rather than the longest declared indicator
+     * horizon, because ATR seeds cumulatively across every loaded bar. Quarantining ATR on the
+     * shorter declared horizon would report it clean while the recursion still carries the
+     * pre-action scale. See the ATR note in Indicator_Registry_Baseline_LOCKED.md.
+     */
+    private function resolveCorporateActionContamination(array $tickerIds, $requestedDate, $lookbackTradingDays)
+    {
+        if ($this->eventRisks === null || empty($tickerIds)) {
+            return [];
+        }
+
+        // Not guarded: loadBarsWindow already resolved the same window start for the same
+        // requested date, so a calendar failure here cannot be new. Swallowing it would only
+        // create a silent path that publishes contaminated indicators as clean.
+        $windowStart = $this->calendar->tradingDateWindowStart($requestedDate, $lookbackTradingDays);
+        $tradingDates = $this->calendar->tradingDatesBetween($windowStart, $requestedDate);
+
+        if (empty($tradingDates)) {
+            return [];
+        }
+
+        return $this->eventRisks->resolveCorporateActionContaminationForTickerIds($tickerIds, $tradingDates);
+    }
+
+    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null, array $contamination = [], $atrContaminationHorizonDays = 0)
     {
         return [
             'set_version' => config('market_data.indicators.set_version'),
             'sector_code' => $sectorContext['sector_code'] ?? null,
             'sector_index_code' => $sectorContext['sector_index_code'] ?? null,
             'event_risk_context' => $eventRiskContext ?: [],
+            'corporate_action_contamination' => $contamination,
+            'atr_contamination_horizon_days' => (int) $atrContaminationHorizonDays,
             'lot_size' => (int) config('market_data.platform.lot_size'),
             'price_basis_default' => config('market_data.platform.price_basis_default'),
             'dv_window_days' => (int) config('market_data.indicators.dv_window_days'),

@@ -140,12 +140,15 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `IND_MISSING_DEPENDENCY_BAR` | INDICATOR | HARD | A required canonical bar in the trading-day dependency chain is missing. |
 | `IND_INVALID_BAR_INPUT` | INDICATOR | HARD | A canonical bar input required for indicator computation is invalid. |
 | `IND_COMPUTE_ERROR` | INDICATOR | HARD | Indicator computation failed because of logic or runtime error. |
+| `IND_CORPORATE_ACTION_DISCONTINUITY` | INDICATOR | WARN | At least one mandatory indicator window spans a corporate action that breaks price or volume continuity, so the affected fields were quarantined as NULL instead of published as arithmetically meaningless values. |
 | `ELIG_MISSING_BAR` | ELIGIBILITY | WARN | A ticker in the coverage universe does not have a canonical valid bar for the requested date. |
 | `ELIG_MISSING_INDICATORS` | ELIGIBILITY | HARD | Eligibility cannot be determined because required indicators are unavailable. |
 | `ELIG_INVALID_INDICATORS` | ELIGIBILITY | WARN | An indicator row exists but required indicators are marked invalid. |
 | `ELIG_INSUFFICIENT_HISTORY` | ELIGIBILITY | WARN | Eligibility is blocked because required indicator history is still insufficient. |
 | `ELIG_UNIVERSE_DEPENDENCY_MISSING` | ELIGIBILITY | HARD | An upstream dependency required to determine universe membership is unavailable. |
 | `ELIG_FETCH_FAILURE` | ELIGIBILITY | WARN | Eligibility is blocked because ticker-level source acquisition failed and required upstream artifacts could not be formed safely. |
+| `ELIG_CORPORATE_ACTION_DISCONTINUITY` | ELIGIBILITY | WARN | Eligibility is blocked because required indicators were quarantined by a corporate action that breaks price or volume continuity inside their dependency window. |
+| `EVENT_RISK_CA_TYPE_UNMAPPED` | EVENT_RISK | WARN | A corporate action row carries an action_type that has no row in the corporate action type dictionary; it was treated fail-safe as breaking both price and volume continuity until an operator maps it. |
 | `SNAP_SOURCE_TIMEOUT` | INTRADAY | WARN | The session-snapshot source timed out. |
 | `SNAP_SOURCE_RATE_LIMIT` | INTRADAY | WARN | The session-snapshot source hit rate limiting. |
 | `SNAP_PARTIAL_SCOPE` | INTRADAY | WARN | The session snapshot captured only part of the planned scope. |

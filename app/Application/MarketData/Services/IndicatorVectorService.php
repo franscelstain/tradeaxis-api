@@ -4,6 +4,28 @@ namespace App\Application\MarketData\Services;
 
 class IndicatorVectorService
 {
+    /**
+     * Baseline indicators whose NULL forces is_valid=0.
+     *
+     * Owner contract: docs/market_data/registry/Indicator_Registry_Baseline_LOCKED.md
+     * ma20/ma50 and the sector-rotation fields are intentionally absent: they are not
+     * mandatory baseline indicators, so contaminating them alone does not invalidate a row.
+     */
+    private const MANDATORY_BASELINE_INDICATORS = [
+        'dv20_idr',
+        'atr14_pct',
+        'vol_ratio',
+        'roc5',
+        'roc10',
+        'roc20',
+        'hh20',
+        'll20',
+        'close_to_hh20_pct',
+        'close_to_ll20_pct',
+        'range_20_pct',
+        'range_position_20_pct',
+    ];
+
     public function buildRow($tickerId, array $bars, $requestedDate, $publicationId, $runId, $createdAt, array $config)
     {
         usort($bars, function ($a, $b) {
@@ -51,6 +73,18 @@ class IndicatorVectorService
 
         $values = $this->calculateIndicators($bars, $index, $config);
 
+        $quarantine = $this->applyCorporateActionQuarantine($values, $config);
+        $values = $quarantine['values'];
+
+        // Contamination is a known, explainable cause. Reporting it as insufficient history
+        // would misdescribe it and strip the operator's ability to find affected tickers by
+        // reason code. HARD structural codes are preserved: a missing dependency bar is a
+        // genuine data hole and stays more actionable than the quarantine annotation.
+        if ($quarantine['mandatory_contaminated']
+            && ($invalidReason === null || $invalidReason === 'IND_INSUFFICIENT_HISTORY')) {
+            $invalidReason = 'IND_CORPORATE_ACTION_DISCONTINUITY';
+        }
+
         return [
             'trade_date' => $requestedDate,
             'ticker_id' => $tickerId,
@@ -86,6 +120,7 @@ class IndicatorVectorService
             'is_uma' => $values['is_uma'],
             'event_risk_flag' => $values['event_risk_flag'],
             'event_risk_reasons' => $values['event_risk_reasons'],
+            'corporate_action_window_reasons' => $quarantine['tokens'],
             'run_id' => $runId,
             'publication_id' => $publicationId,
             'created_at' => $createdAt,
@@ -178,6 +213,138 @@ class IndicatorVectorService
             'rs_20_vs_sector' => $equityRoc20Pct !== null && $sectorRoc20Pct !== null ? round($equityRoc20Pct - $sectorRoc20Pct, 10) : null,
             'sector_rs_20_vs_ihsg' => $sectorRoc20Pct !== null && $benchmarkRoc20Pct !== null ? round($sectorRoc20Pct - $benchmarkRoc20Pct, 10) : null,
         ] + $this->eventRiskValues($config);
+    }
+
+    /**
+     * Quarantine indicators whose dependency window spans a corporate action that breaks
+     * price or volume continuity.
+     *
+     * Owner contract: docs/market_data/registry/Indicator_Registry_Baseline_LOCKED.md
+     * (Amendment 2026-07-29 - Corporate action window contamination)
+     *
+     * An indicator with horizon W is contaminated when an entry sits at depth < W, where
+     * depth counts trading days back from the requested date. At depth == W the action lands
+     * exactly on the window start, so every bar in the window already sits on the post-action
+     * scale and the window is clean.
+     */
+    private function applyCorporateActionQuarantine(array $values, array $config)
+    {
+        $entries = isset($config['corporate_action_contamination']) && is_array($config['corporate_action_contamination'])
+            ? $config['corporate_action_contamination']
+            : [];
+
+        if (empty($entries)) {
+            return [
+                'values' => $values,
+                'tokens' => null,
+                'mandatory_contaminated' => false,
+            ];
+        }
+
+        $tokens = [];
+        $mandatoryContaminated = false;
+
+        foreach ($this->contaminationHorizons($config) as $field => $horizon) {
+            list($horizonDays, $sensitiveToPrice, $sensitiveToVolume) = $horizon;
+
+            if ($horizonDays <= 0) {
+                continue;
+            }
+
+            foreach ($entries as $entry) {
+                if ((int) $entry['depth'] >= $horizonDays) {
+                    continue;
+                }
+
+                $applies = ($sensitiveToPrice && ! empty($entry['breaks_price_continuity']))
+                    || ($sensitiveToVolume && ! empty($entry['breaks_volume_continuity']));
+
+                if (! $applies) {
+                    continue;
+                }
+
+                $values[$field] = null;
+                $tokens[$entry['action_type_code'].'@'.$entry['action_date']] = true;
+
+                if (in_array($field, self::MANDATORY_BASELINE_INDICATORS, true)) {
+                    $mandatoryContaminated = true;
+                }
+            }
+        }
+
+        $tokenList = array_keys($tokens);
+        sort($tokenList);
+
+        return [
+            'values' => $values,
+            'tokens' => empty($tokenList) ? null : $this->joinContaminationTokens($tokenList),
+            'mandatory_contaminated' => $mandatoryContaminated,
+        ];
+    }
+
+    /**
+     * Contamination horizon per indicator, in trading days inclusive of the requested date.
+     *
+     * Horizons are derived from the same window config the indicators themselves use, so a
+     * change to a window size cannot leave the quarantine describing a horizon that no longer
+     * matches the computation.
+     *
+     * Tuple shape: [horizon_days, price_scale_sensitive, volume_scale_sensitive]
+     */
+    private function contaminationHorizons(array $config)
+    {
+        $dvWindow = (int) $config['dv_window_days'];
+        $volLookback = (int) $config['vol_ratio_lookback_days'];
+        $rocLookback = (int) $config['roc_lookback_days'];
+        $hhWindow = (int) $config['hh_window_days'];
+
+        // ATR is seeded cumulatively across the whole loaded bar window rather than the 15
+        // days the registry declares, so its contamination horizon is supplied by the caller
+        // from the actual load window. See the ATR note in the registry amendment.
+        $atrHorizon = (int) (isset($config['atr_contamination_horizon_days']) ? $config['atr_contamination_horizon_days'] : 0);
+
+        return [
+            'dv20_idr' => [$dvWindow, true, true],
+            'atr14_pct' => [$atrHorizon, true, false],
+            'vol_ratio' => [$volLookback + 1, false, true],
+            'roc5' => [6, true, false],
+            'roc10' => [11, true, false],
+            'roc20' => [$rocLookback + 1, true, false],
+            'hh20' => [$hhWindow, true, false],
+            'll20' => [$hhWindow, true, false],
+            'ma20' => [20, true, false],
+            'ma50' => [50, true, false],
+            'close_to_hh20_pct' => [$hhWindow, true, false],
+            'close_to_ll20_pct' => [$hhWindow, true, false],
+            'range_20_pct' => [$hhWindow, true, false],
+            'range_position_20_pct' => [$hhWindow, true, false],
+            'close_vs_ma20_pct' => [20, true, false],
+            'close_vs_ma50_pct' => [50, true, false],
+            // ma20(D) and ma20(D[-5]) together span D[-24]..D.
+            'ma20_slope_pct' => [25, true, false],
+            'rs_20_vs_ihsg' => [$rocLookback + 1, true, false],
+            'rs_20_vs_sector' => [$rocLookback + 1, true, false],
+        ];
+    }
+
+    /**
+     * Join tokens without splitting one mid-way when the persisted column runs out of room.
+     */
+    private function joinContaminationTokens(array $tokenList)
+    {
+        $joined = '';
+
+        foreach ($tokenList as $token) {
+            $candidate = $joined === '' ? $token : $joined.','.$token;
+
+            if (strlen($candidate) > 255) {
+                break;
+            }
+
+            $joined = $candidate;
+        }
+
+        return $joined === '' ? null : $joined;
     }
 
     private function averageTurnover(array $bars, $index, $window, $lotSize, array $config)

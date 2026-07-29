@@ -122,6 +122,19 @@ CREATE TABLE IF NOT EXISTS market_data_corporate_actions (
   KEY idx_md_corp_action_type_date (action_type, action_date)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS market_data_corporate_action_types (
+  action_type_code VARCHAR(64) NOT NULL,
+  price_continuity_impact VARCHAR(32) NOT NULL,
+  volume_continuity_impact VARCHAR(32) NOT NULL,
+  share_count_changes TINYINT(1) NOT NULL DEFAULT 0,
+  description VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (action_type_code),
+  KEY idx_md_corp_action_types_price_impact (price_continuity_impact),
+  KEY idx_md_corp_action_types_volume_impact (volume_continuity_impact)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS market_data_trading_status_event_types (
   event_type_code VARCHAR(64) NOT NULL,
   risk_family VARCHAR(64) NOT NULL,
@@ -353,6 +366,7 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   run_id BIGINT UNSIGNED NOT NULL,
   publication_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL,
+  corporate_action_window_reasons VARCHAR(255) NULL,
   PRIMARY KEY (trade_date, ticker_id),
   KEY idx_eod_indicators_ticker_date (ticker_id, trade_date),
   KEY idx_eod_indicators_run (run_id),
@@ -714,6 +728,7 @@ CREATE TABLE IF NOT EXISTS eod_indicators_history (
   event_risk_reasons VARCHAR(255) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL,
+  corporate_action_window_reasons VARCHAR(255) NULL,
   PRIMARY KEY (publication_id, trade_date, ticker_id),
   KEY idx_indicators_history_trade_date (trade_date),
   KEY idx_indicators_history_ticker_date (ticker_id, trade_date),

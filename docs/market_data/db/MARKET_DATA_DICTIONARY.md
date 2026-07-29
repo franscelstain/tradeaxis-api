@@ -2,7 +2,7 @@
 
 Status: `CANONICAL_REFERENCE_FOR_DATABASE_CONNECTED_WORK`
 
-Last updated: 2026-06-22
+Last updated: 2026-07-29
 
 This document is the operational data dictionary for database-connected Market Data, Watchlist, backtest, audit, and future feature work. It complements the physical DDL in `Database_Schema_MariaDB.sql`; it does not replace migrations or locked schema contracts.
 
@@ -46,6 +46,7 @@ These mappings are mandatory for database-connected work. Do not infer alternate
 | `market_data_sectors` | IDX-IC sector taxonomy and sector-index mapping such as IDXTECHNO/IDXFINANCE. | `sector_code` | `sector_code` | `effective_from/effective_to` | Pre-trade safe when membership/sector state is resolved as-of date. |
 | `ticker_sector_memberships` | Historical ticker-to-sector membership as of trade date. Required for sector reconstruction. | `membership_id` | `ticker_id + sector_code` | `effective_from/effective_to` | Pre-trade safe if date-bounded; no fabricated sector fallback. |
 | `market_data_corporate_actions` | Source-backed corporate action events by ticker/date/type. | `corporate_action_id` | `ticker_id/ticker_code` | `action_date` | Pre-trade safe only if source row is known as-of date; not future action leakage. |
+| `market_data_corporate_action_types` | Canonical dictionary for corporate action semantics: price/volume continuity impact and share-count change. Drives indicator window contamination. | `action_type_code` | `action_type_code` | n/a | Pre-trade safe configuration when seeded/locked. |
 | `market_data_trading_status_event_types` | Canonical dictionary for trading-status event semantics, risk families, transition rules, and expected-bar policy. | `event_type_code` | `event_type_code` | n/a | Pre-trade safe configuration when seeded/locked. |
 | `market_data_trading_status_events` | Source-backed trading status events such as suspension, UMA, and special monitoring start/end states. | `trading_status_id` | `ticker_id/ticker_code` | `trade_date` | Pre-trade safe when event is known/carry-forward as-of date. |
 | `market_benchmarks` | Benchmark/index master. IHSG maps to Yahoo ^JKSE; sector benchmarks map to IDX sector provider symbols. | `benchmark_id` | `benchmark_code` | `n/a` | Pre-trade safe master mapping; IHSG is market index identifier. |
@@ -175,6 +176,33 @@ These mappings are mandatory for database-connected work. Do not infer alternate
 | `notes` | `VARCHAR(255) NULL` | data field |
 | `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
 | `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
+
+#### Corporate action semantic rules
+
+- `action_type` must resolve against `market_data_corporate_action_types`. It is not a free-form label.
+- `corporate_action_flag` and `corporate_action_types` on `eod_indicators` are **exact-date** context: they are populated only where `action_date = trade_date`. They do not indicate that a past action still affects the current row.
+- Whether a past action still poisons an indicator window is a separate question, answered by the contamination contract in `Indicator_Registry_Baseline_LOCKED.md` and surfaced through `invalid_reason_code=IND_CORPORATE_ACTION_DISCONTINUITY`.
+- The table stores no quantitative payload. There is no `ratio_from`, `ratio_to`, `cum_date`, `ex_date`, or `dividend_per_share`. Consumers must not assume a magnitude can be derived from these rows.
+
+### `market_data_corporate_action_types`
+
+- Purpose: Canonical dictionary for corporate action semantics. Daily imports store only event identity; this table defines whether an action type breaks price continuity, volume continuity, or share count. Used to decide indicator window contamination.
+- Primary/identity key: `action_type_code`
+- Identifier key: `action_type_code`
+- Date/as-of key: n/a
+- Selection safety: Pre-trade safe configuration once seeded and locked.
+
+| Column | Type / contract | Field role |
+|---|---|---|
+| `action_type_code` | `VARCHAR(64) NOT NULL` | canonical action identity |
+| `price_continuity_impact` | `VARCHAR(32) NOT NULL` | `NONE`, `SCALED`, or `GAP_UNKNOWN_MAGNITUDE` |
+| `volume_continuity_impact` | `VARCHAR(32) NOT NULL` | `NONE` or `SCALED` |
+| `share_count_changes` | `TINYINT(1) NOT NULL DEFAULT 0` | whether outstanding share count changes |
+| `description` | `VARCHAR(255) NULL` | human-readable contract note |
+| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
+| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
+
+Canonical seeded rows and the unknown-type fail-safe rule are owned by `docs/market_data/registry/Corporate_Action_Type_Registry_LOCKED.md`. This dictionary describes the physical shape only; it does not redefine the taxonomy.
 
 ### `market_data_trading_status_event_types`
 
@@ -425,6 +453,7 @@ These mappings are mandatory for database-connected work. Do not infer alternate
 | `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
 | `publication_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
 | `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
+| `corporate_action_window_reasons` | `VARCHAR(255) NULL` | state/reason/audit field; sorted comma-joined `ACTION_TYPE_CODE@YYYY-MM-DD` tokens naming the corporate actions that quarantined at least one indicator field on this row. NULL when no contamination applies. Distinct from the exact-date `corporate_action_*` fields. Appended last on purpose so the migration stays an instant metadata change on multi-million-row tables. |
 
 ### `eod_eligibility`
 
@@ -690,6 +719,7 @@ Dictionary note: `lifecycle_state=RUNNING` is reserved for an active executing p
 | `event_risk_reasons` | `VARCHAR(255) NULL` | data field |
 | `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
 | `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
+| `corporate_action_window_reasons` | `VARCHAR(255) NULL` | state/reason/audit field; sorted comma-joined `ACTION_TYPE_CODE@YYYY-MM-DD` tokens naming the corporate actions that quarantined at least one indicator field on this row. NULL when no contamination applies. Distinct from the exact-date `corporate_action_*` fields. Appended last on purpose so the migration stays an instant metadata change on multi-million-row tables. |
 
 ### `eod_eligibility_history`
 
