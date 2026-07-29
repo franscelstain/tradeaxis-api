@@ -1,0 +1,364 @@
+{
+  "run_code": "C171_DESIGN_NEW_IMMUTABLE_DRAFT_PARAMSET_CANDIDATES_FROM_DIAGNOSTIC",
+  "phase_label": "C171_DESIGN_NEW_IMMUTABLE_DRAFT_PARAMSET_CANDIDATES_FROM_DIAGNOSTIC",
+  "status": "C171_IMMUTABLE_DRAFT_CANDIDATE_DESIGN_COMPLETED",
+  "reason_code": "C171_FIVE_CURATED_REAL_IS_REMEDIATION_CANDIDATES_DESIGNED",
+  "source_evidence": {
+    "eval_id": 188,
+    "param_set_id": 1,
+    "params_hash": "b7f3c207b989c55c93f8f61b1fcceea2c343a151",
+    "diagnostic_artifact_hash": "768b4e47d4a9e497fda29ca6541be9a8f3a63c9d",
+    "diagnostic_json_sha1": "1d2edc8ba5e1da342437e8c91465db03858b068d",
+    "trades_csv_sha1": "7ee6a9c292b43de39a6d4436c5ca80a41d463048",
+    "segments_csv_sha1": "3bb20881ddf2c3d5d402034fdeb50034bf4a10b0",
+    "anomalies_csv_sha1": "53e530a601b2b2dc47812d149d5082ac72f226b9",
+    "official_pick_parity_pass": true,
+    "remediation_classification": "STRATEGY_QUALITY_FAILURE_CONFIRMED"
+  },
+  "design_rules": {
+    "candidate_count": 5,
+    "uses_decision_time_fields_only": true,
+    "uses_oos": false,
+    "uses_ticker_blacklist": false,
+    "uses_sector_whitelist": false,
+    "uses_month_blacklist": false,
+    "lowers_canonical_gates": false,
+    "edits_param_set_1": false,
+    "creates_draft_rows": false,
+    "persists_param_grid_rows": false,
+    "promotes_paramset": false,
+    "production_ready": false,
+    "proxy_metrics_are_retained_baseline_pick_attribution_only": true,
+    "proxy_metrics_are_not_reranked_official_is_results": true
+  },
+  "baseline": {
+    "trade_count": 1425,
+    "days_covered": 506,
+    "avg_ret_net": -0.002539,
+    "win_rate": 0.399298,
+    "median_ret_net": -0.04927,
+    "p25_ret_net": -0.082112,
+    "month_win_rate_min": 0.241379,
+    "month_avg_ret_net_min": -0.034529
+  },
+  "confirmed_diagnostic_signals": [
+    {
+      "signal": "EXCESSIVE_VOLUME_PARTICIPATION",
+      "evidence": "vol_ratio >= 5 had 595 trades, -0.9883% average return, 34.79% win rate, and -6.4772% median return.",
+      "design_response": "Add an explicit maximum volume-ratio bound; test 5.0 and 3.0 without raising the minimum above the baseline unless isolated by a candidate."
+    },
+    {
+      "signal": "VERY_HIGH_DV20_CONCENTRATION",
+      "evidence": "dv20 >= 50B contributed -9.033846 aggregate return across 773 trades; 2.5B-10B buckets were positive in retained-pick attribution.",
+      "design_response": "Add an explicit maximum DV20 bound at 50B; retain 1B or 2.5B lower floors as separate candidates."
+    },
+    {
+      "signal": "HIGH_ATR_DOWNSIDE",
+      "evidence": "ATR 6%-10% had -0.8938% average return, -9.6730% median return, and -11.4757% p25.",
+      "design_response": "Test 7.5% and 6.0% maximum ATR bounds as separate quality/coverage branches."
+    },
+    {
+      "signal": "SCORE_SATURATION",
+      "evidence": "The score distribution saturated at 1.0 and the upper score deciles D09-D10 were negative; retained picks below 0.98 improved median and stop rate when combined with bounded liquidity/volume.",
+      "design_response": "Add an explicit top-pick maximum score bound of 0.98 or exact-saturation exclusion 0.999999."
+    },
+    {
+      "signal": "ANOMALY_NOT_PRIMARY_CAUSE",
+      "evidence": "Only one trade was flagged; removing it still failed all five performance/stability gates.",
+      "design_response": "Do not build a ticker blacklist or silently delete the official trade."
+    }
+  ],
+  "required_next_implementation_contract": {
+    "new_catalog_code": "WS_BT_GRID_REAL_IS_REMEDIATION_C171_R1_2026_07",
+    "catalog_version": "C171-R1",
+    "required_canonical_paramset_extensions": [
+      "liquidity.max_dv20_idr",
+      "volume.max_vol_ratio",
+      "grouping.top_max_score_total"
+    ],
+    "existing_canonical_fields_reused": [
+      "liquidity.min_dv20_idr",
+      "volume.min_vol_ratio",
+      "risk.min_atr14_pct",
+      "risk.max_atr14_pct",
+      "scoring.weights",
+      "grouping.top_picks_target",
+      "grouping.secondary_target",
+      "eval canonical thresholds"
+    ],
+    "runtime_semantics": [
+      "Reject candidate before grouping when dv20_idr exceeds liquidity.max_dv20_idr.",
+      "Reject candidate before scoring/grouping when vol_ratio exceeds volume.max_vol_ratio.",
+      "Exclude TOP-pick candidates whose score_total exceeds grouping.top_max_score_total.",
+      "Do not apply sector, ticker, month, or future-return routing.",
+      "Keep ENTRY/EXIT/HOLD/FEE/SLIP/GAP/PX evaluation model unchanged."
+    ],
+    "draft_persistence_allowed_after_implementation_and_tests": true,
+    "official_is_required_for_each_unchanged_draft": true,
+    "oos_allowed_only_after_full_canonical_is_pass": true
+  },
+  "candidates": [
+    {
+      "candidate_code": "C171_DRAFT_A_BROAD_MODERATE_SCORE_CAP",
+      "role": "primary_quality_candidate",
+      "rationale": "Broad enough to preserve replacement opportunity while removing the three confirmed weak regions: very-high liquidity concentration, volume spikes, and score saturation.",
+      "proposed_bounds": {
+        "min_dv20_idr": 1000000000,
+        "max_dv20_idr": 50000000000,
+        "min_vol_ratio": 1.2,
+        "max_vol_ratio": 5.0,
+        "min_atr14_pct": 0.02,
+        "max_atr14_pct": 0.075,
+        "top_max_score_total": 0.98
+      },
+      "unchanged_contracts": {
+        "weights": {
+          "momentum": 0.3,
+          "volume": 0.2,
+          "breakout": 0.3,
+          "risk": 0.2
+        },
+        "stop_atr_mult": 1.5,
+        "min_rr": 1.5,
+        "top_picks_target": 5,
+        "secondary_target": 10,
+        "top_min_score_q": 0.8,
+        "secondary_min_score_q": 0.65,
+        "canonical_eval_gates_unchanged": true
+      },
+      "proxy_retained_baseline_pick_metrics": {
+        "retained_trade_count": 200,
+        "retained_days_covered": 163,
+        "avg_ret_net": 0.032372845,
+        "win_rate": 0.555,
+        "median_ret_net": 0.0352805,
+        "p25_ret_net": -0.062984,
+        "month_win_rate_min": 0.0,
+        "month_avg_ret_net_min": -0.09203166666666666,
+        "periods_count": 27,
+        "negative_month_count": 7,
+        "stop_rate": 0.335,
+        "target_rate": 0.435
+      },
+      "proxy_gate_interpretation": {
+        "minimum_trade_count_proxy": true,
+        "minimum_coverage_proxy": false,
+        "average_return_positive_proxy": true,
+        "median_return_non_negative_proxy": true,
+        "p25_downside_bound_proxy": false,
+        "monthly_win_rate_floor_proxy": false,
+        "monthly_average_floor_proxy": false
+      }
+    },
+    {
+      "candidate_code": "C171_DRAFT_B_BROAD_SAMPLE_RECOVERY",
+      "role": "coverage_recovery_candidate",
+      "rationale": "Control candidate for whether upper liquidity/volume and ATR bounds improve quality without a score cap; intended to preserve more dates for the canonical coverage gate.",
+      "proposed_bounds": {
+        "min_dv20_idr": 1000000000,
+        "max_dv20_idr": 50000000000,
+        "min_vol_ratio": 1.2,
+        "max_vol_ratio": 5.0,
+        "min_atr14_pct": 0.02,
+        "max_atr14_pct": 0.075,
+        "top_max_score_total": 1.0
+      },
+      "unchanged_contracts": {
+        "weights": {
+          "momentum": 0.3,
+          "volume": 0.2,
+          "breakout": 0.3,
+          "risk": 0.2
+        },
+        "stop_atr_mult": 1.5,
+        "min_rr": 1.5,
+        "top_picks_target": 5,
+        "secondary_target": 10,
+        "top_min_score_q": 0.8,
+        "secondary_min_score_q": 0.65,
+        "canonical_eval_gates_unchanged": true
+      },
+      "proxy_retained_baseline_pick_metrics": {
+        "retained_trade_count": 292,
+        "retained_days_covered": 231,
+        "avg_ret_net": 0.023980342465753424,
+        "win_rate": 0.5171232876712328,
+        "median_ret_net": 0.0143755,
+        "p25_ret_net": -0.07221025,
+        "month_win_rate_min": 0.14285714285714285,
+        "month_avg_ret_net_min": -0.058902857142857146,
+        "periods_count": 27,
+        "negative_month_count": 9,
+        "stop_rate": 0.3801369863013699,
+        "target_rate": 0.410958904109589
+      },
+      "proxy_gate_interpretation": {
+        "minimum_trade_count_proxy": true,
+        "minimum_coverage_proxy": false,
+        "average_return_positive_proxy": true,
+        "median_return_non_negative_proxy": true,
+        "p25_downside_bound_proxy": false,
+        "monthly_win_rate_floor_proxy": false,
+        "monthly_average_floor_proxy": false
+      }
+    },
+    {
+      "candidate_code": "C171_DRAFT_C_MID_LIQ_LOW_ATR_SCORE_CAP",
+      "role": "mid_liquidity_quality_candidate",
+      "rationale": "Targets the strongest liquidity/volume/ATR intersection while avoiding exact score saturation; retains a broader upper liquidity bound than the narrow 2.5B–10B frontier.",
+      "proposed_bounds": {
+        "min_dv20_idr": 2500000000,
+        "max_dv20_idr": 50000000000,
+        "min_vol_ratio": 1.5,
+        "max_vol_ratio": 5.0,
+        "min_atr14_pct": 0.02,
+        "max_atr14_pct": 0.06,
+        "top_max_score_total": 0.999999
+      },
+      "unchanged_contracts": {
+        "weights": {
+          "momentum": 0.3,
+          "volume": 0.2,
+          "breakout": 0.3,
+          "risk": 0.2
+        },
+        "stop_atr_mult": 1.5,
+        "min_rr": 1.5,
+        "top_picks_target": 5,
+        "secondary_target": 10,
+        "top_min_score_q": 0.8,
+        "secondary_min_score_q": 0.65,
+        "canonical_eval_gates_unchanged": true
+      },
+      "proxy_retained_baseline_pick_metrics": {
+        "retained_trade_count": 166,
+        "retained_days_covered": 149,
+        "avg_ret_net": 0.02354784337349398,
+        "win_rate": 0.5240963855421686,
+        "median_ret_net": 0.013855,
+        "p25_ret_net": -0.0644125,
+        "month_win_rate_min": 0.2,
+        "month_avg_ret_net_min": -0.04970133333333334,
+        "periods_count": 27,
+        "negative_month_count": 9,
+        "stop_rate": 0.3795180722891566,
+        "target_rate": 0.41566265060240964
+      },
+      "proxy_gate_interpretation": {
+        "minimum_trade_count_proxy": true,
+        "minimum_coverage_proxy": false,
+        "average_return_positive_proxy": true,
+        "median_return_non_negative_proxy": true,
+        "p25_downside_bound_proxy": false,
+        "monthly_win_rate_floor_proxy": false,
+        "monthly_average_floor_proxy": false
+      }
+    },
+    {
+      "candidate_code": "C171_DRAFT_D_LOW_ATR_BALANCED",
+      "role": "low_atr_balanced_candidate",
+      "rationale": "Keeps the broad liquidity floor but removes the 6%–10% ATR bucket and exact score saturation; intended as the main balance between quality and replacement coverage.",
+      "proposed_bounds": {
+        "min_dv20_idr": 1000000000,
+        "max_dv20_idr": 50000000000,
+        "min_vol_ratio": 1.2,
+        "max_vol_ratio": 5.0,
+        "min_atr14_pct": 0.02,
+        "max_atr14_pct": 0.06,
+        "top_max_score_total": 0.999999
+      },
+      "unchanged_contracts": {
+        "weights": {
+          "momentum": 0.3,
+          "volume": 0.2,
+          "breakout": 0.3,
+          "risk": 0.2
+        },
+        "stop_atr_mult": 1.5,
+        "min_rr": 1.5,
+        "top_picks_target": 5,
+        "secondary_target": 10,
+        "top_min_score_q": 0.8,
+        "secondary_min_score_q": 0.65,
+        "canonical_eval_gates_unchanged": true
+      },
+      "proxy_retained_baseline_pick_metrics": {
+        "retained_trade_count": 184,
+        "retained_days_covered": 160,
+        "avg_ret_net": 0.024343331521739127,
+        "win_rate": 0.532608695652174,
+        "median_ret_net": 0.015908,
+        "p25_ret_net": -0.06298424999999999,
+        "month_win_rate_min": 0.2,
+        "month_avg_ret_net_min": -0.04970133333333334,
+        "periods_count": 27,
+        "negative_month_count": 8,
+        "stop_rate": 0.3695652173913043,
+        "target_rate": 0.41304347826086957
+      },
+      "proxy_gate_interpretation": {
+        "minimum_trade_count_proxy": true,
+        "minimum_coverage_proxy": false,
+        "average_return_positive_proxy": true,
+        "median_return_non_negative_proxy": true,
+        "p25_downside_bound_proxy": false,
+        "monthly_win_rate_floor_proxy": false,
+        "monthly_average_floor_proxy": false
+      }
+    },
+    {
+      "candidate_code": "C171_DRAFT_E_LOWER_VOLUME_BALANCED",
+      "role": "volume_spike_avoidance_candidate",
+      "rationale": "Tests the strongest direct signal from the official diagnostic: moderate participation outperformed volume spikes; keeps ATR broader to avoid combining too many strict axes.",
+      "proposed_bounds": {
+        "min_dv20_idr": 1000000000,
+        "max_dv20_idr": 50000000000,
+        "min_vol_ratio": 1.2,
+        "max_vol_ratio": 3.0,
+        "min_atr14_pct": 0.02,
+        "max_atr14_pct": 0.075,
+        "top_max_score_total": 0.98
+      },
+      "unchanged_contracts": {
+        "weights": {
+          "momentum": 0.3,
+          "volume": 0.2,
+          "breakout": 0.3,
+          "risk": 0.2
+        },
+        "stop_atr_mult": 1.5,
+        "min_rr": 1.5,
+        "top_picks_target": 5,
+        "secondary_target": 10,
+        "top_min_score_q": 0.8,
+        "secondary_min_score_q": 0.65,
+        "canonical_eval_gates_unchanged": true
+      },
+      "proxy_retained_baseline_pick_metrics": {
+        "retained_trade_count": 132,
+        "retained_days_covered": 119,
+        "avg_ret_net": 0.03251952272727273,
+        "win_rate": 0.5454545454545454,
+        "median_ret_net": 0.033859,
+        "p25_ret_net": -0.068937,
+        "month_win_rate_min": 0.0,
+        "month_avg_ret_net_min": -0.09203166666666666,
+        "periods_count": 26,
+        "negative_month_count": 8,
+        "stop_rate": 0.3409090909090909,
+        "target_rate": 0.4393939393939394
+      },
+      "proxy_gate_interpretation": {
+        "minimum_trade_count_proxy": true,
+        "minimum_coverage_proxy": false,
+        "average_return_positive_proxy": true,
+        "median_return_non_negative_proxy": true,
+        "p25_downside_bound_proxy": false,
+        "monthly_win_rate_floor_proxy": false,
+        "monthly_average_floor_proxy": false
+      }
+    }
+  ],
+  "next_recommendation": "C171_IMPLEMENT_AND_PERSIST_IMMUTABLE_REAL_IS_REMEDIATION_DRAFT_CATALOG",
+  "artifact_hash": "2a1345857e2ecf62b2d64fcaa46ed06f6015e9a6"
+}

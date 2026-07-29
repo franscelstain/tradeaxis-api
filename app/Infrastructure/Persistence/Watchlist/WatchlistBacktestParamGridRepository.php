@@ -14,6 +14,9 @@ use App\Application\Watchlist\Services\WatchlistBacktestC14ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC15ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC16ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestC17ParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestC171RemediationParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestR2ParamGridCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -27,27 +30,29 @@ class WatchlistBacktestParamGridRepository
     ];
 
     private const PARAMETER_COLUMNS = [
-        'min_dv20_idr', 'dv20_strong_idr',
-        'min_vol_ratio', 'strong_vol_ratio',
+        'min_dv20_idr', 'max_dv20_idr', 'dv20_strong_idr',
+        'min_vol_ratio', 'max_vol_ratio', 'strong_vol_ratio',
         'min_atr14_pct', 'max_atr14_pct', 'atr_ideal_low', 'atr_ideal_high',
+        'max_signal_tick_risk_expansion_pct',
         'roc_lo', 'roc_hi', 'mom_roc20_soft_min', 'bo_near_below_pct', 'bo_max_ext_pct',
         'w_momentum', 'w_volume', 'w_breakout', 'w_risk',
         'stop_atr_mult', 'min_rr',
         'top_picks_target', 'secondary_target',
-        'top_min_score_q', 'secondary_min_score_q',
+        'top_min_score_q', 'top_max_score_total', 'secondary_min_score_q',
     ];
 
     private const PERSISTED_COLUMNS = [
         'policy_code', 'catalog_code', 'catalog_version', 'catalog_hash',
         'row_code', 'row_hash', 'rationale',
-        'min_dv20_idr', 'dv20_strong_idr',
-        'min_vol_ratio', 'strong_vol_ratio',
+        'min_dv20_idr', 'max_dv20_idr', 'dv20_strong_idr',
+        'min_vol_ratio', 'max_vol_ratio', 'strong_vol_ratio',
         'min_atr14_pct', 'max_atr14_pct', 'atr_ideal_low', 'atr_ideal_high',
+        'max_signal_tick_risk_expansion_pct',
         'roc_lo', 'roc_hi', 'mom_roc20_soft_min', 'bo_near_below_pct', 'bo_max_ext_pct',
         'w_momentum', 'w_volume', 'w_breakout', 'w_risk',
         'stop_atr_mult', 'min_rr',
         'top_picks_target', 'secondary_target',
-        'top_min_score_q', 'secondary_min_score_q',
+        'top_min_score_q', 'top_max_score_total', 'secondary_min_score_q',
         'notes',
     ];
 
@@ -211,6 +216,12 @@ class WatchlistBacktestParamGridRepository
         $rowCodes = [];
         $parameterPayloads = [];
         foreach ($rows as $index => $row) {
+            $row = array_replace([
+                'max_dv20_idr' => null,
+                'max_vol_ratio' => null,
+                'top_max_score_total' => null,
+                'max_signal_tick_risk_expansion_pct' => null,
+            ], $row);
             foreach (self::PERSISTED_COLUMNS as $column) {
                 if (! array_key_exists($column, $row)) {
                     throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: missing '.$column.' at catalog index '.$index.'.');
@@ -317,6 +328,21 @@ class WatchlistBacktestParamGridRepository
                 WatchlistBacktestC17ParamGridCatalog::hash(),
                 WatchlistBacktestC17ParamGridCatalog::CATALOG_COUNT,
             ],
+            WatchlistBacktestC171RemediationParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestC171RemediationParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestC171RemediationParamGridCatalog::hash(),
+                WatchlistBacktestC171RemediationParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::hash(),
+                WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog::hash(),
+                WatchlistBacktestC171FinalBoundedRemediationParamGridCatalog::CATALOG_COUNT,
+            ],
         ];
         if (! isset($known[$code])) {
             throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: catalog_code is not an approved immutable catalog.');
@@ -332,8 +358,18 @@ class WatchlistBacktestParamGridRepository
         if ((int) $row['min_dv20_idr'] < 0 || (int) $row['dv20_strong_idr'] < (int) $row['min_dv20_idr']) {
             throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: liquidity thresholds are invalid.');
         }
+        if ($row['max_dv20_idr'] !== null
+            && ((int) $row['max_dv20_idr'] < (int) $row['min_dv20_idr']
+                || (int) $row['max_dv20_idr'] < (int) $row['dv20_strong_idr'])) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: max_dv20_idr must be >= min_dv20_idr and dv20_strong_idr.');
+        }
         if ((float) $row['min_vol_ratio'] < 0 || (float) $row['strong_vol_ratio'] < (float) $row['min_vol_ratio']) {
             throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: volume thresholds are invalid.');
+        }
+        if ($row['max_vol_ratio'] !== null
+            && ((float) $row['max_vol_ratio'] < (float) $row['min_vol_ratio']
+                || (float) $row['max_vol_ratio'] < (float) $row['strong_vol_ratio'])) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: max_vol_ratio must be >= min_vol_ratio and strong_vol_ratio.');
         }
         if (! ((float) $row['min_atr14_pct'] <= (float) $row['atr_ideal_low']
             && (float) $row['atr_ideal_low'] <= (float) $row['atr_ideal_high']
@@ -350,6 +386,15 @@ class WatchlistBacktestParamGridRepository
         }
         if ((float) $row['secondary_min_score_q'] > (float) $row['top_min_score_q']) {
             throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: secondary quantile must not exceed top quantile.');
+        }
+        if ($row['top_max_score_total'] !== null
+            && ((float) $row['top_max_score_total'] < 0 || (float) $row['top_max_score_total'] > 1)) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: top_max_score_total must be within 0..1.');
+        }
+        if ($row['max_signal_tick_risk_expansion_pct'] !== null
+            && ((float) $row['max_signal_tick_risk_expansion_pct'] < 0
+                || (float) $row['max_signal_tick_risk_expansion_pct'] > 1)) {
+            throw new RuntimeException('WS_BT_R2_CATALOG_INVALID: max_signal_tick_risk_expansion_pct must be within 0..1.');
         }
 
         $weightTotal = (float) $row['w_momentum'] + (float) $row['w_volume']
@@ -428,7 +473,7 @@ class WatchlistBacktestParamGridRepository
         }
         foreach (self::PERSISTED_COLUMNS as $column) {
             $item = $value[$column] ?? null;
-            if (in_array($column, ['min_dv20_idr', 'dv20_strong_idr', 'top_picks_target', 'secondary_target'], true)) {
+            if (in_array($column, ['min_dv20_idr', 'max_dv20_idr', 'dv20_strong_idr', 'top_picks_target', 'secondary_target'], true)) {
                 $item = $item === null ? null : (int) $item;
             } elseif (in_array($column, self::PARAMETER_COLUMNS, true)) {
                 $item = $item === null ? null : (float) $item;

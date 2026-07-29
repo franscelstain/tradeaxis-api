@@ -10,10 +10,12 @@ class WatchlistCandidateUniverseService
         'paramset_code' => 'WS_ACTIVE_BOOTSTRAP',
         'liquidity' => [
             'min_dv20_idr' => 1000000000.0,
+            'max_dv20_idr' => null,
             'dv20_strong_idr' => 5000000000.0,
         ],
         'volume' => [
             'min_vol_ratio' => 1.2,
+            'max_vol_ratio' => null,
         ],
         'risk' => [
             'min_atr14_pct' => 0.02,
@@ -22,14 +24,19 @@ class WatchlistCandidateUniverseService
             'atr_ideal_high' => 0.075,
             'stop_atr_mult' => 1.5,
             'min_rr' => 1.5,
+            'max_signal_tick_risk_expansion_pct' => null,
         ],
     ];
 
     private WatchlistMarketDataConsumerReadService $readModel;
+    private WeeklySwingDecisionTimeTickRiskService $tickRisk;
 
-    public function __construct(WatchlistMarketDataConsumerReadService $readModel = null)
-    {
+    public function __construct(
+        WatchlistMarketDataConsumerReadService $readModel = null,
+        WeeklySwingDecisionTimeTickRiskService $tickRisk = null
+    ) {
         $this->readModel = $readModel ?: new WatchlistMarketDataConsumerReadService();
+        $this->tickRisk = $tickRisk ?: new WeeklySwingDecisionTimeTickRiskService();
     }
 
     public function buildCandidateUniverseForTradeDate(string $tradeDate, array $paramset = []): array
@@ -134,7 +141,7 @@ class WatchlistCandidateUniverseService
     private function evaluateCandidate(array $candidate, array $paramset): array
     {
         $metrics = $this->extractMetrics($candidate, $paramset);
-        $missingFields = $this->missingGuardFields($metrics);
+        $missingFields = $this->missingGuardFields($metrics, $paramset);
         $failReasons = [];
         $infoReasons = [];
 
@@ -145,6 +152,10 @@ class WatchlistCandidateUniverseService
         if ($missingFields === []) {
             if ($metrics['dv20_idr'] < $paramset['liquidity']['min_dv20_idr']) {
                 $failReasons[] = 'WS_LIQ_FAIL';
+            }
+            if ($paramset['liquidity']['max_dv20_idr'] !== null
+                && $metrics['dv20_idr'] > $paramset['liquidity']['max_dv20_idr']) {
+                $failReasons[] = 'WS_LIQ_HIGH';
             }
 
             if ($metrics['atr14_pct'] < $paramset['risk']['min_atr14_pct']) {
@@ -157,6 +168,14 @@ class WatchlistCandidateUniverseService
 
             if ($metrics['vol_ratio'] < $paramset['volume']['min_vol_ratio']) {
                 $failReasons[] = 'WS_VOLR_FAIL';
+            }
+            if ($paramset['volume']['max_vol_ratio'] !== null
+                && $metrics['vol_ratio'] > $paramset['volume']['max_vol_ratio']) {
+                $failReasons[] = 'WS_VOLR_HIGH';
+            }
+            if ($paramset['risk']['max_signal_tick_risk_expansion_pct'] !== null
+                && $metrics['signal_tick_risk_expansion_pct'] > $paramset['risk']['max_signal_tick_risk_expansion_pct']) {
+                $failReasons[] = 'WS_TICK_RISK_HIGH';
             }
         }
 
@@ -203,12 +222,16 @@ class WatchlistCandidateUniverseService
             'gate_metrics' => $metrics,
             'gate_thresholds' => [
                 'min_dv20_idr' => $paramset['liquidity']['min_dv20_idr'],
+                'max_dv20_idr' => $paramset['liquidity']['max_dv20_idr'],
                 'dv20_strong_idr' => $paramset['liquidity']['dv20_strong_idr'],
                 'min_atr14_pct' => $paramset['risk']['min_atr14_pct'],
                 'max_atr14_pct' => $paramset['risk']['max_atr14_pct'],
                 'atr_ideal_low' => $paramset['risk']['atr_ideal_low'],
                 'atr_ideal_high' => $paramset['risk']['atr_ideal_high'],
                 'min_vol_ratio' => $paramset['volume']['min_vol_ratio'],
+                'max_vol_ratio' => $paramset['volume']['max_vol_ratio'],
+                'max_signal_tick_risk_expansion_pct' => $paramset['risk']['max_signal_tick_risk_expansion_pct'],
+                'signal_tick_risk_contract' => WeeklySwingDecisionTimeTickRiskService::CONTRACT,
             ],
         ];
     }
@@ -216,10 +239,21 @@ class WatchlistCandidateUniverseService
     private function extractMetrics(array $candidate, array $paramset = []): array
     {
         $indicators = $candidate['indicators'] ?? [];
+        $signalClosePrice = $this->metricOrNull($candidate['close_price'] ?? $candidate['close'] ?? $indicators['close'] ?? null);
+        $atr14Pct = $this->metricOrNull($indicators['atr14_pct'] ?? $candidate['atr14_pct'] ?? null);
+        $tickRisk = $this->tickRisk->calculate(
+            $signalClosePrice,
+            $atr14Pct,
+            (float) ($paramset['risk']['stop_atr_mult'] ?? self::DEFAULT_PARAMSET['risk']['stop_atr_mult'])
+        );
         $metrics = [
             'dv20_idr' => $this->metricOrNull($indicators['dv20idr'] ?? $indicators['dv20_idr'] ?? $candidate['dv20idr'] ?? $candidate['dv20_idr'] ?? null),
-            'atr14_pct' => $this->metricOrNull($indicators['atr14_pct'] ?? $candidate['atr14_pct'] ?? null),
+            'atr14_pct' => $atr14Pct,
             'vol_ratio' => $this->metricOrNull($indicators['vol_ratio'] ?? $candidate['vol_ratio'] ?? null),
+            'signal_close_price' => $signalClosePrice,
+            'theoretical_stop_risk_pct' => $tickRisk['theoretical_stop_risk_pct'],
+            'normalized_stop_risk_pct' => $tickRisk['normalized_stop_risk_pct'],
+            'signal_tick_risk_expansion_pct' => $tickRisk['signal_tick_risk_expansion_pct'],
             'roc20' => $this->metricOrNull($indicators['roc_20'] ?? $indicators['roc20'] ?? $candidate['roc_20'] ?? $candidate['roc20'] ?? null),
             'hh20' => $this->metricOrNull($indicators['hh20'] ?? $candidate['hh20'] ?? null),
             'ma20' => $this->metricOrNull($indicators['ma20'] ?? $candidate['ma20'] ?? null),
@@ -306,10 +340,15 @@ class WatchlistCandidateUniverseService
         return $sectorCode === '' ? null : $sectorCode;
     }
 
-    private function missingGuardFields(array $metrics): array
+    private function missingGuardFields(array $metrics, array $paramset): array
     {
         $missing = [];
-        foreach (['dv20_idr', 'atr14_pct', 'vol_ratio'] as $field) {
+        $required = ['dv20_idr', 'atr14_pct', 'vol_ratio'];
+        if ($paramset['risk']['max_signal_tick_risk_expansion_pct'] !== null) {
+            $required[] = 'signal_close_price';
+            $required[] = 'signal_tick_risk_expansion_pct';
+        }
+        foreach ($required as $field) {
             if ($metrics[$field] === null) {
                 $missing[] = $field;
             }
@@ -320,7 +359,7 @@ class WatchlistCandidateUniverseService
 
     private function canonicalFailReason(array $failReasons): ?string
     {
-        foreach (['WS_DATA_MISSING', 'WS_LIQ_FAIL', 'WS_ATR_LOW', 'WS_ATR_HIGH', 'WS_VOLR_FAIL'] as $reason) {
+        foreach (['WS_DATA_MISSING', 'WS_LIQ_FAIL', 'WS_LIQ_HIGH', 'WS_ATR_LOW', 'WS_ATR_HIGH', 'WS_VOLR_FAIL', 'WS_VOLR_HIGH', 'WS_TICK_RISK_HIGH'] as $reason) {
             if (in_array($reason, $failReasons, true)) {
                 return $reason;
             }
@@ -338,7 +377,7 @@ class WatchlistCandidateUniverseService
         }
 
         $ordered = [];
-        foreach (['WS_ELIGIBLE', 'WS_DATA_MISSING', 'WS_LIQ_FAIL', 'WS_ATR_LOW', 'WS_ATR_HIGH', 'WS_VOLR_FAIL'] as $reason) {
+        foreach (['WS_ELIGIBLE', 'WS_DATA_MISSING', 'WS_LIQ_FAIL', 'WS_LIQ_HIGH', 'WS_ATR_LOW', 'WS_ATR_HIGH', 'WS_VOLR_FAIL', 'WS_VOLR_HIGH', 'WS_TICK_RISK_HIGH'] as $reason) {
             if (array_key_exists($reason, $counts)) {
                 $ordered[$reason] = $counts[$reason];
                 unset($counts[$reason]);
@@ -359,16 +398,21 @@ class WatchlistCandidateUniverseService
             'paramset_code' => (string) ($paramset['paramset_code'] ?? $defaults['paramset_code']),
             'liquidity' => [
                 'min_dv20_idr' => $this->paramValue($paramset, ['liquidity', 'min_dv20_idr'], $defaults['liquidity']['min_dv20_idr']),
+                'max_dv20_idr' => $this->optionalParamValue($paramset, ['liquidity', 'max_dv20_idr']),
                 'dv20_strong_idr' => $this->paramValue($paramset, ['liquidity', 'dv20_strong_idr'], $defaults['liquidity']['dv20_strong_idr']),
             ],
             'volume' => [
                 'min_vol_ratio' => $this->paramValue($paramset, ['volume', 'min_vol_ratio'], $defaults['volume']['min_vol_ratio']),
+                'max_vol_ratio' => $this->optionalParamValue($paramset, ['volume', 'max_vol_ratio']),
             ],
             'risk' => [
                 'min_atr14_pct' => $this->paramValue($paramset, ['risk', 'min_atr14_pct'], $defaults['risk']['min_atr14_pct']),
                 'max_atr14_pct' => $this->paramValue($paramset, ['risk', 'max_atr14_pct'], $defaults['risk']['max_atr14_pct']),
                 'atr_ideal_low' => $this->paramValue($paramset, ['risk', 'atr_ideal_low'], $defaults['risk']['atr_ideal_low']),
                 'atr_ideal_high' => $this->paramValue($paramset, ['risk', 'atr_ideal_high'], $defaults['risk']['atr_ideal_high']),
+                'stop_atr_mult' => $this->paramValue($paramset, ['risk', 'stop_atr_mult'], $defaults['risk']['stop_atr_mult']),
+                'min_rr' => $this->paramValue($paramset, ['risk', 'min_rr'], $defaults['risk']['min_rr']),
+                'max_signal_tick_risk_expansion_pct' => $this->optionalParamValue($paramset, ['risk', 'max_signal_tick_risk_expansion_pct']),
             ],
         ];
 
@@ -404,6 +448,22 @@ class WatchlistCandidateUniverseService
             ], true);
     }
 
+    private function optionalParamValue(array $paramset, array $path): ?float
+    {
+        $cursor = $paramset;
+        foreach ($path as $segment) {
+            if (! is_array($cursor) || ! array_key_exists($segment, $cursor)) {
+                return null;
+            }
+            $cursor = $cursor[$segment];
+        }
+        if (is_array($cursor) && array_key_exists('value', $cursor)) {
+            $cursor = $cursor['value'];
+        }
+
+        return is_numeric($cursor) ? (float) $cursor : null;
+    }
+
     private function paramValue(array $paramset, array $path, float $default): float
     {
         $cursor = $paramset;
@@ -433,14 +493,35 @@ class WatchlistCandidateUniverseService
             'risk.max_atr14_pct' => $paramset['risk']['max_atr14_pct'],
             'risk.atr_ideal_low' => $paramset['risk']['atr_ideal_low'],
             'risk.atr_ideal_high' => $paramset['risk']['atr_ideal_high'],
+            'risk.stop_atr_mult' => $paramset['risk']['stop_atr_mult'],
+            'risk.min_rr' => $paramset['risk']['min_rr'],
         ] as $name => $value) {
             if (! is_numeric($value) || (float) $value < 0) {
                 $errors[] = $name.' must be numeric and >= 0';
             }
         }
 
+        foreach ([
+            'liquidity.max_dv20_idr' => $paramset['liquidity']['max_dv20_idr'],
+            'volume.max_vol_ratio' => $paramset['volume']['max_vol_ratio'],
+            'risk.max_signal_tick_risk_expansion_pct' => $paramset['risk']['max_signal_tick_risk_expansion_pct'],
+        ] as $name => $value) {
+            if ($value !== null && (! is_numeric($value) || (float) $value < 0)) {
+                $errors[] = $name.' must be null or numeric and >= 0';
+            }
+        }
+
         if ($paramset['liquidity']['dv20_strong_idr'] < $paramset['liquidity']['min_dv20_idr']) {
             $errors[] = 'liquidity.dv20_strong_idr must be >= liquidity.min_dv20_idr';
+        }
+        if ($paramset['liquidity']['max_dv20_idr'] !== null
+            && ($paramset['liquidity']['max_dv20_idr'] < $paramset['liquidity']['min_dv20_idr']
+                || $paramset['liquidity']['max_dv20_idr'] < $paramset['liquidity']['dv20_strong_idr'])) {
+            $errors[] = 'liquidity.max_dv20_idr must be >= min_dv20_idr and dv20_strong_idr';
+        }
+        if ($paramset['volume']['max_vol_ratio'] !== null
+            && $paramset['volume']['max_vol_ratio'] < $paramset['volume']['min_vol_ratio']) {
+            $errors[] = 'volume.max_vol_ratio must be >= volume.min_vol_ratio';
         }
 
         if ($paramset['risk']['min_atr14_pct'] > $paramset['risk']['max_atr14_pct']) {
@@ -459,7 +540,10 @@ class WatchlistCandidateUniverseService
             $errors[] = 'risk.atr_ideal_low must be <= risk.atr_ideal_high';
         }
 
-        foreach (['risk.min_atr14_pct', 'risk.max_atr14_pct', 'risk.atr_ideal_low', 'risk.atr_ideal_high'] as $name) {
+        foreach (['risk.min_atr14_pct', 'risk.max_atr14_pct', 'risk.atr_ideal_low', 'risk.atr_ideal_high', 'risk.max_signal_tick_risk_expansion_pct'] as $name) {
+            if ($name === 'risk.max_signal_tick_risk_expansion_pct' && $paramset['risk']['max_signal_tick_risk_expansion_pct'] === null) {
+                continue;
+            }
             $path = explode('.', $name);
             if ($paramset[$path[0]][$path[1]] > 1) {
                 $errors[] = $name.' must be a fraction between 0 and 1, not percent-points';

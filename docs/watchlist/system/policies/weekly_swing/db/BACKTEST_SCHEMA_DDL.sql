@@ -32,11 +32,14 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_param_grid (
   rationale TEXT NOT NULL,
   -- entry-quality guardrails and scoring inputs
   min_dv20_idr BIGINT UNSIGNED NOT NULL,
+  max_dv20_idr BIGINT UNSIGNED NULL,
   dv20_strong_idr BIGINT UNSIGNED NOT NULL,
   min_vol_ratio DECIMAL(10,6) NOT NULL,
+  max_vol_ratio DECIMAL(20,6) NULL,
   strong_vol_ratio DECIMAL(10,6) NOT NULL,
   min_atr14_pct DECIMAL(10,6) NOT NULL,
   max_atr14_pct DECIMAL(10,6) NOT NULL,
+  max_signal_tick_risk_expansion_pct DECIMAL(10,6) NULL,
   atr_ideal_low DECIMAL(10,6) NOT NULL,
   atr_ideal_high DECIMAL(10,6) NOT NULL,
   roc_lo DECIMAL(10,6) NOT NULL,
@@ -56,6 +59,7 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_param_grid (
   top_picks_target INT UNSIGNED NOT NULL,
   secondary_target INT UNSIGNED NOT NULL,
   top_min_score_q DECIMAL(10,6) NOT NULL,
+  top_max_score_total DECIMAL(10,6) NULL,
   secondary_min_score_q DECIMAL(10,6) NOT NULL,
   notes VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -72,6 +76,11 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_eval (
   catalog_hash CHAR(40) NOT NULL,
   param_id INT NOT NULL,
   eval_model VARCHAR(96) NOT NULL,
+  eval_model_hash CHAR(40) NOT NULL,
+  implementation_version VARCHAR(64) NOT NULL,
+  implementation_hash CHAR(40) NOT NULL,
+  evidence_pipeline_version VARCHAR(64) NOT NULL,
+  evidence_pipeline_hash CHAR(40) NOT NULL,
   paramset_hash CHAR(40) NOT NULL,
 
   -- evaluation window metadata
@@ -106,11 +115,22 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_eval (
   min_ret_net_all DECIMAL(10,6) NULL,
   max_ret_net_all DECIMAL(10,6) NULL,
 
+  -- immutable official-evidence manifest identity
+  picks_hash CHAR(40) NULL,
+  universe_count INT NULL,
+  universe_hash CHAR(40) NULL,
+  cutoff_count INT NULL,
+  cutoffs_hash CHAR(40) NULL,
+  evidence_manifest_hash CHAR(40) NULL,
+  market_data_lineage_hash CHAR(40) NULL,
+
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (eval_id),
   UNIQUE KEY UQ_bt_eval_catalog_param_window (
     policy_code, catalog_code, catalog_version, param_id,
-    eval_model, paramset_hash, from_date, to_date
+    eval_model, eval_model_hash, implementation_version, implementation_hash,
+    evidence_pipeline_version, evidence_pipeline_hash,
+    paramset_hash, from_date, to_date
   ),
   KEY IDX_bt_eval_catalog_rank (
     policy_code, catalog_code, avg_ret_net_top,
@@ -193,7 +213,9 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_universe_ws (
   -- metrics snapshot (for equivalence debugging)
   dv20_idr        BIGINT NULL,
   atr14_pct       DECIMAL(10,6) NULL,
-  vol_ratio       DECIMAL(10,6) NULL,
+  vol_ratio       DECIMAL(20,6) NULL,
+  signal_close_price DECIMAL(20,6) NULL,
+  signal_tick_risk_expansion_pct DECIMAL(10,6) NULL,
 
   -- canonical reason for NOT eligible (must follow priority in doc 15)
   reason_code     VARCHAR(32) NULL,
@@ -219,3 +241,36 @@ CREATE TABLE IF NOT EXISTS watchlist_bt_cutoffs_ws (
   KEY IDX_bt_cutoffs_date (policy_code, asof_eod_date, param_id),
   CONSTRAINT FK_bt_cutoffs_param FOREIGN KEY (param_id) REFERENCES watchlist_bt_param_grid(param_id)
 ) ENGINE=InnoDB;
+/* ===================== C171 Versioned Official IS Evidence ===================== */
+-- Implemented by migration:
+-- 2026_07_25_000001_version_watchlist_official_backtest_evidence_and_paramset_identity.php
+--
+-- Identity rules:
+-- 1. Every picks/universe/cutoff row belongs to exactly one watchlist_bt_eval.eval_id.
+-- 2. watchlist_bt_eval owns the immutable evidence manifest hashes.
+-- 3. DRAFT params_hash, IS paramset_hash, OOS paramset_hash, eval_model_hash,
+--    implementation_hash, and IS evidence_manifest_hash must be equal before promotion.
+-- 4. Legacy support rows may not be assigned an eval_id by inference. Non-empty
+--    unversioned tables require an explicit remediation/backfill session.
+-- 5. Paramset payload/provenance is immutable. Only DRAFT->ACTIVE and
+--    ACTIVE->DEPRECATED status transitions are permitted by the DB guard.
+--
+-- New watchlist_bt_eval identity columns:
+-- eval_model_hash CHAR(40), implementation_version VARCHAR(64),
+-- implementation_hash CHAR(40), picks_hash CHAR(40), universe_count INT,
+-- universe_hash CHAR(40), cutoff_count INT, cutoffs_hash CHAR(40),
+-- evidence_manifest_hash CHAR(40), market_data_lineage_hash CHAR(40).
+--
+-- C171 C01 evidence-pipeline versioning (migration
+-- 2026_07_28_000002_version_c171_tick_risk_evidence_pipeline.php):
+-- evidence_pipeline_version VARCHAR(64), evidence_pipeline_hash CHAR(40).
+-- These fields version evidence construction independently from the immutable
+-- strategy implementation identity. Legacy evals remain immutable under V1;
+-- corrected tick-risk propagation reruns use V2 and receive new eval_id values.
+--
+-- New support-table identity:
+-- watchlist_bt_picks_ws.eval_id + row_hash
+-- watchlist_bt_universe_ws.eval_id + policy_code + param_id + row_hash
+-- watchlist_bt_cutoffs_ws.eval_id + row_hash
+-- Composite uniqueness is scoped by eval_id so multiple official evaluations
+-- cannot overwrite or share support evidence.

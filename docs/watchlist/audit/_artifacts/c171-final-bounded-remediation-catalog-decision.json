@@ -1,0 +1,197 @@
+{
+    "schema_version": "C171_FINAL_BOUNDED_REMEDIATION_CATALOG_DECISION_V1",
+    "run_code": "C171_C01_V3_FINAL_COMPARATIVE_AND_C171_CLOSURE_DECISION",
+    "status": "C171_ONE_FINAL_BOUNDED_REMEDIATION_ALLOWED_CLOSURE_RULE_LOCKED",
+    "decision": "ONE_FINAL_BOUNDED_REMEDIATION_ALLOWED",
+    "source_pipeline_version": "WS_C171_C01_TICK_RISK_GUARD_ENFORCEMENT_PIPELINE_V3",
+    "source_pipeline_hash": "9e9933b363026623b7ab5629f3281fa680a53a2e",
+    "source_eval_ids": [
+        199,
+        200,
+        201,
+        202,
+        203,
+        204
+    ],
+    "source_param_set_ids": [
+        5,
+        7,
+        8,
+        9,
+        10,
+        11
+    ],
+    "source_evidence": {
+        "9": {
+            "eval_id": 202,
+            "params_hash": "794d9487c9566aeb611a132f2e8951e9013ed2ce",
+            "artifact_hash": "17670dc076c2ed3a8c21b8835f93ff7bf1505ab2",
+            "file_sha1": "f421999d5b5b03d9d5366929d7ae0c1eea62d025",
+            "picks_count": 948,
+            "days_covered": 499,
+            "avg_ret_net": 0.003155136661464025,
+            "median_ret_net": -0.009045820226845374,
+            "p25_ret_net": -0.0519270580389113,
+            "win_rate": 0.4229957805907173,
+            "month_win_rate_min": 0.23809523809523808,
+            "month_avg_ret_net_min": -0.026832069764216242,
+            "period_fail_count": 20,
+            "canonical_is_gates_pass": false
+        },
+        "8": {
+            "eval_id": 201,
+            "params_hash": "b87fd352dd0fc98242a0ad4a9ae72922f5d7cd66",
+            "artifact_hash": "cc34ba030d790751305eda3a6d9d14e63fb10a27",
+            "file_sha1": "0352703b15326793b7eef365bf4cd16c26c5ffbf",
+            "picks_count": 1094,
+            "days_covered": 504,
+            "avg_ret_net": 0.005613481398964261,
+            "median_ret_net": -0.008647569849127519,
+            "p25_ret_net": -0.05604172501881547,
+            "win_rate": 0.43784277879341865,
+            "month_win_rate_min": 0.27586206896551724,
+            "month_avg_ret_net_min": -0.02438659705318895,
+            "period_fail_count": 16,
+            "canonical_is_gates_pass": false
+        },
+        "11": {
+            "eval_id": 204,
+            "params_hash": "c93bae2b761028d6b236f368d5b19bb4f498715a",
+            "artifact_hash": "bc81941261f0af27f8043b4033da1d2a9b2f331a",
+            "file_sha1": "d811d80cbe3677835cb3bbb6f3f87462a1744eaf",
+            "picks_count": 1308,
+            "days_covered": 508,
+            "avg_ret_net": 0.011903278369749106,
+            "median_ret_net": -0.0005006759124818505,
+            "p25_ret_net": -0.06309412630637606,
+            "win_rate": 0.4648318042813456,
+            "month_win_rate_min": 0.27586206896551724,
+            "month_avg_ret_net_min": -0.016505902083925335,
+            "period_fail_count": 12,
+            "canonical_is_gates_pass": false
+        },
+        "7": {
+            "eval_id": 200,
+            "params_hash": "d13f9bb408d7c08a7d27bbac638f77218846d234",
+            "artifact_hash": "742f5097b62465ab32937e809c515ad046f8dd41",
+            "file_sha1": "4333202870d94220d9b75075d40412de6694699e",
+            "picks_count": 1119,
+            "days_covered": 504,
+            "avg_ret_net": 0.008125275029869814,
+            "median_ret_net": -0.0065228048060666085,
+            "p25_ret_net": -0.05678128494026858,
+            "win_rate": 0.4486148346738159,
+            "month_win_rate_min": 0.26666666666666666,
+            "month_avg_ret_net_min": -0.016955608051394025,
+            "period_fail_count": 15,
+            "canonical_is_gates_pass": false
+        },
+        "5": {
+            "eval_id": 199,
+            "params_hash": "e49b47449be1bc59659455d315bb6aaf5f4f9491",
+            "artifact_hash": "08346e0edad9218b724ef9ab3b3721c78011a0cb",
+            "file_sha1": "bcab17a6e9c931a3b13dc9ba5043392911527ec2",
+            "picks_count": 1158,
+            "days_covered": 506,
+            "avg_ret_net": 0.011193623573232045,
+            "median_ret_net": -0.0005014793641241662,
+            "p25_ret_net": -0.060484878780304924,
+            "win_rate": 0.45595854922279794,
+            "month_win_rate_min": 0.26666666666666666,
+            "month_avg_ret_net_min": -0.016955608051394025,
+            "period_fail_count": 14,
+            "canonical_is_gates_pass": false
+        },
+        "10": {
+            "eval_id": 203,
+            "params_hash": "873c1d1eb5f7f3dccee0f8619ec30e61eb838078",
+            "artifact_hash": "0ae379be0ec80c1aac17d37cd94728b84f41532c",
+            "file_sha1": "684f055e7f0a830fceb7043d7696b539ef9b4fd2",
+            "picks_count": 1198,
+            "days_covered": 507,
+            "avg_ret_net": 0.011299283531406303,
+            "median_ret_net": -0.0005023610984244281,
+            "p25_ret_net": -0.062087112654811684,
+            "win_rate": 0.4557595993322204,
+            "month_win_rate_min": 0.23636363636363636,
+            "month_avg_ret_net_min": -0.019143026864020543,
+            "period_fail_count": 13,
+            "canonical_is_gates_pass": false
+        }
+    },
+    "anchor_eval_id": 204,
+    "anchor_param_set_id": 11,
+    "anchor_params_hash": "c93bae2b761028d6b236f368d5b19bb4f498715a",
+    "anchor_reason": "BEST_V3_AVERAGE_RETURN_WIN_RATE_MONTHLY_FLOOR_AND_PERIOD_FAIL_COUNT_WITHOUT_TICK_RISK_GUARD",
+    "rejected_direction": {
+        "LOW_PRICE_TICK_RISK_AS_PRIMARY_STRATEGY": "REJECTED_BY_VALID_V3_EVIDENCE",
+        "reason": "TIGHTER_THRESHOLDS_IMPROVED_P25_ONLY_WHILE_DEGRADING_AVERAGE_MEDIAN_WIN_RATE_COVERAGE_AND_PERIOD_STABILITY"
+    },
+    "final_catalog": {
+        "catalog_code": "WS_BT_GRID_FINAL_BOUNDED_REMEDIATION_C01_2026_07",
+        "catalog_version": "FINAL-C01",
+        "catalog_hash": "5bc6dce5a8a96665435bdae8a30857bc75b108b0",
+        "candidate_count": 3,
+        "candidates": [
+            {
+                "row_code": "C171_FINAL_A_RISK_FORWARD_INTERPOLATED",
+                "rationale": "Final bounded score interpolation between the valid V3 control and risk-forward anchor; tests whether 35% risk weight preserves positive return while recovering downside.",
+                "changes": {
+                    "w_momentum": 0.3,
+                    "w_volume": 0.1,
+                    "w_breakout": 0.25,
+                    "w_risk": 0.35,
+                    "max_atr14_pct": 0.06,
+                    "atr_ideal_high": 0.06,
+                    "stop_atr_mult": 1.5
+                }
+            },
+            {
+                "row_code": "C171_FINAL_B_RISK_FORWARD_ATR_055",
+                "rationale": "Final bounded downside candidate anchored to paramset 11; applies only a mild 5.5% ATR ceiling to reduce the high-ATR loss tail without a tick-risk or ticker blacklist.",
+                "changes": {
+                    "w_momentum": 0.3,
+                    "w_volume": 0.1,
+                    "w_breakout": 0.2,
+                    "w_risk": 0.4,
+                    "max_atr14_pct": 0.055,
+                    "atr_ideal_high": 0.055,
+                    "stop_atr_mult": 1.5
+                }
+            },
+            {
+                "row_code": "C171_FINAL_C_RISK_FORWARD_STOP_125",
+                "rationale": "Final bounded execution-risk candidate anchored to paramset 11; tightens only stop ATR multiplier from 1.50 to 1.25 while preserving canonical gates and minimum RR.",
+                "changes": {
+                    "w_momentum": 0.3,
+                    "w_volume": 0.1,
+                    "w_breakout": 0.2,
+                    "w_risk": 0.4,
+                    "max_atr14_pct": 0.06,
+                    "atr_ideal_high": 0.06,
+                    "stop_atr_mult": 1.25
+                }
+            }
+        ]
+    },
+    "closure_rule": {
+        "if_any_candidate_passes_all_canonical_is_gates": "REQUIRE_FINAL_C171_REVIEW_BEFORE_C172",
+        "if_no_candidate_passes_all_canonical_is_gates": "C171_FAILED_NOT_READY_NO_FURTHER_REMEDIATION",
+        "additional_c171_candidate_catalog_allowed": false,
+        "oos_before_pass_forbidden": true,
+        "canonical_gate_weakening_forbidden": true
+    },
+    "boundaries": {
+        "draft_only": true,
+        "official_is_runtime_invoked": false,
+        "oos_runtime_invoked": false,
+        "oos_table_read": false,
+        "paramset_promoted": false,
+        "plan_run_created": false,
+        "recommendation_persisted": false,
+        "confirm_mutated": false,
+        "production_ready": false
+    },
+    "next_recommendation": "C171_PERSIST_AND_RUN_FINAL_BOUNDED_REMEDIATION_THEN_CLOSE_OR_ADVANCE",
+    "artifact_hash": "81dbe104197cd2e12abb692e1e66668ff94b9725"
+}

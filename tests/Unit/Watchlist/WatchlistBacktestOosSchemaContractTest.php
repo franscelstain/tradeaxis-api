@@ -87,9 +87,10 @@ class WatchlistBacktestOosSchemaContractTest extends TestCase
             $repository
         );
         $this->assertStringContainsString(
-            "'eval_model', 'paramset_hash', 'from_date', 'to_date'",
+            "'eval_model', 'eval_model_hash', 'implementation_version', 'implementation_hash'",
             $repository
         );
+        $this->assertStringContainsString("'paramset_hash', 'from_date', 'to_date'", $repository);
         $this->assertStringContainsString('WS_BT_EVAL_IDENTITY_CONFLICT', $repository);
         $this->assertStringNotContainsString('updateOrInsert', $repository);
     }

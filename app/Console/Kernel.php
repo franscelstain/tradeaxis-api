@@ -233,6 +233,13 @@ use App\Console\Commands\Watchlist\RunBacktestC166WeeklySwingWatchlistProduction
 use App\Console\Commands\Watchlist\RunBacktestC166WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutPostRolloutObservationGoDecisionFinalizationReviewCommand;
 use App\Console\Commands\Watchlist\RunBacktestC167WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutCompletionBoundaryReviewCommand;
 use App\Console\Commands\Watchlist\GenerateWeeklySwingWatchlistCommand;
+use App\Console\Commands\Watchlist\RunBacktestC171VersionedOfficialIsEvidenceCommand;
+use App\Console\Commands\Watchlist\RunBacktestC171TradeEvidenceDiagnosticCommand;
+use App\Console\Commands\Watchlist\PersistBacktestC171RemediationDraftCatalogCommand;
+use App\Console\Commands\Watchlist\PersistBacktestC171LowPriceExecutionQualityDraftCatalogCommand;
+use App\Console\Commands\Watchlist\PersistBacktestC171FinalBoundedRemediationDraftCatalogCommand;
+use App\Console\Commands\Watchlist\SealBacktestC171FinalFailedNotReadyClosureCommand;
+use App\Console\Commands\Watchlist\RunBacktestC171ComparativeOfficialIsFailureDiagnosticCommand;
 use App\Console\Commands\Watchlist\ImportWeeklySwingParamsetDraftCommand;
 use App\Console\Commands\Watchlist\PromoteWeeklySwingParamsetCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC01ParamGridCommand;
@@ -246,6 +253,8 @@ use App\Console\Commands\Watchlist\SeedBacktestC14ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC15ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC16ParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC17ParamGridCommand;
+use App\Console\Commands\Watchlist\SeedBacktestC171RemediationParamGridCommand;
+use App\Console\Commands\Watchlist\SeedBacktestC171LowPriceExecutionQualityParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestR2ParamGridCommand;
 use Illuminate\Console\Scheduling\Schedule;
@@ -455,6 +464,13 @@ class Kernel extends ConsoleKernel
         RunBacktestC166WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutPostRolloutObservationGoDecisionFinalizationReviewCommand::class,
         RunBacktestC167WeeklySwingWatchlistProductionLiveRuntimePlanConfirmControlledRolloutCompletionBoundaryReviewCommand::class,
         GenerateWeeklySwingWatchlistCommand::class,
+        RunBacktestC171VersionedOfficialIsEvidenceCommand::class,
+        RunBacktestC171TradeEvidenceDiagnosticCommand::class,
+        PersistBacktestC171RemediationDraftCatalogCommand::class,
+        PersistBacktestC171LowPriceExecutionQualityDraftCatalogCommand::class,
+        PersistBacktestC171FinalBoundedRemediationDraftCatalogCommand::class,
+        SealBacktestC171FinalFailedNotReadyClosureCommand::class,
+        RunBacktestC171ComparativeOfficialIsFailureDiagnosticCommand::class,
         ImportWeeklySwingParamsetDraftCommand::class,
         PromoteWeeklySwingParamsetCommand::class,
         SeedBacktestParamGridCommand::class,
@@ -470,6 +486,8 @@ class Kernel extends ConsoleKernel
         SeedBacktestC15ParamGridCommand::class,
         SeedBacktestC16ParamGridCommand::class,
         SeedBacktestC17ParamGridCommand::class,
+        SeedBacktestC171RemediationParamGridCommand::class,
+        SeedBacktestC171LowPriceExecutionQualityParamGridCommand::class,
         IngestEodBarsCommand::class,
         ComputeIndicatorsCommand::class,
         BuildEligibilityCommand::class,

@@ -140,6 +140,23 @@ class WatchlistBacktestParamGridParamsetFactory
         $momRoc20SoftMin = $this->requiredFloat($row, 'mom_roc20_soft_min');
         $boNearBelowPct = $this->requiredFloat($row, 'bo_near_below_pct');
         $boMaxExtPct = $this->requiredFloat($row, 'bo_max_ext_pct');
+        $usesC171UpperBounds = in_array($catalogCode, [
+            WatchlistBacktestC171RemediationParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_CODE,
+        ], true);
+        $usesLowPriceTickRisk = $catalogCode === WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_CODE;
+        $maxDv20Idr = $usesC171UpperBounds ? $this->requiredFloat($row, 'max_dv20_idr') : null;
+        $maxVolRatio = $usesC171UpperBounds ? $this->requiredFloat($row, 'max_vol_ratio') : null;
+        $topMaxScoreTotal = $usesC171UpperBounds ? $this->requiredFloat($row, 'top_max_score_total') : 1.0;
+        $maxSignalTickRiskExpansionPct = $usesLowPriceTickRisk
+            ? $this->optionalFloat($row, 'max_signal_tick_risk_expansion_pct')
+            : null;
+        if ($maxSignalTickRiskExpansionPct !== null
+            && ($maxSignalTickRiskExpansionPct < 0.0 || $maxSignalTickRiskExpansionPct > 1.0)) {
+            throw new RuntimeException(
+                'WS_BT_PARAM_GRID_INVALID: max_signal_tick_risk_expansion_pct must be null or within 0..1.'
+            );
+        }
 
         $weights = [
             'momentum' => $this->requiredFloat($row, 'w_momentum'),
@@ -155,8 +172,10 @@ class WatchlistBacktestParamGridParamsetFactory
 
         $this->assertInvariants(
             $minDv20Idr,
+            $maxDv20Idr,
             $dv20StrongIdr,
             $minVolRatio,
+            $maxVolRatio,
             $strongVolRatio,
             $minAtr14Pct,
             $idealLow,
@@ -168,6 +187,7 @@ class WatchlistBacktestParamGridParamsetFactory
             $boMaxExtPct,
             $weights,
             $topMinScoreQ,
+            $topMaxScoreTotal,
             $secondaryMinScoreQ
         );
 
@@ -193,6 +213,21 @@ class WatchlistBacktestParamGridParamsetFactory
             'atr_ideal_high' => $idealHigh,
             'source' => 'explicit immutable catalog values',
             'explicit_catalog_values_preserved' => true,
+            'upper_bound_contract' => [
+                'enabled' => $usesC171UpperBounds,
+                'max_dv20_idr' => $maxDv20Idr,
+                'max_vol_ratio' => $maxVolRatio,
+                'top_max_score_total' => $topMaxScoreTotal,
+                'applied_at_decision_time' => true,
+                'post_return_filtering_used' => false,
+            ],
+            'decision_time_tick_risk_contract' => [
+                'enabled' => $maxSignalTickRiskExpansionPct !== null,
+                'contract' => WeeklySwingDecisionTimeTickRiskService::CONTRACT,
+                'max_signal_tick_risk_expansion_pct' => $maxSignalTickRiskExpansionPct,
+                'signal_date_close_only' => true,
+                'future_entry_price_used' => false,
+            ],
         ];
         if (isset($definition['candidate_selection_extension'])) {
             $btGridResolution['candidate_selection_extension'] = $definition['candidate_selection_extension'];
@@ -224,6 +259,7 @@ class WatchlistBacktestParamGridParamsetFactory
             ],
             'liquidity' => [
                 'min_dv20_idr' => $minDv20Idr,
+                'max_dv20_idr' => $maxDv20Idr,
                 'dv20_strong_idr' => $dv20StrongIdr,
             ],
             'risk' => [
@@ -233,9 +269,11 @@ class WatchlistBacktestParamGridParamsetFactory
                 'atr_ideal_high' => $idealHigh,
                 'stop_atr_mult' => $stopAtrMult,
                 'min_rr' => $minRr,
+                'max_signal_tick_risk_expansion_pct' => $maxSignalTickRiskExpansionPct,
             ],
             'volume' => [
                 'min_vol_ratio' => $minVolRatio,
+                'max_vol_ratio' => $maxVolRatio,
                 'strong_vol_ratio' => $strongVolRatio,
             ],
             'scoring' => [
@@ -244,7 +282,10 @@ class WatchlistBacktestParamGridParamsetFactory
             'grouping' => [
                 'top_min_score_q' => $topMinScoreQ,
                 'secondary_min_score_q' => $secondaryMinScoreQ,
-                'top_picks' => ['max_items' => $topPicksTarget],
+                'top_picks' => [
+                    'max_score_total' => $topMaxScoreTotal,
+                    'max_items' => $topPicksTarget,
+                ],
                 'secondary' => ['max_items' => $secondaryTarget],
             ],
         ]);
@@ -361,6 +402,25 @@ class WatchlistBacktestParamGridParamsetFactory
                 'candidate_selection_extension' => WatchlistBacktestC17ParamGridCatalog::candidateSelectionExtension(),
                 'execution_axis_policy' => WatchlistBacktestC17ParamGridCatalog::exitAxisPolicy(),
             ],
+            WatchlistBacktestC171RemediationParamGridCatalog::CATALOG_CODE => [
+                'version' => WatchlistBacktestC171RemediationParamGridCatalog::CATALOG_VERSION,
+                'hash' => WatchlistBacktestC171RemediationParamGridCatalog::hash(),
+                'fixed_stop_atr_mult' => WatchlistBacktestC171RemediationParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC171RemediationParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC171RemediationParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC171RemediationParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'c171_upper_bounds_required' => true,
+            ],
+            WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_CODE => [
+                'version' => WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_VERSION,
+                'hash' => WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::hash(),
+                'fixed_stop_atr_mult' => WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::FIXED_STOP_ATR_MULT,
+                'fixed_min_rr' => WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::FIXED_MIN_RR,
+                'fixed_top_picks_target' => WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::FIXED_TOP_PICKS_TARGET,
+                'fixed_secondary_target' => WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::FIXED_SECONDARY_TARGET,
+                'c171_upper_bounds_required' => true,
+                'decision_time_tick_risk_supported' => true,
+            ],
         ];
 
         if (! isset($definitions[$catalogCode])) {
@@ -372,8 +432,10 @@ class WatchlistBacktestParamGridParamsetFactory
 
     private function assertInvariants(
         float $minDv20Idr,
+        ?float $maxDv20Idr,
         float $dv20StrongIdr,
         float $minVolRatio,
+        ?float $maxVolRatio,
         float $strongVolRatio,
         float $minAtr14Pct,
         float $idealLow,
@@ -385,13 +447,20 @@ class WatchlistBacktestParamGridParamsetFactory
         float $boMaxExtPct,
         array $weights,
         float $topMinScoreQ,
+        float $topMaxScoreTotal,
         float $secondaryMinScoreQ
     ): void {
         if ($minDv20Idr < 0 || $dv20StrongIdr < $minDv20Idr) {
             throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: dv20_strong_idr must be >= min_dv20_idr and both liquidity thresholds must be non-negative.');
         }
+        if ($maxDv20Idr !== null && ($maxDv20Idr < $minDv20Idr || $maxDv20Idr < $dv20StrongIdr)) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: max_dv20_idr must be >= min_dv20_idr and dv20_strong_idr.');
+        }
         if ($minVolRatio < 0 || $strongVolRatio < $minVolRatio) {
             throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: strong_vol_ratio must be >= min_vol_ratio and both volume thresholds must be non-negative.');
+        }
+        if ($maxVolRatio !== null && ($maxVolRatio < $minVolRatio || $maxVolRatio < $strongVolRatio)) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: max_vol_ratio must be >= min_vol_ratio and strong_vol_ratio.');
         }
         if ($minAtr14Pct < 0 || $maxAtr14Pct > 1
             || ! ($minAtr14Pct <= $idealLow && $idealLow <= $idealHigh && $idealHigh <= $maxAtr14Pct)) {
@@ -414,6 +483,9 @@ class WatchlistBacktestParamGridParamsetFactory
             || $secondaryMinScoreQ > $topMinScoreQ) {
             throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: grouping quantiles are invalid.');
         }
+        if ($topMaxScoreTotal < 0 || $topMaxScoreTotal > 1) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: grouping top_max_score_total must be within 0..1.');
+        }
     }
 
     private function floatOrDefault(array $row, string $key, $default): float
@@ -423,6 +495,18 @@ class WatchlistBacktestParamGridParamsetFactory
         }
 
         return $this->requiredFloat($row, $key);
+    }
+
+    private function optionalFloat(array $row, string $key): ?float
+    {
+        if (! array_key_exists($key, $row) || $row[$key] === null || $row[$key] === '') {
+            return null;
+        }
+        if (! is_numeric($row[$key])) {
+            throw new RuntimeException('WS_BT_PARAM_GRID_INVALID: '.$key.' must be null or numeric.');
+        }
+
+        return (float) $row[$key];
     }
 
     private function requiredFloat(array $row, string $key): float

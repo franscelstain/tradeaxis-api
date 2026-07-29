@@ -33,11 +33,13 @@ Gunakan registry ini sebagai sumber kebenaran definisi per key.
 
 ### C. Liquidity
 - `liquidity.min_dv20_idr` (MAN/ACTIVE, bt_target=true)
+- `liquidity.max_dv20_idr` (BT/TEMP, bt_target=true; optional for legacy, required by C171-R1)
 - `liquidity.dv20_strong_idr` (MAN/ACTIVE, bt_target=true)
 - `liquidity.exclude_tickers` (MAN/ACTIVE)
 
 ### C1. Volume confirmation
 - `volume.min_vol_ratio` (MAN/ACTIVE, bt_target=true)
+- `volume.max_vol_ratio` (BT/TEMP, bt_target=true; optional for legacy, required by C171-R1)
 - `volume.strong_vol_ratio` (MAN/ACTIVE, bt_target=true)
 
 ### D. Risk & stops
@@ -72,6 +74,7 @@ Gunakan registry ini sebagai sumber kebenaran definisi per key.
 - `grouping.top_picks_target` (MAN/ACTIVE)
 - `grouping.secondary_min_score_q` (BT/ACTIVE, bt_target=true)
 - `grouping.top_min_score_q` (BT/ACTIVE, bt_target=true)
+- `grouping.top_max_score_total` (BT/TEMP, bt_target=true; optional for legacy, required by C171-R1)
 - `grouping.grouping_mode` (DET/ACTIVE)
 - `grouping.sort_keys` (DET/ACTIVE, locked)
 - `grouping.rounding_mode` (DET/ACTIVE, locked)
@@ -235,6 +238,13 @@ Untuk Weekly Swing, namespace parameter bersifat tunggal dan canonical. Code waj
   - Kapan diubah: saat regime likuiditas berubah atau BT menunjukkan over/under filtering.
   - Cara ubah: update paramset (BT: via calibration; MAN: promote paramset baru).
 
+- `liquidity.max_dv20_idr` (integer >= `liquidity.min_dv20_idr`) — upper bound decision-time untuk eligible universe.
+  - Origin: BT/TEMP untuk catalog C171-R1.
+  - Alasan: diagnostic official IS menunjukkan konsentrasi `dv20_idr >= 50B` merusak robust return.
+  - Rule: bila hadir, nilainya juga wajib >= `liquidity.dv20_strong_idr`; kandidat dengan DV20 lebih tinggi ditolak sebagai `WS_LIQ_HIGH` sebelum scoring.
+  - Backward compatibility: boleh tidak hadir pada paramset legacy; runtime legacy mengartikannya sebagai tanpa upper bound, bukan memakai `dv20_strong_idr`.
+  - Cara ubah: hanya melalui immutable catalog/paramset baru dan official IS baru.
+
 - `liquidity.dv20_strong_idr` (integer >= 0) — DV20 “kuat” untuk menandai kandidat sangat likuid.
   - Origin: MAN/BT
   - Alasan: dipakai untuk reason/info dan/atau bonus kualitas likuiditas (jika policy memakai).
@@ -252,6 +262,13 @@ Untuk Weekly Swing, namespace parameter bersifat tunggal dan canonical. Code waj
   - Origin: MAN/ACTIVE, bt_target=true
   - Rationale: konfirmasi bahwa pergerakan harga didukung volume; mencegah sinyal lemah pada volume kering.
   - Change triggers: recalibrate BT 2y; perubahan karakter volume pasar.
+
+- `volume.max_vol_ratio` (number >= `volume.min_vol_ratio`) — upper bound decision-time untuk guard partisipasi volume.
+  - Origin: BT/TEMP untuk catalog C171-R1.
+  - Alasan: diagnostic official IS menunjukkan `vol_ratio >= 5` mempunyai average return dan win rate yang lemah.
+  - Rule: catalog C171-R1 juga mewajibkan nilai ini >= `volume.strong_vol_ratio`; kandidat di atas batas ditolak sebagai `WS_VOLR_HIGH` sebelum scoring.
+  - Backward compatibility: boleh tidak hadir pada paramset legacy dan berarti tanpa upper bound.
+  - Cara ubah: immutable catalog/paramset baru, binding baru, dan official IS baru.
 
 - `volume.strong_vol_ratio` (number >= `volume.min_vol_ratio`) — ambang volume kuat untuk komponen skor volume.
   - Origin: MAN/BT, bt_target=true
@@ -408,6 +425,13 @@ Untuk Weekly Swing, namespace parameter bersifat tunggal dan canonical. Code waj
   - Alasan: cutoff adaptif terhadap distribusi score harian.
   - Kapan diubah: hanya via recalibration BT.
   - Cara ubah: kalibrasi BT → promote paramset.
+
+- `grouping.top_max_score_total` (0..1) — upper cap score untuk qualified TOP pool.
+  - Origin: BT/TEMP untuk catalog C171-R1.
+  - Alasan: official diagnostic menunjukkan score saturation/upper deciles bukan jaminan kualitas.
+  - Rule: TOP quantile dihitung dari score yang `<= top_max_score_total`; score di atas cap tidak boleh menjadi TOP, namun dapat dipertimbangkan sebagai SECONDARY berdasarkan cutoff decision-time.
+  - Backward compatibility: omitted legacy field diadaptasi ke `1.0`.
+  - Cara ubah: hanya lewat immutable paramset baru; post-return filtering dilarang.
 
 - `grouping.secondary_min_score_q` (0..1) — quantile cutoff SECONDARY.
   - Origin: BT

@@ -882,6 +882,90 @@ Dictionary note: `lifecycle_state=RUNNING` is reserved for an active executing p
 | `reason_code` | `VARCHAR(64) NOT NULL` | state/reason/audit field |
 | `reason_count` | `INT NOT NULL` | data field |
 
+## Watchlist Versioned Official Backtest Evidence Tables
+
+These tables are owned by Watchlist, but they are listed here because database-connected diagnostics consume them together with Market Data. Their return/outcome fields are evaluation-only and must never become selection inputs.
+
+### `watchlist_bt_eval`
+
+- Purpose: Immutable official IS evaluation header and evidence-manifest owner.
+- Primary/identity key: `eval_id`.
+- Identifier keys used by C171 diagnostic: `eval_id`, `param_id`, `paramset_hash`, `eval_model_hash`, `implementation_hash`.
+- Date/as-of key: `from_date/to_date`.
+- Selection safety: Evaluation/audit only.
+
+| Column | Type / contract | Field role |
+|---|---|---|
+| `eval_id` | `BIGINT` identity | exact official evaluation identifier |
+| `param_id` | integer FK | bound backtest catalog row |
+| `from_date` / `to_date` | `DATE` | explicit IS window |
+| `paramset_hash` | `CHAR(40)` | immutable canonical paramset identity |
+| `eval_model_hash` | `CHAR(40)` | evaluation-model identity |
+| `implementation_hash` | `CHAR(40)` | implementation identity |
+| `picks_count` / `picks_hash` | count/hash | official TOP population manifest |
+| `universe_count` / `universe_hash` | count/hash | full signal-date universe manifest |
+| `cutoff_count` / `cutoffs_hash` | count/hash | daily cutoff manifest |
+| `market_data_lineage_hash` | `CHAR(40)` | locked Market Data lineage identity |
+| `evidence_manifest_hash` | `CHAR(40)` | aggregate immutable evidence identity |
+| return/stability metric columns | numeric | evaluation-only; forbidden for selection |
+
+### `watchlist_bt_picks_ws`
+
+- Purpose: Immutable official metrics-ready TOP/TOP_PICKS rows for one exact evaluation.
+- Primary/identity key used by C171: `(eval_id,asof_eod_date,ticker_id)`.
+- Identifier key: `ticker_id/ticker_code`.
+- Date/as-of key: `asof_eod_date`.
+- Selection safety: `score_total` reflects decision-time scoring; `ret_net` is evaluation-only and forbidden for selection/tuning routing.
+
+| Column | Type / contract | Field role |
+|---|---|---|
+| `eval_id` | FK to `watchlist_bt_eval` | exact evidence owner |
+| `param_id` | FK to catalog | catalog binding |
+| `asof_eod_date` | `DATE` | signal/decision date |
+| `ticker_id` / `ticker_code` | identifier | exact equity identity |
+| `bucket_code` | `TOP` / `TOP_PICKS` | official metrics population |
+| `score_total` | decimal | decision-time score evidence |
+| `ret_net` | decimal | future outcome; evaluation-only |
+| `source_publication_id/version/run_id` | positive lineage tuple | entry/published Market Data evidence |
+| `row_hash` | `CHAR(40)` | immutable row identity |
+
+### `watchlist_bt_universe_ws`
+
+- Purpose: Immutable signal-date universe and guard evidence for one exact evaluation.
+- Primary/identity key: `(eval_id,asof_eod_date,ticker_id)`.
+- Identifier key: `ticker_id/ticker_code`.
+- Date/as-of key: `asof_eod_date`.
+- Selection safety: signal-date fields are pre-trade safe only within the exact evaluation/as-of date; no return/path fields are present.
+
+| Column | Type / contract | Field role |
+|---|---|---|
+| `eval_id` / `param_id` | identifiers | exact evaluation/catalog binding |
+| `asof_eod_date` | `DATE` | decision date |
+| `ticker_id` / `ticker_code` | identifier | equity identity |
+| `required_ok` / `guard_ok` / `eligible_ok` | booleans | decision-time eligibility evidence |
+| `dv20_idr` | integer/decimal | signal-date liquidity diagnostic |
+| `atr14_pct` | decimal | signal-date risk diagnostic |
+| `vol_ratio` | `DECIMAL(20,6)` | signal-date volume diagnostic |
+| `reason_code` | reason | guard/eligibility explanation |
+| `source_publication_id/version/run_id` | lineage tuple | exact published source identity |
+| `row_hash` | `CHAR(40)` | immutable row identity |
+
+### `watchlist_bt_cutoffs_ws`
+
+- Purpose: Immutable daily TOP/SECONDARY cutoff evidence per exact evaluation.
+- Primary/identity key: `(eval_id,policy_code,param_id,asof_eod_date)`.
+- Identifier key: `eval_id/param_id`.
+- Date/as-of key: `asof_eod_date`.
+- Selection safety: historical decision-time cutoff evidence; diagnostics may verify it but must not rewrite or route using future outcomes.
+
+| Column | Type / contract | Field role |
+|---|---|---|
+| `eval_id` / `param_id` | identifiers | exact evidence owner and catalog row |
+| `asof_eod_date` | `DATE` | decision date |
+| `top_cutoff_score` / `secondary_cutoff_score` | decimal | deterministic daily cutoffs |
+| `source_publication_id/version/run_id` | lineage tuple | exact published source identity |
+| `row_hash` | `CHAR(40)` | immutable row identity |
+
 ## Watchlist Consumer Notes
 
 - Watchlist PLAN/CONFIRM and backtest must read Market Data via published/current readable state unless a locked artifact explicitly allows another source.

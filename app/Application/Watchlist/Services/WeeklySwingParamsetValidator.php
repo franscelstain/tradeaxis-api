@@ -44,6 +44,13 @@ class WeeklySwingParamsetValidator
         'hash_contract' => ['version', 'order_by', 'scales', 'null_handling'],
     ];
 
+    private const OPTIONAL_SECTION_KEYS = [
+        'liquidity' => ['max_dv20_idr'],
+        'volume' => ['max_vol_ratio'],
+        'grouping' => ['top_max_score_total'],
+        'risk' => ['max_signal_tick_risk_expansion_pct'],
+    ];
+
     private const AUDIT_KEYS = [
         'value', 'origin', 'status', 'bt_target', 'rationale', 'change_triggers',
     ];
@@ -152,16 +159,18 @@ class WeeklySwingParamsetValidator
                 continue;
             }
 
+            $optionalKeys = self::OPTIONAL_SECTION_KEYS[$section] ?? [];
+            $allowedKeys = array_values(array_unique(array_merge($requiredKeys, $optionalKeys)));
             foreach ($requiredKeys as $key) {
                 if (! array_key_exists($key, $value)) {
                     $this->error($errors, 'WS_PARAMSET_REQUIRED_KEY_MISSING', $section.'.'.$key);
                 }
             }
-            foreach (array_diff(array_keys($value), $requiredKeys) as $key) {
+            foreach (array_diff(array_keys($value), $allowedKeys) as $key) {
                 $this->error($errors, 'WS_PARAMSET_UNKNOWN_KEY', $section.'.'.$key);
             }
 
-            foreach ($requiredKeys as $key) {
+            foreach ($allowedKeys as $key) {
                 if (! array_key_exists($key, $value)) {
                     continue;
                 }
@@ -268,6 +277,16 @@ class WeeklySwingParamsetValidator
         if ($minDv !== null && $strongDv !== null && ($minDv < 0 || $strongDv < $minDv)) {
             $this->error($errors, 'WS_PARAMSET_RANGE_INVALID', 'liquidity.dv20_strong_idr.value');
         }
+        $maxDv = $this->numericValue($payload, 'liquidity.max_dv20_idr');
+        if ($maxDv !== null && ($minDv === null || $maxDv < $minDv || ($strongDv !== null && $maxDv < $strongDv))) {
+            $this->error($errors, 'WS_PARAMSET_RANGE_INVALID', 'liquidity.max_dv20_idr.value');
+        }
+
+        $minVol = $this->numericValue($payload, 'volume.min_vol_ratio');
+        $maxVol = $this->numericValue($payload, 'volume.max_vol_ratio');
+        if ($maxVol !== null && ($minVol === null || $maxVol < $minVol)) {
+            $this->error($errors, 'WS_PARAMSET_RANGE_INVALID', 'volume.max_vol_ratio.value');
+        }
 
         $atr = [
             $this->numericValue($payload, 'risk.min_atr14_pct'),
@@ -289,6 +308,15 @@ class WeeklySwingParamsetValidator
         $topQ = $this->numericValue($payload, 'grouping.top_min_score_q');
         if ($secondaryQ !== null && $topQ !== null && ! (0 <= $secondaryQ && $secondaryQ <= $topQ && $topQ <= 1)) {
             $this->error($errors, 'WS_PARAMSET_RANGE_INVALID', 'grouping.score_quantiles');
+        }
+        $topMaxScore = $this->numericValue($payload, 'grouping.top_max_score_total');
+        if ($topMaxScore !== null && ($topMaxScore < 0 || $topMaxScore > 1)) {
+            $this->error($errors, 'WS_PARAMSET_RANGE_INVALID', 'grouping.top_max_score_total.value');
+        }
+
+        $maxSignalTickExpansion = $this->numericValue($payload, 'risk.max_signal_tick_risk_expansion_pct');
+        if ($maxSignalTickExpansion !== null && ($maxSignalTickExpansion < 0 || $maxSignalTickExpansion > 1)) {
+            $this->error($errors, 'WS_PARAMSET_RANGE_INVALID', 'risk.max_signal_tick_risk_expansion_pct.value');
         }
 
         $weights = $this->value($payload, 'scoring.weights');

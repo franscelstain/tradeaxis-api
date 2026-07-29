@@ -127,8 +127,10 @@ Dokumen ini harus dibuktikan minimal oleh test:
 | param_key | origin | grid_column | cutoff_dependency | pick_dependency | eval_dependency | notes |
 |---|---|---|---|---|---|---|
 | `liquidity.min_dv20_idr` | MAN/BT target | `min_dv20_idr` | candidate selection | eligible/executed candidates | `watchlist_bt_eval` + OOS | IDR integer |
+| `liquidity.max_dv20_idr` | C171 BT target, optional | `max_dv20_idr` | candidate selection | bounded universe + reason evidence | `watchlist_bt_eval` + official IS evidence | IDR integer; omitted for legacy rows |
 | `risk.max_atr14_pct` | MAN/BT target | `max_atr14_pct` | candidate selection | eligible/executed candidates | `watchlist_bt_eval` + OOS | fractional ATR |
 | `volume.min_vol_ratio` | MAN/BT target | `min_vol_ratio` | candidate selection | eligible/executed candidates | `watchlist_bt_eval` + OOS | ratio |
+| `volume.max_vol_ratio` | C171 BT target, optional | `max_vol_ratio` | candidate selection | bounded universe + reason evidence | `watchlist_bt_eval` + official IS evidence | ratio; omitted for legacy rows |
 | `scoring.weights.momentum` | MAN/BT target | `w_momentum` | score/bucket | pick score | `watchlist_bt_eval` + OOS | weights total 1.0 |
 | `scoring.weights.volume` | MAN/BT target | `w_volume` | score/bucket | pick score | `watchlist_bt_eval` + OOS | weights total 1.0 |
 | `scoring.weights.breakout` | MAN/BT target | `w_breakout` | score/bucket | pick score | `watchlist_bt_eval` + OOS | weights total 1.0 |
@@ -138,6 +140,7 @@ Dokumen ini harus dibuktikan minimal oleh test:
 | `grouping.top_picks_target` | BT target | `top_picks_target` | TOP cutoff | TOP picks | `watchlist_bt_eval` + OOS | positive integer |
 | `grouping.secondary_target` | BT target | `secondary_target` | secondary cutoff | secondary picks | `watchlist_bt_eval` + OOS | positive integer |
 | `grouping.top_min_score_q` | BT | `top_min_score_q` | `watchlist_bt_cutoffs_ws` | TOP picks | `watchlist_bt_eval` + OOS | quantile `0..1` |
+| `grouping.top_max_score_total` | C171 BT target, optional | `top_max_score_total` | bounded TOP quantile pool | TOP picks + cutoff manifest | `watchlist_bt_eval` + official IS evidence | score `0..1`; legacy effective default `1.0` |
 | `grouping.secondary_min_score_q` | BT | `secondary_min_score_q` | `watchlist_bt_cutoffs_ws` | secondary picks | `watchlist_bt_eval` + OOS | quantile `0..1` |
 
 This table documents the implemented minimum grid mapping. It does not waive the full picks/cutoffs/universe evidence required by this document for a later promotion review.

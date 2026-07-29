@@ -286,6 +286,81 @@ class WatchlistScoringServiceTest extends TestCase
         $this->assertArrayHasKey('factor_breakdown', $result['items'][0]);
     }
 
+    public function test_scoring_preserves_candidate_universe_guard_parameters_before_building_universe(): void
+    {
+        $payload = $this->universe([
+            $this->candidate(1, 'GUARD'),
+        ]);
+        $candidateUniverse = new class($payload) extends WatchlistCandidateUniverseService {
+            private array $payload;
+            public array $receivedParamset = [];
+
+            public function __construct(array $payload)
+            {
+                $this->payload = $payload;
+            }
+
+            public function buildCandidateUniverseForTradeDate(string $tradeDate, array $paramset = []): array
+            {
+                $this->receivedParamset = $paramset;
+
+                return $this->payload;
+            }
+        };
+
+        $service = new WatchlistScoringService($candidateUniverse);
+        $result = $service->scoreForTradeDate('2026-05-19', [
+            'liquidity' => [
+                'min_dv20_idr' => 1000000000.0,
+                'max_dv20_idr' => 9000000000.0,
+                'dv20_strong_idr' => 5000000000.0,
+            ],
+            'volume' => [
+                'min_vol_ratio' => 1.2,
+                'max_vol_ratio' => 3.0,
+                'strong_vol_ratio' => 2.5,
+            ],
+            'risk' => [
+                'min_atr14_pct' => 0.02,
+                'max_atr14_pct' => 0.12,
+                'atr_ideal_low' => 0.035,
+                'atr_ideal_high' => 0.075,
+                'stop_atr_mult' => 1.25,
+                'min_rr' => 1.75,
+                'max_signal_tick_risk_expansion_pct' => 0.01,
+            ],
+        ]);
+
+        $this->assertTrue($result['ready']);
+        $this->assertSame(9000000000.0, $candidateUniverse->receivedParamset['liquidity']['max_dv20_idr']);
+        $this->assertSame(3.0, $candidateUniverse->receivedParamset['volume']['max_vol_ratio']);
+        $this->assertSame(1.25, $candidateUniverse->receivedParamset['risk']['stop_atr_mult']);
+        $this->assertSame(1.75, $candidateUniverse->receivedParamset['risk']['min_rr']);
+        $this->assertSame(0.01, $candidateUniverse->receivedParamset['risk']['max_signal_tick_risk_expansion_pct']);
+        $this->assertSame(0.01, $result['paramset_snapshot']['risk']['max_signal_tick_risk_expansion_pct']);
+    }
+
+    public function test_scoring_propagates_decision_time_tick_risk_metrics_to_scored_evidence(): void
+    {
+        $service = new WatchlistScoringService($this->fakeCandidateUniverse($this->universe([
+            $this->candidate(1, 'TICK', [
+                'signal_close_price' => 60.0,
+                'theoretical_stop_risk_pct' => 0.06,
+                'normalized_stop_risk_pct' => 0.0666666667,
+                'signal_tick_risk_expansion_pct' => 0.0066666667,
+            ]),
+        ])));
+
+        $result = $service->scoreForTradeDate('2026-05-19');
+        $metrics = $result['items'][0]['score_metrics'];
+
+        $this->assertTrue($result['ready']);
+        $this->assertSame(60.0, $metrics['signal_close_price']);
+        $this->assertSame(0.06, $metrics['theoretical_stop_risk_pct']);
+        $this->assertEqualsWithDelta(0.0666666667, $metrics['normalized_stop_risk_pct'], 0.0000000001);
+        $this->assertEqualsWithDelta(0.0066666667, $metrics['signal_tick_risk_expansion_pct'], 0.0000000001);
+    }
+
     private function fakeCandidateUniverse(array $payload): WatchlistCandidateUniverseService
     {
         return new class($payload) extends WatchlistCandidateUniverseService {

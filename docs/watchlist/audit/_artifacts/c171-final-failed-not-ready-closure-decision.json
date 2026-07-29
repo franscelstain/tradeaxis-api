@@ -1,0 +1,147 @@
+{
+    "schema_version": "C171_FINAL_FAILED_NOT_READY_CLOSURE_DECISION_V1",
+    "run_code": "C171_FINAL_FAILED_NOT_READY_CLOSURE_AND_EVIDENCE_SEAL",
+    "final_decision": "C171_FAILED_NOT_READY_NO_FURTHER_REMEDIATION",
+    "reason_code": "C171_NO_FINAL_CANDIDATE_PASSED_CANONICAL_IS_GATES",
+    "pipeline_version": "WS_C171_C01_TICK_RISK_GUARD_ENFORCEMENT_PIPELINE_V3",
+    "pipeline_hash": "9e9933b363026623b7ab5629f3281fa680a53a2e",
+    "canonical_is_from": "2023-01-02",
+    "canonical_is_to": "2025-05-21",
+    "anchor": {
+        "param_set_id": 11,
+        "eval_id": 204,
+        "bt_param_id": 166,
+        "row_code": "C171_C01_E_SCORE_RISK_FORWARD_RECALIBRATION",
+        "params_hash": "c93bae2b761028d6b236f368d5b19bb4f498715a",
+        "artifact_hash": "bc81941261f0af27f8043b4033da1d2a9b2f331a",
+        "file_sha1": "d811d80cbe3677835cb3bbb6f3f87462a1744eaf",
+        "evidence_manifest_hash": "604bfbe9698fbb8ec3c74e3fa6e10f9335f66d1d",
+        "canonical_is_gates_pass": false,
+        "metrics": {
+            "picks_count": 1308,
+            "days_covered": 508,
+            "avg_ret_net_top": 0.011903278369749106,
+            "win_rate_top": 0.4648318042813456,
+            "median_ret_net_top": -0.0005006759124818505,
+            "p25_ret_net_top": -0.06309412630637606,
+            "month_win_rate_min": 0.27586206896551724,
+            "month_avg_ret_net_min": -0.016505902083925335,
+            "period_fail_count": 12
+        },
+        "gates": {
+            "minimum_trade_count": true,
+            "minimum_coverage": true,
+            "average_return_positive": true,
+            "median_return_non_negative": false,
+            "p25_downside_bound": false,
+            "monthly_win_rate_floor": false,
+            "monthly_average_floor": false
+        }
+    },
+    "final_candidates": [
+        {
+            "param_set_id": 12,
+            "eval_id": 205,
+            "bt_param_id": 167,
+            "row_code": "C171_FINAL_A_RISK_FORWARD_INTERPOLATED",
+            "params_hash": "1d8bfec8d6519526ce0582fa5ce17287b41d27d2",
+            "artifact_hash": "003f793b16117bcdd8d8ebd5cd7181919cc39c1d",
+            "file_sha1": "f251d73175400dd36920d68d4e02e5afc59dae90",
+            "evidence_manifest_hash": "269c3fe498abd6b5cc1e76181266b73e6a771a41",
+            "canonical_is_gates_pass": false,
+            "metrics": {
+                "picks_count": 1269,
+                "days_covered": 507,
+                "avg_ret_net_top": 0.01145464438312777,
+                "win_rate_top": 0.46178092986603625,
+                "median_ret_net_top": -0.0005011275369581559,
+                "p25_ret_net_top": -0.0625970253893535,
+                "month_win_rate_min": 0.26666666666666666,
+                "month_avg_ret_net_min": -0.016955608051394025,
+                "period_fail_count": 14
+            },
+            "gates": {
+                "minimum_trade_count": true,
+                "minimum_coverage": true,
+                "average_return_positive": true,
+                "median_return_non_negative": false,
+                "p25_downside_bound": false,
+                "monthly_win_rate_floor": false,
+                "monthly_average_floor": false
+            }
+        },
+        {
+            "param_set_id": 13,
+            "eval_id": 206,
+            "bt_param_id": 168,
+            "row_code": "C171_FINAL_B_RISK_FORWARD_ATR_055",
+            "params_hash": "5c0aa7ef161e6dad96b77e9d4f978c696d785993",
+            "artifact_hash": "3c4860a655eaa107ff1c1fa7c61c43ad3501d89e",
+            "file_sha1": "5c764255457820f1321cb7fadc5ddf21556895e5",
+            "evidence_manifest_hash": "2ed3b26d0b6c81def7b8f096ccc6ee4045ac0dea",
+            "canonical_is_gates_pass": false,
+            "metrics": {
+                "picks_count": 1292,
+                "days_covered": 507,
+                "avg_ret_net_top": 0.009389918348920764,
+                "win_rate_top": 0.45433436532507737,
+                "median_ret_net_top": -0.0005015799971175188,
+                "p25_ret_net_top": -0.061090836374543815,
+                "month_win_rate_min": 0.17857142857142858,
+                "month_avg_ret_net_min": -0.029277972698896083,
+                "period_fail_count": 15
+            },
+            "gates": {
+                "minimum_trade_count": true,
+                "minimum_coverage": true,
+                "average_return_positive": true,
+                "median_return_non_negative": false,
+                "p25_downside_bound": false,
+                "monthly_win_rate_floor": false,
+                "monthly_average_floor": false
+            }
+        },
+        {
+            "param_set_id": 14,
+            "eval_id": 207,
+            "bt_param_id": 169,
+            "row_code": "C171_FINAL_C_RISK_FORWARD_STOP_125",
+            "params_hash": "a3e84b2657c1ecd3ece807439621a25743aa06eb",
+            "artifact_hash": "b8c89c197d5e78e31adb1f08a21e37b17f30b122",
+            "file_sha1": "7fedd1436305b351fa9e3e846fc3b4abca42c26e",
+            "evidence_manifest_hash": "9639d87d580b6782321b0c78ea5e03fd10be03fb",
+            "canonical_is_gates_pass": false,
+            "metrics": {
+                "picks_count": 1309,
+                "days_covered": 508,
+                "avg_ret_net_top": 0.009125925123639177,
+                "win_rate_top": 0.45760122230710465,
+                "median_ret_net_top": -0.00458068710306546,
+                "p25_ret_net_top": -0.05722343340600436,
+                "month_win_rate_min": 0.2542372881355932,
+                "month_avg_ret_net_min": -0.019596458044718254,
+                "period_fail_count": 15
+            },
+            "gates": {
+                "minimum_trade_count": true,
+                "minimum_coverage": true,
+                "average_return_positive": true,
+                "median_return_non_negative": false,
+                "p25_downside_bound": false,
+                "monthly_win_rate_floor": false,
+                "monthly_average_floor": false
+            }
+        }
+    ],
+    "final_candidate_count": 3,
+    "final_passing_candidate_count": 0,
+    "anchor_remains_best_overall": true,
+    "additional_c171_candidate_catalog_allowed": false,
+    "oos_allowed": false,
+    "c172_allowed": false,
+    "promotion_allowed": false,
+    "plan_allowed": false,
+    "production_ready": false,
+    "summary_csv_file_sha1": "53356ca429cf7aa47efc45acfb5511f9dc92ed50",
+    "artifact_hash": "b7fcc8d7aae089cd6fb518ddb390de0d3122318d"
+}

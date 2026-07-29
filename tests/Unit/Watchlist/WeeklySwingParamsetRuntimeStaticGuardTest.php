@@ -43,7 +43,9 @@ class WeeklySwingParamsetRuntimeStaticGuardTest extends TestCase
         $this->assertStringContainsString("'watchlist_bt_oos_eval_ws'", $service);
         $this->assertStringContainsString('WS_PARAMSET_PROMOTION_OOS_PROOF_MISSING', $service);
         $this->assertStringContainsString('WS_PARAMSET_PROMOTION_OFFICIAL_EVIDENCE_SCHEMA_UNVERSIONED', $service);
-        $this->assertStringContainsString('WS_PARAMSET_PROMOTION_OFFICIAL_SUPPORT_EVIDENCE_MISSING', $service);
+        $this->assertStringContainsString('WS_PARAMSET_PROMOTION_OFFICIAL_EVIDENCE_MANIFEST_MISSING', $service);
+        $this->assertStringContainsString('WS_PARAMSET_PROMOTION_OFFICIAL_EVIDENCE_HASH_MISMATCH', $service);
+        $this->assertStringContainsString('WS_PARAMSET_PROMOTION_OFFICIAL_SUPPORT_EVIDENCE_VALID', $service);
         $this->assertStringContainsString("->where('status', 'DRAFT')", $service);
         $this->assertStringContainsString("'status' => 'ACTIVE'", $service);
     }

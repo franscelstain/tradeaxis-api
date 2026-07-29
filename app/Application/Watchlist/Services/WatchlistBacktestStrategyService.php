@@ -117,6 +117,7 @@ class WatchlistBacktestStrategyService
         $resolvedParamset = $this->resolveParamset($paramset);
         $replayDates = $this->normalizeTradeDates($tradeDates);
         $payload = $this->basePayload($replayDates, $resolvedParamset);
+        $this->initializeOfficialEvidenceSpool($payload, $resolvedParamset);
 
         if ($replayDates === []) {
             $payload['ready'] = false;
@@ -181,9 +182,17 @@ class WatchlistBacktestStrategyService
             $this->appendDailyReplay($payload, $tradeDate, $planOutput, $recommendationOutput, $confirmOutput, $resolvedParamset);
         }
 
+        $this->finalizeTickRiskGuardAudit($payload, $resolvedParamset);
+
         $payload['items'] = $this->sortItems($payload['items']);
         $payload['trades'] = $this->sortTrades($payload['trades']);
         $payload['evaluations'] = $this->sortEvaluations($payload['evaluations']);
+        if (($payload['official_evidence']['storage_mode'] ?? 'IN_MEMORY') === 'JSONL_SPOOL') {
+            $this->finalizeOfficialEvidenceSpool($payload);
+        } else {
+            $payload['official_evidence']['universe'] = $this->sortOfficialUniverse($payload['official_evidence']['universe']);
+            $payload['official_evidence']['cutoffs'] = $this->sortOfficialCutoffs($payload['official_evidence']['cutoffs']);
+        }
         $payload['summary'] = $this->buildSummary($payload, $daysEvaluated, $fatalNoLookahead);
         $payload['ready'] = ! $fatalNoLookahead && $daysEvaluated > 0;
         $payload['is_ready'] = $payload['ready'];
@@ -207,15 +216,18 @@ class WatchlistBacktestStrategyService
         array $confirmOutput,
         array $paramset
     ): void {
+        $this->collectOfficialEvidence($payload, $tradeDate, $planOutput, $paramset);
         $recommendationIndex = $this->indexByTickerIdentity($recommendationOutput['items'] ?? []);
         $confirmIndex = $this->indexByTickerIdentity($confirmOutput['items'] ?? []);
         $recommendedCountForDate = 0;
 
-        foreach (($confirmOutput['items'] ?? []) as $confirmItem) {
-            $recommendationItem = $this->firstItemForKeys($recommendationIndex, $this->identityKeys($confirmItem));
-            $isRecommended = (bool) (($recommendationItem['recommended_flag'] ?? false) === true);
+        if (! $this->compactReplayItems($paramset)) {
+            foreach (($confirmOutput['items'] ?? []) as $confirmItem) {
+                $recommendationItem = $this->firstItemForKeys($recommendationIndex, $this->identityKeys($confirmItem));
+                $isRecommended = (bool) (($recommendationItem['recommended_flag'] ?? false) === true);
 
-            $payload['items'][] = $this->replayItem($tradeDate, $confirmItem, $recommendationItem, $isRecommended);
+                $payload['items'][] = $this->replayItem($tradeDate, $confirmItem, $recommendationItem, $isRecommended);
+            }
         }
 
         foreach (($recommendationOutput['items'] ?? []) as $recommendationItem) {
@@ -246,6 +258,328 @@ class WatchlistBacktestStrategyService
                 'active_trade_evaluation' => false,
             ]);
         }
+    }
+
+
+    private function collectOfficialEvidence(array &$payload, string $tradeDate, array $planOutput, array $paramset): void
+    {
+        $manifest = is_array($planOutput['cutoff_manifest'] ?? null) ? $planOutput['cutoff_manifest'] : [];
+        $cutoff = [
+            'asof_eod_date' => $tradeDate,
+            'top_cutoff_score' => $this->floatOrNull($manifest['top_picks_min_score_total'] ?? null),
+            'secondary_cutoff_score' => $this->floatOrNull($manifest['secondary_min_score_total'] ?? null),
+            'cutoff_mode' => $manifest['mode'] ?? null,
+            'score_count' => isset($manifest['score_count']) ? (int) $manifest['score_count'] : null,
+            'score_payload_hash' => $manifest['score_payload_hash'] ?? null,
+            'source_publication_id' => $planOutput['publication_id'] ?? null,
+            'source_publication_version' => $planOutput['publication_version'] ?? null,
+            'source_run_id' => $planOutput['run_id'] ?? null,
+        ];
+
+        $seen = [];
+        $dailyUniverse = [];
+        $evidenceGroups = is_array($planOutput['groups'] ?? null) ? $planOutput['groups'] : [];
+        $evidenceGroups['AVOID_EXCLUDED'] = is_array($planOutput['excluded'] ?? null) ? $planOutput['excluded'] : [];
+        foreach ($evidenceGroups as $group => $items) {
+            foreach (is_array($items) ? $items : [] as $item) {
+                $tickerId = $this->intOrNull($item['ticker_id'] ?? null);
+                if ($tickerId === null || isset($seen[$tickerId])) {
+                    continue;
+                }
+                $seen[$tickerId] = true;
+                $metrics = is_array($item['score_metrics'] ?? null) ? $item['score_metrics'] : [];
+                $reasonCodes = array_values(array_unique(array_map('strval', $item['reason_codes'] ?? [])));
+                $evidenceRow = [
+                    'asof_eod_date' => $tradeDate,
+                    'ticker_id' => $tickerId,
+                    'ticker_code' => $this->tickerCode($item),
+                    'required_ok' => (bool) ($item['required_ok'] ?? $item['required_fields_available'] ?? true),
+                    'guard_ok' => (bool) ($item['guard_ok'] ?? $item['eligible_score'] ?? ! in_array((string) $group, ['AVOID', 'AVOID_EXCLUDED'], true)),
+                    'eligible_ok' => (bool) ($item['eligible_ok'] ?? $item['eligible_score'] ?? ! in_array((string) $group, ['AVOID', 'AVOID_EXCLUDED'], true)),
+                    'dv20_idr' => $metrics['dv20_idr'] ?? $item['dv20_idr'] ?? null,
+                    'atr14_pct' => $metrics['atr14_pct'] ?? $item['atr14_pct'] ?? null,
+                    'vol_ratio' => $metrics['vol_ratio'] ?? $item['vol_ratio'] ?? null,
+                    'signal_close_price' => $metrics['signal_close_price'] ?? $item['signal_close_price'] ?? $item['close_price'] ?? null,
+                    'signal_tick_risk_expansion_pct' => $metrics['signal_tick_risk_expansion_pct'] ?? $item['signal_tick_risk_expansion_pct'] ?? null,
+                    'reason_code' => $reasonCodes[0] ?? null,
+                    'reason_codes' => $reasonCodes,
+                    'plan_group' => (string) $group,
+                    'score_total' => $this->floatOrNull($item['score_total'] ?? null),
+                    'source_publication_id' => $planOutput['publication_id'] ?? null,
+                    'source_publication_version' => $planOutput['publication_version'] ?? null,
+                    'source_run_id' => $planOutput['run_id'] ?? null,
+                ];
+                $this->auditTickRiskEvidenceRow($payload, $evidenceRow, $item, (string) $group, $paramset);
+                $dailyUniverse[] = $evidenceRow;
+            }
+        }
+        usort($dailyUniverse, function (array $left, array $right): int {
+            return ((int) ($left['ticker_id'] ?? 0)) <=> ((int) ($right['ticker_id'] ?? 0));
+        });
+
+        if (($payload['official_evidence']['storage_mode'] ?? 'IN_MEMORY') === 'JSONL_SPOOL') {
+            $this->appendJsonLines((string) $payload['official_evidence']['cutoffs_spool_path'], [$cutoff]);
+            $this->appendJsonLines((string) $payload['official_evidence']['universe_spool_path'], $dailyUniverse);
+            $payload['official_evidence']['cutoff_count']++;
+            $payload['official_evidence']['universe_count'] += count($dailyUniverse);
+            return;
+        }
+
+        $payload['official_evidence']['cutoffs'][] = $cutoff;
+        foreach ($dailyUniverse as $row) {
+            $payload['official_evidence']['universe'][] = $row;
+        }
+    }
+
+    private function initialTickRiskGuardAudit(array $paramset): array
+    {
+        $threshold = $this->floatOrNull($paramset['risk']['max_signal_tick_risk_expansion_pct'] ?? null);
+
+        return [
+            'contract' => 'C171_C01_DECISION_TIME_TICK_RISK_GUARD_EXECUTION_AND_EVIDENCE_PROPAGATION_V3',
+            'enabled' => $threshold !== null,
+            'threshold' => $threshold,
+            'decision_time_fields_only' => true,
+            'full_reason_codes_audited' => true,
+            'scored_candidate_count' => 0,
+            'metric_propagated_to_scored_candidates_count' => 0,
+            'metric_missing_on_scored_candidates_count' => 0,
+            'official_pick_count' => 0,
+            'metric_propagated_to_official_picks_count' => 0,
+            'metric_missing_on_official_picks_count' => 0,
+            'above_threshold_before_guard_count' => 0,
+            'above_threshold_without_tick_reason_count' => 0,
+            'tick_only_rejected_count' => 0,
+            'tick_multi_reason_rejected_count' => 0,
+            'eligible_above_threshold_after_guard_count' => 0,
+            'tick_risk_metric_propagated_to_scored_candidates' => $threshold === null,
+            'tick_risk_metric_propagated_to_official_picks' => $threshold === null,
+            'threshold_enforced_for_all_evidence_rows' => $threshold === null,
+            'status' => $threshold === null ? 'NOT_APPLICABLE' : 'NOT_EVALUATED',
+            'pass' => $threshold === null,
+        ];
+    }
+
+    private function auditTickRiskEvidenceRow(
+        array &$payload,
+        array $row,
+        array $item,
+        string $group,
+        array $paramset
+    ): void {
+        $audit = &$payload['official_evidence']['tick_risk_guard_audit'];
+        if (! is_array($audit) || ! ($audit['enabled'] ?? false)) {
+            return;
+        }
+
+        $threshold = $this->floatOrNull($paramset['risk']['max_signal_tick_risk_expansion_pct'] ?? null);
+        if ($threshold === null) {
+            throw new \RuntimeException('WS_C171_TICK_RISK_GUARD_AUDIT_THRESHOLD_MISSING');
+        }
+
+        $close = $this->floatOrNull($row['signal_close_price'] ?? null);
+        $tickRisk = $this->floatOrNull($row['signal_tick_risk_expansion_pct'] ?? null);
+        $hasMetric = $close !== null && $tickRisk !== null;
+        $isScoredCandidate = (bool) ($item['eligible_score'] ?? false);
+        $isOfficialPick = $group === 'TOP_PICKS';
+        $eligible = (bool) ($row['eligible_ok'] ?? false);
+        $reasonCodes = $this->uniqueReasonCodes(is_array($row['reason_codes'] ?? null) ? $row['reason_codes'] : []);
+        $hasTickReason = in_array('WS_TICK_RISK_HIGH', $reasonCodes, true);
+
+        if ($isScoredCandidate) {
+            $audit['scored_candidate_count']++;
+            if ($hasMetric) {
+                $audit['metric_propagated_to_scored_candidates_count']++;
+            } else {
+                $audit['metric_missing_on_scored_candidates_count']++;
+            }
+        }
+        if ($isOfficialPick) {
+            $audit['official_pick_count']++;
+            if ($hasMetric) {
+                $audit['metric_propagated_to_official_picks_count']++;
+            } else {
+                $audit['metric_missing_on_official_picks_count']++;
+            }
+        }
+
+        if ($tickRisk !== null && $tickRisk > $threshold) {
+            $audit['above_threshold_before_guard_count']++;
+            if (! $hasTickReason) {
+                $audit['above_threshold_without_tick_reason_count']++;
+            }
+            if ($eligible) {
+                $audit['eligible_above_threshold_after_guard_count']++;
+            }
+        }
+
+        if ($hasTickReason) {
+            $otherFailureReasons = array_values(array_filter(
+                $reasonCodes,
+                function (string $reason): bool {
+                    return $this->isIndependentTickRiskFailureReason($reason);
+                }
+            ));
+            if ($otherFailureReasons === []) {
+                $audit['tick_only_rejected_count']++;
+            } else {
+                $audit['tick_multi_reason_rejected_count']++;
+            }
+        }
+    }
+
+    private function finalizeTickRiskGuardAudit(array &$payload, array $paramset): void
+    {
+        $audit = &$payload['official_evidence']['tick_risk_guard_audit'];
+        if (! is_array($audit)) {
+            throw new \RuntimeException('WS_C171_TICK_RISK_GUARD_AUDIT_MISSING');
+        }
+        if (! ($audit['enabled'] ?? false)) {
+            $audit['status'] = 'NOT_APPLICABLE';
+            $audit['pass'] = true;
+            return;
+        }
+
+        $threshold = $this->floatOrNull($paramset['risk']['max_signal_tick_risk_expansion_pct'] ?? null);
+        if ($threshold === null || abs((float) ($audit['threshold'] ?? -1) - $threshold) > 0.0000000001) {
+            throw new \RuntimeException('WS_C171_TICK_RISK_GUARD_AUDIT_THRESHOLD_IDENTITY_MISMATCH');
+        }
+
+        $audit['tick_risk_metric_propagated_to_scored_candidates'] =
+            (int) $audit['metric_missing_on_scored_candidates_count'] === 0
+            && (int) $audit['metric_propagated_to_scored_candidates_count'] === (int) $audit['scored_candidate_count'];
+        $audit['tick_risk_metric_propagated_to_official_picks'] =
+            (int) $audit['metric_missing_on_official_picks_count'] === 0
+            && (int) $audit['metric_propagated_to_official_picks_count'] === (int) $audit['official_pick_count'];
+        $audit['threshold_enforced_for_all_evidence_rows'] =
+            (int) $audit['above_threshold_without_tick_reason_count'] === 0
+            && (int) $audit['eligible_above_threshold_after_guard_count'] === 0;
+        $audit['pass'] = (bool) $audit['tick_risk_metric_propagated_to_scored_candidates']
+            && (bool) $audit['tick_risk_metric_propagated_to_official_picks']
+            && (bool) $audit['threshold_enforced_for_all_evidence_rows'];
+        $audit['status'] = $audit['pass'] ? 'PASS' : 'FAIL';
+
+        if (! $audit['pass']) {
+            throw new \RuntimeException(
+                'WS_C171_TICK_RISK_GUARD_EXECUTION_OR_EVIDENCE_PROPAGATION_FAILED: '.json_encode($audit)
+            );
+        }
+    }
+
+    private function isIndependentTickRiskFailureReason(string $reason): bool
+    {
+        if ($reason === 'WS_TICK_RISK_HIGH') {
+            return false;
+        }
+        if (in_array($reason, $this->tickRiskFailureReasonCodes(), true)) {
+            return true;
+        }
+
+        return substr($reason, -5) === '_FAIL';
+    }
+
+    private function tickRiskFailureReasonCodes(): array
+    {
+        return [
+            'WS_DATA_MISSING',
+            'WS_LIQ_FAIL',
+            'WS_LIQ_HIGH',
+            'WS_ATR_LOW',
+            'WS_ATR_HIGH',
+            'WS_VOLR_FAIL',
+            'WS_VOLR_HIGH',
+            'WS_TICK_RISK_HIGH',
+        ];
+    }
+
+    private function initializeOfficialEvidenceSpool(array &$payload, array $paramset): void
+    {
+        $backtest = is_array($paramset['backtest'] ?? null) ? $paramset['backtest'] : [];
+        if (($backtest['official_evidence_storage_mode'] ?? null) !== 'JSONL_SPOOL') {
+            return;
+        }
+        $directory = rtrim((string) ($backtest['official_evidence_spool_directory'] ?? ''), DIRECTORY_SEPARATOR);
+        if ($directory === '') {
+            throw new \RuntimeException('WS_C171_OFFICIAL_EVIDENCE_SPOOL_DIRECTORY_REQUIRED');
+        }
+        if (! is_dir($directory) && ! mkdir($directory, 0775, true) && ! is_dir($directory)) {
+            throw new \RuntimeException('WS_C171_OFFICIAL_EVIDENCE_SPOOL_DIRECTORY_CREATE_FAILED: '.$directory);
+        }
+        $runKey = preg_replace('/[^A-Za-z0-9_.-]/', '_', (string) ($backtest['official_evidence_spool_run_key'] ?? 'c171'));
+        $universePath = $directory.DIRECTORY_SEPARATOR.$runKey.'.universe.raw.jsonl';
+        $cutoffsPath = $directory.DIRECTORY_SEPARATOR.$runKey.'.cutoffs.raw.jsonl';
+        foreach ([$universePath, $cutoffsPath] as $path) {
+            if (file_put_contents($path, '', LOCK_EX) === false) {
+                throw new \RuntimeException('WS_C171_OFFICIAL_EVIDENCE_SPOOL_INITIALIZE_FAILED: '.$path);
+            }
+        }
+        $tickRiskGuardAudit = $payload['official_evidence']['tick_risk_guard_audit']
+            ?? $this->initialTickRiskGuardAudit($paramset);
+        $payload['official_evidence'] = [
+            'schema_version' => 'WS_OFFICIAL_IS_EVIDENCE_C171_V1',
+            'storage_mode' => 'JSONL_SPOOL',
+            'universe_spool_path' => $universePath,
+            'cutoffs_spool_path' => $cutoffsPath,
+            'universe_count' => 0,
+            'cutoff_count' => 0,
+            'finalized' => false,
+            'tick_risk_guard_audit' => $tickRiskGuardAudit,
+        ];
+        $payload['summary']['official_evidence_storage_mode'] = 'JSONL_SPOOL';
+        $payload['summary']['compact_replay_items'] = $this->compactReplayItems($paramset);
+    }
+
+    private function finalizeOfficialEvidenceSpool(array &$payload): void
+    {
+        foreach (['universe_spool_path', 'cutoffs_spool_path'] as $field) {
+            $path = (string) ($payload['official_evidence'][$field] ?? '');
+            if ($path === '' || ! is_file($path)) {
+                throw new \RuntimeException('WS_C171_OFFICIAL_EVIDENCE_SPOOL_MISSING: '.$field);
+            }
+            $payload['official_evidence'][$field.'_sha1'] = sha1_file($path);
+            $payload['official_evidence'][$field.'_bytes'] = filesize($path);
+        }
+        $payload['official_evidence']['finalized'] = true;
+    }
+
+    private function appendJsonLines(string $path, array $rows): void
+    {
+        if ($rows === []) {
+            return;
+        }
+        $buffer = '';
+        foreach ($rows as $row) {
+            $json = json_encode($row, JSON_UNESCAPED_SLASHES);
+            if ($json === false) {
+                throw new \RuntimeException('WS_C171_OFFICIAL_EVIDENCE_SPOOL_JSON_ENCODING_FAILED: '.json_last_error_msg());
+            }
+            $buffer .= $json.PHP_EOL;
+        }
+        if (file_put_contents($path, $buffer, FILE_APPEND | LOCK_EX) === false) {
+            throw new \RuntimeException('WS_C171_OFFICIAL_EVIDENCE_SPOOL_APPEND_FAILED: '.$path);
+        }
+    }
+
+    private function compactReplayItems(array $paramset): bool
+    {
+        return (bool) ($paramset['backtest']['compact_replay_items'] ?? false);
+    }
+
+    private function sortOfficialUniverse(array $rows): array
+    {
+        usort($rows, function (array $left, array $right): int {
+            return strcmp((string) ($left['asof_eod_date'] ?? ''), (string) ($right['asof_eod_date'] ?? ''))
+                ?: (((int) ($left['ticker_id'] ?? 0)) <=> ((int) ($right['ticker_id'] ?? 0)));
+        });
+        return $rows;
+    }
+
+    private function sortOfficialCutoffs(array $rows): array
+    {
+        usort($rows, function (array $left, array $right): int {
+            return strcmp((string) ($left['asof_eod_date'] ?? ''), (string) ($right['asof_eod_date'] ?? ''));
+        });
+        return $rows;
     }
 
     private function replayItem(string $tradeDate, array $confirmItem, ?array $recommendationItem, bool $isRecommended): array
@@ -434,6 +768,12 @@ class WatchlistBacktestStrategyService
             'items' => [],
             'trades' => [],
             'evaluations' => [],
+            'official_evidence' => [
+                'schema_version' => 'WS_OFFICIAL_IS_EVIDENCE_C171_V1',
+                'universe' => [],
+                'cutoffs' => [],
+                'tick_risk_guard_audit' => $this->initialTickRiskGuardAudit($paramset),
+            ],
             'summary' => [
                 'days_requested' => count($replayDates),
                 'days_evaluated' => 0,
@@ -662,6 +1002,10 @@ class WatchlistBacktestStrategyService
             'dv20_idr',
             'atr14_pct',
             'vol_ratio',
+            'signal_close_price',
+            'theoretical_stop_risk_pct',
+            'normalized_stop_risk_pct',
+            'signal_tick_risk_expansion_pct',
             'roc20',
             'hh20',
             'ma20',

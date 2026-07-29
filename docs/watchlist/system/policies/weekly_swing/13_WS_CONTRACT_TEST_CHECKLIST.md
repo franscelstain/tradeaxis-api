@@ -148,3 +148,16 @@ Checklist ini menetapkan acceptance minimum untuk artefak dan boundary Weekly Sw
 - [ ] `dead_parameter_or_silent_default_summary` reports catalog mapping gaps or explicitly records no detected dead/silent default axis.
 - [ ] no next catalog is designed from unavailable diagnostic fields.
 - [ ] no OOS service/repository call, OOS table write, best-of-failed binding, promotion, order, broker, allocation, or production-ready output occurs.
+
+## C171 Immutable Real-IS Remediation DRAFT Catalog Additions
+
+- [ ] catalog identity is exactly `WS_BT_GRID_REAL_IS_REMEDIATION_C171_R1_2026_07`, version `C171-R1`, count `5`, and hash `82b0fcbf17823fda5ab59bd2dba3d947b4f9e233`;
+- [ ] source `eval_id=188`, source `param_set_id=1`, diagnostic identity, and candidate-design identity are verified before any DRAFT persistence;
+- [ ] `max_dv20_idr`, `max_vol_ratio`, and `top_max_score_total` are persisted, mapped, hashed, validated, and consumed at decision time;
+- [ ] legacy paramsets without the optional upper bounds remain valid and behaviorally unchanged;
+- [ ] `WS_LIQ_HIGH` and `WS_VOLR_HIGH` follow the locked reason priority and remain parity with the official seed;
+- [ ] TOP score cap recalculates the same-day TOP quantile pool and cannot use realized return, OOS evidence, ticker blacklist, sector whitelist, or month blacklist;
+- [ ] seed and DRAFT persistence reruns are idempotent; conflicting duplicate catalog/DRAFT payloads fail closed;
+- [ ] exactly five new immutable DRAFT paramsets are persisted with distinct hashes and explicit catalog binding provenance;
+- [ ] catalog persistence invokes no official IS runtime, OOS service/repository, promotion, PLAN, recommendation, CONFIRM, activation, or rollout;
+- [ ] canonical gates remain unchanged and C172 stays blocked until a later official IS run passes every gate.

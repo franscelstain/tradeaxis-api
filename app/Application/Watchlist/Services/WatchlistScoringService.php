@@ -17,10 +17,12 @@ class WatchlistScoringService
         ],
         'liquidity' => [
             'min_dv20_idr' => 1000000000.0,
+            'max_dv20_idr' => null,
             'dv20_strong_idr' => 5000000000.0,
         ],
         'volume' => [
             'min_vol_ratio' => 1.2,
+            'max_vol_ratio' => null,
             'strong_vol_ratio' => 2.5,
         ],
         'risk' => [
@@ -30,6 +32,7 @@ class WatchlistScoringService
             'atr_ideal_high' => 0.075,
             'stop_atr_mult' => 1.5,
             'min_rr' => 1.5,
+            'max_signal_tick_risk_expansion_pct' => null,
         ],
         'scoring' => [
             'combine_mode' => 'WEIGHTED_MEAN',
@@ -507,6 +510,10 @@ class WatchlistScoringService
             'dv20_idr' => $this->metricOrNull($gateMetrics['dv20_idr'] ?? $indicators['dv20idr'] ?? $indicators['dv20_idr'] ?? $candidate['dv20_idr'] ?? $candidate['dv20idr'] ?? null),
             'atr14_pct' => $this->metricOrNull($gateMetrics['atr14_pct'] ?? $indicators['atr14_pct'] ?? $candidate['atr14_pct'] ?? null),
             'vol_ratio' => $this->metricOrNull($gateMetrics['vol_ratio'] ?? $indicators['vol_ratio'] ?? $candidate['vol_ratio'] ?? null),
+            'signal_close_price' => $this->metricOrNull($gateMetrics['signal_close_price'] ?? $candidate['signal_close_price'] ?? $candidate['close_price'] ?? null),
+            'theoretical_stop_risk_pct' => $this->metricOrNull($gateMetrics['theoretical_stop_risk_pct'] ?? $candidate['theoretical_stop_risk_pct'] ?? null),
+            'normalized_stop_risk_pct' => $this->metricOrNull($gateMetrics['normalized_stop_risk_pct'] ?? $candidate['normalized_stop_risk_pct'] ?? null),
+            'signal_tick_risk_expansion_pct' => $this->metricOrNull($gateMetrics['signal_tick_risk_expansion_pct'] ?? $candidate['signal_tick_risk_expansion_pct'] ?? null),
             'roc20' => $this->metricOrNull($gateMetrics['roc20'] ?? $indicators['roc_20'] ?? $indicators['roc20'] ?? $candidate['roc20'] ?? $candidate['roc_20'] ?? null),
             'hh20' => $this->metricOrNull($gateMetrics['hh20'] ?? $indicators['hh20'] ?? $candidate['hh20'] ?? null),
             'ma20' => $this->metricOrNull($gateMetrics['ma20'] ?? $indicators['ma20'] ?? $candidate['ma20'] ?? null),
@@ -605,10 +612,12 @@ class WatchlistScoringService
             ],
             'liquidity' => [
                 'min_dv20_idr' => $this->paramValue($paramset, ['liquidity', 'min_dv20_idr'], $defaults['liquidity']['min_dv20_idr']),
+                'max_dv20_idr' => $this->optionalParamValue($paramset, ['liquidity', 'max_dv20_idr']),
                 'dv20_strong_idr' => $this->paramValue($paramset, ['liquidity', 'dv20_strong_idr'], $defaults['liquidity']['dv20_strong_idr']),
             ],
             'volume' => [
                 'min_vol_ratio' => $this->paramValue($paramset, ['volume', 'min_vol_ratio'], $defaults['volume']['min_vol_ratio']),
+                'max_vol_ratio' => $this->optionalParamValue($paramset, ['volume', 'max_vol_ratio']),
                 'strong_vol_ratio' => $this->paramValue($paramset, ['volume', 'strong_vol_ratio'], $defaults['volume']['strong_vol_ratio']),
             ],
             'risk' => [
@@ -616,6 +625,9 @@ class WatchlistScoringService
                 'max_atr14_pct' => $this->paramValue($paramset, ['risk', 'max_atr14_pct'], $defaults['risk']['max_atr14_pct']),
                 'atr_ideal_low' => $this->paramValue($paramset, ['risk', 'atr_ideal_low'], $defaults['risk']['atr_ideal_low']),
                 'atr_ideal_high' => $this->paramValue($paramset, ['risk', 'atr_ideal_high'], $defaults['risk']['atr_ideal_high']),
+                'stop_atr_mult' => $this->paramValue($paramset, ['risk', 'stop_atr_mult'], $defaults['risk']['stop_atr_mult']),
+                'min_rr' => $this->paramValue($paramset, ['risk', 'min_rr'], $defaults['risk']['min_rr']),
+                'max_signal_tick_risk_expansion_pct' => $this->optionalParamValue($paramset, ['risk', 'max_signal_tick_risk_expansion_pct']),
             ],
             'scoring' => [
                 'combine_mode' => (string) ($this->paramValueMixed($paramset, ['scoring', 'combine_mode'], $defaults['scoring']['combine_mode'])),
@@ -688,11 +700,30 @@ class WatchlistScoringService
             }
         }
 
+        foreach ([
+            'liquidity.max_dv20_idr' => $paramset['liquidity']['max_dv20_idr'],
+            'volume.max_vol_ratio' => $paramset['volume']['max_vol_ratio'],
+            'risk.max_signal_tick_risk_expansion_pct' => $paramset['risk']['max_signal_tick_risk_expansion_pct'],
+        ] as $name => $value) {
+            if ($value !== null && (! is_numeric($value) || (float) $value < 0)) {
+                $errors[] = $name.' must be null or numeric and >= 0';
+            }
+        }
+
         if ($paramset['setup']['roc_lo'] >= $paramset['setup']['roc_hi']) {
             $errors[] = 'setup.roc_lo must be < setup.roc_hi';
         }
         if ($paramset['liquidity']['dv20_strong_idr'] < $paramset['liquidity']['min_dv20_idr']) {
             $errors[] = 'liquidity.dv20_strong_idr must be >= liquidity.min_dv20_idr';
+        }
+        if ($paramset['liquidity']['max_dv20_idr'] !== null
+            && ($paramset['liquidity']['max_dv20_idr'] < $paramset['liquidity']['min_dv20_idr']
+                || $paramset['liquidity']['max_dv20_idr'] < $paramset['liquidity']['dv20_strong_idr'])) {
+            $errors[] = 'liquidity.max_dv20_idr must be >= min_dv20_idr and dv20_strong_idr';
+        }
+        if ($paramset['volume']['max_vol_ratio'] !== null
+            && $paramset['volume']['max_vol_ratio'] < $paramset['volume']['min_vol_ratio']) {
+            $errors[] = 'volume.max_vol_ratio must be >= volume.min_vol_ratio';
         }
         if ($paramset['volume']['strong_vol_ratio'] < $paramset['volume']['min_vol_ratio']) {
             $errors[] = 'volume.strong_vol_ratio must be >= volume.min_vol_ratio';
@@ -710,7 +741,10 @@ class WatchlistScoringService
             $errors[] = 'risk.atr_ideal_low must be <= risk.atr_ideal_high';
         }
 
-        foreach (['risk.min_atr14_pct', 'risk.max_atr14_pct', 'risk.atr_ideal_low', 'risk.atr_ideal_high'] as $name) {
+        foreach (['risk.min_atr14_pct', 'risk.max_atr14_pct', 'risk.atr_ideal_low', 'risk.atr_ideal_high', 'risk.max_signal_tick_risk_expansion_pct'] as $name) {
+            if ($name === 'risk.max_signal_tick_risk_expansion_pct' && $paramset['risk']['max_signal_tick_risk_expansion_pct'] === null) {
+                continue;
+            }
             $path = explode('.', $name);
             if ($paramset[$path[0]][$path[1]] > 1) {
                 $errors[] = $name.' must be a fraction between 0 and 1, not percent-points';
@@ -718,6 +752,13 @@ class WatchlistScoringService
         }
 
         return $errors;
+    }
+
+    private function optionalParamValue(array $paramset, array $path): ?float
+    {
+        $value = $this->paramValueMixed($paramset, $path, null);
+
+        return is_numeric($value) ? (float) $value : null;
     }
 
     private function paramValue(array $paramset, array $path, float $default): float

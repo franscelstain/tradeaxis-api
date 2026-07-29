@@ -253,6 +253,32 @@ class AddEventRiskSourceContext extends Migration
 
     private function hasIndex($tableName, $indexName)
     {
+        if (! Schema::hasTable($tableName)) {
+            return false;
+        }
+
+        $driver = Schema::getConnection()->getDriverName();
+        if ($driver === 'mysql') {
+            $rows = DB::select(
+                'SELECT COUNT(*) AS aggregate FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?',
+                [$tableName, $indexName]
+            );
+
+            return isset($rows[0]) && (int) $rows[0]->aggregate > 0;
+        }
+
+        if ($driver === 'sqlite') {
+            $escapedTableName = str_replace("'", "''", (string) $tableName);
+            $indexes = DB::select("PRAGMA index_list('".$escapedTableName."')");
+            foreach ($indexes as $index) {
+                if ((string) ($index->name ?? '') === (string) $indexName) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         try {
             $indexes = Schema::getConnection()->getDoctrineSchemaManager()->listTableIndexes($tableName);
 

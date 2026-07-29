@@ -118,3 +118,32 @@ Jika SQL artifact berbeda dari dokumen ini, dokumen ini selalu menang dan SQL ar
 ## Final Procedure Rule
 
 Tidak ada paramset yang boleh dianggap canonically promoted atau canonically active bila status tersebut tidak dapat ditelusuri ke preconditions, validation gates, status transitions, dan postconditions yang ditetapkan secara normatif di dokumen ini.
+
+## C171 identity requirement before OOS and promotion
+
+Before an IS candidate may be handed to OOS, the following identity must be exact:
+
+```text
+watchlist_param_sets.params_hash
+=
+watchlist_bt_eval.paramset_hash
+```
+
+The execution contract must also match:
+
+```text
+watchlist_param_sets.eval_model_hash
+=
+watchlist_bt_eval.eval_model_hash
+
+watchlist_param_sets.implementation_hash
+=
+watchlist_bt_eval.implementation_hash
+```
+
+Before DRAFT-to-ACTIVE promotion, C172 OOS evidence must carry those same hashes plus the exact IS `evidence_manifest_hash`. Any mismatch is fail-closed and cannot be repaired by changing only an artifact or tracker entry.
+
+
+### Paramset provenance identity
+
+An existing `params_hash` is idempotent only when `params_json`, `hash_contract`, `provenance_json`, `eval_model`, `eval_model_hash`, `implementation_version`, and `implementation_hash` are all identical. The same parameter payload may not silently adopt a different backtest binding or source provenance.

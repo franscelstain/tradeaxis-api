@@ -3,6 +3,7 @@
 namespace App\Application\Watchlist\Services;
 
 use App\Application\MarketData\Services\MarketDataTradingCalendarReadService;
+use App\Infrastructure\Persistence\Watchlist\WatchlistBacktestOfficialEvidenceRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -11,15 +12,18 @@ class WeeklySwingParamsetPromotionService
     private WeeklySwingParamsetValidator $validator;
     private WeeklySwingParamsetBacktestBindingVerifier $bindingVerifier;
     private MarketDataTradingCalendarReadService $calendar;
+    private WatchlistBacktestOfficialEvidenceRepository $officialEvidenceRepository;
 
     public function __construct(
         WeeklySwingParamsetValidator $validator = null,
         WeeklySwingParamsetBacktestBindingVerifier $bindingVerifier = null,
-        MarketDataTradingCalendarReadService $calendar = null
+        MarketDataTradingCalendarReadService $calendar = null,
+        WatchlistBacktestOfficialEvidenceRepository $officialEvidenceRepository = null
     ) {
         $this->validator = $validator ?: new WeeklySwingParamsetValidator();
         $this->bindingVerifier = $bindingVerifier ?: new WeeklySwingParamsetBacktestBindingVerifier();
         $this->calendar = $calendar ?: new MarketDataTradingCalendarReadService();
+        $this->officialEvidenceRepository = $officialEvidenceRepository ?: new WatchlistBacktestOfficialEvidenceRepository();
     }
 
     public function execute(int $paramSetId, int $btParamId, int $oosId): array
@@ -67,6 +71,19 @@ class WeeklySwingParamsetPromotionService
                     return $this->blocked('WS_PARAMSET_VALIDATION_FAILED', ['validation' => $validation]);
                 }
 
+                $targetParamsHash = (string) ($target->params_hash ?? '');
+                if ($targetParamsHash === '' || $targetParamsHash !== (string) $validation['canonical_hash']) {
+                    return $this->blocked('WS_PARAMSET_PROMOTION_FULL_PARAMSET_HASH_MISMATCH', [
+                        'draft_params_hash' => $targetParamsHash,
+                        'canonical_params_hash' => (string) $validation['canonical_hash'],
+                    ]);
+                }
+                foreach (['eval_model_hash', 'implementation_version', 'implementation_hash'] as $identityField) {
+                    if (trim((string) ($target->{$identityField} ?? '')) === '') {
+                        return $this->blocked('WS_PARAMSET_PROMOTION_DRAFT_IDENTITY_MISSING', ['identity_field' => $identityField]);
+                    }
+                }
+
                 $binding = $provenance['bt_binding'] ?? [];
                 if ((int) ($binding['bt_param_id'] ?? 0) !== $btParamId) {
                     return $this->blocked('WS_PARAMSET_PROMOTION_BINDING_MISMATCH');
@@ -109,6 +126,37 @@ class WeeklySwingParamsetPromotionService
                     ->first();
                 if (! $isEval) {
                     return $this->blocked('WS_PARAMSET_PROMOTION_IS_EVAL_MISSING');
+                }
+
+                $identityChecks = [
+                    'paramset_hash' => $targetParamsHash,
+                    'eval_model_hash' => (string) $target->eval_model_hash,
+                    'implementation_version' => (string) $target->implementation_version,
+                    'implementation_hash' => (string) $target->implementation_hash,
+                ];
+                foreach ($identityChecks as $field => $expected) {
+                    if ((string) ($isEval->{$field} ?? '') !== $expected) {
+                        return $this->blocked('WS_PARAMSET_PROMOTION_IS_IDENTITY_MISMATCH', [
+                            'identity_field' => $field,
+                            'expected' => $expected,
+                            'actual' => $isEval->{$field} ?? null,
+                        ]);
+                    }
+                }
+                foreach ([
+                    'paramset_hash' => $targetParamsHash,
+                    'eval_model_hash' => (string) $target->eval_model_hash,
+                    'implementation_version' => (string) $target->implementation_version,
+                    'implementation_hash' => (string) $target->implementation_hash,
+                    'is_evidence_manifest_hash' => (string) ($isEval->evidence_manifest_hash ?? ''),
+                ] as $field => $expected) {
+                    if ((string) ($oos->{$field} ?? '') !== $expected) {
+                        return $this->blocked('WS_PARAMSET_PROMOTION_OOS_IDENTITY_MISMATCH', [
+                            'identity_field' => $field,
+                            'expected' => $expected,
+                            'actual' => $oos->{$field} ?? null,
+                        ]);
+                    }
                 }
 
                 $officialEvidence = $this->officialSupportEvidence((array) $isEval);
@@ -214,54 +262,51 @@ class WeeklySwingParamsetPromotionService
 
     private function officialSupportEvidence(array $isEval): array
     {
-        $tables = [
-            'watchlist_bt_picks_ws',
-            'watchlist_bt_universe_ws',
-            'watchlist_bt_cutoffs_ws',
-        ];
-        $missingIdentity = [];
-        foreach ($tables as $table) {
-            if (! Schema::hasColumn($table, 'eval_id')) {
-                $missingIdentity[] = $table.'.eval_id';
+        foreach (['picks_hash','universe_hash','cutoffs_hash','evidence_manifest_hash','market_data_lineage_hash'] as $field) {
+            if (trim((string) ($isEval[$field] ?? '')) === '') {
+                return [
+                    'pass' => false,
+                    'reason_code' => 'WS_PARAMSET_PROMOTION_OFFICIAL_EVIDENCE_MANIFEST_MISSING',
+                    'eval_id' => (int) ($isEval['eval_id'] ?? 0),
+                    'missing_field' => $field,
+                ];
             }
         }
-        if ($missingIdentity !== []) {
+        try {
+            $actual = $this->officialEvidenceRepository->databaseManifest((int) ($isEval['eval_id'] ?? 0));
+        } catch (\Throwable $e) {
             return [
                 'pass' => false,
                 'reason_code' => 'WS_PARAMSET_PROMOTION_OFFICIAL_EVIDENCE_SCHEMA_UNVERSIONED',
-                'eval_id' => (int) ($isEval['eval_id'] ?? 0),
-                'missing_identity_columns' => $missingIdentity,
-                'message' => 'Official picks, universe, and cutoff evidence must be version-bound to the exact IS eval_id.',
+                'message' => $e->getMessage(),
             ];
         }
-
-        $evalId = (int) ($isEval['eval_id'] ?? 0);
-        $counts = [];
-        foreach ($tables as $table) {
-            $counts[$table] = DB::table($table)->where('eval_id', $evalId)->count();
-        }
-        $picksMatch = $counts['watchlist_bt_picks_ws'] === (int) ($isEval['picks_count'] ?? 0);
-        $coveragePresent = $counts['watchlist_bt_universe_ws'] > 0
-            && $counts['watchlist_bt_cutoffs_ws'] > 0;
-        if (! $picksMatch || ! $coveragePresent) {
+        $expected = [
+            'schema_version' => 'WS_OFFICIAL_IS_EVIDENCE_C171_V1',
+            'picks_count' => (int) ($isEval['picks_count'] ?? 0),
+            'picks_hash' => (string) ($isEval['picks_hash'] ?? ''),
+            'universe_count' => (int) ($isEval['universe_count'] ?? 0),
+            'universe_hash' => (string) ($isEval['universe_hash'] ?? ''),
+            'cutoff_count' => (int) ($isEval['cutoff_count'] ?? 0),
+            'cutoffs_hash' => (string) ($isEval['cutoffs_hash'] ?? ''),
+            'market_data_lineage_hash' => (string) ($isEval['market_data_lineage_hash'] ?? ''),
+            'evidence_manifest_hash' => (string) ($isEval['evidence_manifest_hash'] ?? ''),
+        ];
+        if ($actual !== $expected) {
             return [
                 'pass' => false,
-                'reason_code' => 'WS_PARAMSET_PROMOTION_OFFICIAL_SUPPORT_EVIDENCE_MISSING',
-                'eval_id' => $evalId,
-                'expected_picks_count' => (int) ($isEval['picks_count'] ?? 0),
-                'counts' => $counts,
-                'picks_count_matches_eval' => $picksMatch,
-                'universe_and_cutoffs_present' => $coveragePresent,
+                'reason_code' => 'WS_PARAMSET_PROMOTION_OFFICIAL_EVIDENCE_HASH_MISMATCH',
+                'eval_id' => (int) ($isEval['eval_id'] ?? 0),
+                'expected' => $expected,
+                'actual' => $actual,
             ];
         }
 
         return [
             'pass' => true,
             'reason_code' => 'WS_PARAMSET_PROMOTION_OFFICIAL_SUPPORT_EVIDENCE_VALID',
-            'eval_id' => $evalId,
-            'counts' => $counts,
-            'picks_count_matches_eval' => true,
-            'universe_and_cutoffs_present' => true,
+            'eval_id' => (int) ($isEval['eval_id'] ?? 0),
+            'manifest' => $actual,
         ];
     }
 

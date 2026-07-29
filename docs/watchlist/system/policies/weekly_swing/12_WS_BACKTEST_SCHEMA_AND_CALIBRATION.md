@@ -384,6 +384,7 @@ Kolom (harus match DDL):
 - `guard_ok` — 1 jika lolos semua guardrail, 0 jika tidak
 - `eligible_ok` — 1 jika required_ok=1 dan guard_ok=1
 - `dv20_idr`, `atr14_pct`, `vol_ratio` — metric snapshot untuk debug equivalence
+- `vol_ratio` disimpan sebagai `DECIMAL(20,6)` agar snapshot audit tidak overflow pada rasio historis ekstrem ketika denominator volume sangat kecil; nilai tidak boleh di-clamp hanya agar muat ke schema.
 
 Primary key:
 - `(asof_eod_date, ticker_id)`
@@ -392,6 +393,69 @@ Indexes:
 - `idx_bt_univ_ws_req (asof_eod_date, required_ok)`
 - `idx_bt_univ_ws_reason (asof_eod_date, reason_code)`
 - `idx_bt_univ_ws_elig (asof_eod_date, eligible_ok)`
+
+## C171 Real-IS Remediation Catalog and DRAFT-Only Persistence (LOCKED)
+
+The immutable failed official baseline remains:
+
+```text
+eval_id=188
+param_set_id=1
+params_hash=b7f3c207b989c55c93f8f61b1fcceea2c343a151
+canonical_is_gates_pass=0
+```
+
+It may not be edited or deleted. Diagnostic evidence permits one finite,
+decision-time remediation catalog only:
+
+```text
+catalog_code=WS_BT_GRID_REAL_IS_REMEDIATION_C171_R1_2026_07
+catalog_version=C171-R1
+catalog_count=5
+catalog_hash=82b0fcbf17823fda5ab59bd2dba3d947b4f9e233
+```
+
+The official param-grid schema is extended with nullable columns:
+
+```text
+max_dv20_idr BIGINT UNSIGNED NULL
+max_vol_ratio DECIMAL(20,6) NULL
+top_max_score_total DECIMAL(10,6) NULL
+```
+
+Nullable preserves immutable legacy catalog rows. Every C171-R1 row must provide
+all three values and pass exact catalog version/count/hash validation. A seed is
+idempotent only when `(policy_code, catalog_code, row_code)` and the complete
+persisted payload are identical. A changed row fails closed.
+
+DRAFT persistence requirements:
+
+- source identity is exactly `eval_id=188`, `param_set_id=1`, and the baseline
+  hash above;
+- completed diagnostic artifact and candidate-design artifact hashes/file SHA1s
+  must match the locked implementation constants;
+- exactly five canonical JSON payloads are validated, bound to exact `param_id`,
+  and imported as new immutable DRAFTs;
+- rerun is idempotent and must not edit an existing DRAFT payload/hash;
+- persistence stage does not invoke official IS, OOS, promotion, PLAN,
+  recommendation, CONFIRM, activation, rollout, or publication;
+- each unchanged DRAFT must later receive a separate official IS run on
+  `2023-01-02` through `2025-05-21`;
+- failed candidate evaluations remain evidence; no best-failed fallback;
+- C172/OOS remains forbidden until one candidate passes every unchanged
+  canonical IS gate.
+
+Decision-time semantics:
+
+```text
+dv20_idr > max_dv20_idr          => WS_LIQ_HIGH
+vol_ratio > max_vol_ratio         => WS_VOLR_HIGH
+score_total > top_max_score_total => forbidden from TOP qualified pool
+```
+
+The TOP cutoff uses the capped TOP score pool. This is not post-return filtering
+and may not inspect D+1..D+5 outcomes or OOS evidence.
+
 
 ## Next
 ### Weekly Swing
@@ -442,7 +506,10 @@ secondary_min_score_q
 `watchlist_bt_eval` identity is:
 
 ```text
-policy_code + param_id + eval_model + paramset_hash + from_date + to_date
+policy_code + catalog_code + catalog_version + param_id + eval_model
++ eval_model_hash + implementation_version + implementation_hash
++ evidence_pipeline_version + evidence_pipeline_hash
++ paramset_hash + from_date + to_date
 ```
 
 This identity preserves historical evidence when evaluation semantics or a paramset snapshot changes. An old row must not be overwritten or deleted merely to permit a rerun. Existing unversioned rows are migrated to explicit legacy markers by the gap-closure migration/SQL.
@@ -530,8 +597,13 @@ policy_code
 catalog_code
 catalog_version
 param_id
-paramset_hash
 eval_model
+eval_model_hash
+implementation_version
+implementation_hash
+evidence_pipeline_version
+evidence_pipeline_hash
+paramset_hash
 from_date
 to_date
 ```
@@ -1493,3 +1565,76 @@ docs/watchlist/audit/_artifacts/c14-is-run-1.json
 docs/watchlist/audit/_artifacts/c14-is-run-2.json
 docs/watchlist/audit/_artifacts/c14-forensic-summary.csv
 ```
+
+## C171 versioned official IS evidence addendum
+
+C171 implements the previously planned exact evaluation identity. Official IS evidence is no longer accepted as aggregate metrics alone.
+
+```text
+DRAFT_CANONICAL_PARAMS_HASH=watchlist_param_sets.params_hash
+IS_PARAMSET_HASH=watchlist_bt_eval.paramset_hash
+IS_EVAL_MODEL_HASH=watchlist_bt_eval.eval_model_hash
+IS_IMPLEMENTATION_HASH=watchlist_bt_eval.implementation_hash
+IS_EVIDENCE_PIPELINE_VERSION=watchlist_bt_eval.evidence_pipeline_version
+IS_EVIDENCE_PIPELINE_HASH=watchlist_bt_eval.evidence_pipeline_hash
+IS_EVIDENCE_MANIFEST_HASH=watchlist_bt_eval.evidence_manifest_hash
+SUPPORT_ROWS_IDENTITY=eval_id
+```
+
+The official support tables are now evaluation-versioned:
+
+```text
+watchlist_bt_picks_ws.eval_id
+watchlist_bt_universe_ws.eval_id
+watchlist_bt_cutoffs_ws.eval_id
+```
+
+Each row carries a deterministic `row_hash`. `watchlist_bt_eval` stores aggregate hashes for picks, universe, cutoffs, and Market Data lineage. Promotion must recompute the persisted manifest and match all hashes; matching row counts alone are insufficient.
+
+C171 runs canonical IS only. OOS, DRAFT-to-ACTIVE promotion, PLAN persistence, recommendation persistence, CONFIRM, activation, and rollout remain forbidden.
+
+
+## C171 strict canonical IS boundary and evidence population
+
+The canonical C171 IS window is locked to `2023-01-02` through `2025-05-21`. Entry generation must censor the final holding-horizon trading days so no required price read exceeds the IS boundary.
+
+Official IS picks are exactly the metrics-ready `TOP` / `TOP_PICKS` population used by canonical `picks_count`. `SECONDARY` and non-metrics-ready rows are not official picks. Every official pick, universe row, and cutoff row must carry positive Market Data publication/version/run lineage. Universe dates and cutoff dates must match exactly.
+
+`watchlist_bt_eval` and its support evidence are one transactional identity bundle. Hash fields are strings and must never be coerced to numeric values. A failed support-evidence write must not leave a newly inserted orphan evaluation row.
+
+
+## C171 C01 tick-risk evidence-pipeline repair addendum
+
+Evidence construction is versioned independently from immutable strategy semantics. The corrected pipeline is:
+
+```text
+EVIDENCE_PIPELINE_VERSION=WS_C171_C01_TICK_RISK_EVIDENCE_PIPELINE_V2
+EVIDENCE_PIPELINE_HASH=53857a635f6662542f0dc80f08051bed25a7afb8
+STRATEGY_IMPLEMENTATION_VERSION=WS_CANONICAL_IS_C171_V1
+```
+
+Legacy evaluations are backfilled with an explicit V1 marker and are never rewritten. A corrected rerun with the same DRAFT, param-grid row, model, implementation, and IS window receives a new `eval_id` because evidence-pipeline identity is part of the evaluation key.
+
+For a paramset with `max_signal_tick_risk_expansion_pct`, official IS must fail closed unless all scored candidates and TOP-pick candidates carry decision-time `signal_close_price` and `signal_tick_risk_expansion_pct`, every above-threshold row includes `WS_TICK_RISK_HIGH` in the full reason-code set, and no eligible row remains above threshold. OOS and promotion remain forbidden until corrected official IS comparison is complete.
+
+## C171 C01 tick-risk guard adapter enforcement addendum
+
+The V2 evidence-propagation audit correctly failed closed and did not persist a corrected evaluation because the scoring-layer paramset adapter omitted candidate-universe-only guard fields. The scoring adapter must preserve, at minimum:
+
+```text
+liquidity.max_dv20_idr
+volume.max_vol_ratio
+risk.stop_atr_mult
+risk.min_rr
+risk.max_signal_tick_risk_expansion_pct
+```
+
+Current corrected identity:
+
+```text
+EVIDENCE_PIPELINE_VERSION=WS_C171_C01_TICK_RISK_GUARD_ENFORCEMENT_PIPELINE_V3
+EVIDENCE_PIPELINE_HASH=9e9933b363026623b7ab5629f3281fa680a53a2e
+STRATEGY_IMPLEMENTATION_VERSION=WS_CANONICAL_IS_C171_V1
+```
+
+A corrected official IS run is invalid unless the candidate-universe service receives the exact tick-risk threshold from the immutable paramset, all above-threshold rows contain `WS_TICK_RISK_HIGH` in their full reason-code set, and no above-threshold row remains eligible. Because the repaired adapter also restores max-liquidity and max-volume guards, V3 comparison requires paramset 5 as the control plus paramsets 7-11; V1 metrics must not serve as a direct control for V3. Existing V1 evals and historical evals 192 and 194-198 remain immutable. OOS and promotion remain forbidden.

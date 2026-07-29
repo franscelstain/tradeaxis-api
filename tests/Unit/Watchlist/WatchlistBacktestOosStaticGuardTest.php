@@ -67,7 +67,15 @@ class WatchlistBacktestOosStaticGuardTest extends TestCase
         $this->assertStringContainsString("DB::table('watchlist_bt_param_grid')", $content);
         $this->assertStringContainsString("DB::table('watchlist_bt_eval')", $content);
         $this->assertStringContainsString("'catalog_code', 'catalog_version'", $content);
-        $this->assertStringContainsString("'eval_model', 'paramset_hash'", $content);
+        foreach ([
+            "'eval_model'",
+            "'eval_model_hash'",
+            "'implementation_version'",
+            "'implementation_hash'",
+            "'paramset_hash'",
+        ] as $identityField) {
+            $this->assertStringContainsString($identityField, $content);
+        }
         $this->assertStringContainsString("DB::table('watchlist_bt_oos_eval_ws')", $content);
         $this->assertStringContainsString('WS_BT_PARAM_GRID_PERSISTED_SET_MISMATCH', $content);
         $this->assertStringNotContainsString("DB::table('eod_bars')", $content);

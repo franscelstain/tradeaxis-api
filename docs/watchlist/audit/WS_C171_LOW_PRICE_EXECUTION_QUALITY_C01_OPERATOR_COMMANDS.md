@@ -1,0 +1,233 @@
+# C171 Low Price Execution Quality C01 Operator Commands
+
+## Migration
+
+```powershell
+php artisan migrate
+php artisan migrate --env=testing
+```
+
+## Focused and full regression
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalogTest"
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WeeklySwingDecisionTimeTickRiskServiceTest"
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WeeklySwingC171LowPriceExecutionQualityDraftCatalogPersistenceTest"
+vendor\bin\phpunit tests\Unit\Watchlist --filter "WatchlistBacktestC171StaticGuardTest"
+vendor\bin\phpunit tests\Unit\Watchlist --filter "C171"
+vendor\bin\phpunit tests\Unit\Watchlist
+```
+
+## Persist immutable DRAFT catalog
+
+```powershell
+php artisan watchlist:backtest-c171-persist-low-price-execution-quality-c01-draft-catalog `
+  --source-eval-id=192 `
+  --source-param-set-id=5 `
+  --diagnostic-artifact=storage/app/watchlist/backtest/c171-comparative-official-is-failure-diagnostic.json `
+  --hypothesis-lock-artifact=storage/app/watchlist/backtest/c171-comparative-official-is-failure-diagnostic-r2-hypothesis-lock.json `
+  --approval-reference=C171_OPERATOR_APPROVED_LOW_PRICE_EXECUTION_QUALITY_C01_DRAFT_CATALOG_PERSISTENCE_ONLY `
+  --operator-approved `
+  --output-dir=storage/app/watchlist/backtest/c171-low-price-execution-quality-c01-draft-catalog `
+  --output=storage/app/watchlist/backtest/c171-low-price-execution-quality-c01-draft-catalog.json `
+  --overwrite `
+  --progress
+```
+
+Expected boundary markers:
+
+```text
+catalog_row_count=5
+draft_paramset_created_count=5
+official_is_runtime_invoked=0
+oos_runtime_invoked=0
+oos_table_read=0
+paramset_promoted=0
+plan_run_created=0
+production_ready=0
+```
+
+A later exact rerun may report `draft_paramset_created_count=0` and `draft_paramset_idempotent_count=5`.
+
+
+## SQLite PLAN boundary mirror repair validation
+
+The focused persistence test must continue to assert that `watchlist_plan_runs` remains empty. The shared SQLite mirror now creates the runtime-aligned table instead of bypassing the assertion.
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist `
+  --filter "WeeklySwingC171LowPriceExecutionQualityDraftCatalogPersistenceTest"
+
+vendor\bin\phpunit tests\Unit\Watchlist `
+  --filter "WatchlistBacktestC171StaticGuardTest"
+
+vendor\bin\phpunit tests\Unit\Watchlist --filter "C171"
+vendor\bin\phpunit tests\Unit\Watchlist
+```
+
+Pass criteria:
+
+```text
+WeeklySwingC171LowPriceExecutionQualityDraftCatalogPersistenceTest=PASS
+NO_SUCH_TABLE_watchlist_plan_runs=0
+C171_FILTER=PASS
+FULL_WATCHLIST=PASS
+```
+
+Do not run the catalog persistence command until all four PHPUnit commands pass.
+
+## Tick-risk execution and evidence-propagation repair
+
+The repair adds evidence-pipeline identity to `watchlist_bt_eval`. Existing evals are backfilled as legacy V1 and remain immutable. Corrected paramset 7-9 reruns use V2 and create new eval rows.
+
+### Migration
+
+```powershell
+php artisan migrate --env=testing --force
+php artisan migrate
+```
+
+Verify evidence-pipeline backfill:
+
+```sql
+SELECT
+    evidence_pipeline_version,
+    evidence_pipeline_hash,
+    COUNT(*) AS eval_count
+FROM watchlist_bt_eval
+GROUP BY evidence_pipeline_version, evidence_pipeline_hash
+ORDER BY evidence_pipeline_version;
+```
+
+Before corrected reruns, existing evals should be assigned:
+
+```text
+WS_C171_OFFICIAL_EVIDENCE_PIPELINE_V1
+331906bb7cd0cdb3586ff3493f14217d58abacfe
+```
+
+### Focused tests
+
+```powershell
+vendor\bin\phpunit tests\Unit\Watchlist `
+  --filter "WatchlistScoringServiceTest"
+
+vendor\bin\phpunit tests\Unit\Watchlist `
+  --filter "WatchlistBacktestStrategyServiceTest"
+
+vendor\bin\phpunit tests\Unit\Watchlist `
+  --filter "WeeklySwingC171EvidenceIdentityTest"
+
+vendor\bin\phpunit tests\Unit\Watchlist `
+  --filter "WatchlistBacktestC171StaticGuardTest"
+
+vendor\bin\phpunit tests\Unit\Watchlist --filter "C171"
+vendor\bin\phpunit tests\Unit\Watchlist
+```
+
+### Corrected official IS rerun for V3 control and all immutable C01 paramsets
+
+```powershell
+$candidates = @(5, 7, 8, 9, 10, 11)
+$summary = @()
+
+foreach ($id in $candidates) {
+    $output = "storage/app/watchlist/backtest/c171-c01-tick-risk-repair-official-is-paramset-$id.json"
+    $log = "storage/app/watchlist/backtest/c171-c01-tick-risk-repair-official-is-paramset-$id.log"
+
+    php -d memory_limit=1024M artisan `
+      watchlist:backtest-c171-versioned-official-is-evidence `
+      --param-set-id=$id `
+      --from=2023-01-02 `
+      --to=2025-05-21 `
+      --approval-reference="C171_OPERATOR_APPROVED_C01_TICK_RISK_REPAIR_OFFICIAL_IS_EVIDENCE_ONLY_PARAMSET_$id" `
+      --operator-approved `
+      --output=$output `
+      --overwrite `
+      --progress 2>&1 |
+      Tee-Object -FilePath $log
+
+    $exitCode = $LASTEXITCODE
+    if (-not (Test-Path $output)) {
+        $summary += [PSCustomObject]@{
+            param_set_id = $id
+            exit_code = $exitCode
+            artifact_written = $false
+            status = "ARTIFACT_NOT_WRITTEN"
+        }
+        continue
+    }
+
+    $run = Get-Content $output -Raw | ConvertFrom-Json
+    $evaluation = $run.is_calibration.evaluations[0]
+    $metrics = $evaluation.metrics
+    $audit = $run.tick_risk_guard_audit
+
+    $summary += [PSCustomObject]@{
+        param_set_id = $id
+        exit_code = $exitCode
+        artifact_written = $true
+        eval_id = $evaluation.eval_id
+        status = $run.status
+        canonical_is_gates_pass = $run.canonical_is_gates_pass
+        evidence_pipeline_version = $run.evidence_pipeline_version
+        evidence_pipeline_hash = $run.evidence_pipeline_hash
+        tick_risk_audit_status = $audit.status
+        threshold = $audit.threshold
+        scored_candidates = $audit.scored_candidate_count
+        scored_missing_metric = $audit.metric_missing_on_scored_candidates_count
+        official_picks = $audit.official_pick_count
+        official_picks_missing_metric = $audit.metric_missing_on_official_picks_count
+        above_threshold_before_guard = $audit.above_threshold_before_guard_count
+        tick_only_rejected = $audit.tick_only_rejected_count
+        tick_multi_reason_rejected = $audit.tick_multi_reason_rejected_count
+        above_threshold_without_reason = $audit.above_threshold_without_tick_reason_count
+        eligible_above_threshold_after_guard = $audit.eligible_above_threshold_after_guard_count
+        picks_count = $metrics.picks_count
+        avg_ret_net = $metrics.avg_ret_net_top
+        median_ret_net = $metrics.median_ret_net_top
+        p25_ret_net = $metrics.p25_ret_net_top
+        win_rate = $metrics.win_rate_top
+        artifact_hash = $run.artifact_hash
+        file_sha1 = (Get-FileHash $output -Algorithm SHA1).Hash
+    }
+}
+
+$summary | Format-List
+$summary | Export-Csv `
+  storage/app/watchlist/backtest/c171-c01-tick-risk-repair-official-is-summary.csv `
+  -NoTypeInformation `
+  -Encoding UTF8
+```
+
+Required markers for every corrected run:
+
+```text
+evidence_pipeline_version=WS_C171_C01_TICK_RISK_GUARD_ENFORCEMENT_PIPELINE_V3
+evidence_pipeline_hash=9e9933b363026623b7ab5629f3281fa680a53a2e
+oos_runtime_invoked=0
+paramset_promoted=0
+plan_run_created=0
+production_ready=0
+```
+
+Additional required markers for threshold candidates 7-9:
+
+```text
+tick_risk_audit_status=PASS
+tick_risk_audit_metric_missing_on_scored_candidates_count=0
+tick_risk_audit_metric_missing_on_official_picks_count=0
+tick_risk_audit_above_threshold_without_tick_reason_count=0
+tick_risk_audit_eligible_above_threshold_after_guard_count=0
+```
+
+For control/score-only candidates 5, 10, and 11, the tick-risk audit is expected to be `NOT_APPLICABLE` because their immutable paramsets do not define `max_signal_tick_risk_expansion_pct`.
+
+The old evals 192 and 194-198 must remain unchanged. Paramset 5 is the V3 control because the adapter repair also restores max-liquidity and max-volume guards. Do not run OOS or promotion even when one corrected IS candidate improves; compare the V3 control and all five corrected C01 runs first.
+
+
+## Parameter-adapter repair prerequisite
+
+The V2 rerun attempts were expected to fail closed and did not persist corrected evals. Before rerunning, the scoring adapter must preserve the candidate-universe guard fields and PHPUnit must pass. No additional migration is required for V3 because the existing evaluation identity columns and expanded unique index already include evidence-pipeline version/hash.
+
+Required V3 markers are the values shown above. The audit must additionally show positive `tick_only_rejected_count` or `tick_multi_reason_rejected_count` when `above_threshold_before_guard_count` is positive.

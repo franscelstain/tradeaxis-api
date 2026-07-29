@@ -58,6 +58,17 @@ class WatchlistBacktestPublishedPriceRuntimeService
         $runtimeParamset = $this->runtimeParamset(
             is_array($options['paramset'] ?? null) ? $options['paramset'] : []
         );
+        $spool = is_array($options['official_evidence_spool'] ?? null)
+            ? $options['official_evidence_spool']
+            : [];
+        if (($spool['enabled'] ?? false) === true) {
+            $runtimeParamset['backtest']['official_evidence_storage_mode'] = 'JSONL_SPOOL';
+            $runtimeParamset['backtest']['official_evidence_spool_directory'] = (string) ($spool['directory'] ?? '');
+            $runtimeParamset['backtest']['official_evidence_spool_run_key'] = (string) ($spool['run_key'] ?? 'c171');
+        }
+        if (array_key_exists('compact_replay_items', $options)) {
+            $runtimeParamset['backtest']['compact_replay_items'] = (bool) $options['compact_replay_items'];
+        }
         $holdingDays = max(1, (int) ($runtimeParamset['backtest']['holding_days'] ?? 5));
         $strategyTradeDates = $calendar['trade_dates'];
         if ($strictBoundary) {

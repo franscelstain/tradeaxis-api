@@ -51,15 +51,18 @@ Guardrails WS yang wajib setara:
 
 1) Liquidity guard:
 - metric: `dv20_idr`
-- rule: dv20_idr >= min_dv20_idr
+- lower rule: `dv20_idr >= min_dv20_idr`
+- optional C171 upper rule: `dv20_idr <= max_dv20_idr` when the immutable paramset provides `liquidity.max_dv20_idr`
 
 2) Volatility guard:
 - metric: `atr14_pct`
-- rule: atr14_pct <= max_atr14_pct
+- lower rule: `atr14_pct >= min_atr14_pct`
+- upper rule: `atr14_pct <= max_atr14_pct`
 
 3) Volume participation guard:
 - metric: `vol_ratio`
-- rule: vol_ratio >= min_vol_ratio
+- lower rule: `vol_ratio >= min_vol_ratio`
+- optional C171 upper rule: `vol_ratio <= max_vol_ratio` when the immutable paramset provides `volume.max_vol_ratio`
 
 4) Missing/invalid data guard (data-quality):
 - indikator wajib tersedia (bukan NULL) sesuai kebutuhan scoring
@@ -79,9 +82,13 @@ Jika satu ticker gagal lebih dari satu guardrail, reason utama dipilih berdasark
 
 Priority order (highest first):
 1) `WS_DATA_MISSING` — data-quality / required fields tidak lengkap atau invalid
-2) `WS_LIQ_FAIL` — liquidity guard gagal (`dv20_idr < min_dv20_idr`)
-3) `WS_ATR_HIGH` — volatility upper guard gagal (`atr14_pct > max_atr14_pct`)
-4) `WS_VOLR_FAIL` — volume participation guard gagal (`vol_ratio < min_vol_ratio`)
+2) `WS_LIQ_FAIL` — liquidity lower guard gagal (`dv20_idr < min_dv20_idr`)
+3) `WS_LIQ_HIGH` — optional C171 liquidity upper guard gagal (`dv20_idr > max_dv20_idr`)
+4) `WS_ATR_LOW` — volatility lower guard gagal (`atr14_pct < min_atr14_pct`)
+5) `WS_ATR_HIGH` — volatility upper guard gagal (`atr14_pct > max_atr14_pct`)
+6) `WS_VOLR_FAIL` — volume participation lower guard gagal (`vol_ratio < min_vol_ratio`)
+7) `WS_VOLR_HIGH` — optional C171 volume upper guard gagal (`vol_ratio > max_vol_ratio`)
+8) `WS_TICK_RISK_HIGH` — optional C171 C01 decision-time tick-risk expansion melebihi batas paramset
 
 Backtest dan production wajib memakai prioritas yang sama agar audit konsisten.
 
@@ -103,6 +110,8 @@ Setiap row snapshot production wajib menyediakan:
 | `dv20_idr` | YES | snapshot metric liquidity |
 | `atr14_pct` | YES | snapshot metric volatility |
 | `vol_ratio` | YES | snapshot metric volume participation |
+| `signal_close_price` | WHEN tick-risk guard active | signal-date close; bukan next-open entry |
+| `signal_tick_risk_expansion_pct` | WHEN tick-risk guard active | normalized stop risk minus theoretical ATR stop risk |
 | `missing_fields` | YES | daftar field wajib yang missing / invalid; boleh array string atau representasi CSV stabil |
 | `generated_at` | YES | waktu snapshot proof dibuat |
 | `plan_hash` | YES | harus berasal dari `meta.plan_hash` PLAN canonical |
@@ -122,10 +131,14 @@ Proof snapshot equivalence dianggap sah hanya jika:
 ### Mapping rule (LOCKED)
 Untuk guardrails yang dicakup dokumen ini, **tidak ada alias nama**. Mapping 1:1 canonical adalah:
 
-- `MISSING_DATA`          => `WS_DATA_MISSING`
-- `LIQUIDITY_FAIL`        => `WS_LIQ_FAIL`
-- `VOLATILITY_FAIL`       => `WS_ATR_HIGH`
-- `VOLUME_RATIO_FAIL`     => `WS_VOLR_FAIL`
+- `MISSING_DATA`               => `WS_DATA_MISSING`
+- `LIQUIDITY_FAIL`             => `WS_LIQ_FAIL`
+- `LIQUIDITY_UPPER_FAIL`       => `WS_LIQ_HIGH`
+- `VOLATILITY_LOWER_FAIL`      => `WS_ATR_LOW`
+- `VOLATILITY_UPPER_FAIL`      => `WS_ATR_HIGH`
+- `VOLUME_RATIO_FAIL`          => `WS_VOLR_FAIL`
+- `VOLUME_RATIO_UPPER_FAIL`    => `WS_VOLR_HIGH`
+- `TICK_RISK_EXPANSION_FAIL`    => `WS_TICK_RISK_HIGH`
 
 Aturan tambahan (LOCKED):
 - Code alias seperti `WS_GUARD_LIQUIDITY_FAIL` **tidak boleh** dipakai.

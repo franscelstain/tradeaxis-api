@@ -27,7 +27,8 @@ class WatchlistBacktestR2PersistenceTest extends TestCase
             {
                 return implode('|', [
                     $payload['policy_code'], $payload['catalog_code'], $payload['catalog_version'],
-                    $payload['param_id'], $payload['eval_model'], $payload['paramset_hash'],
+                    $payload['param_id'], $payload['eval_model'], $payload['eval_model_hash'],
+                    $payload['implementation_version'], $payload['implementation_hash'], $payload['paramset_hash'],
                     $payload['from_date'], $payload['to_date'],
                 ]);
             }
@@ -85,7 +86,8 @@ class WatchlistBacktestR2PersistenceTest extends TestCase
             "'policy_code', 'catalog_code', 'catalog_version', 'param_id'",
             $source
         );
-        $this->assertStringContainsString("'eval_model', 'paramset_hash', 'from_date', 'to_date'", $source);
+        $this->assertStringContainsString("'eval_model', 'eval_model_hash', 'implementation_version', 'implementation_hash'", $source);
+        $this->assertStringContainsString("'paramset_hash', 'from_date', 'to_date'", $source);
         $this->assertStringNotContainsString('updateOrInsert', $source);
     }
 
@@ -98,11 +100,21 @@ class WatchlistBacktestR2PersistenceTest extends TestCase
             'catalog_hash' => WatchlistBacktestR2ParamGridCatalog::hash(),
             'param_id' => 100,
             'eval_model' => 'ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS',
+            'eval_model_hash' => sha1('ENTRY=NEXT_OPEN;EXIT=STOP_TP_OR_TIME;HOLD=5;FEE=IDR_FIXED;SLIP=0;GAP=OPEN;PX=IDX_BANDS'),
+            'implementation_version' => 'WS_CANONICAL_IS_C171_V1',
+            'implementation_hash' => sha1('WS_CANONICAL_IS_C171_V1|PLAN_RECOMMENDATION_CONFIRM_REPLAY|PUBLISHED_EOD|NO_FUTURE_ROUTING'),
             'paramset_hash' => sha1('paramset'),
             'from_date' => '2023-01-02',
             'to_date' => '2025-05-21',
             'days_covered' => 500,
             'picks_count' => 130,
+            'picks_hash' => sha1('picks'),
+            'universe_count' => 500,
+            'universe_hash' => sha1('universe'),
+            'cutoff_count' => 500,
+            'cutoffs_hash' => sha1('cutoffs'),
+            'evidence_manifest_hash' => sha1('manifest'),
+            'market_data_lineage_hash' => sha1('lineage'),
             'avg_ret_net_top' => 0.01,
             'win_rate_top' => 0.55,
             'median_ret_net_top' => 0.005,

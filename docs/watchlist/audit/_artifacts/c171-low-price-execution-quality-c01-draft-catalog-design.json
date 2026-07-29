@@ -1,0 +1,134 @@
+{
+    "schema_version": "C171_LOW_PRICE_EXECUTION_QUALITY_C01_DRAFT_CATALOG_DESIGN_V1",
+    "status": "C171_LOW_PRICE_EXECUTION_QUALITY_C01_DRAFT_CATALOG_DESIGN_COMPLETED",
+    "source_evidence": {
+        "source_eval_id": 192,
+        "source_param_set_id": 5,
+        "source_params_hash": "e49b47449be1bc59659455d315bb6aaf5f4f9491",
+        "comparative_diagnostic_artifact_hash": "f548a75e62ab954a3d35034b3b4452279693059e",
+        "comparative_diagnostic_file_sha1": "26ca1b9095de6cd5769aac5af3ebe5c44b74fc4c",
+        "hypothesis_lock_artifact_hash": "84a699996dc8ac2eeea2bd921936a2d866f216ad",
+        "hypothesis_lock_file_sha1": "48d7a4659a8ae99b8da83c728f5ca5bc811a5386",
+        "manifest_file_sha1": "b62b34bec53f1735b3ca1d1c02e5a479bc235cd3"
+    },
+    "catalog": {
+        "catalog_code": "WS_BT_GRID_LOW_PRICE_EXECUTION_QUALITY_C01_2026_07",
+        "catalog_version": "C01",
+        "catalog_hash": "bad53b5880f183a55163565fb1e073420c29a080",
+        "candidate_count": 5,
+        "anchor_inherited": {
+            "min_dv20_idr": 1000000000,
+            "max_dv20_idr": 50000000000,
+            "dv20_strong_idr": 5000000000,
+            "min_vol_ratio": 1.2,
+            "max_vol_ratio": 5.0,
+            "min_atr14_pct": 0.02,
+            "max_atr14_pct": 0.06,
+            "atr_ideal_low": 0.035,
+            "atr_ideal_high": 0.06,
+            "stop_atr_mult": 1.5,
+            "min_rr": 1.5,
+            "top_picks_target": 5,
+            "secondary_target": 10,
+            "top_min_score_q": 0.8,
+            "secondary_min_score_q": 0.65,
+            "top_max_score_total": 0.999999
+        }
+    },
+    "locked_hypotheses": [
+        "LOW_PRICE_TICK_RISK_DECISION_TIME_GUARD",
+        "SCORE_RANKING_RECALIBRATION"
+    ],
+    "decision_time_tick_risk_contract": {
+        "contract": "SIGNAL_CLOSE_ATR_STOP_NORMALIZED_WITH_IDX_EQUITY_PRICE_BANDS",
+        "source_price": "signal_date_close",
+        "theoretical_stop_formula": "signal_close * (1 - atr14_pct * stop_atr_mult)",
+        "normalization": "CONSERVATIVE_STOP_FLOOR_WITH_IDX_EQUITY_PRICE_BANDS",
+        "future_entry_price_used": false,
+        "future_return_used": false
+    },
+    "evidence_basis": {
+        "anchor_lt_200_avg_tick_risk_expansion_pct": 0.010727456755956096,
+        "anchor_50_to_99_avg_tick_risk_expansion_pct": 0.007048,
+        "anchor_100_to_199_avg_tick_risk_expansion_pct": 0.003618,
+        "anchor_ge_200_avg_tick_risk_expansion_pct": 0.002788648766676712,
+        "score_decile_material_monotonicity_violation_count": 3
+    },
+    "candidates": [
+        {
+            "candidate_code": "C171_C01_A_TICK_EXPANSION_MILD",
+            "role": "PRIMARY_MILD_SINGLE_FACTOR",
+            "max_signal_tick_risk_expansion_pct": 0.015,
+            "weights": {
+                "momentum": 0.3,
+                "volume": 0.2,
+                "breakout": 0.3,
+                "risk": 0.2
+            }
+        },
+        {
+            "candidate_code": "C171_C01_B_TICK_EXPANSION_BALANCED",
+            "role": "PRIMARY_BALANCED_SINGLE_FACTOR",
+            "max_signal_tick_risk_expansion_pct": 0.01,
+            "weights": {
+                "momentum": 0.3,
+                "volume": 0.2,
+                "breakout": 0.3,
+                "risk": 0.2
+            }
+        },
+        {
+            "candidate_code": "C171_C01_C_TICK_EXPANSION_STRICT",
+            "role": "PRIMARY_STRICT_SINGLE_FACTOR",
+            "max_signal_tick_risk_expansion_pct": 0.005,
+            "weights": {
+                "momentum": 0.3,
+                "volume": 0.2,
+                "breakout": 0.3,
+                "risk": 0.2
+            }
+        },
+        {
+            "candidate_code": "C171_C01_D_SCORE_BALANCED_RECALIBRATION",
+            "role": "SECONDARY_SCORE_SINGLE_FACTOR",
+            "max_signal_tick_risk_expansion_pct": null,
+            "weights": {
+                "momentum": 0.35,
+                "volume": 0.15,
+                "breakout": 0.25,
+                "risk": 0.25
+            }
+        },
+        {
+            "candidate_code": "C171_C01_E_SCORE_RISK_FORWARD_RECALIBRATION",
+            "role": "SECONDARY_SCORE_SINGLE_FACTOR",
+            "max_signal_tick_risk_expansion_pct": null,
+            "weights": {
+                "momentum": 0.3,
+                "volume": 0.1,
+                "breakout": 0.2,
+                "risk": 0.4
+            }
+        }
+    ],
+    "anti_overfit_rules": {
+        "ticker_blacklist_forbidden": true,
+        "month_blacklist_forbidden": true,
+        "return_field_as_selection_input_forbidden": true,
+        "oos_read_forbidden": true,
+        "canonical_gate_weakening_forbidden": true,
+        "decision_time_fields_only": true,
+        "combined_tick_and_score_candidate_deferred": true
+    },
+    "persistence_boundary": {
+        "creates_exactly_five_draft_paramsets": true,
+        "official_is_runtime_invoked": false,
+        "oos_runtime_invoked": false,
+        "oos_table_read": false,
+        "paramset_promoted": false,
+        "plan_run_created": false,
+        "production_ready": false
+    },
+    "next_recommendation": "C171_RUN_VERSIONED_OFFICIAL_IS_FOR_EACH_IMMUTABLE_LOW_PRICE_EXECUTION_QUALITY_C01_DRAFT",
+    "artifact_hash": "e8587b0f4ebb65f7a9c320f87e78114000349565"
+}

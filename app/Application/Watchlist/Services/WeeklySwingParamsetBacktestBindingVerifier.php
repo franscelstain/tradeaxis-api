@@ -40,7 +40,28 @@ class WeeklySwingParamsetBacktestBindingVerifier
 
         $row = (array) $row;
         $mismatches = [];
-        foreach (self::FIELD_MAP as $column => $path) {
+        $fieldMap = self::FIELD_MAP;
+        if (in_array($catalogCode, [
+            WatchlistBacktestC171RemediationParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestC171LowPriceExecutionQualityParamGridCatalog::CATALOG_CODE,
+        ], true)) {
+            $fieldMap = array_merge($fieldMap, [
+                'max_dv20_idr' => 'liquidity.max_dv20_idr',
+                'dv20_strong_idr' => 'liquidity.dv20_strong_idr',
+                'max_vol_ratio' => 'volume.max_vol_ratio',
+                'min_atr14_pct' => 'risk.min_atr14_pct',
+                'atr_ideal_low' => 'risk.atr_ideal_low',
+                'atr_ideal_high' => 'risk.atr_ideal_high',
+                'roc_lo' => 'setup.roc_lo',
+                'roc_hi' => 'setup.roc_hi',
+                'mom_roc20_soft_min' => 'setup.mom_roc20_soft_min',
+                'bo_near_below_pct' => 'setup.bo_near_below_pct',
+                'bo_max_ext_pct' => 'setup.bo_max_ext_pct',
+                'top_max_score_total' => 'grouping.top_max_score_total',
+                'max_signal_tick_risk_expansion_pct' => 'risk.max_signal_tick_risk_expansion_pct',
+            ]);
+        }
+        foreach ($fieldMap as $column => $path) {
             $actual = $this->payloadValue($payload, $path);
             $expected = $row[$column] ?? null;
             if (! $this->equivalent($actual, $expected)) {

@@ -12263,3 +12263,31 @@ NEXT_SESSION=C171_WEEKLY_SWING_VERSIONED_OFFICIAL_BACKTEST_EVIDENCE_AND_EXECUTAB
 ```
 
 C171 must add exact support-evidence identity and persistence, then find one execution-eligible IS candidate under predeclared rules. OOS remains forbidden until every canonical IS and evidence gate passes.
+
+## C171 Versioned Official IS Evidence Governance
+
+C171 is implementation-first and IS-only. The official evidence migration, exact paramset/evaluation identity, support-row persistence, and evidence manifest are code and database contracts, not documentation-only approval flags.
+
+```text
+C171_GOVERNANCE_STATUS=IMPLEMENTED_PENDING_OPERATOR_DATABASE_VALIDATION
+C171_OWNER_DOCUMENT_SEQUENCE_FOLLOWED=1
+C171_NEW_PIPELINE_INVENTED=0
+C171_EXISTING_CANONICAL_REPLAY_REUSED=1
+C171_UNVERSIONED_SUPPORT_ROW_INFERENCE_FORBIDDEN=1
+C171_DRAFT_PAYLOAD_MUTATION_FORBIDDEN=1
+C171_SUPPORT_EVIDENCE_CROSS_EVAL_REUSE_FORBIDDEN=1
+C171_ROW_COUNT_WITHOUT_CONTENT_HASH_FORBIDDEN=1
+C171_HASH_TO_NUMERIC_COERCION_FORBIDDEN=1
+C171_ORPHAN_EVAL_WITHOUT_SUPPORT_EVIDENCE_FORBIDDEN=1
+C171_SECONDARY_ROW_AS_OFFICIAL_TOP_PICK_FORBIDDEN=1
+C171_SUPPORT_ROW_WITHOUT_MARKET_DATA_LINEAGE_FORBIDDEN=1
+C171_UNIVERSE_DATE_WITHOUT_CUTOFF_FORBIDDEN=1
+C171_SAME_PARAMS_HASH_DIFFERENT_PROVENANCE_FORBIDDEN=1
+C171_FUTURE_ROUTE_FLAG_WITHOUT_RUNTIME_PROOF_FORBIDDEN=1
+C171_OOS_BEFORE_IS_PASS_FORBIDDEN=1
+C171_PROMOTION_BEFORE_OOS_PASS_FORBIDDEN=1
+C171_PLAN_BEFORE_ACTIVE_PARAMSET_FORBIDDEN=1
+C171_PRODUCTION_READY=0
+```
+
+An operator may record C171 as complete for the evidence-schema and execution-path scope only after migration, focused tests, full Watchlist regression, official IS execution, database hash inspection, and proof that OOS row count remains unchanged. A canonical IS gate failure does not authorize OOS; it returns the work to targeted C171 strategy remediation.

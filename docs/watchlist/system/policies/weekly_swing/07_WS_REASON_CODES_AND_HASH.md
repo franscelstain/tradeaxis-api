@@ -27,9 +27,12 @@ Daftar reason code aktif saat ini harus tetap parity dengan `db/REASON_CODES_SEE
 - `WS_DATA_OUTLIER`
 - `WS_EOD_ABORT`
 - `WS_LIQ_FAIL`
+- `WS_LIQ_HIGH`
 - `WS_ATR_LOW`
 - `WS_ATR_HIGH`
 - `WS_VOLR_FAIL`
+- `WS_VOLR_HIGH`
+- `WS_TICK_RISK_HIGH`
 - `WS_MOM_STRONG`
 - `WS_MOM_WEAK`
 - `WS_BO_NEAR`
@@ -58,6 +61,17 @@ Daftar reason code aktif saat ini harus tetap parity dengan `db/REASON_CODES_SEE
 - `WS_NO_TRADE_ALL_FILTERED`
 - `WS_PLAN_HASH_MISMATCH`
 - `WS_PLAN_WRITEBACK_DETECTED`
+
+
+### C171 decision-time upper-bound reason codes
+
+- `WS_LIQ_HIGH` means `dv20_idr` exceeds the explicit immutable `liquidity.max_dv20_idr` bound.
+- `WS_VOLR_HIGH` means `vol_ratio` exceeds the explicit immutable `volume.max_vol_ratio` bound.
+- Both codes are PLAN universe guard diagnostics evaluated from data available on `asof_eod_date`.
+- Neither code may be inferred from return outcomes, OOS evidence, ticker identity, sector identity, or a later trade path.
+- Legacy paramsets that omit the optional upper-bound fields do not emit these codes.
+- `WS_TICK_RISK_HIGH` means the signal-date close/ATR stop, after conservative IDX price-fraction normalization, expands risk above `risk.max_signal_tick_risk_expansion_pct`.
+- The tick-risk guard uses only signal-date `close`, `atr14_pct`, and immutable `stop_atr_mult`; next-open entry, realized return, and future path are forbidden.
 
 ### PLAN grouping foundation reason codes
 

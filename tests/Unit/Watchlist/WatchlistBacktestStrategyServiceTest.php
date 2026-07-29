@@ -278,6 +278,76 @@ class WatchlistBacktestStrategyServiceTest extends TestCase
         }
     }
 
+    public function test_tick_risk_guard_audit_proves_execution_and_evidence_propagation(): void
+    {
+        $top = $this->planItem(1, 'PASS', 'TOP_PICKS', 0.90, 1);
+        $top['score_metrics']['signal_close_price'] = 200.0;
+        $top['score_metrics']['signal_tick_risk_expansion_pct'] = 0.004;
+
+        $rejected = $this->planItem(2, 'REJT', 'AVOID', 0.40, null);
+        $rejected['eligible_score'] = false;
+        $rejected['guard_ok'] = false;
+        $rejected['eligible_ok'] = false;
+        $rejected['reason_codes'] = ['WS_LIQ_FAIL', 'WS_TICK_RISK_HIGH'];
+        $rejected['score_metrics']['signal_close_price'] = 60.0;
+        $rejected['score_metrics']['signal_tick_risk_expansion_pct'] = 0.02;
+
+        $tickOnly = $this->planItem(3, 'ONLY', 'AVOID', 0.30, null);
+        $tickOnly['eligible_score'] = false;
+        $tickOnly['guard_ok'] = false;
+        $tickOnly['eligible_ok'] = false;
+        $tickOnly['reason_codes'] = ['WS_RISK_HIGH', 'WS_TICK_RISK_HIGH'];
+        $tickOnly['score_metrics']['signal_close_price'] = 70.0;
+        $tickOnly['score_metrics']['signal_tick_risk_expansion_pct'] = 0.018;
+
+        $plan = $this->planOutput('2026-05-19', [
+            'TOP_PICKS' => [$top],
+        ], [
+            'excluded' => [$rejected, $tickOnly],
+        ]);
+
+        $result = $this->serviceForPlanMap(['2026-05-19' => $plan])->backtestForReplayWindow(
+            ['2026-05-19'],
+            [],
+            ['risk' => ['max_signal_tick_risk_expansion_pct' => 0.01]]
+        );
+
+        $audit = $result['official_evidence']['tick_risk_guard_audit'];
+        $this->assertSame('PASS', $audit['status']);
+        $this->assertTrue($audit['pass']);
+        $this->assertSame(0.01, $audit['threshold']);
+        $this->assertSame(1, $audit['scored_candidate_count']);
+        $this->assertSame(1, $audit['metric_propagated_to_scored_candidates_count']);
+        $this->assertSame(1, $audit['official_pick_count']);
+        $this->assertSame(1, $audit['metric_propagated_to_official_picks_count']);
+        $this->assertSame(2, $audit['above_threshold_before_guard_count']);
+        $this->assertSame(1, $audit['tick_only_rejected_count']);
+        $this->assertSame(1, $audit['tick_multi_reason_rejected_count']);
+        $this->assertSame(0, $audit['above_threshold_without_tick_reason_count']);
+        $this->assertSame(0, $audit['eligible_above_threshold_after_guard_count']);
+        $this->assertTrue($audit['tick_risk_metric_propagated_to_scored_candidates']);
+        $this->assertTrue($audit['tick_risk_metric_propagated_to_official_picks']);
+        $this->assertTrue($audit['threshold_enforced_for_all_evidence_rows']);
+    }
+
+    public function test_tick_risk_guard_audit_fails_closed_when_scored_metric_is_missing(): void
+    {
+        $plan = $this->planOutput('2026-05-19', [
+            'TOP_PICKS' => [
+                $this->planItem(1, 'MISS', 'TOP_PICKS', 0.90, 1),
+            ],
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('WS_C171_TICK_RISK_GUARD_EXECUTION_OR_EVIDENCE_PROPAGATION_FAILED');
+
+        $this->serviceForPlanMap(['2026-05-19' => $plan])->backtestForReplayWindow(
+            ['2026-05-19'],
+            [],
+            ['risk' => ['max_signal_tick_risk_expansion_pct' => 0.01]]
+        );
+    }
+
     private function serviceForPlanMap(array $planMap): WatchlistBacktestStrategyService
     {
         $planGrouping = $this->fakePlanGrouping($planMap);

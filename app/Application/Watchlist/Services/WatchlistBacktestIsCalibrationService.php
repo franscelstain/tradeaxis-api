@@ -3,7 +3,9 @@
 namespace App\Application\Watchlist\Services;
 
 use App\Infrastructure\Persistence\Watchlist\WatchlistBacktestEvaluationRepository;
+use App\Infrastructure\Persistence\Watchlist\WatchlistBacktestOfficialEvidenceRepository;
 use App\Infrastructure\Persistence\Watchlist\WatchlistBacktestParamGridRepository;
+use Illuminate\Support\Facades\DB;
 
 class WatchlistBacktestIsCalibrationService
 {
@@ -11,17 +13,23 @@ class WatchlistBacktestIsCalibrationService
     private WatchlistBacktestParamGridRepository $paramGrid;
     private WatchlistBacktestEvaluationRepository $evaluations;
     private WatchlistBacktestParamGridParamsetFactory $paramsetFactory;
+    private WatchlistBacktestOfficialEvidenceRepository $officialEvidence;
+    private WeeklySwingBacktestEvidenceIdentityService $evidenceIdentity;
 
     public function __construct(
         WatchlistBacktestPublishedPriceRuntimeService $runtime = null,
         WatchlistBacktestParamGridRepository $paramGrid = null,
         WatchlistBacktestEvaluationRepository $evaluations = null,
-        WatchlistBacktestParamGridParamsetFactory $paramsetFactory = null
+        WatchlistBacktestParamGridParamsetFactory $paramsetFactory = null,
+        WatchlistBacktestOfficialEvidenceRepository $officialEvidence = null,
+        WeeklySwingBacktestEvidenceIdentityService $evidenceIdentity = null
     ) {
         $this->runtime = $runtime ?: new WatchlistBacktestPublishedPriceRuntimeService();
         $this->paramGrid = $paramGrid ?: new WatchlistBacktestParamGridRepository();
         $this->evaluations = $evaluations ?: new WatchlistBacktestEvaluationRepository();
         $this->paramsetFactory = $paramsetFactory ?: new WatchlistBacktestParamGridParamsetFactory();
+        $this->officialEvidence = $officialEvidence ?: new WatchlistBacktestOfficialEvidenceRepository();
+        $this->evidenceIdentity = $evidenceIdentity ?: new WeeklySwingBacktestEvidenceIdentityService();
     }
 
     public function calibrate(array $isDates, array $options = []): array
@@ -39,6 +47,12 @@ class WatchlistBacktestIsCalibrationService
         $gridRows = $catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE
             ? $this->paramGrid->allForPolicy($policyCode)
             : $this->paramGrid->allForCatalog($catalogCode, $policyCode);
+        $onlyParamId = isset($options['only_param_id']) ? (int) $options['only_param_id'] : 0;
+        if ($onlyParamId > 0) {
+            $gridRows = array_values(array_filter($gridRows, function (array $row) use ($onlyParamId): bool {
+                return (int) ($row['param_id'] ?? 0) === $onlyParamId;
+            }));
+        }
         if ($gridRows === []) {
             $isLegacyR1 = $catalogCode === WatchlistBacktestParamGridCatalog::CATALOG_CODE;
             return $this->blocked(
@@ -83,12 +97,22 @@ class WatchlistBacktestIsCalibrationService
         foreach ($gridRows as $gridRow) {
             $paramId = (int) ($gridRow['param_id'] ?? 0);
             $rowCode = (string) ($gridRow['row_code'] ?? ('PARAM_'.$paramId));
-            $paramset = $this->paramsetFromGridRow($gridRow);
+            $paramsetOverrides = is_array($options['paramset_overrides_by_param_id'] ?? null)
+                ? $options['paramset_overrides_by_param_id'] : [];
+            $paramset = is_array($paramsetOverrides[$paramId] ?? null)
+                ? $paramsetOverrides[$paramId]
+                : $this->paramsetFromGridRow($gridRow);
             $runtimeOptions = [
                 'paramset' => $paramset,
                 'executed_at' => $options['executed_at'] ?? null,
             ];
-            if ($catalogCode !== WatchlistBacktestParamGridCatalog::CATALOG_CODE) {
+            foreach (['official_evidence_spool', 'compact_replay_items'] as $operationalOption) {
+                if (array_key_exists($operationalOption, $options)) {
+                    $runtimeOptions[$operationalOption] = $options[$operationalOption];
+                }
+            }
+            if ($catalogCode !== WatchlistBacktestParamGridCatalog::CATALOG_CODE
+                || ! empty($options['strict_is_boundary'])) {
                 $runtimeOptions['hard_market_data_to_date'] = $to;
             }
             $result = $this->runtime->evaluateWindow($from, $to, $runtimeOptions);
@@ -150,20 +174,63 @@ class WatchlistBacktestIsCalibrationService
             }
 
             $evalModel = $this->evalModel($paramset);
-            $paramsetHash = $this->stableHash($paramset);
-            $persisted = $this->evaluations->persist($this->evaluationRow(
+            $identityHashes = is_array($options['identity_paramset_hash_by_param_id'] ?? null)
+                ? $options['identity_paramset_hash_by_param_id'] : [];
+            $paramsetHash = isset($identityHashes[$paramId])
+                ? (string) $identityHashes[$paramId]
+                : $this->stableHash($paramset);
+            $identity = $this->evidenceIdentity->identity($paramset, $evalModel);
+            $identity['paramset_hash'] = $paramsetHash;
+            $backtestPayload = is_array($result['backtest_payload'] ?? null) ? $result['backtest_payload'] : [];
+            $hasVersionedEvidence = is_array($backtestPayload['official_evidence'] ?? null);
+            if (! $hasVersionedEvidence && ! empty($options['require_official_evidence'])) {
+                throw new \RuntimeException('WS_C171_OFFICIAL_EVIDENCE_MISSING_FROM_CANONICAL_RUNTIME: exact IS evidence is required.');
+            }
+            $officialEvidence = $hasVersionedEvidence
+                ? $this->officialEvidence->buildManifest(
+                    $policyCode,
+                    $paramId,
+                    $backtestPayload,
+                    is_array($artifact['metrics']['evaluated_trades'] ?? null) ? $artifact['metrics']['evaluated_trades'] : []
+                )
+                : $this->legacyEvidencePlaceholder($metrics);
+            if ($hasVersionedEvidence
+                && (int) ($officialEvidence['manifest']['picks_count'] ?? -1) !== (int) ($metrics['picks_count'] ?? -2)) {
+                throw new \RuntimeException('WS_C171_OFFICIAL_PICK_COUNT_MISMATCH: metric picks_count differs from persisted official picks.');
+            }
+            [$persisted, $evidencePersistence] = DB::transaction(function () use (
                 $policyCode,
                 $catalogCode,
                 $catalogVersion,
                 $catalogHash,
                 $isLegacyR1,
                 $paramId,
-                $evalModel,
-                $paramsetHash,
+                $identity,
+                $officialEvidence,
                 $from,
                 $to,
-                $metrics
-            ));
+                $metrics,
+                $hasVersionedEvidence
+            ): array {
+                $persisted = $this->evaluations->persist($this->evaluationRow(
+                    $policyCode,
+                    $catalogCode,
+                    $catalogVersion,
+                    $catalogHash,
+                    $isLegacyR1,
+                    $paramId,
+                    $identity,
+                    $officialEvidence['manifest'],
+                    $from,
+                    $to,
+                    $metrics
+                ));
+                $evidencePersistence = $hasVersionedEvidence
+                    ? $this->officialEvidence->persist((int) $persisted['eval_id'], $officialEvidence)
+                    : ['status' => 'NOT_PERSISTED_LEGACY_TEST_OR_DIAGNOSTIC'];
+
+                return [$persisted, $evidencePersistence];
+            });
             $sufficiencyReasonCodes = $this->sufficiencyReasonCodes($sufficiency);
             $reference = [
                 'param_id' => $paramId,
@@ -183,6 +250,17 @@ class WatchlistBacktestIsCalibrationService
                 'paramset_snapshot' => $paramset,
                 'paramset_hash' => $paramsetHash,
                 'eval_model' => $evalModel,
+                'eval_model_hash' => $identity['eval_model_hash'],
+                'implementation_version' => $identity['implementation_version'],
+                'implementation_hash' => $identity['implementation_hash'],
+                'evidence_pipeline_version' => $identity['evidence_pipeline_version'],
+                'evidence_pipeline_hash' => $identity['evidence_pipeline_hash'],
+                'tick_risk_guard_audit' => $backtestPayload['official_evidence']['tick_risk_guard_audit'] ?? null,
+                'official_evidence_manifest' => $officialEvidence['manifest'],
+                'official_evidence_persistence_status' => $evidencePersistence['status'],
+                'trade_candidates_frozen_before_price_read' => (bool) ($result['artifact']['runtime_execution']['trade_candidates_frozen_before_price_read'] ?? false),
+                'future_price_used_for_evaluation_only' => (bool) ($result['artifact']['runtime_execution']['future_price_used_for_evaluation_only'] ?? false),
+                'strategy_payload_immutable' => (bool) ($result['artifact']['runtime_execution']['strategy_payload_immutable'] ?? false),
                 'price_read_mode' => $result['price_read']['price_series_manifest']['read_mode']
                     ?? $result['price_read']['price_series_manifest']['targeted_date_ticker_read']
                     ?? null,
@@ -206,11 +284,18 @@ class WatchlistBacktestIsCalibrationService
                 $reference['strategy_trade_date_count'] = (int) ($result['artifact']['runtime_execution']['strategy_trade_date_count'] ?? count($dates));
                 $reference['boundary_censored_trade_date_count'] = (int) ($result['artifact']['runtime_execution']['boundary_censored_trade_date_count'] ?? 0);
             }
+            if (! empty($options['strict_is_boundary'])) {
+                $reference['strict_is_boundary'] = (bool) ($result['artifact']['runtime_execution']['strict_is_boundary'] ?? false);
+                $reference['hard_market_data_to_date'] = $result['artifact']['runtime_execution']['hard_market_data_to_date'] ?? null;
+                $reference['max_requested_market_data_date'] = $result['artifact']['runtime_execution']['max_requested_market_data_date'] ?? null;
+                $reference['strategy_trade_date_count'] = (int) ($result['artifact']['runtime_execution']['strategy_trade_date_count'] ?? count($dates));
+                $reference['boundary_censored_trade_date_count'] = (int) ($result['artifact']['runtime_execution']['boundary_censored_trade_date_count'] ?? 0);
+            }
             $references[] = $reference;
             if ($reference['calibration_valid']) {
                 $valid[] = $reference;
             }
-            unset($result, $artifact, $metrics, $sufficiency, $paramset, $persisted, $reference, $evalModel, $paramsetHash);
+            unset($result, $artifact, $metrics, $sufficiency, $paramset, $persisted, $reference, $evalModel, $paramsetHash, $identity, $officialEvidence, $evidencePersistence);
             $this->releaseIterationMemory();
         }
 
@@ -235,6 +320,13 @@ class WatchlistBacktestIsCalibrationService
             'is_metrics_hash' => $this->stableHash($best['metrics']),
             'is_artifact_hash' => $best['artifact_hash'],
             'eval_model' => $best['eval_model'],
+            'eval_model_hash' => $best['eval_model_hash'],
+            'implementation_version' => $best['implementation_version'],
+            'implementation_hash' => $best['implementation_hash'],
+            'evidence_pipeline_version' => $best['evidence_pipeline_version'],
+            'evidence_pipeline_hash' => $best['evidence_pipeline_hash'],
+            'tick_risk_guard_audit' => $best['tick_risk_guard_audit'] ?? null,
+            'official_evidence_manifest' => $best['official_evidence_manifest'],
             'is_from' => $from,
             'is_to' => $to,
             'is_trading_date_hash' => $expectedDateHash,
@@ -312,6 +404,22 @@ class WatchlistBacktestIsCalibrationService
         }
 
         return $response;
+    }
+
+    private function legacyEvidencePlaceholder(array $metrics): array
+    {
+        $manifest = [
+            'schema_version' => 'LEGACY_NOT_OFFICIAL',
+            'picks_count' => (int) ($metrics['picks_count'] ?? 0),
+            'picks_hash' => sha1('LEGACY_NOT_OFFICIAL_PICKS'),
+            'universe_count' => 0,
+            'universe_hash' => sha1('LEGACY_NOT_OFFICIAL_UNIVERSE'),
+            'cutoff_count' => 0,
+            'cutoffs_hash' => sha1('LEGACY_NOT_OFFICIAL_CUTOFFS'),
+            'market_data_lineage_hash' => sha1('LEGACY_NOT_OFFICIAL_LINEAGE'),
+        ];
+        $manifest['evidence_manifest_hash'] = $this->stableHash($manifest);
+        return ['manifest' => $manifest, 'picks' => [], 'universe' => [], 'cutoffs' => []];
     }
 
     private function sufficiencyReasonCodes(array $sufficiency): array
@@ -395,8 +503,8 @@ class WatchlistBacktestIsCalibrationService
         string $catalogHash,
         bool $isLegacyR1,
         int $paramId,
-        string $evalModel,
-        string $paramsetHash,
+        array $identity,
+        array $evidenceManifest,
         string $from,
         string $to,
         array $metrics
@@ -405,12 +513,24 @@ class WatchlistBacktestIsCalibrationService
         $row = [
             'policy_code' => $policyCode,
             'param_id' => $paramId,
-            'eval_model' => $evalModel,
-            'paramset_hash' => $paramsetHash,
+            'eval_model' => (string) $identity['eval_model'],
+            'eval_model_hash' => (string) $identity['eval_model_hash'],
+            'implementation_version' => (string) $identity['implementation_version'],
+            'implementation_hash' => (string) $identity['implementation_hash'],
+            'evidence_pipeline_version' => (string) $identity['evidence_pipeline_version'],
+            'evidence_pipeline_hash' => (string) $identity['evidence_pipeline_hash'],
+            'paramset_hash' => (string) $identity['paramset_hash'],
             'from_date' => $from,
             'to_date' => $to,
             'days_covered' => $metrics['days_covered'],
             'picks_count' => $metrics['picks_count'],
+            'picks_hash' => (string) $evidenceManifest['picks_hash'],
+            'universe_count' => (int) $evidenceManifest['universe_count'],
+            'universe_hash' => (string) $evidenceManifest['universe_hash'],
+            'cutoff_count' => (int) $evidenceManifest['cutoff_count'],
+            'cutoffs_hash' => (string) $evidenceManifest['cutoffs_hash'],
+            'evidence_manifest_hash' => (string) $evidenceManifest['evidence_manifest_hash'],
+            'market_data_lineage_hash' => (string) $evidenceManifest['market_data_lineage_hash'],
             'avg_ret_net_top' => $metrics['avg_ret_net_top'],
             'win_rate_top' => $metrics['win_rate_top'],
             'median_ret_net_top' => $metrics['median_ret_net_top'],

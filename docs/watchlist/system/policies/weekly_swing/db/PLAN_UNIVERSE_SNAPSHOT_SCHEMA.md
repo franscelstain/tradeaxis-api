@@ -45,8 +45,11 @@ Satu row export mewakili satu ticker pada satu tanggal EOD.
 Jika sebuah ticker gagal lebih dari satu kondisi, reason utama dipilih berdasarkan urutan berikut:
 1. `WS_DATA_MISSING`
 2. `WS_LIQ_FAIL`
-3. `WS_ATR_HIGH`
-4. `WS_VOLR_FAIL`
+3. `WS_LIQ_HIGH` when an explicit `max_dv20_idr` is active
+4. `WS_ATR_LOW`
+5. `WS_ATR_HIGH`
+6. `WS_VOLR_FAIL`
+7. `WS_VOLR_HIGH` when an explicit `max_vol_ratio` is active
 
 Jika implementasi production memakai naming internal yang berbeda, wajib ada mapping 1:1 pada dokumen:
 - [`../15_WS_UNIVERSE_EQUIVALENCE_CONTRACT_LOCKED.md`](../15_WS_UNIVERSE_EQUIVALENCE_CONTRACT_LOCKED.md)
@@ -72,6 +75,11 @@ Jika implementasi production memakai naming internal yang berbeda, wajib ada map
 - wajib berasal dari definisi canonical `meta.plan_hash`
 - tidak boleh dihasilkan dari payload custom lain
 - tujuannya adalah bukti bahwa export snapshot masih terkait ke PLAN canonical yang sebenarnya
+
+
+## C171 Optional Upper-Bound Context
+
+The snapshot metric fields remain `dv20_idr` and `vol_ratio`; no outcome-derived field is added. For an immutable C171 remediation paramset, the proof context must also preserve the active paramset identity/hash so the optional `max_dv20_idr` and `max_vol_ratio` bounds can be reproduced. A legacy paramset without those bounds must not emit `WS_LIQ_HIGH` or `WS_VOLR_HIGH`.
 
 ## Backtest Equivalence Mapping (LOCKED)
 Mapping minimum terhadap `watchlist_bt_universe_ws` adalah:
