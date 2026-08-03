@@ -1,5 +1,18 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
+## CURRENT CANONICAL OVERRIDE — 2026-08-02
+
+Documentation strategy status: `DOCUMENTATION_STRATEGY_READY`.
+
+Implementation status: `CONFORMANCE_AUDIT_PENDING / NOT_PRODUCTION_RELOCKED`.
+
+Authorities:
+
+- behavior and build sequence: `../book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` and its referenced owner contracts;
+- documentation verdict and audit boundary: `reports/AUDIT_FINAL_STATE.md`.
+
+All `LOCKED`, completed, and production-ready checkpoints below are historical execution records under earlier contracts unless explicitly re-admitted by a future implementation audit. They cannot change corrected strategy meaning. Known implementation gaps are handoff backlog, not evidence that documentation remains ambiguous.
+
 ## ACTIVE SESSION
 
 ACTIVE SESSION:

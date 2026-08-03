@@ -14,6 +14,119 @@ use App\Models\EodRun;
 
 class MarketDataPipelineService
 {
+    /**
+     * The columns that make up each artifact's content hash.
+     *
+     * These define what "the same dataset" means. A published column left out of its list makes
+     * two publications that differ in that column hash identically, and a correction that
+     * changes only that column is then declared UNCHANGED and never promoted. That is not
+     * hypothetical: it happened to corporate_action_window_reasons.
+     *
+     * Bookkeeping columns are deliberately excluded. run_id, publication_id and created_at
+     * record who wrote a row, not what was written, and including them would make every
+     * recompute of identical data look like a change.
+     *
+     * PublishedColumnHashCoverageTest reads these constants and checks them against the live
+     * table definitions, so a column added to an artifact table cannot quietly fall outside the
+     * hash that is supposed to cover it.
+     */
+    const HASH_EXCLUDED_BOOKKEEPING_COLUMNS = [
+        'run_id',
+        'publication_id',
+        'created_at',
+        'updated_at',
+    ];
+
+    const BARS_HASH_COLUMNS = [
+        'trade_date',
+        'ticker_id',
+        'listing_id',
+        'open',
+        'high',
+        'low',
+        'close',
+        'volume',
+        'adj_close',
+        'source',
+        'source_observation_id',
+        'previous_close',
+        'traded_value_idr_actual',
+        'trade_count_actual',
+        'board_code',
+        'session_code',
+        'source_timestamp',
+        'acquired_at',
+        'canonicalization_version',
+        'price_product_code',
+        'quality_state',
+        'config_snapshot_id',
+    ];
+
+    const INDICATORS_HASH_COLUMNS = [
+        'trade_date',
+        'ticker_id',
+        'listing_id',
+        'is_valid',
+        'invalid_reason_code',
+        'indicator_set_version',
+        'sector_code',
+        'dv20_idr',
+        'atr14_pct',
+        'vol_ratio',
+        'roc5',
+        'roc10',
+        'roc20',
+        'hh20',
+        'll20',
+        'ma20',
+        'ma50',
+        'close_to_hh20_pct',
+        'close_to_ll20_pct',
+        'range_20_pct',
+        'range_position_20_pct',
+        'close_vs_ma20_pct',
+        'close_vs_ma50_pct',
+        'ma20_slope_pct',
+        'rs_20_vs_ihsg',
+        'sector_roc20',
+        'rs_20_vs_sector',
+        'sector_rs_20_vs_ihsg',
+        'corporate_action_flag',
+        'corporate_action_types',
+        'trading_status_code',
+        'is_suspended',
+        'is_uma',
+        'event_risk_flag',
+        'event_risk_reasons',
+        'corporate_action_window_reasons',
+        'formula_version',
+        'config_snapshot_id',
+        'factor_set_id',
+        'price_product_code',
+        'adv20_traded_value_idr_actual',
+        'adv20_close_volume_proxy_idr',
+        'atr14',
+        'atr_state_ref',
+        'null_reasons_json',
+    ];
+
+    const ELIGIBILITY_HASH_COLUMNS = [
+        'trade_date',
+        'ticker_id',
+        'listing_id',
+        'eligible',
+        'reason_code',
+        'universe_membership_state',
+        'bar_expectation_state',
+        'delivery_state',
+        'canonical_quality_state',
+        'liquidity_state',
+        'temporal_status_state',
+        'event_risk_state',
+        'eligibility_reasons_json',
+        'config_snapshot_id',
+    ];
+
     private $runs;
     private $barsIngest;
     private $indicators;
@@ -594,6 +707,7 @@ class MarketDataPipelineService
                     'coverage_universe_count' => $coverage['expected_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
                     'coverage_missing_count' => $coverage['missing_eod_count'],
+                    'coverage_bar_not_expected_count' => $coverage['coverage_bar_not_expected_count'] ?? null,
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => $coverageGateState,
@@ -659,6 +773,7 @@ class MarketDataPipelineService
                     'coverage_universe_count' => $coverage['expected_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
                     'coverage_missing_count' => $coverage['missing_eod_count'],
+                    'coverage_bar_not_expected_count' => $coverage['coverage_bar_not_expected_count'] ?? null,
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? null),
@@ -713,71 +828,21 @@ class MarketDataPipelineService
                     $useHistory ? 'eod_bars_history' : 'eod_bars',
                     'trade_date',
                     $input->requestedDate,
-                    [
-                        'trade_date',
-                        'ticker_id',
-                        'open',
-                        'high',
-                        'low',
-                        'close',
-                        'volume',
-                        'adj_close',
-                        'source',
-                    ],
+                    self::BARS_HASH_COLUMNS,
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
                 'indicators_batch_hash' => $this->hashForTable(
                     $useHistory ? 'eod_indicators_history' : 'eod_indicators',
                     'trade_date',
                     $input->requestedDate,
-                    [
-                        'trade_date',
-                        'ticker_id',
-                        'is_valid',
-                        'invalid_reason_code',
-                        'indicator_set_version',
-                        'sector_code',
-                        'dv20_idr',
-                        'atr14_pct',
-                        'vol_ratio',
-                        'roc5',
-                        'roc10',
-                        'roc20',
-                        'hh20',
-                        'll20',
-                        'ma20',
-                        'ma50',
-                        'close_to_hh20_pct',
-                        'close_to_ll20_pct',
-                        'range_20_pct',
-                        'range_position_20_pct',
-                        'close_vs_ma20_pct',
-                        'close_vs_ma50_pct',
-                        'ma20_slope_pct',
-                        'rs_20_vs_ihsg',
-                        'sector_roc20',
-                        'rs_20_vs_sector',
-                        'sector_rs_20_vs_ihsg',
-                        'corporate_action_flag',
-                        'corporate_action_types',
-                        'trading_status_code',
-                        'is_suspended',
-                        'is_uma',
-                        'event_risk_flag',
-                        'event_risk_reasons',
-                    ],
+                    self::INDICATORS_HASH_COLUMNS,
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
                 'eligibility_batch_hash' => $this->hashForTable(
                     $useHistory ? 'eod_eligibility_history' : 'eod_eligibility',
                     'trade_date',
                     $input->requestedDate,
-                    [
-                        'trade_date',
-                        'ticker_id',
-                        'eligible',
-                        'reason_code',
-                    ],
+                    self::ELIGIBILITY_HASH_COLUMNS,
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
             ];
@@ -2555,8 +2620,7 @@ class MarketDataPipelineService
 
     private function assertAllowedRequestMode($requestMode, $stage): void
     {
-        $allowed = ['import_only', 'promote', 'full_publish', 'correction', 'repair_candidate', 'replay_verify', 'evidence_export'];
-        if (! in_array((string) $requestMode, $allowed, true)) {
+        if (! in_array((string) $requestMode, MarketDataStageInput::ALLOWED_REQUEST_MODES, true)) {
             throw new \InvalidArgumentException('REQUEST_MODE_INVALID: Unsupported request_mode for market-data run context.');
         }
 

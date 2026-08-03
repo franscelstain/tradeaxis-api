@@ -49,7 +49,7 @@ This inventory records the config/env cleanup for market-data. It is intentional
 | `MARKET_DATA_COVERAGE_MISSING_SAMPLE_LIMIT` | `.env.example`, `.env.testing`, `config/market_data.php` | `25` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES` | `.env.example`, `.env.testing`, `config/market_data.php` | `60` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_PRICE_BASIS_DEFAULT` | `.env.example`, `.env.testing`, `config/market_data.php` | `close` | string | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
-| `MARKET_DATA_LOT_SIZE` | `.env.example`, `.env.testing`, `config/market_data.php` | `100` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
+| `MARKET_DATA_LOT_SIZE` | removed 2026-07-30 | `100` | int | no | no | no | REMOVE | Only caller was the turnover formula, which was wrong: IDX provider volume is in shares, so the lot multiplier inflated `dv20_idr` by 100x. Lot size for position sizing is owned by the watchlist backtest calibration doc, not by market data. |
 | `MARKET_DATA_DAILY_ENABLED` | `.env.example`, `.env.testing`, `config/market_data.php` | `false` | bool | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_DEFAULT_SOURCE_MODE` | `.env.example`, `.env.testing`, `config/market_data.php` | `api` | string | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_SCHEDULER_OUTPUT_PATH` | `.env.example`, `.env.testing`, `config/market_data.php` | `storage/logs/market-data-scheduler.log` | string | yes | yes | yes | ACTIVE_USED | Keep; scheduler output/no-silent-failure proof |

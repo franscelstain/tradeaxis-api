@@ -6,6 +6,7 @@ use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
+use App\Infrastructure\Persistence\MarketData\PriceScaleBreakRepository;
 use App\Infrastructure\Persistence\MarketData\SectorClassificationRepository;
 use Carbon\Carbon;
 
@@ -18,8 +19,9 @@ class EodIndicatorsComputeService
     private $sectors;
     private $eventRisks;
     private $calendar;
+    private $priceScaleBreaks;
 
-    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null, EventRiskSourceRepository $eventRisks = null, MarketCalendarRepository $calendar = null)
+    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null, EventRiskSourceRepository $eventRisks = null, MarketCalendarRepository $calendar = null, PriceScaleBreakRepository $priceScaleBreaks = null)
     {
         $this->artifacts = $artifacts;
         $this->publications = $publications;
@@ -28,6 +30,7 @@ class EodIndicatorsComputeService
         $this->sectors = $sectors;
         $this->eventRisks = $eventRisks;
         $this->calendar = $calendar ?: new MarketCalendarRepository();
+        $this->priceScaleBreaks = $priceScaleBreaks ?: new PriceScaleBreakRepository();
     }
 
     public function compute($run, $requestedDate, $correctionMode = false)
@@ -76,7 +79,10 @@ class EodIndicatorsComputeService
         $eventRiskContextsByTicker = $this->eventRisks !== null
             ? $this->eventRisks->resolveEventRiskContextForTickerIds(array_keys($barsByTicker), $requestedDate)
             : [];
-        $contaminationByTicker = $this->resolveCorporateActionContamination(array_keys($barsByTicker), $requestedDate, $barLoadWindow);
+        $tradingDatesWindow = $this->resolveContaminationTradingDates($requestedDate, $barLoadWindow);
+        $contaminationByTicker = $this->resolveCorporateActionContamination(array_keys($barsByTicker), $tradingDatesWindow);
+        $priceScaleBreaksByTicker = $this->resolvePriceScaleBreakContamination(array_keys($barsByTicker), $tradingDatesWindow);
+        $adjustmentFactorsByTicker = $this->resolveAdjustmentFactors(array_keys($barsByTicker), $tradingDatesWindow);
         $sectorBenchmarkRoc20s = [];
 
         if ($this->benchmarkIndicators !== null && ! empty($sectorContextsByTicker)) {
@@ -99,6 +105,8 @@ class EodIndicatorsComputeService
                 : null;
             $eventRiskContext = $eventRiskContextsByTicker[(int) $tickerId] ?? null;
             $contamination = $contaminationByTicker[(int) $tickerId] ?? [];
+            $priceScaleBreaks = $priceScaleBreaksByTicker[(int) $tickerId] ?? [];
+            $adjustmentFactors = $adjustmentFactorsByTicker[(int) $tickerId] ?? [];
 
             $row = $this->vectors->buildRow(
                 (int) $tickerId,
@@ -107,7 +115,7 @@ class EodIndicatorsComputeService
                 $candidatePublication->publication_id,
                 $run->run_id,
                 $now,
-                $this->vectorConfig($benchmarkRoc20, $sectorContext, $sectorRoc20, $eventRiskContext, $contamination, $barLoadWindow)
+                $this->vectorConfig($benchmarkRoc20, $sectorContext, $sectorRoc20, $eventRiskContext, $contamination, $barLoadWindow, $priceScaleBreaks, $adjustmentFactors)
             );
             if (! $row) {
                 continue;
@@ -139,26 +147,64 @@ class EodIndicatorsComputeService
      * shorter declared horizon would report it clean while the recursion still carries the
      * pre-action scale. See the ATR note in Indicator_Registry_Baseline_LOCKED.md.
      */
-    private function resolveCorporateActionContamination(array $tickerIds, $requestedDate, $lookbackTradingDays)
+    private function resolveCorporateActionContamination(array $tickerIds, array $tradingDates)
     {
-        if ($this->eventRisks === null || empty($tickerIds)) {
-            return [];
-        }
-
-        // Not guarded: loadBarsWindow already resolved the same window start for the same
-        // requested date, so a calendar failure here cannot be new. Swallowing it would only
-        // create a silent path that publishes contaminated indicators as clean.
-        $windowStart = $this->calendar->tradingDateWindowStart($requestedDate, $lookbackTradingDays);
-        $tradingDates = $this->calendar->tradingDatesBetween($windowStart, $requestedDate);
-
-        if (empty($tradingDates)) {
+        if ($this->eventRisks === null || empty($tickerIds) || empty($tradingDates)) {
             return [];
         }
 
         return $this->eventRisks->resolveCorporateActionContaminationForTickerIds($tickerIds, $tradingDates);
     }
 
-    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null, array $contamination = [], $atrContaminationHorizonDays = 0)
+    /**
+     * Detected price-scale breaks that no recorded corporate action explains.
+     *
+     * The corporate action feed misses splits outright, so the price series is the only
+     * reliable signal for them. Without this the quarantine would silently skip every
+     * unrecorded split.
+     */
+    private function resolvePriceScaleBreakContamination(array $tickerIds, array $tradingDates)
+    {
+        if ($this->priceScaleBreaks === null || empty($tickerIds) || empty($tradingDates)) {
+            return [];
+        }
+
+        return $this->priceScaleBreaks->resolveContaminationForTickerIds($tickerIds, $tradingDates);
+    }
+
+    /**
+     * Canonical trading-day sequence backing every contamination depth calculation.
+     *
+     * Not guarded: loadBarsWindow already resolved the same window start for the same
+     * requested date, so a calendar failure here cannot be new. Swallowing it would only
+     * create a silent path that publishes contaminated indicators as clean.
+     */
+    private function resolveContaminationTradingDates($requestedDate, $lookbackTradingDays)
+    {
+        $windowStart = $this->calendar->tradingDateWindowStart($requestedDate, $lookbackTradingDays);
+
+        return $this->calendar->tradingDatesBetween($windowStart, $requestedDate);
+    }
+
+    /**
+     * Adjustment factors effective inside the loaded window.
+     *
+     * Owner contract: docs/market_data/registry/Price_Adjustment_Contract_LOCKED.md
+     */
+    private function resolveAdjustmentFactors(array $tickerIds, array $tradingDates)
+    {
+        if ($this->eventRisks === null || empty($tickerIds) || empty($tradingDates)) {
+            return [];
+        }
+
+        return $this->eventRisks->resolveAdjustmentFactorsForTickerIds(
+            $tickerIds,
+            $tradingDates[0],
+            $tradingDates[count($tradingDates) - 1]
+        );
+    }
+
+    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null, array $contamination = [], $atrContaminationHorizonDays = 0, array $priceScaleBreaks = [], array $adjustmentFactors = [])
     {
         return [
             'set_version' => config('market_data.indicators.set_version'),
@@ -166,8 +212,9 @@ class EodIndicatorsComputeService
             'sector_index_code' => $sectorContext['sector_index_code'] ?? null,
             'event_risk_context' => $eventRiskContext ?: [],
             'corporate_action_contamination' => $contamination,
+            'price_scale_break_contamination' => $priceScaleBreaks,
+            'price_adjustment_factors' => $adjustmentFactors,
             'atr_contamination_horizon_days' => (int) $atrContaminationHorizonDays,
-            'lot_size' => (int) config('market_data.platform.lot_size'),
             'price_basis_default' => config('market_data.platform.price_basis_default'),
             'dv_window_days' => (int) config('market_data.indicators.dv_window_days'),
             'atr_window_days' => (int) config('market_data.indicators.atr_window_days'),

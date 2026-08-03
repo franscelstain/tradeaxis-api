@@ -1,7 +1,9 @@
 # EOD SOURCE OPERATIONAL RESILIENCE CONTRACT (LOCKED)
 
 ## Current State
-LOCKED / PRODUCTION READY FOR CURRENT SOURCE STATE
+STRATEGY LOCKED / DEVELOPMENT-PHASE CAPABLE / OPERATIONAL ACTIVATION NOT YET PROVEN
+
+Dokumen ini tidak boleh digunakan sebagai production-readiness claim. Decision-grade operational relock memerlukan activation marker, catch-up, automated import/promote, stale protection, incident visibility, dan consecutive trading-day executed proof.
 
 ---
 
@@ -10,6 +12,8 @@ Dokumen ini mengunci resilience contract untuk **IMPORT PHASE** pada platform EO
 
 Dokumen ini tidak mengatur indicator compute, eligibility build, hash, seal, atau finalize.
 Semua itu berada di **PROMOTE PHASE**.
+
+Kontrak ini membedakan development frontier dari operational freshness dan memastikan source failure tidak pernah menghasilkan silent readable data.
 
 ---
 
@@ -62,7 +66,7 @@ Readable success tetap ditentukan kemudian oleh coverage gate dan promote outcom
 
 ## Locked source order and fallback policy
 Urutan source resmi untuk jalur aktif adalah:
-1. **Primary:** `api_free` / `yahoo_finance`
+1. **Primary:** `api_free/yahoo_finance`
 2. **Secondary controlled recovery:** `manual_file`
 
 Tidak ada source ketiga pada baseline ini.
@@ -72,6 +76,16 @@ Tidak ada merge antar source untuk membentuk satu requested-date publication.
 `manual_file` hanya boleh dipakai bila:
 - operator memang menjalankan source mode itu secara eksplisit; atau
 - kontrak recovery/correction resmi memerintahkan perpindahan ke jalur itu
+
+### Current-phase strategic rationale
+
+Primary `api_free/yahoo_finance` adalah **bootstrap source yang dipilih dengan sengaja** untuk membuktikan manfaat market-data dan watchlist Weekly Swing sebelum platform menanggung biaya data berbayar.
+
+Keputusan ini bukan kesalahan strategi dan tidak menjadikan Yahoo Finance source of truth domain. Keputusan ini sah selama limitation provider diserap oleh adapter/import strategy, source identity tetap terbuka, dan seluruh validation, coverage, quarantine, correction, publication, serta readability gate tetap berlaku tanpa pelonggaran.
+
+Kontrak fase aktif ini tidak mewajibkan evaluasi vendor, pembelian data, dual-feed, atau migrasi provider sekarang. Kelanjutan menuju provider berbayar adalah future decision setelah manfaat atau kebutuhan SLA, licensing, authoritative correction, dan commercial use membenarkannya.
+
+Rationale, safeguard, non-goal fase aktif, dan future decision trigger dijelaskan di `Yahoo_Finance_Bootstrap_Source_Strategy.md`.
 
 ---
 
@@ -85,7 +99,52 @@ Untuk active default provider `yahoo_finance`:
 - kegagalan beberapa ticker tidak boleh otomatis menghentikan seluruh import date-run
 
 Dokumen ini tidak mengunci provider baru.
-Dokumen ini hanya mengunci perilaku minimum untuk provider path aktif yang sudah ada.
+Dokumen ini hanya mengunci perilaku minimum untuk provider path aktif yang sudah ada. Yahoo Finance bukan data resmi IDX, tidak memiliki commercial SLA yang dijanjikan oleh platform, dan bukan provider final yang sudah ditetapkan.
+
+---
+
+## Development-versus-operational boundary (LOCKED)
+
+### Development phase
+
+Selama `OPERATIONAL_START_DATE` atau governance marker ekuivalen belum ditetapkan:
+
+- latest ingested trade date adalah development data frontier yang bergerak
+- gap setelah frontier bukan production incident dan bukan capability limit
+- `daily_enabled=false` dapat diterima sebagai development-state choice
+- gap tidak menghalangi koreksi historical integrity, schema, corporate action, indicator, replay, atau provenance
+- run yang benar-benar dijalankan tetap wajib fail-safe, traceable, dan tidak boleh menghasilkan false success
+
+Development state tidak mengizinkan klaim fresh/current yang tidak terbukti. Ia hanya berarti kewajiban consecutive daily freshness belum mulai dihitung.
+
+### Operational activation
+
+Freshness menjadi hard requirement hanya setelah marker activation ditetapkan untuk forward paper watchlist, user-facing watchlist, atau penggunaan rutin.
+
+Sebelum activation wajib:
+
+1. menetapkan `OPERATIONAL_START_DATE` atau marker governed ekuivalen
+2. melakukan controlled catch-up seluruh expected trading dates dari development frontier sampai activation boundary
+3. mengaktifkan dan membuktikan daily import **dan** promote/readiness scheduling
+4. mengaktifkan stale alert, source-degraded alert, lock/retry monitoring, dan stale-consumer protection
+5. membuktikan idempotent retry/backfill dan recovery dari partial failure
+6. mulai menghitung consecutive operational SLO hanya sejak activation boundary
+
+Operational activation tidak menetapkan provider berbayar sebagai requirement; source aktif dinilai berdasarkan executed operational evidence.
+
+## Operational source state model (LOCKED)
+
+Untuk setiap expected trade date setelah activation, keadaan source harus terlihat secara eksplisit sebagai semantic minimum berikut:
+
+- **complete/healthy:** expected acquisition selesai dan dapat dilanjutkan ke promote gates
+- **partial/degraded:** sebagian expected observation gagal, terlambat, malformed, atau quarantined
+- **failed:** systemic/config/schema/storage failure menghentikan acquisition yang sah
+- **held/quarantined:** data tersedia tetapi belum aman dipakai karena integrity, stale, schema, or anomaly evidence
+- **stale:** requested latest trade date belum memiliki governed readable publication, sementara prior publication mungkin masih ada
+
+Exact runtime status/reason code mengikuti registry owner, tetapi tidak boleh menormalkan keadaan partial, failed, held, quarantined, atau stale menjadi success.
+
+Setelah activation, missing/late/partial requested date wajib menghasilkan observable degraded or incident evidence. Prior readable date tetap beridentitas prior date dan tidak boleh disajikan sebagai fresh requested date.
 
 ---
 
@@ -115,7 +174,9 @@ Aturan resmi:
 5. evaluate coverage pada promote
 6. hanya bila operating mode eksplisit memerintahkan recovery source, run berikutnya boleh memakai `manual_file`
 
-Satu run tidak boleh berpindah source-of-truth di tengah publication candidate lalu menggabungkan hasil dua source menjadi satu state tanpa kontrak correction/recovery yang eksplisit.
+Satu run tidak boleh berpindah selected acquisition source di tengah publication candidate lalu menggabungkan hasil dua source menjadi satu state tanpa kontrak correction/recovery yang eksplisit.
+
+Retry harus idempotent pada observation/run/checkpoint identity. Retry response menghasilkan observation baru atau linkage retry yang immutable; ia tidak boleh menimpa payload lama atau menggandakan canonical row tanpa dedup identity.
 
 ---
 
@@ -125,6 +186,28 @@ Untuk active path yang request per ticker:
 - command import tidak boleh crash hanya karena beberapa ticker gagal
 - hasil partial harus tetap disimpan pada telemetry / failure evidence
 - requested date tetap dievaluasi akhirnya melalui **bars coverage berbasis canonical valid bars**, bukan jumlah request sukses
+
+Partial-tolerant berarti import dapat menyelesaikan pengumpulan evidence tanpa process crash. Istilah ini tidak berarti partial data boleh menjadi silent readable publication; readability hanya dapat dipertimbangkan setelah denominator temporal, locked `0.98` delivery gate, explicit missing reasons, dan seluruh independent hard gates dievaluasi.
+
+---
+
+## Quarantine and no-auto-repair rule (LOCKED)
+
+Source failure, schema drift, missing bar, stale response, anomaly, atau price discontinuity hanya boleh menghasilkan retry, rejection, held/degraded state, quarantine, or explicit correction workflow.
+
+Jalur source resilience dilarang otomatis:
+
+- mengisi missing bar dengan prior close, zero OHLCV, interpolation, atau synthetic candle
+- meng-copy prior-date observation lalu memberi requested date baru
+- mengubah scale harga/volume berdasarkan anomaly detector
+- menganggap price break sebagai verified corporate action
+- mengedit canonical or history rows in-place
+- memakai `manual_file` tanpa operator/governed recovery decision
+- menurunkan coverage/quality gate agar run terlihat berhasil
+
+Detector boleh membuat anomaly candidate dan evidence. Perubahan content hanya boleh melalui verified source/corporate-action evidence serta revisioned correction/publication lifecycle.
+
+Jika quarantine/rejection membuat gate tidak terpenuhi, promote harus held/failed dan requested date tidak boleh readable.
 
 ---
 
@@ -136,13 +219,13 @@ Jika source A dan source B menghasilkan nilai berbeda untuk ticker/date yang sam
 - pemenang ditentukan oleh **source priority + run mode + validation**
 
 Detailnya:
-- dalam run normal, primary source yang lolos validasi menjadi source-of-truth
-- secondary `manual_file` hanya menjadi source-of-truth bila run memang dijalankan dalam mode itu atau correction resmi mempublikasikannya
+- dalam run normal, primary source yang lolos validasi menjadi selected acquisition source
+- secondary `manual_file` hanya menjadi selected acquisition source bila run memang dijalankan dalam mode itu atau correction resmi mempublikasikannya
 - bila source yang sedang aktif gagal lolos validasi keras, data tersebut tidak boleh dipromosikan; hasilnya harus non-readable sampai run recovery/correction resmi selesai
 
 ---
 
-## Source-of-truth and traceability minimum
+## Selected source and traceability minimum
 Setiap canonical row / publication context harus dapat ditelusuri minimal ke:
 - `requested_trade_date`
 - `source_mode`
@@ -153,6 +236,8 @@ Setiap canonical row / publication context harus dapat ditelusuri minimal ke:
 - publication/correction reference bila source berubah melalui correction flow
 
 Tanpa jejak ini, publication tidak audit-safe.
+
+Traceability minimum ini tunduk pada immutable observation envelope, schema validation, dan stale validation di `Source_Data_Acquisition_Contract_LOCKED.md`.
 
 ---
 
@@ -173,6 +258,8 @@ Walaupun import bersifat partial-tolerant:
 - import retry bukan bentuk publishability override
 - import completion bukan readable success
 - fallback source bukan alasan untuk menggabungkan dua source state secara diam-diam
+- last-known-good publication bukan bukti bahwa requested latest date fresh
+- source failure tidak pernah mengotorisasi synthetic or in-place repair
 
 ---
 
@@ -186,7 +273,12 @@ Minimum field yang harus tampak:
 - `failure_class_summary`
 - `coverage_input_available_count`
 - `coverage_input_universe_count`
-- `source_of_truth_decision`
+- active source decision (`source_of_truth_decision` hanya boleh dipertahankan sebagai legacy field name, bukan domain-truth claim)
+- observation/payload hash or immutable reference
+- schema validation state
+- stale/freshness state
+- quarantine/rejection counts and reasons
+- latest expected and latest readable trade date after activation
 
 ---
 
@@ -195,13 +287,18 @@ Tidak boleh:
 - menyebut provider limitation sebagai capability limit domain
 - mempromosikan requested date hanya karena sebagian ticker berhasil
 - menganggap manual fallback sebagai merge bebas antar-source
-- membiarkan dua source sama-sama dianggap source-of-truth untuk satu publication yang sama
+- membiarkan dua source sama-sama dianggap selected source untuk satu publication yang sama
 - memakai majority vote atau best-effort merge tanpa kontrak baru
+- menyebut development frontier gap sebagai incident sebelum activation
+- menyebut requested latest date fresh hanya karena prior publication masih readable
+- menghasilkan readable success dari source state partial, failed, held, quarantined, stale, atau schema-unknown
+- menjalankan automatic data repair untuk menutupi source failure
 
 ---
 
 ## Cross-contract alignment
 Harus sinkron dengan:
+- `Yahoo_Finance_Bootstrap_Source_Strategy.md`
 - `Source_Data_Acquisition_Contract_LOCKED.md`
 - `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
 - `Run_Status_and_Quality_Gates_LOCKED.md`

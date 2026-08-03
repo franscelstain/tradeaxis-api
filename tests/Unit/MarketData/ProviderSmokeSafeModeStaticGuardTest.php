@@ -17,45 +17,60 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
         return file_get_contents($path);
     }
 
+    /**
+     * The safe-mode surface is read from the command's own signature rather than matched as
+     * source text. The defaults are the safety property here: one ticker, a short timeout and
+     * no retries keep a smoke test from turning into a full provider sweep. Reflection proves
+     * those values however the signature is formatted.
+     */
     public function test_provider_smoke_command_is_registered_with_safe_single_ticker_surface(): void
     {
-        $kernel = $this->read('app/Console/Kernel.php');
-        $command = $this->read('app/Console/Commands/MarketData/ProviderSmokeCommand.php');
+        $this->assertStringContainsString(
+            'ProviderSmokeCommand::class',
+            $this->read('app/Console/Kernel.php'),
+            'Provider smoke must be registered in the kernel.'
+        );
 
-        $this->assertStringContainsString('ProviderSmokeCommand::class', $kernel);
-        $this->assertStringContainsString('market-data:provider:smoke', $command);
-        $this->assertStringContainsString('{--ticker=}', $command);
-        $this->assertStringContainsString('{--trade_date=}', $command);
-        $this->assertStringContainsString('{--dry-run}', $command);
-        $this->assertStringContainsString('{--max-tickers=1}', $command);
-        $this->assertStringContainsString('{--timeout=10}', $command);
-        $this->assertStringContainsString('{--provider=yahoo}', $command);
-        $this->assertStringContainsString('{--retry-max=0}', $command);
-        $this->assertStringContainsString('{--json}', $command);
-        $this->assertStringContainsString('applyProviderOption', $command);
-        $this->assertStringContainsString("config(['market_data.source.api.provider' => \$provider])", $command);
-        $this->assertStringContainsString("'market_data.provider.api_retry_max' => \$retryMax", $command);
-        $this->assertStringContainsString('json_encode($this->jsonPayload($result), JSON_UNESCAPED_SLASHES)', $command);
-        $this->assertStringContainsString('fetchOrLoadEodBars($tradeDate, \'api\', [$ticker])', $command);
+        $signature = $this->commandSignature(\App\Console\Commands\MarketData\ProviderSmokeCommand::class);
+
+        $this->assertStringStartsWith('market-data:provider:smoke', $signature);
+
+        foreach (['ticker=', 'trade_date=', 'dry-run', 'json'] as $option) {
+            $this->assertStringContainsString('{--'.$option.'}', $signature, '--'.$option.' must exist.');
+        }
+
+        // Defaults that keep the command safe.
+        foreach ([
+            'max-tickers=1' => 'a smoke test must never fan out beyond one ticker',
+            'retry-max=0' => 'retries would turn a smoke test into repeated provider load',
+            'timeout=10' => 'a short timeout keeps a hung provider from stalling the operator',
+            'provider=yahoo' => 'the default provider must be explicit',
+        ] as $option => $why) {
+            $this->assertStringContainsString('{--'.$option.'}', $signature, $why);
+        }
     }
 
-    public function test_provider_smoke_blocks_full_universe_and_remains_non_destructive(): void
+    private function commandSignature(string $commandClass): string
+    {
+        $property = (new ReflectionClass($commandClass))->getProperty('signature');
+        $property->setAccessible(true);
+
+        return (string) $property->getValue(
+            (new ReflectionClass($commandClass))->newInstanceWithoutConstructor()
+        );
+    }
+
+    /**
+     * The command must not reach for any publishing machinery at all.
+     *
+     * That a run writes nothing is now proven by ProviderSmokeSafetyTest, which counts rows in
+     * every artifact table before and after. This keeps the complementary half: the symbols that
+     * would make writing possible must not appear, which execution cannot show — a path that is
+     * never taken in a test still exists.
+     */
+    public function test_provider_smoke_cannot_reach_publishing_machinery(): void
     {
         $command = $this->read('app/Console/Commands/MarketData/ProviderSmokeCommand.php');
-
-        foreach ([
-            'PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED',
-            'full_universe_fetch',
-            'write_mode',
-            'publication_created',
-            'seal_executed',
-            'finalize_executed',
-            'pointer_switched',
-            'readable_publication_created',
-            'false',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $command);
-        }
 
         foreach ([
             'FinalizeRunCommand',
@@ -78,7 +93,6 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
     {
         $command = $this->read('app/Console/Commands/MarketData/ProviderSmokeCommand.php');
         $registry = $this->read('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->read('docs/market_data/registry/Reason_Codes_Seed.sql');
 
         foreach ([
             'PROVIDER_SMOKE_OK',
@@ -105,37 +119,30 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
             $this->assertStringContainsString($needle, $command);
         }
 
-        foreach ([
-            'PROVIDER_SMOKE_OK',
-            'PROVIDER_RATE_LIMITED',
-            'PROVIDER_REQUEST_HEADER_CONTEXT_MISMATCH',
-            'PROVIDER_TIMEOUT',
-            'PROVIDER_NETWORK_ERROR',
-            'PROVIDER_RESPONSE_PARSE_FAILED',
-            'PROVIDER_EMPTY_OR_INVALID_RESPONSE',
-            'PROVIDER_TRADE_DATE_NOT_FOUND_IN_RESPONSE',
-            'PROVIDER_SMOKE_TICKER_REQUIRED',
-            'PROVIDER_SMOKE_INVALID_TICKER',
-            'PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED',
-        ] as $reasonCode) {
-            $this->assertStringContainsString('`'.$reasonCode.'`', $registry, $reasonCode.' must exist in registry.');
-            $this->assertStringContainsString("('".$reasonCode."'", $seed, $reasonCode.' must exist in seed SQL.');
-        }
+        // The reason codes the command can emit are read out of the command itself and
+        // checked against the registry. The former version listed them a second time by hand
+        // and also checked the seed file, which is now redundant: ReasonCodeSeedExecutionTest
+        // executes the seed and proves every registry code reaches eod_reason_codes.
+        preg_match_all("/'(PROVIDER_[A-Z0-9_]+)'/", $command, $matches);
+
+        $emitted = array_values(array_unique($matches[1]));
+        sort($emitted);
+
+        $this->assertNotEmpty($emitted, 'Provider smoke must emit at least one reason code.');
+
+        $unregistered = array_values(array_filter($emitted, function ($code) use ($registry) {
+            return strpos($registry, '`'.$code.'`') === false;
+        }));
+
+        $this->assertSame([], $unregistered, 'Reason codes emitted by provider smoke but missing from the registry.');
     }
 
 
-    public function test_provider_empty_or_invalid_response_is_blocked_not_failed(): void
-    {
-        $command = $this->read('app/Console/Commands/MarketData/ProviderSmokeCommand.php');
-
-        $this->assertStringContainsString("'provider_smoke_status' => 'BLOCKED',
-                    'reason_code' => 'PROVIDER_EMPTY_OR_INVALID_RESPONSE'", $command);
-        $this->assertStringNotContainsString("'provider_smoke_status' => 'FAILED',
-                    'reason_code' => 'PROVIDER_EMPTY_OR_INVALID_RESPONSE'", $command);
-        $this->assertMatchesRegularExpression("/PROVIDER_RESPONSE_PARSE_FAILED'.*PROVIDER_EMPTY_OR_INVALID_RESPONSE'.*PROVIDER_TRADE_DATE_NOT_FOUND_IN_RESPONSE/s", $command);
-        $this->assertStringContainsString("'reason_code' => 'PROVIDER_SMOKE_OK'", $command);
-        $this->assertStringContainsString("'returned_row_count' => (string) count(\$rows)", $command);
-    }
+    // The BLOCKED-not-FAILED classification was pinned here by matching two exact lines of
+    // formatted PHP, which would break on an indentation change while proving nothing about
+    // behaviour. ProviderSmokeSafetyTest drives every classification through the real command
+    // with a mocked adapter, and asserts the exit codes a scheduler actually reads: BLOCKED is 2
+    // and means retry, FAILED is 1 and means look at the platform.
 
     public function test_provider_smoke_artifact_and_docs_are_tracked_without_false_pass(): void
     {

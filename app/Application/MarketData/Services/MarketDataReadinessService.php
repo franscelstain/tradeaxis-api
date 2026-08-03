@@ -76,68 +76,27 @@ class MarketDataReadinessService
         ];
     }
 
+    /**
+     * Why the day is not readable, in the platform's own words.
+     *
+     * This used to re-derive the diagnosis from the pointer row with its own chain of checks.
+     * That chain had drifted: it had no equivalent for RUN_COVERAGE_TELEMETRY_INVALID, so a
+     * publication whose run could not prove its coverage fell through every check and was
+     * reported to consumers as NO_READABLE_PUBLICATION — "nothing was published for this date",
+     * which is what a holiday looks like, rather than "a publication exists and is faulty".
+     *
+     * The repository owns this judgement. Asking it is the only way the answer stays true.
+     */
     private function blockedReasonCode($pointerState): string
     {
         if (! $pointerState) {
             return 'NO_READABLE_PUBLICATION';
         }
 
-        if (empty($pointerState->publication_id)) {
-            return 'PUBLICATION_ROW_MISSING';
-        }
+        $reasons = $this->publications->determineCurrentIntegrityViolationReasons($pointerState);
 
-        if ((string) ($pointerState->trade_date ?? '') !== (string) ($pointerState->pointer_trade_date ?? '')) {
-            return 'POINTER_PUBLICATION_TRADE_DATE_MISMATCH';
-        }
-
-        if ((int) ($pointerState->is_current ?? 0) !== 1) {
-            return 'PUBLICATION_NOT_MARKED_CURRENT';
-        }
-
-        if ((string) ($pointerState->seal_state ?? '') !== 'SEALED') {
-            return 'PUBLICATION_NOT_SEALED';
-        }
-
-        if (empty($pointerState->sealed_at) || empty($pointerState->pointer_sealed_at)) {
-            return 'PUBLICATION_SEALED_AT_MISSING';
-        }
-
-        if (empty($pointerState->run_id)) {
-            return 'RUN_ROW_MISSING';
-        }
-
-        if ((string) ($pointerState->run_id ?? '') !== (string) ($pointerState->pointer_run_id ?? '')) {
-            return 'POINTER_RUN_ID_MISMATCH';
-        }
-
-        if ((string) ($pointerState->publication_version ?? '') !== (string) ($pointerState->pointer_publication_version ?? '')) {
-            return 'POINTER_PUBLICATION_VERSION_MISMATCH';
-        }
-
-        if ((string) ($pointerState->terminal_status ?? '') !== 'SUCCESS') {
-            return 'RUN_TERMINAL_STATUS_NOT_SUCCESS';
-        }
-
-        if ((string) ($pointerState->publishability_state ?? '') !== 'READABLE') {
-            return 'RUN_PUBLISHABILITY_NOT_READABLE';
-        }
-
-        if ((string) ($pointerState->coverage_gate_state ?? '') !== 'PASS') {
-            return 'RUN_COVERAGE_GATE_NOT_PASS';
-        }
-
-        if ((int) ($pointerState->is_current_publication ?? 0) !== 1) {
-            return 'RUN_CURRENT_MIRROR_NOT_SET';
-        }
-
-        if ((string) ($pointerState->run_publication_id ?? '') !== (string) ($pointerState->pointer_publication_id ?? '')) {
-            return 'RUN_PUBLICATION_ID_MISMATCH';
-        }
-
-        if ((string) ($pointerState->run_publication_version ?? '') !== (string) ($pointerState->pointer_publication_version ?? '')) {
-            return 'RUN_PUBLICATION_VERSION_MISMATCH';
-        }
-
-        return 'NO_READABLE_PUBLICATION';
+        // The pointer row exists and the integrity scan is satisfied, yet the gateway still
+        // refused it. Nothing more specific can be said, so the generic code is honest here.
+        return $reasons === [] ? 'NO_READABLE_PUBLICATION' : $reasons[0];
     }
 }

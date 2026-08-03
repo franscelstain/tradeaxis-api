@@ -62,28 +62,30 @@ class CoveragePolicyDocsStaticGuardTest extends TestCase
         $this->assertStringNotContainsString('MARKET_DATA_COVERAGE_MIN=0.95', $envExample.$envTesting.$config.$contract);
     }
 
-    public function test_evidence_replay_command_and_repository_boundaries_expose_legacy_raw_without_final_blocked_state(): void
+    /**
+     * The normaliser must be applied wherever a coverage state reaches an operator surface.
+     *
+     * What the normaliser does is now driven by CoverageStateNormalizationTest — that BLOCKED
+     * never survives, that an unrecognised state fails closed to NOT_EVALUABLE rather than PASS,
+     * that absent stays absent, and that the original verdict remains recoverable. The four state
+     * strings previously asserted inside the normaliser file are gone with it: a file naming all
+     * four and returning its input unchanged satisfied every one of them.
+     *
+     * What stays is the wiring, because it is a claim about three separate files calling it and
+     * no single execution shows that a fourth surface forgot to.
+     */
+    public function test_operator_surfaces_normalise_coverage_state_and_keep_the_legacy_trace(): void
     {
-        $normalizer = $this->read('app/Application/MarketData/Services/CoverageGateStateNormalizer.php');
-        $evidence = $this->read('app/Application/MarketData/Services/MarketDataEvidenceExportService.php');
-        $replay = $this->read('app/Application/MarketData/Services/ReplayVerificationService.php');
-        $command = $this->read('app/Console/Commands/MarketData/AbstractMarketDataCommand.php');
-        $runRepository = $this->read('app/Infrastructure/Persistence/MarketData/EodRunRepository.php');
-        $replayRepository = $this->read('app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php');
+        foreach ([
+            'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
+            'app/Application/MarketData/Services/ReplayVerificationService.php',
+            'app/Console/Commands/MarketData/AbstractMarketDataCommand.php',
+        ] as $surface) {
+            $source = $this->read($surface);
 
-        foreach (['PASS', 'FAIL', 'NOT_EVALUABLE', 'LEGACY_BLOCKED'] as $needle) {
-            $this->assertStringContainsString($needle, $normalizer);
+            $this->assertStringContainsString('CoverageGateStateNormalizer::normalize', $source, $surface);
+            $this->assertStringContainsString('legacy_coverage_gate_state_raw', $source, $surface);
         }
-
-        foreach ([$evidence, $replay, $command] as $surface) {
-            $this->assertStringContainsString('CoverageGateStateNormalizer::normalize', $surface);
-            $this->assertStringContainsString('legacy_coverage_gate_state_raw', $surface);
-            $this->assertStringContainsString('RUN_COVERAGE_NOT_EVALUABLE', $surface);
-        }
-
-        $this->assertStringContainsString("unset(\$telemetry['coverage_gate_status'])", $runRepository);
-        $this->assertStringContainsString("CoverageGateStateNormalizer::normalize(\$metric['coverage_gate_state'] ?? null)", $replayRepository);
-        $this->assertStringContainsString("CoverageGateStateNormalizer::normalize(\$metric['expected_coverage_gate_state'] ?? null)", $replayRepository);
     }
 
     public function test_locked_contract_docs_require_coverage_aliases_and_legacy_raw_trace(): void

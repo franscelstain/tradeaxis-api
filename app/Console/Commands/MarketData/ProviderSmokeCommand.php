@@ -8,7 +8,7 @@ use Carbon\Carbon;
 
 class ProviderSmokeCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:provider:smoke {--ticker=} {--trade_date=} {--dry-run} {--max-tickers=1} {--timeout=10} {--provider=yahoo} {--retry-max=0} {--json}';
+    protected $signature = 'market-data:provider:smoke {--ticker=} {--trade_date=} {--dry-run} {--max-tickers=1} {--timeout=10} {--provider=yahoo} {--retry-max=0} {--json} {--output_dir= : Write the run as an evidence artifact into this directory. Nothing is written without it.}';
 
     protected $description = 'Run a safe single-ticker live provider smoke check without publication writes, seal, finalize, or pointer switch.';
 
@@ -120,13 +120,19 @@ class ProviderSmokeCommand extends AbstractMarketDataCommand
                 'error' => $this->sanitizeOutput($e->getMessage()),
             ] + $telemetryLines), $status === 'BLOCKED' ? 2 : 1);
         } catch (\Throwable $e) {
+            // Anything that is not a SourceAcquisitionException is a fault in this platform, not
+            // a condition at the provider. It was previously reported as PROVIDER_NETWORK_ERROR
+            // with exit 2, which tells an operator "the network was flaky, retry later" — so a
+            // crash inside the adapter would be retried indefinitely and never investigated.
+            //
+            // BLOCKED/2 means retryable and provider-side. FAILED/1 means look at the platform.
             return $this->renderProviderSmokeResult($this->baseResult($ticker, $tradeDate, $dryRun, [
-                'provider_smoke_status' => 'BLOCKED',
-                'reason_code' => 'PROVIDER_NETWORK_ERROR',
-                'adapter_reason_code' => 'PROVIDER_NETWORK_ERROR',
+                'provider_smoke_status' => 'FAILED',
+                'reason_code' => 'COMMAND_EXECUTION_FAILED',
+                'adapter_reason_code' => 'none',
                 'source_reason_code' => 'none',
                 'error' => $this->sanitizeOutput($e->getMessage()),
-            ]), 2);
+            ]), 1);
         }
     }
 
@@ -320,20 +326,43 @@ class ProviderSmokeCommand extends AbstractMarketDataCommand
         return $payload;
     }
 
+    /**
+     * Write the run as an evidence artifact, only when the operator asked for one.
+     *
+     * This used to write unconditionally to a single hardcoded path,
+     * storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt,
+     * on every invocation — including failed runs, runs for a different ticker, and runs started
+     * from a test. Three audit tests treat that file as the recorded proof of a passing live
+     * provider check, so any later invocation destroyed the evidence they cite. Evidence that the
+     * next run overwrites is not evidence.
+     *
+     * The file name is also derived from the ticker now. The old one said "bbca" regardless of
+     * which ticker was actually checked.
+     */
     private function writeProviderSmokeArtifact(array $lines, array $result)
     {
-        $path = base_path('storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt');
-        $directory = dirname($path);
+        $outputDir = trim((string) ($this->option('output_dir') ?: ''));
 
+        if ($outputDir === '') {
+            return;
+        }
+
+        $ticker = (string) ($result['ticker'] ?? '');
+        $tradeDate = (string) ($result['trade_date'] ?? '<YYYY-MM-DD>');
+        $retryMax = array_key_exists('retry_max', $result) ? (string) $result['retry_max'] : (string) $this->option('retry-max');
+
+        $slug = strtolower(preg_replace('/[^A-Za-z0-9]+/', '-', $ticker));
+        $slug = trim($slug, '-') ?: 'unknown-ticker';
+
+        $directory = rtrim($outputDir, '/\\');
         if (! is_dir($directory)) {
             mkdir($directory, 0775, true);
         }
 
-        $ticker = (string) ($result['ticker'] ?? 'BBCA');
-        $tradeDate = (string) ($result['trade_date'] ?? '<YYYY-MM-DD>');
-        $retryMax = array_key_exists('retry_max', $result) ? (string) $result['retry_max'] : (string) $this->option('retry-max');
-        $content = "ENCODING: UTF-8\nCOMMAND: php artisan market-data:provider:smoke --ticker=".$ticker." --trade_date=".$tradeDate." --dry-run --retry-max=".$retryMax."\n".implode("\n", $lines)."\n";
-        file_put_contents($path, $content);
+        $content = "ENCODING: UTF-8\nCOMMAND: php artisan market-data:provider:smoke --ticker=".$ticker
+            ." --trade_date=".$tradeDate." --dry-run --retry-max=".$retryMax."\n".implode("\n", $lines)."\n";
+
+        file_put_contents($directory.DIRECTORY_SEPARATOR.'provider-smoke-'.$slug.'.txt', $content);
     }
 
     private function boolString($value)

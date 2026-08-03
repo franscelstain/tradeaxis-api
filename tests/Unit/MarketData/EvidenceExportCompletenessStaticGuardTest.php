@@ -165,21 +165,10 @@ class EvidenceExportCompletenessStaticGuardTest extends TestCase
         }
     }
 
-    public function test_evidence_export_has_no_read_path_latest_shortcuts_or_non_readable_rejection(): void
+    // The latest-date shortcut check that stood here is now applied to every file under app/ by
+    // ReadPathShortcutProhibitionTest, rather than to these three by name.
+    public function test_evidence_export_does_not_claim_readable_when_it_is_not(): void
     {
-        $paths = [
-            'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
-            'app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php',
-            'app/Console/Commands/MarketData/ExportEvidenceCommand.php',
-        ];
-
-        foreach ($paths as $path) {
-            $source = file_get_contents($this->projectPath($path));
-            foreach (["MAX(trade_date)", "max('trade_date')", "latest('trade_date')", "orderByDesc('trade_date')", 'ORDER BY trade_date DESC'] as $forbidden) {
-                $this->assertStringNotContainsString($forbidden, $source, $path.' contains forbidden latest-date shortcut '.$forbidden);
-            }
-        }
-
         $service = file_get_contents($this->projectPath('app/Application/MarketData/Services/MarketDataEvidenceExportService.php'));
         $this->assertStringNotContainsString('Run evidence export requires a SUCCESS + READABLE run', $service);
         $this->assertStringContainsString('NOT_CREATED_OR_NOT_READABLE', $service);

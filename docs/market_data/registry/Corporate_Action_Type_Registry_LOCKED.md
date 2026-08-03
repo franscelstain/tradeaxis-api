@@ -15,6 +15,8 @@ the daily import stores only event identity, while semantics live in a seeded di
 
 This registry is upstream-only. It does not encode watchlist screening, scoring, or strategy meaning.
 
+This registry declares type-level continuity/risk semantics only. It does not verify that an event occurred, select an ex-date, derive a factor, or authorize adjustment. Those decisions require a verified event/factor revision under `../book/Corporate_Action_and_Adjustment_Policy.md`.
+
 ---
 
 ## Dictionary table contract (LOCKED)
@@ -41,8 +43,8 @@ Table: `market_data_corporate_action_types`
   date remain valid.
 
 - **`SCALED`** — the action applies a multiplicative change to the price scale. Every bar before the
-  action date is expressed on a different scale than every bar on/after it. Any indicator whose
-  window spans the action date is arithmetically meaningless and must be quarantined.
+  verified ex/effective date is expressed on a different scale than every bar on/after it. Any indicator whose
+  window spans that boundary is meaningless unless a verified coherent factor is applied.
 
   `SCALED` means the **unit is redefined**, not merely that the company issued more shares. This
   distinction decides most classifications in the table below, so it is stated explicitly:
@@ -62,7 +64,7 @@ Table: `market_data_corporate_action_types`
 - **`NONE`** — traded share units remain on the same scale across the action date. Dilution belongs
   here: issuing new shares at the existing unit leaves yesterday's and today's volume directly
   comparable.
-- **`SCALED`** — the share unit is redefined, so raw `volume` before and after the action date are
+- **`SCALED`** — the share unit is redefined, so raw `volume` before and after the verified ex/effective date are
   not comparable. `vol_ratio` in particular becomes a false volume-expansion signal, because a 1:4
   split multiplies typical daily share volume by roughly four while the underlying activity is
   unchanged.
@@ -143,6 +145,8 @@ information.
 ---
 
 ## Known modelling gap — risk semantics are not represented here
+
+> Historical implementation-gap note: current strategy is governed by the correction section at the end of this registry. Exact-date-only behavior described here is not the target contract.
 
 This registry models exactly one dimension: whether an action breaks price or volume continuity.
 That is sufficient for indicator quarantine and nothing else.
@@ -239,3 +243,17 @@ Consequences of that limitation, recorded here so it is not mistaken for a desig
 
 Capturing the quantitative payload is the prerequisite for a future adjustment engine. Until that
 exists, quarantine is the only contract that never emits a wrong number.
+
+---
+
+## Current event-lifecycle strategy correction (LOCKED)
+
+This section supersedes older implementation-state wording above where it describes exact-date-only `action_date` behavior or a future adjustment engine.
+
+- The target event model requires immutable event identity/revision, stable instrument/listing identity, source observation/reference, announcement/cum/ex/record/payment/effective dates where applicable, quantitative terms, verification state, factor revision, and as-known timestamps.
+- Event occurrence context, event-risk lifecycle, and analytical-window contamination are separate facts.
+- `ex_date` is the primary continuity/event-risk anchor; legacy `action_date = trade_date` projection is insufficient when ex-date or persistent lifecycle semantics are required.
+- Persisting conditions require explicit effective/carry/clear semantics. They must not be fabricated as one-day-only or indefinite.
+- `price_continuity_impact` must never be reused as a generic risk-family field.
+- Adjustment capability is current target strategy under `Price_Adjustment_Contract_LOCKED.md`, but only verified event/factor revisions may activate it.
+- Missing terms keep an event non-adjustable and quarantined. Presence of columns alone does not verify values, and price-gap derivation alone cannot fill them.

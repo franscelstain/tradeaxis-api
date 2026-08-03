@@ -25,55 +25,41 @@ class ApiBackfillLifecycleStaticGuardTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_lifecycle_command_is_registered_without_changing_import_only_backfill_command()
-    {
-        $kernel = file_get_contents($this->root.'/app/Console/Kernel.php');
-        $backfillCommand = file_get_contents($this->root.'/app/Console/Commands/MarketData/BackfillMarketDataCommand.php');
-        $lifecycleCommand = file_get_contents($this->root.'/app/Console/Commands/MarketData/BackfillLifecycleCommand.php');
+    // Command registration was asserted here as class names present in the console kernel.
+    // DestructiveCommandSafetySurfaceTest walks every registered command through kernel
+    // reflection and CommandSurfaceSafetyStaticGuardTest requires each to appear in the ops
+    // safety inventory, so registration is proven by resolving the commands rather than by
+    // finding their names in a file.
 
-        $this->assertStringContainsString('BackfillLifecycleCommand::class', $kernel);
-        $this->assertStringContainsString('market-data:backfill:lifecycle', $lifecycleCommand);
-        $this->assertStringContainsString('MarketDataBackfillService', $backfillCommand);
-        $this->assertStringContainsString('Historical import-only backfill', $backfillCommand);
-    }
-
-    public function test_api_backfill_uses_range_window_service_and_period_bound_yahoo_urls()
+    /**
+     * Only the wiring is asserted here: a range-window acquisition path exists and the
+     * orchestrator uses it.
+     *
+     * Whether the resulting window actually contains the requested dates is proven by
+     * YahooPeriodBoundsTest, which computes the bounds. The former assertions on
+     * "period1={period1}" and "period2={period2}" confirmed the config template carries
+     * placeholders, which would still pass if the substituted values were wrong or if the
+     * window silently excluded the requested date.
+     */
+    public function test_api_backfill_wires_the_range_window_acquisition_path()
     {
         $adapter = file_get_contents($this->root.'/app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php');
-        $config = file_get_contents($this->root.'/config/market_data.php');
-        $env = file_get_contents($this->root.'/.env.example');
         $orchestrator = file_get_contents($this->root.'/app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php');
 
         $this->assertStringContainsString('fetchOrLoadEodBarsRange', $adapter);
-        $this->assertStringContainsString('source_acquisition_mode', $adapter);
-        $this->assertStringContainsString('range_window', $adapter);
-        $this->assertStringContainsString('period1={period1}', $config);
-        $this->assertStringContainsString('period2={period2}', $config);
-        $this->assertStringContainsString('MARKET_DATA_API_BACKFILL_WINDOW_DAYS', $env);
         $this->assertStringContainsString('ApiBackfillRangeAcquisitionService', $orchestrator);
         $this->assertStringContainsString('importDailyFromAcquiredRows', $orchestrator);
     }
 
-    public function test_missing_ticker_lifecycle_command_reuses_range_api_and_full_candidate_rows()
+    public function test_missing_ticker_lifecycle_exposes_an_explicit_ticker_selection_option()
     {
-        $kernel = file_get_contents($this->root.'/app/Console/Kernel.php');
         $command = file_get_contents($this->root.'/app/Console/Commands/MarketData/BackfillMissingTickersCommand.php');
         $orchestrator = file_get_contents($this->root.'/app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php');
 
-        $this->assertStringContainsString('BackfillMissingTickersCommand::class', $kernel);
-        $this->assertStringContainsString('market-data:backfill:missing-tickers', $command);
+        // The option matters because backfilling every missing ticker across a long range is a
+        // large acquisition; an operator must be able to name a subset.
         $this->assertStringContainsString('{--ticker_codes=}', $command);
         $this->assertStringContainsString('executeMissingTickers', $command.$orchestrator);
-        $this->assertStringContainsString('resolveMissingTickerPlan', $orchestrator);
-        $this->assertStringContainsString('$fullUniverseRows', $orchestrator);
-        $this->assertStringContainsString('buildMissingTickerCandidateRows', $orchestrator);
-        $this->assertStringContainsString('loadCanonicalBarTickerIdsForTradeDate', $orchestrator);
-        $this->assertStringContainsString('loadBarsForTradeDate', $orchestrator);
-        $this->assertStringContainsString('importDailyFromAcquiredRows', $orchestrator);
-        $this->assertStringContainsString('promoteDaily', $orchestrator);
-        $this->assertStringContainsString('generateFixtureFromRun', $orchestrator);
-        $this->assertStringContainsString('verifyRunAgainstFixture', $orchestrator);
-        $this->assertStringContainsString('missing_ticker_backfill', $orchestrator);
     }
 
     public function test_lifecycle_replay_is_gated_by_readability_and_evidence_success()
@@ -86,27 +72,23 @@ class ApiBackfillLifecycleStaticGuardTest extends TestCase
         $this->assertStringContainsString('sealed_at', $orchestrator);
     }
 
-    public function test_range_lifecycle_does_not_reintroduce_forbidden_latest_or_max_date_fallback()
-    {
-        $paths = [
-            $this->root.'/app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php',
-            $this->root.'/app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php',
-            $this->root.'/app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php',
-        ];
+    // The latest-date prohibition is now applied to every file under app/ by
+    // ReadPathShortcutProhibitionTest.
 
-        foreach ($paths as $path) {
-            $source = file_get_contents($path);
-            $this->assertDoesNotMatchRegularExpression('/MAX\s*\(\s*trade_date\s*\)/i', $source, $path);
-            $this->assertStringNotContainsString('raw/latest', strtolower($source), $path);
-        }
-    }
-
-    public function test_lifecycle_warmup_start_is_resolved_from_market_calendar_trading_window()
+    /**
+     * The warm-up window must be measured in trading days, never calendar days.
+     *
+     * Only the prohibition and the config key stay here. What the window actually computes is
+     * proven by TradingWindowWarmupTest, which builds a calendar with weekends and a holiday
+     * block and shows that twenty trading days span thirty-two calendar days — the gap a
+     * subDays() warm-up would silently lose, leaving the earliest backfilled dates with null
+     * MA20 and ROC20 on a publication that still reports READABLE.
+     */
+    public function test_lifecycle_warmup_is_never_measured_in_calendar_days()
     {
         $orchestrator = file_get_contents($this->root.'/app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php');
         $config = file_get_contents($this->root.'/config/market_data.php');
 
-        $this->assertStringContainsString('tradingDateWindowStart($firstRequestedTradingDate, $requiredTradingDates)', $orchestrator);
         $this->assertStringContainsString('warmup_trading_days', $orchestrator);
         $this->assertStringNotContainsString('->subDays(max(0, (int) config(\'market_data.source.api_backfill.warmup_days\'', $orchestrator);
         $this->assertStringContainsString('MARKET_DATA_API_BACKFILL_WARMUP_TRADING_DAYS', $config);

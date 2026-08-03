@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\Support\UsesMarketDataSqlite;
 
@@ -277,6 +278,69 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
                 );
             }
         }
+    }
+
+    public function test_strategy_v2_schema_is_mirrored_and_contains_no_direct_price_repair_surface(): void
+    {
+        foreach ([
+            'md_config_snapshots' => [
+                'config_snapshot_id', 'snapshot_uid', 'snapshot_schema_version',
+                'serialization_version', 'resolved_config_json', 'config_hash',
+                'registry_revision', 'effective_at', 'recorded_at', 'build_id',
+                'environment_profile', 'resolver_version', 'created_at',
+            ],
+            'md_source_observations' => [
+                'source_observation_id', 'observation_uid', 'run_id', 'attempt_uid',
+                'requested_trade_date', 'source_name', 'provider', 'provider_symbol',
+                'provider_mapping_id', 'sanitized_request_identity', 'response_status',
+                'content_type', 'source_timestamp', 'acquired_at', 'schema_fingerprint',
+                'adapter_version', 'payload_hash', 'payload_ref', 'bounded_payload_body',
+                'outcome_state', 'reason_code', 'supersedes_observation_id', 'created_at',
+            ],
+            'md_issuers' => ['issuer_id', 'issuer_uid', 'legal_name', 'recorded_at', 'created_at'],
+            'md_instruments' => ['instrument_id', 'instrument_uid', 'issuer_id', 'instrument_type', 'currency_code', 'recorded_at', 'created_at'],
+            'md_listings' => ['listing_id', 'listing_uid', 'instrument_id', 'exchange_code', 'board_code', 'listed_date', 'delisted_date', 'recorded_at', 'created_at'],
+            'md_listing_symbols' => ['listing_symbol_id', 'listing_id', 'symbol', 'symbol_type', 'effective_from', 'effective_to', 'recorded_at', 'retracted_at', 'source_observation_id'],
+            'md_provider_symbol_mappings' => ['provider_mapping_id', 'listing_id', 'provider', 'provider_symbol', 'effective_from', 'effective_to', 'recorded_at', 'retracted_at', 'source_observation_id', 'mapping_revision'],
+            'md_market_calendar_revisions' => ['calendar_revision_id', 'market_code', 'cal_date', 'revision_uid', 'timezone', 'session_state', 'session_open_at', 'session_close_at', 'completed_at', 'recorded_at', 'source_observation_id', 'supersedes_revision_id'],
+            'md_trading_status_revisions' => ['status_revision_id', 'listing_id', 'status_code', 'bar_expectation_state', 'full_session_verified', 'effective_from', 'effective_to', 'recorded_at', 'retracted_at', 'source_observation_id', 'supersedes_revision_id'],
+            'md_corporate_action_revisions' => ['corporate_action_revision_id', 'event_uid', 'revision_number', 'listing_id', 'action_type_code', 'lifecycle_state', 'verification_state', 'ex_date', 'cum_date', 'record_date', 'payment_date', 'terms_json', 'source_observation_id', 'effective_at', 'recorded_at', 'supersedes_revision_id'],
+            'md_adjustment_factor_sets' => ['factor_set_id', 'factor_set_uid', 'price_product_code', 'factor_formula_version', 'config_snapshot_id', 'state', 'content_hash', 'recorded_at', 'created_at'],
+            'md_adjustment_factors' => ['adjustment_factor_id', 'factor_set_id', 'listing_id', 'effective_from', 'effective_to', 'price_factor', 'volume_factor', 'corporate_action_revision_id', 'created_at'],
+            'md_publication_lineage_bindings' => ['publication_lineage_id', 'publication_id', 'config_snapshot_id', 'factor_set_id', 'observation_manifest_hash', 'identity_revision_set_hash', 'calendar_revision_set_hash', 'status_revision_set_hash', 'event_revision_set_hash', 'formula_version', 'build_id', 'read_model_version', 'created_at'],
+            'eod_runs' => ['config_snapshot_id', 'observation_manifest_hash', 'coverage_expected_count', 'coverage_expectation_unknown_count', 'coverage_delivered_count', 'coverage_delivered_valid_count', 'operational_start_date', 'freshness_state', 'latest_expected_trade_date', 'latest_acquired_trade_date', 'latest_canonicalized_trade_date', 'latest_readable_trade_date'],
+            'eod_publications' => ['config_snapshot_id', 'factor_set_id', 'observation_manifest_hash', 'publication_manifest_hash', 'price_product_code', 'read_model_version', 'readiness_state'],
+            'eod_bars_history' => ['listing_id', 'source_observation_id', 'previous_close', 'traded_value_idr_actual', 'trade_count_actual', 'board_code', 'session_code', 'source_timestamp', 'acquired_at', 'canonicalization_version', 'price_product_code', 'quality_state', 'config_snapshot_id'],
+            'eod_indicators_history' => ['listing_id', 'formula_version', 'config_snapshot_id', 'factor_set_id', 'price_product_code', 'adv20_traded_value_idr_actual', 'adv20_close_volume_proxy_idr', 'atr14', 'atr_state_ref', 'null_reasons_json'],
+            'eod_eligibility_history' => ['listing_id', 'universe_membership_state', 'bar_expectation_state', 'delivery_state', 'canonical_quality_state', 'liquidity_state', 'temporal_status_state', 'event_risk_state', 'eligibility_reasons_json', 'config_snapshot_id'],
+        ] as $table => $columns) {
+            $this->assertTrue(Schema::hasTable($table), sprintf('Missing V2 SQLite mirror table %s', $table));
+
+            foreach ($columns as $column) {
+                $this->assertTrue(
+                    Schema::hasColumn($table, $column),
+                    sprintf('Missing V2 SQLite mirror column %s.%s', $table, $column)
+                );
+            }
+        }
+
+        foreach ([
+            'repair_factor',
+            'repair_range_end_date',
+            'repaired_bar_count',
+            'repaired_history_row_count',
+            'repaired_at',
+        ] as $column) {
+            $this->assertFalse(
+                Schema::hasColumn('market_data_price_scale_breaks', $column),
+                sprintf('Direct history-repair field must not exist: market_data_price_scale_breaks.%s', $column)
+            );
+        }
+
+        $this->assertFalse(
+            DB::table('market_data_corporate_action_types')->where('action_type_code', 'PRICE_RESCALE_UNCLASSIFIED')->exists(),
+            'Price-derived unclassified rescale must not be seeded as an adjustment-authorizing action type'
+        );
     }
 
     public function test_replay_metrics_does_not_contain_sqlite_only_source_file_columns(): void

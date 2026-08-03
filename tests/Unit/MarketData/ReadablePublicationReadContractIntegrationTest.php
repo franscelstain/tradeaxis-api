@@ -125,6 +125,37 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
         $this->assertSame([], $repository->getScopeForTradeDate('2026-03-20'));
     }
 
+    /**
+     * Seal is the proof that the dataset content was frozen and hashed. An unsealed
+     * publication may still be mutating, so it must never reach a consumer even when the
+     * pointer happens to reference it.
+     */
+    public function test_scope_repository_returns_empty_when_current_publication_is_not_sealed(): void
+    {
+        DB::table('eod_publications')->where('publication_id', 10)->update([
+            'seal_state' => 'UNSEALED',
+        ]);
+
+        $repository = new EligibilitySnapshotScopeRepository();
+
+        $this->assertSame([], $repository->getScopeForTradeDate('2026-03-20'));
+    }
+
+    /**
+     * A superseded publication is audit-only. Being newer or having a larger run id must not
+     * make it readable.
+     */
+    public function test_scope_repository_returns_empty_when_publication_is_no_longer_current(): void
+    {
+        DB::table('eod_publications')->where('publication_id', 10)->update([
+            'is_current' => 0,
+        ]);
+
+        $repository = new EligibilitySnapshotScopeRepository();
+
+        $this->assertSame([], $repository->getScopeForTradeDate('2026-03-20'));
+    }
+
     public function test_scope_repository_returns_empty_when_current_pointer_coverage_gate_is_not_pass(): void
     {
         DB::table('eod_runs')->where('run_id', 25)->update([

@@ -1,5 +1,7 @@
 # Production Validation Inventory
 
+Current admission status (2026-08-02): **HISTORICAL VALIDATION SCOPE / NOT CURRENT RELOCK PROOF**. See `reports/AUDIT_FINAL_STATE.md`. Runtime proof below remains valid for the commands and contracts it executed, but it predates the corrected temporal identity, immutable observation/config, factor/product, indicator, coverage, read-model, and as-known replay requirements.
+
 Status: DONE.
 Contract: PRODUCTION_VALIDATION_CONTRACT.
 Active implementation: Production Validation / Manual + Runtime Proof.

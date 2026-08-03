@@ -11,6 +11,7 @@ Market-data bergantung pada sumber data dan shared foundation tertentu, terutama
 - corporate action dependencies where relevant
 
 Refer to owner contracts such as:
+- `book/Yahoo_Finance_Bootstrap_Source_Strategy.md`
 - `book/Source_Data_Acquisition_Contract_LOCKED.md`
 - `book/Market_Calendar_Requirements_Contract.md`
 - `book/Tickers_and_Identity_Dependency_Contract_LOCKED.md`
@@ -36,6 +37,10 @@ Untuk active codebase saat ini, operating-model choice yang disahkan adalah:
 
 Pilihan ini adalah perubahan yang sah karena sudah disinkronkan ke config/env, adapter implementation, proof tests, dan owner docs market-data. Ini bukan drift implementasi.
 
+Yahoo Finance dipakai sebagai bootstrap source untuk membuktikan manfaat EOD market-data dan watchlist Weekly Swing sebelum biaya data berbayar dikeluarkan. Pilihan itu bukan kesalahan strategi dan bukan klaim bahwa Yahoo adalah sumber resmi IDX atau provider final. Integritas domain tetap dijaga melalui provider-neutral canonical contracts, provenance, validation, coverage, correction, publication, dan consumer-read safety.
+
+Evaluasi vendor, pembelian data, dual-feed, dan migrasi provider bukan pekerjaan fase aktif. Hal itu menjadi keputusan lanjutan hanya setelah manfaat yang terukur atau kebutuhan SLA, licensing, authoritative correction, field coverage, dan commercial use membenarkannya. Lihat `book/Yahoo_Finance_Bootstrap_Source_Strategy.md` untuk batas keputusan lengkap.
+
 ## Date-driven interpretation note
 Walaupun active provider saat ini adalah Yahoo/public API, capability domain tetap harus dibaca sebagai **date-driven**.
 
@@ -47,6 +52,7 @@ Artinya:
 - promote tetap gate final untuk readability
 
 ## Dependency reading pointers
+- Yahoo Finance current-phase rationale and future boundary -> `book/Yahoo_Finance_Bootstrap_Source_Strategy.md`
 - acquisition and source behavior → `book/Source_Data_Acquisition_Contract_LOCKED.md`
 - publication pointer integrity → `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`, `db/EOD_Current_Publication_Pointer_Table.sql`, `db/Publication_Current_Pointer_Switch_Procedure_LOCKED.sql`
 - reproducibility and sealing → `book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md`, `book/Dataset_Seal_and_Freeze_Contract_LOCKED.md`

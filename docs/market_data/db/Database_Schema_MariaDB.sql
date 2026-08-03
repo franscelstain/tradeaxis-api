@@ -1,7 +1,17 @@
 -- =========================================================
 -- Market Data Platform (EOD) — Core MariaDB Schema
--- LOCKED DDL
+-- STRATEGY-CORRECTED TRANSITIONAL DDL; NOT A PRODUCTION-RELOCK CLAIM
 -- =========================================================
+
+-- IMPORTANT
+-- This file is executed by the 2026-03-22 core migration and therefore preserves the
+-- deployable legacy baseline. The current target shape is this baseline plus every later
+-- forward migration, especially:
+--   2026_08_02_000001_add_market_data_strategy_v2_foundation.php
+-- That migration adds immutable observations, full config snapshots, bitemporal identity /
+-- calendar / status revisions, corporate-action and factor revisions, actual EOD fields,
+-- explicit eligibility facts, and publication lineage bindings. Nullable rollout fields do
+-- not satisfy sealing/readability until backfilled and enforced by a later migration.
 
 -- =========================================================
 -- Ticker master universe
@@ -114,12 +124,55 @@ CREATE TABLE IF NOT EXISTS market_data_corporate_actions (
   source_name VARCHAR(64) NOT NULL DEFAULT 'manual_corporate_action_csv',
   source_ref VARCHAR(255) NULL,
   notes VARCHAR(255) NULL,
+  price_adjustment_factor DECIMAL(20,10) NULL,
+  volume_adjustment_factor DECIMAL(20,10) NULL,
+  ex_date DATE NULL,
+  cum_date DATE NULL,
+  ratio_from DECIMAL(20,6) NULL,
+  ratio_to DECIMAL(20,6) NULL,
+  dividend_per_share DECIMAL(20,4) NULL,
+  adjustment_source VARCHAR(32) NULL,
+  adjustment_note VARCHAR(255) NULL,
+  continuity_check_status VARCHAR(32) NULL,
+  observed_gap_pct DECIMAL(12,6) NULL,
+  continuity_checked_at DATETIME NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (corporate_action_id),
   UNIQUE KEY uq_md_corp_action_ticker_date_type_source (ticker_id, action_date, action_type, source_name),
   KEY idx_md_corp_action_date_ticker (action_date, ticker_id),
-  KEY idx_md_corp_action_type_date (action_type, action_date)
+  KEY idx_md_corp_action_type_date (action_type, action_date),
+  KEY idx_md_corp_action_ex_date (ticker_id, ex_date)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS market_data_price_scale_breaks (
+  price_scale_break_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ticker_id BIGINT UNSIGNED NOT NULL,
+  ticker_code VARCHAR(16) NOT NULL,
+  trade_date DATE NOT NULL,
+  previous_close DECIMAL(20,4) NOT NULL,
+  open_price DECIMAL(20,4) NOT NULL,
+  implied_ratio DECIMAL(20,10) NOT NULL,
+  ratio_direction VARCHAR(16) NOT NULL,
+  inferred_ratio DECIMAL(12,4) NULL,
+  inferred_ratio_error_pct DECIMAL(12,6) NULL,
+  break_type VARCHAR(32) NOT NULL,
+  match_status VARCHAR(16) NOT NULL,
+  matched_corporate_action_id BIGINT UNSIGNED NULL,
+  matched_action_type VARCHAR(64) NULL,
+  review_status VARCHAR(16) NOT NULL DEFAULT 'DETECTED',
+  review_note VARCHAR(255) NULL,
+  reviewed_by VARCHAR(64) NULL,
+  reviewed_at DATETIME NULL,
+  detection_contract_version VARCHAR(64) NOT NULL,
+  detected_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (price_scale_break_id),
+  UNIQUE KEY uq_md_price_scale_break_ticker_date (ticker_id, trade_date),
+  KEY idx_md_price_scale_break_date_ticker (trade_date, ticker_id),
+  KEY idx_md_price_scale_break_status (match_status, review_status),
+  KEY idx_md_price_scale_break_type (break_type)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS market_data_corporate_action_types (
@@ -279,6 +332,19 @@ CREATE TABLE IF NOT EXISTS eod_bars (
   source VARCHAR(32) NOT NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   publication_id BIGINT UNSIGNED NOT NULL,
+  listing_id BIGINT UNSIGNED NULL,
+  source_observation_id BIGINT UNSIGNED NULL,
+  previous_close DECIMAL(20,4) NULL,
+  traded_value_idr_actual DECIMAL(24,2) NULL,
+  trade_count_actual BIGINT UNSIGNED NULL,
+  board_code VARCHAR(16) NULL,
+  session_code VARCHAR(32) NULL,
+  source_timestamp DATETIME NULL,
+  acquired_at DATETIME NULL,
+  canonicalization_version VARCHAR(64) NULL,
+  price_product_code VARCHAR(32) NULL,
+  quality_state VARCHAR(32) NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (trade_date, ticker_id),
   KEY idx_eod_bars_ticker_date (ticker_id, trade_date),
@@ -288,11 +354,11 @@ CREATE TABLE IF NOT EXISTS eod_bars (
 ) ENGINE=InnoDB;
 
 -- LOCKED NOTE
--- eod_bars stores the current canonical readable row set for a given trade_date.
+-- eod_bars is a replaceable current projection for a given trade_date.
 -- publication_id is mandatory publication context on every live current row,
 -- but it is not part of the live-table primary key.
--- Historical auditability across corrections is provided through publication trail,
--- hash trail, correction evidence, and immutable snapshot tables below.
+-- It is never historical authority. Historical authority is the immutable observation and
+-- publication-bound snapshot lineage introduced by the base/history tables and V2 migration.
 
 -- =========================================================
 -- Invalid/rejected source-row evidence
@@ -365,8 +431,18 @@ CREATE TABLE IF NOT EXISTS eod_indicators (
   event_risk_reasons VARCHAR(255) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   publication_id BIGINT UNSIGNED NOT NULL,
-  created_at DATETIME NOT NULL,
   corporate_action_window_reasons VARCHAR(255) NULL,
+  listing_id BIGINT UNSIGNED NULL,
+  formula_version VARCHAR(64) NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
+  factor_set_id BIGINT UNSIGNED NULL,
+  price_product_code VARCHAR(32) NULL,
+  adv20_traded_value_idr_actual DECIMAL(24,2) NULL,
+  adv20_close_volume_proxy_idr DECIMAL(24,2) NULL,
+  atr14 DECIMAL(20,10) NULL,
+  atr_state_ref VARCHAR(128) NULL,
+  null_reasons_json TEXT NULL,
+  created_at DATETIME NOT NULL,
   PRIMARY KEY (trade_date, ticker_id),
   KEY idx_eod_indicators_ticker_date (ticker_id, trade_date),
   KEY idx_eod_indicators_run (run_id),
@@ -393,6 +469,16 @@ CREATE TABLE IF NOT EXISTS eod_eligibility (
   reason_code VARCHAR(64) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
   publication_id BIGINT UNSIGNED NOT NULL,
+  listing_id BIGINT UNSIGNED NULL,
+  universe_membership_state VARCHAR(32) NULL,
+  bar_expectation_state VARCHAR(32) NULL,
+  delivery_state VARCHAR(32) NULL,
+  canonical_quality_state VARCHAR(32) NULL,
+  liquidity_state VARCHAR(32) NULL,
+  temporal_status_state VARCHAR(32) NULL,
+  event_risk_state VARCHAR(32) NULL,
+  eligibility_reasons_json TEXT NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (trade_date, ticker_id),
   KEY idx_eod_eligibility_ticker_date (ticker_id, trade_date),
@@ -455,6 +541,7 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   coverage_universe_count INT NULL,
   coverage_available_count INT NULL,
   coverage_missing_count INT NULL,
+  coverage_bar_not_expected_count INT NULL,
   coverage_ratio DECIMAL(12,6) NULL,
   coverage_min_threshold DECIMAL(12,6) NULL,
   coverage_gate_state ENUM('PASS','FAIL','NOT_EVALUABLE') NULL,
@@ -480,6 +567,18 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   config_version VARCHAR(64) NULL,
   config_hash VARCHAR(64) NULL,
   config_snapshot_ref VARCHAR(255) NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
+  observation_manifest_hash VARCHAR(64) NULL,
+  coverage_expected_count INT NULL,
+  coverage_expectation_unknown_count INT NULL,
+  coverage_delivered_count INT NULL,
+  coverage_delivered_valid_count INT NULL,
+  operational_start_date DATE NULL,
+  freshness_state VARCHAR(32) NULL,
+  latest_expected_trade_date DATE NULL,
+  latest_acquired_trade_date DATE NULL,
+  latest_canonicalized_trade_date DATE NULL,
+  latest_readable_trade_date DATE NULL,
 
   supersedes_run_id BIGINT UNSIGNED NULL,
   publication_id BIGINT UNSIGNED NULL,
@@ -576,6 +675,13 @@ CREATE TABLE IF NOT EXISTS eod_publications (
   source_file_hash_algorithm VARCHAR(32) NULL,
   source_file_size_bytes BIGINT UNSIGNED NULL,
   source_file_row_count INT UNSIGNED NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
+  factor_set_id BIGINT UNSIGNED NULL,
+  observation_manifest_hash VARCHAR(64) NULL,
+  publication_manifest_hash VARCHAR(64) NULL,
+  price_product_code VARCHAR(32) NULL,
+  read_model_version VARCHAR(64) NULL,
+  readiness_state VARCHAR(32) NULL,
   sealed_at DATETIME NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
@@ -681,6 +787,19 @@ CREATE TABLE IF NOT EXISTS eod_bars_history (
   adj_close DECIMAL(20,4) NULL,
   source VARCHAR(32) NOT NULL,
   run_id BIGINT UNSIGNED NOT NULL,
+  listing_id BIGINT UNSIGNED NULL,
+  source_observation_id BIGINT UNSIGNED NULL,
+  previous_close DECIMAL(20,4) NULL,
+  traded_value_idr_actual DECIMAL(24,2) NULL,
+  trade_count_actual BIGINT UNSIGNED NULL,
+  board_code VARCHAR(16) NULL,
+  session_code VARCHAR(32) NULL,
+  source_timestamp DATETIME NULL,
+  acquired_at DATETIME NULL,
+  canonicalization_version VARCHAR(64) NULL,
+  price_product_code VARCHAR(32) NULL,
+  quality_state VARCHAR(32) NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (publication_id, trade_date, ticker_id),
   KEY idx_bars_history_trade_date (trade_date),
@@ -727,8 +846,18 @@ CREATE TABLE IF NOT EXISTS eod_indicators_history (
   event_risk_flag TINYINT(1) NULL,
   event_risk_reasons VARCHAR(255) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
-  created_at DATETIME NOT NULL,
   corporate_action_window_reasons VARCHAR(255) NULL,
+  listing_id BIGINT UNSIGNED NULL,
+  formula_version VARCHAR(64) NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
+  factor_set_id BIGINT UNSIGNED NULL,
+  price_product_code VARCHAR(32) NULL,
+  adv20_traded_value_idr_actual DECIMAL(24,2) NULL,
+  adv20_close_volume_proxy_idr DECIMAL(24,2) NULL,
+  atr14 DECIMAL(20,10) NULL,
+  atr_state_ref VARCHAR(128) NULL,
+  null_reasons_json TEXT NULL,
+  created_at DATETIME NOT NULL,
   PRIMARY KEY (publication_id, trade_date, ticker_id),
   KEY idx_indicators_history_trade_date (trade_date),
   KEY idx_indicators_history_ticker_date (ticker_id, trade_date),
@@ -746,6 +875,16 @@ CREATE TABLE IF NOT EXISTS eod_eligibility_history (
   eligible TINYINT(1) NOT NULL,
   reason_code VARCHAR(64) NULL,
   run_id BIGINT UNSIGNED NOT NULL,
+  listing_id BIGINT UNSIGNED NULL,
+  universe_membership_state VARCHAR(32) NULL,
+  bar_expectation_state VARCHAR(32) NULL,
+  delivery_state VARCHAR(32) NULL,
+  canonical_quality_state VARCHAR(32) NULL,
+  liquidity_state VARCHAR(32) NULL,
+  temporal_status_state VARCHAR(32) NULL,
+  event_risk_state VARCHAR(32) NULL,
+  eligibility_reasons_json TEXT NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL,
   PRIMARY KEY (publication_id, trade_date, ticker_id),
   KEY idx_eligibility_history_trade_date (trade_date),

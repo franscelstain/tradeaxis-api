@@ -1,19 +1,21 @@
-# Test Coverage Closure Contract (LOCKED)
+# Test Coverage Closure Contract (STRATEGY LOCKED)
 
-## Purpose
-Define how the documentation proves that critical contracts are actually covered by tests and fixtures.
+## Allowed states
 
-## Closure table shape
+- `PROVEN`: required positive/negative/real-market oracle executes on the production path and admitted evidence passes.
+- `PARTIAL`: some layers execute, but an oracle/runtime/database/concurrency/operations layer is missing.
+- `BLOCKED`: prerequisites prevent execution.
+- `NOT_IMPLEMENTED`: test/fixture or behavior does not exist.
+- `SUPERSEDED`: proves a rule rejected by the current strategy.
 
-| Contract | Covered by test IDs | Covered by fixture families | Closure state |
-|---|---|---|---|
-| hash determinism | `hash_same_content_same_hash`, `hash_different_runid_same_hash`, `hash_changed_content_diff_hash` | `fixture_hash_payload`, `fixture_controlled_correction` | full |
-| correction publication integrity | `correction_preserves_prior_publication`, `correction_publishes_new_current`, `correction_unchanged_content_no_publish` | `fixture_controlled_correction`, `fixture_unchanged_rerun` | full |
+Only `PROVEN` closes an item. `BLOCKED`, historical green, mock-only, schema-presence-only, command-exit-only, and copied implementation snapshots do not.
 
-## Allowed closure states
-- `full`
-- `partial`
-- `missing`
+## Closure row
 
-## Locked rule
-A critical contract must not be treated as fully proven unless closure state is `full`.
+Each invariant records owner contract/version, risk/P0-P1 mapping, fixture/oracle, positive and negative tests, production code path, MariaDB/SQLite/runtime scope, last execution timestamp/build, evidence artifact/hash, state, and open gap.
+
+## Release gate
+
+Every P0/P1 invariant must be `PROVEN`, the full supported suite must pass without superseded expectations, and consecutive activated trading-session operational evidence must exist before order 22 may relock production.
+
+Current V2 schema-mirror proof is `PARTIAL`; it establishes structure only. Strategy behavior and operational proof remain open.

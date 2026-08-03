@@ -6,15 +6,20 @@ Last updated: 2026-04-27
 
 ## Purpose
 
-Coverage gate is the single source of truth for deciding whether an EOD publication candidate may become readable and current. Coverage is not metadata-only; it is an enforcing gate that controls finalize outcome, terminal status, publishability, current pointer ownership, evidence export, and replay verification.
+Coverage gate is the enforcing owner for delivery completeness, but not the sole readability decision. Independent quality, provenance, event-risk, eligibility, seal, and pointer gates must also pass.
 
 ## Coverage Inputs
 
-Coverage MUST be evaluated from persisted canonical valid EOD bars for the requested trade date and the applicable publication candidate when one is supplied.
+Coverage MUST be evaluated from persisted temporal expectation plus immutable requested-date delivery evidence for the applicable candidate. Canonical-valid rows are a separate quality/readability count and are never substituted for delivery evidence.
 
 Required fields:
 
 - `expected_universe_count`
+- `verified_not_expected_count`
+- `expectation_unknown_count`
+- `delivered_observation_count`
+- `canonical_valid_count`
+- `quality_blocked_count`
 - `available_eod_count`
 - `missing_eod_count`
 - `expected_bar_count` / `coverage_expected_count` evidence alias
@@ -33,13 +38,15 @@ Required fields:
 
 ## Calculation Rules
 
-`expected_universe_count` is the number of active ticker universe members for the trade date according to the locked universe definition.
+`expected_universe_count` is the temporal as-of-D universe count minus only verified `NOT_EXPECTED` listing/date states. `UNKNOWN` remains included.
 
-`available_eod_count` is the count of unique canonical valid EOD bar ticker IDs for the trade date that also belong to the expected universe.
+`available_eod_count`/`delivered_observation_count` is the count of unique traceably delivered requested-date market observations in the expected universe. Canonical-valid and quality-blocked counts remain separate.
 
 `missing_eod_count = expected_universe_count - available_eod_count`.
 
-`coverage_ratio = available_eod_count / expected_universe_count`.
+`coverage_ratio = delivered_observation_count / expected_universe_count`.
+
+Dormancy, zero volume, illiquidity, provider failure, or current activity/status may not reduce `expected_universe_count`. Delivered-but-invalid observations can contribute to delivery measurement but independently block quality/eligibility/readability.
 
 The single locked platform threshold is `MARKET_DATA_COVERAGE_MIN = 0.98`. Runtime config key `market_data.coverage_gate.min_ratio` and legacy alias `market_data.platform.coverage_min` must resolve to the same 0.98 default unless a future locked policy update changes it explicitly.
 
@@ -49,7 +56,7 @@ When `expected_universe_count = 0`, coverage MUST NOT be coerced to 0 or 1. The 
 
 Allowed coverage gate statuses:
 
-- `PASS`: `expected_universe_count > 0` and `coverage_ratio >= coverage_threshold_value`
+- `PASS`: `expected_universe_count > 0` and `coverage_ratio >= coverage_threshold_value`; this does not imply quality/readability pass
 - `FAIL`: `expected_universe_count > 0` and `coverage_ratio < coverage_threshold_value`
 - `NOT_EVALUABLE`: `expected_universe_count = 0` or coverage cannot be evaluated safely
 
@@ -134,5 +141,7 @@ The following are forbidden:
 - treating coverage as metadata-only
 - allowing current publication when coverage is `FAIL` or `NOT_EVALUABLE`
 - allowing source mode, manual file, correction, repair, replay, or evidence export to bypass coverage enforcement
+- excluding dormant, zero-volume, illiquid, provider-missing, or current-inactive listings without verified point-in-time `NOT_EXPECTED` evidence
+- treating delivery coverage as quality or eligibility
 - using fallback to convert a failed candidate into readable
 - changing threshold without an explicit locked policy update

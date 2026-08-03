@@ -1,136 +1,21 @@
-# Contract Test Matrix (LOCKED)
+# Contract Test Matrix (STRATEGY LOCKED; V2 PROOF OPEN)
 
-## Purpose
-Map every critical upstream contract to explicit proof artifacts so implementation does not guess what must be tested and what evidence each test must assert.
+Documentation specification status: **`DOCUMENTATION_READY`**. `Current V2 state` below reports implementation/executed-proof availability only; `not implemented`, `partial`, or `superseded` is not a documentation defect and remains mandatory handoff work.
 
-This matrix is normative.
-A test suite is not complete merely because code paths execute without error.
+| Contract area | Positive oracle | Required negative proof | Runtime layer | Current V2 state |
+|---|---|---|---|---|
+| observation/provenance | frozen valid payload→immutable envelope→RAW | stale/schema/wrong-date/secrets/no-lineage | adapter + repository + MariaDB | not implemented |
+| temporal identity/mapping | active-at-T listing and mapping | current-state/symbol-text/survivorship leak | repository + replay | not implemented |
+| calendar/status/expectation | completed session and verified full-session status | unknown/dormancy/provider absence excluded | service + coverage integration | not implemented |
+| canonical bars | valid positive RAW OHLCV | zero/inconsistent/conflicting duplicate/overwrite | ingestion + history repository | partial legacy only |
+| actions/factors/products | verified event→revisioned coherent product | synthetic verify, adj-close mix, direct repair | factor builder + correction | superseded tests present |
+| coverage/eligibility | independent expectation/delivery/quality/reasons | denominator shrink and reason erasure | finalize + snapshot | superseded/partial |
+| actual/proxy metrics | source actual and RAW close-volume proxy | mislabeled/mixed-dimension metric | computation + DTO | not implemented |
+| indicators | long-chain independent Wilder oracle | reseed/gap skip/bounded correction impact | computation + publication | superseded/partial |
+| config/hash/seal | full immutable snapshot and deterministic replay | null/current-env/annotation omitted | resolver + manifest + seal | schema partial only |
+| read model/readiness | one complete publication-bound DTO | max/current/mixed/implicit fallback bypass | gateway + privilege + concurrency | legacy partial |
+| publication/as-known replay | frozen exact and cutoff-isolated results | future/current state leakage | replay runner + evidence | legacy exact partial |
+| scheduler/incident/SLO | consecutive activated sessions | missed/stale run silently successful | deployed operations | not proven |
+| schema/migrations | clean install + upgrade + mirror | repair columns/type and missing binding | MariaDB + SQLite | SQLite mirror partial |
 
-## Matrix rules (LOCKED)
-1. Every critical contract must map to at least one positive or negative test.
-2. A contract that can fail in materially different ways should have separate tests for each important failure mode.
-3. Each test must identify:
-   - fixture family
-   - row-level assertions
-   - run-level assertions
-   - hash assertions where applicable
-   - publication assertions where applicable
-   - replay assertions where applicable
-4. A test that only proves process completion is insufficient.
-5. Historical correction behavior must prove both preservation of prior state and correctness of the new current state.
-6. Determinism behavior must prove both equality-under-same-input and inequality-under-real-content-change.
-
-## Test matrix
-
-| Test ID | Contract area | Fixture family | Row assertions | Run assertions | Hash assertions | Publication assertions | Replay assertions |
-|---|---|---|---|---|---|---|---|
-| `bars_valid_accept` | Canonical bar validation | `fixture_bars_valid_minimal` | expected canonical rows written | counts/status consistent | optional | none | none |
-| `bars_invalid_reject` | Canonical bar validation | `fixture_invalid_provider_rows` | invalid rows excluded from canonical bars and captured in invalid storage | invalid counts updated | none | none | none |
-| `bars_duplicate_resolution` | Canonical bar validation | `fixture_invalid_provider_rows` | one deterministic winner row and loser audit evidence | counts/status consistent | optional | none | none |
-| `atr14_seed` | Indicator correctness | `fixture_bars_atr_seed` | expected ATR14 seed row values | indicator run row counts valid | optional | none | none |
-| `atr14_recursive` | Indicator correctness | `fixture_bars_atr_seed` | expected recursive ATR14 value | indicator run row counts valid | optional | none | none |
-| `roc20_dminus20` | Indicator correctness | `fixture_bars_valid_minimal` | expected `roc20` value uses `D[-20]` | indicator run row counts valid | optional | none | none |
-| `vol_ratio_prior20_excl_d` | Indicator correctness | `fixture_bars_valid_minimal` | expected `vol_ratio` excludes D from denominator | indicator run row counts valid | optional | none | none |
-| `hh20_inclusive` | Indicator correctness | `fixture_bars_valid_minimal` | expected `hh20` includes D | indicator run row counts valid | optional | none | none |
-| `price_basis_adj_close_fallback` | Indicator correctness | `fixture_bars_adj_close_fallback` | expected per-date fallback behavior | indicator run row counts valid | optional | none | none |
-| `indicator_insufficient_history` | Null/warmup policy | `fixture_bars_short_history` | mandatory indicator fields NULL; invalid reason = `IND_INSUFFICIENT_HISTORY` | run counts reflect invalid rows | none | none | none |
-| `missing_dependency_bar` | Null/warmup policy | `fixture_missing_dependency_bar` | dependent indicator fields NULL; invalid reason = `IND_MISSING_DEPENDENCY_BAR` | run counts reflect invalid rows | none | none | none |
-| `eligibility_one_row_per_universe` | Eligibility determinism | `fixture_eligibility_universe` | exactly one eligibility row per universe ticker/date | eligibility row count matches universe | none | none | none |
-| `eligibility_missing_bar` | Eligibility determinism | `fixture_effective_date_fallback` or dedicated eligibility fixture | blocked row reason = `ELIG_MISSING_BAR` | eligibility counts valid | none | none | none |
-| `eligibility_invalid_indicators` | Eligibility determinism | `fixture_invalid_indicator_rows` | blocked row reason = `ELIG_INVALID_INDICATORS` | eligibility counts valid | none | none | none |
-| `eligibility_insufficient_history` | Eligibility determinism | `fixture_bars_short_history` | blocked row reason = `ELIG_INSUFFICIENT_HISTORY` | eligibility counts valid | none | none | none |
-| `effective_date_hold_fallback` | Effective-date readiness | `fixture_effective_date_fallback` | row-level optional | requested date not readable, effective date resolves to prior readable date | none | current publication for fallback date remains authoritative | optional |
-| `effective_date_no_prior_success` | Effective-date readiness | `fixture_no_prior_readable_date` | row-level optional | effective date unresolved/NULL | none | no readable publication | optional |
-| `coverage_pass_at_threshold` | Coverage gate | `fixture_coverage_exact_threshold` | numerator and denominator rows match expected resolved universe/canonical bars | coverage gate = `PASS` at exact threshold | optional | requested date still only becomes readable if all other prerequisites pass | optional |
-| `coverage_fail_with_fallback` | Coverage gate | `fixture_coverage_below_threshold_with_prior_publication` | numerator/denominator evidence recorded correctly | terminal status = `HELD`; requested date non-readable | optional | prior readable publication remains authoritative | optional |
-| `coverage_fail_without_fallback` | Coverage gate | `fixture_coverage_below_threshold_no_prior_publication` | numerator/denominator evidence recorded correctly | terminal status = `FAILED` or equivalent no-safe-fallback outcome; requested date non-readable | optional | no readable publication switch | optional |
-| `coverage_blocked_zero_universe` | Coverage gate | `fixture_coverage_zero_universe` | denominator = 0 evidenced explicitly | coverage gate = `NOT_EVALUABLE`; requested date non-readable | optional | no readable publication switch | optional |
-| `coverage_denominator_uses_resolved_universe` | Coverage gate | `fixture_coverage_provider_under_return` | provider rows are fewer than resolved-universe rows and denominator still follows universe | coverage result proves denominator is not derived from provider-return count | optional | publication outcome follows true coverage, not provider row count illusion | optional |
-| `success_requires_seal` | Seal/finalize sequencing | `fixture_finalize_without_seal` | row-level optional | final readable success denied | none | no current readable publication switch | none |
-| `seal_requires_hashes` | Seal/finalize sequencing | `fixture_hash_precondition_fail` | row-level optional | seal denied / non-final outcome | missing hash proven | no readable publication | none |
-| `hash_same_content_same_hash` | Determinism/hash | `fixture_hash_payload` | same serialized payloads | run-level optional | same hash outputs | unchanged publication if rerun only | optional |
-| `hash_different_runid_same_hash` | Determinism/hash | `fixture_hash_payload` | same canonical rows under different run IDs | run-level optional | same hash outputs | no fake new publication | optional |
-| `hash_changed_content_diff_hash` | Determinism/hash | `fixture_controlled_correction` | changed artifact rows visible | correction run outcome valid | changed relevant hash outputs | new current publication supersedes old | optional |
-| `hash_field_order_locked` | Determinism/hash | `fixture_hash_payload` | exact serialized field order implied by expected payload | optional | exact expected hash | none | runtime-stable hash proof optional |
-| `hash_formatting_locked` | Determinism/hash | `fixture_hash_payload` | exact number/null/date formatting implied by expected payload | optional | exact expected hash | none | runtime/locale stability optional |
-| `single_current_publication` | Publication resolution | `fixture_controlled_correction` | row-level optional | publication resolution valid | optional | exactly one current publication | optional |
-| `correction_preserves_prior_publication` | Historical correction integrity | `fixture_controlled_correction` | old and new rows queryable in correct roles | correction run outcome valid | old/new hash trail preserved | old publication audit-only, new publication current | optional |
-| `correction_publishes_new_current` | Historical correction integrity | `fixture_controlled_correction` | changed rows reflected in new publication | correction run outcome valid | new hashes present | publication switch succeeds | optional |
-| `correction_unchanged_content_no_publish` | Historical correction integrity | `fixture_unchanged_rerun` | identical rows to prior publication | rerun outcome may succeed as audit rerun | hashes identical | no publication switch; version unchanged | optional |
-| `correction_requires_approval` | Historical correction integrity | `fixture_correction_request` | row-level optional | unapproved correction cannot publish | none | no new current publication | optional |
-| `correction_failed_reseal_no_switch` | Historical correction integrity | `fixture_correction_reseal_fail` | candidate rows may exist but remain non-current | correction candidate non-published | incomplete/new seal failure evidenced | prior publication remains current | optional |
-| `replay_same_input_same_output` | Replay/data-quality | `fixture_replay_unchanged_input` | same expected artifact rows | expected terminal outcome | identical expected hashes | same publication semantics | comparison_result = `MATCH`; replay_status = `PASS` |
-| `replay_degraded_expected_hold` | Replay/data-quality | `fixture_replay_degraded_input` | degraded artifact outcomes match expectation | expected non-readable status/effective-date behavior | hashes as expected for degraded scenario when applicable | no false readable publication | comparison_result = `EXPECTED_DEGRADE`; replay_status = `PASS` |
-| `replay_runtime_format_stability` | Replay/data-quality | `fixture_hash_payload` | same logical rows under runtime/locale variance | optional | identical hashes | none | comparison_result = `MATCH`; replay_status = `PASS` |
-
-## Minimum assertion payload per implemented test (LOCKED)
-Every implemented test must explicitly identify and assert:
-
-### Row-level assertions
-Examples:
-- expected canonical rows
-- expected invalid rows
-- expected indicator values
-- expected eligibility rows
-- expected reason codes
-
-### Run-level assertions
-Examples:
-- expected terminal status
-- expected effective trade date
-- expected counts
-- expected warning/hard reject counts
-- expected seal presence or absence
-
-### Hash assertions
-Examples:
-- exact expected bars hash
-- exact expected indicators hash
-- exact expected eligibility hash
-- equality across identical reruns
-- inequality across changed-content correction runs
-
-### Publication assertions
-Examples:
-- current publication did or did not switch
-- superseded publication preserved
-- unchanged rerun did not create a new current publication
-- only one current publication resolves for D
-
-### Replay assertions
-Examples:
-- comparison_result class and explicit `replay_status` (`PASS`, `FAIL`, or `BLOCKED`)
-- mismatch summary expectation
-- expected-vs-actual output alignment
-- config-identity-sensitive reproducibility
-
-## Anti-fake-proof rule (LOCKED)
-A test that proves only “the process ran” or “no exception occurred” does not satisfy this matrix.
-
-## See also
-- `Golden_Fixture_Catalog_LOCKED.md`
-- `Golden_Fixture_Examples_LOCKED.md`
-- `Test_Implementation_Guidance_LOCKED.md`
-- `../backtest/Historical_Replay_and_Data_Quality_Backtest.md`
-
-## Coverage gate proof minimums (LOCKED)
-Any implementation claiming coverage-gate compliance must prove at minimum:
-- denominator source = resolved coverage universe as-of requested date
-- numerator source = canonical valid EOD bars as-of requested date
-- threshold is explicit and audit-visible
-- zero-universe path does not auto-pass
-- requested date never becomes readable when coverage gate = `FAIL` or `NOT_EVALUABLE`
-
----
-
-## Out-of-order import execution proof minimums (LOCKED)
-
-Any implementation claiming out-of-order import safety must prove at minimum:
-- recovered checkpoint retry success applies rows by partial ticker/date upsert, not full-date replacement
-- unrelated tickers on the same trade date remain present after recovered apply
-- unchanged recovered rows are NOOP and do not recompute derived artifacts
-- changed historical rows resolve downstream affected dates in trading days
-- affected non-readable dates execute indicator recompute
-- affected non-readable dates execute eligibility rebuild
-- affected readable dates block or run correction/republication; silent live mutation is forbidden
-- command/evidence output contains execution summaries, not only detection summaries
+`partial`, `legacy`, `superseded`, `blocked`, or `not implemented` does not satisfy the done criterion. The matrix is updated from executed evidence, never from document completion alone.

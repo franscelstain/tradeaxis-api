@@ -1,112 +1,56 @@
-# Historical Replay and Data-Quality Backtest (LOCKED)
+# Historical Replay and Data-Quality Verification (STRATEGY LOCKED)
 
 ## Purpose
-This is not a downstream trading-strategy backtest.
 
-Its purpose is to prove that Market Data Platform can:
-- reproduce historical upstream datasets deterministically
-- preserve correction history explicitly
-- verify quality-gate behavior on degraded data
-- verify seal/publication behavior
-- verify that replay outcomes match expected fixture-backed results
+This suite proves deterministic market-data meaning, not trading-strategy performance. It exercises both publication replay and as-known replay as defined by `../book/Replay_Verification_Contract_LOCKED.md`.
 
-## Replay scope
-Replay over historical trading dates must validate at minimum:
-- canonical bar reproducibility
-- indicator reproducibility for the selected indicator set version
-- eligibility reproducibility
-- effective-date fallback behavior
-- content hash reproducibility
-- seal/publication behavior
-- historical correction publication behavior where applicable
+## Required scenario families
 
-## Required replay inputs
-- historical provider snapshots or frozen extracts
-- versioned market calendar
-- versioned ticker identity / temporal membership snapshot
-- effective-dated config registry snapshot
-- selected indicator-set version
-- golden anomaly scenarios
-- correction scenario fixtures where correction integrity is being tested
+### Exact publication verification
 
-## Required outputs per replayed date
-For each replayed date, record at minimum:
-- requested trade date
-- effective trade date
-- terminal status
-- row counts
-- coverage gate state, ratio, minimum threshold, expected/available/missing bar counts, and coverage reason code
-- reason-code counts compared against expected fixture distribution
-- bars/indicators/eligibility hashes
-- seal state
-- comparison result vs expected output
-- mismatch summary when result is not a match
+- resolve an explicit immutable publication, not latest/current;
+- verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;
+- prove an unchanged rerun is byte-identical and does not create a fake correction.
 
-## Required replay dimensions (LOCKED)
+### Degraded acquisition and expectation
 
-### 1. Unchanged-input replay
-Same inputs, same config snapshot, same calendar, same identity mapping, same contract versions.
+- provider outage remains missing delivery and cannot shrink the denominator;
+- unknown expectation does not become holiday/dormancy;
+- stale/schema-invalid/wrong-date/zero-price observations quarantine or hold;
+- no prior-date result masquerades as requested-date fresh data.
 
-Must prove:
-- same canonical outputs
-- same eligibility outputs
-- same hashes
-- same comparison result = `MATCH`
+### Temporal identity and status
 
-### 2. Degraded-input replay
-Intentionally degraded input or anomaly injection.
+- inactive-now/active-then listing remains in the historical universe;
+- symbol change and symbol reuse resolve through stable listing identity;
+- calendar/session/status revisions respect effective and knowledge time.
 
-Must prove:
-- expected non-happy-path status
-- expected fallback behavior
-- expected comparison result classification
-- no silent false-success publication
+### Corporate actions and indicators
 
-### 3. Controlled-correction replay
-Use original published state plus corrected rerun scenario.
+- synthetic price-break candidates never activate factors;
+- verified event/factor revision produces coherent structural OHLC/volume;
+- provider adjusted-close fallback is impossible;
+- long-chain Wilder ATR matches an independent oracle, including a correction whose impact continues beyond fourteen sessions;
+- actual traded value and close-volume proxy never share meaning or field identity.
 
-Must prove:
-- prior publication preserved
-- corrected publication becomes current only after reseal
-- old and new hash trails both remain auditable
-- unchanged rerun case does not create fake correction publication
+### Correction and read path
 
-### 4. Formatting/runtime stability replay
-Vary runtime or locale conditions without changing semantic input.
+- prior immutable publication remains auditable;
+- a distinct corrected candidate becomes active only after complete validation and reseal;
+- concurrent consumers read exactly one publication;
+- explicit fallback retains prior effective date and stale/degraded state.
 
-Must prove:
-- serialized hash payload does not drift
-- hash outputs remain identical
+### As-known isolation
 
-## Comparison result classes
-Minimum replay comparison classes:
-- `MATCH`
-- `MISMATCH`
-- `EXPECTED_DEGRADE`
-- `UNEXPECTED`
+- later master, event, status, calendar, config, formula, and factor revisions are invisible before their recorded/known times;
+- a declared later cutoff can expose them without rewriting earlier replay evidence.
 
-### Meaning
-- `MATCH`: actual output matches expected golden outcome exactly
-- `MISMATCH`: actual output differs from expected golden outcome unexpectedly
-- `EXPECTED_DEGRADE`: degraded scenario produced the expected degraded result
-- `UNEXPECTED`: result does not match expected class and needs investigation
+## Per-run evidence
 
-## Locked acceptance rules
-A replay passes only if:
-- identical controlled inputs produce identical canonical outputs and identical hashes
-- degraded scenarios produce the expected degraded outcomes
-- corrected-history scenarios preserve prior publication and publish new current state only after reseal
-- unchanged rerun scenarios do not create fake correction publications
+Record replay mode, fixture/manifest hash, requested/effective dates, knowledge cutoff, all frozen revision/snapshot IDs, expected/actual readiness and reason sets, field-level mismatch paths, artifact/manifest/seal hashes, executable build identity, and `PASS`/`FAIL`/`BLOCKED`.
 
-## Failure interpretation
-Replay failure means at least one of the following:
-- canonical output drift
-- indicator drift
-- eligibility drift
-- hash drift
-- readiness/publication drift
-- correction-history integrity failure
-- fixture expectation mismatch
+Fixtures must be independently reviewed semantic oracles. Copying current implementation output into “expected” files without independent derivation is not acceptable proof.
 
-## Anti-fake-proof rule (LOCKED)
-A replay that merely “runs successfully” without proving expected outputs and publication semantics does not satisfy this contract.
+## Acceptance
+
+All required scenario families pass on MariaDB production semantics and the supported test mirror. Any missing family remains an open proof gap; historical green results for superseded rules do not close it.

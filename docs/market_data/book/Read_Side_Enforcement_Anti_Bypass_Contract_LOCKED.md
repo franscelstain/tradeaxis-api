@@ -1,153 +1,45 @@
-# Read-Side Enforcement Anti-Bypass Contract LOCKED
+# Read-Side Enforcement Anti-Bypass Contract (STRATEGY LOCKED)
 
-Status: LOCKED  
-Scope: market-data read-side consumers only
+Status: LOCKED at strategy level; implementation and production relock remain unproven.
 
-## A. Authority Rule
+## Authority
 
-This contract locks the market-data read-side consumer contract. Every consumer read path must resolve data through the current readable publication pointer. This contract does not change coverage gate behavior, correction lifecycle, force replace behavior, finalize lock behavior, publication replacement policy, manual-file publishability, or DB schema sync policy.
+The versioned market-data read gateway is the only normal consumer authority. It resolves an active immutable publication and returns the DTO owned by `Downstream_Consumer_Read_Model_Contract_LOCKED.md`. Weekly Swing is an initial consumer profile, not gateway authority or readiness policy.
 
-## B. Consumer Read Path Definition
+## Pointer-only resolution
 
-Consumer read path includes every path that returns, exports, verifies, displays, or reports readable market-data outside the write pipeline:
+Normal reads start from an active publication pointer scoped by market, product, requested/effective trade date, and read-model version. They do not discover authority from the newest row, job, run, seal, history record, or timestamp.
 
-- API responses and future controllers/resources.
-- Dashboard/read services.
-- Public repository methods used by read-only consumers.
-- Commands that display current/readable market-data state.
-- Evidence export.
-- Replay verification and replay fixture comparison.
-- Report/read-only tooling.
+Every downstream join is constrained to the resolved publication and its frozen config, identity/calendar/status/event/factor/formula versions. A mutable current table may exist as a replaceable projection but cannot provide historical authority.
 
-A path remains a consumer read path even when it is executed from CLI, tests, evidence tooling, or replay tooling.
+Current compatibility entry point `resolveCurrentReadablePublicationForTradeDate` must delegate to this pointer-only decision and will be replaced/versioned with the minimum market-data product gateway; its presence does not waive V2 fields or freshness rules.
 
-Current source-state scope decision:
+## Forbidden Bypass Rule
 
-- `READ_SIDE_SCOPE = INTERNAL_ONLY`
-- There is no public HTTP/API market-data read route, controller, resource, or response surface in this source state.
-- Read-side production-readiness for this contract applies to internal repository/service/CLI/evidence/replay consumer surfaces only.
-- A future public HTTP/API market-data consumer must use the same current-readable publication gateway and must be added to this contract, the inventory, and behavioral route/controller tests before it can be included in scope.
+The shortcuts listed below and in the owner consumer contract are forbidden in every consumer surface.
 
-## C. Pointer-Only Rule
+## Defense in depth
 
-A consumer read path must resolve readable data through the official pointer gateway:
+- application repositories expose only the read-gateway interface to consumer modules;
+- database consumer roles can execute approved views/procedures but cannot select internal fact/candidate/history tables directly;
+- exports, queues, caches, notebooks, and scheduled jobs use the same gateway or a publication-bound bulk surface;
+- static checks flag raw table names, `MAX(trade_date)`, client-side formulas, and direct current-row access in consumer namespaces;
+- integration tests prove unsealed, superseded, mixed-publication, configless, and ambiguous-pointer data are unreachable.
 
-- `eod_current_publication_pointer`
-- join to `eod_publications`
-- validation that `pub.is_current = 1`
-- validation that `pub.seal_state = SEALED`
-- validation that pointer/publication/run identifiers match
-- validation that run mirror fields match the pointer (`run.publication_id`, `run.publication_version`)
-- validation that `run.terminal_status = SUCCESS`
-- validation that `run.publishability_state = READABLE`
-- validation that `run.coverage_gate_state = PASS`
-- validation that `run.is_current_publication = 1`
-- validation that trade date/effective date matches the locked publication contract
+## Audit access
 
-The official repository gateway is:
+Privileged audit/reconciliation paths may inspect internal and superseded artifacts. They require explicit mode/authorization, expose publication state and integrity warnings, and cannot return the normal consumer DTO as if the artifact were current/readable.
 
-- `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)`
+## Failure behavior
 
-Compatibility wrappers may call the gateway, but they must not duplicate or weaken the pointer/readability predicate.
+Pointer ambiguity, missing publication binding, seal/hash mismatch, cross-publication rows, or unknown readiness fails closed. The gateway does not fall back around an integrity error. Policy-allowed prior-date fallback occurs only after a valid requested-date state decision and retains its true effective date.
 
-## D. Forbidden Bypass Rule
+## Fail-Safe Rule
 
-Consumer read paths must not:
+An unrecognized or incompletely bound state returns unavailable/blocked evidence; it never attempts a best-effort internal-table read.
 
-- read raw/staging tables directly
-- read `eod_bars`, `eod_eligibility`, or `eod_indicators` without resolving the current readable publication pointer
-- use `MAX(date)`, `MAX(trade_date)`, `MAX(publication_id)`, or equivalent latest/current shortcut
-- use `is_current` without the pointer row
-- use `terminal_status = SUCCESS` without `publishability_state = READABLE`
-- use `publishability_state = READABLE` without current pointer validation
-- fallback to old publications without a current readable pointer
-- fallback to raw/staging/latest-date data when pointer resolution fails
-- normalize a bypass through test fixtures
+## Acceptance evidence
 
-## E. Allowed Internal Access Rule
+Production relock requires code search/static enforcement, database privilege evidence, gateway integration tests, concurrency tests during pointer replacement, and runtime query/audit evidence showing no consumer bypass. A policy document or repository convention alone is insufficient.
 
-Direct raw/artifact/staging access is allowed only for non-consumer paths:
-
-- ingestion/write pipeline
-- indicator computation
-- eligibility computation
-- seal/finalize/publish process
-- dataset hash/seal internals
-- admin repair command
-- audit diagnostic command
-- test setup/assertion fixtures
-- `EodPublicationRepository::findLatestReadablePublicationBefore($tradeDate)` is an internal finalize/source-failure fallback resolver, not the official consumer gateway. It may resolve prior readable pointer rows for pipeline hold/degraded-mode decisions and must not be used by API/evidence/replay/consumer output as a latest shortcut.
-
-These paths must be named and scoped as write/admin/test behavior. They must not be used by API/public read/evidence/replay consumer outputs unless the query is pointer-resolved and readable-current validated.
-
-## F. Fail-Safe Rule
-
-If no current readable publication exists:
-
-- API/read services must return a controlled empty/error result according to their response contract.
-- CLI read commands must display `status=BLOCKED` or equivalent non-success status with `reason_code=NO_READABLE_PUBLICATION`.
-- Evidence export and replay verification must fail-safe with a reason code or empty controlled result.
-- No consumer path may fallback to raw/staging/latest-date rows.
-
-If a pointer exists but resolves to a non-readable, non-success, unsealed, stale, or invalid publication, the behavior is the same fail-safe behavior.
-
-## G. Repository Gateway Rule
-
-All consumer paths must use a repository gateway that resolves the current readable publication first. The gateway must return `null`/controlled empty output if the pointer is absent or invalid. It must not silently search older publications.
-
-Current gateway:
-
-- `EodPublicationRepository::resolveCurrentReadablePublicationForTradeDate($tradeDate)`
-
-Current pointer-resolved read repositories:
-
-- `EligibilitySnapshotScopeRepository::getScopeForTradeDate($tradeDate)`
-- `EodEvidenceRepository::exportEligibilityRows($tradeDate, $publicationId = null)`
-- `EodEvidenceRepository::dominantReasonCodes($runId, $tradeDate, $publicationId = null)`
-
-Pointer-resolved read repositories must enforce `coverage_gate_state = PASS` and the run mirror match before returning rows, counts, or reason-code output.
-
-## H. Static Enforcement Rule
-
-A static anti-bypass test must guard consumer/read paths against:
-
-- `MAX(trade_date)` / `max(trade_date)`
-- `MAX(publication_id)` / `max(publication_id)`
-- direct raw/staging read from consumer paths
-- direct `eod_bars`, `eod_eligibility`, or `eod_indicators` read without pointer validation
-- `is_current` shortcut without `eod_current_publication_pointer`
-- unsafe latest/current repository methods exposed for consumer use
-
-Grep/static findings are not automatically failures when they are write/admin/test setup paths. They must be classified as:
-
-- `ALLOWED_WRITE_PATH`
-- `ALLOWED_ADMIN_REPAIR`
-- `ALLOWED_TEST_SETUP`
-- `FORBIDDEN_CONSUMER_BYPASS`
-
-No `FORBIDDEN_CONSUMER_BYPASS` may remain.
-
-## I. Audit Rule
-
-Every future read-side enforcement change must append a new audit session to:
-
-- `docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md`
-- `docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md`
-
-Audit updates are append-only and must follow `AUDIT_UPDATE_GOVERNANCE.md`.
-
-## J. Validation Evidence
-
-Locked validation for this source-of-truth ZIP:
-
-- `php artisan migrate:fresh --env=testing` → PASS.
-- `vendor/bin/phpunit tests/Unit/MarketData --filter "readable"` → PASS; `OK (45 tests, 256 assertions)`.
-- `vendor/bin/phpunit tests/Unit/MarketData --filter "pointer"` → PASS; `OK (51 tests, 551 assertions)`.
-- `vendor/bin/phpunit tests/Unit/MarketData` → PASS; `OK (250 tests, 2355 assertions)`.
-- `vendor/bin/phpunit tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php` → PASS; `OK (8 tests, 15 assertions)`.
-- `vendor/bin/phpunit tests/Unit/MarketData/PublicationCurrentPointerReadinessStaticGuardTest.php` → PASS; `OK (3 tests, 23 assertions)`.
-
-Regression reconciliation:
-
-- Consumer gateway, eligibility scope, and evidence reads remain mirror-enforced.
-- `EodPublicationRepository::findLatestReadablePublicationBefore($tradeDate)` remains internal-only fallback behavior for pipeline hold/degraded-mode/correction preservation and must not be used as a consumer latest shortcut.
+Contract changes follow `docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md` and the canonical current-state verdict in `docs/market_data/audit/reports/AUDIT_FINAL_STATE.md`.

@@ -32,6 +32,8 @@ class IndicatorVectorService
             return strcmp($a['trade_date'], $b['trade_date']);
         });
 
+        $bars = $this->applyPriceAdjustment($bars, $config);
+
         $index = null;
         foreach ($bars as $i => $bar) {
             if ($bar['trade_date'] === $requestedDate) {
@@ -82,7 +84,11 @@ class IndicatorVectorService
         // genuine data hole and stays more actionable than the quarantine annotation.
         if ($quarantine['mandatory_contaminated']
             && ($invalidReason === null || $invalidReason === 'IND_INSUFFICIENT_HISTORY')) {
-            $invalidReason = 'IND_CORPORATE_ACTION_DISCONTINUITY';
+            // A corporate action names the cause; an unexplained price-scale break only says
+            // the series jumped. When both apply, the named cause is the more actionable one.
+            $invalidReason = $quarantine['price_scale_contaminated'] && ! $quarantine['corporate_action_contaminated']
+                ? 'IND_PRICE_SCALE_DISCONTINUITY'
+                : 'IND_CORPORATE_ACTION_DISCONTINUITY';
         }
 
         return [
@@ -158,7 +164,6 @@ class IndicatorVectorService
 
     public function calculateIndicators(array $bars, $index, array $config)
     {
-        $lotSize = (int) $config['lot_size'];
         $dvWindow = (int) $config['dv_window_days'];
         $atrWindow = (int) $config['atr_window_days'];
         $volLookback = (int) $config['vol_ratio_lookback_days'];
@@ -167,7 +172,7 @@ class IndicatorVectorService
 
         $currentBar = $bars[$index];
         $priceBasisCurrent = $this->priceBasis($currentBar, $config);
-        $dv20Idr = $this->averageTurnover($bars, $index, $dvWindow, $lotSize, $config);
+        $dv20Idr = $this->averageTurnover($bars, $index, $dvWindow, $config);
         $atr = $this->wilderAtr($bars, $index, $atrWindow, $config);
         $priorVolAverage = $this->priorVolumeAverage($bars, $index, $volLookback);
         $hh20 = $this->windowExtreme($bars, $index, $hhWindow, 'high', 'max');
@@ -216,6 +221,60 @@ class IndicatorVectorService
     }
 
     /**
+     * Express every bar in the window on the scale in force at the requested date.
+     *
+     * Owner contract: docs/market_data/registry/Price_Adjustment_Contract_LOCKED.md
+     *
+     * Canonical bars stay raw in storage. Adjustment happens here, in memory, so the
+     * as-traded series is never destroyed and no historical row is rewritten.
+     *
+     * A bar dated B is multiplied by the product of every factor whose ex_date falls after
+     * B, so two splits inside one window compound correctly. Bars at or after the last
+     * ex_date are already on the current scale and are left alone.
+     */
+    private function applyPriceAdjustment(array $bars, array $config)
+    {
+        $factors = isset($config['price_adjustment_factors']) && is_array($config['price_adjustment_factors'])
+            ? $config['price_adjustment_factors']
+            : [];
+
+        if (empty($factors) || empty($bars)) {
+            return $bars;
+        }
+
+        foreach ($bars as $index => $bar) {
+            $barDate = (string) $bar['trade_date'];
+            $priceFactor = 1.0;
+            $volumeFactor = 1.0;
+
+            foreach ($factors as $factor) {
+                if ($barDate < $factor['ex_date']) {
+                    $priceFactor *= $factor['price_factor'];
+                    $volumeFactor *= $factor['volume_factor'];
+                }
+            }
+
+            if (abs($priceFactor - 1.0) < 1e-12 && abs($volumeFactor - 1.0) < 1e-12) {
+                continue;
+            }
+
+            // open, high, low and close move together. Adjusting close alone would corrupt
+            // true range, which mixes high, low and the previous close.
+            foreach (['open', 'high', 'low', 'close', 'adj_close'] as $field) {
+                if (isset($bars[$index][$field]) && $bars[$index][$field] !== null) {
+                    $bars[$index][$field] = (float) $bars[$index][$field] * $priceFactor;
+                }
+            }
+
+            if (isset($bars[$index]['volume']) && $bars[$index]['volume'] !== null) {
+                $bars[$index]['volume'] = (float) $bars[$index]['volume'] * $volumeFactor;
+            }
+        }
+
+        return $bars;
+    }
+
+    /**
      * Quarantine indicators whose dependency window spans a corporate action that breaks
      * price or volume continuity.
      *
@@ -233,16 +292,46 @@ class IndicatorVectorService
             ? $config['corporate_action_contamination']
             : [];
 
+        // A detected price-scale break contaminates identically to a SCALED corporate action.
+        // Splits are routinely absent from the source feed, so the price series itself is the
+        // only reliable signal for them.
+        $priceScaleEntries = isset($config['price_scale_break_contamination']) && is_array($config['price_scale_break_contamination'])
+            ? $config['price_scale_break_contamination']
+            : [];
+
+        foreach ($priceScaleEntries as $entry) {
+            $entries[] = [
+                // Name the cause when the break has one. An operator reading
+                // STOCK_SPLIT@2026-07-15 knows what happened and on which day; reading
+                // PRICE_SCALE_SCALE_SHIFT@2026-07-15 only learns that the price jumped.
+                //
+                // The date is always the detected break date, never the action's recorded date:
+                // the series is what says when the scale actually changed.
+                'action_type_code' => empty($entry['matched_action_type'])
+                    ? 'PRICE_SCALE_'.$entry['break_type']
+                    : strtoupper(trim((string) $entry['matched_action_type'])),
+                'action_date' => $entry['trade_date'],
+                'depth' => $entry['depth'],
+                'breaks_price_continuity' => true,
+                'breaks_volume_continuity' => true,
+                'is_price_scale_break' => true,
+            ];
+        }
+
         if (empty($entries)) {
             return [
                 'values' => $values,
                 'tokens' => null,
                 'mandatory_contaminated' => false,
+                'price_scale_contaminated' => false,
+                'corporate_action_contaminated' => false,
             ];
         }
 
         $tokens = [];
         $mandatoryContaminated = false;
+        $priceScaleContaminated = false;
+        $corporateActionContaminated = false;
 
         foreach ($this->contaminationHorizons($config) as $field => $horizon) {
             list($horizonDays, $sensitiveToPrice, $sensitiveToVolume) = $horizon;
@@ -268,6 +357,12 @@ class IndicatorVectorService
 
                 if (in_array($field, self::MANDATORY_BASELINE_INDICATORS, true)) {
                     $mandatoryContaminated = true;
+
+                    if (empty($entry['is_price_scale_break'])) {
+                        $corporateActionContaminated = true;
+                    } else {
+                        $priceScaleContaminated = true;
+                    }
                 }
             }
         }
@@ -279,6 +374,8 @@ class IndicatorVectorService
             'values' => $values,
             'tokens' => empty($tokenList) ? null : $this->joinContaminationTokens($tokenList),
             'mandatory_contaminated' => $mandatoryContaminated,
+            'price_scale_contaminated' => $priceScaleContaminated,
+            'corporate_action_contaminated' => $corporateActionContaminated,
         ];
     }
 
@@ -347,7 +444,16 @@ class IndicatorVectorService
         return $joined === '' ? null : $joined;
     }
 
-    private function averageTurnover(array $bars, $index, $window, $lotSize, array $config)
+    /**
+     * Average traded value in IDR over the window.
+     *
+     * Provider volume for IDX equities is reported in shares, not lots, so turnover is
+     * price times share volume with no lot multiplier. Verified against the market total:
+     * close * volume across all tickers gives roughly 9.6 trillion IDR for a normal
+     * session, which matches published IDX turnover, while applying a lot size of 100
+     * produces roughly 959 trillion IDR, which exceeds any real exchange.
+     */
+    private function averageTurnover(array $bars, $index, $window, array $config)
     {
         if ($index < 0 || ($index + 1) < $window) {
             return null;
@@ -369,7 +475,7 @@ class IndicatorVectorService
                 return null;
             }
 
-            $turnovers[] = $price * (float) $bar['volume'] * $lotSize;
+            $turnovers[] = $price * (float) $bar['volume'];
         }
 
         return round(array_sum($turnovers) / $window, 2);

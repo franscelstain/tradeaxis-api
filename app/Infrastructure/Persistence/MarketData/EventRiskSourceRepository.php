@@ -84,6 +84,9 @@ class EventRiskSourceRepository
         'CAPITAL_DEFICIENCY' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
         'TICKER_CODE_CHANGE' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
         'COMPANY_NAME_CHANGE' => ['price_continuity_impact' => 'NONE', 'volume_continuity_impact' => 'NONE'],
+
+        // Proven by the price series, exact type not yet confirmed by an operator.
+        'PRICE_RESCALE_UNCLASSIFIED' => ['price_continuity_impact' => 'SCALED', 'volume_continuity_impact' => 'SCALED'],
     ];
 
     /**
@@ -242,7 +245,7 @@ class EventRiskSourceRepository
         $windowEnd = $tradingDates[count($tradingDates) - 1];
 
         $rows = DB::table($this->corporateActionsTable())
-            ->select(['ticker_id', 'action_date', 'action_type'])
+            ->select(['ticker_id', 'action_date', 'action_type', 'price_adjustment_factor', 'continuity_check_status'])
             ->whereIn('ticker_id', $tickerIds)
             ->where('action_date', '>=', $windowStart)
             ->where('action_date', '<=', $windowEnd)
@@ -258,6 +261,25 @@ class EventRiskSourceRepository
             $actionTypeCode = $this->normalizeCode($row->action_type);
 
             if ($actionTypeCode === '') {
+                continue;
+            }
+
+            // An event carrying a usable factor is adjusted in the indicator window, so the
+            // series is continuous and there is nothing left to quarantine. Recording the
+            // action alone never achieves this; only the factor does.
+            if ($this->isAdjustable($row)) {
+                continue;
+            }
+
+            // The series was checked and shows no material discontinuity at this event. The
+            // declared impact is an expectation; the observed series is evidence, and
+            // quarantining a demonstrably continuous window protects nothing.
+            //
+            // Only NO_MATERIAL_GAP releases. A release keyed on "the break detector found
+            // nothing" was tried and reverted: detection has a floor of min_ratio 1.7, about a
+            // 41% move, and every ambiguous action sits below it. Absence of a detection there is
+            // not evidence of absence — it is the detector not looking.
+            if (property_exists($row, 'continuity_check_status') && $row->continuity_check_status === 'NO_MATERIAL_GAP') {
                 continue;
             }
 
@@ -290,6 +312,92 @@ class EventRiskSourceRepository
         ksort($contamination);
 
         return $contamination;
+    }
+
+    /**
+     * Price adjustment factors effective inside the window, keyed by ticker_id.
+     *
+     * Owner contract: docs/market_data/registry/Price_Adjustment_Contract_LOCKED.md
+     *
+     * Keyed on ex_date rather than action_date because the recorded action date does not
+     * reliably equal the date the scale changed. RMKE's split is recorded on 2026-07-17
+     * against a price break on 2026-07-15.
+     *
+     * @return array<int, array<int, array{ex_date:string, price_factor:float, volume_factor:float}>>
+     */
+    public function resolveAdjustmentFactorsForTickerIds(array $tickerIds, $windowStart, $windowEnd): array
+    {
+        $tickerIds = array_values(array_unique(array_map('intval', $tickerIds)));
+        $tickerIds = array_values(array_filter($tickerIds, function ($tickerId) {
+            return $tickerId > 0;
+        }));
+
+        if (empty($tickerIds)) {
+            return [];
+        }
+
+        $rows = DB::table($this->corporateActionsTable())
+            ->select(['ticker_id', 'ex_date', 'action_date', 'price_adjustment_factor', 'volume_adjustment_factor'])
+            ->whereIn('ticker_id', $tickerIds)
+            ->whereNotNull('price_adjustment_factor')
+            ->where('price_adjustment_factor', '>', 0)
+            ->where('price_adjustment_factor', '<>', 1)
+            ->orderBy('ticker_id')
+            ->get();
+
+        $factors = [];
+
+        foreach ($rows as $row) {
+            // ex_date is authoritative; action_date is only a fallback for rows recorded
+            // before the quantitative payload existed.
+            $effectiveDate = $row->ex_date ?: $row->action_date;
+
+            if ($effectiveDate === null) {
+                continue;
+            }
+
+            $effectiveDate = (string) $effectiveDate;
+
+            if ($effectiveDate <= (string) $windowStart || $effectiveDate > (string) $windowEnd) {
+                continue;
+            }
+
+            $priceFactor = (float) $row->price_adjustment_factor;
+            $volumeFactor = $row->volume_adjustment_factor !== null
+                ? (float) $row->volume_adjustment_factor
+                : 1.0;
+
+            $factors[(int) $row->ticker_id][] = [
+                'ex_date' => $effectiveDate,
+                'price_factor' => $priceFactor,
+                'volume_factor' => $volumeFactor > 0 ? $volumeFactor : 1.0,
+            ];
+        }
+
+        foreach ($factors as $tickerId => $list) {
+            usort($list, function ($a, $b) {
+                return strcmp($a['ex_date'], $b['ex_date']);
+            });
+            $factors[$tickerId] = $list;
+        }
+
+        ksort($factors);
+
+        return $factors;
+    }
+
+    /**
+     * A factor of exactly 1, zero, or NULL adjusts nothing and must not suppress quarantine.
+     */
+    private function isAdjustable($row): bool
+    {
+        if (! property_exists($row, 'price_adjustment_factor') || $row->price_adjustment_factor === null) {
+            return false;
+        }
+
+        $factor = (float) $row->price_adjustment_factor;
+
+        return $factor > 0 && abs($factor - 1.0) > 1e-9;
     }
 
     public function corporateActionTypes(): array

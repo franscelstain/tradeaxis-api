@@ -117,7 +117,7 @@ Rules:
 | Guard | File | Method | Relation Protected | Failure Behavior | Test Coverage | Status |
 |---|---|---|---|---|---|---|
 | Live sealed baseline mutation guard | `EodArtifactRepository.php` | `assertLiveArtifactMutationAllowed` | current live artifact vs sealed/current/readable publication | Throws `SEALED_DATASET_MUTATION_BLOCKED` | Hash/seal and static guards | Present |
-| Current pointer integrity reasons | `EodPublicationRepository.php` | `determineCurrentIntegrityViolationReasons` | pointer/publication/run/coverage/readable mirror | Returns reason list / fails pointer resolution | Pointer/readable/static tests | Present |
+| Current pointer integrity reasons | `EodPublicationRepository.php` | `determineCurrentIntegrityViolationReasons` | pointer/publication/run/coverage/readable mirror | Returns reason list / fails pointer resolution | `CurrentPointerIntegrityScanTest` drives 17 broken states through the scan, the consumer read, and the repair command | Present |
 | Post-switch pointer validation | `EodPublicationRepository.php` | `assertCurrentPointerResolvedAfterSwitch` | finalize pointer target | Throws reason-coded runtime error | Publication/finalize tests | Present |
 | Publication integrity context | `EodPublicationRepository.php` | `assertPublicationIntegrityContextComplete` | publication/run hash/seal state | Throws before unsafe publish | Hash/seal/finalize tests | Present |
 | Evidence audit resolver | `EodEvidenceRepository.php` | `resolvePublicationForEvidenceAudit` | historical publication proof | Reason-coded missing/mismatch context | Evidence historical guard | Present |

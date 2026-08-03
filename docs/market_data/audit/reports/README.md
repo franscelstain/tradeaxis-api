@@ -17,6 +17,14 @@ Untuk paket aktif, harus ada tepat satu report kanonik:
 
 File itu adalah satu-satunya ringkasan status audit saat ini.
 
+Current scope membedakan secara eksplisit:
+
+- documentation strategy closure;
+- implementation conformance;
+- operational/production validation.
+
+Kelulusan documentation strategy tidak boleh diturunkan hanya karena code belum dibangun, dan tidak boleh dipromosikan menjadi implementation/production claim tanpa audit serta executed evidence terpisah.
+
 ## What is allowed in this folder
 Di paket aktif, isi folder ini harus seminimal mungkin:
 - `AUDIT_FINAL_STATE.md`

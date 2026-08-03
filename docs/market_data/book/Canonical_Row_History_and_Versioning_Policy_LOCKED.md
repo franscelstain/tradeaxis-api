@@ -4,7 +4,9 @@
 Define the official row-history strategy for preserving historical canonical artifact state across corrections and publication changes.
 
 This policy applies to:
+- raw observation identity/reference
 - canonical bars
+- analytical price products/factor bindings
 - indicators
 - eligibility
 
@@ -12,7 +14,7 @@ This policy applies to:
 A corrected publication for trade date D must never make prior consumer-visible row state disappear silently from auditability.
 
 ## Official production-grade strategy (LOCKED)
-For production-grade Market Data Platform, the official default and required strategy is:
+The official required strategy for every sealed publication is:
 
 ### Strategy A — Immutable publication-bound row snapshots
 
@@ -22,7 +24,7 @@ Under Strategy A:
   - `eod_bars_history`
   - `eod_indicators_history`
   - `eod_eligibility_history`
-- current readable state may still be served from current artifact tables
+- current readable state may be served from rebuildable current projections resolved through the publication pointer
 - historical row-level audit must be reconstructable exactly per publication
 
 ## Strategy B status
@@ -36,14 +38,16 @@ It may exist only as:
 It must not be presented as equal in strength to Strategy A.
 
 ## Strategy A rules (LOCKED)
-If Strategy A is implemented, all of the following must hold:
+All of the following must hold:
 1. each sealed publication must have one immutable snapshot set
 2. history rows must be keyed by `publication_id` plus row identity
 3. history rows must never be updated in place
 4. corrected publication produces a new snapshot set
 5. prior snapshot set remains queryable after supersession
 6. history snapshot rows must link to `eod_publications`
-7. history snapshot writes must happen only for sealed publication states
+7. history snapshot rows are appended/frozen atomically with the seal/publication transition
+8. raw observation, identity/calendar/status snapshot, config, factor, and formula/version bindings remain reconstructable for every snapshot
+9. no repair, recompute, migration, or operator command may update/delete sealed snapshot content
 
 ## Required history-table semantics
 History tables must support:
@@ -53,12 +57,12 @@ History tables must support:
 - no ambiguity between current-state tables and historical snapshot tables
 
 ## Current-state vs history-state distinction
-Current-state tables:
+Optional current projection tables:
 - `eod_bars`
 - `eod_indicators`
 - `eod_eligibility`
 
-serve the current readable state.
+may serve the current readable state only after pointer resolution. They are non-authoritative, rebuildable projections and must never be the only preserved representation of published content.
 
 History tables:
 - `eod_bars_history`
@@ -68,6 +72,8 @@ History tables:
 serve immutable publication-bound audit state.
 
 These roles must never be confused.
+
+A projection replacement may change which immutable snapshot is exposed as current, but it may not mutate the snapshot itself. Direct reads from projections without publication context remain forbidden.
 
 ## Correction rule
 On correction for D:
@@ -100,3 +106,5 @@ Executed evidence examples should demonstrate:
 
 ## Anti-ambiguity rule (LOCKED)
 If the platform claims production-grade auditability but cannot point to immutable publication-bound history rows, then row-history integrity is overstated.
+
+Strategy B is not acceptable for decision-grade relock. Until immutable publication-bound snapshots and mutation guards are implemented and proven, this contract is strategy-locked but its production behavior remains unproven.

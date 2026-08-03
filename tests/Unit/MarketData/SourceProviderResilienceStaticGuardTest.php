@@ -62,23 +62,8 @@ class SourceProviderResilienceStaticGuardTest extends TestCase
         $this->assertStringContainsString('buildReplayExpectedSourceContext', $evidence);
     }
 
-    public function test_runtime_source_and_fallback_paths_do_not_use_forbidden_latest_trade_date_shortcuts(): void
-    {
-        foreach ([
-            'app/Application/MarketData/Services/MarketDataPipelineService.php',
-            'app/Application/MarketData/Services/FinalizeDecisionService.php',
-            'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
-            'app/Application/MarketData/Services/ReplayVerificationService.php',
-            'app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php',
-            'app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php',
-            'app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php',
-        ] as $path) {
-            $source = $this->readProjectFile($path);
-            foreach (["MAX(trade_date)", "max('trade_date')", "latest('trade_date')", "orderByDesc('trade_date')", 'ORDER BY trade_date DESC'] as $forbidden) {
-                $this->assertStringNotContainsString($forbidden, $source, $path.' contains forbidden latest trade_date shortcut '.$forbidden);
-            }
-        }
-    }
+    // The latest-trade-date prohibition previously checked seven named paths here.
+    // ReadPathShortcutProhibitionTest applies it to the whole runtime.
 
     private function readProjectFile($relativePath): string
     {

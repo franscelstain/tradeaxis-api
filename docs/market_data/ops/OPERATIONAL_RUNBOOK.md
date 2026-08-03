@@ -1,725 +1,189 @@
-# OPERATIONAL RUNBOOK — MARKET DATA
-
-Status: LOCKED / MARKET_DATA_PRODUCTION_READY_LOCKED. Latest docs-review validation: `vendor\bin\phpunit` -> OK (641 tests, 9547 assertions) on 2026-06-08.
-Contract: OPERATIONAL_READINESS_CONTRACT.
-Owner: market-data operational layer.
-
-This runbook is the operator source of truth. It describes how to run market-data without reading source code, how to decide whether a process may continue, how to handle HELD / FAILED / NOT_READABLE states, how to export evidence, how to verify replay, and which shortcuts are forbidden.
-
-
-## 0. Ops environment baseline gate
-
-Before any command output is used as evidence, validate the environment against `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md`.
-
-Minimum gate:
-
-- PHP must be `>= 7.3` and `< 8.4`; preferred operator/CI baseline is PHP 8.3.x.
-- Required extensions must be enabled: `dom`, `json`, `libxml`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `tokenizer`, `xml`, `xmlreader`, `xmlwriter`.
-- `.env.testing` must exist before PHPUnit/migration proof.
-- Command output used as evidence must contain no `PHP Warning`, `PHP Deprecated`, `Deprecated:`, `PHP Notice`, vendor/framework deprecation text, missing-extension warning, timezone warning, debug noise, or stack trace caused by environment mismatch.
-- Unsupported runtime must fail closed with `ENV_UNSUPPORTED_PHP_VERSION`; that is `BLOCKED_CONTAINER_RUNTIME_ENV`, not runtime PASS.
-
-Validation commands:
-
-```text
-php -v
-composer --version
-php -m
-php artisan list
-php artisan market-data:daily --help
-php artisan market-data:evidence:export --help
-php artisan market-data:replay:verify --help
-vendor/bin/phpunit --version
-vendor/bin/phpunit tests/Unit/MarketData/OpsEnvironmentBaselineStaticGuardTest.php
-```
-
-## 1. Scope and operator rules
-
-The operator may run documented artisan commands only. The operator must not query raw/staging/latest data as proof of consumer readability, must not manually edit pointer/publication/run tables as a normal flow, and must not promote manual/API data unless the promote path passes coverage, hash, seal, finalize, run-publication linkage, pointer validation, evidence, and replay proof.
-
-Required environment checks:
-
-- `MARKET_DATA_PLATFORM_TIMEZONE=Asia/Jakarta`
-- `MARKET_DATA_DEFAULT_SOURCE_MODE=manual_file` or `api`
-- `MARKET_DATA_DAILY_ENABLED=true` only in staging/production-like environments where daily cron is intentionally enabled
-- `MARKET_DATA_SCHEDULER_OUTPUT_PATH` points to a writable log path
-- `MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES` is configured for the deployment's maximum acceptable daily job runtime
-- `MARKET_DATA_COVERAGE_MIN` configured and reviewed
-- market calendar loaded for requested trading dates
-- source credentials/config available when using provider/API source
-- manual file path available when using `manual_file`
-- writable evidence/replay output directory
-- database migrations already applied
-- reason-code registry and seed synchronized
-
-The operator must stop when terminal output contains `status=BLOCKED`, `terminal_status=FAILED`, `terminal_status=HELD`, `publishability_state=NOT_READABLE`, coverage `FAIL`, coverage `NOT_EVALUABLE`, pointer mismatch, unsealed publication, replay mismatch, or missing evidence metadata.
-
-## 1.1 Scheduler / cron deployment flow
-
-Production cron should invoke the framework scheduler every minute from the deployed release path:
-
-```text
-* * * * * cd /path/to/tradeaxis-api && php artisan schedule:run >> storage/logs/cron-schedule-run.log 2>&1
-```
-
-Application scheduler requirements:
-
-- enable daily scheduling with `MARKET_DATA_DAILY_ENABLED=true`
-- keep `MARKET_DATA_PLATFORM_TIMEZONE=Asia/Jakarta`
-- set `MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME=HH:MM:SS` to the approved daily cutoff
-- set `MARKET_DATA_SCHEDULER_OUTPUT_PATH=storage/logs/market-data-scheduler.log` or another writable deployed path
-- keep `MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES` above the expected maximum daily job runtime
-- verify `php artisan schedule:run --env=testing` or staging equivalent prints `Running scheduled command: ... market-data:daily --latest` when the cutoff is due
-- inspect the scheduler output log for `scheduler_status=SUCCESS` or `scheduler_status=FAILURE`
-
-Safe staging proof may use `MARKET_DATA_DEFAULT_SOURCE_MODE=manual_file` to avoid touching live provider/API. A missing manual file is acceptable as a scheduler failure proof only when the log is reason-coded, remains `publishability_state=NOT_READABLE`, and records `pointer_switched=false`.
-
-Scheduler proof is not live provider proof. Do not claim provider/API readiness from a scheduler run unless the source path is separately validated through a safe provider smoke plan.
-
-## 2. Command coverage matrix
-
-| Command | Purpose | Required input | Safe default | Key output | Reason code / next action | Docs / proof |
-|---|---|---|---|---|---|---|
-| `market-data:daily` | Import-only daily sequence | `--requested_date` or `--latest`, `--source_mode`, optional `--input_file`, `--output_dir` | Import-only; no readable publish claim; successful run closes as `COMPLETED/NULL/NOT_READABLE` | `run_id`, `request_mode=import_only`, `import_status`, `promote_status=NOT_PROMOTED`, source summary | If no valid source, stop and export evidence; next action is fix source or rerun import | command surface, import/promote, fail-safe |
-| `market-data:eod-bars:ingest` | Acquire/canonicalize EOD bars | requested date/source/run context; optional explicit `--request_mode=full_publish` for stage-chain publish proof | stage-only | row counts, source context, invalid count, request mode | If zero valid rows, stop; next action is source fix | fail-safe, source resilience |
-| `market-data:eod-indicators:compute` | Compute deterministic indicators | requested date/source/run context | stage-only | stage status, hash context | If input artifact missing, stop and inspect run evidence | hash/seal |
-| `market-data:eod-indicators:recompute-current` | Recompute indicators from existing current readable bars | start/end date, force reason | `--dry-run`; normal run creates correction-current publication | per-date correction/run/publication summary; source/bar/import flags false | If it fails, previous current publication remains current; inspect correction/run evidence | current indicator recompute |
-| `market-data:eod-eligibility:build` | Build eligibility and coverage context | requested date/source/run context | stage-only | coverage available/universe/missing/ratio | If coverage below threshold, stop before promote | coverage gate |
-| `market-data:audit:hash` | Compute deterministic hashes | requested date/source/run context | stage-only | bars/indicator/eligibility hashes | If hash changes without data change, stop and investigate determinism | hash/seal |
-| `market-data:dataset:seal` | Seal coherent dataset candidate | requested date/source/run context | seal only | `seal_state=SEALED`, `sealed_at`, `sealed_by` | If unsealed, cannot finalize/read | seal contract |
-| `market-data:run:finalize` | Resolve terminal state and pointer eligibility | requested date/source/run context | guarded by service | terminal status, publishability state, publication/pointer fields | If HELD/FAILED/NOT_READABLE, pointer must remain preserved; export evidence | finalize/pointer |
-| `market-data:promote` | Explicit publish path | requested date/source, optional `--run_id`, optional force reason | `--force_replace=false` | coverage, seal, finalize, pointer, publication summary | Coverage/seal/pointer failure blocks readable output; next action follows reason code | import/promote, coverage |
-| `market-data:backfill` | Historical import-only range | `start_date`, `end_date`, source options | import-only range; no publish | case lines per date | Failed case does not imply readable; fix case then promote explicitly | backfill |
-| `market-data:backfill:lifecycle` | Historical full lifecycle range | `start_date`, `end_date`, `--source_mode`; optional `--plan`, `--with-evidence`, `--with-replay`, resume flags | `--plan` for non-mutating planning; normal execution is explicit | source acquisition, promote, evidence, replay, checkpoint summary | Source/provider failures are reason-coded; resume only failed checkpoints after review | backfill/lifecycle |
-| `market-data:backfill:missing-tickers` | Missing ticker/date lifecycle range | `start_date`, `end_date`, `--source_mode=api`; optional `--ticker_codes`, `--plan`, `--with-evidence`, `--with-replay` | `--plan` for non-mutating gap scan; normal execution is explicit | missing ticker counts, source acquisition, candidate row count, promote, evidence, replay | Use when ticker master has active/listed tickers missing from current `eod_bars`; fix provider/source failures before accepting | backfill/missing-tickers |
-| `market-data:evidence:export` | Export proof bundle | exactly one selector: run/correction/replay/date | no DB state mutation except artifact write | output path, run/publication/pointer/source/reason metadata | If metadata incomplete, treat proof as failed and rerun/export issue | evidence |
-| `market-data:evidence-replay:full-range-current` | Proof-only evidence/replay over current readable publications | optional start/end date; omitted range uses current publication pointer min/max | no API fetch, no import, no promote/finalize, no pointer switch | per-date run evidence, fixture path, replay MATCH/PASS, replay evidence, summary artifact | Missing current readable publication or replay mismatch blocks proof; use `--continue_on_error` only to collect all failures | evidence/replay/full-range |
-| `market-data:sector-indexes:ingest-api` | Fetch source-backed sector index OHLC bars from API | `start_date`, optional `end_date`, `--provider`, optional `--symbol_suffix` / `--symbol_map_json` | dry-run unless `--apply` | provider symbols, per-date fetched/upserted counts, missing benchmark codes, source reason codes | Fix provider symbols/source availability before apply; run the existing lifecycle/promote flow for affected dates after apply | sector rotation |
-| `market-data:sector-indexes:import-bars` | Import source-backed sector index OHLC bars | CSV with `sector_index_code`, `trade_date`, `open`, `high`, `low`, `close`; optional `adj_close`, `volume` | dry-run unless `--apply` | row counts, valid rows, upsert count, benchmark codes, validation errors | Fix unknown sector index codes/OHLC ranges before apply; run the existing lifecycle/promote flow for affected dates after apply | sector rotation |
-| `market-data:sectors:import-memberships` | Import source-backed ticker-sector membership | CSV with `ticker_code`, `sector_code`, `effective_from`; optional `effective_to`, `source_name`, `source_ref` | dry-run unless `--apply` | row counts, valid rows, upsert count, validation errors | Fix unknown tickers/sector codes/date ranges before apply; run the existing lifecycle/promote flow for affected dates after apply | sector context |
-| `market-data:events:import-corporate-actions` | Import source-backed corporate action context | CSV with `ticker_code`, `action_date`, `action_type`; optional `source_name`, `source_ref`, `notes` | dry-run unless `--apply` | row counts, valid rows, upsert count, action types, validation errors | Fix unknown tickers/date/type errors before apply; run the existing lifecycle/promote flow for affected dates after apply | event-risk context |
-| `market-data:events:import-trading-status` | Import source-backed trading status events | CSV with `ticker_code`, `trade_date`, `event_type_code`; optional `source_name`, `source_ref`, `notes`; sample `docs/market_data/examples/trading_status_daily.csv`; legacy semantic headers are blocked | dry-run unless `--apply` | row counts, valid rows, upsert count, event type codes, validation errors | Fix unknown tickers/date/event-type errors before apply; event semantics come only from `market_data_trading_status_event_types`; run the existing lifecycle/promote flow for the affected range after apply | event-risk context |
-| `market-data:replay:verify` | Verify executed run against fixture package | `run_id`, `fixture_path` | deterministic proof | replay id/status/mismatch reason | Mismatch blocks acceptance; next action is compare fixture/output and fix root cause | replay |
-| `market-data:replay:smoke` | Run built-in replay cases | `run_id` | deterministic smoke suite | valid/broken/missing/reason mismatch cases | Any failed case blocks readiness claim | replay |
-| `market-data:replay:backfill` | Replay verification over date range | start/end date, fixture case/root | deterministic range proof | case summaries | Failed case must be reason-coded and investigated | replay/backfill |
-| `market-data:replay:fixture:generate` | Generate runtime MATCH replay fixture from one executed run | `run_id`, `--case`, `--output_dir` | artifact generation only | fixture path, manifest path, expected proof files, next verify command | Use when committed `valid_case` is stale against local run; then verify generated fixture must MATCH | replay/fixture |
-| `market-data:session-snapshot` | Capture supplemental session snapshot | trade date, slot, source file | pointer-resolved only | publication/run/scope/captured counts | If no readable current publication, stop with `reason_code=NO_READABLE_PUBLICATION`; do not query raw/latest | session snapshot |
-| `market-data:session-snapshot:purge` | Retention purge | optional `--before_date`, `--dry-run` or `--apply` | dry-run | candidate count, operation mode | Apply only after reviewed dry-run; next action re-run with `--apply` | command safety |
-| `market-data:correction:request` | Register correction request | `--trade_date`, `--reason_code`, `--reason_note` | request only after baseline proof | correction id/status/baseline publication | If missing reason or baseline, blocked; next action supply reason or create readable PASS baseline | correction |
-| `market-data:correction:approve` | Approve correction | `correction_id`, optional approved_by | approval only | correction status | If not found/not executable, stop | correction |
-| `market-data:correction:run` | Execute approved correction | `correction_id`, requested date/source | baseline-preserving guarded run | correction/run/publication/pointer lineage | If baseline invalid or unchanged/failed, previous current must stay preserved | correction |
-| `market-data:current-publication:repair` | Detect/clear invalid current pointer mirror state | `--trade_date`, optional `--apply`, apply reason | dry-run unless apply + reason | operation mode, affected state, pointer before/after | Apply only for documented integrity repair with reason; export evidence after | manual DB/action policy |
-
-Operator discovery command:
-
-```text
-php artisan list | findstr market-data
-```
-
-Help commands that must remain aligned with this runbook:
-
-```text
-php artisan market-data:daily --help
-php artisan market-data:promote --help
-php artisan market-data:backfill:lifecycle --help
-php artisan market-data:backfill:missing-tickers --help
-php artisan market-data:evidence:export --help
-php artisan market-data:evidence-replay:full-range-current --help
-php artisan market-data:sector-indexes:ingest-api --help
-php artisan market-data:sector-indexes:import-bars --help
-php artisan market-data:sectors:import-memberships --help
-php artisan market-data:events:import-corporate-actions --help
-php artisan market-data:events:import-trading-status --help
-php artisan market-data:replay:verify --help
-php artisan market-data:replay:fixture:generate --help
-php artisan market-data:correction:request --help
-php artisan market-data:correction:approve --help
-php artisan market-data:correction:run --help
-```
-
-## 3. Daily operational flow
-
-Use this flow when the source is API/provider or manual file but the goal is only import/readiness staging.
-
-```text
-php artisan market-data:daily --requested_date=YYYY-MM-DD --source_mode=api --output_dir=storage/app/market_data/evidence/YYYY-MM-DD
-```
-
-Manual file variant:
-
-```text
-php artisan market-data:daily --requested_date=YYYY-MM-DD --source_mode=manual_file --input_file=storage/app/market_data/manual/eod-bars-YYYY-MM-DD.csv --output_dir=storage/app/market_data/evidence/YYYY-MM-DD
-```
-
-Expected valid import output:
-
-```text
-run_id=<id>
-requested_date=YYYY-MM-DD
-request_mode=import_only
-import_status=COMPLETED
-promote_status=NOT_PROMOTED
-promoted=false
-pointer_switched=false
-source_mode=<api|manual_file>
-accepted_row_count=<n>
-reason_code=IMPORT_ONLY_COMPLETED_NOT_PROMOTED
-lifecycle_state=COMPLETED
-terminal_status=<NULL>
-publishability_state=NOT_READABLE
-```
-
-`RUNNING` after command exit is not valid for a completed import-only run. If a prior active run exceeds `MARKET_DATA_ACTIVE_RUN_STALE_MINUTES`, it is closed as `CANCELLED/NOT_READABLE` with `STALE_ACTIVE_RUN_CANCELLED` before a new owning run is created or reused.
-
-Pass criteria:
-
-- command exits success for import path
-- accepted row count is non-zero
-- source context is visible
-- import-only stays `promoted=false`
-- pointer is not switched
-- no `READABLE` claim is made from import-only
-
-Fail/stop criteria:
-
-- `status=BLOCKED`
-- invalid date/source mode
-- provider rate limit / source unavailable / malformed manual file
-- zero valid rows
-- empty success
-- `terminal_status=FAILED` or `HELD`
-- `publishability_state=NOT_READABLE` without documented next action
-
-Next action after daily import failure: fix source/manual file/provider config, rerun import, export evidence for failed run when a run id exists, and do not promote.
-
-## 4. Manual file import-only flow
-
-Manual file import is not publish. It only loads candidate data and source proof.
-
-```text
-php artisan market-data:daily --requested_date=YYYY-MM-DD --source_mode=manual_file --input_file=storage/app/market_data/manual/eod-bars-YYYY-MM-DD.csv --output_dir=storage/app/market_data/evidence/YYYY-MM-DD/import
-```
-
-Required checks:
-
-- file path exists
-- file row count is visible in source context
-- source hash and source file size are captured when available
-- accepted rows > 0
-- invalid row count reviewed
-- `request_mode=import_only`
-- `promote_status=NOT_PROMOTED`
-- `pointer_switched=false`
-
-Manual file import must not become current/readable automatically. If the operator needs publication, use explicit promote.
-
-For many manual dates in one source-backed CSV, use lifecycle range instead of splitting files:
-
-```text
-php artisan market-data:backfill:lifecycle YYYY-MM-DD YYYY-MM-DD --source_mode=manual_file --input_file=storage/app/market_data/manual/eod-bars-range.csv --with-evidence --with-replay
-```
-
-The CSV must include `trade_date`; lifecycle filters the same input file per requested date and still runs coverage, indicators, eligibility, hash, seal, finalize, evidence, and replay per date.
-
-## 5. Manual file promote flow
-
-Use promote only after import source proof is acceptable.
-
-```text
-php artisan market-data:promote --requested_date=YYYY-MM-DD --source_mode=manual_file --run_id=<import_run_id> --output_dir=storage/app/market_data/evidence/YYYY-MM-DD/promote
-```
-
-Expected successful promote output:
-
-```text
-request_mode=promote
-terminal_status=SUCCESS
-publishability_state=READABLE
-coverage_gate_state=PASS
-seal_state=SEALED
-publication_id=<id>
-publication_version=<version>
-pointer_switched=true
-current_publication_id=<publication_id>
-lineage_verification_status=RUN_PUBLICATION_LINK_PRESENT
-```
-
-Promote must stop when:
-
-- coverage gate fails (`COVERAGE_BELOW_THRESHOLD` or coverage FAIL family)
-- dataset is unsealed (`PUBLICATION_NOT_SEALED` family)
-- run-publication mirror mismatch
-- pointer mismatch / post-switch resolver mismatch
-- source no valid data
-- manual file malformed/empty
-- correction baseline invalid
-
-Force replacement is not normal operation. When present, `--force_replace=false` must remain default; any force use requires an auditable reason via `--force_replace_reason` or equivalent command option and must be captured in evidence.
-
-## 6. Provider/API flow and failure handling
-
-Provider/API flow uses the same daily/import then promote separation.
-
-```text
-php artisan market-data:daily --requested_date=YYYY-MM-DD --source_mode=api --output_dir=storage/app/market_data/evidence/YYYY-MM-DD/import
-php artisan market-data:promote --requested_date=YYYY-MM-DD --source_mode=api --run_id=<import_run_id> --output_dir=storage/app/market_data/evidence/YYYY-MM-DD/promote
-```
-
-Provider failure handling:
-
-| Symptom | Terminal state expectation | Reason family | Operator next action |
-|---|---|---|---|
-| HTTP 429 / rate limit | HELD or FAILED + NOT_READABLE | `PROVIDER_RATE_LIMITED`, `RUN_SOURCE_RATE_LIMITED`, source retry exhausted family | Stop; wait/backoff by provider policy; do not promote; export evidence if run exists |
-| timeout | HELD/FAILED + NOT_READABLE | `RUN_SOURCE_TIMEOUT` family | Check provider/network, retry once per policy, do not bypass with raw/latest |
-| source unavailable | HELD/FAILED + NOT_READABLE | source unavailable / acquisition failed family | Fix provider config or switch documented source mode; never fake empty success |
-| malformed payload | FAILED + NOT_READABLE | malformed payload family | Capture evidence and escalate to developer/source owner |
-| no valid data | FAILED/HELD + NOT_READABLE | no valid data family | Fix source; do not publish empty output |
-
-Provider retry must be bounded. Infinite retry is forbidden.
-
-
-
-## Trading-status coverage-exclusion triage
-
-Use this procedure when a lifecycle/backfill run is held because requested-date API rows are missing and the missing set includes tickers with trading-status history.
-
-1. Read final `run_summary.json` for the final `run_id` and record `publication_id`, `coverage_expected_count`, `coverage_available_count`, `coverage_missing_count`, `coverage_ratio`, `coverage_gate_state`, `promote_status`, and `publishability_state`.
-2. Run publication-specific status diagnostics for the same `publication_id` and split the universe into:
-   - effective suspended / coverage-exclusion tickers;
-   - event-risk non-exclusion tickers;
-   - residual provider missing tickers.
-3. Apply the canonical event-type rules from `market_data_trading_status_event_types`:
-   - `SUSPENDED` excludes coverage and carries forward until `UNSUSPENDED`.
-   - `UNSUSPENDED` clears only the active suspension state.
-   - `SPECIAL_MONITORING_START` carries event-risk context but does not exclude coverage.
-   - `SPECIAL_MONITORING_END` clears only the active special-monitoring state.
-   - `UMA` is exact-date event-risk context and has no carry-forward pair.
-   - `ACTIVE` is not imported as a source event; it is only a resolved state when no risk state remains active.
-4. Rerun the normal lifecycle with evidence and replay.
-5. Treat final `run_summary.json` plus publication-specific debug output as the authoritative result. Do not use stale failed rows in a reused `source_acquisition_checkpoint.json` as final residual coverage evidence.
-
-## 7. Coverage, hash, seal, finalize, pointer sequence
-
-When running stages separately, use this sequence only:
-
-```text
-php artisan market-data:eod-bars:ingest --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --request_mode=full_publish
-php artisan market-data:eod-indicators:compute --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --run_id=<run_id>
-php artisan market-data:eod-eligibility:build --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --run_id=<run_id>
-php artisan market-data:audit:hash --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --run_id=<run_id>
-php artisan market-data:dataset:seal --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --run_id=<run_id>
-php artisan market-data:run:finalize --requested_date=YYYY-MM-DD --source_mode=<api|manual_file> --run_id=<run_id>
-```
-
-Gate rule:
-
-- coverage PASS is required before readable publication
-- deterministic hash is required before seal
-- `seal_state=SEALED` is required before finalize readable
-- finalize must preserve pointer on HELD/FAILED/NOT_READABLE
-- every readable publication must trace to its run and pointer
-
-## 8. Terminal state handling
-
-| Output state | Meaning | Operator decision | Next action |
-|---|---|---|---|
-| `SUCCESS / READABLE` | publication passed coverage/seal/finalize/pointer | Continue to evidence export and replay | Export evidence, run replay verify/smoke, record proof |
-| `SUCCESS / NOT_READABLE` | process completed but not consumer-readable | Stop for publication | Read reason code, export evidence, fix gate/source/data |
-| `HELD / NOT_READABLE` | process preserved safety due recoverable/blocked condition | Stop | Fix source/gate/pointer issue; do not manually switch pointer |
-| `FAILED / NOT_READABLE` | process failed and cannot be read | Stop | Export evidence when possible; escalate if reason is not operational |
-| `status=BLOCKED` | command input or unsafe action blocked | Stop before mutation | Correct input/options; do not bypass guard |
-
-Required output fields for actionable handling:
-
-- `terminal_status`
-- `publishability_state`
-- `reason_code` or `final_reason_code`
-- source summary when source-related
-- coverage summary when coverage-related
-- seal/hash summary when dataset-related
-- publication/pointer/lineage summary when finalize/promote-related
-- `next action` from this runbook or command output where available
-
-## 9. Reason-code handling
-
-The operator must treat reason codes as the decision key, not exception text alone.
-
-| Condition | Expected code family | Operator next action |
-|---|---|---|
-| coverage below threshold | `COVERAGE_BELOW_THRESHOLD` | Stop promote; fix universe/source; rerun import/promote |
-| provider rate limited | `PROVIDER_RATE_LIMITED` / source retry exhausted family | Stop; wait/backoff; export failed evidence |
-| source unavailable | source acquisition failed/unavailable family | Fix config/provider/manual source; no raw/latest fallback |
-| manual file invalid | manual file malformed/empty/no-valid-data family | Fix file; rerun import-only; do not promote |
-| run lock conflict | `RUN_LOCK_CONFLICT` | Wait for existing run; rerun after lock clears |
-| pointer mismatch | pointer mismatch/current pointer integrity family | Stop; export evidence; use repair only under policy |
-| publication not sealed | `PUBLICATION_NOT_SEALED` | Seal valid artifact; rerun finalize/promote |
-| correction baseline invalid | correction baseline invalid family | Reject/run blocked; preserve current pointer |
-| correction already published | already-published correction family | Do not rerun; export evidence if needed |
-| replay mismatch | replay mismatch family | Compare fixture/proof; do not accept publication until resolved |
-| evidence export incomplete | evidence incomplete/missing metadata family | Rerun export/fix evidence service; do not use incomplete proof |
-
-If a terminal condition has no registered reason family, the session must be reopened as a logging/reason-code gap.
-
-## 10. Evidence export flow
-
-Evidence export is mandatory after successful promote and recommended for HELD/FAILED/NOT_READABLE runs.
-
-Run evidence by run id:
+# Market Data Operational Runbook
 
-```text
-php artisan market-data:evidence:export --run_id=<run_id> --output_dir=storage/app/market_data/evidence/YYYY-MM-DD/run-<run_id>
-```
+Status: **strategy corrected; production activation/relock not yet proven**.
 
-Correction evidence:
+This is the operational entry point. It must be read with the owner contracts for acquisition, temporal identity/calendar/status, immutable publication/correction, configuration snapshots, readiness, replay, and command safety. Earlier green tests or operator-local command demonstrations prove only the behavior they executed; they do not override open semantic gaps in the current audit.
 
-```text
-php artisan market-data:evidence:export --correction_id=<correction_id> --output_dir=storage/app/market_data/evidence/YYYY-MM-DD/correction-<correction_id>
-```
+## Operating modes
 
-Replay evidence:
+- **Development frontier:** before `OPERATIONAL_START_DATE`; missing future daily runs are planned incompleteness, not incidents. Integrity rules still apply and no output may falsely claim freshness/readability.
+- **Bootstrap/backfill:** explicit bounded historical work beginning no earlier than intentional dataset start `2023-01-02`, with resumable checkpoints and normal publication gates.
+- **Activated daily operation:** scheduled acquisition-to-promotion for each latest completed expected IDX Regular-Market session, with SLO, stale monitoring, alerts, and incident response.
+- **Correction/replay:** explicit publication-bound workflows; never an implicit daily repair mode.
 
-```text
-php artisan market-data:evidence:export --replay_id=<replay_id> --output_dir=storage/app/market_data/evidence/YYYY-MM-DD/replay-<replay_id>
-```
+## Activation checklist
 
-Trade-date evidence:
+Activation requires an approved date and environment plus evidence for:
 
-```text
-php artisan market-data:evidence:export --trade_date=YYYY-MM-DD --output_dir=storage/app/market_data/evidence/YYYY-MM-DD
-```
+- deployed scheduler/cron and due-run discovery;
+- provider credential profile, entitlement, rate limits, adapter/schema, and safe smoke result;
+- complete temporal identity/mapping, calendar/session, and trading-status sources;
+- full config snapshots and non-null run/publication/seal bindings;
+- immutable observation, canonical history, event/factor revision, publication, and pointer schema;
+- disabled direct repair/mutation paths and enforced consumer gateway;
+- locks/fencing, bounded retry, quarantine, backfill, correction, and rollback-by-pointer;
+- freshness/readiness monitoring and notification delivery;
+- storage/retention/backup/restore/evidence capacity; and
+- consecutive expected-session rehearsals including failure and recovery.
 
-Evidence pass checklist:
+Missing activation evidence means “not activated,” not a waived prerequisite.
 
-- run id and requested/effective trade date present
-- terminal status and publishability state present
-- source mode/name/input/file hash/attempt telemetry present when applicable
-- coverage state/counts/ratio/threshold present
-- hash/seal metadata present
-- publication id/version/current flag present when promoted
-- pointer/current-publication context present when readable
-- correction lineage present when correction-related
-- replay context present when replay-related
-- reason code/final reason code present for failures/holds
-- enough metadata exists to prove the process without manual DB query
+### Ops environment baseline gate
 
-Evidence fails if it requires the operator to query database tables manually for proof.
+Before any targeted proof, full-suite proof, scheduler rehearsal, or activation claim, execute and retain the gate defined in `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md`. PHP must be `>= 7.3` and `< 8.4`. Treat `ENV_UNSUPPORTED_PHP_VERSION` and `BLOCKED_CONTAINER_RUNTIME_ENV` as blocking outcomes; do not suppress or relabel them as application failures. The static contract is guarded by `OpsEnvironmentBaselineStaticGuardTest.php`.
 
-## 11. Replay verification flow
+## Daily operator flow
 
-Replay is the proof mechanism for deterministic output.
+1. Compare latest expected, acquired, canonicalized, and readable dates.
+2. Inspect scheduler outcome, lock owner/fencing token, source/schema/status, and config snapshot.
+3. Run or observe the documented daily pipeline; do not improvise internal-table writes.
+4. If readable, verify through the consumer gateway and archive evidence.
+5. If held/failed/stale, preserve the previous pointer, classify all reasons, alert according to activation/SLO context, and follow the failure playbook.
+6. Retry only retryable acquisition/runtime failures. Use explicit backfill/correction workflows for historical gaps or fact revisions.
 
-Verify one run:
+## Absolute safety rules
 
-```text
-php artisan market-data:replay:verify <run_id> storage/app/market_data/replay/fixtures/YYYY-MM-DD/proof.json --output_dir=storage/app/market_data/replay/output/YYYY-MM-DD/run-<run_id>
-```
+- no in-place update/delete of observations, canonical snapshots, analytical artifacts, factors, eligibility, manifests, seals, or published history;
+- no automatic price scaling/repair or synthetic corporate-action verification;
+- no manual/force bypass of complete candidate validation;
+- no coverage denominator exclusion for provider absence, dormancy, zero volume, or current inactivity;
+- no unsealed/current-table/latest-date consumer fallback;
+- no secret material in logs, observations, manifests, or evidence;
+- no incident closure without gateway state and evidence matching the claimed outcome.
 
-Smoke suite:
+## Evidence per operation
 
-```text
-php artisan market-data:replay:smoke <run_id> --fixture_root=storage/app/market_data/replay/fixtures --output_dir=storage/app/market_data/replay/output/YYYY-MM-DD/smoke
-```
+Retain command/build identity, actor/environment, timestamps, run/attempt/checkpoint/lock IDs, requested and latest-state dates, config/adapter/schema IDs/hashes, observation outcomes, coverage/quality/product/indicator/eligibility reasons, candidate/publication/pointer/seal hashes, alerts, and final consumer-gateway verification.
 
-Generate a runtime MATCH fixture from the actual run when the committed `valid_case` does not match the local run context:
+## Supporting documents
 
-```text
-php artisan market-data:replay:fixture:generate <run_id> --case=valid_case --output_dir=storage/app/market_data/replay-fixtures/generated-valid-run-<run_id>
-php artisan market-data:replay:verify <run_id> storage/app/market_data/replay-fixtures/generated-valid-run-<run_id> --output_dir=storage/app/market-data/replay
-php artisan market-data:replay:smoke <run_id> --generate_runtime_valid_case --output_dir=storage/app/market-data/replay
-```
+- `Scheduling_and_Locking_Contract_LOCKED.md`
+- `Daily_Pipeline_Execution_and_Sealing_Runbook_LOCKED.md`
+- `Bootstrap_and_Backfill_Runbook_LOCKED.md`
+- `Historical_Correction_Runbook_LOCKED.md`
+- `Failure_Playbook_LOCKED.md`
+- `Incident_Classification_and_Response_Matrix_LOCKED.md`
+- `Performance_SLO_and_Limits_LOCKED.md`
+- `Commands_and_Runbook_LOCKED.md`
 
-Generated fixture acceptance requires `comparison_result=MATCH`, `mismatch_count=0`, generated `manifest.json`, generated `expected/expected_replay_result.json`, and generated `expected/expected_reason_code_counts.json`.
+Production readiness may be restored only by the order-22 re-audit after schema/code/test/operational proof closes every P0/P1 finding.
 
-Full-range current publication evidence/replay proof without importing or promoting OHLC:
+## OPERATIONAL_READINESS_CONTRACT compatibility operator appendix
 
-```text
-php artisan market-data:evidence-replay:full-range-current YYYY-MM-DD YYYY-MM-DD --fixture_case=valid_case --output_dir=storage/app/market_data/evidence/full_range_current_evidence_replay/YYYY-MM-DD_to_YYYY-MM-DD
-```
+This appendix preserves discoverable command/runbook vocabulary while the V2 gateway and commands are implemented. It does not upgrade the status above.
 
-The command must resolve each trading date through current readable publication pointers, export run evidence, generate one runtime fixture per current run/publication, verify replay with `comparison_result=MATCH`, export replay evidence with explicit trade date, and write `market_data_full_range_current_evidence_replay_summary.json`.
+### Daily operational flow
 
-Replay backfill:
+The **Coverage, hash, seal, finalize, pointer sequence** is observation/canonical/product gates → coverage/quality → all artifact and manifest hashes → seal → finalize → atomic pointer → gateway check. Valid terminal summaries are `SUCCESS / READABLE`, `SUCCESS / NOT_READABLE`, `HELD / NOT_READABLE`, and `FAILED / NOT_READABLE`. Invalid input or proof is `status=BLOCKED`.
 
-```text
-php artisan market-data:replay:backfill YYYY-MM-DD YYYY-MM-DD --fixture_case=valid_case --fixture_root=storage/app/market_data/replay/fixtures --output_dir=storage/app/market_data/replay/output/range
-```
+Always record `terminal_status`, `publishability_state`, `reason_code`, and `final_reason_code`, then choose the documented **next action**. **Stop** when integrity/lineage is ambiguous and **preserve pointer** to the last verified publication.
 
-Replay must cover:
+### Manual file import-only flow
 
-- valid fixture case
-- reason code mismatch case
-- broken manifest case
-- missing file case
-- pointer/publication mismatch
-- coverage mismatch
-- source context mismatch
-- import/promote boundary mismatch
-- correction lineage mismatch
+`manual_file` with `request_mode=import_only` must end with `promote_status=NOT_PROMOTED`, `promoted=false`, and `pointer_switched=false`. **Manual file import must not become current/readable automatically**.
 
-Replay fail rule: any mismatch blocks acceptance until it has a reason code and root-cause fix.
+### Manual file promote flow
 
-## 12. Correction lifecycle flow
+Use `market-data:promote --requested_date=<YYYY-MM-DD>` with `request_mode=promote`. Promotion additionally requires `coverage_gate_state=PASS`, complete V2 product/lineage/config, `seal_state=SEALED`, and only then `pointer_switched=true`.
 
-Correction must preserve previous current publication unless the correction is approved, changed, sealed, finalized, and published safely.
+### Provider/API flow
 
-Request:
+Provider/API acquisition follows the immutable-observation workflow. A smoke command is non-publishing; scheduler proof is not live provider proof.
 
-```text
-php artisan market-data:correction:request --trade_date=YYYY-MM-DD --reason_code=<REGISTERED_REASON> --reason_note="operator note" --requested_by=<operator>
-```
+### Evidence export flow
 
-Request is baseline-gated. The command must print `baseline_publication_id` and `baseline_run_id`; if no current sealed readable coverage-PASS baseline exists, it must stop with `CORRECTION_BASELINE_LINK_MISSING` and no correction row.
+- `market-data:evidence:export --run_id=<id>`
+- `market-data:evidence:export --correction_id=<id>`
+- `market-data:evidence:export --replay_id=<id>`
+- `market-data:evidence:export --trade_date=<YYYY-MM-DD>`
+- `market-data:evidence-replay:full-range-current`
 
-Approve:
+Admission verifies: **run id and requested/effective trade date present**; **publication id/version/current flag present**; **pointer/current-publication context present**; **coverage state/counts/ratio/threshold present**; and **source mode/name/input/file hash/attempt telemetry present**. V2 additionally requires observation/config/temporal/factor/formula/read-model context.
 
-```text
-php artisan market-data:correction:approve <correction_id> --approved_by=<approver>
-```
+### Replay verification flow
 
-Run:
+**Replay is the proof mechanism**, not a repair path. Surfaces include `market-data:replay:verify`, `market-data:replay:smoke`, `market-data:replay:backfill`, `market-data:replay:fixture:generate`, and `market-data:evidence-replay:full-range-current`. Negative cases include **reason code mismatch case**, **broken manifest case**, **missing file case**, **coverage mismatch**, and **source context mismatch**, plus the V2 as-known/future-leak cases.
 
-```text
-php artisan market-data:correction:run <correction_id> --requested_date=YYYY-MM-DD --source_mode=<api|manual_file>
-```
+### Correction lifecycle flow
 
-Export evidence:
+Use `market-data:correction:request`, then `market-data:correction:approve`, then `market-data:correction:run`. Compatibility lifecycle labels `REQUESTED`, `APPROVED`, `RESEALED`, `PUBLISHED`, and `CANCELLED` never permit content mutation. If the **baseline is not current/readable/SEALED/SUCCESS**, stop; the **previous current must stay preserved**.
 
-```text
-php artisan market-data:evidence:export --correction_id=<correction_id> --output_dir=storage/app/market_data/evidence/YYYY-MM-DD/correction-<correction_id>
-```
+### Backfill flow
 
-Correction states:
+Use `market-data:backfill:lifecycle` or `market-data:backfill:missing-tickers` with bounded dates, plan/checkpoint, immutable observations, and the normal candidate/seal/pointer gates.
 
-| State | Meaning | Operator action |
-|---|---|---|
-| `REQUESTED` | request registered, not executable yet | Review reason/source/baseline |
-| `APPROVED` | allowed to run | Run correction with documented source |
-| `PUBLISHED` | correction changed data and safely published | Export evidence and replay |
-| `CANCELLED` | not executable | Stop |
-| `RESEALED` | changed artifact resealed | Continue finalize/publish only if gates pass |
+### Session snapshot flow
 
-Reject or stop correction when baseline is not current/readable/SEALED/SUCCESS/PASS, artifact is unchanged under unchanged policy, source fails, coverage fails, seal fails, pointer mismatch occurs, or correction already published. Unchanged correction is a successful preserved-current outcome, not a pointer replacement: it must show `candidate_publication_switch=false`.
+Session snapshots are supplemental publication-bound context and cannot determine EOD readiness or replace canonical bars.
 
-## 13. Backfill flow
+### Supporting source/context imports
 
-Backfill is import-only unless followed by explicit promote per date.
+`market-data:sector-indexes:ingest-api`, `market-data:sector-indexes:import-bars`, `market-data:sectors:import-memberships`, `market-data:events:import-corporate-actions`, and `market-data:events:import-trading-status` create source/revision context only. They do not directly rewrite a readable publication.
 
-```text
-php artisan market-data:backfill YYYY-MM-DD YYYY-MM-DD --source_mode=<api|manual_file> --output_dir=storage/app/market_data/backfill/YYYY-MM-DD --continue_on_error
-```
+### Manual DB action policy
 
-Backfill prerequisites:
+**Manual DB action is exceptional**. It requires that a **backup/rollback plan exists**, the **SQL file is reviewed**, **reason code and operator name are recorded**, and **evidence exported after action**. `market-data:current-publication:repair` may only clear/restore pointer integrity among already valid immutable publications; it cannot repair content.
 
-- market calendar has at least one trading date in range
-- source mode chosen deliberately
-- manual file strategy documented if date-specific files are used
-- coverage expectation known before promote
-- output directory set
+Prohibited manual actions include **direct pointer switch to make data readable**, **direct publication current flag edits as publish flow**, and **manual correction status edit**.
 
-Backfill pass criteria:
+### Forbidden shortcuts
 
-- each case has requested date, status, source context, run id if imported
-- failed cases are reason-coded
-- no readable publication is implied by import-only backfill
-- evidence export and replay are run for promoted dates only
+Forbidden tokens/patterns include `raw/staging/latest/MAX(date)`, `MAX(trade_date)`, `latest('trade_date')`, **direct pointer switch**, **direct `READABLE` update**, **coverage bypass**, **seal bypass**, **finalize bypass**, **replay bypass**, **empty output treated as success**, **silent provider failure**, and **unbounded provider retry**.
 
-## 14. Session snapshot flow
+### Operator checklist before publish
 
-Session snapshot is supplemental and must read only from pointer-resolved readable current publication.
+Complete preflight/activation checks, verify the requested/latest expected dates, lock/fencing token, immutable config/observation/temporal/factor context, and ensure no prohibited repair/derived-action path ran.
 
-Capture:
+### Operator checklist after publish
 
-```text
-php artisan market-data:session-snapshot YYYY-MM-DD PREOPEN --source_mode=manual_file --input_file=storage/app/market_data/session/manual-preopen-YYYY-MM-DD.csv --output_dir=storage/app/market_data/session/YYYY-MM-DD
-```
+Verify the active publication through the gateway, dates/freshness, manifest/seal/hash/context, pointer atomicity, alerts, and exported evidence.
 
-Purge dry-run:
+### Troubleshooting quick map
 
-```text
-php artisan market-data:session-snapshot:purge --before_date=YYYY-MM-DD --dry-run
-```
+Transport failures receive bounded retry; deterministic validation/gate failures are held; provenance/hash/pointer ambiguity fails closed; corrections create a new publication; stale output retains its true effective date.
 
-Purge apply after review:
+### Scheduler / cron deployment flow
 
-```text
-php artisan market-data:session-snapshot:purge --before_date=YYYY-MM-DD --apply
-```
+The deployment scheduler invokes `php artisan schedule:run`. Activation configuration includes `MARKET_DATA_DAILY_ENABLED=true`, `MARKET_DATA_PLATFORM_TIMEZONE=Asia/Jakarta`, `MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME=HH:MM:SS`, `MARKET_DATA_SCHEDULER_OUTPUT_PATH`, and `MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES`. The due event is `market-data:daily --latest`.
 
-Snapshot must stop when no readable current publication exists. Operator must not use raw/staging/latest/MAX(date) as a fallback.
+Logs distinguish `scheduler_status=SUCCESS` and `scheduler_status=FAILURE`; a failed/held run records `pointer_switched=false`. **Scheduler proof is not live provider proof.**
 
-## 15. Manual DB action policy
+### Registered runtime commands
 
-Manual DB action is exceptional, not normal operation.
+- `market-data:daily`
+- `market-data:eod-bars:ingest`
+- `market-data:eod-indicators:compute`
+- `market-data:eod-indicators:recompute-current`
+- `market-data:eod-eligibility:build`
+- `market-data:audit:hash`
+- `market-data:dataset:seal`
+- `market-data:run:finalize`
+- `market-data:promote`
+- `market-data:backfill`
+- `market-data:backfill:lifecycle`
+- `market-data:backfill:missing-tickers`
+- `market-data:evidence:export`
+- `market-data:evidence-replay:full-range-current`
+- `market-data:sector-indexes:ingest-api`
+- `market-data:sector-indexes:import-bars`
+- `market-data:sectors:import-memberships`
+- `market-data:events:import-corporate-actions`
+- `market-data:events:import-trading-status`
+- `market-data:replay:verify`
+- `market-data:replay:smoke`
+- `market-data:replay:backfill`
+- `market-data:replay:fixture:generate`
+- `market-data:session-snapshot`
+- `market-data:session-snapshot:purge`
+- `market-data:correction:request`
+- `market-data:correction:approve`
+- `market-data:correction:run`
+- `market-data:current-publication:repair`
+- `market-data:provider:smoke`
+- `market-data:detect-price-scale-breaks`
+- `market-data:repair-price-scale-stretches` — registered P0 blocker; `--apply` must be removed/disabled.
+- `market-data:events:derive-corporate-actions` — registered P0 blocker when apply creates/verifies factors from prices.
 
-Allowed only when all conditions are true:
+### Manual validation commands
 
-- documented incident or repair case exists
-- evidence exported before action when possible
-- command-based repair is unavailable or insufficient
-- backup/rollback plan exists
-- SQL file is reviewed and stored under docs/tools/process notes
-- reason code and operator name are recorded
-- evidence exported after action
-- replay or pointer validation is run after action when relevant
-
-Preferred repair command:
-
-```text
-php artisan market-data:current-publication:repair --trade_date=YYYY-MM-DD
-php artisan market-data:current-publication:repair --trade_date=YYYY-MM-DD --apply --reason="operator reviewed invalid pointer mirror and approved clear"
-```
-
-Repair apply without `--reason` or `--force_reason` must stop with `COMMAND_DESTRUCTIVE_GUARD_REQUIRED`.
-
-Forbidden manual DB actions:
-
-- direct pointer switch to make data readable
-- direct `READABLE` update
-- direct `is_current` update to bypass promote
-- direct seal/finalize status edit
-- manual coverage override without policy
-- manual deletion/cleanup that hides audit history
-- manual correction status edit to skip request/approve/run
-
-## 16. Forbidden shortcuts
-
-These are forbidden in operations, docs, commands, code, evidence, and replay:
-
-- raw/staging/latest/MAX(date) consumer proof
-- querying raw/staging tables to justify readability
-- `MAX(trade_date)` or `latest('trade_date')` as fallback
-- direct pointer edits as publish flow
-- direct publication current flag edits as publish flow
-- coverage bypass
-- seal bypass
-- finalize bypass
-- replay bypass for accepted publication proof
-- manual file directly becoming readable
-- empty output treated as success
-- silent provider failure
-- unbounded provider retry
-- destructive command without guard/apply confirmation
-
-## 17. Operator checklist before publish
-
-- source mode chosen and documented
-- import-only run exists and is not promoted
-- accepted rows > 0
-- coverage universe and threshold understood
-- invalid rows reviewed
-- reason code absent or acceptable for non-terminal warnings only
-- hash computed deterministically
-- dataset sealed
-- promote command selected explicitly
-- force replacement not used unless documented
-
-## 18. Operator checklist after publish
-
-- terminal status is `SUCCESS`
-- publishability state is `READABLE`
-- coverage gate is `PASS`
-- seal state is `SEALED`
-- publication id/version exists
-- pointer switched to the same publication
-- lineages run → publication → pointer are present
-- evidence exported
-- replay verify/smoke passed
-- audit evidence recorded for local validation
-
-## 19. Troubleshooting quick map
-
-| Problem | Stop? | Next action |
-|---|---:|---|
-| `COMMAND_INVALID_DATE_FORMAT` | Yes | Fix date format to YYYY-MM-DD |
-| `COMMAND_INVALID_SOURCE_MODE` | Yes | Use `api` or `manual_file` |
-| coverage fail | Yes | Fix source/universe; rerun import/promote |
-| source rate limit | Yes | Wait/backoff; rerun; do not fake file unless approved source switch |
-| zero valid data | Yes | Fix source/manual file |
-| HELD | Yes | Read reason, preserve pointer, export evidence |
-| FAILED | Yes | Export evidence if possible, fix root cause |
-| NOT_READABLE | Yes | Do not expose to consumers |
-| replay mismatch | Yes | Compare fixture/proof; fix deterministic mismatch |
-| evidence incomplete | Yes | Rerun/fix evidence before acceptance |
-
-## 20. Manual validation commands
-
-Operator-local commands required before claiming DONE/LOCKED:
-
-```text
-vendor/bin/phpunit tests/Unit/MarketData/OperationalReadinessStaticGuardTest.php
-vendor/bin/phpunit tests/Unit/MarketData --filter "OperationalReadiness"
-vendor/bin/phpunit tests/Unit/MarketData --filter "CommandSurface"
-vendor/bin/phpunit tests/Unit/MarketData --filter "Evidence"
-vendor/bin/phpunit tests/Unit/MarketData --filter "Replay"
-vendor/bin/phpunit tests/Unit/MarketData --filter "Correction"
-vendor/bin/phpunit tests/Unit/MarketData --filter "FailSafe"
-vendor/bin/phpunit tests/Unit/MarketData
-php artisan list | findstr market-data
-```
-
-Expected output:
-
-```text
-OK (... tests, ... assertions)
-```
-
-Pass criteria: all targeted filters and full `tests/Unit/MarketData` pass locally, and command help lists match this runbook.
-
-Fail criteria: any command missing from docs, missing terminal state handling, missing reason-code handling, missing evidence/replay flow, missing manual DB action policy, or any PHPUnit failure.
-
-
-
-## Source/master read-only recompute boundary
-`market-data:eod-indicators:recompute-current` is the implemented current-bars recompute command for this boundary. It does not perform source acquisition, bar ingest, source/master writes, or `eod_bars` writes. It creates a correction-current publication from existing current readable bars and recomputes publication-bound indicator and eligibility artifacts.
-
-"Without updating sector/corporate-action/trading-status/master data" means no writes to source/master tables and no source import commands. It does not mean publication-bound `eod_indicators` context columns are frozen; a new publication may recalculate those fields from existing source rows. A context-freezing technical-only mode must be explicit and separately proven.
-
-### Current indicator recompute from existing current bars
-
-Use this only when OHLCV/source/master data is already correct and only publication-bound indicators need recalculation. It does not fetch API data, ingest bars, import sector/corporate/trading-status sources, update masters, or write `eod_bars`. It creates a correction-current publication from existing current bars and recomputes indicator/eligibility artifacts.
-
-```powershell
-php artisan market-data:eod-indicators:recompute-current <start_date> <end_date> `
-    --force_replace_reason="indicator_recompute_from_existing_current_bars" `
-    --with-evidence `
-    --with-replay `
-    --continue-on-error `
-    -vvv
-```
-
-## Validated current-indicator recompute procedure
-
-Use this path only when current OHLCV and source/master facts are already correct and publication-bound indicators must be recalculated without importing again.
-
-```powershell
-php artisan market-data:eod-indicators:recompute-current 2023-01-02 2026-06-04 `
-    --force_replace_reason="indicator_recompute_from_existing_current_bars" `
-    --with-evidence `
-    --with-replay `
-    --continue-on-error `
-    -vvv
-```
-
-Expected boundary output:
-
-```text
-source_acquisition_executed=false
-bar_ingest_executed=false
-source_master_write_executed=false
-eod_bars_write_executed=false
-```
-
-Final 2026-06-07 runtime proof for `2023-01-02..2026-06-04`: 807 processed, 807 success, 0 failed/skipped, `all_passed=1`. Full MarketData PHPUnit passed at 640 tests / 9539 assertions for that runtime lock. Latest docs-review validation on 2026-06-08 reran `vendor\bin\phpunit` and passed with OK (641 tests, 9547 assertions). 757 replacement publications used run evidence and 50 unchanged/preserved-current outcomes used correction evidence; all 807 evidence exports were `ADMITTED_COMPLETE`.
-
-After a mutating recompute, reconcile the final current pointers:
-
-```powershell
-php artisan market-data:evidence-replay:full-range-current 2023-01-02 2026-06-04 `
-    --continue_on_error `
-    --output_dir=storage/app/market_data/evidence/indicator_recompute_current/full_range_current_2023-01-02_to_2026-06-04 `
-    -vvv
-```
-
-Final reconciliation proof: 807 processed, 807 success, 0 failures/errors, `all_passed=1`; every date MATCH/PASS with zero mismatches.
-
-Do not rerun the entire historical range unless OHLCV, indicator formulas/dependencies, source context, eligibility, or publication/hash/seal logic changed. For a narrow change, recompute and replay only the affected range.
+Run schema/migration parity, targeted owner-contract tests, negative P0/P1 tests, full MarketData PHPUnit, MariaDB integration/replay, command help/dry-run checks, gateway concurrency checks, and consecutive activated-session rehearsals. Store commands, build/runtime identity, results, and artifacts; missing execution is not pass.

@@ -16,7 +16,7 @@ Domain ini mencakup:
 - validation and normalization
 - canonical EOD bars
 - deterministic EOD indicators
-- eligibility/readiness semantics
+- data-usability/readiness semantics (legacy `eligible` naming is compatibility only)
 - publication and current-pointer behavior
 - correction, replay, reseal, and reproducibility behavior
 - audit and proof artifacts
@@ -108,9 +108,13 @@ Audit wajib memeriksa keselarasan minimal antara:
 ## Repo-shaped reading anchor
 Sebelum memakai system summary atau audit summary, pembaca harus mengakui jalur baca resmi paket:
 1. `book/Terminology_and_Scope.md`
-2. `book/Domain_Boundary_Invariants_LOCKED.md`
-3. `book/INDEX.md`
-4. `docs/market_data/README.md`
+2. `book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md`
+3. `book/Domain_Boundary_Invariants_LOCKED.md`
+4. `book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md`
+5. `book/Market_Data_Implementation_Command_Protocol_LOCKED.md`
+6. `audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md`
+7. `book/INDEX.md`
+8. `docs/market_data/README.md`
 
 Audit docs boleh menambah orientasi, tetapi tidak boleh menggantikan anchor baca tersebut.
 

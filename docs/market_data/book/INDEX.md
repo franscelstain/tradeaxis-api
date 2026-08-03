@@ -2,7 +2,12 @@
 
 ## Core scope, terminology, and boundary invariants
 - Terminology_and_Scope.md
+- Market_Data_Strategy_Implementation_Blueprint_LOCKED.md
 - Domain_Boundary_Invariants_LOCKED.md
+- Market_Data_Implementation_Conformance_Matrix_LOCKED.md
+- Market_Data_Implementation_Command_Protocol_LOCKED.md
+
+`Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` adalah owner urutan pembangunan `W00`–`W22` dan handoff audit. `Market_Data_Implementation_Conformance_Matrix_LOCKED.md` memastikan seluruh dokumen/deliverable/proof memiliki assignment. `Market_Data_Implementation_Command_Protocol_LOCKED.md` mengatur start/audit/remediation/re-audit/advance dan result contract. Ketiganya tidak menggantikan owner behavior yang dirujuk pada setiap stage.
 
 ## Consumer readability, publication, and determinism
 - Downstream_Consumer_Read_Model_Contract_LOCKED.md
@@ -18,12 +23,14 @@
 
 ## Core dependencies and universe foundations
 - Market_Calendar_Requirements_Contract.md
+- Trading_Status_Source_Contract_LOCKED.md
 - Tickers_and_Identity_Dependency_Contract_LOCKED.md
 - Coverage_Universe_Definition_LOCKED.md
 - Coverage_Gate_Enforcement_Contract_LOCKED.md
 - Symbol_Lifecycle_and_Mapping_Contract.md
 
 ## Source acquisition and canonical data
+- Yahoo_Finance_Bootstrap_Source_Strategy.md
 - Source_Data_Acquisition_Contract_LOCKED.md
 - EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md
 - Source_Mapping_Contract_LOCKED.md
@@ -41,6 +48,11 @@
 - Corporate_Action_and_Adjustment_Policy.md
 - Corporate_Action_and_Adjustment_Policy_Selected_Defaults_LOCKED.md
 - Corporate_Action_Impact_Flags_Contract.md
+- ../registry/Price_Adjustment_Contract_LOCKED.md
+- ../registry/Price_Scale_Break_Detection_LOCKED.md
+- ../registry/Volume_and_Turnover_Normalization_LOCKED.md
+- ../registry/Indicator_Registry_Baseline_LOCKED.md
+- ../registry/Platform_Config_Registry_LOCKED.md
 
 ## Run readiness, effective date, and consumer safety
 - Run_Status_and_Quality_Gates_LOCKED.md
@@ -58,6 +70,13 @@
 
 ## Supporting datasets
 - Market_Daily_Metrics_Contract.md
+
+## Replay and semantic proof
+- Replay_Verification_Contract_LOCKED.md
+- ../backtest/Point_In_Time_Backtest_Input_Contract_LOCKED.md
+- ../tests/Contract_Test_Matrix_LOCKED.md
+- ../tests/Golden_Fixture_Catalog_LOCKED.md
+- ../tests/Negative_Test_Catalog_LOCKED.md
 
 ## Normative companion folders
 The following folders are normative companions to this book and must be treated as part of the same source of truth:

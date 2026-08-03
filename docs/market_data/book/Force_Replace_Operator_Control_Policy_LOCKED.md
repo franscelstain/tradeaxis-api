@@ -22,6 +22,8 @@ The only supported mechanism is an explicit command-level operator action. Direc
 
 It is not a quality bypass.
 
+It is also not a content-mutation bypass. The replacement candidate must already be a distinct immutable publication-bound snapshot with new run/hash/seal/version lineage. Force only authorizes the guarded pointer switch; it can never update/delete the prior sealed content or history rows.
+
 ---
 
 ## 3. Activation Rule

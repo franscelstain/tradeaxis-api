@@ -19,7 +19,9 @@ The command-specific docs below remain supporting material. They must not contra
 7. `07_REPLAY_AND_EVIDENCE.md`
 8. `08_SESSION_SNAPSHOT.md`
 
-## Registered command surface
+## Detected runtime command surface
+
+Presence in this list means the command is registered, not approved. The two prohibited legacy apply surfaces are called out below and block production relock.
 
 - `market-data:daily`
 - `market-data:eod-bars:ingest`
@@ -51,6 +53,14 @@ The command-specific docs below remain supporting material. They must not contra
 - `market-data:correction:run`
 - `market-data:current-publication:repair`
 - `market-data:provider:smoke`
+- `market-data:detect-price-scale-breaks`
+- `market-data:repair-price-scale-stretches`
+- `market-data:events:derive-corporate-actions`
+
+### Prohibited until removed or redesigned
+
+- `market-data:repair-price-scale-stretches`: direct `--apply` mutation of `eod_bars`/history is forbidden.
+- `market-data:events:derive-corporate-actions`: may at most write an unverified detector candidate; it may not create/update verified actions or factors from price behavior.
 
 ## Notes
 

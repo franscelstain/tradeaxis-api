@@ -19,6 +19,9 @@ use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\FullRangeCurrentEvidenceReplayCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
 use App\Console\Commands\MarketData\IngestSectorIndexBarsApiCommand;
+use App\Console\Commands\MarketData\DetectPriceScaleBreaksCommand;
+use App\Console\Commands\MarketData\DeriveCorporateActionsCommand;
+use App\Console\Commands\MarketData\RepairPriceScaleStretchesCommand;
 use App\Console\Commands\MarketData\ImportCorporateActionsCommand;
 use App\Console\Commands\MarketData\ImportSectorIndexBarsCommand;
 use App\Console\Commands\MarketData\ImportSectorMembershipCommand;
@@ -51,6 +54,9 @@ class Kernel extends ConsoleKernel
         ExportEvidenceCommand::class,
         FullRangeCurrentEvidenceReplayCommand::class,
         IngestSectorIndexBarsApiCommand::class,
+        DetectPriceScaleBreaksCommand::class,
+        DeriveCorporateActionsCommand::class,
+        RepairPriceScaleStretchesCommand::class,
         ImportCorporateActionsCommand::class,
         ImportSectorIndexBarsCommand::class,
         ImportSectorMembershipCommand::class,

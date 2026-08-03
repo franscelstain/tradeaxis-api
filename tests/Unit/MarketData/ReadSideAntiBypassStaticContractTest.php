@@ -1,89 +1,34 @@
 <?php
 
+/**
+ * Three tests were removed. All three asserted query fragments for behaviour that is now driven.
+ *
+ * - The gateway's pointer-only conditions were asserted as ten source strings, plus two regexes
+ *   checking that findCurrentPublicationForTradeDate and findPointerResolvedPublicationForTradeDate
+ *   delegate to it. CorrectionBaselineResolutionTest now drives all four publication entry points
+ *   over thirteen broken states and asserts they never disagree, on rejection or acceptance —
+ *   which is the property the delegation regexes were approximating.
+ * - The consumer repositories' latest-date prohibition is now applied to every file under app/
+ *   by ReadPathShortcutProhibitionTest, rather than to nine paths by name.
+ * - Coverage-pass and run-mirror conditions in the scope and evidence repositories were asserted
+ *   as three strings each. ReadablePublicationReadContractIntegrationTest drives both
+ *   repositories through ten broken publication states and asserts no rows leak from any of them.
+ */
 class ReadSideAntiBypassStaticContractTest extends TestCase
 {
-    private function projectPath(string $relativePath): string
-    {
-        return dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
-    }
-
-    private function read(string $relativePath): string
-    {
-        $path = $this->projectPath($relativePath);
-        $this->assertFileExists($path);
-
-        return file_get_contents($path);
-    }
-
-    public function test_official_publication_gateway_is_pointer_only_and_readable_current(): void
-    {
-        $source = $this->read('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php');
-
-        $this->assertStringContainsString('function resolveCurrentReadablePublicationForTradeDate', $source);
-        $this->assertStringContainsString("eod_current_publication_pointer as ptr", $source);
-        $this->assertStringContainsString("run.terminal_status', 'SUCCESS", $source);
-        $this->assertStringContainsString("run.publishability_state', 'READABLE", $source);
-        $this->assertStringContainsString("run.coverage_gate_state', 'PASS", $source);
-        $this->assertStringContainsString("run.is_current_publication', 1", $source);
-        $this->assertStringContainsString('whereColumn(\'ptr.run_id\', \'pub.run_id\')', $source);
-        $this->assertStringContainsString('whereColumn(\'ptr.publication_version\', \'pub.publication_version\')', $source);
-        $this->assertStringContainsString('whereColumn(\'run.publication_id\', \'ptr.publication_id\')', $source);
-        $this->assertStringContainsString('whereColumn(\'run.publication_version\', \'ptr.publication_version\')', $source);
-
-        $this->assertMatchesRegularExpression(
-            '/function\s+findCurrentPublicationForTradeDate\s*\([^)]*\)\s*\{[^}]*resolveCurrentReadablePublicationForTradeDate/s',
-            $source
-        );
-        $this->assertMatchesRegularExpression(
-            '/function\s+findPointerResolvedPublicationForTradeDate\s*\([^)]*\)\s*\{[^}]*resolveCurrentReadablePublicationForTradeDate/s',
-            $source
-        );
-    }
-
-    public function test_consumer_read_repositories_do_not_use_latest_or_non_pointer_current_shortcuts(): void
-    {
-        $consumerFiles = [
-            'app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php',
-            'app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php',
-            'app/Application/MarketData/Services/SessionSnapshotService.php',
-            'app/Application/MarketData/Services/ReplayVerificationService.php',
-            'app/Application/MarketData/Services/ReplayBackfillService.php',
-            'app/Application/MarketData/Services/ReplaySmokeSuiteService.php',
-            'app/Console/Commands/MarketData/ExportEvidenceCommand.php',
-            'app/Console/Commands/MarketData/VerifyReplayCommand.php',
-            'app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php',
-        ];
-
-        foreach ($consumerFiles as $file) {
-            $source = $this->read($file);
-
-            $this->assertDoesNotMatchRegularExpression('/\bMAX\s*\(\s*(trade_date|publication_id)\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/->\s*max\s*\(\s*[\'"](trade_date|publication_id)[\'"]\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/latest(Current|Publication|TradeDate)|unsafeLatest/i', $source, $file);
-
-            if (preg_match('/eod_(bars|eligibility|indicators)\b/', $source)) {
-                $this->assertStringContainsString('eod_current_publication_pointer', $source, $file.' must pointer-resolve artifact reads.');
-                $this->assertStringContainsString('publishability_state', $source, $file.' must enforce readable publication state.');
-                $this->assertStringContainsString('READABLE', $source, $file.' must enforce READABLE publication state.');
-            }
-        }
-    }
-
-    public function test_pointer_scoped_eligibility_read_queries_require_coverage_pass_and_run_mirror_match(): void
-    {
-        $scopeSource = $this->read('app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php');
-        $evidenceSource = $this->read('app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php');
-
-        foreach ([$scopeSource, $evidenceSource] as $source) {
-            $this->assertStringContainsString("run.coverage_gate_state', 'PASS", $source);
-            $this->assertStringContainsString('whereColumn(\'run.publication_id\', \'ptr.publication_id\')', $source);
-            $this->assertStringContainsString('whereColumn(\'run.publication_version\', \'ptr.publication_version\')', $source);
-        }
-    }
-
+    /**
+     * The read-side contract is a LOCKED document under audit governance. LOCKED does not mean
+     * unchangeable — it means a change must be argued and recorded rather than made in passing.
+     * This checks the governance markers are still in place, which no runtime behaviour can show.
+     */
     public function test_read_side_contract_document_is_locked_and_audit_governed(): void
     {
-        $contract = $this->read('docs/market_data/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md');
+        $path = dirname(__DIR__, 3).DIRECTORY_SEPARATOR
+            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md');
+
+        $this->assertFileExists($path);
+
+        $contract = file_get_contents($path);
 
         $this->assertStringContainsString('Status: LOCKED', $contract);
         $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $contract);

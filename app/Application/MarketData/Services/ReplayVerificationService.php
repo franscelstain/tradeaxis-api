@@ -1327,10 +1327,18 @@ class ReplayVerificationService
         if (strpos($field, 'coverage_') !== false) return 'REPLAY_COVERAGE_STATE_MISMATCH';
         if (strpos($field, 'batch_hash') !== false) return 'REPLAY_ARTIFACT_HASH_MISMATCH';
         if ($field === 'artifact_scope' || strpos($field, 'replay_artifact_scope') !== false) return 'REPLAY_HISTORICAL_ARTIFACT_SCOPE_MISMATCH';
-        if (strpos($field, 'replay_replay_actual_resolution_mode') !== false || strpos($field, 'replay_replay_publication_scope') !== false || strpos($field, 'replay_current_pointer_required') !== false || strpos($field, 'replay_historical_publication_allowed') !== false || strpos($field, 'replay_current_pointer_status') !== false || strpos($field, 'replay_replay_reason_code') !== false) return 'REPLAY_EXPECTED_HISTORICAL_ACTUAL_CURRENT_MISMATCH';
+        // The doubled prefix is not a typo. The resolution-context loop passes 'replay_'.$field
+        // over a list whose entries already begin with replay_, so the field really is named
+        // replay_replay_actual_resolution_mode. The names are left alone because they appear in
+        // recorded replay results and in expected fixtures; renaming them would make every
+        // stored proof disagree with a re-run.
+        if (strpos($field, 'replay_replay_actual_resolution_mode') !== false || strpos($field, 'replay_replay_publication_scope') !== false || strpos($field, 'replay_current_pointer_required') !== false || strpos($field, 'replay_historical_publication_allowed') !== false || strpos($field, 'replay_current_pointer_status') !== false || strpos($field, 'replay_replay_reason_code') !== false || strpos($field, 'replay_replay_selector_type') !== false || strpos($field, 'replay_replay_selector_id') !== false) return 'REPLAY_EXPECTED_HISTORICAL_ACTUAL_CURRENT_MISMATCH';
         if (strpos($field, 'replay_run_publication_mirror_status') !== false || strpos($field, 'replay_lineage_verification_status') !== false || strpos($field, 'replay_publication_run_id') !== false || strpos($field, 'replay_run_id') !== false) return 'REPLAY_PUBLICATION_RUN_MISMATCH';
         if ($field === 'seal_state' || strpos($field, 'replay_seal_state') !== false) return 'REPLAY_SEAL_STATE_MISMATCH';
         if (strpos($field, 'publication_version') !== false) return 'REPLAY_PUBLICATION_VERSION_MISMATCH';
+        // is_current_publication has no trailing underscore, so the rule below never reached it
+        // and a publication that stopped being current was reported as non-deterministic output.
+        if (strpos($field, 'is_current_publication') !== false) return 'REPLAY_PUBLICATION_STATE_MISMATCH';
         if (strpos($field, 'publication_') !== false && strpos($field, 'pointer_') === false) return 'REPLAY_PUBLICATION_STATE_MISMATCH';
         if ($field === 'pointer_resolve_status') return 'REPLAY_POINTER_RESOLUTION_MISMATCH';
         if (strpos($field, 'pointer_') !== false) return 'REPLAY_POINTER_TARGET_MISMATCH';
@@ -1339,6 +1347,9 @@ class ReplayVerificationService
         if ($field === 'terminal_status' || $field === 'status' || $field === 'publishability_state') return 'REPLAY_FINAL_STATUS_MISMATCH';
         if ($field === 'final_reason_code' || $field === 'expected_reason_code' || $field === 'reason_code_counts') return 'REPLAY_FINAL_REASON_CODE_MISMATCH';
         if ($field === 'lineage') return 'REPLAY_LINEAGE_MISMATCH';
+        // A replay run under different configuration is explainable and fixable. Reporting it as
+        // non-deterministic output sends the operator looking for instability in the computation.
+        if ($field === 'config_identity') return 'REPLAY_CONFIG_IDENTITY_MISMATCH';
         return 'REPLAY_NON_DETERMINISTIC_OUTPUT';
     }
 

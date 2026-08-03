@@ -1,39 +1,99 @@
 # Tickers and Identity Dependency Contract (LOCKED)
 
 ## Purpose
-Lock what Market Data Platform requires from the global `tickers` master so:
-- coverage denominator is deterministic
-- provider symbol mapping is stable
-- downstream consumers receive stable `ticker_id`
-- historical replay can reconstruct universe membership as-of D without guessing from current ticker state
+
+Lock the temporal identity model required by Market Data Platform so acquisition, coverage, publication, replay, and downstream reads bind data to the correct security as-of a trade date without survivorship bias.
 
 ## Ownership note
-Market Data Platform depends on a shared ticker-identity foundation.
-This contract defines required dependency semantics only.
-It does not make `market_data` the owner of the global ticker master, and it does not allow the shared foundation to reclaim ownership of canonical bars, indicators, eligibility, or publication behavior.
 
-## Required fields
-- `ticker_id` (immutable PK)
-- `ticker_code` (display / exchange code)
-- historical membership capability for as-of evaluation on D, implemented through either:
-  - `listed_since` + `delisted_since`, or
-  - another immutable equivalent temporal-membership mechanism documented outside this module
+Market Data Platform depends on a shared security-identity foundation. This contract defines required dependency semantics only; it does not transfer ownership of the global master into `market_data` or transfer ownership of bars, indicators, eligibility, and publications out of it.
 
-## Conditionally allowed fallback
-A plain `is_active` flag may be used only when the application explicitly accepts a non-historical current-state universe.
-If historical replay or historical as-of coverage is required, `is_active` alone is insufficient.
+## Required identity layers (LOCKED)
 
-## Optional refinement fields
-- `ticker_type` when reliable and versioned
-- exchange/board metadata when stable and versioned
+The following concepts must remain distinct:
 
-## Locked rules
-1. `ticker_id` is the canonical identity used in all market-data tables.
-2. Provider mapping must resolve provider symbols to `ticker_id` via the ticker master.
-3. Default coverage universe must be evaluated as-of D using temporal membership, not current wall-clock state.
-4. When `trade_date < listed_since`, the ticker is out of default coverage universe for D.
-5. When `delisted_since` exists and `trade_date > delisted_since`, the ticker is out of default coverage universe for D.
-6. `ticker_code` is not a stable historical join key by itself.
+1. **Issuer** — the legal/economic issuing entity, identified by immutable `issuer_id`.
+2. **Instrument** — the security/equity instrument issued by an issuer, identified by immutable `instrument_id`.
+3. **Listing** — the instrument's admission to a venue, market segment, and board over an effective interval, identified by immutable `listing_id`.
+4. **Display/exchange symbol** — a time-varying code attached to a listing.
+5. **Provider symbol mapping** — a provider-specific, time-varying transport identifier mapped to `listing_id` or `instrument_id` through an explicit mapping record.
+
+Legacy `ticker_id` may remain as a compatibility identity only when its exact equivalence to `instrument_id` or `listing_id` is documented and invariant. New contracts must use stable identity names and must not assume `ticker_code` is the security.
+
+## Temporal fields (LOCKED)
+
+Issuer/instrument/listing/symbol records that can change historical membership must provide:
+
+- stable immutable identity
+- `valid_from` or equivalent effective start
+- nullable `valid_to` or equivalent exclusive/inclusive end with one documented convention
+- status/reason for listing, delisting, relisting, symbol change, or board movement
+- source/provenance and revision identity
+- `recorded_at`/`known_at` when point-in-time as-known replay is required
+
+Effective-time answers what was true on trade date T. Recorded/known-time answers what the system was allowed to know during an as-known replay. Current fields may be cached projections only and must not replace temporal records.
+
+## Historical universe rule (LOCKED)
+
+Universe membership for trade date T must be resolved entirely as-of T:
+
+- include a listing whose effective interval covers T and whose market/board scope matches the governed product
+- exclude a listing before its listed/admission date
+- exclude a listing after its effective delisting/termination date
+- retain an instrument that is inactive now when it was valid on T
+- treat suspension and daily trading status as separate point-in-time facts, not as deletion of historical identity
+- apply symbol/board changes using the mapping effective on T
+
+Current `is_active`, current ticker lists, current provider symbols, and present-day board state are forbidden as the sole resolver for historical coverage, replay, or backtest.
+
+## `is_active` boundary (LOCKED)
+
+`is_active` may exist only as a current-state cache or operational query optimization. It must be derived from temporal state, must never erase historical membership, and must never filter an as-of-T universe before temporal resolution.
+
+There is no historical fallback that permits `is_active=1` alone. If the temporal dependency is missing or ambiguous, historical universe resolution must fail/hold with explicit evidence rather than silently use the current universe.
+
+## Stable-key rules (LOCKED)
+
+1. Canonical bars, observations, actions, status events, indicators, eligibility, and publication manifests bind to stable `instrument_id`/`listing_id` semantics.
+2. Display ticker codes and provider symbols are never durable join keys by themselves.
+3. Symbol reuse must create or resolve through non-overlapping temporal mapping records; the same text code must not attach old history to a different instrument.
+4. Board or market-segment movement must be effective-dated and must not rewrite the prior listing context.
+5. Delisting followed by relisting must have explicit temporal continuity or a new listing identity according to governed master evidence.
+6. Identity corrections create revisions/effective records; they do not silently rewrite identity already bound to sealed publications.
+
+## Required point-in-time resolution output
+
+For requested trade date T, the identity dependency must be able to return at minimum:
+
+- `issuer_id`
+- `instrument_id`
+- `listing_id`
+- display/exchange symbol valid on T
+- market segment and board valid on T
+- listed/delisted or listing-validity state on T
+- provider-symbol mapping valid for provider and T
+- source/revision and as-known identity used by the run
+
+The run/publication must record the identity/universe snapshot or immutable version/hash needed to reproduce that resolution.
+
+## Failure behavior (LOCKED)
+
+- Missing temporal identity or overlapping/conflicting mapping for T blocks affected acquisition/universe membership.
+- An unmapped provider symbol is rejected/quarantined; it must not fabricate a new stable identity.
+- Ambiguous symbol reuse must fail closed.
+- Failure for one instrument may remain per-instrument during import, but coverage and promote must expose the resulting gap.
 
 ## Consumer impact
-Downstream consumers must treat `ticker_id` as canonical identity. `ticker_code` is presentation metadata, not durable time-safe identity.
+
+Downstream consumers use stable identity and the symbol/listing projection as-of the effective trade date. A current ticker code is presentation metadata, not proof of historical identity.
+
+## Acceptance criterion (LOCKED)
+
+An inactive-now-but-active-on-T listing must appear in the historical universe for T, and an active-now-but-not-yet-listed-on-T listing must not. Any resolver that cannot satisfy both cases is survivorship-biased and violates this contract.
+
+## Cross-contract alignment
+
+- `Symbol_Lifecycle_and_Mapping_Contract.md`
+- `Market_Calendar_Requirements_Contract.md`
+- `Coverage_Universe_Definition_LOCKED.md`
+- `Replay_Verification_Contract_LOCKED.md`

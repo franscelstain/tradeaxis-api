@@ -1,131 +1,64 @@
-# Downstream Data Readiness Guarantee (LOCKED)
+# Downstream Data Readiness Guarantee (STRATEGY LOCKED)
 
-## Purpose
-Define the exact readiness guarantees that Market Data Platform makes to downstream consumers.
+## Guarantee
 
-This guarantee exists so consumers know:
-- when a date is readable
-- when fallback is required
-- when a candidate date must not be read
-- how correction affects readable state
-- what minimum publication conditions must hold before a dataset is treated as safe
+For a requested Regular-Market trade date, the platform makes one explicit decision: return the active sealed publication for that date, return an explicitly labeled prior-date result, or return a reason-coded non-readable state. Silent fallback and mixed-publication reads are prohibited.
 
-This document is upstream-readiness only.
-It does not express trading desirability or strategy approval.
+## Dates tracked independently
 
-## Core readiness guarantee (LOCKED)
-A downstream consumer may read a date D only if there is a current sealed publication for D.
+- `latest_expected_trade_date`: latest completed Regular-Market session for which a bar is expected under temporal calendar/status evidence;
+- `latest_acquired_trade_date`: latest expected date with a traceable source observation outcome;
+- `latest_canonicalized_trade_date`: latest date with valid canonical facts;
+- `latest_readable_trade_date`: latest date with an active sealed publication satisfying the minimum read product;
+- `requested_trade_date` and `effective_trade_date`.
 
-Readable state requires all of the following:
-- coherent artifact set for D
-- terminal run outcome compatible with readability
-- content hashes available where required by publication contract
-- seal completed
-- publication resolved as current for D
+These dates may differ. No one of them may be inferred from `MAX(trade_date)` in a fact table.
 
-If any of these are missing, D is not guaranteed readable.
+## Readiness states
 
-## Guarantee scope
-The readiness guarantee covers:
-- bars
-- indicators
-- eligibility
-- effective-date publication state
-- seal/publication evidence
+- `READABLE`: one active, sealed, internally consistent immutable publication satisfies all required product gates.
+- `HELD`: processing completed far enough to make a deterministic non-publication decision, with reasons and evidence.
+- `FAILED`: the run failed and cannot expose a candidate.
+- `BUILDING`: a candidate exists but is not sealed/active.
+- `SUPERSEDED`: a formerly readable publication remains auditable but is not the active consumer target.
+- `NOT_AVAILABLE`: no qualifying publication or allowed fallback exists.
 
-It does not guarantee:
-- downstream strategy fit
-- trading attractiveness
-- portfolio suitability
-- real-time market continuity
-- session snapshot availability
+Job success, row counts, eligibility, or a seal record alone do not imply `READABLE`.
 
-## Readability conditions table (LOCKED)
+## Freshness states
 
-| Condition | Readable? | Consumer action |
-|---|---|---|
-| `SUCCESS` + current sealed publication exists for D | Yes | read D |
-| `SUCCESS` but seal missing | No | do not read |
-| `HELD` for requested date T and prior readable sealed date exists | No for T | fallback to prior readable date |
-| `FAILED` for requested date T and prior readable sealed date exists | No for T | fallback to prior readable date |
-| `HELD` for requested date T and no prior readable date exists | No | no readable effective date |
-| `FAILED` for requested date T and no prior readable date exists | No | no readable effective date |
-| corrected new current publication exists for D | Yes | read the new current publication |
-| superseded sealed publication exists for D | No for normal reads | audit-only |
+- `FRESH`: effective date equals the requested/latest expected date and all activated operational freshness gates pass.
+- `STALE`: a readable prior publication is deliberately returned and its older effective date is visible.
+- `DEGRADED`: the effective date may be current or prior, but one or more declared non-silent degraded conditions apply without violating data integrity.
+- `NOT_AVAILABLE`: there is no consumer-safe result.
 
-## Effective-date fallback guarantee (LOCKED)
-If requested date T is not readable:
-- the consumer must not read T as if it were safe
-- the platform may resolve `trade_date_effective` to the latest prior readable date D
-- consumer reads D only if a current sealed publication exists for D
+Before `OPERATIONAL_START_DATE`, missing future/daily data is development frontier, not an incident; the response still may not claim `FRESH`. After activation, lag against the latest expected completed session is measured and alerted.
 
-If no prior readable date exists:
-- `trade_date_effective` must remain unresolved or NULL according to implementation contract
-- consumer must not invent a fallback date
+## `READABLE` conditions
 
-## Seal guarantee (LOCKED)
-Seal is a hard readiness boundary.
+All must hold atomically for the same publication:
 
-Therefore:
-- unsealed candidate artifacts are not readable
-- technically complete but unsealed state is not consumer-safe
-- a final readable `SUCCESS` must not exist without required seal semantics
+1. temporal universe, identity, calendar/session, and status revisions are resolved;
+2. source observations and canonical rows have complete provenance and accepted schema/date/value validation;
+3. coverage expectation/delivery and quality gates pass without denominator manipulation;
+4. the selected analytical price product is coherent and factor/event revisions are verified or correctly contaminated;
+5. required indicators, daily metrics, and eligibility facts are present or validly null with reasons;
+6. non-null full config snapshot/hash, formula/registry/build lineage, content hashes, manifest, and seal verify;
+7. the publication is activated through the pointer/state machine and is not superseded; and
+8. the read surface can materialize the minimum versioned market-data DTO without cross-publication joins.
 
-## Publication guarantee (LOCKED)
-For one trade date D:
-- at most one publication may be current
-- the current publication is the only consumer-readable state for D
-- superseded publications are preserved for audit only
+These conditions are entirely data-facing. No candidate count, ranking stability, signal outcome, P&L, or other watchlist result can make a failed condition pass or a passed condition fail.
 
-## Correction guarantee (LOCKED)
-If a controlled correction replaces the current publication for D:
-- the newly current sealed publication becomes the readable state for D
-- prior publication remains auditable
-- consumer readiness for D remains continuous through current-publication resolution, not through ad hoc row selection
+## Fallback policy
 
-## Eligibility guarantee
-When D is readable:
-- the eligibility snapshot for D is the authoritative readable-universe artifact
-- blocked rows remain explicit
-- consumers must not infer readiness from bars or indicators alone
+Fallback is policy-controlled and explicit. When allowed, it returns the newest prior active sealed publication as `effective_trade_date`, sets `STALE` or `DEGRADED`, and includes the requested date, age in expected trading sessions, and fallback reason.
 
-## Non-guarantees
-The platform does not guarantee readability merely because:
-- a row exists in `eod_bars`
-- a row exists in `eod_indicators`
-- a date appears recent
-- a `run_id` is large
-- timestamps are recent
-- session snapshot exists
+A prior result is never renamed to the requested date, never counted as delivered for that date, and never combined with newer facts. If the maximum allowed age or required context fails, return `NOT_AVAILABLE`.
 
-These are insufficient by themselves.
+## Correction behavior
 
-## Consumer action summary
-Consumers must:
-- resolve effective date explicitly
-- resolve current sealed publication explicitly
-- read eligibility/bars/indicators from that one publication context
-- treat superseded publications as audit-only
+A correction builds and validates a distinct immutable publication, then atomically switches the active pointer. In-flight reads resolve exactly one pointer/publication. Rollback is another audited pointer event, not content mutation.
 
-Consumers must not:
-- guess from recency
-- guess from raw-table presence
-- mix publication contexts
-- bypass readiness/seal logic
+## Acceptance proof
 
-## Required cross-contract alignment
-This readiness guarantee must remain aligned with:
-- `Downstream_Consumer_Read_Model_Contract_LOCKED.md`
-- `Effective_Trade_Date_Contract_LOCKED.md`
-- `Dataset_Seal_and_Freeze_Contract_LOCKED.md`
-- `Historical_Correction_and_Reseal_Contract_LOCKED.md`
-
-## Anti-ambiguity rule (LOCKED)
-If a consumer cannot explain why D is readable in terms of current publication, seal state, and effective-date resolution, then D is not safely readable under this contract.
-
-## See also
-- `Downstream_Consumer_Read_Model_Contract_LOCKED.md`
-- `Effective_Trade_Date_Contract_LOCKED.md`
-- `Run_Status_and_Quality_Gates_LOCKED.md`
-- `Dataset_Seal_and_Freeze_Contract_LOCKED.md`
-- `Historical_Correction_and_Reseal_Contract_LOCKED.md`
+Executed integration tests must prove normal current reads, held and failed dates, explicit prior-date fallback, no-fallback behavior, atomic correction switch, concurrent reads, stale activation behavior, and rejection of mixed/configless/unsealed candidates. Until then this is a strategy guarantee, not a production-readiness claim.

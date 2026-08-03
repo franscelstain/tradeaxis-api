@@ -1,382 +1,75 @@
-# Database Schema Contracts (MariaDB, LOCKED)
-
-## Purpose
-Define the minimum persistence contract required for the Market Data Platform in MariaDB so the schema supports:
-- canonical readable-state storage
-- invalid-row evidence
-- publication-aware consumer reads
-- sealed publication switching
-- correction-safe auditability
-- deterministic replay support
-- auditable registry linkage
-- explicit row-history strategy
-
-## Required core tables
-Minimum required schema support must exist for concepts equivalent to:
-- `eod_bars`
-- `eod_invalid_bars`
-- `eod_indicators`
-- `eod_eligibility`
-- `market_data_sectors`
-- `ticker_sector_memberships`
-- `market_data_corporate_actions`
-- `market_data_trading_status_events`
-- `market_benchmarks`
-- `market_benchmark_bars`
-- `market_benchmark_indicators`
-- `eod_runs`
-- `eod_run_events`
-- `eod_publications`
-- `eod_current_publication_pointer` when the hardened current-publication model is used
-- reason-code registry table
-
-Equivalent naming is allowed only if semantics remain identical.
-
-## Required table semantics
-
-### 1. Canonical bars
-Must support:
-- exactly one current readable row per `(trade_date, ticker_id)`
-- deterministic canonical winner selection
-- mandatory non-null `publication_id` publication context on every live current row
-- readable-state linkage to run/publication context
-
-### 2. Invalid bars
-Must support:
-- rejected source-row evidence
-- invalid reason code
-- source row traceability
-- duplicate-loser preservation when needed
-- run/date linkage
-
-### 3. Indicators
-Must support:
-- exactly one current readable row per `(trade_date, ticker_id)`
-- explicit validity state
-- invalid reason code
-- indicator-set version identity
-- mandatory non-null `publication_id` publication context on every live current row
-- readable-state linkage to run/publication context
-
-### 4. Eligibility
-Must support:
-- exactly one current readable row per `(trade_date, ticker_id)`
-- explicit `eligible` state
-- explicit blocking reason code
-- mandatory non-null `publication_id` publication context on every live current row
-- readable-state linkage to run/publication context
-
-### 5. Sector taxonomy and membership
-Must support:
-- IDX-IC sector taxonomy rows such as `A` through `K` plus `Z`
-- historical ticker-to-sector membership by `effective_from` / `effective_to`
-- source name/reference for manually supplied or official sector classification data
-- nullable `eod_indicators.sector_code` when no source-backed membership exists for the trade date
-- no fabricated sector codes in indicator rows without a valid membership row
-
-### 5b. Benchmark and sector-index history
-Must support:
-- IHSG benchmark rows outside the equity ticker universe
-- sector-index benchmark rows for active IDX-IC sectors that have a `sector_index_code`
-- manual/source-backed sector-index OHLC bars in `market_benchmark_bars`
-- benchmark indicators with `roc_20` used by nullable sector-rotation fields
-- no fabricated `sector_roc20`, `rs_20_vs_sector`, or `sector_rs_20_vs_ihsg` values when sector-index history is missing
-
-### 5c. Corporate action and trading status source context
-Must support:
-- source-backed corporate action rows by `(ticker_id, action_date, action_type, source_name)`
-- source-backed trading status rows by `(ticker_id, trade_date, event_type_code, source_name)` with semantics resolved through `market_data_trading_status_event_types`
-- explicit source name/reference fields for operator CSV or future audited providers
-- nullable `eod_indicators.corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons`
-- `NULL` event-risk indicator fields when no source row/state exists for the ticker/date
-- source-backed `event_risk_flag=0` only when an explicit source row/state says no event risk remains; non-exclusion rows may clear coverage exclusion while special-monitoring/UMA event-risk context can still remain active
-- source-backed semantic coverage state where `SUSPENDED` excludes coverage until `UNSUSPENDED`; `SPECIAL_MONITORING_START` / `SPECIAL_MONITORING_END` manage special-monitoring event risk; `UMA` remains exact-date event risk; `ACTIVE` is not stored as a source event
-- no fabricated no-risk values from absence of corporate-action/trading-status source data
-
-### 6. Runs
-Must support, at minimum:
-- requested trade date
-- effective trade date
-- lifecycle state
-- terminal status
-- quality gate state
-- publishability state
-- stage
-- explicit `request_mode` separating `import_only` from `promote` / publish flows
-- counts and telemetry
-- first-class source traceability fields (not notes/logs only)
-- hash fields
-- seal metadata
-- config identity
-- correction/publication linkage
-- final publishability reason metadata
-
-#### Coverage-gate evidence required on runs
-For the locked coverage-gate contract, `eod_runs` must also support coverage evidence fields equivalent to:
-- `coverage_universe_count`
-- `coverage_available_count`
-- `coverage_missing_count`
-- `coverage_ratio`
-- `coverage_min_threshold`
-- `coverage_gate_state`
-- `coverage_threshold_mode`
-- `coverage_universe_basis`
-- `coverage_contract_version`
-- optional `coverage_missing_sample_json`
-
-These fields exist so finalization does not have to infer denominator, numerator, or threshold after the fact.
-
-### 7. Run events
-Must support:
-- append-only event trail
-- stage/event traceability
-- severity
-- optional reason-code linkage
-- structured payload detail
-- run/date linkage
-
-### 8. Publications
-Must support:
-- current publication for one trade date
-- superseded publication history
-- publication version
-- explicit readable-vs-audit-only distinction
-
-### 9. Current-publication pointer
-When the hardened pointer model is adopted, schema must support:
-- exactly one pointer row per readable trade date
-- one pointed publication per trade date
-- publication-to-trade-date consistency
-- transactional alignment with publication switch flow
-
-## Live current tables vs history tables (LOCKED)
-The schema must keep a clean distinction between:
-
-### A. Live current readable tables
-- `eod_bars`
-- `eod_indicators`
-- `eod_eligibility`
-
-These store one current readable row per `(trade_date, ticker_id)`.
-In these live current tables:
-- `publication_id` is mandatory publication context
-- `publication_id` is not the live-table primary key
-- superseded publication row sets must not remain side-by-side with the current readable row set
-
-### B. Historical publication-bound row sets
-When retained, these belong in:
-- `eod_bars_history`
-- `eod_indicators_history`
-- `eod_eligibility_history`
-- or equivalent immutable publication-bound storage
-
-History tables may use `(publication_id, trade_date, ticker_id)` as the row identity.
-That is distinct from the live current-table identity.
-
-## Required uniqueness and integrity constraints (LOCKED)
-
-### Required uniqueness
-- `eod_bars`: exactly one current readable row per `(trade_date, ticker_id)`
-- `eod_indicators`: exactly one current readable row per `(trade_date, ticker_id)`
-- `eod_eligibility`: exactly one current readable row per `(trade_date, ticker_id)`
-- `market_data_sectors`: one taxonomy row per `sector_code`
-- `ticker_sector_memberships`: one membership row per `(ticker_id, classification_system, effective_from)`
-- `md_replay_reason_code_counts`: one row per `(replay_id, trade_date, reason_code)`
-- `eod_publications`: one row per `(trade_date, publication_version)`
-
-### Required integrity semantics
-- one coherent publication context must back one readable state
-- one trade date must resolve to at most one current publication
-- where the hardened pointer model is used, current-publication resolution must prefer `eod_current_publication_pointer`
-- live current rows in `eod_bars`, `eod_indicators`, and `eod_eligibility` must carry non-null `publication_id`
-- prior superseded publication must remain auditable
-- invalid bars must never leak into canonical readable bars
-- run events must remain append-only
-
-## Run-state model requirement (LOCKED)
-The schema must distinguish, semantically and preferably physically, at minimum:
-
-### A. Lifecycle state
-Execution progression state, for example:
-- `PENDING`
-- `RUNNING` — active process currently executing only, not a proxy for “not promoted yet”
-- `FINALIZING`
-- `COMPLETED` — stage/run work closed; terminal status may still be `NULL` for import-only non-readable candidates
-- `FAILED`
-- `CANCELLED` — stale/interrupted active run was closed without readable side effects
-
-### B. Terminal status
-Consumer-facing terminal outcome:
-- `SUCCESS`
-- `HELD`
-- `FAILED`
-
-### C. Quality gate state
-Gate evaluation state:
-- `PENDING`
-- `PASS`
-- `FAIL`
-- `BLOCKED`
-
-### D. Publishability state
-Readability state:
-- `NOT_READABLE`
-- `READABLE`
-
-These meanings must remain distinct.
-A single overloaded `status` column is not sufficient for strong contract closure.
-
-## Required schema support for effective-date publication
-The schema must support a consumer-readable publication model where:
-- one trade date D may have multiple historical publications
-- only one publication may be current
-- only the current sealed publication is consumer-readable
-- superseded publications remain audit-only
-
-## Required schema support for historical correction integrity
-The schema must be able to represent:
-- prior current publication
-- new correction run
-- approval metadata
-- old/new hash trails
-- publication switch result
-- supersession relation
-
-## Required schema support for explicit row-history strategy
-The schema must support one of the following clearly documented strategies:
-
-### Strategy A — Immutable publication-bound history tables
-Recommended.
-Use tables such as:
-- `eod_bars_history`
-- `eod_indicators_history`
-- `eod_eligibility_history`
-
-These preserve exact row sets per publication.
-
-### Strategy B — Publication + hash + correction evidence only
-Allowed only for explicitly documented non-production, legacy, or intentionally weaker deployments.
-
-Strategy B must not be presented as equal in audit strength to Strategy A and must not be described as the default production-grade strategy.
-
-If Strategy B is chosen:
-- contracts must explicitly state that row-level historical audit is derived from publication trail + hash trail + correction evidence
-- the implementation must not imply richer row-history than it actually stores
-
-## Required replay-proof schema support
-Replay storage must be able to represent:
-- requested trade date
-- effective trade date
-- terminal status
-- comparison result
-- comparison note
-- artifact-changed scope
-- config identity
-- publication version where relevant
-- seal state
-- mismatch summary
-- reason-code counts
-
-## Application-enforced integrity where MariaDB cannot express partial uniqueness
-Some invariants may require application transaction discipline or locked procedure flow, including:
-- exactly one current publication per trade date
-- no ambiguous publication switch
-- no dual-current publication state
-- no mixed current/superseded read state
-
-If MariaDB cannot express the invariant directly, the implementation must still enforce it deterministically.
-
-## Severity model distinction
-Two severity layers may exist:
-
-### Reason-code severity
-Registry classification such as:
-- `INFO`
-- `WARN`
-- `HARD`
-
-### Event severity
-Run-event log severity such as:
-- `INFO`
-- `WARN`
-- `ERROR`
-
-These do not need identical enums, but the distinction must remain explicit.
-
-## Cross-contract alignment
-This schema contract must remain aligned with:
-- `../book/Historical_Correction_and_Reseal_Contract_LOCKED.md`
-- `../book/Downstream_Consumer_Read_Model_Contract_LOCKED.md`
-- `../book/Downstream_Data_Readiness_Guarantee_LOCKED.md`
-- `../book/Determinism_Invariants_LOCKED.md`
-- `../book/Canonical_Row_History_and_Versioning_Policy_LOCKED.md`
-- `../book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`
-- `Indices_and_Constraints_Contract_LOCKED.md`
-
-For current-publication resolution behavior, the book-level pointer contract remains the sole behavioral owner. Schema notes and DDL may enforce that contract, but must not soften it.
-
-## Anti-ambiguity rule (LOCKED)
-If a required audit artifact, invalid-row evidence, run-state dimension, publication-context rule, or row-history strategy is described as mandatory in contracts but not represented or explicitly chosen in schema design, then the schema is incomplete and not contract-consistent.
-
-
-**Publication-context integrity rule for live current tables.**
-For `eod_bars`, `eod_indicators`, and `eod_eligibility`, `publication_id` is a mandatory publication-context field used to bind the current readable rows to the resolved current publication. This field is required as an integrity anchor for downstream reads and operational verification. It must not be interpreted as permitting side-by-side storage of multiple publication versions in the live current tables for the same `(trade_date, ticker_id)` key. Live current tables retain a single current-state row per `(trade_date, ticker_id)`; publication-versioned history belongs in the publication trail and `*_history` tables.
-
----
-
-## 2026-04-26 — DB Schema & Migration Sync Contract Addendum
-
-Status: LOCKED SYNC APPLIED
-
-This addendum records schema reconciliation from the DB schema sync session.
-
-Authoritative sync contract:
-- `docs/market_data/db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md`
-
-Tables now explicitly covered by the core SQL schema document:
-- `tickers`
-- `market_calendar`
-- `md_session_snapshots`
-
-Replay expected-context columns now explicitly covered by `md_replay_daily_metrics` in `Database_Schema_MariaDB.sql`:
-- `expected_config_identity`
-- `expected_publication_version`
-- `expected_coverage_universe_count`
-- `expected_coverage_available_count`
-- `expected_coverage_missing_count`
-- `expected_coverage_ratio`
-- `expected_coverage_min_threshold`
-- `expected_coverage_gate_state`
-- `expected_coverage_threshold_mode`
-- `expected_coverage_universe_basis`
-- `expected_coverage_contract_version`
-- `expected_coverage_missing_sample_json`
-- `expected_bars_batch_hash`
-- `expected_indicators_batch_hash`
-- `expected_eligibility_batch_hash`
-- `expected_reason_code_counts_json`
-
-SQLite mirror correction:
-- `tickers` now mirrors migration-owned ticker master fields and unique ticker code.
-- `market_calendar` now mirrors migration-owned calendar fields and index; previous SQLite-only `market_code` is removed.
-- `md_session_snapshots` now exists in SQLite with repository-required columns, unique key, and indexes.
-
-Compatibility exceptions remain allowed only where explicitly technical:
-- MariaDB `ENUM` -> SQLite `string`
-- MariaDB `JSON` -> SQLite `text`
-- MariaDB composite production primary keys may be mirrored with surrogate test IDs where existing integration tests depend on row insertion ergonomics.
-
-## Database Dictionary and Consumer Field Mapping Rule
-
-`docs/market_data/db/MARKET_DATA_DICTIONARY.md` is the operational dictionary for database-connected work. The physical schema contract in this file remains authoritative for persistence semantics, but agents and implementations must use the dictionary to resolve table purpose, field role, date key, identifier key, as-of lookup rule, and consumer-facing mappings before coding.
-
-Mandatory current mappings:
-
-```text
-market_index_roc20 => market_benchmark_indicators.roc_20 where benchmark_code='IHSG'
-market_index_ma20_slope_pct => market_benchmark_indicators.ma20_slope_pct where benchmark_code='IHSG'
-market_calendar date key => cal_date
-IHSG benchmark master => market_benchmarks.benchmark_code='IHSG' provider_symbol='^JKSE'
-```
-
-If a database-connected task finds a table/column/role missing from the dictionary, the task must update the dictionary or mark the work blocked before claiming implementation evidence.
+# Database Schema Contract — MariaDB (STRATEGY LOCKED)
+
+## Authority and rollout state
+
+Domain owner contracts define meaning. The deployable database shape is the legacy base in `Database_Schema_MariaDB.sql` plus ordered forward migrations. Migration `2026_08_02_000001_add_market_data_strategy_v2_foundation.php` introduces the strategy-corrected foundation as nullable additive fields/tables; null rollout bindings do not satisfy a publication gate.
+
+Production relock additionally requires data backfill, repository adoption, non-null/check/FK enforcement where appropriate, SQLite mirror parity, and executed migration/rollback/integration evidence.
+
+## Required model families
+
+### Immutable acquisition evidence
+
+`md_source_observations` stores one immutable envelope per request/file/response outcome, including stable identity, run/attempt/date, provider symbol and temporal mapping reference, sanitized request identity, timestamps, status/content type, schema fingerprint, adapter version, payload hash/ref/bounded body, outcome/reason, and supersession lineage.
+
+Refetch creates a new row. Secrets are forbidden. Canonical/artifact rows link to accepted observations; rejected/stale/schema-invalid outcomes remain evidence.
+
+### Full configuration snapshots
+
+`md_config_snapshots` stores deterministic typed serialized content, schema/serialization versions, effective and recorded times, registry/build/environment/resolver identity, and `SHA-256` hash. Runs, publication lineage, artifacts, and seals bind the same non-null snapshot.
+
+### Bitemporal identity and expectation
+
+Stable issuer, instrument, and listing IDs are separate from exchange symbols and provider mappings. Symbol/mapping rows have effective intervals and recorded/known time. Calendar/session revisions and trading-status revisions retain the same two-time distinction.
+
+Historical membership and bar expectation are never reconstructed from current `tickers.is_active`, current symbol, provider absence, or dormancy. Overlapping active revisions for the same scope are rejected by validation and ultimately constraints.
+
+### Canonical bars and observations
+
+Publication-bound `eod_bars_history` is authoritative; `eod_bars` may remain a replaceable current projection. Bar rows support listing/observation/config binding, Regular-Market `RAW` OHLCV, optional source-backed previous close, actual traded value, trade count, board/session/status and timestamps, canonicalization version, quality state, and product label.
+
+Provider `adj_close` may be retained only as source lineage/legacy compatibility; it is not canonical RAW close or the structural-adjusted product.
+
+### Corporate actions and factors
+
+Immutable event revisions store lifecycle, verification state, ex/cum/record/payment dates, terms, source observation, and known time. Immutable factor sets/factors link only to verified event revisions and define price/volume transformation intervals.
+
+Price-scale breaks are diagnostic candidates only. Schema must not provide or honor fields/commands that record in-place repairs of canonical or history rows. Legacy corporate-action tables are transitional projections, not factor authority.
+
+### Indicators and eligibility
+
+Indicator snapshots bind listing, publication, config, factor set, coherent price product, formula/registry version, recursive ATR state, explicit actual/proxy liquidity fields, null reasons, and context revisions.
+
+Data-usability snapshots separately store universe membership, bar expectation/delivery, canonical quality, liquidity, temporal status, event risk, upstream data-usability decision, and all reasons. Existing eligibility naming is compatibility only; it cannot encode tradability or watchlist policy. A primary `reason_code` is compatibility only.
+
+### Publications and read state
+
+Immutable publications retain distinct versions, full manifest/config/observation/revision/factor/formula/read-model binding, content hashes, seal, readiness, supersession, and pointer history. The active pointer is the only normal date-current authority; snapshots remain immutable. Pointer switch is atomic and fenced.
+
+Latest expected/acquired/canonicalized/readable dates and freshness state are stored/evidenced independently. Successful run status, a current projection row, or eligibility does not create readability.
+
+### Replay proof storage
+
+Replay storage binds replay mode, fixture/manifest hash, knowledge cutoff when applicable, exact publication identity for publication replay, observation/config/temporal/factor/product/formula/read-model identities, expected/actual readiness/freshness/reasons/hashes, and mismatch details. The target column shape is specified in `../backtest/Replay_Results_Schema_MariaDB.sql`; legacy `config_identity` alone is transitional and insufficient.
+
+## Required integrity
+
+- stable primary/unique temporal revision keys and no ambiguous overlaps;
+- positive OHLC and `high >= max(open, close)`, `low <= min(open, close)`, non-negative volume where database constraints are portable, plus service validation;
+- immutable observation, revision, snapshot, manifest, seal, and history surfaces enforced by privileges/repositories and mutation guards;
+- non-null observation/config/product/factor/formula/publication lineage before seal;
+- all publication artifact rows share the same publication/config context;
+- one active pointer per market/product/date scope;
+- reason/annotation fields participate in artifact hashes;
+- unknown expectation remains in coverage denominator;
+- no cascade delete of published evidence.
+
+Logical references left nullable/no-FK during rollout require an explicit enforcement migration before production relock. Application guards are transitional defense, not a permanent substitute for enforceable integrity where MariaDB supports it.
+
+## MariaDB/SQLite compatibility
+
+SQLite may mirror enum/JSON/unsigned/timestamp types as string/text/integer while preserving column meaning, nullability, uniqueness, and query behavior. Compatibility surrogate IDs are test-only and cannot become domain identity. Every repository-used target column/table must exist in both paths.
+
+## Migration acceptance
+
+Executed proof must cover clean MariaDB install, upgrade from the latest supported deployed schema, rollback rehearsal where supported, SQLite test bootstrap, schema-diff assertions, existing-data backfill validation, duplicate/overlap/invalid-row negatives, repository round trips, publication/read integration, and protection against direct history repair.

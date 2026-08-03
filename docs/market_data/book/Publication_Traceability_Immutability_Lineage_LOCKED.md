@@ -2,7 +2,7 @@
 
 ## Status
 
-LOCKED extension for audit-safety hardening.
+STRATEGY LOCKED / IMPLEMENTATION REQUIRES RE-AUDIT.
 
 This contract does not change:
 - coverage gate logic
@@ -14,8 +14,8 @@ This contract does not change:
 
 ## Scope
 
-This contract only governs:
-1. source file identity persistence
+This contract governs:
+1. immutable source observation identity for file and API acquisition
 2. sealed publication immutability guard
 3. publication versioning and lineage metadata
 
@@ -39,6 +39,8 @@ Rules:
 - Non-file/API runs may keep these fields `NULL`; they must not fake file identity.
 - Publication-level source identity is a copy of the run-level source identity at seal time so the sealed publication remains independently auditable.
 
+API/manual observations additionally require immutable observation id, provider/source, provider symbol mapping, requested boundary, observed/received timestamps, schema/adapter version, payload hash/reference, and linkage to publication-bound rows. API runs must not leave source identity empty merely because file-specific fields are `NULL`.
+
 ---
 
 ## 2. SEALED Publication Immutability Contract
@@ -46,6 +48,9 @@ Rules:
 A publication with `seal_state='SEALED'` is immutable for publication content identity and source identity.
 
 Protected mutation scope:
+- publication-bound bar/price-product/indicator/eligibility row snapshots
+- observation and provenance references
+- identity/universe, calendar/status, config, formula, and factor revision bindings
 - batch hashes
 - source file identity fields
 - seal metadata
@@ -60,6 +65,8 @@ SEALED_PUBLICATION_IMMUTABLE
 Rules:
 - The guard must live in repository/service code, not only in command code.
 - Mutation attempts after seal must fail before writing changes.
+- The guard applies to repository, service, maintenance, repair, migration, and direct operator paths.
+- A content change creates a new publication version and immutable snapshot set; force/repair may switch a pointer only after that lifecycle succeeds.
 - Existing consumer safety, publishability, coverage gate, and pointer decisions are not changed by this guard.
 
 ---
@@ -72,6 +79,7 @@ Required fields:
 - `publication_version`
 - `previous_publication_id`
 - `replaced_publication_id`
+- correction/revision identity and immutable manifest/config/factor references
 
 Compatibility field:
 - `supersedes_publication_id` remains supported as the existing historical replacement field.
@@ -87,8 +95,10 @@ Rules:
 ## Done Criteria
 
 This contract is satisfied only when:
-- source file identity persists to run and publication rows
+- source observation identity persists to run, publication, and row lineage for every source mode
 - sealed publication hash mutation is rejected with `SEALED_PUBLICATION_IMMUTABLE`
+- sealed row/source/config/factor mutation is rejected before write
 - version/previous/replaced lineage fields are persisted
+- superseded immutable snapshot rows remain queryable and hash-verifiable
 - current pointer behavior remains governed by the existing pointer contract
 - coverage and publishability policy remain unchanged

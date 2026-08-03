@@ -9,51 +9,31 @@ class CoverageGateCandidateScopeHardeningStaticGuardTest extends TestCase
         return dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path);
     }
 
-    public function test_promote_and_correction_coverage_resolves_candidate_publication_scope_before_evaluation(): void
-    {
-        $pipeline = file_get_contents($this->projectPath('app/Application/MarketData/Services/MarketDataPipelineService.php'));
+    // The pipeline wiring and the evaluator's output fields were asserted here as source
+    // strings. What the scoping query actually returns is now proven by
+    // CandidateCoverageScopeTest, which builds a live publication holding the full universe and
+    // an incomplete candidate beside it, and shows the candidate is counted by its own bars.
 
-        $this->assertStringContainsString('resolveCandidateCoveragePublicationId', $pipeline);
-        $this->assertStringContainsString('$coverageBasisPublicationId = $this->resolveCandidateCoveragePublicationId($run, $input, $priorCurrent);', $pipeline);
-        $this->assertStringContainsString('$this->coverageGateEvaluator->evaluate($input->requestedDate, $coverageBasisPublicationId)', $pipeline);
-        $this->assertStringContainsString("\$result['publication_id']", $pipeline);
-        $this->assertStringContainsString("'candidate_publication_id='", $pipeline);
-        $this->assertStringContainsString("'baseline_publication_id='", $pipeline);
-        $this->assertStringContainsString('coverageBasisNoteSegments', $pipeline);
-        $this->assertStringContainsString('noteCandidateSupersedesPriorCurrent', $pipeline);
-        $this->assertStringContainsString('replaceBarsHistoryFromPublication', $pipeline);
-        $this->assertStringContainsString('ensureBarsHistoryFromCurrentTradeDate', $pipeline);
-    }
-
-    public function test_artifact_repository_filters_candidate_coverage_by_publication_id_not_live_current_fallback(): void
+    /**
+     * The artifact repository must never resolve a coverage scope for itself.
+     *
+     * These are the three fallbacks that would silently restore the defect the candidate scope
+     * exists to prevent: reading the live current publication, reaching back to the last readable
+     * one, or taking whatever is newest. Each would make an incomplete candidate report the
+     * coverage of a dataset it did not produce.
+     *
+     * This stays a source check because it asserts an absence. The positive behaviour — that the
+     * scoped query counts only the named publication's bars, unions history and current without
+     * double counting, and treats an empty publication as empty — is driven by
+     * CandidateCoverageScopeTest.
+     */
+    public function test_artifact_repository_never_falls_back_to_a_live_or_latest_publication(): void
     {
         $repository = file_get_contents($this->projectPath('app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php'));
 
-        $this->assertStringContainsString('loadCandidateScopedBarTickerIdsForTradeDate', $repository);
-        $this->assertStringContainsString('eod_bars_history', $repository);
-        $this->assertStringContainsString('eod_bars', $repository);
-        $this->assertStringContainsString("where('publication_id', \$publicationId)", $repository);
         $this->assertStringNotContainsString('findCurrentPublicationForTradeDate($tradeDate)', $repository);
         $this->assertStringNotContainsString('findLatestReadablePublicationBefore($tradeDate)', $repository);
         $this->assertStringNotContainsString('orderByDesc(\'trade_date\')', $repository);
-    }
-
-    public function test_coverage_evaluator_outputs_candidate_coverage_basis_context(): void
-    {
-        $evaluator = file_get_contents($this->projectPath('app/Application/MarketData/Services/CoverageGateEvaluator.php'));
-
-        foreach ([
-            'coverage_basis',
-            'coverage_basis_publication_id',
-            'coverage_basis_artifact_scope',
-            'candidate_publication_id',
-            'candidate_available_count',
-            'candidate_missing_count',
-            'candidate_coverage_ratio',
-            'CandidatePublication',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $evaluator);
-        }
     }
 
     public function test_command_evidence_and_replay_expose_candidate_coverage_basis(): void

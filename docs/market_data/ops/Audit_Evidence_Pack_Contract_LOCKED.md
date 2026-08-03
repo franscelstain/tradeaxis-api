@@ -16,6 +16,8 @@ A run, correction, or replay outcome is not operationally healthy unless enough 
 - which hashes were involved
 - whether prior safe state was preserved
 
+Every pack also binds the immutable source-observation manifest, temporal revision set, full config snapshot ID/hash, factor-set ID/hash, coherent price product, formula/registry/read-model versions, and requested/effective/readiness/freshness context. Legacy version labels or `config_identity` strings are compatibility metadata only and cannot satisfy reproducibility alone.
+
 ## Evidence-pack categories
 The platform must be able to reconstruct at minimum:
 1. requested-date run evidence pack
@@ -40,7 +42,10 @@ A conforming run evidence pack must include at minimum:
 - dominant reason-code summary
 - bars/indicators/eligibility hash set, when applicable
 - seal state
-- config identity
+- full config snapshot ID/hash
+- observation-manifest hash
+- temporal revision-set and factor-set identities/hashes
+- price-product, canonicalization, formula/registry, and read-model versions
 - current publication resolution
 - coverage context: `coverage_gate_state`, `coverage_ratio`, `coverage_min_threshold`, `expected_bar_count`, `available_bar_count`, `missing_bar_count`, and `coverage_reason_code`
 - legacy coverage state trace: legacy input `BLOCKED` must not appear as final `coverage_gate_state`; it may appear only as `legacy_coverage_gate_state_raw=BLOCKED`
@@ -167,8 +172,9 @@ A conforming replay result evidence pack must include at minimum:
 4. Which artifact layer diverged?
 5. Did hashes diverge?
 6. Did status/effective-date diverge?
-7. Was config identity consistent?
-8. Does the mismatch indicate canonical drift, indicator drift, eligibility drift, formatting drift, or publication drift?
+7. Were observation/config/temporal/factor/product/formula/read-model identities consistent?
+8. Did the declared replay mode and knowledge cutoff use the correct point-in-time inputs?
+9. Does the mismatch indicate canonical drift, indicator drift, eligibility drift, formatting drift, lineage drift, or publication drift?
 
 ### Minimum example shape
     {
@@ -180,7 +186,17 @@ A conforming replay result evidence pack must include at minimum:
       "replay_status": "FAIL",
       "comparison_note": "eligibility output diverged",
       "artifact_changed_scope": "eligibility_only",
-      "config_identity": "cfg_2025_12_v2",
+      "replay_mode": "PUBLICATION_EXACT",
+      "knowledge_cutoff": null,
+      "observation_manifest_hash": "OBS_HASH",
+      "config_snapshot_id": 9001,
+      "config_snapshot_hash": "CONFIG_HASH",
+      "temporal_revision_set_hash": "TEMPORAL_HASH",
+      "factor_set_id": 7001,
+      "factor_set_hash": "FACTOR_HASH",
+      "price_product_code": "STRUCTURAL_ADJUSTED",
+      "formula_version": "weekly_swing_eod_v2",
+      "read_model_version": "weekly_swing_read_v2",
       "publication_version": 1,
       "bars_batch_hash": "A1",
       "indicators_batch_hash": "B1",

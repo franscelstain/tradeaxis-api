@@ -16,10 +16,10 @@ use Illuminate\Support\Facades\Schema;
  * per field. This column records the causing actions as sorted comma-joined
  * ACTION_TYPE_CODE@YYYY-MM-DD tokens.
  *
- * Deliberately excluded from indicators_batch_hash: the contamination decision itself is
- * already hash-protected through invalid_reason_code and the NULL pattern of the indicator
- * fields. Adding this annotation to the hash column list would invalidate every existing
- * sealed publication hash without adding integrity.
+ * Included in indicators_batch_hash. An earlier revision excluded it to avoid invalidating
+ * sealed hashes, which broke propagation entirely: the recompute cancels a correction when
+ * the candidate hash matches the current one, so a publication with the trail and one
+ * without hashed the same and the column never reached eod_indicators.
  *
  * Appended as the last column rather than placed next to the event-risk fields. Physical
  * column order carries no meaning here because every read is by name, while eod_indicators_history

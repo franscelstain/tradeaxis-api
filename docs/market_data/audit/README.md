@@ -1,5 +1,7 @@
 # Market Data Audit README
 
+Current canonical documentation verdict (2026-08-02): `reports/AUDIT_FINAL_STATE.md` — **`DOCUMENTATION_STRATEGY_READY`**. Implementation conformance and operational/production readiness are separate future verdicts and are not claimed. All earlier inventory, tracker, implementation-status, and proof-pack `LOCKED`/production-ready statements are historical evidence for their dated pre-correction scope.
+
 ## Purpose
 Folder ini adalah pintu masuk audit untuk paket `docs/market_data`. Audit dipakai agar pembahasan paket market-data tetap konsisten saat chat baru dimulai, saat ZIP baru diunggah, atau saat revisi dokumen dilakukan.
 
@@ -49,7 +51,12 @@ Urutan minimum:
    - `../../system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
 6. jalankan checklist yang sesuai
 7. baca `audit/reports/AUDIT_FINAL_STATE.md` untuk state audit aktif saat ini
-8. pakai templates bila perlu membuat findings, remediation, atau verdict baru
+8. untuk pembangunan, ikuti work order pada `../book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md`
+9. gunakan `../book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md` sebagai ledger assignment agar tidak ada dokumen/deliverable/proof yang terlewat
+10. jalankan lifecycle command/result/remediation dari `../book/Market_Data_Implementation_Command_Protocol_LOCKED.md` dan baca current state pada `MARKET_DATA_IMPLEMENTATION_LEDGER.md`
+
+Recommended stage-by-stage directive dimulai dari `MD-RUN W00 market-data.`. Setelah `PASS`, hasil wajib memberikan `MD-RUN W01 market-data.`, lalu berurutan sampai `W22`. Component `MD-EXEC`/`MD-AUDIT` commands tetap tersedia untuk controlled manual operation.
+9. pakai templates bila perlu membuat findings, remediation, atau verdict baru
 
 ## Relationship to other folders
 - `system/` = peta besar sistem tingkat atas
@@ -72,16 +79,17 @@ Dua file berikut adalah checkpoint aktif utama untuk build dan closure implement
 Keduanya wajib sinkron dengan owner docs dan tidak boleh dipakai untuk membuat kontrak paralel.
 
 ## Current checkpoint summary
-Checkpoint aktif menyatakan market-data **production-ready locked** untuk source state saat ini dan daily market-data lifecycle yang terus berjalan.
 
-Range `2023-01-02` sampai `2025-10-31` adalah archived full-range proof window yang dipakai sebagai bukti audit Lumen, bukan tanggal akhir production-ready. Latest operator run/current operation sudah dilaporkan berjalan sampai `2026-06-04`, dan tanggal setelah proof window tetap masuk jalur daily lifecycle/backfill normal.
+- documentation strategy: `DOCUMENTATION_STRATEGY_READY`;
+- normative implementation sequence: `../book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md`;
+- normative implementation assignment/traceability: `../book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md`;
+- normative implementation command/result lifecycle: `../book/Market_Data_Implementation_Command_Protocol_LOCKED.md`;
+- current implementation execution state: `MARKET_DATA_IMPLEMENTATION_LEDGER.md`;
+- implementation conformance: not claimed by documentation closure;
+- operational activation: not established by archived proof;
+- production relock: pending a new audit after implementation and relevant executed evidence.
 
-Bukti penutup aktif berada di dua file Lumen:
-- full unfiltered missing-ticker plan: `missing_bar_count=0`, `missing_trade_date_count=0`, `ticker_count=0`, `trading_dates=672`
-- full-range current evidence/replay: `processed_count=672`, `success_count=672`, `failed_count=0`, `all_passed=1`
-- latest full PHPUnit docs-review proof: `vendor\bin\phpunit` -> `OK (641 tests, 9547 assertions)` pada `2026-06-08`
-
-Catatan `PARTIAL` atau `BLOCKED` bertanggal lebih lama di checkpoint Lumen adalah histori penyebab/perbaikan jika sudah diikuti oleh entry 2026-06-05 yang menutupnya.
+Range `2023-01-02` sampai `2025-10-31` tetap archived proof window, bukan dataset end atau current-freshness claim. Historical Lumen locks dan PHPUnit/runtime evidence hanya membuktikan behavior/contract lama yang benar-benar dieksekusi dan tidak boleh mengalahkan corrected owner strategy.
 
 ## Runtime-state separation
 Audit market-data wajib memisahkan:

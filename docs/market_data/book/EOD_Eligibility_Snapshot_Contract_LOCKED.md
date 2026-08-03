@@ -1,107 +1,109 @@
-# EOD Eligibility Snapshot Contract (LOCKED)
+# EOD Eligibility Facts Snapshot Contract (LOCKED)
 
 ## Purpose
-Define the authoritative eligibility snapshot produced by Market Data Platform for one trade date D.
 
-This snapshot is an upstream readiness artifact for consumers.
-It does not encode ranking, scoring, picks, or trading decisions.
+Define the publication-bound, point-in-time upstream data-usability facts for every temporal-universe instrument on trade date D.
 
-## Output definition
-For each trade date D, the platform must produce exactly one live current eligibility row per coverage-universe ticker for D.
+Eligibility in this contract explains whether market-data is internally valid and sufficiently complete for downstream use. It does not encode ranking, alpha, picks, buy/sell signals, liquidity/tradability preference, event-avoidance preference, or portfolio policy.
 
-Minimum fields:
-- `trade_date`
-- `ticker_id`
-- `publication_id`
-- `eligible`
-- `reason_code`
-- `run_id`
+## Row scope and identity (LOCKED)
 
-## Row cardinality rule (LOCKED)
-For one trade date D in the live current readable table:
-- every ticker in coverage universe for D must have exactly one eligibility row
-- tickers outside coverage universe for D must not appear in the eligibility snapshot for D
-- `publication_id` must be populated on every live current row
+One eligibility facts row exists per `(publication_id, trade_date, stable listing/instrument identity)` in the publication snapshot, including blocked and verified `NOT_EXPECTED` cases.
 
-`publication_id` is mandatory publication context for the current readable row set, but it is not a second competing primary key for the live current table.
-Historical publication-bound snapshots belong in `eod_eligibility_history` or equivalent audit storage.
+Current projections may expose the selected publication, but immutable history remains publication-bound. A current ticker code is not row identity.
 
-## Eligibility meaning
-- `eligible = 1` means the ticker is readable for downstream consumers under upstream readiness rules
-- `eligible = 0` means the ticker is not readable for downstream use on D and must carry a blocking `reason_code`
+## Required fact dimensions
 
-## Upstream-only rule (LOCKED)
-Eligibility here means upstream dataset readiness only.
-It must not be interpreted as:
-- a buy/sell signal
-- a ranking result
-- a watchlist group
-- a strategy approval
+Each row must persist separately:
 
-## Minimum blocking reasons (LOCKED)
-Use only reason codes that exist in the official reason-code registry.
+### Expectation and delivery
 
-Minimum standard blocking reasons:
-- `ELIG_MISSING_BAR`
-- `ELIG_MISSING_INDICATORS`
-- `ELIG_INVALID_INDICATORS`
-- `ELIG_INSUFFICIENT_HISTORY`
-- `ELIG_UNIVERSE_DEPENDENCY_MISSING`
-- `ELIG_FETCH_FAILURE` when optional per-ticker fetch-failure tracking is implemented and the ticker could not be built safely from source acquisition failure
+- bar expectation state/reason
+- delivery coverage state
+- canonical bar availability/validity
+- source/provenance state
 
-## Validity rules
-A ticker may be `eligible = 1` only if all required upstream conditions hold for D:
-- ticker is in coverage universe for D
-- canonical valid bar exists for D
-- mandatory indicators exist for D
-- mandatory indicators are valid
-- no blocking fetch-failure condition applies
-- no locked rule denies readiness for that ticker/date
+### Quality
 
-## Missing-bar rule
-If a coverage-universe ticker has no canonical valid bar for D:
-- `eligible = 0`
-- `reason_code = ELIG_MISSING_BAR`
+- quality state
+- schema/stale/anomaly/quarantine state
+- analytical price-basis and contamination state
+- indicator validity and warm-up/nullability state
 
-## Missing-indicators rule
-If mandatory indicators for D do not exist:
-- `eligible = 0`
-- `reason_code = ELIG_MISSING_INDICATORS`
+### Liquidity
 
-## Invalid-indicators rule
-If indicator row exists but mandatory indicator readiness is invalid:
-- `eligible = 0`
-- `reason_code = ELIG_INVALID_INDICATORS`
+- actual liquidity fields when sourced
+- explicitly named/labelled proxy fields when actual fields are unavailable
+- units, raw/adjusted basis, window, and quality state
+- metric-level availability/validity state and null reason
 
-## Insufficient-history rule
-If the blocking cause is insufficient required history for mandatory indicators:
-- `eligible = 0`
-- `reason_code = ELIG_INSUFFICIENT_HISTORY`
+### Status and event risk
 
-## Universe-dependency rule
-If eligibility cannot be built safely because required universe dependency is unavailable:
-- `eligible = 0`
-- `reason_code = ELIG_UNIVERSE_DEPENDENCY_MISSING`
+- temporal suspension/trading-status state and source revision
+- corporate-action/event-risk state
+- verified factor/event revision or unresolved contamination state
 
-## Optional fetch-failure rule
-If optional per-ticker fetch-failure tracking is implemented and a ticker could not be safely produced because source acquisition failed after retries/exhaustion:
-- `eligible = 0`
-- `reason_code = ELIG_FETCH_FAILURE`
+### Decision and explanation
 
-This code must be used only if it exists in the official registry and is supported by the implementation.
+- `data_usable` boolean, or compatibility `eligible` boolean with identical upstream-only meaning
+- primary/dominant reason code for compatibility
+- complete ordered reason-code set or normalized reason relation
+- rule/config/version and publication identity
 
-## One-blocking-reason rule (LOCKED)
-Each eligibility row stores one blocking `reason_code` only.
+No dimension may be reconstructed from a single overloaded `reason_code` when first-class facts are available.
 
-If multiple blocking conditions exist, the implementation must select the most specific dominant blocking reason according to locked precedence documented elsewhere.
+## Eligibility meaning (LOCKED)
 
-## Consumer rule (LOCKED)
-Consumers must use the eligibility snapshot as published.
-Consumers must not reconstruct eligibility by guessing from bars or indicators independently of the published eligibility artifact.
+- `data_usable = true` / compatibility `eligible = true`: every declared data-integrity/readiness gate passes and the instrument/date may be evaluated by a downstream consumer.
+- `data_usable = false` / compatibility `eligible = false`: one or more data-integrity/readiness gates block use; all material reasons remain explicit.
 
-## Anti-ambiguity rule (LOCKED)
-The following are forbidden:
-- multiple live eligibility rows for the same `(trade_date, ticker_id)`
-- `eligible = 0` with empty blocking reason
-- `eligible = 1` when mandatory upstream readiness conditions are not satisfied
-- live readable eligibility rows with `publication_id IS NULL`
+True does not mean selected, liquid enough for a strategy, ranked, attractive, event-safe under a strategy, or approved for a trade. Downstream policy may impose such preferences without changing this snapshot.
+
+## Gate separation
+
+- Coverage delivery failure blocks eligibility but must remain visible as coverage, not relabelled dormancy.
+- Quality failure blocks eligibility independently of delivery ratio.
+- Zero volume may pass delivery coverage and remains an explicit factual observation; it does not make otherwise valid market data unusable merely because a strategy would avoid the instrument.
+- Verified `NOT_EXPECTED` is an expectation fact, not proof of attractiveness or current inactivity.
+- Unknown status/event/factor fails safe when it prevents expectation, integrity, or price-product correctness. A known status/event flag that merely influences trading preference remains factual and does not fail data usability.
+
+Liquidity or dormancy must never change the coverage denominator.
+
+## Reason-code model (LOCKED)
+
+All applicable material blocking reasons must be preserved deterministically. A primary reason may be selected by versioned precedence for compact consumer behavior, but it cannot erase secondary reasons.
+
+Minimum reason families include:
+
+- missing delivery/bar and fetch failure
+- invalid/schema/stale/quarantined observation
+- insufficient history or missing/invalid indicators
+- unresolved price-scale/corporate-action factor
+- temporal identity/universe/calendar/status dependency failure
+- suspension/trading-status/event state that prevents an expected/valid product
+- missing or invalid required metric input; optional liquidity facts remain nullable with reasons
+- config/provenance/publication integrity failure
+
+Only registry-defined codes may be emitted.
+
+## Publication/readability relationship
+
+A publication may be readable with some ineligible rows when run-level coverage and all global gates pass. Row eligibility does not determine the run status by itself, and a readable publication does not make every row eligible.
+
+Consumers read eligibility facts from the same resolved publication as bars/indicators. They must not recompute upstream eligibility ad hoc.
+
+## Immutability and replay
+
+Eligibility rows and reason sets are frozen with the publication. Changed facts, rules, config, factor, or indicators produce new eligibility snapshots and publication lineage. Replay uses temporal/as-known inputs and reproduces the complete fact/reason set.
+
+## Acceptance criterion (LOCKED)
+
+For every instrument/date, the consumer can separately inspect expectation, delivery, quality, liquidity, status, event risk, indicator state, data usability, and every reason without inferring strategy policy or reading internal tables. A watchlist-specific tradability or selection decision can be changed without rewriting this snapshot.
+
+## Cross-contract alignment
+
+- `Eligibility_Partial_Data_Behavior_LOCKED.md`
+- `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
+- `Trading_Status_Source_Contract_LOCKED.md`
+- `Corporate_Action_Impact_Flags_Contract.md`
+- `Domain_Boundary_Invariants_LOCKED.md`

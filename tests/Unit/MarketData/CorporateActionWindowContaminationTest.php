@@ -14,7 +14,6 @@ class CorporateActionWindowContaminationTest extends TestCase
     {
         return [
             'set_version' => 'ind_v1',
-            'lot_size' => 100,
             'price_basis_default' => 'close',
             'dv_window_days' => 20,
             'atr_window_days' => 14,

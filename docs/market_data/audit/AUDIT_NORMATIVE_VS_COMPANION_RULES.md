@@ -13,6 +13,12 @@ Umumnya berada di:
 - `indicators/` untuk formula/computation specification yang menentukan hasil deterministik
 - `session_snapshot/` untuk snapshot contracts bila fitur snapshot memang ada dalam paket
 
+`book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` adalah normative owner untuk sequencing dan handoff state. Ia tidak mengambil alih behavior owner yang dirujuk pada setiap stage.
+
+`book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md` adalah normative owner untuk document/deliverable/proof assignment. Ia tidak membuat behavior atau urutan alternatif; bila ada dokumen normative baru yang belum assigned, audit harus mencatat documentation synchronization failure.
+
+`book/Market_Data_Implementation_Command_Protocol_LOCKED.md` adalah normative owner untuk admitted implementation/audit/remediation commands, result contract, verdict, dan deterministic next-command rule. `audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md` menyimpan current execution state saja dan tidak menjadi behavioral authority.
+
 ## Normative support materials
 Dokumen dianggap normative support bila menerjemahkan atau menegakkan owner behavior untuk keperluan operasi, pembuktian, atau replay validation, tanpa menjadi sumber baru perilaku domain.
 

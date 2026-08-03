@@ -93,7 +93,16 @@ class EodPublicationRepository
         })->values();
     }
 
-    protected function determineCurrentIntegrityViolationReasons($row)
+    /**
+     * Canonical derivation of why a current-pointer state is invalid.
+     *
+     * Public because operator tooling must report the same reasons the scan filters on.
+     * RepairCurrentPublicationIntegrityCommand previously kept its own copy of this logic and
+     * it had drifted: five of the reasons below were missing there, so a pointer broken only by
+     * a coverage or run-mirror fault was correctly detected as invalid and then displayed with
+     * an empty integrity_reasons list.
+     */
+    public function determineCurrentIntegrityViolationReasons($row)
     {
         if (! $row) {
             return ['CURRENT_POINTER_ROW_MISSING'];
@@ -1198,9 +1207,9 @@ class EodPublicationRepository
             'eligibility_rows_written' => $row->eligibility_rows_written,
         ];
         $manifest['component_column_contract'] = [
-            'bars' => ['trade_date', 'ticker_id', 'open', 'high', 'low', 'close', 'volume', 'adj_close', 'source'],
-            'indicators' => ['trade_date', 'ticker_id', 'is_valid', 'invalid_reason_code', 'indicator_set_version', 'sector_code', 'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc5', 'roc10', 'roc20', 'hh20', 'll20', 'ma20', 'ma50', 'close_to_hh20_pct', 'close_to_ll20_pct', 'range_20_pct', 'range_position_20_pct', 'close_vs_ma20_pct', 'close_vs_ma50_pct', 'ma20_slope_pct', 'rs_20_vs_ihsg', 'sector_roc20', 'rs_20_vs_sector', 'sector_rs_20_vs_ihsg', 'corporate_action_flag', 'corporate_action_types', 'trading_status_code', 'is_suspended', 'is_uma', 'event_risk_flag', 'event_risk_reasons'],
-            'eligibility' => ['trade_date', 'ticker_id', 'eligible', 'reason_code'],
+            'bars' => \App\Application\MarketData\Services\MarketDataPipelineService::BARS_HASH_COLUMNS,
+            'indicators' => \App\Application\MarketData\Services\MarketDataPipelineService::INDICATORS_HASH_COLUMNS,
+            'eligibility' => \App\Application\MarketData\Services\MarketDataPipelineService::ELIGIBILITY_HASH_COLUMNS,
         ];
         $manifest['coverage_context'] = [
             'coverage_universe_count' => $row->coverage_universe_count,

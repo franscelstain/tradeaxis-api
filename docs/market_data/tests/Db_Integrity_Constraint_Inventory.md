@@ -1,6 +1,8 @@
 # DB Integrity & Constraint Enforcement Inventory
 
-Status: LOCKED after operator-local targeted and full MarketData PHPUnit validation passed; fix2 repository/coverage guard regressions are resolved.
+Current admission status: **HISTORICAL PRE-V2 INVENTORY / SUPERSEDED FOR CURRENT SCHEMA CONFORMANCE**. The table below remains evidence for the legacy schema it inspected. Statements such as “no open gap” do not cover immutable observations/config snapshots, temporal identity/calendar/status, revisioned events/factors, V2 artifact bindings, complete eligibility dimensions, or as-known replay. Current target authority is `../db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md` plus the semantic schema contract/dictionary.
+
+Historical status: LOCKED after the then-current operator-local targeted and full MarketData PHPUnit validation passed.
 Last updated: 2026-05-07
 Related contract: `DB_INTEGRITY_CONSTRAINT_ENFORCEMENT_CONTRACT`
 

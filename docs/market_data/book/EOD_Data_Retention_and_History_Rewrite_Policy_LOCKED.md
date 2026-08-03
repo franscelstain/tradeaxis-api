@@ -9,12 +9,16 @@ Mengunci kebijakan penyimpanan jangka panjang, purge, recomputation, correction 
 
 ### Class A — Authoritative long-term records
 Data berikut adalah authoritative dan disimpan **tanpa TTL purge operasional biasa**:
+- immutable raw observation envelopes atau permanent payload hash/reference
 - canonical `eod_bars`
+- publication-bound bar/indicator/eligibility history snapshots
+- temporal identity, calendar/status, corporate-action, dan factor revisions yang dirujuk publication
 - `eod_indicators`
 - `eod_eligibility`
 - `eod_runs`
 - `eod_publications`
 - current publication pointer
+- append-only pointer/supersession history
 - correction request / approval / publication trail
 - hash / seal metadata yang menjadi bagian dari publication proof
 
@@ -48,12 +52,13 @@ Yang dilarang:
 
 ## Correction impact rule (LOCKED)
 Jika satu trade date D dikoreksi:
-- koreksi minimum selalu **isolated ke date D terlebih dahulu**
+- mutation impact harus dihitung dari dependency graph dan market-calendar windows
 - requested date lain tidak boleh ikut berubah diam-diam
-- date setelah D hanya boleh ikut dihitung ulang bila kontrak artifact memang punya dependency eksplisit terhadap D dan rerun tanggal tersebut dijalankan secara resmi
+- setiap affected date yang content-nya berubah harus memiliki run/revision/publication baru atau explicit held/contaminated state
+- rolling indicators, benchmark context, eligibility, hashes, dan later publications dapat membuat impact meluas setelah D
+- automated orchestration boleh memproses seluruh affected dates, tetapi tidak boleh melakukan cascading in-place rewrite
 
-Pada baseline EOD ini, bars/indicators/eligibility/publication adalah **per trade date** sehingga correction default dianggap **isolated per date**.
-Tidak ada cascading rewrite otomatis lintas tanggal.
+Tidak ada asumsi bahwa correction selalu isolated per date. Scope harus dibuktikan dari dependency/version graph; bila impact tidak dapat dibatasi dengan aman, affected range ditahan sampai dapat direbuild dan direpublish.
 
 ---
 
@@ -70,6 +75,8 @@ Purge artifact tidak boleh menghapus:
 - current publication proof yang masih diperlukan audit
 - correction comparison evidence untuk publication yang masih aktif atau masih menjadi referensi insiden
 - evidence minimum yang masih berada dalam retention window 180 hari
+- observation/config/factor/identity references yang diperlukan untuk mereproduksi publication mana pun yang dipertahankan
+- superseded publication snapshots atau lineage yang masih menjadi authoritative audit history
 
 ---
 

@@ -91,22 +91,6 @@ class ManualFilePolicyEnforcementStaticGuardTest extends TestCase
         $this->assertStringContainsString('manual_file_readable_coverage_policy', $replay);
     }
 
-    public function test_manual_file_runtime_paths_do_not_use_latest_trade_date_shortcuts(): void
-    {
-        $paths = [
-            'app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php',
-            'app/Application/MarketData/Services/EodBarsIngestService.php',
-            'app/Application/MarketData/Services/MarketDataPipelineService.php',
-            'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
-            'app/Application/MarketData/Services/ReplayVerificationService.php',
-            'app/Console/Commands/MarketData/AbstractMarketDataCommand.php',
-        ];
-
-        foreach ($paths as $path) {
-            $source = file_get_contents($this->projectPath($path));
-            foreach (["MAX(trade_date)", "max('trade_date')", "latest('trade_date')", "orderByDesc('trade_date')", 'ORDER BY trade_date DESC'] as $forbidden) {
-                $this->assertStringNotContainsString($forbidden, $source, $path.' contains forbidden latest-date shortcut '.$forbidden);
-            }
-        }
-    }
+    // The latest-trade-date prohibition previously checked six named paths here.
+    // ReadPathShortcutProhibitionTest applies it to the whole runtime.
 }

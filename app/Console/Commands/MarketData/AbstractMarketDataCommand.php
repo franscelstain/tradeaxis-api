@@ -13,6 +13,21 @@ use Illuminate\Support\Facades\File;
 
 abstract class AbstractMarketDataCommand extends Command
 {
+    /**
+     * The request modes an operator may type on the command line.
+     *
+     * Deliberately narrower than MarketDataStageInput::ALLOWED_REQUEST_MODES: replay_verify and
+     * evidence_export are internal run contexts set by the replay and evidence services, not
+     * operations an operator starts by hand. It must stay a subset, otherwise a command would
+     * accept a mode the pipeline then rejects.
+     */
+    const OPERATOR_REQUEST_MODES = [
+        'import_only',
+        'promote',
+        'full_publish',
+        'correction',
+        'repair_candidate',
+    ];
 
     protected function renderCommandBlocked($reasonCode, $message, array $context = [])
     {
@@ -73,7 +88,7 @@ abstract class AbstractMarketDataCommand extends Command
             return true;
         }
 
-        if (! in_array((string) $value, ['import_only', 'promote', 'full_publish', 'correction', 'repair_candidate'], true)) {
+        if (! in_array((string) $value, self::OPERATOR_REQUEST_MODES, true)) {
             $this->renderCommandBlocked(
                 'COMMAND_INVALID_REQUEST_MODE',
                 'request_mode must be import_only, promote, full_publish, correction, or repair_candidate.',

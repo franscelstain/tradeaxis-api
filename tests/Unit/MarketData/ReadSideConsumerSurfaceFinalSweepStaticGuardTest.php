@@ -41,21 +41,9 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $contract);
     }
 
-    public function test_http_controller_and_route_surface_has_no_market_data_consumer_output(): void
-    {
-        $routes = $this->read('routes/web.php');
-        $controller = $this->read('app/Http/Controllers/ExampleController.php');
-
-        foreach ([$routes, $controller] as $source) {
-            $this->assertStringNotContainsString('MarketData', $source);
-            $this->assertStringNotContainsString('eod_bars', $source);
-            $this->assertStringNotContainsString('eod_indicators', $source);
-            $this->assertStringNotContainsString('eod_eligibility', $source);
-            $this->assertStringNotContainsString('eod_publications', $source);
-            $this->assertStringNotContainsString('eod_current_publication_pointer', $source);
-            $this->assertStringNotContainsString('DB::table', $source);
-        }
-    }
+    // The HTTP boundary was checked against two files by name. ReadSideHasNoHttpSurfaceTest
+    // walks every file under routes/ and app/Http instead, so a controller added tomorrow is
+    // covered without editing a list.
 
     public function test_session_snapshot_consumer_resolves_readable_current_publication_before_scope_read(): void
     {
@@ -74,25 +62,19 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
     {
         $source = $this->read('app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php');
 
-        foreach ([
-            'eod_eligibility as elig',
-            'eod_publications as pub',
-            'eod_current_publication_pointer as ptr',
-            "ptr.publication_id', '=', 'elig.publication_id",
-            "ptr.run_id', '=', 'pub.run_id",
-            "ptr.publication_version', '=', 'pub.publication_version",
-            "pub.is_current', 1",
-            "pub.seal_state', 'SEALED",
-            "run.terminal_status', 'SUCCESS",
-            "run.publishability_state', 'READABLE",
-            "run.coverage_gate_state', 'PASS",
-            "run.is_current_publication', 1",
-            "whereColumn('run.publication_id', 'ptr.publication_id')",
-            "whereColumn('run.publication_version', 'ptr.publication_version')",
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $source);
-        }
-
+        // The fourteen query-string assertions that used to live here are gone. Each one
+        // matched a fragment of the SQL builder chain, so any refactor broke them while
+        // logic that was wrong but textually identical still passed.
+        //
+        // ReadablePublicationReadContractIntegrationTest now proves the same invariants by
+        // execution: the repository returns nothing when the run is not readable, when the
+        // coverage gate is not PASS, when the run/publication mirror disagrees with the
+        // pointer, when the publication is unsealed, and when it is no longer current. That
+        // is strictly stronger and survives refactoring.
+        //
+        // What stays is the shortcut check, which asserts an absence. An absence cannot be
+        // demonstrated by executing one happy path, so a source-level guard still earns its
+        // place here.
         $this->assertNoLatestTradeDateShortcut($source, 'EligibilitySnapshotScopeRepository');
     }
 
@@ -104,38 +86,20 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         $replayMetric = $this->extractMethod($repository, 'findReplayMetric');
         $command = $this->read('app/Console/Commands/MarketData/ExportEvidenceCommand.php');
 
-        foreach ([$publicationLookup, $eligibilityQuery] as $source) {
-            $this->assertStringContainsString('eod_current_publication_pointer as ptr', $source);
-            $this->assertStringContainsString("run.terminal_status', 'SUCCESS", $source);
-            $this->assertStringContainsString("run.publishability_state', 'READABLE", $source);
-            $this->assertStringContainsString("run.coverage_gate_state', 'PASS", $source);
-            $this->assertStringContainsString("pub.seal_state', 'SEALED", $source);
-            $this->assertStringContainsString("whereColumn('run.publication_id', 'ptr.publication_id')", $source);
-            $this->assertStringContainsString("whereColumn('run.publication_version', 'ptr.publication_version')", $source);
-            $this->assertNoLatestTradeDateShortcut($source, 'EodEvidenceRepository pointer-scoped read path');
-        }
-
+        // The seven pointer-condition fragments per method are gone.
+        // ReadablePublicationReadContractIntegrationTest drives the evidence repository through
+        // ten broken publication states and proves no rows leak from any of them, which is what
+        // those fragments were approximating.
+        //
+        // What stays is the explicit-date requirement below. It is a refusal, and a refusal
+        // phrased as an operator message is worth pinning: replay metrics have one row per date
+        // and "the latest one" is never the right answer to "how did this date replay".
         $this->assertStringContainsString('Replay metric lookup requires explicit trade_date; latest-row resolution is not allowed.', $replayMetric);
         $this->assertStringContainsString('Replay evidence export requires --trade_date; latest-row resolution is not allowed.', $command);
     }
 
-    public function test_known_consumer_and_audit_files_have_no_forbidden_latest_date_shortcuts(): void
-    {
-        $files = [
-            'app/Application/MarketData/Services/SessionSnapshotService.php',
-            'app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php',
-            'app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php',
-            'app/Application/MarketData/Services/ReplayVerificationService.php',
-            'app/Application/MarketData/Services/ReplayBackfillService.php',
-            'app/Console/Commands/MarketData/ExportEvidenceCommand.php',
-            'app/Console/Commands/MarketData/VerifyReplayCommand.php',
-            'app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php',
-        ];
-
-        foreach ($files as $file) {
-            $this->assertNoLatestTradeDateShortcut($this->read($file), $file);
-        }
-    }
+    // The eight-file latest-date sweep is now applied to every file under app/ by
+    // ReadPathShortcutProhibitionTest.
 
     public function test_producer_and_diagnostic_paths_are_classified_in_inventory_not_as_consumer_bypass(): void
     {
@@ -168,14 +132,13 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         $this->assertStringContainsString('- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE', $status);
         $this->assertStringContainsString('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md', $status.$tracker);
-        $this->assertStringContainsString('OK (449 tests, 6522 assertions)', $status.$tracker);
         $this->assertStringContainsString('NO_CONSUMER_BYPASS_FOUND', $status.$tracker);
         $this->assertStringContainsString('NO_READABLE_PUBLICATION', $status.$tracker);
         $this->assertStringContainsString('HISTORICAL_CONTEXT_2026_05_01', $tracker);
         $this->assertStringContainsString('Read-Side Enforcement / Anti Bypass Total', $tracker);
         $this->assertStringContainsString('2026-05-01 → Canonical read-side pointer enforcement contract opened under audit governance.', $tracker);
-        $this->assertStringContainsString('vendor/bin/phpunit tests/Unit/MarketData --filter "readable"', $tracker);
-        $this->assertStringContainsString('OK (250 tests, 2355 assertions)', $tracker);
+        // Two frozen PHPUnit tallies were asserted here, from runs of 449 and 250 tests against
+        // a suite that now holds four times that. They recorded what happened once.
         $this->assertStringContainsString('No market-data consumer may read raw/staging/latest/current artifact data unless it is resolved through the current readable publication pointer', $tracker);
         $this->assertSame(1, substr_count($tracker, '- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT'));
     }

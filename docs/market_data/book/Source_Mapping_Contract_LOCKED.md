@@ -1,39 +1,37 @@
-# Source Mapping Contract — Public API or Manual Input (LOCKED)
+# Source Mapping Contract — Provider Adapters (STRATEGY LOCKED)
 
-## Purpose
-Lock source-to-internal mapping for a personal EOD application that may use public/free APIs or manual input.
+## Boundary
 
-## Normalized adapter output (LOCKED)
-- `ticker_code`
-- `trade_date` (`YYYY-MM-DD`)
-- `open`, `high`, `low`, `close` (decimal)
-- `volume` (int)
-- `adj_close` (decimal or null)
-- `source_name`
-- `captured_at`
+An adapter converts one immutable provider observation into provider-neutral normalized candidates. It does not decide canonical winners, historical identity, adjustment factors, indicators, coverage, eligibility, or readability.
 
-## Mapping to internal (LOCKED)
-Target: `eod_bars(trade_date, ticker_id, open, high, low, close, volume, adj_close, source, ingested_at, run_id)`
-- `source = source_name`
-- `ingested_at = captured_at` if available, otherwise system time when accepted
-- `run_id = current run id`
+## Common normalized fields
 
-## Date alignment (LOCKED)
-- system timezone: timezone name **Asia/Jakarta**
-- source date/timestamp must map to exchange trading day and be validated by market calendar
-- manual rows must still pass the same market-calendar alignment rule
+- observation/run/attempt identity and requested trade date;
+- provider, provider symbol, temporal mapping revision;
+- provider row/timestamp and acquired-at time;
+- mapped listing identity when unambiguous;
+- Regular-Market trade date/session/board context where supplied;
+- raw open, high, low, close, volume;
+- nullable source-backed previous close, actual traded value, trade count, status;
+- nullable provider adjustment field preserved as provider lineage only;
+- schema/adapter/canonicalization versions and validation outcome/reasons.
 
-## Precision (LOCKED)
-- prices: `DECIMAL(18,4)`
-- volume: `BIGINT`
+Yahoo-specific field paths and `.JK` routing remain inside its adapter configuration. Normalized/canonical consumers do not depend on provider vocabulary.
 
-## Missing fields (LOCKED)
-- missing OHLC => invalid => canonical bar rejected
-- missing `adj_close` => keep `NULL`; price basis may fallback to `close`
-- missing `volume` => invalid => canonical bar rejected
+## Mapping rules
 
-## Edge cases (LOCKED)
-- unmapped `ticker_code` against ticker master => reject source row into `eod_invalid_bars` with reason `BAR_TICKER_MAPPING_MISSING`; do not silently fabricate `ticker_id` and do not fail the whole run solely because one row is unmapped
-- suspended/no-trade day => missing bar => eligibility reason `ELIG_MISSING_BAR`
-- corporate-action day => do not fabricate adjusted series
-- manual override/correction must leave audit trail through `run_id`, source name, and correction logs
+- source timestamp/date must resolve to the requested completed IDX Regular-Market session in `Asia/Jakarta`;
+- provider symbol must resolve through an effective-and-known mapping to stable listing identity;
+- raw OHLC must be present, positive, and internally consistent; volume must be present and non-negative;
+- actual traded value/trade count are populated only when directly source-backed and unit-validated;
+- provider `adj_close` may remain nullable observation metadata but is never canonical RAW close, never the `STRUCTURAL_ADJUSTED` product, and has no close fallback semantics;
+- missing required fields, wrong/stale date, schema mismatch, mapping ambiguity, and conflicting duplicates become reason-coded rejected/quarantined candidates linked to the observation;
+- no placeholder zero, forward fill, latest-wins conflict resolution, or synthetic price correction is allowed.
+
+## Missing versus not expected
+
+Provider absence says only “not delivered.” Verified temporal calendar/status evidence separately decides whether a bar was expected. Suspension/no-trade status cannot be inferred from an empty provider response.
+
+## Correction
+
+Refetch/manual recovery creates a new immutable observation and candidate lineage. It never edits a prior observation, canonical snapshot, factor, or sealed publication. Accepted corrections create a new publication through the normal correction/reseal flow.

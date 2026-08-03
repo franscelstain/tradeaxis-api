@@ -1,5 +1,27 @@
 # LUMEN_CONTRACT_TRACKER
 
+## CURRENT CANONICAL AUDIT OVERRIDE — 2026-08-02
+
+Behavior/sequence authority: `../book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` and its referenced owner contracts.
+
+Documentation verdict authority: `reports/AUDIT_FINAL_STATE.md`.
+
+`[DOCUMENTATION_STRATEGY_STATUS] DOCUMENTATION_STRATEGY_READY`
+
+`[IMPLEMENTATION_RELOCK_STATUS] CONFORMANCE_AUDIT_PENDING / NOT_PRODUCTION_RELOCKED`
+
+The `FULL_GLOBAL_MARKET_DATA_LOCKED`, `PRODUCTION_READY`, and component `LOCKED` checkpoints below are retained as historical evidence for the source state and contracts they actually executed. They are **not current decision-grade production claims** after the Weekly Swing strategy correction.
+
+Current handoff facts:
+
+- owner strategy order 1–19 has been updated;
+- order 20 has an additive V2 schema/SQLite foundation but nullable writer/backfill/enforcement gaps remain;
+- order 21 has a passing targeted schema mirror guard (`6 tests / 528 assertions`) but required semantic oracles are not yet production-path proof;
+- P0 direct history repair, current-active survivorship, synthetic price-derived actions, and incoherent runtime price basis remain open;
+- P1 provenance/config/coverage/ATR/event/actual-field/factor/read/ops proof remains open or partial.
+
+No checkpoint below may be cited to close implementation findings unless it is re-executed against the corrected owner contracts and admitted by the future implementation audit. Do not change implementation status to `CONFORMANT`, `VALIDATED`, or `LOCKED` until stage-22 acceptance gates are met.
+
 ## ACTIVE SESSION
 
 ACTIVE SESSION:

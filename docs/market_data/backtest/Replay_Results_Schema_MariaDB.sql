@@ -1,13 +1,31 @@
 CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   replay_id BIGINT UNSIGNED NOT NULL,
   trade_date DATE NOT NULL,
+  replay_mode ENUM('PUBLICATION_EXACT','AS_KNOWN') NOT NULL,
+  fixture_id VARCHAR(128) NOT NULL,
+  fixture_version VARCHAR(64) NOT NULL,
+  fixture_manifest_hash CHAR(64) NOT NULL,
+  knowledge_cutoff DATETIME NULL,
+  publication_id BIGINT UNSIGNED NULL,
   trade_date_effective DATE NULL,
   source VARCHAR(32) NOT NULL,
   status ENUM('SUCCESS','HELD','FAILED') NOT NULL,
   comparison_result ENUM('MATCH','MISMATCH','EXPECTED_DEGRADE','UNEXPECTED') NOT NULL,
   comparison_note VARCHAR(255) NULL,
   artifact_changed_scope VARCHAR(64) NULL,
-  config_identity VARCHAR(128) NULL,
+  config_identity VARCHAR(128) NULL COMMENT 'legacy compatibility label only',
+  config_snapshot_id BIGINT UNSIGNED NOT NULL,
+  config_snapshot_hash CHAR(64) NOT NULL,
+  observation_manifest_hash CHAR(64) NOT NULL,
+  temporal_revision_set_hash CHAR(64) NOT NULL,
+  factor_set_id BIGINT UNSIGNED NULL,
+  factor_set_hash CHAR(64) NULL,
+  price_product_code VARCHAR(32) NOT NULL,
+  canonicalization_version VARCHAR(64) NOT NULL,
+  formula_version VARCHAR(64) NOT NULL,
+  read_model_version VARCHAR(64) NOT NULL,
+  readiness_state VARCHAR(32) NOT NULL,
+  freshness_state VARCHAR(32) NOT NULL,
   publication_version INT UNSIGNED NULL,
   coverage_ratio DECIMAL(6,4) NULL,
   bars_rows_written INT NULL,
@@ -26,7 +44,16 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   expected_status ENUM('SUCCESS','HELD','FAILED') NULL,
   expected_trade_date_effective DATE NULL,
   expected_seal_state ENUM('SEALED','UNSEALED') NULL,
-  expected_config_identity VARCHAR(128) NULL,
+  expected_config_identity VARCHAR(128) NULL COMMENT 'legacy compatibility label only',
+  expected_config_snapshot_hash CHAR(64) NULL,
+  expected_observation_manifest_hash CHAR(64) NULL,
+  expected_temporal_revision_set_hash CHAR(64) NULL,
+  expected_factor_set_hash CHAR(64) NULL,
+  expected_price_product_code VARCHAR(32) NULL,
+  expected_formula_version VARCHAR(64) NULL,
+  expected_read_model_version VARCHAR(64) NULL,
+  expected_readiness_state VARCHAR(32) NULL,
+  expected_freshness_state VARCHAR(32) NULL,
   expected_publication_version INT UNSIGNED NULL,
   expected_bars_batch_hash VARCHAR(64) NULL,
   expected_indicators_batch_hash VARCHAR(64) NULL,
@@ -65,11 +92,14 @@ CREATE TABLE IF NOT EXISTS md_replay_reason_code_counts (
 --    - eligibility_only
 --    - multi_artifact
 --    - none
--- 5. config_identity stores the effective config snapshot identity used by the replayed logic.
+-- 5. config_identity is a legacy compatibility label; config_snapshot_id/hash are authoritative.
 -- 6. publication_version is optional but recommended when replay validates correction-aware publication behavior.
 -- 7. expected_* columns preserve the replay fixture expectation needed by exported evidence packs.
 -- 8. expected_reason_code_counts_json stores the normalized expected reason-code distribution when the fixture declares one.
 -- 9. mismatch_summary is a concise operator-facing explanation of the mismatch and must not replace detailed evidence elsewhere.
+-- 10. PUBLICATION_EXACT freezes the recorded publication and every bound observation/revision/config/factor/formula identity.
+-- 11. AS_KNOWN requires knowledge_cutoff and resolves only revisions recorded/known at or before it.
+-- 12. Null required semantic hashes make the replay BLOCKED and cannot be admitted as deterministic proof.
 
 -- RECOMMENDED USAGE NOTES
 -- 1. Replay verification should compare actual vs expected:

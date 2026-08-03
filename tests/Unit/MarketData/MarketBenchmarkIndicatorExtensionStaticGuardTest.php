@@ -33,18 +33,21 @@ class MarketBenchmarkIndicatorExtensionStaticGuardTest extends TestCase
         $this->assertStringNotContainsString("'ticker_code', 'IHSG'", $schema);
     }
 
-    public function test_benchmark_provider_symbol_is_never_suffixed_as_jk_equity_symbol(): void
+    /**
+     * Only the routing remains asserted here: the adapter must reach both resolvers, so an
+     * index and an equity cannot share one path.
+     *
+     * What each resolver produces is now proven by ProviderSymbolResolverTest, which calls
+     * them. The old check searched for the literal "^JKSE.JK" and so ruled out exactly one
+     * known-bad string while missing the same defect for any other index symbol.
+     */
+    public function test_adapter_routes_benchmarks_and_equities_through_separate_resolvers(): void
     {
         $adapter = $this->read('app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php');
-        $benchmarkResolver = $this->read('app/Infrastructure/MarketData/Source/BenchmarkProviderSymbolResolver.php');
-        $equityResolver = $this->read('app/Infrastructure/MarketData/Source/EquityProviderSymbolResolver.php');
 
         $this->assertStringContainsString('fetchOrLoadBenchmarkBars', $adapter);
         $this->assertStringContainsString('BenchmarkProviderSymbolResolver', $adapter);
         $this->assertStringContainsString('EquityProviderSymbolResolver', $adapter);
-        $this->assertStringContainsString('return $providerSymbol;', $benchmarkResolver);
-        $this->assertStringContainsString('$symbol.$suffix', $equityResolver);
-        $this->assertStringNotContainsString('^JKSE.JK', $adapter.$benchmarkResolver.$equityResolver);
     }
 
     public function test_rs_20_vs_ihsg_depends_on_benchmark_roc20_not_hardcoded_value(): void
@@ -58,48 +61,19 @@ class MarketBenchmarkIndicatorExtensionStaticGuardTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/rs_20_vs_ihsg[^\r\n]+(=|=>)\s*[0-9]+(?:\.[0-9]+)?/', $vector);
     }
 
-    public function test_indicator_extension_has_null_safe_denominator_and_lookback_guards(): void
-    {
-        $vector = $this->read('app/Application/MarketData/Services/IndicatorVectorService.php');
-        $benchmarkVector = $this->read('app/Application/MarketData/Services/BenchmarkIndicatorVectorService.php');
-
-        foreach (['pctDifference', '$base === null', '(float) $base <= 0', 'return null'] as $needle) {
-            $this->assertStringContainsString($needle, $vector);
-        }
-
-        foreach (['IND_INSUFFICIENT_HISTORY', 'IND_INVALID_BAR_INPUT', 'hasInvalidCloseInput', 'return null'] as $needle) {
-            $this->assertStringContainsString($needle, $benchmarkVector);
-        }
-    }
-
-    public function test_benchmark_repository_uses_explicit_trade_date_no_latest_shortcut(): void
-    {
-        $repository = $this->read('app/Infrastructure/Persistence/MarketData/MarketBenchmarkRepository.php');
-
-        $this->assertStringContainsString("where('trade_date', \$tradeDate)", $repository);
-        $this->assertDoesNotMatchRegularExpression('/\bMAX\s*\(\s*trade_date\s*\)/i', $repository);
-        $this->assertDoesNotMatchRegularExpression('/->\s*max\s*\(\s*[\'"]trade_date[\'"]\s*\)/i', $repository);
-        $this->assertDoesNotMatchRegularExpression('/orderByDesc\s*\(\s*[\'"]trade_date[\'"]\s*\)/i', $repository);
-    }
-public function test_benchmark_indicator_extension_production_ready_docs_are_locked(): void
-{
-    $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-    $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-    $inventory = $this->read('docs/market_data/audit/MARKET_BENCHMARK_INDICATOR_EXTENSION_INVENTORY.md');
-    $proofLock = $this->read('storage/app/market_data/evidence/2026-05-19/benchmark-extension/FINAL_MARKET_DATA_PRODUCTION_READY_LOCK.txt');
-
-    foreach ([$status, $tracker, $inventory, $proofLock] as $source) {
-        $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS', $source);
-        $this->assertStringContainsString('PASS', $source);
-        $this->assertStringContainsString('FULL_MARKET_DATA_PHPUNIT', $source);
-        $this->assertStringContainsString('511 tests, 7871 assertions', $source);
-        $this->assertStringContainsString('RUNTIME_VALIDATION', $source);
-        $this->assertStringContainsString('EVIDENCE_EXPORT', $source);
-        $this->assertStringContainsString('REPLAY_VERIFY', $source);
-    }
-
-    $this->assertStringContainsString('^JKSE', $status.$tracker.$inventory);
-    $this->assertStringContainsString('IND_INSUFFICIENT_HISTORY', $status.$tracker.$inventory);
-}
-
+    // Three tests were removed.
+    //
+    // The null-safe denominator and lookback guards were asserted as source strings.
+    // IndicatorVectorServiceTest already drives them: a null benchmark leaves rs_20_vs_ihsg null
+    // rather than falling back to the raw equity return, and a zero denominator produces null
+    // without error.
+    //
+    // The benchmark repository's latest-date prohibition is now applied to every file under app/
+    // by ReadPathShortcutProhibitionTest. What the repository actually resolves is proven by
+    // BenchmarkRoc20ResolutionTest, which had no predecessor of any kind — the repository that
+    // supplies the denominator of relative strength was untested.
+    //
+    // The production-ready doc test asserted a frozen tally, "511 tests, 7871 assertions",
+    // against a suite that now holds many times that. It recorded one past run and could only
+    // ever be archaeology or churn.
 }

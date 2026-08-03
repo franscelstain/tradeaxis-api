@@ -1,10 +1,12 @@
 # Full Market-Data Production Ready Inventory
 
+Current admission status (2026-08-02): **HISTORICAL INVENTORY — SUPERSEDED FOR CURRENT IMPLEMENTATION/PRODUCTION RELOCK**. The canonical documentation verdict is `DOCUMENTATION_STRATEGY_READY` in `reports/AUDIT_FINAL_STATE.md`; implementation conformance and production readiness are not relocked. The legacy decision and proofs below remain evidence for their exact pre-correction scope only.
+
 Last updated: 2026-06-08
 
 ## Decision
 
-Full market-data production readiness is **FULLY_PRODUCTION_READY / MARKET_DATA_PRODUCTION_READY_LOCKED for the current source state**.
+Historical pre-correction decision: **FULLY_PRODUCTION_READY / MARKET_DATA_PRODUCTION_READY_LOCKED for the then-current source state**.
 
 The active 2026-06-05 checkpoint adds the full-global market-data evidence lock. The `2023-01-02` through `2025-10-31` range is the archived current-readable full-range proof window used by the Lumen audit evidence, not the last date the application is production-ready.
 

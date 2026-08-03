@@ -8,7 +8,6 @@ return [
         'cutoff_grace_minutes' => (int) env('MARKET_DATA_CUT_OFF_GRACE_MINUTES', 15),
         'coverage_min' => (float) env('MARKET_DATA_COVERAGE_MIN', 0.98), // legacy alias; owner block lives under coverage_gate.min_ratio
         'price_basis_default' => env('MARKET_DATA_PRICE_BASIS_DEFAULT', 'close'),
-        'lot_size' => (int) env('MARKET_DATA_LOT_SIZE', 100),
     ],
     'pipeline' => [
         'daily_enabled' => (bool) env('MARKET_DATA_DAILY_ENABLED', false),
@@ -31,6 +30,9 @@ return [
         'universe_basis' => env('MARKET_DATA_COVERAGE_UNIVERSE_BASIS', 'ACTIVE_LISTED_EQUITY_AS_OF_DATE'),
         'contract_version' => env('MARKET_DATA_COVERAGE_CONTRACT_VERSION', 'coverage_gate_v1'),
         'missing_sample_limit' => (int) env('MARKET_DATA_COVERAGE_MISSING_SAMPLE_LIMIT', 25),
+        // A ticker silent for this many trading days is no longer expected to produce a bar.
+        // Deliberately far beyond normal illiquidity; see Coverage_Universe_Definition_LOCKED.md.
+        'dormant_absence_trading_days' => (int) env('MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS', 60),
     ],
     'indicators' => [
         'set_version' => env('MARKET_DATA_INDICATOR_SET_VERSION', 'v1'),
@@ -39,6 +41,13 @@ return [
         'vol_ratio_lookback_days' => (int) env('MARKET_DATA_VOL_RATIO_LOOKBACK_DAYS', 20),
         'roc_lookback_days' => (int) env('MARKET_DATA_ROC_LOOKBACK_DAYS', 20),
         'hh_window_days' => (int) env('MARKET_DATA_HH_WINDOW_DAYS', 20),
+    ],
+    'price_scale_break' => [
+        'contract_version' => env('MARKET_DATA_PRICE_SCALE_BREAK_CONTRACT_VERSION', 'price_scale_break_v1'),
+        'min_ratio' => (float) env('MARKET_DATA_PRICE_SCALE_BREAK_MIN_RATIO', 1.7),
+        'min_price_idr' => (float) env('MARKET_DATA_PRICE_SCALE_BREAK_MIN_PRICE_IDR', 50),
+        'action_match_trading_days' => (int) env('MARKET_DATA_PRICE_SCALE_BREAK_ACTION_MATCH_TRADING_DAYS', 5),
+        'ratio_tolerance' => (float) env('MARKET_DATA_PRICE_SCALE_BREAK_RATIO_TOLERANCE', 0.08),
     ],
     'hash' => [
         'algorithm' => env('MARKET_DATA_HASH_ALGORITHM', 'SHA-256'),
@@ -114,6 +123,7 @@ return [
         'trading_status_events_table' => env('MARKET_DATA_TRADING_STATUS_EVENTS_TABLE', 'market_data_trading_status_events'),
         'trading_status_event_types_table' => env('MARKET_DATA_TRADING_STATUS_EVENT_TYPES_TABLE', 'market_data_trading_status_event_types'),
         'corporate_action_types_table' => env('MARKET_DATA_CORPORATE_ACTION_TYPES_TABLE', 'market_data_corporate_action_types'),
+        'price_scale_breaks_table' => env('MARKET_DATA_PRICE_SCALE_BREAKS_TABLE', 'market_data_price_scale_breaks'),
         'corporate_action_source_name' => env('MARKET_DATA_CORPORATE_ACTION_SOURCE_NAME', 'manual_corporate_action_csv'),
         'trading_status_source_name' => env('MARKET_DATA_TRADING_STATUS_SOURCE_NAME', 'manual_trading_status_csv'),
     ],

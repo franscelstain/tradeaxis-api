@@ -295,6 +295,60 @@ class EodArtifactRepository
         });
     }
 
+    /**
+     * Ticker ids that produced no *traded* canonical bar in the window ending at $tradeDate.
+     *
+     * A ticker counts as active only if it has at least one bar with positive volume. Bars
+     * with zero volume record a price nobody transacted at, which is worth nothing to a
+     * trading system and cannot be bought or sold.
+     *
+     * Owner contract: docs/market_data/book/Coverage_Universe_Definition_LOCKED.md
+     *
+     * These are no longer expected to produce a bar, so counting them as missing measures
+     * nothing and permanently erodes the coverage ratio.
+     *
+     * @return array<int, int>
+     */
+    public function loadDormantTickerIds(array $tickerIds, $tradeDate, $lookbackTradingDays)
+    {
+        $tickerIds = array_values(array_unique(array_map('intval', $tickerIds)));
+        $tickerIds = array_values(array_filter($tickerIds, function ($tickerId) {
+            return $tickerId > 0;
+        }));
+
+        if (empty($tickerIds) || (int) $lookbackTradingDays < 1) {
+            return [];
+        }
+
+        $windowStart = $this->calendar->tradingDateWindowStart($tradeDate, (int) $lookbackTradingDays);
+
+        // Positive volume, not mere presence. A provider may carry a stale price forward with
+        // volume 0 for months after a ticker stops trading; the eleven tickers that vanished
+        // on 2026-07-17 had zero volume on all 120 of their final bars. Traded volume is a
+        // market fact, while the existence of a bar is a provider behaviour.
+        $active = DB::table('eod_bars')
+            ->whereIn('ticker_id', $tickerIds)
+            ->where('trade_date', '>=', $windowStart)
+            ->where('trade_date', '<=', $tradeDate)
+            ->where('volume', '>', 0)
+            ->distinct()
+            ->pluck('ticker_id')
+            ->map(function ($value) {
+                return (int) $value;
+            })
+            ->all();
+
+        $activeSet = array_fill_keys($active, true);
+
+        $dormant = array_values(array_filter($tickerIds, function ($tickerId) use ($activeSet) {
+            return ! isset($activeSet[$tickerId]);
+        }));
+
+        sort($dormant);
+
+        return $dormant;
+    }
+
     public function loadIndicatorsForTradeDate($tradeDate, $requestedPublicationId = null)
     {
         $table = $requestedPublicationId ? 'eod_indicators_history' : 'eod_indicators';
@@ -471,6 +525,7 @@ class EodArtifactRepository
                     'is_uma' => $row->is_uma,
                     'event_risk_flag' => $row->event_risk_flag,
                     'event_risk_reasons' => $row->event_risk_reasons,
+                    'corporate_action_window_reasons' => $row->corporate_action_window_reasons,
                     'run_id' => $runId,
                     'created_at' => $now,
                 ];
@@ -586,6 +641,7 @@ class EodArtifactRepository
                 'is_uma' => $row->is_uma,
                 'event_risk_flag' => $row->event_risk_flag,
                 'event_risk_reasons' => $row->event_risk_reasons,
+                'corporate_action_window_reasons' => $row->corporate_action_window_reasons,
                 'run_id' => $runId,
                 'publication_id' => $publicationId,
                 'created_at' => $now,

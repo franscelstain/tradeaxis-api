@@ -9,8 +9,8 @@ It binds them together.
 
 ## Core invariant set (LOCKED)
 
-### Invariant 1 — Same canonical content implies same content hashes
-If the consumer-visible canonical content for trade date D is identical, then:
+### Invariant 1 — Same semantic content and bindings imply same content hashes
+If the consumer-visible canonical values, annotations, row membership, and stable observation/config/temporal/factor/product/formula/read-model bindings for trade date D are identical, then:
 - `bars_batch_hash` must be identical
 - `indicators_batch_hash` must be identical
 - `eligibility_batch_hash` must be identical
@@ -18,13 +18,13 @@ If the consumer-visible canonical content for trade date D is identical, then:
 This must hold across reruns and replay.
 
 ### Invariant 2 — Different `run_id` alone must not change content identity
-If only run provenance changes, such as:
+If only volatile run provenance changes, such as:
 - `run_id`
 - timestamps
 - operator identity
 - audit notes
 
-and consumer-visible content remains identical, then content hashes must remain identical.
+and all semantic bindings remain identical, then artifact content hashes must remain identical.
 
 ### Invariant 3 — Changed consumer-visible content must change the relevant hash
 If any consumer-visible artifact content for D changes, then the relevant artifact hash must change.
@@ -35,6 +35,7 @@ Examples:
 - changed eligibility row
 - changed blocking reason code
 - changed included row set
+- changed observation manifest, config snapshot, factor set, product/formula/read-model version, or temporal revision binding
 
 ### Invariant 4 — One logical readable date resolves to one current sealed publication
 For one readable trade date D:
@@ -72,12 +73,15 @@ Any window reference such as:
 
 must be evaluated by trading-day sequence, not by calendar subtraction.
 
-### Invariant 9 — Per-date price basis fallback is deterministic
-Where closing-price basis is required:
-- use `adj_close` if present on that specific date
-- otherwise use `close`
+### Invariant 9 — One coherent price product per analytical run
+Every analytical run binds one explicit, versioned price-product and factor-set identity.
 
-This fallback is evaluated per date, not once for the whole series/window.
+For Weekly Swing technical indicators:
+
+- the target product is `STRUCTURAL_ADJUSTED`;
+- open, high, low, close, previous close, and applicable volume transformations come from the same verified factor chain;
+- provider `adj_close`, RAW `close`, or another product cannot be selected as a per-date fallback;
+- missing or conflicting verified factor state produces explicit `NULL`/invalid/contaminated output rather than a mixed-scale vector.
 
 ### Invariant 10 — Insufficient history must not be faked
 If the required history window is not satisfied:
@@ -105,14 +109,17 @@ If a controlled correction produces changed consumer-visible content for D:
 
 ### Invariant 14 — Replay must reproduce unchanged historical inputs
 If replay uses identical:
-- source snapshot
-- calendar ordering
-- ticker identity/membership semantics
-- config identity
-- formula contracts
+- immutable source-observation manifest
+- temporal issuer/instrument/listing/symbol and provider-mapping revisions
+- calendar/session/status revisions
+- corporate-action event/factor-set revisions
+- full configuration snapshot/hash
+- price-product and formula/registry versions
 - serialization rules
 
 then replay must reproduce identical outputs and identical hashes.
+
+Publication replay freezes the exact identities above. As-known replay resolves only revisions known by the declared knowledge cutoff. Current state must not leak into either mode.
 
 ### Invariant 15 — Formatting/runtime differences must not cause semantic drift
 Runtime environment differences such as locale or formatting behavior must not change:

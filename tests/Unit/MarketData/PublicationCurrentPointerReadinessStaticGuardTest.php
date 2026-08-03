@@ -4,85 +4,56 @@ use PHPUnit\Framework\TestCase;
 
 class PublicationCurrentPointerReadinessStaticGuardTest extends TestCase
 {
-    public function test_current_pointer_resolution_requires_run_publication_mirror_match()
+    // Two tests were removed here.
+    //
+    // The first asserted seven query fragments inside resolveCurrentReadablePublicationForTradeDate.
+    // PublicationRepositoryIntegrationTest already drives that method over twelve broken pointer
+    // states and CorrectionBaselineResolutionTest over thirteen more, all by execution.
+    //
+    // The second asserted that three reason-code strings appear inside the reason derivation.
+    // They did appear, and two further static guards confirmed the same strings independently,
+    // yet the operator never saw them: the repair command kept a private copy of the derivation
+    // that was missing five reasons, so a pointer broken only by a coverage or run-mirror fault
+    // was reported as invalid with an empty integrity_reasons list. Presence of a string in a
+    // file says nothing about which code path reaches the operator.
+    //
+    // CurrentPointerIntegrityScanTest replaces both. It drives seventeen broken states through
+    // the scan, the consumer read, and the real repair command, and asserts the three agree.
+
+    /**
+     * The post-switch assertion must throw, never return a boolean an indifferent caller could
+     * discard. That is an absence, so it stays a source check: execution can show that a
+     * particular call throws, but not that no silent-failure path was ever added.
+     */
+    public function test_post_switch_pointer_assertion_cannot_fail_silently()
     {
         $source = $this->readProjectFile('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php');
-        $method = $this->extractMethod($source, 'resolveCurrentReadablePublicationForTradeDate');
-
-        $this->assertStringContainsString("eod_current_publication_pointer as ptr", $method);
-        $this->assertStringContainsString("->whereColumn('run.publication_id', 'ptr.publication_id')", $method);
-        $this->assertStringContainsString("->whereColumn('run.publication_version', 'ptr.publication_version')", $method);
-        $this->assertStringContainsString("ptr.publication_id as pointer_publication_id", $method);
-        $this->assertStringContainsString("run.terminal_status', 'SUCCESS'", $method);
-        $this->assertStringContainsString("run.publishability_state', 'READABLE'", $method);
-        $this->assertStringContainsString("pub.seal_state', 'SEALED'", $method);
-    }
-
-    public function test_invalid_current_state_scan_detects_ghost_pointer_and_run_mirror_mismatch()
-    {
-        $source = $this->readProjectFile('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php');
-        $scanMethod = $this->extractMethod($source, 'findInvalidCurrentPublicationStates');
-        $reasonMethod = $this->extractMethod($source, 'determineCurrentIntegrityViolationReasons', 'protected');
-
-        $this->assertStringContainsString("->leftJoin('eod_publications as pub'", $scanMethod);
-        $this->assertStringContainsString('PUBLICATION_ROW_MISSING', $reasonMethod);
-        $this->assertStringContainsString('RUN_PUBLICATION_ID_MISMATCH', $reasonMethod);
-        $this->assertStringContainsString('RUN_PUBLICATION_VERSION_MISMATCH', $reasonMethod);
-    }
-
-    public function test_pointer_switch_paths_verify_pointer_resolution_after_mutation()
-    {
-        $source = $this->readProjectFile('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php');
-        $promote = $this->extractMethod($source, 'promoteCandidateToCurrent');
-        $restore = $this->extractMethod($source, 'restorePriorCurrentPublication');
         $postSwitch = $this->extractMethod($source, 'assertCurrentPointerResolvedAfterSwitch', 'private');
 
-        $this->assertStringContainsString('Current publication promotion requires pre-approved SUCCESS + READABLE run before pointer switch', $promote);
-        $this->assertStringContainsString('assertCurrentPointerResolvedAfterSwitch', $promote);
-        $this->assertStringContainsString('assertCurrentPointerResolvedAfterSwitch', $restore);
-        $this->assertStringContainsString('findRawCurrentPublicationStateForTradeDate', $postSwitch);
-        $this->assertStringContainsString('determineCurrentIntegrityViolationReasons', $postSwitch);
-        $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $postSwitch);
-        $this->assertStringContainsString('pointer_publication_id', $postSwitch);
         $this->assertStringContainsString('throw new \\RuntimeException', $postSwitch);
-        $this->assertStringContainsString('current pointer did not resolve to a readable publication after switch', $postSwitch);
         $this->assertStringNotContainsString('return false', $postSwitch);
     }
 
-
-
-    public function test_pipeline_primes_run_with_carbon_timestamp_and_authoritative_pointer_resolver_before_readable_outcome()
+    /**
+     * Pointer timestamps must be taken in the exchange timezone. `now()` would silently use the
+     * application default, and the resulting sealed_at would disagree with the trading day it
+     * claims to belong to. Only the prohibition is asserted; the positive case is covered by the
+     * promote and finalize integration tests.
+     */
+    public function test_pointer_switch_timestamps_are_not_taken_in_the_default_timezone()
     {
         $source = $this->readProjectFile('app/Application/MarketData/Services/MarketDataPipelineService.php');
         $prepare = $this->extractMethod($source, 'prepareRunForPointerSwitch', 'private');
-        $finalize = $this->extractMethod($source, 'completeFinalize');
 
         $this->assertStringContainsString("Carbon::now(config('market_data.platform.timezone'))", $prepare);
         $this->assertStringNotContainsString('now()', $prepare);
-        $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate($input->requestedDate)', $finalize);
-        $this->assertStringContainsString('Current publication pointer resolution mismatch after finalize.', $finalize);
-        $this->assertStringContainsString('Treat the pointer resolver as the authoritative post-switch', $finalize);
     }
 
-    public function test_completed_success_finalize_idempotency_validates_current_pointer_before_short_circuit()
-    {
-        $source = $this->readProjectFile('app/Application/MarketData/Services/MarketDataPipelineService.php');
-        $idempotency = $this->extractMethod($source, 'findCompletedFinalizeRun', 'private');
-        $pointerCheck = $this->extractMethod($source, 'completedCurrentReadableRunStillPointerResolved', 'private');
-        $failSafe = $this->extractMethod($source, 'failSafeCompletedReadableRunPointerMismatch', 'private');
-
-        $this->assertStringContainsString('completedCurrentReadableRunStillPointerResolved', $idempotency);
-        $this->assertStringContainsString('failSafeCompletedReadableRunPointerMismatch', $idempotency);
-        $this->assertStringContainsString('findReadableCurrentPublicationForRun', $pointerCheck);
-        $this->assertStringContainsString('publication_id', $pointerCheck);
-        $this->assertStringContainsString('publication_version', $pointerCheck);
-        $this->assertStringContainsString('run_id', $pointerCheck);
-        $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $failSafe);
-        $this->assertStringContainsString('clearCurrentPublicationState', $failSafe);
-        $this->assertStringContainsString('RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID', $failSafe);
-        $this->assertStringContainsString('RUN_LOCK_CONFLICT', $failSafe);
-    }
-
+    // The finalize-idempotency fail-safe was asserted here as nine wiring strings. It is driven
+    // end to end by MarketDataPipelineIntegrationTest: a completed run whose pointer version is
+    // corrupted mid-flight is re-finalized, held with RUN_LOCK_CONFLICT, the invalid pointer is
+    // cleared, no publication is duplicated, and RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID is
+    // recorded against the run. Every string checked here is an observable outcome there.
 
     private function readProjectFile($relativePath)
     {

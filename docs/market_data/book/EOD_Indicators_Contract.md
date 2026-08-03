@@ -1,200 +1,80 @@
-# EOD Indicators Contract (LOCKED)
+# EOD Indicators Artifact Contract (LOCKED)
 
 ## Purpose
-Define the authoritative upstream indicator artifact for one trade date D.
 
-This contract governs:
-- indicator row identity
-- minimum fields
-- publication-context semantics
-- validity semantics
-- dependency semantics
-- null/invalid behavior
-- deterministic interpretation
+Define immutable, publication-bound, versioned indicator facts for one stable instrument/listing and trade date.
 
-This document complements:
-- `../indicators/EOD_Indicators_Formula_Spec.md`
-- indicator test fixtures
-- eligibility contracts
+Indicators are upstream measurements, not signals, rankings, watchlist groups, or portfolio/execution actions.
 
-## Output identity
-For the live current readable indicators table, there must be at most one indicator row per `(trade_date, ticker_id)`.
+## Identity and lineage (LOCKED)
 
-Minimum logical row identity:
-- `trade_date`
-- `ticker_id`
+Logical row identity within a publication is `(trade_date, stable listing/instrument identity)`. Physical identity additionally binds publication, run, indicator row revision, price-product/factor-set, formula set, config snapshot, temporal universe/calendar, and source-bar publication.
 
-`publication_id` is mandatory publication context for the current readable row, but it is not a second competing live-table identity.
-Historical publication-bound snapshots belong in history tables or publication evidence, not as duplicate live current rows.
+Optional live tables are rebuildable projections only. Immutable publication-bound history is authoritative.
 
-## Minimum fields
-Required minimum fields:
-- `trade_date`
-- `ticker_id`
-- `publication_id`
-- `is_valid`
-- `invalid_reason_code`
-- `indicator_set_version`
-- `sector_code`
-- `dv20_idr`
-- `atr14_pct`
-- `vol_ratio`
-- `roc5`
-- `roc10`
-- `roc20`
-- `hh20`
-- `ll20`
-- `close_to_hh20_pct`
-- `close_to_ll20_pct`
-- `range_20_pct`
-- `range_position_20_pct`
-- `sector_roc20`
-- `rs_20_vs_sector`
-- `sector_rs_20_vs_ihsg`
-- `corporate_action_flag`
-- `corporate_action_types`
-- `trading_status_code`
-- `is_suspended`
-- `is_uma`
-- `event_risk_flag`
-- `event_risk_reasons`
-- `run_id`
+## Required metadata
 
-Equivalent naming is allowed only if semantics remain identical.
+- trade date and stable identity
+- publication/run/row revision
+- `indicator_set_version` and formula version
+- price-basis/product identity (`STRUCTURAL_ADJUSTED` for technical default)
+- factor-set hash/reference and adjustment/contamination state
+- config hash/snapshot reference
+- field-level validity/nullability/reasons plus compatibility primary reason
+- source bar publication/hash
 
-## Current-state publication-context rule (LOCKED)
-For the live readable table `eod_indicators`:
-- each row must belong to exactly one sealed publication context
-- `publication_id` must be non-null
-- the row must represent the current readable state for `(trade_date, ticker_id)`
-- superseded publication row sets must not remain side-by-side in the live current table
+## Baseline facts
 
-## Upstream-only rule (LOCKED)
-These indicators are upstream derived data.
-They are not:
-- signals
-- rankings
-- watchlist groups
-- portfolio actions
-- execution instructions
+- actual/proxy liquidity fields with explicit labels
+- `atr14_pct`, `vol_ratio`
+- `roc5`, `roc10`, `roc20`
+- `ma20`, `ma50`, distance metrics
+- `hh20`, `ll20`, and range-position metrics
+- source-backed sector/benchmark context
+- separate corporate-action, trading-status, suspension/UMA, and event-risk facts
 
-## Validity semantics
-- `is_valid = 1` means all mandatory indicator fields required by the active upstream contract are valid for that row
-- `is_valid = 0` means the row exists, but one or more mandatory readiness conditions failed
+Exact identities, formulas, dependencies, and required/optional classification are owned by the versioned indicator registry and formula specification.
 
-When invalid:
-- `invalid_reason_code` must be populated
-- blocked downstream readiness must be explainable without guessing
+## Price basis (LOCKED)
 
-## One-row rule (LOCKED)
-The live current artifact must emit at most one row per `(trade_date, ticker_id)`.
-Duplicate live indicator rows for the same key are forbidden.
+One run uses one coherent `STRUCTURAL_ADJUSTED` OHLC/volume vector. Provider `adj_close`, raw close fallback, and per-date basis mixing are forbidden. Missing verified factors cause explicit null/contamination state.
 
+## Nullability and row validity
 
-## Indicator nullability and OHLCV gap policy (LOCKED)
-Indicator availability is evaluated per field. A missing dependency for `ma50` must not force `ma20`, `roc20`, `dv20_idr`, event-risk fields, or sector fields to NULL when their own dependencies are satisfied.
+- Nullability is per field; one missing optional dependency does not null unrelated facts.
+- Intentional dataset-start and post-listing warm-up produce deterministic `NULL` per formula.
+- Missing expected bars, invalid inputs, unresolved factors, or recursive-chain gaps use distinct reasons.
+- Overall `is_valid` reflects the versioned required-field set, but complete field-level states/reasons must remain available.
+- No zero OHLCV placeholder row is permitted.
 
-Dataset-start and ticker-listed-date insufficient history are normal states. They produce NULL only for the affected formulas. They must not block the whole EOD publication date.
+## Temporal source context
 
-If a ticker is active/listed on a valid `market_calendar` trading day but its provider OHLCV row is unavailable while other tickers have data, the publication may carry a zero OHLCV placeholder for that ticker to preserve universe coverage. Such a zero-placeholder row is not a valid price input: price-based, turnover, and range indicators depending on it must be NULL/invalid for that field rather than computed from price `0`.
+Sector membership, benchmark, corporate action, factor, and trading status resolve as-of trade date and, for as-known mode, only from revisions known at the run cutoff. Absence remains unknown/NULL, not fabricated safe state.
 
+## ATR state and mutation impact
 
-## Recompute source scope (LOCKED)
-Recomputing EOD indicators without updating sector/corporate/trading-status/master data means source/master tables are read-only. It forbids imports/upserts/fetches into sector membership, sector-index bars, corporate-action source rows, trading-status source rows, ticker master, and EOD bars.
+ATR follows stable-seed Wilder recursion. The runtime must persist versioned recursive state or compute from stable chain. A changed historical TR/factor can affect every later ATR, so a fixed sliding horizon is insufficient; affected publications require recompute/correction until chain equivalence is restored.
 
-A new publication may still write fresh publication-bound `eod_indicators` rows, including sector, corporate-action, trading-status, suspension, UMA, and event-risk columns, as long as those values are resolved only from existing source/master rows. This is publication recompute, not source/master mutation.
+## Recompute and immutability
 
-A future technical-only recompute mode must be explicitly named and must preserve publication-bound context columns from the prior current publication. No current command is approved for that mode.
-
-## Dependency summary table (LOCKED)
-
-| Indicator | Input dependency | Window traversal | Warmup rule | Null rule | Blocking invalid reason |
-|---|---|---|---|---|---|
-| `dv20_idr` | `basis_close(X)`, `volume(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required history missing | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
-| `atr14_pct` | `high(X)`, `low(X)`, `basis_close(prev(X))`, `basis_close(D)` | trading-day | 15 bars for first ATR14 output | `NULL` if seed or dependency chain invalid | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
-| `vol_ratio` | `volume(D)` and `volume(D[-20] ... D[-1])` | trading-day | 21 bars total | `NULL` if prior-20 unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
-| `roc5` | `basis_close(D)`, `basis_close(D[-5])` | trading-day | 6 bars total | `NULL` if `D[-5]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
-| `roc10` | `basis_close(D)`, `basis_close(D[-10])` | trading-day | 11 bars total | `NULL` if `D[-10]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
-| `roc20` | `basis_close(D)`, `basis_close(D[-20])` | trading-day | 21 bars total | `NULL` if `D[-20]` unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
-| `hh20` | `high(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required dependency unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
-| `ll20` | `low(X)` for `D[-19] ... D` | trading-day | 20 valid bars including D | `NULL` if required dependency unavailable | `IND_INSUFFICIENT_HISTORY`, `IND_MISSING_DEPENDENCY_BAR`, `IND_INVALID_BAR_INPUT` |
-| `range_20_pct` | `hh20`, `ll20` | trading-day | 20 valid bars including D | `NULL` if `ll20 <= 0`; otherwise may be `0` for flat range | same as `hh20`/`ll20` |
-| `range_position_20_pct` | `basis_close(D)`, `hh20`, `ll20` | trading-day | 20 valid bars including D | `NULL` if `hh20 - ll20 <= 0` | same as `hh20`/`ll20` |
-| `sector_code` | `ticker_sector_memberships` effective on D | trade-date membership lookup | source-backed membership exists | `NULL` if no membership source exists for D | non-blocking; must not be fabricated |
-| `sector_roc20` | `market_benchmark_indicators.roc_20` for the active `sector_index_code` on D | benchmark indicator lookup | sector index bars and benchmark indicator exist | `NULL` if no sector index history/indicator exists for D | non-blocking; must not be fabricated |
-| `rs_20_vs_sector` | `roc20`, `sector_roc20` | same trade date | valid equity `roc20` and sector `roc_20` exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
-| `sector_rs_20_vs_ihsg` | sector benchmark `roc_20`, IHSG benchmark `roc_20` | same trade date | both benchmark indicators exist | `NULL` if either dependency is NULL | non-blocking; must not be fabricated |
-| `corporate_action_flag` | `market_data_corporate_actions` for ticker/date | exact trade-date source lookup | source row exists | `NULL` if no corporate-action source row exists | non-blocking; must not be fabricated |
-| `corporate_action_types` | `market_data_corporate_actions.action_type` | exact trade-date source lookup | source row exists | `NULL` if no corporate-action source row exists | non-blocking; deterministic comma list |
-| `trading_status_code` | `market_data_trading_status_events.event_type_code` resolved through `market_data_trading_status_event_types` | exact trade-date rows plus stateful carry-forward lookup | source row/state exists | `NULL` if no trading-status source row/state exists | non-blocking; deterministic comma list |
-| `is_suspended` | derived from canonical event type semantics | exact trade-date rows plus suspension carry-forward lookup | `SUSPENDED` state exists or exact `UNSUSPENDED` clear row exists | `NULL` if no source row/state exists | non-blocking; source-backed projection only |
-| `is_uma` | derived from canonical `UMA` event type | exact trade-date lookup | exact `UMA` source row exists | `NULL` if no `UMA` source row exists | non-blocking; source-backed projection only |
-| `event_risk_flag` | corporate action/trading status context | exact trade-date rows plus independent stateful carry-forward lookup | source row/state exists | `NULL` if no source row/state exists; `0` only for source-backed non-risk status/state and no active independent risk state | non-blocking; must not infer no risk from absence |
-| `event_risk_reasons` | source-backed event context | exact trade-date rows plus stateful carry-forward lookup | source-backed risk exists | `NULL` if no risk reason exists | non-blocking; deterministic comma list |
-
-## Price basis rule (LOCKED)
-Where closing-price basis is required, use per-date fallback:
-- `adj_close`
-- otherwise `close`
-
-This must be applied separately on each dependency date.
-
-## Trading-day rule (LOCKED)
-Lookbacks and windows must be evaluated on ordered trading-day sequence.
-Calendar subtraction is forbidden.
-
-## Invalid reason semantics
-Preferred meanings:
-- `IND_INSUFFICIENT_HISTORY`:
-  history not yet long enough for the indicator’s locked warmup
-- `IND_MISSING_DEPENDENCY_BAR`:
-  a required trading-day dependency row should exist but is missing
-- `IND_INVALID_BAR_INPUT`:
-  required bar input exists but is invalid for computation
-- `IND_COMPUTE_ERROR`:
-  compute logic/runtime failed unexpectedly
-
-## Row existence rule (LOCKED)
-If implementation chooses to materialize indicator rows even when invalid:
-- the row must remain uniquely keyed by `(trade_date, ticker_id)` in the live current table
-- `publication_id` must still be populated
-- `is_valid = 0`
-- `invalid_reason_code` must explain why
-
-Implementation must not silently omit rows if downstream contracts expect explicit invalid-state rows.
-
-## Determinism rule (LOCKED)
-Given identical canonical bars, calendar ordering, config semantics, and indicator-set version, the indicator row for `(trade_date, ticker_id)` must be identical across reruns within the same publication outcome.
+Recompute reads immutable source/master revisions and writes new candidate/publication-bound rows. It cannot mutate bars, source/master events, factors, sealed indicator rows, or history. Changed published output requires correction/republication; identical output is an evidenced no-op.
 
 ## Eligibility interaction
-Eligibility consumers must use this indicator artifact as published.
-They must not recompute indicators ad hoc from bars at read time.
 
-## Anti-ambiguity rule (LOCKED)
-The following are forbidden:
-- multiple live indicator rows for the same `(trade_date, ticker_id)`
-- invalid row with empty invalid reason
-- non-`NULL` output produced through guessed or missing dependencies
-- downstream read logic inferring validity from field non-nullness alone while ignoring `is_valid` and `invalid_reason_code`
-- live readable indicator rows with `publication_id IS NULL`
+Indicator validity/warm-up/contamination facts feed eligibility under explicit versioned gates. Indicators do not decide alpha or selection.
 
----
+## Determinism
 
-## Amendment 2026-05-27 - Affected-date reprocess execution
+Identical source publication, temporal source revisions, product/factor version, stable ATR state/seed, formula/config version, and precision rules produce identical rows, field states, reasons, and hashes.
 
-When EOD bar mutation impact resolution finds affected non-readable dates, the system must actually recompute indicators for those dates. Reporting `REPROCESS_REQUIRED_*` is detection only; execution proof requires `indicator_reprocess_execution_summary`.
+## Acceptance criterion (LOCKED)
 
-Execution contract:
-- `execution_state=EXECUTED` only after indicator recompute runs for the affected date set.
-- `reprocess_scope=FULL_DATE` is acceptable when the current compute service is date-scoped.
-- `execution_state=NOOP` is valid only for unchanged bars or no affected dates.
-- `execution_state=BLOCKED` is required when an affected date is already readable and must go through correction.
-- `execution_state=FAILED` must include `failure_reason_code`.
+Every value and `NULL` is explainable from exact dependencies/version identity, and long-chain reruns never drift as the loaded window moves.
 
-Consumer read must not treat stale pre-mutation indicator rows as current proof after a changed historical bar is accepted.
+## Cross-contract alignment
 
-## Amendment 2026-05-27 - Publication-stage follow-through
-
-For affected dates that are not already readable/current, successful indicator and eligibility reprocess may be followed by the normal promote flow. That follow-through recomputes hash/seal/finalize artifacts through the existing publication pipeline.
-
-For affected dates that are already readable/current, indicator rows must not be silently overwritten as a live replacement. The correction/republication lifecycle remains required.
+- `../indicators/EOD_Indicators_Formula_Spec.md`
+- `../indicators/Indicator_Computation_Specification.md`
+- `../registry/Indicator_Registry_Baseline_LOCKED.md`
+- `Indicator_Nullability_And_OHLCV_Gap_Contract.md`
+- `Corporate_Action_and_Adjustment_Policy_Selected_Defaults_LOCKED.md`

@@ -1,6 +1,6 @@
 # Correction Lifecycle Safety Contract
 
-Status: LOCKED for the 2026-05-20 correction lifecycle hardening scope. Request baseline proof, unchanged publication-switch semantics, failed-correction pointer preservation, evidence linkage, replay MATCH linkage, and repair reason guards are enforced and validated by runtime proof.
+Status: STRATEGY LOCKED / IMPLEMENTATION RE-AUDIT REQUIRED. The 2026-05-20 proof remains historical evidence for pointer/baseline behavior, but it does not close the newer audit finding that direct historical bar/history repair paths can mutate sealed content.
 
 ## Scope
 
@@ -9,6 +9,8 @@ This contract owns market-data correction lifecycle safety across baseline resol
 ## Final Rule
 
 A correction may only publish a replacement when the baseline is resolved from the current readable pointer contract, the baseline publication is `SUCCESS + READABLE + SEALED + coverage PASS`, candidate artifacts are complete and deterministically different from the baseline, reseal is valid, candidate publication linkage is valid, and the post-switch pointer resolver returns the same candidate publication/run/version. If any check fails, the correction must not switch pointer and must preserve the previous current readable publication.
+
+No correction, repair, force, recompute, detector, migration, or operator path may update/delete sealed bar/history or other publication-bound content in-place. A changed value requires immutable new row snapshots, new hashes, new publication version, and explicit supersession. Pointer repair alone may repair pointer integrity; it cannot repair content.
 
 ## Request And Baseline Rule
 
@@ -39,6 +41,8 @@ Evidence and replay must carry correction lifecycle fields: correction id/status
 ## Repair / Force Guard Rule
 
 Force replacement and current-publication repair are operator-intent paths. `market-data:promote --force_replace=true` must include `--force_replace_reason` or `--force_reason`; `market-data:current-publication:repair --apply` must include `--reason` or `--force_reason`. Repair output must show the reason, pointer before, pointer after, operation mode, and registered command reason code.
+
+Repair output must also show `integrity_reasons`, and those reasons must be derived by `EodPublicationRepository::determineCurrentIntegrityViolationReasons` — the same judgement that selected the row as invalid. No caller may re-derive them locally. The operator is instructed to review `integrity_reasons` before authorising a destructive clear, so a state that the scan flags must never be displayed with an empty or partial reason list: detection and diagnosis are one decision, not two.
 
 ## Fail-safe Rule
 

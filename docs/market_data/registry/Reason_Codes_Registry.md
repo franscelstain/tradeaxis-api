@@ -24,6 +24,7 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `COVERAGE_THRESHOLD_MET` | COVERAGE | INFO | Coverage evaluation passed because available canonical EOD bars met or exceeded the locked minimum threshold. |
 | `COVERAGE_BELOW_THRESHOLD` | COVERAGE | HARD | Coverage evaluation failed because available canonical EOD bars stayed below the locked minimum threshold. |
 | `COVERAGE_UNIVERSE_EMPTY` | COVERAGE | HARD | Coverage could not be evaluated because the resolved coverage universe for the requested date was empty. |
+| `COVERAGE_DORMANT_TICKERS_EXCLUDED` | COVERAGE | HARD / INACTIVE | Deprecated legacy reason. Dormancy must never remove a temporal-universe listing from the coverage denominator; any runtime emission is a V2 migration failure. |
 | `COVERAGE_GATE_DISABLED` | COVERAGE | HARD | Coverage gate runtime switch was disabled; coverage must remain not evaluable and cannot create readable publication. |
 | `COVERAGE_CANONICAL_BAR_EVIDENCE_DISABLED` | COVERAGE | HARD | Canonical bar evidence requirement was disabled; coverage must remain not evaluable because readable coverage requires canonical bar proof. |
 | `RUN_INDICATORS_MISSING` | RUN | HARD | Required indicator artifact or required indicator row set for the requested date is not available. |
@@ -59,10 +60,12 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `RUN_SOURCE_NO_VALID_DATA` | RUN | HARD | Source acquisition produced zero valid canonical EOD bars; empty source output must remain non-readable and must not publish. |
 | `RUN_SOURCE_MANUAL_FILE_EMPTY` | RUN | HARD | Manual file existed but contained no data rows; empty manual file import/promote is blocked. |
 | `RUN_SOURCE_MANUAL_FILE_NO_VALID_ROWS` | RUN | HARD | Manual file rows were parsed but no row produced a valid canonical bar; run must remain non-readable. |
+| `RUN_SOURCE_MANUAL_FILE_MISSING_ROW` | RUN | WARN | Manual file was readable but contained no row for an expected ticker/date pair; the affected ticker is reported as failed while other tickers may still succeed. |
 | `SOURCE_PROVIDER_HTTP_ERROR` | SOURCE | HARD | Source provider returned a non-transient HTTP error that must not be treated as successful data. |
 | `SOURCE_PROVIDER_MALFORMED_RESPONSE` | SOURCE | HARD | Source provider response could not be parsed into canonical market-data payload. |
 | `SOURCE_PROVIDER_RETRY_EXHAUSTED` | SOURCE | HARD | Source provider retry policy was exhausted without usable data. |
 | `SOURCE_PROVIDER_PARTIAL_RESPONSE` | SOURCE | WARN | Source provider returned only partial usable response context. |
+| `SECTOR_INDEX_API_PARTIAL_RESPONSE` | SOURCE | HARD | Sector index API returned fewer index codes than requested and partial acceptance was not enabled, so the ingest is blocked rather than storing an incomplete index set. |
 | `SOURCE_ALL_SYMBOLS_FAILED` | SOURCE | HARD | All requested symbols failed source acquisition. |
 | `SOURCE_FAILURE_HELD` | SOURCE | WARN | Source failure caused the run to be held safely without readable publication. |
 | `SOURCE_FAILURE_NOT_READABLE` | SOURCE | HARD | Source failure caused the output to remain not readable. |
@@ -141,6 +144,7 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `IND_INVALID_BAR_INPUT` | INDICATOR | HARD | A canonical bar input required for indicator computation is invalid. |
 | `IND_COMPUTE_ERROR` | INDICATOR | HARD | Indicator computation failed because of logic or runtime error. |
 | `IND_CORPORATE_ACTION_DISCONTINUITY` | INDICATOR | WARN | At least one mandatory indicator window spans a corporate action that breaks price or volume continuity, so the affected fields were quarantined as NULL instead of published as arithmetically meaningless values. |
+| `IND_PRICE_SCALE_DISCONTINUITY` | INDICATOR | WARN | At least one mandatory indicator window spans a detected price-scale break that no recorded corporate action explains, so the affected fields were quarantined as NULL. |
 | `ELIG_MISSING_BAR` | ELIGIBILITY | WARN | A ticker in the coverage universe does not have a canonical valid bar for the requested date. |
 | `ELIG_MISSING_INDICATORS` | ELIGIBILITY | HARD | Eligibility cannot be determined because required indicators are unavailable. |
 | `ELIG_INVALID_INDICATORS` | ELIGIBILITY | WARN | An indicator row exists but required indicators are marked invalid. |
@@ -148,6 +152,8 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `ELIG_UNIVERSE_DEPENDENCY_MISSING` | ELIGIBILITY | HARD | An upstream dependency required to determine universe membership is unavailable. |
 | `ELIG_FETCH_FAILURE` | ELIGIBILITY | WARN | Eligibility is blocked because ticker-level source acquisition failed and required upstream artifacts could not be formed safely. |
 | `ELIG_CORPORATE_ACTION_DISCONTINUITY` | ELIGIBILITY | WARN | Eligibility is blocked because required indicators were quarantined by a corporate action that breaks price or volume continuity inside their dependency window. |
+| `ELIG_PRICE_SCALE_DISCONTINUITY` | ELIGIBILITY | WARN | Eligibility is blocked because required indicators were quarantined by an unexplained price-scale break inside their dependency window. |
+| `BAR_PRICE_SCALE_BREAK_DETECTED` | BAR | WARN | A canonical bar opens on a different price scale than the previous bar closes on, beyond the locked ratio and minimum-price guards. |
 | `EVENT_RISK_CA_TYPE_UNMAPPED` | EVENT_RISK | WARN | A corporate action row carries an action_type that has no row in the corporate action type dictionary; it was treated fail-safe as breaking both price and volume continuity until an operator maps it. |
 | `SNAP_SOURCE_TIMEOUT` | INTRADAY | WARN | The session-snapshot source timed out. |
 | `SNAP_SOURCE_RATE_LIMIT` | INTRADAY | WARN | The session-snapshot source hit rate limiting. |
@@ -160,6 +166,8 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `COMMAND_INVALID_DATE_RANGE` | COMMAND | HARD | Operator command date range is invalid because `start_date` is after `end_date`. |
 | `COMMAND_INVALID_SOURCE_MODE` | COMMAND | HARD | Operator command source mode is outside the locked API/manual-file source modes. |
 | `COMMAND_INVALID_PROMOTE_MODE` | COMMAND | HARD | Operator command promote mode is unsupported by the locked promote contract. |
+| `COMMAND_INVALID_REQUEST_MODE` | COMMAND | HARD | Operator command request mode is outside the locked set of run request modes. |
+| `MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE` | COMMAND | HARD | The requested date is not an active trading day in `market_calendar`, so no trading-day window can be resolved for it. |
 | `COMMAND_CONFLICTING_OPTIONS` | COMMAND | HARD | Operator command options are mutually exclusive or ambiguous. |
 | `COMMAND_DESTRUCTIVE_GUARD_REQUIRED` | COMMAND | HARD | Operator command requested a destructive or force action without the required explicit guard/reason. |
 | `COMMAND_DRY_RUN_ONLY` | COMMAND | INFO | Operator command completed a dry-run preview and intentionally did not mutate final state. |
@@ -252,6 +260,8 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `EVIDENCE_COMPLETE` | EVIDENCE | INFO | Evidence export includes all required operator-grade context sections. |
 | `EVIDENCE_INCOMPLETE` | EVIDENCE | WARN | Evidence export completed with one or more missing context sections that must be visible to the operator. |
 | `REPLAY_MATCH` | REPLAY | INFO | Replay expected proof matched observed proof across deterministic fields. |
+| `REPLAY_MISMATCH` | REPLAY | HARD | Replay found a difference that carries no more specific reason code. Seeing this means a comparison produced a mismatch without classifying it, so the specific code is the thing to add rather than this one being the answer. |
+| `REPLAY_CONFIG_IDENTITY_MISMATCH` | REPLAY | HARD | Replay ran under a different configuration identity than the recorded run. The dataset may be reproducible; the configuration it was produced under was not the same one, so compare config before treating the difference as non-determinism. |
 
 | `REPLAY_FIXTURE_SCHEMA_MISMATCH` | REPLAY | HARD | Replay fixture manifest or schema version does not match the locked replay fixture contract. |
 | `REPLAY_EXPECTED_PROOF_INCOMPLETE` | REPLAY | HARD | Replay expected proof package is missing required deterministic lifecycle context. |

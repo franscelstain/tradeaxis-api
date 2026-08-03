@@ -130,24 +130,14 @@ class RunPublicationPointerLinkageStaticGuardTest extends TestCase
         }
     }
 
-    public function test_linkage_inventory_exists_and_no_latest_trade_date_shortcut_is_added(): void
+    // The latest-trade-date prohibition previously checked four named paths here.
+    // ReadPathShortcutProhibitionTest applies it to the whole runtime.
+    public function test_linkage_inventory_covers_every_stage_of_the_run_publication_chain(): void
     {
         $inventory = $this->read('docs/market_data/ops/RUN_PUBLICATION_POINTER_LINKAGE_INVENTORY.md');
 
         foreach (['run creation', 'publication candidate', 'current pointer', 'pointer switch', 'correction baseline', 'correction replacement', 'replay', 'evidence', 'command output', 'static guard'] as $needle) {
             $this->assertStringContainsString($needle, $inventory);
-        }
-
-        foreach ([
-            'app/Application/MarketData/Services/MarketDataPipelineService.php',
-            'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
-            'app/Application/MarketData/Services/ReplayVerificationService.php',
-            'app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php',
-        ] as $file) {
-            $source = $this->read($file);
-            foreach (["MAX(trade_date)", "max('trade_date')", "latest('trade_date')", "orderByDesc('trade_date')", 'ORDER BY trade_date DESC'] as $forbidden) {
-                $this->assertStringNotContainsString($forbidden, $source, $file.' contains forbidden latest-date shortcut '.$forbidden);
-            }
         }
     }
 

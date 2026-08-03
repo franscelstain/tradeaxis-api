@@ -124,7 +124,7 @@ A manual-file run may create a candidate publication and may become current only
 
 A manual-file run must not overwrite an existing valid current publication merely because the source is manually supplied.
 
-Any future force/override behavior requires a separate explicit operator contract and must define:
+Force/override behavior is governed by `Force_Replace_Operator_Control_Policy_LOCKED.md` and must define:
 
 - command flag name;
 - required audit reason;
@@ -132,7 +132,7 @@ Any future force/override behavior requires a separate explicit operator contrac
 - whether replacement is allowed against a valid current publication;
 - how downstream evidence distinguishes normal replacement from forced replacement.
 
-Until such a contract exists, `force_replace` is not part of the locked runtime behavior.
+`force_replace` may authorize a guarded current-pointer ownership switch only. It does not authorize mutation of the prior publication, its row snapshots, hashes, source/config/factor bindings, or lineage.
 
 ---
 
