@@ -112,6 +112,63 @@ Karena bukan current requirement, pekerjaan paid-provider tidak boleh dibuat seo
 
 ---
 
+## Source continuity exposure (LOCKED)
+
+Dokumen ini memiliki keputusan menerima risiko source. Karena itu ia juga harus menyatakan besarnya risiko itu, bukan hanya manfaatnya.
+
+`EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md` memiliki perilaku kegagalan **per-run** — retry, quarantine, degraded state, alert. Yang dinyatakan di sini adalah kegagalan sebagai **kondisi berkelanjutan**, yang tidak dimiliki kontrak mana pun sebelumnya.
+
+### Paparan yang diterima secara sadar
+
+- **Tidak ada SLA, support channel, atau jalur eskalasi.** Bila akses berubah, rate limit mengetat, endpoint bergeser, atau permintaan diblokir, tidak ada pihak yang dapat dimintai pemulihan. Ini konsekuensi wajar dari sumber gratis tak resmi dan bukan cacat yang muncul belakangan.
+- **Tidak ada pemberitahuan perubahan.** Perubahan schema atau perilaku diketahui dari kegagalan validasi, bukan dari pengumuman.
+- **Tidak ada authoritative correction.** Bila provider merevisi nilai historis, tidak ada notifikasi revisi yang dapat diandalkan.
+
+### Batas jalur pemulihan (LOCKED)
+
+`manual_file` adalah **rescue satu tanggal**, bukan jalur kelangsungan operasi.
+
+Universe aktif berjumlah sekitar sembilan ratus emiten. Memulihkan satu hari perdagangan secara manual berarti menyiapkan bar untuk seluruh universe itu, dengan provenance dan validasi yang sama ketatnya. Itu dapat dilakukan sesekali untuk satu tanggal; ia tidak dapat menggantikan akuisisi harian selama periode yang panjang.
+
+Menyebut `manual_file` sebagai jalur pemulihan tanpa menyatakan batas ini akan membuat rencana kelangsungan terlihat ada padahal tidak.
+
+### Risiko kehilangan permanen (LOCKED)
+
+Intentional dataset start adalah `2023-01-02`, sementara development frontier bergerak maju. Rentang di antara keduanya yang **belum di-backfill** hanya ada di sisi provider.
+
+Bila akses hilang sebelum rentang itu diambil, sejarah tersebut tidak dapat dipulihkan dari sumber ini, dengan biaya berapa pun. Observation yang sudah diakuisisi tetap milik platform dan immutable; yang belum diakuisisi tidak dijamin masih akan tersedia.
+
+Konsekuensinya satu, dan ia adalah pekerjaan fase sekarang:
+
+> **Kelengkapan backfill terhadap intentional dataset start adalah mitigasi risiko, bukan sekadar kelengkapan data.** Menundanya berarti membiarkan paparan yang tidak dapat dibalik.
+
+Ini **bukan** pekerjaan provider berbayar dan tidak boleh dibaca sebagai backlog vendor. Ia adalah akuisisi memakai sumber yang aktif sekarang.
+
+### Ambang bagi trigger availability
+
+Trigger *availability* pada daftar di bawah tidak boleh dibiarkan tanpa ukuran. Kontrak operasi wajib menetapkan berapa hari perdagangan berturut-turut kegagalan akuisisi yang mengubah status dari insiden operasional menjadi bukti bahwa kapabilitas source menjadi penghambat. Tanpa ambang, trigger itu tidak pernah terpicu — selalu ada alasan menunggu satu hari lagi.
+
+---
+
+## Licensing basis (LOCKED)
+
+Keputusan bootstrap ini dibenarkan oleh penghematan biaya. Penghematan itu hanya sah bila penggunaannya memang diizinkan, sehingga dasar lisensi adalah bagian dari keputusan, bukan catatan kaki.
+
+Dokumen ini sebelumnya menyatakan empat kali bahwa terms provider "harus dipatuhi", tanpa satu kali pun menyatakan **penggunaan seperti apa yang sedang dilakukan**. Kewajiban tanpa deklarasi tidak dapat diaudit.
+
+Karena itu wajib dicatat dan dipelihara:
+
+- **Penggunaan yang dinyatakan saat ini** — cakupan aktual pemakaian data pada fase ini, termasuk apakah ia bersifat internal/non-komersial, dan siapa yang mengaksesnya.
+- **Terms yang berlaku saat pengambilan**, disimpan sebagai evidence beserta tanggal pembacaannya. Terms provider dapat berubah tanpa pemberitahuan; klaim kepatuhan tanpa tanggal tidak dapat diverifikasi.
+- **Batas yang diketahui** — khususnya redistribusi, penyimpanan, dan pemakaian otomatis.
+- **Peristiwa yang mengubah dasar ini** — pemakaian komersial, akses publik, redistribusi keluaran, atau perubahan terms.
+
+Bila penggunaan bergerak melampaui yang dinyatakan, dasar lisensi berubah lebih dulu dari kebutuhan teknis mana pun. Ini juga yang menghubungkan bagian ini dengan trigger *penggunaan komersial* di bawah: pemicu itu bukan soal kualitas data, melainkan soal izin.
+
+Menyatakan dasar lisensi bukan pekerjaan provider berbayar dan tidak menyiratkan migrasi.
+
+---
+
 ## Evidence that may justify a later paid-data decision
 
 Evaluasi sumber berbayar baru menjadi relevan bila satu atau lebih kondisi berikut muncul:
@@ -203,6 +260,10 @@ Strategi ini dianggap dipatuhi hanya jika seluruh kondisi berikut benar:
 - paid-provider selection, procurement, integration, dan migration tidak dicatat sebagai current remediation backlog
 - future trigger hanya membuka evaluasi baru dan tidak menetapkan hasil evaluasi sebelumnya
 - source transition apa pun kelak mempertahankan versioned publication lineage dan tidak menulis ulang history
+- paparan kelangsungan source dinyatakan terbuka, termasuk ketiadaan SLA dan batas `manual_file` sebagai rescue satu tanggal
+- kelengkapan backfill terhadap intentional dataset start diperlakukan sebagai mitigasi risiko kehilangan permanen, bukan sebagai kelengkapan opsional
+- trigger availability memiliki ambang terukur pada kontrak operasi, bukan penilaian bebas
+- dasar lisensi dinyatakan beserta penggunaan aktual, terms bertanggal, batas yang diketahui, dan peristiwa yang mengubahnya
 
 ---
 

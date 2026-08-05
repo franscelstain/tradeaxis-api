@@ -4,6 +4,25 @@
 
 Tests derive expected meaning from independently reviewed owner contracts and oracles, not from copying current implementation output. A green test for a superseded rule is regression evidence against the new strategy, not proof of correctness.
 
+## What a source-text assertion proves (LOCKED)
+
+A test that reads implementation source and asserts on its text establishes exactly one thing: **that the text is present**. It is a lint, and it must be counted as one.
+
+- A source-text assertion proves neither old meaning nor new meaning. It proves a string exists in a file, which survives a rewrite that preserves the string and changes the behaviour, and fails on a rewrite that changes the string and preserves the behaviour.
+- Such a test may guard against **reintroduction of a named forbidden construct**, which is a legitimate and narrow purpose. It may not stand as the proof that a contract rule holds.
+- Every contract rule requires at least one assertion that **executes the path it governs**. Where only a source-text assertion exists for a rule, that rule is **unproven**, and the suite must not be described as covering it.
+- A rule whose only feasible check is textual states that explicitly, so its weakness is visible rather than absorbed into an aggregate pass count.
+
+Counting rules: a green suite is reported with its behavioural and source-text proportions separated. An aggregate figure that mixes them overstates coverage by exactly the share that never executed anything.
+
+## Fixtures must exist as artifacts (LOCKED)
+
+A fixture catalog, manifest, oracle, or vector document describes what a fixture must contain. It is not the fixture.
+
+- A specification without a corresponding artifact proves nothing and must not be cited as coverage. The correct reading of a fully specified, unbuilt fixture set is **capability absent**, not **coverage pending**.
+- Every fixture document names where its artifacts live, so their presence or absence is checkable rather than assumed.
+- An acceptance criterion that depends on a golden fixture is **unmet** while the fixture does not exist. It is not partially met by the specification being thorough.
+
 Each test identifies contract/version, fixture/manifest hash, runtime/database/build, frozen input revisions/config, assertion layers, and evidence admission state.
 
 ## Required test groups

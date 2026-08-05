@@ -164,6 +164,40 @@ Stale validation harus membedakan historical request dari operational latest-dat
 - setelah operational activation, latest-date acquisition yang terlambat atau berhenti pada prior trade date menghasilkan explicit degraded/held evidence dan tidak boleh membuat requested date readable
 - prior readable publication boleh dipertahankan sebagai prior-date state, tetapi tidak boleh diberi label fresh untuk requested date baru
 
+## Observation revision visibility (LOCKED)
+
+Aturan immutability di atas menjaga **keamanan** revisi: payload provider yang berubah tidak boleh mengubah canonical atau sealed history. Ia tidak menjaga **keterlihatan**-nya.
+
+Bootstrap source tidak memberi notifikasi revisi — `Yahoo_Finance_Bootstrap_Source_Strategy.md` mencatat ketiadaan authoritative correction sebagai paparan yang diterima sadar. Karena itu perbandingan saat re-fetch adalah **satu-satunya** cara platform dapat mengetahui bahwa nilai historis berubah di sisi provider.
+
+Kapan pun acquisition menghasilkan observation baru untuk kombinasi instrument/date yang sudah pernah memiliki observation sebelumnya — melalui backfill yang beririsan, retry, recovery, atau correction — maka wajib:
+
+- membandingkan nilai OHLCV yang dinormalisasi terhadap observation sebelumnya yang terpilih untuk kombinasi tersebut;
+- ketika keduanya sama, mencatat konfirmasi tanpa membuat temuan;
+- ketika berbeda, menghasilkan **explicit divergence finding** yang mengikat kedua observation identity, nilai keduanya, dan besar selisihnya;
+- membiarkan temuan itu terbuka untuk correction lifecycle, bukan menyelesaikannya sendiri.
+
+Aturan yang menyertainya:
+
+- Divergence adalah **temuan**, bukan izin. Ia tidak memilih pemenang, tidak mengubah canonical row, dan tidak menyentuh publication yang sudah sealed. Pemilihan observation tetap milik correction contract.
+- Diamnya perbandingan hanya berarti kedua observation setuju. Ia bukan bukti bahwa nilainya benar, dan bukan bukti bahwa provider tidak pernah merevisi tanggal yang tidak pernah di-refetch.
+- Menyimpan dua observation berbeda untuk instrument/date yang sama **tanpa** temuan adalah pelanggaran kontrak. Lineage yang benar tanpa perbandingan hanya mengarsipkan perbedaan itu diam-diam.
+
+## Capability boundary (LOCKED)
+
+Kontrak ini memiliki empat pemeriksa: schema/payload validation, stale/requested-date validation, row acceptance, dan dedup. Masing-masing kuat pada wilayahnya, dan wilayah itu harus dinyatakan.
+
+**Yang dibuktikan acquisition.** Bahwa sebuah response benar-benar diterima, dari request yang teridentifikasi, pada waktu yang tercatat; bahwa bentuknya sesuai schema yang aktif; bahwa ia memuat requested trade date; bahwa isinya terikat pada payload hash yang dapat diverifikasi; dan bahwa setiap canonical row dapat ditelusuri kembali ke envelope yang membentuknya.
+
+**Yang tidak dapat dibuktikan acquisition.**
+
+- **Bahwa nilainya benar.** Seluruh pemeriksaan di kontrak ini bersifat struktural, temporal, dan provenance. Response yang berbentuk sempurna, bertanggal benar, cocok schema, dan hash-verified tetap dapat memuat harga yang tidak pernah diperdagangkan. Acquisition membuktikan **kami menerima ini**, bukan **ini benar**.
+- **Bahwa provider tidak merevisi diam-diam.** Hanya kombinasi instrument/date yang benar-benar di-refetch yang dapat dibandingkan. Tanggal yang diambil sekali dan tidak pernah disentuh lagi tidak memiliki bukti apa pun tentang stabilitasnya.
+- **Bahwa response kosong benar-benar berarti tidak ada perdagangan.** Kontrak ini mewajibkan non-empty semantics untuk instrument/date yang expected, tetapi ekspektasi itu datang dari kalender dan status, bukan dari acquisition. Bila ekspektasinya salah, acquisition tidak memiliki cara mengetahuinya.
+- **Bahwa schema fingerprint yang cocok berarti semantik tidak berubah.** Provider dapat mengubah arti sebuah field tanpa mengubah bentuknya. Drift semacam itu lolos seluruh pemeriksaan di sini.
+
+Konsekuensinya: **acquisition `SUCCESS` tidak boleh dikutip sebagai bukti kualitas data.** Ia bukti bahwa observation sah dan terlacak. Setiap klaim tentang kebenaran nilai harus datang dari kontrak hilir yang memang memilikinya.
+
 ## Row acceptance rule
 Satu canonical bar hanya boleh diterima bila:
 - immutable observation envelope/reference tersedia dan hash-verifiable
@@ -235,6 +269,8 @@ Tidak boleh:
 - menurunkan quality bar hanya demi menyelesaikan import lebih cepat
 - memperlakukan unknown schema, stale response, atau malformed payload sebagai successful empty dataset
 - membiarkan provider-specific payload path menjadi field contract downstream
+- menyimpan dua observation berbeda untuk instrument/date yang sama tanpa divergence finding
+- mengutip acquisition `SUCCESS` sebagai bukti bahwa nilainya benar
 
 ---
 
@@ -278,7 +314,7 @@ Warmup contract:
 - If the requested date is missing from `market_calendar` or the prior trading-day window is insufficient, source acquisition must be blocked before import/promote.
 - Warmup bars are support history for rolling indicators and benchmark dependencies; they do not become requested publication targets unless the operator requested those dates.
 
-Yahoo Finance chart API harus menggunakan precise `period1` / `period2` boundaries for range-window acquisition. Provider `range=10d` style defaults are not sufficient for arbitrary historical backfill windows.
+Bootstrap adapter yang aktif harus memakai boundary window yang presisi untuk range-window acquisition; default window bergaya `range=10d` tidak memadai untuk backfill historis sembarang. Nama parameter, endpoint, dan kapabilitas provider yang berlaku dimiliki oleh capability matrix pada `Yahoo_Finance_Bootstrap_Source_Strategy.md` dan tidak diulang di sini, agar pergantian adapter tidak menyisakan pernyataan provider yang usang di kontrak domain.
 
 ---
 

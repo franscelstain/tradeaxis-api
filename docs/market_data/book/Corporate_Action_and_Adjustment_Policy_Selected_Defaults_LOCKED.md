@@ -18,6 +18,31 @@ Every indicator/analytical run binds one explicit price-product identity, produc
 
 If required verified factors are missing or conflicting, the affected vector/fields remain `NULL`/invalid and eligibility is blocked with explicit reasons. The run must not fall back to `RAW`, provider `adj_close`, or a mixed vector to manufacture continuity.
 
+### Persistence of the binding (LOCKED)
+
+"Binds" above is a requirement about **stored state**, not about a value held in memory during computation. A binding that exists only while the run executes cannot be enforced, cannot be audited, and cannot be exposed to a consumer.
+
+The following must therefore be first-class, queryable fields — not log lines, not notes, not inferred from column names:
+
+- **price-product identity** and product version, recorded on the analytical artifact and on its publication;
+- **factor-set reference or hash** covering exactly the factor revisions the run consumed;
+- **formula/indicator-set version** and configuration snapshot reference already required elsewhere.
+
+Rules:
+
+- Every analytical row resolves its basis without joining to anything outside its own publication context. A consumer must never infer basis from a column name, a default, or the absence of a marker.
+- Two analytical rows for the same listing and date under different bases are distinguishable by these fields alone.
+- An analytical row whose price-product identity is `NULL` is not weakly identified; it is **unidentified** and must not be readable.
+- Absence of these fields makes the one-basis-per-run rule unverifiable after the fact. A rule that can only be asserted at compute time and never checked afterwards provides no guarantee, because nothing distinguishes a conforming run from a non-conforming one once the run has ended.
+
+### Verifiability (LOCKED)
+
+The one-basis rule must be checkable **after the fact**, from stored artifacts alone:
+
+- for any publication, the set of distinct price-product identities across its analytical rows has exactly one member;
+- for any analytical row, the factor-set reference resolves to factor revisions whose effective ranges cover that row's dependency window;
+- a run that produced no analytical rows records its selected basis anyway, so an empty result is distinguishable from an unselected basis.
+
 ## Coherence rule
 
 For `STRUCTURAL_ADJUSTED`:
@@ -44,9 +69,17 @@ Changing price basis, factor selection, factor revision, precision rule, or fall
 
 Publications expose price-basis identity and quality/contamination state. Consumers must not infer basis from column names or reconstruct adjustments ad hoc.
 
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini memilih default analitik dan menetapkan aturan koherensi serta pengikatan basis. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data. Batas kemampuan produk harga yang dipilih di sini dimiliki `../registry/Price_Adjustment_Contract_LOCKED.md`, yang menyatakan bahwa deret koheren membuktikan **faktor terverifikasi diterapkan secara konsisten**, bukan bahwa window-nya bebas peristiwa struktural.
+
+Satu konsekuensi dari batas itu berlaku langsung di sini: satu basis per run menjamin **tidak ada pencampuran**, bukan **kelengkapan**. Sebuah run yang mengikat `STRUCTURAL_ADJUSTED` dengan factor set yang kehilangan satu peristiwa tetap memenuhi aturan one-basis-per-run sepenuhnya, dan hasilnya tetap salah secara diam-diam.
+
 ## Acceptance criterion (LOCKED)
 
 No vector mixes scales across dates or fields; missing verification fails safe; identical raw publication plus factor/config/formula versions reproduce identical analytical output.
+
+Kriteria ini hanya dapat dinilai bila pengikatan basis tersimpan sebagaimana disyaratkan di atas. Selama identitas price-product tidak ada sebagai field, kriteria ini tidak terbuktikan secara konstruksi — bukan gagal, melainkan tidak terukur.
 
 ## Cross-contract alignment
 

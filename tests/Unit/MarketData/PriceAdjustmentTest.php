@@ -208,7 +208,7 @@ class PriceAdjustmentTest extends TestCase
         );
     }
 
-    public function test_derivation_records_a_factor_but_never_guesses_the_action_type(): void
+    public function test_price_break_detection_never_authors_an_event_or_factor(): void
     {
         DB::table('tickers')->insert(['ticker_id' => 3, 'ticker_code' => 'SCCO', 'company_name' => 'SCCO Tbk', 'is_active' => 1]);
 
@@ -225,15 +225,12 @@ class PriceAdjustmentTest extends TestCase
         (new PriceScaleBreakDetectionService())->detect(null, null, null, true);
         $result = (new CorporateActionDerivationService())->derive(true);
 
-        $this->assertCount(1, $result['derived']);
+        $this->assertSame([], $result['derived']);
+        $this->assertSame('DETECTION_ONLY', $result['capability_state']);
+        $this->assertSame('CORPORATE_ACTION_AUTHORITATIVE_EVIDENCE_REQUIRED', $result['skipped'][0]['reason_code']);
 
         $action = DB::table('market_data_corporate_actions')->where('ticker_id', 3)->first();
-
-        $this->assertSame('PRICE_RESCALE_UNCLASSIFIED', $action->action_type);
-        $this->assertSame('DERIVED_FROM_PRICE_SERIES', $action->adjustment_source);
-        $this->assertSame('2024-02-01', (string) $action->ex_date);
-        // 2506 / 9975
-        $this->assertEqualsWithDelta(0.2512, (float) $action->price_adjustment_factor, 0.0005);
+        $this->assertNull($action);
     }
 
     private function seedBar($tickerId, $date, $open, $close): void
@@ -251,7 +248,7 @@ class PriceAdjustmentTest extends TestCase
      * A recorded action whose series shows no material gap is evidence that the window is
      * continuous, so quarantining it protects nothing.
      */
-    public function test_a_recorded_action_with_no_material_gap_stops_quarantining(): void
+    public function test_price_continuity_alone_does_not_verify_a_recorded_action(): void
     {
         DB::table('tickers')->insert(['ticker_id' => 10, 'ticker_code' => 'CALM', 'company_name' => 'CALM Tbk', 'is_active' => 1]);
 
@@ -273,10 +270,10 @@ class PriceAdjustmentTest extends TestCase
         (new CorporateActionDerivationService())->checkRecordedActions(true);
 
         $action = DB::table('market_data_corporate_actions')->where('ticker_id', 10)->first();
-        $this->assertSame('NO_MATERIAL_GAP', $action->continuity_check_status);
+        $this->assertNull($action->continuity_check_status);
         $this->assertNull($action->price_adjustment_factor, 'a continuous series needs no factor');
 
-        $this->assertSame([], $repository->resolveCorporateActionContaminationForTickerIds([10], $dates));
+        $this->assertArrayHasKey(10, $repository->resolveCorporateActionContaminationForTickerIds([10], $dates));
     }
 
     /**
@@ -300,7 +297,7 @@ class PriceAdjustmentTest extends TestCase
         (new CorporateActionDerivationService())->checkRecordedActions(true);
 
         $action = DB::table('market_data_corporate_actions')->where('ticker_id', 11)->first();
-        $this->assertSame('GAP_AMBIGUOUS', $action->continuity_check_status);
+        $this->assertNull($action->continuity_check_status);
         $this->assertNull($action->price_adjustment_factor);
 
         $this->assertArrayHasKey(
@@ -312,7 +309,7 @@ class PriceAdjustmentTest extends TestCase
         );
     }
 
-    public function test_a_recorded_action_beyond_the_exchange_band_receives_a_factor(): void
+    public function test_a_recorded_action_beyond_the_exchange_band_still_requires_authoritative_terms(): void
     {
         DB::table('tickers')->insert(['ticker_id' => 12, 'ticker_code' => 'BIGG', 'company_name' => 'BIGG Tbk', 'is_active' => 1]);
 
@@ -329,12 +326,12 @@ class PriceAdjustmentTest extends TestCase
         (new CorporateActionDerivationService())->checkRecordedActions(true);
 
         $action = DB::table('market_data_corporate_actions')->where('ticker_id', 12)->first();
-        $this->assertSame('GAP_BEYOND_EXCHANGE_BAND', $action->continuity_check_status);
-        $this->assertEqualsWithDelta(0.2, (float) $action->price_adjustment_factor, 0.0001);
-        $this->assertSame('2025-03-11', (string) $action->ex_date);
+        $this->assertNull($action->continuity_check_status);
+        $this->assertNull($action->price_adjustment_factor);
+        $this->assertNull($action->ex_date);
 
-        $this->assertSame(
-            [],
+        $this->assertArrayHasKey(
+            12,
             (new EventRiskSourceRepository())->resolveCorporateActionContaminationForTickerIds(
                 [12],
                 ['2025-03-10', '2025-03-11', '2025-03-12']

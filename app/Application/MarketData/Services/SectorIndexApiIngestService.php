@@ -2,7 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
-use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Application\MarketData\Ports\ApiEodBarsSource;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use App\Infrastructure\Persistence\MarketData\MarketBenchmarkRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
@@ -17,7 +17,7 @@ class SectorIndexApiIngestService
     private $calendar;
 
     public function __construct(
-        PublicApiEodBarsAdapter $apiSourceAdapter,
+        ApiEodBarsSource $apiSourceAdapter,
         MarketBenchmarkRepository $benchmarks,
         MarketCalendarRepository $calendar
     ) {

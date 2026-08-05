@@ -15,23 +15,23 @@ The following layers are distinct:
 
 Provider `adj_close` is not a canonical adjusted OHLCV product and must not bridge layers 3 and 4 implicitly.
 
-## Provider field mapping (LOCKED)
+## Source field mapping targets (LOCKED)
 
-For active `api_free/yahoo_finance`, the adapter maps the chart response conceptually as follows:
+**Adapter mapping rules are owned by `Source_Mapping_Contract_LOCKED.md`**, and the capabilities of the active source are owned by the capability matrix in `Yahoo_Finance_Bootstrap_Source_Strategy.md`. What is owned here is the **canonical target** each normalized concept must land on, stated without provider vocabulary so that changing adapters cannot strand this contract.
 
-| Provider concept | Normalized/canonical target | Rule |
+| Normalized source concept | Canonical target | Rule |
 |---|---|---|
-| response/meta symbol | provider symbol provenance | lineage only; resolve through effective-dated mapping |
-| response/meta exchange timezone | timestamp normalization evidence | must be consistent with governed exchange/platform timezone mapping |
-| timestamp | `trade_date`, provider observed timestamp | convert deterministically to `Asia/Jakarta`; requested-date membership required |
-| quote open/high/low/close | `RAW` open/high/low/close | decimal-preserving validation; no zero/null substitution |
-| quote volume | `RAW` volume | non-negative integer; zero is distinct from missing |
-| adjclose | provider adjusted-close observation | optional lineage/source field only; never per-row analytical fallback |
-| provider error/meta error | rejection/failure evidence | never parse as an empty successful dataset |
+| provider symbol as requested/returned | provider symbol provenance | lineage only; identity resolves through the effective-dated mapping |
+| source exchange/timezone metadata | timestamp normalization evidence | must agree with the governed exchange/platform timezone mapping |
+| source observation timestamp | `trade_date` and provider observed timestamp | deterministic conversion to `Asia/Jakarta`; requested-date membership required |
+| open, high, low, close | `RAW` open/high/low/close | decimal-preserving validation; no zero or null substitution |
+| volume | `RAW` volume | non-negative integer; zero is distinct from missing, and zero with price movement is invalid |
+| provider adjusted close | provider adjusted-close observation | nullable lineage field only; never a per-row analytical fallback |
+| source error or failure metadata | rejection/failure evidence | never parsed as an empty successful dataset |
 
-`manual_file` must declare an equivalent schema/version and map each column explicitly. Column position guessing, silent type coercion, and unmapped extra-field use are forbidden.
+Any source mode, including `manual_file`, must declare an equivalent schema/version and map each column explicitly. Column position guessing, silent type coercion, and unmapped extra-field use are forbidden.
 
-Future adapters map their payloads into the same normalized semantics and may not leak provider JSON paths, suffix rules, or proprietary status codes into consumer contracts.
+Future adapters map their payloads into these same normalized semantics and may not leak source JSON paths, suffix rules, or proprietary status codes into consumer contracts.
 
 ## Canonical field model (LOCKED)
 
@@ -115,6 +115,23 @@ Consumers must never use rejection storage as market-data input.
 Idempotent processing of the same observation/config produces the same candidate content/hash. It may not duplicate an immutable candidate identity.
 
 Canonicalization must not update sealed publication content in-place. A changed historical observation creates a new correction run and publication revision; identical reprocessing is a no-op with evidence.
+
+## Capability boundary (LOCKED)
+
+**What canonicalization proves.** That a provider row mapped to the declared fields; that OHLC are present, positive, and internally consistent; that the row resolves to the requested completed Regular-Market session; that duplicates and conflicts were rejected rather than silently resolved.
+
+**What canonicalization cannot prove.**
+
+- **That the values reflect what actually traded.** Internal consistency is a relation among the numbers themselves. It says nothing about their relation to the market. Every check here can pass on values that never occurred.
+- **That a correctly dated row is a fresh row.** A payload carrying the requested date whose OHLCV repeats a prior session satisfies date validation and consistency validation together. Staleness is detected from timestamps and schema state, not from the values.
+- **That the price scale is the one expected.** A source that already changed scale delivers rows that are individually valid. Discontinuity is visible only across adjacent observations, which is a separate detector with its own sensitivity floor.
+- **That volume is in the expected unit.** A wrong unit remains present and non-negative. Unit correctness rests on the declared provider unit identity and its normalization evidence, not on validation of the number.
+
+### Consequences (LOCKED)
+
+- `canonical-valid` means **admissible as a bar**. It never means **verified against the market**, and must not be reported, exported, or cited as such.
+- Passing canonicalization may not close a data-quality finding, satisfy a continuity check, or serve as evidence that a window is undisturbed.
+- Because these blind spots are structural rather than incidental, downstream contracts must not treat canonical validity as an upstream guarantee of correctness.
 
 ## Acceptance criterion (LOCKED)
 

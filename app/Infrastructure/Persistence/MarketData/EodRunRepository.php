@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Persistence\MarketData;
 
 use App\Application\MarketData\Services\CoverageGateStateNormalizer;
+use App\Domain\MarketData\MarketDataScope;
 use App\Models\EodRun;
 use App\Models\EodRunEvent;
 use Carbon\Carbon;
@@ -10,9 +11,20 @@ use Illuminate\Support\Facades\DB;
 
 class EodRunRepository
 {
+    private $configSnapshots;
+
+    public function __construct(MarketDataConfigSnapshotRepository $configSnapshots = null)
+    {
+        $this->configSnapshots = $configSnapshots ?: new MarketDataConfigSnapshotRepository();
+    }
+
     public function getOrCreateOwningRun($requestedDate, $sourceMode, $stage, $supersedesRunId = null, $requestMode = null)
     {
-        return DB::transaction(function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId, $requestMode) {
+        $scope = MarketDataScope::fromConfig();
+        $requestedDate = $scope->assertRequestedDate($requestedDate);
+        $snapshot = $this->configSnapshots->resolveForRun($requestedDate);
+
+        return DB::transaction(function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId, $requestMode, $scope, $snapshot) {
             $this->cancelStaleActiveRuns($requestedDate, $sourceMode, $requestMode);
 
             $activeRun = EodRun::query()
@@ -32,6 +44,15 @@ class EodRunRepository
                 ->first();
 
             if ($activeRun) {
+                if (empty($activeRun->config_snapshot_id)) {
+                    $activeRun->config_snapshot_id = $snapshot['config_snapshot_id'];
+                    $activeRun->config_hash = $snapshot['config_hash'];
+                    $activeRun->config_snapshot_ref = $snapshot['snapshot_uid'];
+                    $activeRun->operational_start_date = $scope->operationalStartDate();
+                    $activeRun->freshness_state = $scope->operationalStartDate() ? 'NOT_EVALUATED' : 'DEVELOPMENT_NOT_OPERATIONAL';
+                    $activeRun->save();
+                }
+
                 return $activeRun;
             }
 
@@ -83,8 +104,12 @@ class EodRunRepository
                 'indicators_batch_hash' => null,
                 'eligibility_batch_hash' => null,
                 'config_version' => config('market_data.indicators.set_version'),
-                'config_hash' => null,
-                'config_snapshot_ref' => null,
+                'config_hash' => $snapshot['config_hash'],
+                'config_snapshot_ref' => $snapshot['snapshot_uid'],
+                'config_snapshot_id' => $snapshot['config_snapshot_id'],
+                'observation_manifest_hash' => null,
+                'operational_start_date' => $scope->operationalStartDate(),
+                'freshness_state' => $scope->operationalStartDate() ? 'NOT_EVALUATED' : 'DEVELOPMENT_NOT_OPERATIONAL',
                 'supersedes_run_id' => $supersedesRunId,
                 'publication_id' => null,
                 'publication_version' => null,
@@ -118,6 +143,8 @@ class EodRunRepository
                     'supersedes_run_id' => $supersedesRunId,
                     'lifecycle_state' => 'PENDING',
                     'publishability_state' => 'NOT_READABLE',
+                    'config_snapshot_id' => (int) $snapshot['config_snapshot_id'],
+                    'config_hash' => $snapshot['config_hash'],
                 ]
             );
 
@@ -178,6 +205,10 @@ class EodRunRepository
             'config_version' => $seedRun->config_version ?: config('market_data.indicators.set_version'),
             'config_hash' => $seedRun->config_hash,
             'config_snapshot_ref' => $seedRun->config_snapshot_ref,
+            'config_snapshot_id' => $seedRun->config_snapshot_id,
+            'observation_manifest_hash' => $seedRun->observation_manifest_hash,
+            'operational_start_date' => $seedRun->operational_start_date,
+            'freshness_state' => $seedRun->freshness_state,
             'supersedes_run_id' => $seedRun->supersedes_run_id,
             'publication_id' => null,
             'publication_version' => null,

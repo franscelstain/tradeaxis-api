@@ -185,6 +185,18 @@ For every corrected date D it must be possible to answer:
 ## Anti-drift rule (LOCKED)
 If a later readable state for D differs from a prior sealed publication without explicit correction trail, supersession trail, and reseal evidence, it is a contract violation.
 
+## Capability boundary (LOCKED)
+
+**What the correction lifecycle proves.** That a content change produced a new revision, hashes, seal, publication, and supersession lineage; that the prior publication remains queryable; that the pointer moved only after the new publication was valid.
+
+**What it cannot prove.**
+
+- **That every affected date was corrected.** The impact resolver propagates along recorded dependencies. A dependency that was never recorded — an unrecorded event, an unrecorded calendar session — leaves affected dates outside the correction set, and they remain published with stale derived values while the correction reports success.
+- **That the correction improved the data.** The lifecycle validates process, not outcome. A correction replacing a right value with a wrong one follows exactly the same path and produces exactly the same evidence.
+- **That the absence of corrections means the history is right.** It means no correction was requested.
+
+Consequently a completed correction may be cited as evidence that **the change was applied safely and traceably**, never as evidence that **the corrected range is now correct** or that **no other range needs correcting**.
+
 ## See also
 - `Dataset_Seal_and_Freeze_Contract_LOCKED.md`
 - `Audit_Hash_and_Reproducibility_Contract_LOCKED.md`

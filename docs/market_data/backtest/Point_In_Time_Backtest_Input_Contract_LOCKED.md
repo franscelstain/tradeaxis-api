@@ -27,3 +27,15 @@ Signal features use the declared coherent analytical product. Simulated executio
 ## Acceptance fixtures
 
 At minimum prove inactive-now/active-then membership, symbol transition/reuse, late action verification, late config/calendar/status correction, unavailable same-day data, explicit stale fallback, and original-versus-corrected as-known datasets.
+
+## Capability boundary (LOCKED)
+
+**What a point-in-time input set proves.** That every row was resolvable from facts recorded by its declared knowledge cutoff, that inactive-now securities remain present when they were in the temporal universe, and that later corrections form a separate later-known dataset rather than rewriting the earlier one.
+
+**What it cannot prove.**
+
+- **That the as-known state was complete at that cutoff.** The set contains what the platform had recorded by then. A fact that existed in the market but was never captured is absent from the as-known view and from the later-known view alike, so no comparison reveals it.
+- **That the cutoff reflects real availability.** `recorded_at` states when the platform learned something, not when it became knowable. A fact ingested late appears unknowable for longer than it was.
+- **That absence of look-ahead in the data means absence of look-ahead in the study.** This contract governs inputs. A backtest that selects instruments by present-day knowledge receives clean point-in-time rows and still leaks.
+
+Consequently a conforming input set may be cited as evidence that **the platform did not supply future state**, never as evidence that **the study is free of hindsight**.

@@ -56,9 +56,23 @@ Replay uses the mapping effective on trade date T and, for as-known mode, only t
 - symbol/date outside mapping validity: reject with explicit reason
 - mapping dependency unavailable: do not fabricate `ticker_id`, do not publish affected row, and expose coverage impact
 
+## Capability boundary (LOCKED)
+
+**What mapping resolution proves.** That a symbol resolves to at most one listing for a provider and effective instant; that reuse recorded as reuse resolves correctly on each side of its boundary; that gaps and overlaps fail closed rather than falling back to the current mapping.
+
+**What it cannot prove.**
+
+- **That an unrecorded rename or reuse was noticed.** A symbol change never recorded as a mapping interval resolves to one identity across both eras and satisfies every uniqueness rule. It is indistinguishable from a symbol that genuinely never changed.
+- **That the recorded effective boundary is the real one.** A boundary off by even one session attaches observations to the wrong identity, consistently and without conflict.
+- **That the provider used the symbol the platform assumes.** The mapping records what the platform requested and stored; a provider that silently serves a different security for a given symbol produces a well-formed mapping to the wrong instrument.
+
+Mapping completeness therefore inherits the external reconciliation requirement in `Tickers_and_Identity_Dependency_Contract_LOCKED.md`. A mapping set that is internally consistent is not thereby complete.
+
 ## Acceptance criterion (LOCKED)
 
 Given the same symbol text reused by two instruments at different times, observations before and after the reuse boundary must resolve to their respective stable identities without moving historical rows.
+
+This proves the mapping mechanism. It does not prove that every rename, relisting, or reuse in the period was recorded; that is established by the external reconciliation above.
 
 ## Cross-contract alignment
 

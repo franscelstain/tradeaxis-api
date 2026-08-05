@@ -29,15 +29,16 @@ Hanya satu work order boleh `IN_PROGRESS`. Successor tidak boleh dimulai sampai 
 - implementation conformance: `NOT_CLAIMED`
 - operational validation: `NOT_CLAIMED`
 - open findings recorded by command protocol: `NONE_RECORDED`
+- known implementation backlog carried by the audit report: **31** (`P0-01`–`P0-04`, `P1-01`–`P1-27`), assigned to later work orders
 - execution mode: `STAGE_BY_STAGE`
-- next permitted command: **`MD-RUN W00 market-data.`**
+- next permitted command: **`MD-RUN W01 market-data.`**
 
 ## Work-order ledger
 
 | Work order | Scope | Dependency | Status | Latest audit verdict | Assigned docs | Evidence refs | Next action/state |
 |---|---|---|---|---|---:|---|---|
-| `W00` | Preflight and implementation ledger baseline | documentation ready | `NOT_STARTED` | `NOT_AUDITED` | matrix-wide inventory | none | `MD-RUN W00 market-data.` |
-| `W01` | Scope, boundary, dataset/activation semantics | `W00 CONFORMANT` | `NOT_STARTED` | `NOT_AUDITED` | stages 1–2 | none | wait for predecessor |
+| `W00` | Preflight and implementation ledger baseline | documentation ready | `CONFORMANT` | `PASS` | 142 dari 142 | baseline 2026-08-03 di bawah | closed |
+| `W01` | Scope, boundary, dataset/activation semantics | `W00 CONFORMANT` | `NOT_STARTED` | `NOT_AUDITED` | stages 1–2 | none | `MD-RUN W01 market-data.` |
 | `W02` | Yahoo bootstrap and provider-neutral ports | `W01 CONFORMANT` | `NOT_STARTED` | `NOT_AUDITED` | stage 3 | none | wait for predecessor |
 | `W03` | Migration/schema/repository/reason/test skeleton | `W02 CONFORMANT` | `NOT_STARTED` | `NOT_AUDITED` | foundations stages 4–21 | none | wait for predecessor |
 | `W04` | Immutable config snapshot and semantic bindings | `W03 CONFORMANT` | `NOT_STARTED` | `NOT_AUDITED` | stage 16 foundation | none | wait for predecessor |
@@ -59,6 +60,74 @@ Hanya satu work order boleh `IN_PROGRESS`. Successor tidak boleh dimulai sampai 
 | `W20` | Optional session snapshot decision/implementation | `W19 CONFORMANT` | `NOT_STARTED` | `NOT_AUDITED` | stage 17/19 optional | none | wait for predecessor |
 | `W21` | Global convergence/backfill/full semantic proof | `W20 CONFORMANT` | `NOT_STARTED` | `NOT_AUDITED` | stages 20–21 | none | wait for predecessor |
 | `W22` | Independent audit/activation-aware validation/relock | `W21 CONFORMANT` | `NOT_STARTED` | `NOT_AUDITED` | stage 22 | none | wait for predecessor |
+
+## W00 baseline — direkam 2026-08-03
+
+Exit gate `W00` menurut blueprint: *current code/schema/test/evidence baseline direkam; setiap dokumen aktif memiliki assignment di conformance matrix.* Keduanya terpenuhi dan tercatat di bawah. Baseline ini adalah titik banding untuk setiap work order berikutnya.
+
+### Preflight environment
+
+| Item | Nilai | Gate |
+|---|---|---|
+| PHP | `7.4.33` | `>= 7.3` dan `< 8.4` — **PASS** |
+| Ekstensi wajib | `dom`, `mbstring`, `xml`, `xmlwriter` | lengkap |
+| PHPUnit | `9.6.34` | dapat dijalankan |
+| MariaDB | `10.4.27` | tersedia |
+
+### Code
+
+| Permukaan | Jumlah |
+|---|---:|
+| Application service | 35 |
+| Persistence repository | 21 |
+| Source adapter | 6 |
+| Artisan command | 34 |
+
+### Schema
+
+| Sumber | Jumlah | Catatan |
+|---|---:|---|
+| Tabel MariaDB | 40 | keadaan terdeploy |
+| Tabel mirror SQLite | 41 | keadaan yang dimaksud |
+| Berkas migration | 47 | |
+| Migration diterapkan | 56 | **dua berkas terakhir tidak tercatat** — `P1-26` |
+
+### Data
+
+| Tabel | Baris |
+|---|---:|
+| `eod_bars` | 756.329 |
+| `eod_bars_history` | 56.138.923 |
+| `eod_indicators` | 756.328 |
+| `eod_publications` | 64.092 |
+| `market_data_corporate_actions` | 530 |
+
+### Test
+
+| Item | Nilai |
+|---|---|
+| Suite penuh | `OK (1158 tests, 8774 assertions)` |
+| Berkas test market-data | 129 |
+| — behavioral | 95 |
+| — static guard teks-sumber | 34 |
+
+Proporsi dilaporkan terpisah sesuai `../tests/Contract_Tests_Specification.md`: angka gabungan melebihkan cakupan sebesar bagian yang tidak mengeksekusi apa pun.
+
+### Evidence
+
+| Item | Nilai |
+|---|---|
+| Evidence bundle di `storage/app/market-data/` | 20 |
+| Berkas golden fixture / oracle | **0** — `DOC-81` |
+| Admissibility bukti yang ada | lihat **Evidence admissibility ledger** pada `reports/AUDIT_FINAL_STATE.md` |
+
+### Assignment coverage
+
+142 dokumen aktif pada `book/`, `registry/`, `indicators/`, `backtest/`, `db/`, `tests/`, `ops/`, dan `session_snapshot/`. **Nol tanpa assignment** di conformance matrix.
+
+### Batas yang berlaku atas baseline ini
+
+Baseline ini merekam **apa yang ada**, bukan bahwa apa yang ada benar. Ia tidak menutup satu pun dari 31 temuan implementasi yang dibawa audit report, dan tidak boleh dikutip sebagai bukti kesesuaian. Perannya adalah titik banding: setiap perubahan pada work order berikutnya diukur terhadap angka-angka ini.
 
 ## Active findings
 
@@ -99,6 +168,6 @@ If an update would produce two active work orders, successor before predecessor,
 ## Current next command
 
 ```text
-MD-RUN W00 market-data.
-Jalankan hanya work order W00 dari current-state ledger sampai PASS sesuai blueprint, conformance matrix, command protocol, seluruh assigned owner contracts, dan implementation ledger. Implementasikan seluruh assignment, audit, remediasi dan re-audit sampai PASS, tandai W00 CONFORMANT berdasarkan evidence, lalu berhenti dan berikan exact next command MD-RUN W01 market-data. Jangan mengimplementasikan W01 pada command ini dan jangan memasukkan policy watchlist.
+MD-RUN W01 market-data.
+Jalankan hanya work order W01 dari current-state ledger sampai PASS sesuai blueprint, conformance matrix, command protocol, seluruh assigned owner contracts, dan implementation ledger. Verifikasi predecessor W00 CONFORMANT terlebih dahulu. Implementasikan seluruh assignment stage 1-2, audit, remediasi dan re-audit sampai PASS, tandai W01 CONFORMANT berdasarkan evidence, lalu berhenti dan berikan exact next command MD-RUN W02 market-data. Jangan mengimplementasikan W02 pada command ini dan jangan memasukkan policy watchlist.
 ```

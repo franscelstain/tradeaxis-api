@@ -123,3 +123,7 @@ This contract must remain aligned with:
 
 ## Anti-ambiguity rule (LOCKED)
 If a publication cannot be described by one coherent manifest-shaped proof object, then publication identity is too fragmented for audit-grade use.
+
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini menetapkan isi dan bentuk manifest publikasi. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data, sehingga tidak memiliki wilayah buta untuk dinyatakan. Mekanisme yang memang menghasilkan keluaran semacam itu menyatakan batasnya pada owner contract-nya masing-masing.

@@ -38,5 +38,6 @@ class EodRun extends Model
         'invalid_indicator_count' => 'integer',
         'hard_reject_count' => 'integer',
         'warning_count' => 'integer',
+        'config_snapshot_id' => 'integer',
     ];
 }

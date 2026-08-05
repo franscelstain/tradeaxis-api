@@ -7,6 +7,13 @@ use Illuminate\Support\Str;
 
 class TickerMasterRepository
 {
+    private $temporalIdentity;
+
+    public function __construct(TemporalIdentityRepository $temporalIdentity = null)
+    {
+        $this->temporalIdentity = $temporalIdentity ?: new TemporalIdentityRepository();
+    }
+
     public function resolveTickerIdsByCodes(array $tickerCodes)
     {
         $normalized = collect($tickerCodes)
@@ -69,43 +76,23 @@ class TickerMasterRepository
 
     public function getUniverseForTradeDate($tradeDate)
     {
-        $table = config('market_data.tickers.table');
-        $idColumn = config('market_data.tickers.id_column');
-        $codeColumn = config('market_data.tickers.code_column');
-        $activeColumn = config('market_data.tickers.active_column');
-        $activeValue = (int) config('market_data.tickers.active_value', 1);
-        $listedDateColumn = config('market_data.tickers.listed_date_column');
-        $delistedDateColumn = config('market_data.tickers.delisted_date_column');
+        return array_map(function (array $row) {
+            return [
+                'ticker_id' => $row['ticker_id'],
+                'ticker_code' => $row['ticker_code'],
+                'issuer_id' => $row['issuer_id'],
+                'instrument_id' => $row['instrument_id'],
+                'listing_id' => $row['listing_id'],
+                'exchange_code' => $row['exchange_code'],
+                'market_segment' => $row['market_segment'],
+                'board_code' => $row['board_code'],
+                'identity_recorded_at' => $row['identity_recorded_at'],
+            ];
+        }, $this->temporalIdentity->universeAsOf($tradeDate));
+    }
 
-        $query = DB::table($table)->select([$idColumn, $codeColumn]);
-
-        if ($activeColumn) {
-            $query->where($activeColumn, $activeValue);
-        }
-
-        if ($listedDateColumn) {
-            $query->where(function ($sub) use ($listedDateColumn, $tradeDate) {
-                $sub->whereNull($listedDateColumn)
-                    ->orWhere($listedDateColumn, '<=', $tradeDate);
-            });
-        }
-
-        if ($delistedDateColumn) {
-            $query->where(function ($sub) use ($delistedDateColumn, $tradeDate) {
-                $sub->whereNull($delistedDateColumn)
-                    ->orWhere($delistedDateColumn, '>', $tradeDate);
-            });
-        }
-
-        return $query
-            ->orderBy($idColumn)
-            ->get()
-            ->map(function ($row) use ($idColumn, $codeColumn) {
-                return [
-                    'ticker_id' => (int) $row->{$idColumn},
-                    'ticker_code' => Str::upper(trim($row->{$codeColumn})),
-                ];
-            })
-            ->all();
+    public function resolveTemporalContextsByCodes(array $tickerCodes, $tradeDate, $knownAt = null)
+    {
+        return $this->temporalIdentity->resolveByTickerCodes($tickerCodes, $tradeDate, $knownAt);
     }
 }

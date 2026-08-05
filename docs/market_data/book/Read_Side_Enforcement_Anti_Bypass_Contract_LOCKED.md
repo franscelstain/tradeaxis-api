@@ -43,3 +43,15 @@ An unrecognized or incompletely bound state returns unavailable/blocked evidence
 Production relock requires code search/static enforcement, database privilege evidence, gateway integration tests, concurrency tests during pointer replacement, and runtime query/audit evidence showing no consumer bypass. A policy document or repository convention alone is insufficient.
 
 Contract changes follow `docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md` and the canonical current-state verdict in `docs/market_data/audit/reports/AUDIT_FINAL_STATE.md`.
+
+## Capability boundary (LOCKED)
+
+**What read-side enforcement proves.** That governed read paths resolve through publication context, reject recency shortcuts, and refuse raw or invalid storage as a price source.
+
+**What it cannot prove.**
+
+- **That no bypass occurred.** Enforcement lives in application code. A consumer with direct database access, a reporting tool pointed at the schema, or an ad-hoc query reaches the same tables without passing through any of it. This is the same limit the sealed-publication immutability guard carries, and for the same reason.
+- **That the absence of violations means the rules were exercised.** No consumer surface is currently exposed. A rule with no traffic has not been tested by traffic; it has merely not been contradicted.
+- **That a governed path is a correct path.** Enforcement checks how data is reached, not whether the resolved publication is the one that should be current.
+
+Consequently clean enforcement may be cited as evidence that **governed paths behave**, never as evidence that **all access was governed**.

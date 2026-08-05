@@ -61,6 +61,19 @@ A consumer may cite these facts. A consumer may not own them, hardcode them, or 
 - deriving a price or volume factor from band arithmetic;
 - using these facts to score, rank, or filter instruments for tradability — that boundary belongs downstream.
 
+## Capability boundary (LOCKED)
+
+**What these facts prove.** That a given move was or was not reachable within one session under the band effective on that date; that proportional reasoning is or is not meaningful at a given price level; that the values used in a decision were sourced and effective-dated.
+
+**What they cannot prove.**
+
+- **That an event occurred.** A band is a bound on what one session can produce, not an observation of what happened. Exceeding it says an ordinary move cannot explain the gap — it identifies no action, type, terms, or factor.
+- **That a move inside the band was ordinary.** Most corporate actions produce effects well inside the band. Containment is the weaker inference of the two and carries no evidential weight, which is why `GAP_AMBIGUOUS` exists as a distinct verdict rather than a clean result.
+- **That the recorded band applied on that date.** These are effective-dated rows. A tier boundary recorded with the wrong effective date silently reclassifies every move measured against it, in both directions.
+- **That an unsourced value is a fact.** Until the band, floor, and tick tables carry source references and reconciliation dates, they are placeholders. The current in-code single scalar is recorded above as exactly that.
+
+Consequently an exceedance result may be cited as evidence that **an ordinary session move is insufficient explanation**, never as evidence that **a corporate action occurred**.
+
 ## Acceptance criterion (LOCKED)
 
 Every band, floor, or tick value used in a market-data decision resolves from an effective-dated, source-referenced row valid on the requested trade date. An unsourced constant may be used for no decision that reaches a published output.

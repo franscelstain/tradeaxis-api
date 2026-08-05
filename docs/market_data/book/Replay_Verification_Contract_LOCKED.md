@@ -63,6 +63,45 @@ Evidence preserves fixture/manifest hashes, actual and expected contexts, mismat
 
 “Command exited successfully” or matching row counts alone is not replay proof.
 
+## Mode recording and single-mode implementation (LOCKED)
+
+Replay mode is declared mandatory and explicit above. That declaration binds the **result** as much as the request:
+
+- Every replay result records its mode as a first-class field. A result set in which publication and as-known outcomes are indistinguishable does not satisfy the mandatory-mode rule, regardless of what the invoking command intended.
+- A result carrying no mode is not a publication-replay result by default. It is **unclassified**, and an unclassified result may not be cited as either.
+
+### While only one mode exists (LOCKED)
+
+Publication replay and as-known replay answer different questions, and only the second bears on future-state leakage. Where as-known replay is not implemented, the following hold without exception:
+
+- **Publication-replay results carry no information about anti-survivorship or future-state leakage.** They compare an artifact against inputs frozen with it; a future master, a later action revision, or a later configuration is absent from both sides of that comparison and therefore cannot produce a mismatch.
+- No volume of publication-replay `PASS` results substitutes for a single as-known fixture. Accumulating them raises confidence in determinism only.
+- The eight anti-survivorship fixtures required below are as-known fixtures. Until as-known replay exists, their absence is not a gap in coverage — it is a gap in capability, and any claim resting on them is unavailable rather than untested.
+- A conformance or activation claim that cites replay evidence names which mode produced it. Citing an unmoded or publication-only corpus in support of a point-in-time property is a governance violation.
+
+## Capability boundary (LOCKED)
+
+Replay is the strongest proof this platform has, which makes an unstated limit here more dangerous than anywhere else.
+
+**What replay proves.** That a published artifact is reproducible from the inputs frozen with it; that the pipeline is deterministic across runs, builds, and environments; that the tested paths do not read future or current state; that a divergence, when it appears, is real.
+
+**What replay cannot prove.**
+
+- **That the values are correct.** Replay compares an output against itself under fixed inputs. A publication computed from a wrong observation, a missing corporate action, or an absent factor reproduces exactly and returns `PASS`. The verdict means "the pipeline agreed with itself", never "the market data is right".
+- **That the source observation was faithful.** Provider error inside an immutable observation is frozen by the same mechanism that guarantees reproducibility.
+- **That an event was not missed.** A corporate action nobody recorded is absent from both sides of the comparison, so it cannot create a mismatch.
+- **That the semantic rules are right.** Replay verifies the rules were applied consistently, not that they express the intended meaning. A rule that is wrong in the same way on both sides replays green.
+- **That untested paths are safe.** Only the bound inputs and asserted fields are covered. A field absent from the assertion set is unverified regardless of the verdict.
+
+### Admissibility of a PASS (LOCKED)
+
+- A replay `PASS` may be cited as evidence of **reproducibility and determinism**. It may never be cited as evidence of **data correctness, event completeness, or factor validity**.
+- A replay `PASS` may not close a data-quality finding, release a quarantine, dismiss a corporate-action candidate, or satisfy a continuity check.
+- Where an audit claim requires correctness, the admissible evidence is independent — verified event terms, source reconciliation, or exchange-published facts — not a replay verdict.
+- `BLOCKED` is not a weaker `PASS`. It states that the comparison did not execute.
+
+This is the same principle the detection and adjustment contracts already carry: a bounded mechanism agreeing with itself is not evidence about the world.
+
 ## Trading backtest boundary
 
 This contract verifies the upstream data product; it does not measure alpha or portfolio performance. A downstream backtest consumes the versioned as-known read product defined by `../backtest/Point_In_Time_Backtest_Input_Contract_LOCKED.md` and owns its own decision/execution assumptions.

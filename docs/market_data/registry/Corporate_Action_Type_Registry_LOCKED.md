@@ -228,6 +228,19 @@ poisons `ma50`.
 
 ---
 
+## Capability boundary (LOCKED)
+
+**What the type registry proves.** That a registered action type has one governed meaning — whether it adjusts price, whether it adjusts volume, which effective date anchors it, and what event-risk it carries — and that this meaning is versioned rather than inferred at runtime.
+
+**What it cannot prove.**
+
+- **That an instance is what its type says.** The registry defines the class. Whether a particular recorded action truly is a split, and on what terms, is a verification question owned by `../book/Corporate_Action_and_Adjustment_Policy.md`. A correctly typed action with wrong terms is fully registry-conformant.
+- **That an unregistered type is harmless.** An action whose type is absent from the registry has no governed semantics. It must quarantine, not default to non-adjusting, because absence of a rule is not a rule of no effect.
+- **That the type set is complete.** Exchanges introduce and rename action types. The registry covers what has been registered; a genuinely new type first appears as an unknown, and the safety of that moment depends on the quarantine rule above rather than on this registry.
+- **That adjusting semantics equal adjustment applied.** A type marked adjusting states that a factor is required, not that one exists or was verified.
+
+Consequently a type-conformant action set may be cited as evidence that **recorded types carry governed semantics**, never as evidence that **the actions themselves are verified or complete**.
+
 ## Known limitation and planned follow-up
 
 `GAP_UNKNOWN_MAGNITUDE` exists because `market_data_corporate_actions` currently stores no

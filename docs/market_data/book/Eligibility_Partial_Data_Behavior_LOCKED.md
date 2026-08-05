@@ -42,6 +42,18 @@ Absence of source/status/event/liquidity data means unknown or missing, never no
 
 Identical publication-bound inputs, temporal snapshots, factor/config/formula versions, and reason precedence produce identical rows and ordered reason sets. Published rows are immutable; changes create a new publication.
 
+## Capability boundary (LOCKED)
+
+**What partial-data handling proves.** That an incomplete input set produces an explicit partial or blocked state with reasons, rather than a silently narrowed result, and that absence fails safe rather than defaulting to usable.
+
+**What it cannot prove.**
+
+- **That the present data is right.** Partiality is about which facts arrived, not whether they are correct. A complete set of wrong facts is not partial.
+- **That the missing facts would have changed the decision.** A blocked row states that a required input was absent, not that its presence would have blocked or unblocked anything.
+- **That partiality was detected at all.** Detection depends on knowing which facts were required. A dimension nobody declared is never missing, because nothing expects it — which is why the required dimension list in the snapshot contract is load-bearing rather than descriptive.
+
+Consequently a non-partial result may be cited as evidence that **every declared input was present**, never as evidence that **the row is fully described**.
+
 ## Acceptance criterion (LOCKED)
 
 Partial data never disappears into data usability, coverage exclusions, or consumer guesses; every blocked state remains explicit, independently classified, and reason-coded. Watchlist preference is not part of this acceptance criterion.

@@ -85,6 +85,53 @@ An import process that is incomplete, not coverage-evaluated, missing required a
 
 Promote may continue only when coverage `PASS` and all independent hard gates pass. `FAIL` or `NOT_EVALUABLE` remains `NOT_READABLE`; prior readable publication may remain as explicitly stale/prior fallback but never masquerades as D.
 
+## Evidence validity boundary (LOCKED)
+
+Coverage evidence records `coverage_contract_version`, which states which coverage rules applied. It does not state which **universe resolver** produced the denominator, and the denominator is the part of coverage that depends most on something outside this contract.
+
+Consequently a stored coverage result cannot, by itself, be distinguished from one produced by a resolver since found defective.
+
+Required bindings on every coverage evidence record:
+
+- **identity/universe resolver version** that produced the temporal universe, alongside the coverage contract version;
+- **calendar and trading-status revision identities** used to resolve expectation;
+- the resulting `coverage_universe_count`, `coverage_bar_not_expected_count`, and delivered counts, each already required above.
+
+Admissibility rules:
+
+- Coverage evidence produced under a **superseded resolver, calendar revision, or status revision is not admissible** as proof of temporal correctness. It remains valid evidence of what the platform decided at the time, which is a different claim.
+- Such evidence is either re-derived under current components or explicitly qualified wherever it is cited. It is never silently carried forward as current proof.
+- A conformance claim that depends on coverage correctness must name the resolver version its evidence was produced under.
+
+This generalises: **evidence binds the version of every component its correctness depends on, not only the version of the contract that produced it.** A coverage record binding only its own contract version records less than it appears to.
+
+## Denominator exclusion path (LOCKED)
+
+`bar_not_expected` is the only mechanism permitted to reduce the denominator, which makes it the only mechanism through which a provider failure could be concealed. Its rarity in operation is a property of the market, not evidence that it is safe.
+
+- The exclusion path requires positive proof of correct behaviour — a governed test that exercises it — independently of how seldom production triggers it.
+- Low usage is never cited as assurance. A path used in a fraction of a percent of runs is effectively untested by production traffic, and its first material use may also be its first real execution.
+- Every exclusion records the verified evidence that produced it, so that a spike in exclusions is inspectable rather than merely plausible.
+- A sustained rise in exclusion rate is itself a finding for the quality gates, since the honest reading is either a market event affecting many listings or a defect in expectation resolution.
+
+## Capability boundary (LOCKED)
+
+**What the gate proves.** That the expected set of listings for a date was delivered, traceably and without fabrication, at or above the configured ratio; that provider absence and dormancy did not shrink the denominator.
+
+**What the gate cannot prove.**
+
+- **That the delivered values are correct.** Coverage counts observations, not prices. A `PASS` at 100 percent is fully compatible with every delivered bar being wrong. Correctness is the quality dimension's concern, and quality validation has its own boundary.
+- **That the expectation itself is right.** Coverage is measured against the calendar and status evidence. When those are wrong in the direction of `NOT_EXPECTED`, numerator and denominator shrink together and the ratio stays clean while a real Regular-Market session is missing entirely. Coverage is self-consistent under a wrong calendar; it cannot detect that condition from the inside.
+- **That a session is complete in market terms.** The gate answers "did we get a row for each listing we expected", not "did we get the whole session".
+
+### Consequences (LOCKED)
+
+- Coverage `PASS` may never be cited as evidence of data correctness, calendar correctness, or session completeness.
+- A missing expected trading date is a calendar/status finding, not a coverage finding, and must be detected by an independent check that does not derive its expectation from the same calendar revision.
+- Because the gate cannot see its own expectation being wrong, calendar and trading-status revisions carry the burden of proof independently under their owner contracts.
+
+For a five-trading-day analytical horizon, a silently absent session is not a small loss. It shortens the window while every field continues to label it as complete.
+
 ## Acceptance criterion (LOCKED)
 
 Provider failure cannot disappear through dormant/liquidity exclusion; a 100% delivery ratio cannot conceal invalid/quarantined observations because independent quality counts/gates remain visible and enforcing.

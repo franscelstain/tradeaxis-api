@@ -64,3 +64,15 @@ Historical proof under prior `adj_close` fallback, zero-placeholder, or sliding 
 ## Acceptance criterion
 
 Two computations with the same complete bindings yield identical value/null/reason/hash output regardless of query load-window size or current master/config state.
+
+## Capability boundary (LOCKED)
+
+**What the computation procedure proves.** That dependencies were loaded in the declared order, that recursive state was carried from the stored prior state rather than reseeded, and that identical inputs and versions reproduce identical output.
+
+**What it cannot prove.**
+
+- **That the loaded state was right.** A recursive chain reproduces faithfully from whatever seed and prior state it was given. A wrong seed produces a perfectly deterministic wrong chain, indefinitely.
+- **That the dependency set was complete.** The procedure loads what the dependency manifest declares. A dependency nobody declared is never missing, so its absence raises nothing.
+- **That reproducibility across runs implies correctness across versions.** Two runs agreeing under one formula version says nothing about whether that version expresses the intended measurement.
+
+Consequently a deterministic recomputation may be cited as evidence that **the procedure is stable and reproducible**, never as evidence that **the values are correct**.

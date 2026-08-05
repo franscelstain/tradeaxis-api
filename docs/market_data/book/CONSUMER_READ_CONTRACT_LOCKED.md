@@ -51,3 +51,15 @@ Consumers must not cache across publication versions without including publicati
 Application repositories expose the gateway DTO, database privileges/views deny consumer roles direct internal-table access, and static/integration tests reject bypass patterns. Audit endpoints require explicit authorization and clearly identify non-current or unsealed state.
 
 Production lock requires executed enforcement evidence; the document alone does not prove it.
+
+## Capability boundary (LOCKED)
+
+**What the read contract proves.** That a consumer receives data resolved from one sealed publication, with its effective date, price-basis identity, and readiness state stated rather than inferred, and that no internal table or recency shortcut is required to obtain it.
+
+**What it cannot prove.**
+
+- **That the delivered content is correct.** The contract governs how data is handed over, not how it was produced. Every upstream capability boundary composes into what arrives here; none of them is cancelled by a clean read.
+- **That the effective date is the requested date.** A conforming response may carry a prior sealed date under fallback. The contract requires that this be visible; it does not require that it be avoidable.
+- **That a consumer will read the fields it is given.** Stating basis, effective date, and readiness satisfies this contract. Whether the consumer acts on them is outside it, and a consumer that ignores them receives correct data and draws wrong conclusions.
+
+Consequently a successful read may be cited as evidence that **the handover was governed and self-describing**, never as evidence that **the underlying facts are right**.

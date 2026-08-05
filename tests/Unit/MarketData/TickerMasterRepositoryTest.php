@@ -28,7 +28,7 @@ class TickerMasterRepositoryTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_universe_filter_uses_numeric_active_value_and_rejects_stale_yes_string(): void
+    public function test_universe_is_point_in_time_and_does_not_apply_current_active_flag(): void
     {
         DB::table('tickers')->insert([
             ['ticker_id' => 1, 'ticker_code' => 'BBCA', 'company_name' => 'BBCA', 'is_active' => 1, 'listed_date' => '2020-01-01', 'delisted_date' => null],
@@ -40,9 +40,10 @@ class TickerMasterRepositoryTest extends TestCase
 
         $universe = (new TickerMasterRepository())->getUniverseForTradeDate('2026-05-17');
 
-        $this->assertSame([
-            ['ticker_id' => 1, 'ticker_code' => 'BBCA'],
-        ], $universe);
+        $this->assertSame(['BBCA', 'BMRI', 'TLKM'], array_column($universe, 'ticker_code'));
+        $this->assertSame([1, 2, 3], array_column($universe, 'ticker_id'));
+        $this->assertNotEmpty(array_column($universe, 'listing_id'));
+        $this->assertSame(['REGULAR', 'REGULAR', 'REGULAR'], array_column($universe, 'market_segment'));
     }
 
     public function test_delisted_date_is_exclusive_from_tradeable_universe(): void
@@ -51,9 +52,10 @@ class TickerMasterRepositoryTest extends TestCase
             ['ticker_id' => 10, 'ticker_code' => 'FREN', 'company_name' => 'FREN', 'is_active' => 1, 'listed_date' => '2006-11-29', 'delisted_date' => '2025-04-17'],
         ]);
 
-        $this->assertSame([
-            ['ticker_id' => 10, 'ticker_code' => 'FREN'],
-        ], (new TickerMasterRepository())->getUniverseForTradeDate('2025-04-16'));
+        $beforeDelisting = (new TickerMasterRepository())->getUniverseForTradeDate('2025-04-16');
+        $this->assertSame(['FREN'], array_column($beforeDelisting, 'ticker_code'));
+        $this->assertSame([10], array_column($beforeDelisting, 'ticker_id'));
+        $this->assertNotNull($beforeDelisting[0]['listing_id']);
 
         $this->assertSame([], (new TickerMasterRepository())->getUniverseForTradeDate('2025-04-17'));
     }

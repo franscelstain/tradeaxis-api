@@ -3,6 +3,8 @@
 ## Purpose
 Market Data Platform adalah domain upstream yang ditujukan untuk menghasilkan data product EOD yang **valid, decision-grade, point-in-time, reproducible, auditable, stabil, dan aman dibaca downstream**.
 
+`decision-grade` didefinisikan dalam empat kondisi terukur di `book/Terminology_and_Scope.md`, relatif terhadap decision horizon Weekly Swing. Ia adalah **target property, bukan klaim yang sudah terbukti**: tidak ada dokumen yang boleh menyatakan output market-data sudah decision-grade sebelum re-audit order 22 membuktikan keempat kondisinya dengan executed evidence.
+
 Watchlist Weekly Swing saham IDX adalah **initial consumer profile** yang membantu menentukan scope EOD dan kebutuhan field awal; ia bukan pemilik ataupun ukuran kelulusan market-data. Kesiapan market-data dinilai dari kebenaran, kelengkapan, provenance, temporal integrity, reproducibility, publication safety, dan activation-aware freshness. Hasil screening, ranking, sinyal, profitabilitas, atau usefulness strategi tidak boleh menjadi syarat `DOCUMENTATION_STRATEGY_READY`, `IMPLEMENTATION_CONFORMANT`, maupun `OPERATIONALLY_VALIDATED` untuk domain ini.
 
 Yahoo Finance adalah bootstrap source fase sekarang. Arsitektur dan kontrak domain tetap provider-neutral agar source dapat ditingkatkan pada masa depan tanpa mendesain ulang indikator atau consumer contract.
@@ -74,54 +76,43 @@ Kemampuan domain tidak boleh dibatasi oleh default query provider seperti `range
 
 ---
 
-## Dataset boundary and operating phase (LOCKED)
+## Consumer horizon, dataset boundary, dan operating phase
 
-### Intentional dataset start
+> **Owner: `book/Terminology_and_Scope.md`.** Bagian ini adalah ringkasan orientasi. Definisi, konsekuensi, dan aturan interpretasi lengkap dimiliki dokumen tersebut. Bila keduanya tampak berbeda, Terminology yang berlaku dan README yang harus diperbaiki.
 
-`2023-01-02` adalah **intentional dataset start** untuk baseline awal aplikasi, bukan tanggal yang muncul karena source gagal menyediakan data lebih lama.
+**Decision horizon.** Weekly Swing memiliki decision horizon **5 hari perdagangan IDX** dengan rentang tahan praktis **3 sampai 15 hari perdagangan**, selalu dinyatakan dalam hari perdagangan, bukan hari kalender. Horizon ini melahirkan kewajiban terukur — radius kontaminasi, toleransi keterlambatan, dan biaya warm-up — yang angkanya dimiliki kontrak indikator dan operasi.
 
-Konsekuensinya:
-- tidak adanya data sebelum `2023-01-02` bukan missing-data bug dalam scope aktif
-- pipeline, replay, indicator, dan backtest hanya boleh mengklaim coverage mulai dari boundary ini
-- indicator menghasilkan deterministic `NULL` selama warm-up history belum cukup
-- ticker yang listing setelah boundary memulai warm-up dari listed date-nya sendiri
-- ekspansi ke tanggal yang lebih lama adalah future scope yang harus dilakukan secara eksplisit, bukan blocker sekarang
+**Empat batas waktu yang berbeda dan tidak boleh dicampur:**
 
-Intentional dataset start berbeda dari **archived proof window**. Rentang `2023-01-02` sampai `2025-10-31` hanya menyatakan rentang executed evidence lama; rentang itu bukan capability limit, retention limit, atau freshness claim.
+| Konsep | Nilai / marker | Artinya |
+|---|---|---|
+| Intentional dataset start | `2023-01-02` | Baseline awal yang dipilih sengaja, bukan akibat source gagal |
+| Archived proof window | `2023-01-02` – `2025-10-31` | Rentang executed evidence lama. **Bukan** dataset end, capability limit, retention limit, atau freshness claim |
+| Development data frontier | bergerak | Trade date terakhir yang ter-ingest saat pembangunan. Gap sesudahnya bukan production incident sebelum activation |
+| Operational activation | `OPERATIONAL_START_DATE` | Batas ketika freshness operasional mulai wajib. Tidak pernah ditetapkan secara implisit oleh backfill atau proof yang pernah jalan |
 
-### Development data frontier
-
-**Development data frontier** adalah trade date terakhir yang telah di-ingest pada suatu saat selama pembangunan. Nilainya dapat bergerak dan bukan dataset end, capability limit, atau operational-freshness claim.
-
-Selama belum ada operational activation:
-- gap setelah frontier bukan production incident
-- `daily_enabled=false` dapat menjadi development-state choice
-- gap freshness tidak menghalangi perbaikan contract, schema, historical integrity, corporate action, indicator, atau replay
-- nilai frontier dan evidence as-of tetap harus dilaporkan transparan
-
-### Operational activation
-
-**Operational activation date** adalah tanggal efektif ketika forward paper watchlist, user-facing watchlist, atau penggunaan rutin mulai mewajibkan freshness operasional. Marker normatifnya adalah `OPERATIONAL_START_DATE` atau governance marker ekuivalen; marker tersebut belum boleh dianggap ditetapkan hanya karena historical backfill atau proof pernah dijalankan.
-
-Sebelum activation wajib:
-1. menetapkan marker activation secara eksplisit
-2. melakukan controlled backfill dari development frontier sampai activation boundary
-3. mengaktifkan dan membuktikan daily import/promote scheduling
-4. mengaktifkan freshness alert dan stale-consumer protection
-5. mulai menghitung consecutive operational SLO hanya dari activation boundary
+Prasyarat operasional sebelum marker activation boleh ditetapkan — marker eksplisit, controlled catch-up, scheduling terbukti, alert dan stale-consumer protection aktif, bukti recovery dari partial failure, dan SLO yang dihitung hanya sejak boundary — dimiliki dan dirinci oleh `book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`. Jumlah dan isinya tidak diulang di sini agar tidak menyimpang dari ownernya.
 
 ---
 
-## Data-product terminology (LOCKED)
+## Data-product terminology
 
-- **Raw source observation** adalah payload/field provider beserta provenance dan waktu observasinya. Ia immutable dan belum otomatis menjadi canonical bar.
-- **`RAW` price product** adalah canonical, validated, Regular-Market EOD OHLCV pada scale yang diobservasi market, tanpa adjustment. Istilah ini tidak sama dengan raw provider payload.
-- **`STRUCTURAL_ADJUSTED` price product** adalah OHLC yang disesuaikan secara coherent dan volume yang disesuaikan inversely ketika semantics action mengharuskannya, hanya berdasarkan structural corporate action yang terverifikasi dan berversi. Ini adalah default target basis untuk profil indicator teknikal EOD awal.
-- **`TOTAL_RETURN` price product** adalah produk terpisah untuk performance evaluation yang memasukkan distribution effects bila data yang memadai tersedia; ia bukan alias `STRUCTURAL_ADJUSTED`.
-- Provider `adj_close` tidak boleh dipakai sebagai per-row fallback atau dicampur dengan `close` dalam satu indicator vector. Satu run wajib memakai satu price basis yang eksplisit dan berversi.
-- **Coverage** menyatakan apakah expected observation tersedia; **quality** apakah observation dapat dipercaya; **liquidity** adalah fakta/ukuran perdagangan beserta unit dan kualitasnya; **event risk** adalah fakta event/corporate action; **data eligibility/data usability** menyatakan apakah data aman dipakai berdasarkan integrity/readiness gates. Threshold tradability, preferensi likuiditas, dan keputusan menghindari event tertentu tetap milik downstream.
+> **Owner: `book/Terminology_and_Scope.md`.** Ringkasan orientasi; definisi penuh dan 15 aturan interpretasi terkunci ada di sana.
 
-Jika factor material belum terverifikasi, affected range harus di-quarantine atau eligibility diblokir; anomaly tidak boleh menjadi izin untuk mengubah history atau membuat adjustment otomatis.
+Empat hal yang paling sering dikacaukan menjadi satu:
+
+| Istilah | Ringkasnya |
+|---|---|
+| Raw source observation | Payload provider beserta provenance. Immutable, dan belum menjadi canonical bar |
+| `RAW` price product | Canonical EOD OHLCV pada scale yang diobservasi market, tanpa adjustment. **Bukan** sinonim payload provider |
+| `STRUCTURAL_ADJUSTED` | OHLC coherent dengan volume inverse bila semantics mengharuskan, hanya dari corporate action terverifikasi dan berversi. Default target basis untuk profil indikator EOD awal |
+| `TOTAL_RETURN` | Produk terpisah untuk performance evaluation. Bukan alias `STRUCTURAL_ADJUSTED` |
+
+Provider `adj_close` bukan salah satu dari ketiga price product di atas, tidak boleh menjadi per-row fallback, dan tidak boleh dicampur dengan `close` dalam satu vector. Satu run memakai satu price basis eksplisit dan berversi.
+
+**Coverage**, **quality**, **liquidity**, **event risk**, dan **data usability** adalah lima dimensi terpisah yang wajib tetap dapat dijelaskan sendiri-sendiri. Threshold tradability, preferensi likuiditas, dan kebijakan menghindari event tertentu milik downstream.
+
+Bila factor material belum terverifikasi, affected range di-quarantine atau eligibility diblokir. Anomaly tidak pernah menjadi izin mengubah history atau membuat adjustment otomatis.
 
 ---
 
@@ -222,6 +213,8 @@ Untuk memahami baseline implementasi baru, baca urutan ini:
 10. `tests/README.md` lalu test contracts/fixtures stage 21
 11. ops runbooks yang dirujuk setiap stage
 12. `audit/reports/AUDIT_FINAL_STATE.md` hanya untuk status audit, bukan untuk menciptakan behavior domain
+
+Untuk mengetahui hasil tiap order beserta angka penentunya, masuk lewat section **Hasil per order — indeks berurutan 1→22** pada dokumen tersebut. Ia berurutan naik dan menunjuk ke detail masing-masing, sementara section detailnya sendiri tersusun menurun mengikuti urutan penulisan.
 
 Blueprint adalah owner work order `W00`–`W22`. Conformance matrix adalah owner assignment/traceability agar tidak ada dokumen, deliverable, proof, atau evidence yang terlewat. Command protocol dan implementation ledger menentukan command yang admitted, bentuk hasil, verdict, remediation loop, dan next permitted command. Makna behavior tetap dimiliki owner contract paling spesifik yang dirujuk pada setiap stage.
 

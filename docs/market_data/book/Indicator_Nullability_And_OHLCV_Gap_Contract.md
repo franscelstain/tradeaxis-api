@@ -26,3 +26,15 @@ Published nullability/reasons are immutable and versioned. Corrections create ne
 ## Acceptance criterion
 
 Every `NULL` has a deterministic, inspectable cause; every non-null value has complete valid dependencies on one coherent basis.
+
+## Capability boundary (LOCKED)
+
+**What nullability rules prove.** That a value is emitted only when its declared preconditions are met, that an unmet precondition yields a deterministic `NULL` with a reason rather than a substitute, and that gaps are never forward-filled or interpolated.
+
+**What they cannot prove.**
+
+- **That a non-null value met its preconditions meaningfully.** The rules check that the declared conditions were formally satisfied — enough sessions present, dependencies loaded. Formal satisfaction over a window whose content is wrong still produces a non-null value with no reason attached.
+- **That the precondition set is sufficient.** Preconditions cover the failure modes someone anticipated. A window that is complete, contiguous, and contaminated satisfies every count-based precondition there is.
+- **That `NULL` means the market had nothing to say.** `NULL` means the platform declined to assert a value. Those are different statements, and only the second is being made.
+
+Consequently a fully populated indicator row may be cited as evidence that **declared preconditions were satisfied**, never as evidence that **the window was suitable**.

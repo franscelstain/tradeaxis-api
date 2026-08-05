@@ -30,3 +30,15 @@ If the active pointer changes during a read, the implementation either completes
 ## Fail-safe default
 
 Any state not represented above resolves to no consumer data product with an explicit reason. New success-like states require a contract version and tests before use.
+
+## Capability boundary (LOCKED)
+
+**What the decision table proves.** That every enumerated combination of coverage, seal, pointer, and freshness state maps to exactly one readability outcome, deterministically and without operator judgement.
+
+**What it cannot prove.**
+
+- **That the enumeration is complete.** A table decides the combinations someone listed. A state combination that was never anticipated has no row, and the safety of that moment depends on the default path rather than on this table.
+- **That the inputs it consumed were right.** The table is a pure function of states supplied to it. Wrong coverage or a wrong seal state produces a confident, deterministic, wrong readability outcome.
+- **That a rarely reached row works.** Determinism is a property of the mapping, not evidence that every branch has been executed.
+
+Consequently a readability outcome may be cited as evidence that **the declared decision rules were applied**, never as evidence that **the date deserves to be read**.

@@ -15,7 +15,7 @@ A detected break may suggest that observations use different scales, but price m
 - whether source data is wrong versus legitimately as-traded
 - an adjustment-active price or volume factor
 
-## Detection sensitivity boundary (LOCKED)
+## Capability boundary — detection sensitivity (LOCKED)
 
 The detector has a lower bound. It must be stated, because silence from a bounded detector is not evidence.
 

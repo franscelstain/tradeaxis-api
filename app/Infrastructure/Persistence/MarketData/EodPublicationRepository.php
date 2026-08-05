@@ -444,6 +444,13 @@ class EodPublicationRepository
                 'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
                 'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
                 'source_file_row_count' => $run->source_file_row_count ?? null,
+                'config_snapshot_id' => $run->config_snapshot_id ?? null,
+                'factor_set_id' => null,
+                'observation_manifest_hash' => $run->observation_manifest_hash ?? null,
+                'publication_manifest_hash' => null,
+                'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
+                'read_model_version' => 'market_data_read_product_v1',
+                'readiness_state' => 'NOT_READY',
                 'sealed_at' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -866,6 +873,18 @@ class EodPublicationRepository
         foreach (['bars_rows_written', 'indicators_rows_written', 'eligibility_rows_written'] as $rowCountField) {
             if (! $allowPartial && (empty($run->{$rowCountField}) && (int) ($run->{$rowCountField} ?? 0) <= 0)) {
                 $missing[] = $rowCountField;
+            }
+        }
+
+        if (! empty($run->config_snapshot_id)) {
+            if (empty($publication->config_snapshot_id) || (int) $publication->config_snapshot_id !== (int) $run->config_snapshot_id) {
+                $missing[] = 'config_snapshot_id';
+            }
+            if (empty($publication->observation_manifest_hash) || (string) $publication->observation_manifest_hash !== (string) $run->observation_manifest_hash) {
+                $missing[] = 'observation_manifest_hash';
+            }
+            if ((string) ($publication->price_product_code ?? '') !== 'RAW') {
+                $missing[] = 'price_product_code';
             }
         }
 

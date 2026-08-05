@@ -65,6 +65,19 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `SOURCE_PROVIDER_MALFORMED_RESPONSE` | SOURCE | HARD | Source provider response could not be parsed into canonical market-data payload. |
 | `SOURCE_PROVIDER_RETRY_EXHAUSTED` | SOURCE | HARD | Source provider retry policy was exhausted without usable data. |
 | `SOURCE_PROVIDER_PARTIAL_RESPONSE` | SOURCE | WARN | Source provider returned only partial usable response context. |
+| `SOURCE_OBSERVATION_CAPTURE_REQUIRED` | SOURCE | HARD | Canonicalization was blocked because raw source evidence was not durably captured first. |
+| `SOURCE_OBSERVATION_NOT_ACCEPTED` | SOURCE | HARD | Canonicalization was blocked because the bound source observation is not accepted. |
+| `SOURCE_OBSERVATION_PERSISTENCE_FAILED` | SOURCE | HARD | Acquisition was blocked because immutable observation capture or outcome persistence failed. |
+| `CONFIG_SNAPSHOT_REQUIRED` | CONFIG | HARD | A run or canonical artifact lacks its immutable resolved configuration snapshot. |
+| `TEMPORAL_LISTING_MAPPING_MISSING` | IDENTITY | HARD | No unambiguous point-in-time listing identity could be bound for the requested date. |
+| `PROVIDER_SYMBOL_MAPPING_MISSING` | IDENTITY | HARD | No effective provider symbol mapping exists for the requested listing and date. |
+| `PROVIDER_SYMBOL_MAPPING_AMBIGUOUS` | IDENTITY | HARD | More than one provider symbol mapping is effective for the requested listing and date. |
+| `MARKET_CALENDAR_EVIDENCE_MISSING` | CALENDAR | HARD | No explicitly sourced calendar revision exists for the requested date. |
+| `MARKET_SESSION_NOT_COMPLETED` | CALENDAR | HARD | EOD acquisition was blocked because the Regular-Market session is not completed. |
+| `TRADING_STATUS_NO_EVIDENCE` | TRADING_STATUS | WARN | No verified point-in-time trading-status evidence exists, so status remains unknown. |
+| `TRADING_STATUS_CONFLICT` | TRADING_STATUS | HARD | Conflicting verified status revisions prevent a deterministic status decision. |
+| `CORPORATE_ACTION_AUTHORITATIVE_EVIDENCE_REQUIRED` | CORPORATE_ACTION | HARD | Price geometry cannot synthesize event identity, terms, date, or factors. |
+| `IMMUTABLE_HISTORY_CORRECTION_REQUIRED` | CORRECTION | HARD | An anomaly requires authoritative evidence and a new correction publication; in-place history mutation is prohibited. |
 | `SECTOR_INDEX_API_PARTIAL_RESPONSE` | SOURCE | HARD | Sector index API returned fewer index codes than requested and partial acceptance was not enabled, so the ingest is blocked rather than storing an incomplete index set. |
 | `SOURCE_ALL_SYMBOLS_FAILED` | SOURCE | HARD | All requested symbols failed source acquisition. |
 | `SOURCE_FAILURE_HELD` | SOURCE | WARN | Source failure caused the run to be held safely without readable publication. |

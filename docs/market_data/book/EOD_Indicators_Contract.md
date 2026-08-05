@@ -67,6 +67,14 @@ Indicator validity/warm-up/contamination facts feed eligibility under explicit v
 
 Identical source publication, temporal source revisions, product/factor version, stable ATR state/seed, formula/config version, and precision rules produce identical rows, field states, reasons, and hashes.
 
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini menetapkan identitas, lineage, dan immutability artefak indikator. Ia tidak menghasilkan verdict, state, flag, atau signal tentang data.
+
+Batas kemampuan nilai yang dibungkus artefak ini dimiliki tiga kontrak lain: `../registry/Indicator_Registry_Baseline_LOCKED.md` untuk semantik field dan radius kontaminasi, `../indicators/EOD_Indicators_Formula_Spec.md` untuk batas aritmetikanya, dan `Indicator_Nullability_And_OHLCV_Gap_Contract.md` untuk arti `NULL` dan non-`NULL`.
+
+Satu konsekuensi berlaku langsung di sini: lineage yang lengkap membuktikan sebuah baris **dapat ditelusuri**, bukan bahwa nilainya benar. Baris dengan publication, run, factor-set, formula set, config snapshot, dan universe identity yang seluruhnya terisi tetap dapat memuat angka yang salah, dan seluruh pengikatan itu akan menelusurinya dengan setia sampai ke sumbernya.
+
 ## Acceptance criterion (LOCKED)
 
 Every value and `NULL` is explainable from exact dependencies/version identity, and long-chain reruns never drift as the loaded window moves.

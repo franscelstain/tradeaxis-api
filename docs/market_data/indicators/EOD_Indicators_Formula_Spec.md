@@ -153,3 +153,15 @@ Price basis, factor revision, seed rule, formula, window, rounding, nullability,
 ## Acceptance criterion (LOCKED)
 
 Golden long-chain fixtures must reproduce byte/number-equivalent output for the same publication/factor/config/formula identity and detect a one-value divergence far after an ATR seed or historical correction.
+
+## Capability boundary (LOCKED)
+
+**What a formula proves.** That a value is the exact arithmetic result of its declared definition over its declared window, reproducible to the declared precision.
+
+**What it cannot prove.**
+
+- **That the inputs deserved to be used.** Exactness propagates whatever it is given. A formula applied to a contaminated window returns a precisely computed wrong number.
+- **That the window covers the period it names.** Windows are counted in sessions, not elapsed time. Twenty sessions spanning a long holiday sequence, a suspension, or an unrecorded market closure describe a materially longer stretch of calendar than twenty sessions in an ordinary month, while both are labelled the same. A momentum figure therefore measures a period whose real length varies.
+- **That a defined value is a meaningful one.** A ratio remains defined as its denominator approaches the exchange minimum price, and a range measure remains defined across a series of no-trade sessions. Definedness is a property of the arithmetic, not of the market.
+
+Consequently a formula result may be cited as evidence that **the declared computation was performed correctly**, never as evidence that **the quantity it names is a faithful description of the period**.

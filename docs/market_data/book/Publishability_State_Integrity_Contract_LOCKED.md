@@ -141,3 +141,15 @@ Rules:
 `publication_reprocess_state=REPUBLISHED` is valid only when the affected date produced `SUCCESS + READABLE + SEALED + coverage PASS` through the correct publication path.
 
 If the affected date was already readable/current before the historical change, `REPUBLISHED` requires correction-current mode and correction id lineage. Without that proof, the state must remain blocked/failed and the current pointer must remain unchanged.
+
+## Capability boundary (LOCKED)
+
+**What publishability state proves.** That the declared gates were evaluated in order, that the resulting state is one of the governed values, and that a non-publishable outcome preserves the previous readable publication.
+
+**What it cannot prove.**
+
+- **That a publishable date is a good date.** The state aggregates gate outcomes. Every gate passing means no declared check objected, which is a statement about the checks, not about the market data.
+- **That state transitions capture every relevant change.** A change invisible to all declared gates moves nothing and leaves the state identical.
+- **That `READABLE` implies freshness.** Readability is about a resolved publication; whether it is the requested date or a prior one is a separate, explicitly reported fact.
+
+Consequently a publishable state may be cited as evidence that **declared gates were satisfied**, never as evidence that **the published content is correct**.

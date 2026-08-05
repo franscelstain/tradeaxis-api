@@ -21,6 +21,24 @@ The following must agree: name/meaning, type/unit, nullability/default, primary 
 
 `Database_Schema_MariaDB.sql` is the legacy clean-install base executed by the core migration, not permission to edit deployed databases. Existing databases evolve only through forward migrations. The current target is base plus all later migrations.
 
+## Drift detection is required (LOCKED)
+
+The sentence above states the **target**. Nothing above requires anyone to check that a given database reaches it, and an unverified target is an assumption.
+
+The failure this prevents is not corruption; it is a database that is simply **behind**, which produces no error anywhere. Code compiled against the intended schema passes its tests, because the test mirror is hand-written to the intended schema. Runtime paths that touch the unapplied tables fail only when exercised, and paths not yet wired never fail at all. Every surface reports health while the deployed shape and the intended shape have diverged.
+
+Required, on its own cadence and independent of any deployment:
+
+- **Applied-versus-available migration comparison.** Every migration file present must appear in the applied-migration record. A file present but unapplied is a **schema drift finding**, named with the migration identifier.
+- **Deployed-versus-mirror table and column comparison.** The test mirror encodes the intended shape. A table or column present in one and absent in the other is a finding regardless of direction, because both directions have occurred: tables introduced in migrations but never applied, and columns present in the deployed database but absent from both migrations and mirror.
+- **Explicit result.** Counts for each direction and the identifiers involved are recorded. An unverified environment is declared as such.
+
+Rules:
+
+- A conformance, replay, or activation claim naming a database must state its applied-migration position. **Green tests are not evidence of deployed schema state**, since the mirror is independent of the deployment.
+- Drift is closed by applying forward migrations, never by editing the deployed database to match, and never by editing the mirror to match a stale deployment.
+- Where runtime code depends on a table the deployed database lacks, that dependency is unrunnable in that environment. Recording the dependency as implemented is a false claim until the drift is closed.
+
 ## V2 rollout matrix
 
 | Area | Migration state | Runtime/code state | Relock state |

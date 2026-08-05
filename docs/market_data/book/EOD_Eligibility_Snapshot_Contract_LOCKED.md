@@ -50,7 +50,16 @@ Each row must persist separately:
 - complete ordered reason-code set or normalized reason relation
 - rule/config/version and publication identity
 
-No dimension may be reconstructed from a single overloaded `reason_code` when first-class facts are available.
+No dimension may be reconstructed from a single overloaded `reason_code`.
+
+The qualifier "when first-class facts are available" previously attached to that sentence is removed, because it disabled the prohibition in precisely the situation the prohibition exists for. Read with the qualifier, a snapshot that persists none of the dimensions above is conformant, since nothing first-class is available to prefer. That reading makes the mandatory separation on this page unenforceable.
+
+The rule is therefore unconditional, with a stated consequence:
+
+- Absence of the first-class facts is a **defect against this contract**, never a licence to overload `reason_code`.
+- A snapshot lacking the required dimensions does not become explainable by carrying a richer reason string. A single reason value can express one selected verdict; it cannot express four independent dimensions, and encoding them into it produces a value only the producer can decode.
+- Until the required fields exist, the snapshot is **not conformant** and any claim of explainability made on its behalf must say so explicitly.
+- `eligible = true` rows carry the dimension facts as well. Explanation is not reserved for blocked rows; a consumer must be able to see why a usable row is usable, not merely that nothing objected.
 
 ## Eligibility meaning (LOCKED)
 
@@ -58,6 +67,21 @@ No dimension may be reconstructed from a single overloaded `reason_code` when fi
 - `data_usable = false` / compatibility `eligible = false`: one or more data-integrity/readiness gates block use; all material reasons remain explicit.
 
 True does not mean selected, liquid enough for a strategy, ranked, attractive, event-safe under a strategy, or approved for a trade. Downstream policy may impose such preferences without changing this snapshot.
+
+### Capability boundary (LOCKED)
+
+The statement above draws the boundary against **policy**. This one draws it against **correctness**.
+
+`data_usable = true` means every **declared** gate passed. It does not mean the data is right. Each contributing gate is bounded, and their blind regions compose rather than cancel:
+
+- coverage sees delivery, not values, and cannot see its own expectation being wrong;
+- canonical validation sees internal consistency, not fidelity to the market;
+- contamination sees detected and verified events, not events nobody recorded;
+- replay sees reproducibility, not correctness.
+
+An instrument whose data is wrong in a way no gate can observe is `data_usable = true` with an empty reason set, and is indistinguishable from one that is genuinely clean.
+
+Consequently `data_usable = true` may be relied on as **"nothing we can test has objected"**, and never as **"this data has been verified correct"**. An empty reason set records the absence of detected objections, not the absence of defects. Downstream consumers must not treat it as a correctness warranty, and audit claims must not cite it as one.
 
 ## Gate separation
 

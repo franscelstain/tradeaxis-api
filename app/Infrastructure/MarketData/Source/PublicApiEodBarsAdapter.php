@@ -2,24 +2,36 @@
 
 namespace App\Infrastructure\MarketData\Source;
 
+use App\Application\MarketData\Ports\ApiEodBarsSource;
+use App\Application\MarketData\Ports\SourceObservationRecorder;
+use App\Infrastructure\MarketData\Observation\InMemorySourceObservationRecorder;
+use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-class PublicApiEodBarsAdapter
+class PublicApiEodBarsAdapter implements ApiEodBarsSource
 {
     private $fetcher;
     private $lastAcquisitionTelemetry = [];
     private $equityProviderSymbols;
     private $benchmarkProviderSymbols;
+    private $observations;
 
-    public function __construct(callable $fetcher = null, EquityProviderSymbolResolver $equityProviderSymbols = null, BenchmarkProviderSymbolResolver $benchmarkProviderSymbols = null)
+    public function __construct(
+        callable $fetcher = null,
+        EquityProviderSymbolResolver $equityProviderSymbols = null,
+        BenchmarkProviderSymbolResolver $benchmarkProviderSymbols = null,
+        SourceObservationRecorder $observations = null
+    )
     {
         $this->fetcher = $fetcher;
         $this->equityProviderSymbols = $equityProviderSymbols ?: new EquityProviderSymbolResolver();
         $this->benchmarkProviderSymbols = $benchmarkProviderSymbols ?: new BenchmarkProviderSymbolResolver();
+        $this->observations = $observations ?: $this->defaultObservationRecorder();
     }
 
-    public function fetchOrLoadEodBars($tradeDate, $sourceMode, array $tickerCodes = [])
+    public function fetchOrLoadEodBars($tradeDate, $sourceMode, array $tickerCodes = [], array $context = [])
     {
         $this->lastAcquisitionTelemetry = [];
         if ($sourceMode !== 'api') {
@@ -33,7 +45,7 @@ class PublicApiEodBarsAdapter
         }
 
         if ($this->providerName($apiConfig) === 'yahoo_finance') {
-            return $this->fetchYahooFinanceBars($tradeDate, $tickerCodes, $apiConfig);
+            return $this->fetchYahooFinanceBars($tradeDate, $tickerCodes, $apiConfig, $context);
         }
 
         $url = str_replace(
@@ -42,15 +54,16 @@ class PublicApiEodBarsAdapter
             $urlTemplate
         );
 
-        $response = $this->requestWithRetry($url, [
+        $response = $this->requestWithRetry($url, array_merge($context, [
             'trade_date' => $tradeDate,
             'requested_ticker_count' => count($tickerCodes),
-        ]);
+        ]));
         $requestTelemetry = $this->consumeLastAcquisitionTelemetry();
 
         try {
             $rows = $this->parsePayload($response['body'], $tradeDate, $response['captured_at']);
         } catch (SourceAcquisitionException $e) {
+            $this->rejectResponse($response, $e->reasonCode());
             $telemetry = $this->buildGenericFailureTelemetry($tradeDate, $tickerCodes, $apiConfig, $requestTelemetry, $e->reasonCode());
             $this->rememberAcquisitionTelemetry($telemetry);
 
@@ -58,6 +71,7 @@ class PublicApiEodBarsAdapter
         }
 
         if (count($rows) === 0) {
+            $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
             $telemetry = $this->buildGenericEmptyResponseTelemetry($tradeDate, $tickerCodes, $apiConfig, $requestTelemetry);
             $this->rememberAcquisitionTelemetry($telemetry);
 
@@ -73,6 +87,7 @@ class PublicApiEodBarsAdapter
         $normalizedRows = array_map(function ($row, $index) use ($tradeDate, $response, $apiConfig) {
             return $this->normalizeRow($row, $tradeDate, $index + 1, $response['captured_at'], $apiConfig);
         }, $rows, array_keys($rows));
+        $normalizedRows = $this->acceptResponseRows($response, $normalizedRows);
 
         $this->rememberAcquisitionTelemetry($this->buildGenericSuccessTelemetry($tradeDate, $tickerCodes, $normalizedRows, $apiConfig, $requestTelemetry));
 
@@ -99,7 +114,7 @@ class PublicApiEodBarsAdapter
         return $this->fetchYahooFinanceBarsRange($startDate, $endDate, $tickerCodes, $tradingDates, $apiConfig, $context);
     }
 
-    public function fetchOrLoadBenchmarkBars($tradeDate, $sourceMode, array $benchmarks = [])
+    public function fetchOrLoadBenchmarkBars($tradeDate, $sourceMode, array $benchmarks = [], array $context = [])
     {
         $this->lastAcquisitionTelemetry = [];
         if ($sourceMode !== 'api') {
@@ -129,13 +144,14 @@ class PublicApiEodBarsAdapter
             );
 
             $url = $this->buildYahooFinanceUrl($tradeDate, $benchmarkCode, $apiConfig, $providerSymbol);
-            $requestContext = [
+            $requestContext = array_merge($context, [
                 'trade_date' => $tradeDate,
                 'benchmark_code' => $benchmarkCode,
                 'provider_symbol' => $providerSymbol,
                 'requested_benchmark_count' => count($benchmarks),
-            ];
+            ]);
             $lastBenchmarkRequestTelemetry = [];
+            $response = null;
 
             try {
                 $response = $this->requestWithRetry($url, $requestContext);
@@ -156,6 +172,7 @@ class PublicApiEodBarsAdapter
                 );
 
                 if ($row === null) {
+                    $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
                     $failureTelemetry[] = $lastBenchmarkRequestTelemetry + [
                         'benchmark_code' => $benchmarkCode,
                         'provider_symbol' => $providerSymbol,
@@ -166,8 +183,14 @@ class PublicApiEodBarsAdapter
                     continue;
                 }
 
-                $rows[] = $this->normalizeBenchmarkRow($row, $benchmark, $providerSymbol, $response['captured_at'], $apiConfig);
+                $accepted = $this->acceptResponseRows($response, [
+                    $this->normalizeBenchmarkRow($row, $benchmark, $providerSymbol, $response['captured_at'], $apiConfig),
+                ]);
+                $rows[] = $accepted[0];
             } catch (SourceAcquisitionException $e) {
+                if (isset($response) && is_array($response)) {
+                    $this->rejectResponse($response, $e->reasonCode());
+                }
                 $failureTelemetry[] = ($e->context() ?: $lastBenchmarkRequestTelemetry) + [
                     'benchmark_code' => $benchmarkCode,
                     'provider_symbol' => $providerSymbol,
@@ -196,7 +219,7 @@ class PublicApiEodBarsAdapter
     }
 
 
-    private function fetchYahooFinanceBars($tradeDate, array $tickerCodes, array $apiConfig)
+    private function fetchYahooFinanceBars($tradeDate, array $tickerCodes, array $apiConfig, array $context = [])
     {
         if (empty($tickerCodes)) {
             throw new SourceAcquisitionException('Yahoo Finance source membutuhkan ticker universe yang tidak kosong.', 'RUN_SOURCE_RESPONSE_CHANGED');
@@ -212,14 +235,17 @@ class PublicApiEodBarsAdapter
         }, $tickerCodes))));
 
         foreach ($uniqueTickerCodes as $tickerCode) {
-            $url = $this->buildYahooFinanceUrl($tradeDate, $tickerCode, $apiConfig);
-            $requestContext = [
+            $identity = $this->resolveEquityIdentity($tickerCode, $apiConfig, $tradeDate, $context);
+            $providerSymbol = $identity['provider_symbol'];
+            $url = $this->buildYahooFinanceUrl($tradeDate, $tickerCode, $apiConfig, $providerSymbol);
+            $requestContext = array_merge($context, $identity, [
                 'trade_date' => $tradeDate,
                 'ticker_code' => $tickerCode,
                 'requested_ticker_count' => count($tickerCodes),
                 'unique_ticker_count' => count($uniqueTickerCodes),
-            ];
+            ]);
             $lastTickerRequestTelemetry = [];
+            $response = null;
 
             try {
                 $response = $this->requestWithRetry($url, $requestContext);
@@ -229,6 +255,7 @@ class PublicApiEodBarsAdapter
 
                 $row = $this->parseYahooFinancePayload($response['body'], $tradeDate, $tickerCode, $response['captured_at'], $apiConfig);
                 if ($row === null) {
+                    $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
                     $failureTelemetry[] = $this->withTickerTelemetry(array_merge($lastTickerRequestTelemetry, [
                         'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
                         'source_final_status' => 'FAILED',
@@ -238,8 +265,19 @@ class PublicApiEodBarsAdapter
                 }
 
                 $index++;
-                $rows[] = $this->normalizeRow($row, $tradeDate, $index, $response['captured_at'], $apiConfig);
+                $normalized = $this->normalizeRow($row, $tradeDate, $index, $response['captured_at'], $apiConfig);
+                $normalized = array_merge($normalized, [
+                    'listing_id' => $identity['listing_id'] ?? null,
+                    'provider_symbol' => $providerSymbol,
+                    'provider_mapping_id' => $identity['provider_mapping_id'] ?? null,
+                    'mapping_revision' => $identity['mapping_revision'] ?? null,
+                ]);
+                $accepted = $this->acceptResponseRows($response, [$normalized]);
+                $rows[] = $accepted[0];
             } catch (SourceAcquisitionException $e) {
+                if (is_array($response)) {
+                    $this->rejectResponse($response, $e->reasonCode());
+                }
                 $exceptionTelemetry = $e->context();
                 $telemetry = $this->withTickerTelemetry($exceptionTelemetry ?: $lastTickerRequestTelemetry, $tickerCode);
                 if (empty($telemetry)) {
@@ -344,8 +382,10 @@ class PublicApiEodBarsAdapter
         }, $tickerCodes))));
 
         foreach ($uniqueTickerCodes as $tickerCode) {
-            $url = $this->buildYahooFinanceRangeUrl($startDate, $endDate, $tickerCode, $apiConfig);
-            $requestContext = array_merge($context, [
+            $identity = $this->resolveEquityIdentity($tickerCode, $apiConfig, $endDate, $context);
+            $providerSymbol = $identity['provider_symbol'];
+            $url = $this->buildYahooFinanceRangeUrl($startDate, $endDate, $tickerCode, $apiConfig, $providerSymbol);
+            $requestContext = array_merge($context, $identity, [
                 'source_acquisition_mode' => 'range_window',
                 'source_window_start' => $startDate,
                 'source_window_end' => $endDate,
@@ -355,6 +395,7 @@ class PublicApiEodBarsAdapter
                 'requested_trade_date_count' => count($tradingDates),
             ]);
             $lastTickerRequestTelemetry = [];
+            $response = null;
 
             try {
                 $response = $this->requestWithRetry($url, $requestContext);
@@ -372,6 +413,7 @@ class PublicApiEodBarsAdapter
                 );
 
                 if (empty($parsed['rows'])) {
+                    $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
                     $failureTelemetry[] = $this->withTickerTelemetry(array_merge($lastTickerRequestTelemetry, [
                         'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
                         'source_final_status' => 'FAILED',
@@ -381,13 +423,26 @@ class PublicApiEodBarsAdapter
                     continue;
                 }
 
-                foreach ($parsed['rows'] as $row) {
+                $normalizedRows = array_map(function (array $row) use ($identity, $providerSymbol) {
+                    return array_merge($row, [
+                        'listing_id' => $identity['listing_id'] ?? null,
+                        'provider_symbol' => $providerSymbol,
+                        'provider_mapping_id' => $identity['provider_mapping_id'] ?? null,
+                        'mapping_revision' => $identity['mapping_revision'] ?? null,
+                    ]);
+                }, $parsed['rows']);
+                $normalizedRows = $this->acceptResponseRows($response, $normalizedRows);
+
+                foreach ($normalizedRows as $row) {
                     $rowDate = (string) $row['trade_date'];
                     $rowsByDate[$rowDate][] = $row;
                     $rows[] = $row;
                 }
                 $invalidOhlcvSkipped += (int) ($parsed['invalid_ohlcv_skipped'] ?? 0);
             } catch (SourceAcquisitionException $e) {
+                if (is_array($response)) {
+                    $this->rejectResponse($response, $e->reasonCode());
+                }
                 $exceptionTelemetry = $e->context();
                 $telemetry = $this->withTickerTelemetry($exceptionTelemetry ?: $lastTickerRequestTelemetry, $tickerCode);
                 if (empty($telemetry)) {
@@ -859,10 +914,10 @@ class PublicApiEodBarsAdapter
         );
     }
 
-    private function buildYahooFinanceRangeUrl($startDate, $endDate, $tickerCode, array $apiConfig)
+    private function buildYahooFinanceRangeUrl($startDate, $endDate, $tickerCode, array $apiConfig, $providerSymbol = null)
     {
         $urlTemplate = isset($apiConfig['endpoint_template']) ? trim((string) $apiConfig['endpoint_template']) : '';
-        $symbol = $this->equityProviderSymbols->resolve($tickerCode, $apiConfig);
+        $symbol = $providerSymbol ?: $this->equityProviderSymbols->resolve($tickerCode, $apiConfig);
         $symbolSuffix = '';
         $range = (string) data_get($apiConfig, 'yahoo.range', '10d');
         $interval = (string) data_get($apiConfig, 'yahoo.interval', '1d');
@@ -980,7 +1035,9 @@ class PublicApiEodBarsAdapter
                 'low' => $quote['low'][$position] ?? null,
                 'close' => $quote['close'][$position] ?? null,
                 'volume' => $quote['volume'][$position] ?? null,
-                'adj_close' => $adjclose[$position] ?? ($quote['close'][$position] ?? null),
+                // Provider adjusted close is evidence only. Missing data must stay null;
+                // it is never repaired with close or promoted as canonical price truth.
+                'adj_close' => $adjclose[$position] ?? null,
                 'source_name' => isset($apiConfig['source_name']) ? $apiConfig['source_name'] : 'YAHOO_FINANCE',
                 'source_row_ref' => $sourceRowRefPrefix.':'.$code.':'.$rowTradeDate,
                 'captured_at' => $capturedAt,
@@ -1129,6 +1186,24 @@ class PublicApiEodBarsAdapter
         return is_array($telemetry) ? $telemetry : [];
     }
 
+    public function capabilities()
+    {
+        return [
+            'provider' => 'yahoo_finance',
+            'phase' => 'bootstrap_free_source',
+            'frequency' => 'EOD',
+            'market_segment' => 'IDX_REGULAR',
+            'provides_ohlcv' => true,
+            'provides_provider_adjusted_close_as_evidence_only' => true,
+            'provides_actual_traded_value' => false,
+            'provides_official_board_or_trading_status' => false,
+            'provides_authoritative_corporate_actions' => false,
+            'supports_point_in_time_identity_without_internal_mapping' => false,
+            'canonical_price_basis_candidates' => ['RAW', 'SPLIT_ADJUSTED'],
+            'forbidden_canonical_basis' => ['PROVIDER_ADJ_CLOSE'],
+        ];
+    }
+
     private function rememberAcquisitionTelemetry(array $telemetry)
     {
         $this->lastAcquisitionTelemetry = $telemetry;
@@ -1148,11 +1223,21 @@ class PublicApiEodBarsAdapter
         for ($attempt = 0; $attempt <= $retryMax; $attempt++) {
             $attemptNumber = $attempt + 1;
             $throttleDelayMs = $this->applyThrottleAndJitter($attempt);
+            $capture = null;
 
             try {
                 $response = $this->performHttpRequest($url);
                 $status = (int) $response['status'];
                 $responseBodySample = $this->responseBodySample($response['body']);
+                $capture = $this->persistCapture($this->observationEnvelope(
+                    $url,
+                    $requestContext,
+                    $response['body'],
+                    $status,
+                    $this->extractContentType($response['headers'] ?? []),
+                    $capturedAt,
+                    $attemptNumber
+                ));
 
                 if (in_array($status, [401, 403], true)) {
                     throw new SourceAcquisitionException('Source API authentication/config failed with HTTP '.$status.'.', 'RUN_SOURCE_AUTH_ERROR', 0, null, [
@@ -1220,8 +1305,13 @@ class PublicApiEodBarsAdapter
                 return [
                     'body' => $response['body'],
                     'captured_at' => $capturedAt,
+                    'observation_capture' => $capture,
                 ];
             } catch (SourceAcquisitionException $e) {
+                if (is_array($capture)) {
+                    $this->persistOutcome($capture, 'REJECTED', $e->reasonCode());
+                    $capture = null;
+                }
                 $willRetry = $this->shouldRetry($e->reasonCode(), $attempt, $retryMax);
                 $backoffDelayMs = $willRetry ? $this->backoff($attempt, $baseBackoffMs) : 0;
 
@@ -1309,6 +1399,11 @@ class PublicApiEodBarsAdapter
                     'captured_at' => $capturedAt,
                 ];
 
+                $this->observations->recordTransportFailure(
+                    $this->observationEnvelope($url, $requestContext, null, null, null, $capturedAt, $attemptNumber),
+                    $reasonCode
+                );
+
                 $this->rememberAcquisitionTelemetry($failureContext);
 
                 $lastException = new SourceAcquisitionException(
@@ -1326,6 +1421,104 @@ class PublicApiEodBarsAdapter
         }
 
         throw $lastException ?: new SourceAcquisitionException('Unknown source API acquisition failure.', 'RUN_SOURCE_TIMEOUT');
+    }
+
+    private function acceptResponseRows(array $response, array $rows)
+    {
+        $capture = $response['observation_capture'] ?? null;
+        if (! is_array($capture)) {
+            throw new SourceAcquisitionException(
+                'Raw provider response was not captured before normalization.',
+                'SOURCE_OBSERVATION_CAPTURE_REQUIRED'
+            );
+        }
+
+        $outcome = $this->persistOutcome($capture, 'ACCEPTED');
+
+        return array_map(function (array $row) use ($capture, $outcome) {
+            return array_merge($row, [
+                'source_observation_id' => $outcome['source_observation_id'],
+                'source_capture_observation_id' => $capture['source_observation_id'],
+                'source_payload_hash' => $capture['payload_hash'] ?? null,
+                'source_schema_fingerprint' => $capture['schema_fingerprint'] ?? null,
+                'source_observation_persisted' => ! empty($outcome['persisted']),
+            ]);
+        }, $rows);
+    }
+
+    private function rejectResponse(array $response, $reasonCode)
+    {
+        $capture = $response['observation_capture'] ?? null;
+        if (is_array($capture)) {
+            $this->persistOutcome($capture, 'REJECTED', $reasonCode);
+        }
+    }
+
+    private function observationEnvelope($url, array $context, $payload, $status, $contentType, $capturedAt, $attemptNumber)
+    {
+        return array_merge($context, [
+            'attempt_uid' => hash('sha256', $this->sanitizeUrl($url).'|'.$capturedAt.'|'.$attemptNumber),
+            'requested_trade_date' => $context['trade_date'] ?? ($context['requested_end'] ?? ($context['source_window_end'] ?? null)),
+            'requested_start_date' => $context['requested_start'] ?? ($context['source_window_start'] ?? null),
+            'requested_end_date' => $context['requested_end'] ?? ($context['source_window_end'] ?? null),
+            'source_mode' => $context['source_mode'] ?? 'api_free',
+            'source_name' => strtoupper((string) data_get(config('market_data.source.api'), 'source_name', 'YAHOO_FINANCE')),
+            'provider' => $this->providerName(config('market_data.source.api')),
+            'sanitized_request_identity' => $this->sanitizeUrl($url),
+            'response_status' => $status,
+            'content_type' => $contentType,
+            'acquired_at' => $capturedAt,
+            'adapter_version' => (string) config('market_data.source.api.adapter_version', 'public_api_eod_v1'),
+            'provider_schema_version' => (string) config('market_data.source.api.schema_version', 'provider_schema_observed_v1'),
+            'payload' => $payload,
+        ]);
+    }
+
+    private function extractContentType(array $headers)
+    {
+        foreach ($headers as $name => $value) {
+            if (is_string($name) && strtolower($name) === 'content-type') {
+                return trim(is_array($value) ? implode(';', $value) : (string) $value);
+            }
+
+            if (is_int($name) && stripos((string) $value, 'Content-Type:') === 0) {
+                return trim(substr((string) $value, strlen('Content-Type:')));
+            }
+        }
+
+        return null;
+    }
+
+    private function persistCapture(array $envelope)
+    {
+        try {
+            return $this->observations->capture($envelope);
+        } catch (SourceAcquisitionException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new SourceAcquisitionException(
+                'Raw source response could not be persisted before validation.',
+                'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
+                0,
+                $e
+            );
+        }
+    }
+
+    private function persistOutcome(array $capture, $state, $reasonCode = null)
+    {
+        try {
+            return $this->observations->recordOutcome($capture, $state, $reasonCode);
+        } catch (SourceAcquisitionException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new SourceAcquisitionException(
+                'Source observation outcome could not be persisted immutably.',
+                'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
+                0,
+                $e
+            );
+        }
     }
 
 
@@ -1681,5 +1874,38 @@ class PublicApiEodBarsAdapter
         }
 
         return Str::upper(trim((string) $value));
+    }
+
+    private function defaultObservationRecorder()
+    {
+        try {
+            if (Schema::hasTable('md_source_observations')) {
+                return new SourceObservationRepository();
+            }
+        } catch (\Throwable $e) {
+            // Isolated adapter tests intentionally have no persistence foundation.
+        }
+
+        return new InMemorySourceObservationRecorder();
+    }
+
+    private function resolveEquityIdentity($tickerCode, array $apiConfig, $tradeDate, array $context)
+    {
+        try {
+            return $this->equityProviderSymbols->resolveContext($tickerCode, $apiConfig, $tradeDate, $context);
+        } catch (\RuntimeException $e) {
+            $reasonCode = strpos($e->getMessage(), 'PROVIDER_SYMBOL_MAPPING_AMBIGUOUS') === 0
+                ? 'PROVIDER_SYMBOL_MAPPING_AMBIGUOUS'
+                : 'PROVIDER_SYMBOL_MAPPING_MISSING';
+
+            throw new SourceAcquisitionException($e->getMessage(), $reasonCode, 0, $e, [
+                'trade_date' => $tradeDate,
+                'ticker_code' => $tickerCode,
+                'provider' => $this->providerName($apiConfig),
+                'source_final_status' => 'FAILED',
+                'final_reason_code' => $reasonCode,
+                'failure_scope' => 'TICKER',
+            ]);
+        }
     }
 }

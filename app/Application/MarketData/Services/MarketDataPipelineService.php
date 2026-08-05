@@ -35,6 +35,12 @@ class MarketDataPipelineService
         'publication_id',
         'created_at',
         'updated_at',
+        // Acquisition-instance provenance is bound through observation/config manifests.
+        // It is not canonical row content; otherwise an identical re-acquisition can never
+        // be recognized as an unchanged correction.
+        'source_observation_id',
+        'source_timestamp',
+        'acquired_at',
     ];
 
     const BARS_HASH_COLUMNS = [
@@ -48,14 +54,11 @@ class MarketDataPipelineService
         'volume',
         'adj_close',
         'source',
-        'source_observation_id',
         'previous_close',
         'traded_value_idr_actual',
         'trade_count_actual',
         'board_code',
         'session_code',
-        'source_timestamp',
-        'acquired_at',
         'canonicalization_version',
         'price_product_code',
         'quality_state',
@@ -317,7 +320,19 @@ class MarketDataPipelineService
         }
 
         try {
-            $sourceRows = $this->barsIngest->acquireSourceRows($input->requestedDate, $input->sourceMode);
+            $sourceRows = empty($run->config_snapshot_id)
+                ? $this->barsIngest->acquireSourceRows($input->requestedDate, $input->sourceMode)
+                : $this->barsIngest->acquireSourceRows(
+                    $input->requestedDate,
+                    $input->sourceMode,
+                    null,
+                    [
+                    'run_id' => (int) $run->run_id,
+                    'config_snapshot_id' => (int) $run->config_snapshot_id,
+                    'source_mode' => $input->sourceMode === 'api' ? 'api_free' : $input->sourceMode,
+                    'enforce_temporal_mapping' => $input->sourceMode === 'api',
+                    ]
+                );
             $sourceAcquisitionTelemetry = $this->barsIngest->consumeSourceAcquisitionTelemetry($input->sourceMode);
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisitionTelemetry) {
                 $result = $this->barsIngest->ingestAcquiredRows(

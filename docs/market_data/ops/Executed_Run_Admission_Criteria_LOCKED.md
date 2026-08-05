@@ -51,3 +51,14 @@ This contract must remain aligned with:
 
 ## Anti-ambiguity rule (LOCKED)
 If a reader cannot tell whether an artifact is illustrative or actually executed, the evidence labeling is too weak.
+## Capability boundary (LOCKED)
+
+**What run admission proves.** That an executed run carried the identity, evidence, and completeness required before its results may be cited, and that a run failing those criteria is excluded rather than partially counted.
+
+**What it cannot prove.**
+
+- **That an admitted run produced correct data.** Admission checks the run's evidence, not its output. A well-evidenced run over wrong inputs is fully admissible.
+- **That the criteria cover what matters.** A run is admitted against declared requirements. A missing binding nobody required — as configuration snapshots were until recently — does not block admission.
+- **That admission history is comparable across versions.** Runs admitted under earlier criteria were held to a different bar, and the record does not distinguish them unless the criteria version is bound.
+
+Consequently an admitted run may be cited as evidence that **its evidence met the declared bar**, never as evidence that **its results are sound**.

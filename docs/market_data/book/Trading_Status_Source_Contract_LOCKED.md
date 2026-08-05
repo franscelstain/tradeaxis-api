@@ -99,6 +99,29 @@ A partial-session halt/suspension does not automatically prove that no EOD bar w
 - Overlapping contradictory carried states: hold affected expectation/eligibility and emit evidence.
 - Source unavailable after activation: expose degraded state; do not silently treat all listings as normally trading.
 
+## Capability boundary (LOCKED)
+
+**What status resolution proves.** That status for `T` derives from events valid on `T` under the declared authority class and priority; that absence of evidence yields `UNKNOWN/NO_EVIDENCE` rather than an assumption of normal trading; that conflicting authoritative sources hold rather than resolve by recency.
+
+**What it cannot prove.**
+
+- **That every status event was published to a source the platform reads.** A suspension announced only through a channel outside the registered sources leaves no trace. The listing resolves to `UNKNOWN` at best, and to apparently-normal at worst if a stale prior state carries forward.
+- **That a carried state ended when it actually ended.** An unsuspension that was never recorded leaves the suspension carrying forward indefinitely, which is fail-safe for expectation but wrong as a fact.
+- **That the effective interval is right.** A status event dated one session off moves bar expectation for a real trading day.
+- **That `UNKNOWN` is rare.** The state is correct and safe, but a period dominated by `UNKNOWN` produces a fail-safe denominator that no longer discriminates. Frequency of `UNKNOWN` is itself a data-quality signal and must be visible, not absorbed.
+
+Consequently a clean status resolution may be cited as evidence that **recorded status was applied correctly**, never as evidence that **the listing traded normally**.
+
+### Status completeness is verified externally (LOCKED)
+
+Trading status is a root of expectation, so it falls under the shared external-reconciliation rules owned by global gate 13 in `Market_Data_Implementation_Conformance_Matrix_LOCKED.md`. Those rules are not repeated here.
+
+Domain parameters owned by this contract:
+
+- **Authority:** the exchange announcement record for suspension, unsuspension, halt, relisting, UMA, and governed board or status changes.
+- **Scope:** from the intentional dataset start onward, per registered status source and its declared authority class.
+- **Qualification:** the frequency of `UNKNOWN` in a period is reported alongside the reconciliation result, because a period dominated by `UNKNOWN` is fail-safe but no longer discriminating.
+
 ## Acceptance criterion (LOCKED)
 
 For trade date T, a historical suspension/unsuspension sequence must resolve using only temporal records valid and known under the requested replay mode. A current status lookup or missing provider bar must never substitute for that proof.

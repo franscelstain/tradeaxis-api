@@ -16,3 +16,15 @@ Before `OPERATIONAL_START_DATE`, unfinished future/daily scope is development fr
 | proof/monitoring | missing evidence, alert delivery failure, blocked replay | high for release/activation | block readiness/relock claim | restore proof path; `BLOCKED` is not pass |
 
 Severity increases with breadth, duration, consumer exposure, undetected period, irreversibility, and regulatory/security impact. Every incident records all classes/reasons even when one primary class is used for routing.
+
+## Capability boundary (LOCKED)
+
+**What incident classification proves.** That an observed condition maps to a declared severity and response path deterministically, without operator improvisation, and that closure requires evidence matching the claimed outcome.
+
+**What it cannot prove.**
+
+- **That every incident was observed.** Classification acts on conditions that surfaced. A defect that produced no alert, no failing gate, and no complaint is never classified, and the absence of incidents is therefore not evidence of health.
+- **That severity reflects consequence.** Severity is assigned from declared signals. A low-severity data defect can outrank a high-severity outage for a consumer whose horizon it corrupts.
+- **That a closed incident is a solved one.** Closure requires evidence of the claimed outcome; whether the underlying cause recurs is outside what closure asserts.
+
+Consequently a clean incident record may be cited as evidence that **observed conditions were handled per the matrix**, never as evidence that **nothing went wrong**.

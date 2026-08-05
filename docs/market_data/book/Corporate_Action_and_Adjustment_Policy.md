@@ -41,6 +41,45 @@ Minimum verification states:
 
 Only `AUTHORITATIVE_VERIFIED` or governed `MANUAL_VERIFIED` revisions with complete applicable terms may be adjustment-active. Provider-reported events may be used for conservative event risk but not for an unproven factor. Synthetic candidates always quarantine and cannot become verified merely because their ratio resembles a common split.
 
+## Continuity verdicts (LOCKED)
+
+A continuity check compares the price series across a candidate anchor and records what the series shows. Its verdicts are runtime facts that quarantine dependent output, so they must be named and bounded here rather than left to implementation.
+
+| Verdict | Meaning |
+|---|---|
+| `NO_SERIES` | Insufficient adjacent observations to measure continuity at the anchor |
+| `NO_MATERIAL_GAP` | Measured discontinuity is below the materiality floor |
+| `GAP_AMBIGUOUS` | A discontinuity exists but is within the range an ordinary session move could produce |
+| `GAP_BEYOND_EXCHANGE_BAND` | Measured move exceeds what one session can produce under the exchange band owned by `../registry/Exchange_Market_Structure_Facts_LOCKED.md` |
+
+### A continuity verdict is not a verification state (LOCKED)
+
+The two axes are orthogonal and must never substitute for one another:
+
+- **Verification state** answers *do we know this event happened, and on what terms* — it comes from authoritative or manual evidence.
+- **Continuity verdict** answers *what does the price series show around this anchor* — it comes from arithmetic on observed prices.
+
+Therefore:
+
+- `GAP_BEYOND_EXCHANGE_BAND` establishes that a move is too large for an ordinary session. It does **not** establish the event, its type, its terms, or its factor. On its own it is a `SYNTHETIC_CANDIDATE` at best, and by the hierarchy above it quarantines rather than adjusts.
+- `NO_MATERIAL_GAP` measured at the wrong anchor date proves nothing about the correct anchor. A verdict inherits the correctness of the date it was measured on.
+- No verdict may be recorded as, converted into, or read as a verification state. A factor whose only justification is a continuity verdict fails the adjustment-active rule regardless of how large the measured move was.
+
+### Resolving `GAP_AMBIGUOUS` (LOCKED)
+
+An ambiguous verdict states that the series cannot distinguish an event from an ordinary move. It is resolved only by evidence **independent of the price series**:
+
+- authoritative or manual verification of the event terms, which supplies the factor directly and makes the continuity question moot; or
+- authoritative evidence that no adjusting event occurred at the anchor, which dismisses the candidate under the hierarchy above.
+
+Explicitly insufficient to resolve it:
+
+- absence of a detected price-scale break, because detection has a stated sensitivity floor and its silence is not evidence;
+- the measured gap being small, since smallness is what made the verdict ambiguous;
+- the passage of time, re-running the check, or the absence of complaints.
+
+An unresolved `GAP_AMBIGUOUS` keeps its quarantine indefinitely. That is the intended fail-safe, not a backlog defect, and it may not be cleared to reduce the count of quarantined rows.
+
 ## Effective-date hierarchy (LOCKED)
 
 - `ex_date` is the primary anchor for price continuity and event-risk effects.
@@ -85,6 +124,35 @@ Event risk is distinct from adjustment eligibility. An event may be non-adjustin
 - adjusting only close while leaving OHLC/volume incoherent
 - clearing quarantine before verified event-factor-break linkage exists
 - treating missing event evidence as no event
+- recording a continuity verdict as, or reading it as, a verification state
+- treating `GAP_BEYOND_EXCHANGE_BAND` as sufficient justification for an adjustment-active factor
+- clearing `GAP_AMBIGUOUS` using evidence derived from the price series, including the absence of a detected break
+- clearing quarantine in order to reduce the count of quarantined rows
+
+## Capability boundary (LOCKED)
+
+The verification hierarchy is the strongest gate in this package, which makes an unstated limit here especially costly.
+
+**What the hierarchy proves.** That a factor becomes adjustment-active only from authoritative or governed manual evidence with complete applicable terms; that a detector candidate can never promote itself; that an unresolved anchor keeps its quarantine.
+
+**What it cannot prove.**
+
+- **That every event was recorded.** The hierarchy classifies events the platform knows about. An adjusting action that no source reported is not `PROVIDER_REPORTED`, not `SYNTHETIC_CANDIDATE`, and not quarantined — it is simply absent, and the affected series carries an uncorrected discontinuity with no flag on it.
+- **That `AUTHORITATIVE_VERIFIED` terms are right.** The state records the class of evidence, not its accuracy. A transcription error in a verified ratio produces a confidently wrong factor.
+- **That an absent factor means no adjustment was needed.** Absence records that no verified factor exists, which is equally consistent with an event nobody verified.
+- **That quarantine coverage equals contamination coverage.** Quarantine follows recorded anchors. A contaminated window whose cause was never recorded is not quarantined.
+
+Consequently a fully `AUTHORITATIVE_VERIFIED` event set may be cited as evidence that **recorded events were handled correctly**, never as evidence that **the series is free of unadjusted corporate actions**.
+
+### Event completeness is verified externally (LOCKED)
+
+The corporate-action record is a root of expectation, so it falls under the shared external-reconciliation rules owned by global gate 13 in `Market_Data_Implementation_Conformance_Matrix_LOCKED.md`. Those rules are not repeated here.
+
+Domain parameters owned by this contract:
+
+- **Authority:** an authoritative exchange or CSD corporate-action record.
+- **Scope:** from the intentional dataset start onward, covering every action type the type registry marks as adjusting or event-risk bearing.
+- **Qualification:** an unadjusted-series claim covering an unreconciled period must name that period. The second reconciliation direction — an action that occurred but was never recorded — is the one that produces silently uncorrected discontinuities, and is therefore the direction that matters most here.
 
 ## Acceptance criterion (LOCKED)
 

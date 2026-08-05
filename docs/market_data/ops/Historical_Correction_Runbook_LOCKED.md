@@ -278,3 +278,6 @@ If the correction flow cannot explain exactly which publication is current, whic
 - `Run_Ownership_and_Recovery_LOCKED.md`
 - `Run_Artifacts_Format_LOCKED.md`
 - `Audit_Evidence_Pack_Contract_LOCKED.md`
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Dokumen ini adalah runbook operator untuk koreksi historis. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data, sehingga tidak memiliki wilayah buta untuk dinyatakan. Mekanisme yang memang menghasilkan keluaran semacam itu menyatakan batasnya pada owner contract-nya masing-masing, khususnya `../book/Historical_Correction_and_Reseal_Contract_LOCKED.md`.

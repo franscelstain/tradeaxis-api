@@ -92,6 +92,41 @@ Rules:
 
 ---
 
+---
+
+## 4. Projection Reconciliation Contract (LOCKED)
+
+Sections 1 to 3 protect **history**. They say nothing about whether the live materialised projection still corresponds to it.
+
+`EOD_Bars_Contract.md` states that a current projection such as `eod_bars` is non-authoritative and rebuildable from immutable publication-bound rows. That is a claim about the projection, and a claim with no verification obligation is an assumption.
+
+This is **internal** reconciliation: it compares two platform artifacts against each other. It is distinct from the external reconciliation owned by global gate 13, which compares a root of expectation against an outside authority. Neither substitutes for the other — a projection can agree perfectly with a publication built on an incomplete universe.
+
+Required reconciliation, on its own cadence and independent of the daily pipeline:
+
+- **Coverage both ways.** Every projection row must be covered by the current publication for its trade date, and every current-publication row must appear in the projection. A row present on one side only is a finding, not a rounding difference.
+- **Value agreement.** For rows present on both sides, every canonical field must match exactly. Divergence is direct evidence that something wrote to the projection outside the publication lifecycle.
+- **Explicit result.** The reconciliation records counts for both directions and the trade dates involved. An unreconciled period is declared as such.
+
+Rules:
+
+- A projection row whose trade date has no current publication is an **orphan** and must be reported. It may not be silently deleted, because deletion destroys the evidence of how it arrived; it is resolved through the correction lifecycle like any other content decision.
+- A superseded publication that never became current is working as designed. What must be caught is projection content that outlived it.
+- Reconciliation failure never authorises editing sealed history to match the projection. The publication is authoritative; the projection is the side that gets rebuilt.
+
+## 5. Capability Boundary (LOCKED)
+
+**What the immutability guard proves.** That a mutation attempt reaching a guarded repository or service path against sealed content is rejected before writing, with `SEALED_PUBLICATION_IMMUTABLE`; that lineage fields identify version and replacement relations; that superseded snapshots remain queryable and hash-verifiable.
+
+**What it cannot prove.**
+
+- **That sealed content was never modified.** The guard is application-level. A direct database session, an out-of-band migration, a restore from an altered backup, or any path that does not pass through application code is invisible to it. Hash verification detects such a change only when someone runs it and compares against an independently retained hash.
+- **That the sealed content is correct.** Immutability preserves whatever was sealed, including a wrong value sealed faithfully.
+- **That lineage completeness equals decision completeness.** `previous_publication_id` records which publication was replaced, not whether replacing it was right.
+- **That the projection agrees with history**, absent the reconciliation in section 4.
+
+Consequently a passing immutability guard may be cited as evidence that **guarded write paths are safe**, never as evidence that **published content is intact or correct**.
+
 ## Done Criteria
 
 This contract is satisfied only when:
@@ -102,3 +137,5 @@ This contract is satisfied only when:
 - superseded immutable snapshot rows remain queryable and hash-verifiable
 - current pointer behavior remains governed by the existing pointer contract
 - coverage and publishability policy remain unchanged
+- projection-versus-current-publication reconciliation runs on its own cadence, reports both directions, and leaves no undeclared unreconciled period
+- the capability boundary in section 5 is stated wherever an immutability result is cited as evidence

@@ -110,3 +110,16 @@ The following remains forbidden:
 - replacing an already-readable affected date through normal full-publish;
 - switching current pointer without correction lineage;
 - claiming readable/current state when correction-current promotion or pointer validation fails.
+
+## Capability boundary (LOCKED)
+
+**What the safety lifecycle proves.** That a correction moved through request, approval, and run without mutating sealed content; that affected readable dates were reprocessed under correction lineage rather than normal publish; that a failed correction left the previous current publication intact.
+
+**What it cannot prove.**
+
+- **That the affected set was complete.** Impact resolution walks recorded dependencies. An unrecorded corporate action, an unrecorded calendar session, or a contamination window nobody registered leaves affected dates outside the set, and the correction reports success while stale derived values remain published.
+- **That approval means the change is right.** Approval records that a governed actor authorised the correction, not that the replacement values are correct.
+- **That a clean lifecycle means the data is now clean.** Process safety and content correctness are independent; this contract owns the first and makes no claim about the second.
+- **That no correction is needed.** Nothing here detects a defect. Corrections begin from a finding raised elsewhere, so silence means nothing was reported.
+
+Consequently a successful correction may be cited as evidence that **the change was applied safely and traceably**, never as evidence that **the affected range is now correct** or that **no further range is affected**.

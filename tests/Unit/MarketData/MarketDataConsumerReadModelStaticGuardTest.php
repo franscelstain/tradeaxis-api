@@ -38,10 +38,10 @@ class MarketDataConsumerReadModelStaticGuardTest extends TestCase
     {
         return [
             'app/Application/MarketData/Services/MarketDataReadinessService.php',
-            'app/Application/MarketData/Services/MarketDataWatchlistReadService.php',
-            'app/Infrastructure/Persistence/MarketData/MarketDataWatchlistReadRepository.php',
-            'app/Application/MarketData/Services/MarketDataPortfolioPriceService.php',
-            'app/Infrastructure/Persistence/MarketData/MarketDataPortfolioPriceRepository.php',
+            'app/Application/MarketData/Services/MarketDataReadProductService.php',
+            'app/Infrastructure/Persistence/MarketData/MarketDataReadProductRepository.php',
+            'app/Application/MarketData/Services/MarketDataPriceReadService.php',
+            'app/Infrastructure/Persistence/MarketData/MarketDataPriceReadRepository.php',
             'app/Application/MarketData/Services/MarketBenchmarkReadService.php',
             'app/Infrastructure/Persistence/MarketData/MarketBenchmarkReadRepository.php',
         ];

@@ -1224,3 +1224,17 @@ market_index_roc20 => market_benchmark_indicators.roc_20 where benchmark_code='I
 market_index_ma20_slope_pct => market_benchmark_indicators.ma20_slope_pct where benchmark_code='IHSG'
 market_calendar date key => cal_date
 ```
+
+## 28. Pencabutan klaim dilakukan di tempat (LOCKED)
+
+Aturan bagian 27 mengatur apa yang terjadi ketika sesi baru merusak hasil sesi lama. Bagian ini mengatur hal yang lebih sederhana dan lebih sering terlewat: **klaim yang sudah tidak berlaku tetapi masih tertulis sebagai berlaku.**
+
+Mengumumkan pencabutan di satu dokumen tidak mencabut klaim yang tertulis di dokumen lain. Pembaca yang mendarat di dokumen kedua melihat klaim yang berlaku, dan pencabutan yang hanya hidup di tempat lain bukan pencabutan — ia harapan bahwa setiap pembaca membaca urutan yang benar.
+
+Aturan:
+
+- Klaim status, kesiapan, atau kelulusan yang dicabut wajib diberi **penanda superseded pada klaim itu sendiri**, di dokumen tempat ia ditulis, dengan rujukan ke keputusan yang menggantikannya dan tanggalnya.
+- Dokumennya **tidak dihapus**. Riwayat audit tetap bernilai sebagai catatan apa yang pernah dinilai benar; yang dilarang adalah klaimnya terbaca sebagai masih berlaku.
+- Penanda diletakkan sedekat mungkin dengan klaim, bukan hanya di kepala dokumen. Dokumen panjang dibaca sebagian.
+- Sebuah sesi yang mencabut klaim bertanggung jawab menandai **seluruh** tempat klaim itu muncul, bukan hanya dokumen yang sedang dikerjakannya. Pencarian teks atas nama klaim adalah bagian dari pekerjaan pencabutan.
+- Klaim yang tidak dapat ditemukan seluruh kemunculannya dinyatakan demikian, sehingga pembaca berikutnya tahu bahwa penandaannya belum tuntas.

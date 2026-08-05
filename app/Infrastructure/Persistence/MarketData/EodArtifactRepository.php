@@ -95,7 +95,7 @@ class EodArtifactRepository
                     'source' => $row['source'],
                     'run_id' => $runId,
                     'created_at' => $row['created_at'],
-                ]);
+                ] + $this->barLineage($row));
             }
 
             DB::table('eod_invalid_bars')
@@ -160,7 +160,7 @@ class EodArtifactRepository
                 'source' => $row->source,
                 'run_id' => $runId,
                 'created_at' => $now,
-            ];
+            ] + $this->barLineage($row);
         }
 
         if (! empty($insert)) {
@@ -221,7 +221,7 @@ class EodArtifactRepository
                     'source' => $row->source,
                     'run_id' => $runId,
                     'created_at' => $now,
-                ];
+                ] + $this->barLineage($row);
             }
 
             DB::table('eod_bars_history')->insert($insert);
@@ -472,7 +472,7 @@ class EodArtifactRepository
                     'source' => $row->source,
                     'run_id' => $runId,
                     'created_at' => $now,
-                ];
+                ] + $this->barLineage($row);
             }
 
             if (! empty($insert)) {
@@ -589,7 +589,7 @@ class EodArtifactRepository
                 'run_id' => $runId,
                 'publication_id' => $publicationId,
                 'created_at' => $now,
-            ];
+            ] + $this->barLineage($row);
         }
 
         if (! empty($insert)) {
@@ -851,5 +851,20 @@ class EodArtifactRepository
         $normalized = rtrim(rtrim(number_format((float) $value, 10, '.', ''), '0'), '.');
 
         return $normalized === '-0' ? '0' : $normalized;
+    }
+
+    private function barLineage($row): array
+    {
+        $source = is_array($row) ? $row : (array) $row;
+        $lineage = [];
+        foreach ([
+            'listing_id', 'source_observation_id', 'previous_close', 'traded_value_idr_actual',
+            'trade_count_actual', 'board_code', 'session_code', 'source_timestamp', 'acquired_at',
+            'canonicalization_version', 'price_product_code', 'quality_state', 'config_snapshot_id',
+        ] as $field) {
+            $lineage[$field] = array_key_exists($field, $source) ? $source[$field] : null;
+        }
+
+        return $lineage;
     }
 }

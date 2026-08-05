@@ -69,6 +69,21 @@ A canonical bar is valid only when:
 
 Zero volume with valid positive OHLC may represent a source-backed no-trade/unchanged observation and must remain distinguishable from a missing bar. Zero or negative OHLC is always invalid and never canonical.
 
+### Cross-field consistency (LOCKED)
+
+Rules 1 to 9 validate each field against its own domain. They cannot detect a bar whose fields are individually valid but jointly impossible. One such combination is common enough, and damaging enough, to be named:
+
+10. **Zero volume with intra-session price movement is invalid.** When `volume = 0`, the session recorded no executed trade, so `open`, `high`, `low`, and `close` must be identical. A bar reporting `volume = 0` alongside `high > low` asserts that price moved without any trade occurring, which no market mechanism produces. It is rejected as invalid with its own reason code, never stored as canonical.
+
+This is the volume-side sibling of the zero-price rule. A zero price is impossible in isolation; a zero volume is legitimate in isolation and impossible only in combination.
+
+Two consequences:
+
+- The contradiction is a **source defect**, not a market fact. It is handled as invalid observation evidence under the missing-versus-invalid model, and the affected listing/date becomes a delivery gap rather than a silently wrong bar.
+- Such defects cluster by acquisition date rather than by instrument. When a single trade date carries a materially higher share of zero-volume bars than its neighbours, that is date-level evidence of an acquisition fault, and it must surface even for rows whose OHLC happen to be flat and are therefore individually admissible. **The date-level check and its threshold are owned by `Run_Status_and_Quality_Gates_LOCKED.md`**; this contract owns only the per-row rule, because a per-row rule cannot by construction see a pattern across rows.
+
+A bar accepted before this rule existed does not become valid retroactively; correcting it follows the correction/republication lifecycle like any other content change.
+
 ## Null and missing policy (LOCKED)
 
 - Required canonical OHLCV and identity fields are never `NULL`.
@@ -99,6 +114,19 @@ A changed bar can affect later adjusted products, rolling indicators, eligibilit
 ## Consumer rule
 
 Consumers read bars only through a resolved sealed/readable publication and explicit price-basis identity. They must not read raw observation storage, invalid rows, unbound current projections, or `MAX(trade_date)` shortcuts.
+
+## Capability boundary (LOCKED)
+
+**What the validation rules prove.** That each canonical bar is internally coherent, positively priced, integrally volumed, identity-resolved, calendar-bound, and provenance-complete; and, under rule 10, that no bar asserts price movement without trade.
+
+**What they cannot prove.**
+
+- **That the values are the ones the market produced.** Every rule tests the bar against itself or against structural facts. A fabricated bar with plausible, internally consistent values satisfies all ten.
+- **That a flat bar is a genuine no-trade day.** `open = high = low = close` with zero volume is admissible and usually correct, but it is also the exact shape a provider produces when it repeats a prior session. The rules cannot separate the two.
+- **That a bar belongs to the session it claims.** Rule 7 checks the trade date against the bound calendar. If the calendar itself is wrong, a bar for a non-session passes, and if a real session is missing from the calendar, its bars are rejected as non-trading.
+- **That an accepted bar is contamination-free.** Validity is a property of the bar; contamination is a property of its window and belongs to the corporate-action and detection contracts.
+
+Consequently a valid canonical bar may be cited as evidence that **the row is admissible and traceable**, never as evidence that **the price is right**.
 
 ## Acceptance criterion (LOCKED)
 

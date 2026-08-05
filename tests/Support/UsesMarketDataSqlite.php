@@ -997,24 +997,33 @@ trait UsesMarketDataSqlite
         $schema->create('md_source_observations', function (Blueprint $table) {
             $table->bigIncrements('source_observation_id');
             $table->string('observation_uid', 64)->unique();
+            $table->integer('parent_observation_id')->nullable();
             $table->integer('run_id')->nullable();
             $table->string('attempt_uid', 64);
             $table->date('requested_trade_date');
+            $table->date('requested_start_date')->nullable();
+            $table->date('requested_end_date')->nullable();
+            $table->string('source_mode', 32)->nullable();
             $table->string('source_name', 64);
             $table->string('provider', 64)->nullable();
             $table->string('provider_symbol', 128)->nullable();
             $table->integer('provider_mapping_id')->nullable();
+            $table->string('mapping_revision', 64)->nullable();
+            $table->integer('config_snapshot_id')->nullable();
             $table->string('sanitized_request_identity', 255);
             $table->integer('response_status')->nullable();
             $table->string('content_type', 128)->nullable();
             $table->dateTime('source_timestamp')->nullable();
             $table->dateTime('acquired_at');
+            $table->string('provider_schema_version', 64)->nullable();
             $table->string('schema_fingerprint', 64)->nullable();
             $table->string('adapter_version', 64);
             $table->string('payload_hash', 64)->nullable();
             $table->string('payload_ref', 512)->nullable();
+            $table->integer('payload_byte_length')->nullable();
             $table->text('bounded_payload_body')->nullable();
             $table->string('outcome_state', 32);
+            $table->string('validation_state', 32)->nullable();
             $table->string('reason_code', 64)->nullable();
             $table->integer('supersedes_observation_id')->nullable();
             $table->dateTime('created_at');
@@ -1022,12 +1031,16 @@ trait UsesMarketDataSqlite
             $table->index(['provider', 'provider_symbol', 'requested_trade_date'], 'idx_md_obs_provider_symbol_date');
             $table->index(['payload_hash', 'adapter_version'], 'idx_md_obs_payload_adapter');
             $table->index(['outcome_state', 'requested_trade_date'], 'idx_md_obs_outcome_date');
+            $table->index(['parent_observation_id', 'outcome_state'], 'idx_md_obs_parent_outcome');
+            $table->index(['source_mode', 'requested_start_date', 'requested_end_date'], 'idx_md_obs_mode_range');
+            $table->index(['config_snapshot_id', 'mapping_revision'], 'idx_md_obs_config_mapping');
         });
 
         $schema->create('md_issuers', function (Blueprint $table) {
             $table->bigIncrements('issuer_id');
             $table->string('issuer_uid', 64)->unique();
             $table->string('legal_name', 255);
+            $table->string('source_ref', 255)->nullable();
             $table->dateTime('recorded_at');
             $table->dateTime('created_at');
         });
@@ -1038,6 +1051,7 @@ trait UsesMarketDataSqlite
             $table->integer('issuer_id');
             $table->string('instrument_type', 32);
             $table->string('currency_code', 3)->default('IDR');
+            $table->string('source_ref', 255)->nullable();
             $table->dateTime('recorded_at');
             $table->dateTime('created_at');
             $table->index(['issuer_id'], 'idx_md_instrument_issuer');
@@ -1046,15 +1060,20 @@ trait UsesMarketDataSqlite
         $schema->create('md_listings', function (Blueprint $table) {
             $table->bigIncrements('listing_id');
             $table->string('listing_uid', 64)->unique();
+            $table->integer('legacy_ticker_id')->nullable()->unique();
             $table->integer('instrument_id');
             $table->string('exchange_code', 16);
+            $table->string('market_segment', 32)->nullable();
             $table->string('board_code', 16)->nullable();
             $table->date('listed_date');
             $table->date('delisted_date')->nullable();
+            $table->string('source_ref', 255)->nullable();
+            $table->string('listing_state', 32)->nullable();
             $table->dateTime('recorded_at');
             $table->dateTime('created_at');
             $table->index(['exchange_code', 'listed_date', 'delisted_date'], 'idx_md_listing_exchange_dates');
             $table->index(['instrument_id'], 'idx_md_listing_instrument');
+            $table->index(['exchange_code', 'market_segment', 'listed_date', 'delisted_date'], 'idx_md_listing_market_interval');
         });
 
         $schema->create('md_listing_symbols', function (Blueprint $table) {
@@ -1062,11 +1081,14 @@ trait UsesMarketDataSqlite
             $table->integer('listing_id');
             $table->string('symbol', 64);
             $table->string('symbol_type', 32)->default('EXCHANGE');
+            $table->string('symbol_namespace', 64)->nullable();
             $table->dateTime('effective_from');
             $table->dateTime('effective_to')->nullable();
             $table->dateTime('recorded_at');
             $table->dateTime('retracted_at')->nullable();
             $table->integer('source_observation_id')->nullable();
+            $table->string('source_ref', 255)->nullable();
+            $table->string('change_reason', 64)->nullable();
             $table->unique(['listing_id', 'symbol_type', 'effective_from', 'recorded_at'], 'uq_md_listing_symbol_revision');
             $table->index(['symbol', 'effective_from', 'effective_to'], 'idx_md_symbol_effective');
         });
@@ -1082,6 +1104,8 @@ trait UsesMarketDataSqlite
             $table->dateTime('retracted_at')->nullable();
             $table->integer('source_observation_id')->nullable();
             $table->string('mapping_revision', 64);
+            $table->string('source_ref', 255)->nullable();
+            $table->string('change_reason', 64)->nullable();
             $table->unique(['listing_id', 'provider', 'effective_from', 'recorded_at'], 'uq_md_provider_mapping_revision');
             $table->index(['provider', 'provider_symbol', 'effective_from', 'effective_to'], 'idx_md_provider_symbol_effective');
         });
@@ -1089,9 +1113,12 @@ trait UsesMarketDataSqlite
         $schema->create('md_market_calendar_revisions', function (Blueprint $table) {
             $table->bigIncrements('calendar_revision_id');
             $table->string('market_code', 16)->default('IDX');
+            $table->string('market_segment', 32)->nullable();
             $table->date('cal_date');
             $table->string('revision_uid', 64);
             $table->string('timezone', 64)->default('Asia/Jakarta');
+            $table->boolean('is_trading_day')->nullable();
+            $table->boolean('is_half_day')->nullable();
             $table->string('session_state', 32);
             $table->dateTime('session_open_at')->nullable();
             $table->dateTime('session_close_at')->nullable();
@@ -1099,6 +1126,8 @@ trait UsesMarketDataSqlite
             $table->dateTime('recorded_at');
             $table->integer('source_observation_id')->nullable();
             $table->integer('supersedes_revision_id')->nullable();
+            $table->string('source_ref', 255)->nullable();
+            $table->string('source_version', 64)->nullable();
             $table->unique(['market_code', 'cal_date', 'revision_uid'], 'uq_md_calendar_revision');
             $table->index(['cal_date', 'recorded_at'], 'idx_md_calendar_date_known');
         });
@@ -1108,6 +1137,8 @@ trait UsesMarketDataSqlite
             $table->integer('listing_id');
             $table->string('status_code', 64);
             $table->string('bar_expectation_state', 32);
+            $table->string('board_code', 16)->nullable();
+            $table->string('authority_class', 32)->nullable();
             $table->boolean('full_session_verified')->default(false);
             $table->dateTime('effective_from');
             $table->dateTime('effective_to')->nullable();
@@ -1115,6 +1146,9 @@ trait UsesMarketDataSqlite
             $table->dateTime('retracted_at')->nullable();
             $table->integer('source_observation_id')->nullable();
             $table->integer('supersedes_revision_id')->nullable();
+            $table->string('source_ref', 255)->nullable();
+            $table->string('verification_state', 32)->nullable();
+            $table->dateTime('observed_at')->nullable();
             $table->index(['listing_id', 'effective_from', 'effective_to'], 'idx_md_status_listing_effective');
             $table->index(['recorded_at', 'bar_expectation_state'], 'idx_md_status_known_expectation');
         });

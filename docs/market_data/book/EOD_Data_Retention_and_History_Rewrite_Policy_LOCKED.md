@@ -95,3 +95,7 @@ Harus sinkron dengan:
 - `Dataset_Seal_and_Freeze_Contract_LOCKED.md`
 - `Audit_Hash_and_Reproducibility_Contract_LOCKED.md`
 - `CONSUMER_READ_CONTRACT_LOCKED.md`
+
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini menetapkan apa yang disimpan, berapa lama, dan apa yang tidak boleh ditulis ulang. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data, sehingga tidak memiliki wilayah buta untuk dinyatakan. Mekanisme yang memang menghasilkan keluaran semacam itu menyatakan batasnya pada owner contract-nya masing-masing.

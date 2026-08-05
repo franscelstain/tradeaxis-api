@@ -29,6 +29,27 @@ For each calendar date, the governed dependency must provide:
 
 Ad-hoc holidays, emergency closures, shortened sessions, and late corrections must create effective revision evidence rather than silently rewriting the calendar used by sealed publications.
 
+## Calendar provenance tiers (LOCKED)
+
+A calendar row may be a **verified** fact or a **projection**, and the two must never be stored or read as the same thing.
+
+| Tier | Meaning | May produce `EXPECTED` |
+|---|---|---|
+| `VERIFIED` | Reconciled against the exchange-published schedule for that period, with source reference and reconciliation date | yes |
+| `PROJECTED` | Derived by rule — typically weekdays minus known recurring closures — for a period the exchange has not yet published | **no** |
+
+Exchanges publish holiday schedules a limited distance ahead. Rows beyond that horizon are necessarily projections, and a projected weekday is an assumption about a date, not a governed trading session.
+
+Rules:
+
+- Every calendar row carries its tier, the source it was reconciled against, and the date of that reconciliation.
+- A `PROJECTED` row resolves bar expectation to `UNKNOWN`, never `EXPECTED`. It stays in the fail-safe denominator under the coverage contract and never silently produces a missing-bar finding against a date that was never a session.
+- A tier transition from `PROJECTED` to `VERIFIED` is a calendar revision with effective evidence, not an in-place edit.
+- A calendar generated wholly by weekday rule, with no holiday reconciliation for its period, must be recorded as `PROJECTED` for that period even when it visually resembles a real schedule.
+- Range extent is not evidence of authority. A calendar that reaches far into the future says only that rows were generated, not that sessions were confirmed.
+
+Without this tiering, the first trading year beyond the published horizon produces an expected bar on every public holiday, and the resulting coverage failures look like provider faults rather than calendar assumptions.
+
 ## Session-completion rule (LOCKED)
 
 A date may become a Regular-Market EOD target only when:
@@ -53,6 +74,27 @@ For listing L and trade date T, bar expectation must be explainable from separat
 The decision must produce an explicit state such as `EXPECTED`, `NOT_EXPECTED`, or `UNKNOWN` plus reason and source/version references. `UNKNOWN` must not be silently excluded from the coverage denominator.
 
 Current `is_active`, dormancy, historical zero volume, missing provider response, or present-day suspension state cannot prove `NOT_EXPECTED` for T. Only point-in-time authoritative calendar/listing/status evidence may do so.
+
+## Shortened-session semantics (LOCKED)
+
+`is_half_day` is required among the fields above, but a marker without stated meaning changes nothing downstream. IDX runs several shortened Regular-Market sessions each year, typically around major holidays.
+
+What a shortened session **does not** change:
+
+- it is a completed Regular-Market session and produces a normal expected bar;
+- the bar is canonical, not partial, degraded, or quality-blocked;
+- coverage treats it exactly like any other trading day.
+
+What it **does** change, and must therefore be visible:
+
+- **Volume and every measure derived from it.** A shorter session mechanically produces lower traded volume for reasons that have nothing to do with the instrument. Rolling liquidity measures spanning a shortened session are depressed by the calendar, not by the market.
+- **Range-based measures.** A shorter session narrows the opportunity for the day's high and low to separate, which affects true range and any measure built on it.
+
+Requirements:
+
+- The session-length context of trade date T must be retrievable alongside its bar, so a consumer can tell a low-volume day caused by the schedule from one caused by the instrument.
+- Liquidity and volatility measures must not silently normalise, exclude, or reweight shortened sessions. Any such treatment is a versioned decision owned by the measure's contract and must be declared there.
+- A shortened session must never be inferred from low volume. It is a calendar fact and comes only from calendar evidence.
 
 ## Trading-window rules (LOCKED)
 
@@ -80,6 +122,29 @@ After operational activation:
 - Conflicting calendar revisions: quarantine/hold until one governed revision is selected.
 - Unknown session completion: do not publish latest T as EOD.
 - Missing status evidence: do not infer suspension or non-expectation from provider absence.
+
+## Capability boundary (LOCKED)
+
+The calendar is the root of expectation. Everything downstream measures itself against it, which means **no downstream check can detect that the calendar is wrong**.
+
+**What the calendar proves.** That a given date was, according to the recorded revision, a completed Regular-Market session; that expectation for a listing/date is traceable to a version, an evidence source, and a reason.
+
+**What the calendar cannot prove.**
+
+- **Its own completeness.** A session the calendar never recorded produces no missing bars, no coverage shortfall, and no reason code. Numerator and denominator omit it together and every gate reports clean.
+- **Its own correctness from platform data.** Bars, provider absence, and dormancy are explicitly barred from establishing expectation, and rightly so. That prohibition removes the only internal signal, so verification must come from outside.
+
+### Consequence — completeness is verified externally (LOCKED)
+
+The calendar is the root of expectation, so it falls under the shared external-reconciliation rules owned by global gate 13 in `Market_Data_Implementation_Conformance_Matrix_LOCKED.md`. Those rules are not repeated here.
+
+Domain parameters owned by this contract:
+
+- **Authority:** the exchange-published Regular-Market schedule for the period.
+- **Scope:** every period from the intentional dataset start through the furthest `VERIFIED` row. Rows beyond the published horizon remain `PROJECTED` under the provenance tiers above and are not reconcilable until the exchange publishes them.
+- **Qualification:** a reconciled period upgrades its rows from `PROJECTED` to `VERIFIED` as a calendar revision.
+
+This is the burden the coverage gate contract explicitly assigns here: because coverage is self-consistent under a wrong calendar, the calendar carries its own proof.
 
 ## Acceptance criterion (LOCKED)
 

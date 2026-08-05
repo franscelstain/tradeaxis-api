@@ -1,6 +1,6 @@
 <?php
 
-use App\Application\MarketData\Services\MarketDataWatchlistReadService;
+use App\Application\MarketData\Services\MarketDataReadProductService;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\MarketData\SeedsConsumerReadModelFixture;
 use Tests\Support\UsesMarketDataSqlite;
@@ -44,7 +44,7 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->seedIndicator('2026-05-19', 2, 99, 999, ['publication_id' => 999, 'run_id' => 99]);
         $this->seedEligibility('2026-05-19', 2, 99, 999, 1);
 
-        $result = (new MarketDataWatchlistReadService())->getWatchlistMarketDataForTradeDate('2026-05-19');
+        $result = (new MarketDataReadProductService())->getReadProductForTradeDate('2026-05-19');
 
         $this->assertTrue($result['is_ready']);
         $this->assertSame(2, $result['publication_id']);
@@ -93,7 +93,7 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->seedIndicator('2026-05-18', 1, 2, 1);
         $this->seedEligibility('2026-05-18', 1, 2, 1, 1);
 
-        $result = (new MarketDataWatchlistReadService())->getWatchlistMarketDataForTradeDate('2026-05-19');
+        $result = (new MarketDataReadProductService())->getReadProductForTradeDate('2026-05-19');
 
         $this->assertFalse($result['is_ready']);
         $this->assertSame('NO_READABLE_PUBLICATION', $result['reason_code']);
@@ -111,9 +111,30 @@ class MarketDataWatchlistReadModelTest extends TestCase
 
         DB::table('eod_current_publication_pointer')->where('trade_date', '2026-05-19')->delete();
 
-        $result = (new MarketDataWatchlistReadService())->getWatchlistMarketDataForTradeDate('2026-05-19');
+        $result = (new MarketDataReadProductService())->getReadProductForTradeDate('2026-05-19');
 
         $this->assertFalse($result['is_ready']);
         $this->assertSame([], $result['rows']);
+    }
+
+    public function test_market_data_read_product_exposes_unusable_rows_without_strategy_screening_or_current_active_filter(): void
+    {
+        $this->seedTicker(1, 'BBCA', 'Bank Central Asia');
+        $this->seedTicker(2, 'HIST', 'Historical Listing');
+        DB::table('tickers')->where('ticker_id', 2)->update(['is_active' => 0]);
+        $this->seedReadablePublication('2026-05-19', 3, 2);
+
+        foreach ([1, 2] as $tickerId) {
+            $this->seedBar('2026-05-19', $tickerId, 3, 2, 9000 + $tickerId);
+            $this->seedIndicator('2026-05-19', $tickerId, 3, 2);
+        }
+        $this->seedEligibility('2026-05-19', 1, 3, 2, 1);
+        $this->seedEligibility('2026-05-19', 2, 3, 2, 0);
+
+        $result = (new MarketDataReadProductService())->getReadProductForTradeDate('2026-05-19');
+
+        $this->assertSame(['BBCA', 'HIST'], array_column($result['rows'], 'ticker_code'));
+        $this->assertSame([true, false], array_column($result['rows'], 'data_usable'));
+        $this->assertSame(['DATA_USABLE', 'DATA_NOT_USABLE'], array_column($result['rows'], 'eligibility_state'));
     }
 }

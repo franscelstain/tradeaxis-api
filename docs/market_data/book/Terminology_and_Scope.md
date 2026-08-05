@@ -8,15 +8,50 @@ The platform target is a decision-grade, point-in-time, reproducible, and audita
 
 This module remains upstream-only. It guarantees the meaning and quality state of decision inputs; it does not promise profit or define watchlist scoring, alpha ranking, entry/exit, position sizing, portfolio action, or broker execution.
 
+## `decision-grade` (LOCKED)
+
+The word carries the platform's headline quality claim and must not stay undefined. It is a property relative to the horizon declared below, not an absolute standard.
+
+A field is **decision-grade** for trade date `T` when all four hold:
+
+1. **As-known** — every input resolves from facts recorded and effective by `T`, with no later revision leaking in.
+2. **Single declared basis** — the value belongs to one explicit, versioned price basis and one formula version, with no per-row fallback or mixing across dates.
+3. **Correct or explicitly blocked** — the field is either right, or `NULL`/quarantined with a reason code. It is never silently wrong. A value that cannot be distinguished from a wrong one, and carries no reason, fails this condition regardless of its arithmetic.
+4. **Timely enough to be usable** — it is available while the horizon it serves is still open.
+
+Condition 3 is the demanding one, and it is what the capability-boundary rules across the owner contracts exist to protect: a bounded check that stays silent must not be read as satisfying it.
+
+**Claim state.** `decision-grade` is the **target property** of this platform, not a proven one. No document may assert that market-data output is decision-grade until the order-22 re-audit proves all four conditions with executed evidence. Describing the target as an achieved state is a governance violation.
+
 ## Market, horizon, and session scope (LOCKED)
 
 - **Target market:** IDX-listed equities.
 - **Canonical market segment:** Regular Market. Cash and negotiated market observations must not be silently mixed into this product.
 - **Data frequency:** End-of-Day (EOD), representing a completed Regular Market session for a trade date.
 - **Calendar and timezone:** the IDX trading calendar with platform timezone `Asia/Jakarta`; session completion, board, and trading-status semantics must remain explicit.
-- **Initial consumer profile:** Weekly Swing, with an expected holding period of several days to several weeks. This profile is a scope/prioritization input, not a market-data readiness gate.
+- **Initial consumer profile:** Weekly Swing. Its **decision horizon is 5 IDX trading days** — one trading week — with a practical holding range of **3 to 15 trading days**. The horizon is expressed in trading days, never in calendar days, because holidays and suspensions change the two independently. This profile is a scope/prioritization input, not a market-data readiness gate.
 
 Tick data, full order book/market depth, intraday or ultra-low-latency processing, execution routing, full cash/negotiated-market analytics, and multi-exchange coverage are outside the current scope.
+
+### Horizon roles of a dependency window (LOCKED)
+
+A field's window is not arbitrary and must declare which role it serves relative to the horizon above:
+
+- **decision window** — spans at most the horizon, and its value is consumed for a decision taken now;
+- **context window** — spans beyond the horizon deliberately, and supplies regime or trend background rather than the decision itself;
+- **state window** — has no fixed span because it carries recursive state, such as Wilder ATR.
+
+A window whose role is undeclared cannot be justified by the horizon and must not be added to the baseline field set. The concrete window lengths belong to the indicator owner contract; the obligation to state the role belongs here, because only this document owns the horizon they are measured against.
+
+### Obligations derived from the horizon (LOCKED)
+
+The horizon is not only a scope statement. It generates requirements that other contracts must satisfy with concrete numbers.
+
+**Contamination radius.** One undetected structural event does not corrupt a single value; it mislabels every value whose window contains it. The radius therefore equals the longest dependency window in the published field set, which for the current baseline exceeds the horizon by an order of magnitude. Market-data correctness matters more for a short horizon than for a long one, because a single defect consumes many consecutive decision opportunities rather than being averaged away. The radius must be published as a number by the indicator owner contract.
+
+**Staleness tolerance.** Output that arrives late consumes the horizon it was meant to serve; a two-session delay removes roughly forty percent of a five-session horizon. A freshness target is therefore a requirement of the consumer profile, not an operational preference. The target value and its alerting belong to the operations contract, but that contract may not choose a value that leaves the horizon unusable.
+
+**Warm-up cost.** The longest window sets how much history an instrument needs before any decision field resolves. Combined with the intentional dataset start below, this determines when the usable series actually begins, which is later than the raw series begins.
 
 The product dependency direction is:
 
@@ -55,13 +90,12 @@ Before operational activation:
 
 The **operational activation date** is the effective boundary from which a forward paper watchlist, user-facing watchlist, or other routine use requires operational freshness. Its normative marker is `OPERATIONAL_START_DATE` or an equivalent governed marker. Historical backfill, a proof run, or a recent development frontier does not set it implicitly.
 
-Before activation the project must:
+Two consequences follow from the term itself and are owned here:
 
-1. set the activation marker explicitly
-2. catch up every required trading date from the development frontier through the activation boundary by controlled backfill
-3. enable and prove daily import/promote scheduling
-4. enable freshness alerts and stale-consumer protection
-5. begin consecutive operational SLO measurement only at the activation boundary
+- operational freshness obligations, including consecutive SLO measurement, begin **only** at this boundary and are never backdated;
+- the boundary is set by an explicit governed marker, never implied by a backfill, a proof run, or a recent development frontier.
+
+**The operational gate list that must be satisfied before the marker may be set is owned by `EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`**, because those gates are operational proofs rather than terminology. This document defines what operational activation *means*; that contract defines what it *requires*. Enumerating the gates in both places is how the two lists drift apart.
 
 ## Scope of Market Data Platform (LOCKED)
 
@@ -257,6 +291,32 @@ Optional non-streaming supplemental artifact aligned to the effective readable t
 13. Coverage, quality, liquidity, event risk, and eligibility must remain separately explainable.
 14. Eligibility must never be described as alpha approval, candidate ranking, tradability approval, or a trading signal.
 15. Market-data readiness must never depend on watchlist implementation, ranking stability, strategy metrics, profitability, or user preference.
+16. The decision horizon must never be expressed in calendar days, because holidays and suspensions move trading days and calendar days independently.
+17. A dependency window must never enter the baseline field set without a declared horizon role; spanning beyond the horizon is legitimate for a context window and illegitimate for a decision window.
+18. `decision-grade` must never be described as an achieved state before the order-22 re-audit proves its four conditions with executed evidence.
+19. A field that is non-null, in range, and reason-free must never be described as decision-grade on that basis alone; condition 3 concerns whether it is right, not whether it looks ordinary.
+
+## Term ownership register (LOCKED)
+
+"Tidak ada ambiguity" adalah penilaian yang tidak dapat difalsifikasi. Register ini menggantinya dengan klaim yang dapat diuji: **istilah berikut didefinisikan di dokumen ini dan tidak di tempat lain.**
+
+| Kelompok | Istilah |
+|---|---|
+| Horizon dan kualitas | decision horizon, decision window, context window, state window, `decision-grade` |
+| Batas waktu | intentional dataset start, archived proof window, development data frontier, operational activation |
+| Price product | raw source observation, `RAW`, `STRUCTURAL_ADJUSTED`, `TOTAL_RETURN` |
+| Fase | import, promote, date-driven capability, provider limitation abstraction, fatal failure, per-ticker failure |
+| Dimensi fakta | coverage, quality, liquidity, event risk, eligibility snapshot |
+| Publikasi dan tanggal | requested trade date, effective trade date, canonical bars, invalid bars, indicators, seal, publication, replay, session snapshot |
+
+Aturan yang mengikat:
+
+- Dokumen lain **boleh** memakai, meringkas, dan merujuk istilah-istilah ini. Dokumen lain **tidak boleh** mendefinisikan ulang, memperluas, atau mempersempitnya.
+- Ringkasan di dokumen lain wajib membawa pointer ke sini dan aturan presedensi: bila berbeda, definisi di sini yang berlaku.
+- Menambahkan istilah baru ke register ini adalah perubahan pada dokumen ini, bukan pada dokumen yang membutuhkannya.
+- Sebuah istilah yang ternyata memiliki dua definisi substantif di dua dokumen adalah pelanggaran kontrak, bukan perbedaan gaya penulisan.
+
+Uji yang berlaku untuk *Done criteria* order 1: setiap istilah di atas memiliki **tepat satu** tempat definisi. Kegagalan uji itu bersifat konkret dan dapat ditunjukkan, tidak lagi bergantung pada penilaian pembaca.
 
 ## Anti-domain-leak rule (LOCKED)
 

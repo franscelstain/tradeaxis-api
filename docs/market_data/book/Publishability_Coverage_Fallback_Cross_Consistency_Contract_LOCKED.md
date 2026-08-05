@@ -236,3 +236,15 @@ Implementation wajib menjaga contract ini melalui:
 - invalid current pointer diagnosis including coverage state.
 
 Any future change that allows partial coverage, manual override, mixed source coverage, or non-current publication behavior must update this contract first and must not silently weaken these invariants.
+
+## Capability boundary (LOCKED)
+
+**What cross-consistency proves.** That coverage state, publishability state, fallback behaviour, and reported dates agree with one another, so a consumer cannot receive a combination that contradicts itself.
+
+**What it cannot prove.**
+
+- **That mutually consistent states are correct states.** Consistency is a relation among the platform's own outputs. Every one of them can be wrong together and remain perfectly consistent.
+- **That the fallback publication is suitable.** Consistency requires the fallback be labelled as a prior date, not that a prior date serves the consumer's need.
+- **That an absent contradiction means the decision table was exercised.** A combination never produced is neither confirmed nor refuted by this contract.
+
+Consequently a consistent state set may be cited as evidence that **the platform is not contradicting itself**, never as evidence that **its conclusion about the date is right**.

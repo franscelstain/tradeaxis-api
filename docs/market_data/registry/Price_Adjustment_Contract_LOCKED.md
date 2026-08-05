@@ -85,6 +85,18 @@ Identical raw publication, temporal event/factor revisions, analytical as-of dat
 - treating factor `1` or absent factor as proof the window is clean
 - deriving actual traded value by multiplying structural-adjusted price with raw volume and naming it actual
 
+## Capability boundary (LOCKED)
+
+**What the adjustment product proves.** That every adjusted value traces to an immutable raw bar, a verified event/factor revision, a formula/config version, and an analytical as-of date; that unresolved evidence fails safe rather than falling back.
+
+**What it cannot prove.**
+
+- **That the series is fully adjusted.** The product applies the factors it has. An event nobody recorded contributes no factor, produces no contamination flag, and leaves a discontinuity that is arithmetically invisible in the output.
+- **That a coherent series is a correct one.** Coherence means OHLC and volume were transformed consistently by the same factor set. A wrong factor applied coherently yields a perfectly coherent, wrong series.
+- **That factor `1` or an absent factor indicates a clean window** — already prohibited above, and restated here because it is the specific reading this boundary exists to prevent.
+
+Consequently a `STRUCTURAL_ADJUSTED` series may be cited as evidence that **verified factors were applied coherently**, never as evidence that **the window is free of structural events**. That claim requires event completeness under the corporate-action owner contract.
+
 ## Acceptance criterion (LOCKED)
 
 Every adjusted value traces to immutable raw bar publication plus verified event/factor revision, formula/config version, and analytical as-of date; unresolved evidence always fails safe.

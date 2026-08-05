@@ -105,6 +105,17 @@ The eligibility artifact may expose:
 
 Coverage, quality, liquidity, trading status, event risk, and eligibility must remain separately inspectable. Combining them into an eligibility result does not permit their meanings or evidence to collapse into one field.
 
+### Retirement of the `eligible` alias (LOCKED)
+
+`eligible` is the most policy-suggestive name on the entire market-data surface: read plainly, it says *permitted to trade*. Every contract that uses it must therefore repeat that it means `data_usable`, and that repetition is the only thing preventing the misreading. A compatibility alias that never retires makes the correction permanent rather than temporary.
+
+- `data_usable` is the canonical field. `eligible` is a compatibility alias retained solely so existing consumers do not break.
+- The alias is retired once no consumer outside this package reads it, which must be demonstrated rather than assumed.
+- Retirement is a versioned read-model change under the consumer read contract; it never silently drops the column.
+- Until retirement, **no new artifact, column, reason code, config key, or API field may be named with `eligible`**. New surfaces use `data_usable`. The alias may be preserved, not propagated.
+
+An alias with no retirement condition is a permanent ambiguity, not a compatibility measure.
+
 ## Indicator boundary rule (LOCKED)
 
 Indicators are deterministic, versioned measurements derived from one declared coherent price basis. They may be included because the Weekly Swing consumer needs them, but they remain facts.
@@ -131,6 +142,30 @@ Market-data must not:
 - turn a liquidity measure into ranking or candidate selection
 
 Any policy-specific preference among otherwise usable instruments belongs downstream. Liquidity and zero-volume observations remain factual fields; a threshold that decides tradability or candidate membership must not enter market-data `eligible`/`data_usable`. Liquidity may block only the validity of a liquidity-derived field itself when its required observation is missing or invalid, not the usability of otherwise valid market facts.
+
+## Dual-use fact rule (LOCKED)
+
+Some facts are legitimately required on **both** sides of this boundary. They are the boundary's weakest point, because each side has a defensible claim to them and the split is easy to lose.
+
+The liquidity rule above is one instance of the general pattern. Stated as a class:
+
+- **Market-data owns the fact** — its value, unit, source, effective date, and quality state.
+- **Downstream owns the preference derived from it** — any threshold, ordering, or acceptance decision.
+- **Neither side may own the other's half**, and market-data may not hold a configuration key whose only purpose is a downstream threshold.
+
+A fact does not become policy because a strategy uses it, and it does not become market-data because a pipeline reads it.
+
+Known dual-use facts and their split:
+
+| Fact | Market-data use | Downstream use |
+|---|---|---|
+| Exchange auto-rejection band | Distinguishing an ordinary session move from a change in price scale | Whether a locked instrument can actually be entered or exited |
+| Tick / price fraction ladder | Bounding how small a meaningful proportional move can be at a given price | Order price construction and slippage assumptions |
+| Exchange lot size | **None** — explicitly disowned by the volume contract | Position sizing |
+| Traded-value measures and proxies | Factual liquidity measurement with declared unit and basis | Whether an instrument is liquid enough to trade |
+| Trading status and event risk | Bar expectation, contamination, and data usability | Event-avoidance preference |
+
+When a new dual-use fact appears, its owner contract must state both halves explicitly before the fact reaches a published output. Recording only the half that market-data needs is how the boundary erodes: the other half then gets decided implicitly, by whichever component happens to read it first.
 
 ## Publication and recency boundary rule (LOCKED)
 
@@ -205,7 +240,7 @@ The following terms are forbidden as positive Market Data Platform feature seman
 - long or short
 - entry or exit
 - ranking or priority
-- pick or candidate selection
+- instrument candidacy or pick selection for a trade
 - alpha, edge, or conviction
 - target price, stop loss, or take profit
 - position or risk sizing
@@ -213,6 +248,20 @@ The following terms are forbidden as positive Market Data Platform feature seman
 - broker or execution action
 
 Allowed wording includes "out of scope", "must not be interpreted as", "not produced by this module", and explicit descriptions of downstream behavior.
+
+### Overloaded vocabulary (LOCKED)
+
+Three words carry a legitimate upstream meaning **and** a forbidden downstream meaning. The forbidden list above targets the downstream sense only. Reading it as a word blacklist would flag correct upstream usage across most of this package.
+
+| Word | Legitimate upstream meaning | Forbidden meaning |
+|---|---|---|
+| `candidate` | An artifact awaiting validation, sealing, or review — a candidate publication, candidate bar, or detector candidate | An instrument being considered for a trade |
+| `target` | A publication or run destination, such as `publish_target` | A price objective for a position |
+| `policy` | A governed rule for handling data, such as an error or retention policy | A trading or allocation rule |
+
+Any lint, guard test, or review that enforces the forbidden list must distinguish these senses. A guard that cannot make the distinction must check the surrounding contract, not the token, because `candidate` alone appears legitimately in over one hundred documents in this package including this one.
+
+New vocabulary that would collide in the same way must be avoided rather than disambiguated later.
 
 ## Boundary invariants
 
@@ -227,6 +276,9 @@ Allowed wording includes "out of scope", "must not be interpreted as", "not prod
 9. Publication currentness and effective-date fallback are not trading recency recommendations.
 10. Market-data replay is not strategy backtesting or profitability proof.
 11. Downstream policy must not rewrite upstream facts or historical publications.
+12. A dual-use fact must have both halves stated by its owner contract before it reaches a published output; recording only the upstream half lets the downstream half be decided implicitly.
+13. The forbidden-terms list targets meanings, not tokens; `candidate`, `target`, and `policy` carry legitimate upstream senses that no guard may flag on the word alone.
+14. A compatibility alias without a stated retirement condition is a permanent ambiguity; `eligible` may be preserved but never propagated to a new surface.
 
 ## Boundary acceptance test (LOCKED)
 
@@ -248,6 +300,8 @@ This owner contract must remain aligned with:
 - `Downstream_Consumer_Read_Model_Contract_LOCKED.md`
 - `Downstream_Data_Readiness_Guarantee_LOCKED.md`
 - `EOD_Eligibility_Snapshot_Contract_LOCKED.md`
+- `../registry/Exchange_Market_Structure_Facts_LOCKED.md` — owns the dual-use exchange facts split above
+- `../registry/Volume_and_Turnover_Normalization_LOCKED.md` — owns the actual-versus-proxy split and the lot-size disownment
 - `../session_snapshot/Session_Snapshot_Contract_LOCKED.md`
 
 Where a dependent document uses older wording that conflates eligibility with readability or policy, this owner boundary takes precedence until that dependent contract reaches its ordered strategy-update step.

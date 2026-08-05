@@ -87,9 +87,45 @@ The run/publication must record the identity/universe snapshot or immutable vers
 
 Downstream consumers use stable identity and the symbol/listing projection as-of the effective trade date. A current ticker code is presentation metadata, not proof of historical identity.
 
+## Capability boundary (LOCKED)
+
+The rules above make the **resolver** survivorship-free. They cannot make the **master** complete, and those are different guarantees.
+
+**What temporal resolution proves.** That a listing recorded in the master is included or excluded for trade date `T` strictly by its effective interval; that current state never filters a historical universe; that symbol reuse resolves to the correct stable identity on each side of its boundary.
+
+**What it cannot prove.**
+
+- **That the master contains every security that existed on `T`.** A security that listed and delisted without ever being recorded is absent from the universe, absent from the coverage denominator, and absent from both sides of a replay comparison. No gate fires, because every gate derives its expectation from this same master.
+- **That a recorded delisting date is the real one.** An effective interval closed on the wrong date silently moves a listing in or out of historical universes.
+- **That symbol reuse was noticed.** Reuse handled correctly is provably correct; reuse that was never recorded as reuse resolves to one identity across both eras, and looks entirely consistent.
+
+This is the same structure the market calendar carries: the universe is a **root of expectation**, so no downstream check can detect that it is wrong.
+
+### Universe completeness is verified externally (LOCKED)
+
+The universe is a root of expectation, so it falls under the shared external-reconciliation rules owned by global gate 13 in `Market_Data_Implementation_Conformance_Matrix_LOCKED.md`. Those rules are not repeated here.
+
+Domain parameters owned by this contract:
+
+- **Authority:** an authoritative exchange listing and delisting record.
+- **Scope:** from the intentional dataset start onward. Absence of securities delisted before that boundary is out of scope by design, not a completeness defect.
+- **Qualification:** a survivorship-free claim covering an unreconciled period must name that period explicitly.
+
+## Legacy `ticker_id` retirement (LOCKED)
+
+`ticker_id` is permitted above only as a compatibility identity with documented, invariant equivalence. That condition governs its **use**; it does not state when it ends.
+
+- Stable `instrument_id`/`listing_id` are canonical. `ticker_id` is retained solely so existing rows and consumers do not break.
+- The alias is retired once no reader outside this package depends on it, which must be demonstrated rather than assumed.
+- Retirement is a versioned schema and read-model change; it never silently drops the column.
+- Until retirement, **no new table, column, contract, or API field may key on `ticker_id`**. New surfaces bind stable identity. The alias may be preserved, not propagated.
+- A `ticker_id` whose equivalence to a stable identity is not documented and invariant is not a compatibility alias; it is an unresolved identity and must fail closed.
+
 ## Acceptance criterion (LOCKED)
 
 An inactive-now-but-active-on-T listing must appear in the historical universe for T, and an active-now-but-not-yet-listed-on-T listing must not. Any resolver that cannot satisfy both cases is survivorship-biased and violates this contract.
+
+Satisfying this criterion establishes a **survivorship-free resolver**. A survivorship-free **universe** additionally requires the external completeness reconciliation above. Claims must name which of the two they mean.
 
 ## Cross-contract alignment
 

@@ -13,3 +13,15 @@ A release candidate requires:
 - `BLOCKED` treated as missing proof, never converted to pass.
 
 Pass rates or row-count similarity cannot compensate for a semantic mismatch in a required invariant.
+
+## Capability boundary (LOCKED)
+
+**What these metrics prove.** That a study's outputs were computed from a declared point-in-time input set under stated acceptance rules, so results are attributable to a specific data version rather than to an unspecified snapshot.
+
+**What they cannot prove.**
+
+- **That the strategy works.** This is a data contract. Metrics computed here describe a study over supplied inputs; they carry no claim about future performance, and market-data readiness never depends on them.
+- **That a metric difference reflects a strategy difference.** Two runs over different data versions differ for reasons this contract cannot separate from strategy changes unless both bind their input versions.
+- **That acceptance criteria being met makes the underlying data correct.** Every upstream capability boundary composes into these numbers; none is discharged by a study that accepts them.
+
+Consequently a metric set may be cited as evidence that **a study ran over an identified data version**, never as evidence about **market-data quality or strategy merit**.

@@ -38,6 +38,25 @@ Using structural-adjusted price with raw volume is dimensionally inconsistent an
 
 Actual and proxy fields must never be coalesced into one output across dates.
 
+### Proxy labelling must be persisted (LOCKED)
+
+The proxy is required above to carry formula version, `RAW` basis, window, and proxy label. Those are properties of a stored artifact, not of a sentence in this contract. A metric that carries them only in documentation carries them nowhere a consumer can read.
+
+- Formula version, price basis, window length, and an explicit actual-versus-proxy marker are **queryable fields** accompanying the metric, resolvable from the same publication context.
+- A consumer must be able to tell an actual value from a proxy **without consulting a document and without parsing a column name**. Name conventions assist readers; they are not a machine-readable contract.
+- A metric whose actual-versus-proxy marker is absent is not assumed to be a proxy. It is **unlabelled**, and an unlabelled liquidity metric may not be published.
+
+### Retirement of the `dv20_idr` alias (LOCKED)
+
+`dv20_idr` names neither its basis nor its proxy nature. Read plainly, `dv` suggests daily value and `_idr` asserts a currency amount, which is precisely the reading this contract forbids. Documenting it as an alias corrects the reading for whoever reads the documentation; the column keeps asserting the wrong thing to everyone else.
+
+- The canonical fields are the explicitly named actual and proxy metrics. `dv20_idr` is retained solely so existing consumers do not break.
+- The alias is retired once no reader outside this package depends on it, demonstrated rather than assumed, through a versioned read-model change.
+- Until retirement, **no new artifact, column, contract, or API field may be named `dv*` or otherwise imply traded value without stating its basis**. New surfaces use the explicit names. The alias may be preserved, not propagated.
+- An alias may not stand in for the field it aliases. Where the explicitly named proxy field does not yet exist, the alias is a gap to close, not a substitute that satisfies this contract.
+
+This is the third compatibility alias in this package to require an explicit end, after `eligible` and `ticker_id`. The pattern is now established: **an alias introduced without a retirement condition becomes permanent, and its misleading reading becomes the platform's default meaning.**
+
 ## Lot-size boundary
 
 Exchange lot size belongs to downstream order/position sizing, not market-data traded-value normalization. Market-data must not multiply share volume by lot size or own a position-sizing configuration.
@@ -48,6 +67,19 @@ Exchange lot size belongs to downstream order/position sizing, not market-data t
 - Round only at the locked storage/presentation boundary.
 - Source unit/value correction creates new observation and publication lineage.
 - Never rewrite raw volume or historical values to repair a proxy.
+
+## Capability boundary (LOCKED)
+
+**What these metrics prove.** That a reported figure is dimensionally coherent — shares are shares, currency is currency, and a proxy is never renamed as actual; that unit normalization is evidenced; and that zero volume is preserved as a source-backed fact rather than treated as missing.
+
+**What they cannot prove.**
+
+- **That the proxy resembles actual turnover.** `RAW close × RAW volume` values every share at the closing price. A session whose trades occurred far from the close produces a proxy that is dimensionally correct and materially different from the traded value it stands in for. The gap is largest exactly where it matters most: volatile and thinly traded instruments.
+- **That the metric describes tradable liquidity.** A twenty-session average can be dominated by one exceptional day. Two instruments with identical `dv20` may differ entirely in whether a position could be exited over the horizon, and that judgement belongs downstream.
+- **That the volume figure is complete.** The metric normalises what the source reported. Volume missing or wrong at the source produces a clean, confident, wrong metric — as a single acquisition-date defect already demonstrated in this dataset.
+- **That a shortened session was accounted for.** Session length is a calendar fact, not a volume fact. A window spanning shortened sessions is mechanically depressed, and nothing in this contract detects it.
+
+Consequently a liquidity metric may be cited as evidence of **reported trading activity on a declared basis**, never as evidence of **actual turnover** or **executability**.
 
 ## Acceptance criterion (LOCKED)
 

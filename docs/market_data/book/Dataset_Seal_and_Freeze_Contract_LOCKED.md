@@ -32,6 +32,18 @@ Operational metadata may grow later through extra run events or operator notes, 
 
 Seal is not evidence that semantic meaning is correct by itself. A sealed publication produced under obsolete or invalid contracts remains subject to audit findings and may only be corrected through a new revision/publication.
 
+## Capability boundary (LOCKED)
+
+**What a seal proves.** That the content bound to a publication was fixed at seal time, that its hashes were computed over the declared payload, and that later mutation through guarded paths is rejected.
+
+**What it cannot prove.**
+
+- **That the sealed content is correct.** A seal preserves faithfully whatever was presented to it. Wrong values seal exactly as well as right ones, and the resulting hash is equally valid.
+- **That everything relevant was inside the seal.** Only declared payload participates in the hash. A field, annotation, or reason set excluded from the hash definition can differ between two publications that hash identically.
+- **That the inputs were complete.** A seal over a dataset missing an entire listing, or a session the calendar never recorded, is a valid seal over an incomplete truth.
+
+Consequently `SEALED` may be cited as evidence of **fixity and reproducibility**, never as evidence of **correctness or completeness**.
+
 ## Protected content scope (LOCKED)
 
 The frozen identity includes bars, analytical price products, indicators, eligibility facts, observation references, temporal universe/calendar/status versions, corporate-action/factor revisions, config snapshot/hash, formula/version identity, content hashes, and lineage links.

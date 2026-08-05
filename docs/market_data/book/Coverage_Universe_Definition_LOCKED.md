@@ -74,3 +74,15 @@ This document owns universe and expectation semantics. Coverage delivery formula
 - `Market_Calendar_Requirements_Contract.md`
 - `Trading_Status_Source_Contract_LOCKED.md`
 - `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
+
+## Capability boundary (LOCKED)
+
+**What universe definition proves.** That membership for a trade date follows the declared basis, resolved from temporal listing state rather than current state, and that dormancy, liquidity, and provider behaviour play no part in it.
+
+**What it cannot prove.**
+
+- **That the universe is complete.** Membership is drawn from the identity master. A listing the master never recorded is not excluded by rule — it is absent, and no membership decision is ever made about it. External reconciliation under global gate 13 is the only remedy, and it is owned by `Tickers_and_Identity_Dependency_Contract_LOCKED.md`.
+- **That the declared basis is the right basis.** The definition applies whichever basis is configured. Choosing a basis that omits a market segment produces a smaller universe with perfect internal conformance.
+- **That a stable universe count means a stable universe.** Equal counts on two dates are consistent with a listing entering as another leaves.
+
+Consequently a conforming universe may be cited as evidence that **membership followed the declared temporal rules**, never as evidence that **every listing that existed is represented**.

@@ -108,3 +108,7 @@ Executed evidence examples should demonstrate:
 If the platform claims production-grade auditability but cannot point to immutable publication-bound history rows, then row-history integrity is overstated.
 
 Strategy B is not acceptable for decision-grade relock. Until immutable publication-bound snapshots and mutation guards are implemented and proven, this contract is strategy-locked but its production behavior remains unproven.
+
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini menetapkan kapan sebuah versi baris baru terbentuk dan bagaimana versi lama dipertahankan. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data, sehingga tidak memiliki wilayah buta untuk dinyatakan. Mekanisme yang memang menghasilkan keluaran semacam itu menyatakan batasnya pada owner contract-nya masing-masing.

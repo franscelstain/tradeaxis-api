@@ -39,3 +39,15 @@ Implications:
 - coverage `FAIL` keeps the requested date `NOT_READABLE` even if bars/indicators/eligibility/hashes already exist
 - coverage `NOT_EVALUABLE` also keeps the requested date `NOT_READABLE`; finalization maps this to `quality_gate_state=BLOCKED` and must treat it as blocked integrity/prerequisite state, not as silent pass
 - readable fallback resolution may keep consumers operational, but it does not convert the requested date into `SUCCESS`
+
+## Capability boundary (LOCKED)
+
+**What cutoff and finalization prove.** That a requested date reached a terminal state under declared rules, and that the state and its reasons are explicit rather than implied by elapsed time.
+
+**What they cannot prove.**
+
+- **That the session actually completed.** Cutoff is a platform clock rule. Session completion is a calendar and status fact, and where that evidence is unknown the cutoff must hold rather than substitute for it.
+- **That finalization means data is right.** Finalization records that the pipeline reached a decision, not that the decision rests on correct inputs.
+- **That a late arrival would not have changed the outcome.** Once finalized, data arriving afterwards is a correction question, and the finalized state carries no information about whether such data exists.
+
+Consequently a finalized date may be cited as evidence that **the run reached a governed terminal state**, never as evidence that **the session was complete or the content correct**.

@@ -54,3 +54,15 @@ Fixtures must be independently reviewed semantic oracles. Copying current implem
 ## Acceptance
 
 All required scenario families pass on MariaDB production semantics and the supported test mirror. Any missing family remains an open proof gap; historical green results for superseded rules do not close it.
+
+## Capability boundary (LOCKED)
+
+**What historical quality replay proves.** That the quality decisions recorded for past dates reproduce under their bound rules, and that quarantine, rejection, and hold outcomes were not applied retroactively.
+
+**What it cannot prove.**
+
+- **That past quality decisions were the right decisions.** Reproducing a verdict confirms the rule was applied consistently; a rule that was wrong then reproduces wrongly now, with full agreement.
+- **That the defects it replays are the defects that occurred.** Only recorded defects can be replayed. A fault nobody detected at the time leaves no verdict to reproduce and no trace to find.
+- **That improving rules improves history.** A rule strengthened today does not reclassify yesterday's publications; it changes what happens next, which is the intended behaviour and also the limit.
+
+Consequently a clean historical quality replay may be cited as evidence that **recorded decisions were stable and rule-bound**, never as evidence that **historical data was sound**.

@@ -4,6 +4,16 @@ Status: **strategy corrected; production activation/relock not yet proven**.
 
 This is the operational entry point. It must be read with the owner contracts for acquisition, temporal identity/calendar/status, immutable publication/correction, configuration snapshots, readiness, replay, and command safety. Earlier green tests or operator-local command demonstrations prove only the behavior they executed; they do not override open semantic gaps in the current audit.
 
+## Capability boundary scope for ops documents (LOCKED)
+
+Global gate 11 applies to documents owning a mechanism that produces a verdict, state, flag, or signal. Most documents in this directory do not: runbooks describe operator procedure, command documents describe invocation, format and schema documents describe artifact shape, and inventories record what exists. Adding a generic boundary to each would satisfy a mechanical check while teaching nothing, which the gate itself forbids.
+
+**Out of gate 11 scope as a class:** operational runbooks including this one, `commands/*`, `IMPLEMENTATION_GUIDE.md`, `Operator_Decision_Trees_LOCKED.md`, `Audit_Query_Cookbook_LOCKED.md`, artifact/format/logging schema documents, evidence-pack shape contracts, and all `*_INVENTORY.md`.
+
+**In gate 11 scope, and each states its own boundary:** `Performance_SLO_and_Limits_LOCKED.md`, `Incident_Classification_and_Response_Matrix_LOCKED.md`, `Executed_Run_Admission_Criteria_LOCKED.md`, `Release_Gates_LOCKED.md`, and `Scheduling_and_Locking_Contract_LOCKED.md`.
+
+A document moving from describing procedure to producing a verdict moves into scope and must state its boundary at that point.
+
 ## Operating modes
 
 - **Development frontier:** before `OPERATIONAL_START_DATE`; missing future daily runs are planned incompleteness, not incidents. Integrity rules still apply and no output may falsely claim freshness/readability.

@@ -61,6 +61,39 @@ Action timing uses verified exchange-effective/ex-date semantics. Exact-date-onl
 
 Unresolved structural breaks block or null every dependent field rather than mixing incompatible regimes. Raw canonical bars remain unchanged.
 
+## Contamination radius (LOCKED)
+
+`Terminology_and_Scope.md` assigns this contract the duty of publishing the radius as a number. The baseline field set has two radii, not one, and collapsing them into a single figure would understate the worse case.
+
+**Fixed-window radius: 50 trading sessions.** The longest fixed dependency in the baseline is `ma50`, defined over `D[-49]..D`. An undetected structural event at session `T` therefore mislabels every dependent fixed-window value from `T` through `T+49`. Against the declared decision horizon of five trading days, fifty sessions is roughly **ten consecutive decision cycles** — the defect is not diluted by averaging, it is carried by it.
+
+**Recursive radius: unbounded forward.** `ATR14` uses Wilder recurrence from one stable seed, so a wrong true range at session `T` propagates into every later `ATR14` value without limit. This is already stated above as an impact rule; restated here it is a radius, and it is the reason ATR-dependent output cannot be bounded by any window length.
+
+Consequences that bind:
+
+- Impact resolution for a correction at session `T` covers at minimum `T` through `T+49` for fixed-window fields, and the **entire remaining chain** for ATR-derived fields.
+- A quarantine that covers only the event date is insufficient by a factor of fifty for fixed-window fields and by an unbounded factor for recursive ones.
+- Adding a field with a longer fixed window raises the fixed-window radius and is an output-affecting change under the version rule, not a routine addition.
+- Publishing these numbers does not make them safe. It makes the cost of an undetected event explicit, which is the point: at this horizon, a single missed event consumes more decision opportunities than most operators expect.
+
+## Capability boundary (LOCKED)
+
+**What the engine proves.** That each value follows its declared formula exactly; that the ATR chain is stable and reproducible; that warm-up and insufficient history produce declared nulls with reason codes; that **detected** contamination is surfaced on every dependent field.
+
+**What the engine cannot prove.**
+
+- **That the window is free of undetected discontinuity.** Contamination rules act on verified event revisions and detector candidates. An event nobody recorded, and a scale change below the detector's sensitivity floor, leave no trace in the input. The engine computes over the window it is given.
+- **That a value is meaningful.** An indicator computed across an unadjusted corporate action is arithmetically correct and semantically wrong. It is non-null, within range, carries no reason code, and participates in the artifact hash like any other value.
+- **That the value can be told apart from a real move.** `ROC20` of roughly minus ninety percent across an unadjusted ten-for-one split is numerically indistinguishable from a genuine collapse of the same size. Nothing in the field, its reason set, or its precision reveals which one it is.
+
+### Consequences (LOCKED)
+
+- A non-null indicator value is **not** evidence that its window is clean.
+- An empty contamination reason set records what was **detected**, not what **occurred**. It may never be read, exported, or reported as proof of an undisturbed window.
+- Evidence that a window is clean must come from event completeness under the corporate-action owner contract, never from the shape, range, or nullability of the computed value.
+
+A twenty-session window under a five-trading-day decision horizon spans roughly four weeks of decisions. One undetected structural event does not corrupt a single number; it mislabels every value that window feeds, and each of them looks ordinary.
+
 ## Nullability, precision, and reasons
 
 For every registered field, the versioned registry entry must declare:

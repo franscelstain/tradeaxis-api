@@ -94,11 +94,16 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertNotNull($run->bars_batch_hash);
         $this->assertNotNull($run->indicators_batch_hash);
         $this->assertNotNull($run->eligibility_batch_hash);
+        $this->assertNotNull($run->config_snapshot_id);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $run->observation_manifest_hash);
 
         $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
         $this->assertNotNull($publication);
         $this->assertSame(1, (int) $publication->is_current);
         $this->assertSame('SEALED', $publication->seal_state);
+        $this->assertSame((int) $run->config_snapshot_id, (int) $publication->config_snapshot_id);
+        $this->assertSame((string) $run->observation_manifest_hash, (string) $publication->observation_manifest_hash);
+        $this->assertSame('RAW', $publication->price_product_code);
 
         $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
         $this->assertNotNull($pointer);
@@ -114,6 +119,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame((int) $publication->publication_id, (int) $resolvedReadableForRun->publication_id);
 
         $this->assertSame(1, DB::table('eod_bars')->where('trade_date', '2026-03-20')->count());
+        $canonicalBar = DB::table('eod_bars')->where('trade_date', '2026-03-20')->first();
+        $this->assertNotNull($canonicalBar->listing_id);
+        $this->assertNotNull($canonicalBar->source_observation_id);
+        $this->assertSame((int) $run->config_snapshot_id, (int) $canonicalBar->config_snapshot_id);
+        $this->assertSame('RAW', $canonicalBar->price_product_code);
+        $this->assertSame('VALIDATED', $canonicalBar->quality_state);
+        $this->assertNull($canonicalBar->adj_close, 'provider adjusted close remains only in raw observation evidence');
+        $this->assertTrue(DB::table('md_source_observations')->where('source_observation_id', $canonicalBar->source_observation_id)->where('outcome_state', 'ACCEPTED')->exists());
+        $this->assertTrue(DB::table('md_source_observations')->where('run_id', $run->run_id)->where('outcome_state', 'CAPTURED')->exists());
         $this->assertSame(1, DB::table('eod_indicators')->where('trade_date', '2026-03-20')->count());
         $this->assertSame(1, DB::table('eod_eligibility')->where('trade_date', '2026-03-20')->where('eligible', 1)->count());
 

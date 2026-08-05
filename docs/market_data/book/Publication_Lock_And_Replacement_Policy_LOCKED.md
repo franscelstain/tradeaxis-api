@@ -217,3 +217,7 @@ This policy is considered enforced only when:
 - pointer changes only on `SUCCESS` + `READABLE` eligible runs;
 - manual file does not bypass current-publication lock;
 - audit files are updated append-only with runtime/test proof.
+
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini menetapkan aturan penguncian dan penggantian publikasi. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data, sehingga tidak memiliki wilayah buta untuk dinyatakan. Mekanisme yang memang menghasilkan keluaran semacam itu menyatakan batasnya pada owner contract-nya masing-masing, khususnya `Finalize_Lock_And_Pointer_Behavior_LOCKED.md` untuk perilaku lock dan pointer.

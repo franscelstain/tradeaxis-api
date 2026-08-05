@@ -22,3 +22,17 @@ Documentation specification status: **`DOCUMENTATION_READY`**. `required` means 
 | `schema_v2_foundation` | migration and SQLite mirror | target tables/columns present; direct repair fields/type absent | **executed locally: schema mirror only** |
 
 “Required” means no admitted executed V2 evidence is currently recorded. Legacy fixture IDs containing adjusted-close fallback, dormancy exclusion, sliding ATR reseed, direct scale repair, or price-derived verified actions are superseded and cannot count toward closure.
+
+## Artifact existence status (LOCKED)
+
+This catalog specifies fixtures. It does not create them, and a specified fixture is not a built one.
+
+**Current state:** no golden fixture artifacts exist in the repository. A search across the project outside `docs/` returns only a replay-fixture generator command, two seeding helpers, and an ops runtime-matrix manifest in storage — none of which is a golden indicator fixture, expected-output oracle, or test vector set.
+
+Consequences that bind until artifacts exist:
+
+- Every acceptance criterion depending on a golden fixture is **unmet**, not partially met. Thoroughness of this catalog does not substitute for the artifacts it describes.
+- The long-chain deterministic calculation required by the indicator owner contract has **no executing test**. No test in the suite exercises a Wilder ATR chain against an external reference, so that criterion is unproven rather than proven.
+- A conformance claim may not cite this catalog as coverage. It may cite it as a plan.
+
+Closing this requires building the artifacts, naming their location here, and adding tests that consume them. Extending the specification does not move it closer to closed.

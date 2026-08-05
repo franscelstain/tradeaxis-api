@@ -2,13 +2,16 @@
 
 namespace App\Application\MarketData\Services;
 
-use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
-use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Application\MarketData\Ports\ApiEodBarsSource;
+use App\Application\MarketData\Ports\ManualEodBarsSource;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
+use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
+use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class EodBarsIngestService
 {
@@ -18,14 +21,18 @@ class EodBarsIngestService
     private $artifacts;
     private $publications;
     private $impactResolver;
+    private $observations;
+    private $calendar;
 
     public function __construct(
-        LocalFileEodBarsAdapter $localSourceAdapter,
-        PublicApiEodBarsAdapter $apiSourceAdapter,
+        ManualEodBarsSource $localSourceAdapter,
+        ApiEodBarsSource $apiSourceAdapter,
         TickerMasterRepository $tickers,
         EodArtifactRepository $artifacts,
         EodPublicationRepository $publications,
-        EodBarsMutationImpactResolver $impactResolver = null
+        EodBarsMutationImpactResolver $impactResolver = null,
+        SourceObservationRepository $observations = null,
+        MarketCalendarRepository $calendar = null
     ) {
         $this->localSourceAdapter = $localSourceAdapter;
         $this->apiSourceAdapter = $apiSourceAdapter;
@@ -33,6 +40,8 @@ class EodBarsIngestService
         $this->artifacts = $artifacts;
         $this->publications = $publications;
         $this->impactResolver = $impactResolver;
+        $this->observations = $observations ?: new SourceObservationRepository();
+        $this->calendar = $calendar ?: new MarketCalendarRepository();
     }
 
     public function ingest($run, $requestedDate, $sourceMode, $priorCurrentPublication = null)
@@ -43,9 +52,14 @@ class EodBarsIngestService
         return $this->ingestAcquiredRows($run, $requestedDate, $sourceMode, $sourceRows, $sourceAcquisition, $priorCurrentPublication);
     }
 
-    public function acquireSourceRows($requestedDate, $sourceMode, array $tickerCodes = null)
+    public function acquireSourceRows($requestedDate, $sourceMode, array $tickerCodes = null, array $context = [])
     {
-        return $this->fetchSourceRows($requestedDate, $sourceMode, $tickerCodes);
+        if (! empty($context['config_snapshot_id'])) {
+            $calendarContext = $this->calendar->assertCompletedRegularSession($requestedDate, $context['known_at'] ?? null);
+            $context['calendar_revision_id'] = $calendarContext['calendar_revision_id'];
+        }
+
+        return $this->fetchSourceRows($requestedDate, $sourceMode, $tickerCodes, $context);
     }
 
     public function ingestAcquiredRows($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null)
@@ -85,6 +99,10 @@ class EodBarsIngestService
 
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
+        $strictLineage = ! empty($run->config_snapshot_id);
+        $identityContexts = $strictLineage
+            ? $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate)
+            : [];
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
@@ -94,6 +112,8 @@ class EodBarsIngestService
             $tickerCode = (string) ($row['ticker_code'] ?? '');
             $tickerId = isset($tickerMap[$tickerCode]) ? $tickerMap[$tickerCode] : null;
             $row['ticker_id'] = $tickerId;
+            $identity = $identityContexts[$tickerCode] ?? null;
+            $row['listing_id'] = $row['listing_id'] ?? ($identity['listing_id'] ?? null);
 
             if ($tickerId === null) {
                 $invalidRows[] = $this->makeInvalidRow(
@@ -131,6 +151,10 @@ class EodBarsIngestService
             $validation = $this->validateCanonicalRow($row, $requestedDate);
 
             if ($validation['valid']) {
+                if ($strictLineage) {
+                    $this->assertRequiredLineage($row, $run);
+                }
+
                 $validRows[] = [
                     'trade_date' => $requestedDate,
                     'ticker_id' => $row['ticker_id'],
@@ -139,9 +163,22 @@ class EodBarsIngestService
                     'low' => $row['low'],
                     'close' => $row['close'],
                     'volume' => $row['volume'],
-                    'adj_close' => $row['adj_close'],
+                    'adj_close' => $strictLineage ? null : $row['adj_close'],
                     'source' => $this->canonicalSourceForRow($row),
                     'run_id' => $run->run_id,
+                    'listing_id' => $strictLineage ? (int) $row['listing_id'] : null,
+                    'source_observation_id' => $strictLineage ? (int) $row['source_observation_id'] : null,
+                    'previous_close' => null,
+                    'traded_value_idr_actual' => null,
+                    'trade_count_actual' => null,
+                    'board_code' => $strictLineage ? ($identity['board_code'] ?? null) : null,
+                    'session_code' => $strictLineage ? 'REGULAR' : null,
+                    'source_timestamp' => $strictLineage ? ($row['source_timestamp'] ?? null) : null,
+                    'acquired_at' => $strictLineage ? ($row['captured_at'] ?? $now) : null,
+                    'canonicalization_version' => $strictLineage ? (string) config('market_data.source.canonicalization_version') : null,
+                    'price_product_code' => $strictLineage ? (string) config('market_data.scope.raw_product_code', 'RAW') : null,
+                    'quality_state' => $strictLineage ? 'VALIDATED' : null,
+                    'config_snapshot_id' => $strictLineage ? (int) $run->config_snapshot_id : null,
                     'created_at' => $now,
                 ];
                 continue;
@@ -203,6 +240,22 @@ class EodBarsIngestService
         }, $validRows);
 
         $barMutationSummary = $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
+        if ($strictLineage) {
+            $manifestHash = $this->observations->manifestHashForRun($run->run_id);
+            DB::table('eod_runs')->where('run_id', $run->run_id)->update([
+                'observation_manifest_hash' => $manifestHash,
+                'updated_at' => $now,
+            ]);
+            DB::table('eod_publications')->where('publication_id', $candidatePublication->publication_id)->update([
+                'config_snapshot_id' => (int) $run->config_snapshot_id,
+                'observation_manifest_hash' => $manifestHash,
+                'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
+                'read_model_version' => 'market_data_read_product_v1',
+                'readiness_state' => 'NOT_READY',
+                'updated_at' => $now,
+            ]);
+            $run->observation_manifest_hash = $manifestHash;
+        }
         if (! is_array($barMutationSummary)) {
             $barMutationSummary = $this->defaultBarMutationSummary($requestedDate, $candidatePublication->publication_id, $validRows, $useHistory);
         }
@@ -551,7 +604,7 @@ class EodBarsIngestService
     }
 
 
-    private function fetchSourceRows($requestedDate, $sourceMode, array $tickerCodes = null)
+    private function fetchSourceRows($requestedDate, $sourceMode, array $tickerCodes = null, array $context = [])
     {
         if ($sourceMode === 'api') {
             if ($tickerCodes === null) {
@@ -561,10 +614,41 @@ class EodBarsIngestService
                 }, $universe))));
             }
 
-            return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes);
+            return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes, $context);
         }
 
-        return $this->localSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode);
+        return $this->localSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes ?: [], $context);
+    }
+
+    private function assertRequiredLineage(array $row, $run)
+    {
+        if (empty($row['listing_id'])) {
+            throw new SourceAcquisitionException(
+                'Canonical bar requires a point-in-time listing binding.',
+                'TEMPORAL_LISTING_MAPPING_MISSING'
+            );
+        }
+
+        if (empty($row['source_observation_id']) || empty($row['source_observation_persisted'])) {
+            throw new SourceAcquisitionException(
+                'Canonical bar requires a persisted accepted source observation.',
+                'SOURCE_OBSERVATION_CAPTURE_REQUIRED'
+            );
+        }
+
+        if (! $this->observations->existsAccepted((int) $row['source_observation_id'])) {
+            throw new SourceAcquisitionException(
+                'Canonical bar source observation is not in an accepted immutable state.',
+                'SOURCE_OBSERVATION_NOT_ACCEPTED'
+            );
+        }
+
+        if (empty($run->config_snapshot_id)) {
+            throw new SourceAcquisitionException(
+                'Canonical bar requires an immutable configuration snapshot.',
+                'CONFIG_SNAPSHOT_REQUIRED'
+            );
+        }
     }
 
     private function assertSingleDaySourceBoundary($requestedDate, $sourceMode, array $sourceRows)

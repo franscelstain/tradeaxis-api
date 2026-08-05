@@ -1,6 +1,21 @@
 <?php
 
 return [
+    'scope' => [
+        'market_code' => 'IDX',
+        'market_segment' => 'REGULAR',
+        'frequency' => 'EOD',
+        'timezone' => 'Asia/Jakarta',
+        'dataset_start' => env('MARKET_DATA_DATASET_START', '2023-01-02'),
+        'operational_start_date' => env('MARKET_DATA_OPERATIONAL_START_DATE', null),
+        'canonical_product_code' => 'IDX_REGULAR_EOD_RAW_V1',
+        'raw_product_code' => 'RAW',
+        'structural_adjusted_product_code' => 'STRUCTURAL_ADJUSTED',
+        'total_return_product_code' => 'TOTAL_RETURN',
+        'data_usability_field' => 'data_usable',
+        'compatibility_eligibility_field' => 'eligible',
+        'contract_version' => 'market_data_scope_v2',
+    ],
     'platform' => [
         'timezone' => env('MARKET_DATA_PLATFORM_TIMEZONE', 'Asia/Jakarta'),
         'seal_required_for_consumers' => (bool) env('MARKET_DATA_SEAL_REQUIRED_FOR_CONSUMERS', true),
@@ -56,12 +71,20 @@ return [
         'null_token' => env('MARKET_DATA_HASH_NULL_TOKEN', '[empty]'),
     ],
     'source' => [
+        'adapter_contract_version' => 'provider_neutral_eod_source_v2',
+        'observation_schema_version' => 'source_observation_v2',
+        'observation_retention_version' => 'bounded_payload_v1',
+        'canonicalization_version' => 'idx_regular_raw_v2',
+        'mapping_revision' => 'temporal_provider_mapping_v1',
+        'bounded_payload_bytes' => (int) env('MARKET_DATA_SOURCE_BOUNDED_PAYLOAD_BYTES', 65536),
         'local_directory' => env('MARKET_DATA_SOURCE_LOCAL_DIRECTORY', 'storage/app/market_data/eod_bars'),
         'file_template_json' => env('MARKET_DATA_SOURCE_FILE_TEMPLATE_JSON', '{date}.json'),
         'file_template_csv' => env('MARKET_DATA_SOURCE_FILE_TEMPLATE_CSV', '{date}.csv'),
         'default_source_name' => env('MARKET_DATA_SOURCE_DEFAULT_NAME', 'YAHOO_FINANCE'),
         'api' => [
             'provider' => env('MARKET_DATA_SOURCE_API_PROVIDER', 'yahoo_finance'),
+            'adapter_version' => env('MARKET_DATA_SOURCE_API_ADAPTER_VERSION', 'yahoo_chart_v2'),
+            'schema_version' => env('MARKET_DATA_SOURCE_API_SCHEMA_VERSION', 'yahoo_chart_schema_v1'),
             'endpoint_template' => env('MARKET_DATA_SOURCE_API_ENDPOINT_TEMPLATE', 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}&includePrePost=false&events=div%2Csplits&corsDomain=finance.yahoo.com'),
             'response_format' => env('MARKET_DATA_SOURCE_API_RESPONSE_FORMAT', 'json'),
             'response_rows_path' => env('MARKET_DATA_SOURCE_API_ROWS_PATH', ''),
@@ -106,6 +129,16 @@ return [
         'active_value' => (int) env('MARKET_DATA_TICKERS_ACTIVE_VALUE', 1),
         'listed_date_column' => env('MARKET_DATA_TICKERS_LISTED_DATE_COLUMN', 'listed_date'),
         'delisted_date_column' => env('MARKET_DATA_TICKERS_DELISTED_DATE_COLUMN', 'delisted_date'),
+        'temporal_projection_version' => 'legacy_ticker_temporal_projection_v1',
+    ],
+    'governance' => [
+        'config_snapshot_schema_version' => 'market_data_config_snapshot_v1',
+        'config_serialization_version' => 'canonical_json_v1',
+        'config_registry_revision' => 'platform_config_registry_v2',
+        'config_resolver_version' => 'market_data_config_resolver_v1',
+        'build_id' => env('MARKET_DATA_BUILD_ID', 'development-worktree'),
+        'environment_profile' => env('MARKET_DATA_ENVIRONMENT_PROFILE', 'local'),
+        'credential_profile' => env('MARKET_DATA_CREDENTIAL_PROFILE', 'bootstrap-public-access'),
     ],
     'sectors' => [
         'table' => env('MARKET_DATA_SECTORS_TABLE', 'market_data_sectors'),

@@ -30,3 +30,15 @@ After activation, missing/late due runs are freshness incidents governed by SLO 
 - shrinking coverage for provider failures/dormancy;
 - retry loops that discard the original failed observation/evidence; and
 - marking a date complete before the active sealed read product is verifiably materializable.
+
+## Capability boundary (LOCKED)
+
+**What scheduling and locking prove.** That due work was discovered from governed dates rather than wall-clock guessing, that one owner held a run at a time, and that lock loss or fencing violation stops work rather than racing it.
+
+**What they cannot prove.**
+
+- **That scheduled means executed.** A schedule states intent. Whether the due event ran, and whether it ran to completion, is run evidence, not schedule evidence.
+- **That no work happened outside the lock.** Locking governs paths that acquire it; a manual command run outside the scheduler holds nothing.
+- **That an absence of overlap means an absence of contention.** Where no concurrent attempt occurred, the mechanism reports success without ever being tested.
+
+Consequently a clean scheduling record may be cited as evidence that **due work was serialised and ownership was explicit**, never as evidence that **operations ran correctly**.

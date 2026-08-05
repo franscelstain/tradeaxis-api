@@ -145,3 +145,15 @@ The following are forbidden:
 - treating delivery coverage as quality or eligibility
 - using fallback to convert a failed candidate into readable
 - changing threshold without an explicit locked policy update
+
+## Capability boundary (LOCKED)
+
+**What gate enforcement proves.** That the coverage decision was computed from governed counts, compared against the bound threshold, and that a failing or non-evaluable result blocked readability rather than degrading quietly.
+
+**What it cannot prove.**
+
+- **That a passing ratio means the delivered data is right.** The gate counts delivered observations against expected ones. Correctness of the values is a different dimension with its own gates, and passing here says nothing about it.
+- **That the threshold is the right threshold.** A configured boundary expresses a chosen tolerance. A date just above it is not thereby sound, and a date just below it is not thereby unusable.
+- **That the counts it compared were themselves correct.** Numerator and denominator arrive from delivery and expectation resolution. If either is wrong, the gate computes a precise ratio of wrong numbers and reports it confidently.
+
+Consequently a coverage `PASS` may be cited as evidence that **the delivered share met the declared threshold**, never as evidence that **the date is complete or correct**.

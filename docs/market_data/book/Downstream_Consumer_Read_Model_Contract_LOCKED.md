@@ -80,3 +80,15 @@ Consumers and repositories must not:
 Additive optional fields may be introduced within a read-model version. Grain, field meaning, unit, basis, requiredness, null semantics, or readiness behavior changes require a new version and compatibility plan.
 
 Until an implemented read surface and executed contract tests prove atomic publication binding and every minimum field/state above, this strategy is not production-relocked.
+
+## Capability boundary (LOCKED)
+
+**What the read model proves.** That a versioned, stable field set is delivered with declared units, basis, nullability, and identity, so a consumer can bind to a contract rather than to a table shape.
+
+**What it cannot prove.**
+
+- **That a present field is a meaningful one.** Field presence is a schema property. A liquidity proxy, an indicator over a contaminated window, and a value from a shortened session all arrive as ordinary populated fields.
+- **That the field set is sufficient for the consumer's decision.** The model delivers what market-data owns. Whether that is enough to decide anything is a downstream question this contract deliberately does not answer.
+- **That version stability implies semantic stability.** A field whose upstream meaning shifted while its name and type held is a version problem this contract cannot detect on its own; that is why upstream changes are output-affecting.
+
+Consequently a conforming read model may be cited as evidence that **the delivered shape matches its declared version**, never as evidence that **the values describe the market accurately**.

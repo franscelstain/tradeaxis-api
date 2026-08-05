@@ -158,3 +158,15 @@ Dormancy and zero-volume history are factual liquidity/activity observations, no
 A provider that stops serving an otherwise valid listing must continue increasing missing delivery; no elapsed-day threshold may hide it. A valid zero-volume canonical bar is delivered coverage and remains explicit for downstream tradability policy. A missing row is not delivered even when the instrument was historically illiquid.
 
 Coverage edge handling must expose expectation, delivery, canonical validity, quality, liquidity, and eligibility as separate counts/states.
+
+## Capability boundary (LOCKED)
+
+**What edge-case handling proves.** That dormancy, zero volume, delayed delivery, and provider outage are classified explicitly rather than absorbed into the denominator, and that each classification carries its own reason.
+
+**What it cannot prove.**
+
+- **That the classification matches reality.** An instrument correctly classified dormant by the declared rule may simply have had no trade that day; the rule sorts observations, it does not diagnose the market.
+- **That the edge-case set is complete.** Cases are enumerated as they are discovered. A situation not yet enumerated falls through to the default path, and the default path is safe only for cases someone anticipated.
+- **That a rarely triggered branch works.** Frequency of use is not evidence of correctness; a branch triggered once a year is exercised by production once a year.
+
+Consequently a clean edge-case classification may be cited as evidence that **known cases were sorted by declared rules**, never as evidence that **nothing unusual happened**.

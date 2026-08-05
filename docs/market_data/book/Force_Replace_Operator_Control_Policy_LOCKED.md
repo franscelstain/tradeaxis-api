@@ -155,3 +155,7 @@ This policy is satisfied only when:
 - command summary exposes force flag;
 - tests cover uncontrolled block and controlled replace;
 - audit files append the session result without deleting old history.
+
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini menetapkan kewenangan operator dan batas tindakan paksa. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data, sehingga tidak memiliki wilayah buta untuk dinyatakan. Mekanisme yang memang menghasilkan keluaran semacam itu menyatakan batasnya pada owner contract-nya masing-masing.

@@ -77,6 +77,18 @@ Tidak ada merge antar source untuk membentuk satu requested-date publication.
 - operator memang menjalankan source mode itu secara eksplisit; atau
 - kontrak recovery/correction resmi memerintahkan perpindahan ke jalur itu
 
+### Batas kapasitas jalur pemulihan (LOCKED)
+
+`manual_file` adalah **rescue satu tanggal, bukan jalur kelangsungan operasi.**
+
+Satu requested date mencakup seluruh universe aktif yang berukuran ratusan instrument, dan setiap baris tetap tunduk pada observation envelope, provenance, schema, stale, dan validation yang sama ketatnya. Itu dapat dikerjakan sesekali untuk satu tanggal; ia tidak dapat menggantikan akuisisi harian selama periode yang panjang.
+
+Konsekuensi operasional yang mengikat:
+
+- Kegagalan primary source yang berlangsung berhari-hari **tidak** memiliki jalur pemulihan yang setara. Keadaan itu adalah `stale`/`failed` yang harus terlihat dan dieskalasi, bukan sesuatu yang ditambal dengan recovery manual berulang.
+- Rencana kelangsungan tidak boleh disusun dengan asumsi `manual_file` sanggup menutup gap panjang. Menyebutnya jalur pemulihan tanpa menyatakan batas ini membuat rencana kelangsungan terlihat ada padahal tidak.
+- Berapa hari perdagangan berturut-turut kegagalan yang mengubah insiden operasional menjadi bukti bahwa kapabilitas source menjadi penghambat adalah ambang yang wajib ditetapkan kontrak operasi, sesuai `Yahoo_Finance_Bootstrap_Source_Strategy.md`.
+
 ### Current-phase strategic rationale
 
 Primary `api_free/yahoo_finance` adalah **bootstrap source yang dipilih dengan sengaja** untuk membuktikan manfaat market-data dan watchlist Weekly Swing sebelum platform menanggung biaya data berbayar.
@@ -89,17 +101,37 @@ Rationale, safeguard, non-goal fase aktif, dan future decision trigger dijelaska
 
 ---
 
-## Provider context locked for active path
-Untuk active default provider `yahoo_finance`:
-- request dilakukan **per ticker**
-- symbol IDX dirender sebagai `<ticker>.JK`
-- provider gratis dapat memberi `HTTP 429`
-- provider dapat memiliki default acquisition window seperti `10d`
-- karena request fan-out terjadi per ticker, ketahanan jalur import harus **partial-tolerant**
-- kegagalan beberapa ticker tidak boleh otomatis menghentikan seluruh import date-run
+## Acquisition shape locked for active path
 
-Dokumen ini tidak mengunci provider baru.
-Dokumen ini hanya mengunci perilaku minimum untuk provider path aktif yang sudah ada. Yahoo Finance bukan data resmi IDX, tidak memiliki commercial SLA yang dijanjikan oleh platform, dan bukan provider final yang sudah ditetapkan.
+Kontrak ini mengunci perilaku minimum berdasarkan **bentuk akuisisi**, bukan berdasarkan nama provider. Simbol, kode status, jendela default, dan kapabilitas provider yang berlaku dimiliki oleh capability matrix pada `Yahoo_Finance_Bootstrap_Source_Strategy.md`; mengulanginya di sini akan melanggar aturan dokumen ini sendiri bahwa provider limitation tidak diwariskan ke domain contract.
+
+Bentuk yang mengikat pada jalur aktif:
+
+- **fan-out per instrument** — satu requested date menghasilkan banyak unit akuisisi independen, satu per instrument dalam universe;
+- karena itu ketahanan jalur import wajib **partial-tolerant**: kegagalan sebagian unit tidak boleh menghentikan seluruh import date-run;
+- source gratis tanpa SLA dapat menerapkan **pembatasan laju** dan dapat menolak permintaan tanpa pemberitahuan;
+- source dapat memiliki **jendela akuisisi default** yang lebih sempit dari kebutuhan domain, sehingga windowing eksplisit wajib tersedia.
+
+Dokumen ini tidak mengunci provider baru dan tidak menjadikan source aktif sebagai domain truth. Ketiadaan SLA, support, dan authoritative correction adalah paparan yang sudah dinyatakan pada owner strategi source.
+
+---
+
+## Source access self-protection (LOCKED)
+
+Perilaku retry platform sendiri adalah salah satu ancaman terbesar terhadap kelangsungan akses ke source gratis tak resmi. Aturan retry di bawah melindungi **run**; aturan ini melindungi **source**.
+
+Universe aktif berukuran ratusan instrument, sehingga satu requested date sudah menghasilkan ratusan permintaan sebelum retry apa pun. Kegagalan menyeluruh yang direspons dengan retry penuh melipatgandakan beban tepat ketika source sedang menolak — cara tercepat kehilangan akses secara permanen, yaitu risiko kelangsungan yang dinyatakan pada owner strategi source.
+
+Karena itu wajib:
+
+- **Throttle dan concurrency ceiling** aktif pada seluruh jalur akuisisi, bukan hanya pada retry.
+- **Circuit breaker.** Ketika rasio kegagalan melewati ambang yang dikonfigurasi, akuisisi berhenti untuk run itu dan menghasilkan degraded/failed evidence. Ia tidak melanjutkan sisa universe dengan harapan sebagian berhasil.
+- **Backoff yang meningkat** untuk kelas transient, bukan interval tetap.
+- **Retry budget yang terdeklarasi.** Batasnya adalah nilai konfigurasi yang tercatat pada config register, bukan penilaian implementasi. Retry budget yang tidak terdeklarasi tidak boleh dianggap ada.
+
+Config key yang mengikat aturan ini dimiliki kontrak ini dan terdaftar pada `../registry/Platform_Config_Registry_LOCKED.md`: `market_data.provider.api_retry_max`, `market_data.provider.api_backoff_ms`, `market_data.provider.api_throttle_qps`, dan `market_data.provider.circuit_breaker_error_rate`.
+
+Menghentikan akuisisi lebih awal untuk melindungi akses adalah **outcome yang sah dan wajib terlihat**, bukan kegagalan yang perlu disamarkan. Ia menghasilkan degraded/failed state seperti kegagalan lainnya, dan tidak pernah menghasilkan readable publication.
 
 ---
 
@@ -117,7 +149,9 @@ Selama `OPERATIONAL_START_DATE` atau governance marker ekuivalen belum ditetapka
 
 Development state tidak mengizinkan klaim fresh/current yang tidak terbukti. Ia hanya berarti kewajiban consecutive daily freshness belum mulai dihitung.
 
-### Operational activation
+### Operational activation gates
+
+Arti dan konsekuensi istilah *operational activation* dimiliki `Terminology_and_Scope.md`. Yang dimiliki di sini adalah **gate operasional yang harus terbukti sebelum marker itu boleh ditetapkan** — proof, bukan terminologi.
 
 Freshness menjadi hard requirement hanya setelah marker activation ditetapkan untuk forward paper watchlist, user-facing watchlist, atau penggunaan rutin.
 
@@ -153,7 +187,7 @@ Provider limitation harus diserap oleh import strategy, bukan diwariskan ke doma
 
 Implementation wajib siap mendukung hal-hal berikut sesuai provider capability aktual:
 - explicit date-range request
-- `period1` / `period2` style request
+- request berbatas rentang eksplisit dengan parameter batas awal dan akhir, apa pun penamaannya di adapter
 - windowing yang mencakup requested date target
 - batching historical fetch
 - retry / backoff / throttle untuk failure transient
@@ -168,7 +202,7 @@ Provider limitation tidak boleh dipakai untuk:
 ## Retry / backoff / handoff decision flow (LOCKED)
 Aturan resmi:
 1. coba primary source untuk ticker/date target
-2. bila gagal dengan transient class (`429`, timeout, temporary transport failure), lakukan retry sampai retry budget habis
+2. bila gagal dengan transient class — sinyal pembatasan laju, timeout, atau kegagalan transport sementara — lakukan retry sampai retry budget terdeklarasi habis, dengan throttle dan circuit breaker tetap berlaku
 3. bila gagal dengan non-transient class (auth/config/parser/global mapping/date mismatch), tandai failure tanpa retry berlebihan
 4. setelah seluruh ticker selesai diproses atau retry budget habis, simpan hasil import evidence
 5. evaluate coverage pada promote
@@ -208,6 +242,23 @@ Jalur source resilience dilarang otomatis:
 Detector boleh membuat anomaly candidate dan evidence. Perubahan content hanya boleh melalui verified source/corporate-action evidence serta revisioned correction/publication lifecycle.
 
 Jika quarantine/rejection membuat gate tidak terpenuhi, promote harus held/failed dan requested date tidak boleh readable.
+
+---
+
+## Capability boundary (LOCKED)
+
+Model lima keadaan di atas mengklasifikasikan **apa yang teramati platform**, bukan apa yang terjadi di pasar. Batasnya harus dinyatakan karena keadaan `complete/healthy` adalah pernyataan paling menenangkan yang dihasilkan kontrak ini.
+
+**Yang dibuktikan model keadaan.** Bahwa unit akuisisi yang diharapkan selesai, gagal, tertunda, atau terkarantina; bahwa kegagalan terlihat dan terhitung; bahwa keadaan selain sukses tidak pernah dinormalkan menjadi sukses.
+
+**Yang tidak dapat dibuktikannya.**
+
+- **Bahwa `complete/healthy` berarti datanya benar.** Keadaan ini mengukur penyelesaian akuisisi, bukan kebenaran nilai. Source yang mengirim harga yang salah namun lengkap dan berbentuk sempurna menghasilkan `complete/healthy`.
+- **Bahwa ketiadaan response berarti tidak ada perdagangan.** Ketiadaan hanya berarti tidak terkirim. Apakah sebuah bar seharusnya ada ditentukan oleh kalender dan trading status, bukan oleh kontrak ini. Bila ekspektasi itu sendiri salah, model keadaan tidak memiliki cara mengetahuinya — ia akan melaporkan `complete/healthy` untuk sesi yang seharusnya diharapkan tetapi tidak pernah tercatat.
+- **Bahwa kelas kegagalan yang dilaporkan sudah tepat.** Klasifikasi transient versus non-transient berasal dari sinyal transport. Source yang mengembalikan kegagalan yang menyamar sebagai sukses, atau sebaliknya, akan salah diklasifikasikan berikut keputusan retry-nya.
+- **Bahwa retry yang berhasil membuktikan kegagalan sebelumnya bersifat transient.** Ia hanya membuktikan percobaan kedua berhasil.
+
+Konsekuensinya: **`complete/healthy` tidak boleh dikutip sebagai bukti kualitas data atau kelengkapan sesi.** Ia menyatakan akuisisi berjalan sebagaimana mestinya terhadap ekspektasi yang diberikan kepadanya.
 
 ---
 
@@ -293,6 +344,9 @@ Tidak boleh:
 - menyebut requested latest date fresh hanya karena prior publication masih readable
 - menghasilkan readable success dari source state partial, failed, held, quarantined, stale, atau schema-unknown
 - menjalankan automatic data repair untuk menutupi source failure
+- menjalankan retry tanpa throttle, circuit breaker, dan retry budget yang terdeklarasi
+- memperlakukan penghentian akuisisi demi melindungi akses sebagai kegagalan yang perlu disamarkan
+- mengutip `complete/healthy` sebagai bukti kualitas data atau kelengkapan sesi
 
 ---
 

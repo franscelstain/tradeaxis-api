@@ -53,8 +53,16 @@ Sebelum `W22`:
 8. system/audit/runbook docs disinkronkan setelah behavior nyata terbukti;
 9. archived evidence dan examples tidak dihitung sebagai current executed proof tanpa admission metadata;
 10. watchlist outcomes tidak digunakan sebagai market-data acceptance evidence;
-11. setiap source, detector, resolver, dan validator menyatakan capability boundary-nya pada owner contract: apa yang dapat dibuktikan, apa yang hanya diagnostic, apa yang tidak dapat dilihat, dan fail-safe state ketika evidence tidak tersedia;
+11. setiap source, detector, resolver, dan validator menyatakan capability boundary-nya pada owner contract: apa yang dapat dibuktikan, apa yang hanya diagnostic, apa yang tidak dapat dilihat, dan fail-safe state ketika evidence tidak tersedia. **Cakupan gate ini adalah dokumen yang memiliki mekanisme penghasil verdict, state, flag, atau signal** — bukan setiap dokumen yang ter-assign pada sebuah stage. Kontrak yang hanya menetapkan pemisahan tanggung jawab, lokasi penyimpanan, kewenangan operator, atau bentuk artefak tidak menghasilkan verdict dan berada di luar cakupan; menambahkan boundary generik ke dokumen semacam itu memenuhi pemeriksaan mekanis tanpa mengajarkan apa pun, dan justru melemahkan gate ini. Bila ragu, tanyakan apakah dokumen itu memiliki keluaran yang dapat dikutip sebagai bukti — bila ya, ia wajib menyatakan batasnya. Pernyataan itu wajib berada di bawah heading yang judulnya dimulai dengan **`Capability boundary`**, setelah nomor section opsional, agar gate ini dapat diperiksa secara mekanis. Kualifikasi boleh mengikuti setelahnya. Bentuk yang sah mencakup `## Capability boundary (LOCKED)`, `## 5. Capability Boundary (LOCKED)`, dan `## Capability boundary — detection sensitivity (LOCKED)`;
 12. tidak ada output, verdict, atau release keputusan yang memakai **ketiadaan sinyal dari komponen berbatas** sebagai bukti ketiadaan peristiwa.
+
+13. setiap **root of expectation** — kalender, universe/identitas, corporate action, dan trading status — memiliki rekonsiliasi eksternal, karena tidak ada gate internal yang dapat mendeteksi ketidaklengkapannya. Aturan bersama berikut dimiliki gate ini dan **tidak boleh diulang** di owner contract; owner contract hanya menyatakan parameter domainnya sendiri, yaitu sumber otoritatif yang dipakai, cadence-nya, dan cakupan periodenya:
+    - **dua arah** — tercatat tetapi tidak pernah terjadi, dan terjadi tetapi tidak pernah tercatat. Arah kedua adalah yang tidak dapat dijangkau gate internal mana pun;
+    - **independen dari pipeline harian**, dengan cadence sendiri, karena pipeline mengukur kesesuaian terhadap sumber ekspektasi, bukan sumber ekspektasi itu sendiri;
+    - **periode yang belum direkonsiliasi dinyatakan eksplisit**, dan klaim apa pun yang mencakupnya dikualifikasi sesuai;
+    - **pipeline hijau, gate yang lulus, atau ketiadaan keluhan bukan bukti rekonsiliasi**.
+
+Gate 13 adalah penawar dari gate 11 dan 12: keduanya menamai wilayah buta, gate ini menetapkan satu-satunya cara mengisinya. Empat rekonsiliasi domain sebelumnya dinyatakan terpisah di masing-masing owner contract dan sudah mulai berbeda isinya; menyatukan aturan bersamanya di sini menghentikan penyimpangan itu.
 
 Gate 11 dan 12 berbeda dari gate 6. Gate 6 membuktikan komponen menolak input buruk dengan benar. Gate 11 menyatakan wilayah tempat komponen tidak menghasilkan sinyal sama sekali, dan gate 12 melarang wilayah itu dibaca sebagai bukti. Sebuah komponen dapat lulus seluruh negative proof dan tetap menyesatkan bila wilayah butanya tidak dinyatakan.
 
@@ -212,10 +220,11 @@ Documents:
 - `Corporate_Action_Impact_Flags_Contract.md`
 - `../registry/Corporate_Action_Type_Registry_LOCKED.md`
 - `../registry/Price_Scale_Break_Detection_LOCKED.md`
+- `../registry/Exchange_Market_Structure_Facts_LOCKED.md`
 
-Required implementation outcome: source-backed event identity/revision, verification hierarchy, effective/known/ex/cum/record/payment dates, factor candidate/verified state, contamination window, and anomaly-only detector.
+Required implementation outcome: source-backed event identity/revision, verification hierarchy, effective/known/ex/cum/record/payment dates, factor candidate/verified state, contamination window, and anomaly-only detector. Exchange price band, minimum price, dan tick ladder diresolusi dari tiered effective-dated rows, bukan konstanta dalam kode.
 
-Exit gate: price jump/proximity/provider adjusted field tidak dapat membuat verified action/factor atau mengubah history.
+Exit gate: price jump/proximity/provider adjusted field tidak dapat membuat verified action/factor atau mengubah history. Tidak ada keputusan yang mencapai published output memakai band/floor/tick tanpa sumber dan effective date.
 
 ### Stage 11 — coherent analytical price products
 
@@ -252,6 +261,7 @@ Work order: `W16`.
 Documents:
 
 - `EOD_Eligibility_Snapshot_Contract_LOCKED.md`
+- `Sector_Classification_Contract_LOCKED.md`
 - `Eligibility_Partial_Data_Behavior_LOCKED.md`
 
 Required implementation outcome: one publication-bound row per temporal listing with separately persisted expectation, delivery, quality, metric validity, status, event/contamination, indicator state, data-usability decision, and complete ordered reasons.
