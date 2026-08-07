@@ -122,7 +122,25 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
      * the decision it actually reached. The rejected outcomes are asserted absent so a downgrade
      * cannot be left sitting next to the claim it contradicts.
      */
-    public function test_production_ready_claim_states_a_single_settled_decision(): void
+    /**
+     * Archived source-state evidence records one settled decision per artifact.
+     *
+     * SUPERSEDED at W01 — stage 1: this method previously asserted that the retired claims
+     * `MARKET_DATA_PRODUCTION_READY_LOCKED`, `Final source-state lock status: LOCKED`, and
+     * `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED` remained present in the audit
+     * documents. `docs/market_data/README.md` retires those claims for the corrected
+     * data-readiness baseline, so a green suite was requiring the platform to keep asserting
+     * something the owner document had already withdrawn — and removing the claims from the
+     * fourteen documents that carry them would have broken this test.
+     *
+     * Those three assertions are removed rather than adjusted, per the retirement obligation in
+     * `Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` steps 3 and 7: a stage that
+     * rejects a behaviour retires the proof that locks it, in the same stage.
+     *
+     * What remains are archived execution facts — runtime parity, provider smoke, and audit-doc
+     * synchronisation — which record what was executed and claim nothing about current readiness.
+     */
+    public function test_archived_source_state_evidence_states_a_single_settled_decision(): void
     {
         $proofPack = $this->read('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
         $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
@@ -131,9 +149,6 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $this->assertStringContainsString('Decision: `OPS_RUNTIME_PARITY_PASSED`', $proofPack);
         $this->assertStringNotContainsString('Decision: `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`', $proofPack);
         $this->assertStringContainsString('FINAL_PROVIDER_SMOKE=PASSED', $proofPack);
-        $this->assertStringContainsString('Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`', $proofPack);
-        $this->assertStringContainsString('Final source-state lock status: `LOCKED`', $proofPack);
-        $this->assertStringContainsString('- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('FINAL_AUDIT_DOCS_SYNCHRONIZED', $tracker.$proofPack);
 
         // A provisional claim scoped to one delivered archive must not survive the final lock.

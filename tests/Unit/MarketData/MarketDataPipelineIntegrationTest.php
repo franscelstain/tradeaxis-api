@@ -4910,6 +4910,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
                 ['cal_date' => $date->toDateString()],
                 [
                     'is_trading_day' => in_array($date->dayOfWeekIso, [6, 7], true) ? 0 : 1,
+                    'provenance_tier' => 'VERIFIED',
                     'source' => 'test_fixture',
                     'created_at' => Carbon::now()->toDateTimeString(),
                     'updated_at' => Carbon::now()->toDateTimeString(),

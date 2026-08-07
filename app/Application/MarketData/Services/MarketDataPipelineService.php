@@ -722,7 +722,23 @@ class MarketDataPipelineService
                     'coverage_universe_count' => $coverage['expected_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
                     'coverage_missing_count' => $coverage['missing_eod_count'],
-                    'coverage_bar_not_expected_count' => $coverage['coverage_bar_not_expected_count'] ?? null,
+                    /*
+                     * The full expectation/delivery evidence, not just the surviving denominator.
+                     *
+                     * Suspension and dormancy both remove instruments from the denominator, which
+                     * raises the ratio. That is legitimate only while the removal is visible: with
+                     * the exclusion counts unrecorded, a run that excluded 40 instruments and a run
+                     * that excluded none produce the same stored evidence, and the gate cannot be
+                     * audited after the fact. Counts are written as integers rather than left null
+                     * so "none excluded" stays distinguishable from "never recorded".
+                     */
+                    'coverage_expected_count' => (int) $coverage['expected_universe_count'],
+                    'coverage_delivered_count' => (int) $coverage['available_eod_count'],
+                    'coverage_delivered_valid_count' => (int) $coverage['available_eod_count'],
+                    // Verified NOT_EXPECTED only, which is full-session suspension. Dormancy no
+                    // longer contributes because it never proved NOT_EXPECTED in the first place.
+                    'coverage_bar_not_expected_count' => (int) ($coverage['coverage_bar_not_expected_count'] ?? 0),
+                    'coverage_expectation_unknown_count' => (int) ($coverage['coverage_expectation_unknown_count'] ?? 0),
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => $coverageGateState,
@@ -788,7 +804,23 @@ class MarketDataPipelineService
                     'coverage_universe_count' => $coverage['expected_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
                     'coverage_missing_count' => $coverage['missing_eod_count'],
-                    'coverage_bar_not_expected_count' => $coverage['coverage_bar_not_expected_count'] ?? null,
+                    /*
+                     * The full expectation/delivery evidence, not just the surviving denominator.
+                     *
+                     * Suspension and dormancy both remove instruments from the denominator, which
+                     * raises the ratio. That is legitimate only while the removal is visible: with
+                     * the exclusion counts unrecorded, a run that excluded 40 instruments and a run
+                     * that excluded none produce the same stored evidence, and the gate cannot be
+                     * audited after the fact. Counts are written as integers rather than left null
+                     * so "none excluded" stays distinguishable from "never recorded".
+                     */
+                    'coverage_expected_count' => (int) $coverage['expected_universe_count'],
+                    'coverage_delivered_count' => (int) $coverage['available_eod_count'],
+                    'coverage_delivered_valid_count' => (int) $coverage['available_eod_count'],
+                    // Verified NOT_EXPECTED only, which is full-session suspension. Dormancy no
+                    // longer contributes because it never proved NOT_EXPECTED in the first place.
+                    'coverage_bar_not_expected_count' => (int) ($coverage['coverage_bar_not_expected_count'] ?? 0),
+                    'coverage_expectation_unknown_count' => (int) ($coverage['coverage_expectation_unknown_count'] ?? 0),
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? null),

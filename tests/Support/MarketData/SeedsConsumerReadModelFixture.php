@@ -197,7 +197,7 @@ trait SeedsConsumerReadModelFixture
     {
         DB::table('market_calendar')->insert([
             'cal_date' => $tradeDate,
-            'is_trading_day' => 1,
+            'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
             'created_at' => $tradeDate.' 00:00:00',
         ]);
     }

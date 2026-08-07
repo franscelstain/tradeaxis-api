@@ -54,6 +54,9 @@ class MarketDataReadProductService
             'publication_version' => (int) $publication->publication_version,
             'run_id' => (int) $publication->run_id,
             'is_ready' => true,
+            // Carried through to the consumer rather than stopping at readiness: a reader deciding
+            // whether to act on this product needs to know it came from a development frontier.
+            'activation_state' => $readiness['activation_state'] ?? null,
             'reason_code' => 'READABLE_PUBLICATION_RESOLVED',
             'pointer_resolve_status' => 'RESOLVED_READABLE_CURRENT',
             'rows' => $rows,
@@ -72,6 +75,7 @@ class MarketDataReadProductService
             'publication_version' => null,
             'run_id' => null,
             'is_ready' => false,
+            'activation_state' => $readiness['activation_state'] ?? null,
             'reason_code' => $readiness['reason_code'],
             'pointer_resolve_status' => $readiness['pointer_resolve_status'],
             'rows' => [],

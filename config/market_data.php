@@ -171,6 +171,15 @@ return [
         'circuit_breaker_error_rate' => (float) env('MARKET_DATA_CIRCUIT_BREAKER_ERROR_RATE', 0.5),
     ],
     'session_snapshot' => [
+        /*
+         * Explicit feature state, defaulting to disabled.
+         *
+         * The snapshot is optional supplemental reference data and has never been captured — the
+         * table holds zero rows. Without a declared state a reader cannot tell whether that means
+         * "switched off by decision" or "switched on and failing", and the stage 17 outcome
+         * requires the feature state to be explicit rather than inferred from emptiness.
+         */
+        'enabled' => filter_var(env('MARKET_DATA_SESSION_SNAPSHOT_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
         'retention_days' => (int) env('MARKET_DATA_SESSION_SNAPSHOT_RETENTION_DAYS', 30),
         'scope_default' => env('MARKET_DATA_SESSION_SNAPSHOT_SCOPE_DEFAULT', 'eligibility_set'),
         'slot_tolerance_minutes' => (int) env('MARKET_DATA_SESSION_SNAPSHOT_SLOT_TOLERANCE_MINUTES', 3),

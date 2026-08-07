@@ -8,6 +8,7 @@ use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 use App\Models\EodRun;
 use PHPUnit\Framework\TestCase;
@@ -76,6 +77,8 @@ class EodBarsIngestServiceTest extends TestCase
                     'source_name' => 'YAHOO_FINANCE',
                     'source_row_ref' => 'yahoo:BBCA:2026-03-24',
                     'captured_at' => '2026-03-24T17:00:00+07:00',
+                    'source_observation_id' => 901,
+                    'source_observation_persisted' => true,
                 ],
                 [
                     'ticker_code' => 'BBRI',
@@ -89,6 +92,8 @@ class EodBarsIngestServiceTest extends TestCase
                     'source_name' => 'YAHOO_FINANCE',
                     'source_row_ref' => 'yahoo:BBRI:2026-03-24',
                     'captured_at' => '2026-03-24T17:00:00+07:00',
+                    'source_observation_id' => 902,
+                    'source_observation_persisted' => true,
                 ],
             ]);
 
@@ -96,6 +101,16 @@ class EodBarsIngestServiceTest extends TestCase
             ->method('resolveTickerIdsByCodes')
             ->with(['BBCA', 'BBRI'])
             ->willReturn(['BBCA' => 1, 'BBRI' => 2]);
+
+        $tickers->method('resolveTemporalContextsByCodes')
+            ->willReturnCallback(function (array $codes) {
+                $contexts = [];
+                foreach ($codes as $index => $code) {
+                    $contexts[$code] = ['listing_id' => 5000 + $index, 'board_code' => 'RG'];
+                }
+
+                return $contexts;
+            });
 
         $publications->expects($this->once())
             ->method('getOrCreateCandidatePublication')
@@ -121,7 +136,11 @@ class EodBarsIngestServiceTest extends TestCase
                 false
             );
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+        $observations = $this->createMock(SourceObservationRepository::class);
+        $observations->method('existsAccepted')->willReturn(true);
+        $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
 
         $result = $service->ingest($run, '2026-03-24', 'api');
 
@@ -165,6 +184,8 @@ class EodBarsIngestServiceTest extends TestCase
                 'canonical_source' => 'API_FREE',
                 'source_row_ref' => 'current:2026-03-24:BBCA',
                 'captured_at' => '2026-03-24T17:00:00+07:00',
+                'source_observation_id' => 903,
+                'source_observation_persisted' => true,
             ],
             [
                 'ticker_code' => 'BBRI',
@@ -178,6 +199,8 @@ class EodBarsIngestServiceTest extends TestCase
                 'source_name' => 'YAHOO_FINANCE',
                 'source_row_ref' => 'yahoo:BBRI:2026-03-24',
                 'captured_at' => '2026-03-24T17:00:00+07:00',
+                'source_observation_id' => 904,
+                'source_observation_persisted' => true,
             ],
         ];
 
@@ -190,6 +213,16 @@ class EodBarsIngestServiceTest extends TestCase
             ->method('resolveTickerIdsByCodes')
             ->with(['BBCA', 'BBRI'])
             ->willReturn(['BBCA' => 1, 'BBRI' => 2]);
+
+        $tickers->method('resolveTemporalContextsByCodes')
+            ->willReturnCallback(function (array $codes) {
+                $contexts = [];
+                foreach ($codes as $index => $code) {
+                    $contexts[$code] = ['listing_id' => 5000 + $index, 'board_code' => 'RG'];
+                }
+
+                return $contexts;
+            });
 
         $publications->expects($this->once())
             ->method('getOrCreateCandidatePublication')
@@ -215,7 +248,11 @@ class EodBarsIngestServiceTest extends TestCase
                 false
             );
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+        $observations = $this->createMock(SourceObservationRepository::class);
+        $observations->method('existsAccepted')->willReturn(true);
+        $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
 
         $result = $service->ingestAcquiredRows($run, '2026-03-24', 'api', $sourceRows, [
             'source_acquisition_state' => 'SUCCESS',
@@ -258,6 +295,8 @@ class EodBarsIngestServiceTest extends TestCase
             'canonical_source' => 'IDX_STOCK_SUMMARY_NO_TRADE_CLOSE_CARRY_FORWARD',
             'source_row_ref' => 'https://www.idx.id/primary/TradingSummary/GetStockSummary?date=20260324&start=0&length=1000#MASA',
             'captured_at' => '2026-03-24T17:00:00+07:00',
+            'source_observation_id' => 905,
+            'source_observation_persisted' => true,
         ]];
 
         $publications->expects($this->once())
@@ -269,6 +308,16 @@ class EodBarsIngestServiceTest extends TestCase
             ->method('resolveTickerIdsByCodes')
             ->with(['MASA'])
             ->willReturn(['MASA' => 10]);
+
+        $tickers->method('resolveTemporalContextsByCodes')
+            ->willReturnCallback(function (array $codes) {
+                $contexts = [];
+                foreach ($codes as $index => $code) {
+                    $contexts[$code] = ['listing_id' => 5000 + $index, 'board_code' => 'RG'];
+                }
+
+                return $contexts;
+            });
 
         $publications->expects($this->once())
             ->method('getOrCreateCandidatePublication')
@@ -295,7 +344,11 @@ class EodBarsIngestServiceTest extends TestCase
                 false
             );
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+        $observations = $this->createMock(SourceObservationRepository::class);
+        $observations->method('existsAccepted')->willReturn(true);
+        $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
 
         $result = $service->ingestAcquiredRows($run, '2026-03-24', 'manual_file', $sourceRows, [
             'source_acquisition_state' => 'SUCCESS',
@@ -354,6 +407,8 @@ class EodBarsIngestServiceTest extends TestCase
                     'source_name' => 'YAHOO_FINANCE',
                     'source_row_ref' => 'yahoo:BBCA:2026-03-24',
                     'captured_at' => '2026-03-24T17:00:00+07:00',
+                    'source_observation_id' => 906,
+                    'source_observation_persisted' => true,
                 ],
                 [
                     'ticker_code' => 'BBRI',
@@ -367,6 +422,8 @@ class EodBarsIngestServiceTest extends TestCase
                     'source_name' => 'ALT_PROVIDER',
                     'source_row_ref' => 'alt:BBRI:2026-03-24',
                     'captured_at' => '2026-03-24T17:00:00+07:00',
+                    'source_observation_id' => 907,
+                    'source_observation_persisted' => true,
                 ],
             ]);
 
@@ -379,7 +436,11 @@ class EodBarsIngestServiceTest extends TestCase
         $artifacts->expects($this->never())
             ->method('replaceBars');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+        $observations = $this->createMock(SourceObservationRepository::class);
+        $observations->method('existsAccepted')->willReturn(true);
+        $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('mixed source_name rows');
@@ -435,6 +496,8 @@ class EodBarsIngestServiceTest extends TestCase
                     'source_name' => 'YAHOO_FINANCE',
                     'source_row_ref' => 'yahoo:BBCA:2026-03-24',
                     'captured_at' => '2026-03-24T17:00:00+07:00',
+                    'source_observation_id' => 908,
+                    'source_observation_persisted' => true,
                 ],
             ]);
 
@@ -453,6 +516,16 @@ class EodBarsIngestServiceTest extends TestCase
             ->with(['BBCA'])
             ->willReturn(['BBCA' => 1]);
 
+        $tickers->method('resolveTemporalContextsByCodes')
+            ->willReturnCallback(function (array $codes) {
+                $contexts = [];
+                foreach ($codes as $index => $code) {
+                    $contexts[$code] = ['listing_id' => 5000 + $index, 'board_code' => 'RG'];
+                }
+
+                return $contexts;
+            });
+
         $publications->expects($this->once())
             ->method('getOrCreateCandidatePublication')
             ->willReturn((object) [
@@ -463,7 +536,11 @@ class EodBarsIngestServiceTest extends TestCase
         $artifacts->expects($this->once())
             ->method('replaceBars');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+        $observations = $this->createMock(SourceObservationRepository::class);
+        $observations->method('existsAccepted')->willReturn(true);
+        $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
 
         $result = $service->ingest($run, '2026-03-24', 'api');
 
@@ -506,6 +583,8 @@ class EodBarsIngestServiceTest extends TestCase
                 'source_name' => 'LOCAL_FILE',
                 'source_row_ref' => 'row-1',
                 'captured_at' => '2026-03-24T17:00:00+07:00',
+                'source_observation_id' => 909,
+                'source_observation_persisted' => true,
             ],
             [
                 'ticker_code' => 'XXXX',
@@ -519,6 +598,8 @@ class EodBarsIngestServiceTest extends TestCase
                 'source_name' => 'LOCAL_FILE',
                 'source_row_ref' => 'row-2',
                 'captured_at' => '2026-03-24T17:00:00+07:00',
+                'source_observation_id' => 910,
+                'source_observation_persisted' => true,
             ],
         ];
 
@@ -534,6 +615,16 @@ class EodBarsIngestServiceTest extends TestCase
             ->method('resolveTickerIdsByCodes')
             ->with(['BBCA', 'XXXX'])
             ->willReturn(['BBCA' => 1]);
+
+        $tickers->method('resolveTemporalContextsByCodes')
+            ->willReturnCallback(function (array $codes) {
+                $contexts = [];
+                foreach ($codes as $index => $code) {
+                    $contexts[$code] = ['listing_id' => 5000 + $index, 'board_code' => 'RG'];
+                }
+
+                return $contexts;
+            });
 
         $publications->expects($this->once())
             ->method('findCurrentPublicationForTradeDate')
@@ -568,7 +659,11 @@ class EodBarsIngestServiceTest extends TestCase
                 false
             );
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+        $observations = $this->createMock(SourceObservationRepository::class);
+        $observations->method('existsAccepted')->willReturn(true);
+        $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
 
         $result = $service->ingest($run, '2026-03-24', 'manual_file');
 
@@ -610,6 +705,8 @@ class EodBarsIngestServiceTest extends TestCase
             'source_name' => 'API_FREE',
             'source_row_ref' => 'yahoo:BBCA:2026-06-09',
             'captured_at' => '2026-06-10 11:42:34',
+            'source_observation_id' => 911,
+            'source_observation_persisted' => true,
         ]];
 
         $publications->expects($this->once())
@@ -622,10 +719,24 @@ class EodBarsIngestServiceTest extends TestCase
             ->with(['BBCA'])
             ->willReturn([]);
 
+        $tickers->method('resolveTemporalContextsByCodes')
+            ->willReturnCallback(function (array $codes) {
+                $contexts = [];
+                foreach ($codes as $index => $code) {
+                    $contexts[$code] = ['listing_id' => 5000 + $index, 'board_code' => 'RG'];
+                }
+
+                return $contexts;
+            });
+
         $publications->expects($this->never())->method('getOrCreateCandidatePublication');
         $artifacts->expects($this->never())->method('replaceBars');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications);
+        $observations = $this->createMock(SourceObservationRepository::class);
+        $observations->method('existsAccepted')->willReturn(true);
+        $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
+
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
 
         try {
             $service->ingestAcquiredRows($run, '2026-06-09', 'api', $sourceRows, [

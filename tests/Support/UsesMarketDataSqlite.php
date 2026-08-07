@@ -81,6 +81,9 @@ trait UsesMarketDataSqlite
             $table->dateTime('updated_at')->nullable();
 
             $table->index(['is_trading_day', 'cal_date'], 'market_calendar_trading_idx');
+            $table->string('provenance_tier', 16)->nullable();
+            $table->date('reconciled_at')->nullable();
+            $table->string('reconciliation_source_ref', 255)->nullable();
         });
 
         $schema->create('market_data_sectors', function (Blueprint $table) {
@@ -1128,6 +1131,9 @@ trait UsesMarketDataSqlite
             $table->integer('supersedes_revision_id')->nullable();
             $table->string('source_ref', 255)->nullable();
             $table->string('source_version', 64)->nullable();
+            $table->string('provenance_tier', 16)->nullable();
+            $table->date('reconciled_at')->nullable();
+            $table->string('reconciliation_source_ref', 255)->nullable();
             $table->unique(['market_code', 'cal_date', 'revision_uid'], 'uq_md_calendar_revision');
             $table->index(['cal_date', 'recorded_at'], 'idx_md_calendar_date_known');
         });

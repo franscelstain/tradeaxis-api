@@ -255,7 +255,7 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
     {
         return [
             'cal_date' => $date,
-            'is_trading_day' => $isTradingDay ? 1 : 0,
+            'is_trading_day' => $isTradingDay, 'provenance_tier' => 'VERIFIED' ? 1 : 0,
             'holiday_name' => $isTradingDay ? 'HARI BURSA' : 'AKHIR PEKAN',
             'session_open_time' => null,
             'session_close_time' => null,

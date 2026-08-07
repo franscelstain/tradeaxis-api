@@ -13,6 +13,17 @@ class MarketCalendarRepository
     {
         $context = $this->sessionContext($tradeDate, $knownAt);
 
+        // A projected row is an assumption about a date, not a governed session. Treating it as
+        // expected produces a missing-bar finding on every public holiday beyond the exchange's
+        // published horizon, and those failures read as provider faults rather than calendar
+        // assumptions. Owner: Market_Calendar_Requirements_Contract.md, provenance tiers.
+        if ($context['provenance_tier'] !== 'VERIFIED') {
+            throw new \RuntimeException(
+                'MARKET_CALENDAR_PROVENANCE_NOT_VERIFIED: '.$tradeDate.' resolves from a '
+                .($context['provenance_tier'] ?: 'UNKNOWN').' calendar row; bar expectation is UNKNOWN, never EXPECTED.'
+            );
+        }
+
         if ($context['is_trading_day'] !== true) {
             throw new \RuntimeException('MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE: requested date is not an IDX Regular-Market trading day.');
         }
@@ -56,6 +67,7 @@ class MarketCalendarRepository
             'completed_at' => $row->completed_at,
             'recorded_at' => $row->recorded_at,
             'source_ref' => $row->source_ref,
+            'provenance_tier' => isset($row->provenance_tier) ? (string) $row->provenance_tier : '',
         ];
     }
 
@@ -142,6 +154,9 @@ class MarketCalendarRepository
                 'supersedes_revision_id' => $existing->calendar_revision_id,
                 'source_ref' => $existing->source_ref,
                 'source_version' => $existing->source_version,
+                'provenance_tier' => $existing->provenance_tier ?? null,
+                'reconciled_at' => $existing->reconciled_at ?? null,
+                'reconciliation_source_ref' => $existing->reconciliation_source_ref ?? null,
             ]);
 
             return;
@@ -178,6 +193,11 @@ class MarketCalendarRepository
             'recorded_at' => $recordedAt,
             'source_observation_id' => null,
             'supersedes_revision_id' => null,
+            'provenance_tier' => isset($legacy->provenance_tier) && $legacy->provenance_tier !== null
+                ? (string) $legacy->provenance_tier
+                : 'PROJECTED',
+            'reconciled_at' => $legacy->reconciled_at ?? null,
+            'reconciliation_source_ref' => $legacy->reconciliation_source_ref ?? null,
             'source_ref' => $sourceRef,
             'source_version' => 'legacy_calendar_projection_v1',
         ]);

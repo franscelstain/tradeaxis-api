@@ -165,6 +165,18 @@ Karena itu wajib dicatat dan dipelihara:
 
 Bila penggunaan bergerak melampaui yang dinyatakan, dasar lisensi berubah lebih dulu dari kebutuhan teknis mana pun. Ini juga yang menghubungkan bagian ini dengan trigger *penggunaan komersial* di bawah: pemicu itu bukan soal kualitas data, melainkan soal izin.
 
+### Deklarasi berlaku — dicatat 2026-08-03
+
+| Butir | Keadaan |
+|---|---|
+| **Penggunaan yang dinyatakan** | **Internal dan non-komersial.** Pemilik platform adalah satu-satunya pihak yang mengakses data. Tidak ada distribusi keluaran ke pihak lain, tidak ada akses publik, dan tidak ada pemakaian komersial pada fase ini. Dinyatakan oleh pemilik platform pada 2026-08-03 |
+| **Profil akses teknis** | Terverifikasi dari resolver: `credential_profile = bootstrap-public-access`, `auth_header_name` dan `auth_token` kosong, sehingga akses bersifat publik tanpa autentikasi |
+| **Terms yang berlaku saat pengambilan** | **Belum dibaca dan belum bertanggal.** Karena itu **tidak ada klaim kepatuhan yang dibuat** terhadap terms provider |
+| **Batas yang diketahui** | **Belum ditetapkan**, karena bergantung pada pembacaan terms di atas |
+| **Peristiwa yang mengubah dasar ini** | Diturunkan dari penggunaan yang dinyatakan: pemakaian komersial dalam bentuk apa pun, penambahan pihak yang mengakses, akses publik, redistribusi keluaran, atau perubahan terms provider. Salah satu saja terjadi, deklarasi ini kedaluwarsa dan wajib dinyatakan ulang sebelum akuisisi berikutnya |
+
+**Aturan yang mengikat keadaan ini (LOCKED).** Selama terms belum dibaca dan bertanggal, tidak ada dokumen, kode, komentar, evidence, atau laporan yang boleh menyatakan platform mematuhi terms provider. Ketiadaan klaim adalah keadaan yang sah; klaim tanpa tanggal tidak. Membaca dan menanggali terms akan menutup baris ketiga dan keempat, dan itu pekerjaan yang berdiri sendiri — ia tidak menghalangi akuisisi pada penggunaan internal non-komersial yang dinyatakan di atas.
+
 Menyatakan dasar lisensi bukan pekerjaan provider berbayar dan tidak menyiratkan migrasi.
 
 ---

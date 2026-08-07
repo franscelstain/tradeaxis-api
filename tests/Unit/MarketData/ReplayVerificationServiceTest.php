@@ -189,6 +189,9 @@ class ReplayVerificationServiceTest extends TestCase
             'terminal_status' => 'HELD',
             'publishability_state' => 'NOT_READABLE',
             'config_version' => 'v1',
+            // A replay is admissible evidence only when the configuration that produced the run
+            // can be recovered, so a fixture asserting a replay verdict has to bind one.
+            'config_snapshot_id' => 7001,
             'sealed_at' => null,
             'bars_batch_hash' => null,
             'indicators_batch_hash' => null,
@@ -773,6 +776,9 @@ class ReplayVerificationServiceTest extends TestCase
 
         $run = (object) [
             'run_id' => 196,
+            // Bound for the same reason as the other run fixtures: this case asserts a replay
+            // verdict, and a verdict over an unbindable run is not admissible evidence.
+            'config_snapshot_id' => 7001,
             'trade_date_requested' => '2026-03-21',
             'trade_date_effective' => '2026-03-21',
             'source' => 'manual_file',
@@ -833,6 +839,9 @@ class ReplayVerificationServiceTest extends TestCase
             'terminal_status' => 'SUCCESS',
             'publishability_state' => 'READABLE',
             'config_version' => 'v1',
+            // A replay is admissible evidence only when the configuration that produced the run
+            // can be recovered, so a fixture asserting a replay verdict has to bind one.
+            'config_snapshot_id' => 7001,
             'publication_version' => 4,
             'coverage_universe_count' => 10,
             'coverage_available_count' => 10,

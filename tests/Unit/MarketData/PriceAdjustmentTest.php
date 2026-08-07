@@ -137,7 +137,12 @@ class PriceAdjustmentTest extends TestCase
             ['ex_date' => $exTwo, 'price_factor' => 0.2, 'volume_factor' => 5.0],
         ];
 
-        $result = $method->invoke($service, $bars, $this->config($factors));
+        $adjustment = $method->invoke($service, $bars, $this->config($factors));
+        $result = $adjustment['bars'];
+
+        // The vector now reports which product the adjusted series is, so a consumer can tell an
+        // adjusted window from an unadjusted one.
+        $this->assertSame('STRUCTURAL_ADJUSTED', $adjustment['price_product_code']);
 
         // Before both events: 0.5 * 0.2 = 0.1
         $this->assertEqualsWithDelta(10.0, $result[0]['close'], 0.0001);

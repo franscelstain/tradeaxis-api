@@ -105,7 +105,7 @@ class MarketDataOrdersOneToFourFoundationTest extends TestCase
         Carbon::setTestNow('2026-03-21 09:00:00');
         DB::table('market_calendar')->insert([
             'cal_date' => '2026-03-20',
-            'is_trading_day' => 1,
+            'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
             'session_open_time' => '09:00',
             'session_close_time' => '16:00',
             'source' => 'operator_bootstrap',
@@ -180,7 +180,7 @@ class MarketDataOrdersOneToFourFoundationTest extends TestCase
     public function test_calendar_completion_appends_revision_instead_of_freezing_scheduled_state(): void
     {
         DB::table('market_calendar')->insert([
-            'cal_date' => '2026-03-20', 'is_trading_day' => 1,
+            'cal_date' => '2026-03-20', 'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
             'session_open_time' => '09:00', 'session_close_time' => '16:00',
             'source' => 'operator_bootstrap', 'created_at' => '2026-03-01 00:00:00',
             'updated_at' => '2026-03-01 00:00:00',

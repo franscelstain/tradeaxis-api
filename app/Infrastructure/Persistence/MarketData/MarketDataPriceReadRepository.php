@@ -46,7 +46,11 @@ class MarketDataPriceReadRepository
                 'ticker_code' => $code,
                 'raw_close' => $rawClose,
                 'provider_adjusted_close_evidence' => $row->adj_close === null ? null : (float) $row->adj_close,
-                'price_product_code' => $row->price_product_code ?: 'RAW',
+                // A row that never recorded its product code does not become RAW by being read.
+                // Defaulting here asserted a product for all 756,329 legacy rows that carry NULL,
+                // which is a claim about scale the row itself never made.
+                'price_product_code' => $row->price_product_code ?: null,
+                'price_product_reason_code' => $row->price_product_code ? null : 'PRICE_PRODUCT_UNRECORDED',
                 'previous_raw_close' => $previousClose,
                 'previous_close_reason_code' => $previousClose === null ? 'NO_READABLE_PUBLICATION' : null,
                 'change_amount' => $change,

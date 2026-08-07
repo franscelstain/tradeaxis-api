@@ -152,6 +152,12 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `BAR_NEGATIVE_VOLUME` | BAR | HARD | Received volume value was negative. |
 | `BAR_MISSING_REQUIRED_FIELD` | BAR | HARD | One or more mandatory source fields were missing. |
 | `BAR_TICKER_MAPPING_MISSING` | BAR | WARN | Source row `ticker_code` could not be resolved deterministically to `ticker_id` via the ticker master. |
+| `SESSION_SNAPSHOT_FEATURE_DISABLED` | COMMAND | INFO | Optional session-snapshot capture was requested while the feature is disabled; EOD readiness is unaffected. |
+| `SESSION_SNAPSHOT_SCOPE_UNRECOGNISED` | COMMAND | HARD | Configured session-snapshot scope is not an upstream-safe value, so scope could not be resolved safely. |
+| `ELIG_TRADING_SUSPENDED` | ELIGIBILITY | HARD | Listing was suspended on the requested date, so its data is not usable and no bar was expected. |
+| `BAR_TEMPORAL_LISTING_MAPPING_MISSING` | BAR | HARD | No point-in-time listing resolves for the instrument on the requested date, so the row cannot bind to a canonical logical identity. |
+| `BAR_SOURCE_OBSERVATION_MISSING` | BAR | HARD | Row carries no persisted source observation, so its origin cannot be traced. |
+| `BAR_SOURCE_OBSERVATION_NOT_ACCEPTED` | BAR | HARD | Referenced source observation exists but is not in an accepted immutable state. |
 | `IND_INSUFFICIENT_HISTORY` | INDICATOR | WARN | Required trading-day history is not yet sufficient for deterministic indicator computation. |
 | `IND_MISSING_DEPENDENCY_BAR` | INDICATOR | HARD | A required canonical bar in the trading-day dependency chain is missing. |
 | `IND_INVALID_BAR_INPUT` | INDICATOR | HARD | A canonical bar input required for indicator computation is invalid. |

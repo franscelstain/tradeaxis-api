@@ -292,6 +292,8 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_session_snapshot_capture_command_renders_summary(): void
     {
+        // This case exercises capture behaviour, so it asserts the feature is enabled.
+        config()->set('market_data.session_snapshot.enabled', true);
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldReceive('capture')
             ->once()
@@ -343,6 +345,8 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_session_snapshot_capture_command_blocks_without_readable_publication(): void
     {
+        // This case exercises capture behaviour, so it asserts the feature is enabled.
+        config()->set('market_data.session_snapshot.enabled', true);
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldReceive('capture')
             ->once()
@@ -373,6 +377,8 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_session_snapshot_capture_command_blocks_missing_slot_before_service(): void
     {
+        // This case exercises capture behaviour, so it asserts the feature is enabled.
+        config()->set('market_data.session_snapshot.enabled', true);
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldNotReceive('capture');
 

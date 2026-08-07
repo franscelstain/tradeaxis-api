@@ -49,7 +49,7 @@ class BarMutationImpactResolverTest extends TestCase
                 $day = date('Y-m-d', $date);
 
                 $calendar[] = [
-                    'cal_date' => $day, 'is_trading_day' => 1,
+                    'cal_date' => $day, 'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
                     'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
                 ];
 

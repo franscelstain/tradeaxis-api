@@ -37,7 +37,7 @@ class CoverageDormantUniverseTest extends TestCase
             if ($dow <= 5) {
                 $rows[] = [
                     'cal_date' => date('Y-m-d', $date),
-                    'is_trading_day' => 1,
+                    'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
                     'created_at' => '2026-01-01 00:00:00',
                     'updated_at' => '2026-01-01 00:00:00',
                 ];
@@ -104,7 +104,16 @@ class CoverageDormantUniverseTest extends TestCase
         $this->assertSame([], (new EodArtifactRepository())->loadDormantTickerIds([3], $dates[0], 60));
     }
 
-    public function test_dormant_ticker_leaves_the_denominator_and_is_counted_separately(): void
+    /**
+     * A dormant ticker stays in the denominator and counts as missing.
+     *
+     * This test previously asserted the opposite, and the opposite is what the contract forbids.
+     * `Coverage_Universe_Definition_LOCKED.md:35-38` states dormancy cannot prove `NOT_EXPECTED`,
+     * and `:45` gives the reason: a ticker that stops arriving because the feed broke is
+     * indistinguishable from one that stopped trading, so excluding the quiet ones removes exactly
+     * the evidence a provider outage would appear in. Coverage here is 2/3, not a clean 1.0.
+     */
+    public function test_a_dormant_ticker_stays_in_the_denominator(): void
     {
         $dates = $this->tradingDates();
         $today = $dates[0];
@@ -119,19 +128,17 @@ class CoverageDormantUniverseTest extends TestCase
 
         $coverage = app(CoverageGateEvaluator::class)->evaluate($today);
 
-        // GONE is excluded, so the two live tickers give full coverage instead of 2/3.
-        $this->assertSame(2, $coverage['expected_universe_count']);
+        $this->assertSame(3, $coverage['expected_universe_count'], 'the quiet ticker is still expected');
         $this->assertSame(2, $coverage['available_eod_count']);
-        $this->assertSame(0, $coverage['missing_eod_count']);
-        $this->assertEqualsWithDelta(1.0, $coverage['coverage_ratio'], 0.000001);
-        $this->assertSame(1, $coverage['coverage_bar_not_expected_count']);
+        $this->assertSame(1, $coverage['missing_eod_count'], 'its absence is missing data, not an exemption');
+        $this->assertEqualsWithDelta(2 / 3, $coverage['coverage_ratio'], 0.000001);
     }
 
     /**
-     * Dormancy exclusion is also the shape a provider failure would take, so it must never
-     * be silent.
+     * The deprecated exclusion reason is never emitted. The registry records any runtime emission
+     * as a migration failure, so its absence is the assertion.
      */
-    public function test_exclusion_surfaces_a_reason_code(): void
+    public function test_the_deprecated_dormancy_exclusion_reason_is_never_emitted(): void
     {
         $dates = $this->tradingDates();
         $today = $dates[0];
@@ -143,21 +150,30 @@ class CoverageDormantUniverseTest extends TestCase
 
         $coverage = app(CoverageGateEvaluator::class)->evaluate($today);
 
-        $this->assertContains('COVERAGE_DORMANT_TICKERS_EXCLUDED', $coverage['reason_codes']);
+        $this->assertNotContains('COVERAGE_DORMANT_TICKERS_EXCLUDED', $coverage['reason_codes']);
+        $this->assertSame(0, $coverage['coverage_bar_not_expected_count'], 'only verified suspension may reduce the denominator');
     }
 
-    public function test_no_dormant_ticker_means_no_reason_code_and_zero_count(): void
+    /**
+     * Dormancy still cannot improve the ratio even when every quiet ticker is quiet. Without a
+     * live ticker to balance it, coverage collapses rather than reporting a clean denominator.
+     */
+    public function test_a_universe_of_dormant_tickers_reports_low_coverage_not_perfect_coverage(): void
     {
         $dates = $this->tradingDates();
         $today = $dates[0];
 
-        $this->seedTicker(9, 'AAAA');
-        $this->seedBar(9, $today);
+        $this->seedTicker(9, 'GONE1');
+        $this->seedTicker(13, 'GONE2');
+        $this->seedBar(9, $dates[75]);
+        $this->seedBar(13, $dates[80]);
 
         $coverage = app(CoverageGateEvaluator::class)->evaluate($today);
 
-        $this->assertSame(0, $coverage['coverage_bar_not_expected_count']);
-        $this->assertNotContains('COVERAGE_DORMANT_TICKERS_EXCLUDED', $coverage['reason_codes']);
+        $this->assertSame(2, $coverage['expected_universe_count']);
+        $this->assertSame(0, $coverage['available_eod_count']);
+        $this->assertEqualsWithDelta(0.0, $coverage['coverage_ratio'], 0.000001);
+        $this->assertSame('FAIL', $coverage['coverage_gate_status'], 'a silent market is a failure, not a pass');
     }
 
     /**

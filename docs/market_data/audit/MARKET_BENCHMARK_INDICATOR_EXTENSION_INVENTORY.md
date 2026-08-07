@@ -36,7 +36,7 @@ Remaining proof required before LOCKED/full production-ready relock:
 - Preserve current readable publication, evidence export, replay determinism, and no-bypass read-side contracts.
 
 ## Baseline Production-Ready Status
-- Baseline before this session: `MARKET_DATA_PRODUCTION_READY_LOCKED: YES`.
+- Baseline before this session: `MARKET_DATA_PRODUCTION_READY_LOCKED: YES`.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - Baseline full MarketData PHPUnit before this session: `OK (495 tests, 7616 assertions)`.
 - Current full MarketData PHPUnit after this session: `OK (511 tests, 7871 assertions)`.
 - This session is now locked as `PASS` because migration/schema, tests, static guards, runtime proof, evidence, replay, benchmark DB proof, and audit docs are synchronized.
@@ -208,7 +208,7 @@ EVIDENCE_EXPORT: PASS
 REPLAY_VERIFY: PASS
 DOCS_UPDATED: YES
 REMAINING_BLOCKERS: none
-FULL_MARKET_DATA_PRODUCTION_READY: YES
+FULL_MARKET_DATA_PRODUCTION_READY: YES  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 ```
 
 ## 2026-06-10 Addendum - Backfill Lifecycle Benchmark Non-Blocking Recovery

@@ -11,6 +11,21 @@ class CaptureSessionSnapshotCommand extends AbstractMarketDataCommand
 
     public function handle(SessionSnapshotService $service)
     {
+        /*
+         * A disabled optional feature declines by name. Silence here would be indistinguishable
+         * from a capture that ran and found nothing, which is exactly the "implied missing
+         * feature" the stage 17 exit gate forbids.
+         */
+        if (! config('market_data.session_snapshot.enabled', false)) {
+            $this->renderCommandBlocked(
+                'SESSION_SNAPSHOT_FEATURE_DISABLED',
+                'Session snapshot is an optional feature and is currently disabled; EOD readiness is unaffected by its absence.',
+                ['feature_state' => 'DISABLED']
+            );
+
+            return 0;
+        }
+
         if (! $this->argument('trade_date') || ! $this->argument('snapshot_slot')) {
             $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'trade_date and snapshot_slot are required.', [
                 'trade_date' => $this->argument('trade_date'),

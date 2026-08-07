@@ -81,11 +81,24 @@ class CoverageGateEvaluator
         $universe = $this->filterSuspendedUniverseRows($rawUniverse, $tradeDate);
         $coverageBarNotRequiredCount = max(0, $coverageUniverseCount - count($universe));
 
-        // A ticker silent for months is not one we expect a bar from today. Counting it as
-        // missing measures nothing and erodes the ratio permanently.
-        $afterSuspensionCount = count($universe);
-        $universe = $this->filterDormantUniverseRows($universe, $tradeDate);
-        $coverageBarNotExpectedCount = max(0, $afterSuspensionCount - count($universe));
+        /*
+         * Dormancy does not leave the denominator, and the reason is not bookkeeping.
+         *
+         * `Coverage_Universe_Definition_LOCKED.md:35-38` states that dormancy, absence of recent
+         * bars, historical zero volume, and illiquidity cannot prove `NOT_EXPECTED`, and `:45`
+         * gives the danger plainly: excluding them hides provider outages and makes coverage look
+         * healthier as missing data accumulates. A ticker that stops arriving because the feed
+         * broke is indistinguishable from one that stopped trading, so removing the quiet ones
+         * removes exactly the evidence an outage would show up in.
+         *
+         * `Reason_Codes_Registry.md` records the same decision from the other side:
+         * `COVERAGE_DORMANT_TICKERS_EXCLUDED` is deprecated, and any runtime emission of it is a
+         * migration failure.
+         *
+         * Only verified `NOT_EXPECTED` may be excluded (`:21`), which here means a verified
+         * full-session suspension. Everything else stays in, and `UNKNOWN` stays in fail-safe.
+         */
+        $coverageBarNotExpectedCount = $coverageBarNotRequiredCount;
 
         $universeByTickerId = [];
         foreach ($universe as $row) {
@@ -160,12 +173,6 @@ class CoverageGateEvaluator
         $sampleRows = array_slice($missingRows, 0, max(0, $missingSampleLimit));
 
         $reasonCodes = [$reasonCode, $coverageReasonCode];
-
-        // Dormancy exclusion is the shape a provider failure would take, so a non-zero count
-        // is surfaced rather than left implicit in the denominator.
-        if ($coverageBarNotExpectedCount > 0) {
-            $reasonCodes[] = 'COVERAGE_DORMANT_TICKERS_EXCLUDED';
-        }
 
         return [
             'expected_universe_count' => $expectedUniverseCount,
@@ -245,54 +252,6 @@ class CoverageGateEvaluator
             'missing_ticker_ids' => [],
             'missing_ticker_codes' => [],
         ];
-    }
-
-    /**
-     * Remove tickers that have produced no canonical bar for the locked dormancy horizon.
-     *
-     * Owner contract: docs/market_data/book/Coverage_Universe_Definition_LOCKED.md
-     *
-     * The horizon is deliberately far beyond normal illiquidity so that a thinly traded but
-     * live ticker is never mistaken for a dormant one.
-     */
-    private function filterDormantUniverseRows(array $universeRows, $tradeDate): array
-    {
-        $lookback = (int) config('market_data.coverage_gate.dormant_absence_trading_days', 60);
-
-        if ($lookback < 1 || $universeRows === []) {
-            return $universeRows;
-        }
-
-        $tickerIds = array_values(array_filter(array_map(function ($row) {
-            return (int) ($row['ticker_id'] ?? 0);
-        }, $universeRows)));
-
-        if ($tickerIds === []) {
-            return $universeRows;
-        }
-
-        try {
-            $dormantIds = $this->eodArtifactRepository->loadDormantTickerIds($tickerIds, $tradeDate, $lookback);
-        } catch (\Throwable $e) {
-            // Not swallowed into a silent pass: keeping every ticker in the denominator is
-            // the conservative outcome, so a resolution failure can only make the gate
-            // stricter, never looser.
-            return $universeRows;
-        }
-
-        // A repository that cannot answer must not collapse the gate. Keeping every ticker
-        // in the denominator is the conservative outcome.
-        if (! is_array($dormantIds) || $dormantIds === []) {
-            return $universeRows;
-        }
-
-        $dormantSet = array_fill_keys($dormantIds, true);
-
-        return array_values(array_filter($universeRows, function ($row) use ($dormantSet) {
-            $tickerId = (int) ($row['ticker_id'] ?? 0);
-
-            return $tickerId > 0 && ! isset($dormantSet[$tickerId]);
-        }));
     }
 
     private function filterSuspendedUniverseRows(array $universeRows, $tradeDate): array

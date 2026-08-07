@@ -6,7 +6,7 @@ Last updated: 2026-05-20
 
 Replay determinism runtime proof is complete for the current-readable fixture scope, command/evidence surfaces, and historical non-current publication scope. The runtime proof produced explicit `PASS`, `FAIL`, and `BLOCKED` outcomes. Historical replay is locked as an explicit-context audit path because the current source ZIP includes the required historical non-current runtime artifact pack with `historical_publication_allowed=true`, `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
 
-This inventory now supports full market-data production readiness for this source ZIP because the historical non-current replay runtime artifacts are supplied and the `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` lock conditions are satisfied.
+This inventory now supports full market-data production readiness for this source ZIP because the historical non-current replay runtime artifacts are supplied and the `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` lock conditions are satisfied.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 
 ## Runtime Proof
 

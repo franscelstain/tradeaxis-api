@@ -2,6 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Domain\MarketData\MarketDataScope;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use Illuminate\Support\Facades\DB;
 
@@ -33,6 +34,15 @@ class MarketDataReadinessService
             'trade_date' => $tradeDate,
             'trade_date_effective' => $run ? (string) $run->trade_date_effective : (string) $publication->trade_date,
             'is_ready' => true,
+            /*
+             * Ready in which world. `MarketDataScope::stateFor()` has always been able to answer
+             * this and nothing ever called it, so a date processed during development reported the
+             * same readiness as one produced under an operational guarantee. With
+             * `operational_start_date` unset — as it is for all 71,917 runs — every date is
+             * DEVELOPMENT, and saying so is the difference between a freshness claim and a
+             * statement about where the build happens to have reached.
+             */
+            'activation_state' => MarketDataScope::fromConfig()->stateFor($tradeDate),
             'reason_code' => 'READABLE_PUBLICATION_RESOLVED',
             'publication_id' => (int) $publication->publication_id,
             'publication_version' => (int) $publication->publication_version,
@@ -59,6 +69,7 @@ class MarketDataReadinessService
             'trade_date' => $tradeDate,
             'trade_date_effective' => null,
             'is_ready' => false,
+            'activation_state' => MarketDataScope::fromConfig()->stateFor($tradeDate),
             'reason_code' => $reasonCode,
             'publication_id' => $pointerState && $pointerState->publication_id !== null ? (int) $pointerState->publication_id : null,
             'publication_version' => $pointerState && $pointerState->publication_version !== null ? (int) $pointerState->publication_version : null,

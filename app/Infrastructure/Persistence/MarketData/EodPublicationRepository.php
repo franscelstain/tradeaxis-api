@@ -516,6 +516,33 @@ class EodPublicationRepository
         }
     }
 
+    /**
+     * Bind a candidate to the acquisition set and configuration that produced it.
+     *
+     * A null `$configSnapshotId` is written as null on purpose: that is the `CONFIG_UNBOUND` state
+     * from `Platform_Config_Registry_LOCKED.md:31`, and recording it is what lets a later seal
+     * refuse the candidate. The observation manifest is bound regardless, because which
+     * observations produced a candidate is knowable even when the configuration is not.
+     */
+    public function bindCandidateAcquisitionProvenance($publicationId, $runId, $observationManifestHash, $configSnapshotId)
+    {
+        $now = Carbon::now(config('market_data.platform.timezone'));
+
+        DB::table('eod_runs')->where('run_id', $runId)->update([
+            'observation_manifest_hash' => $observationManifestHash,
+            'updated_at' => $now,
+        ]);
+
+        DB::table('eod_publications')->where('publication_id', $publicationId)->update([
+            'config_snapshot_id' => $configSnapshotId,
+            'observation_manifest_hash' => $observationManifestHash,
+            'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
+            'read_model_version' => 'market_data_read_product_v1',
+            'readiness_state' => 'NOT_READY',
+            'updated_at' => $now,
+        ]);
+    }
+
     public function sealCandidatePublication(EodRun $run, $sealedBy, $sealNote = null)
     {
         return DB::transaction(function () use ($run) {
@@ -1030,9 +1057,20 @@ class EodPublicationRepository
         });
     }
 
+    /**
+     * Discard a candidate that will never be published.
+     *
+     * The seal check is the whole safety of this method. Its name says candidate, but nothing
+     * enforced that, and it deletes the snapshot sets *and* the publication row — so called with a
+     * sealed id it would perform the most complete violation rule 9 of
+     * `Canonical_Row_History_and_Versioning_Policy_LOCKED.md` describes: sealed snapshot content
+     * deleted by an operator path, leaving no record that it ever existed.
+     */
     public function discardCandidatePublication($publicationId)
     {
         DB::transaction(function () use ($publicationId) {
+            $this->assertPublicationMutable($publicationId);
+
             DB::table('eod_bars_history')->where('publication_id', $publicationId)->delete();
             DB::table('eod_indicators_history')->where('publication_id', $publicationId)->delete();
             DB::table('eod_eligibility_history')->where('publication_id', $publicationId)->delete();

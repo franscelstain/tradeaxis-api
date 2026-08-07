@@ -99,10 +99,22 @@ class EodBarsIngestService
 
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
-        $strictLineage = ! empty($run->config_snapshot_id);
-        $identityContexts = $strictLineage
-            ? $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate)
-            : [];
+        /*
+         * Traceability and configuration binding are two obligations, and making the first
+         * conditional on the second is what left every canonical row untraceable. The gate used to
+         * read `! empty($run->config_snapshot_id)`, while the lineage assertion it guarded threw on
+         * that same value being empty — so the assertion could only run once its own precondition
+         * already held, and its config branch was unreachable by construction. Config binding has
+         * never been populated, so across 71,917 runs the lineage requirement executed zero times
+         * and all 756,329 canonical rows carry NULL lineage.
+         *
+         * `Canonicalization_Contract_EOD_Bars.md:138` forbids emitting an untraceable row with no
+         * condition attached. The configuration gate is a different rule with a different subject:
+         * `Platform_Config_Registry_LOCKED.md:31` scopes it to a sealed publication, which is
+         * sealing and consumer readability, not import.
+         */
+        $configSnapshotId = ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null;
+        $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate);
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
@@ -151,8 +163,17 @@ class EodBarsIngestService
             $validation = $this->validateCanonicalRow($row, $requestedDate);
 
             if ($validation['valid']) {
-                if ($strictLineage) {
-                    $this->assertRequiredLineage($row, $run);
+                /*
+                 * A row that cannot prove where it came from is rejected, not published and not
+                 * silently degraded to NULL lineage. It is routed to the invalid store rather than
+                 * aborting the run, because the contract requires each provider row to resolve to
+                 * exactly one of canonical, invalid/rejected, missing, or held — one unresolvable
+                 * instrument is not grounds for discarding the other ~950.
+                 */
+                $lineageRejection = $this->lineageRejectionReason($row);
+                if ($lineageRejection !== null) {
+                    $invalidRows[] = $this->makeInvalidRow($run->run_id, $row, $lineageRejection['reason_code'], $lineageRejection['note'], $now);
+                    continue;
                 }
 
                 $validRows[] = [
@@ -163,22 +184,32 @@ class EodBarsIngestService
                     'low' => $row['low'],
                     'close' => $row['close'],
                     'volume' => $row['volume'],
-                    'adj_close' => $strictLineage ? null : $row['adj_close'],
+                    /*
+                     * Provider adjusted close does not enter the canonical row. Its canonical home
+                     * is the observation evidence — `Canonicalization_Contract_EOD_Bars.md:29`
+                     * admits it as a nullable lineage field only, never as a per-row analytical
+                     * value, and `:16` forbids it bridging the raw and adjusted layers implicitly.
+                     * Keeping it out is what makes the exit-gate prohibition structural rather than
+                     * a naming convention two columns apart.
+                     */
+                    'adj_close' => null,
                     'source' => $this->canonicalSourceForRow($row),
                     'run_id' => $run->run_id,
-                    'listing_id' => $strictLineage ? (int) $row['listing_id'] : null,
-                    'source_observation_id' => $strictLineage ? (int) $row['source_observation_id'] : null,
+                    'listing_id' => (int) $row['listing_id'],
+                    'source_observation_id' => (int) $row['source_observation_id'],
                     'previous_close' => null,
                     'traded_value_idr_actual' => null,
                     'trade_count_actual' => null,
-                    'board_code' => $strictLineage ? ($identity['board_code'] ?? null) : null,
-                    'session_code' => $strictLineage ? 'REGULAR' : null,
-                    'source_timestamp' => $strictLineage ? ($row['source_timestamp'] ?? null) : null,
-                    'acquired_at' => $strictLineage ? ($row['captured_at'] ?? $now) : null,
-                    'canonicalization_version' => $strictLineage ? (string) config('market_data.source.canonicalization_version') : null,
-                    'price_product_code' => $strictLineage ? (string) config('market_data.scope.raw_product_code', 'RAW') : null,
-                    'quality_state' => $strictLineage ? 'VALIDATED' : null,
-                    'config_snapshot_id' => $strictLineage ? (int) $run->config_snapshot_id : null,
+                    'board_code' => $identity['board_code'] ?? null,
+                    'session_code' => 'REGULAR',
+                    'source_timestamp' => $row['source_timestamp'] ?? null,
+                    'acquired_at' => $row['captured_at'] ?? $now,
+                    'canonicalization_version' => (string) config('market_data.source.canonicalization_version'),
+                    'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
+                    'quality_state' => 'VALIDATED',
+                    // Null here is the CONFIG_UNBOUND state, not a missing obligation at this
+                    // layer; it is sealing and readability that the config gate governs.
+                    'config_snapshot_id' => $configSnapshotId,
                     'created_at' => $now,
                 ];
                 continue;
@@ -240,22 +271,17 @@ class EodBarsIngestService
         }, $validRows);
 
         $barMutationSummary = $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
-        if ($strictLineage) {
-            $manifestHash = $this->observations->manifestHashForRun($run->run_id);
-            DB::table('eod_runs')->where('run_id', $run->run_id)->update([
-                'observation_manifest_hash' => $manifestHash,
-                'updated_at' => $now,
-            ]);
-            DB::table('eod_publications')->where('publication_id', $candidatePublication->publication_id)->update([
-                'config_snapshot_id' => (int) $run->config_snapshot_id,
-                'observation_manifest_hash' => $manifestHash,
-                'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
-                'read_model_version' => 'market_data_read_product_v1',
-                'readiness_state' => 'NOT_READY',
-                'updated_at' => $now,
-            ]);
-            $run->observation_manifest_hash = $manifestHash;
-        }
+        // The manifest hash describes which observations produced this candidate, so it is bound
+        // whether or not a config snapshot exists. Withholding it alongside the config binding was
+        // the same conflation: it left the candidate unable to state its own acquisition set.
+        $manifestHash = $this->observations->manifestHashForRun($run->run_id);
+        $this->publications->bindCandidateAcquisitionProvenance(
+            $candidatePublication->publication_id,
+            $run->run_id,
+            $manifestHash,
+            $configSnapshotId
+        );
+        $run->observation_manifest_hash = $manifestHash;
         if (! is_array($barMutationSummary)) {
             $barMutationSummary = $this->defaultBarMutationSummary($requestedDate, $candidatePublication->publication_id, $validRows, $useHistory);
         }
@@ -620,35 +646,41 @@ class EodBarsIngestService
         return $this->localSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes ?: [], $context);
     }
 
-    private function assertRequiredLineage(array $row, $run)
+    /**
+     * Decide whether a row may become canonical, given what it can prove about its own origin.
+     *
+     * Returns null when the row is traceable, or the reason it is not. It reports rather than
+     * throws because an untraceable row is a rejected row, and rejection is a recorded outcome
+     * under `Invalid_Bar_Storage_Policy_LOCKED.md` — not a reason to abandon the whole date.
+     *
+     * The configuration snapshot is deliberately not checked here. It governs sealing and consumer
+     * readability (`Platform_Config_Registry_LOCKED.md:31`), and checking it at import is what
+     * previously made traceability itself conditional.
+     */
+    private function lineageRejectionReason(array $row)
     {
         if (empty($row['listing_id'])) {
-            throw new SourceAcquisitionException(
-                'Canonical bar requires a point-in-time listing binding.',
-                'TEMPORAL_LISTING_MAPPING_MISSING'
-            );
+            return [
+                'reason_code' => 'BAR_TEMPORAL_LISTING_MAPPING_MISSING',
+                'note' => 'No point-in-time listing resolves for this instrument on the requested date.',
+            ];
         }
 
         if (empty($row['source_observation_id']) || empty($row['source_observation_persisted'])) {
-            throw new SourceAcquisitionException(
-                'Canonical bar requires a persisted accepted source observation.',
-                'SOURCE_OBSERVATION_CAPTURE_REQUIRED'
-            );
+            return [
+                'reason_code' => 'BAR_SOURCE_OBSERVATION_MISSING',
+                'note' => 'Canonical bar requires a persisted source observation.',
+            ];
         }
 
         if (! $this->observations->existsAccepted((int) $row['source_observation_id'])) {
-            throw new SourceAcquisitionException(
-                'Canonical bar source observation is not in an accepted immutable state.',
-                'SOURCE_OBSERVATION_NOT_ACCEPTED'
-            );
+            return [
+                'reason_code' => 'BAR_SOURCE_OBSERVATION_NOT_ACCEPTED',
+                'note' => 'Referenced source observation is not in an accepted immutable state.',
+            ];
         }
 
-        if (empty($run->config_snapshot_id)) {
-            throw new SourceAcquisitionException(
-                'Canonical bar requires an immutable configuration snapshot.',
-                'CONFIG_SNAPSHOT_REQUIRED'
-            );
-        }
+        return null;
     }
 
     private function assertSingleDaySourceBoundary($requestedDate, $sourceMode, array $sourceRows)

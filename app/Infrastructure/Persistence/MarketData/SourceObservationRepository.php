@@ -129,7 +129,10 @@ class SourceObservationRepository implements SourceObservationRecorder
             'provider_mapping_id' => $source['provider_mapping_id'] ?? null,
             'mapping_revision' => $source['mapping_revision'] ?? null,
             'config_snapshot_id' => $source['config_snapshot_id'] ?? null,
-            'sanitized_request_identity' => substr((string) ($source['sanitized_request_identity'] ?? 'unavailable'), 0, 255),
+            // The field is named sanitized, but naming is not sanitising. Redacting here rather
+            // than trusting every caller keeps a leaked query credential out of a table that
+            // cannot be edited afterwards.
+            'sanitized_request_identity' => substr($this->redactSensitiveText((string) ($source['sanitized_request_identity'] ?? 'unavailable')), 0, 255),
             'response_status' => $source['response_status'] ?? ($source['http_status'] ?? null),
             'content_type' => $source['content_type'] ?? null,
             'source_timestamp' => $source['source_timestamp'] ?? null,
@@ -181,10 +184,26 @@ class SourceObservationRepository implements SourceObservationRecorder
         }
     }
 
+    /**
+     * Redaction must cover every shape a credential arrives in, because this table is immutable:
+     * a secret written here is written permanently.
+     *
+     * The two patterns previously disagreed. `crumb` — Yahoo's session credential — was redacted
+     * as a query parameter but survived as a JSON field, so a payload carrying it in the body was
+     * stored verbatim. Keeping one keyword list for both shapes is what prevents that class of
+     * gap from reopening.
+     *
+     * Owner contract: docs/market_data/book/Source_Data_Acquisition_Contract_LOCKED.md —
+     * "Credential, API key, cookie rahasia, authorization header, dan sensitive query value tidak
+     * boleh masuk envelope atau diagnostic sample."
+     */
     private function redactSensitiveText($text)
     {
-        $text = preg_replace('/([?&](?:token|key|api_key|crumb|signature|auth|authorization)=)[^&\s]+/i', '$1[REDACTED]', (string) $text);
-        $text = preg_replace('/("(?:token|secret|password|cookie|authorization|api_key)"\s*:\s*")[^"]*(")/i', '$1[REDACTED]$2', $text);
+        $keywords = 'token|key|api_key|apikey|crumb|signature|auth|authorization|secret|password|cookie|session|bearer';
+
+        $text = preg_replace('/([?&](?:'.$keywords.')=)[^&\s]+/i', '$1[REDACTED]', (string) $text);
+        $text = preg_replace('/("(?:'.$keywords.')"\s*:\s*")[^"]*(")/i', '$1[REDACTED]$2', $text);
+        $text = preg_replace('/((?:'.$keywords.')\s*[:=]\s*)(?!\[REDACTED\])[A-Za-z0-9._\-]{8,}/i', '$1[REDACTED]', $text);
 
         return $text;
     }

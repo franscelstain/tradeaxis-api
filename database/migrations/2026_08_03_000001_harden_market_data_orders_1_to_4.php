@@ -4,7 +4,16 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class HardenMarketDataOrdersOneToFour extends Migration
+/**
+ * Class name must match the studly form of the filename — `harden_market_data_orders_1_to_4`
+ * resolves to `HardenMarketDataOrders1To4`. When it does not, the migrator's class-exists check
+ * fails, it falls back to a plain `require` of a file already required, and the run dies with
+ * "Cannot declare class ... because the name is already in use" before any statement executes.
+ *
+ * This migration carried the name `HardenMarketDataOrdersOneToFour` and could therefore never
+ * run since it was written. Corrected at W03.
+ */
+class HardenMarketDataOrders1To4 extends Migration
 {
     public function up()
     {

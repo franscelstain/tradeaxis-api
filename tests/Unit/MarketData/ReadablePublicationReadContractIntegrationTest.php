@@ -17,7 +17,10 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
         config()->set('market_data.tickers.table', 'tickers');
         config()->set('market_data.tickers.id_column', 'ticker_id');
         config()->set('market_data.tickers.code_column', 'ticker_code');
-        config()->set('market_data.session_snapshot.scope_default', 'universe_only');
+        // `eligibility_set` is the contract's recommended default. The previous value here,
+        // `universe_only`, appeared nowhere in the scope contract and produced identical behaviour,
+        // since the query reads eligibility rows either way.
+        config()->set('market_data.session_snapshot.scope_default', 'eligibility_set');
 
         DB::table('tickers')->insert([
             ['ticker_id' => 1, 'ticker_code' => 'BBCA', 'is_active' => 1],

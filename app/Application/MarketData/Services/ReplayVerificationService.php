@@ -49,6 +49,13 @@ class ReplayVerificationService
         $actual = $this->buildActualReplayState($run, $publication, $correction, $expectedContext);
         $comparison = $this->compareExpectedAndActual($fixture, $actual, $expectedContext);
         $replayStatus = $this->replayStatusForComparison($comparison['comparison_result']);
+        $admissibility = $this->replayAdmissibility($run, $publication, $fixture);
+        if ($admissibility !== null) {
+            $replayStatus = 'BLOCKED';
+            $comparison['comparison_result'] = 'NOT_ADMISSIBLE';
+            $comparison['mismatch_summary'] = $admissibility['reason'];
+        }
+
         $replayId = $replayId ?: $this->replays->nextReplayId();
 
         $manifest = $fixture['manifest'];
@@ -1768,6 +1775,40 @@ class ReplayVerificationService
         }
         usort($normalized, function ($left, $right) { return strcmp($left['reason_code'], $right['reason_code']); });
         return $normalized;
+    }
+
+    /**
+     * Decide whether a replay result may be believed at all, before asking whether it matched.
+     *
+     * Two conditions make a match meaningless rather than reassuring.
+     *
+     * A publication whose run carries no configuration snapshot is `CONFIG_UNBOUND`
+     * (`Platform_Config_Registry_LOCKED.md:31`): the configuration that produced it cannot be
+     * recovered, so reproducing its output proves the code is stable, not that the artifact is
+     * reproducible. `DOC-71` requires those replays to be `BLOCKED`, and until now none were —
+     * 20,635 results, every one `PASS`, over a corpus that is entirely `CONFIG_UNBOUND`.
+     *
+     * A fixture generated from the very run it verifies is worse: `generateFixtureFromRun()` builds
+     * its expected state by calling `buildActualReplayState()`, so the oracle is the subject. Such
+     * a comparison can only ever return MATCH, which is exactly what the corpus shows — zero FAIL
+     * and zero BLOCKED across every recorded result.
+     */
+    private function replayAdmissibility($run, $publication, array $fixture)
+    {
+        $family = (string) ($fixture['manifest']['fixture_family'] ?? '');
+        if ($family === 'runtime_generated_valid_case') {
+            return [
+                'reason' => 'REPLAY_FIXTURE_SELF_GENERATED: expectation was derived from the run under verification; a match proves only that the run equals itself.',
+            ];
+        }
+
+        if (empty($run->config_snapshot_id) && empty($publication->config_snapshot_id ?? null)) {
+            return [
+                'reason' => 'REPLAY_CONFIG_UNBOUND: publication carries no configuration snapshot, so reproducibility cannot be evidenced.',
+            ];
+        }
+
+        return null;
     }
 
     private function replayStatusForComparison($comparisonResult)

@@ -234,7 +234,31 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             return $this->normalizeTickerCode($tickerCode);
         }, $tickerCodes))));
 
+        $circuitBreaker = null;
+
         foreach ($uniqueTickerCodes as $tickerCode) {
+            // Our own retry behaviour is the likeliest cause of losing access to an unofficial
+            // free source. A universe of this size already issues hundreds of requests per date
+            // before any retry; continuing through a wholesale failure multiplies load exactly
+            // when the source is refusing. Stopping early to protect access is a legitimate
+            // outcome that must be visible, not a failure to disguise.
+            //
+            // Owner contract: docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md
+            //                 — "Source access self-protection (LOCKED)"
+            $circuitBreaker = $this->openCircuitBreaker(count($failureTelemetry), count($uniqueTickerCodes), $index);
+            if ($circuitBreaker !== null) {
+                $failureTelemetry[] = $this->withTickerTelemetry([
+                    'trade_date' => $tradeDate,
+                    'final_reason_code' => $circuitBreaker,
+                    'circuit_breaker_open' => true,
+                    'circuit_breaker_threshold' => (float) config('market_data.provider.circuit_breaker_error_rate', 0.5),
+                    'attempted_ticker_count' => count($failureTelemetry) + $index,
+                    'unique_ticker_count' => count($uniqueTickerCodes),
+                    'accepted_row_count' => $index,
+                ], $tickerCode);
+                break;
+            }
+
             $identity = $this->resolveEquityIdentity($tickerCode, $apiConfig, $tradeDate, $context);
             $providerSymbol = $identity['provider_symbol'];
             $url = $this->buildYahooFinanceUrl($tradeDate, $tickerCode, $apiConfig, $providerSymbol);
@@ -1865,6 +1889,33 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         }
 
         return $current;
+    }
+
+    /**
+     * Returns a reason code once the observed failure ratio crosses the configured breaker
+     * threshold, or null while acquisition may continue.
+     *
+     * The breaker only engages after a minimum number of attempts, because a single early
+     * failure is not a signal — with a one-instrument universe it would otherwise trip on the
+     * first transient error.
+     */
+    private function openCircuitBreaker($failureCount, $universeCount, $successCount)
+    {
+        $threshold = (float) config('market_data.provider.circuit_breaker_error_rate', 0.5);
+        if ($threshold <= 0 || $threshold >= 1) {
+            return null;
+        }
+
+        $attempts = $failureCount + $successCount;
+        $minimumAttempts = max(5, (int) ceil($universeCount * 0.05));
+
+        if ($attempts < $minimumAttempts) {
+            return null;
+        }
+
+        return ($failureCount / $attempts) > $threshold
+            ? 'RUN_SOURCE_CIRCUIT_BREAKER_OPEN'
+            : null;
     }
 
     private function normalizeTickerCode($value)

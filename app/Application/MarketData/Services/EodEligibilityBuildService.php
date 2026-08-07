@@ -39,10 +39,30 @@ class EodEligibilityBuildService
             || ! empty($candidatePublication->previous_publication_id)
             || ! empty($candidatePublication->replaced_publication_id);
 
-        $universe = $this->filterSuspendedUniverseRows(
-            $this->tickers->getUniverseForTradeDate($requestedDate),
-            $requestedDate
-        );
+        /*
+         * Every temporal listing gets a row, including the suspended ones.
+         *
+         * Suspension used to remove the listing from the universe before the snapshot was built,
+         * so an instrument that was blocked simply vanished from the record. That inverts what the
+         * snapshot is for: a reader asking why an instrument is absent today gets no answer at
+         * all, and absence-because-suspended becomes indistinguishable from absence-because-never-
+         * listed. `EOD_Eligibility_Snapshot_Contract_LOCKED.md` requires one publication-bound row
+         * per temporal listing with status persisted separately, which is the opposite of dropping
+         * the row and keeping nothing.
+         */
+        $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
+        $suspendedTickerIds = $this->suspendedTickerIdSet($universe, $requestedDate);
+
+        /*
+         * Dormancy is recorded here rather than in the coverage denominator.
+         *
+         * `Coverage_Universe_Definition_LOCKED.md:45` calls dormancy, zero-volume history, and
+         * liquidity "separate factual dimensions" and forbids them altering coverage, because a
+         * ticker that stopped arriving from a broken feed looks exactly like one that stopped
+         * trading. The fact is still worth knowing — it just belongs on the usability row as a
+         * liquidity observation, where a reader can see it without it moving a gate.
+         */
+        $dormantTickerIds = $this->dormantTickerIdSet($universe, $requestedDate);
         $bars = $this->artifacts->loadBarsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
         $indicators = $this->artifacts->loadIndicatorsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
         $rows = [];
@@ -53,9 +73,24 @@ class EodEligibilityBuildService
             $tickerId = $ticker['ticker_id'];
             $bar = isset($bars[$tickerId]) ? $bars[$tickerId] : null;
             $indicator = isset($indicators[$tickerId]) ? $indicators[$tickerId] : null;
+            $isSuspended = isset($suspendedTickerIds[$tickerId]);
             $decision = $this->decisions->decide($bar, $indicator);
             $reasonCode = $decision['reason_code'];
             $eligible = $decision['eligible'];
+            $reasons = [];
+
+            if ($isSuspended) {
+                // A suspended listing is not usable, and it says so rather than disappearing.
+                // The suspension reason leads the ordered set because it explains the absence of
+                // the bar rather than merely restating it.
+                $eligible = 0;
+                $reasons[] = 'ELIG_TRADING_SUSPENDED';
+                $reasonCode = $reasonCode ?: 'ELIG_TRADING_SUSPENDED';
+            }
+
+            if ($decision['reason_code'] !== null) {
+                $reasons[] = $decision['reason_code'];
+            }
 
             if ($eligible === 0) {
                 $blockedCount++;
@@ -66,6 +101,19 @@ class EodEligibilityBuildService
                 'ticker_id' => $tickerId,
                 'eligible' => $eligible,
                 'reason_code' => $reasonCode,
+                'listing_id' => $ticker['listing_id'] ?? null,
+                'universe_membership_state' => 'MEMBER',
+                // Recorded separately so a reader never has to infer one dimension from another.
+                // A single scalar reason cannot carry an ordered set, and the first reason written
+                // would silently erase every later one.
+                'bar_expectation_state' => $isSuspended ? 'BAR_NOT_EXPECTED' : 'BAR_EXPECTATION_UNKNOWN',
+                'delivery_state' => $bar ? 'DELIVERED' : 'NOT_DELIVERED',
+                'canonical_quality_state' => $bar ? ($bar['quality_state'] ?? null) : null,
+                // An observation, never an input to the usability decision: W16 proved the
+                // decision consults no liquidity preference, and this must not become one.
+                'liquidity_state' => isset($dormantTickerIds[$tickerId]) ? 'DORMANT' : 'ACTIVE',
+                'temporal_status_state' => $isSuspended ? 'SUSPENSION' : 'UNKNOWN',
+                'eligibility_reasons_json' => $reasons === [] ? null : json_encode($reasons),
                 'run_id' => $run->run_id,
                 'publication_id' => $candidatePublication->publication_id,
                 'created_at' => $now,
@@ -88,10 +136,41 @@ class EodEligibilityBuildService
         ];
     }
 
-    private function filterSuspendedUniverseRows(array $universeRows, $tradeDate): array
+    /**
+     * Resolve which listings have been silent beyond the dormancy horizon, as an observation.
+     *
+     * A resolution failure yields an empty set rather than an exception: dormancy is descriptive
+     * here, so failing to describe it must not stop a snapshot from being written.
+     */
+    private function dormantTickerIdSet(array $universeRows, $tradeDate): array
+    {
+        $lookback = (int) config('market_data.coverage_gate.dormant_absence_trading_days', 60);
+        $tickerIds = array_values(array_filter(array_map(function ($row) {
+            return (int) ($row['ticker_id'] ?? 0);
+        }, $universeRows)));
+
+        if ($lookback < 1 || $tickerIds === []) {
+            return [];
+        }
+
+        try {
+            $dormant = $this->artifacts->loadDormantTickerIds($tickerIds, $tradeDate, $lookback);
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return is_array($dormant) ? array_fill_keys($dormant, true) : [];
+    }
+
+    /**
+     * Resolve which listings were suspended on the requested date, as a lookup rather than a
+     * filter. The distinction is the whole point: the set is used to annotate rows, never to
+     * remove them.
+     */
+    private function suspendedTickerIdSet(array $universeRows, $tradeDate): array
     {
         if (! $this->eventRiskSources instanceof EventRiskSourceRepository || $universeRows === []) {
-            return $universeRows;
+            return [];
         }
 
         $tickerIds = array_values(array_filter(array_map(function ($row) {
@@ -99,18 +178,9 @@ class EodEligibilityBuildService
         }, $universeRows)));
 
         if ($tickerIds === []) {
-            return $universeRows;
+            return [];
         }
 
-        $suspendedIds = array_fill_keys($this->eventRiskSources->suspendedTickerIdsAsOf($tickerIds, $tradeDate), true);
-        if ($suspendedIds === []) {
-            return $universeRows;
-        }
-
-        return array_values(array_filter($universeRows, function ($row) use ($suspendedIds) {
-            $tickerId = (int) ($row['ticker_id'] ?? 0);
-
-            return $tickerId > 0 && ! isset($suspendedIds[$tickerId]);
-        }));
+        return array_fill_keys($this->eventRiskSources->suspendedTickerIdsAsOf($tickerIds, $tradeDate), true);
     }
 }

@@ -17,7 +17,7 @@ The scope remains market-data only. Watchlist ranking, buy/sell decisions, targe
 BASELINE_PRODUCTION_READY_PRESERVED: YES
 
 Source baseline before this session:
-- MARKET_DATA_PRODUCTION_READY_LOCKED: YES
+- MARKET_DATA_PRODUCTION_READY_LOCKED: YES  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - FULL_MARKET_DATA_PHPUNIT: PASSED
 - Full MarketData suite: OK (513 tests, 7980 assertions)
 - MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS: PASS

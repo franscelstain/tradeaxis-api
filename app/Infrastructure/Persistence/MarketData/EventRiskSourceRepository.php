@@ -245,7 +245,7 @@ class EventRiskSourceRepository
         $windowEnd = $tradingDates[count($tradingDates) - 1];
 
         $rows = DB::table($this->corporateActionsTable())
-            ->select(['ticker_id', 'action_date', 'action_type', 'price_adjustment_factor', 'continuity_check_status'])
+            ->select(['ticker_id', 'action_date', 'action_type', 'price_adjustment_factor', 'continuity_check_status', 'adjustment_source'])
             ->whereIn('ticker_id', $tickerIds)
             ->where('action_date', '>=', $windowStart)
             ->where('action_date', '<=', $windowEnd)
@@ -337,11 +337,18 @@ class EventRiskSourceRepository
         }
 
         $rows = DB::table($this->corporateActionsTable())
-            ->select(['ticker_id', 'ex_date', 'action_date', 'price_adjustment_factor', 'volume_adjustment_factor'])
+            ->select(['ticker_id', 'ex_date', 'action_date', 'price_adjustment_factor', 'volume_adjustment_factor', 'adjustment_source'])
             ->whereIn('ticker_id', $tickerIds)
             ->whereNotNull('price_adjustment_factor')
             ->where('price_adjustment_factor', '>', 0)
             ->where('price_adjustment_factor', '<>', 1)
+            // A factor the platform inferred from the price series may not adjust published
+            // output. Excluding it here and refusing it in isAdjustable() are the same rule:
+            // the row stays quarantined instead of being silently smoothed.
+            ->where(function ($query) {
+                $query->whereNull('adjustment_source')
+                    ->orWhere('adjustment_source', '<>', 'DERIVED_FROM_PRICE_SERIES');
+            })
             ->orderBy('ticker_id')
             ->get();
 
@@ -388,6 +395,16 @@ class EventRiskSourceRepository
 
     /**
      * A factor of exactly 1, zero, or NULL adjusts nothing and must not suppress quarantine.
+     *
+     * Neither may a factor inferred from the price series itself. A discontinuity proves that
+     * something happened; it cannot establish what, on which terms, or effective when. Treating
+     * the inferred ratio as an adjustment closes the loop on the platform's own guess — the series
+     * is smoothed using a number derived from the very gap being explained, and the result is
+     * indistinguishable from a sourced adjustment.
+     *
+     * Owner: Corporate_Action_and_Adjustment_Policy.md and
+     * ../registry/Price_Scale_Break_Detection_LOCKED.md — a price anomaly is candidate evidence
+     * only and may never become a verified event or factor.
      */
     private function isAdjustable($row): bool
     {
@@ -395,9 +412,26 @@ class EventRiskSourceRepository
             return false;
         }
 
+        if ($this->isDerivedFromPriceSeries($row)) {
+            return false;
+        }
+
         $factor = (float) $row->price_adjustment_factor;
 
         return $factor > 0 && abs($factor - 1.0) > 1e-9;
+    }
+
+    /**
+     * True when the row's factor came from the platform's own price-series inference rather than
+     * from an authoritative corporate-action source.
+     */
+    private function isDerivedFromPriceSeries($row): bool
+    {
+        if (! property_exists($row, 'adjustment_source')) {
+            return false;
+        }
+
+        return $this->normalizeCode($row->adjustment_source) === 'DERIVED_FROM_PRICE_SERIES';
     }
 
     public function corporateActionTypes(): array

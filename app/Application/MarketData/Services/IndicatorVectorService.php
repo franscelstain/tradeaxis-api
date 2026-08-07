@@ -2,6 +2,8 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Domain\MarketData\MarketDataScope;
+
 class IndicatorVectorService
 {
     /**
@@ -26,13 +28,16 @@ class IndicatorVectorService
         'range_position_20_pct',
     ];
 
-    public function buildRow($tickerId, array $bars, $requestedDate, $publicationId, $runId, $createdAt, array $config)
+    public function buildRow($tickerId, array $bars, $requestedDate, $publicationId, $runId, $createdAt, array $config, array $atrSeries = null)
     {
         usort($bars, function ($a, $b) {
             return strcmp($a['trade_date'], $b['trade_date']);
         });
 
-        $bars = $this->applyPriceAdjustment($bars, $config);
+        $rawBars = $bars;
+        $adjustment = $this->applyPriceAdjustment($bars, $config);
+        $bars = $adjustment['bars'];
+        $priceProductCode = $adjustment['price_product_code'];
 
         $index = null;
         foreach ($bars as $i => $bar) {
@@ -50,6 +55,8 @@ class IndicatorVectorService
         $sectorCode = $this->normalizeSectorCode($config['sector_code'] ?? null);
         $values = [
             'dv20_idr' => null,
+            'adv20_close_volume_proxy_idr' => null,
+            'adv20_traded_value_idr_actual' => null,
             'atr14_pct' => null,
             'vol_ratio' => null,
             'sector_code' => $sectorCode,
@@ -73,7 +80,7 @@ class IndicatorVectorService
             'sector_rs_20_vs_ihsg' => null,
         ] + $this->eventRiskValues($config);
 
-        $values = $this->calculateIndicators($bars, $index, $config);
+        $values = $this->calculateIndicators($bars, $index, $config, $rawBars, $atrSeries);
 
         $quarantine = $this->applyCorporateActionQuarantine($values, $config);
         $values = $quarantine['values'];
@@ -97,8 +104,18 @@ class IndicatorVectorService
             'is_valid' => $invalidReason ? 0 : 1,
             'invalid_reason_code' => $invalidReason,
             'indicator_set_version' => $config['set_version'],
+            /*
+             * The vector must state which price product it was computed on. Without it a consumer
+             * cannot tell an adjusted series from an unadjusted one, and the two are not
+             * comparable: a split-affected window differs by the split ratio, not by a few
+             * percent. Leaving it null let RAW-based and STRUCTURAL_ADJUSTED-based rows sit in one
+             * column indistinguishably.
+             */
+            'price_product_code' => $priceProductCode,
             'sector_code' => $values['sector_code'],
             'dv20_idr' => $values['dv20_idr'],
+            'adv20_close_volume_proxy_idr' => $values['adv20_close_volume_proxy_idr'],
+            'adv20_traded_value_idr_actual' => $values['adv20_traded_value_idr_actual'],
             'atr14_pct' => $values['atr14_pct'],
             'vol_ratio' => $values['vol_ratio'],
             'roc5' => $values['roc5'],
@@ -162,8 +179,11 @@ class IndicatorVectorService
         return null;
     }
 
-    public function calculateIndicators(array $bars, $index, array $config)
+    public function calculateIndicators(array $bars, $index, array $config, array $rawBars = null, array $atrSeries = null)
     {
+        // The turnover proxy is defined on the as-traded series, so it is computed from the raw
+        // bars even when every other indicator runs on the adjusted ones.
+        $rawBars = $rawBars === null ? $bars : $rawBars;
         $dvWindow = (int) $config['dv_window_days'];
         $atrWindow = (int) $config['atr_window_days'];
         $volLookback = (int) $config['vol_ratio_lookback_days'];
@@ -172,8 +192,8 @@ class IndicatorVectorService
 
         $currentBar = $bars[$index];
         $priceBasisCurrent = $this->priceBasis($currentBar, $config);
-        $dv20Idr = $this->averageTurnover($bars, $index, $dvWindow, $config);
-        $atr = $this->wilderAtr($bars, $index, $atrWindow, $config);
+        $dv20Idr = $this->averageTurnover($rawBars, $index, $dvWindow, $config);
+        $atr = $this->wilderAtr($bars, $index, $atrWindow, $config, $atrSeries);
         $priorVolAverage = $this->priorVolumeAverage($bars, $index, $volLookback);
         $hh20 = $this->windowExtreme($bars, $index, $hhWindow, 'high', 'max');
         $ll20 = $this->windowExtreme($bars, $index, $hhWindow, 'low', 'min');
@@ -190,7 +210,19 @@ class IndicatorVectorService
         $equityRoc20Pct = $roc20 !== null ? $roc20 * 100 : null;
 
         return [
+            /*
+             * `dv20_idr` is the legacy alias for the proxy and carries the same value. The two
+             * explicitly named fields exist so a consumer never has to guess which one it holds:
+             * the actual is source-backed traded value, the proxy is RAW close x RAW volume.
+             *
+             * The actual stays NULL because the provider does not supply traded value at all —
+             * the adapter declares `provides_actual_traded_value => false`. NULL is the contract's
+             * required value when the actual is unavailable, and it is the only honest one: a
+             * proxy written into the actual field would be a misstatement, not an approximation.
+             */
             'dv20_idr' => $dv20Idr,
+            'adv20_close_volume_proxy_idr' => $dv20Idr,
+            'adv20_traded_value_idr_actual' => null,
             'atr14_pct' => $atr !== null && $priceBasisCurrent > 0 ? round($atr / $priceBasisCurrent, 10) : null,
             'vol_ratio' => $priorVolAverage !== null
                 && $priorVolAverage > 0
@@ -238,9 +270,16 @@ class IndicatorVectorService
             ? $config['price_adjustment_factors']
             : [];
 
+        // Domain constants rather than the config helper: this service computes vectors and must
+        // stay callable without a booted container.
+        $rawProduct = MarketDataScope::RAW_PRODUCT;
+        $adjustedProduct = MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT;
+
         if (empty($factors) || empty($bars)) {
-            return $bars;
+            return ['bars' => $bars, 'price_product_code' => $rawProduct];
         }
+
+        $applied = false;
 
         foreach ($bars as $index => $bar) {
             $barDate = (string) $bar['trade_date'];
@@ -258,9 +297,19 @@ class IndicatorVectorService
                 continue;
             }
 
-            // open, high, low and close move together. Adjusting close alone would corrupt
-            // true range, which mixes high, low and the previous close.
-            foreach (['open', 'high', 'low', 'close', 'adj_close'] as $field) {
+            $applied = true;
+
+            /*
+             * open, high, low and close move together. Adjusting close alone would corrupt true
+             * range, which mixes high, low and the previous close.
+             *
+             * `adj_close` is deliberately excluded. It is a provider observation, not a platform
+             * product, so multiplying it by the platform's own structural factor yields a value
+             * that is neither: not what the provider reported, and not a product the platform
+             * defines. That hybrid sitting in the same vector as `close` is exactly the mixing the
+             * stage-11 exit gate forbids.
+             */
+            foreach (['open', 'high', 'low', 'close'] as $field) {
                 if (isset($bars[$index][$field]) && $bars[$index][$field] !== null) {
                     $bars[$index][$field] = (float) $bars[$index][$field] * $priceFactor;
                 }
@@ -271,7 +320,10 @@ class IndicatorVectorService
             }
         }
 
-        return $bars;
+        return [
+            'bars' => $bars,
+            'price_product_code' => $applied ? $adjustedProduct : $rawProduct,
+        ];
     }
 
     /**
@@ -402,6 +454,10 @@ class IndicatorVectorService
 
         return [
             'dv20_idr' => [$dvWindow, true, true],
+            // The explicitly named proxy carries the same value over the same window, so it is
+            // contaminated by exactly the same events. Omitting it here would leave a quarantined
+            // window readable through its clearer name.
+            'adv20_close_volume_proxy_idr' => [$dvWindow, true, true],
             'atr14_pct' => [$atrHorizon, true, false],
             'vol_ratio' => [$volLookback + 1, false, true],
             'roc5' => [6, true, false],
@@ -475,14 +531,42 @@ class IndicatorVectorService
                 return null;
             }
 
+            // RAW close x RAW volume — Volume_and_Turnover_Normalization_LOCKED.md:27. Both terms
+            // come from the same as-traded bar, so a corporate action that scales price without
+            // scaling volume cannot skew the product.
             $turnovers[] = $price * (float) $bar['volume'];
         }
 
         return round(array_sum($turnovers) / $window, 2);
     }
 
-    private function wilderAtr(array $bars, $index, $window, array $config)
+    /**
+     * Wilder ATR seeded at the dataset/listing boundary rather than at the start of the load
+     * window. `$atrSeries` carries the full as-traded series when the caller can supply it; the
+     * loaded window is used only as a fallback, and that fallback is an approximation, not the
+     * contract value.
+     *
+     * Owner: Market_Data_Strategy_Implementation_Blueprint_LOCKED.md stage 15 — "Wilder ATR
+     * memakai stable seed dan recursive state dari dataset/listing boundary, bukan sliding-window
+     * reseed."
+     */
+    private function wilderAtr(array $bars, $index, $window, array $config, array $atrSeries = null)
     {
+        if ($atrSeries !== null && ! empty($atrSeries)) {
+            $anchor = (string) $bars[$index]['trade_date'];
+            $boundarySeries = [];
+            foreach ($atrSeries as $entry) {
+                if ((string) $entry['trade_date'] <= $anchor) {
+                    $boundarySeries[] = $entry;
+                }
+            }
+
+            if (count($boundarySeries) > $index + 1) {
+                $bars = $boundarySeries;
+                $index = count($boundarySeries) - 1;
+            }
+        }
+
         if ($index < $window) {
             return null;
         }
