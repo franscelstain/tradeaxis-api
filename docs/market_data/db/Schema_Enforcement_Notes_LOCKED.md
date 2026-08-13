@@ -13,11 +13,9 @@ is explicit and auditable.
 ## Direct DB-enforced invariants
 These are enforced directly by primary keys, unique keys, or simple column constraints.
 
-### Current examples
-- one current artifact row per `(trade_date, ticker_id)` in:
-  - `eod_bars`
-  - `eod_indicators`
-  - `eod_eligibility`
+### V2 target examples
+- one publication-bound artifact row per `(trade_date, listing_id)` in canonical bars, indicators, and the data-usability/eligibility compatibility projection
+- any current runtime uniqueness on `(trade_date, ticker_id)` is a **legacy schema shape**, not the target semantic identity; it remains acceptable only as a temporary projection while invariant equivalence to `listing_id` is proven
 - one replay reason-code row per `(replay_id, trade_date, reason_code)`
 - one publication version row per `(trade_date, publication_version)`
 
@@ -47,9 +45,9 @@ For every critical invariant, the implementation must know:
 
 | Invariant | Enforced by DB directly? | Enforced by procedure/app? | Notes |
 |---|---|---|---|
-| one canonical bar row per `(trade_date, ticker_id)` | Yes | Optional additional checks | PK/unique semantics |
-| one indicator row per `(trade_date, ticker_id)` | Yes | Optional additional checks | PK/unique semantics |
-| one eligibility row per `(trade_date, ticker_id)` | Yes | Optional additional checks | PK/unique semantics |
+| one canonical bar row per `(trade_date, listing_id)` in the V2 target | Yes | Optional additional checks | Legacy runtime may still enforce `(trade_date, ticker_id)` during migration; that shape is compatibility-only |
+| one indicator row per `(trade_date, listing_id)` in the V2 target | Yes | Optional additional checks | Same compatibility boundary as canonical bars |
+| one data-usability/eligibility row per `(trade_date, listing_id)` in the V2 target | Yes | Optional additional checks | `ticker_id` is not a new-surface key |
 | one publication version per `(trade_date, publication_version)` | Yes | Optional additional checks | unique key |
 | exactly one current publication per trade date | No | Yes | enforced by publication switch flow |
 | current publication must be sealed | Partially | Yes | procedure must reject unsealed switch |

@@ -123,8 +123,12 @@ class PublicationSealPointerLifecycleTest extends TestCase
         $rows = [[
             'trade_date' => '2026-03-24',
             'ticker_id' => 10,
+            'listing_id' => 1010,
+            'source_observation_id' => 5010,
             'open' => 1, 'high' => 2, 'low' => 1, 'close' => 2,
             'volume' => 5, 'source' => 'YAHOO_FINANCE', 'run_id' => 103,
+            'canonicalization_version' => 'eod_canonical_v1',
+            'price_product_code' => 'RAW', 'quality_state' => 'VALIDATED',
             'publication_id' => 3, 'created_at' => '2026-03-24 18:10:00',
         ]];
 
@@ -249,8 +253,12 @@ class PublicationSealPointerLifecycleTest extends TestCase
         $rows = [[
             'trade_date' => '2026-03-24',
             'ticker_id' => 10,
+            'listing_id' => 1010,
+            'source_observation_id' => 5010,
             'open' => 100, 'high' => 115, 'low' => 99, 'close' => 114,
             'volume' => 1000, 'source' => 'YAHOO_FINANCE', 'run_id' => 114,
+            'canonicalization_version' => 'eod_canonical_v1',
+            'price_product_code' => 'RAW', 'quality_state' => 'VALIDATED',
             'publication_id' => 14, 'created_at' => '2026-03-24 18:10:00',
         ]];
 

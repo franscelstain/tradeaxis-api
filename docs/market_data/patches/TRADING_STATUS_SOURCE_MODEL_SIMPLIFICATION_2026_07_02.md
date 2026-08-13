@@ -1,5 +1,8 @@
 # Trading Status Source Model Simplification — 2026-07-02
 
+> **HISTORICAL PATCH RECORD — NON-AUTHORITATIVE UNDER CURRENT V2.** Retained for traceability; current owner contracts override any legacy behavior stated below.
+
+
 ## Decision
 
 `market_data_trading_status_events` is now a source-event table only. It stores the canonical event identity and source metadata, not duplicated semantic interpretation fields.

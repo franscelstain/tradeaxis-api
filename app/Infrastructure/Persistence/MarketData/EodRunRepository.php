@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\DB;
 
 class EodRunRepository
 {
+    public const REQUIRED_COVERAGE_EVIDENCE_WRITE_FIELDS = [
+        'coverage_expected_count',
+        'coverage_bar_not_expected_count',
+        'coverage_expectation_unknown_count',
+        'coverage_delivered_count',
+        'coverage_delivered_valid_count',
+    ];
+
     private $configSnapshots;
 
     public function __construct(MarketDataConfigSnapshotRepository $configSnapshots = null)
@@ -44,6 +52,8 @@ class EodRunRepository
                 ->first();
 
             if ($activeRun) {
+                $activeRun->assertKnowledgeCutoffForExecution();
+
                 if (empty($activeRun->config_snapshot_id)) {
                     $activeRun->config_snapshot_id = $snapshot['config_snapshot_id'];
                     $activeRun->config_hash = $snapshot['config_hash'];
@@ -56,7 +66,7 @@ class EodRunRepository
                 return $activeRun;
             }
 
-            $now = Carbon::now(config('market_data.platform.timezone'));
+            $now = $this->captureKnowledgeCutoff();
 
             $run = EodRun::query()->create([
                 'trade_date_requested' => $requestedDate,
@@ -90,6 +100,7 @@ class EodRunRepository
                 'coverage_gate_state' => null,
                 'coverage_threshold_mode' => null,
                 'coverage_universe_basis' => null,
+                'knowledge_cutoff_at' => $now,
                 'coverage_contract_version' => null,
                 'coverage_missing_sample_json' => null,
                 'bars_rows_written' => null,
@@ -155,7 +166,13 @@ class EodRunRepository
 
     public function createPromoteRunFromSeed(EodRun $seedRun, $stage, array $overrides = [])
     {
-        $now = Carbon::now(config('market_data.platform.timezone'));
+        if (array_key_exists('knowledge_cutoff_at', $overrides)) {
+            throw new \LogicException(
+                'RUN_KNOWLEDGE_CUTOFF_IMMUTABLE: promote overrides cannot replace the creation coordinate.'
+            );
+        }
+
+        $now = $this->captureKnowledgeCutoff();
 
         $payload = [
             'trade_date_requested' => $seedRun->trade_date_requested,
@@ -189,6 +206,7 @@ class EodRunRepository
             'coverage_gate_state' => null,
             'coverage_threshold_mode' => null,
             'coverage_universe_basis' => null,
+            'knowledge_cutoff_at' => $now,
             'coverage_contract_version' => null,
             'coverage_missing_sample_json' => null,
             'bars_rows_written' => $seedRun->bars_rows_written,
@@ -225,6 +243,23 @@ class EodRunRepository
             'created_at' => $now,
             'updated_at' => $now,
         ];
+
+        /*
+         * A promote run must record the configuration it actually executed under.
+         *
+         * This payload carried no config identity at all, so every run created here — including the
+         * 843 recompute runs of 2026-08-10/11 — was born with config_snapshot_id NULL, and
+         * md_config_snapshots stayed empty even though the resolver was wired into
+         * getOrCreateOwningRun. Replay then blocked such runs as REPLAY_CONFIG_UNBOUND.
+         *
+         * The snapshot is resolved fresh rather than copied from the seed. The seed describes an
+         * earlier execution; this run executes under today's resolved config, and claiming the
+         * seed's identity would attribute a configuration this run never used.
+         */
+        $snapshot = $this->configSnapshots->resolveForRun($seedRun->trade_date_requested);
+        $payload['config_snapshot_id'] = $snapshot['config_snapshot_id'];
+        $payload['config_hash'] = $snapshot['config_hash'];
+        $payload['config_snapshot_ref'] = $snapshot['snapshot_uid'];
 
         foreach ($overrides as $key => $value) {
             $payload[$key] = $value;
@@ -426,9 +461,44 @@ class EodRunRepository
         return $run->fresh();
     }
 
+    /**
+     * Return the knowledge coordinate captured when this run was created.
+     *
+     * Deliberately not `started_at`. Identity projection happens as a side effect of the first
+     * universe read, which lands after the run row is created, so every listing it writes carries a
+     * `recorded_at` later than `started_at` and a cutoff taken from there emptied the universe
+     * outright — 31 errors and 5 failures on 2026-08-11, reverted the same day. Projection is driven
+     * to completion first and the coordinate is stamped after it, so the rows projection just wrote
+     * fall inside the cutoff instead of outside it.
+     *
+     * New runs are stamped by both repository creation paths after identity projection completes.
+     * Runs that predate the column keep a null coordinate as faithful historical state; this reader
+     * must never invent a coordinate later, because no cutoff was honoured by their earlier stages.
+     * Execution entry points reject that legacy state instead of resuming it without a boundary.
+     */
+    public function resolveKnowledgeCutoff(EodRun $run)
+    {
+        if (! empty($run->knowledge_cutoff_at)) {
+            return (string) $run->knowledge_cutoff_at;
+        }
+
+        return null;
+    }
+
+    /**
+     * Project legacy identity first, then capture one immutable coordinate for the new run.
+     */
+    private function captureKnowledgeCutoff(): Carbon
+    {
+        (new TemporalIdentityRepository())->ensureLegacyProjection();
+
+        return Carbon::now(config('market_data.platform.timezone'));
+    }
+
     public function updateTelemetry(EodRun $run, array $telemetry)
     {
         $telemetry = $this->normalizeTelemetry($telemetry);
+        $this->assertCompleteCoverageTelemetry($run, $telemetry);
 
         foreach ($telemetry as $key => $value) {
             $run->{$key} = $value;
@@ -592,6 +662,55 @@ class EodRunRepository
         }
 
         return $telemetry;
+    }
+
+    private function assertCompleteCoverageTelemetry(EodRun $run, array $telemetry): void
+    {
+        $coverageTouched = false;
+        foreach (array_keys($telemetry) as $field) {
+            if (strpos((string) $field, 'coverage_') === 0) {
+                $coverageTouched = true;
+                break;
+            }
+        }
+
+        if (! $coverageTouched) {
+            return;
+        }
+
+        $merged = [];
+        foreach (self::REQUIRED_COVERAGE_EVIDENCE_WRITE_FIELDS as $field) {
+            $merged[$field] = array_key_exists($field, $telemetry)
+                ? $telemetry[$field]
+                : $run->{$field};
+        }
+
+        $missing = [];
+        $invalid = [];
+        foreach ($merged as $field => $value) {
+            if ($value === null || (is_string($value) && trim($value) === '')) {
+                $missing[] = $field;
+                continue;
+            }
+
+            if (! is_numeric($value) || (float) $value < 0 || floor((float) $value) !== (float) $value) {
+                $invalid[] = $field;
+            }
+        }
+
+        if ($missing !== [] || $invalid !== []) {
+            $details = [];
+            if ($missing !== []) {
+                $details[] = 'missing '.implode(', ', $missing);
+            }
+            if ($invalid !== []) {
+                $details[] = 'non-negative integer required for '.implode(', ', $invalid);
+            }
+
+            throw new \LogicException(
+                'COVERAGE_EVIDENCE_WRITE_INCOMPLETE: '.implode('; ', $details).'.'
+            );
+        }
     }
 
     private function normalizeSeverity($severity)

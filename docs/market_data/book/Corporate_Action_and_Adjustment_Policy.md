@@ -151,6 +151,7 @@ The corporate-action record is a root of expectation, so it falls under the shar
 Domain parameters owned by this contract:
 
 - **Authority:** an authoritative exchange or CSD corporate-action record.
+- **Cadence:** reconcile current corporate-action evidence on each operational trading day before affected price-product/indicator publications are finalized, rerun on authoritative event/terms revisions, and complete full-range reconciliation before an historical period is claimed action-complete.
 - **Scope:** from the intentional dataset start onward, covering every action type the type registry marks as adjusting or event-risk bearing.
 - **Qualification:** an unadjusted-series claim covering an unreconciled period must name that period. The second reconciliation direction — an action that occurred but was never recorded — is the one that produces silently uncorrected discontinuities, and is therefore the direction that matters most here.
 

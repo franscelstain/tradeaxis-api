@@ -461,6 +461,7 @@ class ReplayVerificationServiceTest extends TestCase
             'publication_version' => 4,
             'publication_is_current' => false,
             'coverage_universe_count' => 10,
+            'coverage_expected_count' => 10,
             'coverage_available_count' => 10,
             'coverage_missing_count' => 0,
             'coverage_ratio' => '1.0000',
@@ -786,6 +787,7 @@ class ReplayVerificationServiceTest extends TestCase
             'publishability_state' => 'NOT_READABLE',
             'final_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
             'coverage_universe_count' => 0,
+            'coverage_expected_count' => 0,
             'coverage_available_count' => 0,
             'coverage_missing_count' => 0,
             'coverage_ratio' => null,
@@ -829,6 +831,73 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertSame('BLOCKED', $result['actual_context']['actual_coverage_context']['legacy_coverage_gate_state_raw']);
     }
 
+    public function test_replay_detects_analytical_factor_set_identity_drift(): void
+    {
+        $expectedFactorHash = str_repeat('a', 64);
+        $actualFactorHash = str_repeat('b', 64);
+        $expected = $this->expectedReplayResult([
+            'publication_id' => 55,
+            'publication_run_id' => 103,
+            'run_id' => 103,
+        ]);
+        $expected['expected_publication_context'] += [
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_id' => null,
+            'factor_set_hash' => $expectedFactorHash,
+        ];
+        $expected['expected_lineage'] += [
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_id' => null,
+            'factor_set_hash' => $expectedFactorHash,
+        ];
+
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $expected,
+            'expected/expected_reason_code_counts.json' => [],
+        ], 'fixture_replay_analytical_identity_drift'));
+
+        $run = (object) ($this->successReadableRun(103, '2026-03-20') + [
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $actualFactorHash,
+        ]);
+        $publication = (object) [
+            'publication_id' => 55,
+            'run_id' => 103,
+            'publication_version' => 4,
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-03-20 17:30:00',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_id' => null,
+            'factor_set_hash' => $actualFactorHash,
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+        $evidence->shouldReceive('findRunById')->once()->with(103)->andReturn($run);
+        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(103, '2026-03-20')->andReturn($publication);
+        $evidence->shouldReceive('dominantReasonCodes')->once()->with(103, '2026-03-20', 55)->andReturn([]);
+        $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-20', 55)->andReturn([]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3301);
+        $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
+            return $metric['comparison_result'] === 'MISMATCH'
+                && in_array('REPLAY_LINEAGE_MISMATCH', json_decode($metric['mismatch_reason_codes_json'], true), true);
+        }));
+        $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3301, '2026-03-20', []);
+
+        $result = (new ReplayVerificationService($evidence, $publications, $replays))
+            ->verifyRunAgainstFixture(103, $fixtureDir);
+
+        $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertContains('REPLAY_LINEAGE_MISMATCH', $result['mismatch_reason_codes']);
+        $this->assertSame($actualFactorHash, $result['actual_context']['actual_publication_context']['factor_set_hash']);
+    }
+
     private function successReadableRun($runId, $tradeDate)
     {
         return [
@@ -844,6 +913,7 @@ class ReplayVerificationServiceTest extends TestCase
             'config_snapshot_id' => 7001,
             'publication_version' => 4,
             'coverage_universe_count' => 10,
+            'coverage_expected_count' => 10,
             'coverage_available_count' => 10,
             'coverage_missing_count' => 0,
             'coverage_ratio' => '1.0000',
@@ -888,6 +958,7 @@ class ReplayVerificationServiceTest extends TestCase
             'publication_version' => 4,
             'publication_is_current' => true,
             'coverage_universe_count' => 10,
+            'coverage_expected_count' => 10,
             'coverage_available_count' => 10,
             'coverage_missing_count' => 0,
             'coverage_ratio' => '1.0000',
@@ -910,6 +981,9 @@ class ReplayVerificationServiceTest extends TestCase
             'warning_count' => 0,
             'hard_reject_count' => 0,
         ], $overrides);
+        if (! array_key_exists('coverage_expected_count', $overrides)) {
+            $v['coverage_expected_count'] = $v['coverage_universe_count'];
+        }
         if (! array_key_exists('run_id', $v) && array_key_exists('publication_run_id', $v)) {
             $v['run_id'] = $v['publication_run_id'];
         }
@@ -943,10 +1017,10 @@ class ReplayVerificationServiceTest extends TestCase
             ],
             'expected_coverage_context' => [
                 'coverage_universe_count' => $v['coverage_universe_count'],
-                'coverage_expected_count' => $v['coverage_universe_count'],
+                'coverage_expected_count' => $v['coverage_expected_count'],
                 'coverage_available_count' => $v['coverage_available_count'],
                 'coverage_missing_count' => $v['coverage_missing_count'],
-                'expected_bar_count' => $v['coverage_universe_count'],
+                'expected_bar_count' => $v['coverage_expected_count'],
                 'available_bar_count' => $v['coverage_available_count'],
                 'missing_bar_count' => $v['coverage_missing_count'],
                 'coverage_ratio' => $v['coverage_ratio'],

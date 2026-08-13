@@ -1,6 +1,11 @@
 # DB Fields & Metadata (Coverage Gate)
 
 ## Purpose
+
+## V2 strategy synchronization boundary (LOCKED 2026-08-08)
+
+This file is a **target metadata contract plus transitional runtime inventory**. Any legacy column, enum, request-mode label, or lookup behavior described below is compatibility evidence only when it conflicts with the V2 owner contracts. New schema/API surfaces must bind stable `listing_id`/`instrument_id`, immutable source/revision identities, complete config provenance, and point-in-time semantics. Compatibility `ticker_id`, `repair_candidate`, current-master `is_active`, or dictionary-only expected-bar decisions do **not** satisfy V2 semantics.
+
 Define the minimum DB/runtime metadata that must be persisted or emitted so the locked coverage-gate contract is audit-visible and implementable.
 
 This document does not own the coverage formula.
@@ -9,12 +14,26 @@ Formula and outcome semantics are owned by `../book/EOD_COVERAGE_GATE_CONTRACT_L
 ## Required eod_runs fields (LOCKED minimum)
 The `eod_runs` record for a requested trade date must make these values audit-visible:
 
+- `knowledge_cutoff_at` DATETIME NULL
+  Immutable as-known coordinate captured for a new run after legacy identity projection completes. `NULL` on a legacy run preserves the historical fact that it was unbounded; readers must not manufacture a later cutoff, and runtime must not resume execution on that same run identity.
 - `coverage_universe_count` INT NULL  
-  Official denominator resolved from the coverage universe as-of `trade_date_requested`.
+  Raw temporal-universe count before verified `NOT_EXPECTED` exclusions; it is not the denominator.
+- `coverage_universe_hash` CHAR(64) NULL
+  Deterministic identity of the ordered temporal universe, its basis, and requested trade date.
+- `coverage_bar_not_expected_count` INT NULL
+  Listings excluded only by verified point-in-time `NOT_EXPECTED` evidence.
+- `coverage_expected_count` INT NULL
+  Fail-safe denominator: temporal universe minus verified `NOT_EXPECTED`, retaining `UNKNOWN`.
+- `coverage_expectation_unknown_count` INT NULL
+  Denominator members whose expectation evidence is unresolved; zero means measured zero, while `NULL` means not measured.
+- `coverage_delivered_count` INT NULL
+  Traceably delivered expected listing/date observations used as the coverage numerator.
+- `coverage_delivered_valid_count` INT NULL
+  Delivered observations that also passed canonical validation; it remains distinct from delivery coverage.
 - `coverage_available_count` INT NULL  
-  Canonical valid-bar numerator used for coverage evaluation.
+  Compatibility metric for canonical availability. It must not replace or be exported as `coverage_delivered_count`.
 - `coverage_missing_count` INT NULL  
-  Derived missing count for the resolved universe. Expected formula: `coverage_universe_count - coverage_available_count`, never below zero.
+  Missing expected delivery count. The governing identity is `coverage_expected_count - coverage_delivered_count`, never raw universe minus canonical availability.
 - `coverage_ratio` DECIMAL(12,6) NULL  
   Evaluated ratio before any UI-only rounding.
 - `coverage_min_threshold` DECIMAL(12,6) NULL  
@@ -28,7 +47,9 @@ The `eod_runs` record for a requested trade date must make these values audit-vi
 - `coverage_contract_version` VARCHAR(64) NULL  
   Contract/config identity for audit and replay clarity.
 - `coverage_missing_sample_json` JSON/TEXT NULL  
-  Optional but recommended sample of missing ticker codes for operator evidence. Sampling must not replace the official counts.
+  Optional but recommended sample of missing stable listing identities plus display symbols for operator evidence. Sampling must not replace the official counts.
+- `coverage_excluded_sample_json` JSON/TEXT NULL
+  Bounded sample of listings removed by verified `NOT_EXPECTED` evidence; `NULL` remains distinct from a measured empty sample.
 
 ## Why these fields are required
 They close the ambiguity that previously allowed coverage to be discussed without proving:
@@ -50,8 +71,10 @@ If replay or evidence tables mirror run metrics, they should also mirror the sam
 ## Anti-ambiguity notes
 - `coverage_ratio` alone is not sufficient.
 - `coverage_gate_state` alone is not sufficient.
-- provider row count must never substitute for `coverage_universe_count`.
-- eligibility row count must never substitute for `coverage_available_count`.
+- provider row count must never substitute for `coverage_delivered_count`.
+- raw `coverage_universe_count` must never substitute for `coverage_expected_count`.
+- canonical `coverage_available_count` must never substitute for traceable `coverage_delivered_count`.
+- eligibility row count must never substitute for any delivery count.
 
 
 ## Required eod_runs source traceability fields (session hardening minimum)
@@ -60,7 +83,7 @@ The `eod_runs` record must also expose first-class traceability fields so source
 - `source` VARCHAR/ENUM NOT NULL  
   Logical source mode used by the run, for example `api` or `manual_file`.
 - `request_mode` VARCHAR(32) NULL  
-  Explicit import/promote intent for the run. Runtime values include `import_only`, `promote`, `full_publish`, `correction`, `repair_candidate`, `replay_verify`, and `evidence_export`. `import_only` must not be interpreted as consumer-readable publication proof.
+  Explicit import/promote intent for the run. Target semantic values include `import_only`, `promote`, `full_publish`, `correction`, `correction_candidate`, `replay_verify`, and `evidence_export`. A persisted/runtime `repair_candidate` value is a legacy compatibility label for `correction_candidate`; it must not authorize in-place content repair. `import_only` must not be interpreted as consumer-readable publication proof.
 - `source_name` VARCHAR(64) NULL  
   Logical source identity such as `API_FREE` or `LOCAL_FILE`.
 - `source_provider` VARCHAR(64) NULL  
@@ -90,20 +113,34 @@ To avoid implicit-only linkage, `eod_runs` should also persist:
 
 This keeps run/publication linkage and publishability reasoning queryable even when operators are not reading event payload JSON.
 
+## Required analytical product identity
+
+Every indicator-producing run and sealed publication must persist one coherent analytical identity:
+
+- `price_product_code = STRUCTURAL_ADJUSTED`
+- `price_product_version` identifying the selected product implementation
+- `factor_set_hash` as the deterministic SHA-256 identity of the complete run/window factor set, including the empty/no-op set
+
+Every `eod_indicators` and `eod_indicators_history` row must mirror those three values. Sector-relative rows additionally bind `sector_membership_id` so their point-in-time classification fact is auditable. A cumulative factor of one does not change the product to `RAW`, and provider `adj_close` is source evidence rather than an analytical fallback.
+
 ---
 
 ## 2026-04-26 — DB Schema Sync Metadata Addendum
 
-Status: SYNCED WITH `DB_Schema_And_Migration_Sync_Contract_LOCKED.md`
+Status: **TRANSITIONAL RUNTIME INVENTORY / V2 TARGET OWNED BY `DB_Schema_And_Migration_Sync_Contract_LOCKED.md`**
+
+The structures below record the runtime shape synchronized in 2026-04/06. Where they use current `ticker_id`, overwrite/upsert business keys, non-revisioned source rows, or session-snapshot keys without `listing_id`, those lines are **historical/transitional inventory, not V2 target semantics**. The V2 target must add stable listing identity and immutable observation/revision/publication bindings before implementation conformance can be granted.
 
 Newly documented / synchronized table metadata:
 
-### `tickers`
+### `tickers` — legacy runtime projection
 
 Runtime owner: ticker universe / coverage universe lookup.  
 Repository: `TickerMasterRepository`.
 
-Required fields:
+**V2 target:** this table is a compatibility/current-state projection only. Historical universe authority lives in temporal issuer/instrument/listing/symbol revisions. `is_active` and current `ticker_code` cannot define an as-of universe.
+
+Legacy runtime fields:
 - `ticker_id`
 - `ticker_code`
 - `company_name`
@@ -145,7 +182,9 @@ Required constraint/index:
 Runtime owner: source-backed sector taxonomy for upstream market-data context.
 Repository: `SectorClassificationRepository`.
 
-Required fields:
+**V2 target:** membership binds stable `listing_id`, temporal interval, source observation/revision, known time, and authority class. Reclassification closes the old revision and opens a new one; accepted history is not overwritten.
+
+Legacy runtime fields:
 - `sector_code`
 - `sector_name`
 - `sector_index_code`
@@ -186,36 +225,49 @@ Required sector benchmark codes:
 
 Sector benchmark rows use provider `manual_sector_index_csv` unless a future audited provider is added. They must not be fetched through the Yahoo equity/benchmark API unless a verified provider symbol exists.
 
-### `ticker_sector_memberships`
+### `ticker_sector_memberships` — governed point-in-time fact
 
-Runtime owner: historical ticker-to-sector membership used to populate nullable `eod_indicators.sector_code`, then resolve sector-index benchmark context for nullable `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg`.
+Runtime owner: append-only, as-known listing-to-sector membership used to populate nullable `eod_indicators.sector_code`, then resolve sector-index benchmark context for nullable `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg`.
 Repository: `SectorClassificationRepository`.
 
 Required fields:
 - `membership_id`
-- `ticker_id`
+- `ticker_id` (legacy compatibility reference)
+- `listing_id` (stable resolution identity)
 - `sector_code`
 - `classification_system`
 - `effective_from`
 - `effective_to`
 - `source_name`
 - `source_ref`
+- `source_authority_class`
+- `recorded_at` (known-time boundary)
+- `supersedes_membership_id`
+- `operator_name`
+- `reason_code`
 - `created_at`
 - `updated_at`
 
 Required constraint/index:
 - primary key `membership_id`
-- unique key `(ticker_id, classification_system, effective_from)`
+- unique key `(listing_id, classification_system, effective_from, recorded_at)`
 - index `(ticker_id, classification_system, effective_from, effective_to)`
 - index `(sector_code, classification_system, effective_from)`
+- index `(listing_id, classification_system, effective_from, effective_to)`
+- index `(recorded_at, source_authority_class)`
+- index `(supersedes_membership_id)`
 
-### `market_data_corporate_actions`
+Resolver semantics are fail-closed: only exchange-authoritative or governed operator-entered revisions known by the requested `known_at` may resolve; missing/ambiguous membership and overlapping authoritative intervals produce `UNKNOWN`. Reclassification appends a closing revision for the prior interval and a new membership revision; it never updates the historical fact in place.
+
+### `market_data_corporate_actions` — legacy runtime projection
 
 Runtime owner: source-backed corporate action context used to populate nullable `eod_indicators.corporate_action_flag`, `corporate_action_types`, `event_risk_flag`, and `event_risk_reasons`.
 Repository: `EventRiskSourceRepository`.
 Import command: `market-data:events:import-corporate-actions`.
 
-Required fields:
+**V2 target:** corporate-action source observations and event/factor revisions are append-only and bind stable `listing_id`; the legacy same-key upsert/`updated_at` shape below is not correction authority.
+
+Legacy runtime fields:
 - `corporate_action_id`
 - `ticker_id`
 - `ticker_code`
@@ -235,16 +287,18 @@ Required constraint/index:
 
 ### `market_data_trading_status_event_types`
 
-Runtime owner: canonical dictionary for trading-status event semantics. Operators do not input `expected_bar_policy`, `risk_family`, or transition flags in daily CSV files; they input only `event_type_code`, and this dictionary determines the derived coverage/risk behavior.
+Runtime/transitional dictionary for trading-status event classification. Operators may input an `event_type_code`, and the dictionary may classify risk family/transition behavior. **It must not determine bar expectation by event type alone.** Authoritative `EXPECTED`/`NOT_EXPECTED`/`UNKNOWN` resolution belongs to the point-in-time trading-status/session contract and requires source-backed temporal evidence; `NOT_EXPECTED` requires verified evidence covering the full Regular-Market session.
 Repository: `EventRiskSourceRepository`.
 
 Canonical event type catalog:
-- `SUSPENDED`: `risk_family=SUSPENSION`, `transition_type=START`, `expected_bar_policy=BAR_NOT_REQUIRED`, `carries_forward=1`.
-- `SUSPENSION_OBSERVED`: `risk_family=SUSPENSION`, `transition_type=OBSERVED`, `expected_bar_policy=BAR_NOT_REQUIRED`, `carries_forward=1`; used for source/snapshot proof that suspension is active, including long-suspension lists.
-- `UNSUSPENDED`: `risk_family=SUSPENSION`, `transition_type=END`, `expected_bar_policy=BAR_REQUIRED`, `clears_risk_family=SUSPENSION`.
-- `SPECIAL_MONITORING_START`: `risk_family=SPECIAL_MONITORING`, `transition_type=START`, `expected_bar_policy=BAR_REQUIRED_WITH_RISK`, `carries_forward=1`.
-- `SPECIAL_MONITORING_END`: `risk_family=SPECIAL_MONITORING`, `transition_type=END`, `expected_bar_policy=BAR_REQUIRED`, `clears_risk_family=SPECIAL_MONITORING`.
-- `UMA`: `risk_family=UMA`, `transition_type=POINT_IN_TIME`, `expected_bar_policy=BAR_REQUIRED_WITH_RISK`, `carries_forward=0`.
+- `SUSPENDED`: `risk_family=SUSPENSION`, `transition_type=START`, `carries_forward=1`; **bar expectation remains conditional on verified effective interval/full-session evidence**.
+- `SUSPENSION_OBSERVED`: `risk_family=SUSPENSION`, `transition_type=OBSERVED`, `carries_forward=1`; proves only the source observation it actually carries. A long-suspension/current list does not retroactively prove every historical session.
+- `UNSUSPENDED`: `risk_family=SUSPENSION`, `transition_type=END`, `clears_risk_family=SUSPENSION`; expected-bar resolution still uses the effective interval for the session.
+- `SPECIAL_MONITORING_START`: `risk_family=SPECIAL_MONITORING`, `transition_type=START`, `carries_forward=1`; it is a risk fact and does not by itself alter expected-bar membership.
+- `SPECIAL_MONITORING_END`: `risk_family=SPECIAL_MONITORING`, `transition_type=END`, `clears_risk_family=SPECIAL_MONITORING`.
+- `UMA`: `risk_family=UMA`, `transition_type=POINT_IN_TIME`, `carries_forward=0`; it is a risk fact and does not by itself alter expected-bar membership.
+
+Legacy runtime `expected_bar_policy` values may remain during migration, but they are **non-authoritative compatibility metadata**. A V2 resolver must persist/derive expectation from listing + trading session + temporal status revision and must expose `UNKNOWN` when full-session evidence is absent or conflicting.
 
 Required fields:
 - `event_type_code`
@@ -262,13 +316,15 @@ Required constraint/index:
 - index `(risk_family, transition_type)`
 - index `(expected_bar_policy)`
 
-### `market_data_trading_status_events`
+### `market_data_trading_status_events` — legacy runtime projection
 
-Runtime owner: source-backed trading status event rows. This table stores only actual source events: ticker, date, canonical `event_type_code`, and source/audit metadata. It intentionally does not store denormalized semantic columns such as `status_code`, `status_effect`, `event_risk_scope`, `coverage_exclusion_flag`, `is_suspended`, or `is_uma`; those meanings are resolved from `market_data_trading_status_event_types`.
+Transitional runtime owner: source-backed trading-status event rows. V2 target identity is `listing_id` (plus `instrument_id` where useful), not current ticker identity. Each observation/revision must preserve source evidence, known/captured time, effective interval/session coverage, and revision identity. The legacy runtime table may still store ticker/date/event fields during migration. It intentionally does not store denormalized semantic columns such as `status_code`, `status_effect`, `event_risk_scope`, `coverage_exclusion_flag`, `is_suspended`, or `is_uma`; those meanings are resolved from `market_data_trading_status_event_types`.
 Repository: `EventRiskSourceRepository`.
 Import command: `market-data:events:import-trading-status`.
 
-Daily import CSV contract:
+**V2 target:** stable `listing_id`, immutable source observation/revision, known/captured time, effective interval and full-session evidence are mandatory for authoritative point-in-time resolution. The legacy business key below must not decide historical truth or bar expectation by itself.
+
+Daily import compatibility contract:
 - required: `ticker_code`, `trade_date`, `event_type_code`
 - optional: `source_name`, `source_ref`, `notes`
 - sample file: `docs/market_data/examples/trading_status_daily.csv`
@@ -292,12 +348,14 @@ Required constraint/index:
 - index `(trade_date, ticker_id)`
 - index `(event_type_code, trade_date)`
 
-### `md_session_snapshots`
+### `md_session_snapshots` — legacy runtime projection
 
 Runtime owner: intraday/session snapshot persistence.  
 Repository: `SessionSnapshotRepository`.
 
-Required fields:
+**V2 target:** snapshot identity uses stable `listing_id` and binds the publication/config context used to resolve effective-date scope. The legacy `(trade_date, snapshot_slot, ticker_id)` uniqueness below is migration inventory only.
+
+Legacy runtime fields:
 - `snapshot_id`
 - `trade_date`
 - `snapshot_slot`
@@ -328,7 +386,8 @@ Replay expected-context fields are part of the DB schema contract and must stay 
 
 Replay result status is explicit and must stay synchronized across runtime persistence, command output, and replay evidence export:
 
-- `replay_status`: `PASS` for `MATCH`/`EXPECTED_DEGRADE`, `FAIL` for `MISMATCH`/`UNEXPECTED`, and `BLOCKED` only for missing fixture/context/runtime prerequisites.
+- `replay_status`: `PASS` for `MATCH`/`EXPECTED_DEGRADE`, `FAIL` for `MISMATCH`/`UNEXPECTED`, and `BLOCKED` for `NOT_ADMISSIBLE` as well as missing fixture/context/runtime prerequisites.
+- `comparison_result`: `NOT_ADMISSIBLE` means the verifier refused to judge, not that it judged and found nothing wrong. It is emitted when the fixture's expectation was derived from the run being verified, where agreement would prove only that the run equals itself. It maps to `replay_status = BLOCKED` and must never be counted as a pass. Added 2026-08-11 with `F-025`; before that the value existed in code but not in the column, so an inadmissible replay failed to persist rather than being recorded.
 
 Correction lifecycle replay fields are part of `md_replay_daily_metrics` and must remain synchronized with `ReplayResultRepository`, `ReplayVerificationService`, and replay evidence export:
 

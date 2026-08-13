@@ -168,6 +168,8 @@ class ConsumerReadProductAntiBypassTest extends TestCase
             'ticker_code' => 'identity',
             'close_price' => 'RAW market fact',
             'price_product_code' => 'analytical product identity',
+            'price_product_version' => 'analytical product version',
+            'factor_set_hash' => 'factor-set identity',
             'atr14_pct' => 'indicator',
             'eligibility_reasons_json' => 'data-usability reasons',
             'listing_id' => 'lineage',

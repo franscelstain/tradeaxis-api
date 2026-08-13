@@ -1,6 +1,6 @@
 # Market Data Audit README
 
-Current canonical documentation verdict (2026-08-02): `reports/AUDIT_FINAL_STATE.md` — **`DOCUMENTATION_STRATEGY_READY`**. Implementation conformance and operational/production readiness are separate future verdicts and are not claimed. All earlier inventory, tracker, implementation-status, and proof-pack `LOCKED`/production-ready statements are historical evidence for their dated pre-correction scope.
+Current canonical documentation verdict (revalidated 2026-08-08): `reports/AUDIT_FINAL_STATE.md` — **`DOCUMENTATION_STRATEGY_READY`**, with **documentation strategy/synchronization `PASS` for 22/22 areas**. Implementation conformance and operational/production readiness remain separate verdicts and are not implied by this documentation PASS. All earlier inventory, tracker, implementation-status, and proof-pack `LOCKED`/production-ready statements are historical evidence for their dated pre-correction scope.
 
 ## Purpose
 Folder ini adalah pintu masuk audit untuk paket `docs/market_data`. Audit dipakai agar pembahasan paket market-data tetap konsisten saat chat baru dimulai, saat ZIP baru diunggah, atau saat revisi dokumen dilakukan.
@@ -43,9 +43,10 @@ Urutan minimum:
 1. baca `AUDIT_BASELINE.md`
 2. baca `AUDIT_LAYER_CLASSIFICATION_RULES.md`
 3. baca `AUDIT_DOMAIN_BOUNDARY.md`
-4. baca checkpoint aktif implementasi market-data:
-   - `LUMEN_IMPLEMENTATION_STATUS.md`
-   - `LUMEN_CONTRACT_TRACKER.md`
+4. baca checkpoint implementasi aktif market-data:
+   - `MARKET_DATA_IMPLEMENTATION_LEDGER.md`
+   - `reports/AUDIT_FINAL_STATE.md`
+   File `LUMEN_IMPLEMENTATION_STATUS.md` dan `LUMEN_CONTRACT_TRACKER.md` dipertahankan sebagai **historical execution archive**, bukan checkpoint authority V2.
 5. jika audit menyentuh source live / operational health, baca juga:
    - `../book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
    - `../../system_audit/CODEBASE_BUILD_AND_AUDIT_GUIDE.md`
@@ -54,9 +55,9 @@ Urutan minimum:
 8. untuk pembangunan, ikuti work order pada `../book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md`
 9. gunakan `../book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md` sebagai ledger assignment agar tidak ada dokumen/deliverable/proof yang terlewat
 10. jalankan lifecycle command/result/remediation dari `../book/Market_Data_Implementation_Command_Protocol_LOCKED.md` dan baca current state pada `MARKET_DATA_IMPLEMENTATION_LEDGER.md`
+11. pakai templates bila perlu membuat findings, remediation, atau verdict baru
 
 Recommended stage-by-stage directive dimulai dari `MD-RUN W00 market-data.`. Setelah `PASS`, hasil wajib memberikan `MD-RUN W01 market-data.`, lalu berurutan sampai `W22`. Component `MD-EXEC`/`MD-AUDIT` commands tetap tersedia untuk controlled manual operation.
-9. pakai templates bila perlu membuat findings, remediation, atau verdict baru
 
 ## Relationship to other folders
 - `system/` = peta besar sistem tingkat atas
@@ -72,15 +73,15 @@ Audit ini menilai market-data sebagai **producer/data-platform domain**, bukan w
 
 
 ## Checkpoint rule
-Dua file berikut adalah checkpoint aktif utama untuk build dan closure implementasi market-data:
-- `LUMEN_IMPLEMENTATION_STATUS.md`
-- `LUMEN_CONTRACT_TRACKER.md`
+Checkpoint aktif utama untuk build dan closure implementasi market-data adalah:
+- `MARKET_DATA_IMPLEMENTATION_LEDGER.md` — current work-order/conformance execution state;
+- `reports/AUDIT_FINAL_STATE.md` — current canonical audit/documentation verdict.
 
-Keduanya wajib sinkron dengan owner docs dan tidak boleh dipakai untuk membuat kontrak paralel.
+`LUMEN_IMPLEMENTATION_STATUS.md`, `LUMEN_CONTRACT_TRACKER.md`, dan inventory/proof-pack lama adalah **historical execution evidence**. Mereka boleh menyimpan literal command/status/field lama demi audit trail, tetapi tidak boleh dipakai sebagai current strategy, build sequence, atau conformance decision. Bila konflik, owner contracts + Blueprint + Matrix + current ledger selalu menang.
 
 ## Current checkpoint summary
 
-- documentation strategy: `DOCUMENTATION_STRATEGY_READY`;
+- documentation strategy: `DOCUMENTATION_STRATEGY_READY`; documentation synchronization: `PASS` (`22/22`, revalidated `2026-08-08`);
 - normative implementation sequence: `../book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md`;
 - normative implementation assignment/traceability: `../book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md`;
 - normative implementation command/result lifecycle: `../book/Market_Data_Implementation_Command_Protocol_LOCKED.md`;

@@ -1,5 +1,8 @@
 # WEEKLY SWING PRIORITY 1 INDICATOR EXTENSION INVENTORY
 
+> **HISTORICAL AUDIT/IMPLEMENTATION EVIDENCE — NON-AUTHORITATIVE FOR CURRENT V2 STRATEGY.** This file preserves dated runtime/inventory facts and may contain legacy field names, command behavior, locks, or production claims from earlier contracts. Current strategy authority is the owner contracts + Blueprint + Conformance Matrix; current execution/conformance state is `MARKET_DATA_IMPLEMENTATION_LEDGER.md`; current audit verdict is `reports/AUDIT_FINAL_STATE.md`. Legacy statements are not current requirements unless explicitly re-admitted by those authorities.
+
+
 ## Status
 
 `DONE_CURRENT_RANGE_PROMOTE_PASS_SECTOR_CODE_CURRENT_PASS_SECTOR_ROTATION_11_SECTORS_PASS_FULL_RANGE_EVIDENCE_REPLAY_PASS`

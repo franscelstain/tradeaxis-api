@@ -146,6 +146,39 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
     }
 
+    /**
+     * F-024: the legacy price-basis selector is pruned, not merely deprecated in prose.
+     *
+     * Its registry entry licensed it only "while compatibility code exists". Nothing read it —
+     * EodIndicatorsComputeService::vectorConfig() wrote it into the indicator vector config and
+     * IndicatorVectorService never looked at it — so the key advertised an authority over price
+     * basis that the platform had already moved to AnalyticalProductIdentityService. A deprecated
+     * key that still ships in config and both env templates reads to an operator as a live knob.
+     *
+     * The sibling test test_active_env_keys_are_synchronized_between_env_templates_and_config
+     * enforces exact key parity, so a partial removal fails there. This test pins the intent: the
+     * key must be absent everywhere, and it must not creep back into the vector config.
+     */
+    public function test_legacy_price_basis_selector_is_pruned_not_left_as_active_config(): void
+    {
+        $config = $this->read('config/market_data.php');
+        $envExample = $this->read('.env.example');
+        $envTesting = $this->read('.env.testing');
+        $computeService = $this->read('app/Application/MarketData/Services/EodIndicatorsComputeService.php');
+
+        foreach ([$envExample, $envTesting] as $document) {
+            $this->assertStringNotContainsString('MARKET_DATA_PRICE_BASIS_DEFAULT=', $document);
+        }
+
+        $this->assertStringNotContainsString("env('MARKET_DATA_PRICE_BASIS_DEFAULT'", $config);
+        $this->assertStringNotContainsString("'price_basis_default' =>", $config);
+        $this->assertStringNotContainsString("'price_basis_default' =>", $computeService);
+
+        $registry = $this->read('docs/market_data/registry/Platform_Config_Registry_LOCKED.md');
+        $this->assertStringContainsString('PRUNED 2026-08-11', $registry);
+        $this->assertStringContainsString('do not reintroduce', $registry);
+    }
+
     public function test_audit_docs_preserve_config_env_cleanup_history_without_requiring_it_as_active_session(): void
     {
         $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');

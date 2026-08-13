@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   trade_date_effective DATE NULL,
   source VARCHAR(32) NOT NULL,
   status ENUM('SUCCESS','HELD','FAILED') NOT NULL,
-  comparison_result ENUM('MATCH','MISMATCH','EXPECTED_DEGRADE','UNEXPECTED') NOT NULL,
+  comparison_result ENUM('MATCH','MISMATCH','EXPECTED_DEGRADE','UNEXPECTED','NOT_ADMISSIBLE') NOT NULL,
   comparison_note VARCHAR(255) NULL,
   artifact_changed_scope VARCHAR(64) NULL,
   config_identity VARCHAR(128) NULL COMMENT 'legacy compatibility label only',
@@ -85,6 +85,10 @@ CREATE TABLE IF NOT EXISTS md_replay_reason_code_counts (
 --    - MISMATCH: actual output differs unexpectedly from expected outcome
 --    - EXPECTED_DEGRADE: degraded-input scenario produced the expected degraded outcome
 --    - UNEXPECTED: output class itself is not the expected one and requires investigation
+--    - NOT_ADMISSIBLE: the verifier refused to judge, which is not the same as judging and finding
+--      nothing wrong. Emitted when the fixture's expectation was derived from the run being
+--      verified, where agreement would prove only that the run equals itself. Maps to
+--      replay_status BLOCKED and must never be counted as a pass. Added 2026-08-11 with F-025.
 -- 3. comparison_note is short structured explanation text for the replay result.
 -- 4. artifact_changed_scope indicates which artifact layer changed, for example:
 --    - bars_only

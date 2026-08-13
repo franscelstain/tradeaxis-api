@@ -1,6 +1,6 @@
 # LUMEN_CONTRACT_TRACKER
 
-## CURRENT CANONICAL AUDIT OVERRIDE — 2026-08-02
+## CURRENT CANONICAL AUDIT OVERRIDE — 2026-08-08
 
 Behavior/sequence authority: `../book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` and its referenced owner contracts.
 
@@ -8,23 +8,25 @@ Documentation verdict authority: `reports/AUDIT_FINAL_STATE.md`.
 
 `[DOCUMENTATION_STRATEGY_STATUS] DOCUMENTATION_STRATEGY_READY`
 
-`[IMPLEMENTATION_RELOCK_STATUS] CONFORMANCE_AUDIT_PENDING / NOT_PRODUCTION_RELOCKED`
+`[IMPLEMENTATION_RELOCK_STATUS] NOT_GRANTED / NOT_PRODUCTION_RELOCKED`
 
 The `FULL_GLOBAL_MARKET_DATA_LOCKED`, `PRODUCTION_READY`, and component `LOCKED` checkpoints below are retained as historical evidence for the source state and contracts they actually executed. They are **not current decision-grade production claims** after the Weekly Swing strategy correction.
 
-Current handoff facts:
+Current handoff facts (strict re-audit 2026-08-08):
 
-- owner strategy order 1–19 has been updated;
-- order 20 has an additive V2 schema/SQLite foundation but nullable writer/backfill/enforcement gaps remain;
-- order 21 has a passing targeted schema mirror guard (`6 tests / 528 assertions`) but required semantic oracles are not yet production-path proof;
-- P0 direct history repair, current-active survivorship, synthetic price-derived actions, and incoherent runtime price basis remain open;
-- P1 provenance/config/coverage/ATR/event/actual-field/factor/read/ops proof remains open or partial.
+- documentation strategy/synchronization: **PASS 22/22**;
+- current implementation authority: `MARKET_DATA_IMPLEMENTATION_LEDGER.md`;
+- implementation conformance: **NOT_GRANTED**; documentation closure is not runtime closure;
+- `P0-04` is reopened as an implementation gap because technical indicators must bind one run-wide `STRUCTURAL_ADJUSTED` analytical price product, not merely avoid provider `adj_close`;
+- remaining P1/runtime/data/proof findings stay governed by the current ledger and must not be inferred from the historical locks below.
 
-No checkpoint below may be cited to close implementation findings unless it is re-executed against the corrected owner contracts and admitted by the future implementation audit. Do not change implementation status to `CONFORMANT`, `VALIDATED`, or `LOCKED` until stage-22 acceptance gates are met.
+No checkpoint below may be cited to close implementation findings unless it is re-executed against the corrected owner contracts and admitted by the current implementation audit. Do not change implementation status to `CONFORMANT`, `VALIDATED`, or `LOCKED` until stage-22 acceptance gates are met.
 
-## ACTIVE SESSION
+## HISTORICAL SESSION RECORD — NON-AUTHORITATIVE UNDER V2
 
-ACTIVE SESSION:
+The block below is preserved verbatim enough to retain execution history, but its `ACTIVE`, `LOCKED`, and `PRODUCTION_READY` wording is historical. **Current V2 overrides:** suspension/event type alone never proves `NOT_EXPECTED`; full-session point-in-time expectation evidence is required. Operational `manual_file` is one-date rescue only; wider manual ranges are planned historical/correction/replay workflows, not continuity. Stable `listing_id` is target identity; current ticker/master state is not historical truth. Technical indicators require the selected run-wide `STRUCTURAL_ADJUSTED` product.
+
+HISTORICAL SESSION:
 - Trading Status Source Model Semantic Simplification
 
 [SESSION_STATUS] COMPLETED

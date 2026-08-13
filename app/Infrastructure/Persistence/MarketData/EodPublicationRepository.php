@@ -29,6 +29,9 @@ class EodPublicationRepository
                 'pub.is_current',
                 'pub.seal_state',
                 'pub.sealed_at',
+                'pub.price_product_code as publication_price_product_code',
+                'pub.price_product_version as publication_price_product_version',
+                'pub.factor_set_hash as publication_factor_set_hash',
                 'run.terminal_status',
                 'run.publishability_state',
                 'run.coverage_gate_state',
@@ -43,7 +46,10 @@ class EodPublicationRepository
                 'run.is_current_publication',
                 'run.sealed_at as run_sealed_at',
                 'run.publication_id as run_publication_id',
-                'run.publication_version as run_publication_version'
+                'run.publication_version as run_publication_version',
+                'run.price_product_code as run_price_product_code',
+                'run.price_product_version as run_price_product_version',
+                'run.factor_set_hash as run_factor_set_hash'
             )
             ->first();
     }
@@ -70,6 +76,9 @@ class EodPublicationRepository
                 'pub.is_current',
                 'pub.seal_state',
                 'pub.sealed_at',
+                'pub.price_product_code as publication_price_product_code',
+                'pub.price_product_version as publication_price_product_version',
+                'pub.factor_set_hash as publication_factor_set_hash',
                 'run.terminal_status',
                 'run.publishability_state',
                 'run.coverage_gate_state',
@@ -84,13 +93,50 @@ class EodPublicationRepository
                 'run.is_current_publication',
                 'run.sealed_at as run_sealed_at',
                 'run.publication_id as run_publication_id',
-                'run.publication_version as run_publication_version'
+                'run.publication_version as run_publication_version',
+                'run.price_product_code as run_price_product_code',
+                'run.price_product_version as run_price_product_version',
+                'run.factor_set_hash as run_factor_set_hash'
             )
             ->get();
 
         return $rows->filter(function ($row) {
             return $this->determineCurrentIntegrityViolationReasons($row) !== [];
         })->values();
+    }
+
+    /**
+     * Migration-only baseline selector for governed analytical recomputation.
+     *
+     * Consumers must use the strict readable resolver. This selector permits exactly the three
+     * legacy analytical-identity faults that the recompute will replace; every seal, pointer,
+     * run, coverage, and publication invariant remains mandatory.
+     */
+    public function findCurrentPublicationForAnalyticalRemediation($tradeDate)
+    {
+        $raw = $this->findRawCurrentPublicationStateForTradeDate($tradeDate);
+        if (! $raw) {
+            return null;
+        }
+
+        $allowedLegacyFaults = [
+            'PUBLICATION_ANALYTICAL_IDENTITY_INVALID',
+            'RUN_ANALYTICAL_IDENTITY_MISMATCH',
+            'ANALYTICAL_ROW_IDENTITY_MISMATCH',
+        ];
+        $blocking = array_values(array_diff(
+            $this->determineCurrentIntegrityViolationReasons($raw),
+            $allowedLegacyFaults
+        ));
+
+        if ($blocking !== []) {
+            return null;
+        }
+
+        return DB::table('eod_publications')
+            ->where('publication_id', $raw->publication_id)
+            ->where('trade_date', $tradeDate)
+            ->first();
     }
 
     /**
@@ -141,6 +187,15 @@ class EodPublicationRepository
 
         if (empty($row->sealed_at)) {
             $reasons[] = 'PUBLICATION_SEALED_AT_MISSING';
+        }
+
+        $expectedProduct = (string) config('market_data.indicators.price_product_default', 'STRUCTURAL_ADJUSTED');
+        $publicationProduct = (string) ($row->publication_price_product_code ?? $row->price_product_code ?? '');
+        $publicationVersion = (string) ($row->publication_price_product_version ?? $row->price_product_version ?? '');
+        $publicationFactorHash = (string) ($row->publication_factor_set_hash ?? $row->factor_set_hash ?? '');
+
+        if ($publicationProduct !== $expectedProduct || $publicationVersion === '' || ! preg_match('/^[a-f0-9]{64}$/', $publicationFactorHash)) {
+            $reasons[] = 'PUBLICATION_ANALYTICAL_IDENTITY_INVALID';
         }
 
         if (empty($row->run_id)) {
@@ -198,6 +253,24 @@ class EodPublicationRepository
             $reasons[] = 'RUN_PUBLICATION_VERSION_MISMATCH';
         }
 
+        if ((string) ($row->run_price_product_code ?? '') !== $publicationProduct
+            || (string) ($row->run_price_product_version ?? '') !== $publicationVersion
+            || (string) ($row->run_factor_set_hash ?? '') !== $publicationFactorHash) {
+            $reasons[] = 'RUN_ANALYTICAL_IDENTITY_MISMATCH';
+        }
+
+        if ($publicationProduct === $expectedProduct
+            && $publicationVersion !== ''
+            && preg_match('/^[a-f0-9]{64}$/', $publicationFactorHash)
+            && ! $this->analyticalRowsMatchPublicationIdentity((object) [
+                'publication_id' => $row->publication_id,
+                'price_product_code' => $publicationProduct,
+                'price_product_version' => $publicationVersion,
+                'factor_set_hash' => $publicationFactorHash,
+            ])) {
+            $reasons[] = 'ANALYTICAL_ROW_IDENTITY_MISMATCH';
+        }
+
         return array_values(array_unique($reasons));
     }
 
@@ -239,6 +312,9 @@ class EodPublicationRepository
             ->where('run.is_current_publication', 1)
             ->whereColumn('run.publication_id', 'ptr.publication_id')
             ->whereColumn('run.publication_version', 'ptr.publication_version')
+            ->whereColumn('run.price_product_code', 'pub.price_product_code')
+            ->whereColumn('run.price_product_version', 'pub.price_product_version')
+            ->whereColumn('run.factor_set_hash', 'pub.factor_set_hash')
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
@@ -314,6 +390,9 @@ class EodPublicationRepository
             ->where('run.is_current_publication', 1)
             ->whereColumn('run.publication_id', 'ptr.publication_id')
             ->whereColumn('run.publication_version', 'ptr.publication_version')
+            ->whereColumn('run.price_product_code', 'pub.price_product_code')
+            ->whereColumn('run.price_product_version', 'pub.price_product_version')
+            ->whereColumn('run.factor_set_hash', 'pub.factor_set_hash')
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
@@ -377,6 +456,9 @@ class EodPublicationRepository
             ->where('run.is_current_publication', 1)
             ->whereColumn('run.publication_id', 'ptr.publication_id')
             ->whereColumn('run.publication_version', 'ptr.publication_version')
+            ->whereColumn('run.price_product_code', 'pub.price_product_code')
+            ->whereColumn('run.price_product_version', 'pub.price_product_version')
+            ->whereColumn('run.factor_set_hash', 'pub.factor_set_hash')
             ->select(
                 'pub.*',
                 'ptr.trade_date as pointer_trade_date',
@@ -446,9 +528,11 @@ class EodPublicationRepository
                 'source_file_row_count' => $run->source_file_row_count ?? null,
                 'config_snapshot_id' => $run->config_snapshot_id ?? null,
                 'factor_set_id' => null,
+                'factor_set_hash' => null,
                 'observation_manifest_hash' => $run->observation_manifest_hash ?? null,
                 'publication_manifest_hash' => null,
-                'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
+                'price_product_code' => (string) config('market_data.indicators.price_product_default', 'STRUCTURAL_ADJUSTED'),
+                'price_product_version' => (string) config('market_data.indicators.price_product_version', 'structural_adjusted_v1'),
                 'read_model_version' => 'market_data_read_product_v1',
                 'readiness_state' => 'NOT_READY',
                 'sealed_at' => null,
@@ -536,11 +620,51 @@ class EodPublicationRepository
         DB::table('eod_publications')->where('publication_id', $publicationId)->update([
             'config_snapshot_id' => $configSnapshotId,
             'observation_manifest_hash' => $observationManifestHash,
-            'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
             'read_model_version' => 'market_data_read_product_v1',
             'readiness_state' => 'NOT_READY',
             'updated_at' => $now,
         ]);
+    }
+
+    /**
+     * Persist the one-basis-per-run identity even when the run produces zero analytical rows.
+     */
+    public function bindCandidateAnalyticalProduct($publicationId, $runId, $priceProductCode, $priceProductVersion, $factorSetHash)
+    {
+        $this->assertPublicationMutable($publicationId);
+        $priceProductCode = strtoupper(trim((string) $priceProductCode));
+        $priceProductVersion = trim((string) $priceProductVersion);
+        $factorSetHash = strtolower(trim((string) $factorSetHash));
+
+        if ($priceProductCode !== 'STRUCTURAL_ADJUSTED') {
+            throw new \RuntimeException('ANALYTICAL_PRICE_PRODUCT_INVALID: publication must bind STRUCTURAL_ADJUSTED.');
+        }
+        if ($priceProductVersion === '' || ! preg_match('/^[a-f0-9]{64}$/', $factorSetHash)) {
+            throw new \RuntimeException('ANALYTICAL_PRODUCT_IDENTITY_INCOMPLETE.');
+        }
+
+        $now = Carbon::now(config('market_data.platform.timezone'));
+        DB::transaction(function () use ($publicationId, $runId, $priceProductCode, $priceProductVersion, $factorSetHash, $now) {
+            $publication = DB::table('eod_publications')
+                ->where('publication_id', $publicationId)
+                ->where('run_id', $runId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $publication) {
+                throw new \RuntimeException('ANALYTICAL_PUBLICATION_RUN_MISMATCH.');
+            }
+
+            $identity = [
+                'price_product_code' => $priceProductCode,
+                'price_product_version' => $priceProductVersion,
+                'factor_set_hash' => $factorSetHash,
+                'updated_at' => $now,
+            ];
+
+            DB::table('eod_publications')->where('publication_id', $publicationId)->update($identity);
+            DB::table('eod_runs')->where('run_id', $runId)->update($identity);
+        });
     }
 
     public function sealCandidatePublication(EodRun $run, $sealedBy, $sealNote = null)
@@ -562,6 +686,9 @@ class EodPublicationRepository
                 ->where('publication_id', $candidate->publication_id)
                 ->update([
                     'seal_state' => 'SEALED',
+                    // Recorded on the publication, not inferred later: a consumer must be able to
+                    // see what this seal covers without reconstructing which run produced it.
+                    'seal_provenance_scope' => $this->sealProvenanceScope($candidate, $run),
                     'source_file_hash' => $run->source_file_hash ?? null,
                     'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
                     'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
@@ -588,6 +715,7 @@ class EodPublicationRepository
                 ->where('publication_id', $candidate->publication_id)
                 ->update([
                     'seal_state' => 'SEALED',
+                    'seal_provenance_scope' => $this->sealProvenanceScope($candidate, $run),
                     'source_file_hash' => $run->source_file_hash ?? null,
                     'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
                     'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
@@ -877,6 +1005,28 @@ class EodPublicationRepository
         });
     }
 
+    /**
+     * What a seal on this candidate actually covers.
+     *
+     * `FULL` — config identity and acquisition provenance both. `ANALYTICAL_ONLY` — the run
+     * recomputed analytics over existing bars and there was no acquisition manifest to carry
+     * forward, so the seal covers the analytical identity and states nothing about acquisition.
+     *
+     * A carried-forward manifest outranks the mode: a recompute that inherits real acquisition
+     * provenance is fully sealed, because the provenance is present and true regardless of which
+     * run first recorded it.
+     */
+    private function sealProvenanceScope($publication, EodRun $run): string
+    {
+        if (trim((string) ($publication->observation_manifest_hash ?? '')) !== '') {
+            return 'FULL';
+        }
+
+        return (string) ($run->promote_mode ?? '') === 'analytical_remediation_current'
+            ? 'ANALYTICAL_ONLY'
+            : 'FULL';
+    }
+
     private function assertPublicationIntegrityContextComplete($publication, EodRun $run, $allowPartial = false): void
     {
         $missing = [];
@@ -903,15 +1053,38 @@ class EodPublicationRepository
             }
         }
 
+        if ((string) ($publication->price_product_code ?? '') !== (string) config('market_data.indicators.price_product_default', 'STRUCTURAL_ADJUSTED')) {
+            $missing[] = 'price_product_code';
+        }
+        if (empty($publication->price_product_version)) {
+            $missing[] = 'price_product_version';
+        }
+        if (empty($publication->factor_set_hash) || ! preg_match('/^[a-f0-9]{64}$/', (string) $publication->factor_set_hash)) {
+            $missing[] = 'factor_set_hash';
+        }
+        if (! $this->analyticalRowsMatchPublicationIdentity($publication)) {
+            $missing[] = 'analytical_row_identity';
+        }
+
+        foreach (['price_product_code', 'price_product_version', 'factor_set_hash'] as $identityField) {
+            if ((string) ($run->{$identityField} ?? '') !== (string) ($publication->{$identityField} ?? '')) {
+                $missing[] = 'run_'.$identityField;
+            }
+        }
+
         if (! empty($run->config_snapshot_id)) {
             if (empty($publication->config_snapshot_id) || (int) $publication->config_snapshot_id !== (int) $run->config_snapshot_id) {
                 $missing[] = 'config_snapshot_id';
             }
-            if (empty($publication->observation_manifest_hash) || (string) $publication->observation_manifest_hash !== (string) $run->observation_manifest_hash) {
-                $missing[] = 'observation_manifest_hash';
-            }
-            if ((string) ($publication->price_product_code ?? '') !== 'RAW') {
-                $missing[] = 'price_product_code';
+            // Only a run that acquired observations can present an acquisition manifest. A
+            // recompute run recomputes analytics over bars that already exist; demanding a manifest
+            // from it asks it to attest to work it did not do, and that demand is what stopped
+            // every promote run the moment config binding woke this gate. A run that did acquire
+            // still fails here exactly as before.
+            if ($this->sealProvenanceScope($publication, $run) === 'FULL') {
+                if (empty($publication->observation_manifest_hash) || (string) $publication->observation_manifest_hash !== (string) $run->observation_manifest_hash) {
+                    $missing[] = 'observation_manifest_hash';
+                }
             }
         }
 
@@ -1126,6 +1299,9 @@ class EodPublicationRepository
             ->where('run.is_current_publication', 1)
             ->whereColumn('run.publication_id', 'ptr.publication_id')
             ->whereColumn('run.publication_version', 'ptr.publication_version')
+            ->whereColumn('run.price_product_code', 'pub.price_product_code')
+            ->whereColumn('run.price_product_version', 'pub.price_product_version')
+            ->whereColumn('run.factor_set_hash', 'pub.factor_set_hash')
             ->orderByDesc('ptr.trade_date')
             ->select(
                 'pub.*',
@@ -1166,6 +1342,16 @@ class EodPublicationRepository
             return null;
         }
 
+        if ((string) ($row->price_product_code ?? '') !== (string) config('market_data.indicators.price_product_default', 'STRUCTURAL_ADJUSTED')
+            || empty($row->price_product_version)
+            || ! preg_match('/^[a-f0-9]{64}$/', (string) ($row->factor_set_hash ?? ''))) {
+            return null;
+        }
+
+        if (! $this->analyticalRowsMatchPublicationIdentity($row)) {
+            return null;
+        }
+
         $runState = [
             'terminal_status' => $row->run_terminal_status ?? $row->terminal_status ?? null,
             'publishability_state' => $row->run_publishability_state ?? $row->publishability_state ?? null,
@@ -1189,6 +1375,29 @@ class EodPublicationRepository
         return $row;
     }
 
+    private function analyticalRowsMatchPublicationIdentity($publication)
+    {
+        foreach (['eod_indicators', 'eod_indicators_history'] as $table) {
+            $query = DB::table($table)->where('publication_id', $publication->publication_id);
+            if (! $query->exists()) {
+                continue;
+            }
+
+            if ((clone $query)->where(function ($row) use ($publication) {
+                $row->whereNull('price_product_code')
+                    ->orWhere('price_product_code', '<>', $publication->price_product_code)
+                    ->orWhereNull('price_product_version')
+                    ->orWhere('price_product_version', '<>', $publication->price_product_version)
+                    ->orWhereNull('factor_set_hash')
+                    ->orWhere('factor_set_hash', '<>', $publication->factor_set_hash);
+            })->exists()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function buildManifestByPublicationId($publicationId)
     {
         $row = DB::table('eod_publications as pub')
@@ -1205,6 +1414,11 @@ class EodPublicationRepository
                 'pub.replaced_publication_id',
                 'pub.seal_state',
                 'pub.sealed_at',
+                'pub.price_product_code',
+                'pub.price_product_version',
+                'pub.factor_set_id',
+                'pub.factor_set_hash',
+                'pub.config_snapshot_id',
                 'run.config_version as config_identity',
                 'pub.bars_batch_hash',
                 'pub.indicators_batch_hash',

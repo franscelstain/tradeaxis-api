@@ -1,5 +1,8 @@
 # Production Validation Inventory
 
+> **HISTORICAL AUDIT/IMPLEMENTATION EVIDENCE — NON-AUTHORITATIVE FOR CURRENT V2 STRATEGY.** This file preserves dated runtime/inventory facts and may contain legacy field names, command behavior, locks, or production claims from earlier contracts. Current strategy authority is the owner contracts + Blueprint + Conformance Matrix; current execution/conformance state is `MARKET_DATA_IMPLEMENTATION_LEDGER.md`; current audit verdict is `reports/AUDIT_FINAL_STATE.md`. Legacy statements are not current requirements unless explicitly re-admitted by those authorities.
+
+
 Current admission status (2026-08-02): **HISTORICAL VALIDATION SCOPE / NOT CURRENT RELOCK PROOF**. See `reports/AUDIT_FINAL_STATE.md`. Runtime proof below remains valid for the commands and contracts it executed, but it predates the corrected temporal identity, immutable observation/config, factor/product, indicator, coverage, read-model, and as-known replay requirements.
 
 Status: DONE.

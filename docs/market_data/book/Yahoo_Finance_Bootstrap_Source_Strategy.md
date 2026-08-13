@@ -33,10 +33,10 @@ Tidak adanya provider berbayar pada fase sekarang bukan defect, audit gap, techn
 ## Current source roles (LOCKED)
 
 - primary bootstrap EOD source: `api_free/yahoo_finance`
-- controlled recovery source: `manual_file`
+- controlled **one-date operational rescue** source: `manual_file`
 - canonical domain truth: governed, validated, versioned publication; bukan provider payload atau nama provider
 
-`manual_file` adalah jalur recovery yang dikendalikan, bukan second live feed, consensus member, atau alasan melakukan merge field-by-field. Satu publication candidate tetap harus memiliki source mode dan provenance yang eksplisit.
+`manual_file` adalah explicit controlled one-date operational rescue, bukan second live feed, continuity source, consensus member, atau alasan melakukan merge field-by-field. Planned correction/replay/historical fill tetap boleh memakai manual input bila scope-nya eksplisit. Satu publication candidate tetap harus memiliki source mode dan provenance yang eksplisit.
 
 ---
 
@@ -253,11 +253,11 @@ Konsekuensinya dua arah dan keduanya mengikat:
 - kontrak hilir tidak boleh menuliskan requirement seolah data itu akan tiba pada fase ini;
 - klaim bahwa provider secara mutlak tidak memiliki kapabilitas tersebut memerlukan hasil probe endpoint yang disimpan sebagai evidence, bukan pembacaan mapping.
 
-### Known adapter defect
+### Historical adapter defect — CLOSED
 
-`PublicApiEodBarsAdapter.php:983` memakai `close` sebagai fallback ketika `adjclose` absen. `Source_Mapping_Contract_LOCKED.md` menyatakan provider `adj_close` "has no close fallback semantics". Nilai `adj_close` yang tersimpan karena itu belum tentu benar-benar `adj_close` provider.
+Audit W00/W01 tanggal `2026-08-03` menutup defect lama ketika adapter memakai `close` sebagai fallback bila provider `adjclose` absen. State aktif dokumentasi tidak lagi menganggap defect tersebut terbuka.
 
-Ini defect implementasi, bukan kekurangan dokumen. Ia dicatat di sini agar matrix tidak dibaca seolah kolom `adj_close` sudah berperilaku sesuai kontrak, dan harus ditutup pada work order yang memiliki source mapping.
+Requirement yang tetap mengikat adalah milik `Source_Mapping_Contract_LOCKED.md`: provider `adj_close` adalah nullable diagnostic observation metadata, **tanpa close fallback semantics**, dan tidak pernah menjadi canonical RAW/analytical price product. Historical mention defect dipertahankan hanya untuk traceability; ia tidak boleh dibaca sebagai current strategy gap.
 
 ---
 
@@ -283,7 +283,7 @@ Strategi ini dianggap dipatuhi hanya jika seluruh kondisi berikut benar:
 
 Interpretasi final:
 - **sekarang:** `api_free/yahoo_finance` adalah bootstrap primary EOD source yang sah untuk pembuktian manfaat Weekly Swing;
-- **recovery:** `manual_file` adalah controlled recovery, bukan dual-feed atau consensus source;
+- **recovery:** `manual_file` adalah controlled one-date operational rescue, bukan continuity source, dual-feed, atau consensus source;
 - **arsitektur:** domain dan canonical contracts tetap provider-neutral;
 - **quality:** sumber gratis tidak pernah menjadi alasan untuk menurunkan validation, coverage, provenance, correction, atau readability safety;
 - **nanti:** sumber berbayar dievaluasi ketika manfaat atau kebutuhan nyata membenarkannya;

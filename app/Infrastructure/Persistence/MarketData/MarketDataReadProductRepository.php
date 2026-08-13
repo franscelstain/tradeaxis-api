@@ -40,6 +40,9 @@ class MarketDataReadProductRepository
             ->where('elig.trade_date', $publication->trade_date)
             ->where('elig.publication_id', $publication->publication_id)
             ->where('elig.run_id', $publication->run_id)
+            ->where('ind.price_product_code', $publication->price_product_code)
+            ->where('ind.price_product_version', $publication->price_product_version)
+            ->where('ind.factor_set_hash', $publication->factor_set_hash)
             ->select([
                 'elig.trade_date', 'elig.eligible', 'elig.reason_code as data_usability_reason_code',
                 'elig.universe_membership_state', 'elig.bar_expectation_state', 'elig.delivery_state',
@@ -47,8 +50,10 @@ class MarketDataReadProductRepository
                 'elig.event_risk_state', 'elig.eligibility_reasons_json',
                 'tick.'.$tickerId.' as ticker_id', 'tick.'.$tickerCode.' as ticker_code',
                 'tick.company_name as ticker_name', 'bar.close as close_price', 'bar.volume', 'bar.source',
-                'bar.listing_id', 'bar.price_product_code', 'bar.quality_state as bar_quality_state',
+                'bar.listing_id', 'bar.price_product_code as canonical_price_product_code', 'bar.quality_state as bar_quality_state',
                 'ind.is_valid as indicator_is_valid', 'ind.invalid_reason_code as indicator_invalid_reason_code',
+                'ind.price_product_code', 'ind.price_product_version', 'ind.factor_set_id', 'ind.factor_set_hash',
+                'ind.config_snapshot_id as analytical_config_snapshot_id', 'ind.sector_membership_id',
                 'ind.dv20_idr', 'ind.adv20_traded_value_idr_actual', 'ind.adv20_close_volume_proxy_idr',
                 'ind.atr14_pct', 'ind.vol_ratio', 'ind.sector_code', 'sector.sector_name', 'sector.sector_index_code',
                 'ind.roc5', 'ind.roc10', 'ind.roc20', 'ind.hh20', 'ind.ll20', 'ind.ma20', 'ind.ma50',

@@ -45,7 +45,7 @@ Rejected policies:
 
 ### OPTION A — STRICT NO REPLACE
 
-Rejected because it blocks legitimate controlled replacement flows such as correction/current replacement and repair workflows.
+Rejected because it blocks legitimate controlled replacement flows such as correction/current replacement and correction/current-replacement and pointer-integrity recovery workflows.
 
 ### OPTION B — AUTO REPLACE
 
@@ -154,7 +154,7 @@ The current pointer must not change when final outcome is:
 - `NOT_READABLE`;
 - `RUN_LOCK_CONFLICT`;
 - coverage failure;
-- non-current repair candidate publication.
+- non-current correction candidate publication.
 
 ---
 

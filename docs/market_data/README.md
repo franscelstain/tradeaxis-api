@@ -122,7 +122,7 @@ Keputusan final lintas dokumen:
 - bounded delivery gap di bawah 2% dapat melewati delivery gate hanya bila denominator temporal benar, seluruh listing yang missing tetap memiliki explicit delivery/eligibility reasons, dan semua independent quality/provenance/product/seal gates lulus
 - “partial import” sebagai proses yang belum selesai, belum dievaluasi, atau kehilangan artifact/reason rows tidak boleh menjadi readable publication
 - sistem memilih **data cukup lengkap tapi boleh lebih lambat** dibanding **data cepat tapi belum cukup lengkap**
-- source order resmi = primary `api_free/yahoo_finance`, secondary controlled recovery `manual_file`
+- source order resmi = primary `api_free/yahoo_finance`, secondary controlled **one-date rescue** `manual_file`; `manual_file` bukan continuity source untuk outage multi-hari
 - conflict resolution = **source priority + validation + correction flow**, bukan voting dan bukan merge bebas
 - consumer hanya boleh membaca publication yang sealed/current/readable melalui effective-date pointer contract
 - consumer dilarang membaca raw table tanpa publication context, dilarang memakai `MAX(date)`, dan dilarang menghitung ulang indicator
@@ -251,6 +251,8 @@ Dokumen dalam domain ini tidak boleh lagi menyatakan atau menyiratkan bahwa:
 Status dokumentasi strategi aktif:
 
 > **`DOCUMENTATION_STRATEGY_READY` — canonical data-readiness implementation baseline for IDX Regular-Market EOD**
+>
+> Documentation-strategy validation: **`PASS` (2026-08-07), 22/22 strategy areas synchronized.** Ini tidak menaikkan claim implementasi/runtime.
 
 Artinya scope, semantics, invariants, target data products, implementation order, schema meaning, proof specification, dan operational boundary telah cukup lengkap untuk mengarahkan pembangunan. Status ini tidak menyatakan code, migration, database, tests, scheduler, atau operasi saat ini sudah conformant atau production-ready.
 

@@ -168,7 +168,7 @@ Pointer tidak boleh pindah karena:
 - coverage `NOT_EVALUABLE`;
 - fallback candidate yang tidak readable;
 - force replace tanpa candidate `SUCCESS + READABLE + coverage PASS`;
-- non-current repair candidate.
+- non-current correction candidate.
 
 ---
 
@@ -201,7 +201,7 @@ Invariant wajib:
 | Coverage NOT_EVALUABLE + no previous readable | `FAILED` | `NOT_READABLE` | pointer empty or unchanged; no fallback |
 | Fallback target NOT_READABLE | reject fallback | current run remains non-readable | pointer must not point to fallback target |
 | Fallback target coverage FAIL | reject fallback | current run remains non-readable | pointer must not point to fallback target |
-| Non-current repair candidate | `SUCCESS` allowed only as non-readable repair artifact | `NOT_READABLE` | pointer not moved to repair candidate |
+| Non-current correction candidate | `SUCCESS` allowed only as non-readable correction artifact | `NOT_READABLE` | pointer not moved to correction candidate |
 | Mixed source data without explicit contract | blocked/fail-safe | `NOT_READABLE` unless coverage contract authorizes basis | pointer not moved |
 
 ---

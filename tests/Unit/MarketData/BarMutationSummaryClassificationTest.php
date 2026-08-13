@@ -48,6 +48,8 @@ class BarMutationSummaryClassificationTest extends TestCase
         return array_merge([
             'trade_date' => self::TRADE_DATE,
             'ticker_id' => $tickerId,
+            'listing_id' => 1000 + $tickerId,
+            'source_observation_id' => 5000 + $tickerId,
             'open' => 100,
             'high' => 110,
             'low' => 90,
@@ -55,6 +57,9 @@ class BarMutationSummaryClassificationTest extends TestCase
             'volume' => 1000,
             'adj_close' => 105,
             'source' => 'API_FREE',
+            'canonicalization_version' => 'eod_canonical_v1',
+            'price_product_code' => 'RAW',
+            'quality_state' => 'VALIDATED',
             'run_id' => 20,
             'publication_id' => 77,
             'created_at' => Carbon::now()->toDateTimeString(),

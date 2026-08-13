@@ -2,7 +2,7 @@
 
 Status: LOCKED  
 Contract owner: Market Data / Publication Safety  
-Last updated: 2026-04-27
+Last updated: 2026-08-12
 
 ## Purpose
 
@@ -15,10 +15,16 @@ Coverage MUST be evaluated from persisted temporal expectation plus immutable re
 Required fields:
 
 - `expected_universe_count`
+- `coverage_universe_count` raw temporal-universe evidence
+- `coverage_universe_hash`
 - `verified_not_expected_count`
+- `coverage_bar_not_expected_count` persisted/evidence field
 - `expectation_unknown_count`
+- `coverage_expectation_unknown_count` persisted/evidence field
 - `delivered_observation_count`
+- `coverage_delivered_count` persisted/evidence field
 - `canonical_valid_count`
+- `coverage_delivered_valid_count` persisted/evidence field
 - `quality_blocked_count`
 - `available_eod_count`
 - `missing_eod_count`
@@ -35,6 +41,8 @@ Required fields:
 - `coverage_universe_basis`
 - `coverage_contract_version`
 - `coverage_missing_sample`
+- `coverage_missing_sample_json` exact stored-field export
+- `coverage_excluded_sample_json`
 
 ## Calculation Rules
 
@@ -42,7 +50,11 @@ Required fields:
 
 `available_eod_count`/`delivered_observation_count` is the count of unique traceably delivered requested-date market observations in the expected universe. Canonical-valid and quality-blocked counts remain separate.
 
-`missing_eod_count = expected_universe_count - available_eod_count`.
+`missing_eod_count = expected_universe_count - delivered_observation_count`.
+
+`coverage_available_count` remains a canonical-availability compatibility metric. It must never be
+substituted for `coverage_delivered_count`, just as raw `coverage_universe_count` must never be
+substituted for `coverage_expected_count`.
 
 `coverage_ratio = delivered_observation_count / expected_universe_count`.
 
@@ -114,7 +126,12 @@ Replay verification MUST compare coverage fields when present in the fixture exp
 Required replay-comparable coverage fields:
 
 - `coverage_universe_count`
+- `coverage_universe_hash`
 - `coverage_expected_count`
+- `coverage_bar_not_expected_count`
+- `coverage_expectation_unknown_count`
+- `coverage_delivered_count`
+- `coverage_delivered_valid_count`
 - `coverage_available_count`
 - `coverage_missing_count`
 - `expected_bar_count`
@@ -129,6 +146,8 @@ Required replay-comparable coverage fields:
 - `coverage_universe_basis`
 - `coverage_contract_version`
 - `coverage_missing_sample`
+- `coverage_missing_sample_json`
+- `coverage_excluded_sample_json`
 
 ## Command Enforcement
 
@@ -140,7 +159,7 @@ The following are forbidden:
 
 - treating coverage as metadata-only
 - allowing current publication when coverage is `FAIL` or `NOT_EVALUABLE`
-- allowing source mode, manual file, correction, repair, replay, or evidence export to bypass coverage enforcement
+- allowing source mode, manual file, correction/republication, pointer-integrity repair, replay, or evidence export to bypass coverage enforcement
 - excluding dormant, zero-volume, illiquid, provider-missing, or current-inactive listings without verified point-in-time `NOT_EXPECTED` evidence
 - treating delivery coverage as quality or eligibility
 - using fallback to convert a failed candidate into readable

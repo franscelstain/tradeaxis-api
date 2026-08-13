@@ -119,6 +119,7 @@ Trading status is a root of expectation, so it falls under the shared external-r
 Domain parameters owned by this contract:
 
 - **Authority:** the exchange announcement record for suspension, unsuspension, halt, relisting, UMA, and governed board or status changes.
+- **Cadence:** reconcile current status evidence on each operational trading day before expected-bar/readability decisions are finalized, rerun when an authoritative status announcement revises an affected date, and perform full-range reconciliation before an historical period receives an unqualified status-complete claim.
 - **Scope:** from the intentional dataset start onward, per registered status source and its declared authority class.
 - **Qualification:** the frequency of `UNKNOWN` in a period is reported alongside the reconciliation result, because a period dominated by `UNKNOWN` is fail-safe but no longer discriminating.
 

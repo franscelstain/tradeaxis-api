@@ -104,6 +104,11 @@ class IndicatorVectorService
             'is_valid' => $invalidReason ? 0 : 1,
             'invalid_reason_code' => $invalidReason,
             'indicator_set_version' => $config['set_version'],
+            'listing_id' => isset($config['listing_id']) ? (int) $config['listing_id'] : null,
+            'formula_version' => (string) ($config['formula_version'] ?? $config['set_version']),
+            'config_snapshot_id' => isset($config['config_snapshot_id']) ? (int) $config['config_snapshot_id'] : null,
+            'factor_set_hash' => $config['factor_set_hash'] ?? null,
+            'price_product_version' => (string) ($config['price_product_version'] ?? 'structural_adjusted_v1'),
             /*
              * The vector must state which price product it was computed on. Without it a consumer
              * cannot tell an adjusted series from an unadjusted one, and the two are not
@@ -113,6 +118,7 @@ class IndicatorVectorService
              */
             'price_product_code' => $priceProductCode,
             'sector_code' => $values['sector_code'],
+            'sector_membership_id' => isset($config['sector_membership_id']) ? (int) $config['sector_membership_id'] : null,
             'dv20_idr' => $values['dv20_idr'],
             'adv20_close_volume_proxy_idr' => $values['adv20_close_volume_proxy_idr'],
             'adv20_traded_value_idr_actual' => $values['adv20_traded_value_idr_actual'],
@@ -270,16 +276,16 @@ class IndicatorVectorService
             ? $config['price_adjustment_factors']
             : [];
 
-        // Domain constants rather than the config helper: this service computes vectors and must
-        // stay callable without a booted container.
-        $rawProduct = MarketDataScope::RAW_PRODUCT;
-        $adjustedProduct = MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT;
-
-        if (empty($factors) || empty($bars)) {
-            return ['bars' => $bars, 'price_product_code' => $rawProduct];
+        // The selected analytical product is run-wide. A cumulative factor of one describes the
+        // value transformation for this row; it never changes the product's identity back to RAW.
+        $selectedProduct = strtoupper(trim((string) ($config['selected_price_product_code'] ?? MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT)));
+        if ($selectedProduct !== MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT) {
+            throw new \RuntimeException('ANALYTICAL_PRICE_PRODUCT_INVALID: expected STRUCTURAL_ADJUSTED.');
         }
 
-        $applied = false;
+        if (empty($factors) || empty($bars)) {
+            return ['bars' => $bars, 'price_product_code' => $selectedProduct];
+        }
 
         foreach ($bars as $index => $bar) {
             $barDate = (string) $bar['trade_date'];
@@ -296,8 +302,6 @@ class IndicatorVectorService
             if (abs($priceFactor - 1.0) < 1e-12 && abs($volumeFactor - 1.0) < 1e-12) {
                 continue;
             }
-
-            $applied = true;
 
             /*
              * open, high, low and close move together. Adjusting close alone would corrupt true
@@ -322,7 +326,7 @@ class IndicatorVectorService
 
         return [
             'bars' => $bars,
-            'price_product_code' => $applied ? $adjustedProduct : $rawProduct,
+            'price_product_code' => $selectedProduct,
         ];
     }
 
@@ -562,7 +566,9 @@ class IndicatorVectorService
             }
 
             if (count($boundarySeries) > $index + 1) {
-                $bars = $boundarySeries;
+                // Boundary state is part of the selected analytical product too. Feeding the RAW
+                // series here would mix RAW ATR with structurally adjusted MA/ROC values.
+                $bars = $this->applyPriceAdjustment($boundarySeries, $config)['bars'];
                 $index = count($boundarySeries) - 1;
             }
         }
@@ -714,12 +720,8 @@ class IndicatorVectorService
 
     private function priceBasis(array $bar, array $config)
     {
-        $basis = strtolower((string) $config['price_basis_default']);
-
-        if ($basis === 'adj_close' && isset($bar['adj_close']) && $bar['adj_close'] !== null) {
-            return (float) $bar['adj_close'];
-        }
-
+        // applyPriceAdjustment has already built the selected coherent product in the canonical
+        // OHLC fields. Provider adjusted-close observations never participate in this selector.
         return (float) $bar['close'];
     }
 

@@ -31,6 +31,7 @@ trait SeedsConsumerReadModelFixture
         int $publicationVersion = 1,
         array $overrides = []
     ): void {
+        $factorSetHash = hash('sha256', 'consumer-read-model-fixture|'.$tradeDate.'|'.$publicationId);
         // array_key_exists, not ??. Half the states worth testing are "this column is null", and
         // ?? treats a null override as an absent one — so a test asking for a missing seal
         // timestamp silently received a present one and passed for the wrong reason.
@@ -78,6 +79,9 @@ trait SeedsConsumerReadModelFixture
             'coverage_universe_basis' => $override('coverage_universe_basis', 'ACTIVE_LISTED_EQUITY_AS_OF_DATE'),
             'coverage_contract_version' => $override('coverage_contract_version', 'coverage_gate_v1'),
             'is_current_publication' => $isCurrentRun,
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'sealed_at' => $sealedAt,
             'started_at' => $tradeDate.' 17:00:00',
             'created_at' => $tradeDate.' 17:00:00',
@@ -91,6 +95,9 @@ trait SeedsConsumerReadModelFixture
             'publication_version' => $publicationVersion,
             'is_current' => $isCurrent,
             'seal_state' => $sealState,
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'sealed_at' => $publicationSealedAt,
             'created_at' => $rowTimestamp,
             'updated_at' => $rowTimestamp,
@@ -146,6 +153,10 @@ trait SeedsConsumerReadModelFixture
             'is_valid' => 1,
             'invalid_reason_code' => null,
             'indicator_set_version' => 'v1',
+            'formula_version' => 'v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'consumer-read-model-fixture|'.$tradeDate.'|'.$publicationId),
             'sector_code' => 'G',
             'dv20_idr' => '123456789000.00',
             'atr14_pct' => '2.1000000000',

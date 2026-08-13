@@ -41,11 +41,11 @@ Minimum source mode yang valid:
 - `manual_file`
 
 `manual_file` tetap valid untuk:
-- controlled recovery
-- replay-like controlled ingestion
-- operator-driven historical fill yang kontraknya eksplisit
+- **explicit controlled one-date operational rescue**;
+- replay/correction ingestion yang diperintahkan owner contract;
+- operator-driven historical fill yang scope tanggalnya eksplisit selama development/backfill.
 
-Semua source mode, termasuk `manual_file`, tunduk pada observation-envelope, provenance, schema, stale-data, validation, dan correction rules yang sama. Manual input tidak boleh menjadi jalur bypass.
+Batasnya tegas: planned historical fill/replay boleh memiliki range eksplisit, tetapi `manual_file` **bukan** continuity source untuk menambal outage operational multi-hari secara berulang. Semua source mode, termasuk `manual_file`, tunduk pada observation-envelope, provenance, schema, stale-data, validation, dan correction rules yang sama. Manual input tidak boleh menjadi jalur bypass.
 
 ---
 
@@ -69,7 +69,7 @@ Untuk memenuhi kontrak tanggal bebas, implementation source acquisition wajib si
 - `period1` / `period2`
 - bounded windowing yang tetap membuktikan requested date target
 - retry / backoff / throttle untuk failure transient
-- fallback ke `manual_file` bila operating model memang mengizinkan jalur recovery terkontrol
+- explicit one-date rescue ke `manual_file` bila operating model memang mengizinkan recovery tersebut; planned historical fill/replay harus dinyatakan sebagai workflow tersendiri, bukan fallback continuity
 
 Yang dilarang:
 - menjadikan default query window provider sebagai capability limit platform
@@ -81,7 +81,7 @@ Yang dilarang:
 ## Source order and acquisition winner (LOCKED)
 Urutan resmi:
 1. `api_free` / `yahoo_finance`
-2. `manual_file` sebagai controlled recovery path
+2. `manual_file` sebagai controlled one-date operational rescue path; planned replay/correction/historical-fill scope tetap eksplisit dan bukan continuity fallback
 
 Urutan ini adalah keputusan untuk **fase bootstrap pembuktian manfaat**, bukan penetapan Yahoo Finance sebagai provider final atau authoritative exchange source.
 
@@ -96,7 +96,7 @@ Istilah legacy `source-of-truth mode` bila masih ada pada telemetry hanya berart
 
 Artinya:
 - run `api_free` tidak boleh diam-diam mengisi sebagian ticker dari `manual_file` lalu mengaku satu source tunggal
-- run `manual_file` yang sah boleh menjadi active acquisition source hanya bila memang dijalankan sebagai recovery/correction resmi
+- run `manual_file` yang sah boleh menjadi active acquisition source hanya bila dijalankan sebagai explicit one-date rescue, correction/replay resmi, atau planned historical fill dengan scope eksplisit; ia tidak boleh menjadi implicit multi-day outage continuity
 
 ---
 

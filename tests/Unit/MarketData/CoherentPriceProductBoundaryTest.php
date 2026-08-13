@@ -23,6 +23,8 @@ class CoherentPriceProductBoundaryTest extends TestCase
         return [
             'set_version' => 'ind_v1',
             'price_adjustment_factors' => $factors,
+            'selected_price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
             'price_basis_default' => 'close',
             'dv_window_days' => 20,
             'atr_window_days' => 14,
@@ -89,29 +91,27 @@ class CoherentPriceProductBoundaryTest extends TestCase
     }
 
     /**
-     * An unadjusted vector says RAW rather than claiming an adjustment it never performed.
+     * A factor-free row remains part of the run-wide selected product; factor one is not RAW.
      */
-    public function test_a_vector_with_no_factors_declares_raw(): void
+    public function test_a_vector_with_no_factors_remains_structural_adjusted(): void
     {
         $result = $this->adjust([$this->bar('2026-04-05')], []);
 
-        $this->assertSame('RAW', $result['price_product_code']);
+        $this->assertSame('STRUCTURAL_ADJUSTED', $result['price_product_code']);
         $this->assertEqualsWithDelta(100.0, $result['bars'][0]['close'], 1e-9);
     }
 
     /**
-     * A factor that lands outside the window adjusts nothing, so the vector stays RAW. Reporting
-     * STRUCTURAL_ADJUSTED merely because a factor existed somewhere would make the label describe
-     * the input rather than the output.
+     * A factor outside this row's window changes no value but cannot switch the run's product.
      */
-    public function test_a_factor_that_changes_nothing_leaves_the_vector_raw(): void
+    public function test_a_factor_that_changes_nothing_keeps_the_selected_product(): void
     {
         $result = $this->adjust(
             [$this->bar('2026-05-10')],
             [['ex_date' => '2026-04-20', 'price_factor' => 0.5, 'volume_factor' => 2.0]]
         );
 
-        $this->assertSame('RAW', $result['price_product_code'], 'a bar after the ex-date is already on the current scale');
+        $this->assertSame('STRUCTURAL_ADJUSTED', $result['price_product_code']);
         $this->assertEqualsWithDelta(100.0, $result['bars'][0]['close'], 1e-9);
     }
 
@@ -130,7 +130,8 @@ class CoherentPriceProductBoundaryTest extends TestCase
             ->buildRow(1, $bars, $requestedDate, 55, 9001, '2026-05-25 18:00:00', $this->config());
 
         $this->assertArrayHasKey('price_product_code', $row);
-        $this->assertSame('RAW', $row['price_product_code']);
+        $this->assertSame('STRUCTURAL_ADJUSTED', $row['price_product_code']);
+        $this->assertSame('structural_adjusted_v1', $row['price_product_version']);
     }
 
     /**
@@ -153,5 +154,28 @@ class CoherentPriceProductBoundaryTest extends TestCase
         $this->assertEqualsWithDelta(45.0, $adjusted['low'], 1e-9);
         $this->assertEqualsWithDelta(55.0, $adjusted['close'], 1e-9);
         $this->assertEqualsWithDelta(200.0, $adjusted['volume'], 1e-9, 'volume moves inversely');
+    }
+
+    public function test_legacy_adj_close_selector_cannot_become_an_analytical_fallback(): void
+    {
+        $bars = [];
+        for ($i = 1; $i <= 60; $i++) {
+            $bars[] = $this->bar(date('Y-m-d', strtotime('2026-01-01 +'.$i.' days')), 100, 77);
+        }
+        $config = $this->config();
+        $config['price_basis_default'] = 'adj_close';
+
+        $row = (new IndicatorVectorService())->buildRow(
+            1,
+            $bars,
+            $bars[count($bars) - 1]['trade_date'],
+            55,
+            9001,
+            '2026-05-25 18:00:00',
+            $config
+        );
+
+        $this->assertEqualsWithDelta(100.0, $row['hh20'], 1e-9);
+        $this->assertSame('STRUCTURAL_ADJUSTED', $row['price_product_code']);
     }
 }

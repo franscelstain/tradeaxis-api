@@ -1,5 +1,8 @@
 # Executed Correction Diff Example (LOCKED)
 
+> **ILLUSTRATIVE ONLY — NOT CURRENT STRATEGY AUTHORITY.** Resolve all semantics against the current owner contracts/Blueprint/Matrix; legacy fields in this example are compatibility or historical shape only.
+
+
 ## Purpose
 Show what a real correction diff artifact looks like after a correction is executed and published.
 

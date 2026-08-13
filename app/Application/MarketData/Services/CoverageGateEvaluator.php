@@ -22,7 +22,16 @@ class CoverageGateEvaluator
         $this->eventRiskSourceRepository = $eventRiskSourceRepository;
     }
 
-    public function evaluate($tradeDate, $requestedPublicationId = null)
+    /**
+     * `$knownAt` makes the denominator reproducible for a fixed trade date.
+     *
+     * Both of its inputs were cutoff-blind: the universe resolved "as of now", and the suspension
+     * lookup did too. Either one moving between two runs of the same trade date moves the
+     * denominator with it, which is what `F-006` measured as 950 → 949 → 950 on one execution day.
+     * With a cutoff the answer is a function of (trade date, knowledge time) and a replay can
+     * reproduce it.
+     */
+    public function evaluate($tradeDate, $requestedPublicationId = null, $knownAt = null)
     {
         $coverageBasis = $requestedPublicationId !== null && $requestedPublicationId !== ''
             ? 'CandidatePublication'
@@ -76,10 +85,10 @@ class CoverageGateEvaluator
             );
         }
 
-        $rawUniverse = $this->tickerMasterRepository->getUniverseForTradeDate($tradeDate);
+        $rawUniverse = $this->tickerMasterRepository->getUniverseForTradeDate($tradeDate, $knownAt);
         $coverageUniverseCount = count($rawUniverse);
-        $universe = $this->filterSuspendedUniverseRows($rawUniverse, $tradeDate);
-        $coverageBarNotRequiredCount = max(0, $coverageUniverseCount - count($universe));
+        $universe = $this->filterSuspendedUniverseRows($rawUniverse, $tradeDate, $knownAt);
+        $coverageBarNotExpectedCount = max(0, $coverageUniverseCount - count($universe));
 
         /*
          * Dormancy does not leave the denominator, and the reason is not bookkeeping.
@@ -98,8 +107,6 @@ class CoverageGateEvaluator
          * Only verified `NOT_EXPECTED` may be excluded (`:21`), which here means a verified
          * full-session suspension. Everything else stays in, and `UNKNOWN` stays in fail-safe.
          */
-        $coverageBarNotExpectedCount = $coverageBarNotRequiredCount;
-
         $universeByTickerId = [];
         foreach ($universe as $row) {
             $tickerId = isset($row['ticker_id']) ? (int) $row['ticker_id'] : null;
@@ -112,6 +119,17 @@ class CoverageGateEvaluator
                 'ticker_code' => isset($row['ticker_code']) ? (string) $row['ticker_code'] : null,
             ];
         }
+
+        /*
+         * `Coverage_Universe_Definition_LOCKED.md:52` requires EXPECTED, NOT_EXPECTED and UNKNOWN
+         * to be recorded, and `:57` fixes the denominator as EXPECTED + UNKNOWN. UNKNOWN was never
+         * computed, so the pipeline wrote a hard zero and the state could not be told apart from
+         * EXPECTED — which `:21` forbids, because UNKNOWN must stay visible.
+         *
+         * Counted from the same filtered set that forms the denominator, so the identity
+         * EXPECTED + UNKNOWN = denominator holds by construction rather than by arithmetic luck.
+         */
+        $expectationUnknownCount = $this->expectationUnknownCount($universeByTickerId, $tradeDate, $knownAt);
 
         $expectedUniverseCount = count($universeByTickerId);
         $coverageBarRequiredCount = $expectedUniverseCount;
@@ -131,7 +149,8 @@ class CoverageGateEvaluator
                     'coverage_zero_universe_blocked' => $blockedOnZeroUniverse,
                     'canonical_bar_evidence_required' => true,
                     'coverage_universe_count' => $coverageUniverseCount,
-                    'coverage_bar_not_required_count' => $coverageBarNotRequiredCount,
+                    'coverage_bar_not_expected_count' => $coverageBarNotExpectedCount,
+                    'coverage_expectation_unknown_count' => $expectationUnknownCount,
                     'coverage_bar_required_count' => 0,
                 ]
             );
@@ -177,8 +196,10 @@ class CoverageGateEvaluator
         return [
             'expected_universe_count' => $expectedUniverseCount,
             'coverage_universe_count' => $coverageUniverseCount,
-            'coverage_bar_not_required_count' => $coverageBarNotRequiredCount,
             'coverage_bar_not_expected_count' => $coverageBarNotExpectedCount,
+            'coverage_expectation_unknown_count' => $expectationUnknownCount,
+            'coverage_universe_hash' => $this->universeHash($rawUniverse, $universeBasis, $tradeDate),
+            'coverage_excluded_sample' => $this->excludedSample($rawUniverse, $universeByTickerId, $missingSampleLimit),
             'coverage_bar_required_count' => $coverageBarRequiredCount,
             'available_eod_count' => $availableEodCount,
             'missing_eod_count' => $missingEodCount,
@@ -226,7 +247,6 @@ class CoverageGateEvaluator
         return $policy + [
             'expected_universe_count' => 0,
             'coverage_universe_count' => 0,
-            'coverage_bar_not_required_count' => 0,
             'coverage_bar_not_expected_count' => 0,
             'coverage_bar_required_count' => 0,
             'available_eod_count' => 0,
@@ -254,7 +274,88 @@ class CoverageGateEvaluator
         ];
     }
 
-    private function filterSuspendedUniverseRows(array $universeRows, $tradeDate): array
+    /**
+     * A canonical hash over the universe that produced this run's denominator.
+     *
+     * `Coverage_Universe_Definition_LOCKED.md:52` asks for the temporal universe count **and**
+     * version/hash; only the count was stored. Two runs for one trade date could therefore resolve
+     * different universes with nothing recording which one each used.
+     *
+     * Follows the convention of `AnalyticalProductIdentityService::factorSetHash`: a schema tag so
+     * the shape can change without silently colliding, the basis, and an explicitly sorted identity
+     * list so ordering from the query can never alter the hash.
+     */
+    private function universeHash(array $universeRows, $universeBasis, $tradeDate): string
+    {
+        $identities = array_values(array_unique(array_map(function ($row) {
+            return (int) ($row['listing_id'] ?? 0).':'.(int) ($row['ticker_id'] ?? 0);
+        }, $universeRows)));
+        sort($identities, SORT_STRING);
+
+        return hash('sha256', json_encode([
+            'universe_hash_schema_version' => 'coverage_universe_v1',
+            'universe_basis' => (string) $universeBasis,
+            'trade_date' => (string) $tradeDate,
+            'listings' => $identities,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
+    /**
+     * Identities of the listings that left the denominator as verified `NOT_EXPECTED`.
+     *
+     * Bounded by the same sample limit as the missing sample, because the point is auditability
+     * rather than a full dump: a reader needs to be able to check an exclusion back against its
+     * source evidence, which naming a sample allows and a bare count does not.
+     */
+    private function excludedSample(array $rawUniverse, array $universeByTickerId, int $limit): array
+    {
+        if ($limit <= 0) {
+            return [];
+        }
+
+        $excluded = [];
+        foreach ($rawUniverse as $row) {
+            $tickerId = (int) ($row['ticker_id'] ?? 0);
+            if ($tickerId > 0 && ! array_key_exists($tickerId, $universeByTickerId)) {
+                $excluded[] = [
+                    'ticker_id' => $tickerId,
+                    'ticker_code' => isset($row['ticker_code']) ? (string) $row['ticker_code'] : null,
+                ];
+            }
+
+            if (count($excluded) >= $limit) {
+                break;
+            }
+        }
+
+        return $excluded;
+    }
+
+    /**
+     * How many denominator listings have expectation evidence the platform cannot resolve.
+     *
+     * If the expectation source itself is unavailable, every denominator member is UNKNOWN. A hard
+     * zero would claim the platform checked the source and found no uncertainty, which is precisely
+     * the false measurement this evidence field exists to prevent.
+     */
+    private function expectationUnknownCount(array $universeByTickerId, $tradeDate, $knownAt = null): int
+    {
+        if ($universeByTickerId === []) {
+            return 0;
+        }
+
+        if (! $this->eventRiskSourceRepository instanceof EventRiskSourceRepository) {
+            return count($universeByTickerId);
+        }
+
+        return count($this->eventRiskSourceRepository->expectationUnknownTickerIdsAsOf(
+            array_keys($universeByTickerId),
+            $tradeDate,
+            $knownAt
+        ));
+    }
+
+    private function filterSuspendedUniverseRows(array $universeRows, $tradeDate, $knownAt = null): array
     {
         if (! $this->eventRiskSourceRepository instanceof EventRiskSourceRepository || $universeRows === []) {
             return $universeRows;
@@ -268,7 +369,7 @@ class CoverageGateEvaluator
             return $universeRows;
         }
 
-        $suspendedIds = array_fill_keys($this->eventRiskSourceRepository->suspendedTickerIdsAsOf($tickerIds, $tradeDate), true);
+        $suspendedIds = array_fill_keys($this->eventRiskSourceRepository->suspendedTickerIdsAsOf($tickerIds, $tradeDate, $knownAt), true);
         if ($suspendedIds === []) {
             return $universeRows;
         }

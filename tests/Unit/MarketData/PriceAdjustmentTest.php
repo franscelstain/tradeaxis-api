@@ -180,6 +180,8 @@ class PriceAdjustmentTest extends TestCase
             'ex_date' => '2026-07-15',
             'price_adjustment_factor' => 0.2,
             'volume_adjustment_factor' => 5,
+            // A factor alone no longer suppresses quarantine; it must also say where it came from.
+            'adjustment_source' => 'EXCHANGE_ANNOUNCEMENT',
         ]);
 
         $this->assertSame(

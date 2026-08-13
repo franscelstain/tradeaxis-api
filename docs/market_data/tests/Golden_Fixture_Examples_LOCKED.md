@@ -85,8 +85,11 @@ Ticker has only 10 trading-day bars.
 ### Expected eligibility output
 
     trade_date=D
-    ticker_id=101
-    eligible=0
+    listing_id=1001
+    ticker_code=FIXTURE
+    data_usable=0
+    reason_codes=[ELIG_INSUFFICIENT_HISTORY]
+    eligible=0                  # legacy compatibility projection only
     reason_code=ELIG_INSUFFICIENT_HISTORY
 
 ### Locked proof intent

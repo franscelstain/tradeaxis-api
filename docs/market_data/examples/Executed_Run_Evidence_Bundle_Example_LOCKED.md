@@ -1,5 +1,8 @@
 # Executed Run Evidence Bundle Example (LOCKED)
 
+> **ILLUSTRATIVE ONLY — NOT CURRENT STRATEGY AUTHORITY.** Resolve all semantics against the current owner contracts/Blueprint/Matrix; legacy fields in this example are compatibility or historical shape only.
+
+
 ## Purpose
 Show what one real executed evidence bundle should contain when the platform wants to demonstrate proof-by-execution.
 

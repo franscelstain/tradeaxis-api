@@ -60,7 +60,7 @@ Mapping:
 | Promotion conflict with prior current available | `HELD` | `NOT_READABLE` | Restore prior current pointer |
 | Promotion conflict without prior current | `HELD` | `NOT_READABLE` | Clear unsafe pointer/current state |
 | Coverage FAIL/NOT_EVALUABLE | `HELD` or `FAILED` according to fallback availability | `NOT_READABLE` | No candidate pointer switch |
-| Repair candidate / non-current publish target | `SUCCESS` or `HELD` according to existing policy | `NOT_READABLE` unless existing current is preserved | Current pointer preserved |
+| Correction candidate / non-current publish target (legacy runtime may label this `repair_candidate`) | `SUCCESS` or `HELD` according to existing policy | `NOT_READABLE` unless existing current is preserved | Current pointer preserved; no in-place content repair implied |
 
 Conflict is not a successful publish. Conflict is also not automatically a system crash. It is a traceable finalize outcome that prevents unsafe publication ownership.
 

@@ -40,6 +40,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
             'is_current_publication' => 1,
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'publication-repository-old'),
             'sealed_at' => '2026-03-20 17:20:00',
             'started_at' => '2026-03-20 17:00:00',
             'created_at' => '2026-03-20 17:00:00',
@@ -70,6 +73,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
             'is_current_publication' => 1,
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'publication-repository-new'),
             'sealed_at' => '2026-03-20 17:21:00',
             'started_at' => '2026-03-20 17:01:00',
             'created_at' => '2026-03-20 17:01:00',
@@ -87,6 +93,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'bars_batch_hash' => 'bars-old',
             'indicators_batch_hash' => 'ind-old',
             'eligibility_batch_hash' => 'elig-old',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'publication-repository-old'),
             'sealed_at' => '2026-03-20 17:20:00',
             'created_at' => '2026-03-20 17:20:00',
             'updated_at' => '2026-03-20 17:20:00',
@@ -100,6 +109,36 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'sealed_at' => '2026-03-20 17:20:00',
             'updated_at' => '2026-03-20 17:20:00',
         ]);
+    }
+
+    public function test_analytical_remediation_can_select_a_legacy_identity_baseline_without_opening_consumer_read(): void
+    {
+        DB::table('eod_publications')->where('publication_id', 10)->update([
+            'price_product_code' => null,
+            'price_product_version' => null,
+            'factor_set_hash' => null,
+        ]);
+        DB::table('eod_runs')->where('run_id', 25)->update([
+            'price_product_code' => null,
+            'price_product_version' => null,
+            'factor_set_hash' => null,
+        ]);
+
+        $repository = new EodPublicationRepository();
+
+        $this->assertNull($repository->resolveCurrentReadablePublicationForTradeDate('2026-03-20'));
+        $baseline = $repository->findCurrentPublicationForAnalyticalRemediation('2026-03-20');
+        $this->assertNotNull($baseline);
+        $this->assertSame(10, (int) $baseline->publication_id);
+    }
+
+    public function test_analytical_remediation_does_not_bypass_non_analytical_integrity_faults(): void
+    {
+        DB::table('eod_runs')->where('run_id', 25)->update(['coverage_gate_state' => 'FAIL']);
+
+        $this->assertNull(
+            (new EodPublicationRepository())->findCurrentPublicationForAnalyticalRemediation('2026-03-20')
+        );
     }
 
 
@@ -319,6 +358,13 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-new',
             'eligibility_batch_hash' => 'elig-new',
         ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new')
+        );
 
         $sealed = $repo->sealCandidatePublication($run, 'system');
         $this->assertSame('SEALED', $sealed->seal_state);
@@ -363,6 +409,13 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-new',
             'eligibility_batch_hash' => 'elig-new',
         ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new')
+        );
 
         $repo->sealCandidatePublication($run, 'system');
 
@@ -387,6 +440,13 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-force',
             'eligibility_batch_hash' => 'elig-force',
         ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new')
+        );
 
         $repo->sealCandidatePublication($run, 'system');
 
@@ -507,6 +567,13 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-new',
             'eligibility_batch_hash' => 'elig-new',
         ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new')
+        );
         $repo->sealCandidatePublication($run, 'system', 'test seal');
 
         $this->expectException(RuntimeException::class);

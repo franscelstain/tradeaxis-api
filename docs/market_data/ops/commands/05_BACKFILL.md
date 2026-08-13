@@ -9,13 +9,17 @@ Command ini wajib dipahami sebagai mekanisme resmi untuk memproses range trading
 
 `start_date` dan `end_date` adalah input operator yang wajib. Implementasi boleh membuat argumen parser menjadi opsional hanya agar command dapat mengembalikan `status=BLOCKED` dan `reason_code=COMMAND_MISSING_REQUIRED_INPUT` ketika input hilang; itu tidak mengubah contract bahwa kedua tanggal wajib diberikan.
 
+## V2 import boundary
+For every date, acquisition first appends immutable source observations/attempts and resolves stable `listing_id`. Import may build or merge an **unsealed candidate projection**; it may not overwrite source observations, sealed history, or readable publication artifacts. A historical date that is already readable requires correction/republication lineage before changed truth can become current.
+
 ## Contract
 Command ini hanya boleh menjalankan:
 - iterasi trading date
-- acquisition/import bars per date
-- invalid-row persistence
+- immutable source acquisition/import evidence per date
+- stable-listing mapping and unsealed candidate-bar materialization
+- invalid/rejected evidence persistence
 - telemetry persistence
-- bars coverage evidence minimum
+- bars delivery/coverage evidence minimum
 
 Command ini **tidak boleh** menjalankan:
 - indicators
@@ -69,20 +73,22 @@ Warmup rule:
 - If the first requested date is not an active trading day, or the trading calendar cannot provide the required prior warmup window, the lifecycle command must fail fast instead of publishing indicators with starved history.
 - Warmup rows may be acquired/imported as support history, but they are not requested publication targets unless they are also inside the requested date range.
 
-## Manual file range acquisition
-Untuk `source_mode=manual_file`, command dapat memakai file per tanggal dari local source directory atau satu file eksplisit gabungan lewat `--input_file`.
+## Manual file historical range acquisition
+`source_mode=manual_file` boleh memakai file per tanggal dari local source directory atau satu file eksplisit gabungan lewat `--input_file` **hanya untuk workflow terencana seperti historical development fill, historical backfill, correction/republication, atau replay-oriented reconstruction**. Kemampuan range ini **bukan operational continuity path**.
 
-Contoh satu CSV gabungan:
+Untuk **operational recovery** setelah kegagalan provider/daily acquisition, `manual_file` dibatasi sebagai **controlled one-date rescue**; operator tidak boleh memakai range multi-hari sebagai pengganti provider continuity.
+
+Contoh satu CSV gabungan untuk **planned historical backfill**:
 
 ```text
 php artisan market-data:backfill:lifecycle 2026-06-01 2026-06-30 --source_mode=manual_file --input_file=storage/app/market_data/manual/eod-bars-2026-06.csv --with-evidence --with-replay
 ```
 
-CSV gabungan wajib tetap memiliki kolom `trade_date`. Saat menjalankan lifecycle range, adapter manual file memfilter baris berdasarkan requested `trade_date` yang sedang diproses, lalu promote/coverage/evidence/replay tetap berjalan per tanggal.
+CSV gabungan wajib tetap memiliki kolom `trade_date`. Saat workflow historical yang sah menjalankan lifecycle range, adapter manual file memfilter baris berdasarkan requested `trade_date` yang sedang diproses, lalu promote/coverage/evidence/replay tetap berjalan per tanggal. Setiap penerimaan data tetap tunduk pada immutable source-observation, correction/revision, coverage, lineage, config, seal, dan replay contract; range capability tidak memberi izin overwrite atau bypass gate.
 
 ## Lifecycle order
 Per requested `trade_date`, command runs chronologically:
-- import/acquired bars persist
+- immutable observations persist and unsealed candidate bars are materialized
 - promote and coverage gate
 - indicators
 - eligibility
@@ -133,7 +139,7 @@ Retry state meaning:
 - `NO_FAILED_CHECKPOINT`: no failed source acquisition checkpoint exists for the requested resume scope.
 - `SYSTEMIC_FAILED`: reserved for true global/provider/config failures, not a single ticker HTTP 400 retry failure.
 
-Latest runtime proof for `2026-05-01` to `2026-05-07`:
+Historical runtime proof for `2026-05-01` to `2026-05-07` (retained as execution history; not V2 conformance proof):
 - Plan: `source_acquisition_mode=range_window`, `window_count=2`, `estimated_http_requests=1826`, `ticker_count=913`, `trading_dates=4`.
 - Diagnose-source: `PARTIAL_SUCCESS`, `failed_ticker_count=1`, `failed_window_count=1`.
 - Full lifecycle: 4/4 requested dates readable with evidence exported, fixture generated, and replay verified.
@@ -150,6 +156,8 @@ This cache is intentionally slim:
 - does not store full `source_acquisition_checkpoints`
 - does not store raw provider payloads
 
+The slim cache is **not** the immutable source-observation store. Provider response/envelope/hash/provenance required by the source-observation contract must be retained through the governed observation/evidence surface even when the resume cache omits the raw payload.
+
 `source_acquisition_checkpoint.json` remains the full retry identity artifact. `source_acquisition_diagnostics.json.reason_code` must match the explicit summary reason or the deterministic failed-checkpoint reason chosen from the retry scope.
 
 ---
@@ -157,9 +165,9 @@ This cache is intentionally slim:
 # `market-data:backfill:missing-tickers`
 
 ## Official role
-`market-data:backfill:missing-tickers` adalah command **MISSING TICKER FULL LIFECYCLE ORCHESTRATION** untuk mengisi hanya ticker/date yang hilang dari current `eod_bars`.
+`market-data:backfill:missing-tickers` mempertahankan nama command legacy, tetapi semantik V2-nya adalah **MISSING LISTING FULL LIFECYCLE ORCHESTRATION** untuk stable `listing_id`/trade-date yang expected tetapi belum delivered dalam publication-bound artifact. `ticker_code`/`ticker_id` hanya input/display compatibility yang harus di-resolve point-in-time.
 
-Command ini digunakan ketika ticker master sudah berisi ticker aktif/listed untuk suatu trade date, tetapi bar ticker tersebut belum ada di artifact current. Ini berbeda dari membaca `eod_runs` duplicate/non-current; tanggal dianggap selesai jika sudah punya current readable publication, dan command ini hanya mencari gap bar ticker di artifact current.
+Command ini digunakan ketika **temporal listing universe** untuk suatu trade date menyatakan listing berada dalam scope expected-bar, tetapi baseline/current readable publication tidak memiliki valid delivered bar untuk listing tersebut. Current `is_active`/ticker master tidak boleh menentukan historical universe. Bila tanggal sudah readable, setiap perubahan truth harus menghasilkan correction/republication lineage; command tidak mengedit artifact current secara in-place.
 
 Contoh plan non-mutating:
 
@@ -174,26 +182,27 @@ php artisan market-data:backfill:missing-tickers 2023-01-02 2025-10-31 --source_
 ```
 
 ## Lifecycle behavior
-- `--plan` menghitung gap dari ticker master versus current `eod_bars` tanpa menulis data.
-- Normal execution memakai API range acquisition hanya untuk ticker yang missing.
-- Untuk tanggal yang sudah memiliki current bars, candidate source payload dibangun dari current bars yang sudah ada ditambah API rows untuk ticker missing.
-- Candidate penuh tersebut masuk ke lifecycle biasa: import candidate, promote, compute indicators, build eligibility, hash, seal, finalize, evidence export, fixture generation, dan replay verify.
-- Source-backed sector, corporate-action, trading-status, UMA/suspend, dan event-risk fields ikut dihitung karena command tidak bypass compute lifecycle.
+- `--plan` menghitung gap dari temporal `listing_id` universe + verified expected-bar state versus delivered bars pada publication context yang dipilih, tanpa menulis data.
+- Normal execution memakai API range acquisition hanya untuk source symbol/listing gap yang telah di-resolve point-in-time.
+- Setiap response/refetch baru di-append sebagai immutable source observation. Existing rows untuk tanggal yang sudah memiliki readable publication direferensikan dari explicit baseline publication/observation lineage; mereka **bukan** disamarkan menjadi source payload baru.
+- Candidate penuh dibentuk sebagai unsealed correction/publication candidate, kemudian melalui coverage, analytical price product, indicators, data-usability/eligibility projection, hash, seal, finalize, evidence export, fixture generation, dan replay verify.
+- Temporal sector membership, corporate-action/factor revisions, trading-status facts, and event-risk context are resolved as-of the publication/replay knowledge context; they are not inferred from mutable current masters.
 
 ## Operator meaning
 Selesainya command ini dengan `with-evidence`/`with-replay` berarti gap ticker yang diproses sudah melalui proof lifecycle yang sama seperti backfill lifecycle, bukan sekadar raw import.
 
 Jika `--ticker_codes` tidak diberikan, command memindai semua ticker universe untuk tanggal yang diminta. Gunakan `--ticker_codes` saat operator baru menambahkan ticker tertentu dan ingin menghindari source acquisition seluruh missing universe.
 
-## Out-of-order import impact output
-Backfill and lifecycle commands may import dates that are older than already available or already readable dates.
+## Historical mutation telemetry compatibility
+Backfill and lifecycle commands may ingest observations for dates older than already available/readable dates. The field names below are retained for runtime compatibility; `mutation`/`updated` mean changes to an **unsealed candidate projection**, never in-place mutation of observation or sealed history. Target identity metrics use `listing`, while ticker metrics are compatibility-only.
 
-When EOD bars are written, command output and summary artifacts must expose:
+When candidate bars change, command output and summary artifacts may expose:
 - `bar_mutation_changed_count`
 - `bar_mutation_inserted_count`
 - `bar_mutation_updated_count`
 - `bar_mutation_unchanged_count`
-- `affected_ticker_count`
+- `affected_listing_count` (target)
+- `affected_ticker_count` (legacy compatibility)
 - `affected_trade_date_count`
 - `affected_start_date`
 - `affected_end_date`
@@ -202,7 +211,7 @@ When EOD bars are written, command output and summary artifacts must expose:
 - `publication_impact_state`
 
 Important states:
-- `NOOP_UNCHANGED_BARS`: source rows were applied idempotently and did not change canonical bars.
+- `NOOP_UNCHANGED_BARS`: accepted observations do not change the candidate analytical truth; no sealed/history mutation occurs.
 - `REPROCESS_REQUIRED_REQUESTED_DATES_ONLY`: changed bars affect only the imported/requested date set currently visible to the resolver.
 - `REPROCESS_REQUIRED_WITH_DOWNSTREAM_IMPACT`: changed historical bars may affect later indicator dates and downstream derived artifacts must be handled before they are trusted.
 - `REQUIRES_REPUBLICATION`: at least one affected date is already readable and must go through correction/reseal/republication before consumer-visible replacement.
@@ -210,6 +219,12 @@ Important states:
 `--resume --only-failed` must not fake apply recovered ticker rows by replacing an entire date artifact with a partial retry result. A successful recovered-checkpoint apply requires a dedicated partial-row recovery/correction path before derived artifacts are recomputed.
 
 ## Amendment 2026-05-27 - Recovered apply and execution summary
+### V2 interpretation of recovered-row apply (LOCKED 2026-08-08)
+
+The May telemetry names below describe the legacy implementation surface. Under the current strategy, a retry success first creates a new immutable source observation. Any `partial-upsert` is permitted only as a merge into an **unsealed candidate/workspace projection** keyed by stable `listing_id`; it is not permission to overwrite immutable observations, canonical history bound to a sealed publication, or publication snapshots. An already-readable affected date always goes through correction/republication.
+
+Target telemetry should expose `affected_listing_count`; `affected_ticker_count` may remain only as a compatibility metric while legacy identity is present.
+
 `--resume --only-failed` retry success now proceeds beyond source acquisition when recovered rows are present.
 
 Expected recovery output includes:
@@ -221,7 +236,7 @@ Expected recovery output includes:
 - `eligibility_reprocess_execution_state`
 - `publication_reprocess_state`
 
-Recovered rows are partial-upserted by ticker/date. Existing ticker rows on the same date must remain present. If the recovered rows are unchanged, the command reports `UNCHANGED`/`NOOP_UNCHANGED_BARS` and does not recompute unnecessarily. If affected dates are already readable, lifecycle/full-publish reprocess must use correction-current republication with explicit correction lineage, or report a blocked/failed correction reason without mutating the current pointer silently.
+Recovered immutable observations are merged into the unsealed candidate projection by stable listing/date. Existing candidate rows for other listings on the same date must remain present. The historical implementation may report this operation as a ticker/date partial-upsert, but that label does not authorize immutable/history overwrite. If the recovered rows are unchanged, the command reports `UNCHANGED`/`NOOP_UNCHANGED_BARS` and does not recompute unnecessarily. If affected dates are already readable, lifecycle/full-publish reprocess must use correction-current republication with explicit correction lineage, or report a blocked/failed correction reason without mutating the current pointer silently.
 
 ## Amendment 2026-05-27 - Hash/seal/finalize for affected non-readable dates
 For `market-data:backfill:lifecycle`, changed historical bars that affect downstream non-readable dates may now continue from `PENDING_PROMOTE` into the existing promote flow. The promote flow recomputes coverage/indicators/eligibility as needed, then hashes, seals, finalizes, and validates readability.

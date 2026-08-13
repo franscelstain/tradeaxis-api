@@ -140,6 +140,48 @@ class IndicatorIndependentOracleTest extends TestCase
         );
     }
 
+    public function test_boundary_atr_uses_the_same_structural_adjustment_product_as_other_prices(): void
+    {
+        $adjusted = $this->rampBars(200);
+        $raw = $adjusted;
+        $splitIndex = 100;
+
+        // Before a 2-for-1 split, the as-traded price scale is twice the current scale. A 0.5
+        // structural factor must therefore be applied to the complete recursive ATR history.
+        for ($i = 0; $i < $splitIndex; $i++) {
+            foreach (['open', 'high', 'low', 'close', 'adj_close'] as $field) {
+                $raw[$i][$field] *= 2;
+            }
+        }
+
+        $atrSeries = array_map(function ($bar) {
+            return [
+                'trade_date' => $bar['trade_date'],
+                'high' => $bar['high'],
+                'low' => $bar['low'],
+                'close' => $bar['close'],
+            ];
+        }, $raw);
+
+        $window = array_slice($raw, -60);
+        $withBoundary = $this->values($window, $this->config([
+            'selected_price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_adjustment_factors' => [[
+                'ex_date' => $raw[$splitIndex]['trade_date'],
+                'price_factor' => 0.5,
+                'volume_factor' => 2.0,
+            ]],
+        ]), $atrSeries);
+        $expected = $this->values($adjusted);
+
+        $this->assertEqualsWithDelta(
+            $expected['atr14_pct'],
+            $withBoundary['atr14_pct'],
+            1e-9,
+            'ATR boundary state may not mix the RAW and STRUCTURAL_ADJUSTED products'
+        );
+    }
+
     /**
      * Gap oracle. A NULL inside the required window is a genuine hole, so the dependent indicator
      * is NULL rather than computed over a shortened series. Skipping the gap would silently change

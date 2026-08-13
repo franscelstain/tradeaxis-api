@@ -1,6 +1,8 @@
 # Current Indicator Recompute Command Contract
 
-Status: LOCKED_RUNTIME_FULL_RANGE_AND_FINAL_REPLAY_PASS
+Status: STRATEGY_SYNCED / LEGACY_RUNTIME_PROOF_RETAINED
+
+> **V2 proof boundary (2026-08-08):** the 2026-06 runtime/full-range proof below remains valid evidence for the command boundary that actually ran. It is **not** evidence that the later V2 temporal-identity, immutable-observation, structural-price-product, full config-provenance, sector-temporal, or as-known requirements are implemented. Current V2 conformance requires fresh proof after those dependencies are implemented.
 
 ## Purpose
 
@@ -83,7 +85,8 @@ Insufficient history is not a whole-date error.
 - `ma50` is `NULL` when fewer than 50 valid close inputs exist.
 - `roc20` is `NULL` when the dependency close is unavailable/invalid.
 - sector rotation is `NULL` when benchmark sector source/dependency is unavailable.
-- zero OHLCV placeholders are publication coverage rows, not valid price inputs for indicators.
+- zero-valued **price** placeholders are forbidden canonical rows; a missing/invalid observation remains missing/invalid with explicit reason evidence and must not be converted into zero OHLC;
+- a source-backed `volume = 0` may remain a valid as-traded fact when price/session evidence is otherwise valid, but it is never a substitute for a missing price observation.
 
 ## Lifecycle rule
 

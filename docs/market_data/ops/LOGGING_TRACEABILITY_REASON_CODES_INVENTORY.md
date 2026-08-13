@@ -1,3 +1,6 @@
+> **V2 STATUS OVERRIDE — HISTORICAL IMPLEMENTATION INVENTORY, NON-AUTHORITATIVE FOR CURRENT STRATEGY**
+> The rows and `LOCKED_LOCAL_PHPUNIT_PASS` labels below describe the runtime reviewed in May 2026. They do not grant V2 conformance and may retain legacy names such as `ticker`, `eligibility`, `repair_candidate`, or manual-file behavior. Current authority is the owner contracts, `Reason_Codes_Registry.md`, `Logging_Schema_JSON_LOCKED.md`, and the implementation conformance matrix. Operational `manual_file` recovery is one-date only; `RUN_REPAIR_CANDIDATE_PARTIAL` is a legacy name for a non-readable correction candidate; content repair in place is forbidden.
+
 # Logging / Traceability / Reason Codes Inventory
 
 [LAST_UPDATED] 2026-05-07

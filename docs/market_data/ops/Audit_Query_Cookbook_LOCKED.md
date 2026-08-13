@@ -80,7 +80,7 @@ Inspect rejected source rows.
 
 ### Query intent
 - filter `eod_invalid_bars` by `trade_date`
-- optionally filter by `run_id` or `ticker_id`
+- optionally filter by `run_id` or stable `listing_id`; `ticker_id` is compatibility/display filtering only
 
 ### Must answer
 - invalid reason code distribution

@@ -1,6 +1,7 @@
 <?php
 
 use App\Application\MarketData\Services\CoverageGateEvaluator;
+use App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\UsesMarketDataSqlite;
 
@@ -17,9 +18,8 @@ use Tests\Support\UsesMarketDataSqlite;
  *   docs/market_data/book/Coverage_Edge_Cases_Contract_LOCKED.md
  *
  * Coverage is delivered over expected, so anything that shrinks the denominator raises the ratio.
- * The load-bearing word in the gate is "silently": excluding a genuinely dormant instrument is
- * legitimate, excluding it without recording that the exclusion happened is not. The two are
- * indistinguishable in the stored evidence unless the exclusion counts are written.
+ * Only verified `NOT_EXPECTED` may shrink it; dormancy is never sufficient. The exclusion count and
+ * sample make every permitted removal reconstructible rather than silent.
  */
 class CoverageSilentImprovementBoundaryTest extends TestCase
 {
@@ -38,9 +38,123 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
     }
 
     /**
-     * The evaluator reports every quantity needed to reconstruct the denominator, so a later
-     * reader can check the arithmetic instead of trusting the surviving number.
+     * F-043 — the universe hash must change when the universe changes, and only then.
+     *
+     * A hash that never varies would record the same thing a count already records. The value of
+     * this one is that two runs for the same trade date can be compared: equal hashes mean the same
+     * universe, different hashes mean the denominator moved. The knowledge cutoff closed `F-006`;
+     * the hash remains the evidence that the fixed-coordinate answer is the same set, not only the
+     * same count.
      */
+    public function test_the_universe_hash_changes_only_when_the_universe_changes(): void
+    {
+        $this->seedUniverse(10, 8);
+        $evaluator = new CoverageGateEvaluator(...$this->evaluatorDependencies());
+
+        $first = $evaluator->evaluate('2026-03-24')['coverage_universe_hash'];
+        $again = $evaluator->evaluate('2026-03-24')['coverage_universe_hash'];
+
+        $this->assertSame($first, $again, 'an unchanged universe must hash the same');
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $first);
+
+        DB::table('tickers')->insert([
+            'ticker_id' => 11,
+            'ticker_code' => 'TST11',
+            'company_name' => 'Test 11',
+            'is_active' => 1,
+            'listed_date' => '2023-01-02',
+            'created_at' => '2023-01-01 00:00:00',
+        ]);
+        (new TemporalIdentityRepository())->ensureLegacyProjection(['TST11']);
+
+        $this->assertNotSame(
+            $first,
+            $evaluator->evaluate('2026-03-24')['coverage_universe_hash'],
+            'a listing entering the universe must change its hash, otherwise the hash records nothing'
+        );
+    }
+
+    /**
+     * F-044 — an exclusion must be checkable back against its source, which a count alone prevents.
+     */
+    public function test_excluded_listings_are_named_not_only_counted(): void
+    {
+        $this->seedUniverse(10, 8);
+
+        DB::table('market_data_trading_status_events')->insert([
+            'ticker_id' => 2,
+            'ticker_code' => 'TST2',
+            'trade_date' => '2026-03-24',
+            'event_type_code' => 'SUSPENDED',
+            'source_name' => 'test_fixture',
+            'recorded_at' => '2026-03-24 00:00:00',
+            'created_at' => '2026-03-24 00:00:00',
+        ]);
+
+        $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
+
+        $this->assertSame(1, (int) $result['coverage_bar_not_expected_count']);
+        $this->assertSame(
+            [['ticker_id' => 2, 'ticker_code' => 'TST2']],
+            $result['coverage_excluded_sample'],
+            'the listing that left the denominator must be named'
+        );
+    }
+
+    public function test_an_uninterpretable_status_makes_a_listing_unknown_and_keeps_it_in_the_denominator(): void
+    {
+        $this->seedUniverse(10, 8);
+
+        // Evidence the platform holds and cannot read: a status event whose type the dictionary
+        // does not define. Under :19 that is incomplete expectation evidence, so the listing is
+        // UNKNOWN — and under :21 it stays in the denominator rather than leaving it.
+        DB::table('market_data_trading_status_events')->insert([
+            'ticker_id' => 1,
+            'ticker_code' => 'TST1',
+            'trade_date' => '2026-03-24',
+            'event_type_code' => 'SOME_FUTURE_IDX_STATUS',
+            'source_name' => 'test_fixture',
+            'recorded_at' => '2026-03-24 00:00:00',
+            'created_at' => '2026-03-24 00:00:00',
+        ]);
+
+        $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
+
+        $this->assertSame(1, (int) $result['coverage_expectation_unknown_count'], 'the unreadable status must be counted');
+        $this->assertSame(
+            10,
+            (int) $result['expected_universe_count'],
+            'and it must remain in the denominator — only verified NOT_EXPECTED may leave'
+        );
+        $this->assertSame(0, (int) $result['coverage_bar_not_expected_count'], 'it is not proof that no bar was expected');
+    }
+
+    /**
+     * The measurement must be able to answer zero as well, otherwise a corpus-wide zero would be
+     * indistinguishable from the hard-coded zero this finding was about.
+     */
+    public function test_a_clean_universe_reports_a_measured_zero_unknown(): void
+    {
+        $this->seedUniverse(10, 8);
+        $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
+
+        $this->assertSame(0, (int) $result['coverage_expectation_unknown_count']);
+        $this->assertArrayHasKey('coverage_expectation_unknown_count', $result, 'zero must be produced, not defaulted');
+    }
+
+    public function test_an_unavailable_expectation_source_marks_the_whole_denominator_unknown(): void
+    {
+        $this->seedUniverse(10, 8);
+        $dependencies = $this->evaluatorDependencies();
+        $dependencies[2] = null;
+
+        $result = (new CoverageGateEvaluator(...$dependencies))->evaluate('2026-03-24');
+
+        $this->assertSame(10, $result['expected_universe_count']);
+        $this->assertSame(10, $result['coverage_expectation_unknown_count']);
+        $this->assertSame(0, $result['coverage_bar_not_expected_count']);
+    }
+
     public function test_the_evaluator_reports_every_term_of_the_denominator(): void
     {
         $this->seedUniverse(10, 8);
@@ -49,7 +163,6 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
         foreach ([
             'expected_universe_count',
             'coverage_universe_count',
-            'coverage_bar_not_required_count',
             'coverage_bar_not_expected_count',
             'available_eod_count',
             'missing_eod_count',
@@ -68,7 +181,6 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
         $this->seedUniverse(10, 8);
         $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
 
-        $this->assertIsInt($result['coverage_bar_not_required_count']);
         $this->assertIsInt($result['coverage_bar_not_expected_count']);
     }
 
@@ -79,12 +191,21 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
     public function test_the_raw_universe_and_the_expected_denominator_are_reported_separately(): void
     {
         $this->seedUniverse(10, 8);
+        DB::table('market_data_trading_status_events')->insert([
+            'ticker_id' => 2,
+            'ticker_code' => 'TST2',
+            'trade_date' => '2026-03-24',
+            'event_type_code' => 'SUSPENDED',
+            'source_name' => 'test_fixture',
+            'recorded_at' => '2026-03-24 00:00:00',
+            'created_at' => '2026-03-24 00:00:00',
+        ]);
         $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
 
         $this->assertArrayHasKey('coverage_universe_count', $result);
         $this->assertArrayHasKey('expected_universe_count', $result);
         $this->assertSame(
-            (int) $result['coverage_universe_count'] - (int) $result['coverage_bar_not_required_count'] - (int) $result['coverage_bar_not_expected_count'],
+            (int) $result['coverage_universe_count'] - (int) $result['coverage_bar_not_expected_count'],
             (int) $result['expected_universe_count'],
             'the denominator must be reconstructible from the reported terms'
         );
@@ -119,7 +240,6 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
         $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
 
         $accounted = (int) $result['expected_universe_count']
-            + (int) $result['coverage_bar_not_required_count']
             + (int) $result['coverage_bar_not_expected_count'];
 
         $this->assertSame((int) $result['coverage_universe_count'], $accounted, 'no instrument may leave the universe unaccounted');

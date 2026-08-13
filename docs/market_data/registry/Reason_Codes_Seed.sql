@@ -5,6 +5,7 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('AFFECTED_PUBLICATION_REQUIRES_CORRECTION', 'CORRECTION', 'A changed historical EOD bar can affect at least one already readable downstream publication; silent mutation is blocked and correction/reseal/republication is required.', 'HARD', 1),
 ('RUN_COVERAGE_LOW', 'RUN', 'Coverage ratio for the requested date is below the locked minimum threshold.', 'HARD', 1),
 ('RUN_COVERAGE_NOT_EVALUABLE', 'RUN', 'Coverage could not be evaluated meaningfully for the requested date, so requested-date publication must remain not readable.', 'HARD', 1),
+('RUN_KNOWLEDGE_CUTOFF_MISSING', 'RUN', 'Execution was blocked because the selected run predates the mandatory creation-time knowledge cutoff and cannot be resumed deterministically.', 'HARD', 1),
 ('COVERAGE_THRESHOLD_MET', 'COVERAGE', 'Coverage evaluation passed because available canonical EOD bars met or exceeded the locked minimum threshold.', 'INFO', 1),
 ('COVERAGE_BELOW_THRESHOLD', 'COVERAGE', 'Coverage evaluation failed because available canonical EOD bars stayed below the locked minimum threshold.', 'HARD', 1),
 ('COVERAGE_UNIVERSE_EMPTY', 'COVERAGE', 'Coverage could not be evaluated because the resolved coverage universe for the requested date was empty.', 'HARD', 1),
@@ -154,6 +155,7 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('SNAP_SOURCE_ERROR', 'INTRADAY', 'The session-snapshot source failed for an operational reason that does not block EOD.', 'WARN', 1),
 ('READABLE_PUBLICATION_RESOLVED', 'READ_SIDE', 'A read-side consumer resolved a current sealed readable publication through the authoritative pointer.', 'INFO', 1),
 ('NO_READABLE_PUBLICATION', 'READ_SIDE', 'A read-side consumer could not resolve a current readable publication through the authoritative pointer and must return no data.', 'HARD', 1),
+('PRICE_PRODUCT_UNRECORDED', 'READ_SIDE', 'The bar carries no price_product_code, so the read side reports the price without asserting which analytical product it belongs to. The row is served rather than withheld because the values are real; what is missing is the scale claim, and defaulting it to RAW would assert something the row never recorded.', 'WARN', 1),
 ('COMMAND_MISSING_REQUIRED_INPUT', 'COMMAND', 'Operator command input is missing or empty for a required argument or option.', 'HARD', 1),
 ('COMMAND_INVALID_DATE_FORMAT', 'COMMAND', 'Operator command date input does not use the locked YYYY-MM-DD format.', 'HARD', 1),
 ('COMMAND_INVALID_DATE_RANGE', 'COMMAND', 'Operator command date range is invalid because start_date is after end_date.', 'HARD', 1),
@@ -386,7 +388,11 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('AFFECTED_DATE_RUN_NOT_FOUND', 'PUBLICATION_REPROCESS', 'Affected non-readable date could not be promoted because no persisted run exists.', 'HARD', 1),
 ('PUBLICATION_REPROCESS_NOT_READABLE', 'PUBLICATION_REPROCESS', 'Affected-date promote flow completed without producing a readable publication.', 'HARD', 1),
 ('PUBLICATION_REPROCESS_FAILED', 'PUBLICATION_REPROCESS', 'Publication reprocess failed before completing promote/hash/seal/finalize.', 'HARD', 1),
-('PUBLICATION_REPROCESS_REPLAY_FAILED', 'PUBLICATION_REPROCESS', 'Publication reprocess produced a readable run but requested replay verification failed.', 'HARD', 1)
+('PUBLICATION_REPROCESS_REPLAY_FAILED', 'PUBLICATION_REPROCESS', 'Publication reprocess produced a readable run but requested replay verification failed.', 'HARD', 1),
+('SECTOR_MEMBERSHIP_IMPORT', 'SECTOR_CLASSIFICATION', 'Operator-entered sector membership revision was imported with explicit provenance and governance.', 'INFO', 1),
+('SECTOR_MEMBERSHIP_LEGACY_RECLASSED_DERIVED', 'SECTOR_CLASSIFICATION', 'Pre-import legacy membership row was declared DERIVED_REFERENCE because its source is a profile or new-listing page rather than a dated IDX-IC classification announcement; it may corroborate but never establish membership.', 'INFO', 1),
+('SECTOR_MEMBERSHIP_EFFECTIVE_FROM_CORRECTED_TO_LISTING', 'SECTOR_CLASSIFICATION', 'Legacy membership effective date was corrected from the IDX-IC launch date to the instrument listing date, because the instrument was not yet listed on the launch date and therefore could not carry a classification from it.', 'INFO', 1),
+('SECTOR_MEMBERSHIP_IMPORT_LOCK_UNAVAILABLE', 'SECTOR_CLASSIFICATION', 'A sector membership import could not take the serialising import lock because another import holds it; the command stopped before writing anything rather than validating one world and applying to another.', 'HARD', 1)
 ON DUPLICATE KEY UPDATE
   `category` = VALUES(`category`),
   `description` = VALUES(`description`),

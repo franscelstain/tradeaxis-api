@@ -127,8 +127,11 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
 
-        $this->assertStringContainsString('ACTIVE SESSION:', $status);
-        $this->assertStringContainsString('ACTIVE SESSION:', $tracker);
+        $this->assertStringContainsString('CURRENT CANONICAL OVERRIDE', $status);
+        $this->assertStringContainsString('CURRENT CANONICAL AUDIT OVERRIDE', $tracker);
+        $this->assertStringContainsString('HISTORICAL SESSION:', $status);
+        $this->assertStringContainsString('HISTORICAL SESSION:', $tracker);
+        $this->assertStringNotContainsString("\nACTIVE SESSION:\n", $status.$tracker);
         $this->assertStringContainsString('- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE', $status);
         $this->assertStringContainsString('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md', $status.$tracker);

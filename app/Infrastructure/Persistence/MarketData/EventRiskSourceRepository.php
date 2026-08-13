@@ -100,16 +100,68 @@ class EventRiskSourceRepository
         'volume_continuity_impact' => 'SCALED',
     ];
 
+    /**
+     * Closed vocabulary for where an adjustment factor came from.
+     *
+     * The column existed with no declared vocabulary at all: only DERIVED_FROM_PRICE_SERIES was
+     * ever written, by the platform's own inference, and isAdjustable() refused exactly that. The
+     * result was a closed loop — the only factors the platform could produce were the ones it
+     * refused to use — and no free-text value would have been caught, because nothing defined what
+     * a valid value was.
+     *
+     * DERIVED_FROM_PRICE_SERIES is listed here so it is a known member, not so it is usable. It is
+     * deliberately absent from the authoritative set, and the importer refuses it outright: a
+     * platform inference must not be launderable into a source by writing it in a CSV.
+     */
+    public const ADJUSTMENT_SOURCES = [
+        'EXCHANGE_ANNOUNCEMENT',
+        'DEPOSITORY_SCHEDULE',
+        'OPERATOR_ENTERED',
+        'DERIVED_FROM_PRICE_SERIES',
+    ];
+
+    public const AUTHORITATIVE_ADJUSTMENT_SOURCES = [
+        'EXCHANGE_ANNOUNCEMENT',
+        'DEPOSITORY_SCHEDULE',
+        'OPERATOR_ENTERED',
+    ];
+
     private ?array $tradingStatusEventTypes = null;
 
     private ?array $corporateActionTypes = null;
 
-    public function suspendedTickerIdsAsOf(array $tickerIds, $tradeDate): array
+    /**
+     * Restrict a query to what the platform knew at $knownAt.
+     *
+     * A NULL recorded_at is excluded rather than assumed to predate the cutoff. An undated row
+     * cannot be placed on the knowledge timeline at all, and assuming it is old enough would let it
+     * leak into every replay — which is the exact failure this cutoff exists to stop.
+     */
+    private function applyKnowledgeCutoff($query, $knownAt, string $column = 'recorded_at')
     {
-        $contexts = $this->resolveEventRiskContextForTickerIds($tickerIds, $tradeDate);
+        if ($knownAt === null || $knownAt === '') {
+            return $query;
+        }
+
+        return $query->whereNotNull($column)->where($column, '<=', $knownAt);
+    }
+
+    public function suspendedTickerIdsAsOf(array $tickerIds, $tradeDate, $knownAt = null): array
+    {
+        $contexts = $this->resolveEventRiskContextForTickerIds($tickerIds, $tradeDate, $knownAt);
         $suspended = [];
 
         foreach ($contexts as $tickerId => $context) {
+            /*
+             * A listing whose expectation evidence is incomplete may not be excluded from the
+             * denominator, even when a suspension flag was also derived for it. It is `UNKNOWN`,
+             * and `Coverage_Universe_Definition_LOCKED.md:21` keeps `UNKNOWN` in and visible —
+             * only verified `NOT_EXPECTED` may leave.
+             */
+            if ((int) ($context['expectation_unknown'] ?? 0) === 1) {
+                continue;
+            }
+
             if ((int) ($context['is_suspended'] ?? 0) === 1) {
                 $suspended[(int) $tickerId] = true;
             }
@@ -120,7 +172,29 @@ class EventRiskSourceRepository
         return array_keys($suspended);
     }
 
-    public function resolveEventRiskContextForTickerIds(array $tickerIds, $tradeDate): array
+    /**
+     * Listings whose expectation evidence is incomplete or conflicting on the date.
+     *
+     * `Coverage_Universe_Definition_LOCKED.md:52` requires the `UNKNOWN` count to be recorded
+     * alongside `EXPECTED` and `NOT_EXPECTED`. It was never computed, so the pipeline wrote a hard
+     * zero and the state was indistinguishable from `EXPECTED`.
+     */
+    public function expectationUnknownTickerIdsAsOf(array $tickerIds, $tradeDate, $knownAt = null): array
+    {
+        $unknown = [];
+
+        foreach ($this->resolveEventRiskContextForTickerIds($tickerIds, $tradeDate, $knownAt) as $tickerId => $context) {
+            if ((int) ($context['expectation_unknown'] ?? 0) === 1) {
+                $unknown[(int) $tickerId] = true;
+            }
+        }
+
+        ksort($unknown);
+
+        return array_keys($unknown);
+    }
+
+    public function resolveEventRiskContextForTickerIds(array $tickerIds, $tradeDate, $knownAt = null): array
     {
         $tickerIds = array_values(array_unique(array_map('intval', $tickerIds)));
         $tickerIds = array_values(array_filter($tickerIds, function ($tickerId) {
@@ -133,10 +207,13 @@ class EventRiskSourceRepository
 
         $contexts = [];
 
-        $corporateActions = DB::table($this->corporateActionsTable())
-            ->select('ticker_id', 'action_type')
-            ->whereIn('ticker_id', $tickerIds)
-            ->where('action_date', $tradeDate)
+        $corporateActions = $this->applyKnowledgeCutoff(
+            DB::table($this->corporateActionsTable())
+                ->select('ticker_id', 'action_type')
+                ->whereIn('ticker_id', $tickerIds)
+                ->where('action_date', $tradeDate),
+            $knownAt
+        )
             ->orderBy('ticker_id')
             ->orderBy('action_type')
             ->get();
@@ -156,10 +233,13 @@ class EventRiskSourceRepository
             $contexts[$tickerId] = $context;
         }
 
-        $tradingStatuses = DB::table($this->tradingStatusesTable())
-            ->select(['ticker_id', 'trade_date', 'event_type_code'])
-            ->whereIn('ticker_id', $tickerIds)
-            ->where('trade_date', '<=', $tradeDate)
+        $tradingStatuses = $this->applyKnowledgeCutoff(
+            DB::table($this->tradingStatusesTable())
+                ->select(['ticker_id', 'trade_date', 'event_type_code'])
+                ->whereIn('ticker_id', $tickerIds)
+                ->where('trade_date', '<=', $tradeDate),
+            $knownAt
+        )
             ->orderBy('ticker_id')
             ->orderBy('trade_date')
             ->orderBy('event_type_code')
@@ -172,7 +252,22 @@ class EventRiskSourceRepository
             $eventTypeCode = $this->normalizeCode($row->event_type_code);
             $eventType = $this->tradingStatusEventType($eventTypeCode);
 
+            /*
+             * An event type the dictionary does not define is evidence the platform holds and
+             * cannot interpret, which `Coverage_Universe_Definition_LOCKED.md:19` calls incomplete
+             * expectation evidence — `UNKNOWN`, not absence.
+             *
+             * It used to `continue`, which discarded the row silently and left the listing looking
+             * plainly `EXPECTED`. The corporate-action path already treats an unmapped type
+             * fail-safe; this one dropped it. `:21` forbids exactly that direction of silence.
+             */
             if ($eventType === null) {
+                $context = $contexts[$tickerId] ?? $this->emptyContext();
+                $context['expectation_unknown'] = 1;
+                $context['event_risk_flag'] = 1;
+                $context['_event_risk_reasons']['TRADING_STATUS_TYPE_UNMAPPED:'.$eventTypeCode] = true;
+                $contexts[$tickerId] = $context;
+
                 continue;
             }
 
@@ -228,7 +323,7 @@ class EventRiskSourceRepository
      *
      * @return array<int, array<int, array>> keyed by ticker_id
      */
-    public function resolveCorporateActionContaminationForTickerIds(array $tickerIds, array $tradingDates): array
+    public function resolveCorporateActionContaminationForTickerIds(array $tickerIds, array $tradingDates, $knownAt = null): array
     {
         $tickerIds = array_values(array_unique(array_map('intval', $tickerIds)));
         $tickerIds = array_values(array_filter($tickerIds, function ($tickerId) {
@@ -244,15 +339,35 @@ class EventRiskSourceRepository
         $windowStart = $tradingDates[0];
         $windowEnd = $tradingDates[count($tradingDates) - 1];
 
-        $rows = DB::table($this->corporateActionsTable())
-            ->select(['ticker_id', 'action_date', 'action_type', 'price_adjustment_factor', 'continuity_check_status', 'adjustment_source'])
-            ->whereIn('ticker_id', $tickerIds)
-            ->where('action_date', '>=', $windowStart)
-            ->where('action_date', '<=', $windowEnd)
+        $rows = $this->applyKnowledgeCutoff(
+            DB::table($this->corporateActionsTable())
+                ->select(['ticker_id', 'action_date', 'ex_date', 'action_type', 'price_adjustment_factor', 'continuity_check_status', 'adjustment_source'])
+                ->whereIn('ticker_id', $tickerIds)
+                ->where('action_date', '>=', $windowStart)
+                ->where('action_date', '<=', $windowEnd),
+            $knownAt
+        )
             ->orderBy('ticker_id')
             ->orderBy('action_date')
             ->orderBy('action_type')
             ->get();
+
+        /*
+         * One event can be recorded twice: once as the platform's own price-series hypothesis, and
+         * again when the exchange terms arrive. The hypothesis is not adjustable and would keep
+         * quarantining a window that the authoritative factor now adjusts correctly — the series
+         * would be rescaled and then nulled anyway, which is the worst of both.
+         *
+         * A hypothesis about an event is answered once that event's terms are known. So a row that
+         * cannot adjust is set aside when another row for the same instrument, type and effective
+         * date can.
+         */
+        $coveredEvents = [];
+        foreach ($rows as $row) {
+            if ($this->isAdjustable($row)) {
+                $coveredEvents[$this->corporateActionEventKey($row)] = true;
+            }
+        }
 
         $types = $this->corporateActionTypes();
         $contamination = [];
@@ -261,6 +376,10 @@ class EventRiskSourceRepository
             $actionTypeCode = $this->normalizeCode($row->action_type);
 
             if ($actionTypeCode === '') {
+                continue;
+            }
+
+            if (! $this->isAdjustable($row) && isset($coveredEvents[$this->corporateActionEventKey($row)])) {
                 continue;
             }
 
@@ -325,7 +444,7 @@ class EventRiskSourceRepository
      *
      * @return array<int, array<int, array{ex_date:string, price_factor:float, volume_factor:float}>>
      */
-    public function resolveAdjustmentFactorsForTickerIds(array $tickerIds, $windowStart, $windowEnd): array
+    public function resolveAdjustmentFactorsForTickerIds(array $tickerIds, $windowStart, $windowEnd, $knownAt = null): array
     {
         $tickerIds = array_values(array_unique(array_map('intval', $tickerIds)));
         $tickerIds = array_values(array_filter($tickerIds, function ($tickerId) {
@@ -336,20 +455,28 @@ class EventRiskSourceRepository
             return [];
         }
 
-        $rows = DB::table($this->corporateActionsTable())
-            ->select(['ticker_id', 'ex_date', 'action_date', 'price_adjustment_factor', 'volume_adjustment_factor', 'adjustment_source'])
-            ->whereIn('ticker_id', $tickerIds)
-            ->whereNotNull('price_adjustment_factor')
-            ->where('price_adjustment_factor', '>', 0)
-            ->where('price_adjustment_factor', '<>', 1)
-            // A factor the platform inferred from the price series may not adjust published
-            // output. Excluding it here and refusing it in isAdjustable() are the same rule:
-            // the row stays quarantined instead of being silently smoothed.
-            ->where(function ($query) {
-                $query->whereNull('adjustment_source')
-                    ->orWhere('adjustment_source', '<>', 'DERIVED_FROM_PRICE_SERIES');
-            })
-            ->orderBy('ticker_id')
+        $rows = $this->applyKnowledgeCutoff(
+            DB::table($this->corporateActionsTable().' as action')
+                ->leftJoin('md_listings as listing', 'listing.legacy_ticker_id', '=', 'action.ticker_id'),
+            $knownAt,
+            'action.recorded_at'
+        )
+            ->select([
+                'action.corporate_action_id', 'action.ticker_id', 'listing.listing_id',
+                'action.ex_date', 'action.action_date', 'action.price_adjustment_factor',
+                'action.volume_adjustment_factor', 'action.adjustment_source', 'action.updated_at',
+            ])
+            ->whereIn('action.ticker_id', $tickerIds)
+            ->whereNotNull('action.price_adjustment_factor')
+            ->where('action.price_adjustment_factor', '>', 0)
+            ->where('action.price_adjustment_factor', '<>', 1)
+            // Only an attributed factor may adjust published output. This is the same positive
+            // allowlist isAdjustable() applies, stated once in both places so the query cannot
+            // admit a row the guard would refuse. A factor the platform inferred from the price
+            // series, and a factor with no declared source at all, are both excluded: the row
+            // stays quarantined instead of being silently smoothed.
+            ->whereIn('action.adjustment_source', self::AUTHORITATIVE_ADJUSTMENT_SOURCES)
+            ->orderBy('action.ticker_id')
             ->get();
 
         $factors = [];
@@ -375,6 +502,8 @@ class EventRiskSourceRepository
                 : 1.0;
 
             $factors[(int) $row->ticker_id][] = [
+                'listing_id' => $row->listing_id === null ? null : (int) $row->listing_id,
+                'factor_revision_ref' => 'legacy-corporate-action:'.(int) $row->corporate_action_id.':'.(string) $row->updated_at,
                 'ex_date' => $effectiveDate,
                 'price_factor' => $priceFactor,
                 'volume_factor' => $volumeFactor > 0 ? $volumeFactor : 1.0,
@@ -406,32 +535,37 @@ class EventRiskSourceRepository
      * ../registry/Price_Scale_Break_Detection_LOCKED.md — a price anomaly is candidate evidence
      * only and may never become a verified event or factor.
      */
+    /**
+     * Identity of the corporate event a row describes, independent of who recorded it.
+     *
+     * `ex_date` is what places the event on the timeline, with `action_date` as the fallback the
+     * adjustment path already uses for rows recorded before the quantitative payload existed.
+     */
+    private function corporateActionEventKey($row): string
+    {
+        $effectiveDate = (string) (($row->ex_date ?? null) ?: ($row->action_date ?? ''));
+
+        return (int) $row->ticker_id.'|'.$this->normalizeCode($row->action_type).'|'.$effectiveDate;
+    }
+
     private function isAdjustable($row): bool
     {
         if (! property_exists($row, 'price_adjustment_factor') || $row->price_adjustment_factor === null) {
             return false;
         }
 
-        if ($this->isDerivedFromPriceSeries($row)) {
+        // A positive allowlist, not merely an exclusion of the derived source. An unattributed
+        // factor — adjustment_source NULL or a value nobody declared — must not adjust published
+        // output either: excluding only the one known-bad value would let an unknown one through,
+        // and the platform cannot say where such a factor came from.
+        $source = $this->normalizeCode($row->adjustment_source ?? '');
+        if (! in_array($source, self::AUTHORITATIVE_ADJUSTMENT_SOURCES, true)) {
             return false;
         }
 
         $factor = (float) $row->price_adjustment_factor;
 
         return $factor > 0 && abs($factor - 1.0) > 1e-9;
-    }
-
-    /**
-     * True when the row's factor came from the platform's own price-series inference rather than
-     * from an authoritative corporate-action source.
-     */
-    private function isDerivedFromPriceSeries($row): bool
-    {
-        if (! property_exists($row, 'adjustment_source')) {
-            return false;
-        }
-
-        return $this->normalizeCode($row->adjustment_source) === 'DERIVED_FROM_PRICE_SERIES';
     }
 
     public function corporateActionTypes(): array
@@ -500,21 +634,110 @@ class EventRiskSourceRepository
     {
         $now = $row['updated_at'] ?? date('Y-m-d H:i:s');
 
+        $keys = [
+            'ticker_id' => (int) $row['ticker_id'],
+            'action_date' => $row['action_date'],
+            'action_type' => $this->normalizeCode($row['action_type']),
+            'source_name' => $row['source_name'],
+        ];
+
         return DB::table($this->corporateActionsTable())->updateOrInsert(
-            [
-                'ticker_id' => (int) $row['ticker_id'],
-                'action_date' => $row['action_date'],
-                'action_type' => $this->normalizeCode($row['action_type']),
-                'source_name' => $row['source_name'],
-            ],
+            $keys,
+            $this->corporateActionUpsertValues($row, $now, $keys)
+        );
+    }
+
+    /**
+     * The values an upsert writes, with absent columns left alone.
+     *
+     * Writing the quantitative payload as `$row[...] ?? null` destroyed data. `updateOrInsert`
+     * writes every value it is given, so re-importing an event from a CSV that omits the factor
+     * columns — the three-column minimum the importer documents as valid — silently replaced a
+     * stored `price_adjustment_factor` and its `adjustment_source` with NULL. Measured on the MLPT
+     * row inside a rolled-back transaction: 0.04 became NULL and EXCHANGE_ANNOUNCEMENT became NULL,
+     * with no error, and the next recompute would have restored the fabricated -95.7% roc20.
+     *
+     * So absence and emptiness are separated. A key that is not present leaves the stored value
+     * untouched; a key present with an explicit null clears it. Erasing an attributed factor stays
+     * possible, but only as something the caller asked for rather than something it forgot to say.
+     */
+    private function corporateActionUpsertValues(array $row, $now, array $keys): array
+    {
+        $values = $this->withDurableCreationTimestamps(
             [
                 'ticker_code' => $this->normalizeCode($row['ticker_code']),
-                'source_ref' => $row['source_ref'] ?? null,
-                'notes' => $row['notes'] ?? null,
-                'created_at' => $row['created_at'] ?? $now,
                 'updated_at' => $now,
-            ]
+            ],
+            $row,
+            $this->corporateActionsTable(),
+            $keys,
+            $now
         );
+
+        return $this->withPreservedOptionalFields($values, $row, [
+            'source_ref', 'notes', 'ex_date', 'cum_date', 'ratio_from', 'ratio_to',
+            'price_adjustment_factor', 'volume_adjustment_factor', 'dividend_per_share',
+            'adjustment_source', 'adjustment_note',
+        ]);
+    }
+
+    /**
+     * The absent-preserves rule, stated once for every upsert in this repository.
+     *
+     * `F-040` fixed the corporate-action upsert and left its sibling carrying the same defect, so
+     * `F-041` had to repeat the work a day later. The rule now lives in one place: a third upsert
+     * cannot diverge from it by being written independently.
+     *
+     * A key that is not present leaves the stored value untouched. A key present with an explicit
+     * null clears it. `updateOrInsert` writes every value it is handed, so passing `?? null` for an
+     * optional field silently destroys stored data whenever the caller simply had nothing to say
+     * about that column.
+     */
+    /**
+     * Timestamps that describe when a row came into being, kept durable across a re-import.
+     *
+     * `created_at` and `recorded_at` were written unconditionally, so re-importing an event moved
+     * both to now. For `recorded_at` that inverts the protection `F-028` was built for: an event
+     * genuinely known in June, re-imported in August, becomes invisible to every cutoff before
+     * August — the platform would understate what it knew, which is as wrong for replay as the
+     * original leak that overstated it.
+     *
+     * `updated_at` is deliberately not here. It means "when this row was last written", so writing
+     * it on every upsert is correct.
+     *
+     * Row existence has to be read first because `updateOrInsert` does not tell its caller which
+     * branch it took. The window between the check and the write is the same one `updateOrInsert`
+     * already carries internally; a loser in that race sets a creation timestamp a moment late,
+     * which is bounded and visible, unlike silently rewriting one that was already correct.
+     */
+    private function withDurableCreationTimestamps(array $values, array $row, string $table, array $keys, $now): array
+    {
+        $isNewRow = ! DB::table($table)->where($keys)->exists();
+
+        if (array_key_exists('created_at', $row)) {
+            $values['created_at'] = $row['created_at'];
+        } elseif ($isNewRow) {
+            $values['created_at'] = $now;
+        }
+
+        if (array_key_exists('recorded_at', $row)) {
+            $values['recorded_at'] = $row['recorded_at'];
+        } elseif ($isNewRow) {
+            $values['recorded_at'] = $row['created_at'] ?? $now;
+        }
+
+        return $values;
+    }
+
+    private function withPreservedOptionalFields(array $values, array $row, array $optionalFields): array
+    {
+        foreach ($optionalFields as $field) {
+            if (array_key_exists($field, $row)) {
+                $values[$field] = $row[$field];
+            }
+        }
+
+        return $values;
     }
 
     public function upsertTradingStatusEvent(array $row): bool
@@ -526,20 +749,29 @@ class EventRiskSourceRepository
             throw new \InvalidArgumentException('Unknown trading status event_type_code: '.$eventTypeCode);
         }
 
+        $keys = [
+            'ticker_id' => (int) $row['ticker_id'],
+            'trade_date' => $row['trade_date'],
+            'event_type_code' => $eventTypeCode,
+            'source_name' => $row['source_name'],
+        ];
+
         return DB::table($this->tradingStatusesTable())->updateOrInsert(
-            [
-                'ticker_id' => (int) $row['ticker_id'],
-                'trade_date' => $row['trade_date'],
-                'event_type_code' => $eventTypeCode,
-                'source_name' => $row['source_name'],
-            ],
-            [
-                'ticker_code' => $this->normalizeCode($row['ticker_code']),
-                'source_ref' => $row['source_ref'] ?? null,
-                'notes' => $row['notes'] ?? null,
-                'created_at' => $row['created_at'] ?? $now,
-                'updated_at' => $now,
-            ]
+            $keys,
+            $this->withPreservedOptionalFields(
+                $this->withDurableCreationTimestamps(
+                    [
+                        'ticker_code' => $this->normalizeCode($row['ticker_code']),
+                        'updated_at' => $now,
+                    ],
+                    $row,
+                    $this->tradingStatusesTable(),
+                    $keys,
+                    $now
+                ),
+                $row,
+                ['source_ref', 'notes']
+            )
         );
     }
 
@@ -559,6 +791,9 @@ class EventRiskSourceRepository
             'trading_status_code' => null,
             'is_suspended' => null,
             'is_uma' => null,
+            // Coverage_Universe_Definition_LOCKED.md:19 — expectation evidence that is incomplete
+            // or conflicting resolves UNKNOWN, which stays in the denominator and stays visible.
+            'expectation_unknown' => null,
             'event_risk_flag' => null,
             'event_risk_reasons' => null,
             '_corporate_action_types' => [],

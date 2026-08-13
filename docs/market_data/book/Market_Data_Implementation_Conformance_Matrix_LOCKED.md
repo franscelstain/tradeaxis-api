@@ -4,6 +4,8 @@
 
 Status dokumentasi: **`DOCUMENTATION_STRATEGY_READY`**.
 
+Documentation-strategy synchronization: **`PASS` (2026-08-07)**. Strategy coverage `22/22`; owner assignment completeness tetap wajib dibuktikan melalui ledger dan tidak menyiratkan implementation/runtime conformance.
+
 Dokumen ini adalah owner untuk **traceability kelengkapan implementasi**. `Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` memiliki urutan kerja `W00`–`W22`; owner contract paling spesifik memiliki behavior; matrix ini memastikan seluruh dokumen strategi aktif memperoleh contract-area assignment, deliverable, proof, dan status sehingga tidak ada yang terlewat.
 
 Matrix ini tidak membuat logic watchlist. Weekly Swing hanya initial consumer profile pada read boundary. Screening, tradability threshold, ranking, signal, entry/exit, portfolio, dan performance proof berada di luar conformance market-data.
@@ -56,13 +58,13 @@ Sebelum `W22`:
 11. setiap source, detector, resolver, dan validator menyatakan capability boundary-nya pada owner contract: apa yang dapat dibuktikan, apa yang hanya diagnostic, apa yang tidak dapat dilihat, dan fail-safe state ketika evidence tidak tersedia. **Cakupan gate ini adalah dokumen yang memiliki mekanisme penghasil verdict, state, flag, atau signal** — bukan setiap dokumen yang ter-assign pada sebuah stage. Kontrak yang hanya menetapkan pemisahan tanggung jawab, lokasi penyimpanan, kewenangan operator, atau bentuk artefak tidak menghasilkan verdict dan berada di luar cakupan; menambahkan boundary generik ke dokumen semacam itu memenuhi pemeriksaan mekanis tanpa mengajarkan apa pun, dan justru melemahkan gate ini. Bila ragu, tanyakan apakah dokumen itu memiliki keluaran yang dapat dikutip sebagai bukti — bila ya, ia wajib menyatakan batasnya. Pernyataan itu wajib berada di bawah heading yang judulnya dimulai dengan **`Capability boundary`**, setelah nomor section opsional, agar gate ini dapat diperiksa secara mekanis. Kualifikasi boleh mengikuti setelahnya. Bentuk yang sah mencakup `## Capability boundary (LOCKED)`, `## 5. Capability Boundary (LOCKED)`, dan `## Capability boundary — detection sensitivity (LOCKED)`;
 12. tidak ada output, verdict, atau release keputusan yang memakai **ketiadaan sinyal dari komponen berbatas** sebagai bukti ketiadaan peristiwa.
 
-13. setiap **root of expectation** — kalender, universe/identitas, corporate action, dan trading status — memiliki rekonsiliasi eksternal, karena tidak ada gate internal yang dapat mendeteksi ketidaklengkapannya. Aturan bersama berikut dimiliki gate ini dan **tidak boleh diulang** di owner contract; owner contract hanya menyatakan parameter domainnya sendiri, yaitu sumber otoritatif yang dipakai, cadence-nya, dan cakupan periodenya:
+13. setiap **root of expectation** — kalender, universe/identitas, corporate action, trading status, serta **sector classification/membership untuk setiap produk sector-relative** — memiliki rekonsiliasi eksternal, karena tidak ada gate internal yang dapat mendeteksi ketidaklengkapannya. Aturan bersama berikut dimiliki gate ini dan **tidak boleh diulang** di owner contract; owner contract hanya menyatakan parameter domainnya sendiri, yaitu sumber otoritatif yang dipakai, cadence rekonsiliasinya, cakupan periodenya, dan qualification bila periodenya belum direkonsiliasi:
     - **dua arah** — tercatat tetapi tidak pernah terjadi, dan terjadi tetapi tidak pernah tercatat. Arah kedua adalah yang tidak dapat dijangkau gate internal mana pun;
     - **independen dari pipeline harian**, dengan cadence sendiri, karena pipeline mengukur kesesuaian terhadap sumber ekspektasi, bukan sumber ekspektasi itu sendiri;
     - **periode yang belum direkonsiliasi dinyatakan eksplisit**, dan klaim apa pun yang mencakupnya dikualifikasi sesuai;
     - **pipeline hijau, gate yang lulus, atau ketiadaan keluhan bukan bukti rekonsiliasi**.
 
-Gate 13 adalah penawar dari gate 11 dan 12: keduanya menamai wilayah buta, gate ini menetapkan satu-satunya cara mengisinya. Empat rekonsiliasi domain sebelumnya dinyatakan terpisah di masing-masing owner contract dan sudah mulai berbeda isinya; menyatukan aturan bersamanya di sini menghentikan penyimpangan itu.
+Gate 13 adalah penawar dari gate 11 dan 12: keduanya menamai wilayah buta, gate ini menetapkan satu-satunya cara mengisinya. **Lima domain rekonsiliasi** kini tunduk pada aturan bersama ini: calendar, universe/identity, trading status, corporate action, dan sector classification/membership untuk sector-relative products. Owner contract hanya membawa parameter domainnya agar aturan bersama tidak menyimpang antar domain.
 
 Gate 11 dan 12 berbeda dari gate 6. Gate 6 membuktikan komponen menolak input buruk dengan benar. Gate 11 menyatakan wilayah tempat komponen tidak menghasilkan sinyal sama sekali, dan gate 12 melarang wilayah itu dibaca sebagai bukti. Sebuah komponen dapat lulus seluruh negative proof dan tetap menyesatkan bila wilayah butanya tidak dinyatakan.
 
@@ -107,7 +109,7 @@ Documents:
 
 - `Yahoo_Finance_Bootstrap_Source_Strategy.md`
 
-Required implementation outcome: provider port netral, Yahoo adapter terisolasi, limitation/provenance/schema/date/licensing disclosure eksplisit, manual file hanya controlled recovery, dan paid-provider work tetap deferred.
+Required implementation outcome: provider port netral, Yahoo adapter terisolasi, limitation/provenance/schema/date/licensing disclosure eksplisit, manual file hanya controlled **one-date operational rescue** (bukan multi-day continuity), dan paid-provider work tetap deferred.
 
 Exit gate: mengganti adapter tidak mengubah canonical/product/indicator/read contracts dan Yahoo tidak pernah dilabel official IDX source.
 
@@ -142,7 +144,7 @@ Required implementation outcome: retry/backoff/rate-limit/circuit-breaker, wrong
 
 Exit gate: outage/partial/empty/wrong-date/schema-change fixtures tidak menghasilkan silent readable publication atau denominator shrink.
 
-### Stage 6 — temporal identity and symbol/provider mapping
+### Stage 6 — temporal identity, symbol/provider mapping, and sector-reference foundation
 
 Work order: `W05`.
 
@@ -150,10 +152,11 @@ Documents:
 
 - `Tickers_and_Identity_Dependency_Contract_LOCKED.md`
 - `Symbol_Lifecycle_and_Mapping_Contract.md`
+- `Sector_Classification_Contract_LOCKED.md` — cross-cutting prerequisite; sector-relative analytical products may not precede this foundation
 
-Required implementation outcome: issuer, instrument, listing, exchange symbol, dan provider symbol berbeda identity dan bitemporal/as-known resolvable; current `is_active` bukan historical truth.
+Required implementation outcome: issuer, instrument, listing, exchange symbol, provider symbol, dan temporal `IDX-IC` membership berbeda governed facts dan bitemporal/as-known resolvable; current `is_active` maupun current sector bukan historical truth.
 
-Exit gate: listing/delisting, rename, symbol reuse, provider mapping revision, dan inactive-now-active-then fixtures lulus tanpa survivorship leakage.
+Exit gate: listing/delisting, rename, symbol reuse, provider mapping revision, inactive-now-active-then, sector reclassification, missing-membership, dan current-sector-leakage fixtures lulus tanpa survivorship/future leakage.
 
 ### Stage 7 — calendar, session, and temporal trading status
 
@@ -261,12 +264,15 @@ Work order: `W16`.
 Documents:
 
 - `EOD_Eligibility_Snapshot_Contract_LOCKED.md`
-- `Sector_Classification_Contract_LOCKED.md`
 - `Eligibility_Partial_Data_Behavior_LOCKED.md`
 
-Required implementation outcome: one publication-bound row per temporal listing with separately persisted expectation, delivery, quality, metric validity, status, event/contamination, indicator state, data-usability decision, and complete ordered reasons.
+Cross-cutting prerequisite/input:
 
-Exit gate: blocked row tidak hilang; true tidak berarti tradable/selected; liquidity/event preference watchlist tidak masuk upstream decision.
+- `Sector_Classification_Contract_LOCKED.md` — primary prerequisite closure berada di Stage 6/`W05`; Stage 13 hanya mempersist/mengekspose sector-reference state yang sudah point-in-time dan publication-bound bila read product membutuhkannya.
+
+Required implementation outcome: one publication-bound row per temporal listing with separately persisted expectation, delivery, quality, metric validity, status, event/contamination, indicator state, sector-reference state bila relevan, data-usability decision, and complete ordered reasons.
+
+Exit gate: blocked row tidak hilang; true tidak berarti tradable/selected; liquidity/event preference watchlist tidak masuk upstream decision; missing/unknown sector tidak diganti current membership dan hanya men-null-kan dependent sector-relative fields sesuai owner indicator contract.
 
 ### Stage 14 — actual and proxy daily market metrics
 

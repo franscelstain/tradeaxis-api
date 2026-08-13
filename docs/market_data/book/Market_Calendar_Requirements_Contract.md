@@ -141,6 +141,7 @@ The calendar is the root of expectation, so it falls under the shared external-r
 Domain parameters owned by this contract:
 
 - **Authority:** the exchange-published Regular-Market schedule for the period.
+- **Cadence:** reconcile whenever IDX publishes or revises the trading calendar, and before any `PROJECTED` period is upgraded to `VERIFIED` or included in an unqualified reconciled-period claim.
 - **Scope:** every period from the intentional dataset start through the furthest `VERIFIED` row. Rows beyond the published horizon remain `PROJECTED` under the provenance tiers above and are not reconcilable until the exchange publishes them.
 - **Qualification:** a reconciled period upgrades its rows from `PROJECTED` to `VERIFIED` as a calendar revision.
 

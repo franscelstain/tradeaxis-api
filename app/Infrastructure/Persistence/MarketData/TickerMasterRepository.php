@@ -74,7 +74,15 @@ class TickerMasterRepository
             ->all();
     }
 
-    public function getUniverseForTradeDate($tradeDate)
+    /**
+     * The universe for a trade date, optionally as the platform knew it at a moment in time.
+     *
+     * `universeAsOf` has accepted a knowledge cutoff since it became a temporal root, and this
+     * wrapper never passed one — so the coverage denominator answered "as of now" and moved when a
+     * listing was recorded between two runs of the same trade date. `F-006` recorded that as
+     * 950 → 949 → 950 across three runs on one execution day.
+     */
+    public function getUniverseForTradeDate($tradeDate, $knownAt = null)
     {
         return array_map(function (array $row) {
             return [
@@ -88,7 +96,7 @@ class TickerMasterRepository
                 'board_code' => $row['board_code'],
                 'identity_recorded_at' => $row['identity_recorded_at'],
             ];
-        }, $this->temporalIdentity->universeAsOf($tradeDate));
+        }, $this->temporalIdentity->universeAsOf($tradeDate, $knownAt));
     }
 
     public function resolveTemporalContextsByCodes(array $tickerCodes, $tradeDate, $knownAt = null)

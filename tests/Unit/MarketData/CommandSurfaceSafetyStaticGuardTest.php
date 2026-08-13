@@ -170,7 +170,8 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->assertStringContainsString('source_master_write_executed', $command);
         $this->assertStringContainsString('eod_bars_write_executed', $command);
         $this->assertStringContainsString('promoteDaily(', $command);
-        $this->assertStringContainsString('correction_current', $command);
+        $this->assertStringContainsString("'analytical_remediation_current'", $command);
+        $this->assertStringNotContainsString("'correction_current'", $command);
         $this->assertStringContainsString('exportCorrectionEvidence', $command);
         $this->assertStringContainsString('recomputePreservedCurrentPublication', $command);
         $this->assertStringNotContainsString('completeIngest(', $command);

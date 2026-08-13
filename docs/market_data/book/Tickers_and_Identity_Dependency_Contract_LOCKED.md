@@ -108,6 +108,7 @@ The universe is a root of expectation, so it falls under the shared external-rec
 Domain parameters owned by this contract:
 
 - **Authority:** an authoritative exchange listing and delisting record.
+- **Cadence:** reconcile the current listing universe on each operational trading day before finalizing that date's expectation set; run full-range reconciliation before any historical period is claimed survivorship-free, and rerun after authoritative listing/delisting corrections.
 - **Scope:** from the intentional dataset start onward. Absence of securities delisted before that boundary is out of scope by design, not a completeness defect.
 - **Qualification:** a survivorship-free claim covering an unreconciled period must name that period explicitly.
 

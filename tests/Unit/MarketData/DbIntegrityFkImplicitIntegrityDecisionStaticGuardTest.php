@@ -107,7 +107,10 @@ class DbIntegrityFkImplicitIntegrityDecisionStaticGuardTest extends TestCase
         $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
 
         foreach ([$status, $tracker] as $document) {
-            $this->assertStringContainsString('ACTIVE SESSION:', $document);
+            $this->assertStringContainsString('CURRENT CANONICAL', $document);
+            $this->assertStringContainsString('HISTORICAL SESSION:', $document);
+            $this->assertStringContainsString('NON-AUTHORITATIVE UNDER V2', $document);
+            $this->assertStringNotContainsString("\nACTIVE SESSION:\n", $document);
             $this->assertStringContainsString('DB Integrity FK / Implicit Integrity Decision', $document);
             $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $document);
             $this->assertStringContainsString('operator-local PHPUnit', $document);

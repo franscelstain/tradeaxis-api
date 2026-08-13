@@ -21,7 +21,7 @@ Import/ingest is the process of accepting source data into traceable run/candida
 - `promote`
 - `full_publish`
 - `correction`
-- `repair_candidate`
+- `correction_candidate` (legacy persisted/request alias `repair_candidate` may be accepted only for backward compatibility and must never authorize in-place repair)
 - `replay_verify`
 - `evidence_export`
 

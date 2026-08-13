@@ -186,7 +186,7 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
 
     private function planTradeDate($tradeDate)
     {
-        $publication = app(EodPublicationRepository::class)->findCurrentPublicationForTradeDate($tradeDate);
+        $publication = app(EodPublicationRepository::class)->findCurrentPublicationForAnalyticalRemediation($tradeDate);
 
         if (! $publication) {
             return [
@@ -214,7 +214,7 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
     private function recomputeTradeDate($tradeDate, $reason, $withEvidence, $outputDir)
     {
         try {
-            $publication = app(EodPublicationRepository::class)->findCurrentPublicationForTradeDate($tradeDate);
+            $publication = app(EodPublicationRepository::class)->findCurrentPublicationForAnalyticalRemediation($tradeDate);
             if (! $publication) {
                 throw new \RuntimeException('NO_READABLE_PUBLICATION: No current readable publication exists for trade_date.');
             }
@@ -240,7 +240,7 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
                 $sourceMode,
                 (int) $publication->run_id,
                 (int) $correction->correction_id,
-                'correction_current',
+                'analytical_remediation_current',
                 false,
                 $reason
             );

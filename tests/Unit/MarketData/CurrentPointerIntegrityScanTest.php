@@ -49,6 +49,8 @@ class CurrentPointerIntegrityScanTest extends TestCase
 
     private function seedValidCurrentPublication(): void
     {
+        $factorSetHash = hash('sha256', 'pointer-integrity|'.self::TRADE_DATE.'|25|10');
+
         DB::table('eod_runs')->insert([
             'run_id' => 25,
             'trade_date_requested' => self::TRADE_DATE,
@@ -70,6 +72,9 @@ class CurrentPointerIntegrityScanTest extends TestCase
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE',
             'coverage_contract_version' => 'coverage_gate_v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'is_current_publication' => 1,
             'sealed_at' => '2026-03-20 17:20:00',
             'started_at' => '2026-03-20 17:00:00',
@@ -84,6 +89,9 @@ class CurrentPointerIntegrityScanTest extends TestCase
             'publication_version' => 1,
             'is_current' => 1,
             'seal_state' => 'SEALED',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'sealed_at' => '2026-03-20 17:20:00',
             'created_at' => '2026-03-20 17:20:00',
             'updated_at' => '2026-03-20 17:20:00',
@@ -148,6 +156,28 @@ class CurrentPointerIntegrityScanTest extends TestCase
 
         $this->assertCount(0, $this->repository()->findInvalidCurrentPublicationStates(self::TRADE_DATE));
         $this->assertStringContainsString('status=OK', $this->runRepairCommandDryRun());
+    }
+
+    public function test_an_indicator_with_a_different_analytical_identity_invalidates_the_publication(): void
+    {
+        DB::table('eod_indicators')->insert([
+            'trade_date' => self::TRADE_DATE,
+            'ticker_id' => 1,
+            'is_valid' => 1,
+            'indicator_set_version' => 'v1',
+            'price_product_code' => 'RAW',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'pointer-integrity|'.self::TRADE_DATE.'|25|10'),
+            'run_id' => 25,
+            'publication_id' => 10,
+            'created_at' => '2026-03-20 17:20:00',
+        ]);
+
+        $this->assertNull($this->repository()->resolveCurrentReadablePublicationForTradeDate(self::TRADE_DATE));
+        $this->assertContains(
+            'ANALYTICAL_ROW_IDENTITY_MISMATCH',
+            $this->reportedReasons($this->runRepairCommandDryRun())
+        );
     }
 
     /**
@@ -257,6 +287,10 @@ class CurrentPointerIntegrityScanTest extends TestCase
                 ['table' => 'eod_publications', 'update' => ['sealed_at' => null], 'reason' => 'PUBLICATION_SEALED_AT_MISSING'],
                 'the publication carries no proof of when it was sealed',
             ],
+            'publication analytical identity missing' => [
+                ['table' => 'eod_publications', 'update' => ['factor_set_hash' => null], 'reason' => 'PUBLICATION_ANALYTICAL_IDENTITY_INVALID'],
+                'the publication does not identify the factor set used by its analytical product',
+            ],
             'pointer seal timestamp missing' => [
                 ['table' => 'eod_current_publication_pointer', 'update' => ['sealed_at' => null], 'reason' => 'POINTER_SEALED_AT_MISSING'],
                 'the pointer carries no proof of when it was sealed',
@@ -336,6 +370,10 @@ class CurrentPointerIntegrityScanTest extends TestCase
             'run publication mirror version mismatch' => [
                 ['table' => 'eod_runs', 'update' => ['publication_version' => 9], 'reason' => 'RUN_PUBLICATION_VERSION_MISMATCH'],
                 'the run mirrors a different publication version than the pointer does',
+            ],
+            'run analytical identity mismatch' => [
+                ['table' => 'eod_runs', 'update' => ['factor_set_hash' => str_repeat('f', 64)], 'reason' => 'RUN_ANALYTICAL_IDENTITY_MISMATCH'],
+                'the run and publication name different analytical factor sets',
             ],
         ];
     }

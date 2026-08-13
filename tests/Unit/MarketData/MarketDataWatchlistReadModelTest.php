@@ -49,6 +49,9 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->assertTrue($result['is_ready']);
         $this->assertSame(2, $result['publication_id']);
         $this->assertSame(3, $result['run_id']);
+        $this->assertSame('STRUCTURAL_ADJUSTED', $result['price_product_code']);
+        $this->assertSame('structural_adjusted_v1', $result['price_product_version']);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $result['factor_set_hash']);
         $this->assertSame('RESOLVED_READABLE_CURRENT', $result['pointer_resolve_status']);
         $this->assertCount(1, $result['rows']);
 
@@ -82,6 +85,9 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->assertSame(1, $row['event_risk_flag']);
         $this->assertSame('CORPORATE_ACTION:DIVIDEND,UMA', $row['event_risk_reasons']);
         $this->assertSame('v1', $row['indicator_set_version']);
+        $this->assertSame('STRUCTURAL_ADJUSTED', $row['price_product_code']);
+        $this->assertSame('structural_adjusted_v1', $row['price_product_version']);
+        $this->assertSame($result['factor_set_hash'], $row['factor_set_hash']);
         $this->assertSame('API_FREE', $row['source_name']);
     }
 

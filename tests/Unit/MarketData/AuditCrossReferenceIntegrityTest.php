@@ -249,20 +249,24 @@ class AuditCrossReferenceIntegrityTest extends TestCase
      * Both documents declare which session is currently active, and they must name the same one.
      * They are updated separately, so disagreement means one was left behind.
      */
-    public function test_both_documents_name_the_same_active_session(): void
+    public function test_both_documents_name_the_same_current_canonical_override(): void
     {
-        $status = $this->activeSession($this->read(self::STATUS_DOC));
-        $tracker = $this->activeSession($this->read(self::TRACKER_DOC));
+        $status = $this->canonicalOverrideDate($this->read(self::STATUS_DOC));
+        $tracker = $this->canonicalOverrideDate($this->read(self::TRACKER_DOC));
 
-        $this->assertNotSame('', $status, 'The implementation status must name an active session.');
+        $this->assertNotSame('', $status, 'The implementation status must date its canonical override.');
         $this->assertSame($status, $tracker);
     }
 
-    private function activeSession(string $document): string
+    private function canonicalOverrideDate(string $document): string
     {
-        $this->assertMatchesRegularExpression('/ACTIVE SESSION:\R- (?P<session>[^\r\n]+)/', $document);
-        preg_match('/ACTIVE SESSION:\R- (?P<session>[^\r\n]+)/', $document, $match);
+        $pattern = '/^## CURRENT CANONICAL(?: AUDIT)? OVERRIDE .* (?P<date>\d{4}-\d{2}-\d{2})$/mu';
+        $this->assertMatchesRegularExpression($pattern, $document);
+        preg_match($pattern, $document, $match);
 
-        return trim($match['session']);
+        $this->assertStringContainsString('HISTORICAL SESSION RECORD', $document);
+        $this->assertStringNotContainsString("\nACTIVE SESSION:\n", $document);
+
+        return trim($match['date']);
     }
 }

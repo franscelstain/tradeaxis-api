@@ -90,11 +90,13 @@ Always record `terminal_status`, `publishability_state`, `reason_code`, and `fin
 
 ### Manual file import-only flow
 
+For **operational recovery**, `manual_file` is a controlled **one-date rescue only**, never a multi-day continuity substitute for the provider. Planned historical development fill, backfill, correction/republication, and replay-oriented reconstruction may use an explicitly bounded historical range under the historical backfill contract.
+
 `manual_file` with `request_mode=import_only` must end with `promote_status=NOT_PROMOTED`, `promoted=false`, and `pointer_switched=false`. **Manual file import must not become current/readable automatically**.
 
 ### Manual file promote flow
 
-Use `market-data:promote --requested_date=<YYYY-MM-DD>` with `request_mode=promote`. Promotion additionally requires `coverage_gate_state=PASS`, complete V2 product/lineage/config, `seal_state=SEALED`, and only then `pointer_switched=true`.
+Use `market-data:promote --requested_date=<YYYY-MM-DD>` with `request_mode=promote`. Promotion additionally requires `coverage_gate_state=PASS`, complete V2 product/lineage/config, `seal_state=SEALED`, and only then `pointer_switched=true`. A manual-file rescue does not receive relaxed gates or special overwrite rights.
 
 ### Provider/API flow
 

@@ -36,6 +36,8 @@ class CorrectionBaselineResolutionTest extends TestCase
 
     private function seedReadablePublication(): void
     {
+        $factorSetHash = hash('sha256', 'correction-baseline|2026-03-20|25|10');
+
         DB::table('eod_runs')->insert([
             'run_id' => 25,
             'trade_date_requested' => '2026-03-20',
@@ -57,6 +59,9 @@ class CorrectionBaselineResolutionTest extends TestCase
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE',
             'coverage_contract_version' => 'coverage_gate_v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'is_current_publication' => 1,
             'sealed_at' => '2026-03-20 17:20:00',
             'started_at' => '2026-03-20 17:00:00',
@@ -71,6 +76,9 @@ class CorrectionBaselineResolutionTest extends TestCase
             'publication_version' => 1,
             'is_current' => 1,
             'seal_state' => 'SEALED',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'sealed_at' => '2026-03-20 17:20:00',
             'created_at' => '2026-03-20 17:20:00',
             'updated_at' => '2026-03-20 17:20:00',
@@ -134,6 +142,12 @@ class CorrectionBaselineResolutionTest extends TestCase
             'pointer seal missing' => ['eod_current_publication_pointer', ['sealed_at' => null], 'pointer carries no seal timestamp'],
             'pointer version mismatch' => ['eod_current_publication_pointer', ['publication_version' => 9], 'pointer version disagrees with the publication'],
             'pointer run mismatch' => ['eod_current_publication_pointer', ['run_id' => 99], 'pointer run disagrees with the publication run'],
+            'publication product invalid' => ['eod_publications', ['price_product_code' => 'RAW'], 'publication analytical product is not the selected run-wide product'],
+            'publication product version missing' => ['eod_publications', ['price_product_version' => null], 'publication analytical product version is missing'],
+            'publication factor identity missing' => ['eod_publications', ['factor_set_hash' => null], 'publication factor set identity is missing'],
+            'run product mismatch' => ['eod_runs', ['price_product_code' => 'RAW'], 'run and publication analytical products disagree'],
+            'run product version mismatch' => ['eod_runs', ['price_product_version' => 'structural_adjusted_v2'], 'run and publication product versions disagree'],
+            'run factor identity mismatch' => ['eod_runs', ['factor_set_hash' => str_repeat('f', 64)], 'run and publication factor sets disagree'],
         ];
     }
 

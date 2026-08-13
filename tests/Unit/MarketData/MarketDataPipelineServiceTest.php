@@ -90,6 +90,9 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->coverage_threshold_mode = $coverageRatio !== null ? 'MIN_RATIO' : null;
         $run->coverage_contract_version = $coverageRatio !== null ? 'coverage_gate_v1' : null;
         $run->sealed_at = $sealedAt;
+        $attributes = $run->getAttributes();
+        $attributes['knowledge_cutoff_at'] = '2026-03-24 18:00:00';
+        $run->setRawAttributes($attributes);
 
         return $run;
     }
@@ -176,6 +179,40 @@ class MarketDataPipelineServiceTest extends TestCase
         $this->assertSame($run, $result[0]);
         $this->assertNull($result[1]);
         $this->assertNull($result[2]);
+    }
+
+    public function test_start_stage_rejects_an_explicit_legacy_run_without_a_knowledge_cutoff(): void
+    {
+        [$service, $runs] = $this->makeService();
+
+        $run = $this->makeRun(190);
+        $attributes = $run->getAttributes();
+        $attributes['knowledge_cutoff_at'] = null;
+        $run->setRawAttributes($attributes);
+        $run->lifecycle_state = 'RUNNING';
+        $run->source = 'api';
+        $run->request_mode = 'import_only';
+
+        $runs->shouldReceive('findByRunId')->once()->with(190)->andReturn($run);
+        $runs->shouldReceive('getOrCreateOwningRun')->never();
+        $runs->shouldReceive('touchStage')->never();
+        $runs->shouldReceive('appendEvent')->never();
+
+        try {
+            $service->startStage(new MarketDataStageInput(
+                '2026-03-24',
+                'api',
+                190,
+                'INGEST_BARS',
+                null,
+                false,
+                null,
+                'import_only'
+            ));
+            $this->fail('An explicit legacy run executed without a knowledge cutoff.');
+        } catch (LogicException $e) {
+            $this->assertStringContainsString('RUN_KNOWLEDGE_CUTOFF_MISSING', $e->getMessage());
+        }
     }
 
     public function test_complete_ingest_persists_manual_input_file_in_notes_and_event_payload(): void
@@ -683,10 +720,22 @@ class MarketDataPipelineServiceTest extends TestCase
                 'storage_target' => 'eod_eligibility',
             ]);
 
+        /*
+         * F-006 — the stage resolves the run's knowledge coordinate and evaluates coverage at it.
+         * Pinned as a third argument rather than left loose: the whole point of the coordinate is
+         * that the denominator is read as of a stated moment, so a call that omitted it would be
+         * the defect, not a detail.
+         */
+        $runs->shouldReceive('resolveKnowledgeCutoff')
+            ->once()
+            ->with($run)
+            ->andReturn('2026-04-03 18:05:00');
+
         $coverageGateEvaluator->shouldReceive('evaluate')
             ->once()
-            ->with('2026-04-03', 15)
+            ->with('2026-04-03', 15, '2026-04-03 18:05:00')
             ->andReturn([
+                'coverage_universe_count' => 950,
                 'expected_universe_count' => 900,
                 'available_eod_count' => 890,
                 'missing_eod_count' => 10,
@@ -706,7 +755,10 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with($run, m::on(function ($telemetry) {
                 return $telemetry['eligibility_rows_written'] === 900
                     && $telemetry['hard_reject_count'] === 40
-                    && $telemetry['coverage_universe_count'] === 900
+                    && $telemetry['coverage_universe_count'] === 950
+                    && $telemetry['coverage_expected_count'] === 900
+                    && $telemetry['coverage_delivered_count'] === 890
+                    && $telemetry['coverage_delivered_valid_count'] === 890
                     && $telemetry['coverage_available_count'] === 890
                     && $telemetry['coverage_missing_count'] === 10
                     && abs($telemetry['coverage_ratio'] - 0.9888889) < 0.000001

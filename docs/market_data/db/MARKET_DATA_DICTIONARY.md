@@ -169,7 +169,12 @@ Current projection only. Consumers receive the publication-bound read model.
 
 Execution lifecycle and outcome, requested/effective dates, source/retry evidence, independent expected/unknown/delivered/delivered-valid coverage counts, quality counts, artifact hashes, full config snapshot, observation manifest, correction/publication context, activation/freshness state, and latest expected/acquired/canonicalized/readable dates.
 
-Legacy `coverage_universe_count`, `coverage_available_count`, `coverage_missing_count`, `config_version/hash/ref`, and repair-like status values are transitional. New decisions use the explicit V2 fields; legacy compatibility must not shrink denominator or satisfy full-config proof.
+`coverage_universe_count` remains required raw-universe evidence and is never the denominator.
+`coverage_available_count` and legacy interpretations of `coverage_missing_count` are compatibility
+metrics; new decisions use explicit expected/unknown/delivered/delivered-valid fields. Compatibility
+fields must not shrink the denominator, impersonate another stored field during export, or satisfy
+full-config proof. `config_version/hash/ref` and repair-like status values retain their separately
+documented transitional boundaries.
 
 ### `eod_run_events`
 

@@ -66,7 +66,7 @@ Rules:
 - The guard must live in repository/service code, not only in command code.
 - Mutation attempts after seal must fail before writing changes.
 - The guard applies to repository, service, maintenance, repair, migration, and direct operator paths.
-- A content change creates a new publication version and immutable snapshot set; force/repair may switch a pointer only after that lifecycle succeeds.
+- A content change creates a new publication version and immutable snapshot set; a governed correction/current-replacement flow may switch a pointer only after that lifecycle succeeds; integrity repair is limited to pointer/mirror recovery.
 - Existing consumer safety, publishability, coverage gate, and pointer decisions are not changed by this guard.
 
 ---
@@ -88,7 +88,7 @@ Rules:
 - First publication for a trade date starts at `publication_version=1`.
 - Next publication for the same trade date increments `publication_version` by one from the existing maximum version.
 - When a publication replaces a current publication, `previous_publication_id`, `replaced_publication_id`, and `supersedes_publication_id` must identify that prior publication.
-- Non-current repair candidates may still carry lineage to the baseline/current publication without becoming reader-authoritative.
+- Non-current correction candidates may still carry lineage to the baseline/current publication without becoming reader-authoritative.
 
 ---
 

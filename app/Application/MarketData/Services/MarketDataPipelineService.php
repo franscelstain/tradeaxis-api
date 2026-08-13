@@ -72,6 +72,7 @@ class MarketDataPipelineService
         'is_valid',
         'invalid_reason_code',
         'indicator_set_version',
+        'sector_membership_id',
         'sector_code',
         'dv20_idr',
         'atr14_pct',
@@ -105,7 +106,9 @@ class MarketDataPipelineService
         'formula_version',
         'config_snapshot_id',
         'factor_set_id',
+        'factor_set_hash',
         'price_product_code',
+        'price_product_version',
         'adv20_traded_value_idr_actual',
         'adv20_close_volume_proxy_idr',
         'atr14',
@@ -187,6 +190,11 @@ class MarketDataPipelineService
             ? $this->safeFindRunById($input->runId)
             : null;
 
+        if ($run !== null) {
+            $run = $this->hydrateRunModel($run);
+            $run->assertKnowledgeCutoffForExecution();
+        }
+
         $runPromoteMode = $run && isset($run->promote_mode) && $run->promote_mode !== ''
             ? (string) $run->promote_mode
             : null;
@@ -198,13 +206,17 @@ class MarketDataPipelineService
             in_array($runPromoteMode, ['repair_candidate', 'incremental'], true)
             || in_array($runPublishTarget, ['repair_candidate', 'incremental_candidate'], true)
         );
+        $isAnalyticalRemediation = $input->correctionId
+            && $runPromoteMode === 'analytical_remediation_current';
 
         if ($input->correctionId) {
             $correction = $isRepairCandidate
                 ? $this->safeCanExecuteCorrection($input->correctionId, $input->requestedDate, 'repair_candidate')
                 : $this->corrections->requireApprovedForTradeDate($input->correctionId, $input->requestedDate);
 
-            $priorCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
+            $priorCurrent = $isAnalyticalRemediation
+                ? $this->publications->findCurrentPublicationForAnalyticalRemediation($input->requestedDate)
+                : $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
 
             if (! $priorCurrent) {
                 throw new \RuntimeException(
@@ -230,6 +242,9 @@ class MarketDataPipelineService
         if (! $run) {
             throw new \RuntimeException('Owning run context not found for market-data stage.');
         }
+
+        $run = $this->hydrateRunModel($run);
+        $run->assertKnowledgeCutoffForExecution();
 
         $existingSourceMode = isset($run->source) && $run->source !== ''
             ? (string) $run->source
@@ -712,33 +727,27 @@ class MarketDataPipelineService
         try {
             return DB::transaction(function () use ($run, $input, $priorCurrent) {
                 $coverageBasisPublicationId = $this->resolveCandidateCoveragePublicationId($run, $input, $priorCurrent);
-                $coverage = $this->coverageGateEvaluator->evaluate($input->requestedDate, $coverageBasisPublicationId);
+                $coverage = $this->coverageGateEvaluator->evaluate(
+                    $input->requestedDate,
+                    $coverageBasisPublicationId,
+                    $this->runs->resolveKnowledgeCutoff($run)
+                );
 
                 $coverageGateState = CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? 'NOT_EVALUABLE');
                 $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
                 $coverageTelemetry = [
                     'quality_gate_state' => $qualityGateState,
-                    'coverage_universe_count' => $coverage['expected_universe_count'],
+                    'coverage_universe_count' => $coverage['coverage_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
                     'coverage_missing_count' => $coverage['missing_eod_count'],
-                    /*
-                     * The full expectation/delivery evidence, not just the surviving denominator.
-                     *
-                     * Suspension and dormancy both remove instruments from the denominator, which
-                     * raises the ratio. That is legitimate only while the removal is visible: with
-                     * the exclusion counts unrecorded, a run that excluded 40 instruments and a run
-                     * that excluded none produce the same stored evidence, and the gate cannot be
-                     * audited after the fact. Counts are written as integers rather than left null
-                     * so "none excluded" stays distinguishable from "never recorded".
-                     */
-                    'coverage_expected_count' => (int) $coverage['expected_universe_count'],
-                    'coverage_delivered_count' => (int) $coverage['available_eod_count'],
-                    'coverage_delivered_valid_count' => (int) $coverage['available_eod_count'],
-                    // Verified NOT_EXPECTED only, which is full-session suspension. Dormancy no
-                    // longer contributes because it never proved NOT_EXPECTED in the first place.
-                    'coverage_bar_not_expected_count' => (int) ($coverage['coverage_bar_not_expected_count'] ?? 0),
-                    'coverage_expectation_unknown_count' => (int) ($coverage['coverage_expectation_unknown_count'] ?? 0),
+                    // Store measured evidence only. Zero remains zero; absence remains null and is
+                    // rejected at the repository boundary instead of being disguised as evidence.
+                    'coverage_expected_count' => $this->measuredCoverageCount($coverage, 'expected_universe_count'),
+                    'coverage_delivered_count' => $this->measuredCoverageCount($coverage, 'available_eod_count'),
+                    'coverage_delivered_valid_count' => $this->measuredCoverageCount($coverage, 'available_eod_count'),
+                    'coverage_bar_not_expected_count' => $this->measuredCoverageCount($coverage, 'coverage_bar_not_expected_count'),
+                    'coverage_expectation_unknown_count' => $this->measuredCoverageCount($coverage, 'coverage_expectation_unknown_count'),
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => $coverageGateState,
@@ -746,6 +755,15 @@ class MarketDataPipelineService
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
+                    /*
+                     * F-043 and F-044. Absent rather than defaulted when the evaluator did not
+                     * produce them, for the same reason the unknown count is NULL when uncomputed:
+                     * "not measured" and "measured as empty" must stay distinguishable.
+                     */
+                    'coverage_universe_hash' => $coverage['coverage_universe_hash'] ?? null,
+                    'coverage_excluded_sample_json' => array_key_exists('coverage_excluded_sample', $coverage)
+                        ? json_encode($coverage['coverage_excluded_sample'])
+                        : null,
                     'notes' => $this->appendRunNotes($run->notes ?? null, $this->coverageBasisNoteSegments($coverage, $coverageBasisPublicationId, $priorCurrent)),
                 ];
 
@@ -795,32 +813,22 @@ class MarketDataPipelineService
                 $result = $this->eligibility->build($run, $input->requestedDate, $input->correctionId !== null);
                 $coverage = $this->coverageGateEvaluator->evaluate(
                     $input->requestedDate,
-                    $result['publication_id']
+                    $result['publication_id'],
+                    $this->runs->resolveKnowledgeCutoff($run)
                 );
 
                 $run = $this->runs->updateTelemetry($run, [
                     'eligibility_rows_written' => $result['eligibility_rows_written'],
                     'hard_reject_count' => $result['blocked_rows'],
-                    'coverage_universe_count' => $coverage['expected_universe_count'],
+                    'coverage_universe_count' => $coverage['coverage_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
                     'coverage_missing_count' => $coverage['missing_eod_count'],
-                    /*
-                     * The full expectation/delivery evidence, not just the surviving denominator.
-                     *
-                     * Suspension and dormancy both remove instruments from the denominator, which
-                     * raises the ratio. That is legitimate only while the removal is visible: with
-                     * the exclusion counts unrecorded, a run that excluded 40 instruments and a run
-                     * that excluded none produce the same stored evidence, and the gate cannot be
-                     * audited after the fact. Counts are written as integers rather than left null
-                     * so "none excluded" stays distinguishable from "never recorded".
-                     */
-                    'coverage_expected_count' => (int) $coverage['expected_universe_count'],
-                    'coverage_delivered_count' => (int) $coverage['available_eod_count'],
-                    'coverage_delivered_valid_count' => (int) $coverage['available_eod_count'],
-                    // Verified NOT_EXPECTED only, which is full-session suspension. Dormancy no
-                    // longer contributes because it never proved NOT_EXPECTED in the first place.
-                    'coverage_bar_not_expected_count' => (int) ($coverage['coverage_bar_not_expected_count'] ?? 0),
-                    'coverage_expectation_unknown_count' => (int) ($coverage['coverage_expectation_unknown_count'] ?? 0),
+                    // The eligibility stage uses the identical fail-closed evidence projection.
+                    'coverage_expected_count' => $this->measuredCoverageCount($coverage, 'expected_universe_count'),
+                    'coverage_delivered_count' => $this->measuredCoverageCount($coverage, 'available_eod_count'),
+                    'coverage_delivered_valid_count' => $this->measuredCoverageCount($coverage, 'available_eod_count'),
+                    'coverage_bar_not_expected_count' => $this->measuredCoverageCount($coverage, 'coverage_bar_not_expected_count'),
+                    'coverage_expectation_unknown_count' => $this->measuredCoverageCount($coverage, 'coverage_expectation_unknown_count'),
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? null),
@@ -828,6 +836,15 @@ class MarketDataPipelineService
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
+                    /*
+                     * F-043 and F-044. Absent rather than defaulted when the evaluator did not
+                     * produce them, for the same reason the unknown count is NULL when uncomputed:
+                     * "not measured" and "measured as empty" must stay distinguishable.
+                     */
+                    'coverage_universe_hash' => $coverage['coverage_universe_hash'] ?? null,
+                    'coverage_excluded_sample_json' => array_key_exists('coverage_excluded_sample', $coverage)
+                        ? json_encode($coverage['coverage_excluded_sample'])
+                        : null,
                     'notes' => $this->appendRunNotes($run->notes ?? null, $this->coverageBasisNoteSegments($coverage, $result['publication_id'], null)),
                 ]);
 
@@ -848,7 +865,7 @@ class MarketDataPipelineService
             throw $e;
         }
     }
-    
+
     public function completeHash(MarketDataStageInput $input)
     {
         [$run] = $this->startStage($input);
@@ -3258,12 +3275,12 @@ class MarketDataPipelineService
         ];
         $resolvedMode = $aliases[$resolvedMode] ?? $resolvedMode;
 
-        if (! in_array($resolvedMode, ['full_publish', 'correction_current', 'repair_candidate'], true)) {
+        if (! in_array($resolvedMode, ['full_publish', 'correction_current', 'analytical_remediation_current', 'repair_candidate'], true)) {
             throw new \InvalidArgumentException('Unsupported promote mode: '.$resolvedMode);
         }
 
-        if ($resolvedMode === 'correction_current' && $correctionId === null) {
-            throw new \InvalidArgumentException('Promote mode correction_current requires correction_id.');
+        if (in_array($resolvedMode, ['correction_current', 'analytical_remediation_current'], true) && $correctionId === null) {
+            throw new \InvalidArgumentException('Promote mode '.$resolvedMode.' requires correction_id.');
         }
 
         if ($resolvedMode === 'repair_candidate') {
@@ -3278,6 +3295,15 @@ class MarketDataPipelineService
         if ($resolvedMode === 'correction_current') {
             return [
                 'promote_mode' => 'correction_current',
+                'publish_target' => 'current_replace',
+                'requires_full_coverage' => true,
+                'requires_baseline' => true,
+            ];
+        }
+
+        if ($resolvedMode === 'analytical_remediation_current') {
+            return [
+                'promote_mode' => 'analytical_remediation_current',
                 'publish_target' => 'current_replace',
                 'requires_full_coverage' => true,
                 'requires_baseline' => true,
@@ -3376,6 +3402,17 @@ class MarketDataPipelineService
         } catch (\Mockery\Exception\NoMatchingExpectationException $e) {
             return $run;
         }
+    }
+
+    private function measuredCoverageCount(array $coverage, string $field): ?int
+    {
+        if (! array_key_exists($field, $coverage)
+            || $coverage[$field] === null
+            || (is_string($coverage[$field]) && trim($coverage[$field]) === '')) {
+            return null;
+        }
+
+        return (int) $coverage[$field];
     }
 
 

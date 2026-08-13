@@ -12,6 +12,30 @@ Define coherent, revisioned analytical price products across verified corporate 
 
 Provider `adj_close` is not any of these analytical products and is never a per-row fallback.
 
+## Factor provenance vocabulary (LOCKED)
+
+`adjustment_source` declares where a factor came from. It is a closed vocabulary, mirrored in
+`EventRiskSourceRepository::ADJUSTMENT_SOURCES`:
+
+| Value | Meaning | May adjust published output |
+|---|---|---|
+| `EXCHANGE_ANNOUNCEMENT` | Terms read from a dated exchange announcement | yes |
+| `DEPOSITORY_SCHEDULE` | Terms read from the depository's corporate-action schedule | yes |
+| `OPERATOR_ENTERED` | Entered by a named operator with a reference to the underlying document | yes |
+| `DERIVED_FROM_PRICE_SERIES` | Inferred by the platform from a discontinuity in its own price series | **no** |
+
+Two rules follow, and both are positive rather than exclusionary:
+
+- Only the first three may adjust. A factor whose source is `NULL`, or a value outside this table,
+  is **unattributed** and must not rescale published prices — the platform cannot say where the
+  number came from, and excluding only the one known-bad value would admit every unknown one.
+- A refused factor does not become harmless. Its action still contaminates the window, so the
+  series is quarantined rather than published as clean while carrying an unexplained discontinuity.
+
+`DERIVED_FROM_PRICE_SERIES` is a platform observation, not a source. The importer refuses it
+outright: accepting it from a CSV would let an inference be laundered into a provenance, after which
+nothing could tell the two apart.
+
 ## Factor revision model
 
 Each applied factor revision must bind:

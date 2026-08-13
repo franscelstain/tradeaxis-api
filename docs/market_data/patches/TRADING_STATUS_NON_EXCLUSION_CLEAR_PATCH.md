@@ -1,5 +1,8 @@
 # Trading Status Non-Exclusion Clear Patch
 
+> **HISTORICAL PATCH RECORD — NON-AUTHORITATIVE UNDER CURRENT V2.** Retained for traceability; current owner contracts override any legacy behavior stated below.
+
+
 > SUPERSEDED CURRENT MODEL NOTE (2026-07-02): This patch is retained as historical evidence only. Current trading-status source truth is `TRADING_STATUS_SOURCE_MODEL_SIMPLIFICATION_2026_07_02.md`: source rows use only `event_type_code` (`SUSPENDED`, `UNSUSPENDED`, `SPECIAL_MONITORING_START`, `SPECIAL_MONITORING_END`, `UMA`), and coverage semantics live in `market_data_trading_status_event_types` instead of source-row columns such as `coverage_exclusion_flag`.
 
 

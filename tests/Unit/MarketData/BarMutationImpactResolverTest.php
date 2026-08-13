@@ -171,6 +171,7 @@ class BarMutationImpactResolverTest extends TestCase
     {
         $dates = $this->tradingDates();
         $changed = $dates[10];
+        $factorSetHash = hash('sha256', 'mutation-impact|'.$dates[12].'|25|10');
 
         DB::table('eod_runs')->insert([
             'run_id' => 25, 'trade_date_requested' => $dates[12], 'trade_date_effective' => $dates[12],
@@ -190,6 +191,9 @@ class BarMutationImpactResolverTest extends TestCase
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE',
             'coverage_contract_version' => 'coverage_gate_v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'started_at' => '2026-01-01 00:00:00', 'created_at' => '2026-01-01 00:00:00',
             'updated_at' => '2026-01-01 00:00:00',
         ]);
@@ -197,6 +201,9 @@ class BarMutationImpactResolverTest extends TestCase
         DB::table('eod_publications')->insert([
             'publication_id' => 10, 'trade_date' => $dates[12], 'run_id' => 25,
             'publication_version' => 1, 'is_current' => 1, 'seal_state' => 'SEALED',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'sealed_at' => '2026-01-01 00:00:00', 'created_at' => '2026-01-01 00:00:00',
             'updated_at' => '2026-01-01 00:00:00',
         ]);

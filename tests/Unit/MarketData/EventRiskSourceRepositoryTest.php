@@ -247,6 +247,192 @@ class EventRiskSourceRepositoryTest extends TestCase
         ]);
     }
 
+    /**
+     * F-040 — a re-import must not erase an attributed factor by omission.
+     *
+     * `updateOrInsert` writes every value it is handed, so passing `$row[...] ?? null` for the
+     * quantitative payload meant re-importing an event from a CSV without the factor columns —
+     * the three-column minimum the importer documents as valid — silently replaced a stored factor
+     * and its provenance with NULL. The next recompute would then have restored the very artefact
+     * the factor was obtained to remove.
+     *
+     * Both halves are pinned, because a fix that only preserved would remove the ability to correct
+     * a wrong factor: absence leaves the value alone, an explicit null clears it.
+     */
+    public function test_an_omitted_column_preserves_a_stored_factor_while_an_explicit_null_clears_it(): void
+    {
+        $repository = new EventRiskSourceRepository();
+        $identity = [
+            'ticker_id' => 10,
+            'ticker_code' => 'TEST',
+            'action_date' => '2026-05-20',
+            'action_type' => 'STOCK_SPLIT',
+            'source_name' => 'idx_manual',
+        ];
+
+        $repository->upsertCorporateAction($identity + [
+            'ex_date' => '2026-05-20',
+            'price_adjustment_factor' => 0.2,
+            'volume_adjustment_factor' => 5,
+            'adjustment_source' => 'EXCHANGE_ANNOUNCEMENT',
+            'source_ref' => 'Peng-1/BEI/05-2026',
+        ]);
+
+        $repository->upsertCorporateAction($identity);
+        $preserved = DB::table('market_data_corporate_actions')->where('ticker_id', 10)->first();
+
+        $this->assertEqualsWithDelta(0.2, (float) $preserved->price_adjustment_factor, 1e-9, 'an omitted column may not erase a factor');
+        $this->assertSame('EXCHANGE_ANNOUNCEMENT', $preserved->adjustment_source, 'nor its provenance');
+        $this->assertSame('Peng-1/BEI/05-2026', $preserved->source_ref, 'nor the reference to its document');
+        $this->assertSame('2026-05-20', (string) $preserved->ex_date);
+
+        $repository->upsertCorporateAction($identity + [
+            'price_adjustment_factor' => null,
+            'adjustment_source' => null,
+        ]);
+        $cleared = DB::table('market_data_corporate_actions')->where('ticker_id', 10)->first();
+
+        $this->assertNull($cleared->price_adjustment_factor, 'an explicit null must still clear it');
+        $this->assertNull($cleared->adjustment_source);
+        $this->assertEqualsWithDelta(5.0, (float) $cleared->volume_adjustment_factor, 1e-9, 'and must clear only what was named');
+    }
+
+    /**
+     * F-041 — the same rule on the sibling upsert, which F-040 left behind.
+     *
+     * Fixing `upsertCorporateAction` and not `upsertTradingStatusEvent` cost a full audit cycle to
+     * discover: on a production row it erased an IDX announcement URL and its text, with all 3,700
+     * rows carrying both.
+     */
+    public function test_a_trading_status_event_keeps_its_reference_when_a_column_is_omitted(): void
+    {
+        $repository = new EventRiskSourceRepository();
+        $identity = [
+            'ticker_id' => 10,
+            'ticker_code' => 'TEST',
+            'trade_date' => '2026-05-20',
+            'event_type_code' => 'SUSPENDED',
+            'source_name' => 'idx_manual',
+        ];
+
+        $repository->upsertTradingStatusEvent($identity + [
+            'source_ref' => 'https://idx.co.id/pengumuman/1',
+            'notes' => 'IDX mengumumkan suspensi',
+        ]);
+
+        $repository->upsertTradingStatusEvent($identity);
+        $preserved = DB::table('market_data_trading_status_events')->where('ticker_id', 10)->first();
+
+        $this->assertSame('https://idx.co.id/pengumuman/1', $preserved->source_ref);
+        $this->assertSame('IDX mengumumkan suspensi', $preserved->notes);
+
+        $repository->upsertTradingStatusEvent($identity + ['source_ref' => null]);
+        $cleared = DB::table('market_data_trading_status_events')->where('ticker_id', 10)->first();
+
+        $this->assertNull($cleared->source_ref, 'an explicit null must still clear');
+        $this->assertSame('IDX mengumumkan suspensi', $cleared->notes, 'and must clear only what was named');
+    }
+
+    /**
+     * No third upsert may reintroduce the pattern.
+     *
+     * `?? null` inside an `updateOrInsert` value block is the defect signature: the value is always
+     * written, so a caller with nothing to say about a column erases it. A sweep on 2026-08-11 found
+     * exactly two instances across nine upsert sites; this keeps the count at zero rather than
+     * relying on the next author knowing the history.
+     */
+    public function test_no_upsert_writes_an_optional_field_as_null(): void
+    {
+        $offenders = [];
+
+        foreach (glob(__DIR__.'/../../../app/Infrastructure/Persistence/MarketData/*.php') as $path) {
+            /*
+             * Comments are stripped first. The first version of this guard matched the prose that
+             * documents the defect — the explanation of `?? null` inside the very docblock warning
+             * against it — and reported three offenders where the code had none. A guard that
+             * cannot tell code from commentary teaches people to ignore it.
+             */
+            $code = '';
+            foreach (token_get_all((string) file_get_contents($path)) as $token) {
+                if (is_array($token)) {
+                    $code .= in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? ' ' : $token[1];
+                    continue;
+                }
+                $code .= $token;
+            }
+
+            $lines = explode("\n", $code);
+            foreach ($lines as $index => $line) {
+                if (strpos($line, 'updateOrInsert') === false) {
+                    continue;
+                }
+
+                if (strpos(implode("\n", array_slice($lines, $index, 30)), '?? null') !== false) {
+                    $offenders[] = basename($path).' near updateOrInsert';
+                }
+            }
+        }
+        $offenders = array_values(array_unique($offenders));
+
+        $this->assertSame(
+            [],
+            $offenders,
+            'an updateOrInsert value built with ?? null erases stored data when the caller omits the column'
+        );
+    }
+
+    /**
+     * F-042 — a re-import must not move the coordinates that say when a row came into being.
+     *
+     * `created_at` and `recorded_at` were written on every upsert, so re-importing an event moved
+     * both to now. For `recorded_at` that inverts what `F-028` was built for: an event genuinely
+     * known in June, re-imported in August, disappears from every cutoff before August. The
+     * platform would understate what it knew, which is as wrong for replay as the leak that
+     * overstated it.
+     *
+     * Four properties, because a fix that only preserved would break the insert path and a fix that
+     * only handled one method would repeat `F-040` into `F-041`.
+     */
+    public function test_creation_timestamps_survive_a_reimport_on_both_upserts(): void
+    {
+        $repository = new EventRiskSourceRepository();
+        $action = [
+            'ticker_id' => 10, 'ticker_code' => 'TEST', 'action_date' => '2026-05-20',
+            'action_type' => 'STOCK_SPLIT', 'source_name' => 'idx_manual',
+        ];
+        $status = [
+            'ticker_id' => 10, 'ticker_code' => 'TEST', 'trade_date' => '2026-05-20',
+            'event_type_code' => 'SUSPENDED', 'source_name' => 'idx_manual',
+        ];
+
+        $repository->upsertCorporateAction($action + ['recorded_at' => '2026-06-01 09:00:00', 'created_at' => '2026-06-01 09:00:00']);
+        $repository->upsertTradingStatusEvent($status + ['recorded_at' => '2026-06-01 09:00:00', 'created_at' => '2026-06-01 09:00:00']);
+
+        $repository->upsertCorporateAction($action);
+        $repository->upsertTradingStatusEvent($status);
+
+        $storedAction = DB::table('market_data_corporate_actions')->where('ticker_id', 10)->first();
+        $storedStatus = DB::table('market_data_trading_status_events')->where('ticker_id', 10)->first();
+
+        foreach ([$storedAction, $storedStatus] as $stored) {
+            $this->assertSame('2026-06-01 09:00:00', (string) $stored->recorded_at, 'a re-import may not move the as-known coordinate');
+            $this->assertSame('2026-06-01 09:00:00', (string) $stored->created_at, 'nor the creation time');
+        }
+
+        // A new row still receives both, otherwise preserving would have broken the insert path.
+        // array_merge, not `+`: the union operator keeps the left-hand value and would have
+        // re-upserted the same row instead of creating one.
+        $repository->upsertCorporateAction(array_merge($action, ['action_date' => '2026-05-21']));
+        $fresh = DB::table('market_data_corporate_actions')->where('action_date', '2026-05-21')->first();
+        $this->assertNotNull($fresh->recorded_at);
+        $this->assertNotNull($fresh->created_at);
+
+        // And a caller that names a value is still obeyed, so a correction remains possible.
+        $repository->upsertCorporateAction($action + ['recorded_at' => '2020-01-01 00:00:00']);
+        $corrected = DB::table('market_data_corporate_actions')->where('ticker_id', 10)->where('action_date', '2026-05-20')->first();
+        $this->assertSame('2020-01-01 00:00:00', (string) $corrected->recorded_at);
+    }
+
     public function test_contamination_depth_counts_trading_days_not_calendar_days(): void
     {
         $this->insertCorporateAction(10, '2026-05-20', 'STOCK_SPLIT');

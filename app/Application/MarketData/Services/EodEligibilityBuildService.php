@@ -108,12 +108,15 @@ class EodEligibilityBuildService
                 // would silently erase every later one.
                 'bar_expectation_state' => $isSuspended ? 'BAR_NOT_EXPECTED' : 'BAR_EXPECTATION_UNKNOWN',
                 'delivery_state' => $bar ? 'DELIVERED' : 'NOT_DELIVERED',
-                'canonical_quality_state' => $bar ? ($bar['quality_state'] ?? null) : null,
+                'canonical_quality_state' => $this->canonicalQualityState($bar),
                 // An observation, never an input to the usability decision: W16 proved the
                 // decision consults no liquidity preference, and this must not become one.
                 'liquidity_state' => isset($dormantTickerIds[$tickerId]) ? 'DORMANT' : 'ACTIVE',
                 'temporal_status_state' => $isSuspended ? 'SUSPENSION' : 'UNKNOWN',
-                'eligibility_reasons_json' => $reasons === [] ? null : json_encode($reasons),
+                // A factual projection of the indicator flag only. EligibilityDecisionService
+                // remains independent of event preference as required by the W16 owner contract.
+                'event_risk_state' => $this->eventRiskState($indicator),
+                'eligibility_reasons_json' => json_encode(array_values(array_unique($reasons))),
                 'run_id' => $run->run_id,
                 'publication_id' => $candidatePublication->publication_id,
                 'created_at' => $now,
@@ -134,6 +137,42 @@ class EodEligibilityBuildService
             'eligibility_pass_ratio' => $eligibilityRowsWritten > 0 ? round($eligibleRows / $eligibilityRowsWritten, 4) : null,
             'storage_target' => $useHistory ? 'eod_eligibility_history' : 'eod_eligibility',
         ];
+    }
+
+    private function canonicalQualityState($bar): string
+    {
+        if ($bar === null) {
+            return 'UNAVAILABLE';
+        }
+
+        $qualityState = $bar['quality_state'] ?? null;
+
+        return $qualityState === null || trim((string) $qualityState) === ''
+            ? 'UNKNOWN'
+            : (string) $qualityState;
+    }
+
+    private function eventRiskState($indicator): string
+    {
+        if ($indicator === null
+            || ! array_key_exists('event_risk_flag', $indicator)
+            || $indicator['event_risk_flag'] === null) {
+            return 'UNKNOWN';
+        }
+
+        if ($indicator['event_risk_flag'] === true
+            || $indicator['event_risk_flag'] === 1
+            || $indicator['event_risk_flag'] === '1') {
+            return 'FLAGGED';
+        }
+
+        if ($indicator['event_risk_flag'] === false
+            || $indicator['event_risk_flag'] === 0
+            || $indicator['event_risk_flag'] === '0') {
+            return 'CLEAR';
+        }
+
+        return 'UNKNOWN';
     }
 
     /**
@@ -167,7 +206,7 @@ class EodEligibilityBuildService
      * filter. The distinction is the whole point: the set is used to annotate rows, never to
      * remove them.
      */
-    private function suspendedTickerIdSet(array $universeRows, $tradeDate): array
+    private function suspendedTickerIdSet(array $universeRows, $tradeDate, $knownAt = null): array
     {
         if (! $this->eventRiskSources instanceof EventRiskSourceRepository || $universeRows === []) {
             return [];
@@ -181,6 +220,6 @@ class EodEligibilityBuildService
             return [];
         }
 
-        return array_fill_keys($this->eventRiskSources->suspendedTickerIdsAsOf($tickerIds, $tradeDate), true);
+        return array_fill_keys($this->eventRiskSources->suspendedTickerIdsAsOf($tickerIds, $tradeDate, $knownAt), true);
     }
 }

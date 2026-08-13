@@ -181,12 +181,15 @@ Provide a row-level readable/blocking view for the resolved trade date D.
 
 ### Minimum columns
 - `trade_date`
-- `ticker_id`
-- `eligible`
-- `reason_code`
+- stable `listing_id`
+- optional compatibility/display `ticker_id` / `ticker_code`
+- `publication_id`
+- `data_usable`
+- complete deterministic `reason_codes` / reason-set representation
+- optional legacy `eligible` and primary `reason_code` projection, never as the sole V2 meaning
 
 ### Example
-    trade_date,ticker_id,eligible,reason_code
+    trade_date,listing_id,ticker_code,publication_id,data_usable,reason_codes,eligible,reason_code
     2026-03-09,101,1,
     2026-03-09,102,0,ELIG_MISSING_BAR
 
@@ -201,13 +204,15 @@ Provide row-level audit evidence for rejected source rows.
 
 ### Minimum columns
 - `trade_date`
-- `ticker_id`
+- stable `listing_id` when mapping resolved
+- optional display/compatibility `ticker_id` / `ticker_code`
+- immutable `source_observation_id` or observation reference/hash
 - `source`
 - `source_row_ref`
 - `invalid_reason_code`
 
 ### Example
-    trade_date,ticker_id,source,source_row_ref,invalid_reason_code
+    trade_date,listing_id,ticker_code,source_observation_id,source,source_row_ref,invalid_reason_code
     2026-03-10,101,API_FREE,row_001,BAR_INVALID_OHLC_ORDER
     2026-03-10,205,API_FREE,row_019,BAR_NON_POSITIVE_PRICE
 

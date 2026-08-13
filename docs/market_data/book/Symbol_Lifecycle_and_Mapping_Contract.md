@@ -54,7 +54,7 @@ Replay uses the mapping effective on trade date T and, for as-known mode, only t
 - unknown symbol: reject/quarantine the observation
 - ambiguous mapping: fail closed for the affected observation
 - symbol/date outside mapping validity: reject with explicit reason
-- mapping dependency unavailable: do not fabricate `ticker_id`, do not publish affected row, and expose coverage impact
+- mapping dependency unavailable: do not fabricate `instrument_id`, `listing_id`, or a compatibility `ticker_id`; do not publish the affected row, and expose coverage impact
 
 ## Capability boundary (LOCKED)
 

@@ -8,6 +8,25 @@ use Illuminate\Support\Facades\DB;
 
 class EodArtifactRepository
 {
+    public const REQUIRED_CANONICAL_BAR_WRITE_FIELDS = [
+        'listing_id',
+        'source_observation_id',
+        'canonicalization_version',
+        'price_product_code',
+        'quality_state',
+    ];
+
+    public const REQUIRED_ELIGIBILITY_WRITE_FIELDS = [
+        'universe_membership_state',
+        'bar_expectation_state',
+        'delivery_state',
+        'canonical_quality_state',
+        'liquidity_state',
+        'temporal_status_state',
+        'event_risk_state',
+        'eligibility_reasons_json',
+    ];
+
     private $calendar;
 
     public function __construct(MarketCalendarRepository $calendar = null)
@@ -20,8 +39,11 @@ class EodArtifactRepository
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory) {
             if (! $useHistory) {
                 $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_bars');
+            } else {
+                $this->assertHistorySnapshotMutable($publicationId);
             }
 
+            $this->assertCompleteBarRows($validRows, 'replaceBars');
             $mutationSummary = $this->buildBarsMutationSummary($tradeDate, $publicationId, $validRows, $useHistory);
 
             if ($useHistory) {
@@ -29,8 +51,6 @@ class EodArtifactRepository
                 // assembled while its publication is still a candidate and frozen at the seal
                 // transition, so rewriting it before that point is legitimate and rewriting it
                 // after is exactly what rule 9 of the history policy forbids.
-                $this->assertHistorySnapshotMutable($publicationId);
-
                 DB::table('eod_bars_history')
                     ->where('trade_date', $tradeDate)
                     ->where('publication_id', $publicationId)
@@ -67,6 +87,7 @@ class EodArtifactRepository
                 $this->assertHistorySnapshotMutable($publicationId);
             }
 
+            $this->assertCompleteBarRows($validRows, 'upsertBarsPartial');
             $mutationSummary = $this->buildBarsMutationSummary($tradeDate, $publicationId, $validRows, $useHistory, false);
             $table = $useHistory ? 'eod_bars_history' : 'eod_bars';
             $writeTickerIds = array_fill_keys(array_merge(
@@ -171,6 +192,8 @@ class EodArtifactRepository
             ] + $this->barLineage($row);
         }
 
+        $this->assertCompleteBarRows($insert, 'ensureBarsHistoryFromCurrentTradeDate');
+
         if (! empty($insert)) {
             DB::table('eod_bars_history')->insert($insert);
         }
@@ -210,11 +233,6 @@ class EodArtifactRepository
 
             $this->assertHistorySnapshotMutable($targetPublicationId);
 
-            DB::table('eod_bars_history')
-                ->where('trade_date', $tradeDate)
-                ->where('publication_id', $targetPublicationId)
-                ->delete();
-
             $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
             $insert = [];
             foreach ($sourceRows as $row) {
@@ -234,12 +252,19 @@ class EodArtifactRepository
                 ] + $this->barLineage($row);
             }
 
+            $this->assertCompleteBarRows($insert, 'replaceBarsHistoryFromPublication');
+
+            DB::table('eod_bars_history')
+                ->where('trade_date', $tradeDate)
+                ->where('publication_id', $targetPublicationId)
+                ->delete();
+
             DB::table('eod_bars_history')->insert($insert);
         });
     }
 
     /**
-     * Load the true-range inputs for every ticker from the dataset boundary to the requested date.
+     * Load one ticker's true-range inputs from the dataset boundary to the requested date.
      *
      * Wilder ATR is a recursive filter, so its value depends on where the recursion was seeded.
      * Seeding it at the start of a sliding load window gives each date its own seed and produces a
@@ -247,30 +272,51 @@ class EodArtifactRepository
      * — measured on 120 production tickers at 2026-07-28, the median divergence from the
      * boundary-seeded value was 0.34%, but the 90th percentile was 1.62% and the worst was 72.9%.
      *
-     * Only the four fields true range needs are selected. The full bar row carries around twenty-
-     * five columns, and loading all of them across ~756,000 rows to compute one indicator would
-     * trade a correctness fix for a memory problem.
+     * Only the four fields true range needs are selected. Scoping the query to one ticker keeps
+     * the worker's peak memory bounded even when the complete canonical corpus is large.
      */
-    public function loadAtrSeriesFromBoundary($tradeDate, $boundaryDate)
+    public function loadAtrSeriesForTickerFromBoundary($tickerId, $tradeDate, $boundaryDate, $requestedPublicationId = null)
     {
-        $rows = DB::table('eod_bars')
-            ->select(['ticker_id', 'trade_date', 'high', 'low', 'close'])
-            ->whereBetween('trade_date', [$boundaryDate, $tradeDate])
-            ->orderBy('ticker_id')
+        $query = DB::table('eod_bars')
+            ->select(['trade_date', 'high', 'low', 'close'])
+            ->where('ticker_id', (int) $tickerId)
+            ->whereBetween('trade_date', [$boundaryDate, $tradeDate]);
+
+        // Correction candidates read their requested-date bar from immutable candidate history,
+        // matching loadBarsWindow(). Earlier dates remain current canonical inputs.
+        if ($requestedPublicationId !== null && $requestedPublicationId !== '') {
+            $query->where('trade_date', '<>', $tradeDate);
+        }
+
+        $rows = $query
             ->orderBy('trade_date')
             ->get();
 
-        $series = [];
-        foreach ($rows as $row) {
-            $series[(int) $row->ticker_id][] = [
-                'trade_date' => (string) $row->trade_date,
-                'high' => $row->high,
-                'low' => $row->low,
-                'close' => $row->close,
-            ];
+        if ($requestedPublicationId !== null && $requestedPublicationId !== '') {
+            $historyRow = DB::table('eod_bars_history')
+                ->select(['trade_date', 'high', 'low', 'close'])
+                ->where('publication_id', (int) $requestedPublicationId)
+                ->where('ticker_id', (int) $tickerId)
+                ->where('trade_date', $tradeDate)
+                ->first();
+
+            if ($historyRow !== null) {
+                $rows->push($historyRow);
+            }
         }
 
-        return $series;
+        return $rows
+            ->sortBy('trade_date')
+            ->values()
+            ->map(function ($row) {
+                return [
+                    'trade_date' => (string) $row->trade_date,
+                    'high' => $row->high,
+                    'low' => $row->low,
+                    'close' => $row->close,
+                ];
+            })
+            ->all();
     }
 
     public function loadBarsWindow($tradeDate, $lookbackDays, $requestedPublicationId = null)
@@ -469,6 +515,8 @@ class EodArtifactRepository
                 $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_eligibility');
             }
 
+            $this->assertCompleteEligibilityRows($rows, 'replaceEligibility');
+
             $table = $useHistory ? 'eod_eligibility_history' : 'eod_eligibility';
             $query = DB::table($table)->where('trade_date', $tradeDate);
 
@@ -493,7 +541,8 @@ class EodArtifactRepository
 
     public function snapshotPublicationFromCurrentTables($tradeDate, $publicationId, $runId)
     {
-        $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
+        return DB::transaction(function () use ($tradeDate, $publicationId, $runId) {
+            $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
         if (! DB::table('eod_bars_history')->where('publication_id', $publicationId)->exists()) {
             $bars = $this->applyStableArtifactOrder(
@@ -519,6 +568,8 @@ class EodArtifactRepository
                     'created_at' => $now,
                 ] + $this->barLineage($row);
             }
+
+            $this->assertCompleteBarRows($insert, 'snapshotPublicationFromCurrentTables');
 
             if (! empty($insert)) {
                 DB::table('eod_bars_history')->insert($insert);
@@ -573,7 +624,7 @@ class EodArtifactRepository
                     'corporate_action_window_reasons' => $row->corporate_action_window_reasons,
                     'run_id' => $runId,
                     'created_at' => $now,
-                ];
+                ] + $this->indicatorLineage($row);
             }
 
             if (! empty($insert)) {
@@ -598,30 +649,32 @@ class EodArtifactRepository
                     'reason_code' => $row->reason_code,
                     'run_id' => $runId,
                     'created_at' => $now,
-                ];
+                ] + $this->eligibilityFacts($row);
             }
+
+            $this->assertCompleteEligibilityRows($insert, 'snapshotPublicationFromCurrentTables');
 
             if (! empty($insert)) {
                 DB::table('eod_eligibility_history')->insert($insert);
             }
-        }
+            }
+        });
     }
 
     public function promotePublicationHistoryToCurrent($tradeDate, $publicationId, $runId)
     {
-        $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
+        return DB::transaction(function () use ($tradeDate, $publicationId, $runId) {
+            $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
-        DB::table('eod_bars')->where('trade_date', $tradeDate)->delete();
-
-        $bars = $this->applyStableArtifactOrder(
+            $bars = $this->applyStableArtifactOrder(
             DB::table('eod_bars_history')
                 ->where('trade_date', $tradeDate)
                 ->where('publication_id', $publicationId)
         )->get();
 
-        $insert = [];
-        foreach ($bars as $row) {
-            $insert[] = [
+            $insert = [];
+            foreach ($bars as $row) {
+                $insert[] = [
                 'trade_date' => $row->trade_date,
                 'ticker_id' => $row->ticker_id,
                 'open' => $row->open,
@@ -634,12 +687,16 @@ class EodArtifactRepository
                 'run_id' => $runId,
                 'publication_id' => $publicationId,
                 'created_at' => $now,
-            ] + $this->barLineage($row);
-        }
+                ] + $this->barLineage($row);
+            }
 
-        if (! empty($insert)) {
-            DB::table('eod_bars')->insert($insert);
-        }
+            $this->assertCompleteBarRows($insert, 'promotePublicationHistoryToCurrent');
+
+            DB::table('eod_bars')->where('trade_date', $tradeDate)->delete();
+
+            if (! empty($insert)) {
+                DB::table('eod_bars')->insert($insert);
+            }
 
         DB::table('eod_indicators')->where('trade_date', $tradeDate)->delete();
 
@@ -690,37 +747,40 @@ class EodArtifactRepository
                 'run_id' => $runId,
                 'publication_id' => $publicationId,
                 'created_at' => $now,
-            ];
+            ] + $this->indicatorLineage($row);
         }
 
         if (! empty($insert)) {
             DB::table('eod_indicators')->insert($insert);
         }
 
-        DB::table('eod_eligibility')->where('trade_date', $tradeDate)->delete();
-
-        $elig = $this->applyStableArtifactOrder(
+            $elig = $this->applyStableArtifactOrder(
             DB::table('eod_eligibility_history')
                 ->where('trade_date', $tradeDate)
                 ->where('publication_id', $publicationId)
         )->get();
 
-        $insert = [];
-        foreach ($elig as $row) {
-            $insert[] = [
+            $insert = [];
+            foreach ($elig as $row) {
+                $insert[] = [
                 'trade_date' => $row->trade_date,
                 'ticker_id' => $row->ticker_id,
                 'eligible' => $row->eligible,
                 'reason_code' => $row->reason_code,
                 'run_id' => $runId,
                 'publication_id' => $publicationId,
-                'created_at' => $now,
-            ];
-        }
+                    'created_at' => $now,
+                ] + $this->eligibilityFacts($row);
+            }
 
-        if (! empty($insert)) {
-            DB::table('eod_eligibility')->insert($insert);
-        }
+            $this->assertCompleteEligibilityRows($insert, 'promotePublicationHistoryToCurrent');
+
+            DB::table('eod_eligibility')->where('trade_date', $tradeDate)->delete();
+
+            if (! empty($insert)) {
+                DB::table('eod_eligibility')->insert($insert);
+            }
+        });
     }
 
     /**
@@ -930,6 +990,80 @@ class EodArtifactRepository
             'listing_id', 'source_observation_id', 'previous_close', 'traded_value_idr_actual',
             'trade_count_actual', 'board_code', 'session_code', 'source_timestamp', 'acquired_at',
             'canonicalization_version', 'price_product_code', 'quality_state', 'config_snapshot_id',
+        ] as $field) {
+            $lineage[$field] = array_key_exists($field, $source) ? $source[$field] : null;
+        }
+
+        return $lineage;
+    }
+
+    private function eligibilityFacts($row): array
+    {
+        $source = is_array($row) ? $row : (array) $row;
+        $facts = [];
+
+        foreach (array_merge(
+            ['listing_id'],
+            self::REQUIRED_ELIGIBILITY_WRITE_FIELDS,
+            ['config_snapshot_id']
+        ) as $field) {
+            $facts[$field] = array_key_exists($field, $source) ? $source[$field] : null;
+        }
+
+        return $facts;
+    }
+
+    private function assertCompleteBarRows(array $rows, string $context): void
+    {
+        $this->assertRequiredRowValues(
+            $rows,
+            self::REQUIRED_CANONICAL_BAR_WRITE_FIELDS,
+            'CANONICAL_BAR_WRITE_INCOMPLETE',
+            $context
+        );
+    }
+
+    private function assertCompleteEligibilityRows(array $rows, string $context): void
+    {
+        $this->assertRequiredRowValues(
+            $rows,
+            self::REQUIRED_ELIGIBILITY_WRITE_FIELDS,
+            'ELIGIBILITY_WRITE_INCOMPLETE',
+            $context
+        );
+    }
+
+    private function assertRequiredRowValues(array $rows, array $requiredFields, string $reasonCode, string $context): void
+    {
+        foreach ($rows as $index => $row) {
+            $source = is_array($row) ? $row : (array) $row;
+            $missing = [];
+
+            foreach ($requiredFields as $field) {
+                if (! array_key_exists($field, $source)
+                    || $source[$field] === null
+                    || (is_string($source[$field]) && trim($source[$field]) === '')) {
+                    $missing[] = $field;
+                }
+            }
+
+            if ($missing !== []) {
+                throw new \LogicException(
+                    $reasonCode.': '.$context.' row '.$index.' is missing required field(s): '.implode(', ', $missing).'.'
+                );
+            }
+        }
+    }
+
+    private function indicatorLineage($row): array
+    {
+        $source = is_array($row) ? $row : (array) $row;
+        $lineage = [];
+        foreach ([
+            'listing_id', 'formula_version', 'config_snapshot_id', 'factor_set_id',
+            'factor_set_hash', 'price_product_code', 'price_product_version',
+            'sector_membership_id', 'adv20_traded_value_idr_actual',
+            'adv20_close_volume_proxy_idr', 'atr14', 'atr_state_ref', 'null_reasons_json',
         ] as $field) {
             $lineage[$field] = array_key_exists($field, $source) ? $source[$field] : null;
         }

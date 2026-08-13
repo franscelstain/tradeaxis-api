@@ -29,6 +29,9 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'coverage_universe_count' => 2,
             'coverage_available_count' => 2,
             'coverage_missing_count' => 0,
+            'coverage_expected_count' => 101,
+            'coverage_delivered_count' => 102,
+            'coverage_delivered_valid_count' => 103,
             'coverage_ratio' => 1.0,
             'coverage_min_threshold' => 0.98,
             'coverage_gate_state' => 'PASS',
@@ -36,6 +39,12 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',
             'coverage_missing_sample_json' => json_encode([]),
+            'coverage_bar_not_expected_count' => 104,
+            'coverage_expectation_unknown_count' => 105,
+            'coverage_universe_hash' => str_repeat('a', 64),
+            'coverage_excluded_sample_json' => json_encode([
+                ['ticker_id' => 202, 'ticker_code' => 'EXCL'],
+            ]),
             'final_reason_code' => 'COVERAGE_THRESHOLD_MET',
             'final_outcome_note' => 'Run finalized as readable publication.',
             'publication_id' => 1201,
@@ -190,6 +199,16 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('COVERAGE_THRESHOLD_MET', $summary['coverage']['coverage_reason_code']);
         $this->assertTrue($summary['coverage']['coverage_passed']);
         $this->assertSame(2, $summary['coverage']['coverage_universe_count']);
+        $this->assertSame(101, $summary['coverage']['coverage_expected_count']);
+        $this->assertSame(102, $summary['coverage']['coverage_delivered_count']);
+        $this->assertSame(103, $summary['coverage']['coverage_delivered_valid_count']);
+        $this->assertSame(104, $summary['coverage']['coverage_bar_not_expected_count']);
+        $this->assertSame(105, $summary['coverage']['coverage_expectation_unknown_count']);
+        $this->assertSame(str_repeat('a', 64), $summary['coverage']['coverage_universe_hash']);
+        $this->assertSame(
+            [['ticker_id' => 202, 'ticker_code' => 'EXCL']],
+            $summary['coverage']['coverage_excluded_sample_json']
+        );
         $this->assertSame(0.98, $summary['coverage']['coverage_min_threshold']);
         $this->assertSame([], $summary['coverage']['coverage_missing_sample']);
         $this->assertSame('API_FREE', $summary['source_context']['source_name']);
@@ -213,6 +232,21 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertFalse($admission['silent_missing_metadata_allowed']);
 
         $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);
+        $this->assertSame(
+            array_keys(MarketDataEvidenceExportService::RUN_COVERAGE_STORAGE_EXPORT_PATHS),
+            array_values(MarketDataEvidenceExportService::RUN_COVERAGE_STORAGE_EXPORT_PATHS),
+            'Stored coverage evidence must use its own exact payload key, never an alias for another field.'
+        );
+        foreach (MarketDataEvidenceExportService::RUN_COVERAGE_STORAGE_EXPORT_PATHS as $payloadField) {
+            $this->assertArrayHasKey($payloadField, $payload['coverage_context'], 'Missing coverage export path '.$payloadField);
+        }
+        $this->assertSame(104, $payload['coverage_context']['coverage_bar_not_expected_count']);
+        $this->assertSame(105, $payload['coverage_context']['coverage_expectation_unknown_count']);
+        $this->assertSame(str_repeat('a', 64), $payload['coverage_context']['coverage_universe_hash']);
+        $this->assertSame(
+            [['ticker_id' => 202, 'ticker_code' => 'EXCL']],
+            $payload['coverage_context']['coverage_excluded_sample_json']
+        );
         $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
         $this->assertSame('coverage_gate_v1', $payload['run_summary']['coverage']['coverage_contract_version']);
         $this->assertSame('active_equity_universe_asof_trade_date', $payload['run_summary']['coverage']['coverage_universe_basis']);
@@ -354,9 +388,16 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('INCOMPLETE', $payload['evidence_completeness']['evidence_completeness_state']);
         $this->assertContains('artifact_hash_context', $payload['evidence_completeness']['missing_sections']);
         $this->assertSame('FAIL', $payload['coverage_context']['coverage_gate_state']);
-        $this->assertSame(901, $payload['coverage_context']['coverage_expected_count']);
+        $this->assertNull($payload['coverage_context']['coverage_expected_count']);
+        $this->assertNull($payload['coverage_context']['coverage_delivered_count']);
+        $this->assertNull($payload['coverage_context']['coverage_delivered_valid_count']);
+        $this->assertNull($payload['coverage_context']['coverage_bar_not_expected_count']);
+        $this->assertNull($payload['coverage_context']['coverage_expectation_unknown_count']);
+        $this->assertNull($payload['coverage_context']['coverage_universe_hash']);
+        $this->assertNull($payload['coverage_context']['coverage_excluded_sample_json']);
         $this->assertSame(5, $payload['coverage_context']['coverage_available_count']);
-        $this->assertSame(901, $payload['coverage_context']['expected_bar_count']);
+        $this->assertSame(['BBCA', 'TLKM'], $payload['coverage_context']['coverage_missing_sample_json']);
+        $this->assertNull($payload['coverage_context']['expected_bar_count']);
         $this->assertSame(5, $payload['coverage_context']['available_bar_count']);
         $this->assertSame(896, $payload['coverage_context']['missing_bar_count']);
         $this->assertSame('manual_file', $payload['source_context']['source_mode']);

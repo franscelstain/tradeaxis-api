@@ -63,7 +63,7 @@ class RecomputeCurrentIndicatorsCommandTest extends TestCase
     private function bindPublications($publication): void
     {
         $publications = m::mock(EodPublicationRepository::class);
-        $publications->shouldReceive('findCurrentPublicationForTradeDate')->andReturn($publication);
+        $publications->shouldReceive('findCurrentPublicationForAnalyticalRemediation')->andReturn($publication);
 
         $this->app->instance(EodPublicationRepository::class, $publications);
     }
@@ -262,4 +262,3 @@ class RecomputeCurrentIndicatorsCommandTest extends TestCase
         $this->assertStringContainsString('reason_code=MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE', $display);
     }
 }
-

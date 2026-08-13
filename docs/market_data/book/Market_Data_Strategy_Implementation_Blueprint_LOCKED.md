@@ -4,6 +4,8 @@
 
 Status dokumentasi: **`DOCUMENTATION_STRATEGY_READY`**.
 
+Documentation-strategy synchronization: **`PASS` (2026-08-07)** — seluruh 22 strategy area memiliki owner/assignment, dependency order eksplisit, dan tidak ada known cross-document contradiction pada baseline aktif.
+
 Dokumen ini adalah owner untuk **urutan pembangunan** market-data setelah keputusan strategi dikunci. Ia menghubungkan owner contracts tanpa mengambil alih makna domain yang dimiliki masing-masing contract.
 
 Status ini berarti strategi dokumentasi sudah cukup lengkap untuk menjadi panduan pembangunan. Status ini **tidak** berarti schema, migration, code, test, deployment, atau operasi saat ini sudah sesuai. Implementasi hanya boleh dinilai selesai setelah dibangun mengikuti blueprint ini dan diaudit kembali dengan executed evidence.
@@ -60,18 +62,24 @@ Dokumentasi saat ini hanya mengklaim state pertama. Dua state berikutnya harus d
 ## Mandatory data-product flow
 
 ```text
-source observation
+immutable configuration snapshot
+  + temporal issuer/instrument/listing/provider-symbol mapping
+  + verified market calendar/session/trading-status facts
+  + temporal IDX-IC sector membership
+  -> immutable source observation
   -> canonical RAW Regular-Market EOD
   -> verified revisioned corporate-action factors
-  -> coherent STRUCTURAL_ADJUSTED product
-  -> versioned indicators
-  -> expectation/delivery/quality/liquidity/status/event-risk facts
+  -> coherent STRUCTURAL_ADJUSTED / TOTAL_RETURN products
+  -> actual/proxy daily market metrics
+  -> versioned indicators, including sector-relative measures only when temporal sector inputs exist
+  -> temporal coverage expectation/delivery facts
+  -> quality/liquidity/status/event-risk/indicator-validity facts
   -> data-usability snapshot
   -> sealed readable publication
   -> versioned market-data read product
 ```
 
-Tidak ada stage yang boleh melompati observation provenance, temporal identity, publication binding, configuration snapshot, atau fail-safe quality gate.
+Dependency order is normative: temporal identity, calendar/status, and temporal sector membership must be available before acquisition/indicator consumers that depend on them. Configuration identity binds every output-affecting stage. Tidak ada stage yang boleh melompati observation provenance, temporal reference facts, publication binding, configuration snapshot, atau fail-safe quality gate.
 
 ## Executable work order (LOCKED)
 
@@ -84,7 +92,7 @@ Urutan `W00` sampai `W22` berikut adalah urutan kerja aktual ketika membangun si
 | `W02` | Kunci Yahoo bootstrap dan provider-neutral ports | 3 | Yahoo-specific behavior berhenti di adapter; current/future source decision eksplisit |
 | `W03` | Bangun migration framework, additive schema skeleton, repository interfaces, reason registry, dan test harness skeleton | 4–21 foundations | clean-install/upgrade path tersedia untuk setiap feature berikut; belum ada nullable placeholder yang dianggap conformant |
 | `W04` | Bangun immutable configuration snapshot dan semantic version bindings | 16 | semua writer berikut dapat menerima non-null config/reason/build identity sejak pertama kali dibuat |
-| `W05` | Bangun temporal issuer/instrument/listing/symbol/provider mapping | 6 | as-of/as-known identity dan inactive-now-active-then fixture lulus |
+| `W05` | Bangun temporal issuer/instrument/listing/symbol/provider mapping **serta temporal sector membership foundation** | 6 + 13 prerequisite | as-of/as-known identity, inactive-now-active-then, dan sector-reclassification fixture lulus sebelum indicator sector-relative dibangun |
 | `W06` | Bangun calendar/session/status expectation | 7 | requested date dan expected-bar decision tidak memakai current-state guessing |
 | `W07` | Bangun immutable source observations dan acquisition ports/adapters | 4 | setiap source outcome, termasuk empty/failure, memiliki immutable provenance |
 | `W08` | Bangun resilience, retry/backoff/rate limit, manual recovery, quarantine, dan failure taxonomy | 5 | provider failure tidak menghasilkan synthetic data atau silent readable state |
@@ -194,14 +202,15 @@ Owner: `EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`.
 
 Build outcome: retry, backoff, rate limiting, stale/wrong-date/schema quarantine, degraded state, and no-silent-readable-data behavior mengikuti development/activation boundary. Source failure tidak boleh memicu synthetic repair.
 
-### Stage 6 — temporal identity and symbol mapping
+### Stage 6 — temporal identity, symbol/provider mapping, and sector-reference foundation
 
 Owner:
 
 - `Tickers_and_Identity_Dependency_Contract_LOCKED.md`
 - `Symbol_Lifecycle_and_Mapping_Contract.md`
+- `Sector_Classification_Contract_LOCKED.md` — cross-cutting prerequisite for sector-relative analytical products; consumed again by Stage 13/read-product facts
 
-Build outcome: issuer, instrument, listing, exchange symbol, dan provider symbol adalah identity yang berbeda dan temporal. Historical universe tidak membaca current `is_active`, current symbol, atau future mapping.
+Build outcome: issuer, instrument, listing, exchange symbol, dan provider symbol adalah identity yang berbeda dan temporal. Historical universe tidak membaca current `is_active`, current symbol, atau future mapping. `IDX-IC` sector membership juga temporal/as-known: reclassification menutup interval lama dan membuka interval baru, dan current sector tidak boleh bocor ke historical indicator window.
 
 ### Stage 7 — calendar, session, and temporal trading status
 
@@ -280,7 +289,11 @@ Owner:
 - `EOD_Eligibility_Snapshot_Contract_LOCKED.md`
 - `Eligibility_Partial_Data_Behavior_LOCKED.md`
 
-Build outcome: universe membership, expectation, delivery, canonical quality, liquidity, status, event risk, data-usability decision, dan seluruh reason codes disimpan terpisah. Compatibility `eligible` hanya berarti data usability. Liquidity/tradability preference dan event-avoidance policy tidak boleh menjadi upstream decision.
+Cross-cutting input:
+
+- `Sector_Classification_Contract_LOCKED.md` — temporal membership foundation sudah harus conformant pada `W05`; Stage 13 hanya membawa sector fact/unknown state ke publication-bound explainability/read product dan **tidak** menunda pembentukan membership sampai `W16`.
+
+Build outcome: universe membership, expectation, delivery, canonical quality, liquidity, status, event risk, sector-reference state bila relevan, data-usability decision, dan seluruh reason codes disimpan terpisah. Compatibility `eligible` hanya berarti data usability. Liquidity/tradability preference dan event-avoidance policy tidak boleh menjadi upstream decision.
 
 ### Stage 14 — actual and proxy market metrics
 

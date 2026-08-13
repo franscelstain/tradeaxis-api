@@ -1,10 +1,10 @@
 # LUMEN_IMPLEMENTATION_STATUS
 
-## CURRENT CANONICAL OVERRIDE — 2026-08-02
+## CURRENT CANONICAL OVERRIDE — 2026-08-08
 
 Documentation strategy status: `DOCUMENTATION_STRATEGY_READY`.
 
-Implementation status: `CONFORMANCE_AUDIT_PENDING / NOT_PRODUCTION_RELOCKED`.
+Implementation status: `NOT_GRANTED / NOT_PRODUCTION_RELOCKED`; current execution state is owned by `MARKET_DATA_IMPLEMENTATION_LEDGER.md`.
 
 Authorities:
 
@@ -13,9 +13,11 @@ Authorities:
 
 All `LOCKED`, completed, and production-ready checkpoints below are historical execution records under earlier contracts unless explicitly re-admitted by a future implementation audit. They cannot change corrected strategy meaning. Known implementation gaps are handoff backlog, not evidence that documentation remains ambiguous.
 
-## ACTIVE SESSION
+## HISTORICAL SESSION RECORD — NON-AUTHORITATIVE UNDER V2
 
-ACTIVE SESSION:
+The following session block is retained only as execution history. Its labels such as `ACTIVE SESSION`, `LOCKED`, or `COMPLETED` describe the state at the time they were written and are **superseded** wherever they conflict with the 2026-08 V2 owner contracts. In particular, a suspension event does not by itself make a Regular-Market EOD bar `NOT_EXPECTED`; that decision requires verified point-in-time full-session expectation evidence.
+
+HISTORICAL SESSION:
 - Trading Status Source Model Semantic Simplification
 
 [SESSION_STATUS] COMPLETED

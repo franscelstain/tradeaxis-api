@@ -63,8 +63,21 @@ trait UsesMarketDataSqlite
             $table->string('board_code', 10)->nullable();
             $table->string('exchange_code', 10)->nullable();
             $table->integer('is_active')->default(1);
-            $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
-            $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            /*
+             * Not CURRENT_TIMESTAMP, unlike the other mirrored tables.
+             *
+             * `TemporalIdentityRepository::projectTicker` uses this column as the knowledge
+             * coordinate of every listing it projects. CURRENT_TIMESTAMP is SQLite's real clock,
+             * while the suite freezes Carbon months earlier, so a projected listing was recorded
+             * after the run that read it — a run reading data that did not yet exist. Harmless while
+             * nothing consulted the coordinate; once `F-006` made the coverage denominator read it,
+             * every projected listing fell outside the cutoff and the universe emptied.
+             *
+             * Production carries no such rows: all 977 tickers were created between 2025-12-15 and
+             * 2026-07-14, none ahead of the clock. The fixture is what modelled the impossible.
+             */
+            $table->dateTime('created_at')->default('2020-01-01 00:00:00');
+            $table->dateTime('updated_at')->default('2020-01-01 00:00:00');
 
             $table->unique('ticker_code', 'ticker_code');
         });
@@ -106,18 +119,31 @@ trait UsesMarketDataSqlite
         $schema->create('ticker_sector_memberships', function (Blueprint $table) {
             $table->bigIncrements('membership_id');
             $table->unsignedBigInteger('ticker_id');
+            // NOT NULL here mirrors 2026_08_10_000001. These four columns carry the authority claim
+            // and the as-known coordinate, and two of them compose
+            // uq_sector_membership_listing_effective_known — a unique index MySQL cannot enforce over
+            // NULLs. Keeping the mirror permissive would let tests pass on rows production rejects.
+            $table->unsignedBigInteger('listing_id');
             $table->string('sector_code', 8);
             $table->string('classification_system', 32)->default('IDX-IC');
             $table->date('effective_from');
             $table->date('effective_to')->nullable();
-            $table->string('source_name', 64)->nullable();
+            $table->string('source_name', 64);
             $table->string('source_ref', 255)->nullable();
+            $table->string('source_authority_class', 32);
+            $table->dateTime('recorded_at');
+            $table->unsignedBigInteger('supersedes_membership_id')->nullable();
+            $table->string('operator_name', 128)->nullable();
+            $table->string('reason_code', 64)->nullable();
             $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
 
-            $table->unique(['ticker_id', 'classification_system', 'effective_from'], 'uq_ticker_sector_membership_effective_from');
+            $table->unique(['listing_id', 'classification_system', 'effective_from', 'recorded_at'], 'uq_sector_membership_listing_effective_known');
             $table->index(['ticker_id', 'classification_system', 'effective_from', 'effective_to'], 'idx_ticker_sector_membership_ticker_date');
             $table->index(['sector_code', 'classification_system', 'effective_from'], 'idx_ticker_sector_membership_sector_date');
+            $table->index(['listing_id', 'classification_system', 'effective_from', 'effective_to'], 'idx_sector_membership_listing_effective');
+            $table->index(['recorded_at', 'source_authority_class'], 'idx_sector_membership_known_authority');
+            $table->index('supersedes_membership_id', 'idx_sector_membership_supersedes');
         });
 
         $schema->create('market_data_corporate_actions', function (Blueprint $table) {
@@ -128,6 +154,9 @@ trait UsesMarketDataSqlite
             $table->string('action_type', 64);
             $table->string('source_name', 64)->default('manual_corporate_action_csv');
             $table->string('source_ref', 255)->nullable();
+            // The as-known coordinate from 2026_08_11_000002. Without it in the mirror the
+            // knowledge cutoff has nothing to filter on and its guard would pass vacuously.
+            $table->dateTime('recorded_at')->nullable();
             $table->string('notes', 255)->nullable();
             $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
@@ -257,6 +286,7 @@ trait UsesMarketDataSqlite
             $table->string('event_type_code', 64);
             $table->string('source_name', 64)->default('manual_trading_status_csv');
             $table->string('source_ref', 255)->nullable();
+            $table->dateTime('recorded_at')->nullable();
             $table->string('notes', 255)->nullable();
             $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->dateTime('updated_at')->default(DB::raw('CURRENT_TIMESTAMP'));
@@ -363,6 +393,13 @@ trait UsesMarketDataSqlite
             $table->bigInteger('source_file_size_bytes')->nullable();
             $table->integer('source_file_row_count')->nullable();
             $table->integer('coverage_universe_count')->nullable();
+            // F-043/F-044 — the two Coverage_Universe_Definition_LOCKED.md:52 evidence items the
+            // corpus never recorded: which universe produced the denominator, and which listings
+            // left it.
+            $table->string('coverage_universe_hash', 64)->nullable();
+            $table->text('coverage_excluded_sample_json')->nullable();
+            // F-006 — the run's own knowledge coordinate, so its denominator is reproducible.
+            $table->dateTime('knowledge_cutoff_at')->nullable();
             $table->integer('coverage_available_count')->nullable();
             $table->integer('coverage_missing_count')->nullable();
             $table->integer('coverage_bar_not_expected_count')->nullable();
@@ -393,6 +430,9 @@ trait UsesMarketDataSqlite
             $table->string('config_snapshot_ref')->nullable();
             $table->integer('config_snapshot_id')->nullable();
             $table->string('observation_manifest_hash', 64)->nullable();
+            $table->string('price_product_code', 32)->nullable();
+            $table->string('price_product_version', 64)->nullable();
+            $table->string('factor_set_hash', 64)->nullable();
             $table->date('operational_start_date')->nullable();
             $table->string('freshness_state', 32)->nullable();
             $table->date('latest_expected_trade_date')->nullable();
@@ -507,9 +547,14 @@ trait UsesMarketDataSqlite
             $table->integer('source_file_row_count')->nullable();
             $table->integer('config_snapshot_id')->nullable();
             $table->integer('factor_set_id')->nullable();
+            $table->string('factor_set_hash', 64)->nullable();
             $table->string('observation_manifest_hash', 64)->nullable();
+            // What the seal covers — FULL, or ANALYTICAL_ONLY when the run recomputed analytics
+            // over existing bars and had no acquisition provenance to carry forward.
+            $table->string('seal_provenance_scope', 32)->nullable();
             $table->string('publication_manifest_hash', 64)->nullable();
             $table->string('price_product_code', 32)->nullable();
+            $table->string('price_product_version', 64)->nullable();
             $table->string('read_model_version', 64)->nullable();
             $table->string('readiness_state', 32)->nullable();
             $table->dateTime('sealed_at')->nullable();
@@ -644,7 +689,10 @@ trait UsesMarketDataSqlite
             $table->string('formula_version', 64)->nullable();
             $table->integer('config_snapshot_id')->nullable();
             $table->integer('factor_set_id')->nullable();
+            $table->string('factor_set_hash', 64)->nullable();
             $table->string('price_product_code', 32)->nullable();
+            $table->string('price_product_version', 64)->nullable();
+            $table->integer('sector_membership_id')->nullable();
             $table->decimal('adv20_traded_value_idr_actual', 24, 2)->nullable();
             $table->decimal('adv20_close_volume_proxy_idr', 24, 2)->nullable();
             $table->decimal('atr14', 20, 10)->nullable();
@@ -933,7 +981,10 @@ trait UsesMarketDataSqlite
             $table->string('formula_version', 64)->nullable();
             $table->integer('config_snapshot_id')->nullable();
             $table->integer('factor_set_id')->nullable();
+            $table->string('factor_set_hash', 64)->nullable();
             $table->string('price_product_code', 32)->nullable();
+            $table->string('price_product_version', 64)->nullable();
+            $table->integer('sector_membership_id')->nullable();
             $table->decimal('adv20_traded_value_idr_actual', 24, 2)->nullable();
             $table->decimal('adv20_close_volume_proxy_idr', 24, 2)->nullable();
             $table->decimal('atr14', 20, 10)->nullable();

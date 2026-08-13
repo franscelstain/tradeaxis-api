@@ -22,7 +22,9 @@ return [
         'cutoff_time' => env('MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME', '17:15:00'),
         'cutoff_grace_minutes' => (int) env('MARKET_DATA_CUT_OFF_GRACE_MINUTES', 15),
         'coverage_min' => (float) env('MARKET_DATA_COVERAGE_MIN', 0.98), // legacy alias; owner block lives under coverage_gate.min_ratio
-        'price_basis_default' => env('MARKET_DATA_PRICE_BASIS_DEFAULT', 'close'),
+        // price_basis_default was pruned on 2026-08-11 (F-024). Its registry entry permitted it only
+        // "while compatibility code exists"; no reader remained, so the key described a selection the
+        // platform no longer makes. The analytical product is AnalyticalProductIdentityService.
     ],
     'pipeline' => [
         'daily_enabled' => (bool) env('MARKET_DATA_DAILY_ENABLED', false),
@@ -51,6 +53,9 @@ return [
     ],
     'indicators' => [
         'set_version' => env('MARKET_DATA_INDICATOR_SET_VERSION', 'v1'),
+        'price_product_default' => env('MARKET_DATA_INDICATOR_PRICE_PRODUCT_DEFAULT', 'STRUCTURAL_ADJUSTED'),
+        'price_product_version' => env('MARKET_DATA_INDICATOR_PRICE_PRODUCT_VERSION', 'structural_adjusted_v1'),
+        'factor_formula_version' => env('MARKET_DATA_FACTOR_FORMULA_VERSION', 'structural_factor_product_v1'),
         'dv_window_days' => (int) env('MARKET_DATA_DV_WINDOW_DAYS', 20),
         'atr_window_days' => (int) env('MARKET_DATA_ATR_WINDOW_DAYS', 14),
         'vol_ratio_lookback_days' => (int) env('MARKET_DATA_VOL_RATIO_LOOKBACK_DAYS', 20),

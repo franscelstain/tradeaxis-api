@@ -50,7 +50,11 @@ class CorporateActionCandidateBoundaryTest extends TestCase
             'source_name' => 'idx_corporate_action',
             'price_adjustment_factor' => 0.25,
             'volume_adjustment_factor' => 4,
-            'adjustment_source' => null,
+            // The fixture always meant a source-backed factor — its source_name is an IDX feed and
+            // the test that uses it is named for exactly that. It could not say so until
+            // adjustment_source had a declared vocabulary, so it defaulted to NULL and the rule
+            // "only an attributed factor adjusts" had nothing to bite on.
+            'adjustment_source' => 'EXCHANGE_ANNOUNCEMENT',
             'created_at' => '2026-03-20 09:00:00',
         ], $override));
     }
@@ -87,6 +91,37 @@ class CorporateActionCandidateBoundaryTest extends TestCase
 
         $this->assertArrayHasKey(10, $factors);
         $this->assertEqualsWithDelta(0.25, $factors[10][0]['price_factor'], 1e-9);
+    }
+
+    /**
+     * A factor nobody attributed does not adjust either.
+     *
+     * The rule used to exclude one known-bad source and admit everything else, so a row with
+     * adjustment_source NULL — or any value nobody declared — rescaled published prices while the
+     * platform could not say where the number came from. The allowlist is positive now, and the
+     * two cases below are the ones that used to slip through.
+     */
+    public function test_an_unattributed_factor_does_not_adjust(): void
+    {
+        foreach ([null, 'SOME_VENDOR_FEED'] as $unattributed) {
+            DB::table('market_data_corporate_actions')->delete();
+            $this->action(['adjustment_source' => $unattributed]);
+
+            $this->assertSame(
+                [],
+                $this->factorsFor([10], '2026-03-23', '2026-03-25'),
+                'a factor with adjustment_source '.var_export($unattributed, true).' must not adjust'
+            );
+
+            $this->assertArrayHasKey(
+                10,
+                (new EventRiskSourceRepository())->resolveCorporateActionContaminationForTickerIds(
+                    [10],
+                    ['2026-03-23', '2026-03-24', '2026-03-25']
+                ),
+                'and refusing it must leave the window quarantined rather than silently clean'
+            );
+        }
     }
 
     /**

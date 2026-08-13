@@ -18,7 +18,10 @@ Structured events are written to `eod_run_events`.
 - `event_time`
 
 ## Recommended payload fields
-- `ticker_id` when event is row/ticker specific
+- stable `listing_id` when event is row/listing specific; `instrument_id` where useful
+- optional compatibility/display `ticker_id` / `ticker_code` only after temporal mapping
+- `source_observation_id` / revision reference when the event concerns source or canonicalization
+- `publication_id`, `config_snapshot_id`, or revision-set identity when the event concerns publication-bound output
 - `source`
 - `http_status`
 - `counts`

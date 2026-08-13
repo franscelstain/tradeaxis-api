@@ -56,7 +56,7 @@ Its one capability the approved command lacked, `--max_dates`, was carried over 
 The approved recompute command uses correction-current lifecycle: it snapshots existing current bars into candidate history, recomputes indicators and eligibility, hashes, seals, finalizes, and switches the current pointer only when validation passes.
 
 ## Non-error indicator rule
-Indicator nullability remains per field. Missing/insufficient dependencies such as MA20, MA50, ROC20, ATR14, sector benchmark history, or zero-placeholder OHLCV must produce NULL only for affected fields and must not fail the whole publication date.
+Indicator nullability remains per field. Missing/insufficient dependencies such as MA20, MA50, ROC20, ATR14, or sector benchmark history produce NULL only for affected fields and must not fail the whole publication date. **Zero-price placeholder OHLCV is not a dependency state because canonical zero OHLC placeholders are forbidden**; a missing/invalid observation remains missing/invalid evidence and dependent fields become NULL with the applicable reason set.
 
 ## Runtime lock evidence
 

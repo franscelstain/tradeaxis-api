@@ -53,6 +53,10 @@ class MarketDataReadProductService
             'publication_id' => (int) $publication->publication_id,
             'publication_version' => (int) $publication->publication_version,
             'run_id' => (int) $publication->run_id,
+            'price_product_code' => (string) $publication->price_product_code,
+            'price_product_version' => (string) $publication->price_product_version,
+            'factor_set_id' => $publication->factor_set_id === null ? null : (int) $publication->factor_set_id,
+            'factor_set_hash' => (string) $publication->factor_set_hash,
             'is_ready' => true,
             // Carried through to the consumer rather than stopping at readiness: a reader deciding
             // whether to act on this product needs to know it came from a development frontier.
@@ -74,6 +78,10 @@ class MarketDataReadProductService
             'publication_id' => null,
             'publication_version' => null,
             'run_id' => null,
+            'price_product_code' => null,
+            'price_product_version' => null,
+            'factor_set_id' => null,
+            'factor_set_hash' => null,
             'is_ready' => false,
             'activation_state' => $readiness['activation_state'] ?? null,
             'reason_code' => $readiness['reason_code'],

@@ -139,7 +139,8 @@ Generated from `config/market_data.php` on 2026-08-03: 128 keys. A key added, re
 | `market_data.platform.cutoff_time` | string | `17:15:00` | `MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME` | `../book/Terminology_and_Scope.md` |
 | `market_data.platform.cutoff_grace_minutes` | int | `MARKET_DATA_CUT_OFF_GRACE_MINUTES` | `MARKET_DATA_CUT_OFF_GRACE_MINUTES` | `../book/Terminology_and_Scope.md` |
 | `market_data.platform.coverage_min` | float | `0.98` | `MARKET_DATA_COVERAGE_MIN` | `../book/Terminology_and_Scope.md` |
-| `market_data.platform.price_basis_default` | string | `close` | `MARKET_DATA_PRICE_BASIS_DEFAULT` | `../book/Terminology_and_Scope.md` |
+| `market_data.indicators.price_product_default` | string | `STRUCTURAL_ADJUSTED` | `MARKET_DATA_INDICATOR_PRICE_PRODUCT_DEFAULT` | `Indicator_Registry_Baseline_LOCKED.md`, `Price_Adjustment_Contract_LOCKED.md` |
+| ~~`market_data.platform.price_basis_default`~~ | — | — | ~~`MARKET_DATA_PRICE_BASIS_DEFAULT`~~ | **PRUNED 2026-08-11 (`F-024`). Not an active config key; do not reintroduce.** The entry previously permitted it as a legacy RAW-field selector "while compatibility code exists". That condition expired: the key was written into the indicator vector config by `EodIndicatorsComputeService::vectorConfig()` and read by nothing, so it named a selection the platform no longer makes while still appearing to govern one. Removed from `config/market_data.php`, both env templates, and the vector config in the same change. The analytical product is decided solely by `AnalyticalProductIdentityService`, which throws unless the selection is `STRUCTURAL_ADJUSTED`. `CoherentPriceProductBoundaryTest::test_legacy_adj_close_selector_cannot_become_an_analytical_fallback` retains the guard by injecting the key anyway and proving it is ignored. |
 | `market_data.pipeline.daily_enabled` | bool | `false` | `MARKET_DATA_DAILY_ENABLED` | `../ops/Scheduling_and_Locking_Contract_LOCKED.md` |
 | `market_data.pipeline.default_source_mode` | string | `api` | `MARKET_DATA_DEFAULT_SOURCE_MODE` | `../ops/Scheduling_and_Locking_Contract_LOCKED.md` |
 | `market_data.pipeline.active_run_stale_minutes` | int | `MARKET_DATA_ACTIVE_RUN_STALE_MINUTES` | `MARKET_DATA_ACTIVE_RUN_STALE_MINUTES` | `../ops/Scheduling_and_Locking_Contract_LOCKED.md` |
@@ -154,7 +155,8 @@ Generated from `config/market_data.php` on 2026-08-03: 128 keys. A key added, re
 | `market_data.coverage_gate.universe_basis` | string | `MARKET_DATA_COVERAGE_UNIVERSE_BASIS` | `MARKET_DATA_COVERAGE_UNIVERSE_BASIS` | `../book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` |
 | `market_data.coverage_gate.contract_version` | string | `coverage_gate_v1` | `MARKET_DATA_COVERAGE_CONTRACT_VERSION` | `../book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` |
 | `market_data.coverage_gate.missing_sample_limit` | int | `MARKET_DATA_COVERAGE_MISSING_SAMPLE_LIMIT` | `MARKET_DATA_COVERAGE_MISSING_SAMPLE_LIMIT` | `../book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` |
-| `market_data.coverage_gate.dormant_absence_trading_days` | int | `MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS` | `MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS` | `../book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` |
+| `market_data.activity.dormant_absence_trading_days` | int | `MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS` during compatibility migration | `MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS` | activity/liquidity fact only; **must not change coverage denominator or data usability** |
+| `market_data.coverage_gate.dormant_absence_trading_days` | int | legacy alias | `MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS` | **DEPRECATED misleading namespace.** If still resolved by runtime it is snapshotted for reproducibility, but any use to exclude denominator rows is a V2 migration failure. |
 | `market_data.indicators.set_version` | string | `v1` | `MARKET_DATA_INDICATOR_SET_VERSION` | `Indicator_Registry_Baseline_LOCKED.md` |
 | `market_data.indicators.dv_window_days` | int | `MARKET_DATA_DV_WINDOW_DAYS` | `MARKET_DATA_DV_WINDOW_DAYS` | `Indicator_Registry_Baseline_LOCKED.md` |
 | `market_data.indicators.atr_window_days` | int | `MARKET_DATA_ATR_WINDOW_DAYS` | `MARKET_DATA_ATR_WINDOW_DAYS` | `Indicator_Registry_Baseline_LOCKED.md` |
@@ -212,6 +214,10 @@ Generated from `config/market_data.php` on 2026-08-03: 128 keys. A key added, re
 | `market_data.source.api_backfill.max_dates_per_run` | int | `MARKET_DATA_API_BACKFILL_MAX_DATES_PER_RUN` | `MARKET_DATA_API_BACKFILL_MAX_DATES_PER_RUN` | `../book/Source_Data_Acquisition_Contract_LOCKED.md` |
 | `market_data.source.api_backfill.collect_all_errors` | bool | `false` | `MARKET_DATA_API_BACKFILL_COLLECT_ALL_ERRORS` | `../book/Source_Data_Acquisition_Contract_LOCKED.md` |
 | `market_data.source.api_backfill.default_error_policy` | string | `stop_on_error` | `MARKET_DATA_API_BACKFILL_DEFAULT_ERROR_POLICY` | `../book/Source_Data_Acquisition_Contract_LOCKED.md` |
+### Legacy current-ticker projection keys (TRANSITIONAL / NOT HISTORICAL-UNIVERSE AUTHORITY)
+
+The `market_data.tickers.*` keys below describe the current legacy runtime projection while migration is incomplete. They may be snapshotted because they affect compatibility code, but they **must not** determine point-in-time universe membership, provider-symbol resolution, canonical row identity, or new API/schema keys. V2 authority is the temporal issuer/instrument/listing/symbol model using stable `listing_id`/`instrument_id`; current `is_active` is not historical truth.
+
 | `market_data.tickers.table` | string | `tickers` | `MARKET_DATA_TICKERS_TABLE` | `../book/Tickers_and_Identity_Dependency_Contract_LOCKED.md` |
 | `market_data.tickers.id_column` | string | `ticker_id` | `MARKET_DATA_TICKERS_ID_COLUMN` | `../book/Tickers_and_Identity_Dependency_Contract_LOCKED.md` |
 | `market_data.tickers.code_column` | string | `ticker_code` | `MARKET_DATA_TICKERS_CODE_COLUMN` | `../book/Tickers_and_Identity_Dependency_Contract_LOCKED.md` |
@@ -248,7 +254,7 @@ Generated from `config/market_data.php` on 2026-08-03: 128 keys. A key added, re
 | `market_data.provider.api_throttle_qps` | int | `MARKET_DATA_API_THROTTLE_QPS` | `MARKET_DATA_API_THROTTLE_QPS` | `../book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md` |
 | `market_data.provider.circuit_breaker_error_rate` | float | `0.5` | `MARKET_DATA_CIRCUIT_BREAKER_ERROR_RATE` | `../book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md` |
 | `market_data.session_snapshot.retention_days` | int | `MARKET_DATA_SESSION_SNAPSHOT_RETENTION_DAYS` | `MARKET_DATA_SESSION_SNAPSHOT_RETENTION_DAYS` | `../session_snapshot/Session_Snapshot_Contract_LOCKED.md` |
-| `market_data.session_snapshot.scope_default` | string | `eligibility_set` | `MARKET_DATA_SESSION_SNAPSHOT_SCOPE_DEFAULT` | `../session_snapshot/Session_Snapshot_Contract_LOCKED.md` |
+| `market_data.session_snapshot.scope_default` | string | `data_usability_set` target (`eligibility_set` accepted only as legacy compatibility alias) | `MARKET_DATA_SESSION_SNAPSHOT_SCOPE_DEFAULT` | `../session_snapshot/Session_Snapshot_Contract_LOCKED.md` |
 | `market_data.session_snapshot.slot_tolerance_minutes` | int | `MARKET_DATA_SESSION_SNAPSHOT_SLOT_TOLERANCE_MINUTES` | `MARKET_DATA_SESSION_SNAPSHOT_SLOT_TOLERANCE_MINUTES` | `../session_snapshot/Session_Snapshot_Contract_LOCKED.md` |
 
 ## Registry metadata

@@ -8,6 +8,33 @@ use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 
 class MarketDataEvidenceExportService
 {
+    /**
+     * Storage-to-payload coverage evidence contract.
+     *
+     * EvidenceExportCompletenessStaticGuardTest compares these keys with every coverage_* column
+     * in the eod_runs schema mirror. Adding persisted coverage evidence without declaring its
+     * payload path therefore fails the suite instead of creating another stored-but-hidden field.
+     */
+    public const RUN_COVERAGE_STORAGE_EXPORT_PATHS = [
+        'coverage_universe_count' => 'coverage_universe_count',
+        'coverage_universe_hash' => 'coverage_universe_hash',
+        'coverage_excluded_sample_json' => 'coverage_excluded_sample_json',
+        'coverage_available_count' => 'coverage_available_count',
+        'coverage_missing_count' => 'coverage_missing_count',
+        'coverage_bar_not_expected_count' => 'coverage_bar_not_expected_count',
+        'coverage_expected_count' => 'coverage_expected_count',
+        'coverage_expectation_unknown_count' => 'coverage_expectation_unknown_count',
+        'coverage_delivered_count' => 'coverage_delivered_count',
+        'coverage_delivered_valid_count' => 'coverage_delivered_valid_count',
+        'coverage_ratio' => 'coverage_ratio',
+        'coverage_min_threshold' => 'coverage_min_threshold',
+        'coverage_gate_state' => 'coverage_gate_state',
+        'coverage_threshold_mode' => 'coverage_threshold_mode',
+        'coverage_universe_basis' => 'coverage_universe_basis',
+        'coverage_contract_version' => 'coverage_contract_version',
+        'coverage_missing_sample_json' => 'coverage_missing_sample_json',
+    ];
+
     private function field($record, $name, $default = null)
     {
         return is_object($record) && property_exists($record, $name) ? $record->{$name} : $default;
@@ -1925,15 +1952,23 @@ class MarketDataEvidenceExportService
         $coverageGateState = CoverageGateStateNormalizer::normalize($record->coverage_gate_state ?? null);
         $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($record->coverage_gate_state ?? null);
         $reasonCode = $this->resolveCoverageReasonCodeFromState($coverageGateState);
-        $missingSample = $this->decodeJsonArray($record->coverage_missing_sample_json ?? null);
+        $storedMissingSample = $this->decodeNullableJsonArray($this->field($record, 'coverage_missing_sample_json'));
+        $missingSample = $storedMissingSample ?? [];
+        $excludedSample = $this->decodeNullableJsonArray($this->field($record, 'coverage_excluded_sample_json'));
         $notesMap = $this->parseRunNotes((string) ($this->field($record, 'notes') ?? ''));
 
         return [
             'coverage_universe_count' => isset($record->coverage_universe_count) && $record->coverage_universe_count !== null ? (int) $record->coverage_universe_count : null,
-            'coverage_expected_count' => isset($record->coverage_universe_count) && $record->coverage_universe_count !== null ? (int) $record->coverage_universe_count : null,
+            'coverage_universe_hash' => isset($record->coverage_universe_hash) && $record->coverage_universe_hash !== null ? (string) $record->coverage_universe_hash : null,
+            'coverage_excluded_sample_json' => $excludedSample,
+            'coverage_expected_count' => isset($record->coverage_expected_count) && $record->coverage_expected_count !== null ? (int) $record->coverage_expected_count : null,
+            'coverage_delivered_count' => isset($record->coverage_delivered_count) && $record->coverage_delivered_count !== null ? (int) $record->coverage_delivered_count : null,
+            'coverage_delivered_valid_count' => isset($record->coverage_delivered_valid_count) && $record->coverage_delivered_valid_count !== null ? (int) $record->coverage_delivered_valid_count : null,
             'coverage_available_count' => isset($record->coverage_available_count) && $record->coverage_available_count !== null ? (int) $record->coverage_available_count : null,
             'coverage_missing_count' => isset($record->coverage_missing_count) && $record->coverage_missing_count !== null ? (int) $record->coverage_missing_count : null,
-            'expected_bar_count' => isset($record->coverage_universe_count) && $record->coverage_universe_count !== null ? (int) $record->coverage_universe_count : null,
+            'coverage_bar_not_expected_count' => isset($record->coverage_bar_not_expected_count) && $record->coverage_bar_not_expected_count !== null ? (int) $record->coverage_bar_not_expected_count : null,
+            'coverage_expectation_unknown_count' => isset($record->coverage_expectation_unknown_count) && $record->coverage_expectation_unknown_count !== null ? (int) $record->coverage_expectation_unknown_count : null,
+            'expected_bar_count' => isset($record->coverage_expected_count) && $record->coverage_expected_count !== null ? (int) $record->coverage_expected_count : null,
             'available_bar_count' => isset($record->coverage_available_count) && $record->coverage_available_count !== null ? (int) $record->coverage_available_count : null,
             'missing_bar_count' => isset($record->coverage_missing_count) && $record->coverage_missing_count !== null ? (int) $record->coverage_missing_count : null,
             'coverage_ratio' => isset($record->coverage_ratio) && $record->coverage_ratio !== null ? (float) $record->coverage_ratio : null,
@@ -1945,6 +1980,7 @@ class MarketDataEvidenceExportService
             'coverage_universe_basis' => $record->coverage_universe_basis ?? null,
             'coverage_contract_version' => $record->coverage_contract_version ?? null,
             'coverage_policy_version' => $record->coverage_contract_version ?? null,
+            'coverage_missing_sample_json' => $storedMissingSample,
             'coverage_missing_sample' => $missingSample,
             'coverage_failed_symbols' => $missingSample,
             'coverage_evaluated_at' => $this->field($record, 'finished_at') ?: $this->field($record, 'updated_at'),
@@ -1989,10 +2025,10 @@ class MarketDataEvidenceExportService
 
         return [
             'coverage_universe_count' => isset($record->expected_coverage_universe_count) && $record->expected_coverage_universe_count !== null ? (int) $record->expected_coverage_universe_count : null,
-            'coverage_expected_count' => isset($record->expected_coverage_universe_count) && $record->expected_coverage_universe_count !== null ? (int) $record->expected_coverage_universe_count : null,
+            'coverage_expected_count' => isset($record->expected_coverage_expected_count) && $record->expected_coverage_expected_count !== null ? (int) $record->expected_coverage_expected_count : null,
             'coverage_available_count' => isset($record->expected_coverage_available_count) && $record->expected_coverage_available_count !== null ? (int) $record->expected_coverage_available_count : null,
             'coverage_missing_count' => isset($record->expected_coverage_missing_count) && $record->expected_coverage_missing_count !== null ? (int) $record->expected_coverage_missing_count : null,
-            'expected_bar_count' => isset($record->expected_coverage_universe_count) && $record->expected_coverage_universe_count !== null ? (int) $record->expected_coverage_universe_count : null,
+            'expected_bar_count' => isset($record->expected_coverage_expected_count) && $record->expected_coverage_expected_count !== null ? (int) $record->expected_coverage_expected_count : null,
             'available_bar_count' => isset($record->expected_coverage_available_count) && $record->expected_coverage_available_count !== null ? (int) $record->expected_coverage_available_count : null,
             'missing_bar_count' => isset($record->expected_coverage_missing_count) && $record->expected_coverage_missing_count !== null ? (int) $record->expected_coverage_missing_count : null,
             'coverage_ratio' => isset($record->expected_coverage_ratio) && $record->expected_coverage_ratio !== null ? (float) $record->expected_coverage_ratio : null,
@@ -2040,6 +2076,15 @@ class MarketDataEvidenceExportService
         $decoded = json_decode($value, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private function decodeNullableJsonArray($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return $this->decodeJsonArray($value);
     }
 
     private function replayStatusForComparison($comparisonResult)

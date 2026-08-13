@@ -159,26 +159,84 @@ class ProductionCorpusInvariantOracleTest extends TestCase
      * No adjustment factor inferred from the price series can reach the adjustment path. W11 proved
      * this on the decision side; here it is read back from the deployed corpus.
      */
+    /**
+     * An authoritative factor must actually reach published output, read back from the corpus.
+     *
+     * Until 2026-08-11 the platform held zero usable factors, so every guard around adjustment
+     * passed while the mechanism had never once fired — `STRUCTURAL_ADJUSTED` was value-identical to
+     * `RAW` across all 756,328 rows and nothing could tell a working adjustment from an absent one.
+     *
+     * The test does not inspect code. If a factor were recorded but never applied, the indicator at
+     * its ex-date would still carry the raw split drop, and `roc20` would sit at roughly
+     * `factor - 1`: -0.96 for a 1:25 split, -0.80 for 1:5. Distance from that value is the evidence
+     * that the series was rescaled. Measured on the three IDX-verified splits it is 0.91 to 1.03.
+     */
+    public function test_an_authoritative_factor_reaches_published_output(): void
+    {
+        $appliedFactors = "FROM market_data_corporate_actions a
+             JOIN tickers t ON t.ticker_code = a.ticker_code
+             JOIN eod_indicators i ON i.ticker_id = t.ticker_id AND i.trade_date = a.ex_date
+             WHERE a.adjustment_source IN ('EXCHANGE_ANNOUNCEMENT','DEPOSITORY_SCHEDULE','OPERATOR_ENTERED')
+               AND a.price_adjustment_factor IS NOT NULL AND a.ex_date IS NOT NULL
+               AND i.roc20 IS NOT NULL";
+
+        $this->assertSame(
+            0,
+            $this->violations("SELECT COUNT(*) c ".$appliedFactors
+                ." AND ABS(i.roc20 - (a.price_adjustment_factor - 1)) < 0.1"),
+            'an indicator sitting at the raw split drop means its factor was recorded but never applied'
+        );
+
+        $this->assertGreaterThan(
+            0,
+            $this->violations("SELECT COUNT(*) c ".$appliedFactors),
+            'at least one authoritative factor must exist with an indicator at its ex-date, '
+            .'otherwise the assertion above is satisfied by an empty corpus — which is exactly how '
+            .'this invariant passed for three years while no factor had ever been applied'
+        );
+    }
+
     public function test_no_price_derived_factor_is_usable_as_an_adjustment(): void
     {
-        // The production filter, replicated exactly as EventRiskSourceRepository applies it.
-        $usableUnderProductionFilter = $this->violations(
+        /*
+         * The production filter, replicated as EventRiskSourceRepository applies it today: a
+         * positive allowlist over AUTHORITATIVE_ADJUSTMENT_SOURCES, not the earlier exclusion of
+         * one known-bad value. The earlier form admitted a factor whose adjustment_source was NULL
+         * or unrecognised, which is a factor nobody attributed.
+         */
+        $derivedSurvivingTheFilter = $this->violations(
             "SELECT COUNT(*) c FROM market_data_corporate_actions
              WHERE price_adjustment_factor IS NOT NULL AND price_adjustment_factor > 0 AND price_adjustment_factor <> 1
-               AND (adjustment_source IS NULL OR adjustment_source <> 'DERIVED_FROM_PRICE_SERIES')"
+               AND adjustment_source IN ('EXCHANGE_ANNOUNCEMENT','DEPOSITORY_SCHEDULE','OPERATOR_ENTERED')
+               AND adjustment_source = 'DERIVED_FROM_PRICE_SERIES'"
         );
 
-        // The same query without the provenance clause, so the difference is attributable.
-        $usableIgnoringProvenance = $this->violations(
+        $derivedFactorsPresent = $this->violations(
             "SELECT COUNT(*) c FROM market_data_corporate_actions
-             WHERE price_adjustment_factor IS NOT NULL AND price_adjustment_factor > 0 AND price_adjustment_factor <> 1"
+             WHERE price_adjustment_factor IS NOT NULL AND price_adjustment_factor > 0 AND price_adjustment_factor <> 1
+               AND adjustment_source = 'DERIVED_FROM_PRICE_SERIES'"
         );
 
-        $this->assertSame(0, $usableUnderProductionFilter, 'no factor survives the production filter');
+        $unattributedSurvivingTheFilter = $this->violations(
+            "SELECT COUNT(*) c FROM market_data_corporate_actions
+             WHERE price_adjustment_factor IS NOT NULL AND price_adjustment_factor > 0 AND price_adjustment_factor <> 1
+               AND (adjustment_source IS NULL OR adjustment_source NOT IN
+                    ('EXCHANGE_ANNOUNCEMENT','DEPOSITORY_SCHEDULE','OPERATOR_ENTERED','DERIVED_FROM_PRICE_SERIES'))
+               AND adjustment_source IN ('EXCHANGE_ANNOUNCEMENT','DEPOSITORY_SCHEDULE','OPERATOR_ENTERED')"
+        );
+
+        $this->assertSame(0, $derivedSurvivingTheFilter, 'no price-derived factor may survive the production filter');
+        $this->assertSame(0, $unattributedSurvivingTheFilter, 'and no unattributed factor may survive it either');
+
+        /*
+         * The invariant above used to be satisfied because the corpus held no usable factor at all
+         * — it passed while proving nothing about the filter. This pins that the exclusion is doing
+         * work: derived factors exist and are held out.
+         */
         $this->assertGreaterThan(
-            $usableUnderProductionFilter,
-            $usableIgnoringProvenance,
-            'and dropping the provenance clause would readmit factors, so the clause is what excludes them'
+            0,
+            $derivedFactorsPresent,
+            'derived factors must exist, otherwise the exclusion above is vacuous'
         );
     }
 

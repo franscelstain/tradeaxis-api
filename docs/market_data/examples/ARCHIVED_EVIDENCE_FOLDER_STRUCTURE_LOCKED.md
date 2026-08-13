@@ -1,5 +1,8 @@
 # Archived Evidence Folder Structure (LOCKED)
 
+> **ILLUSTRATIVE ONLY — NOT CURRENT STRATEGY AUTHORITY.** Resolve all semantics against the current owner contracts/Blueprint/Matrix; legacy fields in this example are compatibility or historical shape only.
+
+
 ## Purpose
 Show the recommended structure for storing archived actual execution evidence separately from illustrative examples.
 

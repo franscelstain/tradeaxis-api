@@ -80,8 +80,13 @@ Sector membership is a root of expectation for every sector-relative measure, so
 Domain parameters owned by this contract:
 
 - **Authority:** the IDX-published `IDX-IC` classification and its change announcements.
+- **Cadence:** reconcile on every IDX-IC classification/reclassification publication before sector-relative products for the affected effective period are finalized; perform a full-range membership reconciliation before any historical period receives an unqualified sector-relative correctness claim.
 - **Scope:** from the intentional dataset start onward, covering every instrument in the temporal universe.
 - **Qualification:** a claim about sector-relative measures over an unreconciled period must name that period. The direction that matters most here is a reclassification that occurred but was never recorded, since it produces silently wrong sector attribution rather than a gap.
+
+## Dependency order (LOCKED)
+
+Temporal sector membership is a prerequisite for every sector-relative indicator. The implementation sequence therefore closes this contract's temporal foundation at Stage 6 / `W05`, **before** deterministic indicator work at `W14`. Stage 13 / `W16` may consume and expose the already-governed sector-reference state, but may not be the first point at which membership becomes temporal.
 
 ## Acceptance criterion (LOCKED)
 
