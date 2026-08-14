@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Console\Commands\MarketData\AuditHashCommand;
+use App\Console\Commands\MarketData\AdmitStageEightConformantSuffixCommand;
 use App\Console\Commands\MarketData\BuildEligibilityCommand;
 use App\Console\Commands\MarketData\ComputeIndicatorsCommand;
 use App\Console\Commands\MarketData\DailyPipelineCommand;
@@ -35,6 +36,10 @@ use App\Console\Commands\MarketData\RequestCorrectionCommand;
 use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
 use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
+use App\Console\Commands\MarketData\RecordAuthoritativeCorporateActionTermsCommand;
+use App\Console\Commands\MarketData\RecordAuthoritativeExchangeMarketStructureCommand;
+use App\Console\Commands\MarketData\RecordAuthoritativeTradingStatusSnapshotCommand;
+use App\Console\Commands\MarketData\ReconstructCurrentCorpusCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
@@ -42,6 +47,7 @@ class Kernel extends ConsoleKernel
 {
     protected $commands = [
         IngestEodBarsCommand::class,
+        AdmitStageEightConformantSuffixCommand::class,
         ComputeIndicatorsCommand::class,
         BuildEligibilityCommand::class,
         AuditHashCommand::class,
@@ -74,6 +80,10 @@ class Kernel extends ConsoleKernel
         RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,
         RepairCurrentPublicationIntegrityCommand::class,
+        RecordAuthoritativeCorporateActionTermsCommand::class,
+        RecordAuthoritativeExchangeMarketStructureCommand::class,
+        RecordAuthoritativeTradingStatusSnapshotCommand::class,
+        ReconstructCurrentCorpusCommand::class,
     ];
 
     protected function schedule(Schedule $schedule)
